@@ -2,6 +2,7 @@ package worker
 
 import (
 	"fmt"
+	"strings"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -18,30 +19,6 @@ func (w *Workflows) isBuildDeployable(bld app.ComponentBuild) bool {
 
 func (w *Workflows) isDeployable(install *app.Install) bool {
 	return install.InstallSandboxRuns[0].Status == app.SandboxRunStatusActive
-}
-
-func (w *Workflows) anyDependencyInActive(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy) (string, error) {
-	depComponents, err := activities.AwaitGetComponentDependents(ctx, activities.GetComponentDependents{
-		AppID:           install.App.ID,
-		ComponentRootID: installDeploy.ComponentID,
-	})
-
-	if err != nil {
-		return "", fmt.Errorf("unable to get installComponent: %w", err)
-	}
-
-	for _, dep := range depComponents {
-		if depCmp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
-			InstallID:   installDeploy.InstallComponent.InstallID,
-			ComponentID: dep.ID,
-		}); err != nil {
-			return "", fmt.Errorf("unable to get installComponent: %w", err)
-		} else if app.InstallDeployStatus(depCmp.Component.Status) != app.InstallDeployStatusOK {
-			return depCmp.ComponentID, fmt.Errorf("dependent component: %s, not active", depCmp.ID)
-		}
-	}
-
-	return "", nil
 }
 
 func (w *Workflows) isTeardownable(install *app.Install) bool {
@@ -93,16 +70,20 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 		return nil
 	}
 
-	// inactiveCmpID, err := w.anyDependencyInActive(ctx, install, installDeploy)
-	// if err != nil {
-	// 	if inactiveCmpID != "" {
-	// 		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("dependent component: %s  not active", inactiveCmpID))
-	// 	} else {
-	// 		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
-	// 	}
-	// 	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
-	// 	return fmt.Errorf("unable to check dependencies: %w", err)
-	// }
+	inactiveCmpIDs, err := activities.AwaitFetchInactiveDependencies(ctx, activities.FetchInactiveDependenciesRequest{
+		ComponentRootID: installDeploy.ComponentID,
+		InstallID:       installID,
+	})
+
+	if err != nil {
+		if len(inactiveCmpIDs) > 0 {
+			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("dependent component: [%s]  not active", strings.Join(inactiveCmpIDs, ", ")))
+		} else {
+			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
+		}
+		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
+		return fmt.Errorf("unable to check dependencies: %w", err)
+	}
 
 	deployCfg, err := activities.AwaitGetComponentConfigByDeployID(ctx, deployID)
 	if err != nil {
