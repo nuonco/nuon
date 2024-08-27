@@ -24,7 +24,7 @@ func (w *Workflows) isDeployable(install app.Install) bool {
 func (w *Workflows) anyDependencyInActive(ctx workflow.Context, install app.Install, installDeploy app.InstallDeploy) (string, error) {
 	var depComponents []app.Component
 	err := w.defaultExecGetActivity(ctx, w.acts.GetComponentDependents, activities.GetComponentDependents{
-		AppID:   install.App.ID,
+		AppID:           install.App.ID,
 		ComponentRootID: installDeploy.ComponentID,
 	}, &depComponents)
 
@@ -102,16 +102,16 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 		return nil
 	}
 
-	inactiveCmpID, err := w.anyDependencyInActive(ctx, install, installDeploy)
-	if err != nil {
-		if inactiveCmpID != "" {
-			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("dependent component: %s  not active", inactiveCmpID))
-		} else {
-			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
-		}
-		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
-		return fmt.Errorf("unable to check dependencies: %w", err)
-	}
+	// inactiveCmpID, err := w.anyDependencyInActive(ctx, install, installDeploy)
+	// if err != nil {
+	// 	if inactiveCmpID != "" {
+	// 		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("dependent component: %s  not active", inactiveCmpID))
+	// 	} else {
+	// 		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
+	// 	}
+	// 	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
+	// 	return fmt.Errorf("unable to check dependencies: %w", err)
+	// }
 
 	var deployCfg componentsv1.Component
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentConfig, activities.GetComponentConfigRequest{
