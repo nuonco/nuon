@@ -502,3 +502,40 @@ module "shared-berri-ai" {
     github = github.nuonco-shared
   }
 }
+
+module "shared-percona" {
+  source = "./modules/repository"
+
+  name                     = "percona"
+  description              = "Nuon configuration for percona."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
+module "shared-percona-installer" {
+  source = "./modules/repository"
+
+  name                     = "percona-installer"
+  description              = "Custom installer for percona."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+  is_fork                  = true
+
+  collaborators = {
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
