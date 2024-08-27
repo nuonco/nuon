@@ -10,7 +10,7 @@ import (
 
 func (w *Workflows) sendNotification(ctx workflow.Context, typ notifications.Type, appID string, vars map[string]string) {
 	l := workflow.GetLogger(ctx)
-	if err := w.defaultExecErrorActivity(ctx, w.acts.SendNotification, sharedactivities.SendNotificationRequest{
+	if err := sharedactivities.AwaitSendNotification(ctx, sharedactivities.SendNotificationRequest{
 		AppID: appID,
 		Type:  typ,
 		Vars:  vars,

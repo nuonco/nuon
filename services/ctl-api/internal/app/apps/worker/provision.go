@@ -18,15 +18,13 @@ func (w *Workflows) provision(ctx workflow.Context, appID string, dryRun bool) e
 
 	w.updateStatus(ctx, appID, app.AppStatusProvisioning, "provisioning app resources")
 
-	var currentApp app.App
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-		AppID: appID,
-	}, &currentApp); err != nil {
+	currentApp, err := activities.AwaitGetByAppID(ctx, appID)
+	if err != nil {
 		w.updateStatus(ctx, appID, app.AppStatusError, "unable to get app from database")
 		return fmt.Errorf("unable to get app from database: %w", err)
 	}
 
-	_, err := w.execProvisionWorkflow(ctx, dryRun, &appsv1.ProvisionRequest{
+	_, err = w.execProvisionWorkflow(ctx, dryRun, &appsv1.ProvisionRequest{
 		OrgId: currentApp.OrgID,
 		AppId: appID,
 	})

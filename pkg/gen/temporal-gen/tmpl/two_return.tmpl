@@ -2,7 +2,7 @@
 // {{ .FnName }} executes [{{ .BaseFnName }}] within a Temporal activity, waits for the future to complete, then returns the response or error.
 //
 // Temporal enforces that only a value XOR an error will be returned.
-func {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) ({{ if .HasResp }}{{ .RespType }}, {{ end }}error) {
+func {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) ({{ .RespType }}, error) {
 	ao := {{ template "activity_options.tmpl" .Options }}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 

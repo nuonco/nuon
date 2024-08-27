@@ -9,33 +9,27 @@ import (
 )
 
 func (w *Workflows) updateStatus(ctx workflow.Context, orgID string, status app.OrgStatus, statusDescription string) {
-	err := w.defaultExecErrorActivity(ctx, w.acts.UpdateStatus, activities.UpdateStatusRequest{
+	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		OrgID:             orgID,
 		Status:            status,
 		StatusDescription: statusDescription,
-	})
-	if err == nil {
-		return
+	}); err != nil {
+		l := workflow.GetLogger(ctx)
+		l.Error("unable to update org status",
+			zap.String("organization-id", orgID),
+			zap.Error(err))
 	}
-
-	l := workflow.GetLogger(ctx)
-	l.Error("unable to update org status",
-		zap.String("organization-id", orgID),
-		zap.Error(err))
 }
 
 func (w *Workflows) updateHealthCheckStatus(ctx workflow.Context, orgHealthCheckID string, status app.OrgHealthCheckStatus, statusDescription string) {
-	err := w.defaultExecErrorActivity(ctx, w.acts.UpdateHealthCheckStatus, activities.UpdateHealthCheckStatusRequest{
+	if err := activities.AwaitUpdateHealthCheckStatus(ctx, activities.UpdateHealthCheckStatusRequest{
 		OrgHealthCheckID:  orgHealthCheckID,
 		Status:            status,
 		StatusDescription: statusDescription,
-	})
-	if err == nil {
-		return
+	}); err != nil {
+		l := workflow.GetLogger(ctx)
+		l.Error("unable to update org health check status",
+			zap.String("health-check-id", orgHealthCheckID),
+			zap.Error(err))
 	}
-
-	l := workflow.GetLogger(ctx)
-	l.Error("unable to update org health check status",
-		zap.String("health-check-id", orgHealthCheckID),
-		zap.Error(err))
 }

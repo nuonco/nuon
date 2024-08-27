@@ -15,25 +15,23 @@ import (
 )
 
 func (w *Workflows) provision(ctx workflow.Context, installID string, dryRun bool) error {
-	var install app.Install
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-		InstallID: installID,
-	}, &install); err != nil {
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	var installRun app.InstallSandboxRun
-	if err := w.defaultExecGetActivity(ctx, w.acts.CreateSandboxRun, activities.CreateSandboxRunRequest{
+	installRun, err := activities.AwaitCreateSandboxRun(ctx, activities.CreateSandboxRunRequest{
 		InstallID: installID,
 		RunType:   app.SandboxRunTypeProvision,
-	}, &installRun); err != nil {
+	})
+	if err != nil {
 		return fmt.Errorf("unable to create install: %w", err)
 	}
 
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusStarted)
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
 
-	req, err := w.protos.ToInstallProvisionRequest(&install, installRun.ID)
+	req, err := w.protos.ToInstallProvisionRequest(install, installRun.ID)
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install provision request")
 		return fmt.Errorf("unable to get install provision request: %w", err)

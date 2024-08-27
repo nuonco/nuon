@@ -11,6 +11,8 @@ type GetComponentLatestBuildRequest struct {
 	ComponentID string `validate:"required"`
 }
 
+// @await-gen
+// @by-id ComponentID
 func (a *Activities) GetComponentLatestBuild(ctx context.Context, req GetComponentLatestBuildRequest) (*app.ComponentBuild, error) {
 	var build app.ComponentBuild
 	res := a.db.WithContext(ctx).
