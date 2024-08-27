@@ -15,6 +15,14 @@ type GetInstallComponentRequest struct {
 
 // @await-gen
 func (a *Activities) GetInstallComponent(ctx context.Context, req GetInstallComponentRequest) (*app.InstallComponent, error) {
+	installComponent, err := a.getInstallComponent(ctx, req.InstallID, req.ComponentID)
+	if err != nil {
+		return nil, err
+	}
+	return installComponent, nil
+}
+
+func (a *Activities) getInstallComponent(ctx context.Context, installID, componentID string) (*app.InstallComponent, error) {
 	installComponent := app.InstallComponent{}
 	res := a.db.WithContext(ctx).
 		Preload("Component").
@@ -23,8 +31,8 @@ func (a *Activities) GetInstallComponent(ctx context.Context, req GetInstallComp
 			return db.Order("install_deploys.created_at DESC")
 		}).
 		Where(app.InstallComponent{
-			InstallID:   req.InstallID,
-			ComponentID: req.ComponentID,
+			InstallID:   installID,
+			ComponentID: componentID,
 		}).
 		First(&installComponent)
 	if res.Error != nil {
