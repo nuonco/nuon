@@ -12,11 +12,11 @@ import (
 )
 
 func (w *Workflows) shouldTeardownInstallComponent(ctx workflow.Context, installID, compID string) (bool, error) {
-	var installComponent app.InstallComponent
-	if err := w.defaultExecGetActivity(ctx, w.acts.GetInstallComponent, activities.GetInstallComponentRequest{
+	installComponent, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 		InstallID:   installID,
 		ComponentID: compID,
-	}, &installComponent); err != nil {
+	})
+	if err != nil {
 		return false, fmt.Errorf("unable to get install component: %w", err)
 	}
 
@@ -31,7 +31,7 @@ func (w *Workflows) shouldTeardownInstallComponent(ctx workflow.Context, install
 	return true, nil
 }
 
-func (w *Workflows) shouldTeardownComponents(install app.Install) bool {
+func (w *Workflows) shouldTeardownComponents(install *app.Install) bool {
 	if len(install.InstallSandboxRuns) < 1 {
 		return false
 	}
@@ -48,10 +48,8 @@ func (w *Workflows) shouldTeardownComponents(install app.Install) bool {
 
 func (w *Workflows) teardownComponents(ctx workflow.Context, installID string, sandboxMode, async bool) error {
 	l := workflow.GetLogger(ctx)
-	var install app.Install
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-		InstallID: installID,
-	}, &install); err != nil {
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
@@ -60,17 +58,16 @@ func (w *Workflows) teardownComponents(ctx workflow.Context, installID string, s
 		return nil
 	}
 
-	var componentIDs []string
-	if err := w.defaultExecGetActivity(ctx, w.acts.GetAppGraph, activities.GetAppGraphRequest{
-		AppID: install.AppID,
-	}, &componentIDs); err != nil {
+	componentIDs, err := activities.AwaitGetAppGraphByAppID(ctx, install.AppID)
+	if err != nil {
 		return fmt.Errorf("unable to get app graph: %w", err)
 	}
+
 	// NOTE(jm): it would probably be better, long term to have a proper way of inverting the graph and walking it
 	// in reverse, but for now, this is the only place we need to do so, so it is just localized here.
 	slices.Reverse(componentIDs)
 
-	deploys := make([]app.InstallDeploy, 0)
+	deploys := make([]*app.InstallDeploy, 0)
 	for _, compID := range componentIDs {
 		shouldTeardown, err := w.shouldTeardownInstallComponent(ctx, installID, compID)
 		if err != nil {
@@ -81,21 +78,18 @@ func (w *Workflows) teardownComponents(ctx workflow.Context, installID string, s
 			continue
 		}
 
-		var componentBuild app.ComponentBuild
-		if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentLatestBuild, activities.GetComponentLatestBuildRequest{
-			ComponentID: compID,
-		}, &componentBuild); err != nil {
+		componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, compID)
+		if err != nil {
 			return fmt.Errorf("unable to get latest component build: %w", err)
 		}
 
-		var installDeploy app.InstallDeploy
-		if err := w.defaultExecGetActivity(ctx, w.acts.CreateInstallDeploy, activities.CreateInstallDeployRequest{
-			InstallID:   installID,
-			ComponentID: compID,
-			BuildID:     componentBuild.ID,
-			Teardown:    true,
-			Signal:      async,
-		}, &installDeploy); err != nil {
+		installDeploy, err := activities.AwaitCreateInstallDeploy(ctx, activities.CreateInstallDeployRequest{
+			InstallID: installID, ComponentID: compID,
+			BuildID:  componentBuild.ID,
+			Teardown: true,
+			Signal:   async,
+		})
+		if err != nil {
 			return fmt.Errorf("unable to create install deploy: %w", err)
 		}
 

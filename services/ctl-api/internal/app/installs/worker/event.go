@@ -11,7 +11,7 @@ import (
 
 func (w *Workflows) writeInstallEvent(ctx workflow.Context, installID string, op eventloop.SignalType, status app.OperationStatus) {
 	l := workflow.GetLogger(ctx)
-	if err := w.defaultExecErrorActivity(ctx, w.acts.WriteEvent, &activities.WriteEventRequest{
+	if err := activities.AwaitWriteEvent(ctx, activities.WriteEventRequest{
 		InstallID:       installID,
 		Operation:       op,
 		OperationStatus: status,
@@ -22,7 +22,7 @@ func (w *Workflows) writeInstallEvent(ctx workflow.Context, installID string, op
 
 func (w *Workflows) writeDeployEvent(ctx workflow.Context, deployID string, op eventloop.SignalType, status app.OperationStatus) {
 	l := workflow.GetLogger(ctx)
-	if err := w.defaultExecErrorActivity(ctx, w.acts.WriteEvent, &activities.WriteEventRequest{
+	if err := activities.AwaitWriteEvent(ctx, activities.WriteEventRequest{
 		DeployID:        deployID,
 		Operation:       op,
 		OperationStatus: status,
@@ -33,7 +33,7 @@ func (w *Workflows) writeDeployEvent(ctx workflow.Context, deployID string, op e
 
 func (w *Workflows) writeRunEvent(ctx workflow.Context, runID string, op eventloop.SignalType, status app.OperationStatus) {
 	l := workflow.GetLogger(ctx)
-	if err := w.defaultExecErrorActivity(ctx, w.acts.WriteEvent, &activities.WriteEventRequest{
+	if err := activities.AwaitWriteEvent(ctx, activities.WriteEventRequest{
 		SandboxRunID:    runID,
 		Operation:       op,
 		OperationStatus: status,

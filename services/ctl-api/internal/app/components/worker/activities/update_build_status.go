@@ -15,6 +15,7 @@ type UpdateBuildStatus struct {
 	StatusDescription string                   `validate:"required"`
 }
 
+// @await-gen
 func (a *Activities) UpdateBuildStatus(ctx context.Context, req UpdateBuildStatus) error {
 	currentApp := app.ComponentBuild{
 		ID: req.BuildID,

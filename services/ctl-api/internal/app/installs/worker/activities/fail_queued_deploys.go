@@ -14,7 +14,10 @@ type FailQueuedDeploysRequest struct {
 // Since releases can be running in the background, and queueing jobs, it is possible that an install can have a deploy
 // queued for it, while it's being deleted.
 //
-// Eventually, this should be fixed with more intelligent release tooling, but for now we just mark them as error
+// # Eventually, this should be fixed with more intelligent release tooling, but for now we just mark them as error
+//
+// @await-gen
+// @by-id InstallID
 func (a *Activities) FailQueuedDeploys(ctx context.Context, req FailQueuedDeploysRequest) error {
 	var installDeploys []app.InstallDeploy
 

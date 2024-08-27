@@ -14,12 +14,10 @@ import (
 func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, appID string) error {
 	deadline := workflow.Now(ctx).Add(time.Minute * 60)
 	for {
-		var currentApp app.App
-		if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-			AppID: appID,
-		}, &currentApp); err != nil {
-			w.updateStatus(ctx, appID, "error", "unable to get app from database")
-			return fmt.Errorf("unable to get app: %w", err)
+		currentApp, err := activities.AwaitGetByAppID(ctx, appID)
+		if err != nil {
+			w.updateStatus(ctx, appID, app.AppStatusError, "unable to get app from database")
+			return fmt.Errorf("unable to get app from database: %w", err)
 		}
 
 		installCnt := 0
@@ -59,15 +57,13 @@ func (w *Workflows) deprovision(ctx workflow.Context, appID string, dryRun bool)
 	// update status
 	w.updateStatus(ctx, appID, app.AppStatusDeprovisioning, "deleting app resources")
 
-	var currentApp app.App
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-		AppID: appID,
-	}, &currentApp); err != nil {
+	currentApp, err := activities.AwaitGetByAppID(ctx, appID)
+	if err != nil {
 		w.updateStatus(ctx, appID, app.AppStatusError, "unable to get app from database")
 		return fmt.Errorf("unable to get app from database: %w", err)
 	}
 
-	_, err := w.execDeprovisionWorkflow(ctx, dryRun, &appsv1.DeprovisionRequest{
+	_, err = w.execDeprovisionWorkflow(ctx, dryRun, &appsv1.DeprovisionRequest{
 		OrgId: currentApp.OrgID,
 		AppId: appID,
 	})
@@ -77,9 +73,7 @@ func (w *Workflows) deprovision(ctx workflow.Context, appID string, dryRun bool)
 	}
 
 	// update status with response
-	if err := w.defaultExecErrorActivity(ctx, w.acts.Delete, activities.DeleteRequest{
-		AppID: appID,
-	}); err != nil {
+	if err := activities.AwaitDeleteByAppID(ctx, appID); err != nil {
 		w.updateStatus(ctx, appID, app.AppStatusError, "unable to delete app")
 		return fmt.Errorf("unable to delete app: %w", err)
 	}

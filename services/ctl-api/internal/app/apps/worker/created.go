@@ -11,12 +11,10 @@ import (
 )
 
 func (w *Workflows) created(ctx workflow.Context, appID string) error {
-	var currentApp app.App
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-		AppID: appID,
-	}, &currentApp); err != nil {
+	currentApp, err := activities.AwaitGetByAppID(ctx, appID)
+	if err != nil {
 		w.updateStatus(ctx, appID, app.AppStatusError, "unable to get app from database")
-		return fmt.Errorf("unable to get app: %w", err)
+		return fmt.Errorf("unable to get app from database: %w", err)
 	}
 
 	w.sendNotification(ctx, notifications.NotificationsTypeAppCreated, appID, map[string]string{

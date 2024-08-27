@@ -9,9 +9,7 @@ import (
 )
 
 func (w *Workflows) forget(ctx workflow.Context, installID string) error {
-	if err := w.defaultExecErrorActivity(ctx, w.acts.Delete, activities.DeleteRequest{
-		InstallID: installID,
-	}); err != nil {
+	if err := activities.AwaitDeleteByInstallID(ctx, installID); err != nil {
 		return fmt.Errorf("unable to delete install: %w", err)
 	}
 

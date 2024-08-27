@@ -12,6 +12,8 @@ type GetAppGraphRequest struct {
 	Inverted bool   `json:"inverted"`
 }
 
+// @await-gen
+// @by-id AppID
 func (a *Activities) GetAppGraph(ctx context.Context, req GetAppGraphRequest) ([]string, error) {
 	g, rootIDs, err := a.appsHelpers.GetGraph(ctx, req.AppID)
 	if err != nil {
