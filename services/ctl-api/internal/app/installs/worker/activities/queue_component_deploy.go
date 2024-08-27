@@ -19,6 +19,7 @@ type CreateInstallDeployRequest struct {
 	Signal      bool   `json:"signal"`
 }
 
+// @await-gen
 func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallDeployRequest) (*app.InstallDeploy, error) {
 	// create deploy
 	installCmp := app.InstallComponent{}

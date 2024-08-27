@@ -8,35 +8,30 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
+// TODO(sdboyer) refactor this to return an error; processing should abort if status updates fail
 func (w *Workflows) updateRunStatus(ctx workflow.Context, runID string, status app.SandboxRunStatus, statusDescription string) {
 	l := workflow.GetLogger(ctx)
 
-	err := w.defaultExecErrorActivity(ctx, w.acts.UpdateRunStatus, activities.UpdateRunStatusRequest{
+	if err := activities.AwaitUpdateRunStatus(ctx, activities.UpdateRunStatusRequest{
 		RunID:             runID,
 		Status:            status,
 		StatusDescription: statusDescription,
-	})
-	if err == nil {
-		return
+	}); err != nil {
+		l.Error("unable to update run status",
+			zap.String("run-id", runID),
+			zap.Error(err))
 	}
-
-	l.Error("unable to update run status",
-		zap.String("run-id", runID),
-		zap.Error(err))
 }
 
 func (w *Workflows) updateDeployStatus(ctx workflow.Context, deployID string, status app.InstallDeployStatus, statusDescription string) {
 	l := workflow.GetLogger(ctx)
-	err := w.defaultExecErrorActivity(ctx, w.acts.UpdateDeployStatus, activities.UpdateDeployStatusRequest{
+	if err := activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
 		DeployID:          deployID,
 		Status:            status,
 		StatusDescription: statusDescription,
-	})
-	if err == nil {
-		return
+	}); err != nil {
+		l.Error("unable to update deploy status",
+			zap.String("deploy-id", deployID),
+			zap.Error(err))
 	}
-
-	l.Error("unable to update deploy status",
-		zap.String("deploy-id", deployID),
-		zap.Error(err))
 }

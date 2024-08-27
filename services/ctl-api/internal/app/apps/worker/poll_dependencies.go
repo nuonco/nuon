@@ -15,12 +15,10 @@ const (
 
 func (w *Workflows) pollDependencies(ctx workflow.Context, appID string) error {
 	for {
-		var currentApp app.App
-		if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-			AppID: appID,
-		}, &currentApp); err != nil {
-			w.updateStatus(ctx, appID, "error", "unable to get app from database")
-			return fmt.Errorf("unable to get app: %w", err)
+		currentApp, err := activities.AwaitGetByAppID(ctx, appID)
+		if err != nil {
+			w.updateStatus(ctx, appID, app.AppStatusError, "unable to get app from database")
+			return fmt.Errorf("unable to get app from database: %w", err)
 		}
 
 		if currentApp.Org.Status == "active" {
@@ -28,6 +26,7 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, appID string) error {
 		}
 
 		if currentApp.Org.Status == "error" {
+			// TODO(sdboyer) remove transitive error status propagation
 			w.updateStatus(ctx, appID, "error", "org is in error state")
 		}
 

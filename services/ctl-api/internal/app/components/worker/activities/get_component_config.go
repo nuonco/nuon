@@ -12,6 +12,8 @@ type GetRequest struct {
 	BuildID string `validate:"required"`
 }
 
+// @await-gen
+// @by-id BuildID
 func (a *Activities) GetComponentConfig(ctx context.Context, req GetRequest) (*componentsv1.Component, error) {
 	bld := app.ComponentBuild{}
 	res := a.db.WithContext(ctx).

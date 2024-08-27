@@ -5,7 +5,6 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	componentsv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	execv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -17,31 +16,27 @@ func (w *Workflows) isBuildDeployable(bld app.ComponentBuild) bool {
 	return bld.Status == app.ComponentBuildStatusActive
 }
 
-func (w *Workflows) isDeployable(install app.Install) bool {
+func (w *Workflows) isDeployable(install *app.Install) bool {
 	return install.InstallSandboxRuns[0].Status == app.SandboxRunStatusActive
 }
 
-func (w *Workflows) anyDependencyInActive(ctx workflow.Context, install app.Install, installDeploy app.InstallDeploy) (string, error) {
-	var depComponents []app.Component
-	err := w.defaultExecGetActivity(ctx, w.acts.GetComponentDependents, activities.GetComponentDependents{
+func (w *Workflows) anyDependencyInActive(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy) (string, error) {
+	depComponents, err := activities.AwaitGetComponentDependents(ctx, activities.GetComponentDependents{
 		AppID:           install.App.ID,
 		ComponentRootID: installDeploy.ComponentID,
-	}, &depComponents)
+	})
 
 	if err != nil {
 		return "", fmt.Errorf("unable to get installComponent: %w", err)
 	}
 
 	for _, dep := range depComponents {
-		var depCmp *app.InstallComponent
-		if err := w.defaultExecGetActivity(ctx, w.acts.GetInstallComponent, activities.GetInstallComponentRequest{
+		if depCmp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 			InstallID:   installDeploy.InstallComponent.InstallID,
 			ComponentID: dep.ID,
-		}, &depCmp); err != nil {
+		}); err != nil {
 			return "", fmt.Errorf("unable to get installComponent: %w", err)
-		}
-
-		if app.InstallDeployStatus(depCmp.Component.Status) != app.InstallDeployStatusOK {
+		} else if app.InstallDeployStatus(depCmp.Component.Status) != app.InstallDeployStatusOK {
 			return depCmp.ComponentID, fmt.Errorf("dependent component: %s, not active", depCmp.ID)
 		}
 	}
@@ -49,7 +44,7 @@ func (w *Workflows) anyDependencyInActive(ctx workflow.Context, install app.Inst
 	return "", nil
 }
 
-func (w *Workflows) isTeardownable(install app.Install) bool {
+func (w *Workflows) isTeardownable(install *app.Install) bool {
 	if install.InstallSandboxRuns[0].Status == app.SandboxRunStatusError {
 		return false
 	}
@@ -64,19 +59,15 @@ func (w *Workflows) isTeardownable(install app.Install) bool {
 func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, sandboxMode bool) error {
 	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusStarted)
 
-	var install app.Install
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-		InstallID: installID,
-	}, &install); err != nil {
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
 		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to get install from database")
 		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	var installDeploy app.InstallDeploy
-	if err := w.defaultExecGetActivity(ctx, w.acts.GetDeploy, activities.GetDeployRequest{
-		DeployID: deployID,
-	}, &installDeploy); err != nil {
+	installDeploy, err := activities.AwaitGetDeployByDeployID(ctx, deployID)
+	if err != nil {
 		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to get install deploy from database")
 		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install deploy: %w", err)
@@ -113,10 +104,8 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 	// 	return fmt.Errorf("unable to check dependencies: %w", err)
 	// }
 
-	var deployCfg componentsv1.Component
-	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentConfig, activities.GetComponentConfigRequest{
-		DeployID: deployID,
-	}, &deployCfg); err != nil {
+	deployCfg, err := activities.AwaitGetComponentConfigByDeployID(ctx, deployID)
+	if err != nil {
 		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to get component config")
 		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get deploy component config: %w", err)
@@ -134,9 +123,9 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 				BuildId:   installDeploy.ComponentBuildID,
 				InstallId: install.ID,
 				DeployId:  deployID,
-				Component: &deployCfg,
+				Component: deployCfg,
 				Type:      planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE,
-				Context:   w.protos.InstallContext(install),
+				Context:   w.protos.InstallContext(*install),
 			},
 		},
 	})
@@ -176,9 +165,9 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 				InstallId: install.ID,
 				BuildId:   installDeploy.ComponentBuildID,
 				DeployId:  deployID,
-				Component: &deployCfg,
+				Component: deployCfg,
 				Type:      deployPlanTyp,
-				Context:   w.protos.InstallContext(install),
+				Context:   w.protos.InstallContext(*install),
 			},
 		},
 	})

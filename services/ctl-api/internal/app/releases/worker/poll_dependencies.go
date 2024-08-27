@@ -16,10 +16,8 @@ const (
 
 func (w *Workflows) pollDependencies(ctx workflow.Context, releaseID string) error {
 	for {
-		var release app.ComponentRelease
-		if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-			ReleaseID: releaseID,
-		}, &release); err != nil {
+		release, err := activities.AwaitGetByReleaseID(ctx, releaseID)
+		if err != nil {
 			w.updateStatus(ctx, releaseID, app.ReleaseStatusError, "unable to get release from database")
 			return fmt.Errorf("unable to get release: %w", err)
 		}

@@ -15,11 +15,8 @@ func (w *Workflows) deployComponents(ctx workflow.Context, installID string, san
 	w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusStarted)
 
 	l := workflow.GetLogger(ctx)
-	var install app.Install
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-		InstallID: installID,
-	}, &install); err != nil {
-		w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
@@ -29,31 +26,27 @@ func (w *Workflows) deployComponents(ctx workflow.Context, installID string, san
 		return nil
 	}
 
-	var componentIDs []string
-	if err := w.defaultExecGetActivity(ctx, w.acts.GetAppGraph, activities.GetAppGraphRequest{
-		AppID: install.AppID,
-	}, &componentIDs); err != nil {
+	componentIDs, err := activities.AwaitGetAppGraphByAppID(ctx, install.AppID)
+	if err != nil {
 		w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get app graph: %w", err)
 	}
 
-	deploys := make([]app.InstallDeploy, 0)
+	deploys := make([]*app.InstallDeploy, 0)
 	for _, componentID := range componentIDs {
-		var componentBuild app.ComponentBuild
-		if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentLatestBuild, activities.GetComponentLatestBuildRequest{
-			ComponentID: componentID,
-		}, &componentBuild); err != nil {
+		componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, componentID)
+		if err != nil {
 			w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 			return fmt.Errorf("unable to get component build: %w", err)
 		}
 
-		var installDeploy app.InstallDeploy
-		if err := w.defaultExecGetActivity(ctx, w.acts.CreateInstallDeploy, activities.CreateInstallDeployRequest{
+		installDeploy, err := activities.AwaitCreateInstallDeploy(ctx, activities.CreateInstallDeployRequest{
 			InstallID:   installID,
 			ComponentID: componentID,
 			BuildID:     componentBuild.ID,
 			Signal:      async,
-		}, &installDeploy); err != nil {
+		})
+		if err != nil {
 			w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 			return fmt.Errorf("unable to create install deploy: %w", err)
 		}

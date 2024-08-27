@@ -9,7 +9,7 @@ import (
 )
 
 func (w *Workflows) updateStatus(ctx workflow.Context, appID string, status app.AppStatus, statusDescription string) {
-	err := w.defaultExecErrorActivity(ctx, w.acts.UpdateStatus, activities.UpdateStatusRequest{
+	err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		AppID:             appID,
 		Status:            status,
 		StatusDescription: statusDescription,

@@ -15,9 +15,7 @@ func (w *Workflows) delete(ctx workflow.Context, orgID string, dryRun bool) erro
 	}
 
 	// update status with response
-	if err := w.defaultExecErrorActivity(ctx, w.acts.Delete, activities.DeleteRequest{
-		OrgID: orgID,
-	}); err != nil {
+	if err := activities.AwaitDeleteByOrgID(ctx, orgID); err != nil {
 		w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to delete organization from database")
 		return fmt.Errorf("unable to delete org: %w", err)
 	}

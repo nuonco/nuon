@@ -12,10 +12,7 @@ func (w *Workflows) forceDelete(ctx workflow.Context, orgID string, dryRun bool)
 		l.Error("unable to deprovision org: %w", zap.Error(err))
 	}
 
-	// update status with response
-	if err := w.defaultExecErrorActivity(ctx, w.acts.Delete, activities.DeleteRequest{
-		OrgID: orgID,
-	}); err != nil {
+	if err := activities.AwaitDeleteByOrgID(ctx, orgID); err != nil {
 		l.Error("unable to delete org: %w", zap.Error(err))
 	}
 	return nil

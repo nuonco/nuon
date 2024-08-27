@@ -15,15 +15,13 @@ import (
 func (w *Workflows) provision(ctx workflow.Context, orgID string, sandboxMode bool) error {
 	w.updateStatus(ctx, orgID, app.OrgStatusProvisioning, "provisioning organization resources")
 
-	var org app.Org
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-		OrgID: orgID,
-	}, &org); err != nil {
+	org, err := activities.AwaitGetByOrgID(ctx, orgID)
+	if err != nil {
 		w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to get org from database")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	_, err := w.execProvisionWorkflow(ctx, sandboxMode, &orgsv1.ProvisionRequest{
+	_, err = w.execProvisionWorkflow(ctx, sandboxMode, &orgsv1.ProvisionRequest{
 		OrgId:       orgID,
 		Region:      defaultOrgRegion,
 		Reprovision: false,

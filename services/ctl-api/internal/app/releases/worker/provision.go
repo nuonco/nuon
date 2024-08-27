@@ -14,11 +14,9 @@ func (w *Workflows) provision(ctx workflow.Context, releaseID string, dryRun boo
 	// We may need to revisit release statuses.
 	w.updateStatus(ctx, releaseID, app.ReleaseStatusProvisioning, "provisioning deploys")
 
-	var release app.ComponentRelease
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-		ReleaseID: releaseID,
-	}, &release); err != nil {
-		w.updateStatus(ctx, releaseID, "error", "unable to read release record from database")
+	release, err := activities.AwaitGetByReleaseID(ctx, releaseID)
+	if err != nil {
+		w.updateStatus(ctx, releaseID, app.ReleaseStatusError, "unable to read release record from database")
 		return fmt.Errorf("unable to read release record from database: %w", err)
 	}
 

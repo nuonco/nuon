@@ -5,7 +5,6 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	componentsv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	execv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -15,18 +14,14 @@ import (
 func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bool) error {
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPlanning, "creating build plan")
 
-	var currentApp app.App
-	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentApp, activities.GetComponentAppRequest{
-		ComponentID: cmpID,
-	}, &currentApp); err != nil {
+	currentApp, err := activities.AwaitGetComponentAppByComponentID(ctx, cmpID)
+	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component app")
 		return fmt.Errorf("unable to get component app: %w", err)
 	}
 
-	var comp app.Component
-	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponent, activities.GetComponentAppRequest{
-		ComponentID: cmpID,
-	}, &comp); err != nil {
+	comp, err := activities.AwaitGetComponentByComponentID(ctx, cmpID)
+	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component")
 		return fmt.Errorf("unable to get component: %w", err)
 	}
@@ -36,10 +31,8 @@ func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bo
 		return fmt.Errorf("component is not active")
 	}
 
-	var buildCfg componentsv1.Component
-	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentConfig, activities.GetRequest{
-		BuildID: buildID,
-	}, &buildCfg); err != nil {
+	buildCfg, err := activities.AwaitGetComponentConfigByBuildID(ctx, buildID)
+	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component config")
 		return fmt.Errorf("unable to get build component config: %w", err)
 	}
@@ -52,7 +45,7 @@ func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bo
 				OrgId:     currentApp.OrgID,
 				AppId:     currentApp.ID,
 				BuildId:   buildID,
-				Component: &buildCfg,
+				Component: buildCfg,
 				Type:      planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_BUILD,
 				Context:   w.protos.BuildContext(),
 			},

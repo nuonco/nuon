@@ -20,17 +20,17 @@ func GoImportsMapper(f codejen.File) (codejen.File, error) {
 	fname := filepath.Base(f.RelativePath)
 	gf, err := decorator.ParseFile(fset, fname, f.Data, parser.ParseComments)
 	if err != nil {
-		return codejen.File{}, fmt.Errorf("error parsing generated file: %w", err)
+		return codejen.File{}, fmt.Errorf("error parsing generated file: %w\n\nInput file was:\n%s", err, string(f.Data))
 	}
 
 	err = decorator.Fprint(buf, gf)
 	if err != nil {
-		return codejen.File{}, fmt.Errorf("error formatting generated file: %w", err)
+		return codejen.File{}, fmt.Errorf("error formatting generated file: %w\n\nInput file was:\n%s", err, string(f.Data))
 	}
 
 	byt, err := imports.Process(fname, buf.Bytes(), nil)
 	if err != nil {
-		return codejen.File{}, fmt.Errorf("goimports processing of generated file failed: %w", err)
+		return codejen.File{}, fmt.Errorf("goimports processing of generated file failed: %w\n\nInput file was:\n%s", err, string(f.Data))
 	}
 
 	// Compare imports before and after; warn about performance if some were added
@@ -48,7 +48,7 @@ func GoImportsMapper(f codejen.File) (codejen.File, error) {
 
 	if len(added) != 0 {
 		// TODO improve the guidance in this error if/when we better abstract over imports to generate
-		return codejen.File{}, fmt.Errorf("goimports added the following import statements to %s: \n\t%s\nRelying on goimports to find imports significantly slows down code generation. Either add these imports with an AST manipulation in cfg.ApplyFuncs, or set cfg.IgnoreDiscoveredImports to true", f.RelativePath, strings.Join(added, "\n\t"))
+		return codejen.File{}, fmt.Errorf("goimports added the following import statements to %s: \n\t%s\nRelying on goimports to find imports significantly slows down code generation. Usually the remediation is to add these imports to the static set always given in the input jenny\n\nInput file was:\n%s", f.RelativePath, strings.Join(added, "\n\t"), string(f.Data))
 	}
 	f.Data = byt
 	return f, nil
