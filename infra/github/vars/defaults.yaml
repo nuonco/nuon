@@ -18,19 +18,18 @@ members:
   # Fred Diego
   - username: fidiego
     role: admin
-
+  # Ada Ban
+  - username: adaban
+    role: admin
+    
   # all other team members
   # Dre Smith
   - username: ExecutiveDre
   # shared nuon user
   - username: nuonbot
-  # Josh Hall
-  - username: sbnoorwd
   # Don Neufeld
   - username: dnf
   # Casey Bierman
   - username: Casey-00
   # Kristin Jerome
   - username: KJerome415
-  # Ada Ban
-  - username: adaban
