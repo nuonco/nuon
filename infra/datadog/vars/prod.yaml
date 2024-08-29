@@ -3,6 +3,34 @@ pool: nuon
 monitors:
   org_container_waiting:
     enabled: false
+  database_running_low_on_free_space:
+    enabled: true
+    json: >
+      {
+          "name": "${aws_account} - Database Running Low on Free Space",
+          "type": "query alert",
+          "query": "avg(last_1h):avg:aws.rds.free_storage_space{environment:${aws_account}} by {dbname} < 21474836480",
+          "message": "@slack-alerts-${env}-infra \n{{dbname.name}} is running low on free space.",
+          "tags": [
+              "terraform:true",
+              "env:${aws_account}"
+          ],
+          "options": {
+              "groupby_simple_monitor" : false,
+              "new_host_delay": 300,
+              "thresholds": {
+                  "critical": 1073741824
+              },
+              "notify_audit": false,
+              "include_tags": true,
+              "evaluation_delay": 900,
+              "new_group_delay": 60,
+              "notify_no_data": false,
+              "silenced": {}
+          },
+          "priority": 1,
+          "restricted_roles": null
+      }
 synthetics:
   ctl_api_uptime:
     name: "${aws_account} - CTL API Uptime"
