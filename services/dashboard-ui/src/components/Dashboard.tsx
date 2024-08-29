@@ -37,7 +37,7 @@ export const DashboardContent: FC<{
 }> = ({ breadcrumb, children }) => {
   return (
     <>
-      <header className="flex justify-between items-center border-b px-6 py-4">
+      <header className="flex justify-between items-center border-b px-6 py-4 h-[75px]">
         <div className="flex items-center gap-2">
           {breadcrumb.map((crumb, i) => (
             <span key={`breadcrumb-${i}`} className="flex items-center gap-2">
@@ -52,7 +52,7 @@ export const DashboardContent: FC<{
           </Link>
         </div>
       </header>
-      <main className="overflow-x-auto h-full flex flex-col">
+      <main className="overflow-x-auto flex flex-col" style={{ height: 'calc(100% - 75px)'}}>
         {children}
       </main>
     </>
