@@ -1,10 +1,12 @@
 import {
   DashboardContent,
   Heading,
+  InstallStatus,
   Text,
   SubNav,
   type TLink,
 } from '@/components'
+import { InstallProvider } from '@/context'
 import { getInstall, getOrg } from '@/lib'
 
 export default async function InstallLayout({ children, params }) {
@@ -33,6 +35,12 @@ export default async function InstallLayout({ children, params }) {
                 {install.id}
               </Text>
             </hgroup>
+
+            <div>
+              <InstallProvider initInstall={install}>
+                <InstallStatus />
+              </InstallProvider>
+            </div>
           </div>
 
           <SubNav links={subNavLinks} />

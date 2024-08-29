@@ -1,10 +1,10 @@
 import {
-  Card,
+  AppSandboxConfig,
+  AppSandboxVariables,
   Code,
   Heading,
-  InstallEvents,
-  InstallSandboxDetails,
-  InstallStatus,
+  InstallHistory,
+  InstallInputs,
 } from '@/components'
 import { InstallProvider } from '@/context'
 import { getInstall, getInstallEvents } from '@/lib'
@@ -18,45 +18,36 @@ export default async function Install({ params }) {
   ])
 
   return (
-    <div className="flex flex-col md:flex-row gap-6">
-      <div className="flex-auto flex flex-col gap-6">
-        <Card>
-          <Heading>Most recent event</Heading>
-          <div>{events.at(0).operation_name}</div>
-        </Card>
-
-        <Card className="max-h-[40rem]">
+    <InstallProvider initInstall={install}>
+      <div className="flex flex-col lg:flex-row flex-auto">
+        <section className="flex-auto flex flex-col gap-4 px-6 py-8 border-r overflow-auto">
           <Heading>History</Heading>
-          <InstallProvider initInstall={install}>
-            <InstallEvents initEvents={events} shouldPoll />
-          </InstallProvider>
-        </Card>
+
+          <InstallHistory
+            initEvents={events}
+            installId={installId}
+            orgId={orgId}
+            shouldPoll
+          />
+        </section>
+
+        <div className="divide-y flex flex-col lg:w-[550px]">
+          <section className="flex flex-col gap-6 px-6 py-8">
+            <Heading>Active sandbox</Heading>
+
+            <AppSandboxConfig sandboxConfig={install?.app_sandbox_config} />
+            <AppSandboxVariables
+              variables={install?.app_sandbox_config?.variables}
+            />
+          </section>
+
+          <section className="flex flex-col gap-6 px-6 py-8">
+            <Heading>Current inputs</Heading>
+
+            <InstallInputs inputs={install.install_inputs} />
+          </section>
+        </div>
       </div>
-
-      <div className="flex flex-col gap-6">
-        <Card>
-          <Heading>Statues</Heading>
-          <InstallProvider initInstall={install}>
-            <InstallStatus />
-          </InstallProvider>
-        </Card>
-
-        <Card>
-          <Heading>Current inputs</Heading>
-          <Code variant="preformated">
-            {install.install_inputs.map((input) =>
-              JSON.stringify(input.values, null, 2)
-            )}
-          </Code>
-        </Card>
-
-        <Card>
-          <Heading>Sandbox config</Heading>
-          <InstallProvider initInstall={install}>
-            <InstallSandboxDetails />
-          </InstallProvider>
-        </Card>
-      </div>
-    </div>
+    </InstallProvider>
   )
 }
