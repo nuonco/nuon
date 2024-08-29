@@ -293,3 +293,20 @@ resource "aws_route53_record" "elasticsearch" {
   ttl     = "300"
   records = [aws_opensearch_domain.elasticsearch[0].endpoint]
 }
+
+
+################################################################################
+# Cloudwatch Alarms
+################################################################################
+resource "aws_cloudwatch_metric_alarm" "primary_db_free_storage_low_alarm" {
+  alarm_name                = "primary-${local.name}-free-storage-low"
+  comparison_operator       = "LessThanOrEqualToThreshold"
+  evaluation_periods        = 2
+  metric_name               = "FreeStorageSpace"
+  namespace                 = "AWS/EC2"
+  period                    = 120
+  statistic                 = "SampleCount"
+  threshold                 = local.vars.rds.allocated_storage_alarm_threshold
+  alarm_description         = "This metric monitors free storage utilization."
+  insufficient_data_actions = []
+}
