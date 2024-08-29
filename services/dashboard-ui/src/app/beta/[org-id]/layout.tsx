@@ -10,7 +10,7 @@ export default async function OrgLayout({ children, params }) {
     <div className="flex min-h-screen">
       <aside className="dashboard_sidebar flex flex-col w-full md:w-72">
         <header className="flex flex-col gap-4">
-          <div className="border-b flex items-center justify-between px-4 pt-6 pb-4">
+          <div className="border-b flex items-center justify-between px-4 pt-6 pb-4 h-[75px]">
             <Logo />
             <Button className="px-1.5" variant="ghost">
               <GoSidebarCollapse className="rotate-180" />
