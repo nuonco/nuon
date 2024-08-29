@@ -31,14 +31,14 @@ server:
         driver: sql
         sql:
           database: temporal
-          driver: postgres12
+          driver: postgres
           maxConnLifetime: 1h
           maxConns: 20
       visibility:
         driver: sql
         sql:
           database: temporal_visibility
-          driver: postgres12
+          driver: postgres
           maxConnLifetime: 1h
           maxConns: 20
 
