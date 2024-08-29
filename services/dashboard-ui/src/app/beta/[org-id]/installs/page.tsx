@@ -26,7 +26,7 @@ export default async function Installs({ params }) {
     <DashboardContent breadcrumb={[org.name, 'Installs']}>
       <section className="px-6 py-8">
         <DataTable
-          headers={['ID', 'Name', 'App', 'Platform', 'Sandbox']}
+          headers={['ID', 'Name', 'App', 'Platform', 'Sandbox', 'Runner']}
           initData={tableData}
         />
       </section>
