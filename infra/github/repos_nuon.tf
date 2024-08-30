@@ -310,3 +310,21 @@ module "nuon-demo-installer" {
     github = github.nuon
   }
 }
+
+module "nuon-examples" {
+  source = "./modules/repository"
+
+  name                     = "nuon-examples"
+  description              = "Example Application Configurations"
+  required_checks          = []
+  owning_team_id           = github_team.nuon.id
+  is_public                = true
+  enable_branch_protection = true
+
+  collaborators = {
+  }
+
+  providers = {
+    github = github.nuon
+  }
+}
