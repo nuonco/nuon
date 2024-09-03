@@ -1,0 +1,75 @@
+package signals
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+)
+
+type EnsureEventLoopsRequest struct{}
+type EnsureEventLoopsPageRequest struct {
+	Namespace string `json:"namespace"`
+	Offset    int    `json:"offset"`
+	Limit     int    `json:"limit"`
+}
+
+const (
+	TemporalNamespace string = "general"
+	EventLoop         string = "general"
+
+	OperationCreated   eventloop.SignalType = "created"
+	OperationRestart   eventloop.SignalType = "restart"
+	OperationReconcile eventloop.SignalType = "reconcile"
+)
+
+type Signal struct {
+	Type eventloop.SignalType
+
+	eventloop.BaseSignal
+}
+
+var _ eventloop.Signal = (*Signal)(nil)
+
+func (s *Signal) Validate(v *validator.Validate) error {
+	if err := v.Struct(s); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Signal) SignalType() eventloop.SignalType {
+	return s.Type
+}
+
+func (s *Signal) Namespace() string {
+	return TemporalNamespace
+}
+
+func (s *Signal) Name() string {
+	return string(s.Type)
+}
+
+func (s *Signal) Start() bool {
+	switch s.Type {
+	case OperationCreated:
+		return true
+	case OperationRestart:
+		return true
+	default:
+	}
+
+	return false
+}
+
+// NOTE(fd): the general loop has no concept for an organization. we also modify startEventLoop
+// to ensure the absence of an org doesn't prevent the loop from starting
+func (s *Signal) GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error) {
+	fmt.Println("general.signals.GetOrg called")
+	return nil, nil
+}

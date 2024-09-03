@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -10,6 +11,7 @@ import (
 	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 type service struct {
@@ -20,6 +22,7 @@ type service struct {
 	cfg            *internal.Config
 	temporalClient temporal.Client
 	authzClient    *authz.Client
+	evClient       eventloop.Client
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -50,24 +53,34 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	// create a customer token
 	api.POST("/v1/general/admin-static-token", s.AdminCreateStaticToken)
 
+	// (re)start EventLoopReconcile
+	api.POST("/v1/general/restart-event-loop-reconcile-cron", s.RestartEventLoopReconcileCron)
+	api.POST("/v1/general/reconcile-event-loops", s.ReconcileEventLoops)
+
 	return nil
 }
 
-func New(v *validator.Validate,
-	db *gorm.DB,
-	mw metrics.Writer,
-	l *zap.Logger,
-	temporalClient temporal.Client,
-	cfg *internal.Config,
-	authzClient *authz.Client,
-) *service {
+type Params struct {
+	V              *validator.Validate
+	Db             *gorm.DB
+	Mw             metrics.Writer
+	L              *zap.Logger
+	TemporalClient temporal.Client
+	Cfg            *internal.Config
+	AuthzClient    *authz.Client
+	EvClient       eventloop.Client
+	fx.In
+}
+
+func New(params Params) *service {
 	return &service{
-		l:              l,
-		v:              v,
-		mw:             mw,
-		db:             db,
-		temporalClient: temporalClient,
-		cfg:            cfg,
-		authzClient:    authzClient,
+		l:              params.L,
+		v:              params.V,
+		mw:             params.Mw,
+		db:             params.Db,
+		temporalClient: params.TemporalClient,
+		cfg:            params.Cfg,
+		authzClient:    params.AuthzClient,
+		evClient:       params.EvClient,
 	}
 }
