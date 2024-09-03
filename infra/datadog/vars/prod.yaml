@@ -19,7 +19,7 @@ monitors:
               "groupby_simple_monitor" : false,
               "new_host_delay": 300,
               "thresholds": {
-                  "critical": 1073741824
+                  "critical": 21474836480
               },
               "notify_audit": false,
               "include_tags": true,
