@@ -5,6 +5,8 @@ import (
 	appsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 	componentsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker"
 	componentsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
+	generalworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/worker"
+	generalactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/worker/activities"
 	installsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker"
 	installsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	orgsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker"
@@ -25,13 +27,24 @@ func (c *cli) registerWorker() error {
 		Run:   c.runWorker,
 	}
 	rootCmd.AddCommand(cmd)
-	rootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "all", "namespace defines the namespace whose workers to run. e.g. all, orgs, apps, components, installs, releases.")
+	helpText := "namespace defines the namespace whose workers to run. e.g. all, general, orgs, apps, components, installs, releases."
+	rootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "all", helpText)
 	return nil
 }
 
 func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{
 		fx.Invoke(func(*gorm.DB) {}),
+	}
+
+	// generals worker
+	if namespace == "all" || namespace == "general" {
+		providers = append(providers,
+			fx.Provide(generalactivities.New),
+			fx.Provide(generalworker.NewWorkflows),
+			fx.Provide(generalworker.New),
+			fx.Invoke(func(*generalworker.Worker) {}),
+		)
 	}
 
 	// orgs worker
