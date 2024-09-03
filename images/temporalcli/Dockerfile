@@ -31,5 +31,6 @@ ENTRYPOINT [ \
   "-n", "apps",       \
   "-n", "components", \
   "-n", "releases",   \
-  "-n", "canary"      \
+  "-n", "canary",      \
+  "--db-filename", "/var/nuon-dev-temporal.db" \
 ]

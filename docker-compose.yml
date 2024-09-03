@@ -29,6 +29,8 @@ services:
     ports:
       - 7233:7233
       - 8233:8233
+    volumes:
+      - /var/:/tmp/temporalite
     networks:
       - default
 
