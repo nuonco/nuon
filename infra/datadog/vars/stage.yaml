@@ -10,19 +10,11 @@ synthetics:
     subtype: "http"
     status: "live"
     message: "@slack-alerts-${env}-product"
-    locations: [
-      "aws:ca-central-1",
-      "aws:ap-south-1",
-      "aws:eu-west-1"
-    ]
-    tags: [
-      "service:ctl-api",
-      "terraform:true",
-      "env:${env}"
-    ]
+    locations: ["aws:ca-central-1", "aws:ap-south-1", "aws:eu-west-1"]
+    tags: ["service:ctl-api", "terraform:true", "env:${env}"]
     request_definition:
       method: "GET"
-      url: "https://ctl.${env}.nuon.co/healthz"
+      url: "https://ctl.${env}.nuon.co/livez"
     request_headers: {}
     assertion:
       type: "statusCode"
