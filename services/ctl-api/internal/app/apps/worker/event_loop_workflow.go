@@ -2,6 +2,7 @@ package worker
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"go.temporal.io/sdk/workflow"
@@ -19,6 +20,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 	l := workflow.GetLogger(ctx)
 
 	finished := false
+	l.Info(string(req.ID))
 	signalChan := workflow.GetSignalChannel(ctx, req.ID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
@@ -27,6 +29,8 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		if !channelOpen {
 			l.Info("channel was closed")
 			return
+		} else {
+			l.Info("channel is open.")
 		}
 
 		if err := signal.Validate(w.v); err != nil {
@@ -47,6 +51,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			w.mw.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
 		}()
 
+		fmt.Printf("Handling Event: %v\n", signal.SignalType())
 		switch signal.SignalType() {
 		case signals.OperationCreated:
 			op = "created"

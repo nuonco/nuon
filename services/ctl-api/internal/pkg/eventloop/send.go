@@ -2,6 +2,7 @@ package eventloop
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 )
@@ -21,6 +22,7 @@ func (a *evClient) Send(ctx context.Context, id string, signal Signal) {
 		signal,
 	)
 	if err != nil {
+		fmt.Printf("%+v\n", err)
 		a.mw.Incr("event_loop_signal", metrics.ToStatusTag("unable_to_send"))
 	}
 }

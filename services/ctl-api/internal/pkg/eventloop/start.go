@@ -21,7 +21,11 @@ func (a *evClient) startEventLoop(ctx context.Context, id string, signal Signal)
 		return err
 	}
 
-	if org.OrgType == app.OrgTypeIntegration {
+	// we have a new EvenLoop that does not correspond to db objects: "general"
+	// as a result, we can reach this code w/out an org in hand so we explicitly
+	// check if we're working with this "general" EventLoop.
+	// NOTE(fd): find a more elegant intervention.
+	if id != "general" && org.OrgType == app.OrgTypeIntegration {
 		return nil
 	}
 
@@ -42,7 +46,7 @@ func (a *evClient) startEventLoop(ctx context.Context, id string, signal Signal)
 
 	req := EventLoopRequest{
 		ID:          id,
-		SandboxMode: org.OrgType == app.OrgTypeSandbox,
+		SandboxMode: id != "general" && org.OrgType == app.OrgTypeSandbox,
 	}
 	wkflowRun, err := a.client.ExecuteWorkflowInNamespace(ctx,
 		signal.Namespace(),
