@@ -67,9 +67,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Fetch terraform outputs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@3.2.0
         with:
           name: ${{ needs.terraform.outputs.env_cache_key }}
+          include-hidden-files: true
 
       - name: Copy terraform outputs to environment
         run: |
