@@ -36,9 +36,11 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		if !channelOpen {
 			l.Info("channel was closed")
 			return
+		} else {
+			l.Info("channel is open")
 		}
 
-		//if err := signal.Validate(w.v); err != nil {
+		//if err := evSignal.Validate(w.v); err != nil {
 		//l.Info("invalid signal", zap.Error(err))
 		//}
 
