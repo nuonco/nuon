@@ -33,3 +33,6 @@ updates:
       interval: "monthly"
       time: "07:00"
       timezone: "America/New_York"
+    ignore:
+      # ignore all updates for actions/download-artifact
+      - dependency-name: 'actions/download-artifact'
