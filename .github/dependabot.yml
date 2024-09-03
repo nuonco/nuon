@@ -36,3 +36,5 @@ updates:
     ignore:
       # ignore all updates for actions/download-artifact
       - dependency-name: 'actions/download-artifact'
+      # ignore all updates for actions/upload-artifact
+      - dependency-name: 'actions/upload-artifact'
