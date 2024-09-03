@@ -96,7 +96,7 @@ jobs:
           echo outputs_cache_key=env-${{ github.run_id }}-${{ inputs.cache-key }}-outputs >> "$GITHUB_OUTPUT"
 
       - name: Save env outputs
-        uses: actions/upload-artifact@3.2.0
+        uses: actions/upload-artifact@v3
         with:
           name: env-${{ github.run_id }}-${{inputs.cache-key}}-env
           path: ${{ env.TF_ENV }}
@@ -105,7 +105,7 @@ jobs:
           include-hidden-files: true
 
       - name: Save tf outputs
-        uses: actions/upload-artifact@3.2.0
+        uses: actions/upload-artifact@v3
         with:
           name: env-${{ github.run_id }}-${{inputs.cache-key}}-outputs
           path: ${{ env.TF_OUT }}
