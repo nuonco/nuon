@@ -3,6 +3,7 @@ package builder
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
+
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 )
 
@@ -13,7 +14,7 @@ type Builder struct {
 
 	config configs.OCISyncBuild
 
-	registryConfig configs.OCIRegistry
+	registryConfig configs.OCIRegistryRepository
 }
 
 func New(v *validator.Validate) (*Builder, error) {

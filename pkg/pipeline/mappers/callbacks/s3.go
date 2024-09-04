@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/aws/s3uploader"
 	"github.com/powertoolsdev/mono/pkg/pipeline"
@@ -50,8 +50,8 @@ type s3Callback struct {
 
 func (s *s3Callback) callback(ctx context.Context,
 	log hclog.Logger,
-	ui terminal.UI,
-	byts []byte) error {
+	byts []byte,
+) error {
 	u, err := s3uploader.NewS3Uploader(s.v,
 		s3uploader.WithCredentials(s.Credentials),
 		s3uploader.WithBucketName(s.Bucket),
@@ -66,7 +66,6 @@ func (s *s3Callback) callback(ctx context.Context,
 	}
 
 	return nil
-
 }
 
 type BucketKeySettings struct {

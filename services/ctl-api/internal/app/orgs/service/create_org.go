@@ -21,6 +21,7 @@ type CreateOrgRequest struct {
 	// These fields are used to control the behaviour of the org.
 	UseCustomCert  bool `json:"use_custom_cert"`
 	UseSandboxMode bool `json:"use_sandbox_mode"`
+	UseNewRunner   bool `json:"use_new_runner"`
 }
 
 func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
@@ -46,14 +47,16 @@ func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
 // @Success		201				{object}	app.Org
 // @Router			/v1/orgs [POST]
 func (s *service) CreateOrg(ctx *gin.Context) {
-	user, err := authcontext.FromContext(ctx)
+	acct, err := authcontext.FromGinContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	// TODO(jm): remove this, once we allow anyone to create an org.
-	if user.AccountType == app.AccountTypeAuth0 && !strings.HasSuffix(user.Email, "nuon.co") {
+	// NOTE(jm): we have a discrepancy in your db, where some OG members had their data inputted into the accounts
+	// table backwards.
+	isNuon := strings.HasSuffix(acct.Email, "nuon.co") || strings.HasSuffix(acct.Subject, "nuon.co")
+	if acct.AccountType == app.AccountTypeAuth0 && !isNuon {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("only nuon members can create orgs"),
 			Description: "please reach out to a Nuon team employee to try Nuon",
@@ -71,7 +74,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		return
 	}
 
-	newOrg, err := s.createOrg(ctx, user, &req)
+	newOrg, err := s.createOrg(ctx, acct, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org: %w", err))
 		return
@@ -99,12 +102,16 @@ func (s *service) createOrg(ctx context.Context, acct *app.Account, req *CreateO
 		orgTyp = app.OrgTypeSandbox
 	}
 
+	// NOTE(jm): this will be removed, once we fully roll out the new runner
+	if req.UseNewRunner {
+		orgTyp = app.OrgTypeV2
+	}
+
 	notificationsCfg := app.NotificationsConfig{
 		EnableSlackNotifications: acct.AccountType == app.AccountTypeAuth0,
 		EnableEmailNotifications: acct.AccountType == app.AccountTypeAuth0,
 		InternalSlackWebhookURL:  s.cfg.InternalSlackWebhookURL,
 	}
-
 	org := app.Org{
 		Name:                req.Name,
 		Status:              "queued",
@@ -138,6 +145,10 @@ func (s *service) createOrg(ctx context.Context, acct *app.Account, req *CreateO
 
 	if err := s.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID); err != nil {
 		return nil, fmt.Errorf("unable to add user to org: %w", err)
+	}
+
+	if _, err := s.runnersHelpers.CreateOrgRunnerGroup(ctx, &org); err != nil {
+		return nil, fmt.Errorf("unable to create org runner group: %w", err)
 	}
 
 	return &org, nil

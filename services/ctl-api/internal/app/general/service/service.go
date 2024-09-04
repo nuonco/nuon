@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
@@ -25,7 +26,9 @@ type service struct {
 	evClient       eventloop.Client
 }
 
-func (s *service) RegisterRoutes(api *gin.Engine) error {
+var _ api.Service = (*service)(nil)
+
+func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/metrics", s.PublishMetrics)
 	api.GET("/v1/general/current-user", s.GetCurrentUser)
 	api.GET("/v1/general/cli-config", s.GetCLIConfig)
@@ -60,16 +63,22 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
+func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	return nil
+}
+
 type Params struct {
+	fx.In
+
 	V              *validator.Validate
-	Db             *gorm.DB
 	Mw             metrics.Writer
 	L              *zap.Logger
 	TemporalClient temporal.Client
 	Cfg            *internal.Config
 	AuthzClient    *authz.Client
 	EvClient       eventloop.Client
-	fx.In
+	DB             *gorm.DB `name:"psql"`
+	MW             metrics.Writer
 }
 
 func New(params Params) *service {
@@ -77,7 +86,7 @@ func New(params Params) *service {
 		l:              params.L,
 		v:              params.V,
 		mw:             params.Mw,
-		db:             params.Db,
+		db:             params.DB,
 		temporalClient: params.TemporalClient,
 		cfg:            params.Cfg,
 		authzClient:    params.AuthzClient,

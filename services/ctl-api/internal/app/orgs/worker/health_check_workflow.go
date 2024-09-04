@@ -61,19 +61,19 @@ func (w *Workflows) OrgHealthCheck(ctx workflow.Context, req HealthCheckRequest)
 		w.mw.Incr(ctx, "health_check.count", metrics.ToTags(tags)...)
 	}()
 
-	var healthCheck app.OrgHealthCheck
-	if err := w.defaultExecGetActivity(ctx, w.acts.CreateHealthCheck, activities.CreateHealthCheckRequest{
+	healthCheck, err := activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
 		OrgID: req.OrgID,
-	}, &healthCheck); err != nil {
+	})
+	if err != nil {
 		status = "error"
 		op = "create_health_check"
 		return fmt.Errorf("unable to create org health check: %w", err)
 	}
 
-	var org app.Org
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
+	org, err := activities.AwaitGet(ctx, activities.GetRequest{
 		OrgID: req.OrgID,
-	}, &org); err != nil {
+	})
+	if err != nil {
 		w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatusError, "unable to get org from database")
 		status = "error"
 		op = "get_health_check"
@@ -96,9 +96,11 @@ func (w *Workflows) OrgHealthCheck(ctx workflow.Context, req HealthCheckRequest)
 	ctx = workflow.WithRetryPolicy(ctx, temporal.RetryPolicy{
 		MaximumAttempts: 1,
 	})
-	if err := w.defaultExecGetActivity(ctx, w.acts.PingWaypointServer, activities.PingWaypointServerRequest{
+
+	err = activities.AwaitPingWaypointServer(ctx, activities.PingWaypointServerRequest{
 		OrgID: req.OrgID,
-	}, &healthCheck); err != nil {
+	})
+	if err != nil {
 		w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatusError, "unable to ping server")
 		status = "error"
 		op = "update_health_check"

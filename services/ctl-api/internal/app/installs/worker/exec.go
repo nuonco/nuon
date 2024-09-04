@@ -2,6 +2,7 @@ package worker
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	enumsv1 "go.temporal.io/api/enums/v1"
@@ -17,12 +18,12 @@ import (
 
 func (w *Workflows) execCreatePlanWorkflow(
 	ctx workflow.Context,
-	dryRun bool,
+	sandboxMode bool,
 	workflowID string,
 	req *planv1.CreatePlanRequest,
 ) (*planv1.CreatePlanResponse, error) {
 	l := workflow.GetLogger(ctx)
-	if dryRun {
+	if sandboxMode {
 		l.Debug("sandbox-mode enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.SandboxSleep.String()))
 		workflow.Sleep(ctx, w.cfg.SandboxSleep)
 		return generics.GetFakeObj[*planv1.CreatePlanResponse](), nil
@@ -109,11 +110,11 @@ func (w *Workflows) execDeprovisionWorkflow(
 
 func (w *Workflows) execProvisionWorkflow(
 	ctx workflow.Context,
-	dryRun bool,
+	sandboxMode bool,
 	req *installsv1.ProvisionRequest,
 ) (*installsv1.ProvisionResponse, error) {
 	l := workflow.GetLogger(ctx)
-	if dryRun {
+	if sandboxMode {
 		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
 		workflow.Sleep(ctx, w.cfg.SandboxSleep)
 		return generics.GetFakeObj[*installsv1.ProvisionResponse](), nil
@@ -136,4 +137,36 @@ func (w *Workflows) execProvisionWorkflow(
 	}
 
 	return &resp, nil
+}
+
+func (w *Workflows) execChildWorkflow(
+	ctx workflow.Context,
+	installID string,
+	workflowName string,
+	sandboxMode bool,
+	req interface{},
+	resp interface{},
+) error {
+	if sandboxMode {
+		l := workflow.GetLogger(ctx)
+		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
+		workflow.Sleep(ctx, w.cfg.SandboxSleep)
+		return nil
+	}
+
+	cwo := workflow.ChildWorkflowOptions{
+		TaskQueue:                workflows.ExecutorsTaskQueue,
+		WorkflowID:               fmt.Sprintf("%s-%s", installID, strings.ToLower(workflowName)),
+		WorkflowExecutionTimeout: time.Minute * 20,
+		WorkflowTaskTimeout:      time.Minute * 10,
+		WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	fut := workflow.ExecuteChildWorkflow(ctx, workflowName, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return fmt.Errorf("unable to get workflow response: %w", err)
+	}
+
+	return nil
 }

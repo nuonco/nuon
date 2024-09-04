@@ -2,12 +2,21 @@ package activities
 
 import (
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/fx"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
 )
+
+type Params struct {
+	fx.In
+
+	V          *validator.Validate
+	Helpers    *helpers.Helpers
+	SharedActs *activities.Activities
+	DB         *gorm.DB `name:"psql"`
+}
 
 type Activities struct {
 	v       *validator.Validate
@@ -17,16 +26,11 @@ type Activities struct {
 	*activities.Activities
 }
 
-func New(cfg *internal.Config,
-	v *validator.Validate,
-	helpers *helpers.Helpers,
-	sharedActs *activities.Activities,
-	db *gorm.DB,
-) (*Activities, error) {
+func New(params Params) (*Activities, error) {
 	return &Activities{
-		Activities: sharedActs,
-		v:          v,
-		db:         db,
-		helpers:    helpers,
+		Activities: params.SharedActs,
+		v:          params.V,
+		db:         params.DB,
+		helpers:    params.Helpers,
 	}, nil
 }

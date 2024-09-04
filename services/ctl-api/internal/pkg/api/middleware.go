@@ -36,12 +36,21 @@ func (a *API) registerMiddlewares() error {
 		}
 		a.public.Use(fn)
 	}
+
 	for _, middleware := range a.cfg.InternalMiddlewares {
 		fn, ok := middlewaresLookup[middleware]
 		if !ok {
-			return fmt.Errorf("middleware not found: %s", middleware)
+			return fmt.Errorf("internal middleware not found: %s", middleware)
 		}
 		a.internal.Use(fn)
+	}
+
+	for _, middleware := range a.cfg.RunnerMiddlewares {
+		fn, ok := middlewaresLookup[middleware]
+		if !ok {
+			return fmt.Errorf("runner middleware not found: %s", middleware)
+		}
+		a.runner.Use(fn)
 	}
 
 	return nil

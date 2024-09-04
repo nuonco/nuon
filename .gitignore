@@ -43,10 +43,12 @@ __debug_bin
 # Ignore earthly secret files
 .secret
 pkg/types/build/
-services/ctl-api/docs/docs.go
-services/ctl-api/docs/swagger*
-services/ctl-api/admin/admin_docs.go
-services/ctl-api/admin/admin_swagger*
+services/ctl-api/docs/public/docs.go
+services/ctl-api/docs/public/swagger*
+services/ctl-api/docs/admin/admin_docs.go
+services/ctl-api/docs/admin/admin_swagger*
+services/ctl-api/docs/runner/runner_docs.go
+services/ctl-api/docs/runner/runner_swagger*
 pkg/api/client/client/
 pkg/api/client/models/
 

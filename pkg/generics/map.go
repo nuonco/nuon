@@ -1,6 +1,10 @@
 package generics
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/mitchellh/mapstructure"
+)
 
 func MergeMap[K comparable, T any](src map[K]T, vals ...map[K]T) map[K]T {
 	for _, val := range vals {
@@ -10,6 +14,15 @@ func MergeMap[K comparable, T any](src map[K]T, vals ...map[K]T) map[K]T {
 	}
 
 	return src
+}
+
+func ToMapstructure(inp interface{}) (map[string]interface{}, error) {
+	var obj map[string]interface{}
+	if err := mapstructure.Decode(inp, &obj); err != nil {
+		return nil, fmt.Errorf("unable to decode to mapstructure: %w", err)
+	}
+
+	return obj, nil
 }
 
 func ToIntMap[T any](inp map[string]T) map[string]interface{} {
@@ -33,5 +46,26 @@ func ToStringMap(inp map[string]interface{}) map[string]string {
 		out[k] = fmt.Sprintf("%v", v)
 	}
 
+	return out
+}
+
+// Merges source and destination map, preferring values from the source map
+// Taken from github.com/helm/pkg/cli/values/options.go
+func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
+	out := make(map[string]interface{}, len(a))
+	for k, v := range a {
+		out[k] = v
+	}
+	for k, v := range b {
+		if v, ok := v.(map[string]interface{}); ok {
+			if bv, ok := out[k]; ok {
+				if bv, ok := bv.(map[string]interface{}); ok {
+					out[k] = MergeMaps(bv, v)
+					continue
+				}
+			}
+		}
+		out[k] = v
+	}
 	return out
 }

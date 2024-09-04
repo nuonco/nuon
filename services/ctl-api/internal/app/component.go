@@ -29,6 +29,61 @@ const (
 	ComponentTypeUnknown         ComponentType = "unknown"
 )
 
+func (c ComponentType) SyncJobType() RunnerJobType {
+	switch c {
+	case ComponentTypeTerraformModule,
+		ComponentTypeHelmChart:
+		return RunnerJobTypeOCISync
+
+	case ComponentTypeDockerBuild,
+		ComponentTypeExternalImage:
+		return RunnerJobTypeContainerImageBuild
+
+	case ComponentTypeJob:
+		return RunnerJobTypeNOOPBuild
+	default:
+	}
+
+	return RunnerJobTypeUnknown
+}
+
+func (c ComponentType) DeployJobType() RunnerJobType {
+	switch c {
+	case ComponentTypeTerraformModule:
+		return RunnerJobTypeTerraformDeploy
+	case ComponentTypeHelmChart:
+		return RunnerJobTypeHelmChartDeploy
+	case ComponentTypeJob:
+		return RunnerJobTypeJobDeploy
+
+		// the following do not require deploys
+	case ComponentTypeDockerBuild,
+		ComponentTypeExternalImage:
+		return RunnerJobTypeJobNOOPDeploy
+	default:
+	}
+
+	return RunnerJobTypeUnknown
+}
+
+func (c ComponentType) BuildJobType() RunnerJobType {
+	switch c {
+	case ComponentTypeTerraformModule:
+		return RunnerJobTypeTerraformModuleBuild
+	case ComponentTypeHelmChart:
+		return RunnerJobTypeHelmChartBuild
+	case ComponentTypeDockerBuild:
+		return RunnerJobTypeDockerBuild
+	case ComponentTypeExternalImage:
+		return RunnerJobTypeContainerImageBuild
+	case ComponentTypeJob:
+		return RunnerJobTypeNOOPBuild
+	default:
+	}
+
+	return RunnerJobTypeUnknown
+}
+
 type Component struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26;" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`

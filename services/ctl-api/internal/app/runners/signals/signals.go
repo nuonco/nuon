@@ -1,0 +1,83 @@
+package signals
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+)
+
+const (
+	TemporalNamespace string = "runners"
+)
+
+const (
+	OperationCreated     eventloop.SignalType = "created"
+	OperationRestart     eventloop.SignalType = "restart"
+	OperationProvision   eventloop.SignalType = "provision"
+	OperationDeprovision eventloop.SignalType = "deprovision"
+	OperationReprovision eventloop.SignalType = "reprovision"
+	OperationDelete      eventloop.SignalType = "delete"
+	OperationForceDelete eventloop.SignalType = "force_delete"
+	OperationJobQueued   eventloop.SignalType = "job_queued"
+
+	// could this be async or interupt driven via a queue?
+	OperationJobUpdated eventloop.SignalType = "job_updated"
+)
+
+type Signal struct {
+	Type eventloop.SignalType `validate:"required"`
+
+	eventloop.BaseSignal
+
+	JobID string
+}
+
+var _ eventloop.Signal = (*Signal)(nil)
+
+func (s *Signal) Validate(v *validator.Validate) error {
+	if err := v.Struct(s); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
+}
+
+func (s *Signal) SignalType() eventloop.SignalType {
+	return s.Type
+}
+
+func (s *Signal) Namespace() string {
+	return TemporalNamespace
+}
+
+func (s *Signal) Name() string {
+	return string(s.Type)
+}
+
+func (s *Signal) Start() bool {
+	switch s.SignalType() {
+	case OperationCreated:
+		return true
+	case OperationRestart:
+		return true
+	default:
+	}
+
+	return false
+}
+
+func (s *Signal) GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error) {
+	runner := app.Runner{}
+	res := db.WithContext(ctx).
+		Preload("Org").
+		First(&runner, "id = ?", id)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get runner: %w", res.Error)
+	}
+
+	return &runner.Org, nil
+}

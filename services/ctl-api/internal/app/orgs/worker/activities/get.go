@@ -29,6 +29,7 @@ func (a *Activities) getOrg(ctx context.Context, orgID string) (*app.Org, error)
 		Preload("CreatedBy").
 		Preload("Apps").
 		Preload("Apps.Installs").
+		Preload("RunnerGroup.Runners").
 		First(&org, "id = ?", orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org: %w", res.Error)

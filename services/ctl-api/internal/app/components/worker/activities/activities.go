@@ -1,29 +1,39 @@
 package activities
 
 import (
+	"go.uber.org/fx"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
+	runnerhelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
-type Activities struct {
-	db       *gorm.DB
-	protos   *protos.Adapter
-	helpers  *helpers.Helpers
-	evClient eventloop.Client
+type Params struct {
+	fx.In
+
+	Prt           *protos.Adapter
+	DB            *gorm.DB `name:"psql"`
+	Helpers       *helpers.Helpers
+	EvClient      eventloop.Client
+	RunnerHelpers *runnerhelpers.Helpers
 }
 
-func New(prt *protos.Adapter,
-	db *gorm.DB,
-	helpers *helpers.Helpers,
-	evClient eventloop.Client,
-) (*Activities, error) {
+type Activities struct {
+	db              *gorm.DB
+	protos          *protos.Adapter
+	helpers         *helpers.Helpers
+	evClient        eventloop.Client
+	runnersHelpers *runnerhelpers.Helpers
+}
+
+func New(params Params) *Activities {
 	return &Activities{
-		db:       db,
-		protos:   prt,
-		helpers:  helpers,
-		evClient: evClient,
-	}, nil
+		db:              params.DB,
+		protos:          params.Prt,
+		helpers:         params.Helpers,
+		evClient:        params.EvClient,
+		runnersHelpers: params.RunnerHelpers,
+	}
 }

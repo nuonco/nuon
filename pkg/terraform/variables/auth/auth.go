@@ -6,6 +6,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	azurecredentials "github.com/powertoolsdev/mono/pkg/azure/credentials"
 	"github.com/powertoolsdev/mono/pkg/terraform/variables"
 )
 
@@ -15,7 +16,8 @@ var _ variables.Variables = (*auth)(nil)
 type auth struct {
 	v *validator.Validate
 
-	Auth *credentials.Config `validate:"required"`
+	AWSAuth   *credentials.Config
+	AzureAuth *azurecredentials.Config
 }
 
 type varsOption func(*auth) error
@@ -37,9 +39,16 @@ func New(v *validator.Validate, opts ...varsOption) (*auth, error) {
 	return s, nil
 }
 
-func WithAuth(cfg *credentials.Config) varsOption {
+func WithAWSAuth(cfg *credentials.Config) varsOption {
 	return func(v *auth) error {
-		v.Auth = cfg
+		v.AWSAuth = cfg
+		return nil
+	}
+}
+
+func WithAzureAuth(cfg *azurecredentials.Config) varsOption {
+	return func(v *auth) error {
+		v.AzureAuth = cfg
 		return nil
 	}
 }

@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 type CreateInstallParams struct {
@@ -46,26 +45,12 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
-	if len(parentApp.AppSandboxConfigs) < 1 {
-		return nil, stderr.ErrUser{
-			Err:         fmt.Errorf("app does not have any sandbox configs"),
-			Description: "please make create at least one app sandbox config first",
-		}
-	}
-	if len(parentApp.AppRunnerConfigs) < 1 {
-		return nil, stderr.ErrUser{
-			Err:         fmt.Errorf("app does not have any runner configs"),
-			Description: "please make create at least one app runner config first",
-		}
+
+	if err := s.validateApp(&parentApp); err != nil {
+		return nil, err
 	}
 
-	if parentApp.Status == "error" {
-		return nil, stderr.ErrUser{
-			Err:         fmt.Errorf("app is in an error state"),
-			Description: "can not create an install when app is in error state",
-		}
-	}
-
+	// make sure the inputs are valid
 	if err := s.ValidateInstallInputs(ctx, appID, req.Inputs); err != nil {
 		return nil, err
 	}
@@ -107,6 +92,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 
 	if err := s.componentHelpers.EnsureInstallComponents(ctx, appID, []string{install.ID}); err != nil {
 		return nil, fmt.Errorf("unable to ensure install components: %w", err)
+	}
+
+	if _, err := s.runnersHelpers.CreateInstallRunnerGroup(ctx, &install); err != nil {
+		return nil, fmt.Errorf("unable to create install runner: %w", err)
 	}
 
 	return &install, nil
