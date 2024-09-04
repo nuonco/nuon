@@ -3,28 +3,45 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
-type service struct {
-	v           *validator.Validate
-	l           *zap.Logger
-	db          *gorm.DB
-	mw          metrics.Writer
-	cfg         *internal.Config
-	authzClient *authz.Client
+type Params struct {
+	fx.In
 
-	// experimental
-	evClient eventloop.Client
+	V              *validator.Validate
+	DB             *gorm.DB `name:"psql"`
+	MW             metrics.Writer
+	L              *zap.Logger
+	Cfg            *internal.Config
+	EvClient       eventloop.Client
+	AuthzClient    *authz.Client
+	RunnersHelpers *runnershelpers.Helpers
 }
 
-func (s *service) RegisterRoutes(api *gin.Engine) error {
+type service struct {
+	v              *validator.Validate
+	l              *zap.Logger
+	db             *gorm.DB
+	mw             metrics.Writer
+	cfg            *internal.Config
+	authzClient    *authz.Client
+	evClient       eventloop.Client
+	runnersHelpers *runnershelpers.Helpers
+}
+
+var _ api.Service = (*service)(nil)
+
+func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// global routes
 	api.POST("/v1/orgs", s.CreateOrg)
 	api.GET("/v1/orgs", s.GetCurrentUserOrgs)
@@ -42,6 +59,9 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	// health checks
 	api.GET("/v1/orgs/current/health-checks", s.GetOrgHealthChecks)
 
+	// runners
+	api.GET("/v1/orgs/current/runner-group", s.GetOrgRunnerGroup)
+
 	return nil
 }
 
@@ -56,6 +76,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/orgs/:org_id/admin-delete", s.AdminDeleteOrg)
 	api.POST("/v1/orgs/:org_id/admin-reprovision", s.AdminReprovisionOrg)
 	api.POST("/v1/orgs/:org_id/admin-deprovision", s.AdminDeprovisionOrg)
+	api.POST("/v1/orgs/:org_id/admin-force-deprovision", s.AdminForceDeprovisionOrg)
 	api.POST("/v1/orgs/:org_id/admin-restart", s.RestartOrg)
 	api.POST("/v1/orgs/:org_id/admin-restart-children", s.RestartOrgChildren)
 	api.POST("/v1/orgs/:org_id/admin-rename", s.AdminRenameOrg)
@@ -65,21 +86,20 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func New(v *validator.Validate,
-	db *gorm.DB,
-	mw metrics.Writer,
-	l *zap.Logger,
-	cfg *internal.Config,
-	evClient eventloop.Client,
-	authzClient *authz.Client,
-) *service {
+func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	api.GET("/v1/orgs/current", s.GetOrg)
+	return nil
+}
+
+func New(params Params) *service {
 	return &service{
-		l:           l,
-		v:           v,
-		db:          db,
-		mw:          mw,
-		cfg:         cfg,
-		evClient:    evClient,
-		authzClient: authzClient,
+		l:              params.L,
+		v:              params.V,
+		db:             params.DB,
+		mw:             params.MW,
+		cfg:            params.Cfg,
+		evClient:       params.EvClient,
+		authzClient:    params.AuthzClient,
+		runnersHelpers: params.RunnersHelpers,
 	}
 }

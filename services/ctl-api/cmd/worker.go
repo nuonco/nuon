@@ -1,6 +1,11 @@
 package cmd
 
 import (
+	"github.com/spf13/cobra"
+	"go.uber.org/fx"
+	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	appsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker"
 	appsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 	componentsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker"
@@ -13,9 +18,9 @@ import (
 	orgsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 	releasesworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker"
 	releasesactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
-	"github.com/spf13/cobra"
-	"go.uber.org/fx"
-	"gorm.io/gorm"
+	runnersworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker"
+	runnersactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 )
 
 var namespace string
@@ -34,7 +39,7 @@ func (c *cli) registerWorker() error {
 
 func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{
-		fx.Invoke(func(*gorm.DB) {}),
+		fx.Invoke(db.DBGroupParam(func(dbs []*gorm.DB) {})),
 	}
 
 	// generals worker
@@ -93,6 +98,15 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 			fx.Provide(releasesworker.NewWorkflows),
 			fx.Provide(releasesworker.New),
 			fx.Invoke(func(*releasesworker.Worker) {}),
+		)
+	}
+
+	if namespace == "all" || namespace == "runners" {
+		providers = append(providers,
+			// runners worker
+			fx.Provide(runnersactivities.New),
+			fx.Provide(runnersworker.NewWorkflows),
+			fx.Provide(worker.AsWorker(runnersworker.New)),
 		)
 	}
 

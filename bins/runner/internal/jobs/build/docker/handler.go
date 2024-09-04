@@ -1,0 +1,54 @@
+package docker
+
+import (
+	"github.com/go-playground/validator/v10"
+	"github.com/hashicorp/go-hclog"
+	nuonrunner "github.com/nuonco/nuon-runner-go"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal"
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/errs"
+	ocicopy "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/copy"
+)
+
+type handler struct {
+	v           *validator.Validate
+	apiClient   nuonrunner.Client
+	errRecorder *errs.Recorder
+	cfg         *internal.Config
+	l           *zap.Logger
+	hcLog       hclog.Logger
+	ociCopy     ocicopy.Copier
+
+	// state is reused between function calls, but can _not_ be reused with different jobs.
+	//
+	// the job loop ensures that no handler ever has more than one job at a time, but this guarantee should be made
+	// stronger in the future.
+	state *handlerState
+}
+
+var _ jobs.JobHandler = (*handler)(nil)
+
+type HandlerParams struct {
+	fx.In
+
+	V         *validator.Validate
+	APIClient nuonrunner.Client
+	Config    *internal.Config
+	Log       *zap.Logger
+	HCLog     hclog.Logger
+	OCICopy   ocicopy.Copier
+}
+
+func New(params HandlerParams) (*handler, error) {
+	return &handler{
+		v:         params.V,
+		apiClient: params.APIClient,
+		cfg:       params.Config,
+		l:         params.Log,
+		hcLog:     params.HCLog,
+		ociCopy:   params.OCICopy,
+	}, nil
+}

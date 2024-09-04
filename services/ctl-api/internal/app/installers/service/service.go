@@ -3,13 +3,26 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/fx"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	installhelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 )
+
+type Params struct {
+	fx.In
+
+	V              *validator.Validate
+	Cfg            *internal.Config
+	DB             *gorm.DB `name:"psql"`
+	MW             metrics.Writer
+	InstallHelpers *installhelpers.Helpers
+	AuthzClient    *authz.Client
+}
 
 type service struct {
 	v              *validator.Validate
@@ -18,7 +31,9 @@ type service struct {
 	authzClient    *authz.Client
 }
 
-func (s *service) RegisterRoutes(api *gin.Engine) error {
+var _ api.Service = (*service)(nil)
+
+func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// installers
 	api.GET("/v1/installers", s.GetInstallers)
 	api.POST("/v1/installers", s.CreateInstaller)
@@ -39,16 +54,15 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func New(v *validator.Validate,
-	cfg *internal.Config,
-	db *gorm.DB, mw metrics.Writer,
-	installHelpers *installhelpers.Helpers,
-	authzClient *authz.Client,
-) *service {
+func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	return nil
+}
+
+func New(params Params) *service {
 	return &service{
-		v:              v,
-		db:             db,
-		installHelpers: installHelpers,
-		authzClient:    authzClient,
+		v:              params.V,
+		db:             params.DB,
+		installHelpers: params.InstallHelpers,
+		authzClient:    params.AuthzClient,
 	}
 }

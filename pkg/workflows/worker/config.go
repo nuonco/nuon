@@ -27,7 +27,7 @@ type Config struct {
 
 	// temporal configuration
 	TemporalHost                    string `config:"temporal_host" validate:"required"`
-	TemporalNamespace               string `config:"temporal_namespace" validate:"required"`
+	TemporalNamespace               string `config:"temporal_namespace"`
 	TemporalTaskQueue               string `config:"temporal_task_queue" validate:"required"`
 	TemporalMaxConcurrentActivities int    `config:"temporal_max_concurrent_activities" validate:"required" faker:"oneof: 10,20"`
 

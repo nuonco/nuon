@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+
 	"github.com/powertoolsdev/mono/pkg/pipeline"
 )
 
@@ -15,7 +15,7 @@ func MapInit(fn execInitFn) pipeline.ExecFn {
 	return fn.exec
 }
 
-func (p execInitFn) exec(ctx context.Context, l hclog.Logger, ui terminal.UI) ([]byte, error) {
+func (p execInitFn) exec(ctx context.Context, l hclog.Logger) ([]byte, error) {
 	err := p(ctx)
 	return nil, err
 }

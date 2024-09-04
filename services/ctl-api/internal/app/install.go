@@ -41,6 +41,8 @@ type Install struct {
 	AWSAccount   *AWSAccount   `json:"aws_account" gorm:"constraint:OnDelete:CASCADE;"`
 	AzureAccount *AzureAccount `json:"azure_account" gorm:"constraint:OnDelete:CASCADE;"`
 
+	RunnerGroup RunnerGroup `json:"-" temporaljson:"runner_group" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;"`
+
 	// generated view current view
 
 	InstallNumber     int              `json:"install_number" gorm:"->;-:migration"`

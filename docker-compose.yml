@@ -2,6 +2,38 @@
 version: "3.9"
 
 services:
+  # clickhouse
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    ports:
+      - 8123:8123
+      - 9000:9000
+    environment:
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      CLICKHOUSE_DB: ctl_api
+      CLICKHOUSE_USER: ctl-api
+      CLICKHOUSE_PASSWORD: ctl-api
+    networks:
+      - default
+
+  # clickhouse ui
+  clickhouse-ui:
+    image: ghcr.io/caioricciuti/ch-ui:latest
+    ports:
+      - 5521:5521
+    networks:
+      - default
+    environment:
+      VITE_CLICKHOUSE_URL: http://localhost:8123
+      VITE_CLICKHOUSE_USER: ctl-api
+      VITE_CLICKHOUSE_PASSWORD: ctl-api
+    depends_on:
+     - clickhouse
+
   # postgres for the api
   postgres:
     build:
@@ -21,7 +53,23 @@ services:
     networks:
       - default
 
-  # temporal cli for dev server:
+  # NOTE: when connecting to PSQL, set the host as either host.containers.internal (podman) or host.docker.internal 
+  # (docker)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    ports:
+      - "8888:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: team@nuon.co
+      PGADMIN_DEFAULT_PASSWORD: teamnuon
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    networks:
+      - default
+
+  # temporal cli for dev server
   temporal:
     build:
       context: ./images/temporalcli
@@ -34,9 +82,18 @@ services:
     networks:
       - default
 
+  registry:
+    image: registry:latest
+    ports:
+      - 5000:5000
+    networks:
+      - default
+
 networks:
   default:
     driver: bridge
 
 volumes:
   postgres:
+  clickhouse:
+  pgadmin:

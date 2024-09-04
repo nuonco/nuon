@@ -3,15 +3,28 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/google/go-github/v50/github"
+	"go.uber.org/fx"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
+
+type Params struct {
+	fx.In
+
+	V          *validator.Validate
+	DB         *gorm.DB `name:"psql"`
+	MW         metrics.Writer
+	Cfg        *internal.Config
+	VcsHelpers *vcshelpers.Helpers
+	Helpers    *appshelpers.Helpers
+	EvClient   eventloop.Client
+}
 
 type service struct {
 	v          *validator.Validate
@@ -23,7 +36,9 @@ type service struct {
 	evClient   eventloop.Client
 }
 
-func (s *service) RegisterRoutes(api *gin.Engine) error {
+var _ api.Service = (*service)(nil)
+
+func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// manage apps
 	api.POST("/v1/apps", s.CreateApp)
 	api.GET("/v1/apps", s.GetApps)
@@ -72,21 +87,18 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func New(v *validator.Validate,
-	cfg *internal.Config,
-	db *gorm.DB, mw metrics.Writer,
-	ghClient *github.Client,
-	vcsHelpers *vcshelpers.Helpers,
-	helpers *appshelpers.Helpers,
-	evClient eventloop.Client,
-) *service {
+func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	return nil
+}
+
+func New(params Params) *service {
 	return &service{
-		cfg:        cfg,
-		v:          v,
-		db:         db,
-		mw:         mw,
-		vcsHelpers: vcsHelpers,
-		helpers:    helpers,
-		evClient:   evClient,
+		cfg:        params.Cfg,
+		v:          params.V,
+		db:         params.DB,
+		mw:         params.MW,
+		vcsHelpers: params.VcsHelpers,
+		helpers:    params.Helpers,
+		evClient:   params.EvClient,
 	}
 }

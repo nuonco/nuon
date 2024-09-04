@@ -1,0 +1,66 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+)
+
+type CreateRunnerHeartBeatRequest struct {
+	AliveTime time.Duration `json:"alive_time" validate:"required" swaggertype:"primitive,integer"`
+}
+
+// @ID CreateRunnerHeartBeat
+// @Summary	create a runner heart beat
+// @Description.markdown        create_runner_heart_beat.md
+// @Param			req				body	CreateRunnerHeartBeatRequest	true	"Input"
+// @Param			runner_id	path	string	true	"runner job ID"
+// @Tags runners/runner
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.RunnerHeartBeat
+// @Router			/v1/runners/{runner_id}/heart-beats [POST]
+func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
+	runnerID := ctx.Param("runner_id")
+
+	var req CreateRunnerHeartBeatRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+
+	heartBeat, err := s.createRunnerHeartBeat(ctx, runnerID, req)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to create runner heart beat: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, heartBeat)
+}
+
+func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, req CreateRunnerHeartBeatRequest) (*app.RunnerHeartBeat, error) {
+	runnerHeartBeat := app.RunnerHeartBeat{
+		RunnerID:  runnerID,
+		AliveTime: req.AliveTime,
+	}
+
+	res := s.chDB.WithContext(ctx).
+		Create(&runnerHeartBeat)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create runner heart beat: %w", res.Error)
+	}
+
+	return &runnerHeartBeat, nil
+}

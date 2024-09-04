@@ -3,14 +3,28 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	componenthelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
+
+type Params struct {
+	fx.In
+
+	V           *validator.Validate
+	Cfg         *internal.Config
+	DB          *gorm.DB `name:"psql"`
+	MW          metrics.Writer
+	L           *zap.Logger
+	CompHelpers *componenthelpers.Helpers
+	EvClient    eventloop.Client
+}
 
 type service struct {
 	v           *validator.Validate
@@ -22,7 +36,9 @@ type service struct {
 	evClient    eventloop.Client
 }
 
-func (s *service) RegisterRoutes(api *gin.Engine) error {
+var _ api.Service = (*service)(nil)
+
+func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/components/:component_id/releases", s.CreateComponentRelease)
 	api.GET("/v1/components/:component_id/releases", s.GetComponentReleases)
 	api.GET("/v1/apps/:app_id/releases", s.GetAppReleases)
@@ -38,21 +54,18 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func New(v *validator.Validate,
-	cfg *internal.Config,
-	db *gorm.DB,
-	mw metrics.Writer,
-	l *zap.Logger,
-	compHelpers *componenthelpers.Helpers,
-	evClient eventloop.Client,
-) *service {
+func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	return nil
+}
+
+func New(params Params) *service {
 	return &service{
-		cfg:         cfg,
-		l:           l,
-		v:           v,
-		db:          db,
-		mw:          mw,
-		compHelpers: compHelpers,
-		evClient:    evClient,
+		cfg:         params.Cfg,
+		l:           params.L,
+		v:           params.V,
+		db:          params.DB,
+		mw:          params.MW,
+		compHelpers: params.CompHelpers,
+		evClient:    params.EvClient,
 	}
 }

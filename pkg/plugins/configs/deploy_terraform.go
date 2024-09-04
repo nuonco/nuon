@@ -59,6 +59,7 @@ type TerraformDeployHooks struct {
 type TerraformDeploy struct {
 	Plugin string `hcl:"plugin,label"`
 
+	// TODO(jm): should be deprecated
 	OCIArchive *TerraformDeployOCIArchive `hcl:"oci_archive,block"`
 	S3Archive  *TerraformDeployS3Archive  `hcl:"s3_archive,block"`
 	DirArchive *TerraformDeployDirArchive `hcl:"local_archive,block"`
@@ -83,4 +84,8 @@ type TerraformDeploy struct {
 	// decoder for go-hcl. Go-HCL does not support map[string]interface{} out of the box.
 	VariablesJSON string                `hcl:"variables_json"`
 	Hooks         *TerraformDeployHooks `hcl:"hooks,block"`
+
+	// This should replace all usage of the archive blocks above.
+	ArtifactRepo *OCIRegistryRepository `hcl:"artifact_repo,block"`
+	ArtifactTag  string                 `hcl:"artifact_tag"`
 }

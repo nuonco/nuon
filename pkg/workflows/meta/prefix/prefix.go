@@ -26,6 +26,33 @@ func AppConfigPath(orgID, appID string) string {
 	}.toPath()
 }
 
+type runnerState struct {
+	OrgID     string
+	AppID     string
+	InstallID string
+	RunnerID  string
+}
+
+func (i runnerState) toPath() string {
+	base := fmt.Sprintf("org=%s/app=%s/install=%s/runner=%s",
+		i.OrgID,
+		i.AppID,
+		i.InstallID,
+		i.RunnerID)
+	return base
+}
+
+// RunnerStatePath returns the prefix for a runner's state - meaning long lived files that need to persist through
+// runs, such as a terraform state file.
+func RunnerStatePath(orgID, appID, installID, runnerID string) string {
+	return runnerState{
+		OrgID:     orgID,
+		AppID:     appID,
+		RunnerID:  runnerID,
+		InstallID: installID,
+	}.toPath()
+}
+
 type instanceState struct {
 	OrgID       string
 	AppID       string

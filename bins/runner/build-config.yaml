@@ -1,0 +1,8 @@
+---
+dist:
+  name: nuon-runner-otelcol
+  description: Nuon Runner Custom OTEL Collector
+  otelcol_version: 0.104.0
+  output_path: ./internal/app/collector
+  version: 1.0.0
+  module: github.com/powertoolsdev/mono/bins/runner/internal/app/collector

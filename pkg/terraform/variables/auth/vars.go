@@ -12,11 +12,11 @@ func (v *auth) Init(context.Context) error {
 }
 
 func (v *auth) GetEnv(ctx context.Context) (map[string]string, error) {
-	if v.Auth.UseDefault {
+	if v.AWSAuth.UseDefault {
 		return map[string]string{}, nil
 	}
 
-	envVars, err := credentials.FetchEnv(ctx, v.Auth)
+	envVars, err := credentials.FetchEnv(ctx, v.AWSAuth)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch environment vars: %w", err)
 	}

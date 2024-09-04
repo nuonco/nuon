@@ -5,10 +5,10 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
-	iamv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
+	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 )
 
 func (w *Workflows) reprovision(ctx workflow.Context, orgID string, sandboxMode bool) error {
@@ -20,41 +20,29 @@ func (w *Workflows) reprovision(ctx workflow.Context, orgID string, sandboxMode 
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
-	_, err = w.execDeprovisionIAMWorkflow(ctx, sandboxMode, &iamv1.DeprovisionIAMRequest{
-		OrgId: orgID,
-	})
-	// NOTE(jm): we ignore errors deprovisioning, and make a best effort to reprovision regardless
+	// NOTE(jm): this will be removed once the runner is in prod and all orgs are migrated.
+	if org.OrgType != app.OrgTypeV2 {
+		if err := w.reprovisionLegacy(ctx, org, sandboxMode); err != nil {
+			return fmt.Errorf("unable to perform legacy org provision: %w", err)
+		}
 
-	_, err = w.execProvisionWorkflow(ctx, sandboxMode, &orgsv1.ProvisionRequest{
+		return nil
+	}
+
+	// reprovision IAM roles for the org
+	orgIAMReq := &executors.ProvisionIAMRequest{
 		OrgId:       orgID,
-		Region:      defaultOrgRegion,
 		Reprovision: true,
-		CustomCert:  org.CustomCert,
+	}
+	var orgIAMResp executors.ProvisionIAMResponse
+	if err := w.execChildWorkflow(ctx, orgID, executors.ProvisionIAMWorkflowName, sandboxMode, orgIAMReq, &orgIAMResp); err != nil {
+		w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to reprovision iam roles")
+		return fmt.Errorf("unable to reprovision iam roles: %w", err)
+	}
+
+	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
+		Type: runnersignals.OperationReprovision,
 	})
-	if err != nil {
-		w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to reprovision organization resources")
-		return fmt.Errorf("unable to reprovision org: %w", err)
-	}
-
-	for _, orgApp := range org.Apps {
-		if err = activities.AwaitUpsertProject(ctx, activities.UpsertProjectRequest{
-			OrgID:     orgID,
-			ProjectID: orgApp.ID,
-		}); err != nil {
-			w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to upsert app project")
-			return fmt.Errorf("unable to reprovision org: %w", err)
-		}
-
-		for _, install := range orgApp.Installs {
-			if err = activities.AwaitUpsertProject(ctx, activities.UpsertProjectRequest{
-				OrgID:     orgID,
-				ProjectID: install.ID,
-			}); err != nil {
-				w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to upsert install project")
-				return fmt.Errorf("unable to reprovision org: %w", err)
-			}
-		}
-	}
 
 	w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
 		OrgID:       orgID,

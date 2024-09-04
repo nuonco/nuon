@@ -19,8 +19,8 @@ type ContextKey struct{}
 type temporal struct {
 	v *validator.Validate
 
-	Addr      string      `validate:"required"`
-	Namespace string      `validate:"required"`
+	Addr      string `validate:"required"`
+	Namespace string
 	Logger    *zap.Logger `validate:"required"`
 	LazyLoad  bool
 	Converter converter.DataConverter

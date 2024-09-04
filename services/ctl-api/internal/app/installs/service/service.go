@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -11,9 +12,25 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	componenthelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 )
+
+type Params struct {
+	fx.In
+
+	V                *validator.Validate
+	L                *zap.Logger
+	DB               *gorm.DB `name:"psql"`
+	MW               metrics.Writer
+	Cfg              *internal.Config
+	OrgsOutputs      *terraformcloud.OrgsOutputs
+	WpClient         multi.Client
+	ComponentHelpers *componenthelpers.Helpers
+	Helpers          *helpers.Helpers
+	EvClient         eventloop.Client
+}
 
 type service struct {
 	v                *validator.Validate
@@ -28,7 +45,9 @@ type service struct {
 	evClient         eventloop.Client
 }
 
-func (s *service) RegisterRoutes(api *gin.Engine) error {
+var _ api.Service = (*service)(nil)
+
+func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// get all installs across orgs
 	api.GET("/v1/installs", s.GetOrgInstalls)
 
@@ -72,6 +91,9 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/installs/:install_id/events", s.GetInstallEvents)
 	api.GET("/v1/installs/:install_id/events/:event_id", s.GetInstallEvent)
 
+	// install runner group
+	api.GET("/v1/installs/:install_id/runner-group", s.GetInstallRunnerGroup)
+
 	return nil
 }
 
@@ -94,27 +116,21 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func New(v *validator.Validate,
-	cfg *internal.Config,
-	db *gorm.DB,
-	mw metrics.Writer,
-	l *zap.Logger,
-	orgsOutputs *terraformcloud.OrgsOutputs,
-	wpClient multi.Client,
-	componentHelpers *componenthelpers.Helpers,
-	helpers *helpers.Helpers,
-	evClient eventloop.Client,
-) *service {
+func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	return nil
+}
+
+func New(params Params) *service {
 	return &service{
-		cfg:              cfg,
-		l:                l,
-		v:                v,
-		db:               db,
-		mw:               mw,
-		orgsOutputs:      orgsOutputs,
-		wpClient:         wpClient,
-		componentHelpers: componentHelpers,
-		helpers:          helpers,
-		evClient:         evClient,
+		cfg:              params.Cfg,
+		l:                params.L,
+		v:                params.V,
+		db:               params.DB,
+		mw:               params.MW,
+		orgsOutputs:      params.OrgsOutputs,
+		wpClient:         params.WpClient,
+		componentHelpers: params.ComponentHelpers,
+		helpers:          params.Helpers,
+		evClient:         params.EvClient,
 	}
 }

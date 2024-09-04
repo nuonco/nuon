@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -12,9 +13,26 @@ import (
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 )
+
+type Params struct {
+	fx.In
+
+	V           *validator.Validate
+	Cfg         *internal.Config
+	DB          *gorm.DB `name:"psql"`
+	MW          metrics.Writer
+	L           *zap.Logger
+	OrgsOutputs *terraformcloud.OrgsOutputs
+	WpClient    multi.Client
+	Helpers     *helpers.Helpers
+	VcsHelpers  *vcshelpers.Helpers
+	AppsHelpers *appshelpers.Helpers
+	EvClient    eventloop.Client
+}
 
 type service struct {
 	v           *validator.Validate
@@ -30,7 +48,9 @@ type service struct {
 	evClient    eventloop.Client
 }
 
-func (s *service) RegisterRoutes(api *gin.Engine) error {
+var _ api.Service = (*service)(nil)
+
+func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// show all components for an org
 	api.GET("/v1/components", s.GetOrgComponents)
 
@@ -75,29 +95,22 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func New(v *validator.Validate,
-	cfg *internal.Config,
-	db *gorm.DB,
-	mw metrics.Writer,
-	l *zap.Logger,
-	orgsOutputs *terraformcloud.OrgsOutputs,
-	wpClient multi.Client,
-	helpers *helpers.Helpers,
-	vcsHelpers *vcshelpers.Helpers,
-	appsHelpers *appshelpers.Helpers,
-	evClient eventloop.Client,
-) *service {
+func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	return nil
+}
+
+func New(params Params) *service {
 	return &service{
-		cfg:         cfg,
-		l:           l,
-		v:           v,
-		db:          db,
-		mw:          mw,
-		orgsOutputs: orgsOutputs,
-		wpClient:    wpClient,
-		helpers:     helpers,
-		vcsHelpers:  vcsHelpers,
-		appsHelpers: appsHelpers,
-		evClient:    evClient,
+		cfg:         params.Cfg,
+		l:           params.L,
+		v:           params.V,
+		db:          params.DB,
+		mw:          params.MW,
+		orgsOutputs: params.OrgsOutputs,
+		wpClient:    params.WpClient,
+		helpers:     params.Helpers,
+		vcsHelpers:  params.VcsHelpers,
+		appsHelpers: params.AppsHelpers,
+		evClient:    params.EvClient,
 	}
 }

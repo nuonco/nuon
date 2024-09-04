@@ -6,17 +6,18 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+
 	ecrauthorization "github.com/powertoolsdev/mono/pkg/aws/ecr-authorization"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 	ociv1 "github.com/powertoolsdev/mono/pkg/types/plugins/oci/v1"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestRegistry_getAccessInfo(t *testing.T) {
 	errGetAccessInfo := fmt.Errorf("error get access info")
 	authorization := generics.GetFakeObj[*ecrauthorization.Authorization]()
-	cfg := generics.GetFakeObj[configs.OCIRegistry]()
+	cfg := generics.GetFakeObj[configs.OCIRegistryRepository]()
 
 	tests := map[string]struct {
 		clientFn    func(*gomock.Controller) ecrauthorization.Client

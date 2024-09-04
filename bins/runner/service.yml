@@ -1,0 +1,19 @@
+---
+type: binary
+env:
+  # defaults
+  GIT_REF: local
+
+  RUNNER_API_URL: http://localhost:8083
+  RUNNER_API_TOKEN: tok3bbcv1whihi89sco6vztmu4
+  RUNNER_ID: rung72oshrah7d3ax1ooeydqke
+  SETTINGS_REFRESH_TIMEOUT: 1m
+watch_ignore_dirs: []
+
+local_only: true
+local_startup_cmds:
+  - go generate ./...
+local_build_cmds:
+  - go build -o /tmp/runner
+local_cmds:
+  - /tmp/runner run

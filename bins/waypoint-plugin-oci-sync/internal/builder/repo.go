@@ -27,8 +27,8 @@ func (b *Builder) getSrcRepo() (*remote.Repository, error) {
 		Client: retry.DefaultClient,
 		Cache:  auth.DefaultCache,
 		Credential: auth.StaticCredential(registryURL, auth.Credential{
-			Username: b.config.Auth.Username,
-			Password: b.config.Auth.AuthToken,
+			Username: b.config.Source.Username,
+			Password: b.config.Source.AuthToken,
 		}),
 	}
 

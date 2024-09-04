@@ -2,9 +2,12 @@ package health
 
 import (
 	"github.com/gin-gonic/gin"
+	"go.uber.org/fx"
+	"gorm.io/gorm"
+
 	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"gorm.io/gorm"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 )
 
 type Service struct {
@@ -13,7 +16,9 @@ type Service struct {
 	tclient temporalclient.Client
 }
 
-func (s *Service) RegisterRoutes(api *gin.Engine) error {
+var _ api.Service = (*Service)(nil)
+
+func (s *Service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/livez", s.GetLivezHandler)
 	api.GET("/readyz", s.GetReadyzHandler)
 	api.GET("/version", s.GetVersionHandler)
@@ -29,11 +34,26 @@ func (s *Service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func New(cfg *internal.Config, db *gorm.DB, tclient temporalclient.Client,
-) (*Service, error) {
+func (s *Service) RegisterRunnerRoutes(api *gin.Engine) error {
+	api.GET("/livez", s.GetLivezHandler)
+	api.GET("/readyz", s.GetReadyzHandler)
+	api.GET("/version", s.GetVersionHandler)
+
+	return nil
+}
+
+type Params struct {
+	fx.In
+
+	Cfg     *internal.Config
+	DB      *gorm.DB `name:"psql"`
+	TClient temporalclient.Client
+}
+
+func New(params Params) (*Service, error) {
 	return &Service{
-		cfg:     cfg,
-		db:      db,
-		tclient: tclient,
+		cfg:     params.Cfg,
+		db:      params.DB,
+		tclient: params.TClient,
 	}, nil
 }
