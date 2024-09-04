@@ -10,15 +10,28 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func (w *Workflows) isDeprovisionable(install *app.Install) bool {
+func (w *Workflows) isDeprovisionable(ctx workflow.Context, install *app.Install) (bool, error) {
 	if len(install.InstallSandboxRuns) < 1 {
-		return false
-	}
-	if install.InstallSandboxRuns[0].Status == app.SandboxRunStatusAccessError {
-		return false
+		return false, nil
 	}
 
-	return true
+	if install.InstallSandboxRuns[0].Status == app.SandboxRunStatusAccessError {
+		return false, nil
+	}
+
+	untornCmpIds, err := activities.AwaitFetchUntornInstallDeploys(ctx, activities.FetchUntornInstallDeploysRequest{
+		InstallID: install.ID,
+	})
+
+	if err != nil {
+		return false, fmt.Errorf("unable to fetch untorn install deploys: %w", err)
+	}
+
+	if len(untornCmpIds) > 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun bool) error {
@@ -35,7 +48,14 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 		return fmt.Errorf("unable to create install: %w", err)
 	}
 
-	if !w.isDeprovisionable(install) {
+	isDeprovisionable, err := w.isDeprovisionable(ctx, install)
+	if err != nil {
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to determine if install is deprovisionable")
+		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
+		return fmt.Errorf("unable to determine if install is deprovisionable: %w", err)
+	}
+
+	if !isDeprovisionable {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "install is not deprovisionable")
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusNoop)
 		return nil
