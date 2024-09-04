@@ -16,6 +16,9 @@ type GetComponentRequest struct {
 func (a *Activities) GetComponent(ctx context.Context, req GetComponentRequest) (*app.Component, error) {
 	cmp := app.Component{}
 	res := a.db.WithContext(ctx).
+		Preload("Org").
+		Preload("Org.RunnerGroup").
+		Preload("Org.RunnerGroup.Runners").
 		Preload("ComponentConfigs").
 		Preload("ComponentConfigs.ComponentBuilds").
 		Preload("ComponentConfigs.ComponentBuilds.ComponentReleases").

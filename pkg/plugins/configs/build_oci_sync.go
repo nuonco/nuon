@@ -11,7 +11,7 @@ type OciArchiveAuth struct {
 type OCISyncBuild struct {
 	Plugin string `hcl:"plugin,label"`
 
-	Image string         `hcl:"image"`
-	Tag   string         `hcl:"tag"`
-	Auth  OciArchiveAuth `hcl:"auth,block"`
+	Image  string                `hcl:"image"`
+	Tag    string                `hcl:"tag"`
+	Source OCIRegistryRepository `hcl:"source,block"`
 }

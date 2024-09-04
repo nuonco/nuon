@@ -29,3 +29,7 @@ func addSpecTags(doc *openapi2.T) {
 func removeSecurity(doc *openapi2.T) {
 	doc.SecurityDefinitions = nil
 }
+
+func removeOrgIDSecurity(doc *openapi2.T) {
+	delete(doc.SecurityDefinitions, "OrgID")
+}

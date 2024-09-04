@@ -7,12 +7,13 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/admin"
-	"github.com/powertoolsdev/mono/services/ctl-api/docs"
+	"github.com/powertoolsdev/mono/services/ctl-api/docs/admin"
+	"github.com/powertoolsdev/mono/services/ctl-api/docs/public"
+	"github.com/powertoolsdev/mono/services/ctl-api/docs/runner"
 )
 
 func (d *Docs) loadOAPI2Spec() (*openapi2.T, error) {
-	spec := docs.SwaggerInfo.ReadDoc()
+	spec := public.SwaggerInfo.ReadDoc()
 	byts := []byte(spec)
 
 	var doc openapi2.T
@@ -52,6 +53,42 @@ func (d *Docs) loadOAPI2AdminSpec() (*openapi2.T, error) {
 
 func (d *Docs) getOAPI2AdminSpec(ctx *gin.Context) {
 	doc, err := d.loadOAPI2AdminSpec()
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, doc)
+}
+
+func (d *Docs) loadOAPI2RunnerSpec() (*openapi2.T, error) {
+	spec := runner.SwaggerInforunner.ReadDoc()
+	byts := []byte(spec)
+
+	var doc openapi2.T
+	err := json.Unmarshal(byts, &doc)
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert runner open api spec to json: %w", err)
+	}
+
+	addSpecTags(&doc)
+	removeOrgIDSecurity(&doc)
+
+	return &doc, nil
+}
+
+func (d *Docs) getOAPI3RunnerSpec(ctx *gin.Context) {
+	doc, err := d.loadOAPI2RunnerSpec()
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, doc)
+}
+
+func (d *Docs) getOAPI2RunnerSpec(ctx *gin.Context) {
+	doc, err := d.loadOAPI2RunnerSpec()
 	if err != nil {
 		ctx.Error(err)
 		return

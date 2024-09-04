@@ -9,7 +9,7 @@ import (
 )
 
 func (k *k8sSecretGetter) Get(ctx context.Context) ([]byte, error) {
-	client, err := k.getClient()
+	client, err := k.getClient(ctx)
 	if err != nil {
 		return nil, err
 	}

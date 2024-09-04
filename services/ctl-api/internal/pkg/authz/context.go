@@ -8,7 +8,7 @@ import (
 )
 
 func CanCreate(ctx *gin.Context, objectID string) error {
-	acct, err := authcontext.FromContext(ctx)
+	acct, err := authcontext.FromGinContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -17,7 +17,7 @@ func CanCreate(ctx *gin.Context, objectID string) error {
 }
 
 func CanRead(ctx *gin.Context, objectID string) error {
-	acct, err := authcontext.FromContext(ctx)
+	acct, err := authcontext.FromGinContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func CanRead(ctx *gin.Context, objectID string) error {
 }
 
 func CanUpdate(ctx *gin.Context, objectID string) error {
-	acct, err := authcontext.FromContext(ctx)
+	acct, err := authcontext.FromGinContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func CanUpdate(ctx *gin.Context, objectID string) error {
 }
 
 func CanDelete(ctx *gin.Context, objectID string) error {
-	acct, err := authcontext.FromContext(ctx)
+	acct, err := authcontext.FromGinContext(ctx)
 	if err != nil {
 		return err
 	}

@@ -27,6 +27,7 @@ func (m *middleware) fetchAccountToken(ctx context.Context, token string) (*app.
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
+
 	if res.Error != nil {
 		return nil, fmt.Errorf("error occurred querying account tokens: %w", res.Error)
 	}

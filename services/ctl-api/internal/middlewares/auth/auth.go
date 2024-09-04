@@ -5,15 +5,24 @@ import (
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
-	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 )
+
+type Params struct {
+	fx.In
+
+	L           *zap.Logger
+	Cfg         *internal.Config
+	DB          *gorm.DB `name:"psql"`
+	AuthzClient *authz.Client
+}
 
 type middleware struct {
 	cfg         *internal.Config
@@ -33,7 +42,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		if err != nil {
 			ctx.Error(stderr.ErrAuthentication{
 				Err:         err,
-				Description: "Please make sure you set the -H Auth:Bearer <token> header",
+				Description: "Please make sure you set the -H Authorization:Bearer token header",
 			})
 			ctx.Abort()
 			return
@@ -42,9 +51,10 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		if token == "" {
 			ctx.Error(stderr.ErrAuthentication{
 				Err:         fmt.Errorf("auth token was empty"),
-				Description: "Please make sure you set the -H Auth:Bearer <token> header",
+				Description: "Please make sure you set the -H Authorization:Bearer <token> header",
 			})
 			ctx.Abort()
+
 			return
 		}
 
@@ -62,7 +72,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 				return
 			}
 
-			authcontext.SetContext(ctx, acct)
+			middlewares.SetGinContext(ctx, acct)
 			ctx.Next()
 			return
 		}
@@ -93,7 +103,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		authcontext.SetContext(ctx, acct)
+		middlewares.SetGinContext(ctx, acct)
 		ctx.Next()
 	}
 }
@@ -102,15 +112,11 @@ func (m *middleware) Name() string {
 	return "auth"
 }
 
-func New(l *zap.Logger,
-	cfg *internal.Config,
-	db *gorm.DB,
-	authzClient *authz.Client,
-) *middleware {
+func New(params Params) *middleware {
 	return &middleware{
-		l:           l,
-		cfg:         cfg,
-		db:          db,
-		authzClient: authzClient,
+		l:           params.L,
+		cfg:         params.Cfg,
+		db:          params.DB,
+		authzClient: params.AuthzClient,
 	}
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-func (a *Adapter) awsAccess(install app.Install) *contextv1.AwsAccount {
+func (a *Adapter) awsAccess(install *app.Install) *contextv1.AwsAccount {
 	if install.AWSAccount == nil {
 		return nil
 	}
@@ -16,7 +16,7 @@ func (a *Adapter) awsAccess(install app.Install) *contextv1.AwsAccount {
 	}
 }
 
-func (a *Adapter) azureAccess(install app.Install) *contextv1.AzureAccount {
+func (a *Adapter) azureAccess(install *app.Install) *contextv1.AzureAccount {
 	if install.AzureAccount == nil {
 		return nil
 	}
@@ -38,7 +38,6 @@ func (c *Adapter) BuildContext() *contextv1.Context {
 			RunnerType: contextv1.RunnerType_RUNNER_TYPE_BUILD,
 		},
 	}
-
 }
 
 func (c *Adapter) toSecrets(secrets []app.AppSecret) []*variablesv1.Secret {
@@ -53,7 +52,7 @@ func (c *Adapter) toSecrets(secrets []app.AppSecret) []*variablesv1.Secret {
 	return secs
 }
 
-func (c *Adapter) InstallContext(install app.Install) *contextv1.Context {
+func (c *Adapter) InstallContext(install *app.Install) *contextv1.Context {
 	awsAccount := c.awsAccess(install)
 	azureAccount := c.azureAccess(install)
 

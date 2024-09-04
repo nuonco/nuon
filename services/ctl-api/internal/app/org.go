@@ -15,19 +15,18 @@ const (
 	OrgTypeSandbox     OrgType = "sandbox"
 	OrgTypeReal        OrgType = "real"
 	OrgTypeIntegration OrgType = "integration"
+
+	// NOTE(jm): eventually, this will be removed, because we will do the same behaviour for each runner
+	OrgTypeV2 = "v2"
 )
 
 type OrgStatus string
 
 const (
-	OrgStatusPlanning       OrgStatus = "planning"
 	OrgStatusError          OrgStatus = "error"
 	OrgStatusActive         OrgStatus = "active"
 	OrgStatusProvisioning   OrgStatus = "provisioning"
 	OrgStatusDeprovisioning OrgStatus = "deprovisioning"
-
-	OrgStatusSyncing   OrgStatus = "syncing"
-	OrgStatusExecuting OrgStatus = "executing"
 )
 
 type Org struct {
@@ -53,6 +52,8 @@ type Org struct {
 	NotificationsConfig   NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty"`
 	NotificationsConfigID string              `json:"-"`
 
+	RunnerGroup RunnerGroup `json:"-" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;"`
+
 	Apps           []App            `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	VCSConnections []VCSConnection  `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	Invites        []OrgInvite      `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;"`
@@ -60,6 +61,7 @@ type Org struct {
 
 	// NOTE(jm): with GORM, these cascades are not getting created properly. For now, we just add them here, but
 	// eventually we should be able to remove these and add them directly.
+	Runners                   []Runner                   `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 	PublicGitVCSConfigs       []PublicGitVCSConfig       `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 	ConnectedGithubVCSConfigs []ConnectedGithubVCSConfig `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 	VCSConnectionCommits      []VCSConnectionCommit      `gorm:"constraint:OnDelete:CASCADE;" json:"-"`

@@ -3,6 +3,7 @@ package registry
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
+
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 )
 
@@ -18,5 +19,5 @@ func New(v *validator.Validate) (*Registry, error) {
 type Registry struct {
 	v *validator.Validate
 
-	config configs.OCIRegistry
+	config configs.OCIRegistryRepository
 }

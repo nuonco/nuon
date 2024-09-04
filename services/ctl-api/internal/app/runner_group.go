@@ -1,0 +1,76 @@
+package app
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+)
+
+type RunnerGroupType string
+
+const (
+	RunnerGroupTypeInstall RunnerGroupType = "install"
+	RunnerGroupTypeOrg     RunnerGroupType = "org"
+)
+
+type RunnerPlatformType string
+
+const (
+	RunnerPlatformAWSECS   RunnerPlatformType = "aws-ecs"
+	RunnerPlatformAWSEKS   RunnerPlatformType = "aws-eks"
+	RunnerPlatformAzureAKS RunnerPlatformType = "azure-aks"
+	RunnerPlatformAzureACS RunnerPlatformType = "azure-acs"
+	RunnerPlatformLocal    RunnerPlatformType = "local"
+)
+
+func (r RunnerPlatformType) JobType() RunnerJobType {
+	switch r {
+	case RunnerPlatformAWSECS, RunnerPlatformAzureACS:
+		return RunnerJobTypeRunnerTerraform
+	case RunnerPlatformAWSEKS, RunnerPlatformAzureAKS:
+		return RunnerJobTypeRunnerHelm
+	case RunnerPlatformLocal:
+		return RunnerJobTypeRunnerLocal
+	default:
+	}
+
+	return RunnerJobTypeUnknown
+}
+
+type RunnerGroup struct {
+	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
+	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
+	CreatedBy   Account `json:"created_by"`
+
+	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
+	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
+	DeletedAt soft_delete.DeletedAt `gorm:"index:idx_runner_group_owner" json:"-"`
+
+	OrgID string `json:"org_id" gorm:"default null;not null"`
+
+	// parent can org, install or in the future, builtin runner group
+	OwnerID   string `json:"owner_id" gorm:"index:idx_runner_group_owner;notnull;default null"`
+	OwnerType string `json:"owner_type" gorm:"notnull;default null"`
+
+	Runners  []Runner            `json:"runners" gorm:"constraint:OnDelete:CASCADE;"`
+	Settings RunnerGroupSettings `json:"settings" gorm:"constraint:OnDelete:CASCADE;"`
+	Type     RunnerGroupType     `json:"type" gorm:"notnull;defaultnull"`
+	Platform RunnerPlatformType  `json:"platform" gorm:"notnull;defaultnull"`
+}
+
+func (r *RunnerGroup) BeforeCreate(tx *gorm.DB) error {
+	if r.ID == "" {
+		r.ID = domains.NewRunnerGroupID()
+	}
+	if r.CreatedByID == "" {
+		r.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
+	if r.OrgID == "" {
+		r.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+
+	return nil
+}

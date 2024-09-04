@@ -7,12 +7,18 @@ import (
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	componentshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	installshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
+	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/ch"
+	dblog "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/psql"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/github"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/loops"
@@ -33,11 +39,13 @@ func (c *cli) providers() []fx.Option {
 
 		// various dependencies
 		fx.Provide(log.New),
+		fx.Provide(dblog.New),
 		fx.Provide(loops.New),
 		fx.Provide(github.New),
 		fx.Provide(metrics.New),
 		fx.Provide(migrations.New),
-		fx.Provide(db.New),
+		fx.Provide(db.AsPSQL(psql.New)),
+		fx.Provide(db.AsCH(ch.New)),
 		fx.Provide(temporal.New),
 		fx.Provide(validator.New),
 		fx.Provide(protos.New),
@@ -47,12 +55,15 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(activities.New),
 		fx.Provide(notifications.New),
 		fx.Provide(eventloop.New),
+		fx.Provide(teventloop.New),
 		fx.Provide(authz.New),
+		fx.Provide(account.New),
 
 		// add helpers for each domain
 		fx.Provide(vcshelpers.New),
 		fx.Provide(componentshelpers.New),
 		fx.Provide(appshelpers.New),
 		fx.Provide(installshelpers.New),
+		fx.Provide(runnershelpers.New),
 	}
 }

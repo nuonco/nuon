@@ -5,14 +5,15 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/kube"
-	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
-	"github.com/powertoolsdev/mono/pkg/workflows/dal"
 	"go.temporal.io/sdk/activity"
 	apimetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
+
+	"github.com/powertoolsdev/mono/pkg/kube"
+	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
+	"github.com/powertoolsdev/mono/pkg/workflows/dal"
 )
 
 type DeleteNamespaceRequest struct {
@@ -30,7 +31,7 @@ func (r DeleteNamespaceRequest) validate() error {
 type DeleteNamespaceResponse struct{}
 
 func (a *Activities) getKubeConfig(info *kube.ClusterInfo) (*rest.Config, error) {
-	kCfg, err := kube.ConfigForCluster(info)
+	kCfg, err := kube.ConfigForCluster(ctx, info)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get config for cluster: %w", err)
 	}

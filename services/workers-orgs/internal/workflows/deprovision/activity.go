@@ -1,11 +1,13 @@
 package deprovision
 
 import (
+	"context"
 	"fmt"
+
+	"k8s.io/client-go/rest"
 
 	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
 	"github.com/powertoolsdev/mono/pkg/kube"
-	"k8s.io/client-go/rest"
 )
 
 type Activities struct {
@@ -22,12 +24,12 @@ func NewActivities() *Activities {
 	}
 }
 
-func (a *Activities) getKubeConfig(info *kube.ClusterInfo) (*rest.Config, error) {
+func (a *Activities) getKubeConfig(ctx context.Context, info *kube.ClusterInfo) (*rest.Config, error) {
 	if a.Kubeconfig != nil {
 		return a.Kubeconfig, nil
 	}
 
-	kCfg, err := kube.ConfigForCluster(info)
+	kCfg, err := kube.ConfigForCluster(ctx, info)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get config for cluster: %w", err)
 	}
