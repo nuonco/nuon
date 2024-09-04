@@ -59,9 +59,13 @@ func (w *Workflows) deployComponents(ctx workflow.Context, installID string, san
 	}
 
 	for _, installDeploy := range deploys {
-		// NOTE(jm): we make a best effort to teardown all components
+		// NOTE(jm): we make a best effort to deploy all components
 		if err := w.deploy(ctx, installID, installDeploy.ID, sandboxMode); err != nil {
-			l.Error("unable to teardown component", zap.Error(err))
+			l.Error("unable to deploy component", zap.Error(err))
+
+			// (rb) stop iterating after first error
+			break
+
 		}
 	}
 

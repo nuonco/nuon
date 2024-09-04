@@ -48,10 +48,29 @@ func (s *service) deleteComponent(ctx context.Context, compID string) error {
 		ID: compID,
 	}
 
-	res := s.db.WithContext(ctx).Model(&comp).Updates(app.Component{
+	res := s.db.WithContext(ctx).Model(&comp).First(&comp).Where("id = ?", compID)
+	if res.Error != nil {
+		return fmt.Errorf("unable to get component %s: %w", compID, res.Error)
+	}
+
+	dependentComponents, err := s.appsHelpers.GetInvertedDependentComponents(ctx, comp.AppID, comp.ID)
+	if err != nil {
+		return fmt.Errorf("unable to get dependents: %w", err)
+	}
+
+	if len(dependentComponents) > 0 {
+		componentsIds := make([]string, 0, len(dependentComponents))
+		for _, c := range dependentComponents {
+			componentsIds = append(componentsIds, c.ID)
+		}
+		return fmt.Errorf("unable to delete component %s, components dependents exist Dependent IDs: %s", compID, componentsIds)
+	}
+
+	res = s.db.WithContext(ctx).Model(&comp).Updates(app.Component{
 		Status:            "delete_queued",
 		StatusDescription: "delete has been queued and waiting",
 	})
+
 	if res.Error != nil {
 		return fmt.Errorf("unable to update component: %w", res.Error)
 	}
