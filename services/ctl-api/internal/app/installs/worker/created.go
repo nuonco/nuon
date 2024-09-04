@@ -15,6 +15,7 @@ func (w *Workflows) created(ctx workflow.Context, installID string) error {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
+	// send a created notification
 	if install.InstallNumber == 1 {
 		w.sendNotification(ctx, notifications.NotificationsTypeFirstInstallCreated, install.AppID, map[string]string{
 			"install_name": install.Name,

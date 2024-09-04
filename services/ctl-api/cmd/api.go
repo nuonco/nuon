@@ -12,6 +12,7 @@ import (
 	installsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/service"
 	orgsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/service"
 	releasesservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/service"
+	runnersservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/service"
 	vcsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/service"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/health"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
@@ -25,6 +26,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/docs"
 )
 
@@ -45,6 +47,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsMiddleware(global.New)),
 		fx.Provide(api.AsMiddleware(metrics.New)),
 		fx.Provide(api.AsMiddleware(metrics.NewInternal)),
+		fx.Provide(api.AsMiddleware(metrics.NewRunner)),
 		fx.Provide(api.AsMiddleware(headers.New)),
 		fx.Provide(api.AsMiddleware(auth.New)),
 		fx.Provide(api.AsMiddleware(org.New)),
@@ -63,10 +66,13 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsService(installsservice.New)),
 		fx.Provide(api.AsService(installersservice.New)),
 		fx.Provide(api.AsService(componentsservice.New)),
+		fx.Provide(api.AsService(runnersservice.New)),
 		fx.Provide(api.AsService(releasesservice.New)),
 
+		// add api
 		fx.Provide(fx.Annotate(api.NewAPI, fx.ParamTags(`group:"services"`, `group:"middlewares"`))),
-		fx.Invoke(func(*gorm.DB) {}),
+
+		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 		fx.Invoke(func(*api.API) {}),
 	}
 

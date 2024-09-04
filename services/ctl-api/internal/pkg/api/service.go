@@ -6,7 +6,8 @@ import (
 )
 
 type Service interface {
-	RegisterRoutes(*gin.Engine) error
+	RegisterPublicRoutes(*gin.Engine) error
+	RegisterRunnerRoutes(*gin.Engine) error
 	RegisterInternalRoutes(*gin.Engine) error
 }
 

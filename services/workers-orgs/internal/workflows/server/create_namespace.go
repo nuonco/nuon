@@ -6,12 +6,13 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/kube"
 	"go.temporal.io/sdk/activity"
 	corev1 "k8s.io/api/core/v1"
 	apimetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	coreapplyv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/powertoolsdev/mono/pkg/kube"
 )
 
 var errOops error = fmt.Errorf("oops")
@@ -47,7 +48,7 @@ func (a *Activities) CreateNamespace(ctx context.Context, req CreateNamespaceReq
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
-	kCfg, err := a.getKubeConfig(&req.ClusterInfo)
+	kCfg, err := a.getKubeConfig(ctx,&req.ClusterInfo)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get kube config: %w", err)
 	}

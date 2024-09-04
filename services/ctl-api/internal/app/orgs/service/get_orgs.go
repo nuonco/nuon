@@ -23,7 +23,7 @@ import (
 // @Success		200				{array}		app.Org
 // @Router			/v1/orgs [GET]
 func (s *service) GetCurrentUserOrgs(ctx *gin.Context) {
-	account, err := authcontext.FromContext(ctx)
+	account, err := authcontext.FromGinContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

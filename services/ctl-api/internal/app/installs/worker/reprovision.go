@@ -12,39 +12,23 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 )
 
-func (w *Workflows) reprovision(ctx workflow.Context, installID string, dryRun bool) error {
-	install, err := activities.AwaitGetByInstallID(ctx, installID)
-	if err != nil {
-		return fmt.Errorf("unable to get install: %w", err)
-	}
-
-	installRun, err := activities.AwaitCreateSandboxRun(ctx, activities.CreateSandboxRunRequest{
-		InstallID: installID,
-		RunType:   app.SandboxRunTypeReprovision,
-	})
-	if err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create sandbox run")
-		return fmt.Errorf("unable to create install: %w", err)
-	}
-
-	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusStarted)
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
-
+func (w *Workflows) reprovisionLegacy(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, sandboxMode bool) error {
 	req, err := w.protos.ToInstallProvisionRequest(install, installRun.ID)
 	if err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install provision request: %w", err)
 	}
 
-	_, err = w.execProvisionWorkflow(ctx, dryRun, req)
+	_, err = w.execProvisionWorkflow(ctx, sandboxMode, req)
 	if err != nil {
 		w.mw.Event(ctx, &statsd.Event{
 			Title: "install failed to reprovision",
 			Text: fmt.Sprintf(
 				"install %s failed to reprovision\ncreated by %s\nerror: %s",
-				installID,
+				install.ID,
 				install.CreatedBy.Email,
 				err.Error(),
 			),
@@ -68,6 +52,42 @@ func (w *Workflows) reprovision(ctx workflow.Context, installID string, dryRun b
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
 		return fmt.Errorf("unable to provision install: %w", err)
 	}
+
+	return nil
+}
+
+func (w *Workflows) reprovision(ctx workflow.Context, installID string, sandboxMode bool) error {
+	install, err := activities.AwaitGet(ctx, activities.GetRequest{
+		InstallID: installID,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to get install: %w", err)
+	}
+
+	installRun, err := activities.AwaitCreateSandboxRun(ctx, activities.CreateSandboxRunRequest{
+		InstallID: installID,
+		RunType:   app.SandboxRunTypeReprovision,
+	})
+	if err != nil {
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create sandbox run")
+		return fmt.Errorf("unable to create install: %w", err)
+	}
+
+	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusStarted)
+	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
+
+	if install.Org.OrgType != app.OrgTypeV2 {
+		if err := w.reprovisionLegacy(ctx, install, installRun, sandboxMode); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
+		Type: runnersignals.OperationReprovision,
+	})
+	// wait for the runner
 
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "install resources provisioned")
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFinished)

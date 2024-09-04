@@ -8,13 +8,14 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gogo/status"
 	pb "github.com/hashicorp/waypoint/pkg/server/gen"
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/kube"
-	"github.com/powertoolsdev/mono/pkg/waypoint/client/public"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/kube"
+	"github.com/powertoolsdev/mono/pkg/waypoint/client/public"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,7 +63,7 @@ func (a *Activities) BootstrapWaypointServer(
 		return resp, err
 	}
 
-	cfg, err := kube.ConfigForCluster(&req.ClusterInfo)
+	cfg, err := kube.ConfigForCluster(ctx, &req.ClusterInfo)
 	if err != nil {
 		return resp, fmt.Errorf("failed to get config for cluster: %w", err)
 	}

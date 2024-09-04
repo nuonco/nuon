@@ -17,13 +17,14 @@ const (
 	OperationCreated eventloop.SignalType = "created"
 	OperationRestart eventloop.SignalType = "restart"
 
-	OperationProvision      eventloop.SignalType = "provision"
-	OperationDelete         eventloop.SignalType = "delete"
-	OperationForceDelete    eventloop.SignalType = "force_delete"
-	OperationDeprovision    eventloop.SignalType = "deprovision"
-	OperationReprovision    eventloop.SignalType = "reprovision"
-	OperationInviteCreated  eventloop.SignalType = "invite_created"
-	OperationInviteAccepted eventloop.SignalType = "invite_accepted"
+	OperationProvision        eventloop.SignalType = "provision"
+	OperationDelete           eventloop.SignalType = "delete"
+	OperationForceDelete      eventloop.SignalType = "force_delete"
+	OperationDeprovision      eventloop.SignalType = "deprovision"
+	OperationForceDeprovision eventloop.SignalType = "force_deprovision"
+	OperationReprovision      eventloop.SignalType = "reprovision"
+	OperationInviteCreated    eventloop.SignalType = "invite_created"
+	OperationInviteAccepted   eventloop.SignalType = "invite_accepted"
 )
 
 type Signal struct {

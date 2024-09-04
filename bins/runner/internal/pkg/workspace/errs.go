@@ -1,0 +1,25 @@
+package workspace
+
+import "fmt"
+
+type CloneErr struct {
+	Url string
+	Ref string
+	Err error
+}
+
+func (c CloneErr) Error() string {
+	return fmt.Sprintf("unable to clone repo %s with ref %s", c.Url, c.Ref)
+}
+
+func (c CloneErr) Unwrap() error {
+	return c.Err
+}
+
+type PathExistsErr struct {
+	Path string
+}
+
+func (p PathExistsErr) Error() string {
+	return fmt.Sprintf("path %s does not exist", p.Path)
+}

@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
 )
@@ -36,7 +36,6 @@ type run struct {
 	v *validator.Validate
 
 	Workspace      workspace.Workspace `validate:"required"`
-	UI             terminal.UI         `validate:"required"`
 	Log            hclog.Logger        `validate:"required"`
 	OutputSettings *OutputSettings     `validate:"required"`
 }
@@ -75,13 +74,6 @@ func WithOutputSettings(settings *OutputSettings) runOption {
 func WithWorkspace(w workspace.Workspace) runOption {
 	return func(r *run) error {
 		r.Workspace = w
-		return nil
-	}
-}
-
-func WithUI(ui terminal.UI) runOption {
-	return func(r *run) error {
-		r.UI = ui
 		return nil
 	}
 }

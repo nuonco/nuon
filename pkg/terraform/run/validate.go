@@ -26,7 +26,6 @@ func (r *run) getValidatePipeline() (*pipeline.Pipeline, error) {
 	// initialize steps to load the workspace
 	pipe, err := pipeline.New(r.v,
 		pipeline.WithLogger(r.Log),
-		pipeline.WithUI(r.UI),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create pipeline: %w", err)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -17,6 +18,13 @@ import (
 const (
 	orgIDHeaderKey string = "X-Nuon-Org-ID"
 )
+
+type Params struct {
+	fx.In
+
+	L  *zap.Logger
+	DB *gorm.DB `name:"psql"`
+}
 
 type middleware struct {
 	l  *zap.Logger
@@ -44,7 +52,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		acct, err := middlewares.FromContext(ctx)
+		acct, err := middlewares.FromGinContext(ctx)
 		if err != nil {
 			ctx.Error(stderr.ErrAuthorization{
 				Err:         fmt.Errorf("no account identified"),
@@ -90,9 +98,9 @@ func (m middleware) Handler() gin.HandlerFunc {
 	}
 }
 
-func New(l *zap.Logger, db *gorm.DB) *middleware {
+func New(params Params) *middleware {
 	return &middleware{
-		l:  l,
-		db: db,
+		l:  params.L,
+		db: params.DB,
 	}
 }

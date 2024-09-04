@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+import "installs/v1/account_settings.proto";
+import "installs/v1/sandbox_settings.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+
+enum RunnerType {
+  RUNNER_TYPE_UNSPECIFIED = 0;
+  RUNNER_TYPE_AWS_EKS = 1;
+  RUNNER_TYPE_AZURE_AKS = 2;
+  RUNNER_TYPE_AWS_ECS = 3;
+  RUNNER_TYPE_AZURE_ACS = 4;
+}
+
+message RunnerImage {
+  string tag = 1;
+  string url = 2;
+}
+
+message RunnerSettings {
+  string api_token = 1;
+  string api_url = 2;
+
+  RunnerImage image = 3;
+}
+
+message RunnerInput {
+  string org_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string app_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string install_id = 3 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string runner_id = 4 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+
+  RunnerType type = 5;
+  RunnerSettings runner_settings = 6;
+  installs.v1.SandboxSettings sandbox_settings = 7;
+  installs.v1.AWSSettings aws_settings = 8;
+  installs.v1.AzureSettings azure_settings = 9;
+}

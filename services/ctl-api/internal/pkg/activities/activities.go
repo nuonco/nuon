@@ -1,6 +1,7 @@
 package activities
 
 import (
+	"go.uber.org/fx"
 	"gorm.io/gorm"
 
 	"github.com/go-playground/validator/v10"
@@ -9,20 +10,25 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
+type Params struct {
+	fx.In
+
+	Cfg    *internal.Config
+	V      *validator.Validate
+	Notifs *notifications.Notifications
+	DB     *gorm.DB `name:"psql"`
+}
+
 type Activities struct {
 	v      *validator.Validate
 	db     *gorm.DB
 	notifs *notifications.Notifications
 }
 
-func New(cfg *internal.Config,
-	v *validator.Validate,
-	notifs *notifications.Notifications,
-	db *gorm.DB,
-) (*Activities, error) {
+func New(params Params) (*Activities, error) {
 	return &Activities{
-		v:      v,
-		db:     db,
-		notifs: notifs,
+		v:      params.V,
+		db:     params.DB,
+		notifs: params.Notifs,
 	}, nil
 }

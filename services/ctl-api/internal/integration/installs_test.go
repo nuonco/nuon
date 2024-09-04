@@ -280,3 +280,14 @@ func (s *installsIntegrationTestSuite) TestGetAllInstalls() {
 		require.Equal(t, installs[1].ID, origInstall.ID)
 	})
 }
+
+func (s *installsIntegrationTestSuite) TestGetInstallRunnerGroup() {
+	install := s.createInstall(s.appID)
+
+	s.T().Run("success", func(t *testing.T) {
+		runnerGroup, err := s.apiClient.GetInstallRunnerGroup(s.ctx, install.ID)
+		require.Nil(t, err)
+		require.NotNil(t, runnerGroup)
+		require.Len(t, runnerGroup.Runners, 1)
+	})
+}
