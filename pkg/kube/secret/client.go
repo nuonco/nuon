@@ -1,6 +1,7 @@
 package secret
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/kube"
@@ -8,7 +9,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func (k *k8sSecretGetter) getClient() (kubeClientSecretGetter, error) {
+func (k *k8sSecretGetter) getClient(ctx context.Context) (kubeClientSecretGetter, error) {
 	if k.client != nil {
 		return k.client, nil
 	}
@@ -17,8 +18,9 @@ func (k *k8sSecretGetter) getClient() (kubeClientSecretGetter, error) {
 		kubeCfg *rest.Config
 		err     error
 	)
+
 	if k.ClusterInfo != nil {
-		kubeCfg, err = kube.ConfigForCluster(&kube.ClusterInfo{
+		kubeCfg, err = kube.ConfigForCluster(ctx, &kube.ClusterInfo{
 			ID:             k.ClusterInfo.ID,
 			Endpoint:       k.ClusterInfo.Endpoint,
 			CAData:         k.ClusterInfo.CAData,

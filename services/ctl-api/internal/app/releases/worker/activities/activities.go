@@ -1,23 +1,27 @@
 package activities
 
 import (
+	"go.uber.org/fx"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
+
+type Params struct {
+	fx.In
+
+	DB       *gorm.DB `name:"psql"`
+	EvClient eventloop.Client
+}
 
 type Activities struct {
 	db       *gorm.DB
 	evClient eventloop.Client
 }
 
-func New(cfg *internal.Config,
-	evClient eventloop.Client,
-	db *gorm.DB,
-) (*Activities, error) {
+func New(params Params) (*Activities, error) {
 	return &Activities{
-		db:       db,
-		evClient: evClient,
+		db:       params.DB,
+		evClient: params.EvClient,
 	}, nil
 }

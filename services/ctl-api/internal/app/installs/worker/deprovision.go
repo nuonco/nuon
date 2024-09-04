@@ -8,7 +8,25 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 )
+
+func (w *Workflows) deprovisionLegacy(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, sandboxMode bool) error {
+	req, err := w.protos.ToInstallDeprovisionRequest(install, installRun.ID)
+	if err != nil {
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install deprovision request")
+		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
+		return fmt.Errorf("unable to create install deprovision request: %w", err)
+	}
+	_, err = w.execDeprovisionWorkflow(ctx, sandboxMode, req)
+	if err != nil {
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to deprovision install resources")
+		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
+		return fmt.Errorf("unable to deprovision install: %w", err)
+	}
+
+	return nil
+}
 
 func (w *Workflows) isDeprovisionable(ctx workflow.Context, install *app.Install) (bool, error) {
 	if len(install.InstallSandboxRuns) < 1 {
@@ -22,7 +40,6 @@ func (w *Workflows) isDeprovisionable(ctx workflow.Context, install *app.Install
 	untornCmpIds, err := activities.AwaitFetchUntornInstallDeploys(ctx, activities.FetchUntornInstallDeploysRequest{
 		InstallID: install.ID,
 	})
-
 	if err != nil {
 		return false, fmt.Errorf("unable to fetch untorn install deploys: %w", err)
 	}
@@ -34,7 +51,7 @@ func (w *Workflows) isDeprovisionable(ctx workflow.Context, install *app.Install
 	return true, nil
 }
 
-func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun bool) error {
+func (w *Workflows) deprovision(ctx workflow.Context, installID string, sandboxMode bool) error {
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
@@ -64,18 +81,22 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioning, "deprovisioning")
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusStarted)
 
-	req, err := w.protos.ToInstallDeprovisionRequest(install, installRun.ID)
-	if err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install deprovision request")
-		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
-		return fmt.Errorf("unable to create install deprovision request: %w", err)
+	if install.Org.OrgType != app.OrgTypeV2 {
+		if err := w.deprovisionLegacy(ctx, install, installRun, sandboxMode); err != nil {
+			return err
+		}
+
+		return nil
 	}
 
-	_, err = w.execDeprovisionWorkflow(ctx, dryRun, req)
-	if err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to deprovision install resources")
-		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
-		return fmt.Errorf("unable to deprovision install: %w", err)
+	// deprovision the runner
+	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
+		Type: runnersignals.OperationDeprovision,
+	})
+	// wait for the runner
+
+	if err := w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeDestroy, sandboxMode); err != nil {
+		return err
 	}
 
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully deprovisioned")

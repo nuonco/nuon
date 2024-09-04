@@ -6,8 +6,6 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	execv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
-	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -19,6 +17,33 @@ func (w *Workflows) isBuildDeployable(bld app.ComponentBuild) bool {
 
 func (w *Workflows) isDeployable(install *app.Install) bool {
 	return install.InstallSandboxRuns[0].Status == app.SandboxRunStatusActive
+}
+
+func (w *Workflows) anyDependencyInActive(ctx workflow.Context, install app.Install, installDeploy app.InstallDeploy) (string, error) {
+	depComponents, err := activities.AwaitGetComponentDependents(ctx, activities.GetComponentDependents{
+		AppID:           install.App.ID,
+		ComponentRootID: installDeploy.ComponentID,
+	})
+	if err != nil {
+		return "", fmt.Errorf("unable to get installComponent: %w", err)
+	}
+
+	for _, dep := range depComponents {
+		var depCmp *app.InstallComponent
+		depCmp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
+			InstallID:   installDeploy.InstallComponent.InstallID,
+			ComponentID: dep.ID,
+		})
+		if err != nil {
+			return "", fmt.Errorf("unable to get installComponent: %w", err)
+		}
+
+		if app.InstallDeployStatus(depCmp.Component.Status) != app.InstallDeployStatusOK {
+			return depCmp.ComponentID, fmt.Errorf("dependent component: %s, not active", depCmp.ID)
+		}
+	}
+
+	return "", nil
 }
 
 func (w *Workflows) isTeardownable(install *app.Install) bool {
@@ -48,6 +73,15 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to get install deploy from database")
 		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install deploy: %w", err)
+	}
+
+	org, err := activities.AwaitGetOrg(ctx, activities.GetOrgRequest{
+		InstallID: installID,
+	})
+	if err != nil {
+		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to get org from database")
+		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
+		return fmt.Errorf("unable to get org: %w", err)
 	}
 
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
@@ -84,7 +118,6 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 			ComponentRootID: installDeploy.ComponentID,
 			InstallID:       installID,
 		})
-
 		if err != nil {
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
 			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
@@ -104,92 +137,28 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 		return nil
 	}
 
-	deployCfg, err := activities.AwaitGetComponentConfigByDeployID(ctx, deployID)
-	if err != nil {
-		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to get component config")
-		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
-		return fmt.Errorf("unable to get deploy component config: %w", err)
+	if org.OrgType != app.OrgTypeV2 {
+		if err := w.execSyncLegacy(ctx, install, installDeploy, sandboxMode); err != nil {
+			return err
+		}
+		if err := w.execDeployLegacy(ctx, install, installDeploy, sandboxMode); err != nil {
+			return err
+		}
+
+		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFinished)
+		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusOK, "deploy is active")
+		return nil
 	}
 
-	w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusPlanning, "creating sync plan")
-
-	// execute the plan phase here
-	syncImagePlanWorkflowID := fmt.Sprintf("%s-sync-plan-%s", installID, deployID)
-	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, syncImagePlanWorkflowID, &planv1.CreatePlanRequest{
-		Input: &planv1.CreatePlanRequest_Component{
-			Component: &planv1.ComponentInput{
-				OrgId:     install.App.OrgID,
-				AppId:     install.App.ID,
-				BuildId:   installDeploy.ComponentBuildID,
-				InstallId: install.ID,
-				DeployId:  deployID,
-				Component: deployCfg,
-				Type:      planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE,
-				Context:   w.protos.InstallContext(*install),
-			},
-		},
-	})
-	if err != nil {
-		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("unable to create sync plan: %s", err))
-		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
-		return fmt.Errorf("unable to create sync plan: %w", err)
+	if err := w.execSync(ctx, install, installDeploy, sandboxMode); err != nil {
+		return err
 	}
-
-	w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusSyncing, "executing sync plan")
-
-	syncExecuteWorkflowID := fmt.Sprintf("%s-sync-execute-%s", installID, deployID)
-	_, err = w.execExecPlanWorkflow(ctx, sandboxMode, syncExecuteWorkflowID, &execv1.ExecutePlanRequest{
-		Plan: planResp.Plan,
-	})
-	if err != nil {
-		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("unable to execute sync plan: %s", err))
-		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
-		return fmt.Errorf("unable to execute sync plan: %w", err)
-	}
-
-	w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusPlanning, "creating deploy plan")
-
-	// execute the plan phase here
-	deployPlanWorkflowID := fmt.Sprintf("%s-deploy-plan-%s", installID, deployID)
-
-	deployPlanTyp := planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY
-	if installDeploy.Type == app.InstallDeployTypeTeardown {
-		deployPlanTyp = planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DESTROY
-	}
-
-	planResp, err = w.execCreatePlanWorkflow(ctx, sandboxMode, deployPlanWorkflowID, &planv1.CreatePlanRequest{
-		Input: &planv1.CreatePlanRequest_Component{
-			Component: &planv1.ComponentInput{
-				OrgId:     install.App.OrgID,
-				AppId:     install.App.ID,
-				InstallId: install.ID,
-				BuildId:   installDeploy.ComponentBuildID,
-				DeployId:  deployID,
-				Component: deployCfg,
-				Type:      deployPlanTyp,
-				Context:   w.protos.InstallContext(*install),
-			},
-		},
-	})
-	if err != nil {
-		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("unable to create deploy plan: %s", err))
-		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
-		return fmt.Errorf("unable to create deploy plan: %w", err)
-	}
-
-	w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusExecuting, "executing deploy plan")
-
-	deployExecuteWorkflowID := fmt.Sprintf("%s-deploy-execute-%s", installID, deployID)
-	_, err = w.execExecPlanWorkflow(ctx, sandboxMode, deployExecuteWorkflowID, &execv1.ExecutePlanRequest{
-		Plan: planResp.Plan,
-	})
-	if err != nil {
-		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("unable to execute deploy plan: %s", err))
-		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
-		return fmt.Errorf("unable to execute deploy plan: %w", err)
+	if err := w.execDeploy(ctx, install, installDeploy, sandboxMode); err != nil {
+		return err
 	}
 
 	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFinished)
 	w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusOK, "deploy is active")
+
 	return nil
 }

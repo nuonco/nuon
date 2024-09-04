@@ -71,7 +71,7 @@ func (s *service) createHostedInstallerServiceAccount(ctx context.Context, name 
 		return nil, fmt.Errorf("unable to create account: %w", res.Error)
 	}
 
-	ctx = middlewares.SetRegContext(ctx, acct)
+	ctx = middlewares.SetContext(ctx, acct)
 
 	// create role
 	role := app.Role{

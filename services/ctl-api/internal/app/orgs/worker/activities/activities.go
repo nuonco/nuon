@@ -1,28 +1,42 @@
 package activities
 
 import (
+	"go.uber.org/fx"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/waypoint/client/multi"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
+
+type Params struct {
+	fx.In
+
+	Cfg            *internal.Config
+	WpClient       multi.Client
+	DB             *gorm.DB `name:"psql"`
+	Acts           *activities.Activities
+	RunnersHelpers *runnershelpers.Helpers
+	EVClient       eventloop.Client
+}
 
 type Activities struct {
 	*activities.Activities
 
-	db       *gorm.DB
-	wpClient multi.Client
+	db             *gorm.DB
+	wpClient       multi.Client
+	evClient       eventloop.Client
+	runnersHelpers *runnershelpers.Helpers
 }
 
-func New(cfg *internal.Config,
-	wpClient multi.Client,
-	db *gorm.DB,
-	acts *activities.Activities,
-) (*Activities, error) {
+func New(params Params) (*Activities, error) {
 	return &Activities{
-		Activities: acts,
-		db:         db,
-		wpClient:   wpClient,
+		Activities:     params.Acts,
+		db:             params.DB,
+		wpClient:       params.WpClient,
+		evClient:       params.EVClient,
+		runnersHelpers: params.RunnersHelpers,
 	}, nil
 }

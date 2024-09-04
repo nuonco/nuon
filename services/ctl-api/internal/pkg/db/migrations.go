@@ -6,16 +6,17 @@ import (
 	"fmt"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/migrations"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/migrations"
 )
 
 func (a *AutoMigrate) isMigrationApplied(ctx context.Context, name string) (bool, error) {
 	var migration app.Migration
-	res := a.db.WithContext(ctx).
+	res := a.psqlDB.WithContext(ctx).
 		First(&migration, "name = ?", name)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
@@ -33,7 +34,7 @@ func (a *AutoMigrate) createMigration(ctx context.Context, name string) error {
 		Name:   name,
 		Status: app.MigrationStatusInProgress,
 	}
-	res := a.db.WithContext(ctx).
+	res := a.psqlDB.WithContext(ctx).
 		Create(&migration)
 	if res.Error != nil {
 		return res.Error
@@ -44,7 +45,7 @@ func (a *AutoMigrate) createMigration(ctx context.Context, name string) error {
 
 func (a *AutoMigrate) updateMigrationStatus(ctx context.Context, name string, status app.MigrationStatus) error {
 	currentApp := app.Migration{}
-	res := a.db.WithContext(ctx).
+	res := a.psqlDB.WithContext(ctx).
 		Model(&currentApp).
 		Where("name = ?", name).
 		Updates(app.Migration{

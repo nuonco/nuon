@@ -7,4 +7,5 @@ import (
 	_ "github.com/go-swagger/go-swagger/cmd/swagger"
 	_ "github.com/golang/mock/mockgen"
 	_ "github.com/swaggo/swag/cmd/swag"
+	_ "go.opentelemetry.io/collector/cmd/builder"
 )

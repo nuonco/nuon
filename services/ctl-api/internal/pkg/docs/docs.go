@@ -4,9 +4,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/pkg/services/config"
-	"github.com/powertoolsdev/mono/services/ctl-api/admin"
-	"github.com/powertoolsdev/mono/services/ctl-api/docs"
+	"github.com/powertoolsdev/mono/services/ctl-api/docs/admin"
+	"github.com/powertoolsdev/mono/services/ctl-api/docs/public"
+	"github.com/powertoolsdev/mono/services/ctl-api/docs/runner"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 
 	swaggerfiles "github.com/swaggo/files"
 	swagger "github.com/swaggo/gin-swagger"
@@ -16,18 +18,20 @@ type Docs struct {
 	cfg *internal.Config
 }
 
-func (r *Docs) RegisterRoutes(g *gin.Engine) error {
-	docs.SwaggerInfo.Schemes = []string{"https"}
-	docs.SwaggerInfo.Version = r.cfg.Version
+var _ api.Service = (*Docs)(nil)
+
+func (r *Docs) RegisterPublicRoutes(g *gin.Engine) error {
+	public.SwaggerInfo.Schemes = []string{"https"}
+	public.SwaggerInfo.Version = r.cfg.Version
 
 	switch r.cfg.Env {
 	case config.Development:
-		docs.SwaggerInfo.Host = "localhost:8081"
-		docs.SwaggerInfo.Schemes = []string{"http"}
+		public.SwaggerInfo.Host = "localhost:8081"
+		public.SwaggerInfo.Schemes = []string{"http"}
 	case config.Production:
-		docs.SwaggerInfo.Host = "api.nuon.co"
+		public.SwaggerInfo.Host = "api.nuon.co"
 	case config.Stage:
-		docs.SwaggerInfo.Host = "ctl.stage.nuon.co"
+		public.SwaggerInfo.Host = "runner.stage.nuon.co"
 	}
 
 	g.GET("/oapi/v3", r.getOAPI3publicSpec)
@@ -59,6 +63,33 @@ func (r *Docs) RegisterInternalRoutes(g *gin.Engine) error {
 	g.GET("/docs/*any", swagger.WrapHandler(
 		swaggerfiles.Handler,
 		swagger.InstanceName("admin"),
+	))
+
+	return nil
+}
+
+func (r *Docs) RegisterRunnerRoutes(g *gin.Engine) error {
+	runner.SwaggerInforunner.Title = "Nuon Runner API"
+	runner.SwaggerInforunner.Description = "Runner API"
+	runner.SwaggerInforunner.Schemes = []string{"https"}
+	runner.SwaggerInforunner.Version = r.cfg.Version
+
+	switch r.cfg.Env {
+	case config.Development:
+		runner.SwaggerInforunner.Host = "localhost:8083"
+		runner.SwaggerInforunner.Schemes = []string{"http"}
+	case config.Production:
+		runner.SwaggerInforunner.Host = "runner.nuon.co"
+	case config.Stage:
+		runner.SwaggerInforunner.Host = "runner.stage.nuon.co"
+	}
+
+	g.GET("/oapi/v3", r.getOAPI3RunnerSpec)
+	g.GET("/oapi/v2", r.getOAPI2RunnerSpec)
+	g.GET("/docs/*any", swagger.WrapHandler(
+		swaggerfiles.Handler,
+		swagger.PersistAuthorization(true),
+		swagger.InstanceName("runner"),
 	))
 
 	return nil

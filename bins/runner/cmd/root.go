@@ -1,0 +1,18 @@
+package cmd
+
+import (
+	"os"
+
+	"github.com/spf13/cobra"
+)
+
+var rootCmd = &cobra.Command{}
+
+func Execute() {
+	c := &cli{}
+	c.registerRun()
+
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(2)
+	}
+}

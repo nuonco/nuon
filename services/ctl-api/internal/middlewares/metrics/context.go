@@ -15,6 +15,7 @@ type MetricContext struct {
 	Endpoint string
 	Method   string
 	OrgID    string
+	RunnerID string
 	Context  string
 }
 
@@ -22,7 +23,6 @@ func FromContext(ctx context.Context) (*MetricContext, error) {
 	metrics := ctx.Value(ContextKey)
 	if metrics == nil {
 		return nil, ErrMetricContextNotFound
-
 	}
 
 	return metrics.(*MetricContext), nil

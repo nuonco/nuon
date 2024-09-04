@@ -100,7 +100,7 @@ func (a *Activities) InstallWaypoint(ctx context.Context, req InstallWaypointReq
 
 	}
 
-	kCfg, err := kube.ConfigForCluster(&req.ClusterInfo)
+	kCfg, err := kube.ConfigForCluster(ctx, &req.ClusterInfo)
 	if err != nil {
 		return resp, fmt.Errorf("failed to get config for cluster: %w", err)
 	}

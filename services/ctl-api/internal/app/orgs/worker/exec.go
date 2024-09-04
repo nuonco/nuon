@@ -2,15 +2,18 @@ package worker
 
 import (
 	"fmt"
+	"strings"
 	"time"
+
+	enumsv1 "go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	iamv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
-	enumsv1 "go.temporal.io/api/enums/v1"
-	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
+	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 )
 
 func (w *Workflows) execDeprovisionWorkflow(
@@ -46,7 +49,7 @@ func (w *Workflows) execDeprovisionWorkflow(
 func (w *Workflows) execDeprovisionIAMWorkflow(
 	ctx workflow.Context,
 	dryRun bool,
-	req *iamv1.DeprovisionIAMRequest,
+	req *executors.DeprovisionIAMRequest,
 ) (*iamv1.DeprovisionIAMResponse, error) {
 	if dryRun {
 		l := workflow.GetLogger(ctx)
@@ -103,43 +106,33 @@ func (w *Workflows) execProvisionWorkflow(
 	return &resp, nil
 }
 
-func (w *Workflows) defaultExecErrorActivity(
+func (w *Workflows) execChildWorkflow(
 	ctx workflow.Context,
-	actFn interface{},
-	req interface{},
-) error {
-	ao := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 1 * time.Minute,
-	}
-	ctx = workflow.WithActivityOptions(ctx, ao)
-
-	fut := workflow.ExecuteActivity(ctx, actFn, req)
-	var respErr error
-	if err := fut.Get(ctx, &respErr); err != nil {
-		return fmt.Errorf("unable to get activity response: %w", err)
-	}
-
-	if respErr != nil {
-		return fmt.Errorf("activity returned error: %w", respErr)
-	}
-
-	return nil
-}
-
-func (w *Workflows) defaultExecGetActivity(
-	ctx workflow.Context,
-	actFn interface{},
+	orgID string,
+	workflowName string,
+	sandboxMode bool,
 	req interface{},
 	resp interface{},
 ) error {
-	ao := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 1 * time.Minute,
+	if sandboxMode {
+		l := workflow.GetLogger(ctx)
+		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
+		workflow.Sleep(ctx, w.cfg.SandboxSleep)
+		return nil
 	}
-	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	fut := workflow.ExecuteActivity(ctx, actFn, req)
+	cwo := workflow.ChildWorkflowOptions{
+		TaskQueue:                workflows.ExecutorsTaskQueue,
+		WorkflowID:               fmt.Sprintf("%s-%s", orgID, strings.ToLower(workflowName)),
+		WorkflowExecutionTimeout: time.Minute * 20,
+		WorkflowTaskTimeout:      time.Minute * 10,
+		WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	fut := workflow.ExecuteChildWorkflow(ctx, workflowName, req)
 	if err := fut.Get(ctx, &resp); err != nil {
-		return fmt.Errorf("unable to get activity response: %w", err)
+		return fmt.Errorf("unable to get workflow response: %w", err)
 	}
 	return nil
 }

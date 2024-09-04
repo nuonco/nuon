@@ -1,0 +1,94 @@
+package cmd
+
+import (
+	"github.com/spf13/cobra"
+	"go.uber.org/fx"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/build"
+	containerimagebuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/containerimage"
+	dockerbuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/docker"
+	helmbuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/helm"
+	noopbuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/noop"
+	helmdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/helm"
+	jobdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/job"
+	noopdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/noop"
+	terraformdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/terraform"
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner"
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/sandbox"
+
+	// containerimagesync "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/containerimage"
+	noopsync "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/noop"
+	ocisync "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/oci"
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/user"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy"
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/healthcheck"
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/noop"
+	noopoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/noop"
+	shutdownoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/shutdown"
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync"
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/heartbeater"
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
+)
+
+func (c *cli) registerRun() error {
+	runCmd := &cobra.Command{
+		Use:  "run",
+		Long: "run executes the runner job loop, and runs and manages jobs until interrupted.",
+		Run:  c.runRun,
+	}
+
+	rootCmd.AddCommand(runCmd)
+	return nil
+}
+
+func (c *cli) runRun(cmd *cobra.Command, _ []string) {
+	providers := []fx.Option{
+		// build jobs
+		fx.Provide(jobloop.AsJobLoop(build.NewJobLoop)),
+		fx.Provide(jobs.AsJobHandler("builds", dockerbuild.New)),
+		fx.Provide(jobs.AsJobHandler("builds", containerimagebuild.New)),
+		fx.Provide(jobs.AsJobHandler("builds", helmbuild.New)),
+		fx.Provide(jobs.AsJobHandler("builds", noopbuild.New)),
+
+		// deploy jobs
+		fx.Provide(jobloop.AsJobLoop(deploy.NewJobLoop)),
+		fx.Provide(jobs.AsJobHandler("deploys", helmdeploy.New)),
+		fx.Provide(jobs.AsJobHandler("deploys", jobdeploy.New)),
+		fx.Provide(jobs.AsJobHandler("deploys", noopdeploy.New)),
+		fx.Provide(jobs.AsJobHandler("deploys", terraformdeploy.New)),
+
+		// sync jobs
+		fx.Provide(jobloop.AsJobLoop(sync.NewJobLoop)),
+		fx.Provide(jobs.AsJobHandler("sync", ocisync.New)),
+		fx.Provide(jobs.AsJobHandler("sync", noopsync.New)),
+		// fx.Provide(jobs.AsJobHandler("containerimage", containerimagesync.New)),
+
+		// healthcheck jobs
+		fx.Provide(jobloop.AsJobLoop(healthcheck.NewJobLoop)),
+
+		// operation jobs
+		fx.Provide(jobloop.AsJobLoop(noop.NewJobLoop)),
+		fx.Provide(jobs.AsJobHandler("noop", noopoperation.New)),
+		fx.Provide(jobs.AsJobHandler("shutdown", shutdownoperation.New)),
+
+		// TODO(jm) add these jobs
+		// sandbox jobs
+		fx.Provide(jobloop.AsJobLoop(sandbox.NewJobLoop)),
+		// runner jobs
+		fx.Provide(jobloop.AsJobLoop(runner.NewJobLoop)),
+
+		// user jobs
+		fx.Provide(jobloop.AsJobLoop(user.NewJobLoop)),
+
+		// start all job loops
+		fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {
+			//
+		})),
+		fx.Invoke(func(*heartbeater.HeartBeater) {}),
+	}
+
+	providers = append(providers, c.providers()...)
+	fx.New(providers...).Run()
+}
