@@ -103,6 +103,9 @@ func (w *Workflows) teardownComponents(ctx workflow.Context, installID string, s
 		// NOTE(jm): we make a best effort to teardown all components
 		if err := w.deploy(ctx, installID, installDeploy.ID, sandboxMode); err != nil {
 			l.Error("unable to teardown component", zap.Error(err))
+
+			// (rb) stop iterating after first error
+			break
 		}
 	}
 

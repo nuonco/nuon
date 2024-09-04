@@ -56,6 +56,23 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusNoop)
 			return nil
 		}
+
+		// check if the component is a dependency of another component that is still active
+		invertedDepIds, err := activities.AwaitFetchUntornDependencies(ctx, activities.FetchUntornDependenciesRequest{
+			ComponentRootID: installDeploy.ComponentID,
+			InstallID:       installID,
+		})
+
+		if err != nil {
+			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
+			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
+			return fmt.Errorf("unable to fetch active inverted dependencies: %w", err)
+		}
+
+		if len(invertedDepIds) > 0 {
+			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("compoent is depended on by orher components IDs: [%s]", strings.Join(invertedDepIds, ", ")))
+			return fmt.Errorf("other components depends on this component depIDs: %s", strings.Join(invertedDepIds, ", "))
+		}
 	} else {
 		if !w.isDeployable(install) {
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "install is not active and can not be deployed too")
@@ -63,19 +80,21 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 			return nil
 		}
 
-		inactiveCmpIDs, err := activities.AwaitFetchInactiveDependencies(ctx, activities.FetchInactiveDependenciesRequest{
+		inactiveDepIDs, err := activities.AwaitFetchInactiveDependencies(ctx, activities.FetchInactiveDependenciesRequest{
 			ComponentRootID: installDeploy.ComponentID,
 			InstallID:       installID,
 		})
 
 		if err != nil {
-			if len(inactiveCmpIDs) > 0 {
-				w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("dependent component: [%s]  not active", strings.Join(inactiveCmpIDs, ", ")))
-			} else {
-				w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
-			}
+			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
 			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 			return fmt.Errorf("unable to check dependencies: %w", err)
+		}
+
+		if len(inactiveDepIDs) > 0 {
+			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("dependent component: [%s]  not active", strings.Join(inactiveDepIDs, ", ")))
+			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
+			return fmt.Errorf("dependent component: [%s]  not active", strings.Join(inactiveDepIDs, ", "))
 		}
 	}
 
