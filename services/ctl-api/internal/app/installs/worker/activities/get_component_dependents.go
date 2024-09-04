@@ -11,7 +11,7 @@ import (
 
 type GetComponentDependents struct {
 	AppID           string `json:"app_id"`
-	ComponentRootID string `json:"inverted"`
+	ComponentRootID string `json:"component_root_id"`
 }
 
 // @await-gen
