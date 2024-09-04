@@ -52,7 +52,7 @@ func (s *service) CreateApp(ctx *gin.Context) {
 		return
 	}
 
-	user, err := authcontext.FromContext(ctx)
+	user, err := authcontext.FromGinContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

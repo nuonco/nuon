@@ -10,18 +10,6 @@ import "vcs/v1/public_git.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1";
 
-message BuiltinSandbox {
-  string name = 1 [
-    (validate.rules).string.min_len = 1,
-    (tagger.tags) = "faker:\"len=5\""
-  ];
-
-  string version = 2 [
-    (validate.rules).string.min_len = 1,
-    (tagger.tags) = "faker:\"len=5\""
-  ];
-}
-
 message SandboxSettings {
   string terraform_version = 1 [
     (validate.rules).string.min_len = 1,
@@ -31,7 +19,6 @@ message SandboxSettings {
   // configs for where to find the sandbox code
   optional vcs.v1.ConnectedGithubConfig connected_github_config = 2;
   optional vcs.v1.PublicGitConfig public_git_config = 3;
-  optional BuiltinSandbox builtin_config = 4;
 
   // variables to be substituted
   variables.v1.TerraformVariables vars = 5;

@@ -15,7 +15,22 @@ const (
 	InstallDeployTypeRelease  InstallDeployType = "release"
 	InstallDeployTypeInstall  InstallDeployType = "install"
 	InstallDeployTypeTeardown InstallDeployType = "teardown"
+	InstallDeployTypePlanOnly InstallDeployType = "plan-only"
 )
+
+func (i InstallDeployType) RunnerJobOperationType() RunnerJobOperationType {
+	switch i {
+	case InstallDeployTypeTeardown:
+		return RunnerJobOperationTypeDestroy
+	case InstallDeployTypeRelease,
+		InstallDeployTypeInstall:
+		return RunnerJobOperationTypeCreate
+	case InstallDeployTypePlanOnly:
+		return RunnerJobOperationTypePlanOnly
+	}
+
+	return RunnerJobOperationTypeUnknown
+}
 
 type InstallDeployStatus string
 

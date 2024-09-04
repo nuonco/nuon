@@ -23,7 +23,7 @@ import (
 // @Success		200				{object}	app.Account
 // @Router			/v1/general/current-user [GET]
 func (s *service) GetCurrentUser(ctx *gin.Context) {
-	acct, err := authcontext.FromContext(ctx)
+	acct, err := authcontext.FromGinContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

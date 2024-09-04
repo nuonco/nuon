@@ -38,7 +38,7 @@ func (s *service) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	acct, err := authcontext.FromContext(ctx)
+	acct, err := authcontext.FromGinContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

@@ -10,6 +10,7 @@ type PingWaypointServerRequest struct {
 	OrgID string `validate:"required"`
 }
 
+// @await-gen
 func (a *Activities) PingWaypointServer(ctx context.Context, req PingWaypointServerRequest) error {
 	_, err := a.wpClient.GetVersionInfo(ctx, req.OrgID, &emptypb.Empty{})
 	if err != nil {

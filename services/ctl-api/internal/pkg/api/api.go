@@ -5,9 +5,10 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 )
 
 type API struct {
@@ -16,6 +17,9 @@ type API struct {
 
 	internal     *gin.Engine
 	internalAddr string
+
+	runner     *gin.Engine
+	runnerAddr string
 
 	services    []Service
 	middlewares []Middleware
@@ -28,12 +32,15 @@ func NewAPI(services []Service,
 	lc fx.Lifecycle,
 	l *zap.Logger,
 	cfg *internal.Config,
-	shutdowner fx.Shutdowner) (*API, error) {
+	shutdowner fx.Shutdowner,
+) (*API, error) {
 	api := &API{
 		public:       gin.Default(),
 		publicAddr:   fmt.Sprintf(":%v", cfg.HTTPPort),
 		internal:     gin.Default(),
 		internalAddr: fmt.Sprintf(":%v", cfg.InternalHTTPPort),
+		runner:       gin.Default(),
+		runnerAddr:   fmt.Sprintf(":%v", cfg.RunnerHTTPPort),
 
 		cfg:         cfg,
 		services:    services,
@@ -62,6 +69,14 @@ func NewAPI(services []Service,
 			go func() {
 				if err := api.internal.Run(api.internalAddr); err != nil {
 					l.Error("unable to run internal api", zap.Error(err))
+					shutdowner.Shutdown(fx.ExitCode(127))
+				}
+			}()
+
+			l.Info("starting runner api", zap.String("addr", api.runnerAddr))
+			go func() {
+				if err := api.runner.Run(api.runnerAddr); err != nil {
+					l.Error("unable to run runner api", zap.Error(err))
 					shutdowner.Shutdown(fx.ExitCode(127))
 				}
 			}()

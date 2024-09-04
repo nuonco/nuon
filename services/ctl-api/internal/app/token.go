@@ -17,6 +17,7 @@ const (
 	TokenTypeStatic      TokenType = "static"
 	TokenTypeIntegration TokenType = "integration"
 	TokenTypeCanary      TokenType = "canary"
+	TokenTypeNuon        TokenType = "nuon"
 )
 
 type Token struct {
@@ -24,11 +25,11 @@ type Token struct {
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-"`
+	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
 	AccountID string `json:"account_id"`
 
-	Token     string    `gorm:"uniqueIndex;notnull" json:"-"`
+	Token     string    `gorm:"uniqueIndex;default null;notnull" json:"-"`
 	TokenType TokenType `json:"token_type"`
 
 	// claim data

@@ -46,6 +46,10 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 
 		// load public git
 		Preload("AppSandboxConfig.PublicGitVCSConfig").
+
+		// load runners
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
 		First(&install, "id = ?", installID)
 
 	if res.Error != nil {

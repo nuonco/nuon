@@ -5,11 +5,12 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/kube"
 	"go.temporal.io/sdk/activity"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apimetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/powertoolsdev/mono/pkg/kube"
 )
 
 type DestroyNamespaceRequest struct {
@@ -36,7 +37,7 @@ func (a *Activities) DestroyNamespace(ctx context.Context, req DestroyNamespaceR
 	resp := DestroyNamespaceResponse{}
 	l := activity.GetLogger(ctx)
 
-	kubeCfg, err := a.getKubeConfig(&req.ClusterInfo)
+	kubeCfg, err := a.getKubeConfig(ctx, &req.ClusterInfo)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get kube config: %w", err)
 	}

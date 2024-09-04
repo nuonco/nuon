@@ -98,6 +98,34 @@ func NewOrgID() string {
 	return shortid.NewNanoID("org")
 }
 
+func NewRunnerID() string {
+	return shortid.NewNanoID("run")
+}
+
+func NewLogID() string {
+	return shortid.NewNanoID("log")
+}
+
+func NewRunnerHealthCheckID() string {
+	return shortid.NewNanoID("hlt")
+}
+
+func NewRunnerHeartBeatID() string {
+	return shortid.NewNanoID("hrt")
+}
+
+func NewRunnerJobID() string {
+	return shortid.NewNanoID("job")
+}
+
+func NewRunnerGroupID() string {
+	return shortid.NewNanoID("rgr")
+}
+
+func NewRunnerGroupSettingsID() string {
+	return shortid.NewNanoID("rgs")
+}
+
 func NewVCSConnectionID() string {
 	return shortid.NewNanoID("vcs")
 }

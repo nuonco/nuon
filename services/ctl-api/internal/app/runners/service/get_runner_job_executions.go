@@ -1,0 +1,56 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+)
+
+// @ID GetRunnerJobExecutions
+// @Summary	get runner job executions
+// @Description.markdown	get_runner_job_executions.md
+// @Param			runner_job_id	path	string	true	"runner job ID"
+// @Tags runners/runner,runners
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{array}	app.RunnerJobExecution
+// @Router			/v1/runner-jobs/{runner_job_id}/executions [get]
+func (s *service) GetRunnerJobExecutions(ctx *gin.Context) {
+	runnerJobID := ctx.Param("runner_job_id")
+
+	runnerJobs, err := s.getRunnerJobExecutions(ctx, runnerJobID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get runner job executions: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, runnerJobs)
+}
+
+func (s *service) getRunnerJobExecutions(ctx context.Context, runnerJobID string) ([]app.RunnerJobExecution, error) {
+	var runnerJob *app.RunnerJob
+	res := s.db.WithContext(ctx).
+		Preload("CreatedBy").
+		Preload("Executions", func(db *gorm.DB) *gorm.DB {
+			return db.Order("runner_job_executions.created_at DESC")
+		}).
+		First(&runnerJob, "id = ?", runnerJobID)
+
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get runner job: %w", res.Error)
+	}
+
+	return runnerJob.Executions, nil
+}

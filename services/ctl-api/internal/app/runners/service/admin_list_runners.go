@@ -1,0 +1,48 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+)
+
+// @ID AdminGetAllRunners
+// @BasePath	/v1/runners
+// @Summary	Return all runners
+// @Schemes
+// @Description	return all orgs
+// @Param   type query string false "type of runner to return"	     Default(orgs)
+// @Tags runners/admin
+// @Accept			json
+// @Produce		json
+// @Success		200	{array}	app.Runner
+// @Router			/v1/runners [GET]
+func (s *service) AdminGetAllRunners(ctx *gin.Context) {
+	runnerTyp := ctx.DefaultQuery("type", "orgs")
+
+	runners, err := s.getAllRunners(ctx, runnerTyp)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, runners)
+}
+
+func (s *service) getAllRunners(ctx context.Context, typ string) ([]*app.Runner, error) {
+	var runners []*app.Runner
+	res := s.db.WithContext(ctx).
+		Preload("CreatedBy").
+		Joins("JOIN runner_groups ON runner_groups.id = runners.runner_group_id").
+		Where("runner_groups.owner_type = ?", typ).
+		Find(&runners)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get all runners: %w", res.Error)
+	}
+
+	return runners, nil
+}

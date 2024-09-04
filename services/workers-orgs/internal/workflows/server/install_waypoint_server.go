@@ -6,11 +6,12 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
+	"go.temporal.io/sdk/activity"
+	"helm.sh/helm/v3/pkg/release"
+
 	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	waypointhelm "github.com/powertoolsdev/mono/pkg/waypoint/helm"
-	"go.temporal.io/sdk/activity"
-	"helm.sh/helm/v3/pkg/release"
 )
 
 const (
@@ -70,7 +71,7 @@ func (a *Activities) InstallWaypointServer(ctx context.Context, req InstallWaypo
 		return resp, fmt.Errorf("failed to convert helm values: %w", err)
 	}
 
-	kCfg, err := a.getKubeConfig(&req.ClusterInfo)
+	kCfg, err := a.getKubeConfig(ctx, &req.ClusterInfo)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get kube config: %w", err)
 	}

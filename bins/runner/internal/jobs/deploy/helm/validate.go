@@ -1,0 +1,33 @@
+package helm
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/nuonco/nuon-runner-go/models"
+	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/plan"
+)
+
+const (
+	defaultNamespace string = "default"
+)
+
+func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	cfg, err := plan.ParseConfig[WaypointConfig](h.state.plan)
+	if err != nil {
+		return fmt.Errorf("unable to parse plan: %w", err)
+	}
+
+	h.state.cfg = &cfg.Deploy
+	h.state.srcCfg = cfg.Deploy.ArtifactRepo
+	h.state.srcTag = cfg.Deploy.ArtifactTag
+
+	if h.state.cfg.Namespace == "" {
+		h.log.Info("no namespace set, using default", zap.String("namespace", defaultNamespace))
+		h.state.cfg.Namespace = defaultNamespace
+	}
+
+	return nil
+}

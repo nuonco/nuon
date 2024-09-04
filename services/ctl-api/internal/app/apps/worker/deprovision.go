@@ -6,7 +6,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 )
@@ -48,7 +48,7 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, appID string
 	return nil
 }
 
-func (w *Workflows) deprovision(ctx workflow.Context, appID string, dryRun bool) error {
+func (w *Workflows) deprovision(ctx workflow.Context, appID string, sandboxMode bool) error {
 	w.updateStatus(ctx, appID, app.AppStatusActive, "polling for installs and components to be deprovisioned")
 	if err := w.pollChildrenDeprovisioned(ctx, appID); err != nil {
 		return err
@@ -63,13 +63,24 @@ func (w *Workflows) deprovision(ctx workflow.Context, appID string, dryRun bool)
 		return fmt.Errorf("unable to get app from database: %w", err)
 	}
 
-	_, err = w.execDeprovisionWorkflow(ctx, dryRun, &appsv1.DeprovisionRequest{
-		OrgId: currentApp.OrgID,
-		AppId: appID,
-	})
-	if err != nil {
-		w.updateStatus(ctx, appID, app.AppStatusError, "unable to deprovision app")
-		return fmt.Errorf("unable to deprovision app: %w", err)
+	// NOTE(jm): this will be removed once the runner is in prod and all orgs are
+	// migrated.
+	if currentApp.Org.OrgType != app.OrgTypeV2 {
+		if err := w.deprovisionLegacy(ctx, currentApp.OrgID, appID, sandboxMode); err != nil {
+			return fmt.Errorf("unable to perform legacy org deprovision: %w", err)
+		}
+
+		return nil
+	}
+
+	var repoProvisionResp executors.DeprovisionECRRepositoryResponse
+	repoProvisionReq := &executors.DeprovisionECRRepositoryRequest{
+		OrgID: currentApp.OrgID,
+		AppID: appID,
+	}
+	if err := w.execChildWorkflow(ctx, appID, executors.DeprovisionECRRepositoryWorkflowName, sandboxMode, repoProvisionReq, &repoProvisionResp); err != nil {
+		w.updateStatus(ctx, appID, app.AppStatusError, "unable to provision ECR repository")
+		return fmt.Errorf("unable to provision ECR repository: %w", err)
 	}
 
 	// update status with response

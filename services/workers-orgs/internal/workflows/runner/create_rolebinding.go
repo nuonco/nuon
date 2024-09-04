@@ -5,12 +5,13 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/kube"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apimetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rbacapplyv1 "k8s.io/client-go/applyconfigurations/rbac/v1"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/kube"
 )
 
 type CreateRoleBindingRequest struct {
@@ -40,7 +41,7 @@ func (a *Activities) CreateRoleBinding(
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
-	kCfg, err := a.getKubeConfig(&req.ClusterInfo)
+	kCfg, err := a.getKubeConfig(ctx, &req.ClusterInfo)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get kube config: %w", err)
 	}

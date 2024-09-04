@@ -90,7 +90,7 @@ func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
 	}
 
 	authVars, err := authvars.New(p.v,
-		authvars.WithAuth(&p.Cfg.RunAuth),
+		authvars.WithAWSAuth(&p.Cfg.RunAuth),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create auth vars: %w", err)

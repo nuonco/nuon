@@ -3,6 +3,7 @@ package activities
 import (
 	"fmt"
 
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -25,26 +26,30 @@ type Activities struct {
 	*sharedactivities.Activities
 }
 
-func New(db *gorm.DB,
-	prt *protos.Adapter,
-	appsHelpers *appshelpers.Helpers,
-	sharedActs *sharedactivities.Activities,
-	evClient eventloop.Client,
-	mw metrics.Writer,
-) (*Activities, error) {
+type Params struct {
+	fx.In
 
+	DB          *gorm.DB `name:"psql"`
+	Prt         *protos.Adapter
+	AppsHelpers *appshelpers.Helpers
+	SharedActs  *sharedactivities.Activities
+	EvClient    eventloop.Client
+	MW          metrics.Writer
+}
+
+func New(params Params) (*Activities, error) {
 	logger, err := zap.NewProduction()
 	tlogger := temporalzap.NewLogger(logger)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create temporal logger: %w", err)
 	}
 	return &Activities{
-		db:          db,
-		components:  prt,
-		appsHelpers: appsHelpers,
-		Activities:  sharedActs,
-		evClient:    evClient,
-		mw:          mw,
+		db:          params.DB,
+		components:  params.Prt,
+		appsHelpers: params.AppsHelpers,
+		Activities:  params.SharedActs,
+		evClient:    params.EvClient,
+		mw:          params.MW,
 		logger:      tlogger,
 	}, nil
 }

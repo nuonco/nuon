@@ -19,9 +19,11 @@ type HelmRepoDeploy struct {
 	Driver     string    `hcl:"driver,optional"`
 	Namespace  string    `hcl:"namespace,optional"`
 
-	KubeconfigPath  string     `hcl:"kubeconfig,optional"`
-	Context         string     `hcl:"context,optional"`
-	CreateNamespace bool       `hcl:"create_namespace,optional"`
-	SkipCRDs        bool       `hcl:"skip_crds,optional"`
-	Archive         OciArchive `hcl:"archive,block"`
+	KubeconfigPath  string `hcl:"kubeconfig,optional"`
+	Context         string `hcl:"context,optional"`
+	CreateNamespace bool   `hcl:"create_namespace,optional"`
+	SkipCRDs        bool   `hcl:"skip_crds,optional"`
+
+	ArtifactRepo *OCIRegistryRepository `hcl:"artifact_repo,block"`
+	ArtifactTag  string                 `hcl:"artifact_tag"`
 }

@@ -12,25 +12,32 @@ import (
 
 //nolint:gochecknoinits
 func init() {
-	config.RegisterDefault("http_port", "8080")
 	config.RegisterDefault("http_address", "0.0.0.0")
 
-	// defaults for database
+	// defaults for psql database
 	config.RegisterDefault("db_region", "us-west-2")
 	config.RegisterDefault("db_port", 5432)
 	config.RegisterDefault("db_user", "ctl_api")
 	config.RegisterDefault("db_name", "ctl_api")
 
+	// defaults for clickhouse database
+	config.RegisterDefault("clickhouse_db_read_timeout", "10s")
+	config.RegisterDefault("clickhouse_db_write_timeout", "10s")
+	config.RegisterDefault("clickhouse_db_dial_timeout", "1s")
+
 	// defaults for app
-	config.RegisterDefault("temporal_namespace", "default")
 	config.RegisterDefault("github_app_key_secret_name", "ctl-api-github-app-key")
 	config.RegisterDefault("sandbox_artifacts_base_url", "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox")
 
 	// defaults for sandbox mode
 	config.RegisterDefault("sandbox_sleep", "5s")
 
-	config.RegisterDefault("app_sync_api_url", "http://localhost:8081")
 	config.RegisterDefault("installer_base_url", "https://app.stage.nuon.co")
+
+	// runner defaults
+	config.RegisterDefault("runner_container_image_url", "public.ecr.aws/p7e3r5y0/runner")
+	config.RegisterDefault("runner_container_image_tag", "latest")
+	config.RegisterDefault("runner_api_url", "http://localhost:8083")
 }
 
 type Config struct {
@@ -44,8 +51,9 @@ type Config struct {
 	ServiceName      string `config:"service_name" validate:"required"`
 	HTTPPort         string `config:"http_port" validate:"required"`
 	InternalHTTPPort string `config:"internal_http_port" validate:"required"`
+	RunnerHTTPPort   string `config:"runner_http_port" validate:"required"`
 
-	// database connection parameters
+	// psql connection parameters
 	DBName       string `config:"db_name" validate:"required"`
 	DBHost       string `config:"db_host" validate:"required"`
 	DBPort       string `config:"db_port" validate:"required"`
@@ -57,9 +65,19 @@ type Config struct {
 	DBRegion     string `config:"db_region" validate:"required"`
 	DBLogQueries bool   `config:"db_log_queries"`
 
+	// clickhouse connection parameters
+	ClickhouseDBName         string        `config:"clickhouse_db_name" validate:"required"`
+	ClickhouseDBHost         string        `config:"clickhouse_db_host" validate:"required"`
+	ClickhouseDBUser         string        `config:"clickhouse_db_user" validate:"required"`
+	ClickhouseDBPassword     string        `config:"clickhouse_db_password" validate:"required"`
+	ClickhouseDBPort         string        `config:"clickhouse_db_port" validate:"required"`
+	ClickhouseDBUseTLS       bool          `config:"clickhouse_db_use_tls"`
+	ClickhouseDBReadTimeout  time.Duration `config:"clickhouse_db_read_timeout" validate:"required"`
+	ClickhouseDBWriteTimeout time.Duration `config:"clickhouse_db_write_timeout" validate:"required"`
+	ClickhouseDBDialTimeout  time.Duration `config:"clickhouse_db_dial_timeout" validate:"required"`
+
 	// temporal configuration
-	TemporalHost      string `config:"temporal_host"  validate:"required"`
-	TemporalNamespace string `config:"temporal_namespace" validate:"required"`
+	TemporalHost string `config:"temporal_host"  validate:"required"`
 
 	// github configuration
 	GithubAppID            string `config:"github_app_id" validate:"required"`
@@ -68,11 +86,11 @@ type Config struct {
 
 	// base urls for filling in various fields on objects
 	SandboxArtifactsBaseURL string `config:"sandbox_artifacts_base_url" validate:"required"`
-	AppSyncAPIURL           string `config:"app_sync_api_url"`
 
 	// middleware configuration
 	Middlewares         []string `config:"middlewares"`
 	InternalMiddlewares []string `config:"internal_middlewares"`
+	RunnerMiddlewares   []string `config:"runner_middlewares"`
 
 	// auth 0 config
 	Auth0IssuerURL string `config:"auth0_issuer_url" validate:"required"`
@@ -92,6 +110,11 @@ type Config struct {
 	LoopsAPIKey             string `config:"loops_api_key" validate:"required"`
 	InternalSlackWebhookURL string `config:"internal_slack_webhook_url" validate:"required"`
 	DisableNotifications    bool   `config:"disable_notifications"`
+
+	// configuration for runners
+	RunnerContainerImageURL string `config:"runner_container_image_url" validate:"required"`
+	RunnerContainerImageTag string `config:"runner_container_image_tag" validate:"required"`
+	RunnerAPIURL            string `config:"runner_api_url" validate:"required"`
 }
 
 func NewConfig() (*Config, error) {

@@ -98,6 +98,16 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 				return
 			}
 
+			// OperationForceDeprovision
+		case sigs.OperationForceDeprovision:
+			op = "force_deprovision"
+			err := w.forceDeprovision(ctx, req.ID, req.SandboxMode)
+			if err != nil {
+				status = "error"
+				l.Error("unable to force deprovision org", zap.Error(err))
+				return
+			}
+
 		// OperationRestart
 		case sigs.OperationRestart:
 			op = "restart"

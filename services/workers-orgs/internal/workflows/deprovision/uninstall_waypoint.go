@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
-	"github.com/powertoolsdev/mono/pkg/kube"
 	"go.temporal.io/sdk/activity"
 	"helm.sh/helm/v3/pkg/release"
+
+	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
+	"github.com/powertoolsdev/mono/pkg/kube"
 )
 
 type UninstallWaypointRequest struct {
@@ -35,7 +36,7 @@ func (a *Activities) UninstallWaypoint(ctx context.Context, req UninstallWaypoin
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
-	kCfg, err := a.getKubeConfig(&req.ClusterInfo)
+	kCfg, err := a.getKubeConfig(ctx, &req.ClusterInfo)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get kube config: %w", err)
 	}

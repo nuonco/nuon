@@ -5,6 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -71,6 +72,27 @@ func (c *Adapter) toAzureSettings(install *app.Install) *installsv1.AzureSetting
 		ServicePrincipalAppId:    install.AzureAccount.ServicePrincipalAppID,
 		ServicePrincipalPassword: install.AzureAccount.ServicePrincipalPassword,
 	}
+}
+
+func (a *Adapter) ToInstallPlanRequest(install *app.Install, runID string) (*planv1.CreatePlanRequest, error) {
+	sandboxSettings, err := a.toSandboxSettings(install)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get sandbox settings: %w", err)
+	}
+
+	return &planv1.CreatePlanRequest{
+		Input: &planv1.CreatePlanRequest_Sandbox{
+			Sandbox: &planv1.SandboxInput{
+				OrgId:           install.OrgID,
+				AppId:           install.AppID,
+				InstallId:       install.ID,
+				RunId:           runID,
+				SandboxSettings: sandboxSettings,
+				AwsSettings:     a.toAWSSettings(install),
+				AzureSettings:   a.toAzureSettings(install),
+			},
+		},
+	}, nil
 }
 
 func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) (*installsv1.ProvisionRequest, error) {
