@@ -80,6 +80,44 @@ func (h *Helpers) GetDependencyGraph(ctx context.Context, appID string) (graph.G
 	return g, a.Components, nil
 }
 
+func (h *Helpers) GetInvertedDependencyGraph(ctx context.Context, appID string) (graph.Graph[string, *app.Component], []app.Component, error) {
+	a := app.App{}
+	res := h.db.WithContext(ctx).
+		Preload("Org").
+		Preload("Components").
+		Preload("Components.Dependencies").
+		Preload("Components.ComponentConfigs").
+		Preload("Components.ComponentConfigs.ComponentBuilds").
+		First(&a, "id = ?", appID)
+	if res.Error != nil {
+		return nil, nil, fmt.Errorf("unable to get app: %w", res.Error)
+	}
+
+	g := graph.New(componentHash,
+		graph.Directed(),
+		graph.PreventCycles(),
+		graph.Rooted(),
+		graph.Acyclic())
+
+	for _, comp := range a.Components {
+		c := &comp
+		if err := g.AddVertex(c); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	for _, comp := range a.Components {
+		for _, dep := range comp.Dependencies {
+			// edge assignment should be dep.ID -> comp.ID in order to BFS search and fetch all dependents of this component
+			if err := g.AddEdge(dep.ID, comp.ID); err != nil {
+				return nil, nil, err
+			}
+		}
+	}
+
+	return g, a.Components, nil
+}
+
 func (h *Helpers) GetGraph(ctx context.Context, appID string) (graph.Graph[string, *app.Component], []string, error) {
 	a := app.App{}
 	res := h.db.WithContext(ctx).
