@@ -23,3 +23,13 @@ datadog:
   dogstatsd:
     useHostPort: true
     port: 8125
+  # TODO(fd): we need a solution to manage these tolerations for runners
+  tolerations:
+    - key: "deployment"
+      operator: "Equal"
+      value: ctl-api-api
+      effect: "NoSchedule"
+    - key: "installation"
+      operator: "Equal"
+      value: "clickhouse-installation"
+      effect: "NoSchedule"
