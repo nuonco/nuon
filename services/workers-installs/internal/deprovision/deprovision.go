@@ -49,7 +49,7 @@ func (w wkflow) deprovisionNoopBuild(ctx workflow.Context, req *installsv1.Depro
 
 	executeWorkflowID := w.executorsWorkflowID(req, "noop-build-execute")
 	_, err = sandbox.Execute(ctx, executeWorkflowID, &executev1.ExecutePlanRequest{
-		Plan: planResp.Plan,
+		Plan: planResp.Ref,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to execute noop-build plan: %w", err)
@@ -70,7 +70,7 @@ func (w wkflow) deprovisionSandbox(ctx workflow.Context, req *installsv1.Deprovi
 
 	executeWorkflowID := w.executorsWorkflowID(req, "deprovision-execute")
 	execResp, err := sandbox.Execute(ctx, executeWorkflowID, &executev1.ExecutePlanRequest{
-		Plan: planResp.Plan,
+		Plan: planResp.Ref,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute plan: %w", err)
