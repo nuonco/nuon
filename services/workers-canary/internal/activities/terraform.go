@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/mitchellh/mapstructure"
 	"go.temporal.io/sdk/activity"
 
@@ -138,10 +137,8 @@ func (a *Activities) runTerraform(ctx context.Context, moduleDir string, req *Ru
 		Output: os.Stderr,
 	})
 
-	runUI := terminal.NonInteractiveUI(ctx)
 	tfRun, err := run.New(a.v,
 		run.WithWorkspace(wkspace),
-		run.WithUI(runUI),
 		run.WithLogger(runLog),
 		run.WithOutputSettings(&run.OutputSettings{
 			Ignore: true,

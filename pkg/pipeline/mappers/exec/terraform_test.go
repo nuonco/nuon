@@ -15,7 +15,6 @@ import (
 
 func TestTerraform(t *testing.T) {
 	l := NewMockhcLog(nil)
-	ui := NewMockui(nil)
 
 	tests := map[string]struct {
 		execFn      func(*gomock.Controller) pipeline.ExecFn
@@ -126,7 +125,7 @@ func TestTerraform(t *testing.T) {
 			mockCtl, ctx := gomock.WithContext(ctx, t)
 
 			execFn := test.execFn(mockCtl)
-			byts, err := execFn(ctx, l, ui)
+			byts, err := execFn(ctx, l)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
