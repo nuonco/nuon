@@ -1,6 +1,7 @@
+import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { GoChevronRight } from "react-icons/go";
-import { Logo, Link, ProfileDropdown } from '@/components'
+import { GoChevronRight } from 'react-icons/go'
+import { Heading, Logo, Link, ProfileDropdown, Text, type TLink } from '@/components'
 
 export const DashboardHeader: FC = () => {
   return (
@@ -32,9 +33,20 @@ export const Dashboard: FC<{ children: React.ReactElement }> = ({
 }
 
 export const DashboardContent: FC<{
-  breadcrumb: Array<string>
+  breadcrumb: Array<TLink>
   children: React.ReactElement
-}> = ({ breadcrumb, children }) => {
+  heading?: React.ReactElement | string
+  headingUnderline?: React.ReactElement | string
+  statues?: React.ReactElement | null
+  meta?: React.ReactElement | null
+}> = ({
+  breadcrumb,
+  children,
+  heading,
+  headingUnderline,
+  statues = null,
+  meta = null,
+}) => {
   return (
     <>
       <header className="flex justify-between items-center border-b px-6 py-4 h-[75px]">
@@ -42,7 +54,7 @@ export const DashboardContent: FC<{
           {breadcrumb.map((crumb, i) => (
             <span key={`breadcrumb-${i}`} className="flex items-center gap-2">
               {i !== 0 ? <GoChevronRight /> : null}
-              <span>{crumb}</span>
+              <Link href={crumb.href}>{crumb.text}</Link>
             </span>
           ))}
         </div>
@@ -52,7 +64,33 @@ export const DashboardContent: FC<{
           </Link>
         </div>
       </header>
-      <main className="overflow-x-auto flex flex-col" style={{ height: 'calc(100% - 75px)'}}>
+      <main
+        className="overflow-x-auto flex flex-col"
+        style={{ height: 'calc(100% - 75px)' }}
+      >
+        {heading && (
+          <header
+            className={classNames(
+              'px-6 pt-8 flex flex-col pt-6 gap-6 border-b',
+              {
+                'pb-8': !Boolean(meta),
+              }
+            )}
+          >
+            <div className="flex items-start justify-between">
+              <hgroup className="flex flex-col gap-2">
+                <Heading>{heading}</Heading>
+                <Text className="font-mono" variant="overline">
+                  {headingUnderline}
+                </Text>
+              </hgroup>
+
+              {statues}
+            </div>
+            {meta}
+          </header>
+        )}
+
         {children}
       </main>
     </>

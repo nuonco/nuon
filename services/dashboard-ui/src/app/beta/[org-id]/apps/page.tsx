@@ -18,7 +18,12 @@ export default async function Apps({ params }) {
   }, [])
 
   return (
-    <DashboardContent breadcrumb={[org.name, 'Apps']}>
+    <DashboardContent
+      breadcrumb={[
+        { href: `/beta/${org.id}`, text: org.name },
+        { href: `/beta/${org.id}/apps`, text: 'Apps' },
+      ]}
+    >
       <section className="px-6 py-8">
         <DataTable
           headers={['ID', 'Name', 'Platform', 'Runner']}
