@@ -1,5 +1,5 @@
 import React, { Suspense, type FC } from 'react'
-import { FaDocker } from 'react-icons/fa'
+import { FaDocker, FaGitAlt, FaGithub } from 'react-icons/fa'
 import { GoQuestion } from 'react-icons/go'
 import {
   SiAwslambda,
@@ -7,7 +7,7 @@ import {
   SiHelm,
   SiTerraform,
 } from 'react-icons/si'
-import { Card, CodeViewer, Heading, Text, VCS } from '@/components'
+import { Card, CodeViewer, Heading, Link, Text, VCS } from '@/components'
 import { getComponentConfig, type IGetComponentConfig } from '@/lib'
 import { TComponentConfig } from '@/types'
 
@@ -289,4 +289,245 @@ export const ComponentConfigJob: FC<{
       ) : null}
     </>
   )
+}
+
+//TODO(nnnnat): Refactor to this component config
+
+export interface IComponentConfiguration {
+  config: TComponentConfig
+}
+
+export const ComponentConfiguration: FC<IComponentConfiguration> = ({
+  config,
+}) => {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap gap-6 items-start justify-start">
+        <span className="flex flex-col gap-2">
+          <Text variant="overline">Version:</Text>
+          <Text variant="caption">{config.version}</Text>
+        </span>
+        {config.terraform_module && <ConfigurationTerraform {...config} />}
+        {config.docker_build && <ConfigurationDocker {...config} />}
+        {config.external_image && <ConfigurationExternalImage {...config} />}
+        {config.helm && <ConfigurationHelm {...config} />}
+        {config.job && <ConfigurationJob {...config} />}
+      </div>
+
+      {config.terraform_module && (
+        <>
+          {Object.keys(config.terraform_module?.variables).length !== 0 && (
+            <ConfigurationVariables
+              variables={config?.terraform_module?.variables}
+            />
+          )}
+          {Object.keys(config.terraform_module?.env_vars).length !== 0 && (
+            <ConfigurationVariables
+              heading="Enviornment variables"
+              variables={config?.terraform_module?.env_vars}
+            />
+          )}
+        </>
+      )}
+
+      {config.docker_build && (
+        <>
+          {config.docker_build?.env_vars &&
+            Object.keys(config.docker_build?.env_vars)?.length !== 0 && (
+              <ConfigurationVariables
+                heading="Enviornnment variables"
+                variables={config?.docker_build?.env_vars}
+              />
+            )}
+          {/* TODO(nnnnat): handle build args? */}
+        </>
+      )}
+
+      {config.job && (
+        <>
+          {config.job?.env_vars &&
+            Object.keys(config.job?.env_vars)?.length !== 0 && (
+              <ConfigurationVariables
+                heading="Enviornnment variables"
+                variables={config?.job?.env_vars}
+              />
+            )}
+          {/* TODO(nnnnat): handle args? */}
+        </>
+      )}
+
+      {config.helm && (
+        <>
+          {config.helm?.values &&
+            Object.keys(config?.helm?.values).length !== 0 && (
+              <ConfigurationVariables
+                heading="Config values"
+                variables={config?.helm?.values}
+              />
+            )}
+        </>
+      )}
+    </div>
+  )
+}
+
+const ConfigurationTerraform: FC<
+  Pick<TComponentConfig, 'terraform_module'>
+> = ({ terraform_module }) => {
+  return (
+    <>
+      <span className="flex flex-col gap-2">
+        <Text variant="overline">Terraform:</Text>
+        <Text variant="caption">{terraform_module.version}</Text>
+      </span>
+
+      <ConfigurationVCS vcs={terraform_module} />
+    </>
+  )
+}
+
+const ConfigurationDocker: FC<Pick<TComponentConfig, 'docker_build'>> = ({
+  docker_build,
+}) => {
+  return (
+    <>
+      <ConfigurationVCS vcs={docker_build} />
+    </>
+  )
+}
+
+const ConfigurationExternalImage: FC<
+  Pick<TComponentConfig, 'external_image'>
+> = ({ external_image }) => {
+  return (
+    <>
+      <span className="flex flex-col gap-2">
+        <Text variant="overline">Image:</Text>
+        <Text className="break-all" variant="caption">
+          {external_image.image_url}
+        </Text>
+      </span>
+
+      <span className="flex flex-col gap-2">
+        <Text variant="overline">Tag:</Text>
+        <Text className="break-all" variant="caption">
+          {external_image.tag}
+        </Text>
+      </span>
+    </>
+  )
+}
+
+const ConfigurationHelm: FC<Pick<TComponentConfig, 'helm'>> = ({ helm }) => {
+  return (
+    <>
+      <ConfigurationVCS vcs={helm} />
+    </>
+  )
+}
+
+const ConfigurationJob: FC<Pick<TComponentConfig, 'job'>> = ({ job }) => {
+  return (
+    <>
+      <span className="flex flex-col gap-2">
+        <Text variant="overline">Image:</Text>
+        <Text className="break-all" variant="caption">
+          {job.image_url}
+        </Text>
+      </span>
+
+      <span className="flex flex-col gap-2">
+        <Text variant="overline">Tag:</Text>
+        <Text className="break-all" variant="caption">
+          {job.tag}
+        </Text>
+      </span>
+
+      <span className="flex flex-col gap-2">
+        <Text variant="overline">Command:</Text>
+        <Text className="break-all font-mono" variant="caption">
+          {job.cmd}
+        </Text>
+      </span>
+    </>
+  )
+}
+
+const ConfigurationVCS: FC<{ vcs: any }> = ({ vcs }) => {
+  const isGithubConnected = Boolean(vcs.connected_github_vcs_config)
+  const repo = vcs.connected_github_vcs_config || vcs.public_git_vcs_config
+
+  return (
+    <>
+      <span className="flex flex-col gap-2">
+        <Text variant="overline">Repository:</Text>
+        <Text variant="caption">
+          <Link
+            href={`https://github.com/${repo?.repo}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {isGithubConnected ? <FaGithub /> : <FaGitAlt />}
+            {repo?.repo}
+          </Link>
+        </Text>
+      </span>
+
+      <span className="flex flex-col gap-2">
+        <Text variant="overline">Directory:</Text>
+        <Text variant="caption">{repo?.directory}</Text>
+      </span>
+
+      <span className="flex flex-col gap-2">
+        <Text variant="overline">Branch:</Text>
+        <Text variant="caption">{repo?.branch}</Text>
+      </span>
+    </>
+  )
+}
+
+const ConfigurationVariables: FC<{
+  heading?: string
+  variables: Record<string, string>
+}> = ({ heading = 'Variables', variables }) => {
+  const variableKeys = Object.keys(variables)
+  const isEmpty = variableKeys.length === 0
+
+  return (
+    !isEmpty && (
+      <div className="rounded-md border shadow-sm">
+        <div className="py-3 px-4">
+          <Text variant="label">{heading}</Text>
+        </div>
+
+        <div className="divide-y">
+          <div className="grid grid-cols-3 gap-4 py-3 px-4">
+            <Text variant="label">Name</Text>
+            <Text variant="label">Value</Text>
+          </div>
+
+          {variableKeys.map((key, i) => (
+            <div
+              key={`${key}-${i}`}
+              className="grid grid-cols-3 gap-4 py-3 px-4"
+            >
+              <Text className="font-mono break-all" variant="caption">
+                {key}
+              </Text>
+              <Text
+                className="font-mono break-all col-span-2"
+                variant="caption"
+              >
+                {variables[key]}
+              </Text>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  )
+}
+
+const ConfigurationArguments: FC<{ args: Array<string> }> = () => {
+  return <>Args</>
 }
