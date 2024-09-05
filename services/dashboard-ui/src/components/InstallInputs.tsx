@@ -20,7 +20,7 @@ export const InstallInputs: FC<IInstallInputs> = ({ inputs }) => {
             {Object.keys(input.values).map((key, i) => (
               <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-2">
                 <Text variant="caption">{key}</Text>
-                <Text className="col-span-2" variant="caption">
+                <Text className="col-span-2 break-all" variant="caption">
                   {input.values[key]}
                 </Text>
               </div>

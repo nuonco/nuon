@@ -26,7 +26,8 @@ export const Status: FC<IStatus> = ({
     status === 'failed' ||
     status === 'error' ||
     status === 'bad' ||
-    status === 'access-error'
+    status === 'access-error' ||
+    status === 'access_error'
   const isNoop = status === 'noop'
 
   return (
