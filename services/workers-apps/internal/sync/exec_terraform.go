@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/services/config"
 	"github.com/powertoolsdev/mono/pkg/terraform/archive/json"
@@ -52,10 +51,8 @@ func (a *Activities) ExecTerraform(ctx context.Context, req *ExecTerraformReques
 		Output: os.Stdout,
 	})
 
-	runUI := terminal.NonInteractiveUI(ctx)
 	tfRun, err := run.New(a.v,
 		run.WithWorkspace(wkspace),
-		run.WithUI(runUI),
 		run.WithLogger(runLog),
 		run.WithOutputSettings(&run.OutputSettings{
 			Ignore: true,
