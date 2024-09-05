@@ -8,7 +8,9 @@ export const ComponentDependencies: FC<IGetComponent> = async (props) => {
   try {
     component = await getComponent(props)
   } catch (error) {
-    return <Text variant="label">Error: Can not find component dependencies</Text>
+    return (
+      <Text variant="label">Error: Can not find component dependencies</Text>
+    )
   }
 
   return (
@@ -36,3 +38,30 @@ export const ComponentDependenciesCard: FC<
     </Suspense>
   </Card>
 )
+
+export interface IComponentDependencies {
+  appComponents: Array<TComponent>
+  dependentIds: Array<string>
+}
+
+// TODO(nnnnat): rename to ComponentDependencies
+export const DependentComponents: FC<IComponentDependencies> = ({
+  appComponents,
+  dependentIds,
+}) => {
+  return (
+    <div className="flex flex-wrap items-center justify-start gap-3">
+      {appComponents
+        .filter((comp) => dependentIds.some((depId) => comp.id === depId))
+        .map((dep, i) => (
+          <Text
+            key={`${dep.id}-${i}`}
+            className="bg-gray-500/10 leading-3  p-2 rounded-lg border w-fit"
+            variant="caption"
+          >
+            {dep.name}
+          </Text>
+        ))}
+    </div>
+  )
+}

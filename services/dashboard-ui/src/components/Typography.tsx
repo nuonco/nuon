@@ -48,7 +48,7 @@ export const Text: FC<IText> = ({
 
   return (
     <span
-      className={classNames('flex flex-wrap items-center gap-1 break-all', {
+      className={classNames('flex flex-wrap items-center gap-1', {
         ['tracking-wider text-[10px] font-semibold uppercase leading-none word-wrap']:
           isStatus,
         ['text-xs tracking-wide leading-none text-gray-600 dark:text-gray-300']:
