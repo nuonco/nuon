@@ -30,7 +30,7 @@ services:
     environment:
       VITE_CLICKHOUSE_URL: http://localhost:8123
       VITE_CLICKHOUSE_USER: ctl-api
-      VITE_CLICKHOUSE_PASSWORD: ctl-api
+      VITE_CLICKHOUSE_PASS: ctl-api
     depends_on:
      - clickhouse
 
@@ -53,7 +53,7 @@ services:
     networks:
       - default
 
-  # NOTE: when connecting to PSQL, set the host as either host.containers.internal (podman) or host.docker.internal 
+  # NOTE: when connecting to PSQL, set the host as either host.containers.internal (podman) or host.docker.internal
   # (docker)
   pgadmin:
     image: dpage/pgadmin4
