@@ -23,7 +23,7 @@ datadog:
   dogstatsd:
     useHostPort: true
     port: 8125
-  agent:
+  agents:
     tolerations:
       # this toleration affects nodes limited to a specific deployment
       # e.g. ctl-api-api and runner node groups
