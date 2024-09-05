@@ -10,13 +10,10 @@ import (
 
 func TestPipeline_AddStep(t *testing.T) {
 	v := validator.New()
-	ui := NewMockui(nil)
 	l := NewMockhcLog(nil)
 
 	t.Run("successfully adds step", func(t *testing.T) {
-		pipe, err := New(v, WithLogger(l),
-			WithUI(ui),
-		)
+		pipe, err := New(v, WithLogger(l))
 		assert.NoError(t, err)
 
 		step := generics.GetFakeObj[*Step]()

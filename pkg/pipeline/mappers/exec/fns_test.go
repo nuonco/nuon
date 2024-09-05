@@ -6,15 +6,10 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	tfjson "github.com/hashicorp/terraform-json"
-	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=fns_mock_test.go -source=fns_test.go -package=exec
-type ui interface {
-	terminal.UI
-}
-
 type hcLog interface {
 	hclog.Logger
 }

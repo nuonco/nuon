@@ -38,7 +38,6 @@ func (p *Platform) execRun(
 	})
 
 	tfRun, err := run.New(p.v, run.WithWorkspace(p.Workspace),
-		run.WithUI(ui),
 		run.WithLogger(runLog),
 		run.WithOutputSettings(&run.OutputSettings{
 			Credentials:    &p.Cfg.Outputs.Auth,
