@@ -31,7 +31,7 @@ func (r DeleteNamespaceRequest) validate() error {
 type DeleteNamespaceResponse struct{}
 
 func (a *Activities) getKubeConfig(info *kube.ClusterInfo) (*rest.Config, error) {
-	kCfg, err := kube.ConfigForCluster(ctx, info)
+	kCfg, err := kube.ConfigForCluster(nil, info)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get config for cluster: %w", err)
 	}
