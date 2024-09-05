@@ -74,7 +74,7 @@ export const AppSandboxVariables: FC<IAppSandboxVariables> = ({
             <Text className="font-mono" variant="caption">
               {key}
             </Text>
-            <Text className="font-mono col-span-2" variant="caption">
+            <Text className="font-mono break-all col-span-2" variant="caption">
               {variables[key]}
             </Text>
           </div>

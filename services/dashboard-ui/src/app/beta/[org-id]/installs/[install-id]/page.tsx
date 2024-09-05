@@ -2,23 +2,52 @@ import {
   AppSandboxConfig,
   AppSandboxVariables,
   Code,
+  DashboardContent,
   Heading,
   InstallHistory,
   InstallInputs,
+  InstallStatus,
+  SubNav,
+  type TLink,
 } from '@/components'
 import { InstallProvider } from '@/context'
-import { getInstall, getInstallEvents } from '@/lib'
+import { getInstall, getInstallEvents, getOrg } from '@/lib'
 
 export default async function Install({ params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const [install, events] = await Promise.all([
+  const subNavLinks: Array<TLink> = [
+    { href: `/beta/${orgId}/installs/${installId}`, text: 'Status' },
+    {
+      href: `/beta/${orgId}/installs/${installId}/components`,
+      text: 'Components',
+    },
+  ]
+
+  const [install, events, org] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallEvents({ installId, orgId }),
+    getOrg({ orgId }),
   ])
 
   return (
-    <InstallProvider initInstall={install}>
+    <DashboardContent
+      breadcrumb={[
+        { href: `/beta/${org.id}`, text: org.name },
+        { href: `/beta/${org.id}/installs`, text: 'Installs' },
+        { href: `/beta/${org.id}/installs/${install.id}`, text: install.name },
+      ]}
+      heading={install.name}
+      headingUnderline={install.id}
+      statues={
+        <div>
+          <InstallProvider initInstall={install}>
+            <InstallStatus />
+          </InstallProvider>
+        </div>
+      }
+      meta={<SubNav links={subNavLinks} />}
+    >
       <div className="flex flex-col lg:flex-row flex-auto">
         <section className="flex-auto flex flex-col gap-4 px-6 py-8 border-r overflow-auto">
           <Heading>History</Heading>
@@ -48,6 +77,6 @@ export default async function Install({ params }) {
           </section>
         </div>
       </div>
-    </InstallProvider>
+    </DashboardContent>
   )
 }
