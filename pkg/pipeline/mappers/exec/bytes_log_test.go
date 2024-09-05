@@ -13,7 +13,6 @@ import (
 
 func Test_execBytesLogFn_exec(t *testing.T) {
 	l := NewMockhcLog(nil)
-	ui := NewMockui(nil)
 	errInit := fmt.Errorf("error init")
 	expectedByts := generics.GetFakeObj[[]byte]()
 
@@ -45,7 +44,7 @@ func Test_execBytesLogFn_exec(t *testing.T) {
 
 			execFn := test.execFn(mockCtl)
 
-			byts, err := execFn(ctx, l, ui)
+			byts, err := execFn(ctx, l)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
@@ -55,5 +54,4 @@ func Test_execBytesLogFn_exec(t *testing.T) {
 			assert.Equal(t, expectedByts, byts)
 		})
 	}
-
 }

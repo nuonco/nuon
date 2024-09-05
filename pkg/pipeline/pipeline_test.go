@@ -6,23 +6,17 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/stretchr/testify/assert"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=pipeline_mock_test.go -source=pipeline_test.go -package=pipeline
-type ui interface {
-	terminal.UI
-}
-
 type hcLog interface {
 	hclog.Logger
 }
 
 func TestNew(t *testing.T) {
 	v := validator.New()
-	ui := NewMockui(nil)
 	l := NewMockhcLog(nil)
 
 	tests := map[string]struct {
@@ -34,29 +28,17 @@ func TestNew(t *testing.T) {
 			optsFn: func() []pipelineOption {
 				return []pipelineOption{
 					WithLogger(l),
-					WithUI(ui),
 				}
 			},
 			assertFn: func(t *testing.T, p *Pipeline) {
 				assert.Equal(t, l, p.Log)
-				assert.Equal(t, ui, p.UI)
 			},
 		},
 		"missing log": {
 			optsFn: func() []pipelineOption {
-				return []pipelineOption{
-					WithUI(ui),
-				}
+				return []pipelineOption{}
 			},
 			errExpected: fmt.Errorf("Log"),
-		},
-		"missing ui": {
-			optsFn: func() []pipelineOption {
-				return []pipelineOption{
-					WithLogger(l),
-				}
-			},
-			errExpected: fmt.Errorf("UI"),
 		},
 	}
 

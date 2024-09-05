@@ -9,7 +9,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,8 +16,8 @@ import (
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=exec_step_mock_test.go -source=exec_step_test.go -package=pipeline
 type testStepFunctions interface {
-	ValidExecFn(context.Context, hclog.Logger, terminal.UI) ([]byte, error)
-	ValidCallbackFn(context.Context, hclog.Logger, terminal.UI, []byte) error
+	ValidExecFn(context.Context, hclog.Logger) ([]byte, error)
+	ValidCallbackFn(context.Context, hclog.Logger, []byte) error
 }
 
 func TestPipeline_execStep(t *testing.T) {
@@ -27,7 +26,6 @@ func TestPipeline_execStep(t *testing.T) {
 	stepName := generics.GetFakeObj[string]()
 
 	v := validator.New()
-	ui := NewMockui(nil)
 	l := hclog.New(&hclog.LoggerOptions{
 		Output: io.Discard,
 		Name:   "exp",
@@ -42,8 +40,8 @@ func TestPipeline_execStep(t *testing.T) {
 		"happy path": {
 			stepFn: func(mockCtl *gomock.Controller, ctx context.Context) *Step {
 				mock := NewMocktestStepFunctions(mockCtl)
-				mock.EXPECT().ValidExecFn(ctx, l, ui).Return(execResp, nil)
-				mock.EXPECT().ValidCallbackFn(ctx, l, ui, execResp).Return(nil)
+				mock.EXPECT().ValidExecFn(ctx, l).Return(execResp, nil)
+				mock.EXPECT().ValidCallbackFn(ctx, l, execResp).Return(nil)
 
 				return &Step{
 					Name:       stepName,
@@ -85,7 +83,7 @@ func TestPipeline_execStep(t *testing.T) {
 		"error on exec fn": {
 			stepFn: func(mockCtl *gomock.Controller, ctx context.Context) *Step {
 				mock := NewMocktestStepFunctions(mockCtl)
-				mock.EXPECT().ValidExecFn(ctx, l, ui).Return(nil, errPipelineRun)
+				mock.EXPECT().ValidExecFn(ctx, l).Return(nil, errPipelineRun)
 
 				return &Step{
 					Name:       stepName,
@@ -98,8 +96,8 @@ func TestPipeline_execStep(t *testing.T) {
 		"error on callback fn": {
 			stepFn: func(mockCtl *gomock.Controller, ctx context.Context) *Step {
 				mock := NewMocktestStepFunctions(mockCtl)
-				mock.EXPECT().ValidExecFn(ctx, l, ui).Return(execResp, nil)
-				mock.EXPECT().ValidCallbackFn(ctx, l, ui, execResp).Return(errPipelineRun)
+				mock.EXPECT().ValidExecFn(ctx, l).Return(execResp, nil)
+				mock.EXPECT().ValidCallbackFn(ctx, l, execResp).Return(errPipelineRun)
 
 				return &Step{
 					Name:       stepName,
@@ -118,7 +116,6 @@ func TestPipeline_execStep(t *testing.T) {
 
 			pipe, err := New(v,
 				WithLogger(l),
-				WithUI(ui),
 			)
 			assert.NoError(t, err)
 
