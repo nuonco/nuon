@@ -75,12 +75,13 @@ oci-artifacts:
     COPY ../../images/certs+certs/cert.pem "$ETCSSL"
     COPY ../../images/aws-iam-authenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 
-    ENTRYPOINT ["/bin/runner"]
-
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
     LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
     LABEL org.opencontainers.image.version=$image_tag
     LABEL org.opencontainers.image.source=$EARTHLY_GIT_ORIGIN_URL
     LABEL org.opencontainers.image.authors=nuon
     LABEL org.opencontainers.image.vendor=nuon
+
+    ENTRYPOINT ["/bin/runner"]
+
     SAVE IMAGE --push --cache-from=$repo:$cache_tag $repo:$image_tag
