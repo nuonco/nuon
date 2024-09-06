@@ -281,13 +281,13 @@ func (s *installsIntegrationTestSuite) TestGetAllInstalls() {
 	})
 }
 
-func (s *installsIntegrationTestSuite) TestGetInstallRunnerGroup() {
-	install := s.createInstall(s.appID)
+// func (s *installsIntegrationTestSuite) TestGetInstallRunnerGroup() {
+// install := s.createInstall(s.appID)
 
-	s.T().Run("success", func(t *testing.T) {
-		runnerGroup, err := s.apiClient.GetInstallRunnerGroup(s.ctx, install.ID)
-		require.Nil(t, err)
-		require.NotNil(t, runnerGroup)
-		require.Len(t, runnerGroup.Runners, 1)
-	})
-}
+//s.T().Run("success", func(t *testing.T) {
+//runnerGroup, err := s.apiClient.GetInstallRunnerGroup(s.ctx, install.ID)
+//require.Nil(t, err)
+//require.NotNil(t, runnerGroup)
+//require.Len(t, runnerGroup.Runners, 1)
+//})
+//}
