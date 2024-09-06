@@ -79,7 +79,7 @@ const ComponentBuildEvent: FC<IComponentBuildEvent> = ({
         </span>
 
         <Text className="flex items-center gap-4 ml-8" variant="overline">
-          <span>{build.id}</span>
+          <span className="truncate text-ellipsis w-16">{build.id}</span>
           <>
             / <span>{build.component_name}</span>
           </>

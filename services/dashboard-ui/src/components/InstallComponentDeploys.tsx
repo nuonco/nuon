@@ -6,10 +6,11 @@ import classNames from 'classnames'
 import React, { type FC, useEffect, useState } from 'react'
 import { GoChevronRight } from 'react-icons/go'
 import { Link, Status, Text, Time } from '@/components'
-import type { TInstallDeploy } from '@/types'
+import type { TComponent, TInstallDeploy } from '@/types'
 import { SHORT_POLL_DURATION, sentanceCase } from '@/utils'
 
 export interface IInstallComponentDeploys {
+  component: TComponent
   installId: string
   installComponentId: string
   initDeploys: Array<TInstallDeploy>
@@ -18,6 +19,7 @@ export interface IInstallComponentDeploys {
 }
 
 export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
+  component,
   installId,
   installComponentId,
   initDeploys,
@@ -29,7 +31,7 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
   useEffect(() => {
     const fetchInstallComponentDeploys = () => {
       fetch(
-        `/api/${orgId}/installs/${installId}/components/${installComponentId}/deploys`
+        `/api/${orgId}/installs/${installId}/components/${component.id}/deploys`
       )
         .then((res) => res.json().then((b) => setInstallComponentDeploys(b)))
         .catch(console.error)
@@ -49,6 +51,7 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
       {deploys.map((deploy, i) => (
         <InstallDeployEvent
           key={`${deploy.id}-${i}`}
+          component={component}
           deploy={deploy}
           installId={installId}
           installComponentId={installComponentId}
@@ -61,6 +64,7 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
 }
 
 interface IInstallDeployEvent {
+  component: TComponent
   deploy: TInstallDeploy
   installId: string
   installComponentId: string
@@ -69,6 +73,7 @@ interface IInstallDeployEvent {
 }
 
 const InstallDeployEvent: FC<IInstallDeployEvent> = ({
+  component,
   deploy,
   installId,
   installComponentId,
@@ -88,9 +93,9 @@ const InstallDeployEvent: FC<IInstallDeployEvent> = ({
         </span>
 
         <Text className="flex items-center gap-4 ml-8" variant="overline">
-          <span>{deploy.id}</span>
+          <span className="truncate text-ellipsis w-16">{deploy.id}</span>
           <>
-            / <span>{deploy.component_name}</span>
+            / <span>{component.name}</span>
           </>
         </Text>
       </div>
