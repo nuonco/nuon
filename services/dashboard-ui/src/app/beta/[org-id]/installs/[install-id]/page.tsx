@@ -1,9 +1,9 @@
 import {
   AppSandboxConfig,
   AppSandboxVariables,
-  Code,
   DashboardContent,
   Heading,
+  InstallCloudPlatformDetails,
   InstallHistory,
   InstallInputs,
   InstallStatus,
@@ -74,6 +74,14 @@ export default async function Install({ params }) {
             <Heading>Current inputs</Heading>
 
             <InstallInputs inputs={install.install_inputs} />
+          </section>
+
+          <section className="flex flex-col gap-6 px-6 py-8">
+            <Heading>Cloud platform</Heading>
+
+            <InstallProvider initInstall={install}>
+              <InstallCloudPlatformDetails />
+            </InstallProvider>
           </section>
         </div>
       </div>

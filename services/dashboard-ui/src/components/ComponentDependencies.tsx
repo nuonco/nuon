@@ -1,7 +1,7 @@
 import React, { Suspense, type FC } from 'react'
-import { Card, Heading, Text } from '@/components'
+import { Card, Heading, Link, Text } from '@/components'
 import { getComponent, type IGetComponent } from '@/lib'
-import type { TComponent } from '@/types'
+import type { TComponent, TInstallComponent } from '@/types'
 
 export const ComponentDependencies: FC<IGetComponent> = async (props) => {
   let component: TComponent
@@ -40,28 +40,56 @@ export const ComponentDependenciesCard: FC<
 )
 
 export interface IComponentDependencies {
-  appComponents: Array<TComponent>
+  appComponents?: Array<TComponent>
+  appId?: string
   dependentIds: Array<string>
+  installComponents?: Array<TInstallComponent>
+  installId?: string
+  orgId: string
 }
 
 // TODO(nnnnat): rename to ComponentDependencies
 export const DependentComponents: FC<IComponentDependencies> = ({
   appComponents,
+  appId,
   dependentIds,
+  installComponents,
+  installId,
+  orgId,
 }) => {
+  const path = appId
+    ? `/beta/${orgId}/apps/${appId}/components`
+    : `/beta/${orgId}/installs/${installId}/components`
+
   return (
     <div className="flex flex-wrap items-center justify-start gap-3">
-      {appComponents
-        .filter((comp) => dependentIds.some((depId) => comp.id === depId))
-        .map((dep, i) => (
-          <Text
-            key={`${dep.id}-${i}`}
-            className="bg-gray-500/10 leading-3  p-2 rounded-lg border w-fit"
-            variant="caption"
-          >
-            {dep.name}
-          </Text>
-        ))}
+      {appComponents &&
+        appComponents
+          .filter((comp) => dependentIds.some((depId) => comp.id === depId))
+          .map((dep, i) => (
+            <Text
+              key={`${dep.id}-${i}`}
+              className="bg-gray-500/10 leading-3  p-2 rounded-lg border w-fit"
+              variant="caption"
+            >
+              <Link href={`${path}/${dep.id}`}>{dep.name}</Link>
+            </Text>
+          ))}
+
+      {installComponents &&
+        installComponents
+          .filter((comp) =>
+            dependentIds.some((depId) => comp.component_id === depId)
+          )
+          .map((dep, i) => (
+            <Text
+              key={`${dep.id}-${i}`}
+              className="bg-gray-500/10 leading-3  p-2 rounded-lg border w-fit"
+              variant="caption"
+            >
+              <Link href={`${path}/${dep.id}`}>{dep.component?.name}</Link>
+            </Text>
+          ))}
     </div>
   )
 }
