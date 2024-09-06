@@ -4,16 +4,15 @@ import {
   DependentComponents,
   Heading,
   InstallComponentDeploys,
-  Link,
 } from '@/components'
 import {
-  getAppComponents,
   getComponent,
   getComponentConfig,
   getInstall,
   getInstallComponent,
   getOrg,
 } from '@/lib'
+import type { TInstallComponent } from '@/types'
 
 export default async function InstallComponent({ params }) {
   const installComponentId = params?.['component-id'] as string
@@ -30,8 +29,7 @@ export default async function InstallComponent({ params }) {
     getOrg({ orgId }),
   ])
 
-  const [appComponents, component, componentConfig] = await Promise.all([
-    getAppComponents({ appId: installComponent?.component?.app_id, orgId }),
+  const [component, componentConfig] = await Promise.all([
     getComponent({ componentId: installComponent.component_id, orgId }),
     getComponentConfig({ componentId: installComponent?.component_id, orgId }),
   ])
@@ -57,14 +55,18 @@ export default async function InstallComponent({ params }) {
               <Heading>Dependencies</Heading>
 
               <DependentComponents
-                appComponents={appComponents}
                 dependentIds={component.dependencies}
+                installComponents={
+                  install?.install_components as Array<TInstallComponent>
+                }
+                installId={installId}
+                orgId={orgId}
               />
             </section>
           )}
 
           <section className="flex flex-col gap-6 px-6 py-8">
-            <Heading>Latest config</Heading>
+            <Heading>Component config</Heading>
 
             <ComponentConfiguration config={componentConfig} />
           </section>
@@ -72,10 +74,12 @@ export default async function InstallComponent({ params }) {
         <section className="flex flex-col gap-4 px-6 py-8 border-l overflow-auto lg:min-w-[500px] lg:max-w-[500px]">
           <Heading>Deploy history</Heading>
           <InstallComponentDeploys
+            component={component}
             initDeploys={installComponent.install_deploys}
             installId={installId}
-            installComponentId={installComponentId}
+            installComponentId={installComponent.id}
             orgId={orgId}
+            shouldPoll
           />
         </section>
       </div>
