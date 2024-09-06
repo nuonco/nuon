@@ -62,13 +62,13 @@ export const ToolTip: FC<IToolTip> = ({
         >
           <div
             className={classNames(
-              'bg-slate-100 dark:bg-slate-900 text-xs p-2 rounded drop-shadow-md'
+              'bg-dark text-light dark:bg-light dark:text-dark text-xs p-2 rounded drop-shadow-md'
             )}
           >
             {tipContent}
           </div>
         </span>
-        <span className="flex items-center gap-2">
+        <span className="flex items-center gap-2 text-xs">
           {children}
           <GoInfo className="text-gray-600 dark:text-gray-400" />
         </span>
