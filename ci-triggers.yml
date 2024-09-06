@@ -62,35 +62,9 @@ artifacts: |
   charts/waypoint:
     - charts/waypoint/**
 
-  bins/waypoint-plugin-exp:
-    - bins/waypoint-plugin-exp/**
-    - pkg/plugins/configs/**
-    - pkg/types/plugins/**
-  bins/waypoint-plugin-helm:
-    - bins/waypoint-plugin-helm/**
-    - pkg/plugins/configs/**
-    - pkg/types/plugins/**
-  bins/waypoint-plugin-noop:
-    - bins/waypoint-plugin-noop/**
-    - pkg/plugins/configs/**
-    - pkg/types/plugins/**
-  bins/waypoint-plugin-oci:
-    - bins/waypoint-plugin-oci/**
-    - pkg/plugins/configs/**
-    - pkg/types/plugins/**
-  bins/waypoint-plugin-oci-sync:
-    - bins/waypoint-plugin-oci-sync/**
-    - pkg/plugins/configs/**
-    - pkg/types/plugins/**
-  bins/waypoint-plugin-terraform:
-    - bins/waypoint-plugin-terraform/**
-    - pkg/terraform/**
-    - pkg/plugins/configs/**
-    - pkg/types/plugins/**
-  bins/waypoint-plugin-job:
-    - bins/waypoint-plugin-job/**
-    - pkg/plugins/configs/**
-    - pkg/types/plugins/**
+  bins/runner:
+    - bins/runner/**
+    - pkg/**
 
   sandboxes/aws-eks:
   - sandboxes/aws-eks/**
