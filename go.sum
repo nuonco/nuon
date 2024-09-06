@@ -2566,6 +2566,8 @@ github.com/networkplumbing/go-nft v0.2.0/go.mod h1:HnnM+tYvlGAsMU7yoYwXEVLLiDW9g
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nuonco/nuon-go v0.31.0 h1:fwdr7JeayC1C75OHl5wmJu0izxY1tGcDJLXQyQxQi0s=
 github.com/nuonco/nuon-go v0.31.0/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
+github.com/nuonco/nuon-go v0.32.0 h1:6sIL/Vb/acBWkvjLxyqSa1tDyzZKc/uksyUWgcsZdEI=
+github.com/nuonco/nuon-go v0.32.0/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
 github.com/nuonco/nuon-runner-go v0.0.0-20240904175942-21a56fd0efd7 h1:BBQzGtqpk5PD1JdLyE1XH5JP/FwMe1v2ZHmkWeeHkGI=
 github.com/nuonco/nuon-runner-go v0.0.0-20240904175942-21a56fd0efd7/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
 github.com/nwaples/rardecode/v2 v2.0.0-beta.2 h1:e3mzJFJs4k83GXBEiTaQ5HgSc/kOK8q0rDaRO0MPaOk=
