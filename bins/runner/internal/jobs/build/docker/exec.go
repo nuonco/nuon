@@ -20,14 +20,14 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	)
 	if err != nil {
 		h.writeErrorResult(ctx, "get build context", err)
-		return fmt.Errorf("unable to get build context", err)
+		return fmt.Errorf("unable to get build context: %w", err)
 	}
 
 	// perform the build
 	err = h.buildWithKaniko(ctx, h.hcLog, dockerfile, contextDir, h.state.cfg.BuildArgs)
 	if err != nil {
 		h.writeErrorResult(ctx, "execute kaniko build", err)
-		return fmt.Errorf("unable to execute job", err)
+		return fmt.Errorf("unable to execute job: %w", err)
 	}
 
 	// copy from the local registry to the destination
