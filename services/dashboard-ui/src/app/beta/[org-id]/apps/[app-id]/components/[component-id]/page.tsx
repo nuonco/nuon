@@ -51,8 +51,10 @@ export default async function AppComponent({ params }) {
               <Heading>Dependencies</Heading>
 
               <DependentComponents
+                appId={appId}
                 appComponents={appComponents}
                 dependentIds={component.dependencies}
+                orgId={orgId}
               />
             </section>
           )}

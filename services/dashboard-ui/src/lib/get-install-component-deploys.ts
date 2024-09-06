@@ -2,18 +2,18 @@ import type { TInstallDeploy } from '@/types'
 import { API_URL, getFetchOpts } from '@/utils'
 
 export interface IGetInstallComponentDeploys {
+  componentId: string
   installId: string
-  installComponentId: string
   orgId: string
 }
 
 export async function getInstallComponentDeploys({
+  componentId,
   installId,
-  installComponentId,
   orgId,
 }: IGetInstallComponentDeploys): Promise<Array<TInstallDeploy>> {
   const res = await fetch(
-    `${API_URL}/v1/installs/${installId}/components/${installComponentId}/deploys`,
+    `${API_URL}/v1/installs/${installId}/components/${componentId}/deploys`,
     await getFetchOpts(orgId)
   )
 
