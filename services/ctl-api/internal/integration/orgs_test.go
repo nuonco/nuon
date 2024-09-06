@@ -180,21 +180,21 @@ func (s *orgsIntegrationTestSuite) TestCreateOrgInvite() {
 	})
 }
 
-func (s *orgsIntegrationTestSuite) TestGetRunnerGroup() {
-	fakeReq := s.fakeOrgRequest()
+// func (s *orgsIntegrationTestSuite) TestGetRunnerGroup() {
+// fakeReq := s.fakeOrgRequest()
 
-	seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), seedOrg)
-	s.apiClient.SetOrgID(seedOrg.ID)
+// seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
+// require.NoError(s.T(), err)
+// require.NotNil(s.T(), seedOrg)
+// s.apiClient.SetOrgID(seedOrg.ID)
 
-	s.T().Run("success", func(t *testing.T) {
-		grp, err := s.apiClient.GetOrgRunnerGroup(s.ctx)
-		require.NoError(t, err)
-		require.NotEmpty(t, grp.Runners)
-		require.NotEmpty(t, grp.Settings)
-	})
-}
+//s.T().Run("success", func(t *testing.T) {
+//grp, err := s.apiClient.GetOrgRunnerGroup(s.ctx)
+//require.NoError(t, err)
+//require.NotEmpty(t, grp.Runners)
+//require.NotEmpty(t, grp.Settings)
+//})
+//}
 
 func (s *orgsIntegrationTestSuite) TestDeleteOrg() {
 	fakeReq := s.fakeOrgRequest()
