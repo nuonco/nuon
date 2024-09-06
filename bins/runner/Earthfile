@@ -6,10 +6,10 @@ WORKDIR /src
 
 ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}-runner
-ARG SERVICE=runner
+ARG BIN=runner
 ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
-ARG PKG_ROOT=github.com/powertoolsdev/mono/services/runner
+ARG PKG_ROOT=github.com/powertoolsdev/mono/bins/runner
 ARG ETCSSL=/etc/ssl/cert.pem
 
 CACHE $GOCACHE
@@ -18,8 +18,8 @@ CACHE $GOMODCACHE
 code:
     FROM ../../.+deps
     COPY ../../pkg+code/pkg pkg
-    COPY --dir . ./services/$SERVICE
-    WORKDIR services/$SERVICE
+    COPY --dir . ./bins/$BIN
+    WORKDIR bins/$BIN
     RUN go generate ./...
 
 test:
@@ -46,8 +46,20 @@ build:
     SAVE ARTIFACT bin/runner /runner
     SAVE IMAGE --push $GHCR_IMAGE:build
 
-docker:
-    FROM ../../images/go-base+alpine-base
+artifacts:
+    FROM +code
+
+    ARG GOOS=linux
+    ARG GOARCH=amd64
+
+    RUN mkdir -p out && \
+      go build -o ./out/$BIN .
+
+    RUN chmod +x ./out/$BIN
+    SAVE ARTIFACT out AS LOCAL ./out
+
+oci-artifacts:
+    FROM bitnami/kaniko:latest
 
     ARG EARTHLY_GIT_ORIGIN_URL
     ARG EARTHLY_GIT_SHORT_HASH
@@ -56,15 +68,14 @@ docker:
     ARG EARTHLY_TARGET_TAG_DOCKER
 
     # These are set to run locally. They _must_ be overridden in CI.
-    ARG repo=$EARTHLY_TARGET_PROJECT_NO_TAG
-    ARG cache_tag=$EARTHLY_TARGET_TAG_DOCKER
-    ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
+    ARG repo=
+    ARG image_tag=
 
-    COPY +build/service /bin/service
+    COPY +build/runner /bin/runner
     COPY ../../images/certs+certs/cert.pem "$ETCSSL"
     COPY ../../images/aws-iam-authenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 
-    ENTRYPOINT ["/bin/service"]
+    ENTRYPOINT ["/bin/runner"]
 
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
     LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
