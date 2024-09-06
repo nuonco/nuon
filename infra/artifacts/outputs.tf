@@ -56,8 +56,9 @@ output "artifacts" {
     "bins/runner" = {
       bucket_prefix  = "runner"
       ecr            = module.runner.all
-      use_promotions = true
+      use_promotions = false
     }
+
     "bins/waypoint-plugin-exp" = {
       bucket_prefix  = "waypoint-plugin-exp"
       ecr            = module.waypoint_plugin_exp.all
