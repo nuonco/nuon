@@ -2,14 +2,14 @@ import '@test/mock-fetch-options'
 import { expect, test } from 'vitest'
 import { getInstallComponentDeploys } from './get-install-component-deploys'
 
-const installComponentId = 'component-id'
+const componentId = 'component-id'
 const installId = 'install-id'
 const orgId = 'org-id'
 
 test('getInstallComponentDeploys should return an array of deploy object', async () => {
   const spec = await getInstallComponentDeploys({
     installId,
-    installComponentId,
+    componentId,
     orgId,
   })
 
@@ -26,7 +26,7 @@ test('getInstallComponentDeploys should throw an error when it can not find any 
   try {
     await getInstallComponentDeploys({
       installId,
-      installComponentId,
+      componentId,
       orgId,
     })
   } catch (error) {

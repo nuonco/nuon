@@ -301,8 +301,8 @@ export const ComponentConfiguration: FC<IComponentConfiguration> = ({
   config,
 }) => {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-6 items-start justify-start">
+    <div className="flex flex-col gap-8">
+      <div className="flex gap-6 items-start justify-start">
         <span className="flex flex-col gap-2">
           <Text variant="overline">Version:</Text>
           <Text variant="caption">{config.version}</Text>
@@ -475,7 +475,7 @@ const ConfigurationVCS: FC<{ vcs: any }> = ({ vcs }) => {
 
       <span className="flex flex-col gap-2">
         <Text variant="overline">Directory:</Text>
-        <Text variant="caption">{repo?.directory}</Text>
+        <Text className="break-all" variant="caption">{repo?.directory}</Text>
       </span>
 
       <span className="flex flex-col gap-2">

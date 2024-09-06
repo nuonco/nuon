@@ -1,4 +1,13 @@
-import { DashboardContent, DataTable, SubNav, type TLink } from '@/components'
+import {
+  ComponentConfigType,
+  DashboardContent,
+  DataTable,
+  Heading,
+  Status,
+  SubNav,
+  Text,
+  type TLink,
+} from '@/components'
 import { getApp, getAppComponents, getOrg } from '@/lib'
 
 export default async function AppComponents({ params }) {
@@ -15,15 +24,21 @@ export default async function AppComponents({ params }) {
   const org = await getOrg({ orgId })
 
   const tableData = components.reduce((acc, component) => {
+    /* eslint react/jsx-key: 0 */
     acc.push([
-      component.id,
-      component.name,
-      component.dependencies?.length || 0,
-      component?.status,
-      component.config_versions,
+      <div className="flex flex-col gap-2">
+        <Heading variant="subheading">{component?.name}</Heading>
+        <Text variant="caption">{component.id}</Text>
+      </div>,
+      <Text variant="caption">
+        <ComponentConfigType componentId={component.id} orgId={orgId} />
+      </Text>,
+      <Text variant="caption">{component.dependencies?.length || 0}</Text>,
+      <Status status={component?.status} />,
+      <Text variant="caption">{component.config_versions}</Text>,
       `/beta/${orgId}/apps/${appId}/components/${component.id}`,
     ])
-
+    /* eslint react/jsx-key: 1 */
     return acc
   }, [])
 
@@ -40,7 +55,7 @@ export default async function AppComponents({ params }) {
     >
       <section className="px-6 py-8">
         <DataTable
-          headers={['ID', 'Name', 'Dependencies', 'Build', 'Config']}
+          headers={['Name', 'Type', 'Dependencies', 'Build', 'Config']}
           initData={tableData}
         />
       </section>
