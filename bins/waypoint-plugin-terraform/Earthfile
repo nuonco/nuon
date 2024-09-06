@@ -40,6 +40,7 @@ artifacts:
 
 oci-artifacts:
     FROM public.ecr.aws/p7e3r5y0/waypoint-odr-base:$ODR_VERSION
+
     RUN apk add --no-cache \
       libc6-compat \
       build-base \
