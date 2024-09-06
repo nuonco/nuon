@@ -78,7 +78,7 @@ services:
       - 7233:7233
       - 8233:8233
     volumes:
-      - /var/:/tmp/temporalite
+      - /var/:/tmp/temporalcli
     networks:
       - default
 

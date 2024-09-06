@@ -4,7 +4,7 @@ FROM alpine:latest as builder
 RUN mkdir -p /go/bin && \
   apk add --no-cache curl
 
-# Download and extract Temporalite
+# Download and extract temporal cli
 ARG TARGETPLATFORM
 ARG TARGETARCH
 RUN echo "building for ${TARGETPLATFORM}_${TARGETARCH}" && \
