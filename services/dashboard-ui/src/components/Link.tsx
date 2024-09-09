@@ -12,7 +12,7 @@ export const Link: FC<ILink> = ({ className, children, href, ...props }) => {
   return (
     <NextLink
       className={classNames(
-        'flex flex-initial items-center w-fit gap-1 text-fuchsia-700 hover:text-fuchsia-600 focus:text-fuchsia-600 active:text-fuchsia-800 dark:text-fuchsia-500 dark:hover:text-fuchsia-400 dark:focus:text-fuchsia-400 dark:active:text-fuchsia-600',
+        'flex flex-initial items-center w-fit gap-1 text-primary-700 hover:text-primary-600 focus:text-primary-600 active:text-primary-800 dark:text-primary-500 dark:hover:text-primary-400 dark:focus:text-primary-400 dark:active:text-primary-600',
         { [`${className}`]: Boolean(className) }
       )}
       href={href}
