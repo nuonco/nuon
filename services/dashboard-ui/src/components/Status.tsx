@@ -37,10 +37,11 @@ export const Status: FC<IStatus> = ({
       ) : null}
       <span
         className={classNames('flex gap-0 items-center', {
-          'text-green-700 dark:text-green-500': isActive,
-          'text-red-600 dark:text-red-500': isError,
-          'text-gray-600 dark:text-gray-300': isNoop,
-          'text-yellow-600 dark:text-yellow-500': !isActive && !isError,
+          'text-green-800 dark:text-green-500': isActive,
+          'text-red-800 dark:text-red-500': isError,
+          'text-cool-grey-600 dark:text-cool-grey-500': isNoop,
+          'text-orange-800 dark:text-orange-500':
+            !isActive && !isError && !isNoop,
         })}
       >
         <GoDotFill className="text-lg" />
