@@ -35,6 +35,10 @@ func (a *Activities) getInstallComponent(ctx context.Context, installID, compone
 			ComponentID: componentID,
 		}).
 		First(&installComponent)
+	if res.Error == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
 	}
