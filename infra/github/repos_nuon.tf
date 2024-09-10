@@ -328,23 +328,3 @@ module "nuon-examples" {
     github = github.nuon
   }
 }
-
-module "nuon-clickhouse-go" {
-  source = "./modules/repository"
-
-  name                     = "clickhouse-go"
-  description              = "nuon.co's clickhouse-go fork."
-  required_checks          = []
-  is_public                = true
-  enable_branch_protection = false
-  is_fork                  = true
-  owning_team_id           = github_team.nuon.id
-  owning_team_name         = "nuonco/${github_team.nuon.name}"
-
-  collaborators = {
-  }
-
-  providers = {
-    github = github.nuon
-  }
-}
