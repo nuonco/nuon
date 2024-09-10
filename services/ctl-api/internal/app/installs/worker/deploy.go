@@ -34,6 +34,11 @@ func (w *Workflows) anyDependencyInActive(ctx workflow.Context, install app.Inst
 			InstallID:   installDeploy.InstallComponent.InstallID,
 			ComponentID: dep.ID,
 		})
+
+		if depCmp == nil {
+			continue
+		}
+
 		if err != nil {
 			return "", fmt.Errorf("unable to get installComponent: %w", err)
 		}
