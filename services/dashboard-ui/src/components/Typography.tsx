@@ -18,10 +18,10 @@ export const Heading: FC<IHeading> = ({
   return (
     <span
       aria-level={level}
-      className={classNames('flex flex-wrap gap-1 items-center word-wrap', {
-        'text-xl font-bold': variant === 'heading',
+      className={classNames('font-sans flex flex-wrap gap-1 items-center word-wrap', {
+        'text-base font-semibold leading-normal': variant === 'heading',
         'text-base font-semibold': variant === 'subheading',
-        'text-5xl font-semibold': variant === 'title',
+        'text-xl font-semibold leading-loose tracking-normal': variant === 'title',
         'text-3xl font-bold': variant === 'subtitle',
         [`${className}`]: Boolean(className),
       })}
@@ -48,13 +48,14 @@ export const Text: FC<IText> = ({
 
   return (
     <span
-      className={classNames('flex flex-wrap items-center gap-1', {
-        ['tracking-wider text-[10px] font-semibold uppercase leading-none word-wrap']:
+      className={classNames('font-sans flex flex-wrap items-center gap-1', {
+        ['text-base leading-tight tracking-wide font-normal']: variant === "base",
+        ['tracking-wide text-sm font-semibold uppercase leading-none word-wrap']:
           isStatus,
-        ['text-xs tracking-wide leading-none text-gray-600 dark:text-gray-300']:
+        ['text-sm tracking-wide leading-none text-gray-600 dark:text-gray-300']:
           isOverline,
-        ['text-xs font-semibold']: isLabel,
-        'text-xs': variant === 'caption',
+        ['text-sm font-semibold']: isLabel,
+        'text-sm': variant === 'caption',
         [`${className}`]: Boolean(className),
       })}
       role="paragraph"
@@ -75,7 +76,7 @@ export const Code: FC<ICode> = ({
   variant = 'default',
 }) => {
   const classes = classNames(
-    'text-xs p-4 bg-gray-800 text-gray-100 font-mono break-all flex flex-col rounded shadow-sm min-h-[3rem] max-h-[40rem] max-w-5xl overflow-auto',
+    'text-sm p-4 bg-gray-800 text-gray-100 font-mono break-all flex flex-col rounded shadow-sm min-h-[3rem] max-h-[40rem] max-w-5xl overflow-auto',
     {
       'p-1 leading-3 min-h-min w-full overflow-x-scroll': variant === 'inline',
       [`${className}`]: Boolean(className),
