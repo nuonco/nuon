@@ -2,9 +2,11 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type FetchUntornInstallDeploysRequest struct {
@@ -20,14 +22,22 @@ func (a *Activities) FetchUntornInstallDeploys(ctx context.Context, req FetchUnt
 		// can still optimize here with a preload of latest deploy
 		First(&install, "id = ?", req.InstallID)
 
+	untornCmpIDs := make([]string, 0)
+
+	if res.Error == gorm.ErrRecordNotFound {
+		return untornCmpIDs, nil
+	}
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
 
-	untornCmpIDs := make([]string, 0)
 	for _, installCmp := range install.InstallComponents {
 
 		latestDeploy, err := a.getLatestDeploy(ctx, req.InstallID, installCmp.ComponentID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			continue
+		}
+	
 		if err != nil {
 			return nil, fmt.Errorf("unable to get latest deploy: %w", err)
 		}
