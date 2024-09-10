@@ -25,7 +25,7 @@ export const Logs: FC<ILogs> = ({ logs }) => {
                         line = (
                           <span
                             key={`${l?.line?.msg}-${i}`}
-                            className="block text-xs"
+                            className="block text-sm"
                           >
                             {l?.line?.msg}
                           </span>
@@ -38,7 +38,7 @@ export const Logs: FC<ILogs> = ({ logs }) => {
                         line = (
                           <span
                             key={`${l?.raw?.data}-${i}`}
-                            className="block text-xs"
+                            className="block text-sm"
                           >
                             {atob(l?.raw?.data)}
                           </span>
@@ -49,7 +49,7 @@ export const Logs: FC<ILogs> = ({ logs }) => {
                         line = (
                           <span
                             key={`${l?.step?.msg}-${i}`}
-                            className="block text-xs"
+                            className="block text-sm"
                           >
                             {l?.step?.msg}
                           </span>
@@ -61,7 +61,7 @@ export const Logs: FC<ILogs> = ({ logs }) => {
                         line = (
                           <span
                             key={`${l?.status?.msg}-${i}`}
-                            className="block text-xs"
+                            className="block text-sm"
                           >
                             {l?.status?.msg}
                           </span>

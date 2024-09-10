@@ -138,13 +138,32 @@ const config: Config = {
         950: '#3E3D41',
       },
     },
-    // fontSize: {
-    //   xs: '8px',
-    //   sm: '12px',
-    //   base: '14px',
-    //   lg: '16px',
-    //   xl: '18px',
-    // },
+    fontFamily: {
+      sans: ['var(--font-geist-sans)'],
+      mono: ['var(--font-geist-mono)'],
+    },
+    fontSize: {
+      xs: '8px',
+      sm: '12px',
+      base: '14px',
+      lg: '16px',
+      xl: '18px',
+    },
+    fontWeight: {
+      normal: '400',
+      medium: '500',
+      semibold: '600',
+    },
+    letterSpacing: {
+      normal: '0',
+      wide: '0.02em',
+    },
+    lineHeight: {
+      tight: '12px',
+      normal: '16px',
+      relaxed: '20px',
+      loose: '24px',
+    },
     extend: {
       gridAutoRows: {
         auto: '1fr',

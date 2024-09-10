@@ -17,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      className="bg-light text-slate-950 dark:bg-dark dark:text-slate-50"
+      className="bg-light text-cool-grey-950 dark:bg-dark dark:text-cool-grey-50"
       lang="en"
     >
       {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
@@ -29,7 +29,7 @@ export default function RootLayout({
         </>
       ) : null}
       <UserProvider>
-        <body className={`${GeistMono.className} ${GeistSans.className}`}>
+        <body className={`${GeistMono.variable} ${GeistSans.variable} font-sans`}>
           {children}
           {process?.env?.NEXT_PUBLIC_POSTHOG_TOKEN && <InitPosthogAnalytics />}
         </body>
