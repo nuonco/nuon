@@ -159,7 +159,7 @@ export const OrgSummary: FC<IOrgSummary> = () => {
 
   return (
     <div className="flex gap-4 items-center justify-start">
-      <span className="flex items-center justify-center p-2 rounded bg-gray-600/20 w-[40px] h-[40px] font-light">
+      <span className="flex items-center justify-center p-2 rounded bg-gray-600/20 w-[40px] h-[40px] font-light font-sans">
         {initialsFromString(name)}
       </span>
 
@@ -210,10 +210,10 @@ export const OrgsNav: FC<IOrgsNav> = ({ orgs }) => {
             key={org.id}
             href={`/beta/${org.id}/apps`}
           >
-            <span className="flex items-center justify-center p-2 rounded bg-gray-600/20 w-[30px] h-[30px] font-light text-sm text-gray-950 dark:text-gray-50">
+            <span className="flex items-center justify-center p-2 rounded bg-gray-600/20 w-[30px] h-[30px] font-sans font-light text-sm text-gray-950 dark:text-gray-50">
               {initialsFromString(org.name)}
             </span>
-            <span className="text-sm">{org.name}</span>
+            <Text>{org.name}</Text>
           </Link>
         ))}
       </nav>
