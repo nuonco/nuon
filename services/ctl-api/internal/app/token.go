@@ -29,7 +29,7 @@ type Token struct {
 
 	AccountID string `json:"account_id"`
 
-	Token     string    `gorm:"uniqueIndex;default null;notnull" json:"-"`
+	Token     string    `gorm:"unique" json:"-"`
 	TokenType TokenType `json:"token_type"`
 
 	// claim data
