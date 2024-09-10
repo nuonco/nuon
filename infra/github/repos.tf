@@ -38,4 +38,3 @@ module "waypoint" {
   description = "Our internal fork of hashicorp/waypoint."
   topics      = ["terraform"]
 }
-
