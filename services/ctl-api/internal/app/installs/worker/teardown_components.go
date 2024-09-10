@@ -1,11 +1,13 @@
 package worker
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -16,8 +18,17 @@ func (w *Workflows) shouldTeardownInstallComponent(ctx workflow.Context, install
 		InstallID:   installID,
 		ComponentID: compID,
 	})
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+
 	if err != nil {
 		return false, fmt.Errorf("unable to get install component: %w", err)
+	}
+
+	if installComponent == nil {
+		return false, nil
 	}
 
 	if len(installComponent.InstallDeploys) < 1 {
