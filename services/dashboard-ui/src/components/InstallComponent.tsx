@@ -69,7 +69,7 @@ export const InstallComponent: FC = () => {
         )}
       </span>
       <Link
-        className="text-xs"
+        className="text-sm"
         href={`/dashboard/${org_id}/${install_id}/components/${id}`}
       >
         Details
@@ -157,7 +157,7 @@ export const InstallDeploys: FC = () => {
             )}{' '}
           </Text>
           <Link
-            className="text-xs"
+            className="text-sm"
             href={`/dashboard/${d['org_id']}/${install.id}/components/${d.install_component_id}/deploys/${d.id}`}
           >
             Details
