@@ -3,9 +3,10 @@ package app
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type MigrationStatus string
@@ -22,7 +23,7 @@ type Migration struct {
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
-	Name   string          `json:"name" gorm:"not null;default null;index:idx_migration_name,unique"`
+	Name   string          `json:"name" gorm:"unique"`
 	Status MigrationStatus `json:"status" gorm:"not null;default null"`
 }
 
