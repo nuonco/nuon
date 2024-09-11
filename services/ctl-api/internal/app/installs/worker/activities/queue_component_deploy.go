@@ -36,7 +36,7 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 	}).First(&installCmp)
 
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install component: %w", err)
+		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
 	}
 
 	installDeploy := app.InstallDeploy{
@@ -52,10 +52,6 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 	res = a.db.WithContext(ctx).Create(&installDeploy)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install deploy: %w", res.Error)
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("unable to create install deploy: %w", err)
 	}
 
 	if req.Signal {
