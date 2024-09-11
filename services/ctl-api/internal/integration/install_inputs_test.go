@@ -92,7 +92,7 @@ func (s *installInputsSuite) TestGetInstallInputs() {
 		inputs, err := s.apiClient.GetInstallInputs(s.ctx, s.installID)
 		require.NoError(t, err)
 		require.NotEmpty(t, inputs)
-		require.NotEmpty(t, inputs[0].Values)
+		require.NotEmpty(t, inputs[0].RedactedValues)
 	})
 
 	s.T().Run("invalid install", func(t *testing.T) {
@@ -122,7 +122,7 @@ func (s *installInputsSuite) TestGetInstallCurrentInputs() {
 		inputs, err := s.apiClient.GetInstallCurrentInputs(s.ctx, s.installID)
 		require.NoError(t, err)
 		require.NotEmpty(t, inputs)
-		require.NotEmpty(t, inputs.Values)
+		require.NotEmpty(t, inputs.RedactedValues)
 	})
 
 	s.T().Run("invalid install", func(t *testing.T) {

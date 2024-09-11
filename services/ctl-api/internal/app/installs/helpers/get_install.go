@@ -16,7 +16,7 @@ func (h *Helpers) GetInstall(ctx context.Context, installID string) (*app.Instal
 		Preload("AppSandboxConfig").
 		Preload("AppRunnerConfig").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs.created_at DESC")
+			return db.Order("install_inputs_view_v1.created_at DESC")
 		}).
 		Preload("App").
 		Preload("App.Org").
@@ -26,5 +26,4 @@ func (h *Helpers) GetInstall(ctx context.Context, installID string) (*app.Instal
 	}
 
 	return &install, nil
-
 }
