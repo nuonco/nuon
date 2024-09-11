@@ -12,7 +12,7 @@ type GetRequest struct {
 }
 
 // @await-gen
-// @execution-timeout 5s
+// @schedule-to-close-timeout 5s
 func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.Runner, error) {
 	runner, err := a.getRunner(ctx, req.RunnerID)
 	if err != nil {
