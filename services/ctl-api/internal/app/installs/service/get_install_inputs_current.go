@@ -25,18 +25,22 @@ import (
 // @Success		200				{object}	app.InstallInputs
 // @Router			/v1/installs/{install_id}/inputs/current [GET]
 func (s *service) GetInstallCurrentInputs(ctx *gin.Context) {
+	// return a complex type with the configuration "metadata" for each input value
 	appID := ctx.Param("install_id")
 
+	// load install inputs
 	installInputs, err := s.getInstallInputs(ctx, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install inputs: %w", err))
 		return
+
 	}
 
+	// if no inputs, exit early
 	if len(installInputs) < 1 {
 		ctx.Error(fmt.Errorf("no inputs found for install: %w", gorm.ErrRecordNotFound))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, installInputs[0])
+	ctx.JSON(http.StatusOK, installInputs)
 }

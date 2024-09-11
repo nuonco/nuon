@@ -108,5 +108,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "063-drop-org-id-requirements",
 			Fn:   a.migration063RoleDropOrgIDRequirements,
 		},
+		{
+			Name: "066-install-inputs-view-v1",
+			Fn:   a.migration066InstallInputsViewV1,
+		},
 	}
 }
