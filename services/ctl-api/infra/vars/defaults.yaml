@@ -6,8 +6,8 @@ region: us-west-2
 pool: nuon
 rds:
   engine: postgres
-  engine_version: "14.10"
-  family: "postgres14"
+  engine_version: "16.10"
+  family: "postgres16"
   parameters:
     - name: max_connections
       # we limit each api and worker process to 10 connections at a time. This means we have head room to scale this up
