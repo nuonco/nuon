@@ -102,7 +102,7 @@ func NewRunnerID() string {
 	return shortid.NewNanoID("run")
 }
 
-func NewLogID() string {
+func NewOtelLogID() string {
 	return shortid.NewNanoID("log")
 }
 
