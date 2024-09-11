@@ -20,12 +20,21 @@ type InstallInputs struct {
 	OrgID       string                `json:"org_id" gorm:"notnull;default null"`
 	Org         Org                   `json:"-" faker:"-"`
 
-	InstallID string        `json:"install_id" gorm:"notnull;default null"`
-	Install   Install       `json:"-"`
-	Values    pgtype.Hstore `json:"values" gorm:"type:hstore" swaggertype:"object,string"`
+	InstallID      string        `json:"install_id" gorm:"notnull;default null"`
+	Install        Install       `json:"-"`
+	Values         pgtype.Hstore `json:"-"      temporaljson:"values"  gorm:"type:hstore" swaggertype:"object,string"`
+	ValuesRedacted pgtype.Hstore `json:"values" temporaljson:"-values" gorm:"type:hstore" swaggertype:"object,string"`
 
 	AppInputConfigID string         `json:"app_input_config_id"`
 	AppInputConfig   AppInputConfig `json:"-"`
+}
+
+func (i *InstallInputs) UseView() bool {
+	return true
+}
+
+func (i *InstallInputs) ViewVersion() string {
+	return "v1"
 }
 
 func (a *InstallInputs) BeforeCreate(tx *gorm.DB) error {
