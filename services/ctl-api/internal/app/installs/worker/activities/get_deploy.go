@@ -21,7 +21,7 @@ func (a *Activities) GetDeploy(ctx context.Context, req GetDeployRequest) (*app.
 		Preload("InstallComponent").
 		Preload("InstallComponent.Install").
 		Preload("InstallComponent.Install.InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs.created_at DESC")
+			return db.Order("install_inputs_view_v1.created_at DESC")
 		}).
 		Preload("InstallComponent.Install.InstallInputs.AppInputConfig").
 		Preload("InstallComponent.Install.InstallInputs").
