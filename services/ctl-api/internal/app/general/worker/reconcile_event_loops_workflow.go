@@ -19,7 +19,7 @@ const (
 )
 
 func (w *Workflows) startReconcileEventLoopsWorkflowCron(ctx workflow.Context, req activities.EnsureEventLoopsRequest) {
-	workflowId := "reconcile-event-loops"
+	workflowId := "reconcile-event-loops-cron"
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowID:            workflowId,
 		CronSchedule:          reconcileWorkflowCronTab,
