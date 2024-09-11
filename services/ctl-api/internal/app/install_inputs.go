@@ -23,7 +23,7 @@ type InstallInputs struct {
 	InstallID      string        `json:"install_id" gorm:"notnull;default null"`
 	Install        Install       `json:"-"`
 	Values         pgtype.Hstore `json:"-"      temporaljson:"values"  gorm:"type:hstore" swaggertype:"object,string"`
-	ValuesRedacted pgtype.Hstore `json:"values" temporaljson:"-values" gorm:"type:hstore;-:migration" swaggertype:"object,string"`
+	ValuesRedacted pgtype.Hstore `json:"redacted_values" temporaljson:"redacted_values" gorm:"type:hstore;->;-:migration" swaggertype:"object,string"`
 
 	AppInputConfigID string         `json:"app_input_config_id"`
 	AppInputConfig   AppInputConfig `json:"-"`

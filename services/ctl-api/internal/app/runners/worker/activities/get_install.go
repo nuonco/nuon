@@ -30,7 +30,7 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig.AWSDelegationConfig").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs.created_at DESC")
+			return db.Order("install_inputs_view_v1.created_at DESC")
 		}).
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_sandbox_runs.created_at DESC")
