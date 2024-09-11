@@ -39,9 +39,11 @@ type BaseFn struct {
 //
 // TODO(sdboyer) expand this to mirror all the options Temporal actually exposes
 type GenOptions struct {
-	Timeout    time.Duration
-	MaxRetries int
-	ById       *types.Var
+	ScheduleToCloseTimeout time.Duration
+	StartToCloseTimeout    time.Duration
+	MaxRetries             int
+	ById                   *types.Var
+	OptionsCallback        string
 }
 
 func main() {

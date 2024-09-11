@@ -11,7 +11,7 @@ type SaveRunnerJobPlanRequest struct {
 }
 
 // @await-gen
-// @execution-timeout 5s
+// @schedule-to-close-timeout 5s
 func (a *Activities) SaveRunnerJobPlan(ctx context.Context, req *SaveRunnerJobPlanRequest) error {
 	ctx, err := a.helpers.ContextFromJob(ctx, req.JobID)
 	if err != nil {

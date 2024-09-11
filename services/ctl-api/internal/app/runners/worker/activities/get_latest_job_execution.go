@@ -22,7 +22,7 @@ type GetLatestJobExecutionResponse struct {
 }
 
 // @await-gen
-// @execution-timeout 5s
+// @schedule-to-close-timeout 5s
 func (a *Activities) GetLatestJobExecution(ctx context.Context, req GetLatestJobExecutionRequest) (*GetLatestJobExecutionResponse, error) {
 	jobExecution, err := a.getLatestJobExecution(ctx, req.JobID, req.AvailableAt)
 	if err != nil {

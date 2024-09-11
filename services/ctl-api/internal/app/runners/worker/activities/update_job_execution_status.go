@@ -15,7 +15,7 @@ type UpdateJobExecutionStatusRequest struct {
 }
 
 // @await-gen
-// @execution-timeout 5s
+// @schedule-to-close-timeout 5s
 func (a *Activities) UpdateJobExecutionStatus(ctx context.Context, req UpdateJobExecutionStatusRequest) error {
 	runner := app.RunnerJobExecution{
 		ID: req.JobExecutionID,
