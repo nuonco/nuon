@@ -2,10 +2,7 @@ package activities
 
 import (
 	"context"
-	"errors"
 	"fmt"
-
-	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
@@ -22,7 +19,6 @@ type CreateInstallDeployRequest struct {
 // @await-gen
 func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallDeployRequest) (*app.InstallDeploy, error) {
 	// create deploy
-	installCmp := app.InstallComponent{}
 	deployTyp := app.InstallDeployTypeInstall
 	if req.Teardown {
 		deployTyp = app.InstallDeployTypeTeardown
@@ -33,25 +29,31 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		return nil, err
 	}
 
-	deploy := app.InstallDeploy{
-		CreatedByID:       install.CreatedByID,
-		OrgID:             install.OrgID,
-		Status:            "queued",
-		StatusDescription: "waiting to be deployed to install",
-		ComponentBuildID:  req.BuildID,
-		Type:              deployTyp,
-	}
-	err = a.db.WithContext(ctx).Where(&app.InstallComponent{
+	installCmp := app.InstallComponent{}
+	res := a.db.WithContext(ctx).Where(&app.InstallComponent{
 		InstallID:   req.InstallID,
 		ComponentID: req.ComponentID,
-	}).First(&installCmp).
-		Association("InstallDeploys").
-		Append(&deploy)
+	}).First(&installCmp)
 
-	// install was deleted, or no longer exists
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("no install component found: %w", err)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get install component: %w", err)
 	}
+
+	installDeploy := app.InstallDeploy{
+		InstallComponentID: installCmp.ID,
+		CreatedByID:        install.CreatedByID,
+		OrgID:              install.OrgID,
+		Status:             "queued",
+		StatusDescription:  "waiting to be deployed to install",
+		ComponentBuildID:   req.BuildID,
+		Type:               deployTyp,
+	}
+
+	res = a.db.WithContext(ctx).Create(&installDeploy)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create install deploy: %w", res.Error)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to create install deploy: %w", err)
 	}
@@ -59,9 +61,9 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 	if req.Signal {
 		a.evClient.Send(ctx, install.ID, &signals.Signal{
 			Type:     signals.OperationDeploy,
-			DeployID: deploy.ID,
+			DeployID: installDeploy.ID,
 		})
 	}
 
-	return &deploy, nil
+	return &installDeploy, nil
 }
