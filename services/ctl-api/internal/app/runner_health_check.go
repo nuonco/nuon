@@ -32,3 +32,15 @@ func (r *RunnerHealthCheck) BeforeCreate(tx *gorm.DB) error {
 
 	return nil
 }
+
+func (r RunnerHealthCheck) GetTableOptions() (string, bool) {
+	return "", true
+}
+
+func (r RunnerHealthCheck) MigrateDB(tx *gorm.DB) *gorm.DB {
+	opts, hasOpts := r.GetTableOptions()
+	if !hasOpts {
+		return tx
+	}
+	return tx.Set("gorm:table_options", opts)
+}
