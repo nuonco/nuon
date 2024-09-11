@@ -13,6 +13,7 @@ import (
 type Service struct {
 	cfg     *internal.Config
 	db      *gorm.DB
+	chDB    *gorm.DB
 	tclient temporalclient.Client
 }
 
@@ -47,6 +48,7 @@ type Params struct {
 
 	Cfg     *internal.Config
 	DB      *gorm.DB `name:"psql"`
+	CHDB    *gorm.DB `name:"ch"`
 	TClient temporalclient.Client
 }
 
@@ -54,6 +56,7 @@ func New(params Params) (*Service, error) {
 	return &Service{
 		cfg:     params.Cfg,
 		db:      params.DB,
+		chDB:    params.CHDB,
 		tclient: params.TClient,
 	}, nil
 }
