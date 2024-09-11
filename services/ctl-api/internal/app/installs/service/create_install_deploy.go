@@ -100,21 +100,26 @@ func (s *service) createInstallDeploy(ctx context.Context, installID string, req
 	}
 
 	// create deploy
-	installCmp := app.InstallComponent{
+	var installCmp app.InstallComponent
+	res = s.db.WithContext(ctx).Where(app.InstallComponent{
 		InstallID:   installID,
 		ComponentID: build.ComponentConfigConnection.ComponentID,
+	}).First(&installCmp)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create install component: %w", res.Error)
 	}
+
 	deploy := app.InstallDeploy{
-		Status:            "queued",
-		StatusDescription: "waiting to be deployed to install",
-		ComponentBuildID:  req.BuildID,
-		Type:              app.InstallDeployTypeInstall,
+		Status:             "queued",
+		StatusDescription:  "waiting to be deployed to install",
+		ComponentBuildID:   req.BuildID,
+		InstallComponentID: installCmp.ID,
+		Type:               app.InstallDeployTypeInstall,
 	}
-	err := s.db.WithContext(ctx).First(&installCmp, "install_id = ?", installID).
-		Association("InstallDeploys").
-		Append(&deploy)
-	if err != nil {
-		return nil, fmt.Errorf("unable to add install deploy: %w", err)
+
+	res = s.db.WithContext(ctx).Create(&deploy)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create install deploy: %w", res.Error)
 	}
 
 	return &deploy, nil
