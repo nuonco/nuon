@@ -42,5 +42,5 @@ func (s *service) GetInstallCurrentInputs(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, installInputs)
+	ctx.JSON(http.StatusOK, installInputs[0])
 }
