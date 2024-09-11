@@ -48,7 +48,7 @@ func namespacesToReconcile() []string {
 }
 
 // @await-gen
-// @execution-timeout 60s
+// @schedule-to-close-timeout 60s
 func (a *Activities) EnsureEventLoop(ctx context.Context, req EnsureEventLoopsRequest) ([]EnsureEventLoopsResponse, error) {
 	// this Method fetches the row count for all the db tables whose rows' event loops we're going to check
 
@@ -119,7 +119,7 @@ With this result in hand, we then fetch the object IDs and query the status of e
 */
 
 // @await-gen
-// @execution-timeout 60s
+// @schedule-to-close-timeout 60s
 func (a *Activities) EnsureEventLoopPage(ctx context.Context, req EnsureEventLoopsPageRequest) (int, error) {
 	ids, err := a.GetWorkflowIds(ctx, req)
 	if err != nil {
@@ -181,7 +181,7 @@ func (a *Activities) EnsureEventLoopPage(ctx context.Context, req EnsureEventLoo
 }
 
 // @await-gen
-// @execution-timeout 60s
+// @schedule-to-close-timeout 60s
 func (a *Activities) SendReconcileSignal(ctx context.Context, req EnsureEventLoopsRequest) error {
 	a.evClient.Send(ctx, signals.EventLoop, &signals.Signal{Type: signals.OperationReconcile})
 	return nil
