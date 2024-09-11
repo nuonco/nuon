@@ -26,11 +26,9 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, installID string) err
 		}
 
 		if install.App.Status == "active" {
+			w.writeInstallEvent(ctx, installID, signals.OperationPollDependencies, app.OperationStatusFinished)
 			return nil
 		}
 		workflow.Sleep(ctx, defaultPollTimeout)
 	}
-
-	w.writeInstallEvent(ctx, installID, signals.OperationPollDependencies, app.OperationStatusFinished)
-	return nil
 }
