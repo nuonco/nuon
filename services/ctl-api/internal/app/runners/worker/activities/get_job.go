@@ -21,7 +21,7 @@ func (a *Activities) GetJob(ctx context.Context, req GetJobRequest) (*app.Runner
 }
 
 // @await-gen
-// @execution-timeout 5s
+// @schedule-to-close-timeout 5s
 func (a *Activities) getRunnerJob(ctx context.Context, jobID string) (*app.RunnerJob, error) {
 	runnerJob := app.RunnerJob{}
 	res := a.db.WithContext(ctx).

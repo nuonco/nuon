@@ -13,7 +13,7 @@ type CreateAccountRequest struct {
 }
 
 // @await-gen
-// @execution-timeout 5s
+// @schedule-to-close-timeout 5s
 func (a *Activities) CreateAccount(ctx context.Context, req CreateAccountRequest) (*app.Account, error) {
 	acct, err := a.authzClient.CreateServiceAccount(ctx, req.RunnerID)
 	if err != nil {

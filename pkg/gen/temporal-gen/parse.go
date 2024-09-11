@@ -129,11 +129,17 @@ func extractGenOptions(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Pack
 			}
 		case 3:
 			switch parts[1] {
-			case "@execution-timeout":
+			case "@schedule-to-close-timeout":
 				var err error
-				ret.Timeout, err = time.ParseDuration(parts[2])
+				ret.ScheduleToCloseTimeout, err = time.ParseDuration(parts[2])
 				if err != nil {
 					return nil, withPos(fset, com.Pos(), fmt.Errorf("@execution-timeout must be a valid Go duration string per https://pkg.go.dev/time#ParseDuration, got %q", parts[2]))
+				}
+			case "@start-to-close-timeout":
+				var err error
+				ret.StartToCloseTimeout, err = time.ParseDuration(parts[2])
+				if err != nil {
+					return nil, withPos(fset, com.Pos(), fmt.Errorf("@start-to-close-timeout must be a valid Go duration string per https://pkg.go.dev/time#ParseDuration, got %q", parts[2]))
 				}
 			case "@max-retries":
 				var err error
@@ -141,6 +147,8 @@ func extractGenOptions(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Pack
 				if err != nil {
 					return nil, withPos(fset, com.Pos(), fmt.Errorf("@max-retries must be a valid Go duration string, got %q", parts[2]))
 				}
+			case "@options-callback":
+				ret.OptionsCallback = parts[2]
 			case "@by-id":
 				var reqt *types.Struct
 				var ok bool
