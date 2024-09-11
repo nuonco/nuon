@@ -12,7 +12,7 @@ type GetJobStatusRequest struct {
 }
 
 // @await-gen
-// @execution-timeout 5s
+// @schedule-to-close-timeout 5s
 func (a *Activities) GetJobStatus(ctx context.Context, req GetJobRequest) (app.RunnerJobStatus, error) {
 	job, err := a.getRunnerJob(ctx, req.JobID)
 	if err != nil {
