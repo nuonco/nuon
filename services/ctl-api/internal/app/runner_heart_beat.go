@@ -35,7 +35,7 @@ func (r *RunnerHeartBeat) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (r RunnerHeartBeat) GetTableOptions() (string, bool) {
-	return "", true
+	return "ORDER BY (created_at)", true
 }
 
 func (r RunnerHeartBeat) MigrateDB(tx *gorm.DB) *gorm.DB {
