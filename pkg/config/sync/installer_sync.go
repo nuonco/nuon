@@ -89,7 +89,7 @@ func (s *sync) createInstallerRequest(appIDs []string) *models.ServiceCreateInst
 		Name:   generics.ToPtr(s.cfg.Installer.Name),
 		Metadata: &models.ServiceCreateInstallerRequestMetadata{
 			CommunityURL:        generics.ToPtr(s.cfg.Installer.CommunityURL),
-			CopyrightMarkdown:   s.cfg.Installer.FooterMarkdown,
+			CopyrightMarkdown:   s.cfg.Installer.CopyrightMarkdown,
 			DemoURL:             s.cfg.Installer.DemoURL,
 			Description:         generics.ToPtr(s.cfg.Installer.Description),
 			DocumentationURL:    generics.ToPtr(s.cfg.Installer.DocumentationURL),
@@ -110,7 +110,7 @@ func (s *sync) updateInstallerRequest(appIDs []string) *models.ServiceUpdateInst
 		Name:   &s.cfg.Installer.Name,
 		Metadata: &models.ServiceUpdateInstallerRequestMetadata{
 			CommunityURL:        generics.ToPtr(s.cfg.Installer.CommunityURL),
-			CopyrightMarkdown:   s.cfg.Installer.FooterMarkdown,
+			CopyrightMarkdown:   s.cfg.Installer.CopyrightMarkdown,
 			DemoURL:             s.cfg.Installer.DemoURL,
 			Description:         generics.ToPtr(s.cfg.Installer.Description),
 			DocumentationURL:    generics.ToPtr(s.cfg.Installer.DocumentationURL),
