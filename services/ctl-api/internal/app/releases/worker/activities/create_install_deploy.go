@@ -2,7 +2,6 @@ package activities
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -61,34 +60,39 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		}
 	}
 
-	// create deploy
 	installCmp := app.InstallComponent{}
-	deploy := app.InstallDeploy{
-		CreatedByID:            step.CreatedByID,
+	res = a.db.WithContext(ctx).Where(&app.InstallComponent{
+		InstallID:   req.InstallID,
+		ComponentID: componentID,
+	}).First(&installCmp)
+
+	if res.Error != nil {
+		return fmt.Errorf("unable to get install component: %w", res.Error)
+	}
+
+	installDeploy := app.InstallDeploy{
+		InstallComponentID:     installCmp.ID,
+		CreatedByID:            install.CreatedByID,
+		OrgID:                  install.OrgID,
 		Status:                 "queued",
 		StatusDescription:      "waiting to be deployed to install",
 		ComponentBuildID:       step.ComponentRelease.ComponentBuildID,
 		ComponentReleaseStepID: generics.ToPtr(req.ReleaseStepID),
 		Type:                   app.InstallDeployTypeRelease,
 	}
-	err := a.db.WithContext(ctx).Where(&app.InstallComponent{
-		InstallID:   req.InstallID,
-		ComponentID: componentID,
-	}).First(&installCmp).
-		Association("InstallDeploys").
-		Append(&deploy)
 
-	// install was deleted, or no longer exists
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return fmt.Errorf("no install component found: %w", err)
+	res = a.db.WithContext(ctx).Create(&installDeploy)
+	if res.Error != nil {
+		return fmt.Errorf("unable to create install deploy: %w", res.Error)
 	}
-	if err != nil {
-		return fmt.Errorf("unable to create install deploy: %w", err)
+
+	if res.Error != nil {
+		return fmt.Errorf("unable to create install deploy: %w", res.Error)
 	}
 
 	a.evClient.Send(ctx, install.ID, &signals.Signal{
 		Type:     signals.OperationDeploy,
-		DeployID: deploy.ID,
+		DeployID: installDeploy.ID,
 	})
 	return nil
 }
