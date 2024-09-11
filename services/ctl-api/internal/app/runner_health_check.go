@@ -34,12 +34,13 @@ func (r *RunnerHealthCheck) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (r RunnerHealthCheck) GetTableOptions() (string, bool) {
-	return "", true
+	return "ORDER BY (created_at)", true
 }
 
 func (r RunnerHealthCheck) MigrateDB(tx *gorm.DB) *gorm.DB {
 	opts, hasOpts := r.GetTableOptions()
 	if !hasOpts {
+
 		return tx
 	}
 	return tx.Set("gorm:table_options", opts)
