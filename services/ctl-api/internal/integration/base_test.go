@@ -240,3 +240,6 @@ func (s *baseIntegrationTestSuite) deleteOrg(orgID string) {
 	err := s.intAPIClient.DeleteOrg(s.ctx, orgID)
 	require.NoError(s.T(), err)
 }
+
+func (s *baseIntegrationTestSuite) fakeOtelWriteLogs(runnerID string) {
+}
