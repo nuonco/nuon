@@ -2,7 +2,6 @@ package worker
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 
 	"go.temporal.io/sdk/workflow"
@@ -51,7 +50,6 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			w.mw.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
 		}()
 
-		fmt.Printf("Handling Event: %v\n", signal.SignalType())
 		switch signal.SignalType() {
 		case signals.OperationCreated:
 			op = "created"

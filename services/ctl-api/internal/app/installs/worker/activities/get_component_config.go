@@ -24,7 +24,7 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetComponentCon
 		Preload("InstallComponent.Install.AWSAccount").
 		Preload("InstallComponent.Install.AzureAccount").
 		Preload("InstallComponent.Install.InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs.created_at DESC")
+			return db.Order("install_inputs_view_v1.created_at DESC")
 		}).
 		Preload("InstallComponent.Install.InstallInputs.AppInputConfig").
 		Preload("InstallComponent.Install.InstallInputs.AppInputConfig.AppInputs").

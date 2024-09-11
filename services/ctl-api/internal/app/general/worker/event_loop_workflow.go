@@ -13,7 +13,6 @@ import (
 )
 
 func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest) error {
-
 	defaultTags := map[string]string{"sandbox_mode": "false"}
 	w.mw.Incr(ctx, "event_loop.start", metrics.ToTags(defaultTags, "op", "started")...)
 
@@ -50,7 +49,6 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 
 		switch signal.SignalType() {
 		case signals.OperationCreated:
-			w.logger.Info("Operation Created: Handling")
 			op = "created"
 			err := w.created(ctx)
 			if err != nil {
@@ -60,8 +58,6 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			}
 
 		case signals.OperationReconcile:
-			// TODO(fd): update to use zap structured logging (add op)
-			w.logger.Info("Operation Reconcile: Handling")
 			op = "reconcile"
 			err := w.reconcile(ctx)
 			if err != nil {
@@ -71,7 +67,6 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			}
 
 		case signals.OperationRestart:
-			w.logger.Info("Operation Restart: Handling")
 			op = "restart"
 			err := w.restart(ctx)
 			if err != nil {

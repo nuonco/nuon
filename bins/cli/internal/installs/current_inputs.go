@@ -27,7 +27,7 @@ func (s *Service) CurrentInputs(ctx context.Context, installID string, asJSON bo
 
 	for _, inp := range inputs {
 		data := [][]string{}
-		for k, v := range inp.Values {
+		for k, v := range inp.RedactedValues {
 			data = append(data, []string{k, v})
 		}
 		pterm.Println("")
