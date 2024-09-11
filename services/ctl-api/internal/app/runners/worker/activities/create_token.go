@@ -21,7 +21,7 @@ type CreateTokenResponse struct {
 }
 
 // @await-gen
-// @execution-timeout 5s
+// @schedule-to-close-timeout 5s
 func (a *Activities) CreateToken(ctx context.Context, req CreateTokenRequest) (*CreateTokenResponse, error) {
 	email := account.ServiceAccountEmail(req.RunnerID)
 

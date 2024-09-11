@@ -12,7 +12,7 @@ type GetRunnerStatusRequest struct {
 }
 
 // @await-gen
-// @execution-timeout 5s
+// @schedule-to-close-timeout 5s
 func (a *Activities) GetRunnerStatus(ctx context.Context, req GetRunnerStatusRequest) (app.RunnerStatus, error) {
 	// NOTE(jm): remove this once the runner health checks are added
 	return app.RunnerStatusActive, nil

@@ -14,7 +14,7 @@ type DeleteRequest struct {
 }
 
 // @await-gen
-// @execution-timeout 5s
+// @schedule-to-close-timeout 5s
 func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 	res := a.db.WithContext(ctx).
 		Select(clause.Associations).

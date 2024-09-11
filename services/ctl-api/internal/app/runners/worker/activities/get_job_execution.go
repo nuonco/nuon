@@ -12,7 +12,7 @@ type GetJobExecutionRequest struct {
 }
 
 // @await-gen
-// @execution-timeout 5s
+// @schedule-to-close-timeout 5s
 func (a *Activities) GetJobExecution(ctx context.Context, req GetJobExecutionRequest) (*app.RunnerJobExecution, error) {
 	job, err := a.getRunnerJobExecution(ctx, req.JobExecutionID)
 	if err != nil {
