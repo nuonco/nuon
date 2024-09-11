@@ -1,31 +1,60 @@
 package health
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"go.temporal.io/sdk/client"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 func (s *Service) GetLivezHandler(ctx *gin.Context) {
-	// NOTE: didn't find a ping command with gorm. For now will try fetching from org.
-	org := app.Org{}
-	dbRes := s.db.WithContext(ctx).First(&org)
-	if dbRes.Error != nil {
-		ctx.Error(fmt.Errorf("unable to query database: %w", dbRes.Error))
+	// ping psql
+	sqlDB, err := s.db.DB()
+	if err != nil {
+		ctx.Error(stderr.ErrSystem{
+			Err:         err,
+			Description: "unable to get psql connection",
+		})
+		return
+	}
+	if err := sqlDB.PingContext(ctx); err != nil {
+		ctx.Error(stderr.ErrSystem{
+			Err:         err,
+			Description: "unable to ping psql db",
+		})
 		return
 	}
 
-	_, err := s.tclient.CheckHealth(ctx, &client.CheckHealthRequest{})
+	// ping ch
+	chDB, err := s.chDB.DB()
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to check temporal health: %w", err))
+		ctx.Error(stderr.ErrSystem{
+			Err:         err,
+			Description: "unable to get clickhouse connection",
+		})
+		return
+	}
+	if err := chDB.PingContext(ctx); err != nil {
+		ctx.Error(stderr.ErrSystem{
+			Err:         err,
+			Description: "unable to ping clickhouse db",
+		})
+		return
+	}
+
+	// ping temporal
+	_, err = s.tclient.CheckHealth(ctx, &client.CheckHealthRequest{})
+	if err != nil {
+		ctx.Error(stderr.ErrSystem{
+			Err:         err,
+			Description: "unable to check temporal health",
+		})
 		return
 	}
 
 	ctx.JSON(http.StatusOK, map[string]interface{}{
 		"status": "ok",
 	})
-
 }

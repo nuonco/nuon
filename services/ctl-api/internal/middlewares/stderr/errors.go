@@ -33,3 +33,12 @@ type ErrResponse struct {
 	UserError   bool   `json:"user_error"`
 	Description string `json:"description"`
 }
+
+type ErrSystem struct {
+	Err         error
+	Description string
+}
+
+func (e ErrSystem) Error() string {
+	return e.Err.Error()
+}

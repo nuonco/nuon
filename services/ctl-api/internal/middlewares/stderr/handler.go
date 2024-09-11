@@ -8,9 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/powertoolsdev/mono/pkg/config"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/pkg/config"
 )
 
 type middleware struct {
@@ -58,6 +59,16 @@ func (m *middleware) Handler() gin.HandlerFunc {
 				Error:       err.Error(),
 				UserError:   true,
 				Description: authnErr.Description,
+			})
+			return
+		}
+
+		var sysErr ErrSystem
+		if errors.As(err, &sysErr) {
+			c.JSON(http.StatusInternalServerError, ErrResponse{
+				Error:       err.Error(),
+				UserError:   false,
+				Description: sysErr.Description,
 			})
 			return
 		}
