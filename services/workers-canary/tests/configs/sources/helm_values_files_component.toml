@@ -1,4 +1,4 @@
-name = "toml_helm"
+name = "toml_helm_value_files"
 type = "helm_chart"
 chart_name = "e2e-helm"
 
