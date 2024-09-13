@@ -13,7 +13,7 @@ type GetComponentConfigRequest struct {
 	DeployID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @by-id DeployID
 func (a *Activities) GetComponentConfig(ctx context.Context, req GetComponentConfigRequest) (*componentsv1.Component, error) {
 	// NOTE(jm): we have to load a TON of stuff here, but most of this complexity comes from the fact that the VCS

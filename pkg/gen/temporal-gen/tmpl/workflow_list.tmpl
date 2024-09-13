@@ -1,0 +1,10 @@
+// ListWorkflowFns returns a slice of function refs to the methods of [{{ .Receiver }}] for which temporal-gen generated a workflow wrapper function.
+//
+// This list is intended to be passed passing to the Temporal registration function [go.temporal.io/sdk/worker.{{ .TemporalVerb }}Registry.RegisterWorkflow].
+func ({{ .ReceiverLit }}) ListWorkflowFns() []any {
+    return []any{
+    {{- range $name := .BaseFnNames }}
+        {{ $.ReceiverVar}}.{{$name}},
+    {{- end }}
+    }
+}

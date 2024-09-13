@@ -1,7 +1,11 @@
 package worker
 
-import "go.temporal.io/sdk/workflow"
+import (
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	"go.temporal.io/sdk/workflow"
+)
 
-func (w *Workflows) created(ctx workflow.Context, runnerID string) error {
+// @temporal-gen workflow
+func (w *Workflows) Created(ctx workflow.Context, sreq signals.RequestSignal) error {
 	return nil
 }

@@ -11,7 +11,7 @@ type GetRequest struct {
 	ReleaseID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @by-id ReleaseID
 func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.ComponentRelease, error) {
 	release := app.ComponentRelease{}

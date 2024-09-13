@@ -15,7 +15,7 @@ type UpdateDeployStatusRequest struct {
 	StatusDescription string                  `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) UpdateDeployStatus(ctx context.Context, req UpdateDeployStatusRequest) error {
 	install := app.InstallDeploy{
 		ID: req.DeployID,

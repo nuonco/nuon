@@ -13,7 +13,7 @@ type CreateDeployJobRequest struct {
 	Type     app.RunnerJobType
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) CreateDeployJob(ctx context.Context, req *CreateDeployJobRequest) (*app.RunnerJob, error) {
 	job, err := a.runnersHelpers.CreateDeployJob(ctx, req.RunnerID, req.Type, req.Op)
 	if err != nil {

@@ -37,6 +37,11 @@ type Signal struct {
 	JobID string
 }
 
+type RequestSignal struct {
+	*Signal
+	eventloop.EventLoopRequest
+}
+
 var _ eventloop.Signal = (*Signal)(nil)
 
 func (s *Signal) Validate(v *validator.Validate) error {

@@ -11,7 +11,12 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func (w *Workflows) deployComponents(ctx workflow.Context, installID string, sandboxMode, async bool) error {
+// @temporal-gen workflow
+// @execution-timeout 60m
+// @task-timeout 30m
+func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestSignal) error {
+	installID := sreq.ID
+
 	w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusStarted)
 
 	l := workflow.GetLogger(ctx)
@@ -44,7 +49,7 @@ func (w *Workflows) deployComponents(ctx workflow.Context, installID string, san
 			InstallID:   installID,
 			ComponentID: componentID,
 			BuildID:     componentBuild.ID,
-			Signal:      async,
+			Signal:      sreq.Async,
 		})
 		if err != nil {
 			w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
@@ -54,13 +59,15 @@ func (w *Workflows) deployComponents(ctx workflow.Context, installID string, san
 		deploys = append(deploys, installDeploy)
 	}
 
-	if async {
+	if sreq.Async {
 		return nil
 	}
 
 	for _, installDeploy := range deploys {
 		// NOTE(jm): we make a best effort to deploy all components
-		if err := w.deploy(ctx, installID, installDeploy.ID, sandboxMode); err != nil {
+		sreq.Type = signals.OperationDeploy
+		sreq.DeployID = installDeploy.ID
+		if err := w.Deploy(ctx, sreq); err != nil {
 			l.Error("unable to deploy component", zap.Error(err))
 
 			// (rb) stop iterating after first error
@@ -69,6 +76,7 @@ func (w *Workflows) deployComponents(ctx workflow.Context, installID string, san
 		}
 	}
 
+	// TODO(sdboyer): is this status unreachable if deployComponents is called with async?
 	w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFinished)
 	return nil
 }

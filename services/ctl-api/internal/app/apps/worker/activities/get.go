@@ -13,7 +13,7 @@ type GetRequest struct {
 	AppID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @by-id AppID
 func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.App, error) {
 	currentApp := app.App{}
