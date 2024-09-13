@@ -8,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 )
 
@@ -48,25 +49,28 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, appID string
 	return nil
 }
 
-func (w *Workflows) deprovision(ctx workflow.Context, appID string, sandboxMode bool) error {
-	w.updateStatus(ctx, appID, app.AppStatusActive, "polling for installs and components to be deprovisioned")
-	if err := w.pollChildrenDeprovisioned(ctx, appID); err != nil {
+// @temporal-gen workflow
+// @execution-timeout 30m
+// @task-timeout 15m
+func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal) error {
+	w.updateStatus(ctx, sreq.ID, app.AppStatusActive, "polling for installs and components to be deprovisioned")
+	if err := w.pollChildrenDeprovisioned(ctx, sreq.ID); err != nil {
 		return err
 	}
 
 	// update status
-	w.updateStatus(ctx, appID, app.AppStatusDeprovisioning, "deleting app resources")
+	w.updateStatus(ctx, sreq.ID, app.AppStatusDeprovisioning, "deleting app resources")
 
-	currentApp, err := activities.AwaitGetByAppID(ctx, appID)
+	currentApp, err := activities.AwaitGetByAppID(ctx, sreq.ID)
 	if err != nil {
-		w.updateStatus(ctx, appID, app.AppStatusError, "unable to get app from database")
+		w.updateStatus(ctx, sreq.ID, app.AppStatusError, "unable to get app from database")
 		return fmt.Errorf("unable to get app from database: %w", err)
 	}
 
 	// NOTE(jm): this will be removed once the runner is in prod and all orgs are
 	// migrated.
 	if currentApp.Org.OrgType != app.OrgTypeV2 {
-		if err := w.deprovisionLegacy(ctx, currentApp.OrgID, appID, sandboxMode); err != nil {
+		if err := w.deprovisionLegacy(ctx, currentApp.OrgID, sreq.ID, sreq.SandboxMode); err != nil {
 			return fmt.Errorf("unable to perform legacy org deprovision: %w", err)
 		}
 
@@ -76,16 +80,16 @@ func (w *Workflows) deprovision(ctx workflow.Context, appID string, sandboxMode 
 	var repoProvisionResp executors.DeprovisionECRRepositoryResponse
 	repoProvisionReq := &executors.DeprovisionECRRepositoryRequest{
 		OrgID: currentApp.OrgID,
-		AppID: appID,
+		AppID: sreq.ID,
 	}
-	if err := w.execChildWorkflow(ctx, appID, executors.DeprovisionECRRepositoryWorkflowName, sandboxMode, repoProvisionReq, &repoProvisionResp); err != nil {
-		w.updateStatus(ctx, appID, app.AppStatusError, "unable to provision ECR repository")
+	if err := w.execChildWorkflow(ctx, sreq.ID, executors.DeprovisionECRRepositoryWorkflowName, sreq.SandboxMode, repoProvisionReq, &repoProvisionResp); err != nil {
+		w.updateStatus(ctx, sreq.ID, app.AppStatusError, "unable to provision ECR repository")
 		return fmt.Errorf("unable to provision ECR repository: %w", err)
 	}
 
 	// update status with response
-	if err := activities.AwaitDeleteByAppID(ctx, appID); err != nil {
-		w.updateStatus(ctx, appID, app.AppStatusError, "unable to delete app")
+	if err := activities.AwaitDeleteByAppID(ctx, sreq.ID); err != nil {
+		w.updateStatus(ctx, sreq.ID, app.AppStatusError, "unable to delete app")
 		return fmt.Errorf("unable to delete app: %w", err)
 	}
 

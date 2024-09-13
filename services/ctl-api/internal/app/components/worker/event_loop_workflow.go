@@ -48,53 +48,58 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			w.mw.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
 		}()
 
+		sreq := signals.RequestSignal{
+			Signal:           &signal,
+			EventLoopRequest: req,
+		}
+
 		switch signal.SignalType() {
 		case signals.OperationPollDependencies:
 			op = "poll_dependencies"
-			if err := w.pollDependencies(ctx, req.ID); err != nil {
+			if err := w.AwaitPollDependencies(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to poll app status for readiness: %w", zap.Error(err))
 			}
 		case signals.OperationProvision:
 			op = "provision"
-			if err := w.provision(ctx, req.ID); err != nil {
+			if err := w.AwaitProvision(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to provision: %w", zap.Error(err))
 			}
 		case signals.OperationCreated:
 			op = "created"
-			if err := w.created(ctx, req.ID); err != nil {
+			if err := w.AwaitCreated(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to create component: %w", zap.Error(err))
 			}
 		case signals.OperationQueueBuild:
 			op = "queue_build"
-			if err := w.queueBuild(ctx, req.ID); err != nil {
+			if err := w.AwaitQueueBuild(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to handle queue build: %w", zap.Error(err))
 			}
 		case signals.OperationConfigCreated:
 			op = "config_created"
-			if err := w.queueBuild(ctx, req.ID); err != nil {
+			if err := w.AwaitQueueBuild(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to handle config created signal: %w", zap.Error(err))
 			}
 		case signals.OperationBuild:
 			op = "build"
-			if err := w.build(ctx, req.ID, signal.BuildID, req.SandboxMode); err != nil {
+			if err := w.AwaitBuild(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to build component: %w", zap.Error(err))
 			}
 		case signals.OperationDelete:
 			op = "delete"
-			if err := w.delete(ctx, req.ID, req.SandboxMode); err != nil {
+			if err := w.AwaitDelete(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to delete component: %w", zap.Error(err))
 			}
 			finished = true
 		case signals.OperationRestart:
 			op = "restarted"
-			if err := w.restarted(ctx, req.ID); err != nil {
+			if err := w.AwaitRestarted(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to restart component: %w", zap.Error(err))
 			}

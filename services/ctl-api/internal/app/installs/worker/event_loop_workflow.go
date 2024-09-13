@@ -47,11 +47,16 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			w.mw.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
 		}()
 
+		sreq := signals.RequestSignal{
+			Signal:           &signal,
+			EventLoopRequest: req,
+		}
+
 		var err error
 		switch signal.SignalType() {
 		case signals.OperationCreated:
 			op = "created"
-			err = w.created(ctx, req.ID)
+			err = w.AwaitCreated(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to handle created signal", zap.Error(err))
@@ -59,15 +64,15 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			}
 		case signals.OperationPollDependencies:
 			op = "poll_dependencies"
-			err = w.pollDependencies(ctx, req.ID)
+			err = w.AwaitPollDependencies(ctx, sreq)
 			if err != nil {
 				status = "error"
-				l.Error("unable to poll dependencies", zap.Error(err))
+				l.Error("unable to handle created signal", zap.Error(err))
 				return
 			}
 		case signals.OperationProvision:
 			op = "provision"
-			err = w.provision(ctx, req.ID, req.SandboxMode)
+			err = w.AwaitProvision(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to provision", zap.Error(err))
@@ -75,7 +80,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			}
 		case signals.OperationReprovision:
 			op = "reprovision"
-			err = w.reprovision(ctx, req.ID, req.SandboxMode)
+			err = w.AwaitReprovision(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to reprovision", zap.Error(err))
@@ -83,7 +88,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			}
 		case signals.OperationDelete:
 			op = "delete"
-			err = w.delete(ctx, req.ID, req.SandboxMode)
+			err = w.AwaitDelete(ctx, sreq)
 			if err != nil {
 				status = "delete"
 				l.Error("unable to delete", zap.Error(err))
@@ -92,7 +97,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			finished = true
 		case signals.OperationDeprovision:
 			op = "deprovision"
-			err = w.deprovision(ctx, req.ID, req.SandboxMode)
+			err = w.AwaitDeprovision(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to deprovision", zap.Error(err))
@@ -100,14 +105,14 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			}
 		case signals.OperationForgotten:
 			op = "forgotten"
-			err = w.forget(ctx, req.ID)
+			err = w.AwaitForget(ctx, sreq)
 			if err != nil {
 				l.Error("unable to forget", zap.Error(err))
 			}
 			finished = true
 		case signals.OperationDeployComponents:
 			op = "deploy_components"
-			err = w.deployComponents(ctx, req.ID, req.SandboxMode, signal.Async)
+			err = w.AwaitDeployComponents(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to queue deploys for components", zap.Error(err))
@@ -115,7 +120,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			}
 		case signals.OperationTeardownComponents:
 			op = "teardown_components"
-			err = w.teardownComponents(ctx, req.ID, req.SandboxMode, signal.Async)
+			err = w.AwaitTeardownComponents(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to queue teardown deploys for components", zap.Error(err))
@@ -123,7 +128,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			}
 		case signals.OperationDeploy:
 			op = "deploy"
-			err = w.deploy(ctx, req.ID, signal.DeployID, req.SandboxMode)
+			err = w.AwaitDeploy(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to deploy", zap.Error(err))

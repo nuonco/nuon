@@ -12,7 +12,7 @@ type DeleteRequest struct {
 	OrgID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @by-id OrgID
 func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 	// delete apps

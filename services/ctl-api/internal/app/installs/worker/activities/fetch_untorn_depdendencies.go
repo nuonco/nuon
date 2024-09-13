@@ -12,7 +12,7 @@ type FetchUntornDependenciesRequest struct {
 	InstallID       string `json:"install_id"`
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) FetchUntornDependencies(ctx context.Context, req FetchUntornDependenciesRequest) ([]string, error) {
 	install, err := a.getInstall(ctx, req.InstallID)
 	if err != nil {

@@ -14,7 +14,7 @@ type UpdateHealthCheckStatusRequest struct {
 	StatusDescription string                   `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) UpdateHealthCheckStatus(ctx context.Context, req UpdateHealthCheckStatusRequest) error {
 	org := app.OrgHealthCheck{
 		ID: req.OrgHealthCheckID,

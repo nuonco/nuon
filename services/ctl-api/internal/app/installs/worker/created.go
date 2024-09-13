@@ -5,11 +5,17 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
-func (w *Workflows) created(ctx workflow.Context, installID string) error {
+// @temporal-gen workflow
+// @execution-timeout 1m
+// @task-timeout 30s
+func (w *Workflows) Created(ctx workflow.Context, sreq signals.RequestSignal) error {
+	installID := sreq.ID
+
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)

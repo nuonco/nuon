@@ -13,7 +13,7 @@ type GetLatestDeployRequest struct {
 	InstallID   string `json:"install_id"`
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) GetLatestDeploy(ctx context.Context, req GetLatestDeployRequest) (*app.InstallDeploy, error) {
 	installCmpDeploy, err := a.getLatestDeploy(ctx, req.InstallID, req.ComponentID)
 	if err != nil {

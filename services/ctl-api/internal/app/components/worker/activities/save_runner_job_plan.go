@@ -10,7 +10,7 @@ type SaveRunnerJobPlanRequest struct {
 	PlanJSON string
 }
 
-// @await-gen
+// @temporal-gen activity
 // @schedule-to-close-timeout 5s
 func (a *Activities) SaveRunnerJobPlan(ctx context.Context, req *SaveRunnerJobPlanRequest) error {
 	ctx, err := a.runnersHelpers.ContextFromJob(ctx, req.JobID)
