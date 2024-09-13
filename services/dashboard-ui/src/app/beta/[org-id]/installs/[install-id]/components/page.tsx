@@ -1,17 +1,19 @@
 import {
-  ComponentConfigType,
   DashboardContent,
-  DataTable,
   InstallStatus,
-  Heading,
-  Status,
+  InstallComponentsTable,
   SubNav,
-  Text,
-  Time,
+  type TDataInstallComponent,
   type TLink,
 } from '@/components'
 import { InstallProvider } from '@/context'
-import { getInstall, getOrg } from '@/lib'
+import {
+  getInstall,
+  getBuild,
+  getComponent,
+  getComponentConfig,
+  getOrg,
+} from '@/lib'
 
 export default async function InstallComponents({ params }) {
   const orgId = params?.['org-id'] as string
@@ -29,42 +31,33 @@ export default async function InstallComponents({ params }) {
     getOrg({ orgId }),
   ])
 
-  const tableData =
-    install?.install_components?.reduce((acc, installComponent) => {
-      /* eslint react/jsx-key: 0 */
-      acc.push([
-        <div className="flex flex-col gap-2">
-          <Heading variant="subheading">
-            {installComponent?.component?.name}
-          </Heading>
-          <Text variant="caption">{installComponent.id}</Text>
-        </div>,
+  const hydratedInstallComponents = await Promise.all(
+    install.install_components.map(async (comp, _, arr) => {
+      const build = await getBuild({
+        buildId: comp.install_deploys?.[0]?.build_id,
+        orgId,
+      })
+      const config = await getComponentConfig({
+        componentId: comp.component.id,
+        componentConfigId: build.component_config_connection_id,
+        orgId,
+      })
+      const appComponent = await getComponent({
+        componentId: comp.component_id,
+        orgId,
+      })
+      const deps = arr.filter((c) =>
+        appComponent.dependencies?.some((d) => d === c.component_id)
+      )
 
-        <Text variant="caption">
-          <ComponentConfigType
-            componentId={installComponent?.component_id}
-            orgId={orgId}
-          />
-        </Text>,
-
-        <Time
-          time={installComponent.install_deploys?.[0].updated_at}
-          format="relative"
-          variant="caption"
-        />,
-
-        <Text variant="caption">TKTK</Text>,
-
-        <Status status={installComponent.install_deploys?.[0]?.status} />,
-
-        <Text variant="caption">
-          {installComponent.install_deploys?.[0]?.component_config_version || 0}
-        </Text>,
-        `/beta/${orgId}/installs/${installId}/components/${installComponent.id}`,
-      ])
-      /* eslint react/jsx-key: 1 */
-      return acc
-    }, []) || []
+      return {
+        ...comp,
+        build,
+        config,
+        deps,
+      }
+    })
+  )
 
   return (
     <DashboardContent
@@ -85,16 +78,12 @@ export default async function InstallComponents({ params }) {
       meta={<SubNav links={subNavLinks} />}
     >
       <section className="px-6 py-8">
-        <DataTable
-          headers={[
-            'Name',
-            'Type',
-            'Deployment',
-            'Dependencies',
-            'Build',
-            'Config',
-          ]}
-          initData={tableData}
+        <InstallComponentsTable
+          installComponents={
+            hydratedInstallComponents as Array<TDataInstallComponent>
+          }
+          installId={installId}
+          orgId={orgId}
         />
       </section>
     </DashboardContent>

@@ -33,7 +33,7 @@ export const Heading: FC<IHeading> = ({
 }
 
 export interface IText extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'base' | 'caption' | 'label' | 'overline' | 'status'
+  variant?: 'base' | 'caption' | 'label' | 'overline' | 'status' | 'id'
 }
 
 export const Text: FC<IText> = ({
@@ -48,14 +48,15 @@ export const Text: FC<IText> = ({
 
   return (
     <span
-      className={classNames('font-sans flex flex-wrap items-center gap-1', {
-        ['text-base leading-tight tracking-wide font-normal']: variant === "base",
+      className={classNames('flex flex-wrap items-center gap-1', {
+        ['text-base leading-normal tracking-wide font-normal']: variant === "base",
         ['tracking-wide text-sm font-semibold uppercase leading-none word-wrap']:
           isStatus,
         ['text-sm tracking-wide leading-none text-gray-600 dark:text-gray-300']:
           isOverline,
         ['text-sm font-semibold']: isLabel,
         'text-sm': variant === 'caption',
+        'font-mono text-sm': variant ==="id",
         [`${className}`]: Boolean(className),
       })}
       role="paragraph"

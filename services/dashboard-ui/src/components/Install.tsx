@@ -1,5 +1,7 @@
 'use client'
 
+import { FaAws } from 'react-icons/fa'
+import { VscAzure } from 'react-icons/vsc'
 import React, { type FC } from 'react'
 import {
   Card,
@@ -44,5 +46,19 @@ export const InstallCard: FC = () => {
         <Link href={`/dashboard/${org_id}/${id}`}>Details</Link>
       </Text>
     </Card>
+  )
+}
+
+export const InstallPlatform: FC<{ platform: 'aws' | 'azure' }> = ({
+  platform,
+}) => {
+  return platform === 'azure' ? (
+    <>
+      <VscAzure className="text-md" /> {'Azure'}
+    </>
+  ) : (
+    <>
+      <FaAws className="text-xl mb-[-4px]" /> {'Amazon'}
+    </>
   )
 }

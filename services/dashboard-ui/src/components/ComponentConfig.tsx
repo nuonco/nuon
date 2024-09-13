@@ -88,6 +88,42 @@ export const ComponentConfigType: FC<
   )
 }
 
+export const StaticComponentConfigType: FC<
+{
+  configType: string
+    isIconOnly?: boolean
+  }
+> = ({ configType, isIconOnly = false }) => {
+  
+
+  let cfgType = {}
+  switch (configType) {
+    case 'docker':
+      cfgType = { icon: <FaDocker />, name: 'Docker' }
+      break
+    case 'external':
+      cfgType = { icon: <SiOpencontainersinitiative />, name: 'External image' }
+      break
+    case 'helm':
+      cfgType = { icon: <SiHelm />, name: 'Helm' }
+      break
+    case 'terraform':
+      cfgType = { icon: <SiTerraform />, name: 'Terraform' }
+      break
+    case 'job':
+      cfgType = { icon: <SiAwslambda />, name: 'Job' }
+      break
+    default:
+      cfgType = { icon: <GoQuestion />, name: 'Unknown' }
+  }
+
+  return (
+    <span className="flex items-center gap-1">
+      {cfgType['icon']} {!isIconOnly && cfgType['name']}
+    </span>
+  )
+}
+
 export const ComponentConfig: FC<IGetComponentConfig> = async ({
   componentId,
   componentConfigId,
