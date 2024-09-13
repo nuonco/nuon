@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	clickhousecore "github.com/ClickHouse/clickhouse-go/v2"
-	"gorm.io/driver/clickhouse"
+	"github.com/powertoolsdev/mono/pkg/gorm/clickhouse"
 	"gorm.io/gorm"
 )
 

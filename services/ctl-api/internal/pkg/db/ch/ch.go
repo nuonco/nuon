@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
-	"gorm.io/driver/clickhouse"
 	"gorm.io/gorm"
 	"moul.io/zapgorm2"
 
+	"github.com/powertoolsdev/mono/pkg/gorm/clickhouse"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 )
