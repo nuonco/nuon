@@ -2,11 +2,13 @@ package workflows
 
 import (
 	"fmt"
+	"path/filepath"
+
+	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	"github.com/powertoolsdev/mono/services/workers-canary/internal/activities"
-	"go.temporal.io/sdk/workflow"
 )
 
 func (w *wkflow) execTests(ctx workflow.Context,
@@ -23,13 +25,14 @@ func (w *wkflow) execTests(ctx workflow.Context,
 
 	tfOutputsPath := fmt.Sprintf("/tmp/%s.json", req.CanaryId)
 	env := map[string]string{
-		"TEST_DIR":        w.cfg.TestsDir,
-		"NUON_DEBUG":      "true",
-		"NUON_API_URL":    w.cfg.APIURL,
-		"NUON_API_TOKEN":  apiToken,
-		"NUON_ORG_ID":     orgID,
-		"SANDBOX":         fmt.Sprintf("%t", req.SandboxMode),
-		"TF_OUTPUTS_PATH": tfOutputsPath,
+		"NUON_CONFIG_FILE": filepath.Join("/tmp/%s/config.yml", req.CanaryId),
+		"TEST_DIR":         w.cfg.TestsDir,
+		"NUON_DEBUG":       "true",
+		"NUON_API_URL":     w.cfg.APIURL,
+		"NUON_API_TOKEN":   apiToken,
+		"NUON_ORG_ID":      orgID,
+		"SANDBOX":          fmt.Sprintf("%t", req.SandboxMode),
+		"TF_OUTPUTS_PATH":  tfOutputsPath,
 	}
 
 	for idx, test := range testsResp.Tests {
