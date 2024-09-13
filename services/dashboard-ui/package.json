@@ -22,6 +22,7 @@
     "@datadog/browser-logs": "^5.16.0",
     "@datadog/browser-rum": "^5.16.0",
     "@phosphor-icons/react": "^2.1.7",
+    "@tanstack/react-table": "^8.20.5",
     "@uiw/react-textarea-code-editor": "^3.0.2",
     "@xterm/xterm": "^5.5.0",
     "classnames": "^2.5.1",
