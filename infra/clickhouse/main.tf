@@ -292,7 +292,6 @@ resource "kubectl_manifest" "clickhouse_installation" {
             "nodeSelector" = {
               "clickhouse-installation" = "true"
             }
-
             "topologySpreadConstraints" = [
               # spreads the nodes across n = local.zones. if n zones do not exist, karpenter will
               # stand up new nodes until the NodePool can satisfy the minDomains constraint.
@@ -316,6 +315,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
                   "maxSkew" = 1
                   "topologyKey" = "kubernetes.io/hostname"
                   "whenUnsatisfiable" = "ScheduleAnyway"
+                  "minDomains" = "${local.hosts}"
                   "labelSelector" = {
                     "matchLabels" = {
                       # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.

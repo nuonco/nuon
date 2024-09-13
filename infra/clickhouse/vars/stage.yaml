@@ -3,6 +3,7 @@ account: stage
 env: stage
 data_volume_storage: 2Gi
 # this will result in 3 replicas across 3 zones on at least 3 nodes
-zones: 2
+zones: 1
+hosts: 2
 replicas: 2
 shards: 2

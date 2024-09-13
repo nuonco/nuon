@@ -6,5 +6,6 @@ data_volume_storage: 1Gi
 
 # zones should likely be equal to the number of replicas
 zones: 1
+hosts: 1
 replicas: 1
 shards: 1

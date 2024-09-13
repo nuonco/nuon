@@ -5,6 +5,7 @@ locals {
 
   # clickhouse installation manifest values
   zones               = local.vars.zones
+  hosts               = local.vars.hosts
   replicas            = local.vars.replicas
   shards              = local.vars.shards
   data_volume_storage = local.vars.data_volume_storage
