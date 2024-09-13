@@ -78,7 +78,8 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
       "disruption" = {
         "budgets" = [
           {
-            "nodes" = "50%"
+            "nodes" = "20%" // only 20% of nodes should ever be disrupted at a time
+            "nodes" = "1"   // only 1 node should ever be disrupted at a time
           },
         ]
         "consolidateAfter"    = "30s"
@@ -86,9 +87,12 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
         "expireAfter"         = "${random_integer.node_ttl.result}s"
       }
       "limits" = {
-        # 5 t3a.medium boxes
-        "cpu"    = 10
-        "memory" = "20480Mi"
+        # 5 + 1 t3a.medium boxes
+        # hardcoded for prod limits but karpenter scales to zero and local.zones controls
+        # node count (mostly) so we should be okay w/ these higher limits. we can always make
+        # these vars.
+        "cpu"    = 12
+        "memory" = "24576Mi"
       }
       "template" = {
         "metadata" = {
@@ -283,6 +287,39 @@ resource "kubectl_manifest" "clickhouse_installation" {
             "nodeSelector" = {
               "clickhouse-installation" = "true"
             }
+
+            "topologySpreadConstraints" = [
+              # spreads the nodes across n = local.zones. if n zones do not exist, karpenter will
+              # stand up new nodes until the NodePool can satisfy the minDomains constraint.
+              {
+                  "maxSkew" = 1
+                  "topologyKey" = "topology.kubernetes.io/zone"
+                  "whenUnsatisfiable" = "DoNotSchedule"
+                  "minDomains" = "${local.zones}"
+                  "labelSelector" = {
+                    "matchLabels" = {
+                      # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
+                      #           that is, however, an assumption
+                      "clickhouse.altinity.com/chi" = "clickhouse-installation"
+                    }
+                  }
+              },
+              # spreads the pods across nodes. since we specify the number of zones with minDomains above,
+              # we can assume we will eventually (but soon after deployment) have n = local.zones nodes available.
+              # these are likely to be underutilized but what we're buying is resilience.
+              {
+                  "maxSkew" = 1
+                  "topologyKey" = "kubernetes.io/hostname"
+                  "whenUnsatisfiable" = "ScheduleAnyway"
+                  "labelSelector" = {
+                    "matchLabels" = {
+                      # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
+                      #           that is, however, an assumption
+                      "clickhouse.altinity.com/chi" = "clickhouse-installation"
+                    }
+                  }
+              }
+            ]
             "tolerations" = [{
               "key"      = "installation"
               "operator" = "Equal"

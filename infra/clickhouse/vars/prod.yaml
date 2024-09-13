@@ -1,6 +1,8 @@
 ---
 account: prod
 env: prod
+data_volume_storage: 100Gi
+# this will result in 3 replicas across 3 zones on at least 3 nodes
+zones: 3
 replicas: 3
 shards: 3
-data_volume_storage: 100Gi

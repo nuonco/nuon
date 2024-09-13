@@ -1,7 +1,10 @@
 ---
 region: us-west-2
 pool: nuon
+image_tag: "24.3.7"
+data_volume_storage: 1Gi
+
+# zones should likely be equal to the number of replicas
+zones: 1
 replicas: 1
 shards: 1
-data_volume_storage: 1Gi
-image_tag: "24.3.7"
