@@ -1,12 +1,7 @@
-import { FaAws } from 'react-icons/fa'
-import { VscAzure } from 'react-icons/vsc'
 import {
+  AppInstallsTable,
   DashboardContent,
-  DataTable,
-  Heading,
-  Status,
   SubNav,
-  Text,
   type TLink,
 } from '@/components'
 import { getApp, getAppInstalls, getOrg } from '@/lib'
@@ -19,53 +14,11 @@ export default async function AppInstalls({ params }) {
     { href: `/beta/${orgId}/apps/${appId}/components`, text: 'Components' },
     { href: `/beta/${orgId}/apps/${appId}/installs`, text: 'Installs' },
   ]
-
-  const app = await getApp({ appId, orgId })
-  const installs = await getAppInstalls({ appId, orgId })
-  const org = await getOrg({ orgId })
-
-  const tableData = installs.reduce((acc, install) => {
-    /* eslint react/jsx-key: 0 */
-    acc.push([
-      <div className="flex flex-col gap-2">
-        <Heading variant="subheading">{install.name}</Heading>
-        <Text variant="overline">{install.id}</Text>
-      </div>,
-      <div className="flex flex-col gap-2">
-        <Status
-          status={install.sandbox_status}
-          label="Sandbox"
-          isLabelStatusText
-        />
-        <Status
-          status={install.runner_status}
-          label="Runner"
-          isLabelStatusText
-        />
-        <Status
-          status={install.composite_component_status}
-          label="Components"
-          isLabelStatusText
-        />
-      </div>,
-      <Text variant="caption">{app?.name}</Text>,
-      <Text className="flex items-center gap-2" variant="caption">
-        {install.app_sandbox_config.cloud_platform === 'azure' ? (
-          <>
-            <VscAzure className="text-md" /> {'Azure'}
-          </>
-        ) : (
-          <>
-            <FaAws className="text-xl mb-[-4px]" /> {'Amazon'}
-          </>
-        )}
-      </Text>,
-      `/beta/${orgId}/installs/${install.id}`,
-    ])
-    /* eslint react/jsx-key: 1 */
-
-    return acc
-  }, [])
+  const [app, installs, org] = await Promise.all([
+    getApp({ appId, orgId }),
+    getAppInstalls({ appId, orgId }),
+    getOrg({ orgId }),
+  ])
 
   return (
     <DashboardContent
@@ -79,9 +32,9 @@ export default async function AppInstalls({ params }) {
       meta={<SubNav links={subNavLinks} />}
     >
       <section className="px-6 py-8">
-        <DataTable
-          headers={['Name', 'Statues', 'App', 'Platform']}
-          initData={tableData}
+        <AppInstallsTable
+          installs={installs.map((install) => ({ ...install, app }))}
+          orgId={orgId}
         />
       </section>
     </DashboardContent>
