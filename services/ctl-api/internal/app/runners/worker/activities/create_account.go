@@ -12,7 +12,7 @@ type CreateAccountRequest struct {
 	OrgID    string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @schedule-to-close-timeout 5s
 func (a *Activities) CreateAccount(ctx context.Context, req CreateAccountRequest) (*app.Account, error) {
 	acct, err := a.authzClient.CreateServiceAccount(ctx, req.RunnerID)

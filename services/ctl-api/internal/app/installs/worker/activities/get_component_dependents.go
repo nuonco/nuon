@@ -14,7 +14,7 @@ type GetComponentDependents struct {
 	ComponentRootID string `json:"component_root_id"`
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) GetComponentDependents(ctx context.Context, req GetComponentDependents) ([]app.Component, error) {
 	g, cmps, err := a.appsHelpers.GetDependencyGraph(ctx, req.AppID)
 	if err != nil {

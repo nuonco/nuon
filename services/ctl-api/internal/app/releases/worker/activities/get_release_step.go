@@ -11,7 +11,7 @@ type GetReleaseStepRequest struct {
 	ReleaseStepID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @by-id ReleaseStepID
 func (a *Activities) GetReleaseStep(ctx context.Context, req GetReleaseStepRequest) (*app.ComponentReleaseStep, error) {
 	step := app.ComponentReleaseStep{}

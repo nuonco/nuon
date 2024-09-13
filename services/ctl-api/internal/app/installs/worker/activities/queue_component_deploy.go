@@ -16,7 +16,7 @@ type CreateInstallDeployRequest struct {
 	Signal      bool   `json:"signal"`
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallDeployRequest) (*app.InstallDeploy, error) {
 	// create deploy
 	deployTyp := app.InstallDeployTypeInstall

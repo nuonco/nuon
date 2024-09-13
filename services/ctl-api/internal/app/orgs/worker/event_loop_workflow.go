@@ -58,88 +58,77 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			w.mw.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
 		}()
 
+		sreq := sigs.RequestSignal{
+			Signal:           &evSignal,
+			EventLoopRequest: req,
+		}
+
 		switch evSignal.SignalType() {
-		// OperationCreated
 		case sigs.OperationCreated:
 			op = "created"
-			err := w.created(ctx, req.ID, req.SandboxMode)
+			err := w.AwaitCreated(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to handle created signal", zap.Error(err))
 				return
 			}
-		// OperationProvision
 		case sigs.OperationProvision:
 			op = "provision"
-			err := w.provision(ctx, req.ID, req.SandboxMode)
+			err := w.AwaitProvision(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to provision org", zap.Error(err))
 				return
 			}
-
-		// OperationReprovision
 		case sigs.OperationReprovision:
 			op = "reprovision"
-			err := w.reprovision(ctx, req.ID, req.SandboxMode)
+			err := w.AwaitReprovision(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to reprovision org", zap.Error(err))
 				return
 			}
-
-		// OperationDeprovision
 		case sigs.OperationDeprovision:
 			op = "deprovision"
-			err := w.deprovision(ctx, req.ID, req.SandboxMode)
+			err := w.AwaitDeprovision(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to deprovision org", zap.Error(err))
 				return
 			}
-
-			// OperationForceDeprovision
 		case sigs.OperationForceDeprovision:
 			op = "force_deprovision"
-			err := w.forceDeprovision(ctx, req.ID, req.SandboxMode)
+			err := w.AwaitForceDeprovision(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to force deprovision org", zap.Error(err))
 				return
 			}
-
-		// OperationRestart
 		case sigs.OperationRestart:
 			op = "restart"
 			w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
 				OrgID:       req.ID,
 				SandboxMode: req.SandboxMode,
 			})
-
-			// OperationInviteCreated
 		case sigs.OperationInviteCreated:
 			op = "invite_created"
-			err := w.inviteUser(ctx, req.ID, evSignal.InviteID)
+			err := w.AwaitInviteUser(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to handle invite created signal", zap.Error(err))
 				return
 			}
-
-			// OperationInviteAccepted
 		case sigs.OperationInviteAccepted:
 			op = "invite_accepted"
-			err := w.inviteAccepted(ctx, req.ID, evSignal.InviteID)
+			err := w.AwaitInviteAccepted(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to handle invite accepted signal", zap.Error(err))
 				return
 			}
-
-			// OperationForceDelete
 		case sigs.OperationForceDelete:
 			op = "force_delete"
-			err := w.forceDelete(ctx, req.ID, req.SandboxMode)
+			err := w.AwaitForceDelete(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to force delete org", zap.Error(err))
@@ -147,11 +136,9 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			}
 
 			finished = true
-
-		// OperationDelete
 		case sigs.OperationDelete:
 			op = "delete"
-			err := w.delete(ctx, req.ID, req.SandboxMode)
+			err := w.AwaitDelete(ctx, sreq)
 			if err != nil {
 				status = "error"
 				l.Error("unable to delete org", zap.Error(err))

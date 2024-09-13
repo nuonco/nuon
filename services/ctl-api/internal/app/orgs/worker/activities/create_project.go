@@ -12,7 +12,7 @@ type UpsertProjectRequest struct {
 	ProjectID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) UpsertProject(ctx context.Context, req UpsertProjectRequest) error {
 	_, err := a.wpClient.UpsertProject(ctx, req.OrgID, &gen.UpsertProjectRequest{
 		Project: &gen.Project{

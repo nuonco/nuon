@@ -47,13 +47,13 @@ type tvars_awaitfn struct {
 
 	// Options contains the input-specified options that set specify ActivityOptions and govern
 	// various other generator behaviors
-	Options GenOptions
+	Options ActivityGenOptions
 
 	// Zero is a string literal representing the zero value of the response type
 	Zero string
 }
 
-type tvars_awaitfn_byid struct {
+type tvars_activityfn_byid struct {
 	ByIdFnName  string
 	AwaitFnName string
 	RespType    string
@@ -63,40 +63,21 @@ type tvars_awaitfn_byid struct {
 	IdType      string
 }
 
-// AwaitJenny is a jenny that generates a function that calls another function as a Temporal activity, then awaits the response.
-type AwaitJenny struct{}
+// ActivityJenny is a jenny that generates a function that calls a provided base function as a Temporal activity, then awaits the response.
+type ActivityJenny struct{}
 
-func (w AwaitJenny) JennyName() string {
-	return "AwaitJenny"
+func (w ActivityJenny) JennyName() string {
+	return "ActivityJenny"
 }
 
-func (w AwaitJenny) Generate(bf *BaseFile) (*codejen.File, error) {
+func (w ActivityJenny) Generate(bf *BaseFile) (*codejen.File, error) {
+	if len(bf.ActivityFns) == 0 {
+		return nil, nil
+	}
+
 	var buf bytes.Buffer
-	fmt.Fprintf(&buf, `package %s
-
-import (
-`, bf.File.Name.Name)
-
-	q := func(s string) string { return "\"" + s + "\"" }
-	imports := map[string]bool{
-		q("time"):                        true,
-		q("go.temporal.io/sdk/temporal"): true,
-		q("go.temporal.io/sdk/workflow"): true,
-	}
-
-	// pull in all the imports from the file containing the base func, so that at minimum we have the right import for
-	// the request and response types. unnecessary imports will be removed by a goimports pass later. We do deduplicate,
-	// though, because it appears that goimports has a bug and doesn't reliably dedup
-	for _, im := range bf.File.Imports {
-		// NOTE(sdboyer) this will generate invalid stuff if there's a named import that is in the static list above
-		imports[astfmt.Sprint(im)] = true
-	}
-	for im := range imports {
-		fmt.Fprintf(&buf, "\n\t%s", im)
-	}
-	buf.WriteString("\n)")
-
-	for _, bfn := range bf.Fns {
+	genImports(&buf, bf)
+	for _, bfn := range bf.ActivityFns {
 		var wv tvars_awaitfn
 
 		wv.Options = *bfn.Opts
@@ -130,7 +111,7 @@ import (
 		switch len(bfn.Fn.Type.Results.List) {
 		case 1:
 			// This template assumes without verification that the wrapped fn is has a bare error return, b/c temporal requires that
-			err := tmpls.Lookup("one_return.tmpl").Execute(&buf, wv)
+			err := tmpls.Lookup("activity_one_return.tmpl").Execute(&buf, wv)
 			if err != nil {
 				return nil, fmt.Errorf("error executing template for fn %s: %w", bfn.Fn.Name.String(), err)
 			}
@@ -156,7 +137,7 @@ import (
 					wv.Zero = zerostr(rt)
 				}
 			}
-			err := tmpls.Lookup("two_return.tmpl").Execute(&buf, wv)
+			err := tmpls.Lookup("activity_two_return.tmpl").Execute(&buf, wv)
 			if err != nil {
 				return nil, fmt.Errorf("error executing template for fn %s: %w", bfn.Fn.Name.String(), err)
 			}
@@ -165,7 +146,7 @@ import (
 		}
 
 		if bfn.Opts.ById != nil {
-			idopts := tvars_awaitfn_byid{
+			idopts := tvars_activityfn_byid{
 				ByIdFnName:  fmt.Sprintf("%sBy%s", wv.FnName, bfn.Opts.ById.Name()),
 				AwaitFnName: wv.FnName,
 				RespType:    wv.RespType,
@@ -174,7 +155,7 @@ import (
 				IdFieldName: bfn.Opts.ById.Name(),
 				IdType:      bfn.Opts.ById.Type().Underlying().String(),
 			}
-			err := tmpls.Lookup("by_id.tmpl").Execute(&buf, idopts)
+			err := tmpls.Lookup("activity_by_id.tmpl").Execute(&buf, idopts)
 			if err != nil {
 				return nil, fmt.Errorf("error executing by_id template for fn %s: %w", bfn.Fn.Name.String(), err)
 			}
@@ -183,32 +164,5 @@ import (
 
 	genpath := filepath.Base(bf.Path)
 	genpath = genpath[:len(genpath)-3] + "_gen.go"
-	return codejen.NewFile(genpath, buf.Bytes(), AwaitJenny{}), nil
-}
-
-func zerostr(rt types.Type) string {
-	// TODO(sdboyer) move checking over to the parser to error earlier if we have these return types
-	switch x := rt.(type) {
-	case *types.Named:
-		panic("unwrap from the named type before calling this")
-	case *types.Basic:
-		if x.Info()&types.IsNumeric != 0 {
-			return "0"
-		}
-		if x.Info()&types.IsString != 0 {
-			return "\"\""
-		}
-		if x.Info()&types.IsBoolean != 0 {
-			return "false"
-		}
-		panic(fmt.Sprintf("unhandled zero value generation for basic type: %s", x.String()))
-	case *types.Array, *types.Slice, *types.Map, *types.Chan:
-		return "nil"
-	case *types.Struct:
-		return "struct{}{}"
-	}
-	if x, ok := rt.(*types.Named); ok {
-		return x.Obj().Name()
-	}
-	panic(fmt.Errorf("unhandled zero value generation for type: %s", rt.String()))
+	return codejen.NewFile(genpath, buf.Bytes(), ActivityJenny{}), nil
 }

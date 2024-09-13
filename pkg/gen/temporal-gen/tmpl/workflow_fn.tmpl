@@ -1,0 +1,16 @@
+
+
+// {{ .FnName }} executes [{{ .BaseFnName }}] as a Temporal workflow, waits for the future to complete, then returns the error, if any.
+{{ if .IsMethod -}}
+func ({{ .Receiver }}) {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) error {
+{{- else -}}
+func {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) error {
+{{- end }}
+    cwo := {{ template "workflow_options.tmpl" .Options }}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	// The func pointer being passed here is not used for execution. Temporal uses it as the
+	// key for a name lookup against its activity registry, so that it knows what activity function
+	// to actually call when the workflow is ready to be executed.
+	return workflow.ExecuteChildWorkflow(ctx, {{ .BaseFnSymbol }}, req).Get(ctx, nil)
+}

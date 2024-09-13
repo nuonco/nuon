@@ -6,11 +6,17 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
-func (w *Workflows) created(ctx workflow.Context, appID string) error {
+// @temporal-gen workflow
+// @execution-timeout 1m
+// @task-timeout 30s
+func (w *Workflows) Created(ctx workflow.Context, sreq signals.RequestSignal) error {
+	appID := sreq.ID
+
 	currentApp, err := activities.AwaitGetByAppID(ctx, appID)
 	if err != nil {
 		w.updateStatus(ctx, appID, app.AppStatusError, "unable to get app from database")

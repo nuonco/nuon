@@ -6,18 +6,20 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
-func (w *Workflows) created(ctx workflow.Context, orgID string, _ bool) error {
-	org, err := activities.AwaitGetByOrgID(ctx, orgID)
+// @temporal-gen workflow
+func (w *Workflows) Created(ctx workflow.Context, sreq signals.RequestSignal) error {
+	org, err := activities.AwaitGetByOrgID(ctx, sreq.ID)
 	if err != nil {
-		w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to get org from database")
+		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "unable to get org from database")
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
-	w.sendNotification(ctx, notifications.NotificationsTypeOrgCreated, orgID, map[string]string{
+	w.sendNotification(ctx, notifications.NotificationsTypeOrgCreated, sreq.ID, map[string]string{
 		"org_name":   org.Name,
 		"created_by": org.CreatedBy.Email,
 		"email":      org.CreatedBy.Email,

@@ -4,9 +4,11 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
 )
 
-func (w *Workflows) restarted(ctx workflow.Context, componentID string) error {
-	w.updateStatus(ctx, componentID, app.ComponentStatusActive, "component is active")
+// @temporal-gen workflow
+func (w *Workflows) Restarted(ctx workflow.Context, sreq signals.RequestSignal) error {
+	w.updateStatus(ctx, sreq.ID, app.ComponentStatusActive, "component is active")
 	return nil
 }

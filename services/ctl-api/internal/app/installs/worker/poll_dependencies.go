@@ -15,7 +15,12 @@ const (
 	defaultPollTimeout time.Duration = time.Second * 10
 )
 
-func (w *Workflows) pollDependencies(ctx workflow.Context, installID string) error {
+// @temporal-gen workflow
+// @execution-timeout 5m
+// @task-timeout 3m
+func (w *Workflows) PollDependencies(ctx workflow.Context, sreq signals.RequestSignal) error {
+	installID := sreq.ID
+
 	w.writeInstallEvent(ctx, installID, signals.OperationPollDependencies, app.OperationStatusStarted)
 
 	for {

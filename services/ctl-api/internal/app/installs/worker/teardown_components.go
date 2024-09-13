@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
@@ -57,7 +58,12 @@ func (w *Workflows) shouldTeardownComponents(install *app.Install) bool {
 	return false
 }
 
-func (w *Workflows) teardownComponents(ctx workflow.Context, installID string, sandboxMode, async bool) error {
+// @temporal-gen workflow
+// @execution-timeout 60m
+// @task-timeout 30m
+func (w *Workflows) TeardownComponents(ctx workflow.Context, sreq signals.RequestSignal) error {
+	installID := sreq.ID
+
 	l := workflow.GetLogger(ctx)
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
@@ -98,7 +104,7 @@ func (w *Workflows) teardownComponents(ctx workflow.Context, installID string, s
 			InstallID: installID, ComponentID: compID,
 			BuildID:  componentBuild.ID,
 			Teardown: true,
-			Signal:   async,
+			Signal:   sreq.Async,
 		})
 		if err != nil {
 			return fmt.Errorf("unable to create install deploy: %w", err)
@@ -107,12 +113,14 @@ func (w *Workflows) teardownComponents(ctx workflow.Context, installID string, s
 		deploys = append(deploys, installDeploy)
 	}
 
-	if async {
+	if sreq.Async {
 		return nil
 	}
 	for _, installDeploy := range deploys {
 		// NOTE(jm): we make a best effort to teardown all components
-		if err := w.deploy(ctx, installID, installDeploy.ID, sandboxMode); err != nil {
+		sreq.Type = signals.OperationDeploy
+		sreq.DeployID = installDeploy.ID
+		if err := w.Deploy(ctx, sreq); err != nil {
 			l.Error("unable to teardown component", zap.Error(err))
 
 			// (rb) stop iterating after first error
