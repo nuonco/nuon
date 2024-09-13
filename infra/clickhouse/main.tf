@@ -122,6 +122,12 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
                 "t3a.medium",
               ]
             },
+            {
+              "key"      = "topology.kubernetes.io/zone"
+              "operator" = "In"
+              "values"   = ["us-west-2a", "us-west-2b", "us-west-2c", "us-west-2d"]
+            },
+
           ]
           "taints" = [
             {
