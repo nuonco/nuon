@@ -21,7 +21,8 @@ code:
 
 test:
     FROM +code
-    RUN go test -cover ./...
+    # we skip the gorm/clickhouse tests for now since they require a ch server
+    RUN go test $(go list ./... | grep -v gorm/clickhouse) -cover ./...
 
 lint:
     RUN echo "noop..."
