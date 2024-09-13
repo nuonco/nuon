@@ -50,40 +50,46 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			w.mw.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
 		}()
 
+		sreq := signals.RequestSignal{
+			Signal:           &signal,
+			EventLoopRequest: req,
+		}
+
 		switch signal.SignalType() {
 		case signals.OperationCreated:
 			op = "created"
-			if err := w.created(ctx, req.ID); err != nil {
+			err := w.AwaitCreated(ctx, sreq)
+			if err != nil {
 				status = "error"
 				l.Info("unable to handle created signal: %w", zap.Error(err))
 			}
 		case signals.OperationPollDependencies:
 			op = "poll_dependencies"
-			if err := w.pollDependencies(ctx, req.ID); err != nil {
+			if err := w.AwaitPollDependencies(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to poll app dependencies: %w", zap.Error(err))
 			}
 		case signals.OperationProvision:
 			op = "provision"
-			if err := w.provision(ctx, req.ID, req.SandboxMode); err != nil {
+			if err := w.AwaitProvision(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to provision app: %w", zap.Error(err))
 			}
 		case signals.OperationReprovision:
 			op = "reprovision"
-			if err := w.reprovision(ctx, req.ID, req.SandboxMode); err != nil {
+			if err := w.AwaitReprovision(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to reprovision app: %w", zap.Error(err))
 			}
 		case signals.OperationUpdateSandbox:
 			op = "update_sandbox"
-			if err := w.updateSandbox(ctx, req.ID, "", req.SandboxMode); err != nil {
+			if err := w.AwaitUpdateSandbox(ctx, sreq); err != nil {
 				status = "update_sandbox"
 				l.Info("unable to provision app: %w", zap.Error(err))
 			}
 		case signals.OperationDeprovision:
 			op = "deprovision"
-			if err := w.deprovision(ctx, req.ID, req.SandboxMode); err != nil {
+			if err := w.AwaitDeprovision(ctx, sreq); err != nil {
 				status = "deprovision"
 				l.Info("unable to deprovision app: %w", zap.Error(err))
 				return

@@ -11,7 +11,7 @@ type GetOrgRequest struct {
 	AppID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @by-id AppID
 func (a *Activities) GetOrg(ctx context.Context, req GetOrgRequest) (*app.Org, error) {
 	org := app.Org{}

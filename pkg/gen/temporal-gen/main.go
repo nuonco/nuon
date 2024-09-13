@@ -19,31 +19,53 @@ type BaseFile struct {
 	Path string
 	// File is the file containing funcs to be wrapped
 	File *ast.File
-	// Fns is the list of BaseFns in the file for which wrappers should be generated
-	Fns []BaseFn
+	// ActivityFns is the list of ActivityFns in the file for which wrappers should be generated
+	ActivityFns []ActivityFn
+	// WorkflowFns is the list of WorkflowFns in the file for which wrappers should be generated
+	WorkflowFns []WorkflowFn
 	// Package is the result of loading and typechecking the package containing the funcs to be wrapped
 	Package *packages.Package
 }
 
-// BaseFn is the IR of a Go function to be wrapped in generated code for use as a Temporal activity
-type BaseFn struct {
+// ActivityFn is the IR of a Go function to be wrapped in generated code for use as a Temporal activity
+type ActivityFn struct {
 	// Fn is the node of the func for which a wrapper is to be generated
 	Fn *ast.FuncDecl
 	// Opts are options specified in comments on the func to be wrapped that modify generator output
-	Opts *GenOptions
+	Opts *ActivityGenOptions
 }
 
-// GenOptions are specified as @-comments in the input Go source code, providing the user with
+// ActivityGenOptions are specified as @-comments in the input Go source code, providing the user with
 // control over various aspects of the generated output. This includes which temporal.ActivityOptions will
 // be used in generated await functions
 //
 // TODO(sdboyer) expand this to mirror all the options Temporal actually exposes
-type GenOptions struct {
+type ActivityGenOptions struct {
 	ScheduleToCloseTimeout time.Duration
 	StartToCloseTimeout    time.Duration
 	MaxRetries             int
 	ById                   *types.Var
 	OptionsCallback        string
+}
+
+// WorkflowFn is the IR of a Go function to be wrapped in generated code for use as a Temporal workflow
+type WorkflowFn struct {
+	// Fn is the node of the func for which a wrapper is to be generated
+	Fn *ast.FuncDecl
+	// Opts are options specified in comments on the func to be wrapped that modify generator output
+	Opts *WorkflowGenOptions
+}
+
+// WorkflowGenOptions are specified as @-comments in the input Go source code, providing the user with
+// control over various aspects of the generated output. This includes which temporal.ChildWorkflowOptions will
+// be used in generated functions
+type WorkflowGenOptions struct {
+	ExecutionTimeout    time.Duration
+	TaskTimeout         time.Duration
+	IDCallback          string
+	WaitForCancellation bool
+	TaskQueue           string
+	OptionsCallback     string
 }
 
 func main() {
@@ -73,7 +95,10 @@ func main() {
 	// Add our await jenny. Its signature is a codejen.OneToOne, which means it will be called once
 	// for each item in our inputs, and will produce one file for each of those inputs
 	pipe.Append(
-		AwaitJenny{},
+		ActivityJenny{},
+		WorkflowJenny{},
+		ActivityListJenny{},
+		WorkflowListJenny{},
 	)
 
 	// Postprocessors are run on each output produced by the pipeline

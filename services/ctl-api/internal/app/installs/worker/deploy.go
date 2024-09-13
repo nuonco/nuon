@@ -63,7 +63,14 @@ func (w *Workflows) isTeardownable(install *app.Install) bool {
 	return true
 }
 
-func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, sandboxMode bool) error {
+// @temporal-gen workflow
+// @execution-timeout 60m
+// @task-timeout 30m
+func (w *Workflows) Deploy(ctx workflow.Context, sreq signals.RequestSignal) error {
+	installID := sreq.ID
+	deployID := sreq.DeployID
+	sandboxMode := sreq.SandboxMode
+
 	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusStarted)
 
 	install, err := activities.AwaitGetByInstallID(ctx, installID)

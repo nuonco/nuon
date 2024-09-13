@@ -1,7 +1,13 @@
 package worker
 
-import "go.temporal.io/sdk/workflow"
+import (
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
+	"go.temporal.io/sdk/workflow"
+)
 
-func (w *Workflows) forceDeprovision(ctx workflow.Context, orgID string, sandboxMode bool) error {
-	return w.deprovisionOrg(ctx, orgID, sandboxMode)
+// @temporal-gen workflow
+// @execution-timeout 30m
+// @task-timeout 15m
+func (w *Workflows) ForceDeprovision(ctx workflow.Context, sreq signals.RequestSignal) error {
+	return w.deprovisionOrg(ctx, sreq.ID, sreq.SandboxMode)
 }

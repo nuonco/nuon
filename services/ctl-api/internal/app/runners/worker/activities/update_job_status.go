@@ -15,7 +15,7 @@ type UpdateJobStatusRequest struct {
 	StatusDescription string              `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @schedule-to-close-timeout 5s
 func (a *Activities) UpdateJobStatus(ctx context.Context, req UpdateJobStatusRequest) error {
 	runner := app.RunnerJob{

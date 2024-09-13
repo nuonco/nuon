@@ -13,7 +13,7 @@ type GetInstallComponentRequest struct {
 	ComponentID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) GetInstallComponent(ctx context.Context, req GetInstallComponentRequest) (*app.InstallComponent, error) {
 	installComponent, err := a.getInstallComponent(ctx, req.InstallID, req.ComponentID)
 	if err != nil {

@@ -11,7 +11,7 @@ type GetInviteRequest struct {
 	InviteID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @by-id InviteID
 func (a *Activities) GetInvite(ctx context.Context, req GetInviteRequest) (*app.OrgInvite, error) {
 	org, err := a.getOrgInvite(ctx, req.InviteID)
