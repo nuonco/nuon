@@ -79,7 +79,6 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
         "budgets" = [
           {
             "nodes" = "20%" // only 20% of nodes should ever be disrupted at a time
-            "nodes" = "1"   // only 1 node should ever be disrupted at a time
           },
         ]
         "consolidateAfter"    = "30s"
