@@ -314,7 +314,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
               {
                   "maxSkew" = 1
                   "topologyKey" = "kubernetes.io/hostname"
-                  "whenUnsatisfiable" = "ScheduleAnyway"
+                  "whenUnsatisfiable" = "DoNotSchedule"
                   "minDomains" = "${local.hosts}"
                   "labelSelector" = {
                     "matchLabels" = {
