@@ -47,16 +47,21 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			w.mw.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
 		}()
 
+		sreq := signals.RequestSignal{
+			Signal:           &signal,
+			EventLoopRequest: req,
+		}
+
 		switch signal.SignalType() {
 		case signals.OperationPollDependencies:
 			op = "poll_dependencies"
-			if err := w.pollDependencies(ctx, req.ID); err != nil {
+			if err := w.AwaitPollDependencies(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to poll dependencies: %w", zap.Error(err))
 			}
 		case signals.OperationProvision:
 			op = "provision"
-			if err := w.provision(ctx, req.ID, req.SandboxMode); err != nil {
+			if err := w.AwaitProvision(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to provision release: %w", zap.Error(err))
 			}

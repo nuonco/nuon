@@ -29,6 +29,11 @@ type Signal struct {
 	eventloop.BaseSignal
 }
 
+type RequestSignal struct {
+	*Signal
+	eventloop.EventLoopRequest
+}
+
 func (s *Signal) Validate(v *validator.Validate) error {
 	if err := v.Struct(s); err != nil {
 		return fmt.Errorf("invalid request: %w", err)

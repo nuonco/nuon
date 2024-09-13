@@ -11,7 +11,7 @@ type GetJobExecutionStatusRequest struct {
 	JobExecutionID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @schedule-to-close-timeout 5s
 func (a *Activities) GetJobExecutionStatus(ctx context.Context, req GetJobExecutionStatusRequest) (app.RunnerJobExecutionStatus, error) {
 	jobExecution, err := a.getRunnerJobExecution(ctx, req.JobExecutionID)

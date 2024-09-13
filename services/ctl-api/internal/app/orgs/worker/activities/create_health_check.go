@@ -11,7 +11,7 @@ type CreateHealthCheckRequest struct {
 	OrgID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) CreateHealthCheck(ctx context.Context, req CreateHealthCheckRequest) (*app.OrgHealthCheck, error) {
 	org, err := a.getOrg(ctx, req.OrgID)
 	if err != nil {

@@ -56,7 +56,13 @@ func (w *Workflows) reprovisionLegacy(ctx workflow.Context, install *app.Install
 	return nil
 }
 
-func (w *Workflows) reprovision(ctx workflow.Context, installID string, sandboxMode bool) error {
+// @temporal-gen workflow
+// @execution-timeout 60m
+// @task-timeout 30m
+func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal) error {
+	installID := sreq.ID
+	sandboxMode := sreq.SandboxMode
+
 	install, err := activities.AwaitGet(ctx, activities.GetRequest{
 		InstallID: installID,
 	})

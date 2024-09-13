@@ -15,7 +15,7 @@ type UpdateStatusRequest struct {
 	StatusDescription string           `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @schedule-to-close-timeout 5s
 func (a *Activities) UpdateStatus(ctx context.Context, req UpdateStatusRequest) error {
 	runner := app.Runner{

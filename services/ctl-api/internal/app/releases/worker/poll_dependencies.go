@@ -7,6 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
 )
 
@@ -14,11 +15,14 @@ const (
 	defaultPollTimeout time.Duration = time.Second * 10
 )
 
-func (w *Workflows) pollDependencies(ctx workflow.Context, releaseID string) error {
+// @temporal-gen workflow
+// @execution-timeout 1m
+// @task-timeout 30s
+func (w *Workflows) PollDependencies(ctx workflow.Context, sreq signals.RequestSignal) error {
 	for {
-		release, err := activities.AwaitGetByReleaseID(ctx, releaseID)
+		release, err := activities.AwaitGetByReleaseID(ctx, sreq.ID)
 		if err != nil {
-			w.updateStatus(ctx, releaseID, app.ReleaseStatusError, "unable to get release from database")
+			w.updateStatus(ctx, sreq.ID, app.ReleaseStatusError, "unable to get release from database")
 			return fmt.Errorf("unable to get release: %w", err)
 		}
 
@@ -26,7 +30,7 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, releaseID string) err
 			return nil
 		}
 		if release.ComponentBuild.Status == "error" {
-			w.updateStatus(ctx, releaseID, app.ReleaseStatusError, "build failed")
+			w.updateStatus(ctx, sreq.ID, app.ReleaseStatusError, "build failed")
 			return fmt.Errorf("build failed: %s", release.StatusDescription)
 		}
 

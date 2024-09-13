@@ -42,6 +42,9 @@ func New(cfg *internal.Config,
 	wkr.RegisterActivity(acts)
 	wkr.RegisterWorkflow(wkflows.EventLoop)
 	wkr.RegisterWorkflow(wkflows.ProvisionReleaseStep)
+	for _, wf := range wkflows.ListWorkflowFns() {
+		wkr.RegisterWorkflow(wf)
+	}
 
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {

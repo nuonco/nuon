@@ -12,7 +12,7 @@ type FetchInactiveDependenciesRequest struct {
 	InstallID       string `json:"install_id"`
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) FetchInactiveDependencies(ctx context.Context, req FetchInactiveDependenciesRequest) ([]string, error) {
 	install, err := a.getInstall(ctx, req.InstallID)
 	if err != nil {

@@ -13,7 +13,7 @@ type CreateBuildJobRequest struct {
 	Type     app.RunnerJobType
 }
 
-// @await-gen
+// @temporal-gen activity
 // @schedule-to-close-timeout 5s
 func (a *Activities) CreateBuildJob(ctx context.Context, req *CreateBuildJobRequest) (*app.RunnerJob, error) {
 	job, err := a.runnersHelpers.CreateBuildJob(ctx, req.RunnerID, req.Type, req.Op)

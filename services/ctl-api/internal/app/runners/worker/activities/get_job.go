@@ -20,7 +20,7 @@ func (a *Activities) GetJob(ctx context.Context, req GetJobRequest) (*app.Runner
 	return job, nil
 }
 
-// @await-gen
+// @temporal-gen activity
 // @schedule-to-close-timeout 5s
 func (a *Activities) getRunnerJob(ctx context.Context, jobID string) (*app.RunnerJob, error) {
 	runnerJob := app.RunnerJob{}

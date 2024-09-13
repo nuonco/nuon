@@ -13,7 +13,7 @@ type FetchUntornInstallDeploysRequest struct {
 	InstallID string `json:"install_id"`
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) FetchUntornInstallDeploys(ctx context.Context, req FetchUntornInstallDeploysRequest) ([]string, error) {
 	install := app.Install{}
 

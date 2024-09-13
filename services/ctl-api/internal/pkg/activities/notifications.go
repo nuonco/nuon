@@ -16,7 +16,7 @@ type SendNotificationRequest struct {
 	Vars map[string]string
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) SendNotification(ctx context.Context, req SendNotificationRequest) error {
 	cfg, err := a.getNotificationsConfig(ctx, req.OrgID, req.AppID)
 	if err != nil {

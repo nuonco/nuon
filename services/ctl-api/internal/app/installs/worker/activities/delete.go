@@ -12,7 +12,7 @@ type DeleteRequest struct {
 	InstallID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @by-id InstallID
 func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 	res := a.db.WithContext(ctx).

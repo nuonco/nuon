@@ -36,6 +36,11 @@ type Signal struct {
 	eventloop.BaseSignal
 }
 
+type RequestSignal struct {
+	*Signal
+	eventloop.EventLoopRequest
+}
+
 var _ eventloop.Signal = (*Signal)(nil)
 
 func (s *Signal) SignalType() eventloop.SignalType {
