@@ -12,7 +12,7 @@ type CreateSandboxJobRequest struct {
 	Op       app.RunnerJobOperationType
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) CreateSandboxJob(ctx context.Context, req *CreateSandboxJobRequest) (*app.RunnerJob, error) {
 	job, err := a.runnersHelpers.CreateInstallSandboxJob(ctx, req.RunnerID, app.RunnerJobTypeSandboxTerraform, req.Op)
 	if err != nil {

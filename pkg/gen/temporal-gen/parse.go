@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	GenMarker = "@await-gen"
+	GenMarker = "@temporal-gen"
 )
 
 func loadBase(ctx context.Context, dir string) ([]*BaseFile, error) {
@@ -42,7 +42,8 @@ func loadBase(ctx context.Context, dir string) ([]*BaseFile, error) {
 		for i, file := range pkg.Syntax {
 			// TODO(sdboyer): this filename may be wrong if syntax checking returned nil for any files in the pkg
 			fpath := filepath.Base(pkg.CompiledGoFiles[i])
-			var bfs []BaseFn
+			var actfns []ActivityFn
+			var wkffns []WorkflowFn
 			if walkerr != nil {
 				return nil, walkerr
 			}
@@ -57,32 +58,53 @@ func loadBase(ctx context.Context, dir string) ([]*BaseFile, error) {
 						return true
 					}
 
-					opts, err := extractGenOptions(fset, x, pkg)
-					if err != nil {
-						walkerr = err
-						return false
-					}
-					if opts != nil {
-						if len(x.Type.Params.List) != 2 {
-							walkerr = withPos(fset, x.Type.Params.Pos(), errors.New("base activity func must have exactly two params, ctx and a request object"))
-							return false
-						}
+					for _, com := range x.Doc.List {
+						parts := strings.Split(com.Text, " ")
 
-						bfs = append(bfs, BaseFn{
-							Fn:   x,
-							Opts: opts,
-						})
+						// TODO(sdboyer) more validation
+						switch len(parts) {
+						case 0, 1, 2:
+							continue
+						case 3:
+							if parts[1] == GenMarker {
+								if len(x.Type.Params.List) != 2 {
+									walkerr = withPos(fset, x.Type.Params.Pos(), errors.New("base activity func must have exactly two params, ctx and a request object"))
+									return false
+								}
+								switch parts[2] {
+								case "activity":
+									afn, err := extractActivityFn(fset, x, pkg)
+									if err != nil {
+										walkerr = err
+										return false
+									}
+									if afn != nil {
+										actfns = append(actfns, *afn)
+									}
+								case "workflow":
+									wfn, err := extractWorkflowFn(fset, x, pkg)
+									if err != nil {
+										walkerr = err
+										return false
+									}
+									if wfn != nil {
+										wkffns = append(wkffns, *wfn)
+									}
+								}
+							}
+						}
 					}
 				}
 				return true
 			})
 
-			if len(bfs) > 0 {
+			if len(actfns) > 0 || len(wkffns) > 0 {
 				ret = append(ret, &BaseFile{
-					Path:    fpath,
-					File:    file,
-					Fns:     bfs,
-					Package: pkg,
+					Path:        fpath,
+					File:        file,
+					ActivityFns: actfns,
+					WorkflowFns: wkffns,
+					Package:     pkg,
 				})
 			}
 		}
@@ -106,13 +128,10 @@ func loadBase(ctx context.Context, dir string) ([]*BaseFile, error) {
 	return ret, nil
 }
 
-func extractGenOptions(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Package) (*GenOptions, error) {
+func extractActivityFn(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Package) (*ActivityFn, error) {
 	cg := fn.Doc
-	if cg == nil {
-		return nil, nil
-	}
-	ret := new(GenOptions)
-	var matched bool
+
+	ret := new(ActivityGenOptions)
 	for _, com := range cg.List {
 		parts := strings.Split(com.Text, " ")
 
@@ -120,13 +139,6 @@ func extractGenOptions(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Pack
 		switch len(parts) {
 		case 0, 1:
 			continue
-		case 2:
-			if parts[1] == GenMarker {
-				if matched {
-					return nil, withPos(fset, com.Pos(), fmt.Errorf("%s may be declared only once", GenMarker))
-				}
-				matched = true
-			}
 		case 3:
 			switch parts[1] {
 			case "@schedule-to-close-timeout":
@@ -179,8 +191,55 @@ func extractGenOptions(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Pack
 		}
 	}
 
-	if matched {
-		return ret, nil
+	return &ActivityFn{
+		Fn:   fn,
+		Opts: ret,
+	}, nil
+}
+
+func extractWorkflowFn(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Package) (*WorkflowFn, error) {
+	cg := fn.Doc
+
+	ret := new(WorkflowGenOptions)
+	for _, com := range cg.List {
+		parts := strings.Split(com.Text, " ")
+
+		// TODO(sdboyer) more validation
+		switch len(parts) {
+		case 0, 1:
+			continue
+		case 3:
+			switch parts[1] {
+			case "@execution-timeout":
+				var err error
+				ret.ExecutionTimeout, err = time.ParseDuration(parts[2])
+				if err != nil {
+					return nil, withPos(fset, com.Pos(), fmt.Errorf("@execution-timeout must be a valid Go duration string per https://pkg.go.dev/time#ParseDuration, got %q", parts[2]))
+				}
+			case "@task-timeout":
+				var err error
+				ret.TaskTimeout, err = time.ParseDuration(parts[2])
+				if err != nil {
+					return nil, withPos(fset, com.Pos(), fmt.Errorf("@task-timeout must be a valid Go duration string per https://pkg.go.dev/time#ParseDuration, got %q", parts[2]))
+				}
+			case "@id-callback":
+				ret.IDCallback = parts[2]
+			case "@wait-for-cancellation":
+				var err error
+				ret.WaitForCancellation, err = strconv.ParseBool(parts[2])
+				if err != nil {
+					return nil, withPos(fset, com.Pos(), fmt.Errorf("@wait-for-cancellation must be either 'true' or 'false', got %q", parts[2]))
+				}
+			case "@task-queue":
+				ret.TaskQueue = parts[2]
+			case "@options-callback":
+				ret.OptionsCallback = parts[2]
+			}
+		}
 	}
-	return nil, nil
+
+	return &WorkflowFn{
+		Fn:   fn,
+		Opts: ret,
+	}, nil
 }

@@ -11,7 +11,7 @@ type GetComponentAppRequest struct {
 	ComponentID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @by-id ComponentID
 func (a *Activities) GetComponentApp(ctx context.Context, req *GetComponentAppRequest) (*app.App, error) {
 	cmp := app.Component{}

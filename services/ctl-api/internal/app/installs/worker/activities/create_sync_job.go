@@ -13,7 +13,7 @@ type CreateSyncJobRequest struct {
 	Type     app.RunnerJobType
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) CreateSyncJob(ctx context.Context, req *CreateSyncJobRequest) (*app.RunnerJob, error) {
 	job, err := a.runnersHelpers.CreateSyncJob(ctx, req.RunnerID, req.Type, req.Op)
 	if err != nil {

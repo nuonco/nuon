@@ -8,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 )
@@ -31,14 +32,17 @@ func (w *Workflows) pollAppsDeprovisioned(ctx workflow.Context, orgID string) er
 	}
 }
 
-func (w *Workflows) deprovision(ctx workflow.Context, orgID string, sandboxMode bool) error {
-	w.updateStatus(ctx, orgID, app.OrgStatusActive, "ensuring all apps are deleted before deprovisioning")
-	if err := w.pollAppsDeprovisioned(ctx, orgID); err != nil {
-		w.updateStatus(ctx, orgID, app.OrgStatusError, "error polling apps being deprovisioned")
+// @temporal-gen workflow
+// @execution-timeout 30m
+// @task-timeout 15m
+func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal) error {
+	w.updateStatus(ctx, sreq.ID, app.OrgStatusActive, "ensuring all apps are deleted before deprovisioning")
+	if err := w.pollAppsDeprovisioned(ctx, sreq.ID); err != nil {
+		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "error polling apps being deprovisioned")
 		return fmt.Errorf("unable to poll for deleted apps: %w", err)
 	}
 
-	return w.deprovisionOrg(ctx, orgID, sandboxMode)
+	return w.deprovisionOrg(ctx, sreq.ID, sreq.SandboxMode)
 }
 
 func (w *Workflows) deprovisionOrg(ctx workflow.Context, orgID string, sandboxMode bool) error {

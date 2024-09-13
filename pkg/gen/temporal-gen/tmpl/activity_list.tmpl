@@ -1,0 +1,17 @@
+{{ if ne .Receiver "" }}
+// {{ .FnName }} returns a slice of function refs to the methods of [{{ .Receiver }}] for which temporal-gen generated a {{ .TemporalVerb }} wrapper function.
+{{ else -}}
+// {{ .FnName }} returns a slice of function refs to a group of functions for which temporal-gen generated a {{ .TemporalVerb }} wrapper function.
+{{ end -}}
+//
+// This list is intended to be passed passing to the Temporal registration function [go.temporal.io/sdk/worker.{{ .TemporalVerb }}Registry.Register{{ .TemporalVerb }}].
+func {{ .FnName }}() []any {
+    {{- if ne .Receiver "" }}
+    t := new({{ .Receiver }})
+    {{- end }}
+    return []any{
+    {{- range $name := .BaseFnNames }}
+        {{ if ne $.Receiver "" }}t.{{ end }}{{$name}},
+    {{- end }}
+    }
+}

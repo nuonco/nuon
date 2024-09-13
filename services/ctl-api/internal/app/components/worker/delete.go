@@ -7,6 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
 )
 
@@ -47,16 +48,19 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, compID strin
 	return nil
 }
 
-func (w *Workflows) delete(ctx workflow.Context, componentID string, dryRun bool) error {
-	w.updateStatus(ctx, componentID, app.ComponentStatusActive, "polling for releases to finish")
-	if err := w.pollChildrenDeprovisioned(ctx, componentID); err != nil {
+// @temporal-gen workflow
+// @execution-timeout 5m
+// @task-timeout 3m
+func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) error {
+	w.updateStatus(ctx, sreq.ID, app.ComponentStatusActive, "polling for releases to finish")
+	if err := w.pollChildrenDeprovisioned(ctx, sreq.ID); err != nil {
 		return err
 	}
 
 	// update status
-	w.updateStatus(ctx, componentID, app.ComponentStatusDeprovisioning, "deleting component")
+	w.updateStatus(ctx, sreq.ID, app.ComponentStatusDeprovisioning, "deleting component")
 	if err := activities.AwaitDelete(ctx, activities.DeleteRequest{
-		ComponentID: componentID,
+		ComponentID: sreq.ID,
 	}); err != nil {
 		return fmt.Errorf("unable to delete component: %w", err)
 	}

@@ -15,7 +15,7 @@ type UpdateRunStatusRequest struct {
 	StatusDescription string               `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 func (a *Activities) UpdateRunStatus(ctx context.Context, req UpdateRunStatusRequest) error {
 	install := app.InstallSandboxRun{
 		ID: req.RunID,

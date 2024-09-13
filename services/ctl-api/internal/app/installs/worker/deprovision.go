@@ -51,7 +51,13 @@ func (w *Workflows) isDeprovisionable(ctx workflow.Context, install *app.Install
 	return true, nil
 }
 
-func (w *Workflows) deprovision(ctx workflow.Context, installID string, sandboxMode bool) error {
+// @temporal-gen workflow
+// @execution-timeout 60m
+// @execution-timeout 30m
+func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal) error {
+	installID := sreq.ID
+	sandboxMode := sreq.SandboxMode
+
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
@@ -104,8 +110,13 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, sandboxM
 	return nil
 }
 
-func (w *Workflows) delete(ctx workflow.Context, installID string, dryRun bool) error {
-	if err := w.deprovision(ctx, installID, dryRun); err != nil {
+// @temporal-gen workflow
+// @execution-timeout 60m
+// @task-timeout 30m
+func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) error {
+	installID := sreq.ID
+
+	if err := w.Deprovision(ctx, sreq); err != nil {
 		return err
 	}
 

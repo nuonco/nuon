@@ -2,6 +2,7 @@ package eventloop
 
 import (
 	"context"
+	"fmt"
 
 	"gorm.io/gorm"
 
@@ -30,4 +31,9 @@ type Signal interface {
 
 	// DoNothing
 	Noop() bool
+}
+
+// SignalHandlerWorkflowID returns the standard ID to use for a signal handler child workflow
+func SignalHandlerWorkflowID(sig Signal, req EventLoopRequest) string {
+	return fmt.Sprintf("sig-%s-%s", sig.SignalType(), req.ID)
 }

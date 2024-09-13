@@ -13,7 +13,7 @@ type DeleteRequest struct {
 	ComponentID string `validate:"required"`
 }
 
-// @await-gen
+// @temporal-gen activity
 // @by-id ComponentID
 func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 	res := a.db.WithContext(ctx).Unscoped().Delete(&app.Component{
