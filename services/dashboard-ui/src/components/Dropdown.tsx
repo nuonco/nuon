@@ -21,7 +21,7 @@ export const Dropdown: FC<IDropdown> = ({
   return (
     <>
       <div
-        className="z-10 relative inline-block text-left h-[56px] group"
+        className="z-10 relative inline-block text-left group"
         id={id}
         tabIndex={0}
       >
