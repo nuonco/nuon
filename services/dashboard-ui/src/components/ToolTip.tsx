@@ -1,6 +1,8 @@
+"use client"
+
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { GoInfo } from 'react-icons/go'
+import { Info } from "@phosphor-icons/react"
 
 export interface IToolTip {
   children: React.ReactNode
@@ -62,15 +64,15 @@ export const ToolTip: FC<IToolTip> = ({
         >
           <div
             className={classNames(
-              'bg-dark text-light dark:bg-light dark:text-dark text-xs p-2 rounded drop-shadow-md'
+              'bg-dark text-light dark:bg-light dark:text-dark text-sm px-2 py-1.5 rounded drop-shadow-md'
             )}
           >
             {tipContent}
           </div>
         </span>
-        <span className="flex items-center gap-2 text-xs">
+        <span className="flex items-center gap-2 text-sm">
           {children}
-          <GoInfo className="text-gray-600 dark:text-gray-400" />
+          <Info className="text-cool-grey-600 dark:text-cool-grey-500" />
         </span>
       </span>
     </>
