@@ -67,10 +67,11 @@ func (w *Workflows) deprovisionOrg(ctx workflow.Context, orgID string, sandboxMo
 
 	// reprovision IAM roles for the org
 	orgIAMReq := &executors.DeprovisionIAMRequest{
-		OrgId: orgID,
+		OrgID: orgID,
 	}
-	var orgIAMResp executors.ProvisionIAMResponse
-	if err := w.execChildWorkflow(ctx, orgID, executors.DeprovisionIAMWorkflowName, sandboxMode, orgIAMReq, &orgIAMResp); err != nil {
+	orgIAMWorkflowID := fmt.Sprintf("deprovision-iam-%s", orgID)
+	_, err = executors.AwaitDeprovisionIAM(ctx, orgIAMWorkflowID, orgIAMReq)
+	if err != nil {
 		w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to deprovision iam roles")
 		return fmt.Errorf("unable to deprovision iam roles: %w", err)
 	}
