@@ -47,8 +47,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers,
 			fx.Provide(generalactivities.New),
 			fx.Provide(generalworker.NewWorkflows),
-			fx.Provide(generalworker.New),
-			fx.Invoke(func(*generalworker.Worker) {}),
+			fx.Provide(worker.AsWorker(generalworker.New)),
 		)
 	}
 
@@ -57,8 +56,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers,
 			fx.Provide(orgsactivities.New),
 			fx.Provide(orgsworker.NewWorkflows),
-			fx.Provide(orgsworker.New),
-			fx.Invoke(func(*orgsworker.Worker) {}),
+			fx.Provide(worker.AsWorker(orgsworker.New)),
 		)
 	}
 
@@ -67,9 +65,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers,
 			fx.Provide(appsactivities.New),
 			fx.Provide(appsworker.NewWorkflows),
-			fx.Provide(appsworker.New),
-			fx.Invoke(func(*appsworker.Worker) {}),
-		)
+			fx.Provide(worker.AsWorker(appsworker.New)))
 	}
 
 	// components worker
@@ -77,8 +73,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers,
 			fx.Provide(componentsactivities.New),
 			fx.Provide(componentsworker.NewWorkflows),
-			fx.Provide(componentsworker.New),
-			fx.Invoke(func(*componentsworker.Worker) {}),
+			fx.Provide(worker.AsWorker(componentsworker.New)),
 		)
 	}
 
@@ -87,8 +82,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers,
 			fx.Provide(installsactivities.New),
 			fx.Provide(installsworker.NewWorkflows),
-			fx.Provide(installsworker.New),
-			fx.Invoke(func(*installsworker.Worker) {}),
+			fx.Provide(worker.AsWorker(installsworker.New)),
 		)
 	}
 
@@ -96,8 +90,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers,
 			fx.Provide(releasesactivities.New),
 			fx.Provide(releasesworker.NewWorkflows),
-			fx.Provide(releasesworker.New),
-			fx.Invoke(func(*releasesworker.Worker) {}),
+			fx.Provide(worker.AsWorker(releasesworker.New)),
 		)
 	}
 
@@ -110,6 +103,9 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		)
 	}
 
+	providers = append(providers,
+		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {})),
+	)
 	providers = append(providers, c.providers()...)
 	fx.New(providers...).Run()
 }
