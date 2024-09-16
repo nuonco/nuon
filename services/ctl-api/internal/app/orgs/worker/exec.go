@@ -2,7 +2,6 @@ package worker
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	enumsv1 "go.temporal.io/api/enums/v1"
@@ -60,7 +59,7 @@ func (w *Workflows) execDeprovisionIAMWorkflow(
 
 	cwo := workflow.ChildWorkflowOptions{
 		TaskQueue:                workflows.DefaultTaskQueue,
-		WorkflowID:               fmt.Sprintf("%s-deprovision-iam", req.OrgId),
+		WorkflowID:               fmt.Sprintf("%s-deprovision-iam", req.OrgID),
 		WorkflowExecutionTimeout: time.Minute * 1,
 		WorkflowTaskTimeout:      time.Minute * 10,
 		WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
@@ -104,35 +103,4 @@ func (w *Workflows) execProvisionWorkflow(
 	}
 
 	return &resp, nil
-}
-
-func (w *Workflows) execChildWorkflow(
-	ctx workflow.Context,
-	orgID string,
-	workflowName string,
-	sandboxMode bool,
-	req interface{},
-	resp interface{},
-) error {
-	if sandboxMode {
-		l := workflow.GetLogger(ctx)
-		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
-		workflow.Sleep(ctx, w.cfg.SandboxSleep)
-		return nil
-	}
-
-	cwo := workflow.ChildWorkflowOptions{
-		TaskQueue:                workflows.ExecutorsTaskQueue,
-		WorkflowID:               fmt.Sprintf("%s-%s", orgID, strings.ToLower(workflowName)),
-		WorkflowExecutionTimeout: time.Minute * 20,
-		WorkflowTaskTimeout:      time.Minute * 10,
-		WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
-	}
-	ctx = workflow.WithChildOptions(ctx, cwo)
-
-	fut := workflow.ExecuteChildWorkflow(ctx, workflowName, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return fmt.Errorf("unable to get workflow response: %w", err)
-	}
-	return nil
 }

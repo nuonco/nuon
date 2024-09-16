@@ -21,7 +21,7 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	org, err := activities.AwaitGetByOrgID(ctx, sreq.ID)
 	if err != nil {
 		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "unable to get org from database")
-		return fmt.Errorf("unable to get install: %w", err)
+		return fmt.Errorf("unable to get org: %w", err)
 	}
 
 	// NOTE(jm): this will be removed once the runner is in prod
@@ -36,12 +36,13 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 
 	// provision IAM roles for the org
 	orgIAMReq := &executors.ProvisionIAMRequest{
-		OrgId: sreq.ID,
+		OrgID: sreq.ID,
 	}
-	var orgIAMResp executors.ProvisionIAMResponse
-	if err := w.execChildWorkflow(ctx, sreq.ID, executors.ProvisionIAMWorkflowName, sreq.SandboxMode, orgIAMReq, &orgIAMResp); err != nil {
-		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "unable to reprovision iam roles")
-		return fmt.Errorf("unable to provision iam roles: %w", err)
+	orgIAMWorkflowID := fmt.Sprintf("provision-iam-%s", sreq.ID)
+	_, err = executors.AwaitProvisionIAM(ctx, orgIAMWorkflowID, orgIAMReq)
+	if err != nil {
+		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "unable to provision IAM")
+		return fmt.Errorf("unable to provision IAM: %w", err)
 	}
 
 	// provision the runner
@@ -50,10 +51,6 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	})
 	// query runner until active
 
-	w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
-		OrgID:       sreq.ID,
-		SandboxMode: sreq.SandboxMode,
-	})
 	w.updateStatus(ctx, sreq.ID, app.OrgStatusActive, "organization resources are provisioned")
 	return nil
 }

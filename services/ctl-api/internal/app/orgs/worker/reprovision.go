@@ -35,22 +35,18 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 
 	// reprovision IAM roles for the org
 	orgIAMReq := &executors.ProvisionIAMRequest{
-		OrgId:       sreq.ID,
+		OrgID:       sreq.ID,
 		Reprovision: true,
 	}
-	var orgIAMResp executors.ProvisionIAMResponse
-	if err := w.execChildWorkflow(ctx, sreq.ID, executors.ProvisionIAMWorkflowName, sreq.SandboxMode, orgIAMReq, &orgIAMResp); err != nil {
+	orgIAMWorkflowID := fmt.Sprintf("provision-iam-%s", sreq.ID)
+	_, err = executors.AwaitProvisionIAM(ctx, orgIAMWorkflowID, orgIAMReq)
+	if err != nil {
 		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "unable to reprovision iam roles")
 		return fmt.Errorf("unable to reprovision iam roles: %w", err)
 	}
 
 	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationReprovision,
-	})
-
-	w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
-		OrgID:       sreq.ID,
-		SandboxMode: sreq.SandboxMode,
 	})
 
 	w.updateStatus(ctx, sreq.ID, app.OrgStatusActive, "organization resources are provisioned")

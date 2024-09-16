@@ -13,7 +13,7 @@ import (
 
 func (w *Workflows) reprovisionLegacy(ctx workflow.Context, org *app.Org, sandboxMode bool) error {
 	_, err := w.execDeprovisionIAMWorkflow(ctx, sandboxMode, &executors.DeprovisionIAMRequest{
-		OrgId: org.ID,
+		OrgID: org.ID,
 	})
 
 	// NOTE(jm): we ignore errors deprovisioning, and make a best effort to reprovision regardless

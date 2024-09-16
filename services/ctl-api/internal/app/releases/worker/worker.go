@@ -28,7 +28,8 @@ func New(cfg *internal.Config,
 	wkflows *Workflows,
 	acts *activities.Activities,
 	l *zap.Logger,
-	lc fx.Lifecycle) (*Worker, error) {
+	lc fx.Lifecycle,
+) (*Worker, error) {
 	client, err := tclient.GetNamespaceClient(defaultNamespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
@@ -42,9 +43,8 @@ func New(cfg *internal.Config,
 	wkr.RegisterActivity(acts)
 	wkr.RegisterWorkflow(wkflows.EventLoop)
 	wkr.RegisterWorkflow(wkflows.ProvisionReleaseStep)
-	for _, wf := range wkflows.ListWorkflowFns() {
-		wkr.RegisterWorkflow(wf)
-	}
+	wkr.RegisterWorkflow(wkflows.PollDependencies)
+	wkr.RegisterWorkflow(wkflows.Provision)
 
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
