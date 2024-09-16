@@ -1,0 +1,144 @@
+'use client'
+
+import classNames from 'classnames'
+import React, { type FC, useCallback, useEffect, useState } from 'react'
+import { FaGithub } from 'react-icons/fa'
+import { Plus } from '@phosphor-icons/react'
+import NextLink from 'next/link'
+import { Dropdown, Heading, Link, OrgStatus, Status, Text } from '@/components'
+import { OrgProvider } from '@/context'
+import type { TOrg } from '@/types'
+import { GITHUB_APP_NAME, initialsFromString } from '@/utils'
+
+export const OrgAvatar: FC<{ name: string; isSmall?: boolean }> = ({
+  name,
+  isSmall = false,
+}) => {
+  return (
+    <span
+      className={classNames(
+        'flex items-center justify-center p-2 rounded-md bg-cool-grey-200 text-cool-grey-600 dark:bg-dark-grey-300 dark:text-white/40 font-light font-sans',
+        {
+          'w-[40px] h-[40px]': !isSmall,
+          'w-[30px] h-[30px]': isSmall,
+        }
+      )}
+    >
+      {initialsFromString(name)}
+    </span>
+  )
+}
+
+// NOTE(nnnnat): new semiflat designed org switcher parts
+export interface IOrgSummary {
+  org: TOrg
+}
+
+export const OrgSummary: FC<IOrgSummary> = ({ org }) => {
+  return (
+    <div className="flex gap-4 items-center justify-start">
+      <OrgAvatar name={org.name} />
+
+      <div>
+        <Text className="text-md font-medium leading-normal">{org.name}</Text>
+        <OrgProvider initOrg={org}>
+          <OrgStatus isCompact />
+        </OrgProvider>
+      </div>
+    </div>
+  )
+}
+
+const OrgVCSConnections: FC<Pick<TOrg, 'vcs_connections'>> = ({
+  vcs_connections,
+}) => {
+  return (
+    <>
+      {vcs_connections?.length &&
+        vcs_connections?.map((vcs) => (
+          <Text
+            key={vcs?.id}
+            className="flex gap-2 items-center font-mono text-sm text-cool-grey-600 dark:text-cool-grey-500"
+          >
+            <FaGithub className="text-lg" /> {vcs?.github_install_id}
+          </Text>
+        ))}
+    </>
+  )
+}
+
+export const OrgVCSConnectionsDetails: FC<{ org: TOrg }> = ({ org }) => {
+  return (
+    <div className="flex flex-col gap-4 mx-4 py-4 border-cool-grey-600 dark:border-cool-grey-500 border-b border-dotted ">
+      <div className="flex items-center justify-between">
+        <Text variant="label">GitHub Connections</Text>
+        <Link
+          className="flex items-center gap-2 text-sm font-medium"
+          href={`https://github.com/apps/${GITHUB_APP_NAME}/installations/new?state=${org.id}`}
+        >
+          <Plus className="text-lg" />
+          Add
+        </Link>
+      </div>
+
+      <div>
+        <OrgVCSConnections vcs_connections={org.vcs_connections} />
+      </div>
+    </div>
+  )
+}
+
+export interface IOrgsNav {
+  orgs: Array<TOrg>
+}
+
+export const OrgsNav: FC<IOrgsNav> = ({ orgs }) => {
+  return (
+    <div className="flex flex-col gap-4">
+      <Text className="px-4" variant="label">
+        Organizations
+      </Text>
+      <nav className="flex flex-col gap-0 px-1">
+        {orgs.map((org) => (
+          <NextLink
+            className="flex items-center justify-start gap-2 rounded-md p-2 hover:bg-cool-grey-600/20"
+            key={org.id}
+            href={`/beta/${org.id}/apps`}
+          >
+            <OrgAvatar name={org.name} isSmall />
+            <Text className="break-all text-md font-medium leading-normal">
+              {org.name}
+            </Text>
+          </NextLink>
+        ))}
+      </nav>
+    </div>
+  )
+}
+
+export interface IOrgSwitcher {
+  initOrg: TOrg
+  initOrgs: Array<TOrg>
+}
+
+export const OrgSwitcher: FC<IOrgSwitcher> = ({ initOrg, initOrgs }) => {
+  return (
+    <Dropdown
+      className="w-full"
+      hasCustomPadding
+      id="test"
+      isFullWidth
+      text={<OrgSummary org={initOrg} />}
+      position="overlay"
+      alignment="overlay"
+    >
+      <div className="flex flex-col gap-4 overflow-auto max-h-[500px]">
+        <div className="pt-4 px-4">
+          <OrgSummary org={initOrg} />
+        </div>
+        <OrgVCSConnectionsDetails org={initOrg} />
+        <OrgsNav orgs={initOrgs} />
+      </div>
+    </Dropdown>
+  )
+}
