@@ -21,3 +21,11 @@ output "certificate_arn" {
 output "public_domain" {
   value = module.cert.domain
 }
+
+output "runner_domain" {
+  value = module.runner-cert.domain
+}
+
+output "runner_certificate_arn" {
+  value = module.runner-cert.acm_certificate_arn
+}
