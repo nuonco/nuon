@@ -1,3 +1,4 @@
+import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
@@ -13,78 +14,84 @@ import {
 import { InstallProvider } from '@/context'
 import { getInstall, getInstallEvents, getOrg } from '@/lib'
 
-export default async function Install({ params }) {
-  const orgId = params?.['org-id'] as string
-  const installId = params?.['install-id'] as string
-  const subNavLinks: Array<TLink> = [
-    { href: `/beta/${orgId}/installs/${installId}`, text: 'Status' },
-    {
-      href: `/beta/${orgId}/installs/${installId}/components`,
-      text: 'Components',
-    },
-  ]
+export default withPageAuthRequired(
+  async function Install({ params }) {
+    const orgId = params?.['org-id'] as string
+    const installId = params?.['install-id'] as string
+    const subNavLinks: Array<TLink> = [
+      { href: `/beta/${orgId}/installs/${installId}`, text: 'Status' },
+      {
+        href: `/beta/${orgId}/installs/${installId}/components`,
+        text: 'Components',
+      },
+    ]
 
-  const [install, events, org] = await Promise.all([
-    getInstall({ installId, orgId }),
-    getInstallEvents({ installId, orgId }),
-    getOrg({ orgId }),
-  ])
+    const [install, events, org] = await Promise.all([
+      getInstall({ installId, orgId }),
+      getInstallEvents({ installId, orgId }),
+      getOrg({ orgId }),
+    ])
 
-  return (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/beta/${org.id}`, text: org.name },
-        { href: `/beta/${org.id}/installs`, text: 'Installs' },
-        { href: `/beta/${org.id}/installs/${install.id}`, text: install.name },
-      ]}
-      heading={install.name}
-      headingUnderline={install.id}
-      statues={
-        <div>
-          <InstallProvider initInstall={install}>
-            <InstallStatus />
-          </InstallProvider>
-        </div>
-      }
-      meta={<SubNav links={subNavLinks} />}
-    >
-      <div className="flex flex-col lg:flex-row flex-auto">
-        <section className="flex-auto flex flex-col gap-4 px-6 py-8 border-r overflow-auto">
-          <Heading>History</Heading>
+    return (
+      <DashboardContent
+        breadcrumb={[
+          { href: `/beta/${org.id}`, text: org.name },
+          { href: `/beta/${org.id}/installs`, text: 'Installs' },
+          {
+            href: `/beta/${org.id}/installs/${install.id}`,
+            text: install.name,
+          },
+        ]}
+        heading={install.name}
+        headingUnderline={install.id}
+        statues={
+          <div>
+            <InstallProvider initInstall={install}>
+              <InstallStatus />
+            </InstallProvider>
+          </div>
+        }
+        meta={<SubNav links={subNavLinks} />}
+      >
+        <div className="flex flex-col lg:flex-row flex-auto">
+          <section className="flex-auto flex flex-col gap-4 px-6 py-8 border-r overflow-auto">
+            <Heading>History</Heading>
 
-          <InstallHistory
-            initEvents={events}
-            installId={installId}
-            orgId={orgId}
-            shouldPoll
-          />
-        </section>
-
-        <div className="divide-y flex flex-col lg:w-[550px]">
-          <section className="flex flex-col gap-6 px-6 py-8">
-            <Heading>Active sandbox</Heading>
-
-            <AppSandboxConfig sandboxConfig={install?.app_sandbox_config} />
-            <AppSandboxVariables
-              variables={install?.app_sandbox_config?.variables}
+            <InstallHistory
+              initEvents={events}
+              installId={installId}
+              orgId={orgId}
+              shouldPoll
             />
           </section>
 
-          <section className="flex flex-col gap-6 px-6 py-8">
-            <Heading>Current inputs</Heading>
+          <div className="divide-y flex flex-col lg:w-[550px]">
+            <section className="flex flex-col gap-6 px-6 py-8">
+              <Heading>Active sandbox</Heading>
 
-            <InstallInputs inputs={install.install_inputs} />
-          </section>
+              <AppSandboxConfig sandboxConfig={install?.app_sandbox_config} />
+              <AppSandboxVariables
+                variables={install?.app_sandbox_config?.variables}
+              />
+            </section>
 
-          <section className="flex flex-col gap-6 px-6 py-8">
-            <Heading>Cloud platform</Heading>
+            <section className="flex flex-col gap-6 px-6 py-8">
+              <Heading>Current inputs</Heading>
 
-            <InstallProvider initInstall={install}>
-              <InstallCloudPlatformDetails />
-            </InstallProvider>
-          </section>
+              <InstallInputs inputs={install.install_inputs} />
+            </section>
+
+            <section className="flex flex-col gap-6 px-6 py-8">
+              <Heading>Cloud platform</Heading>
+
+              <InstallProvider initInstall={install}>
+                <InstallCloudPlatformDetails />
+              </InstallProvider>
+            </section>
+          </div>
         </div>
-      </div>
-    </DashboardContent>
-  )
-}
+      </DashboardContent>
+    )
+  },
+  { returnTo: '/dashboard' }
+)
