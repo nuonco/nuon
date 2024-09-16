@@ -17,11 +17,11 @@ export const InstallInputs: FC<IInstallInputs> = ({ inputs }) => {
       <div>
         {inputs.map((input, ii) => (
           <div className="divide-y" key={`${input.id}-${ii}`}>
-            {Object.keys(input.values).map((key, i) => (
+            {Object.keys(input.redacted_values).map((key, i) => (
               <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-2">
                 <Text variant="caption">{key}</Text>
                 <Text className="col-span-2 break-all" variant="caption">
-                  {input.values[key]}
+                  {input.redacted_values[key]}
                 </Text>
               </div>
             ))}
