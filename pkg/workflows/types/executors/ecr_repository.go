@@ -1,5 +1,9 @@
 package executors
 
+import (
+	"go.temporal.io/sdk/workflow"
+)
+
 const (
 	ProvisionECRRepositoryWorkflowName   string = "ProvisionECRRepository"
 	DeprovisionECRRepositoryWorkflowName string = "DeprovisionECRRepository"
@@ -17,9 +21,27 @@ type ProvisionECRRepositoryResponse struct {
 	RepositoryURI  string
 }
 
-type DeprovisionECRRepositoryRequest struct  {
+// @disabled-temporal-gen workflow
+// @execution-timeout 10m
+// @task-timeout 1m
+// @task-queue "executors"
+func ProvisionECRRepository(workflow.Context, *ProvisionECRRepositoryRequest) (*ProvisionECRRepositoryResponse, error) {
+	panic("this should not be executed directly, and is only used to generate an await function.")
+	return nil, nil
+}
+
+type DeprovisionECRRepositoryRequest struct {
 	OrgID string
 	AppID string
 }
 
 type DeprovisionECRRepositoryResponse struct{}
+
+// @disabled-temporal-gen workflow
+// @execution-timeout 10m
+// @task-timeout 1m
+// @task-queue "executors"
+func DeprovisionECRRepository(workflow.Context, *DeprovisionECRRepositoryRequest) (*DeprovisionECRRepositoryResponse, error) {
+	panic("this should not be executed directly, and is only used to generate an await function.")
+	return nil, nil
+}

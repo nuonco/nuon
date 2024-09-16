@@ -1,5 +1,7 @@
 package executors
 
+import "go.temporal.io/sdk/workflow"
+
 type ProvisionDNSDelegationRequest struct {
 	InstallID string
 	OrgID     string
@@ -12,6 +14,24 @@ func (d ProvisionDNSDelegationRequest) Validate() error {
 
 type ProvisionDNSDelegationResponse struct{}
 
+// @disabled-temporal-gen workflow
+// @execution-timeout 10m
+// @task-timeout 1m
+// @task-queue "executors"
+func ProvisionDNSDelegation(workflow.Context, *ProvisionDNSDelegationRequest) (*ProvisionDNSDelegationResponse, error) {
+	panic("this should not be executed directly, and is only used to generate an await function.")
+	return nil, nil
+}
+
 type DeprovisionDNSDelegationRequest struct{}
 
 type DeprovisionDNSDelegationResponse struct{}
+
+// @disabled-temporal-gen workflow
+// @execution-timeout 10m
+// @task-timeout 1m
+// @task-queue "executors"
+func DeprovisionDNSDelegation(workflow.Context, *DeprovisionDNSDelegationRequest) (*DeprovisionDNSDelegationResponse, error) {
+	panic("this should not be executed directly, and is only used to generate an await function.")
+	return nil, nil
+}

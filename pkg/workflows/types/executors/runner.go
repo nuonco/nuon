@@ -1,5 +1,7 @@
 package executors
 
+import "go.temporal.io/sdk/workflow"
+
 const (
 	ProvisionRunnerWorkflowName   = "ProvisionRunner"
 	DeprovisionRunnerWorkflowName = "DeprovisionRunner"
@@ -17,6 +19,15 @@ type ProvisionRunnerRequest struct {
 	Image    ProvisionRunnerRequestImage `validate:"required"`
 }
 
+// @disabled-temporal-gen workflow
+// @execution-timeout 10m
+// @task-timeout 1m
+// @task-queue "executors"
+func ProvisionRunner(workflow.Context, *ProvisionRunnerRequest) (*ProvisionRunnerResponse, error) {
+	panic("this should not be executed directly, and is only used to generate an await function.")
+	return nil, nil
+}
+
 type ProvisionRunnerResponse struct{}
 
 type DeprovisionRunnerRequest struct {
@@ -24,3 +35,12 @@ type DeprovisionRunnerRequest struct {
 }
 
 type DeprovisionRunnerResponse struct{}
+
+// @disabled-temporal-gen workflow
+// @execution-timeout 10m
+// @task-timeout 1m
+// @task-queue "executors"
+func DeprovisionRunner(workflow.Context, *DeprovisionRunnerRequest) (*DeprovisionRunnerResponse, error) {
+	panic("this should not be executed directly, and is only used to generate an await function.")
+	return nil, nil
+}

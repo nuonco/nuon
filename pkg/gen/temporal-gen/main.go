@@ -98,7 +98,7 @@ func main() {
 		ActivityJenny{},
 		WorkflowJenny{},
 		ActivityListJenny{},
-		WorkflowListJenny{},
+		// WorkflowListJenny{},
 	)
 
 	// Postprocessors are run on each output produced by the pipeline
