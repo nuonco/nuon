@@ -9,14 +9,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
-const OtelLogTableOptions string = `ENGINE = MergeTree()
-	PARTITION BY toDate(timestamp_time)
-	PRIMARY KEY (service_name, timestamp_time)
-	ORDER BY (service_name, timestamp_time, timestamp)
-	TTL timestamp_time + toIntervalDay(180)
-	SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1;
-`
-
 // Logs are designed to be written via an OTLP exporter.
 //
 // https://opentelemetry.io/docs/specs/otel/logs/bridge-api/
@@ -24,7 +16,7 @@ const OtelLogTableOptions string = `ENGINE = MergeTree()
 // The clickhouse exporter, is a good reference point for this
 // https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/clickhouseexporter/exporter_logs.go
 type OtelLogRecord struct {
-	ID          string `gorm:"primary_key" json:"id"`
+	ID          string `json:"id" gorm:"primary_key"`
 	CreatedByID string `json:"created_by_id" gorm:"notnull"`
 
 	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
@@ -37,23 +29,23 @@ type OtelLogRecord struct {
 	RunnerJobExecutionID string `json:"runner_job_execution_id"`
 
 	// OTEL log message attributes
-	Timestamp          time.Time         `gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1)"`
-	TimestampDate      time.Time         `gorm:"type:Date DEFAULT toDate(timestamp)"`
-	TimestampTime      time.Time         `gorm:"type:DateTime DEFAULT toDateTime(timestamp)"`
-	TraceID            string            `gorm:"codec:ZSTD(1);index:idx_trace_id,type:bloom_filter(0.001),granularity:1;"`
-	SpanID             string            `gorm:"codec:ZSTD(1)"`
-	TraceFlags         int               `gorm:"type:UInt8"`
-	SeverityText       string            `gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
-	SeverityNumber     int               `gorm:"type:UInt8"`
-	ServiceName        string            `gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
-	Body               string            `gorm:"codecZSTD(1);index:idx_body,type:tokenbf_v1(32768\\,3\\,0),granularity:8;"`
-	ResourceSchemaURL  string            `gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
-	ResourceAttributes map[string]string `gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1"`
-	ScopeSchemaURL     string            `gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
-	ScopeName          string            `gorm:"codec:ZSTD(1)"`
-	ScopeVersion       string            `gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
-	ScopeAttributes    map[string]string `gorm:"type:Map(LowCardinality(String), String);codec:ZSTD(1);index:idx_scope_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_scope_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1"`
-	LogAttributes      map[string]string `gorm:"type:Map(LowCardinality(String), String);codec:ZSTD(1); index:idx_log_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_log_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1"`
+	Timestamp          time.Time         `json:"timestamp" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1)"`
+	TimestampDate      time.Time         `json:"timestamp_date" gorm:"type:Date DEFAULT toDate(timestamp)"`
+	TimestampTime      time.Time         `json:"timestamp_time" gorm:"type:DateTime DEFAULT toDateTime(timestamp)"`
+	TraceID            string            `json:"trace_id" gorm:"codec:ZSTD(1);index:idx_trace_id,type:bloom_filter(0.001),granularity:1;"`
+	SpanID             string            `json:"span_id" gorm:"codec:ZSTD(1)"`
+	TraceFlags         int               `json:"trace_flags" gorm:"type:UInt8"`
+	SeverityText       string            `json:"severity_text" gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
+	SeverityNumber     int               `json:"severity_number" gorm:"type:UInt8"`
+	ServiceName        string            `json:"service_name" gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
+	Body               string            `json:"body" gorm:"codecZSTD(1);index:idx_body,type:tokenbf_v1(32768\\,3\\,0),granularity:8;"`
+	ResourceSchemaURL  string            `json:"resource_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
+	ResourceAttributes map[string]string `json:"resource_attributes" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1"`
+	ScopeSchemaURL     string            `json:"scope_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
+	ScopeName          string            `json:"scope_name" gorm:"codec:ZSTD(1)"`
+	ScopeVersion       string            `json:"scope_version" gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
+	ScopeAttributes    map[string]string `json:"scope_attributes" gorm:"type:Map(LowCardinality(String), String);codec:ZSTD(1);index:idx_scope_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_scope_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1"`
+	LogAttributes      map[string]string `json:"log_attributes" gorm:"type:Map(LowCardinality(String), String);codec:ZSTD(1); index:idx_log_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_log_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1"`
 }
 
 func (r *OtelLogRecord) BeforeCreate(tx *gorm.DB) error {
