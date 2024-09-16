@@ -1,4 +1,4 @@
-package temporal
+package dataconverter
 
 import (
 	"fmt"
@@ -56,7 +56,7 @@ func (c *temporalJSONConverter) Encoding() string {
 
 var _ converter.PayloadConverter = (*temporalJSONConverter)(nil)
 
-func newJSONConverter() converter.DataConverter {
+func NewJSONConverter() converter.DataConverter {
 	jc := &temporalJSONConverter{
 		json: jsoniter.Config{
 			EscapeHTML:             true,
