@@ -54,7 +54,7 @@ export const Text: FC<IText> = ({
           isStatus,
         ['text-sm tracking-wide leading-none text-gray-600 dark:text-gray-300']:
           isOverline,
-        ['text-sm font-semibold']: isLabel,
+        ['text-sm font-medium leading-tight']: isLabel,
         'text-sm': variant === 'caption',
         'font-mono text-sm': variant ==="id",
         [`${className}`]: Boolean(className),
