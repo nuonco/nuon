@@ -11,13 +11,12 @@ replace github.com/spf13/viper v1.6.1 => github.com/spf13/viper v1.7.1
 
 replace github.com/spf13/viper v1.4.0 => github.com/spf13/viper v1.7.1
 
-replace github.com/ClickHouse/clickhouse-go/v2 v2.26.0 => github.com/nuonco/clickhouse-go/v2 v2.28.1-alpha
+replace github.com/ClickHouse/clickhouse-go/v2 v2.26.0 => github.com/nuonco/clickhouse-go/v2 v2.28.1
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.11.1
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.6.0
-	github.com/ClickHouse/clickhouse-go/v2 v2.26.0
 	github.com/DataDog/datadog-go/v5 v5.4.0
 	github.com/auth0/go-jwt-middleware/v2 v2.2.1
 	github.com/avast/retry-go v3.0.0+incompatible
@@ -84,6 +83,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/nuonco/clickhouse-go/v2 v2.28.1
 	github.com/nuonco/nuon-runner-go v0.0.0-20240904175942-21a56fd0efd7
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/opencontainers/image-spec v1.1.0
@@ -142,6 +142,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
+	gorm.io/datatypes v1.2.1
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/gorm v1.25.10
 	gorm.io/plugin/soft_delete v1.2.1
@@ -159,6 +160,7 @@ require (
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.8.0 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2 // indirect
@@ -265,6 +267,7 @@ require (
 	gonum.org/v1/gonum v0.15.0 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
+	gorm.io/driver/mysql v1.5.6 // indirect
 	gotest.tools/v3 v3.5.0 // indirect
 )
 
@@ -347,7 +350,7 @@ require (
 	github.com/go-openapi/spec v0.20.9 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-sql-driver/mysql v1.7.1 // indirect
+	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
