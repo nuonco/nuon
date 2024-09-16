@@ -102,6 +102,10 @@ func NewRunnerID() string {
 	return shortid.NewNanoID("run")
 }
 
+func NewOtelTraceID() string {
+	return shortid.NewNanoID("trc")
+}
+
 func NewOtelLogID() string {
 	return shortid.NewNanoID("log")
 }
