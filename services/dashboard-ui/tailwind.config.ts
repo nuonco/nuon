@@ -171,6 +171,9 @@ const config: Config = {
       gridTemplateColumns: {
         auto: 'repeat(auto-fill, minmax(18rem, 1fr))',
       },
+      width: {
+        inherit: 'inherit',
+      },
     },
   },
   plugins: [],
