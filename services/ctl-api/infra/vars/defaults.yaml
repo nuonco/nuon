@@ -1,13 +1,14 @@
 ---
 use_root_domain: false
 subdomain: api
+runner_subdomain: runner
 root_domain: nuon.co
 region: us-west-2
 pool: nuon
 rds:
   engine: postgres
-  engine_version: "16.10"
-  family: "postgres16"
+  engine_version: "15.8"
+  family: "postgres15"
   parameters:
     - name: max_connections
       # we limit each api and worker process to 10 connections at a time. This means we have head room to scale this up
@@ -20,7 +21,7 @@ rds:
       # after 3 lost/unacked keepalives, we consider the connection dead from the db side
     - name: tcp_keepalives_count
       value: 3
-  major_engine_version: "14"
+  major_engine_version: "15"
   instance_class: "db.t4g.large"
   allocated_storage: "100"
   db_name: ctlapi
