@@ -94,7 +94,7 @@ const (
 	// runner job types
 	RunnerJobTypeRunnerHelm      RunnerJobType = "runner-helm"
 	RunnerJobTypeRunnerTerraform RunnerJobType = "runner-terraform"
-	RunnerJobTypeRunnerLocal         RunnerJobType = "runner-local"
+	RunnerJobTypeRunnerLocal     RunnerJobType = "runner-local"
 
 	// unknown
 	RunnerJobTypeUnknown = "unknown"
@@ -211,6 +211,10 @@ func (r *RunnerJob) BeforeCreate(tx *gorm.DB) error {
 
 	if r.Group == RunnerJobGroupUnknown {
 		r.Group = r.Type.Group()
+	}
+
+	if r.OrgID == "" {
+		r.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
 
 	// the overall timeout can be derived by combining the various lower level timeouts.

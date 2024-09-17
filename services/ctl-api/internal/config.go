@@ -98,10 +98,12 @@ type Config struct {
 	Auth0ClientID  string `config:"auth0_client_id" validate:"required"`
 
 	// flags for controlling the background workers
-	ForceSandboxMode   bool          `config:"force_sandbox_mode"`
-	SandboxSleep       time.Duration `config:"sandbox_sleep" validate:"required"`
-	TFEToken           string        `config:"tfe_token" validate:"required"`
-	TFEOrgsWorkspaceID string        `config:"tfe_orgs_workspace_id" validate:"required"`
+	ForceSandboxMode bool          `config:"force_sandbox_mode"`
+	SandboxSleep     time.Duration `config:"sandbox_sleep" validate:"required"`
+
+	// terraform cloud
+	TFEToken           string `config:"tfe_token" validate:"required"`
+	TFEOrgsWorkspaceID string `config:"tfe_orgs_workspace_id" validate:"required"`
 
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
@@ -115,6 +117,7 @@ type Config struct {
 	RunnerContainerImageURL string `config:"runner_container_image_url" validate:"required"`
 	RunnerContainerImageTag string `config:"runner_container_image_tag" validate:"required"`
 	RunnerAPIURL            string `config:"runner_api_url" validate:"required"`
+	UseLocalRunners         bool   `config:"use_local_runners"`
 }
 
 func NewConfig() (*Config, error) {

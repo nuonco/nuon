@@ -6,32 +6,38 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
 )
 
-func (w *Workflows) processJob(ctx workflow.Context, runnerID, jobID string) error {
+// @temporal-gen workflow
+// @execution-timeout 60m
+// @task-timeout 30m
+func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal) error {
 	runner, err := activities.AwaitGet(ctx, activities.GetRequest{
-		RunnerID: runnerID,
+		RunnerID: sreq.ID,
 	})
 	if err != nil {
-		w.updateJobStatus(ctx, jobID, app.RunnerJobStatusNotAttempted, "unable to fetch runner from database")
+		w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "unable to fetch runner from database")
 		return fmt.Errorf("unable to get runner: %w", err)
 	}
 
 	if !runner.Status.IsHealthy() {
-		w.updateJobStatus(ctx, jobID, app.RunnerJobStatusNotAttempted, "runner is not in a healthy state")
+		w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "runner is not in a healthy state")
 		return nil
 	}
 
-	runnerJob, err := activities.AwaitGetRunnerJob(ctx, jobID)
+	runnerJob, err := activities.AwaitGetJob(ctx, activities.GetJobRequest{
+		JobID: sreq.JobID,
+	})
 	if err != nil {
-		w.updateJobStatus(ctx, jobID, app.RunnerJobStatusNotAttempted, "unable to get job from database")
+		w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "unable to get job from database")
 		return fmt.Errorf("unable to get runner job: %w", err)
 	}
 
 	now := workflow.Now(ctx)
 	if runnerJob.CreatedAt.Add(runnerJob.QueueTimeout).Before(now) {
-		w.updateJobStatus(ctx, jobID, app.RunnerJobStatusNotAttempted, "queue timeout reached")
+		w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "queue timeout reached")
 		return nil
 	}
 

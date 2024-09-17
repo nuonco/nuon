@@ -14,7 +14,7 @@ const (
 type SyncParams struct {
 	jobloop.BaseParams
 
-	Handlers []jobs.JobHandler `name:"sync"`
+	Handlers []jobs.JobHandler `group:"sync"`
 }
 
 func NewJobLoop(params SyncParams) jobloop.JobLoop {
