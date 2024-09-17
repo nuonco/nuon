@@ -19,7 +19,12 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 	ctx = middlewares.SetOrgIDContext(ctx, install.OrgID)
 	ctx = middlewares.SetAccountIDContext(ctx, install.CreatedByID)
 
-	rg, err := h.createRunnerGroup(ctx, install.ID, "installs", app.RunnerGroupTypeInstall)
+	rg, err := h.createRunnerGroup(ctx,
+		install.ID,
+		"installs",
+		app.RunnerGroupTypeInstall,
+		install.AppRunnerConfig.Type,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create runner group: %w", err)
 	}
@@ -35,7 +40,12 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	ctx = middlewares.SetOrgIDContext(ctx, org.ID)
 	ctx = middlewares.SetAccountIDContext(ctx, org.CreatedByID)
 
-	rg, err := h.createRunnerGroup(ctx, org.ID, "orgs", app.RunnerGroupTypeOrg)
+	platform := app.AppRunnerTypeAWSEKS
+	if h.cfg.UseLocalRunners {
+		platform = app.AppRunnerTypeLocal
+	}
+
+	rg, err := h.createRunnerGroup(ctx, org.ID, "orgs", app.RunnerGroupTypeOrg, platform)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create runner group: %w", err)
 	}
@@ -47,11 +57,12 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	return rg, nil
 }
 
-func (h *Helpers) createRunnerGroup(ctx context.Context, ownerID, ownerType string, runnerGroupTyp app.RunnerGroupType) (*app.RunnerGroup, error) {
+func (h *Helpers) createRunnerGroup(ctx context.Context, ownerID, ownerType string, runnerGroupTyp app.RunnerGroupType, runnerPlatform app.AppRunnerType) (*app.RunnerGroup, error) {
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   ownerID,
 		OwnerType: ownerType,
 		Type:      runnerGroupTyp,
+		Platform:  runnerPlatform,
 		Runners: []app.Runner{
 			{
 				Name:              "default",

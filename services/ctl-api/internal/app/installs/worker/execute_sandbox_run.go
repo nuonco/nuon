@@ -44,8 +44,9 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 
 	// create the job
 	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
-		RunnerID: install.RunnerGroup.Runners[0].ID,
-		Op:       op,
+		InstallID: install.ID,
+		RunnerID:  install.Org.RunnerGroup.Runners[0].ID,
+		Op:        op,
 	})
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create runner job")
@@ -68,8 +69,9 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 	}
 
 	// queue job
-	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-		Type: runnersignals.OperationJobQueued,
+	w.evClient.Send(ctx, install.Org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
+		Type:  runnersignals.OperationJobQueued,
+		JobID: runnerJob.ID,
 	})
 	// wait for the job
 

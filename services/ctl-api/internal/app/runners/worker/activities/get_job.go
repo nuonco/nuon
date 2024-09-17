@@ -11,6 +11,8 @@ type GetJobRequest struct {
 	JobID string `validate:"required"`
 }
 
+// @temporal-gen activity
+// @schedule-to-close-timeout 5s
 func (a *Activities) GetJob(ctx context.Context, req GetJobRequest) (*app.RunnerJob, error) {
 	job, err := a.getRunnerJob(ctx, req.JobID)
 	if err != nil {
@@ -20,8 +22,6 @@ func (a *Activities) GetJob(ctx context.Context, req GetJobRequest) (*app.Runner
 	return job, nil
 }
 
-// @temporal-gen activity
-// @schedule-to-close-timeout 5s
 func (a *Activities) getRunnerJob(ctx context.Context, jobID string) (*app.RunnerJob, error) {
 	runnerJob := app.RunnerJob{}
 	res := a.db.WithContext(ctx).

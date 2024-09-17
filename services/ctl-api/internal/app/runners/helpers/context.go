@@ -16,5 +16,5 @@ func (s *Helpers) ContextFromJob(ctx context.Context, jobID string) (context.Con
 	ctx = middlewares.SetOrgIDContext(ctx, job.OrgID)
 	ctx = middlewares.SetAccountIDContext(ctx, job.CreatedByID)
 
-	return nil, nil
+	return ctx, nil
 }
