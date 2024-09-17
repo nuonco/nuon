@@ -1,7 +1,7 @@
 ---
 apiVersion: v2
-name: runners
-description: A helm chart for deploying the runners.
+name: runner
+description: A helm chart for deploying a Nuon runner.
 type: application
 version: 0.0.1
 appVersion: "0.0.1"
