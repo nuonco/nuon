@@ -19,10 +19,15 @@ type ProvisionRunnerRequest struct {
 	Image    ProvisionRunnerRequestImage `validate:"required"`
 }
 
-// @disabled-temporal-gen workflow
+func ProvisionRunnerIDCallback(req *ProvisionRunnerRequest) string {
+	return "provision-runner-" + req.RunnerID
+}
+
+// @temporal-gen workflow
 // @execution-timeout 10m
 // @task-timeout 1m
 // @task-queue "executors"
+// @id-callback ProvisionRunnerIDCallback
 func ProvisionRunner(workflow.Context, *ProvisionRunnerRequest) (*ProvisionRunnerResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
 	return nil, nil
@@ -36,10 +41,15 @@ type DeprovisionRunnerRequest struct {
 
 type DeprovisionRunnerResponse struct{}
 
-// @disabled-temporal-gen workflow
+func DeprovisionRunnerIDCallback(req *DeprovisionRunnerRequest) string {
+	return "deprovision-runner-" + req.RunnerID
+}
+
+// @temporal-gen workflow
 // @execution-timeout 10m
 // @task-timeout 1m
 // @task-queue "executors"
+// @id-callback DeprovisionRunnerIDCallback
 func DeprovisionRunner(workflow.Context, *DeprovisionRunnerRequest) (*DeprovisionRunnerResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
 	return nil, nil

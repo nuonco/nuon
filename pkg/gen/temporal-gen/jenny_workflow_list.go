@@ -16,17 +16,20 @@ func (w WorkflowListJenny) JennyName() string {
 }
 
 func (w WorkflowListJenny) Generate(bfs ...*BaseFile) (*codejen.File, error) {
-	afns := make([]WorkflowFn, 0)
+	// TODO(sdboyer) this is all skating by on assuming just one grouping of fns in the input set
+	wfns := make([]WorkflowFn, 0)
 	for _, bf := range bfs {
-		afns = append(afns, bf.WorkflowFns...)
+		wfns = append(wfns, bf.WorkflowFns...)
 	}
-	if len(afns) == 0 {
+	// Only generate lists when there are workflow fns that are methods
+	if len(wfns) == 0 || wfns[0].Fn.Recv == nil {
 		return nil, nil
 	}
+
 	buf := new(bytes.Buffer)
 	genImports(buf, bfs[0])
 
-	sym0 := extractFnSymbols(afns[0].Fn)
+	sym0 := extractFnSymbols(wfns[0].Fn)
 	tvars := tvars_awaitfn_list{
 		FnName:       "ListWorkflowFns",
 		TemporalVerb: "Workflow",
@@ -39,7 +42,7 @@ func (w WorkflowListJenny) Generate(bfs ...*BaseFile) (*codejen.File, error) {
 		tvars.FnName += "On" + tvars.Receiver
 	}
 
-	for _, afn := range afns {
+	for _, afn := range wfns {
 		sym := extractFnSymbols(afn.Fn)
 		if sym.receiverTypeName != tvars.Receiver {
 			a, b := sym.receiverTypeName, tvars.Receiver
