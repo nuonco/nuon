@@ -14,6 +14,10 @@ import (
 
 func (c *ClusterInfo) fetchEnv(ctx context.Context) ([]clientcmdapi.ExecEnvVar, error) {
 	envVars := c.EnvVars
+	if envVars == nil {
+		envVars = make(map[string]string)
+	}
+
 	if c.AWSAuth != nil {
 		credEnvVars, err := awscredentials.FetchEnv(ctx, c.AWSAuth)
 		if err != nil {
@@ -32,7 +36,7 @@ func (c *ClusterInfo) fetchEnv(ctx context.Context) ([]clientcmdapi.ExecEnvVar, 
 	}
 
 	execEnvVars := make([]clientcmdapi.ExecEnvVar, 0)
-	for k, v := range c.EnvVars {
+	for k, v := range envVars {
 		execEnvVars = append(execEnvVars, clientcmdapi.ExecEnvVar{
 			Name:  k,
 			Value: v,
