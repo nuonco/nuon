@@ -122,8 +122,8 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
         enableSorting: false,
         cell: (props) => (
           <Link
-            className="text-xl"
             href={`/beta/${orgId}/installs/${props.row.original.installId}`}
+            variant="ghost"
           >
             <DotsThreeVertical />
           </Link>
