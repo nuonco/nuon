@@ -2,6 +2,7 @@ package kube
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/url"
 
@@ -56,11 +57,16 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 		return nil, fmt.Errorf("unable to fetch environment: %w", err)
 	}
 
+	caData, err := base64.StdEncoding.DecodeString(cInfo.CAData)
+	if err != nil {
+		return nil, fmt.Errorf("unable to decode CA data: %w", err)
+	}
+
 	cfg := &rest.Config{
 		Host: cInfo.Endpoint,
 		TLSClientConfig: rest.TLSClientConfig{
 			ServerName: u.Hostname(),
-			CAData:     []byte(cInfo.CAData),
+			CAData:     []byte(caData),
 		},
 		ExecProvider: &clientcmdapi.ExecConfig{
 			APIVersion:      "client.authentication.k8s.io/v1beta1",

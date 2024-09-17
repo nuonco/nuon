@@ -3,12 +3,13 @@ package worker
 import (
 	"fmt"
 
+	"go.temporal.io/sdk/workflow"
+
 	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
-	"go.temporal.io/sdk/workflow"
 )
 
 func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, apiToken string, sandboxMode bool) error {
@@ -28,6 +29,7 @@ func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, ap
 			URL: runner.RunnerGroup.Settings.ContainerImageURL,
 			Tag: runner.RunnerGroup.Settings.ContainerImageTag,
 		},
+		SettingsRefreshTimeout: runner.RunnerGroup.Settings.SettingsRefreshTimeout,
 	}
 	var resp executors.ProvisionRunnerResponse
 	err = w.execChildWorkflow(ctx, runnerID, executors.ProvisionRunnerWorkflowName, sandboxMode, req, &resp)

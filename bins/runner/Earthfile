@@ -71,6 +71,8 @@ oci-artifacts:
     ARG repo=
     ARG image_tag=
 
+    ENV GIT_REF=$image_tag
+
     COPY +build/runner /bin/runner
     COPY ../../images/certs+certs/cert.pem "$ETCSSL"
     COPY ../../images/aws-iam-authenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
