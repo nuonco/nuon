@@ -17,7 +17,7 @@ export const OrgAvatar: FC<{ name: string; isSmall?: boolean }> = ({
   return (
     <span
       className={classNames(
-        'flex items-center justify-center p-2 rounded-md bg-cool-grey-200 text-cool-grey-600 dark:bg-dark-grey-300 dark:text-white/40 font-light font-sans',
+        'flex items-center justify-center p-2 rounded-md bg-cool-grey-200 text-cool-grey-600 dark:bg-dark-grey-300 dark:text-white/50 font-medium font-sans',
         {
           'w-[40px] h-[40px]': !isSmall,
           'w-[30px] h-[30px]': isSmall,
