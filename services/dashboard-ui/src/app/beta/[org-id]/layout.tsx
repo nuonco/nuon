@@ -1,4 +1,4 @@
-import { GoSidebarCollapse } from 'react-icons/go'
+import { ArrowLineLeft } from '@phosphor-icons/react/dist/ssr'
 import { Button, Logo, OrgSwitcher, SignOutButton, MainNav } from '@/components'
 import { getOrg, getOrgs } from '@/lib'
 
@@ -12,8 +12,8 @@ export default async function OrgLayout({ children, params }) {
         <header className="flex flex-col gap-4">
           <div className="border-b flex items-center justify-between px-4 pt-6 pb-4 h-[75px]">
             <Logo />
-            <Button className="px-1.5" variant="ghost">
-              <GoSidebarCollapse className="rotate-180" />
+            <Button className="p-1.5" hasCustomPadding variant="ghost">
+              <ArrowLineLeft />
             </Button>
           </div>
 
@@ -22,7 +22,7 @@ export default async function OrgLayout({ children, params }) {
           </div>
         </header>
 
-        <div className="flex-auto flex flex-col justify-between px-4 pb-6 pt-8">
+        <div className="dashboard_nav flex-auto flex flex-col justify-between px-4 pb-6 pt-8">
           <MainNav orgId={orgId} />
 
           <div>

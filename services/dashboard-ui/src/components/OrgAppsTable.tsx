@@ -77,8 +77,8 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
         enableSorting: false,
         cell: (props) => (
           <Link
-            className="text-xl"
             href={`/beta/${orgId}/apps/${props.row.original.appId}`}
+            variant="ghost"
           >
             <DotsThreeVertical />
           </Link>

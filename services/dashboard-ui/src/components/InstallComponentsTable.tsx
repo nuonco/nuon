@@ -137,8 +137,8 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         enableSorting: false,
         cell: (props) => (
           <Link
-            className="text-xl"
             href={`/beta/${orgId}/installs/${installId}/components/${props.row.original.installComponentId}`}
+            variant="ghost"
           >
             <DotsThreeVertical />
           </Link>
