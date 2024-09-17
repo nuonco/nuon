@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
+	"go/types"
 	"path/filepath"
 	"strings"
 
@@ -34,6 +35,21 @@ type tvars_workflowfn struct {
 
 	// RecvType is the var declaration and name of the receiver type as a string literal. Populated only if IsMethod is true
 	Receiver string
+
+	// HasResp indicates whether there is a non-error return value from the function
+	HasResp bool
+
+	// RespType is a string literal representing the qualified type of the response
+	RespType string
+
+	// RespIsPtr indicates whether the type of the return value is a pointer
+	RespIsPtr bool
+
+	// ReqIsPtr indicates whether the type of the request value is a pointer
+	ReqIsPtr bool
+
+	// Zero is a string literal representing the zero value of the response type
+	Zero string
 }
 
 // WorkflowJenny is a jenny that generates a function that calls a provided base function as a Temporal workflow, and await the result.
@@ -83,10 +99,42 @@ func (j WorkflowJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 		basebuf.WriteString(bfname)
 
 		tvars.BaseFnSymbol = basebuf.String()
-		// This template assumes without verification that the wrapped fn has a bare error return, b/c temporal requires that
-		err := tmpls.Lookup("workflow_fn.tmpl").Execute(&buf, tvars)
-		if err != nil {
-			return nil, fmt.Errorf("error executing template for fn %s: %w", bfn.Fn.Name.String(), err)
+
+		switch len(bfn.Fn.Type.Results.List) {
+		case 1:
+			// This template assumes without verification that the wrapped fn has a bare error return, b/c temporal requires that
+			err := tmpls.Lookup("workflow_fn.tmpl").Execute(&buf, tvars)
+			if err != nil {
+				return nil, fmt.Errorf("error executing template for fn %s: %w", bfn.Fn.Name.String(), err)
+			}
+		case 2:
+			// This template assumes without verification that the wrapped fn is a (custom value, error) return, b/c temporal requires that
+			tvars.HasResp = true
+			respt := bfn.Fn.Type.Results.List[0].Type
+			tvars.RespType = astfmt.Sprint(respt)
+			_, tvars.RespIsPtr = bfn.Fn.Type.Results.List[0].Type.(*ast.StarExpr)
+
+			if !tvars.RespIsPtr {
+				// Non-pointer return types need to be zero-initialized, the syntax for which
+				// varies by type
+				rt := bf.Package.TypesInfo.Types[respt].Type
+				if rtn, ok := rt.(*types.Named); ok {
+					switch rtn.Underlying().(type) {
+					case *types.Struct:
+						tvars.Zero = fmt.Sprintf("%s{}", rtn.Obj().Name())
+					default:
+						tvars.Zero = zerostr(rtn.Underlying())
+					}
+				} else {
+					tvars.Zero = zerostr(rt)
+				}
+			}
+			err := tmpls.Lookup("workflow_two_return.tmpl").Execute(&buf, tvars)
+			if err != nil {
+				return nil, fmt.Errorf("error executing template for fn %s: %w", bfn.Fn.Name.String(), err)
+			}
+		default:
+			return nil, fmt.Errorf("base workflow func %s must have either one or two return values", bfn.Fn.Name.String())
 		}
 	}
 

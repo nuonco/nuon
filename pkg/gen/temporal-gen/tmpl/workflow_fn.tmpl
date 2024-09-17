@@ -6,6 +6,9 @@ func ({{ .Receiver }}) {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) e
 {{- else -}}
 func {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) error {
 {{- end }}
+	var _ = {{ .BaseFnSymbol }}
+	// use this ^ for to go-to-definition jumping in your editor
+
     cwo := {{ template "workflow_options.tmpl" .Options }}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
