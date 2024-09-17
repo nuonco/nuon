@@ -14,7 +14,7 @@ const (
 type JobLoopParams struct {
 	jobloop.BaseParams
 
-	Handlers []jobs.JobHandler `name:"deploy"`
+	Handlers []jobs.JobHandler `group:"deploys"`
 }
 
 func NewJobLoop(params JobLoopParams) jobloop.JobLoop {

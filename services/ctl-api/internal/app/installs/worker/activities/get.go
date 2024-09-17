@@ -23,6 +23,9 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 	install := app.Install{}
 	res := a.db.WithContext(ctx).
 		Preload("CreatedBy").
+		Preload("Org").
+		Preload("Org.RunnerGroup").
+		Preload("Org.RunnerGroup.Runners").
 		Preload("App").
 		Preload("App.Org").
 		Preload("AWSAccount").

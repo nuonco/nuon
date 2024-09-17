@@ -16,30 +16,6 @@ const (
 	RunnerGroupTypeOrg     RunnerGroupType = "org"
 )
 
-type RunnerPlatformType string
-
-const (
-	RunnerPlatformAWSECS   RunnerPlatformType = "aws-ecs"
-	RunnerPlatformAWSEKS   RunnerPlatformType = "aws-eks"
-	RunnerPlatformAzureAKS RunnerPlatformType = "azure-aks"
-	RunnerPlatformAzureACS RunnerPlatformType = "azure-acs"
-	RunnerPlatformLocal    RunnerPlatformType = "local"
-)
-
-func (r RunnerPlatformType) JobType() RunnerJobType {
-	switch r {
-	case RunnerPlatformAWSECS, RunnerPlatformAzureACS:
-		return RunnerJobTypeRunnerTerraform
-	case RunnerPlatformAWSEKS, RunnerPlatformAzureAKS:
-		return RunnerJobTypeRunnerHelm
-	case RunnerPlatformLocal:
-		return RunnerJobTypeRunnerLocal
-	default:
-	}
-
-	return RunnerJobTypeUnknown
-}
-
 type RunnerGroup struct {
 	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
@@ -58,7 +34,7 @@ type RunnerGroup struct {
 	Runners  []Runner            `json:"runners" gorm:"constraint:OnDelete:CASCADE;"`
 	Settings RunnerGroupSettings `json:"settings" gorm:"constraint:OnDelete:CASCADE;"`
 	Type     RunnerGroupType     `json:"type" gorm:"notnull;defaultnull"`
-	Platform RunnerPlatformType  `json:"platform" gorm:"notnull;defaultnull"`
+	Platform AppRunnerType       `json:"platform" gorm:"notnull;defaultnull"`
 }
 
 func (r *RunnerGroup) BeforeCreate(tx *gorm.DB) error {
