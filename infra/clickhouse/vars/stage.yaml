@@ -2,8 +2,10 @@
 account: stage
 env: stage
 data_volume_storage: 2Gi
-# this will result in 2 replicas across 3 zones on at least 2 nodes and 1 zone
-zones: 1
+
 hosts: 2
 replicas: 2
 shards: 2
+
+# zones controls where the ch NodePool will stand up new nodes
+availability_zones: ["us-west-2b"] # based on ctl-api stage db location

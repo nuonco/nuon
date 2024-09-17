@@ -87,9 +87,6 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
       }
       "limits" = {
         # 5 + 1 t3a.medium boxes
-        # hardcoded for prod limits but karpenter scales to zero and local.zones controls
-        # node count (mostly) so we should be okay w/ these higher limits. we can always make
-        # these vars.
         "cpu"    = 12
         "memory" = "24576Mi"
       }
@@ -124,7 +121,7 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
             {
               "key"      = "topology.kubernetes.io/zone"
               "operator" = "In"
-              "values"   = ["us-west-2a", "us-west-2b", "us-west-2c", "us-west-2d"]
+              "values"   = local.availability_zones
             },
 
           ]
@@ -293,24 +290,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
               "clickhouse-installation" = "true"
             }
             "topologySpreadConstraints" = [
-              # spreads the nodes across n = local.zones. if n zones do not exist, karpenter will
-              # stand up new nodes until the NodePool can satisfy the minDomains constraint.
-              {
-                  "maxSkew" = 1
-                  "topologyKey" = "topology.kubernetes.io/zone"
-                  "whenUnsatisfiable" = "DoNotSchedule"
-                  "minDomains" = "${local.zones}"
-                  "labelSelector" = {
-                    "matchLabels" = {
-                      # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
-                      #           that is, however, an assumption
-                      "clickhouse.altinity.com/chi" = "clickhouse-installation"
-                    }
-                  }
-              },
-              # spreads the pods across nodes. since we specify the number of zones with minDomains above,
-              # we can assume we will eventually (but soon after deployment) have n = local.zones nodes available.
-              # these are likely to be underutilized but what we're buying is resilience.
+              # spread the pods across nodes.
               {
                   "maxSkew" = 1
                   "topologyKey" = "kubernetes.io/hostname"
@@ -389,7 +369,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
               ]
               "resources" = {
                 "requests" = {
-                  "storage" = "4Gi"
+                  "storage" = "32Gi"
                 }
               }
             }

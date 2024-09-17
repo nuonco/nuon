@@ -2,8 +2,10 @@
 account: prod
 env: prod
 data_volume_storage: 100Gi
-# this will result in 3 replicas across 3 nodes in at least 1 zone
-zones: 1
+
 hosts: 3
 replicas: 3
 shards: 3
+
+# zones controls where the ch NodePool will stand up new nodes
+availability_zones: ["us-west-2c"] # based on ctl-api prod db location

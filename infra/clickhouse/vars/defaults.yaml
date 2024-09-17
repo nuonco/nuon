@@ -4,8 +4,9 @@ pool: nuon
 image_tag: "24.3.7"
 data_volume_storage: 1Gi
 
-# zones should likely be equal to the number of replicas
-zones: 1
 hosts: 1
 replicas: 1
 shards: 1
+
+# zones controls where the ch NodePool will stand up new nodes
+availability_zones: ["us-west-2c"]

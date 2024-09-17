@@ -4,10 +4,11 @@ locals {
   zone                   = nonsensitive(data.tfe_outputs.infra-eks-nuon.values.private_zone)
 
   # clickhouse installation manifest values
-  zones               = local.vars.zones
-  hosts               = local.vars.hosts
-  replicas            = local.vars.replicas
-  shards              = local.vars.shards
+  hosts              = local.vars.hosts
+  replicas           = local.vars.replicas
+  shards             = local.vars.shards
+  availability_zones = local.vars.availability_zones
+
   data_volume_storage = local.vars.data_volume_storage
   image_tag           = local.vars.image_tag
 
