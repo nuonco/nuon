@@ -1,6 +1,9 @@
 
 // {{ .FnName }} executes [{{ .BaseFnName }}] within a Temporal activity, waits for the future to complete, then returns the error, if any.
 func {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) error {
+	var _ = {{ .BaseFnSymbol }}
+	// use this ^ for to go-to-definition jumping in your editor
+
 	ao := {{ template "activity_options.tmpl" .Options }}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 

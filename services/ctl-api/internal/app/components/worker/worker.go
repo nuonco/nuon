@@ -42,13 +42,9 @@ func New(cfg *internal.Config,
 	})
 	wkr.RegisterActivity(acts)
 	wkr.RegisterWorkflow(wkflows.EventLoop)
-	wkr.RegisterWorkflow(wkflows.Build)
-	wkr.RegisterWorkflow(wkflows.Delete)
-	wkr.RegisterWorkflow(wkflows.PollDependencies)
-	wkr.RegisterWorkflow(wkflows.Provision)
-	wkr.RegisterWorkflow(wkflows.Created)
-	wkr.RegisterWorkflow(wkflows.QueueBuild)
-	wkr.RegisterWorkflow(wkflows.Restarted)
+	for _, wf := range wkflows.ListWorkflowFns() {
+		wkr.RegisterWorkflow(wf)
+	}
 
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
