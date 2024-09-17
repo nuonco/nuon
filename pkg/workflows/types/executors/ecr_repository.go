@@ -21,10 +21,15 @@ type ProvisionECRRepositoryResponse struct {
 	RepositoryURI  string
 }
 
-// @disabled-temporal-gen workflow
+func ProvisionECRRepositoryIDCallback(req *ProvisionECRRepositoryRequest) string {
+	return "provision-ecr-" + req.OrgID + "-" + req.AppID
+}
+
+// @temporal-gen workflow
 // @execution-timeout 10m
 // @task-timeout 1m
 // @task-queue "executors"
+// @id-callback ProvisionECRRepositoryIDCallback
 func ProvisionECRRepository(workflow.Context, *ProvisionECRRepositoryRequest) (*ProvisionECRRepositoryResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
 	return nil, nil
@@ -37,10 +42,15 @@ type DeprovisionECRRepositoryRequest struct {
 
 type DeprovisionECRRepositoryResponse struct{}
 
+func DeprovisionECRRepositoryIDCallback(req *DeprovisionECRRepositoryRequest) string {
+	return "deprovision-ecr-" + req.OrgID + "-" + req.AppID
+}
+
 // @disabled-temporal-gen workflow
 // @execution-timeout 10m
 // @task-timeout 1m
 // @task-queue "executors"
+// @id-callback DeprovisionECRRepositoryIDCallback
 func DeprovisionECRRepository(workflow.Context, *DeprovisionECRRepositoryRequest) (*DeprovisionECRRepositoryResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
 	return nil, nil

@@ -46,14 +46,9 @@ func New(cfg *internal.Config,
 	// register workflows
 	wkr.RegisterWorkflow(wkflows.OrgHealthCheck)
 	wkr.RegisterWorkflow(wkflows.EventLoop)
-	wkr.RegisterWorkflow(wkflows.Created)
-	wkr.RegisterWorkflow(wkflows.Delete)
-	wkr.RegisterWorkflow(wkflows.Deprovision)
-	wkr.RegisterWorkflow(wkflows.ForceDelete)
-	wkr.RegisterWorkflow(wkflows.ForceDeprovision)
-	wkr.RegisterWorkflow(wkflows.InviteUser)
-	wkr.RegisterWorkflow(wkflows.Provision)
-	wkr.RegisterWorkflow(wkflows.Reprovision)
+	for _, wf := range wkflows.ListWorkflowFns() {
+		wkr.RegisterWorkflow(wf)
+	}
 
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
