@@ -17,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      className="bg-light text-cool-grey-950 dark:bg-dark dark:text-cool-grey-50"
+      className="bg-light text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50"
       lang="en"
     >
       {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||

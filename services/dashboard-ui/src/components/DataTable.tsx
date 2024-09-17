@@ -10,7 +10,7 @@ import {
   type ColumnDef,
   type ColumnFilter,
 } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp } from '@phosphor-icons/react'
+import { ArrowDown, ArrowUp, MagnifyingGlass } from '@phosphor-icons/react'
 import React, { type FC } from 'react'
 import { FiMoreVertical } from 'react-icons/fi'
 import { Link } from '@/components'
@@ -153,9 +153,10 @@ export const DataTableSearch: FC<{
   handleOnChange: any
 }> = ({ value = '', handleOnChange }) => {
   return (
-    <label>
+    <label className="relative">
+      <MagnifyingGlass className="text-cool-grey-600 dark:text-cool-grey-500 absolute top-2.5 left-2" />
       <input
-        className="rounded-md px-3.5 py-1.5 text-base border bg-white dark:bg-dark placeholder:text-cool-grey-600 dark:placeholder:cool-grey-500 md:min-w-72"
+        className="rounded-md pl-8 pr-3.5 py-1.5 text-base border bg-white dark:bg-dark-grey-100 placeholder:text-cool-grey-600 dark:placeholder:text-cool-grey-500 md:min-w-80"
         type="search"
         placeholder="Search..."
         value={value}

@@ -7,7 +7,7 @@ export interface ILink extends HTMLAttributes<HTMLAnchorElement> {
   target?: string
   isActive?: boolean
   isExternal?: boolean
-  variant?: 'default' | 'breadcrumb'
+  variant?: 'default' | 'breadcrumb' | 'ghost'
 }
 
 export const Link: FC<ILink> = ({
@@ -28,6 +28,8 @@ export const Link: FC<ILink> = ({
           variant === 'breadcrumb',
         'text-cool-grey-950 dark:text-white':
           variant === 'breadcrumb' && isActive,
+        'p-2 rounded-md text-base font-medium text-cool-grey-6000 hover:bg-black/5 dark:hover:bg-white/5':
+          variant === 'ghost',
         [`${className}`]: Boolean(className),
       })}
       href={href}

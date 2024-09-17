@@ -8,7 +8,11 @@
   }
 
   .dashboard_sidebar {
-    background-image:  url('../../public/light-sidebar-bg.svg'), linear-gradient(172.2deg, #FFFFFF, #f9f9fb);
+    background:  linear-gradient(336deg, rgba(255,255,255,1) 0%, rgba(249,249,251,1) 100%);
+  }
+
+   .dashboard_nav {
+    background-image:  url('../../public/light-sidebar-bg.svg');
   }
 }
 
@@ -18,7 +22,11 @@
   }
 
   .dashboard_sidebar {
-    background-image:  url('../../public/sidebar-bg.svg'), linear-gradient(172.2deg, #0D0416 0%, #050109 99.36%);
+    background: linear-gradient(336deg, rgba(13,4,22,1) 0%, rgba(5,1,9,1) 100%);
+  }
+
+  .dashboard_nav {
+    background-image:  url('../../public/sidebar-bg.svg');
   }
 }
 
@@ -28,12 +36,15 @@
   }
 }
 
-.dashboard_sidebar {
+.dashboard_sidebar,
+.dashboard_nav {
   background-position: bottom;
   background-repeat: no-repeat;
   background-size: cover;
 }
 
 .dashboard_content {
+  background-image:  url('../../public/dashboard-bg.svg');
+  background-repeat: no-repeat;
   overflow: hidden;
 }

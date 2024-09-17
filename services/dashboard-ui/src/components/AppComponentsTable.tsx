@@ -108,8 +108,8 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
         enableSorting: false,
         cell: (props) => (
           <Link
-            className="text-xl"
             href={`/beta/${orgId}/apps/${appId}/components/${props.row.original.componentId}`}
+            variant="ghost"
           >
             <DotsThreeVertical />
           </Link>
