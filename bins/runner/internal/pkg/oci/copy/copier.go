@@ -46,7 +46,7 @@ type CopierParams struct {
 	V *validator.Validate
 }
 
-func New(params CopierParams) *copier {
+func New(params CopierParams) Copier {
 	return &copier{
 		v: params.V,
 	}
