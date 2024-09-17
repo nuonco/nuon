@@ -105,7 +105,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			// such as a health check, they will immediately be picked up
 		case signals.OperationJobQueued:
 			op = "job_queued"
-			if err := w.processJob(ctx, req.ID, signal.JobID); err != nil {
+			if err := w.AwaitProcessJob(ctx, sreq); err != nil {
 				status = "error"
 				l.Info("unable to handle queued build: %w", zap.Error(err))
 			}

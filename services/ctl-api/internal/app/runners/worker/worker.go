@@ -46,6 +46,7 @@ func New(cfg *internal.Config,
 	wkr.RegisterWorkflow(wkflows.Provision)
 	wkr.RegisterWorkflow(wkflows.Reprovision)
 	wkr.RegisterWorkflow(wkflows.Restart)
+	wkr.RegisterWorkflow(wkflows.ProcessJob)
 
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {

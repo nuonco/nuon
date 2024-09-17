@@ -32,11 +32,13 @@ env:
   AUTH0_ISSUER_URL: "https://nuon.us.auth0.com/"
   AUTH0_AUDIENCE: "api.nuon.co"
   AUTH0_CLIENT_ID: 7VLjCLy25IQVWx7yMLgp15x5IkXDS6Vr
+  INTEGRATION_GITHUB_INSTALL_ID: !!string 41323514
+  INTERNAL_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
+  
+  # different toggles for sandbox mode and other local tooling
   FORCE_SANDBOX_MODE: true
   SANDBOX_SLEEP: 3s
-  INTEGRATION_GITHUB_INSTALL_ID: !!string 41323514
-  APP_SYNC_API_URL: http://localhost:8081
-  INTERNAL_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
+  USE_LOCAL_RUNNERS: true
 
   # common toggles for local development based on what you are working on
   DISABLE_METRICS: true

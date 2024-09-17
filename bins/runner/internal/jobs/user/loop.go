@@ -3,7 +3,6 @@ package user
 import (
 	"github.com/nuonco/nuon-runner-go/models"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
 )
 
@@ -14,11 +13,11 @@ const (
 type JobLoopParams struct {
 	jobloop.BaseParams
 
-	Handlers []jobs.JobHandler `name:"user"`
+	// Handlers []jobs.JobHandler `name:"user"`
 }
 
 func NewJobLoop(params JobLoopParams) jobloop.JobLoop {
-	return jobloop.New(params.Handlers,
+	return jobloop.New(nil,
 		runnerJobGroup,
 		params.BaseParams)
 }
