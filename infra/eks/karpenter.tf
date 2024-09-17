@@ -150,7 +150,7 @@ resource "kubectl_manifest" "karpenter_provisioner" {
           },
           {
             # only allow 1 node to be disrupted at time during work hours
-            nodes    = 1,
+            nodes    = "1",
             schedule = "0 10 * * 1,2,3,4,5"  # https://crontab.guru/#0_10_*_*_1,2,3,4,5
             duration = "11h"
           },
