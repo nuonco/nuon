@@ -18,7 +18,7 @@ export const AppInputConfig: FC<IAppInputConfig> = ({ inputConfig }) => {
       </div>
       {inputConfig.input_groups.map((group, i) => (
         <div className="divide-y" key={`${group.id}-${i}`}>
-          <div className="px-3 py-2 bg-cool-grey-50 text-cool-grey-600 dark:text-cool-grey-500 text-base border-t grid grid-cols-8 gap-4 items-start">
+          <div className="px-3 py-2 bg-cool-grey-50 dark:bg-dark-grey-200 text-cool-grey-600 dark:text-cool-grey-500 text-base border-t grid grid-cols-8 gap-4 items-start">
             <Text className="col-span-2 !font-medium">
               {group.display_name}
             </Text>
