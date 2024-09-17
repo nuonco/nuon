@@ -2,14 +2,13 @@
 # set elsewhere
 # runner_group_id:
 env:
-  NUON_DEBUG: true
+  NUON_DEBUG: 'true'
   RUNNER_ID: <must-be-set>
   API_TOKEN: <must-be-set>
   API_URL: <must-be-set>
 
-
 image:
-  repository: "traefik/whoami"
+  repository: ""
   tag: "latest"
 
 serviceAccount:

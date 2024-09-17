@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	defaultRunnerGroupHeartBeatTimeout time.Duration = time.Second * 5
+	defaultRunnerGroupHeartBeatTimeout       time.Duration = time.Second * 5
+	defaultRunnerGroupSettingsRefreshTimeout time.Duration = time.Minute * 5
 )
 
 func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Install) (*app.RunnerGroup, error) {
@@ -60,10 +61,11 @@ func (h *Helpers) createRunnerGroup(ctx context.Context, ownerID, ownerType stri
 			},
 		},
 		Settings: app.RunnerGroupSettings{
-			ContainerImageURL: h.cfg.RunnerContainerImageURL,
-			ContainerImageTag: h.cfg.RunnerContainerImageTag,
-			RunnerAPIURL:      h.cfg.RunnerAPIURL,
-			HeartBeatTimeout:  defaultRunnerGroupHeartBeatTimeout,
+			ContainerImageURL:      h.cfg.RunnerContainerImageURL,
+			ContainerImageTag:      h.cfg.RunnerContainerImageTag,
+			RunnerAPIURL:           h.cfg.RunnerAPIURL,
+			HeartBeatTimeout:       defaultRunnerGroupHeartBeatTimeout,
+			SettingsRefreshTimeout: defaultRunnerGroupSettingsRefreshTimeout,
 		},
 	}
 	res := h.db.WithContext(ctx).Create(&runnerGroup)
