@@ -4,7 +4,7 @@
 
 @media (prefers-color-scheme: light) {
   * {
-    border-color: rgba(0, 0, 0, 0.1);
+    border-color: #DEE3E7;
   }
 
   .dashboard_sidebar {
@@ -18,7 +18,7 @@
 
 @media (prefers-color-scheme: dark) {
   * {
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: #27252A;
   }
 
   .dashboard_sidebar {
