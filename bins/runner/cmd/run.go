@@ -14,8 +14,12 @@ import (
 	jobdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/job"
 	noopdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/noop"
 	terraformdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/terraform"
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner"
+	runnerhelm "github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner/helm"
+	runnerterraform "github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner/terraform"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/sandbox"
+	sandboxterraform "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sandbox/terraform"
 
 	// containerimagesync "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/containerimage"
 	noopsync "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/noop"
@@ -24,7 +28,6 @@ import (
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/healthcheck"
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/noop"
 	noopoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/noop"
 	shutdownoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/shutdown"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync"
@@ -63,29 +66,30 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 		fx.Provide(jobloop.AsJobLoop(sync.NewJobLoop)),
 		fx.Provide(jobs.AsJobHandler("sync", ocisync.New)),
 		fx.Provide(jobs.AsJobHandler("sync", noopsync.New)),
-		// fx.Provide(jobs.AsJobHandler("containerimage", containerimagesync.New)),
 
 		// healthcheck jobs
 		fx.Provide(jobloop.AsJobLoop(healthcheck.NewJobLoop)),
 
 		// operation jobs
-		fx.Provide(jobloop.AsJobLoop(noop.NewJobLoop)),
-		fx.Provide(jobs.AsJobHandler("noop", noopoperation.New)),
-		fx.Provide(jobs.AsJobHandler("shutdown", shutdownoperation.New)),
+		fx.Provide(jobloop.AsJobLoop(operations.NewJobLoop)),
+		fx.Provide(jobs.AsJobHandler("operations", noopoperation.New)),
+		fx.Provide(jobs.AsJobHandler("operations", shutdownoperation.New)),
 
-		// TODO(jm) add these jobs
 		// sandbox jobs
 		fx.Provide(jobloop.AsJobLoop(sandbox.NewJobLoop)),
+		fx.Provide(jobs.AsJobHandler("sandbox", sandboxterraform.New)),
+
 		// runner jobs
 		fx.Provide(jobloop.AsJobLoop(runner.NewJobLoop)),
+		fx.Provide(jobs.AsJobHandler("runner", runnerterraform.New)),
+		fx.Provide(jobs.AsJobHandler("runner", runnerhelm.New)),
 
+		// TODO(jm): add diagnostics jobs here
 		// user jobs
 		fx.Provide(jobloop.AsJobLoop(user.NewJobLoop)),
 
 		// start all job loops
-		fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {
-			//
-		})),
+		fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
 		fx.Invoke(func(*heartbeater.HeartBeater) {}),
 	}
 

@@ -17,7 +17,22 @@ const (
 	AppRunnerTypeAWSEKS   AppRunnerType = "aws-eks"
 	AppRunnerTypeAzureAKS AppRunnerType = "azure-aks"
 	AppRunnerTypeAzureACS AppRunnerType = "azure-acs"
+	AppRunnerTypeLocal    AppRunnerType = "local"
 )
+
+func (a AppRunnerType) JobType() RunnerJobType {
+	switch a {
+	case AppRunnerTypeAWSECS, AppRunnerTypeAzureACS:
+		return RunnerJobTypeRunnerTerraform
+	case AppRunnerTypeAWSEKS, AppRunnerTypeAzureAKS:
+		return RunnerJobTypeRunnerHelm
+	case AppRunnerTypeLocal:
+		return RunnerJobTypeRunnerLocal
+	default:
+	}
+
+	return RunnerJobTypeUnknown
+}
 
 type AppRunnerConfig struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
