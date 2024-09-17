@@ -38,8 +38,7 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 		OrgID:       sreq.ID,
 		Reprovision: true,
 	}
-	orgIAMWorkflowID := fmt.Sprintf("provision-iam-%s", sreq.ID)
-	_, err = executors.AwaitProvisionIAM(ctx, orgIAMWorkflowID, orgIAMReq)
+	_, err = executors.AwaitProvisionIAM(ctx, orgIAMReq)
 	if err != nil {
 		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "unable to reprovision iam roles")
 		return fmt.Errorf("unable to reprovision iam roles: %w", err)
