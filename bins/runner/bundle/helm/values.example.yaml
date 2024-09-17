@@ -1,0 +1,7 @@
+env:
+  API_TOKEN: tok46c25bg1kl0atxe8zezmr3b
+  API_URL: http://localhost:8083
+  RUNNER_ID: runza0buhlt1623h3oeflpaww1
+image:
+  repository: public.ecr.aws/p7e3r5y0/runner
+  tag: latest
