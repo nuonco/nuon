@@ -1,6 +1,10 @@
 package executors
 
-import "go.temporal.io/sdk/workflow"
+import (
+	"time"
+
+	"go.temporal.io/sdk/workflow"
+)
 
 const (
 	ProvisionRunnerWorkflowName   = "ProvisionRunner"
@@ -13,10 +17,11 @@ type ProvisionRunnerRequestImage struct {
 }
 
 type ProvisionRunnerRequest struct {
-	RunnerID string                      `validate:"required"`
-	APIURL   string                      `validate:"required"`
-	APIToken string                      `validate:"required"`
-	Image    ProvisionRunnerRequestImage `validate:"required"`
+	RunnerID               string                      `validate:"required"`
+	APIURL                 string                      `validate:"required"`
+	APIToken               string                      `validate:"required"`
+	Image                  ProvisionRunnerRequestImage `validate:"required"`
+	SettingsRefreshTimeout time.Duration               `validate:"required"`
 }
 
 func ProvisionRunnerIDCallback(req *ProvisionRunnerRequest) string {

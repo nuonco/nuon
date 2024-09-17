@@ -31,6 +31,9 @@ spec:
       containers:
         - name: {{ include "common.fullname" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command:
+            - /bin/runner
+            - run
           resources:
             limits:
               cpu: {{ .Values.node_pool.instance_type.cpu }}
@@ -42,11 +45,6 @@ spec:
             - configMapRef:
                 name: {{ include "common.fullname" . }}
           env:
-            - name: NUON_API_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "common.fullname" . }}
-                  key: NUON_API_TOKEN
             - name: HOST_IP
               valueFrom:
                   fieldRef:

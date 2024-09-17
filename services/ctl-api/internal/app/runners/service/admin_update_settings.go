@@ -60,7 +60,7 @@ func (s *service) updateRunnerSettings(ctx context.Context, runnerID string, req
 	}
 
 	if res := s.db.WithContext(ctx).
-		Model(&obj).
+		Where(obj).
 		Updates(updates); res.Error != nil {
 		return nil, fmt.Errorf("unable to update runner settings: %w", res.Error)
 	}

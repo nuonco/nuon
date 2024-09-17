@@ -23,9 +23,10 @@ type RunnerGroupSettings struct {
 	RunnerGroupID string `json:"runner_group_id" gorm:"index:idx_runner_group_settings,unique"`
 
 	// configuration for deploying the runner
-	ContainerImageURL string `json:"container_image_url"  gorm:"default null;not null"`
-	ContainerImageTag string `json:"container_image_tag"  gorm:"default null;not null"`
-	RunnerAPIURL      string `json:"runner_api_url" gorm:"default null;not null"`
+	ContainerImageURL      string        `json:"container_image_url"  gorm:"default null;not null"`
+	ContainerImageTag      string        `json:"container_image_tag"  gorm:"default null;not null"`
+	RunnerAPIURL           string        `json:"runner_api_url" gorm:"default null;not null"`
+	SettingsRefreshTimeout time.Duration `json:"settings_refresh_timeout"`
 
 	// Various settings for the runner to handle internally
 	HeartBeatTimeout           time.Duration `json:"heart_beat_timeout" gorm:"default null;" swaggertype:"primitive,integer"`
