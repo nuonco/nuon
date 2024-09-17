@@ -1,7 +1,15 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
 import { GoChevronRight } from 'react-icons/go'
-import { BreadcrumbNav, Heading, Logo, Link, ProfileDropdown, Text, type TLink } from '@/components'
+import {
+  BreadcrumbNav,
+  Heading,
+  Logo,
+  Link,
+  ProfileDropdown,
+  Text,
+  type TLink,
+} from '@/components'
 
 export const DashboardHeader: FC = () => {
   return (
@@ -49,10 +57,10 @@ export const DashboardContent: FC<{
 }) => {
   return (
     <>
-      <header className="flex justify-between items-center border-b px-6 py-4 h-[75px]">
+      <header className="flex justify-between items-center border-b px-6 py-4 h-[75px] bg-white/50 dark:bg-white/[.02]">
         <BreadcrumbNav links={breadcrumb} />
         <div>
-          <Link href="https://docs.nuon.co" target="_blank" className="text-sm">
+          <Link href="https://docs.nuon.co" target="_blank" variant="ghost">
             Docs
           </Link>
         </div>
