@@ -224,7 +224,7 @@ resource "helm_release" "vantage-k8s-agent" {
       "service" = {
         "name" = "report"
         "type" = "ClusterIP"
-        "port" = "9010"
+        "port" = 9010
       }
 
       "resources" = {
