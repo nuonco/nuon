@@ -110,6 +110,26 @@ func NewOtelLogID() string {
 	return shortid.NewNanoID("log")
 }
 
+func NewOtelMetricSumID() string {
+	return shortid.NewNanoID("msu")
+}
+
+func NewOtelMetricGaugeID() string {
+	return shortid.NewNanoID("mga")
+}
+
+func NewOtelMetricHistogramID() string {
+	return shortid.NewNanoID("mhi")
+}
+
+func NewOtelMetricExponentialHistogramID() string {
+	return shortid.NewNanoID("meh")
+}
+
+func NewOtelMetricSummaryID() string {
+	return shortid.NewNanoID("msr")
+}
+
 func NewRunnerHealthCheckID() string {
 	return shortid.NewNanoID("hlt")
 }
