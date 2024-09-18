@@ -3,6 +3,7 @@ package worker
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -11,8 +12,41 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func (w *Workflows) isBuildDeployable(bld app.ComponentBuild) bool {
+func (w *Workflows) isBuildDeployable(bld *app.ComponentBuild) bool {
 	return bld.Status == app.ComponentBuildStatusActive
+}
+
+func (w *Workflows) pollForDeployableBuild(ctx workflow.Context, installDeployId string, bld app.ComponentBuild) error {
+	if w.isBuildDeployable(&bld) {
+		return nil
+	}
+	sleepTimer := time.Second * 10
+	maxAttempts := 20
+	attempt := 0
+	for {
+		if attempt >= maxAttempts {
+			return fmt.Errorf("build is not deployable after %d polling attempts", maxAttempts)
+		}
+
+		attempt++
+
+		// Get the latest build
+		bld, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, bld.ID)
+		if err != nil {
+			return fmt.Errorf("unable to get component build: %w", err)
+		}
+
+		// Check if the build is deployable
+		if w.isBuildDeployable(bld) {
+			return nil
+		}
+
+		if bld.Status == app.ComponentBuildStatusError {
+			return fmt.Errorf("component build is in an error state")
+		}
+
+		workflow.Sleep(ctx, sleepTimer)
+	}
 }
 
 func (w *Workflows) isDeployable(install *app.Install) bool {
@@ -96,6 +130,13 @@ func (w *Workflows) Deploy(ctx workflow.Context, sreq signals.RequestSignal) err
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
+	err = w.pollForDeployableBuild(ctx, deployID, installDeploy.ComponentBuild)
+	if err != nil {
+		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusNoop, "build is not deployable")
+		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusNoop)
+		return nil
+	}
+
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
 		if !w.isTeardownable(install) {
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "install is not in a delete_queued, deprovisioning or active state to tear down components")
@@ -141,12 +182,6 @@ func (w *Workflows) Deploy(ctx workflow.Context, sreq signals.RequestSignal) err
 			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 			return fmt.Errorf("dependent component: [%s]  not active", strings.Join(inactiveDepIDs, ", "))
 		}
-	}
-
-	if !w.isBuildDeployable(installDeploy.ComponentBuild) {
-		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusNoop, "build is not deployable")
-		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
-		return nil
 	}
 
 	if org.OrgType != app.OrgTypeV2 {

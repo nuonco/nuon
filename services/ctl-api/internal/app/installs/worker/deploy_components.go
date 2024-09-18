@@ -63,16 +63,20 @@ func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestS
 		return nil
 	}
 
+	depDeployErrored := false
 	for _, installDeploy := range deploys {
 		// NOTE(jm): we make a best effort to deploy all components
 		sreq.Type = signals.OperationDeploy
 		sreq.DeployID = installDeploy.ID
+
+		if depDeployErrored {
+			w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusNoop, "error with depenedent component")
+			w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusNoop)
+			continue
+		}
 		if err := w.Deploy(ctx, sreq); err != nil {
 			l.Error("unable to deploy component", zap.Error(err))
-
-			// (rb) stop iterating after first error
-			break
-
+			depDeployErrored = true
 		}
 	}
 
