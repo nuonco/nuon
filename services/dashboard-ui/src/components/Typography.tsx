@@ -49,7 +49,7 @@ export const Text: FC<IText> = ({
   return (
     <span
       className={classNames('flex flex-wrap items-center gap-1', {
-        ['text-base leading-normal tracking-wide font-normal']: variant === "base",
+        ['text-base leading-normal tracking-normal font-normal']: variant === "base",
         ['tracking-wide text-sm font-semibold uppercase leading-none word-wrap']:
           isStatus,
         ['text-sm tracking-wide leading-none text-gray-600 dark:text-gray-300']:
