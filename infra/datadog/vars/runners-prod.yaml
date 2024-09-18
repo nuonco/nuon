@@ -1,0 +1,21 @@
+---
+pool: main
+monitors:
+  org_container_waiting:
+    enabled: false
+  waypoint_job_queued:
+    enabled: false
+  temporal_schedule_to_start_timeout:
+    enabled: false
+  org_is_unhealthy:
+    enabled: false
+  org_failed_to_provision:
+    enabled: false
+  install_failed_to_provision:
+    enabled: false
+  failed_to_queue_waypoint_job:
+    enabled: false
+  database_running_low_on_free_space:
+    enabled: false
+  ctl_api_5xx_errors:
+    enabled: false
