@@ -5,11 +5,12 @@ import (
 
 	"github.com/nuonco/clickhouse-go/v2"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 )
 
-type OtelMetricSumExemplar struct {
+type OtelMetricExponentialHistogramExemplar struct {
 	FilteredAttributes map[string]string `json:"filtered_attributes"`
 	TimesUnix          string            `json:"times_unix"`
 	Value              string            `json:"value"`
@@ -17,7 +18,8 @@ type OtelMetricSumExemplar struct {
 	TraceID            string            `json:"trace_id"`
 }
 
-type OtelMetricSum struct {
+// https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/clickhouseexporter/exporter_traces.go#L164
+type OtelMetricExponentialHistogram struct {
 	ID          string `gorm:"primary_key" json:"id"`
 	CreatedByID string `json:"created_by_id" gorm:"notnull"`
 
@@ -26,13 +28,13 @@ type OtelMetricSum struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal log attributes
-	RunnerID             string `json:"runner_id" `
+	RunnerID             string `json:"runner_id"`
 	RunnerJobID          string `json:"runner_job_id"`
 	RunnerJobExecutionID string `json:"runner_job_execution_id"`
 
 	// OTEL log message attributes
-	ResourceSchemaURL  string            `json:"resource_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
 	ResourceAttributes map[string]string `json:"resource_attributes" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1"`
+	ResourceSchemaURL  string            `json:"resource_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
 
 	ScopeName             string            `json:"scope_name" gorm:"codec:ZSTD(1)"`
 	ScopeVersion          string            `json:"scope_version" gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
@@ -50,17 +52,26 @@ type OtelMetricSum struct {
 
 	StartTimeUnix time.Time `json:"start_time_unix" gorm:"type:DateTime64(9); codec:Delta, ZSTD(1)"`
 	TimeUnix      time.Time `json:"time_unix" gorm:"type:DateTime64(9);codec:ZSTD(1)"`
-	Value         float64   `json:"value" gorm:"type:Float64;codec:ZSTD(1)"`
-	Flags         uint32    `json:"flags" gorm:"type:UInt32;codec:ZSTD(1)"`
 
-	IsMonotonic bool `json:"is_monotonic" gorm:"codec:Delta, ZSTD(1)"`
+	Count                uint64   `json:"count" gorm:"type:UInt32;codec:ZSTD(1)"`
+	Sum                  float64  `json:"sum" gorm:"type:Float64;codec:ZSTD(1)"`
+	Scale                float64  `json:"scale" gorm:"type:Float64;codec:ZSTD(1)"`
+	ZeroCount            uint64   `json:"zero_count" gorm:"type:UInt64;codec:ZSTD(1)"`
+	PositiveOffset       int32    `json:"positive_offset" gorm:"type:Int32; codec:ZSTD(1)"`
+	PositiveBucketCounts []uint64 `json:"positive_bucket_counts" gorm:"type:Array(UInt64); codec:ZSTD(1)"`
+	NegativeOffset       int32    `json:"negative_offset" gorm:"type:Int32; codec:ZSTD(1)"`
+	NegativeBucketCounts []uint64 `json:"negative_bucket_counts" gorm:"type:Array(UInt64); codec:ZSTD(1)"`
+
+	Flags uint32  `json:"flags" gorm:"type:UInt32;codec:ZSTD(1)"`
+	Min   float64 `json:"min" gorm:"type:Float64;codec:ZSTD(1)"`
+	Max   float64 `json:"maxx" gorm:"type:Float64;codec:ZSTD(1)"`
 
 	AggregationTemporality int32 `json:"aggregation_temporality" gorm:"type:Int32; codec:ZSTD(1)"`
 
-	Exemplars []OtelMetricSumExemplar `json:"-" gorm:"type:Nested(filtered_attributes Map(LowCardinality(String), String), time_unix DateTime64(9), value Float64, span_id String, trace_id String); codec:ZSTD(1);"`
+	Exemplars []OtelMetricExponentialHistogramExemplar `json:"-" gorm:"type:Nested(filtered_attributes Map(LowCardinality(String), String), time_unix DateTime64(9), value Float64, span_id String, trace_id String); codec:ZSTD(1);"`
 }
 
-func (m OtelMetricSum) GetTableOptions() (string, bool) {
+func (m OtelMetricExponentialHistogram) GetTableOptions() (string, bool) {
 	opts := `ENGINE = MergeTree()
 	TTL toDateTime("time_unix") + toIntervalDay(180)
 	PARTITION BY toDate(time_unix)
@@ -69,11 +80,11 @@ func (m OtelMetricSum) GetTableOptions() (string, bool) {
 	return opts, true
 }
 
-func (m OtelMetricSum) TableName() string {
-	return "otel_metrics_sum"
+func (m OtelMetricExponentialHistogram) TableName() string {
+	return "otel_metrics_exponential_histogram"
 }
 
-func (m OtelMetricSum) MigrateDB(db *gorm.DB) *gorm.DB {
+func (m OtelMetricExponentialHistogram) MigrateDB(db *gorm.DB) *gorm.DB {
 	opts, hasOpts := m.GetTableOptions()
 	if !hasOpts {
 		return db
@@ -81,9 +92,9 @@ func (m OtelMetricSum) MigrateDB(db *gorm.DB) *gorm.DB {
 	return db.Set("gorm:table_options", opts)
 }
 
-func (m *OtelMetricSum) BeforeCreate(tx *gorm.DB) error {
+func (m *OtelMetricExponentialHistogram) BeforeCreate(tx *gorm.DB) error {
 	if m.ID == "" {
-		m.ID = domains.NewOtelMetricSumID()
+		m.ID = domains.NewOtelMetricExponentialHistogramID()
 	}
 	if m.CreatedByID == "" {
 		m.CreatedByID = createdByIDFromContext(tx.Statement.Context)
@@ -91,28 +102,28 @@ func (m *OtelMetricSum) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// DO NOT MIGRATE: this is for ingestion only
-type OtelMetricSumIngestion struct {
+// DO NOT MIGRATE
+type OtelMetricExponentialHistogramIngestion struct {
 	ID          string `gorm:"primary_key" json:"id"`
-	CreatedByID string `json:"created_by_id" gorm:"not null;default:null"`
+	CreatedByID string `json:"created_by_id" gorm:"notnull"`
 
 	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal log attributes
-	RunnerID             string `json:"runner_id" `
+	RunnerID             string `json:"runner_id"`
 	RunnerJobID          string `json:"runner_job_id"`
 	RunnerJobExecutionID string `json:"runner_job_execution_id"`
 
-	// OTEL attributes
+	// OTEL log message attributes
 	ResourceAttributes map[string]string `json:"resource_attributes" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1"`
 	ResourceSchemaURL  string            `json:"resource_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
 
 	ScopeName             string            `json:"scope_name" gorm:"codec:ZSTD(1)"`
 	ScopeVersion          string            `json:"scope_version" gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
 	ScopeAttributes       map[string]string `json:"scope_attributes" gorm:"type:Map(LowCardinality(String), String);codec:ZSTD(1);index:idx_scope_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_scope_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1"`
-	ScopeDroppedAttrCount int               `json:"scope_dropped_attr_count" gorm:"type:UInt32;codec:ZSTD(1)"`
+	ScopeDroppedAttrCount uint32            `json:"scope_dropped_attr_count" gorm:"type:UInt32;codec:ZSTD(1)"`
 	ScopeSchemaURL        string            `json:"scope_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
 
 	ServiceName string `json:"service_name" gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
@@ -125,14 +136,24 @@ type OtelMetricSumIngestion struct {
 
 	StartTimeUnix time.Time `json:"start_time_unix" gorm:"type:DateTime64(9); codec:Delta, ZSTD(1)"`
 	TimeUnix      time.Time `json:"time_unix" gorm:"type:DateTime64(9);codec:ZSTD(1)"`
-	Value         float64   `json:"value" gorm:"type:Float64;codec:ZSTD(1)"`
-	Flags         uint32    `json:"flags" gorm:"type:UInt32;codec:ZSTD(1)"`
 
-	IsMonotonic bool `json:"is_monotonic" gorm:"codec:Delta, ZSTD(1)"`
+	Count                uint64              `json:"count" gorm:"type:UInt32;codec:ZSTD(1)"`
+	Sum                  float64             `json:"sum" gorm:"type:Float64;codec:ZSTD(1)"`
+	Scale                int32               `json:"scale" gorm:"type:Int32;codec:ZSTD(1)"`
+	ZeroCount            uint64              `json:"zero_count" gorm:"type:UInt64;codec:ZSTD(1)"`
+	PositiveOffset       int32               `json:"positive_offset" gorm:"type:Int32; codec:ZSTD(1)"`
+	PositiveBucketCounts clickhouse.ArraySet `json:"positive_bucket_counts" gorm:"type:Array(UInt64); codec:ZSTD(1)"`
+	NegativeOffset       int32               `json:"negative_offset" gorm:"type:Int32; codec:ZSTD(1)"`
+	NegativeBucketCounts clickhouse.ArraySet `json:"negative_bucket_counts" gorm:"type:Array(UInt64); codec:ZSTD(1)"`
+
+	Flags uint32  `json:"flags" gorm:"type:UInt32;codec:ZSTD(1)"`
+	Min   float64 `json:"min" gorm:"type:Float64;codec:ZSTD(1)"`
+	Max   float64 `json:"maxx" gorm:"type:Float64;codec:ZSTD(1)"`
 
 	AggregationTemporality int32 `json:"aggregation_temporality" gorm:"type:Int32; codec:ZSTD(1)"`
 
-	// Exemplars []OtelMetricSumExemplar `json:"-" gorm:"type:Nested(filtered_attributes Map(LowCardinality(String), String), time_unix DateTime64(9), value Float64, span_id String, trace_id String); codec:ZSTD(1);"`
+	// Exemplars []OtelMetricExponentialHistogramExemplar `json:"-" gorm:"type:Nested(filtered_attributes Map(LowCardinality(String), String), time_unix DateTime64(9), value Float64, span_id String, trace_id String); codec:ZSTD(1);"`
+
 	ExemplarsFilteredAttributes clickhouse.ArraySet `json:"-" gorm:"type:Array(Map(LowCardinality(String), String));column:exemplars.filtered_attributes"`
 	ExemplarsTimeUnix           clickhouse.ArraySet `json:"-" gorm:"type:Array(DateTime64(9));column:exemplars.time_unix"`
 	ExemplarsValue              clickhouse.ArraySet `json:"-" gorm:"type:Array(Float64);column:exemplars.value"`
@@ -140,16 +161,16 @@ type OtelMetricSumIngestion struct {
 	ExemplarsTraceID            clickhouse.ArraySet `json:"-" gorm:"type:Array(String);column:exemplars.trace_id"`
 }
 
-func (m *OtelMetricSumIngestion) BeforeCreate(tx *gorm.DB) error {
+func (m OtelMetricExponentialHistogramIngestion) TableName() string {
+	return "otel_metrics_exponential_histogram"
+}
+
+func (m *OtelMetricExponentialHistogramIngestion) BeforeCreate(tx *gorm.DB) error {
 	if m.ID == "" {
-		m.ID = domains.NewOtelMetricSumID()
+		m.ID = domains.NewOtelMetricExponentialHistogramID()
 	}
 	if m.CreatedByID == "" {
 		m.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
 	return nil
-}
-
-func (m OtelMetricSumIngestion) TableName() string {
-	return "otel_metrics_sum"
 }

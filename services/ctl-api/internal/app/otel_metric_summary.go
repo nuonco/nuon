@@ -9,7 +9,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 )
 
-type OtelMetricSumExemplar struct {
+type OtelMetricSummaryExemplar struct {
 	FilteredAttributes map[string]string `json:"filtered_attributes"`
 	TimesUnix          string            `json:"times_unix"`
 	Value              string            `json:"value"`
@@ -17,7 +17,7 @@ type OtelMetricSumExemplar struct {
 	TraceID            string            `json:"trace_id"`
 }
 
-type OtelMetricSum struct {
+type OtelMetricSummary struct {
 	ID          string `gorm:"primary_key" json:"id"`
 	CreatedByID string `json:"created_by_id" gorm:"notnull"`
 
@@ -50,17 +50,15 @@ type OtelMetricSum struct {
 
 	StartTimeUnix time.Time `json:"start_time_unix" gorm:"type:DateTime64(9); codec:Delta, ZSTD(1)"`
 	TimeUnix      time.Time `json:"time_unix" gorm:"type:DateTime64(9);codec:ZSTD(1)"`
-	Value         float64   `json:"value" gorm:"type:Float64;codec:ZSTD(1)"`
-	Flags         uint32    `json:"flags" gorm:"type:UInt32;codec:ZSTD(1)"`
 
-	IsMonotonic bool `json:"is_monotonic" gorm:"codec:Delta, ZSTD(1)"`
+	Count uint64  `json:"count" gorm:"type:UInt32;codec:ZSTD(1)"`
+	Sum   float64 `json:"sum" gorm:"type:Float64;codec:ZSTD(1)"`
+	Flags uint32  `json:"flags" gorm:"type:UInt32;codec:ZSTD(1)"`
 
-	AggregationTemporality int32 `json:"aggregation_temporality" gorm:"type:Int32; codec:ZSTD(1)"`
-
-	Exemplars []OtelMetricSumExemplar `json:"-" gorm:"type:Nested(filtered_attributes Map(LowCardinality(String), String), time_unix DateTime64(9), value Float64, span_id String, trace_id String); codec:ZSTD(1);"`
+	ValueAtQuantiles map[float64]float64 `json:"value_at_quantiles" gorm:"type:Nested(Quantile Float64,Value Float64);codec:ZSTD(1)"`
 }
 
-func (m OtelMetricSum) GetTableOptions() (string, bool) {
+func (m OtelMetricSummary) GetTableOptions() (string, bool) {
 	opts := `ENGINE = MergeTree()
 	TTL toDateTime("time_unix") + toIntervalDay(180)
 	PARTITION BY toDate(time_unix)
@@ -69,11 +67,11 @@ func (m OtelMetricSum) GetTableOptions() (string, bool) {
 	return opts, true
 }
 
-func (m OtelMetricSum) TableName() string {
-	return "otel_metrics_sum"
+func (m OtelMetricSummary) TableName() string {
+	return "otel_metrics_summary"
 }
 
-func (m OtelMetricSum) MigrateDB(db *gorm.DB) *gorm.DB {
+func (m OtelMetricSummary) MigrateDB(db *gorm.DB) *gorm.DB {
 	opts, hasOpts := m.GetTableOptions()
 	if !hasOpts {
 		return db
@@ -81,9 +79,9 @@ func (m OtelMetricSum) MigrateDB(db *gorm.DB) *gorm.DB {
 	return db.Set("gorm:table_options", opts)
 }
 
-func (m *OtelMetricSum) BeforeCreate(tx *gorm.DB) error {
+func (m *OtelMetricSummary) BeforeCreate(tx *gorm.DB) error {
 	if m.ID == "" {
-		m.ID = domains.NewOtelMetricSumID()
+		m.ID = domains.NewOtelMetricSummaryID()
 	}
 	if m.CreatedByID == "" {
 		m.CreatedByID = createdByIDFromContext(tx.Statement.Context)
@@ -92,7 +90,7 @@ func (m *OtelMetricSum) BeforeCreate(tx *gorm.DB) error {
 }
 
 // DO NOT MIGRATE: this is for ingestion only
-type OtelMetricSumIngestion struct {
+type OtelMetricSummaryIngestion struct {
 	ID          string `gorm:"primary_key" json:"id"`
 	CreatedByID string `json:"created_by_id" gorm:"not null;default:null"`
 
@@ -125,24 +123,20 @@ type OtelMetricSumIngestion struct {
 
 	StartTimeUnix time.Time `json:"start_time_unix" gorm:"type:DateTime64(9); codec:Delta, ZSTD(1)"`
 	TimeUnix      time.Time `json:"time_unix" gorm:"type:DateTime64(9);codec:ZSTD(1)"`
-	Value         float64   `json:"value" gorm:"type:Float64;codec:ZSTD(1)"`
-	Flags         uint32    `json:"flags" gorm:"type:UInt32;codec:ZSTD(1)"`
 
-	IsMonotonic bool `json:"is_monotonic" gorm:"codec:Delta, ZSTD(1)"`
+	Count uint64  `json:"count" gorm:"type:UInt32;codec:ZSTD(1)"`
+	Sum   float64 `json:"sum" gorm:"type:Float64;codec:ZSTD(1)"`
+	Flags uint32  `json:"flags" gorm:"type:UInt32;codec:ZSTD(1)"`
 
-	AggregationTemporality int32 `json:"aggregation_temporality" gorm:"type:Int32; codec:ZSTD(1)"`
+	// ValueAtQuantiles map[float64]float64 `json:"value_at_quantiles" gorm:"type:Nested(Quantile Float64,Value Float64);codec:ZSTD(1)"`
 
-	// Exemplars []OtelMetricSumExemplar `json:"-" gorm:"type:Nested(filtered_attributes Map(LowCardinality(String), String), time_unix DateTime64(9), value Float64, span_id String, trace_id String); codec:ZSTD(1);"`
-	ExemplarsFilteredAttributes clickhouse.ArraySet `json:"-" gorm:"type:Array(Map(LowCardinality(String), String));column:exemplars.filtered_attributes"`
-	ExemplarsTimeUnix           clickhouse.ArraySet `json:"-" gorm:"type:Array(DateTime64(9));column:exemplars.time_unix"`
-	ExemplarsValue              clickhouse.ArraySet `json:"-" gorm:"type:Array(Float64);column:exemplars.value"`
-	ExemplarsSpanID             clickhouse.ArraySet `json:"-" gorm:"type:Array(String);column:exemplars.span_id"`
-	ExemplarsTraceID            clickhouse.ArraySet `json:"-" gorm:"type:Array(String);column:exemplars.trace_id"`
+	ValueAtQuantilesQuantile clickhouse.ArraySet `json:"-" gorm:"type:Array(Quantile Float64);column:value_at_quantiles.quantile"`
+	ValueAtQuantilesValue    clickhouse.ArraySet `json:"-" gorm:"type:Array(Value Float64);column:value_at_quantiles.value"`
 }
 
-func (m *OtelMetricSumIngestion) BeforeCreate(tx *gorm.DB) error {
+func (m *OtelMetricSummaryIngestion) BeforeCreate(tx *gorm.DB) error {
 	if m.ID == "" {
-		m.ID = domains.NewOtelMetricSumID()
+		m.ID = domains.NewOtelMetricSummaryID()
 	}
 	if m.CreatedByID == "" {
 		m.CreatedByID = createdByIDFromContext(tx.Statement.Context)
@@ -150,6 +144,6 @@ func (m *OtelMetricSumIngestion) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (m OtelMetricSumIngestion) TableName() string {
-	return "otel_metrics_sum"
+func (m OtelMetricSummaryIngestion) TableName() string {
+	return "otel_metrics_summmary"
 }
