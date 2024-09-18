@@ -55,7 +55,7 @@ export default withPageAuthRequired(
         meta={<SubNav links={subNavLinks} />}
       >
         <div className="flex flex-col lg:flex-row flex-auto">
-          <section className="flex-auto flex flex-col gap-4 px-6 py-8 border-r overflow-auto">
+          <section className="flex-auto flex flex-col gap-4 px-6 py-8 border-r overflow-auto history">
             <Heading>History</Heading>
 
             <InstallHistory
