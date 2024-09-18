@@ -349,3 +349,15 @@ module "infra-vercel" {
   variable_sets                   = []
   project_id                      = tfe_project.infra.id
 }
+
+module "infra-vantage" {
+  source = "./modules/workspace"
+
+  name                            = "infra-vantage"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/vantage"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = []
+  project_id                      = tfe_project.infra.id
+}
