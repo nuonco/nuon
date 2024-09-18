@@ -156,7 +156,7 @@ const config: Config = {
     },
     letterSpacing: {
       normal: '0',
-      wide: '0.02em',
+      wide: '0.04rem',
     },
     lineHeight: {
       tight: '12px',
