@@ -73,7 +73,9 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 		Type:  runnersignals.OperationJobQueued,
 		JobID: runnerJob.ID,
 	})
-	// wait for the job
+	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
+		return fmt.Errorf("unable to poll job: %w", err)
+	}
 
 	return nil
 }

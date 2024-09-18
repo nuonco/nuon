@@ -97,7 +97,9 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationReprovision,
 	})
-	// wait for the runner
+	if err := w.pollRunner(ctx, install.RunnerGroup.Runners[0].ID); err != nil {
+		return err
+	}
 
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "install resources provisioned")
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFinished)
