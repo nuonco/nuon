@@ -107,7 +107,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			op = "job_queued"
 			if err := w.AwaitProcessJob(ctx, sreq); err != nil {
 				status = "error"
-				l.Info("unable to handle queued build: %w", zap.Error(err))
+				l.Info("unable to handle queued job: %w", zap.Error(err))
 			}
 		}
 	})
