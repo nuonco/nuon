@@ -4,6 +4,7 @@ import {
   AppSandboxVariables,
   DashboardContent,
   Heading,
+  InstallCloudPlatform,
   InstallCloudPlatformDetails,
   InstallHistory,
   InstallInputs,
@@ -85,10 +86,8 @@ export default withPageAuthRequired(
 
             <section className="flex flex-col gap-6 px-6 py-8">
               <Heading>Cloud platform</Heading>
-
-              <InstallProvider initInstall={install}>
-                <InstallCloudPlatformDetails />
-              </InstallProvider>
+              
+              <InstallCloudPlatform install={install} />              
             </section>
           </div>
         </div>

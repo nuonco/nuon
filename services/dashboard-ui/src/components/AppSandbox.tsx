@@ -58,23 +58,25 @@ export const AppSandboxVariables: FC<IAppSandboxVariables> = ({
   const isEmpty = variableKeys.length === 0
 
   return isEmpty ? null : (
-    <div className="rounded-md border shadow-sm">
-      <div className="py-3 px-4">
-        <Text variant="label">Variables</Text>
+    <div className="flex flex-col gap-4">
+      <div className="">
+        <Text className="text-sm !font-medium leading-normal">Variables</Text>
       </div>
 
       <div className="divide-y">
-        <div className="grid grid-cols-3 gap-4 py-3 px-4">
-          <Text variant="label">Name</Text>
-          <Text variant="label">Value</Text>
+        <div className="grid grid-cols-3 gap-4 pb-3">
+          <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+            Name
+          </Text>
+          <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+            Value
+          </Text>
         </div>
 
         {variableKeys.map((key, i) => (
-          <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-3 px-4">
-            <Text className="font-mono" variant="caption">
-              {key}
-            </Text>
-            <Text className="font-mono break-all col-span-2" variant="caption">
+          <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-3">
+            <Text className="font-mono text-sm">{key}</Text>
+            <Text className="text-sm font-mono break-all col-span-2">
               {variables[key]}
             </Text>
           </div>

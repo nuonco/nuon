@@ -8,10 +8,14 @@ export interface IInstallInputs {
 
 export const InstallInputs: FC<IInstallInputs> = ({ inputs }) => {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-3 gap-4">
-        <Text variant="label">Name</Text>
-        <Text variant="label">Value</Text>
+    <div className="divide-y">
+      <div className="grid grid-cols-3 gap-4 pb-3">
+        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+          Name
+        </Text>
+        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+          Value
+        </Text>
       </div>
 
       <div>
@@ -21,10 +25,10 @@ export const InstallInputs: FC<IInstallInputs> = ({ inputs }) => {
               ? Object.keys(input.redacted_values).map((key, i) => (
                   <div
                     key={`${key}-${i}`}
-                    className="grid grid-cols-3 gap-4 py-2"
+                    className="grid grid-cols-3 gap-4 py-3"
                   >
-                    <Text variant="caption">{key}</Text>
-                    <Text className="col-span-2 break-all" variant="caption">
+                    <Text className="font-mono text-sm">{key}</Text>
+                    <Text className="col-span-2 break-all text-sm">
                       {input.redacted_values[key]}
                     </Text>
                   </div>
@@ -33,10 +37,10 @@ export const InstallInputs: FC<IInstallInputs> = ({ inputs }) => {
                 Object.keys(input.values).map((key, i) => (
                   <div
                     key={`${key}-${i}`}
-                    className="grid grid-cols-3 gap-4 py-2"
+                    className="grid grid-cols-3 gap-4 py-3"
                   >
-                    <Text variant="caption">{key}</Text>
-                    <Text className="col-span-2 break-all" variant="caption">
+                    <Text className="font-mono text-sm">{key}</Text>
+                    <Text className="col-span-2 break-all text-sm">
                       {input.values[key]}
                     </Text>
                   </div>
