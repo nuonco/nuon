@@ -192,10 +192,10 @@ resource "helm_release" "vantage-k8s-agent" {
   namespace        = "vantage"
   create_namespace = true
 
-  chart               = "vantage/vantage-kubernetes-agent"
-  name                = "vantage-kubernetes-agent"
-  repository          = "https://vantage-sh.github.io/helm-charts"
-  version             = "1.0.34"
+  name       = "vantage-kubernetes-agent"
+  chart      = "vantage/vantage-kubernetes-agent"
+  repository = "https://vantage-sh.github.io/helm-charts"
+  # version    = "1.0.34"
 
   values = [
     # https://github.com/vantage-sh/helm-charts/blob/main/charts/vantage-kubernetes-agent/values.yaml
