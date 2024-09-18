@@ -3,9 +3,10 @@ package app
 import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 
+	"time"
+
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
-	"time"
 )
 
 type OtelTraceEvent struct {
