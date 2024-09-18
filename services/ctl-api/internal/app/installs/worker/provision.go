@@ -95,14 +95,16 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	if err := w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode); err != nil {
 		return err
 	}
+	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "install resources provisioned")
 
 	// provision the runner
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationProvision,
 	})
-	// wait for the runner
+	if err := w.pollRunner(ctx, install.RunnerGroup.Runners[0].ID); err != nil {
+		return err
+	}
 
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "install resources provisioned")
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusFinished)
 	return nil
 }

@@ -47,6 +47,10 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationReprovision,
 	})
+	if err := w.pollRunner(ctx, org.RunnerGroup.Runners[0].ID); err != nil {
+		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "organization did not provision runner")
+		return fmt.Errorf("runner did not reprovision correctly: %w", err)
+	}
 
 	w.updateStatus(ctx, sreq.ID, app.OrgStatusActive, "organization resources are provisioned")
 	return nil
