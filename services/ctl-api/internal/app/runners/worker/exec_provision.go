@@ -102,9 +102,13 @@ func (w *Workflows) executeProvisionInstallRunner(ctx workflow.Context, runnerID
 
 	// queue job
 	w.evClient.Send(ctx, runner.Org.RunnerGroup.Runners[0].ID, &signals.Signal{
-		Type: signals.OperationJobQueued,
+		Type:  signals.OperationJobQueued,
+		JobID: runnerJob.ID,
 	})
-	// wait for the job
+	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
+		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to poll runner job to completion")
+		return fmt.Errorf("unable to poll runner job to completion: %w", err)
+	}
 
 	w.updateStatus(ctx, runnerID, app.RunnerStatusActive, "runner is active and ready to process jobs")
 	return nil
