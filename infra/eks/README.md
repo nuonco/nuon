@@ -45,6 +45,13 @@ The External DNS module creates a service that monitors for annotations on
 `Service`s allowing the team to quickly and easily create DNS entries pointing
 to the a `Service`'s ClusterIP.
 
+### Vantage Agent
+
+Docs: https://docs.vantage.sh/kubernetes_agent
+
+We add the agent as a deployment with S3 for state so we don't ever have to
+debug a statefulset.
+
 ### cert-manager
 
 ### Grafana

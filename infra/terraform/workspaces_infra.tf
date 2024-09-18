@@ -247,7 +247,7 @@ module "infra-eks-runners-stage-main" {
   name                            = "infra-eks-runners-stage-main"
   repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
-  auto_apply                      = false
+  auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
   project_id                      = tfe_project.infra.id
@@ -279,7 +279,7 @@ module "infra-eks-stage-nuon" {
   name                            = "infra-eks-stage-nuon"
   repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
-  auto_apply                      = false
+  auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
   project_id                      = tfe_project.infra.id

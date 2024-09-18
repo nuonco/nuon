@@ -7,6 +7,8 @@ locals {
   }
   target_account_id = local.accounts[var.account].id
 
+  terraform_organization = "nuonco"
+
   tags = {
     environment = var.account
     pool        = var.pool
@@ -32,4 +34,10 @@ variable "account" {
 variable "pool" {
   description = "The cluster pool"
   type        = string
+}
+
+variable "vantage_api_token" {
+  description = "The vantage api token."
+  type        = string
+  sensitive   = true
 }
