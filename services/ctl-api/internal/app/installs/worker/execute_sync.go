@@ -115,9 +115,14 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 
 	// queue job
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-		Type: runnersignals.OperationJobQueued,
+		Type:  runnersignals.OperationJobQueued,
+		JobID: runnerJob.ID,
 	})
-	// wait for the job
+	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to poll job")
+		w.writeDeployEvent(ctx, installDeploy.ID, signals.OperationDeploy, app.OperationStatusFailed)
+		return fmt.Errorf("unable to poll job: %w", err)
+	}
 
 	return nil
 }
