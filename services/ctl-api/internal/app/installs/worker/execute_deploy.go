@@ -118,11 +118,14 @@ func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, insta
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	// queue job
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationJobQueued,
 	})
-	// wait for the job
+	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to execute runner job")
+		w.writeDeployEvent(ctx, installDeploy.ID, signals.OperationDeploy, app.OperationStatusFailed)
+		return fmt.Errorf("unable to get install: %w", err)
+	}
 
 	return nil
 }

@@ -48,7 +48,10 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationProvision,
 	})
-	// query runner until active
+	if err := w.pollRunner(ctx, org.RunnerGroup.Runners[0].ID); err != nil {
+		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "organization did not provision runner")
+		return fmt.Errorf("runner did not provision correctly: %w", err)
+	}
 
 	w.updateStatus(ctx, sreq.ID, app.OrgStatusActive, "organization resources are provisioned")
 	return nil

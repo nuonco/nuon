@@ -79,5 +79,10 @@ func (w *Workflows) deprovisionOrg(ctx workflow.Context, orgID string, sandboxMo
 	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationDeprovision,
 	})
+	if err := w.pollRunner(ctx, org.RunnerGroup.Runners[0].ID); err != nil {
+		w.updateStatus(ctx, org.RunnerGroup.Runners[0].ID, app.OrgStatusError, "organization did not deprovision runner")
+		return fmt.Errorf("runner did not provision correctly: %w", err)
+	}
+
 	return nil
 }
