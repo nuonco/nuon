@@ -206,14 +206,14 @@ resource "helm_release" "vantage-k8s-agent" {
       }
 
       "agent" = {
-        "useDeployment" = "true"
-        "debug" = "false"
-        "logLevel" = "0"
-        "clusterID" = "${local.workspace_trimmed}"
-        "token" = "${var.vantage_api_token}"
-        "collectNamespaceLabels" = "true"
+        "useDeployment"          = true
+        "debug"                  = false
+        "logLevel"               = "0"
+        "clusterID"              = "${local.workspace_trimmed}"
+        "token"                  = "${var.vantage_api_token}"
+        "collectNamespaceLabels" = true
         "gpu" = {
-          "usageMetrics" = "false"
+          "usageMetrics" = false
         }
       }
 
@@ -238,7 +238,7 @@ resource "helm_release" "vantage-k8s-agent" {
         }
       }
       "serviceAccount" = {
-        "annotations": {
+        "annotations" = {
             "eks.amazonaws.com/role-arn" = aws_iam_role.vantage_k8s_agent_role.arn
         }
         "name": "vantage-k8s-agent-service-account"
