@@ -211,7 +211,7 @@ resource "helm_release" "vantage-k8s-agent" {
         "logLevel"               = "0"
         "clusterID"              = "${local.workspace_trimmed}"
         "token"                  = "${var.vantage_api_token}"
-        "collectNamespaceLabels" = true
+        "collectNamespaceLabels" = "true"
         "gpu" = {
           "usageMetrics" = false
         }
