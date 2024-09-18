@@ -1,16 +1,18 @@
-"use client"
+'use client'
 
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { Info } from "@phosphor-icons/react"
+import { Info } from '@phosphor-icons/react'
 
 export interface IToolTip {
+  alignment?: 'center' | 'left' | 'right'
   children: React.ReactNode
   position?: 'bottom' | 'top'
   tipContent: React.ReactNode
 }
 
 export const ToolTip: FC<IToolTip> = ({
+  alignment = 'left',
   children,
   position = 'top',
   tipContent,
@@ -54,11 +56,25 @@ export const ToolTip: FC<IToolTip> = ({
             bottom: 0;
             transform: translateY(100%);
           }
+
+          .tooltip:hover .tooltip-wrapper.right {
+            right: 0;
+          }
+
+          .tooltip:hover .tooltip-wrapper.left {
+            left: 0;
+          }
+
+          .tooltip:hover .tooltip-wrapper.center {
+            left: 50%;
+            transform: translateX(-50$);
+          }
         `}
       </style>
       <span className={classNames('tooltip')}>
         <span
           className={classNames('tooltip-wrapper', {
+            [`${alignment}`]: true,
             [`${position}`]: true,
           })}
         >
