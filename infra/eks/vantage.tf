@@ -130,7 +130,7 @@ data "aws_iam_policy_document" "vantage_k8s_agent_trust_policy" {
       test     = "StringEquals"
       variable = "${local.oidc_provider}:sub"
       // NOTE(fd): named after the fact because we didn't know what the generator would produce
-      values   = ["system:serviceaccount:vantage-k8s-agent-service-account:default"]
+      values   = ["system:serviceaccount:vantage:vantage-k8s-agent-service-account"]
     }
   }
 }
