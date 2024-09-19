@@ -27,9 +27,10 @@ type OtelMetricHistogram struct {
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
-	// internal log attributes
+	// internal attributes
 	RunnerID             string `json:"runner_id"`
 	RunnerJobID          string `json:"runner_job_id"`
+	RunnerGroupID        string `json:"runner_group_id"`
 	RunnerJobExecutionID string `json:"runner_job_execution_id"`
 
 	// OTEL log message attributes
@@ -107,9 +108,10 @@ type OtelMetricHistogramIngestion struct {
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
-	// internal log attributes
+	// internal attributes
 	RunnerID             string `json:"runner_id"`
 	RunnerJobID          string `json:"runner_job_id"`
+	RunnerGroupID        string `json:"runner_group_id"`
 	RunnerJobExecutionID string `json:"runner_job_execution_id"`
 
 	// OTEL log message attributes

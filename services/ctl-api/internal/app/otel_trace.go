@@ -33,6 +33,7 @@ type OtelTrace struct {
 	// internal attributes
 	RunnerID             string `json:"runner_id" `
 	RunnerJobID          string `json:"runner_job_id"`
+	RunnerGroupID        string `json:"runner_group_id"`
 	RunnerJobExecutionID string `json:"runner_job_execution_id"`
 
 	// OTEL log trace attributes
@@ -107,6 +108,7 @@ type OtelTraceIngestion struct {
 	// internal attributes
 	RunnerID             string `json:"runner_id" `
 	RunnerJobID          string `json:"runner_job_id"`
+	RunnerGroupID        string `json:"runner_group_id"`
 	RunnerJobExecutionID string `json:"runner_job_execution_id"`
 
 	// OTEL log trace attributes
