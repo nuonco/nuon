@@ -118,6 +118,27 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 			serviceName = val.AsString()
 		}
 
+		// NOTE(fd): this is a nuon convention.
+		var jobId string
+		jobIdVal, ok := resourceAttributes.Get("job.id")
+		if ok {
+			jobId = jobIdVal.AsString()
+		}
+
+		// NOTE(fd): this is a nuon convention.
+		var runnerGroupId string
+		runnerGroupIdVal, ok := resourceAttributes.Get("runner_group.id")
+		if ok {
+			runnerGroupId = runnerGroupIdVal.AsString()
+		}
+
+		// NOTE(fd): this is a nuon convention.
+		var runnerJobExecutionId string
+		runnerJobExecutionVal, ok := resourceAttributes.Get("runner_job_execution.id")
+		if ok {
+			runnerJobExecutionId = runnerJobExecutionVal.AsString()
+		}
+
 		scopeSpans := trace.ScopeSpans()
 
 		for j := 0; j < scopeSpans.Len(); j++ {
@@ -156,7 +177,10 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 					// this would enable some nifty views/filtering.
 
 					// runner info
-					RunnerID: runnerID,
+					RunnerID:             runnerID,
+					RunnerJobID:          jobId,
+					RunnerGroupID:        runnerGroupId,
+					RunnerJobExecutionID: runnerJobExecutionId,
 
 					// topmatter
 					Timestamp: time.Unix(timestamp, 0),
