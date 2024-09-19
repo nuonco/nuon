@@ -7,7 +7,16 @@ import {
   SiHelm,
   SiTerraform,
 } from 'react-icons/si'
-import { Card, CodeViewer, Heading, Link, Text, VCS } from '@/components'
+import {
+  Card,
+  Config,
+  ConfigContent,
+  CodeViewer,
+  Heading,
+  Link,
+  Text,
+  VCS,
+} from '@/components'
 import { getComponentConfig, type IGetComponentConfig } from '@/lib'
 import { TComponentConfig } from '@/types'
 
@@ -88,14 +97,10 @@ export const ComponentConfigType: FC<
   )
 }
 
-export const StaticComponentConfigType: FC<
-{
+export const StaticComponentConfigType: FC<{
   configType: string
-    isIconOnly?: boolean
-  }
-> = ({ configType, isIconOnly = false }) => {
-  
-
+  isIconOnly?: boolean
+}> = ({ configType, isIconOnly = false }) => {
   let cfgType = {}
   switch (configType) {
     case 'docker':
@@ -338,17 +343,14 @@ export const ComponentConfiguration: FC<IComponentConfiguration> = ({
 }) => {
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex gap-6 items-start justify-start">
-        <span className="flex flex-col gap-2">
-          <Text variant="overline">Version:</Text>
-          <Text variant="caption">{config.version}</Text>
-        </span>
+      <Config>
+        <ConfigContent label="Version" value={config.version} />
         {config.terraform_module && <ConfigurationTerraform {...config} />}
         {config.docker_build && <ConfigurationDocker {...config} />}
         {config.external_image && <ConfigurationExternalImage {...config} />}
         {config.helm && <ConfigurationHelm {...config} />}
         {config.job && <ConfigurationJob {...config} />}
-      </div>
+      </Config>
 
       {config.terraform_module && (
         <>
@@ -412,11 +414,7 @@ const ConfigurationTerraform: FC<
 > = ({ terraform_module }) => {
   return (
     <>
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Terraform:</Text>
-        <Text variant="caption">{terraform_module.version}</Text>
-      </span>
-
+      <ConfigContent label="Terraform" value={terraform_module.version} />
       <ConfigurationVCS vcs={terraform_module} />
     </>
   )
@@ -437,19 +435,8 @@ const ConfigurationExternalImage: FC<
 > = ({ external_image }) => {
   return (
     <>
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Image:</Text>
-        <Text className="break-all" variant="caption">
-          {external_image.image_url}
-        </Text>
-      </span>
-
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Tag:</Text>
-        <Text className="break-all" variant="caption">
-          {external_image.tag}
-        </Text>
-      </span>
+      <ConfigContent label="Image" value={external_image.image_url} />
+      <ConfigContent label="Directory" value={external_image.tag} />
     </>
   )
 }
@@ -465,26 +452,9 @@ const ConfigurationHelm: FC<Pick<TComponentConfig, 'helm'>> = ({ helm }) => {
 const ConfigurationJob: FC<Pick<TComponentConfig, 'job'>> = ({ job }) => {
   return (
     <>
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Image:</Text>
-        <Text className="break-all" variant="caption">
-          {job.image_url}
-        </Text>
-      </span>
-
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Tag:</Text>
-        <Text className="break-all" variant="caption">
-          {job.tag}
-        </Text>
-      </span>
-
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Command:</Text>
-        <Text className="break-all font-mono" variant="caption">
-          {job.cmd}
-        </Text>
-      </span>
+      <ConfigContent label="Image" value={job.image_url} />
+      <ConfigContent label="Tag" value={job.tag} />
+      <ConfigContent label="Command" value={job.cmd} />
     </>
   )
 }
@@ -495,9 +465,9 @@ const ConfigurationVCS: FC<{ vcs: any }> = ({ vcs }) => {
 
   return (
     <>
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Repository:</Text>
-        <Text variant="caption">
+      <ConfigContent
+        label="Repository"
+        value={
           <Link
             href={`https://github.com/${repo?.repo}`}
             target="_blank"
@@ -506,18 +476,11 @@ const ConfigurationVCS: FC<{ vcs: any }> = ({ vcs }) => {
             {isGithubConnected ? <FaGithub /> : <FaGitAlt />}
             {repo?.repo}
           </Link>
-        </Text>
-      </span>
+        }
+      />
 
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Directory:</Text>
-        <Text className="break-all" variant="caption">{repo?.directory}</Text>
-      </span>
-
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Branch:</Text>
-        <Text variant="caption">{repo?.branch}</Text>
-      </span>
+      <ConfigContent label="Directory" value={repo?.directory} />
+      <ConfigContent label="Branch" value={repo?.branch} />
     </>
   )
 }
@@ -531,29 +494,25 @@ const ConfigurationVariables: FC<{
 
   return (
     !isEmpty && (
-      <div className="rounded-md border shadow-sm">
-        <div className="py-3 px-4">
-          <Text variant="label">{heading}</Text>
+      <div className="flex flex-col gap-4">
+        <div className="">
+          <Text className="text-sm !font-medium leading-normal">{heading}</Text>
         </div>
 
         <div className="divide-y">
-          <div className="grid grid-cols-3 gap-4 py-3 px-4">
-            <Text variant="label">Name</Text>
-            <Text variant="label">Value</Text>
+          <div className="grid grid-cols-3 gap-4 pb-3">
+            <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+              Name
+            </Text>
+            <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+              Value
+            </Text>
           </div>
 
           {variableKeys.map((key, i) => (
-            <div
-              key={`${key}-${i}`}
-              className="grid grid-cols-3 gap-4 py-3 px-4"
-            >
-              <Text className="font-mono break-all" variant="caption">
-                {key}
-              </Text>
-              <Text
-                className="font-mono break-all col-span-2"
-                variant="caption"
-              >
+            <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-3">
+              <Text className="font-mono text-sm break-all">{key}</Text>
+              <Text className="font-mono text-sm break-all col-span-2">
                 {variables[key]}
               </Text>
             </div>

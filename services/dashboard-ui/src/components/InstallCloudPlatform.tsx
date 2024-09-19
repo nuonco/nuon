@@ -4,21 +4,25 @@ import React, { type FC } from 'react'
 import { FaAws } from 'react-icons/fa'
 import { VscAzure } from 'react-icons/vsc'
 import { QuestionMark } from '@phosphor-icons/react'
-import { Link, Text, ToolTip } from '@/components'
+import { Config, ConfigContent, Link, Text, ToolTip } from '@/components'
 import type { TInstall, TSandboxConfig } from '@/types'
 import { AWS_REGIONS, AZURE_REGIONS, getFlagEmoji } from '@/utils'
 
 const InstallPlatform: FC<{ platform: 'aws' | 'azure' | string }> = ({
   platform,
 }) => {
-  return platform === 'azure' ? (
-    <>
-      <VscAzure className="text-md" /> {'Azure'}
-    </>
-  ) : (
-    <>
-      <FaAws className="text-xl mb-[-4px]" /> {'Amazon'}
-    </>
+  return (
+    <span className="flex gap-2 items-center">
+      {platform === 'azure' ? (
+        <>
+          <VscAzure className="text-md" /> {'Azure'}
+        </>
+      ) : (
+        <>
+          <FaAws className="text-xl mb-[-4px]" /> {'Amazon'}
+        </>
+      )}
+    </span>
   )
 }
 
@@ -28,25 +32,24 @@ const AzureAccount: FC<Pick<TInstall, 'azure_account'>> = ({
   const region = AZURE_REGIONS.find((r) => r.value === azure_account.location)
   return (
     <>
-      <span className="flex flex-col gap-2">
-        <Text className="text-sm tracking-wide text-cool-grey-600 dark:text-cool-grey-500">
-          Location
-        </Text>
-        <Text className="text-sm">
-          {getFlagEmoji(region.iconVariant?.substring(5))} {region.text}
-        </Text>
-      </span>
-
-      <span className="flex flex-col gap-2">
-        <Text className="text-sm tracking-wide text-cool-grey-600 dark:text-cool-grey-500">
-          Subscription ID
-        </Text>
-        <ToolTip tipContent={azure_account.subscription_id} alignment="right">
-          <Text className="truncate text-ellipsis w-16 text-sm font-mono">
-            {azure_account.subscription_id}
-          </Text>
-        </ToolTip>
-      </span>
+      <ConfigContent
+        label="Location"
+        value={
+          <span className="flex gap-2">
+            {getFlagEmoji(region.iconVariant?.substring(5))} {region.text}
+          </span>
+        }
+      />
+      <ConfigContent
+        label="Subscription ID"
+        value={
+          <ToolTip tipContent={azure_account.subscription_id} alignment="right">
+            <Text className="truncate text-ellipsis w-16 text-sm font-mono">
+              {azure_account.subscription_id}
+            </Text>
+          </ToolTip>
+        }
+      />
     </>
   )
 }
@@ -127,35 +130,23 @@ export const InstallCloudPlatform: FC<IInstallCloudPlatform> = ({
   install,
 }) => {
   const {
-    aws_account,
-    azure_account,
     app_runner_config: { cloud_platform },
   } = install
-  const isAWS = Boolean(aws_account)
+  const isAWS = Boolean(install.aws_account)
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col md:flex-row gap-4">
-        <span className="flex flex-col gap-2">
-          <Text className="text-sm tracking-wide text-cool-grey-600 dark:text-cool-grey-500">
-            Platform
-          </Text>
-          <Text className="text-sm">
-            <InstallPlatform platform={cloud_platform} />
-          </Text>
-        </span>
-
-        <span className="flex flex-col gap-2">
-          <Text className="text-sm tracking-wide text-cool-grey-600 dark:text-cool-grey-500">
-            Runner type
-          </Text>
-          <Text className="text-sm">
-            {install.app_runner_config?.app_runner_type}
-          </Text>
-        </span>
-
+      <Config>
+        <ConfigContent
+          label="Platform"
+          value={<InstallPlatform platform={cloud_platform} />}
+        />
+        <ConfigContent
+          label="Runner type"
+          value={install.app_runner_config?.app_runner_type}
+        />
         {isAWS ? <AWSAccount {...install} /> : <AzureAccount {...install} />}
-      </div>
+      </Config>
 
       {isAWS && (
         <AWSPolicies artifacts={install?.app_sandbox_config?.artifacts} />
