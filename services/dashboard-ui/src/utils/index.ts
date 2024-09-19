@@ -10,6 +10,7 @@ export const SHORT_POLL_DURATION =
 export const GITHUB_APP_NAME =
   process?.env?.NEXT_PUBLIC_GITHUB_APP_NAME || 'nuon-connect'
 
+// "sentance"
 export const sentanceCase = (s = '') => s.charAt(0).toUpperCase() + s.slice(1)
 export const titleCase = (s = '') =>
   s.replace(/^_*(.)|_+(.)/g, (s, c, d) => (c ? c.toUpperCase() : ' ' + d))
@@ -34,4 +35,4 @@ export * from './install-regions'
 export * from './get-fetch-opts'
 export * from './datadog-logs'
 export * from './datadog-rum'
-export * from './posthog-analytics'
+export * from './segment-analytics'
