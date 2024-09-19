@@ -47,6 +47,7 @@ resource "aws_cloudformation_stack" "connect-to-vantage" {
     VantagePingbackArn          = "arn:aws:sns:us-east-1:630399649041:cross-account-cloudformation-connector"
   }
 
+  capabilities = ["CAPABILITY_IAM"]
 }
 
 # aws cloudformation create-stack-instances \
