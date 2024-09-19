@@ -11,8 +11,6 @@
 #         ParameterKey=VantagePingbackArn,ParameterValue=arn:aws:sns:us-east-1:630399649041:cross-account-cloudformation-connector \
 #     ParameterKey=VantageIamRole,ParameterValue=AROAZFRV7IUIYSTS4G3VK \
 #   --capabilities CAPABILITY_IAM
-#
-
 
 resource "aws_cloudformation_stack_set" "vantage-integrations-stack-set" {
   name         = "ConnectToVantage15519-1726084074"
@@ -32,5 +30,20 @@ resource "aws_cloudformation_stack_set" "vantage-integrations-stack-set" {
     VantageIamRole     = "AROAZFRV7IUIYSTS4G3VK"
   }
   capabilities = ["CAPABILITY_IAM"]
+}
 
+
+# aws cloudformation create-stack-instances \
+#   --profile powertoolsdev.NuonAdmin \
+#   --stack-set-name ConnectToVantage15519-1726084074 \
+#   --regions us-east-1 \
+#   --deployment-targets OrganizationalUnitIds=r-p4e3
+
+resource "aws_cloudformation_stack_set_instance" "vantage-integrations-stack-set-instance" {
+  region         = "us-east-1"
+  stack_set_name = aws_cloudformation_stack_set.vantage-integrations-stack-set.name
+
+  deployment_targets {
+    organizational_unit_ids = [aws_organizations_organization.example.roots[0].id]
+  }
 }
