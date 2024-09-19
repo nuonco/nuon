@@ -32,6 +32,22 @@ resource "aws_cloudformation_stack_set" "vantage-integrations-stack-set" {
   capabilities = ["CAPABILITY_IAM"]
 }
 
+resource "aws_cloudformation_stack" "connect-to-vantage" {
+  name         = "ConnectToVantage15519-1726781115"
+  template_url = "https://vantage-public.s3.amazonaws.com/vantage-integration-combined-latest.json"
+
+  parameters = {
+    BucketName                  = "vantage-cur-076aa0ef-143a-409c-801c-3f2dc04fda03-226346b98e"
+    ReportName                  = "VantageReport-226346b98e"
+    VantageDomain               = "https://console.vantage.sh"
+    VantageHandshakeID          = "9kY-FCLksNTLxGprJz2rZA"
+    VantageID                   = "076aa0ef-143a-409c-801c-3f2dc04fda03"
+    VantageIamRole              = "AROAZFRV7IUIYSTS4G3VK"
+    VantageNotificationTopicArn = "arn:aws:sns:us-east-1:630399649041:cost-and-usage-report-uploaded"
+    VantagePingbackArn          = "arn:aws:sns:us-east-1:630399649041:cross-account-cloudformation-connector"
+  }
+
+}
 
 # aws cloudformation create-stack-instances \
 #   --profile powertoolsdev.NuonAdmin \
