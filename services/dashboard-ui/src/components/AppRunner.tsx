@@ -1,7 +1,7 @@
 import React, { type FC } from 'react'
 import { FaAws } from 'react-icons/fa'
 import { VscAzure } from 'react-icons/vsc'
-import { Text } from '@/components'
+import { Config, ConfigContent } from '@/components'
 import type { TAppRunnerConfig } from '@/types'
 
 export interface IAppRunnerConfig {
@@ -10,19 +10,13 @@ export interface IAppRunnerConfig {
 
 export const AppRunnerConfig: FC<IAppRunnerConfig> = ({ runnerConfig }) => {
   return (
-    <div className="flex gap-4">
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Platform:</Text>
-        <Text variant="caption">
-          <Platform platform={runnerConfig.cloud_platform} />
-        </Text>
-      </span>
-
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Runner type:</Text>
-        <Text variant="caption">{runnerConfig.app_runner_type}</Text>
-      </span>
-    </div>
+    <Config>
+      <ConfigContent
+        label="Platform"
+        value={<Platform platform={runnerConfig.cloud_platform} />}
+      />
+      <ConfigContent label="Runner type" value={runnerConfig.app_runner_type} />
+    </Config>
   )
 }
 
