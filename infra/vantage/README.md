@@ -7,6 +7,12 @@ Terraform to manage account access, users, and CURs.
 | docs | https://docs.vantage.sh/terraform/                                     |
 | tf   | https://registry.terraform.io/modules/nuonco/install-access/aws/latest |
 
+## The integration
+
+Involves creating a stack set and and instance of said stack set. We must use
+this method otherwise we won't have data from member accounts. This is done in
+tf.
+
 ## Historical: Out of Band
 
 Vantage was set up ahead of an intro call folloing their docs. The following
