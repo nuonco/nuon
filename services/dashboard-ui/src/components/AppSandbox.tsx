@@ -1,6 +1,6 @@
 import React, { type FC } from 'react'
 import { FaGitAlt, FaGithub } from 'react-icons/fa'
-import { Text, Link } from '@/components'
+import { Config, ConfigContent, Text, Link } from '@/components'
 import type { TAppSandboxConfig } from '@/types'
 
 export interface IAppSandboxConfig {
@@ -14,10 +14,10 @@ export const AppSandboxConfig: FC<IAppSandboxConfig> = ({ sandboxConfig }) => {
     sandboxConfig.public_git_vcs_config
 
   return (
-    <div className="flex flex-col md:flex-row gap-4">
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Repository:</Text>
-        <Text variant="caption">
+    <Config>
+      <ConfigContent
+        label="Repository"
+        value={
           <Link
             href={`https://github.com/${repo?.repo}`}
             target="_blank"
@@ -26,24 +26,15 @@ export const AppSandboxConfig: FC<IAppSandboxConfig> = ({ sandboxConfig }) => {
             {isGithubConnected ? <FaGithub /> : <FaGitAlt />}
             {repo?.repo}
           </Link>
-        </Text>
-      </span>
-
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Directory:</Text>
-        <Text variant="caption">{repo?.directory}</Text>
-      </span>
-
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Branch:</Text>
-        <Text variant="caption">{repo?.branch}</Text>
-      </span>
-
-      <span className="flex flex-col gap-2">
-        <Text variant="overline">Terraform:</Text>
-        <Text variant="caption">{sandboxConfig.terraform_version}</Text>
-      </span>
-    </div>
+        }
+      />
+      <ConfigContent label="Directory" value={repo?.directory} />
+      <ConfigContent label="Branch" value={repo?.branch} />
+      <ConfigContent
+        label="Terraform"
+        value={sandboxConfig.terraform_version}
+      />
+    </Config>
   )
 }
 
