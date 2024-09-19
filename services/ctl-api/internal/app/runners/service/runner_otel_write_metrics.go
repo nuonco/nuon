@@ -132,6 +132,21 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 			jobId = jobIdVal.AsString()
 		}
 
+		// NOTE(fd): this is a nuon convention.
+		var runnerGroupId string
+		runnerGroupIdVal, ok := resAttr.Get("runner_group.id")
+		if ok {
+			runnerGroupId = runnerGroupIdVal.AsString()
+		}
+
+		// NOTE(fd): this is a nuon convention.
+		var runnerJobExecutionId string
+		runnerJobExecutionVal, ok := resAttr.Get("runner_job_execution.id")
+		if ok {
+			runnerJobExecutionId = runnerJobExecutionVal.AsString()
+			fmt.Printf("runnerJobExecutionId=%s", runnerJobExecutionId)
+		}
+
 		scopeMetrics := metrics.ScopeMetrics()
 		for j := 0; j < scopeMetrics.Len(); j++ {
 			rs := scopeMetrics.At(j).Metrics()
@@ -147,8 +162,10 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 						dp := r.Gauge().DataPoints().At(i)
 						attrs, times, values, traceIDs, spanIDs := utils.ConvertExemplars(dp.Exemplars())
 						gaugeMetrics = append(gaugeMetrics, app.OtelMetricGaugeIngestion{
-							RunnerID:    runnerID,
-							RunnerJobID: jobId,
+							RunnerID:             runnerID,
+							RunnerJobID:          jobId,
+							RunnerGroupID:        runnerGroupId,
+							RunnerJobExecutionID: runnerJobExecutionId,
 
 							ResourceAttributes: utils.AttributesToMap(resAttr),
 							ResourceSchemaURL:  resourceSchemaUrl,
@@ -182,8 +199,10 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 						dp := r.Sum().DataPoints().At(i)
 						attrs, times, values, traceIDs, spanIDs := utils.ConvertExemplars(dp.Exemplars())
 						sumMetrics = append(sumMetrics, app.OtelMetricSumIngestion{
-							RunnerID:    runnerID,
-							RunnerJobID: jobId,
+							RunnerID:             runnerID,
+							RunnerJobID:          jobId,
+							RunnerGroupID:        runnerGroupId,
+							RunnerJobExecutionID: runnerJobExecutionId,
 
 							ResourceAttributes: utils.AttributesToMap(resAttr),
 							ResourceSchemaURL:  resourceSchemaUrl,
@@ -220,8 +239,10 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 						dp := r.Histogram().DataPoints().At(i)
 						attrs, times, values, traceIDs, spanIDs := utils.ConvertExemplars(dp.Exemplars())
 						histogramMetrics = append(histogramMetrics, app.OtelMetricHistogramIngestion{
-							RunnerID:    runnerID,
-							RunnerJobID: jobId,
+							RunnerID:             runnerID,
+							RunnerJobID:          jobId,
+							RunnerGroupID:        runnerGroupId,
+							RunnerJobExecutionID: runnerJobExecutionId,
 
 							ResourceAttributes: utils.AttributesToMap(resAttr),
 							ResourceSchemaURL:  resourceSchemaUrl,
@@ -260,83 +281,91 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 						})
 					}
 				case pmetric.MetricTypeExponentialHistogram:
-					dp := r.ExponentialHistogram().DataPoints().At(i)
-					attrs, times, values, traceIDs, spanIDs := utils.ConvertExemplars(dp.Exemplars())
-					exponentialHistogramMetrics = append(exponentialHistogramMetrics, app.OtelMetricExponentialHistogramIngestion{
-						RunnerID:    runnerID,
-						RunnerJobID: jobId,
+					for l := 0; l < r.ExponentialHistogram().DataPoints().Len(); l++ {
+						dp := r.ExponentialHistogram().DataPoints().At(l)
+						attrs, times, values, traceIDs, spanIDs := utils.ConvertExemplars(dp.Exemplars())
+						exponentialHistogramMetrics = append(exponentialHistogramMetrics, app.OtelMetricExponentialHistogramIngestion{
+							RunnerID:             runnerID,
+							RunnerJobID:          jobId,
+							RunnerGroupID:        runnerGroupId,
+							RunnerJobExecutionID: runnerJobExecutionId,
 
-						ResourceAttributes: utils.AttributesToMap(resAttr),
-						ResourceSchemaURL:  resourceSchemaUrl,
+							ResourceAttributes: utils.AttributesToMap(resAttr),
+							ResourceSchemaURL:  resourceSchemaUrl,
 
-						ScopeName:             scopeInstr.Name(),
-						ScopeVersion:          scopeInstr.Version(),
-						ScopeAttributes:       utils.AttributesToMap(scopeInstr.Attributes()),
-						ScopeDroppedAttrCount: uint32(scopeInstr.DroppedAttributesCount()),
-						ScopeSchemaURL:        scopeURL,
+							ScopeName:             scopeInstr.Name(),
+							ScopeVersion:          scopeInstr.Version(),
+							ScopeAttributes:       utils.AttributesToMap(scopeInstr.Attributes()),
+							ScopeDroppedAttrCount: uint32(scopeInstr.DroppedAttributesCount()),
+							ScopeSchemaURL:        scopeURL,
 
-						ServiceName: serviceName,
+							ServiceName: serviceName,
 
-						MetricName:        r.Name(),
-						MetricDescription: r.Description(),
-						MetricUnit:        r.Unit(),
+							MetricName:        r.Name(),
+							MetricDescription: r.Description(),
+							MetricUnit:        r.Unit(),
 
-						StartTimeUnix: dp.StartTimestamp().AsTime(),
-						TimeUnix:      dp.Timestamp().AsTime(),
+							StartTimeUnix: dp.StartTimestamp().AsTime(),
+							TimeUnix:      dp.Timestamp().AsTime(),
 
-						Count: dp.Count(),
-						Sum:   dp.Sum(),
+							Count: dp.Count(),
+							Sum:   dp.Sum(),
 
-						Scale:                dp.Scale(),
-						ZeroCount:            dp.ZeroCount(),
-						PositiveOffset:       dp.Positive().Offset(),
-						PositiveBucketCounts: utils.ConvertSliceToArraySet(dp.Positive().BucketCounts().AsRaw()),
-						NegativeOffset:       dp.Negative().Offset(),
-						NegativeBucketCounts: utils.ConvertSliceToArraySet(dp.Negative().BucketCounts().AsRaw()),
+							Scale:                dp.Scale(),
+							ZeroCount:            dp.ZeroCount(),
+							PositiveOffset:       dp.Positive().Offset(),
+							PositiveBucketCounts: utils.ConvertSliceToArraySet(dp.Positive().BucketCounts().AsRaw()),
+							NegativeOffset:       dp.Negative().Offset(),
+							NegativeBucketCounts: utils.ConvertSliceToArraySet(dp.Negative().BucketCounts().AsRaw()),
 
-						Flags: uint32(dp.Flags()),
-						Min:   dp.Min(),
-						Max:   dp.Max(),
+							Flags: uint32(dp.Flags()),
+							Min:   dp.Min(),
+							Max:   dp.Max(),
 
-						AggregationTemporality: int32(r.ExponentialHistogram().AggregationTemporality()),
+							AggregationTemporality: int32(r.ExponentialHistogram().AggregationTemporality()),
 
-						ExemplarsFilteredAttributes: attrs,
-						ExemplarsTimeUnix:           times,
-						ExemplarsValue:              values,
-						ExemplarsTraceID:            traceIDs,
-						ExemplarsSpanID:             spanIDs,
-					})
+							ExemplarsFilteredAttributes: attrs,
+							ExemplarsTimeUnix:           times,
+							ExemplarsValue:              values,
+							ExemplarsTraceID:            traceIDs,
+							ExemplarsSpanID:             spanIDs,
+						})
+					}
 				case pmetric.MetricTypeSummary:
-					dp := r.Summary().DataPoints().At(i)
-					quantiles, values := utils.ConvertValueAtQuantile(dp.QuantileValues())
-					summaryMetrics = append(summaryMetrics, app.OtelMetricSummaryIngestion{
-						RunnerID:    runnerID,
-						RunnerJobID: jobId,
+					for l := 0; l < r.Summary().DataPoints().Len(); l++ {
+						dp := r.Summary().DataPoints().At(l)
+						quantiles, values := utils.ConvertValueAtQuantile(dp.QuantileValues())
+						summaryMetrics = append(summaryMetrics, app.OtelMetricSummaryIngestion{
+							RunnerID:             runnerID,
+							RunnerJobID:          jobId,
+							RunnerGroupID:        runnerGroupId,
+							RunnerJobExecutionID: runnerJobExecutionId,
 
-						ResourceAttributes: utils.AttributesToMap(resAttr),
-						ResourceSchemaURL:  resourceSchemaUrl,
+							ResourceAttributes: utils.AttributesToMap(resAttr),
+							ResourceSchemaURL:  resourceSchemaUrl,
 
-						ScopeName:             scopeInstr.Name(),
-						ScopeVersion:          scopeInstr.Version(),
-						ScopeAttributes:       utils.AttributesToMap(scopeInstr.Attributes()),
-						ScopeDroppedAttrCount: int(scopeInstr.DroppedAttributesCount()),
-						ScopeSchemaURL:        scopeURL,
+							ScopeName:             scopeInstr.Name(),
+							ScopeVersion:          scopeInstr.Version(),
+							ScopeAttributes:       utils.AttributesToMap(scopeInstr.Attributes()),
+							ScopeDroppedAttrCount: int(scopeInstr.DroppedAttributesCount()),
+							ScopeSchemaURL:        scopeURL,
 
-						ServiceName: serviceName,
+							ServiceName: serviceName,
 
-						MetricName:        r.Name(),
-						MetricDescription: r.Description(),
-						MetricUnit:        r.Unit(),
+							MetricName:        r.Name(),
+							MetricDescription: r.Description(),
+							MetricUnit:        r.Unit(),
 
-						StartTimeUnix: dp.StartTimestamp().AsTime(),
-						TimeUnix:      dp.Timestamp().AsTime(),
+							StartTimeUnix: dp.StartTimestamp().AsTime(),
+							TimeUnix:      dp.Timestamp().AsTime(),
 
-						Count:                    dp.Count(),
-						Sum:                      dp.Sum(),
-						Flags:                    uint32(dp.Flags()),
-						ValueAtQuantilesQuantile: quantiles,
-						ValueAtQuantilesValue:    values,
-					})
+							Count:                    dp.Count(),
+							Sum:                      dp.Sum(),
+							Flags:                    uint32(dp.Flags()),
+							ValueAtQuantilesQuantile: quantiles,
+							ValueAtQuantilesValue:    values,
+						})
+					}
 				case pmetric.MetricTypeEmpty:
 					// TODO: log and consider returning early (or ... validate these up top)
 					errors = append(errors, fmt.Errorf("metrics type is unset"))

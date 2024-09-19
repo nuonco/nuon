@@ -176,6 +176,20 @@ func (s *service) writeRunnerLogs(ctx context.Context, runnerID string, logs plo
 			jobId = jobIdVal.AsString()
 		}
 
+		// NOTE(fd): this is a nuon convention.
+		var runnerGroupId string
+		runnerGroupIdVal, ok := resourceAttributes.Get("runner_group.id")
+		if ok {
+			runnerGroupId = runnerGroupIdVal.AsString()
+		}
+
+		// NOTE(fd): this is a nuon convention.
+		var runnerJobExecutionId string
+		runnerJobExecutionVal, ok := resourceAttributes.Get("runner_job_execution.id")
+		if ok {
+			runnerJobExecutionId = runnerJobExecutionVal.AsString()
+		}
+
 		scopeLogs := log.ScopeLogs()
 
 		for j := 0; j < scopeLogs.Len(); j++ {
@@ -193,8 +207,10 @@ func (s *service) writeRunnerLogs(ctx context.Context, runnerID string, logs plo
 				otelLogRecords = append(otelLogRecords, app.OtelLogRecord{
 
 					// runner info
-					RunnerID:    runnerID,
-					RunnerJobID: jobId,
+					RunnerID:             runnerID,
+					RunnerJobID:          jobId,
+					RunnerGroupID:        runnerGroupId,
+					RunnerJobExecutionID: runnerJobExecutionId,
 
 					// from resource
 					ResourceAttributes: utils.AttributesToMap(resourceAttrs),
