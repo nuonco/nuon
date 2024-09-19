@@ -11,6 +11,10 @@ vi.mock('../utils', async (og) => {
     POLL_DURATION: 2000,
   }
 })
+vi.mock('@auth0/nextjs-auth0/client', () => {
+  const useUser = vi.fn().mockReturnValue({ user: { sub: 'test-id' } })
+  return { useUser }
+})
 
 import { POLL_DURATION } from '../utils'
 
