@@ -29,7 +29,7 @@ resource "aws_cloudformation_stack_set" "vantage-integrations-stack-set" {
     VantageDomain      = "https://console.vantage.sh"
     VantageHandshakeID = "9kY-FCLksNTLxGprJz2rZA"
     VantagePingbackArn = "arn:aws:sns:us-east-1:630399649041:cross-account-cloudformation-connector"
-    VantageIAMRole     = "AROAZFRV7IUIYSTS4G3VK"
+    VantageIamRole     = "AROAZFRV7IUIYSTS4G3VK"
   }
   capabilities = ["CAPABILITY_IAM"]
 
