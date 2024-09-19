@@ -1,8 +1,8 @@
 import { UserProvider } from '@auth0/nextjs-auth0/client'
 import type { Metadata } from 'next'
-import { GeistSans } from 'geist/font/sans';
-import { GeistMono } from 'geist/font/mono';
-import { InitDatadogLogs, InitDatadogRUM, InitPosthogAnalytics } from '@/utils'
+import { GeistSans } from 'geist/font/sans'
+import { GeistMono } from 'geist/font/mono'
+import { InitDatadogLogs, InitDatadogRUM, InitSegmentAnalytics } from '@/utils'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -29,9 +29,13 @@ export default function RootLayout({
         </>
       ) : null}
       <UserProvider>
-        <body className={`${GeistMono.variable} ${GeistSans.variable} font-sans`}>
+        <body
+          className={`${GeistMono.variable} ${GeistSans.variable} font-sans`}
+        >
           {children}
-          {process?.env?.NEXT_PUBLIC_POSTHOG_TOKEN && <InitPosthogAnalytics />}
+          {process.env.NEXT_PUBLIC_SEGMENT_WRITE_KEY && (
+            <InitSegmentAnalytics />
+          )}
         </body>
       </UserProvider>
     </html>

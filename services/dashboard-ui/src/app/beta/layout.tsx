@@ -1,7 +1,7 @@
 import { UserProvider } from '@auth0/nextjs-auth0/client'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { InitDatadogLogs, InitDatadogRUM, InitPosthogAnalytics } from '@/utils'
+import { InitDatadogLogs, InitDatadogRUM, InitSegmentAnalytics } from '@/utils'
 import '../globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -16,7 +16,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  
   return (
     <html
       className="bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-50"
@@ -33,7 +32,9 @@ export default function RootLayout({
       <UserProvider>
         <body className={inter.className}>
           {children}
-          {process?.env?.NEXT_PUBLIC_POSTHOG_TOKEN && <InitPosthogAnalytics />}
+          {process.env.NEXT_PUBLIC_SEGMENT_WRITE_KEY && (
+            <InitSegmentAnalytics />
+          )}
         </body>
       </UserProvider>
     </html>
