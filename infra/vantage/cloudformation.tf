@@ -44,6 +44,6 @@ resource "aws_cloudformation_stack_set_instance" "vantage-integrations-stack-set
   stack_set_name = aws_cloudformation_stack_set.vantage-integrations-stack-set.name
 
   deployment_targets {
-    organizational_unit_ids = [aws_organizations_organization.example.roots[0].id]
+    organizational_unit_ids = ["r-p4e3"]
   }
 }
