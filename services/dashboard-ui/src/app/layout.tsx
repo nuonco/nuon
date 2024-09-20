@@ -8,7 +8,7 @@ import {
   InitDatadogLogs,
   InitDatadogRUM,
   InitSegmentAnalytics,
-  LoadEnv,
+  SegmentAnalyticsIdentify,
 } from '@/utils'
 import './globals.css'
 
@@ -27,7 +27,6 @@ export default function RootLayout({
       className="bg-light text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50"
       lang="en"
     >
-      <LoadEnv env={JSON.stringify(process?.env)} />
       {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
       process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'stage' ||
       process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'local-test' ? (
@@ -43,7 +42,8 @@ export default function RootLayout({
           {children}
           {process.env.SEGMENT_WRITE_KEY && (
             <Suspense>
-              <InitSegmentAnalytics />
+              <InitSegmentAnalytics writeKey={process.env.SEGMENT_WRITE_KEY} />
+              <SegmentAnalyticsIdentify />
             </Suspense>
           )}
         </body>

@@ -1,10 +1,14 @@
+// @ts-nocheck
 'use client'
 
 import React, { type FC, useEffect } from 'react'
-import { useUser } from '@auth0/nextjs-auth0/client'
 import { usePathname, useSearchParams } from 'next/navigation'
+import Script from 'next/script'
+import { useUser } from '@auth0/nextjs-auth0/client'
+import { AnalyticsBrowser } from '@segment/analytics-next'
+import type { TOrg } from '@/types'
 
-export const InitSegmentAnalytics: FC = () => {
+export const SegmentAnalyticsIdentify: FC = () => {
   // Identify user if we haven't already.
   const { user, error, isLoading } = useUser()
 
@@ -26,4 +30,31 @@ export const InitSegmentAnalytics: FC = () => {
   }, [pathname, searchParams])
 
   return <></>
+}
+
+export const SegmentAnalyticsSetOrg: FC<{ org: TOrg }> = ({ org }) => {
+  const { user, isLoading } = useUser()
+
+  useEffect(() => {
+    if (window['analytics'] && user && !isLoading) {
+      window['analytics']?.group(org.id, {
+        userId: user?.sub,
+        name: org.name,
+      })
+    }
+  }, [])
+
+  return <></>
+}
+
+export const InitSegmentAnalytics: FC<{ writeKey: string }> = ({
+  writeKey,
+}) => {
+  useEffect(() => {
+    window.analytics = AnalyticsBrowser.load({
+      writeKey,
+    })
+  }, [])
+
+  return <Script id="load-env">{console.log('analytics initialized')}</Script>
 }
