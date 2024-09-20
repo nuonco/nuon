@@ -59,7 +59,7 @@ type OtelMetricGauge struct {
 
 func (m OtelMetricGauge) GetTableOptions() (string, bool) {
 	opts := `ENGINE = MergeTree()
-	TTL toDateTime("time_unix") + toIntervalDay(180)
+	TTL toDateTime("time_unix") + toIntervalDay(720)
 	PARTITION BY toDate(time_unix)
 	ORDER BY (service_name, metric_name, attributes, toUnixTimestamp64Nano(time_unix))
 	SETTINGS index_granularity=8192, ttl_only_drop_parts = 1;`
