@@ -5,16 +5,18 @@ import React, { type FC, useEffect } from 'react'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { usePathname, useSearchParams } from 'next/navigation'
 
-// Init segment.
-export const analytics = AnalyticsBrowser.load({
-  writeKey: process.env.NEXT_PUBLIC_SEGMENT_WRITE_KEY!,
-})
-
 export const InitSegmentAnalytics: FC = () => {
   // Identify user if we haven't already.
   const { user, error, isLoading } = useUser()
+  let analytics
   useEffect(() => {
-    if (user && !isLoading) {
+    analytics = AnalyticsBrowser.load({
+      writeKey: window.process.env.SEGMENT_WRITE_KEY!,
+    })
+  }, [])
+
+  useEffect(() => {
+    if (analytics && user && !isLoading) {
       analytics.identify(user.sub, {
         email: user.email,
         userId: user.sub,
@@ -27,7 +29,7 @@ export const InitSegmentAnalytics: FC = () => {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   useEffect(() => {
-    analytics.page(pathname)
+    if (analytics) analytics.page(pathname)
   }, [pathname, searchParams])
 
   return <></>
