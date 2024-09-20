@@ -10,7 +10,6 @@ import React, {
 } from 'react'
 import type { TOrg } from '@/types'
 import { POLL_DURATION } from '@/utils'
-import { useUser } from '@auth0/nextjs-auth0/client'
 
 type TOrgContext = {
   isFetching: boolean
@@ -26,7 +25,6 @@ export const OrgProvider: FunctionComponent<{
 }> = ({ children, initOrg, shouldPoll = false }) => {
   const [isFetching, setIsFetching] = useState<boolean>(false)
   const [org, setOrg] = useState<TOrg>(initOrg)
-  const { user } = useUser()
 
   useEffect(() => {
     const fetchOrg = () => {
@@ -34,16 +32,7 @@ export const OrgProvider: FunctionComponent<{
       fetch(`/api/${org?.id}`)
         .then((res) =>
           res.json().then((org) => {
-            setOrg(org)
-
-            // Identify user org if we haven't already.
-            if (window['analytics'] && user) {
-              window['analytics']?.group(org.id, {
-                userId: user?.sub,
-                name: org.name,
-              })
-            }
-
+            setOrg(org)            
             setIsFetching(false)
           })
         )
