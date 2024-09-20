@@ -70,7 +70,7 @@ type OtelTrace struct {
 
 func (r OtelTrace) GetTableOptions() (string, bool) {
 	opts := `ENGINE = MergeTree()
-	TTL toDateTime("timestamp") + toIntervalDay(180)
+	TTL toDateTime("timestamp") + toIntervalDay(720)
 	PARTITION BY toDate(timestamp)
 	ORDER BY (service_name, span_name, toUnixTimestamp(timestamp), trace_id)
 	SETTINGS index_granularity=8192, ttl_only_drop_parts = 1;`
