@@ -1,3 +1,5 @@
+// TODO(nnnat): remove once we have this API changes on prod
+// @ts-nocheck
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppSandboxConfig,

@@ -1,8 +1,15 @@
+// @ts-nocheck
 import { UserProvider } from '@auth0/nextjs-auth0/client'
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
-import { InitDatadogLogs, InitDatadogRUM, InitSegmentAnalytics } from '@/utils'
+import {
+  InitDatadogLogs,
+  InitDatadogRUM,
+  InitSegmentAnalytics,
+  LoadEnv,
+} from '@/utils'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -20,6 +27,7 @@ export default function RootLayout({
       className="bg-light text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50"
       lang="en"
     >
+      <LoadEnv env={JSON.stringify(process?.env)} />
       {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
       process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'stage' ||
       process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'local-test' ? (
@@ -33,8 +41,10 @@ export default function RootLayout({
           className={`${GeistMono.variable} ${GeistSans.variable} font-sans`}
         >
           {children}
-          {process.env.NEXT_PUBLIC_SEGMENT_WRITE_KEY && (
-            <InitSegmentAnalytics />
+          {process.env.SEGMENT_WRITE_KEY && (
+            <Suspense>
+              <InitSegmentAnalytics />
+            </Suspense>
           )}
         </body>
       </UserProvider>
