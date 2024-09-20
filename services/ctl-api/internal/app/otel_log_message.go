@@ -64,8 +64,8 @@ func (r OtelLogRecord) GetTableOptions() (string, bool) {
 	PARTITION BY toDate(timestamp_time)
 	PRIMARY KEY (service_name, timestamp_time)
 	ORDER BY (service_name, timestamp_time, timestamp)
-	TTL timestamp_time + toIntervalDay(180)
-	SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1;`
+	TTL toDateTime("timestamp") + toIntervalDay(720)
+	SETTINGS index_granularity = 8192, ttl_only_drop_parts = 0;`
 	return opts, true
 }
 

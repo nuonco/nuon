@@ -6,7 +6,6 @@ import (
 	"io"
 
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -201,7 +200,7 @@ func (s *service) writeRunnerLogs(ctx context.Context, runnerID string, logs plo
 			logRecords := scopeLog.LogRecords()
 			for k := 0; k < logRecords.Len(); k++ {
 				log := logRecords.At(k)
-				timestamp := log.Timestamp().AsTime().Unix()
+				timestamp := log.Timestamp().AsTime()
 				logAttrs := log.Attributes()
 
 				otelLogRecords = append(otelLogRecords, app.OtelLogRecord{
@@ -222,7 +221,7 @@ func (s *service) writeRunnerLogs(ctx context.Context, runnerID string, logs plo
 					ScopeVersion:    scopeVersion,
 					ScopeAttributes: utils.AttributesToMap(scopeAttrs),
 
-					Timestamp:      time.Unix(timestamp, 0),
+					Timestamp:      timestamp,
 					ServiceName:    serviceName,
 					SeverityNumber: int(log.SeverityNumber()),
 					SeverityText:   log.SeverityText(),
