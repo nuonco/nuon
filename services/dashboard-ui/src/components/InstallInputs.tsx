@@ -1,9 +1,13 @@
+// TODO(nnnat): remove once we have this API changes on prod
+// @ts-nocheck
 import React, { type FC } from 'react'
 import { Text } from '@/components'
 import type { TInstall } from '@/types'
 
 export interface IInstallInputs {
-  inputs: TInstall['install_inputs']
+  inputs: TInstall['install_inputs'] & {
+    redacted_values: Array<Record<string, string>>
+  }
 }
 
 export const InstallInputs: FC<IInstallInputs> = ({ inputs }) => {
