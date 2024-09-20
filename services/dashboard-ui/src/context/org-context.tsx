@@ -11,7 +11,6 @@ import React, {
 import type { TOrg } from '@/types'
 import { POLL_DURATION } from '@/utils'
 import { useUser } from '@auth0/nextjs-auth0/client'
-import { AnalyticsBrowser } from '@segment/analytics-next'
 
 type TOrgContext = {
   isFetching: boolean
@@ -29,13 +28,6 @@ export const OrgProvider: FunctionComponent<{
   const [org, setOrg] = useState<TOrg>(initOrg)
   const { user } = useUser()
 
-  let analytics
-  useEffect(() => {
-    analytics = AnalyticsBrowser.load({
-      writeKey: window.process.env.SEGMENT_WRITE_KEY!,
-    })
-  }, [])
-
   useEffect(() => {
     const fetchOrg = () => {
       setIsFetching(true)
@@ -45,9 +37,9 @@ export const OrgProvider: FunctionComponent<{
             setOrg(org)
 
             // Identify user org if we haven't already.
-            if (analytics) {
-              analytics.group(org.id, {
-                userId: user.sub,
+            if (window['analytics'] && user) {
+              window['analytics']?.group(org.id, {
+                userId: user?.sub,
                 name: org.name,
               })
             }
