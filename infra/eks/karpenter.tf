@@ -17,10 +17,6 @@ locals {
   }
 }
 
-data "aws_ecrpublic_authorization_token" "token" {
-  provider = aws.virginia
-}
-
 module "karpenter_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.43"
@@ -54,8 +50,6 @@ resource "helm_release" "karpenter" {
   chart               = "karpenter"
   name                = "karpenter"
   repository          = "oci://public.ecr.aws/karpenter"
-  repository_username = data.aws_ecrpublic_authorization_token.token.user_name
-  repository_password = data.aws_ecrpublic_authorization_token.token.password
   version             = "0.37.0"
 
   values = [
