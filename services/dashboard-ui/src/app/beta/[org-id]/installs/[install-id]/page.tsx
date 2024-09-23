@@ -11,6 +11,7 @@ import {
   InstallHistory,
   InstallInputs,
   InstallStatus,
+  InstallStatuesV2,
   SubNav,
   type TLink,
 } from '@/components'
@@ -47,13 +48,7 @@ export default withPageAuthRequired(
         ]}
         heading={install.name}
         headingUnderline={install.id}
-        statues={
-          <div>
-            <InstallProvider initInstall={install}>
-              <InstallStatus />
-            </InstallProvider>
-          </div>
-        }
+        statues={<InstallStatuesV2 install={install} />}
         meta={<SubNav links={subNavLinks} />}
       >
         <div className="flex flex-col lg:flex-row flex-auto">
@@ -78,18 +73,21 @@ export default withPageAuthRequired(
               />
             </section>
 
-            {install?.install_inputs?.length && install?.install_inputs.some(input => input.values || input?.redacted_values) && (
-              <section className="flex flex-col gap-6 px-6 py-8">
-                <Heading>Current inputs</Heading>
+            {install?.install_inputs?.length &&
+              install?.install_inputs.some(
+                (input) => input.values || input?.redacted_values
+              ) && (
+                <section className="flex flex-col gap-6 px-6 py-8">
+                  <Heading>Current inputs</Heading>
 
-                <InstallInputs inputs={install.install_inputs} />
-              </section>
-            )}
+                  <InstallInputs inputs={install.install_inputs} />
+                </section>
+              )}
 
             <section className="flex flex-col gap-6 px-6 py-8">
               <Heading>Cloud platform</Heading>
-              
-              <InstallCloudPlatform install={install} />              
+
+              <InstallCloudPlatform install={install} />
             </section>
           </div>
         </div>

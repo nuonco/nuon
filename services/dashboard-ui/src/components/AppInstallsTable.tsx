@@ -9,7 +9,7 @@ import {
   Heading,
   InstallPlatform,
   Link,
-  Status,
+  StatusBadge,
   Table,
   Text,
 } from '@/components'
@@ -75,17 +75,17 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
         enableColumnFilter: true,
         cell: (props) => (
           <div className="flex flex-col gap-2">
-            <Status
+            <StatusBadge
               status={props.getValue<TDataStatues>().sandbox_status}
               label="Sandbox"
               isLabelStatusText
             />
-            <Status
+            <StatusBadge
               status={props.getValue<TDataStatues>().runner_status}
               label="Runner"
               isLabelStatusText
             />
-            <Status
+            <StatusBadge
               status={props.getValue<TDataStatues>().composite_component_status}
               label="Components"
               isLabelStatusText
