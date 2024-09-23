@@ -25,7 +25,7 @@ export const ToolTip: FC<IToolTip> = ({
             display: inline-block;
             position: relative;
             width: fit-content;
-            z-index: 10;
+            z-index: 1001;
           }
 
           .tooltip .tooltip-wrapper {
@@ -33,6 +33,7 @@ export const ToolTip: FC<IToolTip> = ({
             height: max-content;
             position: absolute;
             width: max-content;
+            z-index: 1000;
           }
 
           .tooltip:hover .tooltip-wrapper {
@@ -80,7 +81,7 @@ export const ToolTip: FC<IToolTip> = ({
         >
           <div
             className={classNames(
-              'bg-dark text-light dark:bg-light dark:text-dark text-sm px-2 py-1.5 rounded drop-shadow-md'
+              'bg-dark text-light dark:bg-light dark:text-dark text-sm px-2 py-1.5 rounded drop-shadow-md max-w-96 '
             )}
           >
             {tipContent}

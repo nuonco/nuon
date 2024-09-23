@@ -1,13 +1,12 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
-  InstallStatus,
+  InstallStatuesV2,
   InstallComponentsTable,
   SubNav,
   type TDataInstallComponent,
   type TLink,
 } from '@/components'
-import { InstallProvider } from '@/context'
 import {
   getInstall,
   getBuild,
@@ -15,6 +14,7 @@ import {
   getComponentConfig,
   getOrg,
 } from '@/lib'
+import type { TBuild } from '@/types'
 
 export default withPageAuthRequired(
   async function InstallComponents({ params }) {
@@ -38,10 +38,10 @@ export default withPageAuthRequired(
         const build = await getBuild({
           buildId: comp.install_deploys?.[0]?.build_id,
           orgId,
-        })
+        }).catch((err) => console.error(err))
         const config = await getComponentConfig({
           componentId: comp.component.id,
-          componentConfigId: build.component_config_connection_id,
+          componentConfigId: (build as TBuild)?.component_config_connection_id,
           orgId,
         })
         const appComponent = await getComponent({
@@ -73,13 +73,7 @@ export default withPageAuthRequired(
         ]}
         heading={install.name}
         headingUnderline={install.id}
-        statues={
-          <div>
-            <InstallProvider initInstall={install}>
-              <InstallStatus />
-            </InstallProvider>
-          </div>
-        }
+        statues={<InstallStatuesV2 install={install} />}
         meta={<SubNav links={subNavLinks} />}
       >
         <section className="px-6 py-8">

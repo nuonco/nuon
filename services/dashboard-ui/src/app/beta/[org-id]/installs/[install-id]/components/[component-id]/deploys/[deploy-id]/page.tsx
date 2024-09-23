@@ -6,7 +6,7 @@ import {
   Duration,
   Heading,
   Link,
-  Status,
+  StatusBadge,
   Text,
   Time,
   ToolTip,
@@ -77,14 +77,17 @@ export default withPageAuthRequired(
         statues={
           <div className="flex gap-6 items-start justify-start">
             <span className="flex flex-col gap-2">
-              <Text variant="overline">Status:</Text>
-              <ToolTip tipContent={deploy.status_description}>
-                <Status status={deploy.status} />
-              </ToolTip>
+              <Text variant="overline">Status</Text>
+              <StatusBadge
+                descriptionAlignment="right"
+                descriptionPosition="bottom"
+                description={deploy.status_description}
+                status={deploy.status}
+              />
             </span>
 
             <span className="flex flex-col gap-2">
-              <Text variant="overline">Type:</Text>
+              <Text variant="overline">Type</Text>
               <Text variant="caption">{deploy.install_deploy_type}</Text>
             </span>
 
@@ -94,13 +97,13 @@ export default withPageAuthRequired(
             </span>
 
             <span className="flex flex-col gap-2">
-              <Text variant="overline">Component:</Text>
+              <Text variant="overline">Component</Text>
               <Text variant="label">{component.name}</Text>
               <Text variant="caption">{deploy.component_id}</Text>
             </span>
 
             <span className="flex flex-col gap-2">
-              <Text variant="overline">Install:</Text>
+              <Text variant="overline">Install</Text>
               <Text variant="label">{install.name}</Text>
               <Text variant="caption">{install.id}</Text>
             </span>
@@ -133,12 +136,15 @@ lg:max-w-[550px]"
 
               <div className="flex items-start justify-start gap-6">
                 <span className="flex flex-col gap-2">
-                  <Text variant="overline">Status:</Text>
-                  <Status status={build.status} />
+                  <Text variant="overline">Status</Text>
+                  <StatusBadge
+                    description={build.status_description}
+                    status={build.status}
+                  />
                 </span>
 
                 <span className="flex flex-col gap-2">
-                  <Text variant="overline">Build date:</Text>
+                  <Text variant="overline">Build date</Text>
                   <Time
                     variant="caption"
                     time={build.created_at}
@@ -147,7 +153,7 @@ lg:max-w-[550px]"
                 </span>
 
                 <span className="flex flex-col gap-2">
-                  <Text variant="overline">Build duration:</Text>
+                  <Text variant="overline">Build duration</Text>
                   <Duration
                     variant="caption"
                     beginTime={build.created_at}
