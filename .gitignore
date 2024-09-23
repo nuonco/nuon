@@ -28,6 +28,7 @@ bin/
 **/terraform.tfstate.*
 
 # Go files
+# update reset-generated-code when modifying this section
 # generated protobufs
 pkg/types/**/**pb.go
 pkg/types/**/**pb.validate.go
@@ -35,8 +36,9 @@ pkg/types/**/**connect.go
 # generated mocks
 *mock*.go
 *_gen.go
-go.work
 .gen
+
+go.work
 
 # go debug binaries
 __debug_bin
