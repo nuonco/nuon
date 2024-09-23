@@ -170,7 +170,7 @@ func (s *service) writeRunnerLogs(ctx context.Context, runnerID string, logs plo
 
 		// NOTE(fd): this is a nuon convention.
 		var jobId string
-		jobIdVal, ok := resourceAttributes.Get("job.id")
+		jobIdVal, ok := resourceAttributes.Get("runner_job.id")
 		if ok {
 			jobId = jobIdVal.AsString()
 		}
@@ -222,6 +222,8 @@ func (s *service) writeRunnerLogs(ctx context.Context, runnerID string, logs plo
 					ScopeAttributes: utils.AttributesToMap(scopeAttrs),
 
 					Timestamp:      timestamp,
+					TimestampTime:  timestamp, // the gorm model struct sets these to zero so we must be explici
+					TimestampDate:  timestamp, // the gorm model struct sets these to zero so we must be explici
 					ServiceName:    serviceName,
 					SeverityNumber: int(log.SeverityNumber()),
 					SeverityText:   log.SeverityText(),
