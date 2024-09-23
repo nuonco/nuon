@@ -5,7 +5,7 @@ import React, { type FC, useCallback, useEffect, useState } from 'react'
 import { FaGithub } from 'react-icons/fa'
 import { Plus } from '@phosphor-icons/react'
 import NextLink from 'next/link'
-import { Dropdown, Heading, Link, OrgStatus, Status, Text } from '@/components'
+import { Dropdown, Link, OrgStatus, StatusBadge, Text } from '@/components'
 import { OrgProvider } from '@/context'
 import type { TOrg } from '@/types'
 import { GITHUB_APP_NAME, initialsFromString } from '@/utils'
@@ -40,10 +40,10 @@ export const OrgSummary: FC<IOrgSummary> = ({ org }) => {
       <OrgAvatar name={org.name} />
 
       <div>
-        <Text className="text-md font-medium leading-normal">{org.name}</Text>
-        <OrgProvider initOrg={org}>
-          <OrgStatus isCompact />
-        </OrgProvider>
+        <Text className="text-md font-medium leading-normal mb-1">
+          {org.name}
+        </Text>
+        <StatusBadge status={org.status} isWithoutBorder />
       </div>
     </div>
   )
@@ -101,14 +101,17 @@ export const OrgsNav: FC<IOrgsNav> = ({ orgs }) => {
       <nav className="flex flex-col gap-0 px-1">
         {orgs.map((org) => (
           <NextLink
-            className="flex items-center justify-start gap-2 rounded-md p-2 hover:bg-cool-grey-600/20"
+            className="flex items-center justify-start gap-4 rounded-md p-2 hover:bg-cool-grey-600/20"
             key={org.id}
             href={`/beta/${org.id}/apps`}
           >
-            <OrgAvatar name={org.name} isSmall />
-            <Text className="break-all text-md font-medium leading-normal">
-              {org.name}
-            </Text>
+            <OrgAvatar name={org.name} />
+            <span>
+              <Text className="break-all text-md font-medium leading-normal mb-1">
+                {org.name}
+              </Text>
+              <StatusBadge status={org.status} isWithoutBorder />
+            </span>
           </NextLink>
         ))}
       </nav>
