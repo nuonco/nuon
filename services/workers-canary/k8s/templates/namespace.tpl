@@ -1,0 +1,8 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: {{ .Values.namespace }}
+    name: {{ .Values.namespace }}
+  name: {{ .Values.namespace }}

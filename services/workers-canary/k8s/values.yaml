@@ -28,6 +28,8 @@ image:
   pullPolicy: IfNotPresent
   tag: ""
 
+namespace: "workers-canary"
+
 serviceAccount:
   # Specifies whether a service account should be created
   enabled: true
@@ -43,39 +45,6 @@ service:
     type: ClusterIP
     primary: true
     enabled: false
-
-probes:
-  # Liveness probe configuration
-  # @default  See below
-  liveness:
-    # Enable the liveness probe
-    enabled: false
-    # Set this to `true` if you wish to specify your own livenessProbe
-    custom: false
-    # The spec field contains the values for the default livenessProbe.
-    # If `custom: true`, this field holds the definition of the probe.
-    # @default  See below
-    spec:
-      initialDelaySeconds: 0
-      periodSeconds: 10
-      timeoutSeconds: 1
-      failureThreshold: 3
-
-  #  Readiness probe configuration
-  # @default  See below
-  readiness:
-    #  Enable the readiness probe
-    enabled: false
-    #  Set this to `true` if you wish to specify your own readinessProbe
-    custom: false
-    # The spec field contains the values for the default readinessProbe.
-    # If `custom: true`, this field holds the definition of the readinessProbe.
-    # @default  See below
-    spec:
-      initialDelaySeconds: 0
-      periodSeconds: 10
-      timeoutSeconds: 1
-      failureThreshold: 3
 
 resources:
   limits:
