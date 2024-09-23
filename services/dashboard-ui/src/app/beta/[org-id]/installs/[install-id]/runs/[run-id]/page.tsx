@@ -6,10 +6,9 @@ import {
   DashboardContent,
   Duration,
   Heading,
-  Status,
+  StatusBadge,
   Text,
   Time,
-  ToolTip,
 } from '@/components'
 import { getInstall, getSandboxRun, getOrg } from '@/lib'
 import { sentanceCase } from '@/utils'
@@ -60,19 +59,22 @@ export default withPageAuthRequired(
         statues={
           <div className="flex gap-6 items-start justify-start">
             <span className="flex flex-col gap-2">
-              <Text variant="overline">Status:</Text>
-              <ToolTip tipContent={sandboxRun.status_description}>
-                <Status status={sandboxRun.status} />
-              </ToolTip>
+              <Text variant="overline">Status</Text>
+              <StatusBadge
+                descriptionAlignment="right"
+                descriptionPosition="bottom"
+                description={sandboxRun.status_description}
+                status={sandboxRun.status}
+              />
             </span>
 
             <span className="flex flex-col gap-2">
-              <Text variant="overline">Type:</Text>
+              <Text variant="overline">Type</Text>
               <Text variant="caption">{sandboxRun.run_type}</Text>
             </span>
 
             <span className="flex flex-col gap-2">
-              <Text variant="overline">Install:</Text>
+              <Text variant="overline">Install</Text>
               <Text variant="label">{install.name}</Text>
               <Text variant="caption">{install.id}</Text>
             </span>

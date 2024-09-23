@@ -8,7 +8,7 @@ import {
   Heading,
   Link,
   StaticComponentConfigType,
-  Status,
+  StatusBadge,
   Table,
   Text,
   getComponentConfigType,
@@ -96,7 +96,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
       {
         header: 'Build',
         accessorKey: 'build',
-        cell: (props) => <Status status={props.getValue<string>()} />,
+        cell: (props) => <StatusBadge status={props.getValue<string>()} />,
       },
       {
         header: 'Config',
