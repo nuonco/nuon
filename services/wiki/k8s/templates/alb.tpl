@@ -3,7 +3,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "common.fullname" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Values.namespace }}
   labels:
     {{- include "common.labels" . | nindent 4 }}
   annotations:
@@ -31,7 +31,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "common.fullname" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Values.namespace }}
   labels:
     {{- include "common.labels" . | nindent 4 }}
   annotations:

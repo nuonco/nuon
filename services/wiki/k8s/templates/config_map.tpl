@@ -3,7 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "common.fullname" . }}
-  namespace: {{ .Release.Namespace | quote | default "default"}}
+  namespace: {{ .Values.namespace }}
   labels:
     {{- include "common.labels" . | nindent 4 }}
 data:
