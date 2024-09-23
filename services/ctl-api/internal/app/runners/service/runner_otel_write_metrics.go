@@ -127,7 +127,7 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 
 		// NOTE(fd): this is a nuon convention.
 		var jobId string
-		jobIdVal, ok := resAttr.Get("job.id")
+		jobIdVal, ok := resAttr.Get("runner_job.id")
 		if ok {
 			jobId = jobIdVal.AsString()
 		}
