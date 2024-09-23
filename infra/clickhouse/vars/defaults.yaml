@@ -10,3 +10,12 @@ shards: 1
 
 # zones controls where the ch NodePool will stand up new nodes
 availability_zones: ["us-west-2c"]
+
+# tables we want to backup
+tables:
+ - otel_log_records
+ - otel_metrics_exponential_histogram
+ - otel_metrics_gauge
+ - otel_metrics_histogram
+ - otel_metrics_sum
+ - otel_traces
