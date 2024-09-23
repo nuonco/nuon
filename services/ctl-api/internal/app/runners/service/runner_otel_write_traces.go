@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/utils"
@@ -120,7 +119,7 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 
 		// NOTE(fd): this is a nuon convention.
 		var jobId string
-		jobIdVal, ok := resourceAttributes.Get("job.id")
+		jobIdVal, ok := resourceAttributes.Get("runner_job.id")
 		if ok {
 			jobId = jobIdVal.AsString()
 		}
@@ -150,9 +149,9 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 			traces := scopeSpan.Spans()
 			for k := 0; k < traces.Len(); k++ {
 				trace := traces.At(k)
-				timestamp := trace.StartTimestamp().AsTime().Unix()
-				endtimestamp := trace.EndTimestamp().AsTime().Unix()
-				duration := endtimestamp - timestamp
+				timestamp := trace.StartTimestamp().AsTime()
+				endtimestamp := trace.EndTimestamp().AsTime()
+				duration := endtimestamp.Unix() - timestamp.Unix()
 				traceAttrs := trace.Attributes()
 
 				eventTimes, eventNames, _ := utils.ConvertEvents(trace.Events())
@@ -183,7 +182,9 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 					RunnerJobExecutionID: runnerJobExecutionId,
 
 					// topmatter
-					Timestamp: time.Unix(timestamp, 0),
+					Timestamp:     timestamp,
+					TimestampTime: timestamp, // the gorm model struct sets these to zero so we must be explicit
+					TimestampDate: timestamp, // the gorm model struct sets these to zero so we must be explici
 
 					// from resource
 					ResourceAttributes: utils.AttributesToMap(resourceAttrs),
