@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
 func (w *Workflows) isBuildDeployable(bld *app.ComponentBuild) bool {
@@ -101,18 +102,31 @@ func (w *Workflows) isTeardownable(install *app.Install) bool {
 // @execution-timeout 60m
 // @task-timeout 30m
 func (w *Workflows) Deploy(ctx workflow.Context, sreq signals.RequestSignal) error {
+	w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusStarted)
+
+	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
+	if err != nil {
+		w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "unable to get install from database")
+		w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusFailed)
+		return fmt.Errorf("unable to get install: %w", err)
+	}
+
+	err = w.doDeploy(ctx, sreq, install)
+	if err != nil {
+		w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusFailed)
+		w.sendNotification(ctx, notifications.NotificationsTypeDeployFailed, install.AppID, map[string]string{
+			"install_name": install.Name,
+			"app_name":     install.App.Name,
+			"created_by":   install.CreatedBy.Email,
+		})
+	}
+	return err
+}
+
+func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, install *app.Install) error {
 	installID := sreq.ID
 	deployID := sreq.DeployID
 	sandboxMode := sreq.SandboxMode
-
-	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusStarted)
-
-	install, err := activities.AwaitGetByInstallID(ctx, installID)
-	if err != nil {
-		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to get install from database")
-		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
-		return fmt.Errorf("unable to get install: %w", err)
-	}
 
 	installDeploy, err := activities.AwaitGetDeployByDeployID(ctx, deployID)
 	if err != nil {
