@@ -112,7 +112,9 @@ type OtelTraceIngestion struct {
 	RunnerJobExecutionID string `json:"runner_job_execution_id"`
 
 	// OTEL log trace attributes
-	Timestamp time.Time `json:"timestamp" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1);"`
+	Timestamp     time.Time `json:"timestamp" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1);"`
+	TimestampDate time.Time `json:"timestamp_date" gorm:"type:Date DEFAULT toDate(timestamp);"`
+	TimestampTime time.Time `json:"timestamp_time" gorm:"type:DateTime DEFAULT toDateTime(timestamp);"`
 
 	ResourceAttributes map[string]string `json:"resource_attributes" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1"`
 	ResourceSchemaURL  string            `json:"resource_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1);"`
