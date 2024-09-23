@@ -32,9 +32,9 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
     "apiVersion" = "batch/v1"
     "kind"       = "CronJob"
     "metadata"   = {
-      "name"      = "clickhouse-backup-to-s3-${each.key}"
+      "name"      = "clickhouse-backup-to-s3-${replace(each.key, "_", "-")}"
       "namespace" = "clickhouse"
-      "table"     = each.key
+      "table"     = replace(each.key, "_", "-")
     }
     "spec" = {
       "jobTemplate" = {
@@ -46,7 +46,7 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
                   "command" = [
                     "bash",
                     "/usr/bin/backup.sh",
-                    "${each.key}",
+                    "${replace(each.key, "_", "-")}",
                   ]
                   "env" = [
                     {
