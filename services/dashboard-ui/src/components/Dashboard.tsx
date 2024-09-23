@@ -81,7 +81,7 @@ export const DashboardContent: FC<{
             <div className="flex items-start justify-between">
               <hgroup className="flex flex-col gap-2">
                 <Heading variant="title">{heading}</Heading>
-                <Text className="font-mono" variant="overline">
+                <Text variant="id">
                   {headingUnderline}
                 </Text>
               </hgroup>

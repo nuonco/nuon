@@ -5,7 +5,7 @@ import {
   Duration,
   ComponentConfiguration,
   Heading,
-  Status,
+  StatusBadge,
   Time,
   Text,
   ToolTip,
@@ -73,16 +73,19 @@ export default withPageAuthRequired(
         statues={
           <div className="flex gap-6 items-start justify-start">
             <span className="flex flex-col gap-2">
-              <Text variant="overline">Status:</Text>
-              <ToolTip tipContent={build.status_description}>
-                <Status status={build.status} />
-              </ToolTip>
+              <Text variant="overline">Status</Text>
+              <StatusBadge
+                descriptionAlignment="right"
+                descriptionPosition="bottom"
+                description={build.status_description}
+                status={build.status}
+              />
             </span>
 
             <span className="flex flex-col gap-2">
-              <Text variant="overline">Component:</Text>
+              <Text variant="overline">Component</Text>
               <Text variant="label">{component.name}</Text>
-              <Text variant="caption">{build.component_id}</Text>
+              <Text variant="id">{build.component_id}</Text>
             </span>
           </div>
         }
@@ -103,11 +106,11 @@ lg:max-w-[550px]"
 
                 <div className="flex gap-6 items-start justify-start">
                   <span className="flex flex-col gap-2">
-                    <Text variant="overline">SHA:</Text>
+                    <Text variant="overline">SHA</Text>
                     <ToolTip tipContent={build.vcs_connection_commit?.sha}>
                       <Text
                         className="truncate text-ellipsis w-16"
-                        variant="caption"
+                        variant="id"
                       >
                         {build.vcs_connection_commit?.sha}
                       </Text>
@@ -116,7 +119,7 @@ lg:max-w-[550px]"
 
                   {build.vcs_connection_commit?.author_name !== '' && (
                     <span className="flex flex-col gap-2">
-                      <Text variant="overline">Author:</Text>
+                      <Text variant="overline">Author</Text>
                       <Text variant="caption">
                         {build.vcs_connection_commit?.author_name}
                       </Text>
@@ -124,7 +127,7 @@ lg:max-w-[550px]"
                   )}
 
                   <span className="flex flex-col gap-2">
-                    <Text variant="overline">Message:</Text>
+                    <Text variant="overline">Message</Text>
                     <Text variant="caption">
                       {build.vcs_connection_commit?.message}
                     </Text>

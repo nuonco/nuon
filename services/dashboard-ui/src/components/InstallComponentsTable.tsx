@@ -8,7 +8,7 @@ import {
   Heading,
   Link,
   StaticComponentConfigType,
-  Status,
+  StatusBadge,
   Table,
   Text,
   Time,
@@ -37,7 +37,7 @@ function parseInstallComponentsToTableData(
   installComponents: Array<TDataInstallComponent>
 ): Array<TData> {
   return installComponents.map((comp) => ({
-    buildStatus: comp.build.status,
+    buildStatus: comp.build?.status || 'noop',
     componentType: getComponentConfigType(comp.config),
     configVersion: comp.config?.version,
     installComponentId: comp.id,
@@ -125,7 +125,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
       {
         header: 'Build',
         accessorKey: 'buildStatus',
-        cell: (props) => <Status status={props.getValue<string>()} />,
+        cell: (props) => <StatusBadge status={props.getValue<string>()} />,
       },
       {
         header: 'Config',
