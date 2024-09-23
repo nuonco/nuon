@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
 // @temporal-gen workflow
@@ -44,5 +45,11 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 
 	// update release status
 	w.updateStatus(ctx, sreq.ID, "active", "release succeeded")
+
+	app, err := activities.AwaitGetReleaseAppByReleaseID(ctx, sreq.ID)
+	w.sendNotification(ctx, notifications.NotificationsTypeReleaseSucceeded, sreq.ID, map[string]string{
+		"app_name":   app.Name,
+		"created_by": release.CreatedBy.Email,
+	})
 	return nil
 }
