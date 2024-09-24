@@ -13,13 +13,13 @@ members:
   - username: sdboyer
     role: admin
   # Rob Bruce
-  - username: alphavibe
+  - username: ALPHAvibe
     role: admin
   # Fred Diego
   - username: fidiego
     role: admin
   # Ada Ban
-  - username: adaban
+  - username: AdaBan
     role: admin
     
   # all other team members
