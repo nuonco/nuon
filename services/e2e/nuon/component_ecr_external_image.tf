@@ -6,7 +6,7 @@ resource "nuon_container_image_component" "e2e-ecr" {
   app_id = nuon_app.main.id
 
   dependencies = [
-    nuon_terraform_module_component.e2e[0].id
+    nuon_container_image_component.e2e[0].id
   ]
 
   aws_ecr = {

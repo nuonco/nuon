@@ -6,6 +6,24 @@ echo >&2 -e "pinning app"
 app_id=$(cat $TF_OUTPUTS_PATH | jq -r .app.id)
 nuon apps select --app $app_id
 
+# wait for installs to be active before executing releases
+for install_name in $(cat $TF_OUTPUTS_PATH | jq -r '.installs[]'); do
+  deploy_id=$(nuon -j installs list-deploys -i $install_name | jq -r .[0].id)
+  deploying=true
+  while [ $deploying = true ]
+  do
+    deploy_status=$(nuon -j installs get-deploy -d $deploy_id -i $install_name | jq -r .status)
+    echo $deploy_status
+    if [[ $deploy_status == "active" ]]; then
+      echo >&2 -e "deploy is active\n"
+      deploying=false
+    fi
+
+    echo >&2 -e "waiting for $install_name deploy status to be active\n"
+    sleep 1
+  done
+done
+
 component_name="e2e_external_image"
 build_id=$(nuon builds list -j -c $component_name | jq -r .[0].id)
 

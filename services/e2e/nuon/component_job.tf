@@ -4,8 +4,7 @@ resource "nuon_job_component" "e2e" {
   name   = "${var.component_prefix}e2e_job"
   app_id = nuon_app.main.id
   dependencies = [
-    nuon_docker_build_component.e2e[0].id,
-    nuon_container_image_component.e2e[0].id,
+    nuon_helm_chart_component.e2e[0].id,
   ]
 
   image_url = "bitnami/kubectl"

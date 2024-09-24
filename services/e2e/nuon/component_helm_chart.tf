@@ -8,7 +8,6 @@ resource "nuon_helm_chart_component" "e2e" {
 
   dependencies = [
     nuon_docker_build_component.e2e[0].id,
-    nuon_container_image_component.e2e[0].id,
   ]
 
   chart_name = "e2e-helm"

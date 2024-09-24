@@ -18,18 +18,6 @@ echo >&2 -e "nuon orgs list-connected-repos\n"
 nuon -j orgs list-connected-repos
 echo -e "\n"
 
-echo >&2 -e "nuon orgs create --sandbox-mode\n"
-nuon -j orgs create -n cli-sandbox --sandbox-mode
-echo -e "\n"
-
-echo >&2 -e "nuon orgs current\n"
-nuon -j orgs current
-echo -e "\n"
-
-echo >&2 -e "[SKIP] nuon orgs conntect-github\n"
-# nuon -j orgs connect-github
-echo -e "\n"
-
 echo >&2 -e "nuon orgs list\n"
 nuon -j orgs list
 echo -e "\n"

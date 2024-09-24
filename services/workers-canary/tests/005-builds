@@ -55,3 +55,4 @@ else
   nuon -j builds logs -c $component_name -b $build_id
 fi
 echo -e "\n"
+

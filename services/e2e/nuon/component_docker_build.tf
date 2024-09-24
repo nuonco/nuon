@@ -7,7 +7,7 @@ resource "nuon_docker_build_component" "e2e" {
 
   dockerfile = "Dockerfile"
   dependencies = [
-    nuon_container_image_component.e2e[0].id,
+    nuon_container_image_component.e2e-ecr[0].id,
   ]
   connected_repo = {
     directory = "components/go-httpbin"
