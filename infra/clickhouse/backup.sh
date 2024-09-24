@@ -24,7 +24,7 @@ echo
 
 # check if the initial backup exists
 QUERY="SELECT count(*) FROM system.backups WHERE status = 'BACKUP_CREATED' AND position(name, '$INITIAL_BACKUP') != 0;"
-HAS_INITIAL=`clickhouse client -q "$QUERY"`
+HAS_INITIAL=`clickhouse client -h $CLICKHOUSE_URL -q "$QUERY"`
 
 # if it does not exit, create it
 if [ "$HAS_INITIAL" == "0" ]; then
@@ -32,7 +32,7 @@ if [ "$HAS_INITIAL" == "0" ]; then
   echo
   echo "[clickhouse backups to s3] Creating initial backup: "$CREATE_INITIAL_BACKUP_CMD
   echo
-  RESPONSE=`clickhouse client -q "$CREATE_INITIAL_BACKUP_CMD"`
+  RESPONSE=`clickhouse client -h $CLICKHOUSE_URL -q "$CREATE_INITIAL_BACKUP_CMD"`
   if [[ $RESPONSE == *"BACKUP_FAILED"* ]]; then
       echo
       echo "[clickhouse backups to s3] failed create the initial backup"
@@ -61,7 +61,7 @@ echo
 echo '[clickhouse backups to s3] creating current backup: '$COMMAND
 echo
 
-RESPONSE=`clickhouse client -q "$COMMAND"`
+RESPONSE=`clickhouse client -h $CLICKHOUSE_URL -q "$COMMAND"`
 if [[ $RESPONSE == *"BACKUP_FAILED"* ]]; then
     echo
     echo "[clickhouse backups to s3] failed to create the current backup"

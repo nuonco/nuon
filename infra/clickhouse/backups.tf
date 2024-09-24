@@ -56,6 +56,11 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
                       "name"  = "BUCKET_URL"
                       "value" = "https://${module.bucket.s3_bucket_bucket_domain_name}"
                     },
+                    {
+                      // this is the service url
+                      "name"  = "CLICKHOUSE_URL"
+                      "value" = "clickhouse-clickhouse-installation.clickhouse.svc.cluster.local"
+                    },
                   ]
                   "image"           = "clickhouse/clickhouse-server:${local.image_tag}"
                   "imagePullPolicy" = "IfNotPresent"
