@@ -21,12 +21,25 @@ func (a *Activities) CreateSandboxRun(ctx context.Context, req CreateSandboxRunR
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
+	var status app.SandboxRunStatus
+	switch req.RunType {
+	case app.SandboxRunTypeProvision:
+		status = app.SandboxRunStatusProvisioning
+	case app.SandboxRunTypeReprovision:
+		status = app.SandboxRunStatusReprovisioning
+	case app.SandboxRunTypeDeprovision:
+		status = app.SandboxRunStatusDeprovisioning
+	default:
+		return nil, fmt.Errorf("invalid run type: %s", req.RunType)
+	}
+
 	run := app.InstallSandboxRun{
 		OrgID:              install.OrgID,
 		RunType:            req.RunType,
 		InstallID:          req.InstallID,
 		CreatedByID:        install.CreatedByID,
 		AppSandboxConfigID: install.AppSandboxConfigID,
+		Status:             status,
 	}
 
 	res := a.db.WithContext(ctx).Create(&run)
