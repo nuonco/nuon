@@ -8,8 +8,9 @@ resource "kubectl_manifest" "clickhouse_backup_script" {
     "apiVersion" = "v1"
     "kind" = "ConfigMap"
     "metadata" = {
-      "name" = "clickhouse-backup-to-s3-script"
-      "managed" = "terraform"
+      "name"      = "clickhouse-backup-to-s3-script"
+      "namespace" = "clickhouse"
+      "managed"   = "terraform"
     }
     "data" = {
       "backup.sh" = file("${path.module}/backup.sh")
@@ -32,9 +33,11 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
     "apiVersion" = "batch/v1"
     "kind"       = "CronJob"
     "metadata"   = {
-      "name"      = "clickhouse-backup-to-s3-${replace(each.key, "_", "-")}"
+      "name"      = "ch-s3-backup-${replace(each.key, "_", "-")}"
       "namespace" = "clickhouse"
-      "table"     = replace(each.key, "_", "-")
+      "annotations" = {
+        "nuon.clickhouse.io/table" = replace(each.key, "_", "-")
+      }
     }
     "spec" = {
       "jobTemplate" = {
