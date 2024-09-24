@@ -24,7 +24,7 @@ echo
 # check if the initial backup exists
 # the query checks for entries w/ a base backup. these can only exist if the base backup exists. so if the count is > 0, we have
 # an initial backup. it is a bit indirect but it works well.
-QUERY="SELECT count(*) FROM system.backups WHERE status = 'BACKUP_CREATED' AND position(base_backup_name, '$INITIAL') != 0;"
+QUERY="SELECT count(*) FROM system.backups WHERE status = 'BACKUP_CREATED' AND position(base_backup_name, '$INITIAL_BACKUP') != 0;"
 HAS_INITIAL=`clickhouse client --host $CLICKHOUSE_URL --user $CLICKHOUSE_USERNAME --password $CLICKHOUSE_PASSWORD -q "$QUERY"`
 
 # if it does not exit, create it
