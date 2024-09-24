@@ -110,6 +110,15 @@ func (w *Workflows) TeardownComponents(ctx workflow.Context, sreq signals.Reques
 			return fmt.Errorf("unable to create install deploy: %w", err)
 		}
 
+		_, err = activities.AwaitCreateSandboxRun(ctx, activities.CreateSandboxRunRequest{
+			InstallID: installID,
+			RunType:   app.SandboxRunTypeDeprovision,
+		})
+
+		if err != nil {
+			return fmt.Errorf("unable to create sandbox run: %w", err)
+		}
+
 		deploys = append(deploys, installDeploy)
 	}
 
