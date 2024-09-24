@@ -61,6 +61,14 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
                       "name"  = "CLICKHOUSE_URL"
                       "value" = "clickhouse-clickhouse-installation.clickhouse.svc.cluster.local"
                     },
+                    {
+                      "name"  = "CLICKHOUSE_USERNAME"
+                      "value" = "teamnuon"
+                    },
+                    {
+                      "name"  = "CLICKHOUSE_PASSWORD"
+                      "value" = "teamnuon"
+                    },
                   ]
                   "image"           = "clickhouse/clickhouse-server:${local.image_tag}"
                   "imagePullPolicy" = "IfNotPresent"
