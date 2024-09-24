@@ -47,8 +47,8 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
               "containers" = [
                 {
                   "command" = [
-                    "/usr/bin/bash",
-                    "/usr/bin/backup.sh",
+                    "bash",
+                    "/usr/local/bin/backup.sh",
                     "${replace(each.key, "_", "-")}",
                   ]
                   "env" = [
@@ -62,8 +62,9 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
                   "name"            = "ch-s3-backup-${replace(each.key, "_", "-")}"
                   "volumeMounts"    = [
                     {
-                      "mountPath" = "/usr/bin"
                       "name"      = "config-volume"
+                      "mountPath" = "/usr/local/bin/backup.sh"
+                      "subPath": "backup.sh"
                     },
                   ]
                 },
