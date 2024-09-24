@@ -47,7 +47,7 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
               "containers" = [
                 {
                   "command" = [
-                    "bash",
+                    "/usr/bin/bash",
                     "/usr/bin/backup.sh",
                     "${replace(each.key, "_", "-")}",
                   ]
@@ -59,7 +59,7 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
                   ]
                   "image"           = "clickhouse/clickhouse-server:${local.image_tag}"
                   "imagePullPolicy" = "IfNotPresent"
-                  "name"            = "clickhouse-backup-to-s3"
+                  "name"            = "ch-s3-backup-${replace(each.key, "_", "-")}"
                   "volumeMounts"    = [
                     {
                       "mountPath" = "/usr/bin"
