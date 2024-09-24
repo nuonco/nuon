@@ -1,0 +1,57 @@
+---
+name: infra checks
+"on":
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  actions: read
+  statuses: write
+
+concurrency:
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  changes:
+    name: 🔍 changes
+    runs-on: ubuntu-latest
+    outputs:
+      tfcloud: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: read ci triggers file
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: ci_triggers
+        with:
+          config: ci-triggers.yml
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: ${{ steps.ci_triggers.outputs['terraform-cloud'] }}
+
+  update_status:
+    # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
+    name: 🚢
+    needs:
+      - changes
+      - tag
+    if: ${{ github.event_name == 'pull_request' && (needs.changes.outputs.artifacts == '[]' || needs.changes.outputs.artifacts == '') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: martialonline/workflow-status@v4.1
+        id: check
+      - name: Update status
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: 'Terraform Cloud/nuonco/repo-id-B14tP6vG7ia3CQHo'
+          status: success
