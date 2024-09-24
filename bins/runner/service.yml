@@ -5,9 +5,10 @@ env:
   GIT_REF: local
 
   RUNNER_API_URL: http://localhost:8083
-  RUNNER_API_TOKEN: tokmi4sy56krxqp7utqbhph60a
-  RUNNER_ID: runu4hdnoto1w7j17df2kshcye
   SETTINGS_REFRESH_TIMEOUT: 1m
+
+  RUNNER_API_TOKEN: <REPLACE-ME>
+  RUNNER_ID: <REPLACE-ME>
 watch_ignore_dirs: []
 
 local_only: true
