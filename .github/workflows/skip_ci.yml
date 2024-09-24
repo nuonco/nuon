@@ -29,60 +29,54 @@ jobs:
   checks:
     name: 🔍 checks
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        check:
-          [
-            services ✅,
-            artifacts ✅,
-            pkg ✅,
-            infra ✅,
-            protos ✅,
-            pull_request ✅,
-            branch ✅,
-            lint ✅,
-            Terraform Cloud/nuonco/infra-artifacts,
-            Terraform Cloud/nuonco/aws-accounts,
-            Terraform Cloud/nuonco/aws-org,
-            Terraform Cloud/nuonco/aws-sso,
-            Terraform Cloud/nuonco/infra-datadog-orgs-prod,
-            Terraform Cloud/nuonco/infra-datadog-orgs-stage,
-            Terraform Cloud/nuonco/infra-datadog-prod,
-            Terraform Cloud/nuonco/infra-datadog-stage,
-            Terraform Cloud/nuonco/infra-eks-orgs-prod-main,
-            Terraform Cloud/nuonco/infra-eks-orgs-stage-main,
-            Terraform Cloud/nuonco/infra-eks-prod-nuon,
-            Terraform Cloud/nuonco/infra-eks-stage-nuon,
-            Terraform Cloud/nuonco/infra-github,
-            Terraform Cloud/nuonco/infra-orgs-prod,
-            Terraform Cloud/nuonco/infra-orgs-stage,
-            Terraform Cloud/nuonco/infra-temporal-prod,
-            Terraform Cloud/nuonco/infra-temporal-stage,
-            Terraform Cloud/nuonco/infra-terraform,
-            Terraform Cloud/nuonco/infra-waypoint-orgs-prod,
-            Terraform Cloud/nuonco/infra-waypoint-orgs-stage,
-            Terraform Cloud/nuonco/nuon-dns,
-            Terraform Cloud/nuonco/powertools,
-            Terraform Cloud/nuonco/ctl-api-prod,
-            Terraform Cloud/nuonco/ctl-api-stage,
-            Terraform Cloud/nuonco/dashboard-ui-prod,
-            Terraform Cloud/nuonco/dashboard-ui-stage,
-            Terraform Cloud/nuonco/workers-apps-prod,
-            Terraform Cloud/nuonco/workers-apps-stage,
-            Terraform Cloud/nuonco/workers-canary-prod,
-            Terraform Cloud/nuonco/workers-canary-stage,
-            Terraform Cloud/nuonco/workers-executors-prod,
-            Terraform Cloud/nuonco/workers-executors-stage,
-            Terraform Cloud/nuonco/workers-installs-prod,
-            Terraform Cloud/nuonco/workers-installs-stage,
-            Terraform Cloud/nuonco/workers-orgs-prod,
-            Terraform Cloud/nuonco/workers-orgs-stage,
-          ]
+    # NOTE(jm): by doing this all inline, we only have a single result on the final PR, which makes it easier to read 
+    # than parsing the output of matrix
     steps:
-      - name: update statuses
+      - name: set services
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
-          name: ${{ matrix.check }}
+          name: services ✅
+          status: success
+      - name:  set artifacts
+        if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: artifacts ✅
+          status: success
+      - name:  set pkg
+        if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: pkg ✅
+          status: success
+      - name:  set protos
+        if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: protos ✅
+          status: success
+      - name:  set pull_request
+        if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: pull_request ✅
+          status: success
+      - name:  set branch
+        if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: branch ✅
+          status: success
+      - name:  set lint
+        if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: lint ✅
+          status: success
+      - name:  set terraform cloud
+        if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: Terraform Cloud/nuonco/repo-id-B14tP6vG7ia3CQHo
           status: success
