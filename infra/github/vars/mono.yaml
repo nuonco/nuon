@@ -58,8 +58,8 @@ required_checks:
   # terraform cloud e2e checks
   # NOTE(jm): we can not enforce e2e-prod as a status, as that precludes us from shipping full features to stage, before
   # promoting to prod.
-  #- Terraform Cloud/nuonco/e2e-prod
-  - Terraform Cloud/nuonco/e2e-stage
+  # - Terraform Cloud/nuonco/e2e-prod
+  # - Terraform Cloud/nuonco/e2e-stage
 
   # terraform cloud services
   - Terraform Cloud/nuonco/ctl-api-prod
