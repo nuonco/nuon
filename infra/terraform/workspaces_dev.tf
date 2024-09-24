@@ -33,7 +33,7 @@ module "e2e-jon" {
   source = "./modules/workspace"
 
   name          = "e2e-jon"
-  repo          = "powertoolsdev/mono"
+/*   repo          = "powertoolsdev/mono" */
   auto_apply    = true
   dir           = "infra/e2e-jon"
   variable_sets = ["aws-environment-credentials", "api-stage"]
@@ -55,7 +55,7 @@ module "e2e-jordan" {
   source = "./modules/workspace"
 
   name          = "e2e-jordan"
-  repo          = "powertoolsdev/mono"
+/*   repo          = "powertoolsdev/mono" */
   auto_apply    = true
   dir           = "infra/e2e-jordan"
   variable_sets = ["aws-environment-credentials", "api-stage"]
@@ -77,7 +77,7 @@ module "e2e-nat" {
   source = "./modules/workspace"
 
   name          = "e2e-nat"
-  repo          = "powertoolsdev/mono"
+/*   repo          = "powertoolsdev/mono" */
   auto_apply    = true
   dir           = "infra/e2e-nat"
   variable_sets = ["aws-environment-credentials", "api-stage"]

@@ -2,7 +2,7 @@ module "e2e-stage" {
   source = "./modules/workspace"
 
   name          = "e2e-stage"
-  repo          = "powertoolsdev/mono"
+/*   repo          = "powertoolsdev/mono" */
   auto_apply    = true
   dir           = "infra/e2e-stage"
   variable_sets = ["aws-environment-credentials", "api-stage"]
@@ -26,7 +26,7 @@ module "e2e-prod" {
   source = "./modules/workspace"
 
   name          = "e2e-prod"
-  repo          = "powertoolsdev/mono"
+/*   repo          = "powertoolsdev/mono" */
   auto_apply    = true
   dir           = "infra/e2e-prod"
   variable_sets = ["aws-environment-credentials", "api-prod"]
