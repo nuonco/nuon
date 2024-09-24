@@ -49,7 +49,7 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
                   "command" = [
                     "bash",
                     "/usr/local/bin/backup.sh",
-                    "${replace(each.key, "_", "-")}",
+                    "${each.key}",
                   ]
                   "env" = [
                     {

@@ -5,7 +5,7 @@ set -e
 set -o pipefail
 set -u
 
-TABLE="otel_log_records"
+TABLE=$1
 TIMESTAMP=`date -Iseconds -u | sed 's/-//g; s/://g; s/T//g; s/+//g'`
 LOCATION="$BUCKET_URL/backups/"$TABLE
 INITIAL_BACKUP="$LOCATION/initial"
