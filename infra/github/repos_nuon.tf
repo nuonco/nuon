@@ -319,7 +319,7 @@ module "nuon-examples" {
   required_checks          = []
   owning_team_id           = github_team.nuon.id
   is_public                = true
-  enable_branch_protection = true
+  enable_branch_protection = false
 
   collaborators = {
   }
