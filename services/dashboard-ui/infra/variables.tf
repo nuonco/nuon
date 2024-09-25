@@ -7,6 +7,7 @@ data "utils_deep_merge_yaml" "vars" {
 
 locals {
   name                   = "dashboard-ui"
+  namespace              = "dashboard-ui"
   vars                   = yamldecode(data.utils_deep_merge_yaml.vars.output)
   terraform_organization = "nuonco"
 
