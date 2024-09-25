@@ -7,6 +7,7 @@ data "utils_deep_merge_yaml" "vars" {
 
 locals {
   name                   = "wiki"
+  namespace              = "wiki"
   vars                   = yamldecode(data.utils_deep_merge_yaml.vars.output)
   terraform_organization = "nuonco"
   accounts = {
