@@ -20,7 +20,7 @@ type AdminGetOrgRequest struct {
 // @Produce		json
 // @Success		200	{string}	ok
 // @Router			/v1/orgs/{org_id}/admin-get-installs [GET]
-func (s *service) AdminAdminGetOrgInstalls(ctx *gin.Context) {
+func (s *service) AdminGetOrgInstalls(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
 	installs, err := s.getOrgInstalls(ctx, orgID)

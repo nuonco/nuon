@@ -7,9 +7,10 @@ import (
 )
 
 type Install struct {
-	Id     string `json:"id"`
-	Name   string `json:"name"`
-	Status string `json:"status"`
+	Id            string `json:"id"`
+	Name          string `json:"name"`
+	SandboxStatus string `json:"sandbox_status"`
+	Status        string `json:"status"`
 }
 
 func (c *client) ListInstalls(ctx context.Context, typ string) ([]Install, error) {
