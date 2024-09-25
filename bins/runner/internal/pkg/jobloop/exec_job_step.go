@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon-runner-go/models"
+	"github.com/sourcegraph/conc/panics"
 )
 
 func (j *jobLoop) updateJobExecutionStatus(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus) error {
@@ -31,9 +32,26 @@ func (j *jobLoop) execJobStep(ctx context.Context, step *executeJobStep, job *mo
 		return err
 	}
 
-	err := step.fn(ctx, step.handler, job, jobExecution)
+	var (
+		pc  panics.Catcher
+		err error
+	)
+	pc.Try(func() {
+		err = step.fn(ctx, step.handler, job, jobExecution)
+	})
 	if err == nil {
 		return nil
+	}
+
+	// when a job handler panics, we update the job to a failed status, and propagate the error
+	recovered := pc.Recovered()
+	if recovered != nil {
+		status := models.AppRunnerJobExecutionStatusFailed
+		if updateErr := j.updateJobExecutionStatus(ctx, job.ID, jobExecution.ID, status); updateErr != nil {
+			j.errRecorder.Record("update_job_execution", updateErr)
+		}
+
+		panic(recovered)
 	}
 
 	status := j.errToStatus(err)
@@ -41,9 +59,12 @@ func (j *jobLoop) execJobStep(ctx context.Context, step *executeJobStep, job *mo
 		j.errRecorder.Record("update_job_execution", updateErr)
 	}
 
-	if cleanupErr := step.cleanupFn(ctx, step.handler, job, jobExecution); err != nil {
+	if step.cleanupFn == nil {
+		return err
+	}
+	if cleanupErr := step.cleanupFn(ctx, step.handler, job, jobExecution); cleanupErr != nil {
 		j.errRecorder.Record("cleanup", cleanupErr)
 	}
 
-	return nil
+	return err
 }

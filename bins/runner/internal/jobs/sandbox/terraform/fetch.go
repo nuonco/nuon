@@ -24,7 +24,7 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	h.state.jobExecutionID = jobExecution.ID
 
 	h.state.timeout = time.Duration(job.ExecutionTimeout)
-	h.log.Info("setting helm operation timeout", zap.String("duration", h.state.timeout.String()))
+	h.log.Info("setting sandbox operation timeout", zap.String("duration", h.state.timeout.String()))
 
 	return nil
 }

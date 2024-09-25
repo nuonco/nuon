@@ -43,6 +43,7 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 	s.evClient.Send(ctx, installID, &signals.Signal{
 		Type: signals.OperationDelete,
 	})
+
 	ctx.JSON(http.StatusOK, true)
 }
 

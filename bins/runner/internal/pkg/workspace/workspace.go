@@ -37,7 +37,8 @@ var _ Workspace = (*workspace)(nil)
 
 func New(v *validator.Validate, opts ...workspaceOption) (*workspace, error) {
 	obj := &workspace{
-		v: v,
+		v:          v,
+		TmpRootDir: defaultTmpRootDir,
 	}
 
 	for _, opt := range opts {
