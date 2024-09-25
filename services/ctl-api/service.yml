@@ -36,7 +36,7 @@ env:
   INTERNAL_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
   
   # different toggles for sandbox mode and other local tooling
-  FORCE_SANDBOX_MODE: true
+  FORCE_SANDBOX_MODE: false
   SANDBOX_SLEEP: 3s
   USE_LOCAL_RUNNERS: true
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon-runner-go/models"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
 )
@@ -30,45 +31,53 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		return fmt.Errorf("unable to get handler for job: %w", err)
 	}
 
+	j.l.Error("handler", zap.String("name", handler.Name()))
+
 	steps := []*executeJobStep{
 		// validate step
 		{
-			name:      "fetching",
-			fn:        j.executeFetchJobStep,
-			cleanupFn: nil,
-			handler:   handler,
+			name:        "fetching",
+			fn:          j.executeFetchJobStep,
+			cleanupFn:   nil,
+			handler:     handler,
+			startStatus: models.AppRunnerJobExecutionStatusInitializing,
 		},
 		// validate step
 		{
-			name:      "validate",
-			fn:        j.executeValidateJobStep,
-			cleanupFn: nil,
-			handler:   handler,
+			name:        "validate",
+			fn:          j.executeValidateJobStep,
+			cleanupFn:   nil,
+			handler:     handler,
+			startStatus: models.AppRunnerJobExecutionStatusInitializing,
 		},
 		// initialize step
 		{
-			name:      "initialize",
-			fn:        j.executeInitializeJobStep,
-			cleanupFn: nil,
-			handler:   handler,
+			name:        "initialize",
+			fn:          j.executeInitializeJobStep,
+			cleanupFn:   nil,
+			handler:     handler,
+			startStatus: models.AppRunnerJobExecutionStatusInitializing,
 		},
 		// execute step
 		{
-			name:      "execute",
-			fn:        j.executeExecuteJobStep,
-			cleanupFn: j.cleanupJobStep,
-			handler:   handler,
+			name:        "execute",
+			fn:          j.executeExecuteJobStep,
+			cleanupFn:   j.cleanupJobStep,
+			handler:     handler,
+			startStatus: models.AppRunnerJobExecutionStatusInDashProgress,
 		},
 		// update clean up
 		{
-			name:      "cleanup",
-			fn:        j.executeCleanupJobStep,
-			cleanupFn: nil,
-			handler:   handler,
+			name:        "cleanup",
+			fn:          j.executeCleanupJobStep,
+			cleanupFn:   nil,
+			handler:     handler,
+			startStatus: models.AppRunnerJobExecutionStatusCleaningDashUp,
 		},
 	}
 
 	for _, step := range steps {
+		j.l.Info("executing job step", zap.String("step", step.name))
 		if err := j.execJobStep(ctx, step, job, execution); err != nil {
 			return err
 		}

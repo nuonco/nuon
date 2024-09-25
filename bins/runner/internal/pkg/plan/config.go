@@ -19,6 +19,7 @@ func ParseConfig[T any](plan *planv1.Plan) (*T, error) {
 	}
 
 	cfgStr := wpPlan.WaypointJob.HclConfig
+	fmt.Println(cfgStr)
 	var cfg T
 
 	if err := hclsimple.Decode(configFilename, []byte(cfgStr), nil, &cfg); err != nil {

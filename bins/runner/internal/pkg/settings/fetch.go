@@ -13,7 +13,6 @@ func (s *Settings) fetch(ctx context.Context) error {
 	}
 
 	s.HeartBeatTimeout = time.Duration(settings.HeartBeatTimeout)
-	s.JobExecutionHeartBeatTimeout = time.Duration(settings.JobExecutionHeartBeatTimeout)
 
 	return nil
 }

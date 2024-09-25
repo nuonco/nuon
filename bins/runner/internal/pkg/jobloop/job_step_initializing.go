@@ -10,8 +10,8 @@ import (
 )
 
 func (j *jobLoop) executeFetchJobStep(ctx context.Context, handler jobs.JobHandler, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	if err := handler.Validate(ctx, job, jobExecution); err != nil {
-		return fmt.Errorf("unable to validate job: %w", err)
+	if err := handler.Fetch(ctx, job, jobExecution); err != nil {
+		return fmt.Errorf("unable to fetch job: %w", err)
 	}
 
 	return nil

@@ -42,12 +42,15 @@ func (s *service) CancelRunnerJob(ctx *gin.Context) {
 }
 
 func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string) (*app.RunnerJob, error) {
-	runnerJob := app.RunnerJob{}
+	runnerJob := app.RunnerJob{
+		ID: runnerJobID,
+	}
+
 	res := s.db.WithContext(ctx).
+		Model(&runnerJob).
 		Updates(app.RunnerJob{
 			Status: app.RunnerJobStatusCancelled,
-		}).
-		First(&runnerJob, "id = ?", runnerJobID)
+		})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to cancel runner job: %w", res.Error)
 	}
@@ -63,10 +66,10 @@ func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string) (*app
 		}
 
 		res = s.db.WithContext(ctx).
+			Model(execution).
 			Updates(app.RunnerJobExecution{
 				Status: app.RunnerJobExecutionStatusCancelled,
-			}).
-			First(&execution, "id = ?", execution.ID)
+			})
 		if res.Error != nil {
 			return nil, fmt.Errorf("unable to cancel job execution: %w", res.Error)
 		}
