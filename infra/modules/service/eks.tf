@@ -54,7 +54,7 @@ module "iam_eks_role" {
   role_path = "/eks/"
 
   cluster_service_accounts = {
-    (local.vars.cluster_name) = ["default:${var.name}", ]
+    (local.vars.cluster_name) = ["${var.namespace}:${var.name}", ]
   }
 
   role_policy_arns = merge(

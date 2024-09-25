@@ -6,6 +6,12 @@ variable "name" {
   type = string
 }
 
+variable "namespace" {
+  type        = string
+  description = "the k8s namespace"
+  default     = "default"
+}
+
 variable "additional_iam_policies" {
   type    = list(string)
   default = []

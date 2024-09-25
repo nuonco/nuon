@@ -1,8 +1,9 @@
 module "service" {
   source = "../../../infra/modules/service"
 
-  name = "workers-canary"
-  env  = var.env
+  name      = "workers-canary"
+  namespace = "workers-canary"
+  env       = var.env
 
   additional_iam_policies = [
     aws_iam_policy.s3_permissions.arn
