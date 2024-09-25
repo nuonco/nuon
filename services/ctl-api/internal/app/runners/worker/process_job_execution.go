@@ -47,6 +47,14 @@ func (w *Workflows) processJobExecution(ctx workflow.Context, job *app.RunnerJob
 			return true, nil
 		}
 
+		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
+		if err != nil {
+			return false, err
+		}
+		if jobStatus == app.RunnerJobStatusCancelled {
+			return true, nil
+		}
+
 		// fetch latest job execution
 		jobExecutionResp, err := activities.AwaitGetLatestJobExecution(ctx, activities.GetLatestJobExecutionRequest{
 			JobID:       job.ID,
@@ -85,11 +93,18 @@ func (w *Workflows) processJobExecution(ctx workflow.Context, job *app.RunnerJob
 			return true, nil
 		}
 
+		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
+		if err != nil {
+			return false, err
+		}
+		if jobStatus == app.RunnerJobStatusCancelled {
+			w.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusCancelled)
+			return true, nil
+		}
+
 		// if the runner is deemed unhealthy, the job execution is marked as unknown, and the job is marked as
 		// not attempted with the correct status, this is retryable.
-		runnerStatus, err := activities.AwaitGetRunnerStatus(ctx, activities.GetRunnerStatusRequest{
-			RunnerID: job.RunnerID,
-		})
+		runnerStatus, err := activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
 		if err != nil {
 			return false, err
 		}
@@ -113,6 +128,8 @@ func (w *Workflows) processJobExecution(ctx workflow.Context, job *app.RunnerJob
 		case app.RunnerJobExecutionStatusFinished:
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFinished, "finished")
 			return false, nil
+		case app.RunnerJobExecutionStatusCancelled:
+			return true, nil
 		case app.RunnerJobExecutionStatusFailed:
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "failed")
 			return true, nil
