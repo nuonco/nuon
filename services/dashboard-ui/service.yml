@@ -25,3 +25,4 @@ local_build_cmds:
   - npm install
 local_cmds:
   - npm run dev
+namespace: dashboard-ui
