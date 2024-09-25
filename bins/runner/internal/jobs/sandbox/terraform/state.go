@@ -12,7 +12,11 @@ const (
 	defaultFileType string = "file/helm"
 )
 
-type WaypointConfig configs.App[configs.NoopBuild, configs.SandboxTerraform]
+type (
+	Build          configs.NoRegistryBuild[configs.DockerRefBuild]
+	Deploy         configs.Deploy[configs.SandboxTerraform]
+	WaypointConfig configs.Apps[Build, Deploy]
+)
 
 type handlerState struct {
 	workspace workspace.Workspace

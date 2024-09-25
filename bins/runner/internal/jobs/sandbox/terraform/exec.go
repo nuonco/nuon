@@ -7,13 +7,13 @@ import (
 	"github.com/nuonco/nuon-runner-go/models"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 	"github.com/powertoolsdev/mono/pkg/terraform/run"
 )
 
 func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	wkspace, err := p.getWorkspace()
 	if err != nil {
+		p.log.Error("a-err")
 		p.writeErrorResult(ctx, "load terraform workspace", err)
 		return fmt.Errorf("unable to create workspace from config: %w", err)
 	}
@@ -28,18 +28,19 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}),
 	)
 	if err != nil {
+		p.log.Error("c-err")
 		p.writeErrorResult(ctx, "create terraform run", err)
 		return fmt.Errorf("unable to create run: %w", err)
 	}
 
-	switch p.state.cfg.RunType {
-	case configs.TerraformDeployRunTypeApply:
+	switch job.Operation {
+	case models.AppRunnerJobOperationTypeApply:
 		p.log.Info("executing terraform apply")
 		err = tfRun.Apply(ctx)
-	case configs.TerraformDeployRunTypeDestroy:
+	case models.AppRunnerJobOperationTypeDestroy:
 		p.log.Info("executing terraform destroy")
 		err = tfRun.Destroy(ctx)
-	case configs.TerraformDeployRunTypePlan:
+	case models.AppRunnerJobOperationTypePlanDashOnly:
 		p.log.Info("executing terraform plan")
 		err = tfRun.Plan(ctx)
 	default:

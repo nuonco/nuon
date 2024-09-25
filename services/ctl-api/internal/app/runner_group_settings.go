@@ -26,7 +26,7 @@ type RunnerGroupSettings struct {
 	ContainerImageURL      string        `json:"container_image_url"  gorm:"default null;not null"`
 	ContainerImageTag      string        `json:"container_image_tag"  gorm:"default null;not null"`
 	RunnerAPIURL           string        `json:"runner_api_url" gorm:"default null;not null"`
-	SettingsRefreshTimeout time.Duration `json:"settings_refresh_timeout"`
+	SettingsRefreshTimeout time.Duration `json:"settings_refresh_timeout" swaggertype:"primitive,integer"`
 
 	// Various settings for the runner to handle internally
 	HeartBeatTimeout           time.Duration `json:"heart_beat_timeout" gorm:"default null;" swaggertype:"primitive,integer"`

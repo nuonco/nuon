@@ -11,6 +11,7 @@ var rootCmd = &cobra.Command{}
 func Execute() {
 	c := &cli{}
 	c.registerRun()
+	c.registerRunLocal()
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(2)

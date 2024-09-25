@@ -10,7 +10,7 @@ import (
 
 func (j *jobLoop) getHandler(job *models.AppRunnerJob) (jobs.JobHandler, error) {
 	for _, handler := range j.jobHandlers {
-		if err := jobs.Matches(job, handler); err != nil {
+		if err := jobs.Matches(job, handler); err == nil {
 			return handler, nil
 		}
 	}
