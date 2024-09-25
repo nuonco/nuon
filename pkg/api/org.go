@@ -153,3 +153,18 @@ func (c *client) ForgetOrgInstalls(ctx context.Context, orgID string) error {
 
 	return nil
 }
+
+func (c *client) OrgInstalls(ctx context.Context, orgId string) ([]Install, error) {
+	endpoint := fmt.Sprintf("/v1/orgs/%s/admin-get-installs", orgId)
+	byts, err := c.execGetRequest(ctx, endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("unable to execute get request: %w", err)
+	}
+
+	var response []Install
+	if err := json.Unmarshal(byts, &response); err != nil {
+		return nil, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return response, nil
+}
