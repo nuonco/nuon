@@ -16,3 +16,4 @@ local_startup_cmds:
 local_cmds:
   - /tmp/svc-workers-canary all
 earthly_cmd: all
+namespace: workers-canary

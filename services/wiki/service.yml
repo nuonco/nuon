@@ -9,3 +9,5 @@ watch_ignore:
 local_startup_cmds: []
 local_cmds:
   - npm run dev
+namespace: wiki
+
