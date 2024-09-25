@@ -67,6 +67,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/shutdown-job", s.AdminCreateShutDown)
 	api.POST("/v1/runners/:runner_id/noop-job", s.AdminCreateNoopJob)
 
+	// job management
+	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.AdminCancelRunnerJob)
+	api.GET("/v1/runner-jobs/:runner_job_id", s.AdminGetRunnerJob)
+
 	return nil
 }
 
