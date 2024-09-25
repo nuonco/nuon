@@ -7,6 +7,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/powertoolsdev/mono/pkg/api"
+
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	"github.com/powertoolsdev/mono/services/workers-canary/internal/activities"
@@ -90,6 +92,39 @@ func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequ
 		return nil, orgResp.OrgID, userResp.APIToken, fmt.Errorf("unable to run terraform: %w", err)
 	}
 	w.l.Info("run terraform", zap.Any("response", runResp))
+
+	workflow.Sleep(ctx, 1*time.Minute)
+	defaultPollTimeout := 15 * time.Second
+
+	attempts := 0
+	for {
+		if attempts > 20 {
+			break
+		}
+
+		var installs []api.Install
+		if err := w.defaultExecGetActivity(ctx, w.acts.GetInstallsByOrgID, &activities.GetInstallsByOrgIDRequest{
+			OrgID: orgResp.OrgID,
+		}, &installs); err != nil {
+			return nil, orgResp.OrgID, userResp.APIToken, fmt.Errorf("unable to get installs: %w", err)
+		}
+
+		allActive := true
+		for _, install := range installs {
+			if install.SandboxStatus != "active" {
+				allActive = false
+				break
+			}
+		}
+
+		if allActive {
+			break
+		}
+
+		attempts++
+
+		workflow.Sleep(ctx, defaultPollTimeout)
+	}
 
 	return runResp.Outputs, orgResp.OrgID, userResp.APIToken, nil
 }
