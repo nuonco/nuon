@@ -31,8 +31,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		return fmt.Errorf("unable to get handler for job: %w", err)
 	}
 
-	j.l.Error("handler", zap.String("name", handler.Name()))
-
+	j.l.Info("handling job", zap.String("name", handler.Name()))
 	steps := []*executeJobStep{
 		// validate step
 		{
@@ -86,6 +85,8 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	if err := j.updateJobExecutionStatus(ctx, job.ID, execution.ID, models.AppRunnerJobExecutionStatusFinished); err != nil {
 		return fmt.Errorf("unable to update job execution status after successful execution: %w", err)
 	}
+
+	j.l.Info("finished job", zap.String("name", handler.Name()))
 
 	return nil
 }
