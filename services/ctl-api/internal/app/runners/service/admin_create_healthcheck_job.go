@@ -10,9 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 )
 
-type AdminCreateHealthCheckJobRequest struct {
-	Graceful bool `json:"graceful"`
-}
+type AdminCreateHealthCheckJobRequest struct{}
 
 // @ID AdminCreateRunnerHealthCheck
 // @Summary	create a health check
@@ -33,18 +31,16 @@ func (s *service) AdminCreateHealthCheck(ctx *gin.Context) {
 		return
 	}
 
-	job, err := s.adminCreateJob(ctx, runnerID, req.Graceful, app.RunnerJobTypeHealthCheck)
+	job, err := s.adminCreateJob(ctx, runnerID, app.RunnerJobTypeHealthCheck)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create health check job: %w", err))
 		return
 	}
 
-	if req.Graceful {
-		s.evClient.Send(ctx, runnerID, &signals.Signal{
-			Type:  signals.OperationJobQueued,
-			JobID: job.ID,
-		})
-	}
+	s.evClient.Send(ctx, runnerID, &signals.Signal{
+		Type:  signals.OperationJobQueued,
+		JobID: job.ID,
+	})
 
 	ctx.JSON(http.StatusCreated, true)
 }
