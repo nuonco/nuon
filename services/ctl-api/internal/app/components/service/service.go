@@ -63,6 +63,9 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.PATCH("/v1/components/:component_id", s.UpdateComponent)
 	api.DELETE("/v1/components/:component_id", s.DeleteComponent)
 
+	// get a component's dependencies
+	api.GET("/v1/components/:component_id/dependencies", s.GetComponentDependencies)
+
 	// create component configurations
 	api.POST("/v1/components/:component_id/configs/terraform-module", s.CreateTerraformModuleComponentConfig)
 	api.POST("/v1/components/:component_id/configs/helm", s.CreateHelmComponentConfig)
