@@ -11,6 +11,7 @@ import (
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/analytics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/ch"
@@ -58,6 +59,7 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(teventloop.New),
 		fx.Provide(authz.New),
 		fx.Provide(account.New),
+		fx.Provide(analytics.New),
 
 		// add helpers for each domain
 		fx.Provide(vcshelpers.New),
