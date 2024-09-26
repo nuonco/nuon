@@ -12,9 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 )
 
-type AdminCreateNoopJobRequest struct {
-	Graceful bool `json:"graceful"`
-}
+type AdminCreateNoopJobRequest struct{}
 
 // @ID AdminNoopRunner
 // @Summary	trigger a noop runner job
@@ -35,33 +33,27 @@ func (s *service) AdminCreateNoopJob(ctx *gin.Context) {
 		return
 	}
 
-	job, err := s.adminCreateJob(ctx, runnerID, req.Graceful, app.RunnerJobTypeNOOP)
+	job, err := s.adminCreateJob(ctx, runnerID, app.RunnerJobTypeNOOP)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create health check job: %w", err))
 		return
 	}
 
-	if req.Graceful {
-		s.evClient.Send(ctx, runnerID, &signals.Signal{
-			Type:  signals.OperationJobQueued,
-			JobID: job.ID,
-		})
-	}
+	s.evClient.Send(ctx, runnerID, &signals.Signal{
+		Type:  signals.OperationJobQueued,
+		JobID: job.ID,
+	})
 
 	ctx.JSON(http.StatusCreated, true)
 }
 
-func (s *service) adminCreateJob(ctx context.Context, runnerID string, graceful bool, typ app.RunnerJobType) (*app.RunnerJob, error) {
+func (s *service) adminCreateJob(ctx context.Context, runnerID string, typ app.RunnerJobType) (*app.RunnerJob, error) {
 	runner, err := s.getRunner(ctx, runnerID)
 	if err != nil {
 		return nil, err
 	}
 
-	status := app.RunnerJobStatusAvailable
-	if graceful {
-		status = app.RunnerJobStatusQueued
-	}
-
+	status := app.RunnerJobStatusQueued
 	runnerJob := app.RunnerJob{
 		CreatedByID:       runner.CreatedByID,
 		OrgID:             runner.OrgID,
