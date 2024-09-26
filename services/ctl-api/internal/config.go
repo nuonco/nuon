@@ -118,6 +118,9 @@ type Config struct {
 	RunnerContainerImageTag string `config:"runner_container_image_tag" validate:"required"`
 	RunnerAPIURL            string `config:"runner_api_url" validate:"required"`
 	UseLocalRunners         bool   `config:"use_local_runners"`
+
+	// analytics configuration
+	SegmentWriteKey string `config:"segment_write_key" validate:"required"`
 }
 
 func NewConfig() (*Config, error) {

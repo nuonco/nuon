@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/powertoolsdev/mono/pkg/analytics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
@@ -56,6 +57,18 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 		InviteID: invite.ID,
 	})
 	ctx.JSON(http.StatusCreated, invite)
+
+	account, err := middlewares.AccountFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	s.analyticsClient.Track(account.ID, analytics.InviteSent, map[string]interface{}{
+		"invite_id": invite.ID,
+		"email":     invite.Email,
+		"org_id":    invite.OrgID,
+		"role_type": invite.RoleType,
+	})
 }
 
 func (s *service) createInvite(ctx context.Context, orgID, email string) (*app.OrgInvite, error) {
