@@ -44,6 +44,7 @@ func (h *Helpers) GetDependentComponents(ctx context.Context, appID, compRootID 
 		depCmps = append(depCmps, comp)
 	}
 
+	slices.Reverse(depCmps)
 	return depCmps, nil
 }
 
