@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/powertoolsdev/mono/pkg/analytics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
@@ -18,25 +19,27 @@ import (
 type Params struct {
 	fx.In
 
-	V              *validator.Validate
-	DB             *gorm.DB `name:"psql"`
-	MW             metrics.Writer
-	L              *zap.Logger
-	Cfg            *internal.Config
-	EvClient       eventloop.Client
-	AuthzClient    *authz.Client
-	RunnersHelpers *runnershelpers.Helpers
+	V               *validator.Validate
+	DB              *gorm.DB `name:"psql"`
+	MW              metrics.Writer
+	L               *zap.Logger
+	Cfg             *internal.Config
+	EvClient        eventloop.Client
+	AuthzClient     *authz.Client
+	RunnersHelpers  *runnershelpers.Helpers
+	AnalyticsClient analytics.Client
 }
 
 type service struct {
-	v              *validator.Validate
-	l              *zap.Logger
-	db             *gorm.DB
-	mw             metrics.Writer
-	cfg            *internal.Config
-	authzClient    *authz.Client
-	evClient       eventloop.Client
-	runnersHelpers *runnershelpers.Helpers
+	v               *validator.Validate
+	l               *zap.Logger
+	db              *gorm.DB
+	mw              metrics.Writer
+	cfg             *internal.Config
+	authzClient     *authz.Client
+	evClient        eventloop.Client
+	runnersHelpers  *runnershelpers.Helpers
+	analyticsClient analytics.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -93,13 +96,14 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 
 func New(params Params) *service {
 	return &service{
-		l:              params.L,
-		v:              params.V,
-		db:             params.DB,
-		mw:             params.MW,
-		cfg:            params.Cfg,
-		evClient:       params.EvClient,
-		authzClient:    params.AuthzClient,
-		runnersHelpers: params.RunnersHelpers,
+		l:               params.L,
+		v:               params.V,
+		db:              params.DB,
+		mw:              params.MW,
+		cfg:             params.Cfg,
+		evClient:        params.EvClient,
+		authzClient:     params.AuthzClient,
+		runnersHelpers:  params.RunnersHelpers,
+		analyticsClient: params.AnalyticsClient,
 	}
 }
