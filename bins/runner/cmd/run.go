@@ -13,6 +13,7 @@ import (
 	jobdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/job"
 	noopdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/noop"
 	terraformdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/terraform"
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations"
 	runnerhelm "github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner/helm"
 	runnerterraform "github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner/terraform"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/sandbox"
@@ -64,7 +65,7 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 		// fx.Provide(jobloop.AsJobLoop(healthcheck.NewJobLoop)),
 
 		// operation jobs
-		// fx.Provide(jobloop.AsJobLoop(operations.NewJobLoop)),
+		fx.Provide(jobloop.AsJobLoop(operations.NewJobLoop)),
 		fx.Provide(jobs.AsJobHandler("operations", noopoperation.New)),
 		fx.Provide(jobs.AsJobHandler("operations", shutdownoperation.New)),
 
