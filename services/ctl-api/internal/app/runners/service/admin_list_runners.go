@@ -39,6 +39,7 @@ func (s *service) getAllRunners(ctx context.Context, typ string) ([]*app.Runner,
 		Preload("CreatedBy").
 		Joins("JOIN runner_groups ON runner_groups.id = runners.runner_group_id").
 		Where("runner_groups.owner_type = ?", typ).
+		Order("created_at desc").
 		Find(&runners)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all runners: %w", res.Error)
