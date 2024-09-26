@@ -1,7 +1,7 @@
 ---
 account: stage
 env: stage
-data_volume_storage: 2Gi
+data_volume_storage: 20Gi
 
 hosts: 2
 replicas: 2
