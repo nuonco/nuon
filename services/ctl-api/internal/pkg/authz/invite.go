@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/powertoolsdev/mono/pkg/analytics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
@@ -34,6 +35,13 @@ func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *
 	h.evClient.Send(ctx, invite.OrgID, &signals.Signal{
 		Type:     signals.OperationInviteAccepted,
 		InviteID: invite.ID,
+	})
+
+	h.analyticsClient.Track(acct.ID, analytics.InviteAccepted, map[string]interface{}{
+		"invite_id": invite.ID,
+		"email":     invite.Email,
+		"org_id":    invite.OrgID,
+		"role_type": invite.RoleType,
 	})
 
 	// return nil
