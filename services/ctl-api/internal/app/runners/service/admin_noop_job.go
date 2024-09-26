@@ -74,6 +74,7 @@ func (s *service) adminCreateJob(ctx context.Context, runnerID string, graceful 
 		Status:            status,
 		StatusDescription: string(status),
 		Type:              typ,
+		Group:             app.RunnerJobGroupOperations,
 	}
 	if res := s.db.WithContext(ctx).Create(&runnerJob); res.Error != nil {
 		return nil, res.Error
