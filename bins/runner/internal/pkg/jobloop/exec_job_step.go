@@ -39,10 +39,6 @@ func (j *jobLoop) execJobStep(ctx context.Context, step *executeJobStep, job *mo
 	pc.Try(func() {
 		err = step.fn(ctx, step.handler, job, jobExecution)
 	})
-	if err == nil {
-		return nil
-	}
-
 	// when a job handler panics, we update the job to a failed status, and propagate the error
 	recovered := pc.Recovered()
 	if recovered != nil {
@@ -51,7 +47,12 @@ func (j *jobLoop) execJobStep(ctx context.Context, step *executeJobStep, job *mo
 			j.errRecorder.Record("update_job_execution", updateErr)
 		}
 
+		// TODO(sdboyer) panics need their own error handling, can't have a handler able to blow up the whole runner
 		panic(recovered)
+	}
+
+	if err == nil {
+		return nil
 	}
 
 	status := j.errToStatus(err)
