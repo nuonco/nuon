@@ -31,6 +31,9 @@ type ComponentBuild struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
+	// runner details
+	RunnerJob RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;"`
+
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id" gorm:"notnull"`
 	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 

@@ -87,9 +87,11 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 
 	// create the job
 	runnerJob, err := activities.AwaitCreateBuildJob(ctx, &activities.CreateBuildJobRequest{
-		RunnerID: comp.Org.RunnerGroup.Runners[0].ID,
-		Op:       app.RunnerJobOperationTypeBuild,
-		Type:     comp.Type.BuildJobType(),
+		RunnerID:  comp.Org.RunnerGroup.Runners[0].ID,
+		OwnerType: "component_builds",
+		OwnerID:   buildID,
+		Op:        app.RunnerJobOperationTypeBuild,
+		Type:      comp.Type.BuildJobType(),
 	})
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to create job")
