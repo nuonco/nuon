@@ -2,8 +2,10 @@ package config
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 type middleware struct {
@@ -17,7 +19,7 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		ctx.Set(ContextKey, m.cfg)
+		middlewares.SetConfigGinContext(ctx, m.cfg)
 		ctx.Next()
 	}
 }
