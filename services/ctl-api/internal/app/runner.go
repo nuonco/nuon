@@ -31,7 +31,7 @@ type Runner struct {
 	CreatedBy   Account `json:"created_by"`
 
 	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
-	Org   Org
+	Org   Org    `json:"org"`
 
 	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
@@ -47,6 +47,8 @@ type Runner struct {
 	DisplayName string `json:"display_name" gorm:"not null;default null"`
 
 	Jobs []RunnerJob `json:"jobs" gorm:"constraint:OnDelete:CASCADE;"`
+
+	RunnerJob *RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;"`
 }
 
 func (r *Runner) BeforeCreate(tx *gorm.DB) error {

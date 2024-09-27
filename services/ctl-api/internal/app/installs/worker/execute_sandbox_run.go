@@ -46,6 +46,8 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
 		InstallID: install.ID,
 		RunnerID:  install.Org.RunnerGroup.Runners[0].ID,
+		OwnerType: "runners",
+		OwnerID:   install.Org.RunnerGroup.Runners[0].ID,
 		Op:        op,
 	})
 	if err != nil {
