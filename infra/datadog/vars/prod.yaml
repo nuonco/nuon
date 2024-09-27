@@ -37,7 +37,7 @@ synthetics:
     type: "api"
     subtype: "http"
     status: "live"
-    message: "@slack-alerts-${env}-product"
+    message: "@slack-alerts-${env}-product \n\nctl-api has experienced a disruption"
     locations: ["aws:ca-central-1", "aws:ap-south-1", "aws:eu-west-1"]
     tags: ["service:ctl-api", "terraform:true", "env:${aws_account}"]
     request_definition:
@@ -52,6 +52,6 @@ synthetics:
       tick_every: 60
       retry:
         count: 2
-        interval: 1000
+        interval: 750
       monitor_options:
         renotify_interval: 30
