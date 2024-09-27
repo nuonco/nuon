@@ -22,6 +22,7 @@ echo "  current = "$CURRENT_BACKUP
 echo
 
 
+set +e
 # 1. check for an existing initial backup. if it does not exist, create it.
 
 # NOTE(fd): we are allowing this to fail w/out breaking the script.
@@ -51,6 +52,7 @@ if [ "$HAS_INITIAL" == "0" ]; then
       echo
   fi
 fi
+set -e
 
 # 2. create the backup w/ the initital backup as its base
 
