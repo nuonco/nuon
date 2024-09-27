@@ -21,7 +21,14 @@ echo "  initial = "$INITIAL_BACKUP
 echo "  current = "$CURRENT_BACKUP
 echo
 
-# check if the initial backup exists
+
+# 1. check for an existing initial backup. if it does not exist, create it.
+
+# NOTE(fd): we are allowing this to fail w/out breaking the script.
+#  - if it fails because the initial backup exists, that's fine
+#  - if it fails for other reasons, the backup command will fail
+#    and we can rely on catching that error
+
 # the query checks for entries w/ a base backup. these can only exist if the base backup exists. so if the count is > 0, we have
 # an initial backup. it is a bit indirect but it works well.
 HAS_INITIAL_QUERY="SELECT count(*) FROM system.backups WHERE status = 'BACKUP_CREATED' AND position(base_backup_name, '$INITIAL_BACKUP') != 0;"
@@ -40,11 +47,13 @@ if [ "$HAS_INITIAL" == "0" ]; then
       echo
       echo $RESPONSE >&2
       echo
-      exit 126
+      echo "[clickhouse backups to s3] we will continue anyway"
+      echo
   fi
 fi
 
-# finally: create the backup
+# 2. create the backup w/ the initital backup as its base
+
 COMMAND="BACKUP TABLE $TABLE TO S3('$CURRENT_BACKUP') SETTINGS base_backup = S3('$INITIAL_BACKUP');"
 
 echo
