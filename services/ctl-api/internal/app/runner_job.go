@@ -170,12 +170,14 @@ type RunnerJob struct {
 
 	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_name,unique"`
+	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_name,unique;index:idx_owner_name,unique"`
 
 	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
 	Org   Org
 
-	RunnerID string `json:"runner_id" gorm:"index:idx_runner_name,unique"`
+	RunnerID  string `json:"runner_id" gorm:"index:idx_runner_name,unique"`
+	OwnerType string `json:"owner_type" gorm:"type:varchar(17);"`
+	OwnerID   string `json:"owner_id" gorm:"type:varchar(26);index:idx_owner_name,unique;"`
 
 	// queue timeout is how long a job can be queued, before being made available
 	QueueTimeout time.Duration `json:"queue_timeout" gorm:"default null;not null" swaggertype:"primitive,integer"`
