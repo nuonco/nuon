@@ -91,9 +91,11 @@ func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, insta
 
 	// create the job
 	runnerJob, err := activities.AwaitCreateDeployJob(ctx, &activities.CreateDeployJobRequest{
-		RunnerID: install.RunnerGroup.Runners[0].ID,
-		Op:       installDeploy.Type.RunnerJobOperationType(),
-		Type:     installDeploy.InstallComponent.Component.Type.DeployJobType(),
+		RunnerID:  install.RunnerGroup.Runners[0].ID,
+		OwnerType: "runners",
+		OwnerID:   install.RunnerGroup.Runners[0].ID,
+		Op:        installDeploy.Type.RunnerJobOperationType(),
+		Type:      installDeploy.InstallComponent.Component.Type.DeployJobType(),
 	})
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")

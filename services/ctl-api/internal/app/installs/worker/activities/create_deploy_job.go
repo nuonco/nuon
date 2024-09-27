@@ -8,9 +8,11 @@ import (
 )
 
 type CreateDeployJobRequest struct {
-	RunnerID string
-	Op       app.RunnerJobOperationType
-	Type     app.RunnerJobType
+	RunnerID  string
+	OwnerType string
+	OwnerID   string
+	Op        app.RunnerJobOperationType
+	Type      app.RunnerJobType
 }
 
 // @temporal-gen activity

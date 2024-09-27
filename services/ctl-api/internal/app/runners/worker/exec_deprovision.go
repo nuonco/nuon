@@ -57,9 +57,11 @@ func (w *Workflows) executeDeprovisionInstallRunner(ctx workflow.Context, runner
 
 	// create the job
 	runnerJob, err := activities.AwaitCreateJob(ctx, &activities.CreateJobRequest{
-		RunnerID: runner.Org.RunnerGroup.Runners[0].ID,
-		Op:       app.RunnerJobOperationTypeDestroy,
-		Type:     runner.RunnerGroup.Platform.JobType(),
+		RunnerID:  runner.Org.RunnerGroup.Runners[0].ID,
+		OwnerType: "runners",
+		OwnerID:   runnerID,
+		Op:        app.RunnerJobOperationTypeDestroy,
+		Type:      runner.RunnerGroup.Platform.JobType(),
 	})
 	if err != nil {
 		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to create deprovision job")
