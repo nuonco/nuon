@@ -7,9 +7,11 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-func (h *Helpers) CreateInstallSandboxJob(ctx context.Context, runnerID string, typ app.RunnerJobType, op app.RunnerJobOperationType) (*app.RunnerJob, error) {
+func (h *Helpers) CreateInstallSandboxJob(ctx context.Context, runnerID string, ownerType string, ownerID string, typ app.RunnerJobType, op app.RunnerJobOperationType) (*app.RunnerJob, error) {
 	job := &app.RunnerJob{
 		RunnerID:          runnerID,
+		OwnerType:         ownerType,
+		OwnerID:           ownerID,
 		QueueTimeout:      DefaultQueueTimeout,
 		ExecutionTimeout:  h.getExecutionTimeout(typ),
 		AvailableTimeout:  DefaultAvailableTimeout,

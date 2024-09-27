@@ -78,9 +78,11 @@ func (w *Workflows) executeProvisionInstallRunner(ctx workflow.Context, runnerID
 
 	// create the job
 	runnerJob, err := activities.AwaitCreateJob(ctx, &activities.CreateJobRequest{
-		RunnerID: runner.Org.RunnerGroup.Runners[0].ID,
-		Op:       app.RunnerJobOperationTypeCreate,
-		Type:     runner.RunnerGroup.Platform.JobType(),
+		RunnerID:  runner.Org.RunnerGroup.Runners[0].ID,
+		OwnerType: "runners",
+		OwnerID:   runnerID,
+		Op:        app.RunnerJobOperationTypeCreate,
+		Type:      runner.RunnerGroup.Platform.JobType(),
 	})
 	if err != nil {
 		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to create provision job")
