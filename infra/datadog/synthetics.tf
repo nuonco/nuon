@@ -22,6 +22,7 @@ resource "datadog_synthetics_test" "main" {
     target   = each.value.assertion.target
   }
 
+
   options_list {
     tick_every = each.value.options_list.tick_every
     retry {
@@ -31,5 +32,6 @@ resource "datadog_synthetics_test" "main" {
     monitor_options {
       renotify_interval = each.value.options_list.monitor_options.renotify_interval
     }
+    monitor_priority = each.value.options_list.monitor_priority
   }
 }

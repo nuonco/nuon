@@ -55,3 +55,4 @@ synthetics:
         interval: 750
       monitor_options:
         renotify_interval: 30
+      monitor_priority: 1

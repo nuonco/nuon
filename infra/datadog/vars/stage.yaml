@@ -27,3 +27,4 @@ synthetics:
         interval: 1000
       monitor_options:
         renotify_interval: 5
+      monitor_priority: 2
