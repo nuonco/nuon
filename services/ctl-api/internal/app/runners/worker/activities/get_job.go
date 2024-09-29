@@ -8,13 +8,14 @@ import (
 )
 
 type GetJobRequest struct {
-	JobID string `validate:"required"`
+	ID string `validate:"required"`
 }
 
 // @temporal-gen activity
 // @schedule-to-close-timeout 5s
+// @by-id ID
 func (a *Activities) GetJob(ctx context.Context, req GetJobRequest) (*app.RunnerJob, error) {
-	job, err := a.getRunnerJob(ctx, req.JobID)
+	job, err := a.getRunnerJob(ctx, req.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get runner job: %w", err)
 	}

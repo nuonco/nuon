@@ -28,7 +28,7 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 	}
 
 	runnerJob, err := activities.AwaitGetJob(ctx, activities.GetJobRequest{
-		JobID: sreq.JobID,
+		ID: sreq.JobID,
 	})
 	if err != nil {
 		w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "unable to get job from database")

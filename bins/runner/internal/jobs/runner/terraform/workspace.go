@@ -18,8 +18,10 @@ import (
 func (p *handler) getWorkspace() (workspace.Workspace, error) {
 	cfg := p.state.cfg
 
+	bundleDir := filepath.Join(p.cfg.BundleDir, cfg.BundleName)
 	arch, err := dirarchive.New(p.v,
-		dirarchive.WithPath(filepath.Join(p.cfg.BundleDir, cfg.BundleName)),
+		dirarchive.WithPath(bundleDir),
+		dirarchive.WithIgnoreDotTerraformDir(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create local archive: %w", err)

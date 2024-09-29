@@ -17,6 +17,7 @@ const (
 	RunnerStatusPending        RunnerStatus = "pending"
 	RunnerStatusProvisioning   RunnerStatus = "provisioning"
 	RunnerStatusDeprovisioning RunnerStatus = "deprovisioning"
+	RunnerStatusDeprovisioned  RunnerStatus = "deprovisioned"
 	RunnerStatusReprovisioning RunnerStatus = "reprovisioning"
 	RunnerStatusUnknown        RunnerStatus = "unknown"
 )

@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	installsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
+	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 )
 
 type RestartOrgChildrenRequest struct{}
@@ -42,6 +43,11 @@ func (s *service) RestartOrgChildren(ctx *gin.Context) {
 	s.evClient.Send(ctx, org.ID, &sigs.Signal{
 		Type: sigs.OperationRestart,
 	})
+	for _, runner := range org.RunnerGroup.Runners {
+		s.evClient.Send(ctx, runner.ID, &runnersignals.Signal{
+			Type: runnersignals.OperationRestart,
+		})
+	}
 
 	for _, app := range org.Apps {
 		s.evClient.Send(ctx, app.ID, &appsignals.Signal{
@@ -58,6 +64,12 @@ func (s *service) RestartOrgChildren(ctx *gin.Context) {
 			s.evClient.Send(ctx, install.ID, &installsignals.Signal{
 				Type: signals.OperationRestart,
 			})
+
+			for _, runner := range install.RunnerGroup.Runners {
+				s.evClient.Send(ctx, runner.ID, &runnersignals.Signal{
+					Type: runnersignals.OperationRestart,
+				})
+			}
 		}
 	}
 
