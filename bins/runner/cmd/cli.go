@@ -12,6 +12,7 @@ import (
 	ocicopy "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/copy"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/runnerctx"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
+	"github.com/powertoolsdev/mono/bins/runner/internal/registry"
 )
 
 type cli struct{}
@@ -28,5 +29,6 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(log.NewHclog),
 		fx.Provide(errs.NewRecorder),
 		fx.Provide(ocicopy.New),
+		fx.Provide(registry.New),
 	}
 }
