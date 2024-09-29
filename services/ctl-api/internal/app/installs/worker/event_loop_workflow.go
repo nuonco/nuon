@@ -78,6 +78,14 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 				l.Error("unable to provision", zap.Error(err))
 				return
 			}
+		case signals.OperationReprovisionRunner:
+			op = "reprovision_runner"
+			err = w.AwaitReprovisionRunner(ctx, sreq)
+			if err != nil {
+				status = "error"
+				l.Error("unable to reprovision runner", zap.Error(err))
+				return
+			}
 		case signals.OperationReprovision:
 			op = "reprovision"
 			err = w.AwaitReprovision(ctx, sreq)
@@ -101,6 +109,14 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			if err != nil {
 				status = "error"
 				l.Error("unable to deprovision", zap.Error(err))
+				return
+			}
+		case signals.OperationDeprovisionRunner:
+			op = "deprovision_runner"
+			err = w.AwaitDeprovisionRunner(ctx, sreq)
+			if err != nil {
+				status = "error"
+				l.Error("unable to deprovision runner", zap.Error(err))
 				return
 			}
 		case signals.OperationForgotten:
