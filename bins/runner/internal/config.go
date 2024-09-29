@@ -13,6 +13,7 @@ import (
 func init() {
 	config.RegisterDefault("runner_api_url", "https://api.nuon.co")
 	config.RegisterDefault("bundle_dir", "/bundle")
+	config.RegisterDefault("registry_dir", "/tmp/runner-registry")
 }
 
 type Config struct {
@@ -30,7 +31,8 @@ type Config struct {
 	LogLevel string `config:"log_level"`
 
 	// some artifacts are bundled into the runner binary, to make loading them easier.
-	BundleDir string `config:"bundle_dir"`
+	BundleDir   string `config:"bundle_dir"`
+	RegistryDir string `config:"registry_dir"`
 }
 
 func NewConfig() (*Config, error) {
