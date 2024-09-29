@@ -74,8 +74,12 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 func (s *service) getOrgAndDependencies(ctx context.Context, orgID string) (*app.Org, error) {
 	org := app.Org{}
 	res := s.db.WithContext(ctx).
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
 		Preload("Apps").
 		Preload("Apps.Installs").
+		Preload("Apps.Installs.RunnerGroup").
+		Preload("Apps.Installs.RunnerGroup.Runners").
 		Preload("Apps.Components").
 		Where("name = ?", orgID).
 		Or("id = ?", orgID).

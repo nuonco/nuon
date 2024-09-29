@@ -53,6 +53,7 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 		// load runners
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
+		Preload("RunnerGroup.Runners.RunnerGroup").
 		First(&install, "id = ?", installID)
 
 	if res.Error != nil {

@@ -29,13 +29,3 @@ output "vpc_id" {
 output "private_subnet_ids" {
   value = local.private_subnet_ids
 }
-
-# TODO: provided by backend, but unused
-
-output "cluster_name" {
-  value = var.cluster_name
-}
-
-output "security_group_id" {
-  value = var.security_group_id
-}

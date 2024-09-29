@@ -14,6 +14,7 @@ import (
 	noopdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/noop"
 	terraformdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/terraform"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations"
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner"
 	runnerhelm "github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner/helm"
 	runnerterraform "github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner/terraform"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/sandbox"
@@ -74,7 +75,7 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 		fx.Provide(jobs.AsJobHandler("sandbox", sandboxterraform.New)),
 
 		// runner jobs
-		// fx.Provide(jobloop.AsJobLoop(runner.NewJobLoop)),
+		fx.Provide(jobloop.AsJobLoop(runner.NewJobLoop)),
 		fx.Provide(jobs.AsJobHandler("runner", runnerterraform.New)),
 		fx.Provide(jobs.AsJobHandler("runner", runnerhelm.New)),
 
@@ -84,7 +85,7 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 
 		// start all job loops
 		fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
-		//fx.Invoke(func(*heartbeater.HeartBeater) {}),
+		// fx.Invoke(func(*heartbeater.HeartBeater) {}),
 	}
 
 	providers = append(providers, c.providers()...)
