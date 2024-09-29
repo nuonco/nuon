@@ -18,6 +18,21 @@ func (a *Adapter) toRunnerSettings(runner *app.Runner, apiToken string) *planv1.
 	}
 }
 
+func (a *Adapter) toRunnerType(runner *app.Runner) planv1.RunnerType {
+	switch runner.RunnerGroup.Platform {
+	case app.AppRunnerTypeAWSECS:
+		return planv1.RunnerType_RUNNER_TYPE_AWS_ECS
+	case app.AppRunnerTypeAWSEKS:
+		return planv1.RunnerType_RUNNER_TYPE_AWS_EKS
+	case app.AppRunnerTypeAzureAKS:
+		return planv1.RunnerType_RUNNER_TYPE_AZURE_AKS
+	case app.AppRunnerTypeAzureACS:
+		return planv1.RunnerType_RUNNER_TYPE_AZURE_ACS
+	}
+
+	return planv1.RunnerType_RUNNER_TYPE_UNSPECIFIED
+}
+
 func (a *Adapter) ToRunnerInstallPlanRequest(runner *app.Runner, install *app.Install, apiToken string) (*planv1.CreatePlanRequest, error) {
 	sandboxSettings, err := a.toSandboxSettings(install)
 	if err != nil {
@@ -31,6 +46,7 @@ func (a *Adapter) ToRunnerInstallPlanRequest(runner *app.Runner, install *app.In
 				AppId:           install.AppID,
 				InstallId:       install.ID,
 				RunnerId:        runner.ID,
+				Type:            a.toRunnerType(runner),
 				SandboxSettings: sandboxSettings,
 				RunnerSettings:  a.toRunnerSettings(runner, apiToken),
 				AwsSettings:     a.toAWSSettings(install),

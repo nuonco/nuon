@@ -7,7 +7,11 @@ import (
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
 
-type WaypointConfig configs.App[configs.NoopBuild, configs.RunnerTerraform]
+type (
+	Build          configs.Build[configs.NoopBuild, configs.Registry[configs.NoopRegistry]]
+	Deploy         configs.Deploy[configs.RunnerTerraform]
+	WaypointConfig configs.Apps[Build, Deploy]
+)
 
 type handlerState struct {
 	// set during the fetch/validate phase

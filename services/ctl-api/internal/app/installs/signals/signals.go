@@ -20,6 +20,8 @@ const (
 	OperationDeprovision        eventloop.SignalType = "deprovision"
 	OperationDelete             eventloop.SignalType = "delete"
 	OperationReprovision        eventloop.SignalType = "reprovision"
+	OperationReprovisionRunner  eventloop.SignalType = "reprovision_runner"
+	OperationDeprovisionRunner  eventloop.SignalType = "deprovision_runner"
 	OperationRestart            eventloop.SignalType = "restart"
 	OperationDeploy             eventloop.SignalType = "deploy"
 	OperationForgotten          eventloop.SignalType = "forgotten"

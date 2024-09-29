@@ -112,5 +112,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "066-install-inputs-view-v1",
 			Fn:   a.migration066InstallInputsViewV1,
 		},
+		{
+			Name: "067-drop-runner-job-owner-index",
+			Fn:   a.migration067DropRunnerJobOwnerIndex,
+		},
 	}
 }
