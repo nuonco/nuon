@@ -82,13 +82,6 @@ services:
     networks:
       - default
 
-  registry:
-    image: registry:latest
-    ports:
-      - 5001:5000
-    networks:
-      - default
-
 networks:
   default:
     driver: bridge
