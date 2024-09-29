@@ -94,7 +94,12 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to ensure install components: %w", err)
 	}
 
-	if _, err := s.runnersHelpers.CreateInstallRunnerGroup(ctx, &install); err != nil {
+	loadedInstall, err := s.getInstall(ctx, install.ID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load all install resources: %w", err)
+	}
+
+	if _, err := s.runnersHelpers.CreateInstallRunnerGroup(ctx, loadedInstall); err != nil {
 		return nil, fmt.Errorf("unable to create install runner: %w", err)
 	}
 

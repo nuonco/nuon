@@ -39,6 +39,7 @@ func (h *Helpers) getInstall(ctx context.Context, installID string) (*app.Instal
 	var install app.Install
 	res := h.db.WithContext(ctx).
 		Preload("CreatedBy").
+		Preload("AppRunnerConfig").
 		Preload("App").
 		First(&install, "id = ?", installID)
 	if res.Error != nil {

@@ -6,9 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
-	"gorm.io/gorm"
 )
 
 // @ID GetInstall
@@ -63,6 +64,8 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		Preload("AppSandboxConfig.PublicGitVCSConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
 		Preload("AppRunnerConfig").
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_sandbox_runs.created_at DESC")
 		}).

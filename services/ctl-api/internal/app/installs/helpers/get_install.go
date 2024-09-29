@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 func (h *Helpers) GetInstall(ctx context.Context, installID string) (*app.Install, error) {
@@ -20,6 +21,8 @@ func (h *Helpers) GetInstall(ctx context.Context, installID string) (*app.Instal
 		}).
 		Preload("App").
 		Preload("App.Org").
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
 		First(&install, "id = ?", installID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)

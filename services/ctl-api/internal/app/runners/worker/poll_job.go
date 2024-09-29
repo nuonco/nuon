@@ -7,7 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
 )
 
 const (
