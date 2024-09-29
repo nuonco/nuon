@@ -12,6 +12,7 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("runner_api_url", "https://api.nuon.co")
+	config.RegisterDefault("bundle_dir", "/bundle")
 }
 
 type Config struct {

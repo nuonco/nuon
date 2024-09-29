@@ -53,10 +53,9 @@ type Install struct {
 
 	CurrentInstallInputs     *InstallInputs      `json:"-" gorm:"-"`
 	CompositeComponentStatus InstallDeployStatus `json:"composite_component_status" gorm:"-" swaggertype:"string"`
-	RunnerStatus             string              `json:"runner_status" gorm:"-" swaggertype:"string"`
+	RunnerStatus             RunnerStatus        `json:"runner_status" gorm:"-" swaggertype:"string"`
 
 	// TODO(jm): deprecate these fields once the terraform provider has been updated
-
 	Status            string `json:"status" gorm:"-"`
 	StatusDescription string `json:"status_description" gorm:"-"`
 }
@@ -83,7 +82,11 @@ func (i *Install) BeforeCreate(tx *gorm.DB) error {
 // and then roll that up into a high-level status for the install overall.
 func (i *Install) AfterQuery(tx *gorm.DB) error {
 	// get the runner status
-	i.RunnerStatus = "ok"
+	i.RunnerStatus = RunnerStatusUnknown
+	if len(i.RunnerGroup.Runners) > 0 {
+		i.RunnerStatus = i.RunnerGroup.Runners[0].Status
+	}
+
 	if len(i.InstallInputs) > 0 {
 		i.CurrentInstallInputs = &i.InstallInputs[0]
 	}
@@ -96,30 +99,10 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	// get the composite status of all the components
 	i.CompositeComponentStatus = compositeComponentStatus(i.ComponentStatuses)
 
-	// determine the status of the install based on all three
-	i.Status = string(installStatus(i.SandboxStatus, i.RunnerStatus, i.CompositeComponentStatus))
+	i.Status = "deprecated"
+	i.StatusDescription = "deprecated, please use individual runner, sandbox and component statuses instead"
 
 	return nil
-}
-
-// installStatus coalesces a single status for the install, from the individual statuses of the sandbox, runner, and components
-// It doesn't look like we can determine, based on only on the statuses, whether the install is provisioning or deprovisioning.
-// We may need to update the event loop deprovision workflow to set this status.
-// For now, this is good enough for clients to know if the install is busy, and shouldn't be interacted with.
-func installStatus(sandboxStatus SandboxRunStatus, runnerStatus string, componentStatus InstallDeployStatus) string {
-	// if any status is "error", return "error"
-	if sandboxStatus == "error" || runnerStatus == "error" || componentStatus == "error" {
-		return "error"
-	}
-
-	// if all statuses are "active" (or "ok"), return "active"
-	// if there are no components, then "noop" counts as "active"
-	if sandboxStatus == "active" && runnerStatus == "ok" && (componentStatus == "active" || componentStatus == "noop") {
-		return "active"
-	}
-
-	// otherwise, return "provisioning"
-	return "provisioning"
 }
 
 // compositeComponentStatus coalesces a single status from the statuses of the app's components.

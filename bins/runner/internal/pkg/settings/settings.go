@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/conc"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
@@ -24,9 +23,7 @@ type Settings struct {
 	l         *zap.Logger
 
 	// internal state
-	ticker *time.Ticker
-	ctx    context.Context
-	wg     conc.WaitGroup
+	ctx context.Context
 }
 
 func New(cfg *internal.Config,
@@ -35,7 +32,6 @@ func New(cfg *internal.Config,
 	lc fx.Lifecycle,
 ) (*Settings, error) {
 	settings := &Settings{
-		ticker:    time.NewTicker(cfg.SettingsRefreshTimeout),
 		apiClient: apiClient,
 		ctx:       ctx,
 	}

@@ -263,6 +263,31 @@ func (s installationStatic) toPath() string {
 	)
 }
 
+type runner struct {
+	OrgID     string
+	AppID     string
+	InstallID string
+	RunnerID  string
+}
+
+func RunnerPath(orgID, appID, installID, runID string) string {
+	return runner{
+		OrgID:     orgID,
+		AppID:     appID,
+		InstallID: installID,
+		RunnerID:  runID,
+	}.toPath()
+}
+
+func (s runner) toPath() string {
+	return fmt.Sprintf("org=%s/app=%s/install=%s/runner=%s",
+		s.OrgID,
+		s.AppID,
+		s.InstallID,
+		s.RunnerID,
+	)
+}
+
 type installation struct {
 	OrgID     string
 	AppID     string

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -43,6 +44,9 @@ func (s *service) getAppInstalls(ctx context.Context, appID string) ([]app.Insta
 		Preload("Installs").
 		Preload("Installs.AppSandboxConfig").
 		Preload("Installs.AWSAccount").
+		Preload("Installs.RunnerGroup").
+		Preload("Installs.RunnerGroup.Runners").
+		Preload("Installs.RunnerGroup.Runners").
 		First(&currentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)

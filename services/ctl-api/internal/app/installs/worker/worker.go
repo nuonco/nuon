@@ -51,6 +51,8 @@ func New(cfg *internal.Config,
 	wkr.RegisterWorkflow(wkflows.PollDependencies)
 	wkr.RegisterWorkflow(wkflows.Provision)
 	wkr.RegisterWorkflow(wkflows.Reprovision)
+	wkr.RegisterWorkflow(wkflows.ReprovisionRunner)
+	wkr.RegisterWorkflow(wkflows.DeprovisionRunner)
 	wkr.RegisterWorkflow(wkflows.TeardownComponents)
 
 	lc.Append(fx.Hook{

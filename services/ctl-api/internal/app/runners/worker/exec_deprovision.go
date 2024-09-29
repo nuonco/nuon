@@ -3,12 +3,13 @@ package worker
 import (
 	"fmt"
 
+	"go.temporal.io/sdk/workflow"
+
 	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
-	"go.temporal.io/sdk/workflow"
 )
 
 func (w *Workflows) executeDeprovisionOrgRunner(ctx workflow.Context, runnerID string, sandboxMode bool) error {
@@ -83,10 +84,14 @@ func (w *Workflows) executeDeprovisionInstallRunner(ctx workflow.Context, runner
 
 	// queue job
 	w.evClient.Send(ctx, runner.Org.RunnerGroup.Runners[0].ID, &signals.Signal{
-		Type: signals.OperationJobQueued,
+		Type:  signals.OperationJobQueued,
+		JobID: runnerJob.ID,
 	})
-	// wait for the job
+	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
+		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to poll runner job to completion")
+		return fmt.Errorf("unable to poll runner job to completion: %w", err)
+	}
 
-	w.updateStatus(ctx, runnerID, app.RunnerStatusActive, "runner is active and ready to process jobs")
+	w.updateStatus(ctx, runnerID, app.RunnerStatusDeprovisioned, "runner is deprovisioned")
 	return nil
 }
