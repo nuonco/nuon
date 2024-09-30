@@ -253,7 +253,6 @@ resource "kubectl_manifest" "clickhouse_installation" {
       "defaults" = {
         "templates" = {
           "dataVolumeClaimTemplate" = "data-volume-template"
-          "logVolumeClaimTemplate"  = "log-volume-template"
           "serviceTemplate" = "clickhouse:${local.image_tag}"
         }
       }
@@ -325,10 +324,6 @@ resource "kubectl_manifest" "clickhouse_installation" {
                     "mountPath" = "/var/lib/clickhouse"
                   },
                   {
-                    "name"      = "log-volume-template"
-                    "mountPath" = "/var/log/clickhouse-server"
-                  },
-                  {
                     "name"      = "bootstrap-configmap-volume"
                     "mountPath" = "/docker-entrypoint-initdb.d"
                   }
@@ -358,22 +353,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
                 }
               }
             }
-          },
-          {
-            # logs are sent out to datadog so they don't have to persist long
-            # NOTE(fd): we should drop this if we can
-            "name" = "log-volume-template"
-            "spec" = {
-              "accessModes" = [
-                "ReadWriteOnce",
-              ]
-              "resources" = {
-                "requests" = {
-                  "storage" = "32Gi"
-                }
-              }
-            }
-          },
+          }
         ]
       }
     }
