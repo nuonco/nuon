@@ -207,6 +207,9 @@ resource "kubectl_manifest" "clickhouse_installation" {
             }
           },
         ]
+        "settings" = {
+          "logger/level" = local.logLevel
+        }
         # add a storage configuration config so we can write to s3. this disk will be used for backups (/backups).
         # https://clickhouse.com/docs/en/integrations/s3#managing-credentials
         # https://clickhouse.com/docs/en/integrations/s3#configure-clickhouse-to-use-the-s3-bucket-as-a-disk

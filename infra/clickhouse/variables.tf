@@ -12,6 +12,8 @@ locals {
   data_volume_storage = local.vars.data_volume_storage
   image_tag           = local.vars.image_tag
 
+  logLevel            = local.vars.logLevel
+
   tables              = local.vars.tables
 
   tags = {

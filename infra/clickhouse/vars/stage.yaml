@@ -3,6 +3,8 @@ account: stage
 env: stage
 data_volume_storage: 20Gi
 
+logLevel: debug
+
 hosts: 2
 replicas: 2
 shards: 2
