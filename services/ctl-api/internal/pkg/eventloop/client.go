@@ -42,6 +42,7 @@ type evClient struct {
 	mw     metrics.Writer
 	cfg    *internal.Config
 	db     *gorm.DB
+	v      *validator.Validate
 }
 
 func New(params Params) Client {
@@ -51,5 +52,6 @@ func New(params Params) Client {
 		cfg:    params.Cfg,
 		mw:     params.MW,
 		db:     params.DB,
+		v:      params.V,
 	}
 }

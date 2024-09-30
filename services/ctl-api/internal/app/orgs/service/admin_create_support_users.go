@@ -13,8 +13,6 @@ import (
 )
 
 var defaultSupportUsers = [][2]string{
-	// Dre Smith
-	{"google-oauth2|113884954942864770921", "andre@nuon.co"},
 	// Jon Morehouse
 	{"google-oauth2|114670241124324496631", "jon@nuon.co"},
 	// Jordan Acosta

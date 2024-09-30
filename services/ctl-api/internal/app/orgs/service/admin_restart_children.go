@@ -56,7 +56,7 @@ func (s *service) RestartOrgChildren(ctx *gin.Context) {
 
 		for _, comp := range app.Components {
 			s.evClient.Send(ctx, comp.ID, &componentsignals.Signal{
-				Type: componentsignals.OperationDelete,
+				Type: componentsignals.OperationRestart,
 			})
 		}
 
