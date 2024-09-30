@@ -12,6 +12,12 @@ import (
 func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Component, error) {
 	cmp := app.Component{}
 	res := s.db.WithContext(ctx).
+		// preload org
+		Preload("Org").
+		Preload("Org.RunnerGroup").
+		Preload("Org.RunnerGroup.Runners").
+
+		// preload configs
 		Preload("ComponentConfigs").
 		Preload("Dependencies").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {

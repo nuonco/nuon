@@ -68,9 +68,14 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 	}
 
 	// create the sandbox plan request
-	var compBuild *app.ComponentBuild
+	build, err := activities.AwaitGetComponentBuildByID(ctx, buildID)
+	if err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build")
+		return fmt.Errorf("unable to get component build: %w", err)
+	}
+
 	buildPlanWorkflowID := fmt.Sprintf("%s-build-plan-%s", compID, buildID)
-	planReq := w.protos.ToBuildPlanRequest(compBuild, buildCfg)
+	planReq := w.protos.ToBuildPlanRequest(build, buildCfg)
 	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, buildPlanWorkflowID, planReq)
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component config")
@@ -87,11 +92,10 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 
 	// create the job
 	runnerJob, err := activities.AwaitCreateBuildJob(ctx, &activities.CreateBuildJobRequest{
-		RunnerID:  comp.Org.RunnerGroup.Runners[0].ID,
-		OwnerType: "component_builds",
-		OwnerID:   buildID,
-		Op:        app.RunnerJobOperationTypeBuild,
-		Type:      comp.Type.BuildJobType(),
+		RunnerID: comp.Org.RunnerGroup.Runners[0].ID,
+		BuildID:  buildID,
+		Op:       app.RunnerJobOperationTypeBuild,
+		Type:     comp.Type.BuildJobType(),
 	})
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to create job")
@@ -114,9 +118,14 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 
 	// queue job
 	w.evClient.Send(ctx, comp.Org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-		Type: runnersignals.OperationJobQueued,
+		JobID: runnerJob.ID,
+		Type:  runnersignals.OperationJobQueued,
 	})
 	// wait for the job
+	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "build is active and ready to be deployed")
+		return fmt.Errorf("build job failed: %w", err)
+	}
 
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusActive, "build is active and ready to be deployed")
 	return nil

@@ -16,6 +16,7 @@ func (h *Helpers) CreateDeployJob(ctx context.Context, runnerID string, typ app.
 		MaxExecutions:     DefaultMaxExecutions,
 		Status:            app.RunnerJobStatusQueued,
 		StatusDescription: string(app.RunnerJobStatusQueued),
+		Group:             app.RunnerJobGroupDeploy,
 		Type:              typ,
 		Operation:         op,
 	}
