@@ -86,6 +86,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/orgs/:org_id/admin-static-token", s.AdminCreateStaticToken)
 	api.POST("/v1/orgs/:org_id/admin-internal-slack-webhook-url", s.AdminSetInternalSlackWebhookURLOrg)
 	api.POST("/v1/orgs/:org_id/admin-customer-slack-webhook-url", s.AdminSetCustomerSlackWebhookURLOrg)
+	api.POST("/v1/orgs/:org_id/admin-add-vcs-connection", s.AdminAddVCSConnection)
 	return nil
 }
 
