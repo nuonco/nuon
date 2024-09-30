@@ -17,6 +17,7 @@ func (h *Helpers) CreateSyncJob(ctx context.Context, runnerID string, typ app.Ru
 		Status:            app.RunnerJobStatusQueued,
 		StatusDescription: string(app.RunnerJobStatusQueued),
 		Type:              typ,
+		Group:             app.RunnerJobGroupSync,
 		Operation:         op,
 	}
 

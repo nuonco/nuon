@@ -195,8 +195,8 @@ type RunnerJob struct {
 	StatusDescription string          `json:"status_description" gorm:"not null;default null"`
 
 	Type      RunnerJobType          `json:"type" gorm:"default null;not null"`
-	Group     RunnerJobGroup         `json:"group" gorm:"default null;not null"`
-	Operation RunnerJobOperationType `json:"operation" gorm:"default null;not null"`
+	Group     RunnerJobGroup         `json:"group" gorm:"default:null;not null"`
+	Operation RunnerJobOperationType `json:"operation" gorm:"default:null;not null"`
 
 	Executions []RunnerJobExecution `json:"executions" gorm:"constraint:OnDelete:CASCADE;"`
 	Plan       RunnerJobPlan        `json:"-" gorm:"constraint:OnDelete:CASCADE;"`

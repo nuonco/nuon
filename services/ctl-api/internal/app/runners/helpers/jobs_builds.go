@@ -18,6 +18,7 @@ func (h *Helpers) CreateBuildJob(ctx context.Context, runnerID string, ownerType
 		MaxExecutions:     DefaultMaxExecutions,
 		Status:            app.RunnerJobStatusQueued,
 		StatusDescription: string(app.RunnerJobStatusQueued),
+		Group:             app.RunnerJobGroupBuild,
 		Type:              typ,
 		Operation:         op,
 	}
