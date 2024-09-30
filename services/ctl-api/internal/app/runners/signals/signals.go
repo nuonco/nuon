@@ -34,7 +34,7 @@ type Signal struct {
 
 	eventloop.BaseSignal
 
-	JobID string
+	JobID string `validate:"required_if=Type=job_queued`
 }
 
 type RequestSignal struct {

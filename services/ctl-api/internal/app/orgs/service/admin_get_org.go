@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -39,7 +40,7 @@ func (s *service) adminGetOrg(ctx context.Context, nameOrID string) (*app.Org, e
 		Or("id = ?", nameOrID).
 		First(&org)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to org: %w", res.Error)
+		return nil, fmt.Errorf("unable to get org: %w", res.Error)
 	}
 
 	return &org, nil
