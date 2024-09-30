@@ -31,6 +31,7 @@ monitors:
           "priority": 1,
           "restricted_roles": null
       }
+
 synthetics:
   ctl_api_uptime:
     name: "${aws_account} - CTL API Uptime"
@@ -55,4 +56,45 @@ synthetics:
         interval: 750
       monitor_options:
         renotify_interval: 30
+      monitor_priority: 1
+
+# installers is the list
+# config is the synthetic monitor configuration used for all installers accross the board for
+# one can get a list of vercel installers with this script:
+# vercel projects ls  |& grep installer | tr -s ' ' | cut -d ' ' -f 2,3| jq -R -n -c '[inputs|split(" ")|{(.[0]):.[1]}] | add' | jq
+installer_synthetics:
+  installers:
+    demo-installer: https://demo-installer.vercel.app
+    paradedb-installer: https://paradedb-installer.vercel.app
+    percona-installer: https://percona-installer.vercel.app
+    stardog-installer: https://stardog-installer.vercel.app
+    athena-installer: https://athena-installer.vercel.app
+    installers: https://installers.nuon.co
+    streamkap-installer: https://streamkap-installer.vercel.app
+    weaviate-installer: https://weaviate-installer.vercel.app
+    warpstream-installer: https://warpstream-installer.vercel.app
+    100xdev-installer: https://100xdev-installer.vercel.app
+  config:
+    name: "[prod] Installer Uptime"
+    type: "api"
+    subtype: "http"
+    status: "live"
+    message: "@slack-alerts-${env}-product"
+    locations: ["aws:ca-central-1", "aws:ap-south-1", "aws:eu-west-1"]
+    tags: ["service:installers", "terraform:true", "env:${env}"]
+    request_definition:
+      method: "GET"
+      url: ""
+    request_headers: {}
+    assertion:
+      type: "statusCode"
+      operator: "is"
+      target: 200
+    options_list:
+      tick_every: 300
+      retry:
+        count: 2
+        interval: 1000
+      monitor_options:
+        renotify_interval: 10
       monitor_priority: 1

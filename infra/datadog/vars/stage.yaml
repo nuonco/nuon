@@ -1,8 +1,10 @@
 ---
 pool: nuon
+
 monitors:
   org_container_waiting:
     enabled: false
+
 synthetics:
   ctl_api_uptime:
     name: "${env} - CTL API Uptime"
@@ -28,3 +30,7 @@ synthetics:
       monitor_options:
         renotify_interval: 5
       monitor_priority: 2
+
+installer_synthetics:
+  installers: {}
+  config: {}

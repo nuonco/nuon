@@ -373,3 +373,7 @@ monitors:
       }
 
 synthetics: {}
+
+installer_synthetics:
+  installers: {}
+  config: {}
