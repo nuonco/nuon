@@ -2,7 +2,7 @@
 
 import classNames from 'classnames'
 import React, { type FC, useEffect, useState } from 'react'
-import { GoChevronRight } from 'react-icons/go'
+import { CaretRight } from '@phosphor-icons/react'
 import { Link, Status, Text, Time } from '@/components'
 import type { TBuild } from '@/types'
 import { SHORT_POLL_DURATION, sentanceCase } from '@/utils'
@@ -91,8 +91,9 @@ const ComponentBuildEvent: FC<IComponentBuildEvent> = ({
 
         <Link
           href={`/beta/${orgId}/apps/${appId}/components/${build.component_id}/builds/${build.id}`}
+          variant="ghost"
         >
-          <GoChevronRight />
+          <CaretRight />
         </Link>
       </div>
     </div>
