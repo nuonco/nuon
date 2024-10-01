@@ -38,7 +38,7 @@ export const Dropdown: FC<IDropdown> = ({
           aria-expanded="true"
           aria-controls={`dropdown-content-${id}`}
           className={classNames('h-full bg-white dark:bg-black', {
-            'p-4': hasCustomPadding,
+            'px-4 py-2': hasCustomPadding,
             [`${className}`]: Boolean(className),
           })}
           hasCustomPadding={hasCustomPadding}

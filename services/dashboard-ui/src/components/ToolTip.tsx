@@ -25,7 +25,7 @@ export const ToolTip: FC<IToolTip> = ({
             display: inline-block;
             position: relative;
             width: fit-content;
-            z-index: 1001;
+            z-index: 10;
           }
 
           .tooltip .tooltip-wrapper {
@@ -33,7 +33,7 @@ export const ToolTip: FC<IToolTip> = ({
             height: max-content;
             position: absolute;
             width: max-content;
-            z-index: 1000;
+            z-index: 10;
           }
 
           .tooltip:hover .tooltip-wrapper {
