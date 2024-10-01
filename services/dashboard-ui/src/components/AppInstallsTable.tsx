@@ -26,6 +26,7 @@ type TData = {
   installId: string
   statues: TDataStatues
   app: string
+  appId: string
   platform: string
 }
 
@@ -39,6 +40,7 @@ function parseInstallsToTableData(installs: Array<TInstall>): Array<TData> {
       sandbox_status: install.sandbox_status,
     },
     app: install?.app?.name,
+    appId: install?.app?.id,
     platform: install?.app_sandbox_config?.cloud_platform,
   }))
 }
@@ -63,7 +65,11 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
         accessorKey: 'name',
         cell: (props) => (
           <div className="flex flex-col gap-2">
-            <Heading variant="subheading">{props.getValue<string>()}</Heading>
+            <Link
+              href={`/beta/${orgId}/installs/${props.row.original.installId}`}
+            >
+              <Heading variant="subheading">{props.getValue<string>()}</Heading>
+            </Link>
             <Text variant="id">{props.row.original.installId}</Text>
           </div>
         ),
@@ -105,7 +111,9 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
         header: 'App',
         accessorKey: 'app',
         cell: (props) => (
-          <Text className="break-all">{props.getValue<string>()}</Text>
+          <Link href={`/beta/${orgId}/apps/${props.row.original.appId}`}>
+            <Text className="break-all">{props.getValue<string>()}</Text>
+          </Link>
         ),
       },
       {

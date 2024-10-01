@@ -72,7 +72,11 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         accessorKey: 'name',
         cell: (props) => (
           <div className="flex flex-col gap-2">
-            <Heading variant="subheading">{props.getValue<string>()}</Heading>
+            <Link
+              href={`/beta/${orgId}/installs/${installId}/components/${props.row.original.installComponentId}`}
+            >
+              <Heading variant="subheading">{props.getValue<string>()}</Heading>
+            </Link>
             <Text variant="id">{props.row.original.installComponentId}</Text>
           </div>
         ),

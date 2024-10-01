@@ -8,6 +8,7 @@ import {
   GoXCircleFill,
   GoChevronRight,
 } from 'react-icons/go'
+import { CaretRight } from '@phosphor-icons/react'
 import { Link, Text, Time } from '@/components'
 import type { TInstallEvent } from '@/types'
 import { SHORT_POLL_DURATION, sentanceCase } from '@/utils'
@@ -158,8 +159,8 @@ const InstallEvent: FC<IInstallEvent> = ({ event, isMostRecent = false }) => {
       <div className="flex items-center gap-4">
         <Time time={event.updated_at} format="relative" variant="overline" />
         {href && (
-          <Link href={href}>
-            <GoChevronRight />
+          <Link href={href} variant="ghost">
+            <CaretRight />
           </Link>
         )}
       </div>
