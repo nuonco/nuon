@@ -28,7 +28,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.24.5
 	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.21.5
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.41.1
-	github.com/aws/aws-sdk-go-v2/service/efs v1.26.6
+	github.com/aws/aws-sdk-go-v2/service/efs v1.32.3
 	github.com/aws/aws-sdk-go-v2/service/eks v1.35.5
 	github.com/aws/aws-sdk-go-v2/service/iam v1.28.5
 	github.com/aws/aws-sdk-go-v2/service/kms v1.29.1
