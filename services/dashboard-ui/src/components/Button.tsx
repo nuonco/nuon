@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { type FC } from 'react'
 
 const defaultStyles =
-  'bg-gray-50 hover:bg-gray-100 focus:bg-gray-100 active:bg-gray-200 text-gray-950 dark:bg-gray-950 dark:hover:bg-gray-900 dark:focus:bg-gray-900 dark:active:bg-gray-800 dark:text-gray-50'
+  'bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10'
 
 const cautionStyles =
   'bg-fuchsia-700 hover:bg-fuchsia-600 focus:bg-fuchsia-600 active:bg-fuchsia-800' +
