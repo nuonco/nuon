@@ -13,7 +13,7 @@ import {
   Table,
   Text,
 } from '@/components'
-import type { TInstall } from '@/types'
+import type { TApp, TInstall } from '@/types'
 
 type TDataStatues = {
   composite_component_status: string
@@ -26,6 +26,7 @@ type TData = {
   installId: string
   statues: TDataStatues
   app: string
+  appId: string
   platform: string
 }
 
@@ -38,7 +39,8 @@ function parseInstallsToTableData(installs: Array<TInstall>): Array<TData> {
       runner_status: install.runner_status,
       sandbox_status: install.sandbox_status,
     },
-    app: install?.app?.name,
+    app: install.app.name,
+    appId: install.app.id,
     platform: install?.app_sandbox_config?.cloud_platform,
   }))
 }
@@ -63,7 +65,12 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
         accessorKey: 'name',
         cell: (props) => (
           <div className="flex flex-col gap-2">
-            <Heading variant="subheading">{props.getValue<string>()}</Heading>
+            <Link
+              href={`/beta/${orgId}/installs/${props.row.original.installId}`}
+              variant="default"
+            >
+              <Heading variant="subheading">{props.getValue<string>()}</Heading>
+            </Link>
             <Text variant="id">{props.row.original.installId}</Text>
           </div>
         ),
@@ -105,7 +112,9 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
         header: 'App',
         accessorKey: 'app',
         cell: (props) => (
-          <Text className="break-all">{props.getValue<string>()}</Text>
+          <Link href={`/beta/${orgId}/apps/${props.row.original.appId}`}>
+            <Text className="break-all">{props.getValue<string>()}</Text>
+          </Link>
         ),
       },
       {

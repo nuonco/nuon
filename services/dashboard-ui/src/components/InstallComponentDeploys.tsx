@@ -4,7 +4,7 @@
 
 import classNames from 'classnames'
 import React, { type FC, useEffect, useState } from 'react'
-import { GoChevronRight } from 'react-icons/go'
+import { CaretRight } from '@phosphor-icons/react'
 import { Link, Status, Text, Time } from '@/components'
 import type { TComponent, TInstallDeploy } from '@/types'
 import { SHORT_POLL_DURATION, sentanceCase } from '@/utils'
@@ -104,10 +104,10 @@ const InstallDeployEvent: FC<IInstallDeployEvent> = ({
         <Time time={deploy.updated_at} format="relative" variant="overline" />
 
         <Link
-          key={deploy.id}
           href={`/beta/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${deploy.id}`}
+          variant="ghost"
         >
-          <GoChevronRight />
+          <CaretRight />
         </Link>
       </div>
     </div>
