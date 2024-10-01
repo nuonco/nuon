@@ -2,6 +2,7 @@
 
 import React, { type FC } from 'react'
 import { GoMail, GoSignOut } from 'react-icons/go'
+import { SignOut } from "@phosphor-icons/react"
 import Image from 'next/image'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { Text } from '@/components'
@@ -16,7 +17,7 @@ export const Profile: FC = () => {
     user && (
       <div className="flex gap-4 items-center">
         <Image
-          className="rounded-full"
+          className="rounded-lg"
           height={40}
           width={40}
           src={user.picture as string}
@@ -122,10 +123,10 @@ export const SignOutButton: FC = () => {
   return (
     <a
       href="/api/auth/logout"
-      className="hover:bg-gray-900/5 dark:hover:bg-gray-100/5 p-1 flex items-center justify-between w-full text-sm leading-5 text-left"
+      className="hover:bg-black/5 dark:hover:bg-white/5 h-[48px] p-1 flex items-center justify-between w-full text-sm leading-5 text-left"
     >
       <Profile />
-      <GoSignOut />
+      <SignOut size={16} />
     </a>
   )
 }
