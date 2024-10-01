@@ -9,7 +9,7 @@ import {
   StatusBadge,
   Text,
   Time,
-  ToolTip,
+  RunnerLogs,
 } from '@/components'
 import {
   getBuild,
@@ -18,7 +18,9 @@ import {
   getOrg,
   getInstall,
   getDeploy,
+  getRunnerLogs,
 } from '@/lib'
+import type { TOTELLog } from '@/types'
 
 export default withPageAuthRequired(
   async function InstallComponentDeploy({ params }) {
@@ -27,7 +29,7 @@ export default withPageAuthRequired(
     const orgId = params?.['org-id'] as string
     const deploy = await getDeploy({ deployId, installId, orgId })
     const build = await getBuild({ orgId, buildId: deploy.build_id })
-    const [component, componentConfig, install, org] = await Promise.all([
+    const [component, componentConfig, install, org, logs] = await Promise.all([
       getComponent({ componentId: build.component_id, orgId }),
       getComponentConfig({
         componentId: build.component_id,
@@ -36,6 +38,10 @@ export default withPageAuthRequired(
       }),
       getInstall({ installId, orgId }),
       getOrg({ orgId }),
+      getRunnerLogs({
+        runnerId: 'runqquwgffy3xs8ywu94bjvqz6',
+        orgId: 'orgj5odcpm9cth6qa40j55809f',
+      }).catch(console.error),
     ])
 
     return (
@@ -111,11 +117,7 @@ export default withPageAuthRequired(
         }
       >
         <div className="flex flex-col lg:flex-row flex-auto">
-          <section className="flex flex-auto flex-col gap-4 px-6 py-8 border-r overflow-auto">
-            <Heading>Deploy details</Heading>
-
-            <Text>New runner logs here</Text>
-          </section>
+          <RunnerLogs heading="Deploy logs" logs={logs as Array<TOTELLog>} />
           <div
             className="divide-y flex flex-col lg:min-w-[550px]
 lg:max-w-[550px]"
@@ -145,11 +147,7 @@ lg:max-w-[550px]"
 
                 <span className="flex flex-col gap-2">
                   <Text variant="overline">Build date</Text>
-                  <Time
-                    variant="caption"
-                    time={build.created_at}
-                    format="long"
-                  />
+                  <Time variant="caption" time={build.created_at} />
                 </span>
 
                 <span className="flex flex-col gap-2">

@@ -136,7 +136,7 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({ initOrg, initOrgs }) => {
       alignment="overlay"
     >
       <div className="flex flex-col gap-4 overflow-auto max-h-[500px]">
-        <div className="pt-4 px-4">
+        <div className="pt-2 px-4">
           <OrgSummary org={initOrg} />
         </div>
         <OrgVCSConnectionsDetails org={initOrg} />
