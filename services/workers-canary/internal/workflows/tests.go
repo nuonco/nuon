@@ -40,7 +40,7 @@ func (w *wkflow) execTests(ctx workflow.Context,
 			Env:           env,
 			TFOutputs:     outputs,
 			TFOutputsPath: tfOutputsPath,
-			InstallCLI:    idx == 0,
+			InstallCLI:    true,
 		}
 
 		var testResp activities.ExecTestScriptResponse
