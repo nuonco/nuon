@@ -133,7 +133,7 @@ require (
 	go.temporal.io/sdk v1.25.1
 	go.uber.org/fx v1.20.1
 	go.uber.org/zap v1.27.0
-	golang.org/x/oauth2 v0.20.0
+	golang.org/x/oauth2 v0.23.0
 	golang.org/x/sync v0.8.0
 	google.golang.org/genproto v0.0.0-20240227224415-6ceb2ff114de
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240520151616-dc85e6b867a5
