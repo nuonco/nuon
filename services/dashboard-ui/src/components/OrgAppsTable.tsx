@@ -48,7 +48,7 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
         accessorKey: 'name',
         cell: (props) => (
           <div className="flex flex-col gap-2">
-            <Heading variant="subheading">{props.getValue<string>()}</Heading>
+            <Link href={`/beta/${orgId}/apps/${props.row.original.appId}`}><Heading variant="subheading">{props.getValue<string>()}</Heading></Link>
             <Text variant="id">{props.row.original.appId}</Text>
           </div>
         ),

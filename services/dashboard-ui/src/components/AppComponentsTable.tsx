@@ -3,7 +3,7 @@
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { DotsThreeVertical } from '@phosphor-icons/react'
-import {  
+import {
   DataTableSearch,
   Heading,
   Link,
@@ -16,8 +16,8 @@ import {
 import type { TComponent, TComponentConfig } from '@/types'
 
 type TDataComponent = {
-  deps: Array<TComponent>,
-  config: TComponentConfig,
+  deps: Array<TComponent>
+  config: TComponentConfig
 } & TComponent
 
 type TData = {
@@ -66,7 +66,11 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
         accessorKey: 'name',
         cell: (props) => (
           <div className="flex flex-col gap-2">
-            <Heading variant="subheading">{props.getValue<string>()}</Heading>
+            <Link
+              href={`/beta/${orgId}/apps/${appId}/components/${props.row.original.componentId}`}
+            >
+              <Heading variant="subheading">{props.getValue<string>()}</Heading>
+            </Link>
             <Text variant="id">{props.row.original.componentId}</Text>
           </div>
         ),
@@ -76,22 +80,34 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
         accessorKey: 'componentType',
         cell: (props) => (
           <Text className="gap-4">
-            <StaticComponentConfigType configType={props.getValue<string>()} /> 
+            <StaticComponentConfigType configType={props.getValue<string>()} />
           </Text>
         ),
       },
       {
         header: 'Dependencies',
         accessorKey: 'dependencies',
-        cell: (props) => <div className="flex flex-wrap items-center gap-4">
-          {props.getValue<number>() ? props.row.original.deps.map((dep, i) => (<Text
-              key={`${dep.id}-${i}`}
-              className="bg-gray-500/10 px-2 py-1 rounded-lg border w-fit"
-              variant="caption"
-            >
-              <Link href={`/beta/${orgId}/apps/${appId}/components/${dep.id}`}>{dep?.name}</Link>
-          </Text>)) : <Text>None</Text>}
-        </div>,
+        cell: (props) => (
+          <div className="flex flex-wrap items-center gap-4">
+            {props.getValue<number>() ? (
+              props.row.original.deps.map((dep, i) => (
+                <Text
+                  key={`${dep.id}-${i}`}
+                  className="bg-gray-500/10 px-2 py-1 rounded-lg border w-fit"
+                  variant="caption"
+                >
+                  <Link
+                    href={`/beta/${orgId}/apps/${appId}/components/${dep.id}`}
+                  >
+                    {dep?.name}
+                  </Link>
+                </Text>
+              ))
+            ) : (
+              <Text className="text-sm">None</Text>
+            )}
+          </div>
+        ),
       },
       {
         header: 'Build',
