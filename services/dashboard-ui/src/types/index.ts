@@ -79,3 +79,6 @@ export type TVCSConnection = components['schemas']['app.VCSConnection']
 export type TVCSGitHub = components['schemas']['app.ConnectedGithubVCSConfig']
 export type TVCSGit = components['schemas']['app.PublicGitVCSConfig']
 export type TVCSCommit = components['schemas']['app.VCSConnectionCommit']
+
+// OTEL logs
+export type TOTELLog = components['schemas']['app.OtelLogRecord']

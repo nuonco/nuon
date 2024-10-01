@@ -1,0 +1,32 @@
+import '@test/mock-fetch-options'
+import { expect, test } from 'vitest'
+import { getRunnerLogs } from './get-runner-logs'
+
+const orgId = 'org-id'
+const runnerId = 'runner-id'
+
+test('getRunnerLogs should return an array of runner log object', async () => {
+  const spec = await getRunnerLogs({
+    orgId,
+    runnerId,
+  })
+
+  expect(spec).toHaveLength(3)
+  spec.map((s) => {
+    expect(s).toHaveProperty('timestamp')
+    expect(s).toHaveProperty('severity_number')
+    expect(s).toHaveProperty('severity_text')
+    expect(s).toHaveProperty('body')
+  })
+})
+
+test('getRunnerLogs should throw an error when it can not find any runner logs', async () => {
+  try {
+    await getRunnerLogs({
+      orgId,
+      runnerId,
+    })
+  } catch (error) {
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch runner logs]`)
+  }
+})
