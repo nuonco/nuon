@@ -35,7 +35,7 @@ func (s *service) AdminCreateNoopJob(ctx *gin.Context) {
 
 	job, err := s.adminCreateJob(ctx, runnerID, app.RunnerJobTypeNOOP)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create health check job: %w", err))
+		ctx.Error(fmt.Errorf("unable to create noop job: %w", err))
 		return
 	}
 
@@ -64,6 +64,7 @@ func (s *service) adminCreateJob(ctx context.Context, runnerID string, typ app.R
 		OverallTimeout:    time.Minute * 5,
 		MaxExecutions:     5,
 		Status:            status,
+		Operation:         app.RunnerJobOperationTypeExec,
 		StatusDescription: string(status),
 		Type:              typ,
 		Group:             app.RunnerJobGroupOperations,

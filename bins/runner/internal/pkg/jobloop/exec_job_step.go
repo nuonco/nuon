@@ -48,7 +48,7 @@ func (j *jobLoop) execJobStep(ctx context.Context, step *executeJobStep, job *mo
 		}
 
 		// TODO(sdboyer) panics need their own error handling, can't have a handler able to blow up the whole runner
-		panic(recovered)
+		// panic(recovered)
 	}
 
 	if err == nil {

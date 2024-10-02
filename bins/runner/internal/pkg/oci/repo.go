@@ -3,6 +3,7 @@ package oci
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"oras.land/oras-go/v2/registry"
 	"oras.land/oras-go/v2/registry/remote"
@@ -45,7 +46,7 @@ func GetRepo(ctx context.Context, cfg *configs.OCIRegistryRepository) (registry.
 		return nil, err
 	}
 
-	repo, err := remote.NewRepository(accessInfo.Image)
+	repo, err := remote.NewRepository(accessInfo.RepositoryURI())
 	if err != nil {
 		return nil, fmt.Errorf("unable to get repository: %w", err)
 	}
@@ -61,7 +62,7 @@ func GetRepo(ctx context.Context, cfg *configs.OCIRegistryRepository) (registry.
 	repo.Client = &auth.Client{
 		Client: retry.DefaultClient,
 		Cache:  auth.DefaultCache,
-		Credential: auth.StaticCredential(accessInfo.Auth.ServerAddress, auth.Credential{
+		Credential: auth.StaticCredential(strings.TrimPrefix(accessInfo.Auth.ServerAddress, "https://"), auth.Credential{
 			Username: username,
 			Password: password,
 		}),

@@ -2,6 +2,7 @@ package helm
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nuonco/nuon-runner-go/models"
 
@@ -21,9 +22,14 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 
 	h.state.workspace = wkspace
 	if err := h.state.workspace.Init(ctx); err != nil {
-		return err
+		return fmt.Errorf("unable to initialize workspace: %w", err)
 	}
 
-	h.state.arch = ociarchive.New()
+	arch := ociarchive.New()
+	if err := arch.Initialize(ctx); err != nil {
+		return fmt.Errorf("unable to initialize archive: %w", err)
+	}
+	h.state.arch = arch
+
 	return nil
 }

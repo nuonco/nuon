@@ -62,7 +62,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/service-account-token", s.AdminCreateRunnerServiceAccountToken)
 
 	// trigger specific jobs
-	api.POST("/v1/runners/:runner_id/job", s.AdminCreateJob)
 	api.POST("/v1/runners/:runner_id/health-check-job", s.AdminCreateHealthCheck)
 	api.POST("/v1/runners/:runner_id/shutdown-job", s.AdminCreateShutDown)
 	api.POST("/v1/runners/:runner_id/noop-job", s.AdminCreateNoopJob)
