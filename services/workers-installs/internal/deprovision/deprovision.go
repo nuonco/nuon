@@ -6,9 +6,9 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
-	awsecs "github.com/powertoolsdev/mono/pkg/sandboxes/aws-ecs"
-	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
-	azureaks "github.com/powertoolsdev/mono/pkg/sandboxes/azure-aks"
+	awsecs "github.com/nuonco/sandboxes/pkg/sandboxes/aws-ecs"
+	awseks "github.com/nuonco/sandboxes/pkg/sandboxes/aws-eks"
+	azureaks "github.com/nuonco/sandboxes/pkg/sandboxes/azure-aks"
 	contextv1 "github.com/powertoolsdev/mono/pkg/types/components/context/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
