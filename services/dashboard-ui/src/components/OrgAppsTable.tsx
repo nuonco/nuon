@@ -4,6 +4,7 @@ import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { DotsThreeVertical } from '@phosphor-icons/react'
 import {
+  ClickToCopy,
   DataTableSearch,
   Heading,
   InstallPlatform,
@@ -48,8 +49,12 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
         accessorKey: 'name',
         cell: (props) => (
           <div className="flex flex-col gap-2">
-            <Link href={`/beta/${orgId}/apps/${props.row.original.appId}`}><Heading variant="subheading">{props.getValue<string>()}</Heading></Link>
-            <Text variant="id">{props.row.original.appId}</Text>
+            <Link href={`/beta/${orgId}/apps/${props.row.original.appId}`}>
+              <Heading variant="subheading">{props.getValue<string>()}</Heading>
+            </Link>
+            <ClickToCopy>
+              <Text variant="id">{props.row.original.appId}</Text>
+            </ClickToCopy>
           </div>
         ),
       },
