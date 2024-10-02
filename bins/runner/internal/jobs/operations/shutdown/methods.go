@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-runner-go/models"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
@@ -14,12 +15,12 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 }
 
 func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	h.l.Info("initializing", zap.String("job_type", "noop"))
+	h.l.Info("initializing", zap.String("job_type", "shutdown"))
 	return nil
 }
 
 func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	h.l.Info("validating", zap.String("job_type", "noop"))
+	h.l.Info("validating", zap.String("job_type", "shutdown"))
 	if err := jobs.Matches(job, h); err != nil {
 		return err
 	}
@@ -27,6 +28,13 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 }
 
 func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	h.l.Info("cleaning up", zap.String("job_type", "noop"))
+	h.l.Info("shutting down")
+	if err := h.finishJob(ctx, job, jobExecution); err != nil {
+		h.errRecorder.Record("update job execution", err)
+	}
+
+	if err := h.shutdowner.Shutdown(fx.ExitCode(0)); err != nil {
+		h.errRecorder.Record("unable to shut down", err)
+	}
 	return nil
 }

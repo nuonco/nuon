@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"context"
 	"time"
 
 	"go.uber.org/fx"
@@ -21,19 +20,14 @@ type Settings struct {
 
 	apiClient nuonrunner.Client
 	l         *zap.Logger
-
-	// internal state
-	ctx context.Context
 }
 
 func New(cfg *internal.Config,
-	ctx context.Context,
 	apiClient nuonrunner.Client,
 	lc fx.Lifecycle,
 ) (*Settings, error) {
 	settings := &Settings{
 		apiClient: apiClient,
-		ctx:       ctx,
 	}
 	lc.Append(settings.LifecycleHook())
 

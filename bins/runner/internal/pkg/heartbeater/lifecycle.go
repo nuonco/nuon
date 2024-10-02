@@ -28,6 +28,7 @@ func (s *HeartBeater) LifecycleHook() fx.Hook {
 
 		// stop the loop and wait for the background goroutine to return
 		OnStop: func(context.Context) error {
+			s.cancelFn()
 			s.Stop()
 			return nil
 		},
