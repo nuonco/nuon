@@ -3,7 +3,7 @@
 import classNames from 'classnames'
 import React, { type FC, useEffect, useState } from 'react'
 import { CaretRight } from '@phosphor-icons/react'
-import { Link, Status, Text, Time } from '@/components'
+import { Link, Status, Text, Time, ToolTip } from '@/components'
 import type { TBuild } from '@/types'
 import { SHORT_POLL_DURATION, sentanceCase } from '@/utils'
 
@@ -79,7 +79,7 @@ const ComponentBuildEvent: FC<IComponentBuildEvent> = ({
         </span>
 
         <Text className="flex items-center gap-4 ml-8" variant="overline">
-          <span className="truncate text-ellipsis w-16">{build.id}</span>
+          <ToolTip tipContent={build.id}><span className="truncate text-ellipsis w-16">{build.id}</span></ToolTip>
           <>
             / <span>{build.component_name}</span>
           </>
