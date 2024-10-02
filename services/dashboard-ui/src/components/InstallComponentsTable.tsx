@@ -4,6 +4,7 @@ import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { DotsThreeVertical } from '@phosphor-icons/react'
 import {
+  ClickToCopy,
   DataTableSearch,
   Heading,
   Link,
@@ -77,7 +78,9 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
             >
               <Heading variant="subheading">{props.getValue<string>()}</Heading>
             </Link>
-            <Text variant="id">{props.row.original.installComponentId}</Text>
+            <ClickToCopy>
+              <Text variant="id">{props.row.original.installComponentId}</Text>
+            </ClickToCopy>
           </div>
         ),
       },
