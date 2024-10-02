@@ -74,9 +74,8 @@ const (
 	RunnerJobTypeNOOPBuild            RunnerJobType = "noop-build"
 
 	// sync job types
-	RunnerJobTypeOCISync            RunnerJobType = "oci-sync"
-	RunnerJobTypeContainerImageSync RunnerJobType = "container-image-sync"
-	RunnerJobTypeNOOPSync           RunnerJobType = "noop-sync"
+	RunnerJobTypeOCISync  RunnerJobType = "oci-sync"
+	RunnerJobTypeNOOPSync RunnerJobType = "noop-sync"
 
 	// deploy job types
 	RunnerJobTypeTerraformDeploy RunnerJobType = "terraform-deploy"
@@ -113,7 +112,6 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 
 		// syncing
 	case RunnerJobTypeOCISync,
-		RunnerJobTypeContainerImageSync,
 		RunnerJobTypeNOOPSync:
 		return RunnerJobGroupSync
 

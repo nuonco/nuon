@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon-runner-go/models"
+	"go.uber.org/zap"
+
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry"
 )
 
@@ -12,7 +14,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	src := h.state.workspace.Source()
 
 	h.log.Info("fetching source files")
-	srcFiles, err := h.getSourceFiles(ctx, src.Path)
+	srcFiles, err := h.getSourceFiles(ctx, src.AbsPath())
 	if err != nil {
 		h.writeErrorResult(ctx, "fetch files", err)
 		return fmt.Errorf("unable to get source files: %w", err)
@@ -24,7 +26,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	h.log.Info("copying archive to destination")
+	h.log.Info("copying archive to destination", zap.String("dst", h.state.resultTag), zap.Any("cfg", h.state.dstCfg))
 	res, err := h.ociCopy.CopyFromStore(ctx,
 		h.state.arch.Ref(),
 		"latest",
@@ -33,7 +35,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	)
 	if err != nil {
 		h.writeErrorResult(ctx, "copy image", err)
-		return err
+		return fmt.Errorf("unable to copy image: %w", err)
 	}
 
 	h.log.Info("writing job result")

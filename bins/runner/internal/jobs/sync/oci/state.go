@@ -7,7 +7,11 @@ import (
 )
 
 type (
-	WaypointConfig configs.App[configs.Build[configs.OCISyncBuild, configs.OCIRegistryRepository], configs.NoopDeploy]
+	Registry configs.Registry[configs.OCIRegistryRepository]
+	Build    configs.Build[configs.OCISyncBuild, Registry]
+	Deploy   configs.Deploy[configs.NoopDeploy]
+
+	WaypointConfig configs.Apps[Build, Deploy]
 )
 
 type handlerState struct {

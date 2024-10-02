@@ -28,6 +28,10 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 
 	handler, err := j.getHandler(job)
 	if err != nil {
+		if err := j.updateJobExecutionStatus(ctx, job.ID, execution.ID, models.AppRunnerJobExecutionStatusFailed); err != nil {
+			j.errRecorder.Record("no handler found", err)
+		}
+
 		return fmt.Errorf("unable to get handler for job: %w", err)
 	}
 

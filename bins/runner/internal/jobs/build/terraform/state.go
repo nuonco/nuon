@@ -11,7 +11,13 @@ const (
 	defaultFileType string = "file/terraform"
 )
 
-type WaypointConfig configs.App[configs.Build[configs.OCIArchiveBuild, configs.OCIRegistryRepository], configs.NoopDeploy]
+type (
+	Registry configs.Registry[configs.OCIRegistryRepository]
+	Build    configs.Build[configs.OCIArchiveBuild, Registry]
+	Deploy   configs.Deploy[configs.NoopDeploy]
+
+	WaypointConfig configs.Apps[Build, Deploy]
+)
 
 type handlerState struct {
 	// set during the fetch/validate phase
