@@ -27,12 +27,17 @@ func (j *jobLoop) worker() {
 			lim)
 		if err != nil {
 			j.l.Error("unable to fetch jobs", zap.Error(err))
-			smithytime.SleepWithContext(j.ctx, defaultJobPollBackoff)
+
+			if err := smithytime.SleepWithContext(j.ctx, defaultJobPollBackoff); err != nil {
+				return
+			}
 			continue
 		}
 
 		if len(jobs) < 1 {
-			smithytime.SleepWithContext(j.ctx, starvedJobPollBackoff)
+			if err := smithytime.SleepWithContext(j.ctx, starvedJobPollBackoff); err != nil {
+				return
+			}
 			continue
 		}
 
@@ -41,6 +46,8 @@ func (j *jobLoop) worker() {
 		if err := j.executeJob(j.ctx, job); err != nil {
 			j.errRecorder.Record("job failed", err)
 		}
-		smithytime.SleepWithContext(j.ctx, defaultJobPollBackoff)
+		if err := smithytime.SleepWithContext(j.ctx, defaultJobPollBackoff); err != nil {
+			return
+		}
 	}
 }

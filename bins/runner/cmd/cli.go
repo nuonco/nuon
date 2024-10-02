@@ -10,7 +10,6 @@ import (
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/heartbeater"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/log"
 	ocicopy "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/copy"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/runnerctx"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
 	"github.com/powertoolsdev/mono/bins/runner/internal/registry"
 )
@@ -19,7 +18,6 @@ type cli struct{}
 
 func (c *cli) providers() []fx.Option {
 	return []fx.Option{
-		fx.Provide(runnerctx.New),
 		fx.Provide(settings.New),
 		fx.Provide(internal.NewConfig),
 		fx.Provide(validator.New),
