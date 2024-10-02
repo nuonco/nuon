@@ -1,5 +1,7 @@
 package workspace
 
+import "path/filepath"
+
 type Source struct {
 	// the user provided directory
 	Path string
@@ -9,6 +11,10 @@ type Source struct {
 
 	// whether this is a git source
 	IsGit bool
+}
+
+func (s Source) AbsPath() string {
+	return filepath.Join(s.Root, s.Path)
 }
 
 func (w *workspace) Source() *Source {

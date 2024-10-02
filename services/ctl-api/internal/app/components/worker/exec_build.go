@@ -121,9 +121,11 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		JobID: runnerJob.ID,
 		Type:  runnersignals.OperationJobQueued,
 	})
+
 	// wait for the job
+	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building")
 	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "build is active and ready to be deployed")
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "build did not complete successfully")
 		return fmt.Errorf("build job failed: %w", err)
 	}
 

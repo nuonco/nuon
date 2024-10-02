@@ -32,12 +32,10 @@ const (
 func (c ComponentType) SyncJobType() RunnerJobType {
 	switch c {
 	case ComponentTypeTerraformModule,
+		ComponentTypeDockerBuild,
+		ComponentTypeExternalImage,
 		ComponentTypeHelmChart:
 		return RunnerJobTypeOCISync
-
-	case ComponentTypeDockerBuild,
-		ComponentTypeExternalImage:
-		return RunnerJobTypeContainerImageBuild
 
 	case ComponentTypeJob:
 		return RunnerJobTypeNOOPBuild
@@ -136,21 +134,7 @@ func (c *Component) AfterQuery(tx *gorm.DB) error {
 
 	// parse the latest config
 	c.LatestConfig = &c.ComponentConfigs[0]
-	if c.LatestConfig.HelmComponentConfig != nil {
-		c.Type = ComponentTypeHelmChart
-	}
-	if c.LatestConfig.TerraformModuleComponentConfig != nil {
-		c.Type = ComponentTypeTerraformModule
-	}
-	if c.LatestConfig.DockerBuildComponentConfig != nil {
-		c.Type = ComponentTypeDockerBuild
-	}
-	if c.LatestConfig.ExternalImageComponentConfig != nil {
-		c.Type = ComponentTypeExternalImage
-	}
-	if c.LatestConfig.JobComponentConfig != nil {
-		c.Type = ComponentTypeJob
-	}
+	c.Type = c.LatestConfig.Type
 
 	return nil
 }

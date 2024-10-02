@@ -13,7 +13,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	dstCfg := h.state.regCfg
 
 	res, err := h.ociCopy.Copy(ctx,
-		&srcCfg,
+		srcCfg,
 		h.state.cfg.Tag,
 		dstCfg,
 		h.state.resultTag,

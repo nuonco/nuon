@@ -5,5 +5,5 @@ type ContainerImageBuild struct {
 
 	Tag string `hcl:"tag"`
 
-	Source OCIRegistryRepository `hcl:"oci_registry_repository,block"`
+	Source *OCIRegistryRepository `hcl:"oci_registry_repository,block"`
 }
