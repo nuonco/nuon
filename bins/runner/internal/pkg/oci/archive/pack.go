@@ -3,6 +3,7 @@ package ociarchive
 import (
 	"context"
 	"fmt"
+	"os"
 
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.uber.org/zap"
@@ -21,16 +22,26 @@ type FileRef struct {
 }
 
 func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef) error {
-	fileDescriptors := make([]v1.Descriptor, len(filePaths))
+	fileDescriptors := make([]v1.Descriptor, 0, len(filePaths))
 
-	for idx, f := range filePaths {
+	for _, f := range filePaths {
+		stat, err := os.Stat(f.AbsPath)
+		if err != nil {
+			return fmt.Errorf("unable to stat file: %w", err)
+		}
+
+		if stat.Size() < 1 {
+			log.Info("skipping empty file", zap.String("path", f.RelPath))
+			continue
+		}
+
 		fileDescriptor, err := r.store.Add(ctx, f.RelPath, f.FileType, f.AbsPath)
 		if err != nil {
 			return fmt.Errorf("unable to pack %s: %w", f.AbsPath, err)
 		}
 
-		fileDescriptors[idx] = fileDescriptor
-		log.Info("packed file", zap.String("path", f.RelPath))
+		fileDescriptors = append(fileDescriptors, fileDescriptor)
+		log.Info("packed file", zap.String("path", f.RelPath), zap.String("abspath", f.AbsPath))
 	}
 
 	descriptor, err := oras.Pack(ctx, r.store, defaultArtifactType, fileDescriptors, oras.PackOptions{
@@ -48,7 +59,7 @@ func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef
 	if err != nil {
 		return fmt.Errorf("unable to resolve tag: %w", err)
 	}
-	log.Info("found tag %s %v", zap.String("tag", defaultLocalTag))
+	log.Info("found tag", zap.String("tag", defaultLocalTag))
 
 	return nil
 }

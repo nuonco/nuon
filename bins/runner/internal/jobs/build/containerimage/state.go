@@ -7,7 +7,11 @@ import (
 )
 
 type (
-	WaypointConfig configs.App[configs.Build[configs.ContainerImageBuild, configs.OCIRegistryRepository], configs.NoopDeploy]
+	Registry configs.Registry[configs.OCIRegistryRepository]
+	Build    configs.Build[configs.ContainerImageBuild, Registry]
+	Deploy   configs.Deploy[configs.NoopDeploy]
+
+	WaypointConfig configs.Apps[Build, Deploy]
 )
 
 type handlerState struct {
@@ -17,9 +21,9 @@ type handlerState struct {
 
 	jobID          string
 	jobExecutionID string
+	resultTag      string
 
 	// the config can be one of the following:
-	cfg       *configs.ContainerImageBuild
-	regCfg    *configs.OCIRegistryRepository
-	resultTag string
+	cfg    *configs.ContainerImageBuild
+	regCfg *configs.OCIRegistryRepository
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-func (h *Helpers) CreateSyncJob(ctx context.Context, runnerID string, typ app.RunnerJobType, op app.RunnerJobOperationType) (*app.RunnerJob, error) {
+func (h *Helpers) CreateSyncJob(ctx context.Context, runnerID string, typ app.RunnerJobType, op app.RunnerJobOperationType, deployID string) (*app.RunnerJob, error) {
 	job := &app.RunnerJob{
 		RunnerID:          runnerID,
 		QueueTimeout:      DefaultQueueTimeout,
@@ -19,6 +19,8 @@ func (h *Helpers) CreateSyncJob(ctx context.Context, runnerID string, typ app.Ru
 		Type:              typ,
 		Group:             app.RunnerJobGroupSync,
 		Operation:         op,
+                OwnerType: "install_deploys",
+                OwnerID: deployID,
 	}
 
 	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {

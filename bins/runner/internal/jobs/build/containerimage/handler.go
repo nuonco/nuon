@@ -4,6 +4,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	nuonrunner "github.com/nuonco/nuon-runner-go"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
@@ -17,6 +18,7 @@ type handler struct {
 	errRecorder *errs.Recorder
 	cfg         *internal.Config
 	ociCopy     ocicopy.Copier
+	l           *zap.Logger
 
 	// state is reused between function calls, but can _not_ be reused with different jobs.
 	//
@@ -30,17 +32,21 @@ var _ jobs.JobHandler = (*handler)(nil)
 type HandlerParams struct {
 	fx.In
 
-	V         *validator.Validate
-	APIClient nuonrunner.Client
-	Config    *internal.Config
-	OCICopy   ocicopy.Copier
+	V           *validator.Validate
+	L           *zap.Logger
+	APIClient   nuonrunner.Client
+	ErrRecorder *errs.Recorder
+	Config      *internal.Config
+	OCICopy     ocicopy.Copier
 }
 
 func New(params HandlerParams) (*handler, error) {
 	return &handler{
-		v:         params.V,
-		apiClient: params.APIClient,
-		cfg:       params.Config,
-		ociCopy:   params.OCICopy,
+		v:           params.V,
+		apiClient:   params.APIClient,
+		cfg:         params.Config,
+		ociCopy:     params.OCICopy,
+		l:           params.L,
+		errRecorder: params.ErrRecorder,
 	}, nil
 }

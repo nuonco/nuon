@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 )
 

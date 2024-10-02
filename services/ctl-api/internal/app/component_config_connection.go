@@ -45,6 +45,8 @@ type ComponentConfigConnection struct {
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"-" json:"-"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"-" json:"-"`
 
+	Type ComponentType `gorm:"-" json:"type"`
+
 	Version int `json:"version" gorm:"->;-:migration"`
 }
 
@@ -57,6 +59,23 @@ func (c *ComponentConfigConnection) ViewVersion() string {
 }
 
 func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
+	c.Type = ComponentTypeUnknown
+	if c.HelmComponentConfig != nil {
+		c.Type = ComponentTypeHelmChart
+	}
+	if c.TerraformModuleComponentConfig != nil {
+		c.Type = ComponentTypeTerraformModule
+	}
+	if c.DockerBuildComponentConfig != nil {
+		c.Type = ComponentTypeDockerBuild
+	}
+	if c.ExternalImageComponentConfig != nil {
+		c.Type = ComponentTypeExternalImage
+	}
+	if c.JobComponentConfig != nil {
+		c.Type = ComponentTypeJob
+	}
+
 	// set the vcs connection type, by parsing the subfields on the relationship
 	if c.TerraformModuleComponentConfig != nil {
 		c.ConnectedGithubVCSConfig = c.TerraformModuleComponentConfig.ConnectedGithubVCSConfig
@@ -77,6 +96,8 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 	} else {
 		c.VCSConnectionType = VCSConnectionTypeNone
 	}
+
+	// set the type
 
 	return nil
 }

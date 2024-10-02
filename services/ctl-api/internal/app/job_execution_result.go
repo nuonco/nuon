@@ -43,5 +43,9 @@ func (r *RunnerJobExecutionResult) BeforeCreate(tx *gorm.DB) error {
 		r.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
 
+	if r.OrgID == "" {
+		r.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+
 	return nil
 }

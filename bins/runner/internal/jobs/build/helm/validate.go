@@ -15,7 +15,8 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 		return fmt.Errorf("unable to parse plan: %w", err)
 	}
 
-	h.state.cfg = &cfg.Build.Use
-	h.state.dstCfg = &cfg.Build.Registry
+	h.state.cfg = &cfg.App.Build.Use
+	h.state.dstCfg = &cfg.App.Build.Registry.Use
+	h.state.resultTag = job.OwnerID
 	return nil
 }

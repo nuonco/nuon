@@ -2,8 +2,10 @@ package terraform
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nuonco/nuon-runner-go/models"
+
 	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/workspace"
 )
@@ -23,6 +25,11 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 		return err
 	}
 
-	h.state.arch = ociarchive.New()
+	arch := ociarchive.New()
+	if err := arch.Initialize(ctx); err != nil {
+		return fmt.Errorf("unable to initialize archive: %w", err)
+	}
+	h.state.arch = arch
+
 	return nil
 }

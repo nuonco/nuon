@@ -17,6 +17,16 @@ func (a *Activities) GetComponentBuild(ctx context.Context, req GetComponentBuil
 	var build app.ComponentBuild
 	res := a.db.WithContext(ctx).
 		Where("id = ?", req.ComponentBuildID).
+
+		// load component config connection
+		Preload("ComponentConfigConnection").
+		Preload("ComponentConfigConnection.TerraformModuleComponentConfig").
+		Preload("ComponentConfigConnection.HelmComponentConfig").
+		Preload("ComponentConfigConnection.DockerBuildComponentConfig").
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
+		Preload("ComponentConfigConnection.JobComponentConfig").
+
+		// load first result
 		First(&build)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to load component build: %w", res.Error)
