@@ -19,6 +19,5 @@ func (h *handler) writeErrorResult(ctx context.Context, step string, err error) 
 	}
 
 	if _, err := h.apiClient.CreateJobExecutionResult(ctx, h.state.jobID, h.state.jobExecutionID, resultReq); err != nil {
-		h.errRecorder.Record("write job execution result", err)
-	}
+		h.errRecorder.Record("write job execution result", err) }
 }

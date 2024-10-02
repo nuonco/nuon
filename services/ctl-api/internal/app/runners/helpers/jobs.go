@@ -25,8 +25,7 @@ func (s *Helpers) getExecutionTimeout(typ app.RunnerJobType) time.Duration {
 		app.RunnerJobTypeTerraformModuleBuild: time.Minute * 1,
 
 		// sync timeouts
-		app.RunnerJobTypeOCISync:            time.Minute,
-		app.RunnerJobTypeContainerImageSync: time.Minute * 15,
+		app.RunnerJobTypeOCISync: time.Minute * 15,
 
 		// deploy timeouts
 		app.RunnerJobTypeTerraformDeploy: time.Minute * 60,

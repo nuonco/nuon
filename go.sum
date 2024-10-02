@@ -2240,6 +2240,8 @@ github.com/nuonco/nuon-go v0.32.1 h1:1Zry6Xqtm1GVc/QBOrk9JhZ5U93InhnyUt7XmwlNZJg
 github.com/nuonco/nuon-go v0.32.1/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
 github.com/nuonco/nuon-runner-go v0.0.0 h1:6cucVh7R0nnBwZEFNYWipk5JGkzuXqIhy8hwTQccpQw=
 github.com/nuonco/nuon-runner-go v0.0.0/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
+github.com/nuonco/nuon-runner-go v0.0.1 h1:3UV/TCv0BSt2tI2EJ2nXW1H5mbJTuQzbfXHXLhn0k2s=
+github.com/nuonco/nuon-runner-go v0.0.1/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
 github.com/nwaples/rardecode/v2 v2.0.0-beta.2 h1:e3mzJFJs4k83GXBEiTaQ5HgSc/kOK8q0rDaRO0MPaOk=
 github.com/nwaples/rardecode/v2 v2.0.0-beta.2/go.mod h1:yntwv/HfMc/Hbvtq9I19D1n58te3h6KsqCf3GxyfBGY=
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=

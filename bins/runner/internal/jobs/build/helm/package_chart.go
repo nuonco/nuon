@@ -8,7 +8,7 @@ import (
 )
 
 func (h *handler) packageChart() (string, error) {
-	chartDir := h.state.workspace.Source().Path
+	chartDir := h.state.workspace.Source().AbsPath()
 	dstDir := h.state.arch.TmpDir()
 
 	chart, err := loader.Load(chartDir)

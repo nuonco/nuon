@@ -9,7 +9,7 @@ type CloneErr struct {
 }
 
 func (c CloneErr) Error() string {
-	return fmt.Sprintf("unable to clone repo %s with ref %s", c.Url, c.Ref)
+	return fmt.Sprintf("unable to clone repo %s with ref %s - %s", c.Url, c.Ref, c.Err)
 }
 
 func (c CloneErr) Unwrap() error {
