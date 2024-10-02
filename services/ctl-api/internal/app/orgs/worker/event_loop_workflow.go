@@ -106,10 +106,6 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			}
 		case sigs.OperationRestart:
 			op = "restart"
-			w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
-				OrgID:       req.ID,
-				SandboxMode: req.SandboxMode,
-			})
 		case sigs.OperationInviteCreated:
 			op = "invite_created"
 			err := w.AwaitInviteUser(ctx, sreq)

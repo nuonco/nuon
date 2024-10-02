@@ -14,33 +14,42 @@ import (
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
 )
 
+type Params struct {
+	fx.In
+
+	APIClient nuonrunner.Client
+	Cfg       *internal.Config
+	L         *zap.Logger
+	LC        fx.Lifecycle
+	Settings  *settings.Settings
+}
+
 type HeartBeater struct {
 	settings  *settings.Settings
 	apiClient nuonrunner.Client
 	l         *zap.Logger
 
 	// internal state
-	ctx     context.Context
-	wg      *conc.WaitGroup
-	startTS time.Time
+	ctx      context.Context
+	cancelFn func()
+	wg       *conc.WaitGroup
+	startTS  time.Time
 }
 
-func New(cfg *internal.Config,
-	apiClient nuonrunner.Client,
-	lc fx.Lifecycle,
-	l *zap.Logger,
-	ctx context.Context,
-	settings *settings.Settings,
-) (*HeartBeater, error) {
+func New(params Params) (*HeartBeater, error) {
+	ctx := context.Background()
+	ctx, cancelFn := context.WithCancel(ctx)
+
 	hb := &HeartBeater{
-		settings:  settings,
-		l:         l,
-		ctx:       ctx,
+		settings:  params.Settings,
+		l:         params.L,
 		wg:        conc.NewWaitGroup(),
 		startTS:   time.Now(),
-		apiClient: apiClient,
+		apiClient: params.APIClient,
+		ctx:       ctx,
+		cancelFn:  cancelFn,
 	}
 
-	lc.Append(hb.LifecycleHook())
+	params.LC.Append(hb.LifecycleHook())
 	return hb, nil
 }

@@ -13,10 +13,6 @@ import (
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/errs"
 )
 
-const (
-	defaultMaxConcurrentJobs int = 1
-)
-
 type JobLoop interface {
 	Start() error
 	Stop() error
@@ -34,22 +30,28 @@ type jobLoop struct {
 
 	jobHandlers []jobs.JobHandler
 
-	maxConcurrentJobs int
-	pool              *pool.Pool
+	pool *pool.Pool
 
-	ctx context.Context
-	l   *zap.Logger
+	ctx       context.Context
+	ctxCancel func()
+	l         *zap.Logger
 }
 
 func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params BaseParams) *jobLoop {
+	ctx := context.Background()
+	ctx, cancelFn := context.WithCancel(ctx)
+
 	jl := &jobLoop{
-		apiClient:         params.Client,
-		ctx:               params.Ctx,
-		maxConcurrentJobs: defaultMaxConcurrentJobs,
-		l:                 params.L,
-		errRecorder:       params.ErrRecorder,
-		jobGroup:          jobGroup,
-		jobHandlers:       handlers,
+		apiClient:   params.Client,
+		errRecorder: params.ErrRecorder,
+
+		jobGroup:    jobGroup,
+		jobHandlers: handlers,
+
+		pool:      pool.New().WithMaxGoroutines(1),
+		ctx:       ctx,
+		ctxCancel: cancelFn,
+		l:         params.L,
 	}
 
 	params.LC.Append(jl.LifecycleHook())
