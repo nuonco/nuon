@@ -5,30 +5,42 @@ import (
 	"fmt"
 
 	ociregistry "github.com/distribution/distribution/v3/registry"
-	"github.com/powertoolsdev/mono/bins/runner/internal"
+	"github.com/sourcegraph/conc"
 	"go.uber.org/fx"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal"
 )
 
 type Params struct {
 	fx.In
 
-	LC     fx.Lifecycle
-	Cfg    *internal.Config
-	RunCtx context.Context
+	LC  fx.Lifecycle
+	Cfg *internal.Config
 }
 
 type Registry struct {
 	cfg *internal.Config
 	*ociregistry.Registry
+
+	ctx      context.Context
+	cancelFn func()
+
+	wg *conc.WaitGroup
 }
 
 func New(params Params) (*Registry, error) {
+	ctx := context.Background()
+	ctx, cancelFn := context.WithCancel(ctx)
+
 	reg := &Registry{
-		cfg: params.Cfg,
+		wg:       conc.NewWaitGroup(),
+		cfg:      params.Cfg,
+		ctx:      ctx,
+		cancelFn: cancelFn,
 	}
 
 	cfg := reg.getConfig()
-	ociReg, err := ociregistry.NewRegistry(params.RunCtx, cfg)
+	ociReg, err := ociregistry.NewRegistry(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create new registry: %w", err)
 	}

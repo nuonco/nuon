@@ -11,9 +11,9 @@ func (s *Registry) LifecycleHook() fx.Hook {
 	return fx.Hook{
 		// start the background loop to update the settings
 		OnStart: func(context.Context) error {
-			go func() {
+			s.wg.Go(func() {
 				s.ListenAndServe()
-			}()
+			})
 
 			return nil
 		},
@@ -24,6 +24,8 @@ func (s *Registry) LifecycleHook() fx.Hook {
 				return fmt.Errorf("unable to shut down registry: %w", err)
 			}
 
+			s.cancelFn()
+			s.wg.Wait()
 			return nil
 		},
 	}
