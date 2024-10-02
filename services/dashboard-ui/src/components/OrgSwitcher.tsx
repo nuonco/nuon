@@ -1,12 +1,11 @@
 'use client'
 
 import classNames from 'classnames'
-import React, { type FC, useCallback, useEffect, useState } from 'react'
+import React, { type FC } from 'react'
 import { FaGithub } from 'react-icons/fa'
 import { Plus } from '@phosphor-icons/react'
 import NextLink from 'next/link'
-import { Dropdown, Link, OrgStatus, StatusBadge, Text } from '@/components'
-import { OrgProvider } from '@/context'
+import { Dropdown, Link, StatusBadge, Text } from '@/components'
 import type { TOrg } from '@/types'
 import { GITHUB_APP_NAME, initialsFromString } from '@/utils'
 
@@ -40,7 +39,7 @@ export const OrgSummary: FC<IOrgSummary> = ({ org }) => {
       <OrgAvatar name={org.name} />
 
       <div>
-        <Text className="text-md font-medium leading-normal mb-1">
+        <Text className="text-md !font-medium leading-normal mb-1 truncate">
           {org.name}
         </Text>
         <StatusBadge status={org.status} isWithoutBorder />

@@ -1,8 +1,8 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { GoChevronRight } from 'react-icons/go'
 import {
   BreadcrumbNav,
+  ClickToCopy,
   Heading,
   Logo,
   Link,
@@ -81,9 +81,9 @@ export const DashboardContent: FC<{
             <div className="flex items-start justify-between">
               <hgroup className="flex flex-col gap-2">
                 <Heading variant="title">{heading}</Heading>
-                <Text variant="id">
-                  {headingUnderline}
-                </Text>
+                <ClickToCopy>
+                  <Text variant="id">{headingUnderline}</Text>
+                </ClickToCopy>
               </hgroup>
 
               {statues}
