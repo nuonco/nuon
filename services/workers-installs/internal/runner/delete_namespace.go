@@ -12,7 +12,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/powertoolsdev/mono/pkg/kube"
-	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
+	awseks "github.com/nuonco/sandboxes/pkg/sandboxes/aws-eks"
 	"github.com/powertoolsdev/mono/pkg/workflows/dal"
 )
 
