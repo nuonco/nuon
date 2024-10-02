@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	defaultWorkspaceDirPermissions fs.FileMode = 0o600
+	defaultWorkspaceDirPermissions fs.FileMode = 0o777
 )
 
 func (w *workspace) rootDir() string {

@@ -19,6 +19,10 @@ env:
 
 watch_ignore_dirs: []
 
+# uncomment the following line if you would like to test a runner in the context of an install
+# custom_credentials_iam_role: arn:aws:iam::949309607565:role/nuon-runner-dev
+
+# commands for local dev
 local_only: true
 local_startup_cmds:
   - go generate ./...

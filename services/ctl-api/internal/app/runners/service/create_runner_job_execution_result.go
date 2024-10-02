@@ -37,6 +37,7 @@ type CreateRunnerJobExecutionResultRequest struct {
 // @Success		201				{object}	app.RunnerJobExecutionResult
 // @Router			/v1/runner-jobs/{runner_job_id}/executions/{runner_job_execution_id}/result [POST]
 func (s *service) CreateRunnerJobExecutionResult(ctx *gin.Context) {
+	runnerJobID := ctx.Param("runner_job_id")
 	runnerJobExecutionID := ctx.Param("runner_job_execution_id")
 
 	var req CreateRunnerJobExecutionResultRequest
@@ -45,17 +46,23 @@ func (s *service) CreateRunnerJobExecutionResult(ctx *gin.Context) {
 		return
 	}
 
-	jobExecution, err := s.createRunnerJobExecutionResult(ctx, runnerJobExecutionID, &req)
+	jobExecution, err := s.createRunnerJobExecutionResult(ctx, runnerJobID, runnerJobExecutionID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, jobExecution)
+	ctx.JSON(http.StatusCreated, jobExecution)
 }
 
-func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobExecutionID string, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, error) {
+func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobID, runnerJobExecutionID string, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, error) {
+	runnerJob, err := s.getRunnerJob(ctx, runnerJobID)
+	if err != nil {
+		return nil, err
+	}
+
 	result := app.RunnerJobExecutionResult{
+		OrgID:                runnerJob.OrgID,
 		RunnerJobExecutionID: runnerJobExecutionID,
 		Success:              req.Success,
 

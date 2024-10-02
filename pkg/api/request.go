@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 func (c *client) execGetRequest(ctx context.Context, endpoint string) ([]byte, error) {
@@ -23,6 +25,10 @@ func (c *client) execGetRequest(ctx context.Context, endpoint string) ([]byte, e
 	res, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get response: %w", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("invalid response status: %d", res.StatusCode)
 	}
 
 	if res.Body != nil {
@@ -56,6 +62,9 @@ func (c *client) execPostRequest(ctx context.Context, endpoint string, data inte
 	res, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get response: %w", err)
+	}
+	if !generics.SliceContains(res.StatusCode, []int{http.StatusCreated, http.StatusOK, http.StatusAccepted}) {
+		return nil, fmt.Errorf("invalid response status: %d", res.StatusCode)
 	}
 
 	if res.Body != nil {

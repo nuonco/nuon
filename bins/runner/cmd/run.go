@@ -10,6 +10,7 @@ import (
 	dockerbuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/docker"
 	helmbuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/helm"
 	noopbuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/noop"
+	terraformbuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/terraform"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy"
 	helmdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/helm"
 	jobdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/job"
@@ -54,6 +55,7 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 		fx.Provide(jobs.AsJobHandler("builds", dockerbuild.New)),
 		fx.Provide(jobs.AsJobHandler("builds", containerimagebuild.New)),
 		fx.Provide(jobs.AsJobHandler("builds", helmbuild.New)),
+		fx.Provide(jobs.AsJobHandler("builds", terraformbuild.New)),
 		fx.Provide(jobs.AsJobHandler("builds", noopbuild.New)),
 
 		// deploy jobs

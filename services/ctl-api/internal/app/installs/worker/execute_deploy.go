@@ -70,6 +70,13 @@ func (w *Workflows) execDeployLegacy(ctx workflow.Context, install *app.Install,
 func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, sandboxMode bool) error {
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "deploying")
 
+	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	if err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
+		w.writeDeployEvent(ctx, installDeploy.ID, signals.OperationDeploy, app.OperationStatusFailed)
+		return fmt.Errorf("unable to get build: %w", err)
+	}
+
 	deployCfg, err := activities.AwaitGetComponentConfig(ctx, activities.GetComponentConfigRequest{
 		DeployID: installDeploy.ID,
 	})
@@ -91,11 +98,10 @@ func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, insta
 
 	// create the job
 	runnerJob, err := activities.AwaitCreateDeployJob(ctx, &activities.CreateDeployJobRequest{
-		RunnerID:  install.RunnerGroup.Runners[0].ID,
-		OwnerType: "runners",
-		OwnerID:   install.RunnerGroup.Runners[0].ID,
-		Op:        installDeploy.Type.RunnerJobOperationType(),
-		Type:      installDeploy.InstallComponent.Component.Type.DeployJobType(),
+		RunnerID: install.RunnerGroup.Runners[0].ID,
+		DeployID: installDeploy.ID,
+		Op:       installDeploy.Type.RunnerJobOperationType(),
+		Type:     build.ComponentConfigConnection.Type.SyncJobType(),
 	})
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
