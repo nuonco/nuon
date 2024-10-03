@@ -39,7 +39,6 @@ K8S_DEPLOY:
     COMMAND
     ARG EARTHLY_GIT_PROJECT_NAME
     ARG EARTHLY_GIT_SHORT_HASH
-    ARG namespace=default
     ARG --required service
     ARG --required env
     ARG --required cluster_name
@@ -63,7 +62,8 @@ K8S_DEPLOY:
             update-kubeconfig \
             --region "$AWS_REGION" \
             --name "$cluster_name" \
-            --role-arn="$role_arn"; \
+	    --role-arn="$role_arn"  && \
+	kubectl create namespace $service --dry-run=client -o yaml | kubectl apply -f - && \
 	helm rollback "$chart_name-$env"; \
 	helm upgrade \
             "$chart_name-$env" \
@@ -71,7 +71,7 @@ K8S_DEPLOY:
             --install \
             --debug \
             --atomic \
-            --namespace "$namespace" \
+	    --namespace "$service" \
             --version "$chart_version" \
             --reset-values \
             --values values.yaml \
