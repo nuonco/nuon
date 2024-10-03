@@ -360,17 +360,6 @@ module "nuon-dns" {
   project_id                      = tfe_project.infra.id
 }
 
-module "powertools" {
-  source = "./modules/workspace"
-
-  name                            = "powertools"
-  repo                            = "powertoolsdev/mono"
-  dir                             = "infra/powertools"
-  auto_apply                      = true
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  project_id                      = tfe_project.infra.id
-}
-
 module "infra-vercel" {
   source = "./modules/workspace"
 
