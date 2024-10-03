@@ -16,10 +16,6 @@ services: |
   wiki:
     - services/wiki/**
     - wiki/**
-  workers-apps:
-    - go.mod
-    - go.sum
-    - services/workers-apps/**
   workers-canary:
     - go.mod
     - go.sum
@@ -30,17 +26,6 @@ services: |
     - go.sum
     - services/workers-executors/**
     - pkg/terraform/**
-    - pkg/waypoint/**
-  workers-installs:
-    - go.mod
-    - go.sum
-    - services/workers-installs/**
-    - pkg/types/workflows/installs/**
-    - pkg/types/workflows/executors/**
-  workers-orgs:
-    - go.mod
-    - go.sum
-    - services/workers-orgs/**
     
 # infra is managed via terraform cloud
 terraform-cloud: |
@@ -72,8 +57,6 @@ artifacts: |
     - charts/demo/**
   charts/temporal:
     - charts/temporal/**
-  charts/waypoint:
-    - charts/waypoint/**
 
   bins/runner:
     - bins/runner/**
