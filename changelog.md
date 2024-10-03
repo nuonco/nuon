@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.215
+
+Promoting the runner v2!
+
 ## v0.19.170
 
 Promoting delegation tooling to prod.
@@ -144,7 +148,7 @@ Promoting admin endpoints.
 
 ## v0.19.6
 
-Promoting latest changes for sandbox inputs, install inputs and interpolation. Updating  protos as well.
+Promoting latest changes for sandbox inputs, install inputs and interpolation. Updating protos as well.
 
 ## v0.19.2
 
@@ -154,9 +158,9 @@ New CLI commands + removed basic configs.
 
 New features into prod:
 
-* cli login
-* app inputs
-* custom sandboxes
+- cli login
+- app inputs
+- custom sandboxes
 
 Various fixes and feedback for HoneyHive / Flipt.
 
