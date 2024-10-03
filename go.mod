@@ -11,6 +11,8 @@ replace github.com/spf13/viper v1.4.0 => github.com/spf13/viper v1.7.1
 
 replace github.com/ClickHouse/clickhouse-go/v2 v2.26.0 => github.com/nuonco/clickhouse-go/v2 v2.28.1
 
+replace github.com/go-playground/validator/v10 v10.22.1 => github.com/go-playground/validator/v10 v10.16.0
+
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.11.1
