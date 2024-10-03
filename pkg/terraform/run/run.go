@@ -13,10 +13,10 @@ import (
 
 type OutputSettings struct {
 	Ignore         bool
-	Credentials    *credentials.Config `validate:"required_unless=Ignore 1"`
-	Bucket         string              `validate:"required_unless=Ignore 1"`
-	JobPrefix      string              `validate:"required_unless=Ignore 1"`
-	InstancePrefix string              `validate:"required_unless=Ignore 1"`
+	Credentials    *credentials.Config `validate:"required_unless=Ignore true"`
+	Bucket         string              `validate:"required_unless=Ignore true"`
+	JobPrefix      string              `validate:"required_unless=Ignore true"`
+	InstancePrefix string              `validate:"required_unless=Ignore true"`
 }
 
 // Run accepts a workspace, and executes the provided command in it, uploading outputs to the correct place, afterwards.
