@@ -10,6 +10,14 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
       "namespace" = "clickhouse"
     }
     "spec" = {
+      "defaults" = {
+        "templates" = {
+          "podTemplate"             = "clickhouse-keeper:${local.image_tag}"
+          "serviceTemplate"         = "clickhouse-keeper:${local.image_tag}"
+          "logVolumeClaimTemplate"  = "default"
+          "dataVolumeClaimTemplate" = "default"
+        }
+      }
       "configuration" = {
         "clusters" = [
           {
@@ -17,14 +25,6 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
               "replicasCount" = local.keeperReplicaCount
             }
             "name" = "chk-simple"
-
-            "templates" = {
-              "podTemplate"             = "clickhouse-keeper:${local.image_tag}"
-              "serviceTemplate"         = "clickhouse-keeper:${local.image_tag}"
-              "logVolumeClaimTemplate"  = "default"
-              "dataVolumeClaimTemplate" = "default"
-
-            }
           },
         ]
         "settings" = {
