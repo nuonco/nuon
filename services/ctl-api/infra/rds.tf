@@ -39,12 +39,13 @@ module "primary" {
 
   identifier = "primary-${local.name}"
 
-  engine               = local.vars.rds.engine
-  engine_version       = local.vars.rds.engine_version
-  family               = local.vars.rds.family
-  parameters           = local.vars.rds.parameters
-  major_engine_version = local.vars.rds.major_engine_version
-  instance_class       = local.vars.rds.instance_class
+  allow_major_version_upgrade = true
+  engine                      = local.vars.rds.engine
+  engine_version              = local.vars.rds.engine_version
+  family                      = local.vars.rds.family
+  parameters                  = local.vars.rds.parameters
+  major_engine_version        = local.vars.rds.major_engine_version
+  instance_class              = local.vars.rds.instance_class
 
   allocated_storage = local.vars.rds.allocated_storage
 
