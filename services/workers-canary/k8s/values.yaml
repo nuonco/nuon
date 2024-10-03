@@ -28,8 +28,6 @@ image:
   pullPolicy: IfNotPresent
   tag: ""
 
-namespace: "workers-canary"
-
 serviceAccount:
   # Specifies whether a service account should be created
   enabled: true

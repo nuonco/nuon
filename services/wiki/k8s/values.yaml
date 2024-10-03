@@ -9,8 +9,6 @@ image:
   repository: ""
   tag: ""
 
-namespace: wiki
-
 serviceAccount:
   name: wiki
   annotations:
