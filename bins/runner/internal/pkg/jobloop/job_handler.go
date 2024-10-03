@@ -1,8 +1,7 @@
 package jobloop
 
 import (
-	"fmt"
-
+	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-runner-go/models"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
@@ -15,5 +14,5 @@ func (j *jobLoop) getHandler(job *models.AppRunnerJob) (jobs.JobHandler, error) 
 		}
 	}
 
-	return nil, fmt.Errorf("job handler not found for %s job", job.Type)
+	return nil, errors.Newf("job handler not found for %s job", job.Type)
 }

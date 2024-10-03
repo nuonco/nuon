@@ -16,6 +16,14 @@ const (
 	SentryMainDSN string = "https://a0546c06ff00cb18c7867c5783f96763@o4507623795523584.ingest.us.sentry.io/4507623799193600"
 )
 
+// An SentryTagger is an error that additionally returns a set of k/v pairs to be emitted with Snetry events.
+//
+// If multiple errors in the causal chain emit tags, the tag emitted by the error highest in the chain will be used.
+type SentryTagger interface {
+	error
+	ErrorTags() map[string]string
+}
+
 // ReportToSentry reports an error to sentry, populating the data in a standardized manner for all Nuon errors.
 func ReportToSentry(err error) string {
 	event, extraDetails := report.BuildSentryReport(err)
@@ -45,11 +53,20 @@ func ReportToSentry(err error) string {
 	// automatically fill in the machine's hostname.
 	event.ServerName = "<redacted>"
 
-	tags := map[string]string{
-		"report_type": "error",
-	}
-	for key, value := range tags {
-		event.Tags[key] = value
+	tags := make(map[string]string)
+	visitAllMultiPostOrder(err, func(c error) {
+		if t, ok := c.(SentryTagger); ok {
+			for key, value := range t.ErrorTags() {
+				tags[key] = value
+			}
+		}
+	})
+
+	event.Tags["report_type"] = "error"
+	for k, v := range tags {
+		if _, has := event.Tags[k]; !has {
+			event.Tags[k] = v
+		}
 	}
 
 	res := sentry.CaptureEvent(event)

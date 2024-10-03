@@ -31,5 +31,7 @@ func (s *service) GetRunnerSettings(ctx *gin.Context) {
 		return
 	}
 
+	runner.RunnerGroup.Settings.Env = s.cfg.Env.String()
+
 	ctx.JSON(http.StatusOK, runner.RunnerGroup.Settings)
 }

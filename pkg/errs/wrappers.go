@@ -63,3 +63,13 @@ func visitAllMulti(err error, f func(error)) {
 		visitAllMulti(e, f)
 	}
 }
+
+func visitAllMultiPostOrder(err error, f func(error)) {
+	if e := errbase.UnwrapOnce(err); e != nil {
+		visitAllMulti(e, f)
+	}
+	for _, e := range errbase.UnwrapMulti(err) {
+		visitAllMulti(e, f)
+	}
+	f(err)
+}
