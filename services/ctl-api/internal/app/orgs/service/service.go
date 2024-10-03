@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
@@ -27,6 +28,7 @@ type Params struct {
 	EvClient        eventloop.Client
 	AuthzClient     *authz.Client
 	RunnersHelpers  *runnershelpers.Helpers
+	AcctClient      *account.Client
 	AnalyticsClient analytics.Client
 }
 
@@ -40,6 +42,7 @@ type service struct {
 	evClient        eventloop.Client
 	runnersHelpers  *runnershelpers.Helpers
 	analyticsClient analytics.Client
+	acctClient      *account.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -83,10 +86,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/orgs/:org_id/admin-restart", s.RestartOrg)
 	api.POST("/v1/orgs/:org_id/admin-restart-children", s.RestartOrgChildren)
 	api.POST("/v1/orgs/:org_id/admin-rename", s.AdminRenameOrg)
-	api.POST("/v1/orgs/:org_id/admin-static-token", s.AdminCreateStaticToken)
 	api.POST("/v1/orgs/:org_id/admin-internal-slack-webhook-url", s.AdminSetInternalSlackWebhookURLOrg)
 	api.POST("/v1/orgs/:org_id/admin-customer-slack-webhook-url", s.AdminSetCustomerSlackWebhookURLOrg)
 	api.POST("/v1/orgs/:org_id/admin-add-vcs-connection", s.AdminAddVCSConnection)
+	api.POST("/v1/orgs/:org_id/admin-service-account", s.AdminCreateServiceAccount)
 	return nil
 }
 
@@ -106,5 +109,6 @@ func New(params Params) *service {
 		authzClient:     params.AuthzClient,
 		runnersHelpers:  params.RunnersHelpers,
 		analyticsClient: params.AnalyticsClient,
+		acctClient:      params.AcctClient,
 	}
 }
