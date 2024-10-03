@@ -258,12 +258,14 @@ resource "kubectl_manifest" "clickhouse_installation" {
             </clickhouse>
           EOT
           "config.d/keeper.xml" = <<-EOT
-          <zookeeper>
-              <node>
-                  <host>clickhouse-keeper.clickhouse.svc.cluster.local</host>
-                  <port>2181</port>
-              </node>
-          </zookeeper>
+            <clickhouse>
+              <zookeeper>
+                  <node>
+                      <host>clickhouse-keeper.clickhouse.svc.cluster.local</host>
+                      <port>2181</port>
+                  </node>
+              </zookeeper>
+            </clickhouse>
           EOT
         }
       }

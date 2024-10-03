@@ -19,8 +19,11 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
             "name" = "chk-simple"
 
             "templates" = {
-              "podTemplate"     = "clickhouse-keeper:${local.image_tag}"
-              "serviceTemplate" = "clickhouse-keeper:${local.image_tag}"
+              "podTemplate"             = "clickhouse-keeper:${local.image_tag}"
+              "serviceTemplate"         = "clickhouse-keeper:${local.image_tag}"
+              "logVolumeClaimTemplate"  = "default"
+              "dataVolumeClaimTemplate" = "default"
+
             }
           },
         ]
@@ -73,7 +76,7 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
                     "matchLabels" = {
                       # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
                       #           that is, however, an assumption
-                      "clickhouse.altinity.com/chi" = "clickhouse-installation"
+                      "app" = "clickhouse-keeper"
                     }
                   }
                 }
