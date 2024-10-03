@@ -2239,10 +2239,10 @@ github.com/ncw/swift v1.0.47/go.mod h1:23YIA4yWVnGwv2dQlN4bB7egfYX6YLn0Yo/S6zZO/
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nuonco/clickhouse-go/v2 v2.28.1 h1:BiRzWD5Dcs/n5LTUO+NbrDUXc6+i6Ncl0X703ruozcM=
 github.com/nuonco/clickhouse-go/v2 v2.28.1/go.mod h1:z+/ndg1+oWVgVhxMh+OzVEZQOi/SmoY/gSEId5zj47I=
-github.com/nuonco/nuon-go v0.32.1 h1:1Zry6Xqtm1GVc/QBOrk9JhZ5U93InhnyUt7XmwlNZJg=
-github.com/nuonco/nuon-go v0.32.1/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
-github.com/nuonco/nuon-runner-go v0.0.1 h1:3UV/TCv0BSt2tI2EJ2nXW1H5mbJTuQzbfXHXLhn0k2s=
-github.com/nuonco/nuon-runner-go v0.0.1/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
+github.com/nuonco/nuon-go v0.33.0 h1:euOEIqPptD5rY0B1ZAqdtOnb5p/qa/gjWcxlsJ6n3eA=
+github.com/nuonco/nuon-go v0.33.0/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
+github.com/nuonco/nuon-runner-go v0.1.0 h1:QhiWopBtWerw4xhM99DVi1OBIuDFpjBG5LhowdYvbzI=
+github.com/nuonco/nuon-runner-go v0.1.0/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
 github.com/nuonco/sandboxes v1.34.0 h1:3ZH4qZw6tQkef7BVaKxUYjEfzghVBn+me5pWTE7Q4fc=
 github.com/nuonco/sandboxes v1.34.0/go.mod h1:HR3Srms2+H9TnFOu+FmNSKwMuT6VVWh1yGf3+eHalas=
 github.com/nwaples/rardecode/v2 v2.0.0-beta.2 h1:e3mzJFJs4k83GXBEiTaQ5HgSc/kOK8q0rDaRO0MPaOk=
