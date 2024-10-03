@@ -13,6 +13,8 @@ func (s *Settings) fetch(ctx context.Context) error {
 	}
 
 	s.HeartBeatTimeout = time.Duration(settings.HeartBeatTimeout)
+	s.OrgID = settings.OrgID
+	s.Env = settings.Env
 
 	return nil
 }

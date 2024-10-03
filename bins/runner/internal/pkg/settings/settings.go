@@ -17,6 +17,8 @@ type Settings struct {
 	OTELConfiguration            string        `validate:"required"`
 	JobLoopMinPollPeriod         time.Duration `validate:"required"`
 	MaxConcurrentJobs            int           `validate:"required"`
+	OrgID                        string        `validate:"required"`
+	Env                          string        `validate:"required"`
 
 	apiClient nuonrunner.Client
 	l         *zap.Logger
