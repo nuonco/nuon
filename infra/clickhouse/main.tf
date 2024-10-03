@@ -154,6 +154,12 @@ resource "random_integer" "node_ttl" {
   }
 }
 
+
+
+#
+# clickhouse installation
+#
+
 # configmap to bootstrap ctl_api database
 resource "kubectl_manifest" "clickhouse_installation_configmap_bootstrap" {
   yaml_body = yamlencode({
@@ -215,7 +221,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
         # https://clickhouse.com/docs/en/integrations/s3#configure-clickhouse-to-use-the-s3-bucket-as-a-disk
         # https://clickhouse.com/docs/en/operations/backup#configuring-backuprestore-to-use-an-s3-endpoint
         "files" = {
-          "config.d/disks.xml" = <<-EOT
+          "config.d/disks.xml"  = <<-EOT
           <clickhouse>
             <storage_configuration>
               <disks>
@@ -244,25 +250,33 @@ resource "kubectl_manifest" "clickhouse_installation" {
             </storage_configuration>
           </clickhouse>
           EOT
-          "config.d/s3.xml"    = <<-EOT
+          "config.d/s3.xml"     = <<-EOT
             <clickhouse>
               <s3>
                 <use_environment_credentials>true</use_environment_credentials>
               </s3>
             </clickhouse>
           EOT
+          "config.d/keeper.xml" = <<-EOT
+          <zookeeper>
+              <node>
+                  <host>clickhouse-keeper.clickhouse.svc.cluster.local</host>
+                  <port>2181</port>
+              </node>
+          </zookeeper>
+          EOT
         }
       }
       "defaults" = {
         "templates" = {
           "dataVolumeClaimTemplate" = "data-volume-template"
-          "serviceTemplate" = "clickhouse:${local.image_tag}"
+          "serviceTemplate"         = "clickhouse:${local.image_tag}"
         }
       }
       "templates" = {
         # we define a clusterServiceTemplates so we can set an internal-hostname for access via twingate
         "serviceTemplates" = [{
-          "name"     = "clickhouse:${local.image_tag}"
+          "name" = "clickhouse:${local.image_tag}"
           "metadata" = {
             "annotations" = {
               "external-dns.alpha.kubernetes.io/internal-hostname" = "clickhouse.${local.zone}"
@@ -294,17 +308,17 @@ resource "kubectl_manifest" "clickhouse_installation" {
             "topologySpreadConstraints" = [
               # spread the pods across nodes.
               {
-                  "maxSkew" = 1
-                  "topologyKey" = "kubernetes.io/hostname"
-                  "whenUnsatisfiable" = "DoNotSchedule"
-                  "minDomains" = "${local.hosts}"
-                  "labelSelector" = {
-                    "matchLabels" = {
-                      # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
-                      #           that is, however, an assumption
-                      "clickhouse.altinity.com/chi" = "clickhouse-installation"
-                    }
+                "maxSkew"           = 1
+                "topologyKey"       = "kubernetes.io/hostname"
+                "whenUnsatisfiable" = "DoNotSchedule"
+                "minDomains"        = local.hosts
+                "labelSelector" = {
+                  "matchLabels" = {
+                    # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
+                    #           that is, however, an assumption
+                    "clickhouse.altinity.com/chi" = "clickhouse-installation"
                   }
+                }
               }
             ]
             "tolerations" = [{
@@ -317,7 +331,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
               {
                 "name"  = "clickhouse"
                 "image" = "clickhouse/clickhouse-server:${local.image_tag}"
-                "env"   = [{
+                "env" = [{
                   "name"  = "CLICKHOUSE_ALWAYS_RUN_INITDB_SCRIPTS"
                   "value" = "true"
                 }]

@@ -4,11 +4,13 @@ pool: nuon
 image_tag: "24.3.7"
 data_volume_storage: 1Gi
 
+
 logLevel: information
 
 hosts: 1
 replicas: 1
 shards: 1
+keeperReplicaCount: 2
 
 # zones controls where the ch NodePool will stand up new nodes
 availability_zones: ["us-west-2c"]

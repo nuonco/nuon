@@ -8,6 +8,7 @@ logLevel: warning
 hosts: 3
 replicas: 3
 shards: 3
+keeperReplicaCount: 2
 
 # zones controls where the ch NodePool will stand up new nodes
 availability_zones: ["us-west-2c"] # based on ctl-api prod db location

@@ -7,14 +7,15 @@ locals {
   hosts              = local.vars.hosts
   replicas           = local.vars.replicas
   shards             = local.vars.shards
+  keeperReplicaCount = local.vars.keeperReplicaCount
   availability_zones = local.vars.availability_zones
 
   data_volume_storage = local.vars.data_volume_storage
   image_tag           = local.vars.image_tag
 
-  logLevel            = local.vars.logLevel
+  logLevel = local.vars.logLevel
 
-  tables              = local.vars.tables
+  tables = local.vars.tables
 
   tags = {
     environment = var.env
