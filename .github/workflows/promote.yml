@@ -3,7 +3,7 @@ name: promote
 on:
   push:
     branches:
-      - main-waypoint-archive
+      - main
 
 permissions:
   contents: write
@@ -191,17 +191,16 @@ jobs:
                 - "status:${{ steps.check.outputs.status }}"
                 - "version:${{ needs.tag.outputs.semver }}"
 
-  # TODO: enable this once we are comfortable with the runner going into production.
-  #promote_success:
-    #name: promote_success
-    #needs:
-      #- tag
-      #- bump_tag
-      #- merged_pr
-      #- artifacts
-      #- services
-    #if: ${{ needs.merged_pr.outputs.promote == 'true' }}
-    #uses: ./.github/workflows/promote_success.yml
-    #with:
-      #tag: ${{ needs.tag.outputs.semver }}
-    #secrets: inherit
+  promote_success:
+    name: promote_success
+    needs:
+      - tag
+      - bump_tag
+      - merged_pr
+      - artifacts
+      - services
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
+    uses: ./.github/workflows/promote_success.yml
+    with:
+      tag: ${{ needs.tag.outputs.semver }}
+    secrets: inherit
