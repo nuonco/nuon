@@ -2,12 +2,13 @@ package jobloop
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-runner-go/models"
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/errs"
 )
 
 type executeJobStep struct {
@@ -23,7 +24,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	// create an execution in the API
 	execution, err := j.apiClient.CreateJobExecution(ctx, job.ID, new(models.ServiceCreateRunnerJobExecutionRequest))
 	if err != nil {
-		return fmt.Errorf("unable to create execution: %w", err)
+		return errors.Wrap(err, "unable to create execution")
 	}
 
 	handler, err := j.getHandler(job)
@@ -32,7 +33,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 			j.errRecorder.Record("no handler found", err)
 		}
 
-		return fmt.Errorf("unable to get handler for job: %w", err)
+		return err
 	}
 
 	j.l.Info("handling job", zap.String("name", handler.Name()))
@@ -82,12 +83,12 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	for _, step := range steps {
 		j.l.Info("executing job step", zap.String("step", step.name))
 		if err := j.execJobStep(ctx, step, job, execution); err != nil {
-			return err
+			return errs.WithHandlerError(err, j.jobGroup, step.name, job.Type)
 		}
 	}
 
 	if err := j.updateJobExecutionStatus(ctx, job.ID, execution.ID, models.AppRunnerJobExecutionStatusFinished); err != nil {
-		return fmt.Errorf("unable to update job execution status after successful execution: %w", err)
+		return errors.Wrap(err, "unable to update job execution status after successful execution")
 	}
 
 	j.l.Info("finished job", zap.String("name", handler.Name()))

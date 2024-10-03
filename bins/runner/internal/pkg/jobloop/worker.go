@@ -44,6 +44,7 @@ func (j *jobLoop) worker() {
 		job := jobs[0]
 
 		if err := j.executeJob(j.ctx, job); err != nil {
+			j.errRecorder.ToSentry(err)
 			j.errRecorder.Record("job failed", err)
 		}
 		if err := smithytime.SleepWithContext(j.ctx, defaultJobPollBackoff); err != nil {

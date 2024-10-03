@@ -31,6 +31,9 @@ type RunnerGroupSettings struct {
 	// Various settings for the runner to handle internally
 	HeartBeatTimeout           time.Duration `json:"heart_beat_timeout" gorm:"default null;" swaggertype:"primitive,integer"`
 	OTELCollectorConfiguration string        `json:"otel_collector_config" gorm:"default null;not null"`
+
+	// Never persisted, populated at runtime from the overall ctl-api settings
+	Env string `json:"env" gorm:"-"`
 }
 
 func (r *RunnerGroupSettings) BeforeCreate(tx *gorm.DB) error {
