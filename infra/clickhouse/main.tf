@@ -216,12 +216,18 @@ resource "kubectl_manifest" "clickhouse_installation" {
         "settings" = {
           "logger/level" = local.logLevel
         }
+        # configure to use the zookeeper nodes
+        "zookeeper" = {
+          "nodes" = [
+            { "host" : "clickhouse-keeper.clickhouse.svc.cluster.local", "port" : 2181 },
+          ]
+        }
         # add a storage configuration config so we can write to s3. this disk will be used for backups (/backups).
         # https://clickhouse.com/docs/en/integrations/s3#managing-credentials
         # https://clickhouse.com/docs/en/integrations/s3#configure-clickhouse-to-use-the-s3-bucket-as-a-disk
         # https://clickhouse.com/docs/en/operations/backup#configuring-backuprestore-to-use-an-s3-endpoint
         "files" = {
-          "config.d/disks.xml"  = <<-EOT
+          "config.d/disks.xml" = <<-EOT
           <clickhouse>
             <storage_configuration>
               <disks>
@@ -250,21 +256,11 @@ resource "kubectl_manifest" "clickhouse_installation" {
             </storage_configuration>
           </clickhouse>
           EOT
-          "config.d/s3.xml"     = <<-EOT
+          "config.d/s3.xml"    = <<-EOT
             <clickhouse>
               <s3>
                 <use_environment_credentials>true</use_environment_credentials>
               </s3>
-            </clickhouse>
-          EOT
-          "config.d/keeper.xml" = <<-EOT
-            <clickhouse>
-              <zookeeper>
-                  <node>
-                      <host>clickhouse-keeper.clickhouse.svc.cluster.local</host>
-                      <port>2181</port>
-                  </node>
-              </zookeeper>
             </clickhouse>
           EOT
         }
