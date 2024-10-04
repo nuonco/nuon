@@ -64,7 +64,9 @@ K8S_DEPLOY:
             --name "$cluster_name" \
 	    --role-arn="$role_arn"  && \
 	kubectl create namespace $service --dry-run=client -o yaml | kubectl apply -f - && \
-	helm rollback "$chart_name-$env"; \
+	helm rollback \
+	 "$chart_name-$env" \
+	  --namespace "$service"; \
 	helm upgrade \
             "$chart_name-$env" \
 	    . \

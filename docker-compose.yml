@@ -2,38 +2,6 @@
 version: "3.9"
 
 services:
-  # clickhouse
-  clickhouse:
-    image: clickhouse/clickhouse-server
-    ulimits:
-      nofile:
-        soft: 262144
-        hard: 262144
-    ports:
-      - 8123:8123
-      - 9000:9000
-    environment:
-      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
-      CLICKHOUSE_DB: ctl_api
-      CLICKHOUSE_USER: ctl-api
-      CLICKHOUSE_PASSWORD: ctl-api
-    networks:
-      - default
-
-  # clickhouse ui
-  clickhouse-ui:
-    image: ghcr.io/caioricciuti/ch-ui:latest
-    ports:
-      - 5521:5521
-    networks:
-      - default
-    environment:
-      VITE_CLICKHOUSE_URL: http://localhost:8123
-      VITE_CLICKHOUSE_USER: ctl-api
-      VITE_CLICKHOUSE_PASS: ctl-api
-    depends_on:
-     - clickhouse
-
   # postgres for the api
   postgres:
     build:
@@ -81,6 +49,90 @@ services:
       - /var/:/tmp/temporalcli
     networks:
       - default
+
+  #
+  # Replicated ClickHouse
+  #
+  # clickhouse-keeper
+  clickhouse_keeper:
+    image: bitnami/zookeeper:3.6.1
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    ports:
+      - 2181:2181
+      - 2182:2182
+    networks:
+      - default
+    environment:
+      - ZOO_PORT_NUMBER=2181
+      - ZOO_ENABLE_AUTH=no
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  # clickhouse-server
+  clickhouse_0:
+    image: clickhouse/clickhouse-server
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    ports:
+      - 18123:8123
+      - 9000:9000
+    environment:
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      CLICKHOUSE_DB: ctl_api
+      CLICKHOUSE_USER: ctl-api
+      CLICKHOUSE_PASSWORD: ctl-api
+    networks:
+      - default
+    volumes:
+      - ./.dev/clickhouse_config.xml:/etc/clickhouse-server/config.xml
+      - ./.dev/clickhouse_metrics.xml:/etc/clickhouse-server/metrics.xml
+      - ./.dev/macros/0.xml:/etc/clickhouse-server/config.d/macros.xml
+      - ./.dev/users.xml:/etc/clickhouse-server/users.xml
+    depends_on:
+      - "clickhouse_keeper"
+
+  # clickhouse-server
+  clickhouse_1:
+    image: clickhouse/clickhouse-server
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    ports:
+      - 18124:8123
+      - 9001:9000
+    environment:
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      CLICKHOUSE_DB: ctl_api
+      CLICKHOUSE_USER: ctl-api
+      CLICKHOUSE_PASSWORD: ctl-api
+    networks:
+      - default
+    volumes:
+      - ./.dev/clickhouse_config.xml:/etc/clickhouse-server/config.xml
+      - ./.dev/clickhouse_metrics.xml:/etc/clickhouse-server/metrics.xml
+      - ./.dev/macros/1.xml:/etc/clickhouse-server/config.d/macros.xml
+      - ./.dev/users.xml:/etc/clickhouse-server/users.xml
+    depends_on:
+      - "clickhouse_keeper"
+
+  # clickhouse ui
+  clickhouse-ui:
+    image: ghcr.io/caioricciuti/ch-ui:latest
+    ports:
+      - 5521:5521
+    networks:
+      - default
+    environment:
+      VITE_CLICKHOUSE_URL: http://localhost:18123
+      VITE_CLICKHOUSE_USER: ctl-api
+      VITE_CLICKHOUSE_PASS: ctl-api
+    depends_on:
+     - clickhouse
 
 networks:
   default:

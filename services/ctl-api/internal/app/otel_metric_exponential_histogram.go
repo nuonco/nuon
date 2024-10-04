@@ -73,7 +73,7 @@ type OtelMetricExponentialHistogram struct {
 }
 
 func (m OtelMetricExponentialHistogram) GetTableOptions() (string, bool) {
-	opts := `ENGINE = MergeTree()
+	opts := `ENGINE = ReplicatedMergeTree('/clickhouse/{cluster}/tables/{shard}/otel_metrics_exponential_histogram', '{replica}')
 	TTL toDateTime("time_unix") + toIntervalDay(720)
 	PARTITION BY toDate(time_unix)
 	ORDER BY (service_name, metric_name, attributes, toUnixTimestamp64Nano(time_unix))
