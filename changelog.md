@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.219
+
+Promote to rebuild dashboard-ui.
+
 ## v0.19.218
 
 Promote to rebuild namespaces.
