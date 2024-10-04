@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	installhelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 )
@@ -22,6 +23,7 @@ type Params struct {
 	MW             metrics.Writer
 	InstallHelpers *installhelpers.Helpers
 	AuthzClient    *authz.Client
+	AcctClient     *account.Client
 }
 
 type service struct {
@@ -29,6 +31,7 @@ type service struct {
 	db             *gorm.DB
 	installHelpers *installhelpers.Helpers
 	authzClient    *authz.Client
+	acctClient     *account.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -64,5 +67,6 @@ func New(params Params) *service {
 		db:             params.DB,
 		installHelpers: params.InstallHelpers,
 		authzClient:    params.AuthzClient,
+		acctClient:     params.AcctClient,
 	}
 }

@@ -51,7 +51,7 @@ func (s *service) CreateHostedInstallerServiceAccount(ctx *gin.Context) {
 func (s *service) createHostedInstallerServiceAccount(ctx context.Context, name string) (*app.Account, error) {
 	email := fmt.Sprintf(hostedInstallerServiceAccountEmailTemplate, name)
 
-	acct, err := s.authzClient.FindAccount(ctx, email)
+	acct, err := s.acctClient.FindAccount(ctx, email)
 	if err == nil {
 		return acct, nil
 	}

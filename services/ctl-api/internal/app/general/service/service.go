@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
@@ -23,6 +24,7 @@ type service struct {
 	cfg            *internal.Config
 	temporalClient temporal.Client
 	authzClient    *authz.Client
+	acctClient     *account.Client
 	evClient       eventloop.Client
 }
 
@@ -55,6 +57,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 	// create a customer token
 	api.POST("/v1/general/admin-static-token", s.AdminCreateStaticToken)
+	api.POST("/v1/general/admin-delete-account", s.AdminDeleteAccount)
 
 	// (re)start EventLoopReconcile
 	api.POST("/v1/general/restart-event-loop-reconcile-cron", s.RestartEventLoopReconcileCron)
@@ -76,6 +79,7 @@ type Params struct {
 	TemporalClient temporal.Client
 	Cfg            *internal.Config
 	AuthzClient    *authz.Client
+	AcctClient     *account.Client
 	EvClient       eventloop.Client
 	DB             *gorm.DB `name:"psql"`
 	MW             metrics.Writer
@@ -90,6 +94,7 @@ func New(params Params) *service {
 		temporalClient: params.TemporalClient,
 		cfg:            params.Cfg,
 		authzClient:    params.AuthzClient,
+		acctClient:     params.AcctClient,
 		evClient:       params.EvClient,
 	}
 }
