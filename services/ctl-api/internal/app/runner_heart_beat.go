@@ -35,7 +35,11 @@ func (r *RunnerHeartBeat) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (r RunnerHeartBeat) GetTableOptions() (string, bool) {
-	return "ORDER BY (created_at)", true
+	options := `ENGINE = ReplicatedMergeTree('/clickhouse/{cluster}/tables/{shard}/runner_heart_beats', '{replica}')
+	ORDER BY (created_at)
+	PARTITION BY toDate(created_at)
+	PRIMARY KEY (runner_id, created_at)`
+	return options, true
 }
 
 func (r RunnerHeartBeat) MigrateDB(tx *gorm.DB) *gorm.DB {
