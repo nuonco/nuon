@@ -69,7 +69,7 @@ func (s *service) AdminCreateStaticToken(ctx *gin.Context) {
 }
 
 func (s *service) createStaticToken(ctx context.Context, subjectOrEmail string, duration time.Duration) (*app.Token, error) {
-	acct, err := s.authzClient.FindAccount(ctx, subjectOrEmail)
+	acct, err := s.acctClient.FindAccount(ctx, subjectOrEmail)
 	if err != nil {
 		return nil, fmt.Errorf("invalid account: %w", err)
 	}

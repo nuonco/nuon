@@ -51,7 +51,7 @@ func (s *service) CreateSeedUser(ctx *gin.Context) {
 
 func (s *service) createSeedUser(ctx context.Context) (*app.Token, error) {
 	email := fmt.Sprintf("%s@nuon.co", defaultSeedUserName)
-	acct, err := s.authzClient.FindAccount(ctx, email)
+	acct, err := s.acctClient.FindAccount(ctx, email)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err

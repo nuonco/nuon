@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 )
 
@@ -22,6 +23,7 @@ type Params struct {
 	Cfg         *internal.Config
 	DB          *gorm.DB `name:"psql"`
 	AuthzClient *authz.Client
+	AcctClient  *account.Client
 }
 
 type middleware struct {
@@ -29,6 +31,7 @@ type middleware struct {
 	l           *zap.Logger
 	db          *gorm.DB
 	authzClient *authz.Client
+	acctClient  *account.Client
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
@@ -118,5 +121,6 @@ func New(params Params) *middleware {
 		cfg:         params.Cfg,
 		db:          params.DB,
 		authzClient: params.AuthzClient,
+		acctClient:  params.AcctClient,
 	}
 }
