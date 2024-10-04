@@ -69,7 +69,7 @@ type OtelTrace struct {
 }
 
 func (r OtelTrace) GetTableOptions() (string, bool) {
-	opts := `ENGINE = MergeTree()
+	opts := `ENGINE = ReplicatedMergeTree('/clickhouse/{cluster}/tables/{shard}/otel_traces', '{replica}')
 	TTL toDateTime("timestamp") + toIntervalDay(720)
 	PARTITION BY toDate(timestamp)
 	ORDER BY (service_name, span_name, toUnixTimestamp(timestamp), trace_id)
