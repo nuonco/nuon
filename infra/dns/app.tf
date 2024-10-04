@@ -5,6 +5,6 @@ resource "aws_route53_record" "app" {
   type    = "CNAME"
   ttl     = 300
   records = [
-    "k8s-default-dashboar-fdcb6bc9e1-2132532861.us-west-2.elb.amazonaws.com"
+    "k8s-dashboar-dashboar-e338a5f879-1356364832.us-west-2.elb.amazonaws.com"
   ]
 }
