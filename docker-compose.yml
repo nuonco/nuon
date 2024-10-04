@@ -132,7 +132,9 @@ services:
       VITE_CLICKHOUSE_USER: ctl-api
       VITE_CLICKHOUSE_PASS: ctl-api
     depends_on:
-     - clickhouse
+     - clickhouse_0
+     - clickhouse_1
+     - clickhouse_keeper
 
 networks:
   default:
