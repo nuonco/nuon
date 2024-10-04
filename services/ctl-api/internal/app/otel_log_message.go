@@ -60,7 +60,7 @@ func (r *OtelLogRecord) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (r OtelLogRecord) GetTableOptions() (string, bool) {
-	opts := `ENGINE = MergeTree()
+	opts := `ENGINE = ReplicatedMergeTree('/clickhouse/{cluster}/tables/{shard}/otel_log_record', '{replica}')
 	PARTITION BY toDate(timestamp_time)
 	PRIMARY KEY (service_name, timestamp_time)
 	ORDER BY (service_name, timestamp_time, timestamp)
