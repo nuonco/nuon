@@ -10,14 +10,6 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
       "namespace" = "clickhouse"
     }
     "spec" = {
-      "defaults" = {
-        "templates" = {
-          "podTemplate"             = "clickhouse-keeper:${local.image_tag}"
-          "serviceTemplate"         = "clickhouse-keeper:${local.image_tag}"
-          "logVolumeClaimTemplate"  = "default"
-          "dataVolumeClaimTemplate" = "default"
-        }
-      }
       "configuration" = {
         "clusters" = [
           {
@@ -45,7 +37,6 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
         }
       }
       "templates" = {
-        # we define a clusterServiceTemplates so we can set an internal-hostname for access via twingate
         "serviceTemplates" = [{
           "name" = "clickhouse-keeper:${local.image_tag}"
           "metadata" = {
@@ -71,7 +62,7 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
                   "maxSkew"           = 1
                   "topologyKey"       = "kubernetes.io/hostname"
                   "whenUnsatisfiable" = "DoNotSchedule"
-                  "minDomains"        = local.hosts
+                  "minDomains"        = local.keeperReplicaCount
                   "labelSelector" = {
                     "matchLabels" = {
                       # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
@@ -105,35 +96,7 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
                 },
               ]
             }
-          },
-        ]
-        "volumeClaimTemplates" = [
-          {
-            "name" = "default"
-            "spec" = {
-              "accessModes" = [
-                "ReadWriteOnce",
-              ]
-              "resources" = {
-                "requests" = {
-                  "storage" = "10Gi"
-                }
-              }
-            }
-          },
-          {
-            "name" = "snapshot-storage-path"
-            "spec" = {
-              "accessModes" = [
-                "ReadWriteOnce",
-              ]
-              "resources" = {
-                "requests" = {
-                  "storage" = "10Gi"
-                }
-              }
-            }
-          },
+          }
         ]
       }
     }
