@@ -62,7 +62,7 @@ func (s *service) CreateSupportUsers(ctx *gin.Context) {
 }
 
 func (s *service) createSupportUser(ctx context.Context, email, subject, orgID string) error {
-	acct, err := s.authzClient.FindAccount(ctx, email)
+	acct, err := s.acctClient.FindAccount(ctx, email)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err

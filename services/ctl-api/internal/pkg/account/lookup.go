@@ -11,21 +11,24 @@ func ServiceAccountEmail(id string) string {
 	return fmt.Sprintf("%s@serviceaccount.nuon.co", id)
 }
 
-func (c *Client) FindAccount(ctx context.Context, emailOrSubject string) (*app.Account, error) {
+func (c *Client) FindAccount(ctx context.Context, emailOrSubjectOrID string) (*app.Account, error) {
 	acct := app.Account{}
 	res := c.db.WithContext(ctx).
 		Preload("Roles").
 		Preload("Roles.Org").
 		Preload("Roles.Policies").
 		Where(app.Account{
-			Email: emailOrSubject,
+			Email: emailOrSubjectOrID,
 		}).
 		Or(app.Account{
-			Subject: emailOrSubject,
+			Subject: emailOrSubjectOrID,
+		}).
+		Or(app.Account{
+			Subject: emailOrSubjectOrID,
 		}).
 		First(&acct)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to find account %s: %w", emailOrSubject, res.Error)
+		return nil, fmt.Errorf("unable to find account %s: %w", emailOrSubjectOrID, res.Error)
 	}
 
 	return &acct, nil

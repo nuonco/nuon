@@ -57,7 +57,7 @@ func (m *middleware) saveAccountToken(ctx context.Context, token string, claims 
 		return nil, fmt.Errorf("unable to get custom claims")
 	}
 
-	acct, err := m.authzClient.FindAccount(ctx, customClaims.Email)
+	acct, err := m.acctClient.FindAccount(ctx, customClaims.Email)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("unable to get account: %w", err)

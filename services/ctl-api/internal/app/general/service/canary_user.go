@@ -59,7 +59,7 @@ func (s *service) CreateCanaryUser(ctx *gin.Context) {
 }
 
 func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.Account, *app.Token, error) {
-	acct, err := s.authzClient.FindAccount(ctx, canaryID)
+	acct, err := s.acctClient.FindAccount(ctx, canaryID)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil, err
