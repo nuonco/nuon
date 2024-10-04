@@ -43,8 +43,8 @@ env:
   # common toggles for local development based on what you are working on
   DISABLE_METRICS: true
   DISABLE_NOTIFICATIONS: true
-  # DB_LOG_QUERIES: true
-  # LOG_LEVEL: "DEBUG"
+  DB_LOG_QUERIES: true
+  LOG_LEVEL: "DEBUG"
 
   # analytics configuration
   SEGMENT_WRITE_KEY: FxvXYu94xEX5iVBQT5VfnVv0aEzKdxz2
@@ -64,7 +64,7 @@ watch_ignore:
   - '\/internal\/integration'
   - "_gen"
 local_startup_cmds:
-  - go generate ./...
+  # - go generate ./...
   - go build -o /tmp/svc-ctl-api
   - /tmp/svc-ctl-api startup
 local_build_cmds:
