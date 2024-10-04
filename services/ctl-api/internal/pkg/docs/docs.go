@@ -31,7 +31,7 @@ func (r *Docs) RegisterPublicRoutes(g *gin.Engine) error {
 	case config.Production:
 		public.SwaggerInfo.Host = "api.nuon.co"
 	case config.Stage:
-		public.SwaggerInfo.Host = "runner.stage.nuon.co"
+		public.SwaggerInfo.Host = "api.stage.nuon.co"
 	}
 
 	g.GET("/oapi/v3", r.getOAPI3publicSpec)
