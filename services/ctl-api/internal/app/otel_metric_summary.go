@@ -77,7 +77,7 @@ func (m OtelMetricSummary) MigrateDB(db *gorm.DB) *gorm.DB {
 	if !hasOpts {
 		return db
 	}
-	return db.Set("gorm:table_options", opts)
+	return db.Set("gorm:table_options", opts).Set("gorm:table_cluster_options", "on cluster simple")
 }
 
 func (m *OtelMetricSummary) BeforeCreate(tx *gorm.DB) error {

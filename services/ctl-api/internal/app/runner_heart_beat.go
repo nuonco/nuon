@@ -47,5 +47,5 @@ func (r RunnerHeartBeat) MigrateDB(tx *gorm.DB) *gorm.DB {
 	if !hasOpts {
 		return tx
 	}
-	return tx.Set("gorm:table_options", opts)
+	return tx.Set("gorm:table_options", opts).Set("gorm:table_cluster_options", "on cluster simple")
 }
