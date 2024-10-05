@@ -20,7 +20,7 @@ steps:
       Starting with the end in mind - show a real application
     cmd:
       - curl
-      - https://ctl.stage.nuon.co/livez
+      - https://api.stage.nuon.co/livez
 
   #- name: "install nuon"
     #display_cmd: /bin/bash -c "$(curl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)"
