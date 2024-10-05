@@ -16,7 +16,7 @@ synthetics:
     tags: ["service:ctl-api", "terraform:true", "env:${env}"]
     request_definition:
       method: "GET"
-      url: "https://ctl.${env}.nuon.co/livez"
+      url: "https://api.${env}.nuon.co/livez"
     request_headers: {}
     assertion:
       type: "statusCode"
