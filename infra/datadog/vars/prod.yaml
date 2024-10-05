@@ -43,7 +43,7 @@ synthetics:
     tags: ["service:ctl-api", "terraform:true", "env:${aws_account}"]
     request_definition:
       method: "GET"
-      url: "https://api.${aws_account}.nuon.co/livez"
+      url: "https://api.nuon.co/livez"
     request_headers: {}
     assertion:
       type: "statusCode"
