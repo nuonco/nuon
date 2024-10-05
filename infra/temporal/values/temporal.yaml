@@ -38,7 +38,7 @@ server:
         driver: sql
         sql:
           database: temporal_visibility
-          driver: postgres15
+          driver: postgres12
           maxConnLifetime: 1h
           maxConns: 20
 
