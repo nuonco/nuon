@@ -1,5 +1,5 @@
 output "internal_domain" {
-  value = "ctl.${data.aws_route53_zone.private.name}"
+  value = "api.${data.aws_route53_zone.private.name}"
 }
 
 output "tfe_token" {
