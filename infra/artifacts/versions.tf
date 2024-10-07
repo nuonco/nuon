@@ -11,19 +11,19 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 4.0"
+      version = ">= 5.67.0"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = ">= 2.9.0"
+      version = ">= 2.14"
     }
     tfe = {
       source  = "hashicorp/tfe"
-      version = ">= 0.36.1"
+      version = ">= 0.57.1"
     }
     utils = {
       source  = "cloudposse/utils"
-      version = ">= 0.17.23"
+      version = ">= 1.24.0"
     }
   }
 }
