@@ -1,7 +1,7 @@
 ---
 account: stage
 env: stage
-data_volume_storage: 20Gi
+data_volume_storage: 50Gi
 
 logLevel: debug
 
