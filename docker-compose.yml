@@ -53,72 +53,93 @@ services:
   #
   # Replicated ClickHouse
   #
-  # clickhouse-keeper
-  clickhouse_keeper:
-    image: bitnami/zookeeper:3.6.1
-    ulimits:
-      nofile:
-        soft: 262144
-        hard: 262144
-    ports:
-      - 2181:2181
-      - 2182:2182
-    networks:
-      - default
-    environment:
-      - ZOO_PORT_NUMBER=2181
-      - ZOO_ENABLE_AUTH=no
-      - ALLOW_ANONYMOUS_LOGIN=yes
+  # src: https://github.com/ClickHouse/examples/blob/main/docker-compose-recipes/recipes/cluster/docker-compose.yaml
 
-  # clickhouse-server
-  clickhouse_0:
-    image: clickhouse/clickhouse-server
-    ulimits:
-      nofile:
-        soft: 262144
-        hard: 262144
+  # clickhouse
+  clickhouse-01:
+    image: "clickhouse/clickhouse-server:${CHVER:-latest}"
+    user: "101:101"
+    container_name: clickhouse-01
+    hostname: clickhouse-01
+    networks:
+      cluster:
+        ipv4_address: 192.168.7.1
+    volumes:
+      - ./.dev/fs/volumes/clickhouse-01/etc/clickhouse-server/config.d/config.xml:/etc/clickhouse-server/config.d/config.xml
+      - ./.dev/fs/volumes/clickhouse-01/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
+      - ./.dev/fs/volumes/clickhouse-01/etc/clickhouse-server/conf.d/macros0.xml:/etc/clickhouse-server/conf.d/macros.xml
     ports:
-      - 18123:8123
-      - 9000:9000
+      - "127.0.0.1:8123:8123"
+      - "127.0.0.1:9000:9000"
     environment:
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
       CLICKHOUSE_DB: ctl_api
-      CLICKHOUSE_USER: ctl-api
-      CLICKHOUSE_PASSWORD: ctl-api
-    networks:
-      - default
-    volumes:
-      - ./.dev/clickhouse_config.xml:/etc/clickhouse-server/config.xml
-      - ./.dev/clickhouse_metrics.xml:/etc/clickhouse-server/metrics.xml
-      - ./.dev/macros/0.xml:/etc/clickhouse-server/config.d/macros.xml
-      - ./.dev/users.xml:/etc/clickhouse-server/users.xml
+      # CLICKHOUSE_USER: ctl-api
+      # CLICKHOUSE_PASSWORD: ctl-api
     depends_on:
-      - "clickhouse_keeper"
-
-  # clickhouse-server
-  clickhouse_1:
-    image: clickhouse/clickhouse-server
-    ulimits:
-      nofile:
-        soft: 262144
-        hard: 262144
+      - clickhouse-keeper-01
+      - clickhouse-keeper-02
+      - clickhouse-keeper-03
+  clickhouse-02:
+    image: "clickhouse/clickhouse-server:${CHVER:-latest}"
+    user: "101:101"
+    container_name: clickhouse-02
+    hostname: clickhouse-02
+    networks:
+      cluster:
+        ipv4_address: 192.168.7.2
+    volumes:
+      - ./.dev/fs/volumes/clickhouse-02/etc/clickhouse-server/config.d/config.xml:/etc/clickhouse-server/config.d/config.xml
+      - ./.dev/fs/volumes/clickhouse-02/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
+      - ./.dev/fs/volumes/clickhouse-01/etc/clickhouse-server/conf.d/macros1.xml:/etc/clickhouse-server/conf.d/macros.xml
     ports:
-      - 18124:8123
-      - 9001:9000
+      - "127.0.0.1:8124:8123"
+      - "127.0.0.1:9001:9000"
     environment:
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
       CLICKHOUSE_DB: ctl_api
-      CLICKHOUSE_USER: ctl-api
-      CLICKHOUSE_PASSWORD: ctl-api
-    networks:
-      - default
-    volumes:
-      - ./.dev/clickhouse_config.xml:/etc/clickhouse-server/config.xml
-      - ./.dev/clickhouse_metrics.xml:/etc/clickhouse-server/metrics.xml
-      - ./.dev/macros/1.xml:/etc/clickhouse-server/config.d/macros.xml
-      - ./.dev/users.xml:/etc/clickhouse-server/users.xml
+      # CLICKHOUSE_USER: ctl-api
+      # CLICKHOUSE_PASSWORD: ctl-api
     depends_on:
-      - "clickhouse_keeper"
+      - clickhouse-keeper-01
+      - clickhouse-keeper-02
+      - clickhouse-keeper-03
+  clickhouse-keeper-01:
+    image: "clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}"
+    user: "101:101"
+    container_name: clickhouse-keeper-01
+    hostname: clickhouse-keeper-01
+    networks:
+      cluster:
+        ipv4_address: 192.168.7.5
+    volumes:
+     - ./.dev/fs/volumes/clickhouse-keeper-01/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
+    ports:
+        - "127.0.0.1:9181:9181"
+  clickhouse-keeper-02:
+    image: "clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}"
+    user: "101:101"
+    container_name: clickhouse-keeper-02
+    hostname: clickhouse-keeper-02
+    networks:
+      cluster:
+        ipv4_address: 192.168.7.6
+    volumes:
+     - ./.dev/fs/volumes/clickhouse-keeper-02/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
+    ports:
+        - "127.0.0.1:9182:9181"
+  clickhouse-keeper-03:
+    image: "clickhouse/clickhouse-keeper:${CHKVER:-latest-alpine}"
+    user: "101:101"
+    container_name: clickhouse-keeper-03
+    hostname: clickhouse-keeper-03
+    networks:
+      cluster:
+        ipv4_address: 192.168.7.7
+    volumes:
+     - ./.dev/fs/volumes/clickhouse-keeper-03/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
+    ports:
+        - "127.0.0.1:9183:9181"
 
   # clickhouse ui
   clickhouse-ui:
@@ -128,7 +149,7 @@ services:
     networks:
       - default
     environment:
-      VITE_CLICKHOUSE_URL: http://localhost:18123
+      VITE_CLICKHOUSE_URL: http://localhost:8123
       VITE_CLICKHOUSE_USER: ctl-api
       VITE_CLICKHOUSE_PASS: ctl-api
     depends_on:
@@ -136,11 +157,17 @@ services:
      - clickhouse_1
      - clickhouse_keeper
 
-networks:
-  default:
-    driver: bridge
-
 volumes:
   postgres:
   clickhouse:
   pgadmin:
+
+networks:
+  default:
+    driver: bridge
+  cluster:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.7.0/24
+          gateway: 192.168.7.254
