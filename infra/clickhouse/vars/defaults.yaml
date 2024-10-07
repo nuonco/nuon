@@ -4,10 +4,9 @@ pool: nuon
 image_tag: "24.3.7"
 data_volume_storage: 1Gi
 
-
 logLevel: information
 
-hosts: 1
+hosts: 1 # min number of hosts to deploy to
 replicas: 1
 shards: 1
 keeperReplicaCount: 2
