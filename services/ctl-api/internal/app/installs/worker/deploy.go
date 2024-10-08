@@ -163,7 +163,6 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 			ComponentRootID: installDeploy.ComponentID,
 			InstallID:       installID,
 		})
-
 		if err != nil {
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
 			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
@@ -198,7 +197,7 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 		}
 	}
 
-	if org.OrgType != app.OrgTypeV2 {
+	if org.OrgType == app.OrgTypeLegacy {
 		if err := w.execSyncLegacy(ctx, install, installDeploy, sandboxMode); err != nil {
 			return err
 		}

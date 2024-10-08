@@ -39,3 +39,19 @@ func (d *Docs) getOAPI3AdminSpec(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, oapi3Doc)
 }
+
+func (d *Docs) getOAPI3RunnerSpec(ctx *gin.Context) {
+	doc, err := d.loadOAPI2RunnerSpec()
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	oapi3Doc, err := openapi2conv.ToV3(doc)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to convert open api spec to v3: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, oapi3Doc)
+}

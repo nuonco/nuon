@@ -12,6 +12,7 @@ import (
 
 	"github.com/powertoolsdev/mono/bins/runner/internal"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
+	"github.com/powertoolsdev/mono/pkg/metrics"
 )
 
 type Params struct {
@@ -22,6 +23,7 @@ type Params struct {
 	L         *zap.Logger
 	LC        fx.Lifecycle
 	Settings  *settings.Settings
+	MW        metrics.Writer
 }
 
 type HeartBeater struct {
@@ -34,6 +36,7 @@ type HeartBeater struct {
 	cancelFn func()
 	wg       *conc.WaitGroup
 	startTS  time.Time
+	mw       metrics.Writer
 }
 
 func New(params Params) (*HeartBeater, error) {
@@ -48,6 +51,7 @@ func New(params Params) (*HeartBeater, error) {
 		apiClient: params.APIClient,
 		ctx:       ctx,
 		cancelFn:  cancelFn,
+		mw:        params.MW,
 	}
 
 	params.LC.Append(hb.LifecycleHook())

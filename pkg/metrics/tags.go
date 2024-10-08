@@ -41,6 +41,26 @@ func ToTags(inputs map[string]string, addtlTags ...string) []string {
 	return tags
 }
 
+func ToTag(name, val string) string {
+	return fmt.Sprintf("%s:%s", name, val)
+}
+
+func AddTags(tags []string, vals ...string) []string {
+	for _, val := range vals {
+		tags = append(tags, val)
+	}
+
+	return tags
+}
+
+func AddTagsMap(tags []string, vals map[string]string) []string {
+	for key, val := range vals {
+		tags = append(tags, ToTag(key, val))
+	}
+
+	return tags
+}
+
 // common conversions to make tagging even easier
 func ToBoolTag(name string, val bool) string {
 	return fmt.Sprintf("%s:%s", name, strconv.FormatBool(val))

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -16,6 +17,8 @@ import (
 // @execution-timeout 20m
 // @task-timeout 10m
 func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) error {
+	l := workflow.GetLogger(ctx)
+
 	w.updateStatus(ctx, sreq.ID, app.OrgStatusProvisioning, "provisioning organization resources")
 
 	org, err := activities.AwaitGetByOrgID(ctx, sreq.ID)
@@ -26,7 +29,7 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 
 	// NOTE(jm): this will be removed once the runner is in prod
 	// and all orgs are migrated.
-	if org.OrgType != app.OrgTypeV2 {
+	if org.OrgType == app.OrgTypeLegacy {
 		if err := w.provisionLegacy(ctx, org, sreq.SandboxMode); err != nil {
 			return fmt.Errorf("unable to perform legacy org provision: %w", err)
 		}
@@ -38,10 +41,17 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	orgIAMReq := &executors.ProvisionIAMRequest{
 		OrgID: sreq.ID,
 	}
-	_, err = executors.AwaitProvisionIAM(ctx, orgIAMReq)
-	if err != nil {
-		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "unable to provision IAM")
-		return fmt.Errorf("unable to provision IAM: %w", err)
+	if org.OrgType == app.OrgTypeDefault {
+		_, err = executors.AwaitProvisionIAM(ctx, orgIAMReq)
+		if err != nil {
+			w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "unable to provision IAM")
+			return fmt.Errorf("unable to provision IAM: %w", err)
+		}
+	} else {
+		l.Info("skipping await provision iam",
+			zap.Any("org_type", org.OrgType),
+			zap.String("org_id", org.ID),
+			zap.String("org_name", org.Name))
 	}
 
 	// provision the runner
