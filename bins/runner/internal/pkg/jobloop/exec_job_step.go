@@ -4,9 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"time"
 
 	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/sourcegraph/conc/panics"
+
+	"github.com/powertoolsdev/mono/pkg/metrics"
 )
 
 func (j *jobLoop) updateJobExecutionStatus(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus) error {
@@ -27,8 +31,19 @@ func (j *jobLoop) errToStatus(err error) models.AppRunnerJobExecutionStatus {
 	return models.AppRunnerJobExecutionStatusFailed
 }
 
-func (j *jobLoop) execJobStep(ctx context.Context, step *executeJobStep, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+func (j *jobLoop) execJobStep(ctx context.Context, l *slog.Logger, step *executeJobStep, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	startTS := time.Now()
+	tags := metrics.ToTags(map[string]string{})
+
 	if err := j.updateJobExecutionStatus(ctx, job.ID, jobExecution.ID, step.startStatus); err != nil {
+		j.mw.Incr("job_step", metrics.AddTagsMap(tags, map[string]string{
+			"status":   "error",
+			"err_type": "update_job_execution",
+		}))
+		j.mw.Timing("job_step.duration", time.Since(startTS), metrics.AddTagsMap(tags, map[string]string{
+			"status":   "error",
+			"err_type": "update_job_execution",
+		}))
 		return err
 	}
 
@@ -39,6 +54,7 @@ func (j *jobLoop) execJobStep(ctx context.Context, step *executeJobStep, job *mo
 	pc.Try(func() {
 		err = step.fn(ctx, step.handler, job, jobExecution)
 	})
+
 	// when a job handler panics, we update the job to a failed status, and propagate the error
 	recovered := pc.Recovered()
 	if recovered != nil {
@@ -47,14 +63,29 @@ func (j *jobLoop) execJobStep(ctx context.Context, step *executeJobStep, job *mo
 			j.errRecorder.Record("update_job_execution", updateErr)
 		}
 
-		// TODO(sdboyer) panics need their own error handling, can't have a handler able to blow up the whole runner
-		// panic(recovered)
+		j.mw.Incr("job_step", metrics.AddTagsMap(tags, map[string]string{
+			"status":   "error",
+			"err_type": "panic",
+		}))
+		j.mw.Timing("job_step.duration", time.Since(startTS), metrics.AddTagsMap(tags, map[string]string{
+			"status":   "error",
+			"err_type": "panic",
+		}))
+		panic(recovered)
 	}
 
 	if err == nil {
+		l.Info("step was completed successfully", "step", step.name)
+		j.mw.Incr("job_step", metrics.AddTagsMap(tags, map[string]string{
+			"status": "ok",
+		}))
+		j.mw.Timing("job_step.duration", time.Since(startTS), metrics.AddTagsMap(tags, map[string]string{
+			"status": "ok",
+		}))
 		return nil
 	}
 
+	// handle the error by cleaning up the execution using the handler.
 	status := j.errToStatus(err)
 	if updateErr := j.updateJobExecutionStatus(ctx, job.ID, jobExecution.ID, status); updateErr != nil {
 		j.errRecorder.Record("update_job_execution", updateErr)
@@ -67,5 +98,13 @@ func (j *jobLoop) execJobStep(ctx context.Context, step *executeJobStep, job *mo
 		j.errRecorder.Record("cleanup", cleanupErr)
 	}
 
+	j.mw.Incr("job_step", metrics.AddTagsMap(tags, map[string]string{
+		"status":   "error",
+		"err_type": "handler",
+	}))
+	j.mw.Timing("job_step.duration", time.Since(startTS), metrics.AddTagsMap(tags, map[string]string{
+		"status":   "error",
+		"err_type": "handler",
+	}))
 	return err
 }

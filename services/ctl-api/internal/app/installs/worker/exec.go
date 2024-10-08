@@ -24,8 +24,8 @@ func (w *Workflows) execCreatePlanWorkflow(
 ) (*planv1.CreatePlanResponse, error) {
 	l := workflow.GetLogger(ctx)
 	if sandboxMode {
-		l.Debug("sandbox-mode enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.SandboxSleep.String()))
-		workflow.Sleep(ctx, w.cfg.SandboxSleep)
+		l.Debug("sandbox-mode enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.SandboxModeSleep.String()))
+		workflow.Sleep(ctx, w.cfg.SandboxModeSleep)
 		resp := &planv1.CreatePlanResponse{}
 		resp.Ref = generics.GetFakeObj[*planv1.PlanRef]()
 		return resp, nil
@@ -57,8 +57,8 @@ func (w *Workflows) execExecPlanWorkflow(
 ) (*execv1.ExecutePlanResponse, error) {
 	l := workflow.GetLogger(ctx)
 	if dryRun {
-		l.Debug("sandbox-mode enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.SandboxSleep.String()))
-		workflow.Sleep(ctx, w.cfg.SandboxSleep)
+		l.Debug("sandbox-mode enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.SandboxModeSleep.String()))
+		workflow.Sleep(ctx, w.cfg.SandboxModeSleep)
 		return generics.GetFakeObj[*execv1.ExecutePlanResponse](), nil
 	}
 
@@ -87,8 +87,8 @@ func (w *Workflows) execDeprovisionWorkflow(
 ) (*installsv1.DeprovisionResponse, error) {
 	l := workflow.GetLogger(ctx)
 	if dryRun {
-		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
-		workflow.Sleep(ctx, w.cfg.SandboxSleep)
+		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxModeSleep.String()))
+		workflow.Sleep(ctx, w.cfg.SandboxModeSleep)
 		return generics.GetFakeObj[*installsv1.DeprovisionResponse](), nil
 	}
 
@@ -117,8 +117,8 @@ func (w *Workflows) execProvisionWorkflow(
 ) (*installsv1.ProvisionResponse, error) {
 	l := workflow.GetLogger(ctx)
 	if sandboxMode {
-		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
-		workflow.Sleep(ctx, w.cfg.SandboxSleep)
+		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxModeSleep.String()))
+		workflow.Sleep(ctx, w.cfg.SandboxModeSleep)
 		return generics.GetFakeObj[*installsv1.ProvisionResponse](), nil
 	}
 
@@ -151,8 +151,8 @@ func (w *Workflows) execChildWorkflow(
 ) error {
 	if sandboxMode {
 		l := workflow.GetLogger(ctx)
-		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
-		workflow.Sleep(ctx, w.cfg.SandboxSleep)
+		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxModeSleep.String()))
+		workflow.Sleep(ctx, w.cfg.SandboxModeSleep)
 		return nil
 	}
 

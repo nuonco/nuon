@@ -18,7 +18,7 @@ const (
 )
 
 func (c *cli) registerRunLocal() error {
-	if os.Getenv("RUNNER_ENABLE_LOCAL") != "true" {
+	if os.Getenv("ENV") != "development" {
 		return nil
 	}
 
