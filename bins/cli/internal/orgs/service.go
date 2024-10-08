@@ -22,8 +22,16 @@ func New(apiClient nuon.Client, cfg *config.Config) *Service {
 	}
 }
 
-func (s *Service) setOrgInConfig(ctx context.Context, orgID string) error {
+func (s *Service) setOrgID(ctx context.Context, orgID string) error {
 	s.cfg.Set("org_id", orgID)
+	return s.cfg.WriteConfig()
+}
+
+func (s *Service) unsetOrgID(ctx context.Context) error {
+	s.cfg.Set("install_id", "")
+	s.cfg.Set("app_id", "")
+	s.cfg.Set("org_id", "")
+	pterm.Info.Printfln("current org is now %s", pterm.Green("unset"))
 	return s.cfg.WriteConfig()
 }
 

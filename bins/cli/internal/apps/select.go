@@ -35,7 +35,7 @@ func (s *Service) Select(ctx context.Context, appID string, asJSON bool) error {
 		selectedApp, _ := pterm.DefaultInteractiveSelect.WithOptions(options).Show()
 		app := strings.Split(selectedApp, ":")
 
-		if err := s.setAppInConfig(ctx, strings.ReplaceAll(app[1], " ", "")); err != nil {
+		if err := s.setAppID(ctx, strings.ReplaceAll(app[1], " ", "")); err != nil {
 			return view.Error(err)
 		}
 

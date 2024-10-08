@@ -28,7 +28,7 @@ func (s *Service) Create(ctx context.Context, name string, isSandboxMode bool, a
 			return err
 		}
 		ui.PrintJSON(org)
-		s.setOrgInConfig(ctx, org.ID)
+		s.setOrgID(ctx, org.ID)
 		return err
 	}
 
@@ -60,7 +60,7 @@ func (s *Service) Create(ctx context.Context, name string, isSandboxMode bool, a
 			return view.Fail(errs.NewUserFacing("failed to create org: %s", o.StatusDescription))
 		case o.Status == statusActive:
 			view.Success(fmt.Sprintf("successfully created org %s", o.ID))
-			s.setOrgInConfig(ctx, o.ID)
+			s.setOrgID(ctx, o.ID)
 			return nil
 		default:
 			view.Update(fmt.Sprintf("%s org", o.Status))
