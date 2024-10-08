@@ -21,7 +21,7 @@ func (s *Service) SetCurrent(ctx context.Context, installID string, asJSON bool)
 		return
 	}
 
-	if err := s.setInstallInConfig(ctx, installID); err != nil {
+	if err := s.setInstallID(ctx, installID); err != nil {
 		view.Error(err)
 		return
 	}

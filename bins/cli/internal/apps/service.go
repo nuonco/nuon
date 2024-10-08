@@ -25,8 +25,16 @@ func New(v *validator.Validate, apiClient nuon.Client, cfg *config.Config) *Serv
 	}
 }
 
-func (s *Service) setAppInConfig(ctx context.Context, appID string) error {
+func (s *Service) setAppID(ctx context.Context, appID string) error {
 	s.cfg.Set("app_id", appID)
+	return s.cfg.WriteConfig()
+}
+
+func (s *Service) unsetAppID(ctx context.Context) error {
+	// unset install_id
+	s.cfg.Set("install_id", "")
+	s.cfg.Set("app_id", "")
+	pterm.Info.Printfln("current app is now %s", pterm.Green("unset"))
 	return s.cfg.WriteConfig()
 }
 
@@ -40,6 +48,10 @@ func (s *Service) printNoAppsMsg() {
 
 func (s *Service) printAppNotFoundMsg(id string) {
 	pterm.DefaultBasicText.Printfln("can't find app %s, use %s to view all apps", pterm.Green(id), pterm.LightMagenta("apps list"))
+}
+
+func (s *Service) printAppNotSetMsg() {
+	pterm.DefaultBasicText.Printfln("current app is not set, use %s to set one", pterm.LightMagenta("apps select"))
 }
 
 func (s *Service) notFoundErr(id string) error {

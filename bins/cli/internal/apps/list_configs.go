@@ -10,6 +10,11 @@ import (
 func (s *Service) ListConfigs(ctx context.Context, appID string, asJSON bool) error {
 	view := ui.NewListView()
 
+	if appID == "" {
+		s.printAppNotSetMsg()
+		return nil
+	}
+
 	cfgs, err := s.api.GetAppConfigs(ctx, appID)
 	if err != nil {
 		return view.Error(err)

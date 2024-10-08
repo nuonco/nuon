@@ -54,7 +54,7 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 		selectedInstall, _ := pterm.DefaultInteractiveSelect.WithOptions(options).Show()
 		install := strings.Split(selectedInstall, ":")
 
-		if err := s.setInstallInConfig(ctx, strings.ReplaceAll(install[1], " ", "")); err != nil {
+		if err := s.setInstallID(ctx, strings.ReplaceAll(install[1], " ", "")); err != nil {
 			return view.Error(err)
 		}
 
