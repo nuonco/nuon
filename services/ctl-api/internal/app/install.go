@@ -92,8 +92,9 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	}
 
 	// get the sandbox status
-	if i.SandboxStatus == SandboxRunStatusUnknown || i.SandboxStatus == SandboxRunStatusEmpty {
-		i.SandboxStatus = SandboxRunStatusQueued
+	i.SandboxStatus = SandboxRunStatusQueued
+	if len(i.InstallSandboxRuns) > 0 {
+		i.SandboxStatus = i.InstallSandboxRuns[0].Status
 	}
 
 	// get the composite status of all the components
