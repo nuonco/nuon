@@ -9,6 +9,11 @@ import (
 )
 
 func (s *Service) GetRunnerConfig(ctx context.Context, appID string, asJSON bool) error {
+	if appID == "" {
+		s.printAppNotSetMsg()
+		return nil
+	}
+
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
 		return ui.PrintError(err)

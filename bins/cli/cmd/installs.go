@@ -218,6 +218,17 @@ func (c *cli) installsCmd() *cobra.Command {
 	selectInstallCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter installs by")
 	installsCmds.AddCommand(selectInstallCmd)
 
+	unsetCurrentInstallCmd := &cobra.Command{
+		Use:   "unset-current",
+		Short: "Unset your current install selection",
+		Long:  "Unset your current install selection.",
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.UnsetCurrent(cmd.Context())
+		}),
+	}
+	installsCmds.AddCommand(unsetCurrentInstallCmd)
+
 	reprovisionInstallCmd := &cobra.Command{
 		Use:   "reprovision",
 		Short: "Reproivision install",
