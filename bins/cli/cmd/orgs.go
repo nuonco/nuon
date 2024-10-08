@@ -36,7 +36,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 	healthChecksCmd := &cobra.Command{
 		Use:   "health-checks",
 		Short: "List health checks",
-		Long:  "List recent helath checks for the org you are currently authenticated with",
+		Long:  "List recent health checks for the org you are currently authenticated with",
 		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.ListHealthChecks(cmd.Context(), limit, PrintJSON)
@@ -139,6 +139,17 @@ func (c *cli) orgsCmd() *cobra.Command {
 	}
 	selectOrgCmd.Flags().StringVar(&id, "org", "", "The ID of the org you want to use")
 	orgsCmd.AddCommand(selectOrgCmd)
+
+	deselectOrgCmd := &cobra.Command{
+		Use:   "deselect",
+		Short: "Deselect your current org",
+		Long:  "Deselect your current org",
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.Deselect(cmd.Context())
+		}),
+	}
+	orgsCmd.AddCommand(deselectOrgCmd)
 
 	orgsCmd.AddCommand(&cobra.Command{
 		Use:   "print-config",

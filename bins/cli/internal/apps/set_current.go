@@ -21,7 +21,7 @@ func (s *Service) SetCurrent(ctx context.Context, appID string, asJSON bool) err
 		return err
 	}
 
-	if err := s.setAppInConfig(ctx, appID); err != nil {
+	if err := s.setAppID(ctx, appID); err != nil {
 		return view.Error(err)
 	}
 
