@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
+	"github.com/powertoolsdev/mono/pkg/analytics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
@@ -12,15 +13,17 @@ import (
 )
 
 type Workflows struct {
-	cfg  *internal.Config
-	v    *validator.Validate
-	acts activities.Activities
-	mw   tmetrics.Writer
+	cfg       *internal.Config
+	v         *validator.Validate
+	acts      activities.Activities
+	mw        tmetrics.Writer
+	analytics *analytics.TemporalWriter
 }
 
 func NewWorkflows(v *validator.Validate,
 	cfg *internal.Config,
 	metricsWriter metrics.Writer,
+	analytics *analytics.TemporalWriter,
 ) (*Workflows, error) {
 	tmw, err := tmetrics.New(v,
 		tmetrics.WithMetricsWriter(metricsWriter), tmetrics.WithTags(map[string]string{
@@ -35,7 +38,8 @@ func NewWorkflows(v *validator.Validate,
 		cfg: cfg,
 		v:   v,
 		//  NOTE: this field is only used to be able to fetch activity methods
-		acts: activities.Activities{},
-		mw:   tmw,
+		acts:      activities.Activities{},
+		mw:        tmw,
+		analytics: analytics,
 	}, nil
 }
