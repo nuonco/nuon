@@ -67,7 +67,6 @@ services:
     volumes:
       - ./.dev/fs/volumes/clickhouse-01/etc/clickhouse-server/config.d/config.xml:/etc/clickhouse-server/config.d/config.xml
       - ./.dev/fs/volumes/clickhouse-01/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
-      - ./.dev/fs/volumes/clickhouse-01/etc/clickhouse-server/conf.d/macros0.xml:/etc/clickhouse-server/conf.d/macros.xml
     ports:
       - "127.0.0.1:8123:8123"
       - "127.0.0.1:9000:9000"
@@ -91,7 +90,6 @@ services:
     volumes:
       - ./.dev/fs/volumes/clickhouse-02/etc/clickhouse-server/config.d/config.xml:/etc/clickhouse-server/config.d/config.xml
       - ./.dev/fs/volumes/clickhouse-02/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
-      - ./.dev/fs/volumes/clickhouse-01/etc/clickhouse-server/conf.d/macros1.xml:/etc/clickhouse-server/conf.d/macros.xml
     ports:
       - "127.0.0.1:8124:8123"
       - "127.0.0.1:9001:9000"
@@ -153,9 +151,8 @@ services:
       VITE_CLICKHOUSE_USER: ctl-api
       VITE_CLICKHOUSE_PASS: ctl-api
     depends_on:
-     - clickhouse_0
-     - clickhouse_1
-     - clickhouse_keeper
+     - clickhouse-01
+     - clickhouse-02
 
 volumes:
   postgres:
