@@ -42,8 +42,6 @@ type Org struct {
 	Status            OrgStatus `json:"status" gorm:"notnull" swaggertype:"string"`
 	StatusDescription string    `json:"status_description" gorm:"notnull"`
 
-	// These fields are used to control the behaviour of the org
-	// NOTE: these are starting as nullable, so we can update stage/prod before resetting locally.
 	SandboxMode bool `json:"sandbox_mode" gorm:"notnull"`
 
 	OrgType OrgType `json:"-"`
@@ -52,6 +50,8 @@ type Org struct {
 	NotificationsConfigID string              `json:"-"`
 
 	RunnerGroup RunnerGroup `json:"-" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;"`
+
+	LogoURL string `json:"logo_url"`
 
 	Apps           []App            `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	VCSConnections []VCSConnection  `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
