@@ -22,8 +22,14 @@ func New(apiClient nuon.Client, cfg *config.Config) *Service {
 	}
 }
 
-func (s *Service) setInstallInConfig(ctx context.Context, installID string) error {
+func (s *Service) setInstallID(ctx context.Context, installID string) error {
 	s.cfg.Set("install_id", installID)
+	return s.cfg.WriteConfig()
+}
+
+func (s *Service) unsetInstallID(ctx context.Context) error {
+	s.cfg.Set("install_id", "")
+	pterm.Info.Printfln("current install is now %s", pterm.Green("unset"))
 	return s.cfg.WriteConfig()
 }
 
