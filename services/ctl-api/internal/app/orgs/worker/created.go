@@ -5,6 +5,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/powertoolsdev/mono/pkg/analytics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
@@ -24,5 +25,10 @@ func (w *Workflows) Created(ctx workflow.Context, sreq signals.RequestSignal) er
 		"created_by": org.CreatedBy.Email,
 		"email":      org.CreatedBy.Email,
 	})
+
+	w.analytics.Track(ctx, analytics.OrgCreated, map[string]interface{}{
+		"org_id": org.ID,
+	})
+
 	return nil
 }

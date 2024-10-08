@@ -37,7 +37,7 @@ func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *
 		InviteID: invite.ID,
 	})
 
-	h.analyticsClient.Track(acct.ID, analytics.InviteAccepted, map[string]interface{}{
+	h.analyticsClient.Track(ctx, analytics.InviteAccepted, map[string]interface{}{
 		"invite_id": invite.ID,
 		"email":     invite.Email,
 		"org_id":    invite.OrgID,
