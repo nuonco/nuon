@@ -87,7 +87,7 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioning, "deprovisioning")
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusStarted)
 
-	if install.Org.OrgType != app.OrgTypeV2 {
+	if install.Org.OrgType == app.OrgTypeLegacy {
 		if err := w.deprovisionLegacy(ctx, install, installRun, sandboxMode); err != nil {
 			return err
 		}

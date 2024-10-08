@@ -38,6 +38,7 @@ func (h *Helpers) getInstallDeploy(ctx context.Context, deployID string) (*app.I
 func (h *Helpers) getInstall(ctx context.Context, installID string) (*app.Install, error) {
 	var install app.Install
 	res := h.db.WithContext(ctx).
+		Preload("Org").
 		Preload("CreatedBy").
 		Preload("AppRunnerConfig").
 		Preload("App").

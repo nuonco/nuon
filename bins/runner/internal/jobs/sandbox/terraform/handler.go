@@ -1,6 +1,8 @@
 package terraform
 
 import (
+	"log/slog"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/go-hclog"
 	nuonrunner "github.com/nuonco/nuon-runner-go"
@@ -36,6 +38,7 @@ type HandlerParams struct {
 	ErrRecorder *errs.Recorder
 	Log         *zap.Logger
 	HCLog       hclog.Logger
+	SLog        *slog.Logger `name:"system"`
 }
 
 func New(params HandlerParams) (*handler, error) {

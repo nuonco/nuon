@@ -16,7 +16,7 @@ func (w *Workflows) provisionLegacy(ctx workflow.Context, org *app.Org, sandboxM
 		OrgId:       org.ID,
 		Region:      defaultOrgRegion,
 		Reprovision: false,
-		CustomCert:  org.CustomCert,
+		CustomCert:  false,
 	})
 	if err != nil {
 		w.mw.Event(ctx, &statsd.Event{

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -16,6 +17,7 @@ import (
 // @execution-timeout 20m
 // @task-timeout 10m
 func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal) error {
+	l := workflow.GetLogger(ctx)
 	w.updateStatus(ctx, sreq.ID, app.OrgStatusProvisioning, "reprovisioning organization resources")
 
 	org, err := activities.AwaitGetByOrgID(ctx, sreq.ID)
@@ -25,7 +27,7 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	}
 
 	// NOTE(jm): this will be removed once the runner is in prod and all orgs are migrated.
-	if org.OrgType != app.OrgTypeV2 {
+	if org.OrgType == app.OrgTypeLegacy {
 		if err := w.reprovisionLegacy(ctx, org, sreq.SandboxMode); err != nil {
 			return fmt.Errorf("unable to perform legacy org provision: %w", err)
 		}
@@ -34,14 +36,21 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	}
 
 	// reprovision IAM roles for the org
-	orgIAMReq := &executors.ProvisionIAMRequest{
-		OrgID:       sreq.ID,
-		Reprovision: true,
-	}
-	_, err = executors.AwaitProvisionIAM(ctx, orgIAMReq)
-	if err != nil {
-		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "unable to reprovision iam roles")
-		return fmt.Errorf("unable to reprovision iam roles: %w", err)
+	if org.OrgType == app.OrgTypeDefault {
+		orgIAMReq := &executors.ProvisionIAMRequest{
+			OrgID:       sreq.ID,
+			Reprovision: true,
+		}
+		_, err = executors.AwaitProvisionIAM(ctx, orgIAMReq)
+		if err != nil {
+			w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "unable to reprovision iam roles")
+			return fmt.Errorf("unable to reprovision iam roles: %w", err)
+		}
+	} else {
+		l.Info("skipping await reprovision iam",
+			zap.Any("org_type", org.OrgType),
+			zap.String("org_id", org.ID),
+			zap.String("org_name", org.Name))
 	}
 
 	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{

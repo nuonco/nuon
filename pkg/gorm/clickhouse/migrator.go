@@ -509,6 +509,7 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 			aliases := m.DB.Migrator().GetTypeAliases(realDataType)
 			for _, alias := range aliases {
 				if strings.HasPrefix(fullDataType, alias) {
+					log.Printf("[Migrator.MigrateColumn] [%s] data type is an alias - %s == %s\n", field.DBName, fullDataType, alias)
 					isSameType = true
 					break
 				}
@@ -524,6 +525,7 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 		// check size
 		if length, ok := columnType.Length(); length != int64(field.Size) {
 			if length > 0 && field.Size > 0 {
+				log.Printf("[Migrator.MigrateColumn] [%s] column field.size has changed - %d == %d\n", field.DBName, length, field.Size)
 				alterColumn = true
 			} else {
 				// has size in data type and not equal
@@ -531,6 +533,7 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 				matches2 := regFullDataType.FindAllStringSubmatch(fullDataType, -1)
 				if !field.PrimaryKey &&
 					(len(matches2) == 1 && matches2[0][1] != fmt.Sprint(length) && ok) {
+					log.Printf("[Migrator.MigrateColumn] [%s] column field.size has changed - %d == %s\n", field.DBName, length, matches2[0][1])
 					alterColumn = true
 				}
 			}
@@ -539,6 +542,7 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 		// check precision
 		if precision, _, ok := columnType.DecimalSize(); ok && int64(field.Precision) != precision {
 			if regexp.MustCompile(fmt.Sprintf("[^0-9]%d[^0-9]", field.Precision)).MatchString(m.Migrator.DataTypeOf(field)) {
+				log.Printf("[Migrator.MigrateColumn] [%s] column precision has changed\n", field.DBName)
 				alterColumn = true
 			}
 		}
@@ -548,19 +552,28 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 	if nullable, ok := columnType.Nullable(); ok && nullable == field.NotNull {
 		// not primary key & database is nullable
 		if !field.PrimaryKey && nullable {
+			log.Printf("[Migrator.MigrateColumn] [%s] column should be made nullable\n", field.DBName)
 			alterColumn = true
 		}
 	}
 
 	// check default value
 	if !field.PrimaryKey {
+		// NOTE(fd): clickhouse NOT NULL is the default. A column needs to explicitly set NULL or wrap the col def in Nullable.o
+		// to accept a NULL. as a result, all of the columns have a default value.
+		// as such, in this case, if the dv="", we will do nothing. now, this is an issue. if we explicitly wanted to disallow empty strings,
+		// we'd need to handle them w/ a nullable field. but this is fine for our use-case.
 		currentDefaultNotNull := field.HasDefaultValue && (field.DefaultValueInterface != nil || !strings.EqualFold(field.DefaultValue, "NULL"))
 		dv, dvNotNull := columnType.DefaultValue()
 		if dvNotNull && !currentDefaultNotNull {
 			// default value -> null
-			alterColumn = true
+			log.Printf("[Migrator.MigrateColumn] [%s] dv=%t: default value has changed (\"%s\" -> null) - currentDefaultNotNull=%t dvNotNull=%t\n", field.DBName, field.HasDefaultValue, dv, currentDefaultNotNull, dvNotNull)
+			// explicit override: we do nothing in this case because we do not want to support this mutation
+			log.Printf("[Migrator.MigrateColumn] [%s] politely refusing to alter this column", field.DBName)
+			alterColumn = false
 		} else if !dvNotNull && currentDefaultNotNull {
 			// null -> default value
+			log.Printf("[Migrator.MigrateColumn] [%s] dv=%t: default value has changed (null -> \"%s\") - currentDefaultNotNull=%t dvNotNull=%t\n", field.DBName, field.HasDefaultValue, dv, currentDefaultNotNull, dvNotNull)
 			alterColumn = true
 		} else if currentDefaultNotNull || dvNotNull {
 			switch field.GORMDataType {
@@ -582,11 +595,13 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 	if comment, ok := columnType.Comment(); ok && comment != field.Comment {
 		// not primary key
 		if !field.PrimaryKey {
+			log.Printf("[Migrator.MigrateColumn] [%s] comment has changed\n", field.DBName)
 			alterColumn = true
 		}
 	}
 
 	if alterColumn {
+		log.Printf("[Migrator.MigrateColumn] preparing to alter column \"%s\" although fullDataType != realDataType: \"%s\" != \"%s\"\n", field.DBName, fullDataType, realDataType)
 		if err := m.DB.Migrator().AlterColumn(value, field.DBName); err != nil {
 			return err
 		}

@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
-
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
+	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/utils"
-	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 )
 
 // NOTE(jm): we have to define this here, because the `plogotlp.ExportRequest` type is actually a hidden type and means
@@ -120,16 +120,17 @@ func (s *service) OtelWriteLogs(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
 	// read data into bytes
-	jsonData, err := io.ReadAll(ctx.Request.Body)
+	byts, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
+
 	// unmarshal bytes into ExportRequest
 	// NOTE(fd): this is essentially our validation step. we do not use this object directly otherwise.
 	expreq := plogotlp.NewExportRequest()
-	if err := expreq.UnmarshalJSON(jsonData); err != nil {
-		ctx.Error(fmt.Errorf("unable to marshal request: %w", err))
+	if err := expreq.UnmarshalProto(byts); err != nil {
+		ctx.Error(fmt.Errorf("unable to unmarshal request: %w", err))
 		return
 	}
 
@@ -204,7 +205,6 @@ func (s *service) writeRunnerLogs(ctx context.Context, runnerID string, logs plo
 				logAttrs := log.Attributes()
 
 				otelLogRecords = append(otelLogRecords, app.OtelLogRecord{
-
 					// runner info
 					RunnerID:             runnerID,
 					RunnerJobID:          jobId,

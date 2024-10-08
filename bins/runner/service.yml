@@ -5,17 +5,20 @@ env:
   GIT_REF: local
 
   RUNNER_API_URL: http://localhost:8083
-  SETTINGS_REFRESH_TIMEOUT: 1m
 
   # NOTE: by default, run-local will fetch the first runner from the api and set these for you.
   # 
   # However, if you are working with the runner and testing jobs, you probably want to fetch the runner-id and set it 
   # yourself, so you can use a runner for a specific org or install.
   # RUNNER_ID: <REPLACE-ME>
-
-  RUNNER_ENABLE_LOCAL: "true"
-
   BUNDLE_DIR: "./bundle"
+
+  # enable the log level debug for outputting more information locally for the system logger.
+  #
+  # NOTE(jm): this will not enable all debug output, as the logs are also controlled via the api but for things like 
+  # metrics this is useful.
+  # LOG_LEVEL: DEBUG
+
 
 watch_ignore_dirs: []
 
