@@ -94,28 +94,6 @@ func (s *baseIntegrationTestSuite) createOrg() *models.AppOrg {
 	return org
 }
 
-func (s *baseIntegrationTestSuite) createAppInputConfig(appID string) *models.AppAppInputConfig {
-	group := generics.GetFakeObj[models.ServiceAppGroupRequest]()
-	groupName := generics.GetFakeObj[string]()
-	input := generics.GetFakeObj[models.ServiceAppInputRequest]()
-	input.Group = generics.ToPtr(groupName)
-
-	appReq := &models.ServiceCreateAppInputConfigRequest{
-		Groups: map[string]models.ServiceAppGroupRequest{
-			groupName: group,
-		},
-		Inputs: map[string]models.ServiceAppInputRequest{
-			generics.GetFakeObj[string](): input,
-		},
-	}
-
-	appInputConfig, err := s.apiClient.CreateAppInputConfig(s.ctx, appID, appReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), appInputConfig)
-
-	return appInputConfig
-}
-
 func (s *baseIntegrationTestSuite) fakeInstallInputsForApp(appID string) map[string]string {
 	inputCfg, err := s.apiClient.GetAppInputLatestConfig(s.ctx, appID)
 	require.NoError(s.T(), err)
@@ -239,7 +217,4 @@ func (s *baseIntegrationTestSuite) deleteOrg(orgID string) {
 
 	err := s.intAPIClient.DeleteOrg(s.ctx, orgID)
 	require.NoError(s.T(), err)
-}
-
-func (s *baseIntegrationTestSuite) fakeOtelWriteLogs(runnerID string) {
 }

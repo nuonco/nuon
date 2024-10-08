@@ -5,16 +5,16 @@ import (
 	"testing"
 
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type appsTestSuite struct {
 	baseIntegrationTestSuite
 
 	orgID string
-	appID string
 }
 
 func TestAppsSuite(t *testing.T) {
@@ -84,6 +84,7 @@ func (s *appsTestSuite) TestCreateApp() {
 
 	s.T().Run("allows creating with duplicate name after deleting", func(t *testing.T) {
 		t.Skip("can not test for success after deleting duplicated name because objects are deleted by workers")
+
 		return
 		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
 		appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
@@ -115,14 +116,14 @@ func (s *appsTestSuite) TestGetApp() {
 	require.NotNil(s.T(), app)
 
 	s.T().Run("success", func(t *testing.T) {
-		app, err := s.apiClient.GetApp(s.ctx, app.ID)
+		currentApp, err := s.apiClient.GetApp(s.ctx, app.ID)
 		require.Nil(t, err)
-		require.NotNil(t, app)
+		require.NotNil(t, currentApp)
 	})
 	s.T().Run("success by name", func(t *testing.T) {
-		app, err := s.apiClient.GetApp(s.ctx, app.Name)
+		currentApp, err := s.apiClient.GetApp(s.ctx, app.Name)
 		require.Nil(t, err)
-		require.NotNil(t, app)
+		require.NotNil(t, currentApp)
 	})
 
 	s.T().Run("errors on empty id", func(t *testing.T) {
@@ -189,9 +190,9 @@ func (s *appsTestSuite) TestDeleteApp() {
 		require.True(t, deleted)
 
 		// make sure the app was actually deleted
-		//fetched, err := s.apiClient.GetApp(s.ctx, app.ID)
-		//require.NotNil(t, err)
-		//require.Nil(t, fetched)
+		// fetched, err := s.apiClient.GetApp(s.ctx, app.ID)
+		// require.NotNil(t, err)
+		// require.Nil(t, fetched)
 	})
 
 	s.T().Run("errors on empty id", func(t *testing.T) {

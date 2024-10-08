@@ -6,9 +6,10 @@ import (
 
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type vcsIntegrationTestSuite struct {
@@ -109,12 +110,12 @@ func (s *vcsIntegrationTestSuite) TestGetConnection() {
 	require.NotNil(s.T(), vcs)
 
 	s.T().Run("success", func(t *testing.T) {
-		// add a vcs connection to the org
-		vcs, err := s.apiClient.GetVCSConnection(s.ctx, vcs.ID)
+		// add a currentVCS connection to the org
+		currentVCS, err := s.apiClient.GetVCSConnection(s.ctx, vcs.ID)
 		require.Nil(t, err)
-		require.NotNil(t, vcs)
+		require.NotNil(t, currentVCS)
 
-		require.Equal(t, vcs.GithubInstallID, *(vcsReq.GithubInstallID))
+		require.Equal(t, currentVCS.GithubInstallID, *(vcsReq.GithubInstallID))
 	})
 }
 
