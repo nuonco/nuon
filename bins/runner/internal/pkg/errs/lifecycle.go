@@ -5,19 +5,20 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/powertoolsdev/mono/pkg/errs"
 	"go.uber.org/fx"
+
+	"github.com/powertoolsdev/mono/pkg/errs"
 )
 
 func (r *Recorder) Start() error {
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn: errs.SentryMainDSN,
 		// TODO(sdboyer): come up with a way of inferring from existing context that this is a dev build
-		Environment: r.settings.Env,
-		Tags: map[string]string{
-			"org_id": r.settings.OrgID,
-			"app":    "runner",
-		},
+		//Environment: r.settings.Env,
+		//Tags: map[string]string{
+		//"org_id": r.settings.OrgID,
+		//"app":    "runner",
+		//},
 	})
 	// It's expected that there are places the nuon binary will be executed where it is
 	// not possible to connect to sentry. So we just make a note of whether sentry is active

@@ -21,7 +21,7 @@ func (w *Workflows) reprovisionLegacy(ctx workflow.Context, org *app.Org, sandbo
 		OrgId:       org.ID,
 		Region:      defaultOrgRegion,
 		Reprovision: true,
-		CustomCert:  org.CustomCert,
+		CustomCert:  false,
 	})
 	if err != nil {
 		w.updateStatus(ctx, org.ID, app.OrgStatusError, "unable to reprovision organization resources")

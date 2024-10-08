@@ -82,7 +82,7 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusStarted)
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
 
-	if install.Org.OrgType != app.OrgTypeV2 {
+	if install.Org.OrgType == app.OrgTypeLegacy {
 		if err := w.reprovisionLegacy(ctx, install, installRun, sandboxMode); err != nil {
 			return err
 		}

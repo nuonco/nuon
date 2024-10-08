@@ -13,11 +13,11 @@ type OrgType string
 
 const (
 	OrgTypeSandbox     OrgType = "sandbox"
-	OrgTypeReal        OrgType = "real"
 	OrgTypeIntegration OrgType = "integration"
+	OrgTypeDefault     OrgType = "default"
 
-	// NOTE(jm): eventually, this will be removed, because we will do the same behaviour for each runner
-	OrgTypeV2 = "v2"
+	// Legacy
+	OrgTypeLegacy OrgType = "real"
 )
 
 type OrgStatus string
@@ -45,7 +45,6 @@ type Org struct {
 	// These fields are used to control the behaviour of the org
 	// NOTE: these are starting as nullable, so we can update stage/prod before resetting locally.
 	SandboxMode bool `json:"sandbox_mode" gorm:"notnull"`
-	CustomCert  bool `json:"custom_cert" gorm:"notnull"`
 
 	OrgType OrgType `json:"-"`
 

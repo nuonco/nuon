@@ -2,7 +2,6 @@ package internal
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 
@@ -14,6 +13,7 @@ func init() {
 	config.RegisterDefault("runner_api_url", "https://api.nuon.co")
 	config.RegisterDefault("bundle_dir", "/bundle")
 	config.RegisterDefault("registry_dir", "/tmp/runner-registry")
+	config.RegisterDefault("log_level", "INFO")
 }
 
 type Config struct {
@@ -23,8 +23,6 @@ type Config struct {
 	RunnerAPIURL   string `config:"runner_api_url" validate:"required"`
 	RunnerAPIToken string `config:"runner_api_token" validate:"required"`
 	RunnerID       string `config:"runner_id" validate:"required"`
-
-	SettingsRefreshTimeout time.Duration `config:"settings_refresh_timeout" validate:"required"`
 
 	// observability configuration
 	HostIP   string `config:"host_ip" validate:"required"`

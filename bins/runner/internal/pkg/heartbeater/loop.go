@@ -24,6 +24,8 @@ func (h *HeartBeater) writeHeartBeat(ctx context.Context) error {
 		return err
 	}
 
+	h.mw.Incr("heart_beat.incr", []string{})
+	h.mw.Timing("heart_beat.alive_time", aliveDur, []string{})
 	return nil
 }
 

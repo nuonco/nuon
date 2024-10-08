@@ -2,9 +2,12 @@ package helpers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/sagikazarmark/slog-shim"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
@@ -19,50 +22,16 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 	ctx = middlewares.SetOrgIDContext(ctx, install.OrgID)
 	ctx = middlewares.SetAccountIDContext(ctx, install.CreatedByID)
 
-	rg, err := h.createRunnerGroup(ctx,
-		install.ID,
-		"installs",
-		app.RunnerGroupTypeInstall,
-		install.AppRunnerConfig.Type,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create runner group: %w", err)
-	}
-
-	h.evClient.Send(ctx, rg.Runners[0].ID, &signals.Signal{
-		Type: signals.OperationCreated,
-	})
-
-	return rg, nil
-}
-
-func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.RunnerGroup, error) {
-	ctx = middlewares.SetOrgIDContext(ctx, org.ID)
-	ctx = middlewares.SetAccountIDContext(ctx, org.CreatedByID)
-
-	platform := app.AppRunnerTypeAWSEKS
-	if h.cfg.UseLocalRunners {
+	platform := install.AppRunnerConfig.Type
+	if install.Org.OrgType != app.OrgTypeDefault || h.cfg.UseLocalRunners {
 		platform = app.AppRunnerTypeLocal
 	}
 
-	rg, err := h.createRunnerGroup(ctx, org.ID, "orgs", app.RunnerGroupTypeOrg, platform)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create runner group: %w", err)
-	}
-
-	h.evClient.Send(ctx, rg.Runners[0].ID, &signals.Signal{
-		Type: signals.OperationCreated,
-	})
-
-	return rg, nil
-}
-
-func (h *Helpers) createRunnerGroup(ctx context.Context, ownerID, ownerType string, runnerGroupTyp app.RunnerGroupType, runnerPlatform app.AppRunnerType) (*app.RunnerGroup, error) {
 	runnerGroup := app.RunnerGroup{
-		OwnerID:   ownerID,
-		OwnerType: ownerType,
-		Type:      runnerGroupTyp,
-		Platform:  runnerPlatform,
+		OwnerID:   install.ID,
+		OwnerType: "installs",
+		Type:      app.RunnerGroupTypeInstall,
+		Platform:  install.AppRunnerConfig.Type,
 		Runners: []app.Runner{
 			{
 				Name:              "default",
@@ -72,11 +41,82 @@ func (h *Helpers) createRunnerGroup(ctx context.Context, ownerID, ownerType stri
 			},
 		},
 		Settings: app.RunnerGroupSettings{
-			ContainerImageURL:      h.cfg.RunnerContainerImageURL,
-			ContainerImageTag:      h.cfg.RunnerContainerImageTag,
-			RunnerAPIURL:           h.cfg.RunnerAPIURL,
-			HeartBeatTimeout:       defaultRunnerGroupHeartBeatTimeout,
-			SettingsRefreshTimeout: defaultRunnerGroupSettingsRefreshTimeout,
+			SandboxMode:       install.Org.SandboxMode,
+			ContainerImageURL: h.cfg.RunnerContainerImageURL,
+			ContainerImageTag: h.cfg.RunnerContainerImageTag,
+			RunnerAPIURL:      h.cfg.RunnerAPIURL,
+			HeartBeatTimeout:  defaultRunnerGroupHeartBeatTimeout,
+			EnableLogging:     true,
+			LoggingLevel:      slog.LevelInfo.String(),
+			// NOTE(jm): until we add support for writing metrics via our API, this must be disabled as we
+			// do not guarantee datadog is running in install accounts.
+			EnableMetrics: false,
+			EnableSentry:  true,
+			Metadata: pgtype.Hstore(map[string]*string{
+				"org_id":          generics.ToPtr(install.OrgID),
+				"org_name":        generics.ToPtr(install.Org.Name),
+				"org_type":        generics.ToPtr(string(install.Org.OrgType)),
+				"app_id":          generics.ToPtr(install.AppID),
+				"install_id":      generics.ToPtr(install.ID),
+				"runner_type":     generics.ToPtr(string(app.RunnerGroupTypeInstall)),
+				"runner_platform": generics.ToPtr(string(platform)),
+				"env":             generics.ToPtr(string(h.cfg.Env)),
+			}),
+		},
+	}
+
+	res := h.db.WithContext(ctx).Create(&runnerGroup)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{
+		Type: signals.OperationCreated,
+	})
+
+	return &runnerGroup, nil
+}
+
+func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.RunnerGroup, error) {
+	ctx = middlewares.SetOrgIDContext(ctx, org.ID)
+	ctx = middlewares.SetAccountIDContext(ctx, org.CreatedByID)
+
+	platform := app.AppRunnerTypeAWSEKS
+	if org.OrgType != app.OrgTypeDefault || h.cfg.UseLocalRunners {
+		platform = app.AppRunnerTypeLocal
+	}
+
+	runnerGroup := app.RunnerGroup{
+		OwnerID:   org.ID,
+		OwnerType: "orgs",
+		Type:      app.RunnerGroupTypeOrg,
+		Platform:  platform,
+		Runners: []app.Runner{
+			{
+				Name:              "default",
+				DisplayName:       "Default runner",
+				Status:            app.RunnerStatusPending,
+				StatusDescription: string(app.RunnerStatusPending),
+			},
+		},
+		Settings: app.RunnerGroupSettings{
+			SandboxMode:       org.SandboxMode,
+			ContainerImageURL: h.cfg.RunnerContainerImageURL,
+			ContainerImageTag: h.cfg.RunnerContainerImageTag,
+			RunnerAPIURL:      h.cfg.RunnerAPIURL,
+			HeartBeatTimeout:  defaultRunnerGroupHeartBeatTimeout,
+			EnableLogging:     true,
+			LoggingLevel:      slog.LevelInfo.String(),
+			EnableMetrics:     true,
+			EnableSentry:      true,
+			Metadata: pgtype.Hstore(map[string]*string{
+				"org_id":          generics.ToPtr(org.ID),
+				"org_name":        generics.ToPtr(org.Name),
+				"org_type":        generics.ToPtr(string(org.OrgType)),
+				"runner_type":     generics.ToPtr(string(app.RunnerGroupTypeInstall)),
+				"runner_platform": generics.ToPtr(string(platform)),
+				"env":             generics.ToPtr(string(h.cfg.Env)),
+			}),
 		},
 	}
 	res := h.db.WithContext(ctx).Create(&runnerGroup)
@@ -84,5 +124,8 @@ func (h *Helpers) createRunnerGroup(ctx context.Context, ownerID, ownerType stri
 		return nil, res.Error
 	}
 
+	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{
+		Type: signals.OperationCreated,
+	})
 	return &runnerGroup, nil
 }

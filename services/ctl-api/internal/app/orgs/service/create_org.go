@@ -19,9 +19,7 @@ type CreateOrgRequest struct {
 	Name string `json:"name" validate:"required"`
 
 	// These fields are used to control the behaviour of the org.
-	UseCustomCert  bool `json:"use_custom_cert"`
 	UseSandboxMode bool `json:"use_sandbox_mode"`
-	UseNewRunner   bool `json:"use_new_runner"`
 }
 
 func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
@@ -91,7 +89,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 }
 
 func (s *service) createOrg(ctx context.Context, acct *app.Account, req *CreateOrgRequest) (*app.Org, error) {
-	orgTyp := app.OrgTypeReal
+	orgTyp := app.OrgTypeDefault
 	if req.UseSandboxMode {
 		orgTyp = app.OrgTypeSandbox
 	}
@@ -100,11 +98,6 @@ func (s *service) createOrg(ctx context.Context, acct *app.Account, req *CreateO
 	}
 	if s.cfg.ForceSandboxMode {
 		orgTyp = app.OrgTypeSandbox
-	}
-
-	// NOTE(jm): this will be removed, once we fully roll out the new runner
-	if req.UseNewRunner {
-		orgTyp = app.OrgTypeV2
 	}
 
 	notificationsCfg := app.NotificationsConfig{
@@ -118,7 +111,6 @@ func (s *service) createOrg(ctx context.Context, acct *app.Account, req *CreateO
 		StatusDescription:   "waiting for event loop to start and provision org",
 		SandboxMode:         req.UseSandboxMode,
 		OrgType:             orgTyp,
-		CustomCert:          req.UseCustomCert,
 		NotificationsConfig: notificationsCfg,
 	}
 	if s.cfg.ForceSandboxMode {

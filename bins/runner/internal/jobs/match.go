@@ -11,9 +11,9 @@ func Matches(job *models.AppRunnerJob, handler JobHandler) error {
 		return fmt.Errorf("invalid job type %s", job.Type)
 	}
 
-	//if models.AppRunnerJobStatus(job.Status) != handler.JobStatus() {
-	//return fmt.Errorf("invalid job type %s", job.Type)
-	//}
+	if models.AppRunnerJobStatus(job.Status) != handler.JobStatus() {
+		return fmt.Errorf("invalid job type %s", job.Type)
+	}
 
 	return nil
 }

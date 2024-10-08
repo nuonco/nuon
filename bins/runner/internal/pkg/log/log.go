@@ -21,6 +21,6 @@ func New(cfg *internal.Config) (*zap.Logger, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize logger: %w", err)
 	}
-	zap.ReplaceGlobals(l)
+	// zap.ReplaceGlobals(l)
 	return l, nil
 }
