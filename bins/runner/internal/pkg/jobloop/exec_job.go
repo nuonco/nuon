@@ -5,10 +5,10 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-runner-go/models"
-	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/errs"
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/slog"
 )
 
 type executeJobStep struct {
@@ -21,12 +21,18 @@ type executeJobStep struct {
 }
 
 func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) error {
+	l := slog.DefaultLogger(j.loggerProvider, j.settings, j.cfg, slog.LoggerTypeJob)
+	l = l.With("runner_job_id", job.ID)
+
 	// create an execution in the API
+	l.Info("creating job execution")
 	execution, err := j.apiClient.CreateJobExecution(ctx, job.ID, new(models.ServiceCreateRunnerJobExecutionRequest))
 	if err != nil {
 		return errors.Wrap(err, "unable to create execution")
 	}
+	l = l.With("runner_job_execution_id", execution.ID)
 
+	l.Info("getting job handler")
 	handler, err := j.getHandler(job)
 	if err != nil {
 		if err := j.updateJobExecutionStatus(ctx, job.ID, execution.ID, models.AppRunnerJobExecutionStatusFailed); err != nil {
@@ -36,53 +42,14 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		return err
 	}
 
-	j.l.Info("handling job", zap.String("name", handler.Name()))
-	steps := []*executeJobStep{
-		// validate step
-		{
-			name:        "fetching",
-			fn:          j.executeFetchJobStep,
-			cleanupFn:   nil,
-			handler:     handler,
-			startStatus: models.AppRunnerJobExecutionStatusInitializing,
-		},
-		// validate step
-		{
-			name:        "validate",
-			fn:          j.executeValidateJobStep,
-			cleanupFn:   nil,
-			handler:     handler,
-			startStatus: models.AppRunnerJobExecutionStatusInitializing,
-		},
-		// initialize step
-		{
-			name:        "initialize",
-			fn:          j.executeInitializeJobStep,
-			cleanupFn:   nil,
-			handler:     handler,
-			startStatus: models.AppRunnerJobExecutionStatusInitializing,
-		},
-		// execute step
-		{
-			name:        "execute",
-			fn:          j.executeExecuteJobStep,
-			cleanupFn:   j.cleanupJobStep,
-			handler:     handler,
-			startStatus: models.AppRunnerJobExecutionStatusInDashProgress,
-		},
-		// update clean up
-		{
-			name:        "cleanup",
-			fn:          j.executeCleanupJobStep,
-			cleanupFn:   nil,
-			handler:     handler,
-			startStatus: models.AppRunnerJobExecutionStatusCleaningDashUp,
-		},
+	steps, err := j.getJobSteps(ctx, handler)
+	if err != nil {
+		return errors.Wrap(err, "unable to get job steps")
 	}
 
 	for _, step := range steps {
-		j.l.Info("executing job step", zap.String("step", step.name))
-		if err := j.execJobStep(ctx, step, job, execution); err != nil {
+		l.Info("executing job step", "step", step.name)
+		if err := j.execJobStep(ctx, l, step, job, execution); err != nil {
 			return errs.WithHandlerError(err, j.jobGroup, step.name, job.Type)
 		}
 	}
@@ -91,7 +58,10 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		return errors.Wrap(err, "unable to update job execution status after successful execution")
 	}
 
-	j.l.Info("finished job", zap.String("name", handler.Name()))
+	l.Info("finished job", "name", handler.Name())
+	if err := j.loggerProvider.ForceFlush(ctx); err != nil {
+		return errors.Wrap(err, "unable to flush logger")
+	}
 
 	return nil
 }

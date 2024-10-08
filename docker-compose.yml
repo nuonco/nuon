@@ -23,6 +23,8 @@ services:
 
   # NOTE: when connecting to PSQL, set the host as either host.containers.internal (podman) or host.docker.internal
   # (docker)
+  #
+  # NOTE: since you can not set the connection to the ctl-api automatically, it must be set in the UI once you log in.
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin

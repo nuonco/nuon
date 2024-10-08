@@ -34,7 +34,6 @@ func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, ap
 			URL: runner.RunnerGroup.Settings.ContainerImageURL,
 			Tag: runner.RunnerGroup.Settings.ContainerImageTag,
 		},
-		SettingsRefreshTimeout: runner.RunnerGroup.Settings.SettingsRefreshTimeout,
 	}
 	var resp executors.ProvisionRunnerResponse
 	err = w.execChildWorkflow(ctx, runnerID, executors.ProvisionRunnerWorkflowName, sandboxMode, req, &resp)

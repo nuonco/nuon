@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -13,6 +14,8 @@ import (
 )
 
 func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, op app.RunnerJobOperationType, sandboxMode bool) error {
+	l := workflow.GetLogger(ctx)
+
 	// create an install provision request
 	req, err := w.protos.ToInstallProvisionRequest(install, installRun.ID)
 	if err != nil {
@@ -22,9 +25,15 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 
 	// check permissions
 	var resp executors.CheckPermissionsResponse
-	if err := w.execChildWorkflow(ctx, install.ID, executors.CheckPermissionsWorkflowName, sandboxMode, req, &resp); err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusAccessError, "unable to validate credentials before install "+err.Error())
-		return fmt.Errorf("unable to validate credentials before install: %w", err)
+	if !sandboxMode {
+		if err := w.execChildWorkflow(ctx, install.ID, executors.CheckPermissionsWorkflowName, sandboxMode, req, &resp); err != nil {
+			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusAccessError, "unable to validate credentials before install "+err.Error())
+			return fmt.Errorf("unable to validate credentials before install: %w", err)
+		}
+	} else {
+		l.Info("skipping check permissions",
+			zap.Any("install_id", install.ID),
+			zap.String("org_id", install.OrgID))
 	}
 
 	// create the sandbox plan request
