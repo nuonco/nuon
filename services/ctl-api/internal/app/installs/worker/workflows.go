@@ -6,6 +6,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
 
+	"github.com/powertoolsdev/mono/pkg/analytics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
@@ -17,20 +18,22 @@ import (
 type Params struct {
 	fx.In
 
-	Cfg      *internal.Config
-	V        *validator.Validate
-	Protos   *protos.Adapter
-	MW       metrics.Writer
-	EVClient teventloop.Client
+	Cfg       *internal.Config
+	V         *validator.Validate
+	Protos    *protos.Adapter
+	MW        metrics.Writer
+	EVClient  teventloop.Client
+	Analytics *analytics.TemporalWriter
 }
 
 type Workflows struct {
-	cfg      *internal.Config
-	v        *validator.Validate
-	acts     activities.Activities
-	protos   *protos.Adapter
-	mw       tmetrics.Writer
-	evClient teventloop.Client
+	cfg       *internal.Config
+	v         *validator.Validate
+	acts      activities.Activities
+	protos    *protos.Adapter
+	mw        tmetrics.Writer
+	evClient  teventloop.Client
+	analytics *analytics.TemporalWriter
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {
@@ -50,7 +53,8 @@ func NewWorkflows(params Params) (*Workflows, error) {
 		protos:   params.Protos,
 		evClient: params.EVClient,
 		//  NOTE: this field is only used to be able to fetch activity methods
-		acts: activities.Activities{},
-		mw:   tmw,
+		acts:      activities.Activities{},
+		mw:        tmw,
+		analytics: params.Analytics,
 	}, nil
 }
