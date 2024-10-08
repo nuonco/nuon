@@ -34,20 +34,22 @@ env:
   AUTH0_CLIENT_ID: 7VLjCLy25IQVWx7yMLgp15x5IkXDS6Vr
   INTEGRATION_GITHUB_INSTALL_ID: !!string 41323514
   INTERNAL_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
-
-  # different toggles for sandbox mode and other local tooling
+  SEGMENT_WRITE_KEY: FxvXYu94xEX5iVBQT5VfnVv0aEzKdxz2
+  
+  # The following options are common toggles for configuring local behaviour, and should not be checked in when changed 
+  # (unless you would like to change the default)
   FORCE_SANDBOX_MODE: false
-  SANDBOX_SLEEP: 3s
+  SANDBOX_MODE_SLEEP: 3s
+  # this enables runner usage for sandbox mode
+  SANDBOX_MODE_ENABLE_RUNNERS: true
+  # this forces all runners to be run locally, even when outside sandbox mode
   USE_LOCAL_RUNNERS: true
 
-  # common toggles for local development based on what you are working on
   DISABLE_METRICS: true
   DISABLE_NOTIFICATIONS: true
-  # DB_LOG_QUERIES: true
-  # LOG_LEVEL: "DEBUG"
+  DB_LOG_QUERIES: true
+  LOG_LEVEL: "DEBUG"
 
-  # analytics configuration
-  SEGMENT_WRITE_KEY: FxvXYu94xEX5iVBQT5VfnVv0aEzKdxz2
 
 local_env:
   DB_HOST: localhost

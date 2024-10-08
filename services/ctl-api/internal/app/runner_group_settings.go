@@ -6,6 +6,9 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -23,22 +26,30 @@ type RunnerGroupSettings struct {
 	RunnerGroupID string `json:"runner_group_id" gorm:"index:idx_runner_group_settings,unique"`
 
 	// configuration for deploying the runner
-	ContainerImageURL      string        `json:"container_image_url"  gorm:"default null;not null"`
-	ContainerImageTag      string        `json:"container_image_tag"  gorm:"default null;not null"`
-	RunnerAPIURL           string        `json:"runner_api_url" gorm:"default null;not null"`
-	SettingsRefreshTimeout time.Duration `json:"settings_refresh_timeout" swaggertype:"primitive,integer"`
+	ContainerImageURL string `json:"container_image_url"  gorm:"default null;not null"`
+	ContainerImageTag string `json:"container_image_tag"  gorm:"default null;not null"`
+	RunnerAPIURL      string `json:"runner_api_url" gorm:"default null;not null"`
+
+	// configuration for managing the runner server side
+	SandboxMode bool `json:"sandbox_mode"`
 
 	// Various settings for the runner to handle internally
 	HeartBeatTimeout           time.Duration `json:"heart_beat_timeout" gorm:"default null;" swaggertype:"primitive,integer"`
 	OTELCollectorConfiguration string        `json:"otel_collector_config" gorm:"default null;not null"`
 
-	// Never persisted, populated at runtime from the overall ctl-api settings
-	Env string `json:"env" gorm:"-"`
+	EnableSentry  bool   `json:"enable_sentry"`
+	EnableMetrics bool   `json:"enable_metrics"`
+	EnableLogging bool   `json:"enable_logging"`
+	LoggingLevel  string `json:"logging_level"`
+
+	// Metadata is used as both log and metric tags/attributes in the runner when emitting data
+	Metadata pgtype.Hstore `json:"" gorm:"type:hstore" swaggertype:"object,string"`
 }
 
 func (r *RunnerGroupSettings) BeforeCreate(tx *gorm.DB) error {
 	if r.ID == "" {
 		r.ID = domains.NewRunnerGroupSettingsID()
+		r.Metadata["runner_group_id"] = generics.ToPtr(r.ID)
 	}
 	if r.CreatedByID == "" {
 		r.CreatedByID = createdByIDFromContext(tx.Statement.Context)

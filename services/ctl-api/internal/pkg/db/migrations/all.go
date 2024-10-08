@@ -116,5 +116,21 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "067-drop-runner-job-owner-index",
 			Fn:   a.migration067DropRunnerJobOwnerIndex,
 		},
+		{
+			Name: "068-drop-custom-cert",
+			Fn:   a.migration068DropCustomCert,
+		},
+		{
+			Name: "069-v2-to-default-orgs",
+			Fn:   a.migration069V2ToDefaultOrgs,
+		},
+		{
+			Name: "070-table-sizes-view",
+			Fn:   a.migration070TableSizesView,
+		},
+		{
+			Name: "071-drop-settings-refresh-timeout",
+			Fn:   a.migration071DropSettingsRefreshTimeout,
+		},
 	}
 }

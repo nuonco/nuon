@@ -30,7 +30,10 @@ func init() {
 	config.RegisterDefault("sandbox_artifacts_base_url", "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox")
 
 	// defaults for sandbox mode
-	config.RegisterDefault("sandbox_sleep", "5s")
+	config.RegisterDefault("sandbox_mode_sleep", "5s")
+	// if sandbox_enable_runners is set to true, all jobs require that you process them via a runner, which means
+	// running an org runner during seeding and then install runners, etc.
+	config.RegisterDefault("sandbox_mode_enable_runners", false)
 
 	config.RegisterDefault("installer_base_url", "https://app.stage.nuon.co")
 
@@ -98,8 +101,9 @@ type Config struct {
 	Auth0ClientID  string `config:"auth0_client_id" validate:"required"`
 
 	// flags for controlling the background workers
-	ForceSandboxMode bool          `config:"force_sandbox_mode"`
-	SandboxSleep     time.Duration `config:"sandbox_sleep" validate:"required"`
+	ForceSandboxMode         bool          `config:"force_sandbox_mode"`
+	SandboxModeSleep         time.Duration `config:"sandbox_mode_sleep" validate:"required"`
+	SandboxModeEnableRunners bool          `config:"sandbox_mode_enable_runners"`
 
 	// terraform cloud
 	TFEToken           string `config:"tfe_token" validate:"required"`

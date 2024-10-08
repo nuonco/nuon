@@ -22,8 +22,8 @@ func (w *Workflows) execDeprovisionWorkflow(
 ) (*orgsv1.DeprovisionResponse, error) {
 	if dryRun {
 		l := workflow.GetLogger(ctx)
-		l.Debug("sandbox-mode enabled, sleeping for to mimic deprovisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
-		workflow.Sleep(ctx, w.cfg.SandboxSleep)
+		l.Debug("sandbox-mode enabled, sleeping for to mimic deprovisioning", zap.String("duration", w.cfg.SandboxModeSleep.String()))
+		workflow.Sleep(ctx, w.cfg.SandboxModeSleep)
 		return generics.GetFakeObj[*orgsv1.DeprovisionResponse](), nil
 	}
 
@@ -52,8 +52,8 @@ func (w *Workflows) execDeprovisionIAMWorkflow(
 ) (*iamv1.DeprovisionIAMResponse, error) {
 	if dryRun {
 		l := workflow.GetLogger(ctx)
-		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
-		workflow.Sleep(ctx, w.cfg.SandboxSleep)
+		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxModeSleep.String()))
+		workflow.Sleep(ctx, w.cfg.SandboxModeSleep)
 		return generics.GetFakeObj[*iamv1.DeprovisionIAMResponse](), nil
 	}
 
@@ -82,8 +82,8 @@ func (w *Workflows) execProvisionWorkflow(
 ) (*orgsv1.ProvisionResponse, error) {
 	if dryRun {
 		l := workflow.GetLogger(ctx)
-		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
-		workflow.Sleep(ctx, w.cfg.SandboxSleep)
+		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxModeSleep.String()))
+		workflow.Sleep(ctx, w.cfg.SandboxModeSleep)
 		return generics.GetFakeObj[*orgsv1.ProvisionResponse](), nil
 	}
 

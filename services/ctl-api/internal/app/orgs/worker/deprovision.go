@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -46,6 +47,8 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 }
 
 func (w *Workflows) deprovisionOrg(ctx workflow.Context, orgID string, sandboxMode bool) error {
+	l := workflow.GetLogger(ctx)
+
 	org, err := activities.AwaitGet(ctx, activities.GetRequest{
 		OrgID: orgID,
 	})
@@ -57,7 +60,7 @@ func (w *Workflows) deprovisionOrg(ctx workflow.Context, orgID string, sandboxMo
 	w.updateStatus(ctx, orgID, app.OrgStatusDeprovisioning, "deprovisioning organization resources")
 
 	// NOTE(jm): this will be removed once the runner is in prod and all orgs are migrated.
-	if org.OrgType != app.OrgTypeV2 {
+	if org.OrgType == app.OrgTypeLegacy {
 		if err := w.deprovisionLegacy(ctx, org, sandboxMode); err != nil {
 			return fmt.Errorf("unable to perform legacy org deprovision: %w", err)
 		}
@@ -69,13 +72,19 @@ func (w *Workflows) deprovisionOrg(ctx workflow.Context, orgID string, sandboxMo
 	orgIAMReq := &executors.DeprovisionIAMRequest{
 		OrgID: orgID,
 	}
-	_, err = executors.AwaitDeprovisionIAM(ctx, orgIAMReq)
-	if err != nil {
-		w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to deprovision iam roles")
-		return fmt.Errorf("unable to deprovision iam roles: %w", err)
+	if org.OrgType == app.OrgTypeDefault {
+		_, err = executors.AwaitDeprovisionIAM(ctx, orgIAMReq)
+		if err != nil {
+			w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to deprovision iam roles")
+			return fmt.Errorf("unable to deprovision iam roles: %w", err)
+		}
+	} else {
+		l.Info("skipping await deprovision iam",
+			zap.Any("org_type", org.OrgType),
+			zap.String("org_id", org.ID),
+			zap.String("org_name", org.Name))
 	}
 
-	// TODO(jm): wait until this is deprovisioned
 	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationDeprovision,
 	})

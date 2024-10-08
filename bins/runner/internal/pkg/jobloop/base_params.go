@@ -2,11 +2,14 @@ package jobloop
 
 import (
 	nuonrunner "github.com/nuonco/nuon-runner-go"
+	"go.opentelemetry.io/otel/sdk/log"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/powertoolsdev/mono/bins/runner/internal"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/errs"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
+	"github.com/powertoolsdev/mono/pkg/metrics"
 )
 
 type BaseParams struct {
@@ -16,6 +19,10 @@ type BaseParams struct {
 
 	Client      nuonrunner.Client
 	Settings    *settings.Settings
+	Cfg         *internal.Config
 	L           *zap.Logger
 	ErrRecorder *errs.Recorder
+	MW          metrics.Writer
+
+	LoggerProvider *log.LoggerProvider `name:"job"`
 }

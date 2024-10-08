@@ -5,7 +5,7 @@ import (
 	_ "embed"
 )
 
-//go:embed installs_view_v2.sql
+//go:embed views/installs_view_v2.sql
 var installsViewV2 string
 
 func (a *Migrations) migration060InstallsViewV2(ctx context.Context) error {
