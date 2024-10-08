@@ -22,7 +22,7 @@ func (s *Service) SetCurrent(ctx context.Context, orgID string, asJSON bool) {
 		return
 	}
 
-	if err := s.setOrgInConfig(ctx, orgID); err != nil {
+	if err := s.setOrgID(ctx, orgID); err != nil {
 		view.Error(err)
 		return
 	}

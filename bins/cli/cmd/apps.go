@@ -120,6 +120,17 @@ func (c *cli) appsCmd() *cobra.Command {
 	selectAppCmd.Flags().StringVar(&appID, "app", "", "The ID of the app you want to use")
 	appsCmd.AddCommand(selectAppCmd)
 
+	unsetCurrentAppCmd := &cobra.Command{
+		Use:   "unset-current",
+		Short: "Unset your current app",
+		Long:  "Unset your current app.",
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.UnsetCurrent(cmd.Context())
+		}),
+	}
+	appsCmd.AddCommand(unsetCurrentAppCmd)
+
 	syncCmd := &cobra.Command{
 		Use:               "sync",
 		Short:             "Sync all .nuon.toml config files in the current directory.",

@@ -35,7 +35,7 @@ func (s *Service) Select(ctx context.Context, orgID string, asJSON bool) error {
 		selectedOrg, _ := pterm.DefaultInteractiveSelect.WithOptions(options).Show()
 		org := strings.Split(selectedOrg, ":")
 
-		if err := s.setOrgInConfig(ctx, strings.ReplaceAll(org[1], " ", "")); err != nil {
+		if err := s.setOrgID(ctx, strings.ReplaceAll(org[1], " ", "")); err != nil {
 			return view.Error(err)
 		}
 

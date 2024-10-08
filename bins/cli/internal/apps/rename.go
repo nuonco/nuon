@@ -16,6 +16,11 @@ func (s *Service) Rename(ctx context.Context, appID string, name string, rename,
 	view := ui.NewCreateView("app", asJSON)
 	view.Start()
 
+	if appID == "" {
+		s.printAppNotSetMsg()
+		return nil
+	}
+
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
 		ui.PrintError(err)
