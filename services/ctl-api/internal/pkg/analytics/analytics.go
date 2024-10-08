@@ -9,11 +9,22 @@ import (
 	"go.uber.org/zap"
 )
 
-func New(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (analytics.Client, error) {
-	client, err := analytics.New(cfg.SegmentWriteKey)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create new analytics client: %w", err)
+func NewContextWriter(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (*analytics.ContextWriter, error) {
+	writer := analytics.NewContextWriter(cfg.SegmentWriteKey, l)
+
+	if err := v.Struct(writer); err != nil {
+		return nil, fmt.Errorf("unable to validate analytics context writer: %w", err)
 	}
 
-	return client, nil
+	return writer, nil
+}
+
+func NewTemporalWriter(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (*analytics.TemporalWriter, error) {
+	writer := analytics.NewTemporalWriter(cfg.SegmentWriteKey, l)
+
+	if err := v.Struct(writer); err != nil {
+		return nil, fmt.Errorf("unable to validate analytics context writer: %w", err)
+	}
+
+	return writer, nil
 }

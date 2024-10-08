@@ -58,12 +58,7 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 	})
 	ctx.JSON(http.StatusCreated, invite)
 
-	account, err := middlewares.AccountFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	s.analyticsClient.Track(account.ID, analytics.InviteSent, map[string]interface{}{
+	s.analyticsClient.Track(ctx, analytics.InviteSent, map[string]interface{}{
 		"invite_id": invite.ID,
 		"email":     invite.Email,
 		"org_id":    invite.OrgID,
