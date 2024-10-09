@@ -219,7 +219,9 @@ resource "kubectl_manifest" "clickhouse_installation" {
         # configure to use the zookeeper nodes
         "zookeeper" = {
           "nodes" = [
-            { "host" : "clickhouse-keeper.clickhouse.svc.cluster.local", "port" : 2181 },
+            { "host" : "clickhouse-keeper-0.clickhouse-keeper-headless.clickhouse.svc.cluster.local" },
+            { "host" : "clickhouse-keeper-1.clickhouse-keeper-headless.clickhouse.svc.cluster.local" },
+            { "host" : "clickhouse-keeper-2.clickhouse-keeper-headless.clickhouse.svc.cluster.local" },
           ]
         }
         # add a storage configuration config so we can write to s3. this disk will be used for backups (/backups).
