@@ -35,9 +35,11 @@ env:
   INTEGRATION_GITHUB_INSTALL_ID: !!string 41323514
   INTERNAL_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
   SEGMENT_WRITE_KEY: FxvXYu94xEX5iVBQT5VfnVv0aEzKdxz2
-  
-  # The following options are common toggles for configuring local behaviour, and should not be checked in when changed 
+  DASHBOARD_URL: http://localhost:4000
+
+  # The following options are common toggles for configuring local behaviour, and should not be checked in when changed
   # (unless you would like to change the default)
+
   FORCE_SANDBOX_MODE: false
   SANDBOX_MODE_SLEEP: 3s
   # this enables runner usage for sandbox mode
@@ -49,7 +51,6 @@ env:
   DISABLE_NOTIFICATIONS: true
   DB_LOG_QUERIES: false
   #LOG_LEVEL: "DEBUG"
-
 
 local_env:
   DB_HOST: localhost
