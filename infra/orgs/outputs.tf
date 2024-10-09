@@ -2,14 +2,14 @@
 output "k8s" {
   value = {
     # roles for individual services that grant access to the k8s cluster
-    access_role_arns = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.auth_map_additional_role_arns),
+    access_role_arns = "<deprecated>"
 
     # information needed to access the k8s cluster
-    cluster_id        = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_id),
-    ca_data           = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_certificate_authority_data),
-    public_endpoint   = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_endpoint),
-    oidc_provider_url = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider)
-    oidc_provider_arn = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider_arn)
+    cluster_id        = "<deprectated>"
+    ca_data           = "<deprectated>"
+    public_endpoint   = "<deprectated>"
+    oidc_provider_url = "<deprectated>"
+    oidc_provider_arn = "<deprectated>"
   }
 
 }
