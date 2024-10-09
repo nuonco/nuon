@@ -11,7 +11,7 @@ import (
 )
 
 type OrgsK8sOutputs struct {
-	AccessRoleARNs  map[string]string `mapstructure:"access_role_arns"`
+	AccessRoleARNs  map[string]string `mapstructure:"-"`
 	ClusterID       string            `mapstructure:"cluster_id"`
 	CAData          string            `mapstructure:"ca_data"`
 	PublicEndpoint  string            `mapstructure:"public_endpoint"`
