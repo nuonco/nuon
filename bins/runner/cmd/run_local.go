@@ -13,10 +13,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/api"
 )
 
-const (
-	adminAPIURL string = "http://localhost:8082"
-)
-
 func (c *cli) registerRunLocal() error {
 	if os.Getenv("ENV") != "development" {
 		return nil
@@ -35,6 +31,7 @@ func (c *cli) registerRunLocal() error {
 func (c *cli) runLocalRun(cmd *cobra.Command, _ []string) {
 	runnerID := os.Getenv("RUNNER_ID")
 	runnerAPIToken := os.Getenv("RUNNER_API_TOKEN")
+	adminAPIURL := os.Getenv("INTERNAL_API_URL")
 
 	v := validator.New()
 	ctx := context.Background()
