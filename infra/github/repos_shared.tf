@@ -454,7 +454,8 @@ module "shared-stardog" {
   enable_branch_protection = false
 
   collaborators = {
-    "paulplace" = "push"
+    "paulplace" = "push",
+    "pdmars" = "push"
   }
 
   providers = {
@@ -474,7 +475,8 @@ module "shared-stardog-installer" {
   is_fork                  = true
 
   collaborators = {
-    "paulplace" = "push"
+    "paulplace" = "push",
+    "pdmars" = "push"
   }
 
   providers = {
