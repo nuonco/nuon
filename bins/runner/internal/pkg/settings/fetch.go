@@ -26,5 +26,11 @@ func (s *Settings) fetch(ctx context.Context) error {
 	s.EnableLogging = settings.EnableLogging
 	s.LoggingLevel = level
 
+	// NOTE: we add a few additional fields into the metadata so they appear on all tags, but can not be set by the
+	// API.
+	s.Metadata["runner.id"] = s.cfg.RunnerID
+	s.Metadata["runner.version"] = s.cfg.GitRef
+	s.OtelSchemaURL = s.cfg.RunnerAPIURL
+
 	return nil
 }

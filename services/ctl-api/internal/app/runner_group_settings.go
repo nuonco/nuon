@@ -49,7 +49,7 @@ type RunnerGroupSettings struct {
 func (r *RunnerGroupSettings) BeforeCreate(tx *gorm.DB) error {
 	if r.ID == "" {
 		r.ID = domains.NewRunnerGroupSettingsID()
-		r.Metadata["runner_group_id"] = generics.ToPtr(r.ID)
+		r.Metadata["runner_group.id"] = generics.ToPtr(r.ID)
 	}
 	if r.CreatedByID == "" {
 		r.CreatedByID = createdByIDFromContext(tx.Statement.Context)
