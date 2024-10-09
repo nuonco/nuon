@@ -18,8 +18,7 @@ env_secrets:
   NEXT_PUBLIC_DATADOG_CLIENT_TOKEN:
     name: dashboard-ui-datadog-api-key
     key: datadog_api_key
-watch_ignore:
-  - '\.next'
+disable_watch: true
 local_startup_cmds: []
 local_build_cmds:
   - npm install
