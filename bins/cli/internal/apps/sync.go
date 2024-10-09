@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon-go"
-	"github.com/nuonco/nuon-go/models"
+	"github.com/pterm/pterm"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -18,12 +18,12 @@ import (
 )
 
 const (
-	defaultSyncTimeout time.Duration = time.Minute * 12
-	defaultSyncSleep   time.Duration = time.Second * 20
-	componentBuildStatusError = "error"
-	componentBuildStatusBuilding = "building"
-	componentBuildStatusActive = "active"
-	componentStatusQueued = "queued"
+	defaultSyncTimeout           time.Duration = time.Minute * 12
+	defaultSyncSleep             time.Duration = time.Second * 20
+	componentBuildStatusError                  = "error"
+	componentBuildStatusBuilding               = "building"
+	componentBuildStatusActive                 = "active"
+	componentStatusQueued                      = "queued"
 )
 
 func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
@@ -39,7 +39,8 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	}
 
 	syncer := sync.New(s.api, appID, cfg)
-	if msg, err := syncer.Sync(ctx); err != nil {
+	msg, cmpbuildsScheduled, err := syncer.Sync(ctx)
+	if err != nil {
 		return err
 	} else {
 		if msg != "" {
@@ -49,87 +50,67 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 
 	ui.PrintSuccess("successfully synced " + cfgFile)
 
-	componentIds := syncer.GetComponentStateIds()
-	if len(componentIds) == 0 {
+	if len(cmpbuildsScheduled) == 0 {
 		return nil
 	}
 
 	pollTimeout, cancel := context.WithTimeout(ctx, defaultSyncTimeout)
 	defer cancel()
 
-	ui.PrintLn("waiting for components to build")
+	multi := pterm.DefaultMultiPrinter
+
+	spinnersByComponentID := make(map[string]*pterm.SpinnerPrinter)
+	for _, cmpID := range cmpbuildsScheduled {
+		spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("building component " + cmpID)
+		spinnersByComponentID[cmpID] = spinner
+	}
+
+	multi.Start()
 
 	// NOTE: on updates components are already active and new component_builds records wait to be created.
+	// So we need to wait for the new component_builds to be created before we start to poll.
 	time.Sleep(time.Second * 5)
+
 	for {
 		select {
 		case <-pollTimeout.Done():
 			err = errs.WithUserFacing(err, "timeout waiting for components to build")
 			ui.PrintError(err)
+			for cmpID, spinner := range spinnersByComponentID {
+				spinner.Fail("timeout waiting for component " + cmpID + " to build")
+			}
+			multi.Stop()
 			return err
 		default:
 		}
 
-		finished, err := s.componensBuildsFinished(ctx, appID, componentIds)
-		if finished {
-			ui.PrintSuccess("component builds completed")
-			return nil
+		for cmpID := range spinnersByComponentID {
+			cmpBuild, err := s.api.GetComponentLatestBuild(ctx, cmpID)
+			if err != nil {
+				if nuon.IsNotFound(err) {
+					continue
+				}
+			}
+			if cmpBuild.Status == componentBuildStatusError {
+				spinnersByComponentID[cmpID].Fail("error building component " + cmpID)
+				delete(spinnersByComponentID, cmpID)
+				continue
+			}
+
+			if cmpBuild.Status == componentBuildStatusActive {
+				spinnersByComponentID[cmpID].Success("finished building component " + cmpID)
+				delete(spinnersByComponentID, cmpID)
+				continue
+			}
 		}
 
-		if err != nil {
-			err = errs.WithUserFacing(err, "error waiting for components to build")
-			ui.PrintError(err)
-			return err
+		if len(spinnersByComponentID) == 0 {
+			multi.Stop()
+			return nil
 		}
 
 		time.Sleep(defaultSyncSleep)
 	}
-}
-
-func (s *Service) componensBuildsFinished(ctx context.Context, appID string, componentIDs []string) (bool, error) {
-	components, err := s.api.GetAppComponents(ctx, appID)
-	if err != nil {
-		return false, err
-	}
-
-	cmpByID := make(map[string]*models.AppComponent)
-	for _, cmp := range components {
-		cmpByID[cmp.ID] = cmp
-	}
-
-	allStatusActive := true
-
-	for _, cmpID := range componentIDs {
-		cmp, ok := cmpByID[cmpID]
-		if !ok {
-			return false, errs.NewUserFacing("component not found: %s", cmpID)
-		}
-
-		if cmp.Status == componentStatusQueued {
-			return false, nil
-		}
-
-		cmpBuild, err := s.api.GetComponentLatestBuild(ctx, cmpID)
-		if err != nil {
-			if nuon.IsNotFound(err) {
-				return false, nil
-			}
-
-			return false, err
-		}
-		if cmpBuild.Status == componentBuildStatusError {
-			return false, errs.NewUserFacing("component build encountered an error: %s", cmpBuild.StatusDescription)
-		}
-		if cmpBuild.Status != componentBuildStatusActive {
-			allStatusActive = false
-		}
-	}
-
-	if allStatusActive {
-		return true, nil
-	}
-
-	return false, nil
 }
 
 func (s *Service) Sync(ctx context.Context, all bool, file string) error {
