@@ -22,7 +22,7 @@ type executeJobStep struct {
 
 func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) error {
 	l := slog.DefaultLogger(j.loggerProvider, j.settings, j.cfg, slog.LoggerTypeJob)
-	l = l.With("runner_job_id", job.ID)
+	l = l.With("runner_job.id", job.ID)
 
 	// create an execution in the API
 	l.Info("creating job execution")
@@ -30,7 +30,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	if err != nil {
 		return errors.Wrap(err, "unable to create execution")
 	}
-	l = l.With("runner_job_execution_id", execution.ID)
+	l = l.With("runner_job_execution.id", execution.ID)
 
 	l.Info("getting job handler")
 	handler, err := j.getHandler(job)
