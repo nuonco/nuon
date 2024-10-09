@@ -26,10 +26,11 @@ type OtelMetricSum struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal attributes
-	RunnerID             string `json:"runner_id" `
-	RunnerJobID          string `json:"runner_job_id"`
-	RunnerGroupID        string `json:"runner_group_id"`
-	RunnerJobExecutionID string `json:"runner_job_execution_id"`
+	RunnerID               string `json:"runner_id" `
+	RunnerJobID            string `json:"runner_job_id"`
+	RunnerGroupID          string `json:"runner_group_id"`
+	RunnerJobExecutionID   string `json:"runner_job_execution_id"`
+	RunnerJobExecutionStep string `json:"runner_job_execution_step"`
 
 	// OTEL log message attributes
 	ResourceSchemaURL  string            `json:"resource_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1)"`
@@ -62,7 +63,7 @@ type OtelMetricSum struct {
 }
 
 func (m OtelMetricSum) GetTableOptions() (string, bool) {
-	opts := `ENGINE = ReplicatedMergeTree('/clickhouse/{cluster}/tables/{shard}/otel_metrics_sum', '{replica}')
+	opts := `ENGINE = ReplicatedMergeTree('/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_metrics_sum', '{replica}')
 	TTL toDateTime("time_unix") + toIntervalDay(720)
 	PARTITION BY toDate(time_unix)
 	ORDER BY (service_name, metric_name, attributes, toUnixTimestamp64Nano(time_unix))
@@ -102,10 +103,11 @@ type OtelMetricSumIngestion struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal attributes
-	RunnerID             string `json:"runner_id" `
-	RunnerJobID          string `json:"runner_job_id"`
-	RunnerGroupID        string `json:"runner_group_id"`
-	RunnerJobExecutionID string `json:"runner_job_execution_id"`
+	RunnerID               string `json:"runner_id" `
+	RunnerJobID            string `json:"runner_job_id"`
+	RunnerGroupID          string `json:"runner_group_id"`
+	RunnerJobExecutionID   string `json:"runner_job_execution_id"`
+	RunnerJobExecutionStep string `json:"runner_job_execution_step"`
 
 	// OTEL attributes
 	ResourceAttributes map[string]string `json:"resource_attributes" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1"`

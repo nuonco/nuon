@@ -24,10 +24,11 @@ type OtelLogRecord struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal attributes
-	RunnerID             string `json:"runner_id"`
-	RunnerJobID          string `json:"runner_job_id"`
-	RunnerGroupID        string `json:"runner_group_id"`
-	RunnerJobExecutionID string `json:"runner_job_execution_id"`
+	RunnerID               string `json:"runner_id"`
+	RunnerJobID            string `json:"runner_job_id"`
+	RunnerGroupID          string `json:"runner_group_id"`
+	RunnerJobExecutionID   string `json:"runner_job_execution_id"`
+	RunnerJobExecutionStep string `json:"runner_job_execution_step"`
 
 	// OTEL log message attributes
 	Timestamp          time.Time         `json:"timestamp" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1)"`
@@ -60,7 +61,7 @@ func (r *OtelLogRecord) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (r OtelLogRecord) GetTableOptions() (string, bool) {
-	opts := `ENGINE = ReplicatedMergeTree('/clickhouse/{cluster}/tables/{shard}/otel_log_record', '{replica}')
+	opts := `ENGINE = ReplicatedMergeTree('/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_log_record', '{replica}')
 	PARTITION BY toDate(timestamp_time)
 	PRIMARY KEY (service_name, timestamp_time)
 	ORDER BY (service_name, timestamp_time, timestamp)

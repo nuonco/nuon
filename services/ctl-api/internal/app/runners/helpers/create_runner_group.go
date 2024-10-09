@@ -53,14 +53,16 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 			EnableMetrics: false,
 			EnableSentry:  true,
 			Metadata: pgtype.Hstore(map[string]*string{
-				"org_id":          generics.ToPtr(install.OrgID),
-				"org_name":        generics.ToPtr(install.Org.Name),
-				"org_type":        generics.ToPtr(string(install.Org.OrgType)),
-				"app_id":          generics.ToPtr(install.AppID),
-				"install_id":      generics.ToPtr(install.ID),
-				"runner_type":     generics.ToPtr(string(app.RunnerGroupTypeInstall)),
-				"runner_platform": generics.ToPtr(string(platform)),
+				"org.id":          generics.ToPtr(install.OrgID),
+				"org.name":        generics.ToPtr(install.Org.Name),
+				"org.type":        generics.ToPtr(string(install.Org.OrgType)),
+				"app.id":          generics.ToPtr(install.AppID),
+				"install.id":      generics.ToPtr(install.ID),
+				"runner.type":     generics.ToPtr(string(app.RunnerGroupTypeInstall)),
+				"runner.platform": generics.ToPtr(string(platform)),
 				"env":             generics.ToPtr(string(h.cfg.Env)),
+
+				// NOTE(jm): we also set the runner group at create time
 			}),
 		},
 	}
@@ -110,12 +112,13 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 			EnableMetrics:     true,
 			EnableSentry:      true,
 			Metadata: pgtype.Hstore(map[string]*string{
-				"org_id":          generics.ToPtr(org.ID),
-				"org_name":        generics.ToPtr(org.Name),
-				"org_type":        generics.ToPtr(string(org.OrgType)),
-				"runner_type":     generics.ToPtr(string(app.RunnerGroupTypeInstall)),
-				"runner_platform": generics.ToPtr(string(platform)),
+				"org.id":          generics.ToPtr(org.ID),
+				"org.name":        generics.ToPtr(org.Name),
+				"org.type":        generics.ToPtr(string(org.OrgType)),
+				"runner.type":     generics.ToPtr(string(app.RunnerGroupTypeInstall)),
+				"runner.platform": generics.ToPtr(string(platform)),
 				"env":             generics.ToPtr(string(h.cfg.Env)),
+				// NOTE(jm): we also set the runner group at create time
 			}),
 		},
 	}
