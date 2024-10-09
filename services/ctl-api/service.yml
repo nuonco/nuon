@@ -3,7 +3,7 @@ port: 8081
 type: api
 env:
   # psql db configuration
-  DB_HOST: postgres
+  DB_HOST: localhost
   DB_USER: ctl_api
   DB_NAME: ctl_api
   DB_PASSWORD: password
@@ -52,8 +52,6 @@ env:
   DB_LOG_QUERIES: false
   #LOG_LEVEL: "DEBUG"
 
-local_env:
-  DB_HOST: localhost
 env_secrets:
   GITHUB_APP_KEY:
     name: ctl-api-github-app-key
@@ -76,4 +74,8 @@ local_build_cmds:
 local_cmds:
   - /tmp/svc-ctl-api api
   - /tmp/svc-ctl-api worker --namespace=all
+
 earthly_cmd: server
+earthly_env:
+  DB_HOST: postgres
+  CLICKHOUSE_DB_HOST: clickhouse

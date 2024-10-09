@@ -4,10 +4,8 @@ type: api
 local_only: true
 env:
 env_secrets:
-watch_ignore:
-  - '\.astro'
+disable_watch: true
 local_startup_cmds: []
 local_cmds:
   - npm run dev
 namespace: wiki
-

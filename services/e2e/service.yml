@@ -1,6 +1,4 @@
 ---
-env: {}
-
 # this is a special service, as we use it only locally + in the test case. Thus, we do not want to use either the
 # support role, nor any configmaps in stage (they don't exist)
 local_only: true
@@ -8,7 +6,7 @@ disable_support_role_credentials: true
 
 # when this is running in an actual nuon install, these env vars will be loaded dynamically using helm. However, for
 # testing this locally we set the following hard coded ones to help verify the endpoints
-local_env:
+env:
   # mimic nuon built in vars
   NUON_APP_ID: app-id
   NUON_ORG_ID: org-id
