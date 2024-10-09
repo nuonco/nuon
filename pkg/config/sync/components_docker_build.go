@@ -3,13 +3,14 @@ package sync
 import (
 	"context"
 
+	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, error) {
+func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, string, error) {
 	obj := comp.DockerBuild
 
 	configRequest := &models.ServiceCreateDockerBuildComponentConfigRequest{
@@ -40,10 +41,34 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 
 	configRequest.EnvVars = obj.EnvVarMap
 
-	cfg, err := s.apiClient.CreateDockerBuildComponentConfig(ctx, compID, configRequest)
+	requestChecksum, err := s.getChecksum(configRequest)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return cfg.ID, nil
+	cmpBuild, err := s.apiClient.GetComponentLatestBuild(ctx, compID)
+	if err != nil && !nuon.IsNotFound(err) {
+		return "", "", err
+	}
+
+	doChecksumCompare := true
+	if cmpBuild != nil && cmpBuild.Status == "error" {
+		doChecksumCompare = false
+	}
+
+	if doChecksumCompare {
+		prevComponentState := s.getComponentStateById(compID)
+		if prevComponentState != nil && prevComponentState.Checksum == requestChecksum {
+			return prevComponentState.ConfigID, requestChecksum, nil
+		}
+	}
+
+	cfg, err := s.apiClient.CreateDockerBuildComponentConfig(ctx, compID, configRequest)
+	if err != nil {
+		return "", "", err
+	}
+
+	s.cmpBuildsScheduled = append(s.cmpBuildsScheduled, compID)
+
+	return cfg.ID, requestChecksum, nil
 }

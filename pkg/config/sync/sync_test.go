@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type cfgOptions struct{
-	emptySandbox bool
+type cfgOptions struct {
+	emptySandbox    bool
 	emptyComponents bool
 }
 
@@ -28,22 +28,22 @@ func (e mockNotFoundError) IsCode(code int) bool {
 func (e mockNotFoundError) IsServerError() bool {
 	return false
 }
-func (e mockNotFoundError)  GetPayload() *models.StderrErrResponse {
+func (e mockNotFoundError) GetPayload() *models.StderrErrResponse {
 	return nil
 }
 
 func getTestCfg(options cfgOptions) *config.AppConfig {
 	baseConfg := &config.AppConfig{
-		Version: "v1",
+		Version:     "v1",
 		Description: "description",
 		DisplayName: "displayName",
-		Installer: nil,
+		Installer:   nil,
 		Sandbox: &config.AppSandboxConfig{
 			Source: "source",
 			ConnectedRepo: &config.ConnectedRepoConfig{
-				Repo: "powertools/mono",
+				Repo:      "powertools/mono",
 				Directory: "aws-ecs-byo-vpc",
-				Branch: "main",
+				Branch:    "main",
 			},
 			PublicRepo: nil,
 			VarMap: map[string]string{
@@ -54,27 +54,27 @@ func getTestCfg(options cfgOptions) *config.AppConfig {
 		Inputs: &config.AppInputConfig{
 			Groups: []config.AppInputGroup{
 				{
-					Name: "sandbox",
+					Name:        "sandbox",
 					Description: "Sandbox inputs",
 					DisplayName: "Sandbox inputs",
 				},
 			},
 			Inputs: []config.AppInput{
 				{
-					Name: "vpc_id",
-					Description:  "vpc_id to install application into",
+					Name:        "vpc_id",
+					Description: "vpc_id to install application into",
 					DisplayName: "VPC ID",
-					Required: false,
-					Default: "",
-					Group: "sandbox",
+					Required:    false,
+					Default:     "",
+					Group:       "sandbox",
 				},
 				{
-					Name: "api_key",
-					Description:  "API key",
+					Name:        "api_key",
+					Description: "API key",
 					DisplayName: "API key",
-					Required: true,
-					Default: "",
-					Group: "sandbox",
+					Required:    true,
+					Default:     "",
+					Group:       "sandbox",
 				},
 			},
 		},
@@ -86,8 +86,8 @@ func getTestCfg(options cfgOptions) *config.AppConfig {
 		},
 		Components: []*config.Component{
 			{
-				Name: "terraform1",
-				Type: config.TerraformModuleComponentType,
+				Name:    "terraform1",
+				Type:    config.TerraformModuleComponentType,
 				VarName: "1",
 				TerraformModule: &config.TerraformModuleComponentConfig{
 					TerraformVersion: "0.12",
@@ -98,36 +98,36 @@ func getTestCfg(options cfgOptions) *config.AppConfig {
 						"var": "var",
 					},
 					ConnectedRepo: &config.ConnectedRepoConfig{
-						Repo: "powertools/mono",
+						Repo:      "powertools/mono",
 						Directory: "aws-ecs-byo-vpc",
-						Branch: "main",
+						Branch:    "main",
 					},
 				},
 			},
 			{
-				Name: "helm2",
-				Type: config.HelmChartComponentType,
+				Name:    "helm2",
+				Type:    config.HelmChartComponentType,
 				VarName: "2",
 				HelmChart: &config.HelmChartComponentConfig{
 					ValuesMap: map[string]string{
 						"key": "value",
 					},
 					ConnectedRepo: &config.ConnectedRepoConfig{
-						Repo: "powertools/mono",
+						Repo:      "powertools/mono",
 						Directory: "aws-ecs-byo-vpc",
-						Branch: "main",
+						Branch:    "main",
 					},
 				},
 			},
 			{
-				Name: "docker3",
-				Type: config.DockerBuildComponentType,
+				Name:    "docker3",
+				Type:    config.DockerBuildComponentType,
 				VarName: "3",
 				DockerBuild: &config.DockerBuildComponentConfig{
 					ConnectedRepo: &config.ConnectedRepoConfig{
-						Repo: "powertools/mono",
+						Repo:      "powertools/mono",
 						Directory: "aws-ecs-byo-vpc",
-						Branch: "main",
+						Branch:    "main",
 					},
 					EnvVarMap: map[string]string{
 						"env-var": "env-var",
@@ -150,87 +150,94 @@ func getTestCfg(options cfgOptions) *config.AppConfig {
 
 func getTestAppConfig() *models.AppAppConfig {
 	return &models.AppAppConfig{
-		ID: "appID",
-		OrgID: "orgID",
-		Status: "active",
-		State: "",
+		ID:      "appID",
+		OrgID:   "orgID",
+		Status:  "active",
+		State:   "",
 		Version: 1,
 	}
 }
 
 func TestSync(t *testing.T) {
 	tests := []struct {
-		name string
-		appID string
-		cfg *config.AppConfig
-		err       error
-		existingComponentIDs []string
-		expectedLatestConfig *models.AppAppConfig
-		expectedLatestConfigErr error
-		expectSyncSandBox bool
-		expectSyncInputs bool
-		expectSyncRunner bool
-		expectSyncInstaller bool
-		expectSyncComponents bool
-		expectedMsg	string
-		expectedFinish bool
-
+		name                           string
+		appID                          string
+		cfg                            *config.AppConfig
+		err                            error
+		existingComponentIDs           []string
+		expectedLatestConfig           *models.AppAppConfig
+		expectedLatestConfigErr        error
+		expectSyncSandBox              bool
+		expectSyncInputs               bool
+		expectSyncRunner               bool
+		expectSyncInstaller            bool
+		expectGetComponentLatestBuild bool
+		expectSyncComponents           bool
+		expectedMsg                    string
+		expectCmpBuildScheduled        []string
+		expectedFinish                 bool
 	}{
 		{
-			name: "fails on nil cfg",
+			name:  "fails on nil cfg",
 			appID: "appID",
-			cfg: nil,
+			cfg:   nil,
 			err: SyncInternalErr{
 				Description: "nil config",
-				Err:		 fmt.Errorf("config is nil"),
+				Err:         fmt.Errorf("config is nil"),
 			},
-			expectedLatestConfig: nil,
+			expectedLatestConfig:    nil,
 			expectedLatestConfigErr: nil,
-			expectedMsg: "",
-			expectedFinish: false,
+			expectedMsg:             "",
+			expectCmpBuildScheduled: []string{},
+			expectedFinish:          false,
 		},
 		{
-			name: "fails on nil sandbox",
+			name:  "fails on nil sandbox",
 			appID: "appID",
-			cfg: getTestCfg(cfgOptions{emptySandbox: true, emptyComponents: true}),
+			cfg:   getTestCfg(cfgOptions{emptySandbox: true, emptyComponents: true}),
 			err: SyncAPIErr{
 				Resource: "app-sandbox",
 				Err:      fmt.Errorf("sandbox config is nil"),
 			},
-			expectedLatestConfig: getTestAppConfig(),
+			expectedLatestConfig:    getTestAppConfig(),
 			expectedLatestConfigErr: nil,
-			expectSyncInputs: true,
-			expectedMsg: "",
-			expectedFinish: true,
+			expectSyncInputs:        true,
+			expectedMsg:             "",
+			expectCmpBuildScheduled: []string{},
+			expectedFinish:          true,
 		},
 		{
-			name: "syncs as expected",
-			appID: "appID",
-			cfg: getTestCfg(cfgOptions{emptySandbox: false, emptyComponents: false}),
-			err: nil,
-			expectedLatestConfig: getTestAppConfig(),
+			name:                    "syncs as expected",
+			appID:                   "appID",
+			cfg:                     getTestCfg(cfgOptions{emptySandbox: false, emptyComponents: false}),
+			err:                     nil,
+			expectedLatestConfig:    getTestAppConfig(),
 			expectedLatestConfigErr: nil,
-			expectSyncInputs: true,
-			expectSyncSandBox: true,
-			expectSyncRunner: true,
-			expectSyncInstaller: true,
-			expectedMsg: "",
-			expectedFinish: true,
+			expectSyncInputs:        true,
+			expectSyncSandBox:       true,
+			expectSyncRunner:        true,
+			expectSyncInstaller:     true,
+			expectGetComponentLatestBuild: true,
+			expectedMsg:             "",
+			expectCmpBuildScheduled: []string{"idterraform1", "idhelm2", "iddocker3"},
+			expectedFinish:          true,
 		},
 		{
-			name: "syncs with updated component",
-			appID: "appID",
-			cfg: getTestCfg(cfgOptions{emptySandbox: false, emptyComponents: false}),
-			err: nil,
-			existingComponentIDs: []string{"idterraform1"},
-			expectedLatestConfig: getTestAppConfig(),
+			name:                    "syncs with updated component",
+			appID:                   "appID",
+			cfg:                     getTestCfg(cfgOptions{emptySandbox: false, emptyComponents: false}),
+			err:                     nil,
+			existingComponentIDs:    []string{"idterraform1"},
+			expectedLatestConfig:    getTestAppConfig(),
 			expectedLatestConfigErr: nil,
-			expectSyncInputs: true,
-			expectSyncSandBox: true,
-			expectSyncRunner: true,
-			expectSyncInstaller: true,
-			expectedMsg: "",
-			expectedFinish: true,
+			expectSyncInputs:        true,
+			expectSyncSandBox:       true,
+			expectSyncRunner:        true,
+			expectSyncInstaller:     true,
+			expectGetComponentLatestBuild: true,
+			expectedMsg:             "",
+			expectCmpBuildScheduled: []string{"idterraform1", "idhelm2", "iddocker3"},
+			expectedFinish:          true,
 		},
 	}
 	for _, tt := range tests {
@@ -241,9 +248,10 @@ func TestSync(t *testing.T) {
 
 			defer func() {
 				syncer := New(mockApiClient, tt.appID, tt.cfg)
-				msg, err := syncer.Sync(ctx)
+				msg, cmpBuildsScheduled, err := syncer.Sync(ctx)
 				require.Equal(t, tt.err, err)
 				require.Equal(t, tt.expectedMsg, msg)
+				require.Equal(t, tt.expectCmpBuildScheduled, cmpBuildsScheduled)
 			}()
 
 			if tt.cfg == nil {
@@ -256,19 +264,19 @@ func TestSync(t *testing.T) {
 
 			if tt.expectedLatestConfig != nil {
 				mockApiClient.EXPECT().CreateAppConfig(ctx, tt.appID, gomock.Any()).Return(tt.expectedLatestConfig, tt.expectedLatestConfigErr)
-				mockApiClient.EXPECT().UpdateApp(ctx, tt.appID, gomock.Any()).Return(&models.AppApp{ ID: tt.appID }, nil)
+				mockApiClient.EXPECT().UpdateApp(ctx, tt.appID, gomock.Any()).Return(&models.AppApp{ID: tt.appID}, nil)
 			}
 
 			if tt.expectSyncSandBox {
-				mockApiClient.EXPECT().CreateAppSandboxConfig(ctx, tt.appID, gomock.Any()).Return(&models.AppAppSandboxConfig{ ID: "sandboxId"}, nil)
+				mockApiClient.EXPECT().CreateAppSandboxConfig(ctx, tt.appID, gomock.Any()).Return(&models.AppAppSandboxConfig{ID: "sandboxId"}, nil)
 			}
 
 			if tt.expectSyncInputs {
-				mockApiClient.EXPECT().CreateAppInputConfig(ctx, tt.appID, gomock.Any()).Return(&models.AppAppInputConfig{ ID: "inputId"}, nil)
+				mockApiClient.EXPECT().CreateAppInputConfig(ctx, tt.appID, gomock.Any()).Return(&models.AppAppInputConfig{ID: "inputId"}, nil)
 			}
 
 			if tt.expectSyncRunner {
-				mockApiClient.EXPECT().CreateAppRunnerConfig(ctx, tt.appID, gomock.Any()).Return(&models.AppAppRunnerConfig{ ID: "runnerId"}, nil)
+				mockApiClient.EXPECT().CreateAppRunnerConfig(ctx, tt.appID, gomock.Any()).Return(&models.AppAppRunnerConfig{ID: "runnerId"}, nil)
 			}
 
 			// validate we are syncing dependencies in the correct order
@@ -277,38 +285,43 @@ func TestSync(t *testing.T) {
 			for _, comp := range tt.cfg.Components {
 				mockId := "id" + comp.Name
 				if slices.Contains(tt.existingComponentIDs, mockId) {
-					mockApiClient.EXPECT().GetAppComponent(ctx, tt.appID, comp.Name).Return(&models.AppComponent{ ID: mockId, Type: models.AppComponentType(comp.Type) }, nil)
+					mockApiClient.EXPECT().GetAppComponent(ctx, tt.appID, comp.Name).Return(&models.AppComponent{ID: mockId, Type: models.AppComponentType(comp.Type)}, nil)
 					mockApiClient.EXPECT().UpdateComponent(ctx, mockId, &models.ServiceUpdateComponentRequest{
 						Dependencies: deps,
 						Name:         &comp.Name,
-						VarName: 	comp.VarName,
+						VarName:      comp.VarName,
 					}).Return(nil, nil)
 				} else {
 					mockApiClient.EXPECT().GetAppComponent(ctx, tt.appID, comp.Name).Return(nil, mockNotFoundError{})
-					mockApiClient.EXPECT().CreateComponent(ctx, tt.appID,  &models.ServiceCreateComponentRequest{
+					mockApiClient.EXPECT().CreateComponent(ctx, tt.appID, &models.ServiceCreateComponentRequest{
 						Dependencies: deps,
 						Name:         &comp.Name,
 						VarName:      comp.VarName,
-					}).Return(&models.AppComponent{ ID: mockId}, nil)
+					}).Return(&models.AppComponent{ID: mockId}, nil)
+				}
+				if tt.expectGetComponentLatestBuild {
+					mockApiClient.EXPECT().GetComponentLatestBuild(ctx, mockId).Return(&models.AppComponentBuild{
+						ID: mockId,
+						Status: "active",
+					}, nil)
 				}
 				switch comp.Type {
 				case config.TerraformModuleComponentType:
-					mockApiClient.EXPECT().CreateTerraformModuleComponentConfig(ctx, gomock.Any(), gomock.Any()).Return(&models.AppTerraformModuleComponentConfig{ ID: mockId }, nil)
+					mockApiClient.EXPECT().CreateTerraformModuleComponentConfig(ctx, gomock.Any(), gomock.Any()).Return(&models.AppTerraformModuleComponentConfig{ID: mockId}, nil)
 				case config.HelmChartComponentType:
-					mockApiClient.EXPECT().CreateHelmComponentConfig(ctx, gomock.Any(), gomock.Any()).Return(&models.AppHelmComponentConfig{ ID: mockId }, nil)
+					mockApiClient.EXPECT().CreateHelmComponentConfig(ctx, gomock.Any(), gomock.Any()).Return(&models.AppHelmComponentConfig{ID: mockId}, nil)
 				case config.DockerBuildComponentType:
-					mockApiClient.EXPECT().CreateDockerBuildComponentConfig(ctx, gomock.Any(), gomock.Any()).Return(&models.AppDockerBuildComponentConfig{ ID: mockId }, nil)
+					mockApiClient.EXPECT().CreateDockerBuildComponentConfig(ctx, gomock.Any(), gomock.Any()).Return(&models.AppDockerBuildComponentConfig{ID: mockId}, nil)
 				case config.JobComponentType:
-					mockApiClient.EXPECT().CreateJobComponentConfig(ctx, gomock.Any(), gomock.Any()).Return(&models.AppJobComponentConfig{ ID: mockId }, nil)
+					mockApiClient.EXPECT().CreateJobComponentConfig(ctx, gomock.Any(), gomock.Any()).Return(&models.AppJobComponentConfig{ID: mockId}, nil)
 				case config.ExternalImageComponentType:
-					mockApiClient.EXPECT().CreateExternalImageComponentConfig(ctx, gomock.Any(), gomock.Any()).Return(&models.AppExternalImageComponentConfig{ ID: mockId }, nil)
+					mockApiClient.EXPECT().CreateExternalImageComponentConfig(ctx, gomock.Any(), gomock.Any()).Return(&models.AppExternalImageComponentConfig{ID: mockId}, nil)
 				}
 				deps = []string{mockId}
 			}
-			
 
 			if tt.expectedFinish {
-				mockApiClient.EXPECT().UpdateAppConfig(ctx, tt.appID, tt.expectedLatestConfig.ID, gomock.Any()).Return(&models.AppAppConfig{ ID: tt.appID }, nil)
+				mockApiClient.EXPECT().UpdateAppConfig(ctx, tt.appID, tt.expectedLatestConfig.ID, gomock.Any()).Return(&models.AppAppConfig{ID: tt.appID}, nil)
 			}
 		})
 	}
