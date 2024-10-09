@@ -100,6 +100,8 @@ type Config struct {
 	Auth0Audience  string `config:"auth0_audience" validate:"required"`
 	Auth0ClientID  string `config:"auth0_client_id" validate:"required"`
 
+	DashboardURL string `config:"dashboard_url" validate:"required"`
+
 	// flags for controlling the background workers
 	ForceSandboxMode         bool          `config:"force_sandbox_mode"`
 	SandboxModeSleep         time.Duration `config:"sandbox_mode_sleep" validate:"required"`

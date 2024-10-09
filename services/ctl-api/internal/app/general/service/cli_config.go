@@ -10,6 +10,7 @@ type CLIConfig struct {
 	AuthDomain   string `json:"auth_domain"`
 	AuthClientID string `json:"auth_client_id"`
 	AuthAudience string `json:"auth_audience"`
+	DashboardUrl string `json:"dashboard_url"`
 }
 
 // @ID GetCLIConfig
@@ -30,5 +31,6 @@ func (s *service) GetCLIConfig(ctx *gin.Context) {
 		AuthDomain:   s.cfg.Auth0IssuerURL,
 		AuthClientID: s.cfg.Auth0ClientID,
 		AuthAudience: s.cfg.Auth0Audience,
+		DashboardUrl: s.cfg.DashboardURL,
 	})
 }
