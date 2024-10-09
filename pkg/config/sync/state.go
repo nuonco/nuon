@@ -17,6 +17,7 @@ type componentState struct {
 	ID       string                  `json:"id"`
 	ConfigID string                  `json:"config_id"`
 	Type     models.AppComponentType `json:"type"`
+	Checksum string                  `json:"checksum"`
 }
 
 type state struct {
@@ -29,6 +30,16 @@ type state struct {
 	SandboxConfigID string           `json:"sandbox_config_id"`
 	InputConfigID   string           `json:"input_config_id"`
 	ComponentIDs    []componentState `json:"components"`
+}
+
+func (s *sync) getComponentStateById(id string) *componentState {
+	for _, comp := range s.prevState.ComponentIDs {
+		if comp.ID == id {
+			return &comp
+		}
+	}
+
+	return nil
 }
 
 func (s *sync) fetchState(ctx context.Context) error {

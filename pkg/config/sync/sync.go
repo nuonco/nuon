@@ -17,6 +17,8 @@ type sync struct {
 
 	state     *state
 	prevState *state
+
+	cmpBuildsScheduled []string
 }
 
 type syncStep struct {
@@ -24,22 +26,23 @@ type syncStep struct {
 	Method   func(context.Context) error
 }
 
-func (s *sync) Sync(ctx context.Context) (string, error) {
+func (s *sync) Sync(ctx context.Context) (string, []string, error) {
+	s.cmpBuildsScheduled = make([]string, 0)
 	if s.cfg == nil {
-		return "", SyncInternalErr{
+		return "", s.cmpBuildsScheduled, SyncInternalErr{
 			Description: "nil config",
-			Err:		 fmt.Errorf("config is nil"),
+			Err:         fmt.Errorf("config is nil"),
 		}
 	}
 	if err := s.fetchState(ctx); err != nil {
-		return "", SyncInternalErr{
+		return "", s.cmpBuildsScheduled, SyncInternalErr{
 			Description: "unable to fetch state",
 			Err:         err,
 		}
 	}
 
 	if err := s.start(ctx); err != nil {
-		return "", SyncInternalErr{
+		return "", s.cmpBuildsScheduled, SyncInternalErr{
 			Description: "unable to start sync",
 			Err:         err,
 		}
@@ -47,18 +50,18 @@ func (s *sync) Sync(ctx context.Context) (string, error) {
 
 	steps, err := s.syncSteps()
 	if err != nil {
-		return "", err
+		return "", s.cmpBuildsScheduled, err
 	}
 
 	// sync steps
 	for _, step := range steps {
 		if err := s.syncStep(ctx, step); err != nil {
-			return "", err
+			return "", s.cmpBuildsScheduled, err
 		}
 	}
 
 	if err := s.finish(ctx); err != nil {
-		return "", SyncInternalErr{
+		return "", s.cmpBuildsScheduled, SyncInternalErr{
 			Description: "unable to update config status after syncing",
 			Err:         err,
 		}
@@ -66,7 +69,7 @@ func (s *sync) Sync(ctx context.Context) (string, error) {
 
 	msg := s.notifyOrphanedComponents()
 
-	return msg, nil
+	return msg, s.cmpBuildsScheduled, nil
 }
 
 func (s *sync) GetComponentStateIds() []string {
