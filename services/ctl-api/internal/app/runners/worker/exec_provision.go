@@ -42,6 +42,7 @@ func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, ap
 		return fmt.Errorf("unable to provision runner: %w", err)
 	}
 
+	w.updateStatus(ctx, runnerID, app.RunnerStatusActive, "runner is active and ready to process jobs")
 	return nil
 }
 
