@@ -35,11 +35,8 @@ func init() {
 	// running an org runner during seeding and then install runners, etc.
 	config.RegisterDefault("sandbox_mode_enable_runners", false)
 
-	config.RegisterDefault("installer_base_url", "https://app.stage.nuon.co")
-
 	// runner defaults
 	config.RegisterDefault("runner_container_image_url", "public.ecr.aws/p7e3r5y0/runner")
-	config.RegisterDefault("runner_container_image_tag", "latest")
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
 }
 
