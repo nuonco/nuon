@@ -12,6 +12,10 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
+type SyncComponentConfigResponse struct {
+	CfgID, RequestChecksum string
+}
+
 func (s *sync) getComponent(ctx context.Context, name string, typ models.AppComponentType) (*models.AppComponent, error) {
 	comp, err := s.apiClient.GetAppComponent(ctx, s.appID, name)
 	if err != nil {
@@ -28,11 +32,11 @@ func (s *sync) getComponent(ctx context.Context, name string, typ models.AppComp
 	return comp, nil
 }
 
-func (s *sync) syncComponentConfig(ctx context.Context, comp *config.Component, resource, compID string) (string, error) {
+func (s *sync) syncComponentConfig(ctx context.Context, comp *config.Component, resource, compID string) (SyncComponentConfigResponse, error) {
 	// TODO(jm): this method can now use the Parse method to get an actual component object, simplifying the map
 	// decoding everywhere in this package.
 
-	methods := map[models.AppComponentType]func(context.Context, string, string, *config.Component) (string, error){
+	methods := map[models.AppComponentType]func(context.Context, string, string, *config.Component) (string, string, error){
 		models.AppComponentTypeHelmChart:       s.createHelmChartComponentConfig,
 		models.AppComponentTypeTerraformModule: s.createTerraformModuleComponentConfig,
 		models.AppComponentTypeDockerBuild:     s.createDockerBuildComponentConfig,
@@ -41,21 +45,30 @@ func (s *sync) syncComponentConfig(ctx context.Context, comp *config.Component, 
 	}
 	method, ok := methods[comp.Type.APIType()]
 	if !ok {
-		return "", SyncErr{
-			Resource:    resource,
-			Description: fmt.Sprintf("invalid type %s", comp.Type),
-		}
+		return SyncComponentConfigResponse{
+				CfgID:           "",
+				RequestChecksum: "",
+			}, SyncErr{
+				Resource:    resource,
+				Description: fmt.Sprintf("invalid type %s", comp.Type),
+			}
 	}
 
-	cfgID, err := method(ctx, resource, compID, comp)
+	cfgID, requestChecksum, err := method(ctx, resource, compID, comp)
 	if err != nil {
-		return "", SyncAPIErr{
-			Resource: resource,
-			Err:      err,
-		}
+		return SyncComponentConfigResponse{
+				CfgID:           "",
+				RequestChecksum: "",
+			}, SyncAPIErr{
+				Resource: resource,
+				Err:      err,
+			}
 	}
 
-	return cfgID, nil
+	return SyncComponentConfigResponse{
+		CfgID:           cfgID,
+		RequestChecksum: requestChecksum,
+	}, nil
 }
 
 func (s *sync) cleanupComponent(ctx context.Context, compID string) {
@@ -72,7 +85,7 @@ func (s *sync) notifyOrphanedComponents() string {
 		currentStateIDs = append(currentStateIDs, compState.ID)
 	}
 	detectedOrphaned := false
-	for _, prevCompState:= range s.prevState.ComponentIDs {
+	for _, prevCompState := range s.prevState.ComponentIDs {
 		if !slices.Contains(currentStateIDs, prevCompState.ID) {
 			if !detectedOrphaned {
 				msg += "Existing component(s) are no longer defined in the config:\n"
@@ -125,7 +138,7 @@ func (s *sync) syncComponent(ctx context.Context, resource string, comp *config.
 		}
 	}
 
-	cfgID, err := s.syncComponentConfig(ctx, comp, resource, apiComp.ID)
+	resp, err := s.syncComponentConfig(ctx, comp, resource, apiComp.ID)
 	if err != nil {
 		if isNew {
 			s.cleanupComponent(ctx, apiComp.ID)
@@ -138,7 +151,9 @@ func (s *sync) syncComponent(ctx context.Context, resource string, comp *config.
 		Name:     apiComp.Name,
 		Type:     comp.Type.APIType(),
 		ID:       apiComp.ID,
-		ConfigID: cfgID,
+		ConfigID: resp.CfgID,
+		Checksum: resp.RequestChecksum,
 	})
+
 	return apiComp.ID, nil
 }
