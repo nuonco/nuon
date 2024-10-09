@@ -7,62 +7,17 @@ import (
 	"net/http"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/utils"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/otel"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/collector/pdata/ptrace/ptraceotlp"
 )
 
-// NOTE(jm): we have to define this here, because the `ptraceotlp.ExportRequest` type is actually a hidden type and
-// means we would have to define this otherwise.
-//
-// Instead, we use https://mholt.github.io/json-to-go/ to generate the types from the example JSON in the OTEL examples
-// here: https://github.com/open-telemetry/opentelemetry-proto/blob/main/examples/trace.json
-type OTLPTraceExportRequest struct {
-	ResourceSpans []struct {
-		Resource struct {
-			Attributes []struct {
-				Key   string `json:"key"`
-				Value struct {
-					StringValue string `json:"stringValue"`
-				} `json:"value"`
-			} `json:"attributes"`
-		} `json:"resource"`
-		ScopeSpans []struct {
-			Scope struct {
-				Name       string `json:"name"`
-				Version    string `json:"version"`
-				Attributes []struct {
-					Key   string `json:"key"`
-					Value struct {
-						StringValue string `json:"stringValue"`
-					} `json:"value"`
-				} `json:"attributes"`
-			} `json:"scope"`
-			Spans []struct {
-				TraceID           string `json:"traceId"`
-				SpanID            string `json:"spanId"`
-				ParentSpanID      string `json:"parentSpanId"`
-				Name              string `json:"name"`
-				StartTimeUnixNano string `json:"startTimeUnixNano"`
-				EndTimeUnixNano   string `json:"endTimeUnixNano"`
-				Kind              int    `json:"kind"`
-				Attributes        []struct {
-					Key   string `json:"key"`
-					Value struct {
-						StringValue string `json:"stringValue"`
-					} `json:"value"`
-				} `json:"attributes"`
-			} `json:"spans"`
-		} `json:"scopeSpans"`
-	} `json:"resourceSpans"`
-}
-
 // @ID RunnerOtelWriteTraces
 // @Summary	runner write traces
 // @Description.markdown runner_otel_write_traces.md
 // @Param			runner_id	path	string	true	"runner ID"
-// @Param			req				body	OTLPTraceExportRequest true	"Input"
+// @Param			req				body	otel.OTLPTraceExportRequest true	"Input"
 // @Tags runners/runner
 // @Accept			json
 // @Produce		json
@@ -109,33 +64,13 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 
 		resourceAttributes := trace.Resource().Attributes()
 		resourceAttrs := resourceAttributes
+		resourceAttrsMap := otel.AttributesToMap(resourceAttrs)
 		resourceSchemaUrl := trace.SchemaUrl()
 
 		var serviceName string
 		val, ok := resourceAttributes.Get("service.name")
 		if ok {
 			serviceName = val.AsString()
-		}
-
-		// NOTE(fd): this is a nuon convention.
-		var jobId string
-		jobIdVal, ok := resourceAttributes.Get("runner_job.id")
-		if ok {
-			jobId = jobIdVal.AsString()
-		}
-
-		// NOTE(fd): this is a nuon convention.
-		var runnerGroupId string
-		runnerGroupIdVal, ok := resourceAttributes.Get("runner_group.id")
-		if ok {
-			runnerGroupId = runnerGroupIdVal.AsString()
-		}
-
-		// NOTE(fd): this is a nuon convention.
-		var runnerJobExecutionId string
-		runnerJobExecutionVal, ok := resourceAttributes.Get("runner_job_execution.id")
-		if ok {
-			runnerJobExecutionId = runnerJobExecutionVal.AsString()
 		}
 
 		scopeSpans := trace.ScopeSpans()
@@ -153,20 +88,21 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 				endtimestamp := trace.EndTimestamp().AsTime()
 				duration := endtimestamp.Unix() - timestamp.Unix()
 				traceAttrs := trace.Attributes()
+				traceAttrsMap := otel.AttributesToMap(traceAttrs)
 
-				eventTimes, eventNames, _ := utils.ConvertEvents(trace.Events())
+				eventTimes, eventNames, _ := otel.ConvertEvents(trace.Events())
 				eventsAttrs := make([]map[string]string, trace.Events().Len())
 
 				for i = 0; i < trace.Events().Len(); i++ {
 					event := trace.Events().At(i)
-					eventsAttrs[i] = utils.AttributesToMap(event.Attributes())
+					eventsAttrs[i] = otel.AttributesToMap(event.Attributes())
 				}
 
-				linksTraceIDs, linksSpanIDs, linksTraceStates, _ := utils.ConvertLinks(trace.Links())
+				linksTraceIDs, linksSpanIDs, linksTraceStates, _ := otel.ConvertLinks(trace.Links())
 				linksAttrs := make([]map[string]string, trace.Links().Len())
 				for i = 0; i < trace.Links().Len(); i++ {
 					link := trace.Links().At(i)
-					linksAttrs[i] = utils.AttributesToMap(link.Attributes())
+					linksAttrs[i] = otel.AttributesToMap(link.Attributes())
 				}
 
 				obj := app.OtelTraceIngestion{
@@ -176,10 +112,11 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 					// this would enable some nifty views/filtering.
 
 					// runner info
-					RunnerID:             runnerID,
-					RunnerJobID:          jobId,
-					RunnerGroupID:        runnerGroupId,
-					RunnerJobExecutionID: runnerJobExecutionId,
+					RunnerID:               runnerID,
+					RunnerGroupID:          resourceAttrsMap["runner_group.id"],
+					RunnerJobID:            traceAttrsMap["runner_job.id"],
+					RunnerJobExecutionID:   traceAttrsMap["runner_job_execution.id"],
+					RunnerJobExecutionStep: traceAttrsMap["runner_job_execution_step.name"],
 
 					// topmatter
 					Timestamp:     timestamp,
@@ -187,14 +124,14 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 					TimestampDate: timestamp, // the gorm model struct sets these to zero so we must be explici
 
 					// from resource
-					ResourceAttributes: utils.AttributesToMap(resourceAttrs),
+					ResourceAttributes: resourceAttrsMap,
 					ResourceSchemaURL:  resourceSchemaUrl,
 
 					// from scope
 					ScopeSchemaURL:  scopeSchemaUrl,
 					ScopeName:       scopeName,
 					ScopeVersion:    scopeVersion,
-					ScopeAttributes: utils.AttributesToMap(scopeAttrs),
+					ScopeAttributes: otel.AttributesToMap(scopeAttrs),
 
 					TraceID:          trace.TraceID().String(),
 					SpanID:           trace.SpanID().String(),
@@ -203,7 +140,7 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 					SpanName:         trace.Name(),
 					SpanKind:         trace.Kind().String(),
 					ServiceName:      serviceName,
-					SpanAttributes:   utils.AttributesToMap(traceAttrs),
+					SpanAttributes:   otel.AttributesToMap(traceAttrs),
 					Duration:         duration,
 					StatusCode:       trace.Status().Code().String(),
 					StatusMessage:    trace.Status().Message(),

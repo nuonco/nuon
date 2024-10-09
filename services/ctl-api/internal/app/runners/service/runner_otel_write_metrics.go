@@ -6,53 +6,13 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/utils"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/otel"
 
+	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
 )
-
-// NOTE(jm): we have to define this here, because the `pmetricotlp.ExportRequest` type is actually a hidden type and
-// means we would have to define this otherwise.
-//
-// Instead, we use https://mholt.github.io/json-to-go/ to generate the types from the example JSON in the OTEL examples
-// here: https://opentelemetry.io/docs/specs/otel/protocol/file-exporter/#examples
-type OTLPMetricExportRequest struct {
-	ResourceMetrics []struct {
-		Resource struct {
-			Attributes []struct {
-				Key   string `json:"key"`
-				Value struct {
-					StringValue string `json:"stringValue"`
-				} `json:"value"`
-			} `json:"attributes"`
-		} `json:"resource"`
-		ScopeMetrics []struct {
-			Scope   struct{} `json:"scope"`
-			Metrics []struct {
-				Name string `json:"name"`
-				Unit string `json:"unit"`
-				Sum  struct {
-					DataPoints []struct {
-						Attributes []struct {
-							Key   string `json:"key"`
-							Value struct {
-								StringValue string `json:"stringValue"`
-							} `json:"value"`
-						} `json:"attributes"`
-						StartTimeUnixNano string `json:"startTimeUnixNano"`
-						TimeUnixNano      string `json:"timeUnixNano"`
-						AsInt             string `json:"asInt"`
-					} `json:"dataPoints"`
-					AggregationTemporality int  `json:"aggregationTemporality"`
-					IsMonotonic            bool `json:"isMonotonic"`
-				} `json:"sum"`
-			} `json:"metrics"`
-		} `json:"scopeMetrics"`
-	} `json:"resourceMetrics"`
-}
 
 // @ID RunnerOtelWriteMetrics
 // @Summary	runner write metrics
@@ -116,6 +76,8 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 		metrics := metricsSlice.At(i)
 
 		resAttr := metrics.Resource().Attributes()
+		resourceAttrsMap := otel.AttributesToMap(resAttr)
+
 		resourceSchemaUrl := metrics.SchemaUrl()
 
 		// NOTE(fd): this is a well established convention.
@@ -123,20 +85,6 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 		snVal, ok := resAttr.Get("service.name")
 		if ok {
 			serviceName = snVal.AsString()
-		}
-
-		// NOTE(fd): this is a nuon convention.
-		var jobId string
-		jobIdVal, ok := resAttr.Get("runner_job.id")
-		if ok {
-			jobId = jobIdVal.AsString()
-		}
-
-		// NOTE(fd): this is a nuon convention.
-		var runnerGroupId string
-		runnerGroupIdVal, ok := resAttr.Get("runner_group.id")
-		if ok {
-			runnerGroupId = runnerGroupIdVal.AsString()
 		}
 
 		// NOTE(fd): this is a nuon convention.
@@ -151,6 +99,7 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 		for j := 0; j < scopeMetrics.Len(); j++ {
 			rs := scopeMetrics.At(j).Metrics()
 			scopeInstr := scopeMetrics.At(j).Scope()
+			scopeAttrMap := otel.AttributesToMap(scopeInstr.Attributes())
 			scopeURL := scopeMetrics.At(j).SchemaUrl()
 
 			for k := 0; k < rs.Len(); k++ {
@@ -160,19 +109,21 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 				case pmetric.MetricTypeGauge:
 					for l := 0; l < r.Gauge().DataPoints().Len(); l++ {
 						dp := r.Gauge().DataPoints().At(i)
-						attrs, times, values, traceIDs, spanIDs := utils.ConvertExemplars(dp.Exemplars())
+						dpAttrs := otel.AttributesToMap(dp.Attributes())
+						attrs, times, values, traceIDs, spanIDs := otel.ConvertExemplars(dp.Exemplars())
 						gaugeMetrics = append(gaugeMetrics, app.OtelMetricGaugeIngestion{
-							RunnerID:             runnerID,
-							RunnerJobID:          jobId,
-							RunnerGroupID:        runnerGroupId,
-							RunnerJobExecutionID: runnerJobExecutionId,
+							RunnerID:               runnerID,
+							RunnerGroupID:          resourceAttrsMap["runner_group.id"],
+							RunnerJobID:            dpAttrs["runner_job.id"],
+							RunnerJobExecutionID:   dpAttrs["runner_job_execution.id"],
+							RunnerJobExecutionStep: dpAttrs["runner_job_execution_step.name"],
 
-							ResourceAttributes: utils.AttributesToMap(resAttr),
+							ResourceAttributes: resourceAttrsMap,
 							ResourceSchemaURL:  resourceSchemaUrl,
 
 							ScopeName:             scopeInstr.Name(),
 							ScopeVersion:          scopeInstr.Version(),
-							ScopeAttributes:       utils.AttributesToMap(scopeInstr.Attributes()),
+							ScopeAttributes:       scopeAttrMap,
 							ScopeDroppedAttrCount: int(scopeInstr.DroppedAttributesCount()),
 							ScopeSchemaURL:        scopeURL,
 
@@ -184,7 +135,7 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 
 							StartTimeUnix: dp.StartTimestamp().AsTime(),
 							TimeUnix:      dp.Timestamp().AsTime(),
-							Value:         utils.GetValue(dp.IntValue(), dp.DoubleValue(), dp.ValueType()),
+							Value:         otel.GetValue(dp.IntValue(), dp.DoubleValue(), dp.ValueType()),
 							Flags:         uint32(dp.Flags()),
 
 							ExemplarsFilteredAttributes: attrs,
@@ -197,19 +148,21 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 				case pmetric.MetricTypeSum:
 					for l := 0; l < r.Sum().DataPoints().Len(); l++ {
 						dp := r.Sum().DataPoints().At(i)
-						attrs, times, values, traceIDs, spanIDs := utils.ConvertExemplars(dp.Exemplars())
+						dpAttrs := otel.AttributesToMap(dp.Attributes())
+						attrs, times, values, traceIDs, spanIDs := otel.ConvertExemplars(dp.Exemplars())
 						sumMetrics = append(sumMetrics, app.OtelMetricSumIngestion{
-							RunnerID:             runnerID,
-							RunnerJobID:          jobId,
-							RunnerGroupID:        runnerGroupId,
-							RunnerJobExecutionID: runnerJobExecutionId,
+							RunnerID:               runnerID,
+							RunnerGroupID:          resourceAttrsMap["runner_group.id"],
+							RunnerJobID:            dpAttrs["runner_job.id"],
+							RunnerJobExecutionID:   dpAttrs["runner_job_execution.id"],
+							RunnerJobExecutionStep: dpAttrs["runner_job_execution_step.name"],
 
-							ResourceAttributes: utils.AttributesToMap(resAttr),
+							ResourceAttributes: otel.AttributesToMap(resAttr),
 							ResourceSchemaURL:  resourceSchemaUrl,
 
 							ScopeName:             scopeInstr.Name(),
 							ScopeVersion:          scopeInstr.Version(),
-							ScopeAttributes:       utils.AttributesToMap(scopeInstr.Attributes()),
+							ScopeAttributes:       otel.AttributesToMap(scopeInstr.Attributes()),
 							ScopeDroppedAttrCount: int(scopeInstr.DroppedAttributesCount()),
 							ScopeSchemaURL:        scopeURL,
 
@@ -221,7 +174,7 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 
 							StartTimeUnix: dp.StartTimestamp().AsTime(),
 							TimeUnix:      dp.Timestamp().AsTime(),
-							Value:         utils.GetValue(dp.IntValue(), dp.DoubleValue(), dp.ValueType()),
+							Value:         otel.GetValue(dp.IntValue(), dp.DoubleValue(), dp.ValueType()),
 							Flags:         uint32(dp.Flags()),
 
 							IsMonotonic: r.Sum().IsMonotonic(),
@@ -237,19 +190,21 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 				case pmetric.MetricTypeHistogram:
 					for l := 0; l < r.Histogram().DataPoints().Len(); l++ {
 						dp := r.Histogram().DataPoints().At(i)
-						attrs, times, values, traceIDs, spanIDs := utils.ConvertExemplars(dp.Exemplars())
+						dpAttrs := otel.AttributesToMap(dp.Attributes())
+						attrs, times, values, traceIDs, spanIDs := otel.ConvertExemplars(dp.Exemplars())
 						histogramMetrics = append(histogramMetrics, app.OtelMetricHistogramIngestion{
-							RunnerID:             runnerID,
-							RunnerJobID:          jobId,
-							RunnerGroupID:        runnerGroupId,
-							RunnerJobExecutionID: runnerJobExecutionId,
+							RunnerID:               runnerID,
+							RunnerGroupID:          resourceAttrsMap["runner_group.id"],
+							RunnerJobID:            dpAttrs["runner_job.id"],
+							RunnerJobExecutionID:   dpAttrs["runner_job_execution.id"],
+							RunnerJobExecutionStep: dpAttrs["runner_job_execution_step.name"],
 
-							ResourceAttributes: utils.AttributesToMap(resAttr),
+							ResourceAttributes: otel.AttributesToMap(resAttr),
 							ResourceSchemaURL:  resourceSchemaUrl,
 
 							ScopeName:             scopeInstr.Name(),
 							ScopeVersion:          scopeInstr.Version(),
-							ScopeAttributes:       utils.AttributesToMap(scopeInstr.Attributes()),
+							ScopeAttributes:       otel.AttributesToMap(scopeInstr.Attributes()),
 							ScopeDroppedAttrCount: uint32(scopeInstr.DroppedAttributesCount()),
 							ScopeSchemaURL:        scopeURL,
 
@@ -264,8 +219,8 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 
 							Count:          dp.Count(),
 							Sum:            dp.Sum(),
-							BucketsCount:   utils.ConvertSliceToArraySet(dp.BucketCounts().AsRaw()),
-							ExplicitBounds: utils.ConvertSliceToArraySet(dp.ExplicitBounds().AsRaw()),
+							BucketsCount:   otel.ConvertSliceToArraySet(dp.BucketCounts().AsRaw()),
+							ExplicitBounds: otel.ConvertSliceToArraySet(dp.ExplicitBounds().AsRaw()),
 
 							Flags: uint32(dp.Flags()),
 							Min:   dp.Min(),
@@ -283,19 +238,21 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 				case pmetric.MetricTypeExponentialHistogram:
 					for l := 0; l < r.ExponentialHistogram().DataPoints().Len(); l++ {
 						dp := r.ExponentialHistogram().DataPoints().At(l)
-						attrs, times, values, traceIDs, spanIDs := utils.ConvertExemplars(dp.Exemplars())
+						dpAttrs := otel.AttributesToMap(dp.Attributes())
+						attrs, times, values, traceIDs, spanIDs := otel.ConvertExemplars(dp.Exemplars())
 						exponentialHistogramMetrics = append(exponentialHistogramMetrics, app.OtelMetricExponentialHistogramIngestion{
-							RunnerID:             runnerID,
-							RunnerJobID:          jobId,
-							RunnerGroupID:        runnerGroupId,
-							RunnerJobExecutionID: runnerJobExecutionId,
+							RunnerID:               runnerID,
+							RunnerGroupID:          resourceAttrsMap["runner_group.id"],
+							RunnerJobID:            dpAttrs["runner_job.id"],
+							RunnerJobExecutionID:   dpAttrs["runner_job_execution.id"],
+							RunnerJobExecutionStep: dpAttrs["runner_job_execution_step.name"],
 
-							ResourceAttributes: utils.AttributesToMap(resAttr),
+							ResourceAttributes: otel.AttributesToMap(resAttr),
 							ResourceSchemaURL:  resourceSchemaUrl,
 
 							ScopeName:             scopeInstr.Name(),
 							ScopeVersion:          scopeInstr.Version(),
-							ScopeAttributes:       utils.AttributesToMap(scopeInstr.Attributes()),
+							ScopeAttributes:       otel.AttributesToMap(scopeInstr.Attributes()),
 							ScopeDroppedAttrCount: uint32(scopeInstr.DroppedAttributesCount()),
 							ScopeSchemaURL:        scopeURL,
 
@@ -314,9 +271,9 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 							Scale:                dp.Scale(),
 							ZeroCount:            dp.ZeroCount(),
 							PositiveOffset:       dp.Positive().Offset(),
-							PositiveBucketCounts: utils.ConvertSliceToArraySet(dp.Positive().BucketCounts().AsRaw()),
+							PositiveBucketCounts: otel.ConvertSliceToArraySet(dp.Positive().BucketCounts().AsRaw()),
 							NegativeOffset:       dp.Negative().Offset(),
-							NegativeBucketCounts: utils.ConvertSliceToArraySet(dp.Negative().BucketCounts().AsRaw()),
+							NegativeBucketCounts: otel.ConvertSliceToArraySet(dp.Negative().BucketCounts().AsRaw()),
 
 							Flags: uint32(dp.Flags()),
 							Min:   dp.Min(),
@@ -334,19 +291,21 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 				case pmetric.MetricTypeSummary:
 					for l := 0; l < r.Summary().DataPoints().Len(); l++ {
 						dp := r.Summary().DataPoints().At(l)
-						quantiles, values := utils.ConvertValueAtQuantile(dp.QuantileValues())
+						dpAttrs := otel.AttributesToMap(dp.Attributes())
+						quantiles, values := otel.ConvertValueAtQuantile(dp.QuantileValues())
 						summaryMetrics = append(summaryMetrics, app.OtelMetricSummaryIngestion{
-							RunnerID:             runnerID,
-							RunnerJobID:          jobId,
-							RunnerGroupID:        runnerGroupId,
-							RunnerJobExecutionID: runnerJobExecutionId,
+							RunnerID:               runnerID,
+							RunnerGroupID:          resourceAttrsMap["runner_group.id"],
+							RunnerJobID:            dpAttrs["runner_job.id"],
+							RunnerJobExecutionID:   dpAttrs["runner_job_execution.id"],
+							RunnerJobExecutionStep: dpAttrs["runner_job_execution_step.name"],
 
-							ResourceAttributes: utils.AttributesToMap(resAttr),
+							ResourceAttributes: otel.AttributesToMap(resAttr),
 							ResourceSchemaURL:  resourceSchemaUrl,
 
 							ScopeName:             scopeInstr.Name(),
 							ScopeVersion:          scopeInstr.Version(),
-							ScopeAttributes:       utils.AttributesToMap(scopeInstr.Attributes()),
+							ScopeAttributes:       otel.AttributesToMap(scopeInstr.Attributes()),
 							ScopeDroppedAttrCount: int(scopeInstr.DroppedAttributesCount()),
 							ScopeSchemaURL:        scopeURL,
 

@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"os"
 
+	"go.uber.org/fx"
+
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/sdk/log"
-	"go.uber.org/fx"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
@@ -51,8 +52,10 @@ func NewJobProvider(params Params) (*log.LoggerProvider, error) {
 		return nil, fmt.Errorf("unable to initialize otlp log exporter: %w", err)
 	}
 
+	rsrc := getResource(params.Settings)
 	// Create the logger provider
 	lp := log.NewLoggerProvider(
+		log.WithResource(rsrc),
 		log.WithProcessor(
 			log.NewBatchProcessor(logExporter),
 		),
