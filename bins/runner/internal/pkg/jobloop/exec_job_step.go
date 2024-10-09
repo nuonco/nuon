@@ -32,6 +32,7 @@ func (j *jobLoop) errToStatus(err error) models.AppRunnerJobExecutionStatus {
 }
 
 func (j *jobLoop) execJobStep(ctx context.Context, l *slog.Logger, step *executeJobStep, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	l = l.With("runner_job_execution_step.name", step.name)
 	startTS := time.Now()
 	tags := metrics.ToTags(map[string]string{})
 

@@ -25,6 +25,7 @@ type Settings struct {
 	// visibility settings
 	EnableLogging bool
 	LoggingLevel  slog.Level `validate:"required"`
+	OtelSchemaURL string
 	EnableMetrics bool
 	EnableSentry  bool
 
@@ -37,6 +38,7 @@ type Settings struct {
 
 	apiClient nuonrunner.Client
 	l         *zap.Logger
+	cfg       *internal.Config
 }
 
 type Params struct {
@@ -50,6 +52,7 @@ type Params struct {
 func New(params Params) (*Settings, error) {
 	settings := &Settings{
 		apiClient: params.APIClient,
+		cfg:       params.Cfg,
 	}
 
 	// NOTE(jm): in order to allow the settings type to be used to configure _other_ dependencies, we must

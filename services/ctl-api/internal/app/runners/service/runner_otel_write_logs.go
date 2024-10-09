@@ -6,104 +6,18 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-
-	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
-
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/utils"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/otel"
+
+	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 )
-
-// NOTE(jm): we have to define this here, because the `plogotlp.ExportRequest` type is actually a hidden type and means
-// we would have to define this otherwise.
-//
-// Instead, we use https://mholt.github.io/json-to-go/ to generate the types from the example JSON in the OTEL examples
-// here: https://github.com/open-telemetry/opentelemetry-proto/blob/main/examples/logs.json#L67
-
-// NOTE(fd): Attributes can be key, and StringValue, IntValue, BoolValue, ArrayValue, KeylistValue, etc.
-// this struct is not used for validation of incoming or outgoing data, it is just used in our API docs.
-// validation takes place when we unmarsal the json w/ expreq.UnmarshalJSON.
-
-type Attribute struct {
-	Key   string `json:"key"`
-	Value struct {
-		StringValue string `json:"stringValue"`
-	} `json:"value,omitempty"`
-	Value0 struct {
-		BoolValue bool `json:"boolValue"`
-	} `json:"value,omitempty"`
-	Value1 struct {
-		IntValue string `json:"intValue"`
-	} `json:"value,omitempty"`
-	Value2 struct {
-		DoubleValue float64 `json:"doubleValue"`
-	} `json:"value,omitempty"`
-	Value3 struct {
-		ArrayValue struct {
-			Values []struct {
-				StringValue string `json:"stringValue"`
-			} `json:"values"`
-		} `json:"arrayValue"`
-	} `json:"value,omitempty"`
-	Value4 struct {
-		KvlistValue struct {
-			Values []struct {
-				Key   string `json:"key"`
-				Value struct {
-					StringValue string `json:"stringValue"`
-				} `json:"value"`
-			} `json:"values"`
-		} `json:"kvlistValue"`
-	} `json:"value,omitempty"`
-}
-type Resource struct {
-	Attributes []Attribute `json:"attributes"`
-}
-
-type Scope struct {
-	Name                   string      `json:"name,omitempty"`
-	Version                string      `json:"version,omitempty"`
-	Attributes             []Attribute `json:"attributes,omitempty"`
-	DroppedAttributesCount uint32      `json:"droppedAttributesCount,omitempty"`
-}
-
-type Body struct {
-	StringValue string `json:"stringValue"`
-}
-
-type OTLPLogExportRequest struct {
-	ResourceLogs []struct {
-		Resource  `json:"resource"`
-		ScopeLogs []struct {
-			SchemaURL  string `json:"schemaUrl,omitempty"`
-			Scope      Scope  `json:"scope"`
-			LogRecords []struct {
-				TimeUnixNano           string      `json:"timeUnixNano"`
-				SeverityNumber         int         `json:"severityNumber"`
-				SeverityText           string      `json:"severityText"`
-				ServiceName            string      `json:"serviceName"`
-				Flags                  int         `json:"flags,omitempty"`
-				DroppedAttributesCount int         `json:"droppedAttributesCount"`
-				TraceID                string      `json:"traceId"`
-				SpanID                 string      `json:"spanId"`
-				Body                   Body        `json:"body"`
-				Attributes             []Attribute `json:"attributes"`
-			} `json:"logRecords"`
-		} `json:"scopeLogs"`
-	} `json:"resourceLogs"`
-}
-
-// NOTE(jm): we have to define this here, because the `plogotlp.ExportRequest` type is actually a hidden type and means
-// we would have to define this otherwise.
-//
-// Instead, we use https://mholt.github.io/json-to-go/ to generate the types from the example JSON in the OTEL examples
-// here: https://opentelemetry.io/docs/specs/otel/protocol/file-exporter/#examples
 
 // @ID RunnerOtelWriteLogs
 // @Summary	runner write logs
 // @Description.markdown runner_otel_write_logs.md
 // @Param			runner_id	path	string	true	"runner ID"
-// @Param			req				body	OTLPLogExportRequest true	"Input"
+// @Param			req				body	otel.OTLPLogExportRequest true	"Input"
 // @Tags runners/runner
 // @Accept			json
 // @Produce		json
@@ -160,6 +74,7 @@ func (s *service) writeRunnerLogs(ctx context.Context, runnerID string, logs plo
 
 		resourceAttributes := log.Resource().Attributes()
 		resourceAttrs := resourceAttributes
+		resourceAttrsMap := otel.AttributesToMap(resourceAttrs)
 		resourceSchemaUrl := log.SchemaUrl()
 
 		// NOTE(fd): this is a well established convention.
@@ -169,32 +84,12 @@ func (s *service) writeRunnerLogs(ctx context.Context, runnerID string, logs plo
 			serviceName = snVal.AsString()
 		}
 
-		// NOTE(fd): this is a nuon convention.
-		var jobId string
-		jobIdVal, ok := resourceAttributes.Get("runner_job.id")
-		if ok {
-			jobId = jobIdVal.AsString()
-		}
-
-		// NOTE(fd): this is a nuon convention.
-		var runnerGroupId string
-		runnerGroupIdVal, ok := resourceAttributes.Get("runner_group.id")
-		if ok {
-			runnerGroupId = runnerGroupIdVal.AsString()
-		}
-
-		// NOTE(fd): this is a nuon convention.
-		var runnerJobExecutionId string
-		runnerJobExecutionVal, ok := resourceAttributes.Get("runner_job_execution.id")
-		if ok {
-			runnerJobExecutionId = runnerJobExecutionVal.AsString()
-		}
-
 		scopeLogs := log.ScopeLogs()
 
 		for j := 0; j < scopeLogs.Len(); j++ {
 			scopeLog := scopeLogs.At(j)
 			scopeAttrs := scopeLog.Scope().Attributes()
+			scopeAttrMap := otel.AttributesToMap(scopeAttrs)
 			scopeName := scopeLog.Scope().Name()
 			scopeVersion := scopeLog.Scope().Version()
 			scopeSchemaUrl := scopeLog.SchemaUrl()
@@ -203,35 +98,38 @@ func (s *service) writeRunnerLogs(ctx context.Context, runnerID string, logs plo
 				log := logRecords.At(k)
 				timestamp := log.Timestamp().AsTime()
 				logAttrs := log.Attributes()
+				logAttributesMap := otel.AttributesToMap(logAttrs)
 
 				otelLogRecords = append(otelLogRecords, app.OtelLogRecord{
 					// runner info
-					RunnerID:             runnerID,
-					RunnerJobID:          jobId,
-					RunnerGroupID:        runnerGroupId,
-					RunnerJobExecutionID: runnerJobExecutionId,
+					// NOTE(fd): these locations are a convention
+					RunnerID:               runnerID,
+					RunnerGroupID:          resourceAttrsMap["runner_group.id"],
+					RunnerJobID:            logAttributesMap["runner_job.id"],
+					RunnerJobExecutionID:   logAttributesMap["runner_job_execution.id"],
+					RunnerJobExecutionStep: logAttributesMap["runner_job_execution_step.name"],
 
 					// from resource
-					ResourceAttributes: utils.AttributesToMap(resourceAttrs),
+					ResourceAttributes: otel.AttributesToMap(resourceAttrs),
 					ResourceSchemaURL:  resourceSchemaUrl,
 
 					// from scope
 					ScopeSchemaURL:  scopeSchemaUrl,
 					ScopeName:       scopeName,
 					ScopeVersion:    scopeVersion,
-					ScopeAttributes: utils.AttributesToMap(scopeAttrs),
+					ScopeAttributes: scopeAttrMap,
 
 					Timestamp:      timestamp,
 					TimestampTime:  timestamp, // the gorm model struct sets these to zero so we must be explici
 					TimestampDate:  timestamp, // the gorm model struct sets these to zero so we must be explici
 					ServiceName:    serviceName,
 					SeverityNumber: int(log.SeverityNumber()),
-					SeverityText:   log.SeverityText(),
+					SeverityText:   log.SeverityNumber().String(),
 					Body:           log.Body().AsString(),
 					TraceID:        log.TraceID().String(),
 					SpanID:         log.SpanID().String(),
 					TraceFlags:     int(log.Flags()),
-					LogAttributes:  utils.AttributesToMap(logAttrs),
+					LogAttributes:  logAttributesMap,
 				})
 			}
 		}
