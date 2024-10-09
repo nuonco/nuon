@@ -46,6 +46,10 @@ build:
     SAVE ARTIFACT bin/runner /runner
     SAVE IMAGE --push $GHCR_IMAGE:build
 
+bundle:
+    COPY ./bundle /bundle
+    SAVE ARTIFACT /bundle
+
 artifacts:
     FROM +code
 
