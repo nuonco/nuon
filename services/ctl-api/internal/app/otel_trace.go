@@ -31,10 +31,11 @@ type OtelTrace struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal attributes
-	RunnerID             string `json:"runner_id" `
-	RunnerJobID          string `json:"runner_job_id"`
-	RunnerGroupID        string `json:"runner_group_id"`
-	RunnerJobExecutionID string `json:"runner_job_execution_id"`
+	RunnerID               string `json:"runner_id" `
+	RunnerJobID            string `json:"runner_job_id"`
+	RunnerGroupID          string `json:"runner_group_id"`
+	RunnerJobExecutionID   string `json:"runner_job_execution_id"`
+	RunnerJobExecutionStep string `json:"runner_job_execution_step"`
 
 	// OTEL log trace attributes
 	Timestamp     time.Time `json:"timestamp" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1);"`
@@ -69,7 +70,7 @@ type OtelTrace struct {
 }
 
 func (r OtelTrace) GetTableOptions() (string, bool) {
-	opts := `ENGINE = ReplicatedMergeTree('/clickhouse/{cluster}/tables/{shard}/otel_traces', '{replica}')
+	opts := `ENGINE = ReplicatedMergeTree('/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_traces', '{replica}')
 	TTL toDateTime("timestamp") + toIntervalDay(720)
 	PARTITION BY toDate(timestamp)
 	ORDER BY (service_name, span_name, toUnixTimestamp(timestamp), trace_id)
@@ -106,10 +107,11 @@ type OtelTraceIngestion struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal attributes
-	RunnerID             string `json:"runner_id" `
-	RunnerJobID          string `json:"runner_job_id"`
-	RunnerGroupID        string `json:"runner_group_id"`
-	RunnerJobExecutionID string `json:"runner_job_execution_id"`
+	RunnerID               string `json:"runner_id" `
+	RunnerJobID            string `json:"runner_job_id"`
+	RunnerGroupID          string `json:"runner_group_id"`
+	RunnerJobExecutionID   string `json:"runner_job_execution_id"`
+	RunnerJobExecutionStep string `json:"runner_job_execution_step"`
 
 	// OTEL log trace attributes
 	Timestamp     time.Time `json:"timestamp" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1);"`
