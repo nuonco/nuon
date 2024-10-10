@@ -132,5 +132,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "071-drop-settings-refresh-timeout",
 			Fn:   a.migration071DropSettingsRefreshTimeout,
 		},
+		{
+			Name: "072-runner-settings-group-view",
+			Fn:   a.migration072RunnerSettings,
+		},
 	}
 }
