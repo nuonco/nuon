@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
@@ -53,6 +54,9 @@ func (s *service) getAllInstalls(ctx context.Context, limitVal int, orgTyp strin
 		Preload("App").
 		Preload("App.Org").
 		Preload("App.AppSandboxConfigs").
+		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_sandbox_runs.created_at DESC")
+		}).
 		Joins("JOIN apps ON apps.id=installs_view_v3.app_id").
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Where("org_type = ?", orgTyp).

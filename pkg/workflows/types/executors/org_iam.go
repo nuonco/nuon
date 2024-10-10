@@ -29,7 +29,7 @@ type ProvisionIAMRequest struct {
 type ProvisionIAMResponse struct {
 	DeploymentsRoleArn   string
 	InstallationsRoleArn string
-	OdrRoleArn           string
+	RunnerRoleArn     string
 	InstancesRoleArn     string
 	InstallerRoleArn     string
 	OrgsRoleArn          string

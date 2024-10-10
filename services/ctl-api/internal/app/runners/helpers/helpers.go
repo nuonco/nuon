@@ -7,6 +7,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 )
 
 type Params struct {
@@ -19,10 +20,11 @@ type Params struct {
 }
 
 type Helpers struct {
-	v        *validator.Validate
-	cfg      *internal.Config
-	db       *gorm.DB
-	evClient eventloop.Client
+	v         *validator.Validate
+	cfg       *internal.Config
+	db        *gorm.DB
+	evClient  eventloop.Client
+	tfOutputs *terraformcloud.OrgsOutputs
 }
 
 func New(params Params) *Helpers {
