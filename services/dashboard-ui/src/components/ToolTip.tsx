@@ -87,7 +87,7 @@ export const ToolTip: FC<IToolTip> = ({
             {tipContent}
           </div>
         </span>
-        <span className="flex items-center gap-2 text-sm">
+        <span className="flex items-center gap-1 text-sm">
           {children}
           <Info className="text-cool-grey-600 dark:text-cool-grey-500" />
         </span>

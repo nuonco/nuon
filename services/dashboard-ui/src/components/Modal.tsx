@@ -23,7 +23,7 @@ export const Modal: FC<IModal> = ({
 }) => {
   return isOpen ? (
     <div className="absolute flex w-full h-full top-0 left-0 z-50">
-      <div className="fixed bg-black/50 dark:bg-black/75 w-full h-full" />
+      <div className="fixed bg-black/50 dark:bg-black/75 w-full h-full" onClick={onClose} />
       <div
         className={classNames(
           'relative z-50 border rounded-lg shadow-lg m-auto w-full max-w-7xl bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50',
