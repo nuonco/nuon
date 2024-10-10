@@ -53,4 +53,5 @@
         <shard>01</shard>
         <replica>01</replica>
     </macros>
+    <max_server_memory_usage_to_ram_ratio>2</max_server_memory_usage_to_ram_ratio>
 </clickhouse>
