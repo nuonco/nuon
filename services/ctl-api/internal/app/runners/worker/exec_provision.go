@@ -27,9 +27,11 @@ func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, ap
 	}
 
 	req := &executors.ProvisionRunnerRequest{
-		RunnerID: runnerID,
-		APIURL:   runner.RunnerGroup.Settings.RunnerAPIURL,
-		APIToken: apiToken,
+		RunnerID:                 runnerID,
+		APIURL:                   runner.RunnerGroup.Settings.RunnerAPIURL,
+		APIToken:                 apiToken,
+		RunnerIAMRole:            runner.RunnerGroup.Settings.AWSIAMRoleARN,
+		RunnerServiceAccountName: runner.RunnerGroup.Settings.K8sServiceAccountName,
 		Image: executors.ProvisionRunnerRequestImage{
 			URL: runner.RunnerGroup.Settings.ContainerImageURL,
 			Tag: runner.RunnerGroup.Settings.ContainerImageTag,

@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -120,6 +121,11 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 				"env":             generics.ToPtr(string(h.cfg.Env)),
 				// NOTE(jm): we also set the runner group at create time
 			}),
+
+			// NOTE(jm): this is mainly a legacy relic, where instead of actually tracking infra resources in our API, via a
+			// catalog, we actually pass around templates for IAM role ARNs
+			AWSIAMRoleARN:         fmt.Sprintf(h.tfOutputs.OrgsIAMRoleNameTemplateOutputs.ODRAccess, org.ID),
+			K8sServiceAccountName: fmt.Sprintf("runner-%s", org.ID),
 		},
 	}
 	res := h.db.WithContext(ctx).Create(&runnerGroup)
