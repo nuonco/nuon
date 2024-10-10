@@ -39,7 +39,7 @@ export const OrgSummary: FC<IOrgSummary> = ({ org }) => {
       <OrgAvatar name={org.name} />
 
       <div>
-        <Text className="text-md !font-medium leading-normal mb-1 truncate">
+        <Text className="text-md !font-medium leading-normal mb-1 max-w-[150px] break-all text-left">
           {org.name}
         </Text>
         <StatusBadge status={org.status} isWithoutBorder />
@@ -134,7 +134,7 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({ initOrg, initOrgs }) => {
       position="overlay"
       alignment="overlay"
     >
-      <div className="flex flex-col gap-4 overflow-auto max-h-[500px]">
+      <div className="flex flex-col gap-4 overflow-auto max-h-[500px] pb-2">
         <div className="pt-2 px-4">
           <OrgSummary org={initOrg} />
         </div>

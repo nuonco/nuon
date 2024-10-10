@@ -8,12 +8,12 @@ export interface IAppSandboxConfig {
 }
 
 export const AppSandboxConfig: FC<IAppSandboxConfig> = ({ sandboxConfig }) => {
-  const isGithubConnected = Boolean(sandboxConfig.connected_github_vcs_config)
+  const isGithubConnected = Boolean(sandboxConfig?.connected_github_vcs_config)
   const repo =
-    sandboxConfig.connected_github_vcs_config ||
-    sandboxConfig.public_git_vcs_config
+    sandboxConfig?.connected_github_vcs_config ||
+    sandboxConfig?.public_git_vcs_config
 
-  return (
+  return sandboxConfig ? (
     <Config>
       <ConfigContent
         label="Repository"
@@ -32,10 +32,10 @@ export const AppSandboxConfig: FC<IAppSandboxConfig> = ({ sandboxConfig }) => {
       <ConfigContent label="Branch" value={repo?.branch} />
       <ConfigContent
         label="Terraform"
-        value={sandboxConfig.terraform_version}
+        value={sandboxConfig?.terraform_version}
       />
     </Config>
-  )
+  ) : <Text>Missing app sandbox configuration</Text>
 }
 
 export interface IAppSandboxVariables {
@@ -45,7 +45,7 @@ export interface IAppSandboxVariables {
 export const AppSandboxVariables: FC<IAppSandboxVariables> = ({
   variables,
 }) => {
-  const variableKeys = Object.keys(variables)
+  const variableKeys = Object.keys(variables || {})
   const isEmpty = variableKeys.length === 0
 
   return isEmpty ? null : (

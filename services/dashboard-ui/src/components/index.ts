@@ -46,6 +46,7 @@ export * from './Page'
 export * from './Plans'
 export * from './Profile'
 export * from './RunnerLogs'
+export * from "./RunnerLogsPreview"
 export * from './Status'
 export * from './Terminal'
 export * from './Time'
