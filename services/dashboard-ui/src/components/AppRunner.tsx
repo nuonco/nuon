@@ -1,7 +1,7 @@
 import React, { type FC } from 'react'
 import { FaAws } from 'react-icons/fa'
 import { VscAzure } from 'react-icons/vsc'
-import { Config, ConfigContent } from '@/components'
+import { Config, ConfigContent, Text } from '@/components'
 import type { TAppRunnerConfig } from '@/types'
 
 export interface IAppRunnerConfig {
@@ -9,7 +9,7 @@ export interface IAppRunnerConfig {
 }
 
 export const AppRunnerConfig: FC<IAppRunnerConfig> = ({ runnerConfig }) => {
-  return (
+  return runnerConfig ? (
     <Config>
       <ConfigContent
         label="Platform"
@@ -17,6 +17,8 @@ export const AppRunnerConfig: FC<IAppRunnerConfig> = ({ runnerConfig }) => {
       />
       <ConfigContent label="Runner type" value={runnerConfig.app_runner_type} />
     </Config>
+  ) : (
+    <Text>Missing app runner configuration</Text>
   )
 }
 

@@ -36,7 +36,7 @@ const AzureAccount: FC<Pick<TInstall, 'azure_account'>> = ({
         label="Location"
         value={
           <span className="flex gap-2">
-            {getFlagEmoji(region.iconVariant?.substring(5))} {region.text}
+            {getFlagEmoji(region?.iconVariant?.substring(5))} {region?.text}
           </span>
         }
       />

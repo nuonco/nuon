@@ -5,6 +5,7 @@ import {
   Duration,
   ComponentConfiguration,
   Heading,
+  RunnerLogs,
   StatusBadge,
   Time,
   Text,
@@ -15,8 +16,10 @@ import {
   getBuild,
   getComponent,
   getComponentConfig,
+  getRunnerLogs,
   getOrg,
 } from '@/lib'
+import type { TOTELLog } from '@/types'
 
 export default withPageAuthRequired(
   async function AppComponent({ params }) {
@@ -26,7 +29,7 @@ export default withPageAuthRequired(
     const orgId = params?.['org-id'] as string
 
     const build = await getBuild({ buildId, orgId })
-    const [app, component, componentConfig, org] = await Promise.all([
+    const [app, component, componentConfig, org, logs] = await Promise.all([
       getApp({ appId, orgId }),
       getComponent({ componentId, orgId }),
       getComponentConfig({
@@ -35,6 +38,11 @@ export default withPageAuthRequired(
         orgId,
       }),
       getOrg({ orgId }),
+      getRunnerLogs({
+        jobId: build.runner_job?.id,
+        runnerId: build.runner_job?.runner_id,
+        orgId,
+      }).catch(console.error),
     ])
 
     return (
@@ -91,11 +99,8 @@ export default withPageAuthRequired(
         }
       >
         <div className="flex flex-col lg:flex-row flex-auto">
-          <section className="flex flex-auto flex-col gap-4 px-6 py-8 border-r overflow-auto">
-            <Heading>Build details</Heading>
+          <RunnerLogs heading="Build logs" logs={logs as Array<TOTELLog>} />
 
-            <Text>New runner logs here</Text>
-          </section>
           <div
             className="divide-y flex flex-col lg:min-w-[550px]
 lg:max-w-[550px]"
