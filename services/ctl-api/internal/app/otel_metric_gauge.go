@@ -59,7 +59,7 @@ type OtelMetricGauge struct {
 }
 
 func (m OtelMetricGauge) GetTableOptions() (string, bool) {
-	opts := `ENGINE = ReplicatedMergeTree('/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_metrics_gauge', '{replica}')
+	opts := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_metrics_gauge', '{replica}')
 	TTL toDateTime("time_unix") + toIntervalDay(720)
 	PARTITION BY toDate(time_unix)
 	ORDER BY (service_name, metric_name, attributes, toUnixTimestamp64Nano(time_unix))
