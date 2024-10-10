@@ -56,6 +56,10 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
           {
             "name" = "clickhouse-keeper:${local.image_tag}"
             "spec" = {
+              "securityContext" = {
+                "fsGroup"   = 101
+                "runAsUser" = 101
+              }
               "topologySpreadConstraints" = [
                 # spread the pods across nodes.
                 {
