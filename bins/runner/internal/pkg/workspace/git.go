@@ -33,17 +33,27 @@ func (w *workspace) clone(ctx context.Context) error {
 		}
 	}
 
+	// first, attempt to check out as a reference
 	coOpts := &git.CheckoutOptions{
 		Hash:  plumbing.NewHash(w.Src.Ref),
 		Force: true,
 	}
-	if err := wtree.Checkout(coOpts); err != nil {
-		return CloneErr{
-			Url: w.Src.Url,
-			Ref: w.Src.Ref,
-			Err: err,
-		}
+	if err := wtree.Checkout(coOpts); err == nil {
+		return nil
 	}
 
-	return nil
+	// second, attempt to check out as a branch
+	coOpts = &git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(w.Src.Ref),
+		Force:  true,
+	}
+	if err := wtree.Checkout(coOpts); err == nil {
+		return nil
+	}
+
+	return CloneErr{
+		Url: w.Src.Url,
+		Ref: w.Src.Ref,
+		Err: err,
+	}
 }
