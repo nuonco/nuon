@@ -13,10 +13,11 @@ import (
 type Params struct {
 	fx.In
 
-	V        *validator.Validate
-	Cfg      *internal.Config
-	DB       *gorm.DB `name:"psql"`
-	EVClient eventloop.Client
+	V         *validator.Validate
+	Cfg       *internal.Config
+	DB        *gorm.DB `name:"psql"`
+	EVClient  eventloop.Client
+	TFOutputs *terraformcloud.OrgsOutputs
 }
 
 type Helpers struct {
@@ -29,9 +30,10 @@ type Helpers struct {
 
 func New(params Params) *Helpers {
 	return &Helpers{
-		v:        params.V,
-		cfg:      params.Cfg,
-		db:       params.DB,
-		evClient: params.EVClient,
+		v:         params.V,
+		cfg:       params.Cfg,
+		db:        params.DB,
+		evClient:  params.EVClient,
+		tfOutputs: params.TFOutputs,
 	}
 }
