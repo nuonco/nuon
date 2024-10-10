@@ -3,6 +3,9 @@
   <profiles>
     <default>
       <max_memory_usage>10000000000</max_memory_usage>
+      <max_threads>3</max_threads>
+      <max_bytes_before_external_group_by>536870912</max_bytes_before_external_group_by>
+      <max_bytes_before_external_sort>536870912</max_bytes_before_external_sort>
       <use_uncompressed_cache>0</use_uncompressed_cache>
       <load_balancing>in_order</load_balancing>
       <log_queries>1</log_queries>
