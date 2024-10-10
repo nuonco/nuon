@@ -45,8 +45,6 @@ export default withPageAuthRequired(
       }).catch(console.error),
     ])
 
-    console.log('deploy', logs)
-
     return (
       <DashboardContent
         breadcrumb={[
