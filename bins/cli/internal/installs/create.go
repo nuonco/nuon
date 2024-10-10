@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon-go/models"
+
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
@@ -65,11 +66,11 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, i
 		switch {
 		case err != nil:
 			view.Fail(err)
-		case ins.Status == statusAccessError:
+		case ins.SandboxStatus == statusAccessError:
 			return view.Fail(fmt.Errorf("failed to create install due to access error: %s", ins.StatusDescription))
-		case ins.Status == statusError:
+		case ins.SandboxStatus == statusError:
 			return view.Fail(fmt.Errorf("failed to create install: %s", ins.StatusDescription))
-		case ins.Status == statusActive:
+		case ins.SandboxStatus == statusActive:
 			view.Success(fmt.Sprintf("successfully created install %s", ins.ID))
 			return nil
 		default:
