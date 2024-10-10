@@ -52,6 +52,7 @@ func (s *service) getBuild(ctx context.Context, orgID, bldID string) (*app.Compo
 	// query the build in a way where it will _only_ be returned if it belongs to the component id in question
 	res := s.db.WithContext(ctx).
 		Preload("VCSConnectionCommit").
+    Preload("RunnerJob").
 		Preload("ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
 			return db.Order("component_config_connections_view_v1.created_at DESC")
 		}).
