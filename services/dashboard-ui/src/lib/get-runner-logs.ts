@@ -3,12 +3,17 @@ import { API_URL, getFetchOpts } from '@/utils'
 
 export interface IGetRunnerLogs {
   runnerId: string
+  jobId: string
   orgId: string
 }
 
-export async function getRunnerLogs({ runnerId, orgId }: IGetRunnerLogs): Promise<Array<TOTELLog>> {
+export async function getRunnerLogs({
+  jobId,
+  runnerId,
+  orgId,
+}: IGetRunnerLogs): Promise<Array<TOTELLog>> {
   const data = await fetch(
-    `${API_URL}/v1/runners/${runnerId}/logs`,
+    `${API_URL}/v1/runners/${runnerId}/logs?job_id=${jobId}`,
     await getFetchOpts(orgId)
   )
 
