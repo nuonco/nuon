@@ -24,8 +24,10 @@ output "runner_k8s" {
     cluster_id        = nonsensitive(data.tfe_outputs.infra-eks-runners.values.cluster_id),
     ca_data           = nonsensitive(data.tfe_outputs.infra-eks-runners.values.cluster_certificate_authority_data),
     public_endpoint   = nonsensitive(data.tfe_outputs.infra-eks-runners.values.cluster_endpoint),
-    oidc_provider_url = nonsensitive(data.tfe_outputs.infra-eks-runners.values.oidc_provider)
-    oidc_provider_arn = nonsensitive(data.tfe_outputs.infra-eks-runners.values.oidc_provider_arn)
+
+    # NOTE since the runner access is in a different cluster, this is a local OIDC provider
+    oidc_provider_url = nonsensitive(aws_iam_openid_connect_provider.runners.url)
+    oidc_provider_arn = nonsensitive(aws_iam_openid_connect_provider.runners.arn)
   }
 }
 
