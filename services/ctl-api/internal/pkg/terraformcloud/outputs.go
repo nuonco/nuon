@@ -25,7 +25,9 @@ type OrgsIAMRoleNameTemplateOutputs struct {
 	InstallationsAccess string `mapstructure:"installations_access"`
 	InstancesAccess     string `mapstructure:"instances_access"`
 	OrgsAccess          string `mapstructure:"orgs_access"`
-	ODRAccess           string `mapstructure:"odr_access"`
+
+	Runner string `mapstructure:"runner"`
+	ODR    string `mapstructure:"odr"`
 }
 
 type OrgsECROutputs struct {
