@@ -72,13 +72,13 @@ const ComponentBuildEvent: FC<IComponentBuildEvent> = ({
         'border rounded-md shadow-sm': isMostRecent,
       })}
     >
-      <div className="flex flex-col gap-2">
-        <span className="flex items-center gap-4">
+      <div className="flex flex-col">
+        <span className="flex items-center gap-2">
           <Status status={build.status} isStatusTextHidden />
-          <Text variant="label">{sentanceCase(build.status)}</Text>
+          <Text className="text-sm !font-medium tracking-wide">{sentanceCase(build.status)}</Text>
         </span>
 
-        <Text className="flex items-center gap-4 ml-8" variant="overline">
+        <Text className="flex items-center gap-2 ml-6 text-sm">
           <ToolTip tipContent={build.id}><span className="truncate text-ellipsis w-16">{build.id}</span></ToolTip>
           <>
             / <span>{build.component_name}</span>
@@ -86,7 +86,7 @@ const ComponentBuildEvent: FC<IComponentBuildEvent> = ({
         </Text>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         <Time time={build.updated_at} format="relative" variant="overline" />
 
         <Link

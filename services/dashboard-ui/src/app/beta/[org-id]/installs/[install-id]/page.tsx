@@ -36,6 +36,8 @@ export default withPageAuthRequired(
       getOrg({ orgId }),
     ])
 
+    console.log('install', install)
+
     return (
       <DashboardContent
         breadcrumb={[
