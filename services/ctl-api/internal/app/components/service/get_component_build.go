@@ -51,6 +51,7 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 			return db.Order("component_config_connections_view_v1.created_at DESC")
 		}).
 		Preload("ComponentConfigConnection.Component").
+    Preload("RunnerJob").
 		First(&bld, "id = ?", bldID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component build: %w", res.Error)
