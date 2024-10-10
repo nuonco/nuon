@@ -16,6 +16,11 @@ import {
   getAppSandboxLatestConfig,
   getOrg,
 } from '@/lib'
+import type {
+  TAppInputConfig,
+  TAppRunnerConfig,
+  TAppSandboxConfig,
+} from '@/types'
 
 export default withPageAuthRequired(
   async function App({ params }) {
@@ -30,9 +35,9 @@ export default withPageAuthRequired(
     const [org, app, inputCfg, runnerCfg, sandboxCfg] = await Promise.all([
       getOrg({ orgId }),
       getApp({ appId, orgId }),
-      getAppInputLatestConfig({ appId, orgId }),
-      getAppRunnerLatestConfig({ appId, orgId }),
-      getAppSandboxLatestConfig({ appId, orgId }),
+      getAppInputLatestConfig({ appId, orgId }).catch(console.error),
+      getAppRunnerLatestConfig({ appId, orgId }).catch(console.error),
+      getAppSandboxLatestConfig({ appId, orgId }).catch(console.error),
     ])
 
     return (
@@ -47,22 +52,26 @@ export default withPageAuthRequired(
         meta={<SubNav links={subNavLinks} />}
       >
         <div className="flex flex-col md:flex-row flex-auto">
-          <section className="flex flex-col gap-4 px-6 py-8 border-r">
+          <section className="flex flex-col gap-4 px-6 py-8 border-r w-full">
             <Heading variant="subheading">Inputs</Heading>
-            <AppInputConfig inputConfig={inputCfg} />
+            <AppInputConfig inputConfig={inputCfg as TAppInputConfig} />
           </section>
 
           <div className="flex flex-col lg:min-w-[510px]">
             <section className="flex flex-col gap-4 px-6 py-8 border-b">
               <Heading variant="subheading">Sandbox</Heading>
-              <AppSandboxConfig sandboxConfig={sandboxCfg} />
-              <AppSandboxVariables variables={sandboxCfg.variables} />
+              <AppSandboxConfig
+                sandboxConfig={sandboxCfg as TAppSandboxConfig}
+              />
+              <AppSandboxVariables
+                variables={(sandboxCfg as TAppSandboxConfig)?.variables}
+              />
             </section>
 
             <section className="flex flex-col gap-4 px-6 py-8">
               <Heading variant="subheading">Runner</Heading>
 
-              <AppRunnerConfig runnerConfig={runnerCfg} />
+              <AppRunnerConfig runnerConfig={runnerCfg as TAppRunnerConfig} />
             </section>
           </div>
         </div>

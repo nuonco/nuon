@@ -39,10 +39,13 @@ export default withPageAuthRequired(
       getInstall({ installId, orgId }),
       getOrg({ orgId }),
       getRunnerLogs({
-        runnerId: 'runqquwgffy3xs8ywu94bjvqz6',
-        orgId: 'orgj5odcpm9cth6qa40j55809f',
+        jobId: deploy?.runner_job?.id,
+        runnerId: deploy?.runner_job?.runner_id,
+        orgId,
       }).catch(console.error),
     ])
+
+    console.log('deploy', logs)
 
     return (
       <DashboardContent
