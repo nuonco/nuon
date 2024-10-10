@@ -44,6 +44,10 @@ type RunnerGroupSettings struct {
 
 	// Metadata is used as both log and metric tags/attributes in the runner when emitting data
 	Metadata pgtype.Hstore `json:"" gorm:"type:hstore" swaggertype:"object,string"`
+
+	// specific configuration for cloud specific runners, such as AWS or Azure
+	AWSIAMRoleARN         string `json:"aws_iam_role_arn"`
+	K8sServiceAccountName string `json:"k8s_service_account_name"`
 }
 
 func (r *RunnerGroupSettings) BeforeCreate(tx *gorm.DB) error {

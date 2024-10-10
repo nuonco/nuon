@@ -14,6 +14,9 @@ type AdminUpdateRunnerSettingsRequest struct {
 	ContainerImageURL string `json:"container_image_url"`
 	ContainerImageTag string `json:"container_image_tag"`
 	RunnerAPIURL      string `json:"runner_api_url"`
+
+	K8sServiceAccountName string `json:"k8s_service_account_name"`
+	AWSIAMRoleARN         string `json:"aws_iam_role_arn"`
 }
 
 // @ID AdminUpdateRunnerSettings
@@ -51,9 +54,11 @@ func (s *service) updateRunnerSettings(ctx context.Context, runnerID string, req
 	}
 
 	updates := app.RunnerGroupSettings{
-		ContainerImageURL: req.ContainerImageURL,
-		ContainerImageTag: req.ContainerImageTag,
-		RunnerAPIURL:      req.RunnerAPIURL,
+		ContainerImageURL:     req.ContainerImageURL,
+		ContainerImageTag:     req.ContainerImageTag,
+		RunnerAPIURL:          req.RunnerAPIURL,
+		K8sServiceAccountName: req.K8sServiceAccountName,
+		AWSIAMRoleARN:         req.AWSIAMRoleARN,
 	}
 	obj := app.RunnerGroupSettings{
 		RunnerGroupID: runner.RunnerGroupID,

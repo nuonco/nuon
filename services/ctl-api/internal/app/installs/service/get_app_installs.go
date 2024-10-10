@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -43,6 +44,9 @@ func (s *service) getAppInstalls(ctx context.Context, appID string) ([]app.Insta
 	res := s.db.WithContext(ctx).
 		Preload("Installs").
 		Preload("Installs.AppSandboxConfig").
+		Preload("Installs.InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_sandbox_runs.created_at DESC")
+		}).
 		Preload("Installs.AWSAccount").
 		Preload("Installs.RunnerGroup").
 		Preload("Installs.RunnerGroup.Runners").
