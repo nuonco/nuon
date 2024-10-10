@@ -5,8 +5,7 @@ data "aws_iam_openid_connect_provider" "runners_k8s" {
 }
 
 resource "aws_iam_openid_connect_provider" "runners" {
-  #provider = aws.orgs
-  count = 0
+  provider = aws.orgs
 
   url = data.tfe_outputs.infra-eks-runners.values.cluster_oidc_issuer_url
 
