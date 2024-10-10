@@ -47,6 +47,8 @@ output "org_iam_role_name_templates" {
     odr = "arn:aws:iam::${local.org_account_id}:role/orgs/%[1]s/org-odr-%[1]s"
     # this is the org specific installer IAM role that workers-installs uses when creating a sandbox
     installer = "arn:aws:iam::${local.org_account_id}:role/orgs/%[1]s/org-installer-%[1]s"
+    # this is the org iam role that grants access for the runner
+    runner = "arn:aws:iam::${local.org_account_id}:role/orgs/%[1]s/runner-%[1]s"
   }
 }
 
