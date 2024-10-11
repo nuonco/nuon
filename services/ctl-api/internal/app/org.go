@@ -49,7 +49,7 @@ type Org struct {
 	NotificationsConfig   NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty"`
 	NotificationsConfigID string              `json:"-"`
 
-	RunnerGroup RunnerGroup `json:"-" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;"`
+	RunnerGroup RunnerGroup `json:"runner_group" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;"`
 
 	LogoURL string `json:"logo_url"`
 
