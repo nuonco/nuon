@@ -16,7 +16,7 @@ export default withPageAuthRequired(
         {process.env.SEGMENT_WRITE_KEY && <SegmentAnalyticsSetOrg org={org} />}
         <DashboardContent
           breadcrumb={[
-            { href: `/beta/${org.id}`, text: org.name },
+            { href: `/beta/${org.id}/apps`, text: org.name },
             { href: `/beta/${org.id}/apps`, text: 'Apps' },
           ]}
         >
