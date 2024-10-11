@@ -47,19 +47,19 @@ resource "helm_release" "karpenter" {
   namespace        = "karpenter"
   create_namespace = true
 
-  chart               = "karpenter"
-  name                = "karpenter"
-  repository          = "oci://public.ecr.aws/karpenter"
-  version             = "0.37.0"
+  chart      = "karpenter"
+  name       = "karpenter"
+  repository = "oci://public.ecr.aws/karpenter"
+  version    = "0.37.0"
 
   values = [
     # https://github.com/aws/karpenter-provider-aws/blob/main/charts/karpenter/values.yaml
     yamlencode({
       replicas : local.vars.managed_node_group.desired_size
-      logLevel: "debug"
+      logLevel : "debug"
       settings : {
-        clusterEndpoint        : module.eks.cluster_endpoint
-        clusterName            : local.karpenter.cluster_name
+        clusterEndpoint : module.eks.cluster_endpoint
+        clusterName : local.karpenter.cluster_name
       }
       serviceAccount : {
         annotations : {
@@ -102,7 +102,7 @@ resource "kubectl_manifest" "karpenter_provisioner" {
     }
     spec = {
       limits = {
-        cpu = 1000
+        cpu    = 1000
         memory = "1000Gi"
       }
       template = {
@@ -119,15 +119,25 @@ resource "kubectl_manifest" "karpenter_provisioner" {
             {
               key      = "karpenter.sh/capacity-type"
               operator = "In"
-              values   = [
+              values = [
                 "spot",
                 "on-demand",
               ]
             },
             {
-              "key" = "node.kubernetes.io/instance-type"
+              "key"      = "node.kubernetes.io/instance-type"
               "operator" = "In"
-              "values" = local.vars.managed_node_group.instance_types
+              "values"   = local.vars.managed_node_group.instance_types
+            },
+            {
+              key      = "topology.kubernetes.io/zone"
+              operator = "In"
+              values = [
+                "us-west-2a",
+                "us-west-2b",
+                "us-west-2c",
+                "us-west-2d",
+              ]
             },
           ]
         }
@@ -137,7 +147,7 @@ resource "kubectl_manifest" "karpenter_provisioner" {
         consolidationPolicy = "WhenEmpty"
         consolidateAfter    = "30s"
         # https://karpenter.sh/v0.32/upgrading/v1beta1-migration/#ttlsecondsuntilexpired
-        expireAfter         = "${random_integer.node_ttl.result}s"
+        expireAfter = "${random_integer.node_ttl.result}s"
         budgets = [
           {
             nodes = "10%",
@@ -145,7 +155,7 @@ resource "kubectl_manifest" "karpenter_provisioner" {
           {
             # only allow 1 node to be disrupted at time during work hours
             nodes    = "1",
-            schedule = "0 10 * * 1,2,3,4,5"  # https://crontab.guru/#0_10_*_*_1,2,3,4,5
+            schedule = "0 10 * * 1,2,3,4,5" # https://crontab.guru/#0_10_*_*_1,2,3,4,5
             duration = "11h"
           },
         ]
@@ -169,8 +179,8 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
       name = "default"
     }
     spec = {
-      amiFamily           = "AL2"
-      instanceProfile     = aws_iam_instance_profile.karpenter.name  # https://karpenter.sh/v0.32/concepts/nodeclasses/#specinstanceprofile
+      amiFamily       = "AL2"
+      instanceProfile = aws_iam_instance_profile.karpenter.name # https://karpenter.sh/v0.32/concepts/nodeclasses/#specinstanceprofile
       subnetSelectorTerms = [
         {
           tags = {
@@ -186,7 +196,7 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
         }
       ]
       tags = {
-          "karpenter.sh/discovery" = local.karpenter.discovery_value
+        "karpenter.sh/discovery" = local.karpenter.discovery_value
       }
     }
   })
