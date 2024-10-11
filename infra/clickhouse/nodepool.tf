@@ -40,9 +40,10 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
         "expireAfter"         = "${random_integer.node_ttl.result}s"
       }
       "limits" = {
-        # 5 + 1 t3a.medium boxes
-        "cpu"    = 12
-        "memory" = "24576Mi"
+        # 6 + 1 t3a.medium boxes (these numbers accomodate prod)
+        # 4096 * 13
+        "cpu"    = 14
+        "memory" = "53248Mi"
       }
       "template" = {
         "metadata" = {
