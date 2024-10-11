@@ -6,7 +6,7 @@
 resource "kubectl_manifest" "clickhouse_backup_script" {
   yaml_body = yamlencode({
     "apiVersion" = "v1"
-    "kind" = "ConfigMap"
+    "kind"       = "ConfigMap"
     "metadata" = {
       "name"      = "clickhouse-backup-to-s3-script"
       "namespace" = "clickhouse"
@@ -32,7 +32,7 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
   yaml_body = yamlencode({
     "apiVersion" = "batch/v1"
     "kind"       = "CronJob"
-    "metadata"   = {
+    "metadata" = {
       "name"      = "ch-s3-backup-${replace(each.key, "_", "-")}"
       "namespace" = "clickhouse"
       "annotations" = {
@@ -73,18 +73,18 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
                   "image"           = "clickhouse/clickhouse-server:${local.image_tag}"
                   "imagePullPolicy" = "IfNotPresent"
                   "name"            = "ch-s3-backup-${replace(each.key, "_", "-")}"
-                  "volumeMounts"    = [
+                  "volumeMounts" = [
                     {
                       "name"      = "config-volume"
                       "mountPath" = "/usr/local/bin/backup.sh"
-                      "subPath": "backup.sh"
+                      "subPath" : "backup.sh"
                     },
                   ]
                 },
               ]
               "restartPolicy"      = "OnFailure"
               "serviceAccountName" = "default"
-              "volumes"            = [
+              "volumes" = [
                 {
                   "configMap" = {
                     "name" = "clickhouse-backup-to-s3-script"
@@ -96,7 +96,9 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
           }
         }
       }
-      "schedule" = "13,37,51 */1 * * *" // TODO(fd): add some randomness +/- 3 min
+      "schedule"                   = "13,37,51 */1 * * *" // TODO(fd): add some randomness +/- 3 min
+      "successfulJobsHistoryLimit" = 2
+      "failedJobsHistoryLimit"     = 1
     }
   })
 }
