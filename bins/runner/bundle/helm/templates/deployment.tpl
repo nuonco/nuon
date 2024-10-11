@@ -26,7 +26,7 @@ spec:
           effect: "NoSchedule"
       {{- end }}
 
-      serviceAccountName: {{ include "common.fullname" . }}
+      serviceAccountName: {{ .Values.serviceAccount.name | default (include "common.fullname" .)}}
       automountServiceAccountToken: true
       containers:
         - name: {{ include "common.fullname" . }}
