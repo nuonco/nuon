@@ -196,8 +196,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
               {
                 "maxSkew"           = 1
                 "topologyKey"       = "kubernetes.io/hostname"
-                "whenUnsatisfiable" = "DoNotSchedule"
-                "minDomains"        = local.hosts
+                "whenUnsatisfiable" = "ScheduleAnyway"
                 "labelSelector" = {
                   "matchLabels" = {
                     # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
