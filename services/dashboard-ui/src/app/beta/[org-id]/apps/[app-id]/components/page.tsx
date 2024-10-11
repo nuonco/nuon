@@ -40,7 +40,7 @@ export default withPageAuthRequired(
     return (
       <DashboardContent
         breadcrumb={[
-          { href: `/beta/${org.id}`, text: org.name },
+          { href: `/beta/${org.id}/apps`, text: org.name },
           { href: `/beta/${org.id}/apps`, text: 'Apps' },
           { href: `/beta/${org.id}/apps/${app.id}`, text: app.name },
         ]}
