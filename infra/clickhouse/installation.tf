@@ -208,7 +208,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
               # spread the pods across az:
               {
                 "maxSkew"           = 1
-                "topologyKey"       = "kubernetes.io/hostname"
+                "topologyKey"       = "topology.kubernetes.io/zone"
                 "whenUnsatisfiable" = "DoNotSchedule"
                 "minDomains"        = length(local.availability_zones)
                 "labelSelector" = {
