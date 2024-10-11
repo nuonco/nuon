@@ -11,4 +11,11 @@ shards: 3
 keeperReplicaCount: 3
 
 # zones controls where the ch NodePool will stand up new nodes
-availability_zones: ["us-west-2c"] # based on ctl-api prod db location
+# in prod: we want these distributed across all three zones
+# yes, we will take a performance hit but we'll eat it in exchange
+# for reduced risk.
+availability_zones: [
+  "us-west-2a",
+  "us-west-2b",
+  "us-west-2c",
+]

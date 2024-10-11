@@ -108,6 +108,7 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
 
   depends_on = [
     kubectl_manifest.clickhouse_operator,
-    kubectl_manifest.nodepool_clickhouse
+    kubectl_manifest.nodepool_clickhouse,
+    kubectl_manifest.namespace_clickhouse
   ]
 }

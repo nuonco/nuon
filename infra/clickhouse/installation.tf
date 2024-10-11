@@ -205,6 +205,20 @@ resource "kubectl_manifest" "clickhouse_installation" {
                     "clickhouse.altinity.com/chi" = "clickhouse-installation"
                   }
                 }
+              },
+              # spread the pods across az:
+              {
+                "maxSkew"           = 1
+                "topologyKey"       = "kubernetes.io/hostname"
+                "whenUnsatisfiable" = "DoNotSchedule"
+                "minDomains"        = length(local.availability_zones)
+                "labelSelector" = {
+                  "matchLabels" = {
+                    # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
+                    #           that is, however, an assumption
+                    "clickhouse.altinity.com/chi" = "clickhouse-installation"
+                  }
+                }
               }
             ]
             "tolerations" = [{
@@ -264,6 +278,8 @@ resource "kubectl_manifest" "clickhouse_installation" {
 
   depends_on = [
     kubectl_manifest.clickhouse_operator,
-    kubectl_manifest.nodepool_clickhouse
+    kubectl_manifest.nodepool_clickhouse,
+    kubectl_manifest.namespace_clickhouse,
+    kubectl_manifest.clickhouse_keeper_installation
   ]
 }

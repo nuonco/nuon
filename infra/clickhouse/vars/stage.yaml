@@ -11,4 +11,7 @@ shards: 2
 keeperReplicaCount: 3
 
 # zones controls where the ch NodePool will stand up new nodes
-availability_zones: ["us-west-2b"] # based on ctl-api stage db location
+availability_zones: [
+  "us-west-2a",
+  "us-west-2b",
+]
