@@ -258,7 +258,8 @@ resource "kubectl_manifest" "clickhouse_installation" {
         }]
         "volumeClaimTemplates" = [
           {
-            "name" = "data-volume-template"
+            "name"             = "data-volume-template"
+            "storageClassName" = "ebi"
             "spec" = {
               "accessModes" = [
                 "ReadWriteOnce",
