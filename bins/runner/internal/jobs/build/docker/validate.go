@@ -10,13 +10,15 @@ import (
 )
 
 func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	cfg, err := plan.ParseConfig[InputConfig](h.state.plan)
+	cfg, err := plan.ParseConfig[WaypointConfig](h.state.plan)
 	if err != nil {
 		return fmt.Errorf("unable to parse plan: %w", err)
 	}
 
-	h.state.cfg = &cfg.Build.Use
-	h.state.regCfg = &cfg.Build.Registry
+	h.state.jobID = job.ID
+	h.state.jobExecutionID = jobExecution.ID
+	h.state.cfg = &cfg.App.Build.Use
+	h.state.regCfg = &cfg.App.Build.Registry.Use
 
 	return nil
 }
