@@ -10,9 +10,6 @@ import (
 )
 
 func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	if h.state != nil {
-		return fmt.Errorf("another job is still in flight")
-	}
 	h.state = &handlerState{}
 
 	plan, err := plan.FetchPlan(ctx, h.apiClient, job)

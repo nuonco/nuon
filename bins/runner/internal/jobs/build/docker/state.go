@@ -7,8 +7,13 @@ import (
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
 
-// TODO(jm): this will eventually go away, once we remove the need for using a full waypoint app config
-type InputConfig configs.App[configs.Build[configs.DockerBuild, configs.OCIRegistryRepository], configs.NoopDeploy]
+type (
+	Registry configs.Registry[configs.OCIRegistryRepository]
+	Build    configs.Build[configs.DockerBuild, Registry]
+	Deploy   configs.Deploy[configs.NoopDeploy]
+
+	WaypointConfig configs.Apps[Build, Deploy]
+)
 
 type handlerState struct {
 	// state for an individual run, that can not be reused
