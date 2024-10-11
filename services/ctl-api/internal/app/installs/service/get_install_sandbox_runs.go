@@ -45,6 +45,7 @@ func (s *service) getInstallSandboxRuns(ctx context.Context, installID string) (
 		Preload("AppSandboxConfig.PublicGitVCSConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig.VCSConnection").
+    Preload("RunnerJob").
 		Where("install_id = ?", installID).
 		Order("created_at desc").
 		Find(&installSandboxRuns)
