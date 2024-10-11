@@ -39,6 +39,9 @@ type InstallSandboxRun struct {
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
+	// runner details
+	RunnerJob RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;"`
+
 	// used for RLS
 	OrgID     string  `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org       Org     `json:"-" faker:"-"`
