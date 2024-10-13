@@ -1,6 +1,5 @@
 ---
-port: 8081
-type: api
+color: cyan
 env:
   # psql db configuration
   DB_HOST: localhost
@@ -64,6 +63,8 @@ watch_ignore:
   - '\/admin'
   - '\/internal\/integration'
   - "_gen"
+# the startup commands for ctl api are way too long and must be run only when booting the app
+disable_watch_rerun_startup_commands: true
 local_startup_cmds:
   - go generate ./...
   - go build -o /tmp/svc-ctl-api
@@ -75,7 +76,17 @@ local_cmds:
   - /tmp/svc-ctl-api api
   - /tmp/svc-ctl-api worker --namespace=all
 
-earthly_cmd: server
+earthly_cmds:
+  - cmd: startup
+  - cmd: api
+    ports:
+      - 8081
+      - 8082
+      - 8083
+  - cmd: worker 
+    args:
+      - --namespace=all
+
 earthly_env:
-  DB_HOST: postgres
-  CLICKHOUSE_DB_HOST: clickhouse
+  DB_HOST: host.docker.internal
+  CLICKHOUSE_DB_HOST: host.docker.internal

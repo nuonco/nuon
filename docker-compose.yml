@@ -156,6 +156,14 @@ services:
      - clickhouse-01
      - clickhouse-02
 
+  # cache-registry used for earthly locally
+  cache-registry:
+      image: registry:latest
+      ports:
+        - 5005:5000
+      networks:
+        - default
+
 volumes:
   postgres:
   clickhouse:
