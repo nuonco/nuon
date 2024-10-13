@@ -43,8 +43,8 @@ type Runner struct {
 	DisplayName   string `json:"display_name"`
 }
 
-func (c *client) ListRunners(ctx context.Context) ([]Runner, error) {
-	endpoint := "/v1/runners"
+func (c *client) ListRunners(ctx context.Context, typ string) ([]Runner, error) {
+	endpoint := "/v1/runners?type=" + typ
 	byts, err := c.execGetRequest(ctx, endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute post request: %w", err)

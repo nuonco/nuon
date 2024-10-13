@@ -80,7 +80,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nuonco/clickhouse-go/v2 v2.28.1
-	github.com/nuonco/nuon-runner-go v0.1.1
+	github.com/nuonco/nuon-runner-go v0.1.2
 	github.com/nuonco/sandboxes v1.34.0
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/opencontainers/image-spec v1.1.0
@@ -166,6 +166,7 @@ require (
 	github.com/ClickHouse/ch-go v0.61.5 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
+	github.com/abiosoft/lineprefix v0.1.4 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/bodgit/plumbing v1.2.0 // indirect
