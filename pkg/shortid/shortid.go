@@ -114,6 +114,19 @@ func ParseStrings(strs ...string) ([]string, error) {
 	return ids, nil
 }
 
+func IsShortID(val string) bool {
+	if len(val) != shortIDLen {
+		return false
+	}
+
+	_, err := ToShortID(val)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 // ToShortID coerces strings to shortids handling shortids or uuids as input
 // An error will be returned for anything else, including empty string
 func ToShortID(s string) (string, error) {
