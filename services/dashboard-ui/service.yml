@@ -1,6 +1,5 @@
 ---
-port: 4000
-type: api
+color: red
 env:
   # use this to write out debug logs locally
   # LOG_LEVEL: DEBUG
@@ -25,3 +24,10 @@ local_build_cmds:
 local_cmds:
   - npm run dev
 namespace: dashboard-ui
+earthly_cmds:
+  # the entrypoint of the container is already run start
+  - args: []
+    ports:
+      - 4000
+earthly_env:
+  NEX_PUBLIC_API_URL: http://host.docker.internal:8081
