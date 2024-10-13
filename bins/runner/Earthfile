@@ -74,6 +74,8 @@ oci-artifacts:
     # These are set to run locally. They _must_ be overridden in CI.
     ARG repo=
     ARG image_tag=
+    ARG cache_tag=
+    ARG cache_repo=
 
     ENV GIT_REF=$image_tag
 
@@ -91,4 +93,4 @@ oci-artifacts:
 
     ENTRYPOINT ["/bin/runner"]
 
-    SAVE IMAGE --push --cache-from=$repo:$cache_tag $repo:$image_tag
+    SAVE IMAGE --push --cache-from=$cache_repo:$cache_tag $repo:$image_tag

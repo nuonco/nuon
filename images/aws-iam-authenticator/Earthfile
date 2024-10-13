@@ -1,6 +1,6 @@
 VERSION --use-cache-command 0.6
 
-FROM golang:1.21-alpine
+FROM golang:1.23-alpine
 
 aws-iam-authenticator:
     RUN apk add --update --no-cache curl ca-certificates
@@ -11,4 +11,6 @@ aws-iam-authenticator:
             -Lo aws-iam-authenticator \
             "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
         && chmod +x aws-iam-authenticator
+
+    SAVE IMAGE --cache-hint
     SAVE ARTIFACT aws-iam-authenticator
