@@ -5,14 +5,19 @@ import (
 	"io"
 	"os"
 
+	"github.com/fatih/color"
+
 	"github.com/go-playground/validator/v10"
 )
 
 type command struct {
 	v *validator.Validate
 
-	Cmd  string	       `validate:"required"`
-	Args []string	       `validate:"required"`
+	LinePrefix string
+	LineColor  *color.Color
+
+	Cmd  string            `validate:"required"`
+	Args []string          `validate:"required"`
 	Env  map[string]string `validate:"required"`
 
 	// non-optional arguments
@@ -26,10 +31,10 @@ type commandOption func(*command) error
 
 func New(v *validator.Validate, opts ...commandOption) (*command, error) {
 	l := &command{
-		v:	v,
+		v:      v,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
-		Stdin:	os.Stdin,
+		Stdin:  os.Stdin,
 	}
 	for idx, opt := range opts {
 		if err := opt(l); err != nil {
@@ -105,6 +110,20 @@ func WithStderr(fw io.Writer) commandOption {
 func WithCwd(cwd string) commandOption {
 	return func(l *command) error {
 		l.Cwd = cwd
+		return nil
+	}
+}
+
+func WithLinePrefix(prefix string) commandOption {
+	return func(l *command) error {
+		l.LinePrefix = prefix
+		return nil
+	}
+}
+
+func WithLineColor(color *color.Color) commandOption {
+	return func(l *command) error {
+		l.LineColor = color
 		return nil
 	}
 }
