@@ -46,7 +46,7 @@ type Client interface {
 	CreateCanaryUser(ctx context.Context, canaryID string) (*CreateCanaryUserResponse, error)
 	CreateSeedUser(ctx context.Context) (*CreateSeedUserResponse, error)
 
-	ListRunners(ctx context.Context) ([]Runner, error)
+	ListRunners(ctx context.Context, typ string) ([]Runner, error)
 	GetRunnerServiceAccountToken(ctx context.Context, runnerID string, dur time.Duration) (string, error)
 }
 

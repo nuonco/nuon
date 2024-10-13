@@ -35,7 +35,24 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 		return nil
 	}
 
-	// reprovision IAM roles for the org
+	// deprovision IAM roles for the org
+	if org.OrgType == app.OrgTypeDefault {
+		orgIAMReq := &executors.DeprovisionIAMRequest{
+			OrgID: sreq.ID,
+		}
+		_, err = executors.AwaitDeprovisionIAM(ctx, orgIAMReq)
+		if err != nil {
+			w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "unable to deprovision iam roles")
+			return fmt.Errorf("unable to deprovision iam roles: %w", err)
+		}
+	} else {
+		l.Info("skipping await deprovision iam",
+			zap.Any("org_type", org.OrgType),
+			zap.String("org_id", org.ID),
+			zap.String("org_name", org.Name))
+	}
+
+	// provision IAM roles for the org
 	if org.OrgType == app.OrgTypeDefault {
 		orgIAMReq := &executors.ProvisionIAMRequest{
 			OrgID:       sreq.ID,
