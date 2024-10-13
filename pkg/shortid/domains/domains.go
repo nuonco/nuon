@@ -1,6 +1,10 @@
 package domains
 
-import "github.com/powertoolsdev/mono/pkg/shortid"
+import (
+	"strings"
+
+	"github.com/powertoolsdev/mono/pkg/shortid"
+)
 
 func NewAppID() string {
 	return shortid.NewNanoID("app")
@@ -100,6 +104,18 @@ func NewOrgID() string {
 
 func NewRunnerID() string {
 	return shortid.NewNanoID("run")
+}
+
+func IsRunnerID(val string) bool {
+	if !shortid.IsShortID(val) {
+		return false
+	}
+
+	if !strings.HasPrefix(val, "run") {
+		return false
+	}
+
+	return true
 }
 
 func NewOtelTraceID() string {
