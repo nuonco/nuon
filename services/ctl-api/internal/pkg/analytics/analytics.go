@@ -1,30 +1,39 @@
 package analytics
 
 import (
-	"fmt"
-
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
 	"github.com/powertoolsdev/mono/pkg/analytics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"go.uber.org/zap"
 )
 
-func NewContextWriter(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (*analytics.ContextWriter, error) {
-	writer := analytics.NewContextWriter(cfg.SegmentWriteKey, l)
+type Params struct {
+	fx.In
 
-	if err := v.Struct(writer); err != nil {
-		return nil, fmt.Errorf("unable to validate analytics context writer: %w", err)
-	}
-
-	return writer, nil
+	V   *validator.Validate
+	L   *zap.Logger
+	Cfg *internal.Config
 }
 
-func NewTemporalWriter(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (*analytics.TemporalWriter, error) {
-	writer := analytics.NewTemporalWriter(cfg.SegmentWriteKey, l)
-
-	if err := v.Struct(writer); err != nil {
-		return nil, fmt.Errorf("unable to validate analytics context writer: %w", err)
+func New(params Params) (analytics.Writer, error) {
+	w, err := analytics.New(params.V,
+		analytics.WithDisable(params.Cfg.DisableAnalytics),
+		analytics.WithSegmentKey(params.Cfg.SegmentWriteKey),
+		analytics.WithLogger(params.L),
+		analytics.WithGroupFn(groupFn),
+		analytics.WithIdentifyFn(identifyFn),
+		analytics.WithUserIDFn(userIDFn),
+		analytics.WithProperties(map[string]interface{}{
+			"platform": "ctl-api",
+			"env":      params.Cfg.Env,
+		}),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get analytics writer")
 	}
 
-	return writer, nil
+	return w, nil
 }

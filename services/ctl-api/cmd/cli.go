@@ -61,8 +61,8 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(teventloop.New),
 		fx.Provide(authz.New),
 		fx.Provide(account.New),
-		fx.Provide(analytics.NewContextWriter),
-		fx.Provide(analytics.NewTemporalWriter),
+		fx.Provide(analytics.New),
+		fx.Provide(analytics.NewTemporal),
 
 		// add helpers for each domain
 		fx.Provide(vcshelpers.New),

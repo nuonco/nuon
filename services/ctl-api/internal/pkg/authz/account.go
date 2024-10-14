@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // TODO(jm): this entire file should probably live in `pkg/account`
@@ -34,6 +35,8 @@ func (m *Client) CreateAccount(ctx context.Context, email, subject string) (*app
 		return nil, fmt.Errorf("unable to create account: %w", err)
 	}
 
+	ctx = cctx.SetAccountContext(ctx, &acct)
+	m.analyticsClient.Identify(ctx)
 	return &acct, nil
 }
 
