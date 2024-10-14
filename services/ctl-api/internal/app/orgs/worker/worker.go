@@ -23,41 +23,46 @@ type Worker struct {
 	worker.Worker
 }
 
-func New(cfg *internal.Config,
-	tclient temporalclient.Client,
-	wkflows *Workflows,
-	acts *activities.Activities,
-	l *zap.Logger,
-	lc fx.Lifecycle,
-) (*Worker, error) {
-	client, err := tclient.GetNamespaceClient(defaultNamespace)
+type WorkerParams struct {
+	fx.In
+
+	Cfg     *internal.Config
+	TClient temporalclient.Client
+	WKflows *Workflows
+	Acts    *activities.Activities
+	L       *zap.Logger
+	LC      fx.Lifecycle
+}
+
+func New(params WorkerParams) (*Worker, error) {
+	client, err := params.TClient.GetNamespaceClient(defaultNamespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
 	}
 
 	wkr := worker.New(client, workflows.APITaskQueue, worker.Options{
-		MaxConcurrentActivityExecutionSize: cfg.TemporalMaxConcurrentActivities,
+		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
 		Interceptors:                       []interceptor.WorkerInterceptor{},
 		WorkflowPanicPolicy:                worker.FailWorkflow,
 	})
 
-	wkr.RegisterActivity(acts)
+	wkr.RegisterActivity(params.Acts)
 
 	// register workflows
-	wkr.RegisterWorkflow(wkflows.OrgHealthCheck)
-	wkr.RegisterWorkflow(wkflows.EventLoop)
-	wkr.RegisterWorkflow(wkflows.Created)
-	wkr.RegisterWorkflow(wkflows.Delete)
-	wkr.RegisterWorkflow(wkflows.Deprovision)
-	wkr.RegisterWorkflow(wkflows.ForceDelete)
-	wkr.RegisterWorkflow(wkflows.ForceDeprovision)
-	wkr.RegisterWorkflow(wkflows.InviteUser)
-	wkr.RegisterWorkflow(wkflows.Provision)
-	wkr.RegisterWorkflow(wkflows.Reprovision)
+	wkr.RegisterWorkflow(params.WKflows.OrgHealthCheck)
+	wkr.RegisterWorkflow(params.WKflows.EventLoop)
+	wkr.RegisterWorkflow(params.WKflows.Created)
+	wkr.RegisterWorkflow(params.WKflows.Delete)
+	wkr.RegisterWorkflow(params.WKflows.Deprovision)
+	wkr.RegisterWorkflow(params.WKflows.ForceDelete)
+	wkr.RegisterWorkflow(params.WKflows.ForceDeprovision)
+	wkr.RegisterWorkflow(params.WKflows.InviteUser)
+	wkr.RegisterWorkflow(params.WKflows.Provision)
+	wkr.RegisterWorkflow(params.WKflows.Reprovision)
 
-	lc.Append(fx.Hook{
+	params.LC.Append(fx.Hook{
 		OnStart: func(context.Context) error {
-			l.Info("starting orgs worker")
+			params.L.Info("starting orgs worker")
 			go func() {
 				wkr.Run(worker.InterruptCh())
 			}()

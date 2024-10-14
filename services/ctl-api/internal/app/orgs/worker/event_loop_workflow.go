@@ -23,9 +23,10 @@ type OrgEventLoopRequest struct {
 }
 
 func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest) error {
+	l := workflow.GetLogger(ctx)
+
 	defaultTags := map[string]string{"sandbox_mode": strconv.FormatBool(req.SandboxMode)}
 	w.mw.Incr(ctx, "event_loop.start", metrics.ToTags(defaultTags, "op", "started")...)
-	l := workflow.GetLogger(ctx)
 
 	finished := false
 	signalChan := workflow.GetSignalChannel(ctx, req.ID)

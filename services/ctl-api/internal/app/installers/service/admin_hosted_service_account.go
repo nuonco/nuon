@@ -11,8 +11,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 const (
@@ -71,7 +71,7 @@ func (s *service) createHostedInstallerServiceAccount(ctx context.Context, name 
 		return nil, fmt.Errorf("unable to create account: %w", res.Error)
 	}
 
-	ctx = middlewares.SetContext(ctx, acct)
+	ctx = cctx.SetAccountContext(ctx, acct)
 
 	// create role
 	role := app.Role{

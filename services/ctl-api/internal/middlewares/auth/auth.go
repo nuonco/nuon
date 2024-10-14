@@ -10,10 +10,10 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type Params struct {
@@ -36,7 +36,7 @@ type middleware struct {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if middlewares.IsPublic(ctx) {
+		if cctx.IsPublic(ctx) {
 			ctx.Next()
 			return
 		}
@@ -75,7 +75,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 				return
 			}
 
-			middlewares.SetGinContext(ctx, acct)
+			cctx.SetAccountGinContext(ctx, acct)
 			ctx.Next()
 			return
 		}
@@ -106,7 +106,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		middlewares.SetGinContext(ctx, acct)
+		cctx.SetAccountGinContext(ctx, acct)
 		ctx.Next()
 	}
 }

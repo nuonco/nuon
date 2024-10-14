@@ -9,7 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/analytics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *app.Account) error {
@@ -30,7 +30,7 @@ func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *
 	}
 
 	// send a notification to the correct org event flow that it was accepted
-	middlewares.SetOrgContext(ctx, &invite.Org)
+	cctx.SetOrgContext(ctx, &invite.Org)
 
 	h.evClient.Send(ctx, invite.OrgID, &signals.Signal{
 		Type:     signals.OperationInviteAccepted,
