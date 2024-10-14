@@ -39,6 +39,7 @@ env:
   # The following options are common toggles for configuring local behaviour, and should not be checked in when changed
   # (unless you would like to change the default)
 
+  # this forces all local orgs created to be sandbox mode
   FORCE_SANDBOX_MODE: false
   SANDBOX_MODE_SLEEP: 3s
   # this enables runner usage for sandbox mode
@@ -46,10 +47,11 @@ env:
   # this forces all runners to be run locally, even when outside sandbox mode
   USE_LOCAL_RUNNERS: true
 
+  DISABLE_ANALYTICS: true
   DISABLE_METRICS: true
   DISABLE_NOTIFICATIONS: true
   DB_LOG_QUERIES: false
-  #LOG_LEVEL: "DEBUG"
+  # LOG_LEVEL: "DEBUG"
 
 env_secrets:
   GITHUB_APP_KEY:

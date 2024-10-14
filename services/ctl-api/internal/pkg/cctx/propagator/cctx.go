@@ -21,7 +21,7 @@ type Payload struct {
 }
 
 func (s *propagator) Inject(ctx context.Context, writer workflow.HeaderWriter) error {
-	acctID, err := cctx.OrgIDFromContext(ctx)
+	acctID, err := cctx.AccountIDFromContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func (s *propagator) Inject(ctx context.Context, writer workflow.HeaderWriter) e
 
 // InjectFromWorkflow injects values from context into headers for propagation
 func (s *propagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.HeaderWriter) error {
-	acctID, err := cctx.OrgIDFromWorkflowContext(ctx)
+	acctID, err := cctx.AccountIDFromWorkflowContext(ctx)
 	if err != nil {
 		return err
 	}
