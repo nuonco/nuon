@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 const (
@@ -27,8 +27,8 @@ func (a *Activities) CreateBuildJob(ctx context.Context, req *CreateBuildJobRequ
 		return nil, fmt.Errorf("unable to get component build: %w", err)
 	}
 
-	ctx = middlewares.SetAccountIDContext(ctx, bld.CreatedByID)
-	ctx = middlewares.SetOrgIDContext(ctx, bld.OrgID)
+	ctx = cctx.SetAccountIDContext(ctx, bld.CreatedByID)
+	ctx = cctx.SetOrgIDContext(ctx, bld.OrgID)
 
 	job, err := a.runnersHelpers.CreateBuildJob(ctx, req.RunnerID, buildOwnerType, bld.ID, req.Type, req.Op)
 	if err != nil {

@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
@@ -45,7 +45,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 		_, found := publicEndpointList[key]
 		if found {
 			m.l.Debug("marking request as public", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
-			middlewares.SetPublicContext(ctx, true)
+			cctx.SetPublicContext(ctx, true)
 			return
 		}
 
@@ -56,11 +56,11 @@ func (m middleware) Handler() gin.HandlerFunc {
 		_, found = publicEndpointList[wildcardKey]
 		if found {
 			m.l.Debug("marking request as public due to wildcard", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
-			middlewares.SetPublicContext(ctx, true)
+			cctx.SetPublicContext(ctx, true)
 			return
 		}
 
-		middlewares.SetPublicContext(ctx, false)
+		cctx.SetPublicContext(ctx, false)
 	}
 }
 

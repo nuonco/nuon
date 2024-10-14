@@ -13,6 +13,7 @@ import (
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateOrgRequest struct {
@@ -77,6 +78,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create org: %w", err))
 		return
 	}
+	cctx.SetOrgIDGinContext(ctx, newOrg.ID)
 
 	s.evClient.Send(ctx, newOrg.ID, &sigs.Signal{
 		Type: sigs.OperationCreated,

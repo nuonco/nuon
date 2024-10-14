@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
 	tclient "go.temporal.io/sdk/client"
+
+	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
 )
 
 func (t *temporal) GetNamespaceClient(namespace string) (tclient.Client, error) {
@@ -15,9 +16,10 @@ func (t *temporal) GetNamespaceClient(namespace string) (tclient.Client, error) 
 	}
 
 	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
-		Namespace:     namespace,
-		Logger:        temporalzap.NewLogger(t.Logger),
-		DataConverter: t.Converter,
+		Namespace:          namespace,
+		Logger:             temporalzap.NewLogger(t.Logger),
+		DataConverter:      t.Converter,
+		ContextPropagators: t.propagators,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
@@ -30,15 +32,17 @@ func (t *temporal) ExecuteWorkflowInNamespace(ctx context.Context,
 	namespace string,
 	options tclient.StartWorkflowOptions,
 	workflow interface{},
-	args ...interface{}) (tclient.WorkflowRun, error) {
+	args ...interface{},
+) (tclient.WorkflowRun, error) {
 	defaultClient, err := t.getClient()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get client: %w", err)
 	}
 
 	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
-		Namespace: namespace,
-		Logger:    temporalzap.NewLogger(t.Logger),
+		Namespace:          namespace,
+		Logger:             temporalzap.NewLogger(t.Logger),
+		ContextPropagators: t.propagators,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
@@ -50,15 +54,17 @@ func (t *temporal) ExecuteWorkflowInNamespace(ctx context.Context,
 func (t *temporal) GetWorkflowInNamespace(ctx context.Context,
 	namespace string,
 	workflowID string,
-	runID string) (tclient.WorkflowRun, error) {
+	runID string,
+) (tclient.WorkflowRun, error) {
 	defaultClient, err := t.getClient()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get client: %w", err)
 	}
 
 	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
-		Namespace: namespace,
-		Logger:    temporalzap.NewLogger(t.Logger),
+		Namespace:          namespace,
+		Logger:             temporalzap.NewLogger(t.Logger),
+		ContextPropagators: t.propagators,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
@@ -70,15 +76,17 @@ func (t *temporal) GetWorkflowInNamespace(ctx context.Context,
 func (t *temporal) CancelWorkflowInNamespace(ctx context.Context,
 	namespace string,
 	workflowID string,
-	runID string) error {
+	runID string,
+) error {
 	defaultClient, err := t.getClient()
 	if err != nil {
 		return fmt.Errorf("unable to get client: %w", err)
 	}
 
 	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
-		Namespace: namespace,
-		Logger:    temporalzap.NewLogger(t.Logger),
+		Namespace:          namespace,
+		Logger:             temporalzap.NewLogger(t.Logger),
+		ContextPropagators: t.propagators,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
@@ -96,15 +104,17 @@ func (t *temporal) SignalWorkflowInNamespace(ctx context.Context,
 	workflowID string,
 	runID string,
 	signalName string,
-	signalArg interface{}) error {
+	signalArg interface{},
+) error {
 	defaultClient, err := t.getClient()
 	if err != nil {
 		return fmt.Errorf("unable to get client: %w", err)
 	}
 
 	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
-		Namespace: namespace,
-		Logger:    temporalzap.NewLogger(t.Logger),
+		Namespace:          namespace,
+		Logger:             temporalzap.NewLogger(t.Logger),
+		ContextPropagators: t.propagators,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
@@ -124,15 +134,17 @@ func (t *temporal) SignalWithStartWorkflowInNamespace(ctx context.Context,
 	signalArg interface{},
 	options tclient.StartWorkflowOptions,
 	workflow interface{},
-	workflowArgs interface{}) (tclient.WorkflowRun, error) {
+	workflowArgs interface{},
+) (tclient.WorkflowRun, error) {
 	defaultClient, err := t.getClient()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get client: %w", err)
 	}
 
 	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
-		Namespace: namespace,
-		Logger:    temporalzap.NewLogger(t.Logger),
+		Namespace:          namespace,
+		Logger:             temporalzap.NewLogger(t.Logger),
+		ContextPropagators: t.propagators,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)

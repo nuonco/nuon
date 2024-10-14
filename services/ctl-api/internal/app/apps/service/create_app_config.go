@@ -9,7 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateAppConfigRequest struct{}
@@ -39,7 +39,7 @@ func (c *CreateAppConfigRequest) Validate(v *validator.Validate) error {
 // @Success		201				{object}	app.AppConfig
 // @Router			/v1/apps/{app_id}/config [post]
 func (s *service) CreateAppConfig(ctx *gin.Context) {
-	org, err := middlewares.OrgFromContext(ctx)
+	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

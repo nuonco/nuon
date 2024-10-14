@@ -13,6 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/analytics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/propagator"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/ch"
 	dblog "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/log"
@@ -45,6 +46,7 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(github.New),
 		fx.Provide(metrics.New),
 		fx.Provide(migrations.New),
+		fx.Provide(propagator.New),
 		fx.Provide(db.AsPSQL(psql.New)),
 		fx.Provide(db.AsCH(ch.New)),
 		fx.Provide(temporal.New),

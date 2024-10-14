@@ -9,10 +9,10 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 const (
@@ -37,7 +37,7 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if middlewares.IsGlobal(ctx) || middlewares.IsPublic(ctx) {
+		if cctx.IsGlobal(ctx) || cctx.IsPublic(ctx) {
 			ctx.Next()
 			return
 		}
@@ -52,7 +52,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		acct, err := middlewares.FromGinContext(ctx)
+		acct, err := cctx.AccountFromGinContext(ctx)
 		if err != nil {
 			ctx.Error(stderr.ErrAuthorization{
 				Err:         fmt.Errorf("no account identified"),
@@ -88,7 +88,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		middlewares.SetOrgGinContext(ctx, &org)
+		cctx.SetOrgGinContext(ctx, &org)
 		metricCtx, err := metrics.FromContext(ctx)
 		if err == nil {
 			metricCtx.OrgID = orgID

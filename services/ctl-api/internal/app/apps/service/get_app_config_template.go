@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type AppConfigTemplateType string
@@ -22,20 +22,20 @@ const (
 	AppConfigTemplateTypeAzureAKS     AppConfigTemplateType = "azure-aks"
 
 	// flat app template
-	AppConfigTemplateTypeFlat		 AppConfigTemplateType = "flat"
+	AppConfigTemplateTypeFlat AppConfigTemplateType = "flat"
 
 	// with sources app template
-	AppConfigTemplateTypeTopLevel	 AppConfigTemplateType = "top-level"
-	AppConfigTemplateTypeInstaller	 AppConfigTemplateType = "installer"
-	AppConfigTemplateTypeRunner		 AppConfigTemplateType = "runner"
-	AppConfigTemplateTypeSandbox		 AppConfigTemplateType = "sandbox"
-	AppConfigTemplateTypeInputs		 AppConfigTemplateType = "inputs"
-	AppConfigTemplateTypeTerraform	 AppConfigTemplateType = "terraform"
-	AppConfigTemplateTypeTerraformInfra	 AppConfigTemplateType = "terraformInfra"
-	AppConfigTemplateTypeHelm		 AppConfigTemplateType = "helm"
-	AppConfigTemplateTypeDockerBuild	 AppConfigTemplateType = "docker-build"
-	AppConfigTemplateTypeJob		 AppConfigTemplateType = "job"
-	AppConfigTemplateTypeContainerImage AppConfigTemplateType = "container-image"
+	AppConfigTemplateTypeTopLevel          AppConfigTemplateType = "top-level"
+	AppConfigTemplateTypeInstaller         AppConfigTemplateType = "installer"
+	AppConfigTemplateTypeRunner            AppConfigTemplateType = "runner"
+	AppConfigTemplateTypeSandbox           AppConfigTemplateType = "sandbox"
+	AppConfigTemplateTypeInputs            AppConfigTemplateType = "inputs"
+	AppConfigTemplateTypeTerraform         AppConfigTemplateType = "terraform"
+	AppConfigTemplateTypeTerraformInfra    AppConfigTemplateType = "terraformInfra"
+	AppConfigTemplateTypeHelm              AppConfigTemplateType = "helm"
+	AppConfigTemplateTypeDockerBuild       AppConfigTemplateType = "docker-build"
+	AppConfigTemplateTypeJob               AppConfigTemplateType = "job"
+	AppConfigTemplateTypeContainerImage    AppConfigTemplateType = "container-image"
 	AppConfigTemplateTypeECRContainerImage AppConfigTemplateType = "ecr-container-image"
 )
 
@@ -64,7 +64,7 @@ type AppConfigTemplate struct {
 // @Success		201				{object}	AppConfigTemplate
 // @Router			/v1/apps/{app_id}/template-config [get]
 func (s *service) GetAppConfigTemplate(ctx *gin.Context) {
-	org, err := middlewares.OrgFromContext(ctx)
+	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -95,79 +95,79 @@ func (s *service) createAppTemplate(ctx context.Context, currentApp *app.App, ty
 		return &AppConfigTemplate{
 			Filename: fmt.Sprintf("nuon-template.%s.toml", currentApp.Name),
 			Format:   app.AppConfigFmtToml,
-			Content: fmt.Sprintf(topLevelConfig, nam, nam),
+			Content:  fmt.Sprintf(topLevelConfig, nam, nam),
 		}, nil
 	case AppConfigTemplateTypeInstaller:
 		return &AppConfigTemplate{
 			Filename: "template_installer.toml",
 			Format:   app.AppConfigFmtToml,
-			Content: installerConfig,
+			Content:  installerConfig,
 		}, nil
 	case AppConfigTemplateTypeRunner:
 		return &AppConfigTemplate{
 			Filename: "template_runner.toml",
 			Format:   app.AppConfigFmtToml,
-			Content: runnerConfig,
+			Content:  runnerConfig,
 		}, nil
 	case AppConfigTemplateTypeSandbox:
 		return &AppConfigTemplate{
 			Filename: "template_sandbox.toml",
 			Format:   app.AppConfigFmtToml,
-			Content: sandboxConfig,
+			Content:  sandboxConfig,
 		}, nil
 	case AppConfigTemplateTypeInputs:
 		return &AppConfigTemplate{
 			Filename: "template_inputs.toml",
 			Format:   app.AppConfigFmtToml,
-			Content: inputsConfig,
+			Content:  inputsConfig,
 		}, nil
 	case AppConfigTemplateTypeTerraform:
 		return &AppConfigTemplate{
 			Filename: "template_terraform_component.toml",
 			Format:   app.AppConfigFmtToml,
-			Content: terraformComponentConfig,
+			Content:  terraformComponentConfig,
 		}, nil
 	case AppConfigTemplateTypeTerraformInfra:
 		return &AppConfigTemplate{
 			Filename: "template_terraform_infra_component.toml",
 			Format:   app.AppConfigFmtToml,
-			Content: terraformInfraComponentConfig,
+			Content:  terraformInfraComponentConfig,
 		}, nil
 	case AppConfigTemplateTypeHelm:
 		return &AppConfigTemplate{
 			Filename: "template_helm_component.toml",
 			Format:   app.AppConfigFmtToml,
-			Content: helmComponentConfig,
+			Content:  helmComponentConfig,
 		}, nil
 	case AppConfigTemplateTypeDockerBuild:
 		return &AppConfigTemplate{
 			Filename: "template_docker_build_component.toml",
 			Format:   app.AppConfigFmtToml,
-			Content: dockerBuildComponentConfig,
+			Content:  dockerBuildComponentConfig,
 		}, nil
 	case AppConfigTemplateTypeContainerImage:
 		return &AppConfigTemplate{
 			Filename: "template_container_image_component.toml",
 			Format:   app.AppConfigFmtToml,
-			Content: containerImageComponentConfig,
+			Content:  containerImageComponentConfig,
 		}, nil
 	case AppConfigTemplateTypeJob:
 		return &AppConfigTemplate{
 			Filename: "template_job_component.toml",
 			Format:   app.AppConfigFmtToml,
-			Content: jobComponentConfig,
+			Content:  jobComponentConfig,
 		}, nil
 	case AppConfigTemplateTypeECRContainerImage:
 		return &AppConfigTemplate{
 			Filename: "template_ecr_container_image_component.toml",
 			Format:   app.AppConfigFmtToml,
-			Content: ecrContainerImageComponentConfig,
+			Content:  ecrContainerImageComponentConfig,
 		}, nil
 	default:
 		return &AppConfigTemplate{
 			Filename: fmt.Sprintf("nuon-template.%s.toml", currentApp.Name),
 			Format:   app.AppConfigFmtToml,
-			Content: fmt.Sprintf(flatAppConfigTemplate, nam, nam),
+			Content:  fmt.Sprintf(flatAppConfigTemplate, nam, nam),
 		}, nil
 	}
 }
