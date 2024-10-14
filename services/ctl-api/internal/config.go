@@ -123,7 +123,8 @@ type Config struct {
 	UseLocalRunners         bool   `config:"use_local_runners"`
 
 	// analytics configuration
-	SegmentWriteKey string `config:"segment_write_key" validate:"required"`
+	SegmentWriteKey  string `config:"segment_write_key" validate:"required"`
+	DisableAnalytics bool   `config:"disable_analytics"`
 }
 
 func NewConfig() (*Config, error) {
