@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type BaseSignal struct{}
@@ -33,7 +33,7 @@ func (BaseSignal) Noop() bool {
 }
 
 func (BaseSignal) GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error) {
-	org, err := middlewares.OrgFromContext(ctx)
+	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get org from context: %w", err)
 	}

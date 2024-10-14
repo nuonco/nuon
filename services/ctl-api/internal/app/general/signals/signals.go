@@ -11,12 +11,14 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
-type EnsureEventLoopsRequest struct{}
-type EnsureEventLoopsPageRequest struct {
-	Namespace string `json:"namespace"`
-	Offset    int    `json:"offset"`
-	Limit     int    `json:"limit"`
-}
+type (
+	EnsureEventLoopsRequest     struct{}
+	EnsureEventLoopsPageRequest struct {
+		Namespace string `json:"namespace"`
+		Offset    int    `json:"offset"`
+		Limit     int    `json:"limit"`
+	}
+)
 
 const (
 	TemporalNamespace string = "general"
@@ -70,6 +72,5 @@ func (s *Signal) Start() bool {
 // NOTE(fd): the general loop has no concept for an organization. we also modify startEventLoop
 // to ensure the absence of an org doesn't prevent the loop from starting
 func (s *Signal) GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error) {
-	fmt.Println("general.signals.GetOrg called")
 	return nil, nil
 }

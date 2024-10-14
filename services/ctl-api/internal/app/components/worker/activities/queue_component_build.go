@@ -6,7 +6,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type QueueComponentBuildRequest struct {
@@ -18,8 +18,8 @@ type QueueComponentBuildRequest struct {
 // @temporal-gen activity
 func (a *Activities) QueueComponentBuild(ctx context.Context, req QueueComponentBuildRequest) (*app.ComponentBuild, error) {
 	// set the orgID on the context, for all writes
-	ctx = middlewares.SetOrgIDContext(ctx, req.OrgID)
-	ctx = middlewares.SetAccountIDContext(ctx, req.CreatedByID)
+	ctx = cctx.SetOrgIDContext(ctx, req.OrgID)
+	ctx = cctx.SetAccountIDContext(ctx, req.CreatedByID)
 
 	build, err := a.helpers.CreateComponentBuild(ctx, req.ComponentID, true, nil)
 	if err != nil {

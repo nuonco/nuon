@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows/dal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID GetComponentBuildPlan
@@ -29,7 +29,7 @@ import (
 // @Success		200				{object}	planv1.Plan
 // @Router			/v1/components/{component_id}/builds/{build_id}/plan [get]
 func (s *service) GetComponentBuildPlan(ctx *gin.Context) {
-	org, err := middlewares.OrgFromContext(ctx)
+	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
