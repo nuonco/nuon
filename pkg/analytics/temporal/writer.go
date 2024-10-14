@@ -1,32 +1,30 @@
-package analytics
+package temporalanalytics
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
 	segment "github.com/segmentio/analytics-go/v3"
+	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/analytics/events"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
-//go:generate mockgen -destination=mock_writer.go -source=writer.go -package=analytics
+//go:generate mockgen -destination=mock_writer.go -source=writer.go -package=temporalanalytics
 type Writer interface {
-	Identify(context.Context)
-	Group(context.Context)
-	Track(context.Context, events.Event, map[string]interface{})
+	Track(workflow.Context, events.Event, map[string]interface{})
 }
 
 var _ Writer = (*writer)(nil)
 
+// TemporalWriter wraps a ContextWriter, and calls it's methods via Temporal's workflow.SideEffect.
+// It's methods accept workflow.Context instead of the standard context.Context.
 type writer struct {
 	v *validator.Validate
 
 	SegmentKey string      `validate:"required"`
-	GroupFn    GroupFn     `validate:"required"`
-	IdentifyFn IdentifyFn  `validate:"required"`
 	UserIDFn   UserIDFn    `validate:"required"`
 	Logger     *zap.Logger `validate:"required"`
 	Properties map[string]interface{}
@@ -61,20 +59,6 @@ func New(v *validator.Validate, opts ...optFn) (*writer, error) {
 func WithSegmentKey(key string) optFn {
 	return func(w *writer) error {
 		w.SegmentKey = key
-		return nil
-	}
-}
-
-func WithGroupFn(fn GroupFn) optFn {
-	return func(w *writer) error {
-		w.GroupFn = fn
-		return nil
-	}
-}
-
-func WithIdentifyFn(fn IdentifyFn) optFn {
-	return func(w *writer) error {
-		w.IdentifyFn = fn
 		return nil
 	}
 }

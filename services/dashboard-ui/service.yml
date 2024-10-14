@@ -30,4 +30,4 @@ earthly_cmds:
     ports:
       - 4000
 earthly_env:
-  NEX_PUBLIC_API_URL: http://host.docker.internal:8081
+  NEXT_PUBLIC_API_URL: http://host.docker.internal:8081
