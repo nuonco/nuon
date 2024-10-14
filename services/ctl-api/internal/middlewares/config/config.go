@@ -5,7 +5,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type middleware struct {
@@ -19,7 +19,7 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		middlewares.SetConfigGinContext(ctx, m.cfg)
+		cctx.SetConfigGinContext(ctx, m.cfg)
 		ctx.Next()
 	}
 }

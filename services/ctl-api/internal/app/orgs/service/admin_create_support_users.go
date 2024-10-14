@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 var defaultSupportUsers = [][2]string{
@@ -48,7 +48,7 @@ func (s *service) CreateSupportUsers(ctx *gin.Context) {
 		return
 	}
 
-	middlewares.SetAccountIDGinContext(ctx, org.CreatedByID)
+	cctx.SetAccountIDGinContext(ctx, org.CreatedByID)
 	for _, user := range defaultSupportUsers {
 		if err := s.createSupportUser(ctx, user[0], user[1], orgID); err != nil {
 			ctx.Error(err)

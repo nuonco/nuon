@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-github/v50/github"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 const (
@@ -42,7 +42,7 @@ type Repository struct {
 // @Success		200				{array}		Repository
 // @Router			/v1/vcs/connected-repos [get]
 func (s *service) GetAllConnectedRepos(ctx *gin.Context) {
-	currentOrg, err := middlewares.OrgFromContext(ctx)
+	currentOrg, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

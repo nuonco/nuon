@@ -10,7 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateInstallDeployRequest struct {
@@ -32,7 +32,7 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 	componentID := step.ComponentRelease.ComponentBuild.ComponentConfigConnection.ComponentID
 
 	// set the orgID on the context, for all writes
-	ctx = middlewares.SetOrgIDContext(ctx, step.OrgID)
+	ctx = cctx.SetOrgIDContext(ctx, step.OrgID)
 
 	// ensure that the install component exists
 	var install app.Install
