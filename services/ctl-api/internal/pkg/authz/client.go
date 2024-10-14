@@ -17,7 +17,7 @@ type Params struct {
 	DB              *gorm.DB `name:"psql"`
 	V               *validator.Validate
 	EvClient        eventloop.Client
-	AnalyticsClient *analytics.ContextWriter
+	AnalyticsClient analytics.Writer
 }
 
 type Client struct {
@@ -25,7 +25,7 @@ type Client struct {
 	db              *gorm.DB
 	v               *validator.Validate
 	evClient        eventloop.Client
-	analyticsClient *analytics.ContextWriter
+	analyticsClient analytics.Writer
 }
 
 func New(params Params) *Client {

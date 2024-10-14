@@ -4,8 +4,9 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/fx"
 
-	"github.com/powertoolsdev/mono/pkg/analytics"
+	temporalanalytics "github.com/powertoolsdev/mono/pkg/analytics/temporal"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
@@ -17,16 +18,21 @@ type Workflows struct {
 	v         *validator.Validate
 	acts      activities.Activities
 	mw        tmetrics.Writer
-	analytics *analytics.TemporalWriter
+	analytics temporalanalytics.Writer
 }
 
-func NewWorkflows(v *validator.Validate,
-	cfg *internal.Config,
-	metricsWriter metrics.Writer,
-	analytics *analytics.TemporalWriter,
-) (*Workflows, error) {
-	tmw, err := tmetrics.New(v,
-		tmetrics.WithMetricsWriter(metricsWriter), tmetrics.WithTags(map[string]string{
+type Params struct {
+	fx.In
+
+	V             *validator.Validate
+	Cfg           *internal.Config
+	MetricsWriter metrics.Writer
+	Analytics     temporalanalytics.Writer
+}
+
+func NewWorkflows(params Params) (*Workflows, error) {
+	tmw, err := tmetrics.New(params.V,
+		tmetrics.WithMetricsWriter(params.MetricsWriter), tmetrics.WithTags(map[string]string{
 			"namespace": defaultNamespace,
 			"context":   "worker",
 		}))
@@ -35,11 +41,9 @@ func NewWorkflows(v *validator.Validate,
 	}
 
 	return &Workflows{
-		cfg: cfg,
-		v:   v,
-		//  NOTE: this field is only used to be able to fetch activity methods
-		acts:      activities.Activities{},
+		cfg:       params.Cfg,
+		v:         params.V,
 		mw:        tmw,
-		analytics: analytics,
+		analytics: params.Analytics,
 	}, nil
 }

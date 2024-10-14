@@ -5,7 +5,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/pkg/analytics"
+	"github.com/powertoolsdev/mono/pkg/analytics/events"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
@@ -38,7 +38,7 @@ func (w *Workflows) Created(ctx workflow.Context, sreq signals.RequestSignal) er
 			"created_by":   install.CreatedBy.Email,
 		})
 
-		w.analytics.Track(ctx, analytics.InstallCreated, map[string]any{
+		w.analytics.Track(ctx, events.InstallCreated, map[string]any{
 			"install_id": install.ID,
 		})
 	}

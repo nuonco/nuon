@@ -29,7 +29,7 @@ type Params struct {
 	AuthzClient     *authz.Client
 	RunnersHelpers  *runnershelpers.Helpers
 	AcctClient      *account.Client
-	AnalyticsClient *analytics.ContextWriter
+	AnalyticsClient analytics.Writer
 }
 
 type service struct {
@@ -42,7 +42,7 @@ type service struct {
 	evClient        eventloop.Client
 	runnersHelpers  *runnershelpers.Helpers
 	acctClient      *account.Client
-	analyticsClient *analytics.ContextWriter
+	analyticsClient analytics.Writer
 }
 
 var _ api.Service = (*service)(nil)
