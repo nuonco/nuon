@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type AdminAddVCSConnectionRequest struct {
@@ -41,8 +41,8 @@ func (s *service) AdminAddVCSConnection(ctx *gin.Context) {
 		return
 	}
 
-	middlewares.SetOrgGinContext(ctx, org)
-	middlewares.SetAccountIDGinContext(ctx, org.CreatedByID)
+	cctx.SetOrgGinContext(ctx, org)
+	cctx.SetAccountIDGinContext(ctx, org.CreatedByID)
 
 	if _, err := s.createOrgConnection(ctx, org.ID, req.GithubInstallID); err != nil {
 		ctx.Error(err)

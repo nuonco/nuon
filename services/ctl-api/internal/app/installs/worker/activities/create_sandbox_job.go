@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateSandboxJobRequest struct {
@@ -23,8 +23,8 @@ func (a *Activities) CreateSandboxJob(ctx context.Context, req *CreateSandboxJob
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	ctx = middlewares.SetAccountIDContext(ctx, install.CreatedByID)
-	ctx = middlewares.SetOrgIDContext(ctx, install.OrgID)
+	ctx = cctx.SetAccountIDContext(ctx, install.CreatedByID)
+	ctx = cctx.SetOrgIDContext(ctx, install.OrgID)
 
 	job, err := a.runnersHelpers.CreateInstallSandboxJob(ctx, req.RunnerID, req.OwnerType, req.OwnerID, app.RunnerJobTypeSandboxTerraform, req.Op)
 	if err != nil {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 func (s *Helpers) ContextFromJob(ctx context.Context, jobID string) (context.Context, error) {
@@ -13,8 +13,8 @@ func (s *Helpers) ContextFromJob(ctx context.Context, jobID string) (context.Con
 		return nil, fmt.Errorf("unable to get job: %w", err)
 	}
 
-	ctx = middlewares.SetOrgIDContext(ctx, job.OrgID)
-	ctx = middlewares.SetAccountIDContext(ctx, job.CreatedByID)
+	ctx = cctx.SetOrgIDContext(ctx, job.OrgID)
+	ctx = cctx.SetAccountIDContext(ctx, job.CreatedByID)
 
 	return ctx, nil
 }

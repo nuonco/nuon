@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateSyncJobRequest struct {
@@ -22,8 +22,8 @@ func (a *Activities) CreateSyncJob(ctx context.Context, req *CreateSyncJobReques
 		return nil, fmt.Errorf("unable to get deploy: %w", err)
 	}
 
-	ctx = middlewares.SetAccountIDContext(ctx, deploy.CreatedByID)
-	ctx = middlewares.SetOrgIDContext(ctx, deploy.OrgID)
+	ctx = cctx.SetAccountIDContext(ctx, deploy.CreatedByID)
+	ctx = cctx.SetOrgIDContext(ctx, deploy.OrgID)
 
 	job, err := a.runnersHelpers.CreateSyncJob(ctx, req.RunnerID, req.Type, req.Op, req.DeployID)
 	if err != nil {

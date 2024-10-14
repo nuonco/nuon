@@ -6,8 +6,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
@@ -33,12 +33,12 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if middlewares.IsPublic(ctx) {
+		if cctx.IsPublic(ctx) {
 			ctx.Next()
 			return
 		}
 
-		acct, err := middlewares.FromGinContext(ctx)
+		acct, err := cctx.AccountFromGinContext(ctx)
 		if err != nil {
 			ctx.Error(err)
 			ctx.Abort()
