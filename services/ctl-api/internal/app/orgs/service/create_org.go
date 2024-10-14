@@ -78,7 +78,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create org: %w", err))
 		return
 	}
-	cctx.SetOrgIDGinContext(ctx, newOrg.ID)
+	cctx.SetOrgGinContext(ctx, newOrg)
 
 	s.evClient.Send(ctx, newOrg.ID, &sigs.Signal{
 		Type: sigs.OperationCreated,

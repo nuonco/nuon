@@ -1,4 +1,4 @@
-package analytics
+package events
 
 type Event string
 
