@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID GetInstallers
@@ -26,7 +26,7 @@ import (
 // @Success		200	{array}	app.Installer
 // @Router			/v1/installers [get]
 func (s *service) GetInstallers(ctx *gin.Context) {
-	org, err := middlewares.OrgFromContext(ctx)
+	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

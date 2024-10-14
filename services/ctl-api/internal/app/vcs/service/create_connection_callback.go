@@ -9,7 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateConnectionCallbackRequest struct {
@@ -55,7 +55,7 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 		return
 	}
 
-	dbCtx := middlewares.SetAccountIDContext(ctx, org.CreatedByID)
+	dbCtx := cctx.SetAccountIDContext(ctx, org.CreatedByID)
 	vcsConn, err := s.createOrgConnection(dbCtx, req.OrgID, req.GithubInstallID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org connection: %w", err))

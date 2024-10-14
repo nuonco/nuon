@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateJobRequest struct {
@@ -24,8 +24,8 @@ func (a *Activities) CreateJob(ctx context.Context, req *CreateJobRequest) (*app
 		return nil, fmt.Errorf("unable to fetch runner: %w", err)
 	}
 
-	ctx = middlewares.SetOrgIDContext(ctx, runner.OrgID)
-	ctx = middlewares.SetAccountIDContext(ctx, runner.CreatedByID)
+	ctx = cctx.SetOrgIDContext(ctx, runner.OrgID)
+	ctx = cctx.SetAccountIDContext(ctx, runner.CreatedByID)
 
 	job, err := a.helpers.CreateRunnerJob(ctx, req.RunnerID, req.OwnerType, req.OwnerID, req.Type, req.Op)
 	if err != nil {

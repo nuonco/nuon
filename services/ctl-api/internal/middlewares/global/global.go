@@ -4,9 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"go.uber.org/zap"
-
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
@@ -42,7 +41,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			m.l.Debug("marking request as global", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
 		}
 
-		middlewares.SetIsGlobal(ctx, found)
+		cctx.SetIsGlobal(ctx, found)
 	}
 }
 

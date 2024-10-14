@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	tclient "go.temporal.io/sdk/client"
 	converter "go.temporal.io/sdk/converter"
+	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 )
 
@@ -19,11 +20,12 @@ type ContextKey struct{}
 type temporal struct {
 	v *validator.Validate
 
-	Addr      string `validate:"required"`
-	Namespace string
-	Logger    *zap.Logger `validate:"required"`
-	LazyLoad  bool
-	Converter converter.DataConverter
+	Addr        string `validate:"required"`
+	Namespace   string
+	Logger      *zap.Logger `validate:"required"`
+	LazyLoad    bool
+	Converter   converter.DataConverter
+	propagators []workflow.ContextPropagator
 
 	tclient.Client
 	sync.RWMutex
@@ -34,9 +36,10 @@ var _ Client = (*temporal)(nil)
 func New(v *validator.Validate, opts ...temporalOption) (*temporal, error) {
 	logger, _ := zap.NewProduction(zap.WithCaller(false))
 	tmp := &temporal{
-		v:         v,
-		Logger:    logger,
-		Namespace: defaultNamespace,
+		v:           v,
+		Logger:      logger,
+		Namespace:   defaultNamespace,
+		propagators: make([]workflow.ContextPropagator, 0),
 	}
 
 	for idx, opt := range opts {
@@ -91,6 +94,13 @@ func WithLazyLoad(lazyLoad bool) temporalOption {
 func WithDataConverter(dataConverter converter.DataConverter) temporalOption {
 	return func(t *temporal) error {
 		t.Converter = dataConverter
+		return nil
+	}
+}
+
+func WithContextPropagator(propagator workflow.ContextPropagator) temporalOption {
+	return func(t *temporal) error {
+		t.propagators = append(t.propagators, propagator)
 		return nil
 	}
 }

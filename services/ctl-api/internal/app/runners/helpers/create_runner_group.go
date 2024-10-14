@@ -11,7 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 const (
@@ -20,8 +20,8 @@ const (
 )
 
 func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Install) (*app.RunnerGroup, error) {
-	ctx = middlewares.SetOrgIDContext(ctx, install.OrgID)
-	ctx = middlewares.SetAccountIDContext(ctx, install.CreatedByID)
+	ctx = cctx.SetOrgIDContext(ctx, install.OrgID)
+	ctx = cctx.SetAccountIDContext(ctx, install.CreatedByID)
 
 	platform := install.AppRunnerConfig.Type
 	if install.Org.OrgType != app.OrgTypeDefault || h.cfg.UseLocalRunners {
@@ -81,8 +81,8 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 }
 
 func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.RunnerGroup, error) {
-	ctx = middlewares.SetOrgIDContext(ctx, org.ID)
-	ctx = middlewares.SetAccountIDContext(ctx, org.CreatedByID)
+	ctx = cctx.SetOrgIDContext(ctx, org.ID)
+	ctx = cctx.SetAccountIDContext(ctx, org.CreatedByID)
 
 	platform := app.AppRunnerTypeAWSEKS
 	if org.OrgType != app.OrgTypeDefault || h.cfg.UseLocalRunners {
