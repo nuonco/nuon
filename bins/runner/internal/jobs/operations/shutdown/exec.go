@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-runner-go/models"
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"go.uber.org/zap"
 )
 
@@ -19,7 +20,12 @@ func (h *handler) finishJob(ctx context.Context, job *models.AppRunnerJob, jobEx
 }
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	h.l.Info("exec", zap.String("job_type", "shutdown"))
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("exec", zap.String("job_type", "shutdown"))
 
 	// NOTE(jm): we can not _safely_ stop the fx loop in this step, because the job execution in jobloop.JobLoop
 	// will attempt to "cleanup" after this. This means that immediately once this returns, it will set the status

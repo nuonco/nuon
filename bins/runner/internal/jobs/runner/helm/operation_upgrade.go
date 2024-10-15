@@ -4,26 +4,27 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/release"
 
 	"github.com/powertoolsdev/mono/pkg/helm"
 )
 
-func (h *handler) upgrade(ctx context.Context, actionCfg *action.Configuration) (*release.Release, error) {
-	h.log.Info("fetching previous release")
+func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration) (*release.Release, error) {
+	l.Info("fetching previous release")
 	prevRel, err := helm.GetRelease(actionCfg, h.state.cfg.Name)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get previous helm release: %w", err)
 	}
 
-	h.log.Info("loading helm env settings")
+	l.Info("loading helm env settings")
 	settings, err := helm.LoadEnvSettings()
 	if err != nil {
 		return nil, fmt.Errorf("unable to load env settings: %w", err)
 	}
 
-	h.log.Info("loading chart options")
+	l.Info("loading chart options")
 	cpo, chartName, err := helm.ChartPathOptions(
 		h.state.cfg.Repository,
 		h.state.cfg.Chart,
@@ -33,7 +34,7 @@ func (h *handler) upgrade(ctx context.Context, actionCfg *action.Configuration) 
 		return nil, fmt.Errorf("unable to load chart options: %w", err)
 	}
 
-	h.log.Info("loading chart")
+	l.Info("loading chart")
 	c, _, err := helm.GetChart(chartName, cpo, settings)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load chart: %w", err)
@@ -67,7 +68,7 @@ func (h *handler) upgrade(ctx context.Context, actionCfg *action.Configuration) 
 	client.CleanupOnFail = false
 	client.Force = false
 
-	h.log.Info("upgrading helm release")
+	l.Info("upgrading helm release")
 	rel, err := client.RunWithContext(ctx, prevRel.Name, c, values)
 	if err != nil {
 		return nil, fmt.Errorf("unable to upgrade helm release: %w", err)

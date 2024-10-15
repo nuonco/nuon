@@ -6,17 +6,25 @@ import (
 
 	"github.com/nuonco/nuon-runner-go/models"
 
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/log"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry"
 )
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+	hcLog := log.NewHClog(l)
+
 	// load access info, workspace source and logger
 	src := h.state.workspace.Source()
 
 	// build the image locally, pushing to the local registry
 	dockerfile, contextDir, err := h.getBuildContext(
 		src,
-		h.hcLog,
+		hcLog,
 	)
 	if err != nil {
 		h.writeErrorResult(ctx, "get build context", err)
@@ -24,7 +32,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	// perform the build
-	err = h.buildWithKaniko(ctx, h.hcLog, dockerfile, contextDir, h.state.cfg.BuildArgs)
+	err = h.buildWithKaniko(ctx, hcLog, dockerfile, contextDir, h.state.cfg.BuildArgs)
 	if err != nil {
 		h.writeErrorResult(ctx, "execute kaniko build", err)
 		return fmt.Errorf("unable to execute job: %w", err)

@@ -20,9 +20,9 @@ type BaseParams struct {
 	Client      nuonrunner.Client
 	Settings    *settings.Settings
 	Cfg         *internal.Config
-	L           *zap.Logger
 	ErrRecorder *errs.Recorder
 	MW          metrics.Writer
 
-	LoggerProvider *log.LoggerProvider `name:"job"`
+	L              *zap.Logger         `name:"otelsystem"`
+	LoggerProvider *log.LoggerProvider `name:"otel"`
 }

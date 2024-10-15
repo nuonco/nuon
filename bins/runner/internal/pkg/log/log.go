@@ -1,26 +1,19 @@
 package log
 
-import (
-	"fmt"
+//func New(cfg *internal.Config) (*zap.Logger, error) {
+//var (
+//l   *zap.Logger
+//err error
+//)
 
-	"go.uber.org/zap"
+//l, err = zap.NewProduction()
+//if cfg.LogLevel == "DEBUG" {
+//l, err = zap.NewDevelopment()
+//}
+//if err != nil {
+//return nil, fmt.Errorf("unable to initialize logger: %w", err)
+//}
 
-	"github.com/powertoolsdev/mono/bins/runner/internal"
-)
-
-func New(cfg *internal.Config) (*zap.Logger, error) {
-	var (
-		l   *zap.Logger
-		err error
-	)
-
-	l, err = zap.NewProduction()
-	if cfg.LogLevel == "DEBUG" {
-		l, err = zap.NewDevelopment()
-	}
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize logger: %w", err)
-	}
-	// zap.ReplaceGlobals(l)
-	return l, nil
-}
+//// zap.ReplaceGlobals(l)
+//return l, nil
+//}
