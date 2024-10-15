@@ -7,6 +7,7 @@ env:
   AUTH0_CLIENT_ID: q1GiyhLk6v6cmmsydNKp02ZghvgRMUTa
   NEXT_PUBLIC_API_URL: 'http://localhost:8081'
   NEXT_PUBLIC_SEGMENT_WRITE_KEY: 'BejR5RWgZINK5Kc28pSn7yf1isc5Zalr'
+  NUON_API_URL: http://localhost:8081
 env_secrets:
   AUTH0_CLIENT_SECRET:
     name: dashboard-ui-auth0-client-secret-dev
@@ -31,3 +32,5 @@ earthly_cmds:
       - 4000
 earthly_env:
   NEXT_PUBLIC_API_URL: http://host.docker.internal:8081
+  # used for generating types
+  NUON_API_URL: http://host.docker.internal:8081
