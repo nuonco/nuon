@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	// chTypes "github.com/powertoolsdev/mono/pkg/gorm/clickhouse/pkg/types"
-
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/migrator"
@@ -28,8 +26,6 @@ func contains(s []string, e string) bool {
 }
 
 var regFullDataType = regexp.MustCompile(`\D*(\d+)\D?`)
-
-// var regColumnDefinition = regexp.MustCompile(`\s*(\w+)\s+[a-zA-Z0-9_]+\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)\s*`)
 
 var regColumnDefinition = regexp.MustCompile(`\s*(\w+)\s+[a-zA-Z0-9_]+(?:\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\))?\s*`)
 
