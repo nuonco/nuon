@@ -25,14 +25,17 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(validator.New),
 		fx.Provide(api.New),
 		fx.Provide(heartbeater.New),
-		fx.Provide(log.New),
-		fx.Provide(log.NewHclog),
+		fx.Provide(slog.AsSystemProvider(slog.NewSystemProvider)),
+		fx.Provide(slog.AsOTELProvider(slog.NewOTELProvider)),
+		fx.Provide(log.AsSystemLogger(log.NewSystem)),
+		fx.Provide(log.AsSystemOTELLogger(log.NewOTELSystem)),
 		fx.Provide(errs.NewRecorder),
 		fx.Provide(ocicopy.New),
 		fx.Provide(registry.New),
 		fx.Provide(metrics.New),
-		fx.Provide(slog.AsSystemProvider(slog.NewSystemProvider)),
-		fx.Provide(slog.AsSystemLogger(slog.NewSystemLogger)),
-		fx.Provide(slog.AsJobProvider(slog.NewJobProvider)),
+
+		// NOTE(jm): we plan to deprecate the default loggers, so each logger is forced to be depended on via
+		// name.
+		fx.Provide(log.NewSystem),
 	}
 }

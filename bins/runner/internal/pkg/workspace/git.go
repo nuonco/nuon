@@ -13,8 +13,14 @@ func (w *workspace) isGit() bool {
 }
 
 func (w *workspace) clone(ctx context.Context) error {
+	pWriter := &progressWriter{
+		l: w.L,
+	}
+
+	w.L.Info("cloning repository")
 	repo, err := git.PlainCloneContext(ctx, w.rootDir(), false, &git.CloneOptions{
-		URL: w.Src.Url,
+		URL:      w.Src.Url,
+		Progress: pWriter,
 	})
 	if err != nil {
 		return CloneErr{
@@ -24,6 +30,7 @@ func (w *workspace) clone(ctx context.Context) error {
 		}
 	}
 
+	w.L.Info("fetching working tree")
 	wtree, err := repo.Worktree()
 	if err != nil {
 		return CloneErr{
@@ -34,6 +41,7 @@ func (w *workspace) clone(ctx context.Context) error {
 	}
 
 	// first, attempt to check out as a reference
+	w.L.Info("checking out reference/branch")
 	coOpts := &git.CheckoutOptions{
 		Hash:  plumbing.NewHash(w.Src.Ref),
 		Force: true,

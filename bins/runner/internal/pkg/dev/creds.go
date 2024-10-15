@@ -65,7 +65,7 @@ func (d *devver) initCreds(ctx context.Context) error {
 		return nil
 	}
 
-	if err := retry.Retry(ctx, fn, retry.WithMaxAttempts(5), retry.WithSleep(5)); err != nil {
+	if err := retry.Retry(ctx, fn, retry.WithMaxAttempts(10), retry.WithSleep(5)); err != nil {
 		return err
 	}
 

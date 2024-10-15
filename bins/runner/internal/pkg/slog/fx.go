@@ -4,13 +4,6 @@ import (
 	"go.uber.org/fx"
 )
 
-func AsSystemLogger(f any) any {
-	return fx.Annotate(
-		f,
-		fx.ResultTags(`name:"system"`),
-	)
-}
-
 func AsSystemProvider(f any) any {
 	return fx.Annotate(
 		f,
@@ -18,9 +11,9 @@ func AsSystemProvider(f any) any {
 	)
 }
 
-func AsJobProvider(f any) any {
+func AsOTELProvider(f any) any {
 	return fx.Annotate(
 		f,
-		fx.ResultTags(`name:"job"`),
+		fx.ResultTags(`name:"otel"`),
 	)
 }
