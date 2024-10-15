@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	structpb "google.golang.org/protobuf/types/known/structpb"
+
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
-	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
-	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 var (
@@ -28,9 +28,6 @@ type Client interface {
 
 	GetOrgProvisionRequest(ctx context.Context, orgID string) (*orgsv1.ProvisionRequest, error)
 	GetOrgProvisionResponse(ctx context.Context, orgID string) (*orgsv1.ProvisionResponse, error)
-
-	GetAppProvisionRequest(ctx context.Context, orgID, appID string) (*appsv1.ProvisionRequest, error)
-	GetAppProvisionResponse(ctx context.Context, orgID, appID string) (*appsv1.ProvisionResponse, error)
 
 	// executors
 	GetInstanceSyncPlan(ctx context.Context, orgID, appID, componentID, deployID, installID string) (*planv1.Plan, error)
@@ -80,9 +77,6 @@ type Settings struct {
 
 	DeploymentsBucket                string
 	DeploymentsBucketIAMRoleTemplate string
-
-	AppsBucket                string
-	AppsBucketIAMRoleTemplate string
 }
 
 // WithAuth is used to override the authentication, and use something like static credentials for instance
