@@ -25,9 +25,15 @@ export const OrgCard: FC = () => {
         <Heading variant="subheading">{name}</Heading>
       </span>
 
-      <Text variant="caption">
-        <Link href={`/dashboard/${id}`}>Details</Link>
-      </Text>
+      <div className="flex gap-2 items-center">
+        <Text variant="caption">
+          <Link href={`/dashboard/${id}`}>Details</Link>
+        </Text>
+
+        <Text variant="caption" title="Try the beta of the new Nuon dashboard">
+          <Link href={`/beta/${id}/apps`}>Beta</Link>
+        </Text>
+      </div>
     </Card>
   )
 }
