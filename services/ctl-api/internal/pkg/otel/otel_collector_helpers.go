@@ -2,7 +2,6 @@ package otel
 
 import (
 	"encoding/hex"
-	"fmt"
 	"time"
 
 	"github.com/nuonco/clickhouse-go/v2"
@@ -77,43 +76,6 @@ func ConvertExemplars(exemplars pmetric.ExemplarSlice) (clickhouse.ArraySet, cli
 	return attrs, times, values, traceIDs, spanIDs
 }
 
-// https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/metrics/v1/metrics.proto#L358
-// define two types for one datapoint value, clickhouse only use one value of float64 to store them
-func GetValue(intValue int64, floatValue float64, dataType any) float64 {
-	switch t := dataType.(type) {
-	case pmetric.ExemplarValueType:
-		switch t {
-		case pmetric.ExemplarValueTypeDouble:
-			return floatValue
-		case pmetric.ExemplarValueTypeInt:
-			return float64(intValue)
-		case pmetric.ExemplarValueTypeEmpty:
-			// TODO: make all fmts logs
-			fmt.Println("Exemplar value type is unset, use 0.0 as default")
-			return 0.0
-		default:
-			fmt.Println("Can't find a suitable value for ExemplarValueType, use 0.0 as default")
-			return 0.0
-		}
-	case pmetric.NumberDataPointValueType:
-		switch t {
-		case pmetric.NumberDataPointValueTypeDouble:
-			return floatValue
-		case pmetric.NumberDataPointValueTypeInt:
-			return float64(intValue)
-		case pmetric.NumberDataPointValueTypeEmpty:
-			fmt.Println("DataPoint value type is unset, use 0.0 as default")
-			return 0.0
-		default:
-			fmt.Println("Can't find a suitable value for NumberDataPointValueType, use 0.0 as default")
-			return 0.0
-		}
-	default:
-		fmt.Println("unsupported ValueType, current support: ExemplarValueType, NumberDataPointValueType, ues 0.0 as default")
-		return 0.0
-	}
-}
-
 // src: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/clickhouseexporter/internal/metrics_model.go#L171
 func ConvertSliceToArraySet[T any](slice []T) clickhouse.ArraySet {
 	var set clickhouse.ArraySet
@@ -171,22 +133,4 @@ func StatusCodeStr(sk ptrace.StatusCode) string {
 		return "STATUS_CODE_ERROR"
 	}
 	return ""
-}
-
-// SpanIDToHexOrEmptyString returns a hex string from SpanID.
-// An empty string is returned, if SpanID is empty.
-func SpanIDToHexOrEmptyString(id pcommon.SpanID) string {
-	if id.IsEmpty() {
-		return ""
-	}
-	return hex.EncodeToString(id[:])
-}
-
-// TraceIDToHexOrEmptyString returns a hex string from TraceID.
-// An empty string is returned, if TraceID is empty.
-func TraceIDToHexOrEmptyString(id pcommon.TraceID) string {
-	if id.IsEmpty() {
-		return ""
-	}
-	return hex.EncodeToString(id[:])
 }
