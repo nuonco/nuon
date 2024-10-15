@@ -13,19 +13,6 @@ const (
 	defaultSessionNameTmpl string        = "workflows-dal-%s-%s"
 )
 
-func (r *client) getAppsCredentials(ctx context.Context) *credentials.Config {
-	if r.Auth != nil {
-		return r.Auth
-	}
-
-	return &credentials.Config{
-		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:     fmt.Sprintf(r.Settings.AppsBucketIAMRoleTemplate, r.OrgId),
-			SessionName: fmt.Sprintf(defaultSessionNameTmpl, "apps", r.OrgId),
-		},
-	}
-}
-
 func (r *client) deploymentsCredentials(ctx context.Context) *credentials.Config {
 	if r.Auth != nil {
 		return r.Auth
