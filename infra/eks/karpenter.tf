@@ -66,6 +66,18 @@ resource "helm_release" "karpenter" {
           "eks.amazonaws.com/role-arn" : module.karpenter_irsa.iam_role_arn
         }
       }
+      podAnnotations : {
+        "ad.datadoghq.com/controller.checks" = {
+          "karpenter" : {
+            "init_config" : {},
+            "instances" : [
+              {
+                "openmetrics_endpoint" : "http://%%host%%:8000/metrics"
+              }
+            ]
+          }
+        }
+      }
       tolerations : [
         {
           key : "CriticalAddonsOnly"
