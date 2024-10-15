@@ -3,17 +3,16 @@ package job
 import (
 	"context"
 
-	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
-
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	jobv1 "github.com/powertoolsdev/mono/pkg/types/plugins/job/v1"
+	"go.uber.org/zap"
 )
 
 func (p *handler) deploy(
 	ctx context.Context,
-	ui terminal.UI,
 ) (*jobv1.Deployment, error) {
 	// init logger
-	err := p.initLogger(ui)
+	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -24,18 +23,17 @@ func (p *handler) deploy(
 	}
 
 	// start k8s job
-	ui.Output("starting job")
+	l.Info("starting job")
 	job, err := p.startJob(ctx, clientset)
 	if err != nil {
-		ui.Output("error starting job: %v", err)
 		return nil, err
 	}
 
 	// monitor job
-	ui.Output("polling job")
+	l.Info("polling job")
 	err = p.pollJob(ctx, clientset, job)
 	if err != nil {
-		ui.Output("error polling job: %v", err)
+		l.Error("error polling job: %v", zap.Error(err))
 		return nil, err
 	}
 

@@ -8,10 +8,16 @@ import (
 	"github.com/nuonco/nuon-runner-go/models"
 	"go.uber.org/zap"
 
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/plan"
 )
 
 func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
 	h.state = &handlerState{}
 
 	plan, err := plan.FetchPlan(ctx, h.apiClient, job)
@@ -24,7 +30,7 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	h.state.jobExecutionID = jobExecution.ID
 
 	h.state.timeout = time.Duration(job.ExecutionTimeout)
-	h.log.Info("setting helm operation timeout", zap.String("duration", h.state.timeout.String()))
+	l.Info("setting helm operation timeout", zap.String("duration", h.state.timeout.String()))
 
 	return nil
 }

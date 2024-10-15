@@ -16,7 +16,7 @@ import (
 type Params struct {
 	fx.In
 
-	Logger   *zap.Logger
+	Logger   *zap.Logger `name:"system"`
 	Settings *settings.Settings
 	V        *validator.Validate
 	Cfg      *internal.Config

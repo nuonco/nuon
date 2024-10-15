@@ -17,7 +17,7 @@ func (h *handler) actionInit(ctx context.Context, log *zap.Logger) (*action.Conf
 		return nil, fmt.Errorf("unable to get kube config: %w", err)
 	}
 
-	helmClient, err := helm.Client(h.log, kubeCfg, h.state.cfg.Namespace)
+	helmClient, err := helm.Client(log, kubeCfg, h.state.cfg.Namespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get helm client: %w", err)
 	}
