@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
 
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
@@ -31,12 +32,17 @@ type workspace struct {
 	Src        *planv1.GitSource `validate:"required"`
 	TmpRootDir string            `validate:"required"`
 	ID         string            `validate:"required"`
+
+	L *zap.Logger `validate:"required"`
 }
 
 var _ Workspace = (*workspace)(nil)
 
 func New(v *validator.Validate, opts ...workspaceOption) (*workspace, error) {
+	// TODO(jm): remove this
+	l, _ := zap.NewProduction()
 	obj := &workspace{
+		L:          l,
 		v:          v,
 		TmpRootDir: defaultTmpRootDir,
 	}
@@ -71,5 +77,11 @@ func WithWorkspaceID(workspaceID string) workspaceOption {
 func WithTmpRoot(root string) workspaceOption {
 	return func(obj *workspace) {
 		obj.TmpRootDir = root
+	}
+}
+
+func WithLogger(l *zap.Logger) workspaceOption {
+	return func(obj *workspace) {
+		obj.L = l
 	}
 }

@@ -5,14 +5,16 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon-runner-go/models"
+	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/release"
 
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"github.com/powertoolsdev/mono/pkg/helm"
 )
 
-func (h *handler) execUninstall(ctx context.Context, actionCfg *action.Configuration, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	if err := h.uninstall(ctx, actionCfg); err != nil {
+func (h *handler) execUninstall(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	if err := h.uninstall(ctx, l, actionCfg); err != nil {
 		h.writeErrorResult(ctx, "uninstall", err)
 		return fmt.Errorf("unable to uninstall helm chart: %w", err)
 	}
@@ -28,17 +30,22 @@ func (h *handler) execUninstall(ctx context.Context, actionCfg *action.Configura
 }
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	h.log.Info("Initializing Helm...")
-	actionCfg, err := h.actionInit(h.log)
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("Initializing Helm...")
+	actionCfg, err := h.actionInit(l)
 	if err != nil {
 		return fmt.Errorf("unable to initialize helm actions: %w", err)
 	}
 
 	if job.Operation == models.AppRunnerJobOperationTypeDestroy {
-		return h.execUninstall(ctx, actionCfg, job, jobExecution)
+		return h.execUninstall(ctx, l, actionCfg, job, jobExecution)
 	}
 
-	h.log.Info("Checking for previous Helm release...")
+	l.Info("Checking for previous Helm release...")
 	prevRel, err := helm.GetRelease(actionCfg, h.state.cfg.Name)
 	if err != nil {
 		return fmt.Errorf("unable to get previous helm release: %w", err)
@@ -50,10 +57,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	)
 	if prevRel == nil {
 		op = "install"
-		rel, err = h.install(ctx, actionCfg)
+		rel, err = h.install(ctx, l,actionCfg)
 	} else {
 		op = "upgrade"
-		rel, err = h.upgrade(ctx, actionCfg)
+		rel, err = h.upgrade(ctx, l,actionCfg)
 	}
 	if err != nil {
 		h.writeErrorResult(ctx, op, err)

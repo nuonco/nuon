@@ -28,7 +28,7 @@ type Params struct {
 	Provider *log.LoggerProvider `name:"system"`
 }
 
-func NewJobProvider(params Params) (*log.LoggerProvider, error) {
+func NewOTELProvider(params Params) (*log.LoggerProvider, error) {
 	if !params.Settings.EnableLogging {
 		return log.NewLoggerProvider(), nil
 	}

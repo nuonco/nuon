@@ -20,7 +20,7 @@ type Params struct {
 
 	APIClient nuonrunner.Client
 	Cfg       *internal.Config
-	L         *zap.Logger
+	L         *zap.Logger `name:"system"`
 	LC        fx.Lifecycle
 	Settings  *settings.Settings
 	MW        metrics.Writer

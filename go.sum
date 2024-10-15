@@ -2798,6 +2798,8 @@ go.opentelemetry.io/collector/service v0.104.0 h1:DTpkoX4C6qiA3v3cfB2cHv/cH705o5
 go.opentelemetry.io/collector/service v0.104.0/go.mod h1:eq68zgpqRDYaVp60NeRu973J0rA5vZJkezfw/EzxLXc=
 go.opentelemetry.io/contrib/bridges/otelslog v0.5.0 h1:lU3F57OSLK5mQ1PDBVAfDDaKCPv37MrEbCfTzsF4bz0=
 go.opentelemetry.io/contrib/bridges/otelslog v0.5.0/go.mod h1:I84u06zJFr8T5D73fslEUbnRBimVVSBhuVw8L8I92AU=
+go.opentelemetry.io/contrib/bridges/otelzap v0.5.0 h1:DKXgQ+nDW41ErBPLbRrrytiwfSBIP6v9i7uUKCDMnAc=
+go.opentelemetry.io/contrib/bridges/otelzap v0.5.0/go.mod h1:ljh3EKpTWP9AWcaH+XRfMOUQlICdeMMk5MJvk7Xu4MQ=
 go.opentelemetry.io/contrib/config v0.7.0 h1:b1rK5tGTuhhPirJiMxOcyQfZs76j2VapY6ODn3b2Dbs=
 go.opentelemetry.io/contrib/config v0.7.0/go.mod h1:8tdiFd8N5etOi3XzBmAoMxplEzI3TcL8dU5rM5/xcOQ=
 go.opentelemetry.io/contrib/exporters/autoexport v0.46.1 h1:ysCfPZB9AjUlMa1UHYup3c9dAOCMQX/6sxSfPBUoxHw=

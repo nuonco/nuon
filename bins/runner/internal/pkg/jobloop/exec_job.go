@@ -5,10 +5,11 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-runner-go/models"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/errs"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/slog"
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/log"
 )
 
 type executeJobStep struct {
@@ -21,8 +22,8 @@ type executeJobStep struct {
 }
 
 func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) error {
-	l := slog.DefaultLogger(j.loggerProvider, j.settings, j.cfg, slog.LoggerTypeJob)
-	l = l.With("runner_job.id", job.ID)
+	l := log.NewOTELJobLogger(j.loggerProvider)
+	l = l.With(zap.String("runner_job.id", job.ID))
 
 	// create an execution in the API
 	l.Info("creating job execution")
@@ -30,7 +31,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	if err != nil {
 		return errors.Wrap(err, "unable to create execution")
 	}
-	l = l.With("runner_job_execution.id", execution.ID)
+	l = l.With(zap.String("runner_job_execution.id", execution.ID))
 
 	l.Info("getting job handler")
 	handler, err := j.getHandler(job)
@@ -48,7 +49,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	}
 
 	for _, step := range steps {
-		l.Info("executing job step", "step", step.name)
+		l.Info("executing job step "+step.name, zap.String("step", step.name))
 		if err := j.execJobStep(ctx, l, step, job, execution); err != nil {
 			return errs.WithHandlerError(err, j.jobGroup, step.name, job.Type)
 		}
@@ -58,7 +59,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		return errors.Wrap(err, "unable to update job execution status after successful execution")
 	}
 
-	l.Info("finished job", "name", handler.Name())
+	l.Info("finished job", zap.String("name", handler.Name()))
 	if err := j.loggerProvider.ForceFlush(ctx); err != nil {
 		return errors.Wrap(err, "unable to flush logger")
 	}
