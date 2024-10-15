@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/nuonco/nuon-runner-go/models"
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 )
 
 const (
@@ -14,10 +15,15 @@ const (
 )
 
 func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	h.log.Info("initializing archive...")
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("initializing archive...")
 
 	h.state.chartPath = filepath.Join(h.cfg.BundleDir, defaultChartBundleName)
-	_, err := os.Stat(h.state.chartPath)
+	_, err = os.Stat(h.state.chartPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("bundled chart was not found: %w", err)

@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon-runner-go/models"
 	"go.uber.org/zap"
 
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/plan"
 )
 
@@ -24,7 +25,12 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	h.state.jobExecutionID = jobExecution.ID
 
 	h.state.timeout = time.Duration(job.ExecutionTimeout)
-	h.log.Info("setting sandbox operation timeout", zap.String("duration", h.state.timeout.String()))
+
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+	l.Info("setting sandbox operation timeout", zap.String("duration", h.state.timeout.String()))
 
 	return nil
 }

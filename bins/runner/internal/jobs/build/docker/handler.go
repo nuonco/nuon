@@ -2,10 +2,8 @@ package docker
 
 import (
 	"github.com/go-playground/validator/v10"
-	"github.com/hashicorp/go-hclog"
 	nuonrunner "github.com/nuonco/nuon-runner-go"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
@@ -18,8 +16,6 @@ type handler struct {
 	apiClient   nuonrunner.Client
 	errRecorder *errs.Recorder
 	cfg         *internal.Config
-	l           *zap.Logger
-	hcLog       hclog.Logger
 	ociCopy     ocicopy.Copier
 
 	// state is reused between function calls, but can _not_ be reused with different jobs.
@@ -37,8 +33,6 @@ type HandlerParams struct {
 	V         *validator.Validate
 	APIClient nuonrunner.Client
 	Config    *internal.Config
-	Log       *zap.Logger
-	HCLog     hclog.Logger
 	OCICopy   ocicopy.Copier
 }
 
@@ -47,8 +41,6 @@ func New(params HandlerParams) (*handler, error) {
 		v:         params.V,
 		apiClient: params.APIClient,
 		cfg:       params.Config,
-		l:         params.Log,
-		hcLog:     params.HCLog,
 		ociCopy:   params.OCICopy,
 	}, nil
 }

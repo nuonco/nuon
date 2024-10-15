@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon-runner-go/models"
 	"go.uber.org/zap"
 
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/plan"
 )
 
@@ -15,6 +16,11 @@ const (
 )
 
 func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+        l, err := pkgctx.Logger(ctx)
+        if err != nil {
+                return err
+        }
+
 	cfg, err := plan.ParseConfig[WaypointConfig](h.state.plan)
 	if err != nil {
 		return fmt.Errorf("unable to parse plan: %w", err)
@@ -25,7 +31,7 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 	h.state.srcTag = cfg.Deploy.ArtifactTag
 
 	if h.state.cfg.Namespace == "" {
-		h.log.Info("no namespace set, using default", zap.String("namespace", defaultNamespace))
+		l.Info("no namespace set, using default", zap.String("namespace", defaultNamespace))
 		h.state.cfg.Namespace = defaultNamespace
 	}
 

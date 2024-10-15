@@ -4,7 +4,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	nuonrunner "github.com/nuonco/nuon-runner-go"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
@@ -24,7 +23,6 @@ type handler struct {
 	// the job loop ensures that no handler ever has more than one job at a time, but this guarantee should be made
 	// stronger in the future.
 	state *handlerState
-	log   *zap.Logger
 }
 
 var _ jobs.JobHandler = (*handler)(nil)
@@ -35,7 +33,6 @@ type Params struct {
 	V           *validator.Validate
 	APIClient   nuonrunner.Client
 	Config      *internal.Config
-	Log         *zap.Logger
 	OCICopy     ocicopy.Copier
 	ErrRecorder *errs.Recorder
 }
@@ -45,7 +42,6 @@ func New(params Params) (*handler, error) {
 		v:           params.V,
 		apiClient:   params.APIClient,
 		cfg:         params.Config,
-		log:         params.Log,
 		ociCopy:     params.OCICopy,
 		errRecorder: params.ErrRecorder,
 	}, nil
