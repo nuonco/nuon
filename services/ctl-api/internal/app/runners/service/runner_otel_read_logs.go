@@ -3,17 +3,16 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
-
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-const PageSize int = 100
+const PageSize int = 1000
 
 type Page struct {
 	Data  []app.OtelLogRecord `json:"data"`
