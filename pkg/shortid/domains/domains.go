@@ -102,22 +102,6 @@ func NewOrgID() string {
 	return shortid.NewNanoID("org")
 }
 
-func NewRunnerID() string {
-	return shortid.NewNanoID("run")
-}
-
-func IsRunnerID(val string) bool {
-	if !shortid.IsShortID(val) {
-		return false
-	}
-
-	if !strings.HasPrefix(val, "run") {
-		return false
-	}
-
-	return true
-}
-
 func NewOtelTraceID() string {
 	return shortid.NewNanoID("trc")
 }
@@ -144,6 +128,22 @@ func NewOtelMetricExponentialHistogramID() string {
 
 func NewOtelMetricSummaryID() string {
 	return shortid.NewNanoID("msr")
+}
+
+func NewRunnerID() string {
+	return shortid.NewNanoID("run")
+}
+
+func IsRunnerID(val string) bool {
+	if !shortid.IsShortID(val) {
+		return false
+	}
+
+	if !strings.HasPrefix(val, "run") {
+		return false
+	}
+
+	return true
 }
 
 func NewRunnerHealthCheckID() string {

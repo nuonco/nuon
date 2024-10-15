@@ -90,15 +90,19 @@ jobs:
       - name: Save output vars
         id: save_output_vars
         run: |
+          # we have to manually remove the `/` from the cache-key because we have added the
+          # pkg dir to the cache-key in the artifact matrix
+          cleaned_cache_key=$(echo "${{ inputs.cache-key }}" | sed 's/\//-/g')
+          echo cleaned_cache_key="$cleaned_cache_key"
           echo tf_out=${{ env.TF_OUT }} >> "$GITHUB_OUTPUT"
           echo tf_env=${{ env.TF_ENV }} >> "$GITHUB_OUTPUT"
-          echo env_cache_key=env-${{ github.run_id }}-${{ inputs.cache-key }}-env >> "$GITHUB_OUTPUT"
-          echo outputs_cache_key=env-${{ github.run_id }}-${{ inputs.cache-key }}-outputs >> "$GITHUB_OUTPUT"
+          echo env_cache_key="env-${{ github.run_id }}-"$cleaned_cache_key"-env" >> "$GITHUB_OUTPUT"
+          echo outputs_cache_key="env-${{ github.run_id }}-"$cleaned_cache_key"-outputs" >> "$GITHUB_OUTPUT"
 
       - name: Save env outputs
         uses: actions/upload-artifact@v4
         with:
-          name: env-${{ github.run_id }}-${{inputs.cache-key}}-env
+          name: ${{ steps.save_output_vars.outputs.env_cache_key }}
           path: ${{ env.TF_ENV }}
           if-no-files-found: error
           retention-days: 1
@@ -108,7 +112,7 @@ jobs:
       - name: Save tf outputs
         uses: actions/upload-artifact@v4
         with:
-          name: env-${{ github.run_id }}-${{inputs.cache-key}}-outputs
+          name: ${{ steps.save_output_vars.outputs.outputs_cache_key }}
           path: ${{ env.TF_OUT }}
           if-no-files-found: error
           retention-days: 1

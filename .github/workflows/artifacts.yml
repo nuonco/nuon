@@ -71,7 +71,7 @@ jobs:
         dir: ${{ fromJSON(needs.changes.outputs.artifacts) }}
     uses: ./.github/workflows/artifact.yml
     with:
-      dir: ${{matrix.dir}}
+      dir: ${{ matrix.dir }}
       tag: ${{ needs.tag.outputs.git_ref }}
       is_promotion: false
     secrets: inherit
