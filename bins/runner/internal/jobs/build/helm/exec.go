@@ -7,20 +7,26 @@ import (
 	"github.com/nuonco/nuon-runner-go/models"
 	"go.uber.org/zap"
 
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry"
 )
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	h.log.Info("packaging chart")
-	packagePath, err := h.packageChart()
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("packaging chart")
+	packagePath, err := h.packageChart(l)
 	if err != nil {
 		return fmt.Errorf("unable to get source files: %w", err)
 	}
-	h.log.Info("successfully packaged chart", zap.String("path", packagePath))
+	l.Info("successfully packaged chart", zap.String("path", packagePath))
 
-	h.log.Info("packing chart into archive")
-	if err := h.state.arch.Pack(ctx, h.log, []ociarchive.FileRef{
+	l.Info("packing chart into archive")
+	if err := h.state.arch.Pack(ctx, l, []ociarchive.FileRef{
 		{
 			AbsPath: packagePath,
 			RelPath: defaultChartPackageFilename,
@@ -29,7 +35,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unable to pack archive with helm archive: %w", err)
 	}
 
-	h.log.Info("copying archive to destination")
+	l.Info("copying archive to destination")
 	res, err := h.ociCopy.CopyFromStore(ctx,
 		h.state.arch.Ref(),
 		"latest",
@@ -41,7 +47,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	h.log.Info("writing job result")
+	l.Info("writing job result")
 	resultReq := registry.ToAPIResult(res)
 	if _, err := h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, resultReq); err != nil {
 		h.errRecorder.Record("write job execution result", err)

@@ -3,10 +3,11 @@ package errs
 import (
 	"errors"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
-	"github.com/powertoolsdev/mono/pkg/errs"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
+	"github.com/powertoolsdev/mono/pkg/errs"
 )
 
 type Recorder struct {
@@ -36,12 +37,20 @@ func (r *Recorder) ToSentry(err error) {
 	}
 }
 
-func NewRecorder(l *zap.Logger, s *settings.Settings, lc fx.Lifecycle) *Recorder {
+type Params struct {
+	fx.In
+
+	L        *zap.Logger `name:"system"`
+	Settings *settings.Settings
+	LC       fx.Lifecycle
+}
+
+func NewRecorder(params Params) *Recorder {
 	r := &Recorder{
-		l:        l,
-		settings: s,
+		l:        params.L,
+		settings: params.Settings,
 	}
 
-	lc.Append(r.LifecycleHook())
+	params.LC.Append(r.LifecycleHook())
 	return r
 }

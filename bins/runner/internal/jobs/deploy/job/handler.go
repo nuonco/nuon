@@ -2,7 +2,6 @@ package job
 
 import (
 	"github.com/go-playground/validator/v10"
-	"github.com/hashicorp/go-hclog"
 	nuonrunner "github.com/nuonco/nuon-runner-go"
 	"github.com/nuonco/nuon-runner-go/models"
 	"go.uber.org/fx"
@@ -21,8 +20,6 @@ type handler struct {
 
 	// internal fields
 	Cfg configs.JobDeploy `validate:"required"`
-
-	logger hclog.Logger
 }
 
 var _ jobs.JobHandler = (*handler)(nil)

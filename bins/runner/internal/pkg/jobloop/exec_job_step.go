@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/sourcegraph/conc/panics"
+	"go.uber.org/zap"
 
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 )
 
@@ -31,8 +32,10 @@ func (j *jobLoop) errToStatus(err error) models.AppRunnerJobExecutionStatus {
 	return models.AppRunnerJobExecutionStatusFailed
 }
 
-func (j *jobLoop) execJobStep(ctx context.Context, l *slog.Logger, step *executeJobStep, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	l = l.With("runner_job_execution_step.name", step.name)
+func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, step *executeJobStep, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	l = l.With(zap.String("runner_job_execution_step.name", step.name))
+	ctx = pkgctx.SetLogger(ctx, l)
+
 	startTS := time.Now()
 	tags := metrics.ToTags(map[string]string{})
 
@@ -76,7 +79,7 @@ func (j *jobLoop) execJobStep(ctx context.Context, l *slog.Logger, step *execute
 	}
 
 	if err == nil {
-		l.Info("step was completed successfully", "step", step.name)
+		l.Info("step was completed successfully", zap.String("step", step.name))
 		j.mw.Incr("job_step", metrics.AddTagsMap(tags, map[string]string{
 			"status": "ok",
 		}))

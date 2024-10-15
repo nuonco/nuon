@@ -4,7 +4,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	nuonrunner "github.com/nuonco/nuon-runner-go"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
@@ -28,7 +27,6 @@ type handler struct {
 	apiClient   nuonrunner.Client
 	errRecorder *errs.Recorder
 	cfg         *internal.Config
-	log         *zap.Logger
 }
 
 var _ jobs.JobHandler = (*handler)(nil)

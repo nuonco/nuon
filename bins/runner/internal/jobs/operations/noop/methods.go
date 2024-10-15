@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 )
 
 func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
@@ -15,12 +16,22 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 }
 
 func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	h.l.Info("initializing", zap.String("job_type", "noop"))
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("initializing", zap.String("job_type", "noop"))
 	return nil
 }
 
 func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	h.l.Info("validating", zap.String("job_type", "noop"))
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("validating", zap.String("job_type", "noop"))
 	if err := jobs.Matches(job, h); err != nil {
 		return err
 	}
@@ -28,12 +39,23 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 }
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	h.l.Info("executing", zap.String("job_type", "noop"))
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("executing", zap.String("job_type", "noop"))
+
 	time.Sleep(time.Second * 2)
 	return nil
 }
 
 func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	h.l.Info("cleaning up", zap.String("job_type", "noop"))
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("cleaning up", zap.String("job_type", "noop"))
 	return nil
 }
