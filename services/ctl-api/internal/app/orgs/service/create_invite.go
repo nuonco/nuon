@@ -9,7 +9,9 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/analytics/events"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -45,6 +47,24 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
+
+	if req.Email == "" {
+		ctx.Error(stderr.ErrUser{
+			Err:           fmt.Errorf("email is required"),
+			Description: "email is required",
+		})
+		return
+	}
+
+	if helpers.IsEmail(req.Email) == false {
+		ctx.Error(stderr.ErrUser{
+			Err:           fmt.Errorf("invalid email"),
+			Description: "invalid email",
+		})
+
+		return
+	}
+
 
 	invite, err := s.createInvite(ctx, org.ID, req.Email)
 	if err != nil {
