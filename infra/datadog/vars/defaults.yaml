@@ -81,6 +81,36 @@ aws_permissions:
   - "xray:BatchGetTraces"
   - "xray:GetTraceSummaries"
 monitors:
+  karpenter_node_waiting:
+    enabled: true
+    json: >
+      {
+          "name": "${aws_account} - Karpenter Node Waiting",
+          "type": "query alert",
+          "query": "sum(last_5m):sum:karpenter.disruption.replacement.nodeclaim.failures.count > 1",
+          "message": "@slack-alerts-${env}-infra \nKarpenter NodeClaim Failed.",
+          "tags": [
+            "terraform:true",
+            "env:${aws_account}"
+          ],
+          "options": {
+              "groupby_simple_monitor" : false,
+              "new_host_delay": 120,
+              "thresholds": {
+                  "critical": 1,
+                  "warning": 0.5
+              },
+              "notify_audit": false,
+              "include_tags": true,
+              "new_group_delay": 60,
+              "renotify_interval": 60,
+              "escalation_message": "",
+              "notify_no_data": false,
+              "silenced": {}
+          },
+          "priority": 1,
+          "restricted_roles": null
+      }
   kubernetes_container_waiting:
     enabled: true
     json: >
