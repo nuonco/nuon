@@ -3,10 +3,8 @@ package installs
 import (
 	"context"
 	"fmt"
-	"runtime"
 
-	"os/exec"
-
+	"github.com/pkg/browser"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
@@ -22,22 +20,6 @@ func (s *Service) SandboxRunLogs(ctx context.Context, installID, runID string, a
 	}
 
 	url := fmt.Sprintf("%s/%s/installs/%s/runs/%s", cfg.DashboardURL, s.cfg.OrgID, installID, runID)
-	var cmd *exec.Cmd
-
-	// Determine the OS and set the command accordingly
-	switch runtime.GOOS {
-	case "linux":
-		cmd = exec.Command("xdg-open", url)
-	case "darwin": // macOS
-		cmd = exec.Command("open", url)
-	case "windows":
-		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
-	default:
-		// If the OS is not supported, print the URL
-		ui.PrintLn("Use the following URL to view the logs")
-		ui.PrintLn(url)
-		return nil
-	}
-
-	return cmd.Start()
+	browser.OpenURL(url)
+	return nil
 }
