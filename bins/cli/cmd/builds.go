@@ -29,7 +29,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Short:   "List builds",
 		Long:    "List your app's builds",
 		Run: c.run(func(cmd *cobra.Command, _ []string) error {
-			svc := builds.New(c.apiClient)
+			svc := builds.New(c.apiClient, c.cfg)
 			return svc.List(cmd.Context(), compID, appID, &limit, PrintJSON)
 		}),
 	}
@@ -44,7 +44,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Short: "Get build",
 		Long:  "Get component build",
 		Run: c.run(func(cmd *cobra.Command, _ []string) error {
-			svc := builds.New(c.apiClient)
+			svc := builds.New(c.apiClient, c.cfg)
 			return svc.Get(cmd.Context(), appID, compID, buildID, PrintJSON)
 		}),
 	}
@@ -61,7 +61,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Short: "Create a build",
 		Long:  "Create a build of an app component",
 		Run: c.run(func(cmd *cobra.Command, _ []string) error {
-			svc := builds.New(c.apiClient)
+			svc := builds.New(c.apiClient, c.cfg)
 			return svc.Create(cmd.Context(), appID, compID, PrintJSON)
 		}),
 	}
@@ -76,7 +76,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Short: "Print build plan",
 		Long:  "Print build plan",
 		Run: c.run(func(cmd *cobra.Command, _ []string) error {
-			svc := builds.New(c.apiClient)
+			svc := builds.New(c.apiClient, c.cfg)
 			return svc.PrintPlan(cmd.Context(), appID, compID, buildID, PrintJSON)
 		}),
 	}
@@ -93,7 +93,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Short: "View build logs",
 		Long:  "View build logs by components and build ID",
 		Run: c.run(func(cmd *cobra.Command, _ []string) error {
-			svc := builds.New(c.apiClient)
+			svc := builds.New(c.apiClient, c.cfg)
 			return svc.Logs(cmd.Context(), appID, compID, buildID, PrintJSON)
 		}),
 	}
