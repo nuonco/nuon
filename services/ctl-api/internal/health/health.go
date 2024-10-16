@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
@@ -15,6 +16,7 @@ type Service struct {
 	db      *gorm.DB
 	chDB    *gorm.DB
 	tclient temporalclient.Client
+	mw      metrics.Writer
 }
 
 var _ api.Service = (*Service)(nil)
@@ -50,6 +52,7 @@ type Params struct {
 	DB      *gorm.DB `name:"psql"`
 	CHDB    *gorm.DB `name:"ch"`
 	TClient temporalclient.Client
+	MW      metrics.Writer
 }
 
 func New(params Params) (*Service, error) {
@@ -58,5 +61,6 @@ func New(params Params) (*Service, error) {
 		db:      params.DB,
 		chDB:    params.CHDB,
 		tclient: params.TClient,
+		mw:      params.MW,
 	}, nil
 }
