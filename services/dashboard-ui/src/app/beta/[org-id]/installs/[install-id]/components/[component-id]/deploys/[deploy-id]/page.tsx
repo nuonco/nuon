@@ -120,8 +120,8 @@ export default withPageAuthRequired(
         <div className="flex flex-col lg:flex-row flex-auto">
           <RunnerLogs heading="Deploy logs" logs={logs as Array<TOTELLog>} />
           <div
-            className="divide-y flex flex-col lg:min-w-[550px]
-lg:max-w-[550px]"
+            className="divide-y flex flex-col lg:min-w-[450px]
+lg:max-w-[450px]"
           >
             <section className="flex flex-col gap-6 px-6 py-8">
               <div className="flex items-center justify-between">

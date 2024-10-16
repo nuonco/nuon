@@ -64,19 +64,31 @@ export interface ILogsPreview {
 
 export const LogsPreview: FC<ILogsPreview> = ({ logs }) => {
   return (
-    <div className="divide-y">
-      <div className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full">
-        <Text className="!font-medium text-cool-grey-600 dark:text-cool-grey-500 col-span-4">
-          Date
-        </Text>
+    <div className="flex flex-col gap-8">
+      <div className="divide-y">
+        <div className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full">
+          <Text className="!font-medium text-cool-grey-600 dark:text-cool-grey-500 col-span-4">
+            Date
+          </Text>
 
-        <Text className="!font-medium text-cool-grey-600 dark:text-cool-grey-500 col-span-8">
-          Content
-        </Text>
+          <Text className="!font-medium text-cool-grey-600 dark:text-cool-grey-500 col-span-8">
+            Content
+          </Text>
+        </div>
+        {logs
+          .reverse()
+          .slice(0, 10)
+          .map((line) => (
+            <LogLinePreview
+              key={line?.timestamp as string}
+              line={line}
+              isPreview
+            />
+          ))}
       </div>
-      {logs.slice(0, 15).map((line) => (
-        <LogLinePreview key={line?.timestamp as string} line={line} isPreview />
-      ))}
+      <Text className="text-cool-grey-600 dark:text-cool-grey-500 m-auto">
+        Plus {logs.length - 10} more lines
+      </Text>
     </div>
   )
 }

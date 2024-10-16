@@ -33,7 +33,7 @@ export const AppInputConfig: FC<IAppInputConfig> = ({ inputConfig }) => {
               >
                 <div className="col-span-2 gap-2 flex flex-col items-start justify-start">
                   <Text className="!font-medium">{input.display_name}</Text>{' '}
-                  <Text className="font-mono text-cool-grey-600 dark:text-cool-grey-500 text-sm">
+                  <Text className="font-mono text-cool-grey-600 dark:text-cool-grey-500 text-sm break-all">
                     {input.name}
                   </Text>
                 </div>
