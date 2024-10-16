@@ -231,8 +231,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
               {
                 "maxSkew"           = 3
                 "topologyKey"       = "topology.kubernetes.io/zone"
-                "whenUnsatisfiable" = "DoNotSchedule"
-                "minDomains"        = length(local.availability_zones)
+                "whenUnsatisfiable" = "ScheduleAnyway"
                 "labelSelector" = {
                   "matchLabels" = {
                     # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
