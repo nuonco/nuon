@@ -11,6 +11,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
+var _ workflow.ContextPropagator = (*propagator)(nil)
+
 const (
 	propagationHeader string = "cctx"
 )
