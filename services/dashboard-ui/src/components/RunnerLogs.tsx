@@ -3,6 +3,8 @@
 import classNames from 'classnames'
 import React, { type FC, useMemo, useState } from 'react'
 import {
+  ArrowDown,
+  ArrowUp,
   ArrowsOutSimple,
   MagnifyingGlass,
   FunnelSimple,
@@ -16,6 +18,7 @@ import {
   useReactTable,
   type ColumnDef,
   type ColumnFilter,
+  type ColumnSort,
 } from '@tanstack/react-table'
 import {
   Button,
@@ -25,6 +28,7 @@ import {
   Section,
   Modal,
   LogsPreview,
+  RadioInput,
 } from '@/components'
 import type { TOTELLog } from '@/types'
 
@@ -50,77 +54,28 @@ export const LogLineSeverity: FC<{ severity_number: number }> = ({
   )
 }
 
-export const OTELLogs: FC<{ logs?: Array<TOTELLog> }> = ({ logs = [] }) => {
-  const [data, _] = useState(logs)
-  const [columnFilters, __] = useState([])
-  const [globalFilter, setGlobalFilter] = useState('')
-  const lineStyle =
-    'tracking-wider text-sm font-mono leading-loose text-cool-grey-600 dark:text-cool-grey-500'
+interface IOTELLogs {
+  data: Array<Record<string, any>>
+  columns: Array<ColumnDef<any>>
+  columnFilters: Array<ColumnFilter>
+  globalFilter: string
+  sorting: Array<ColumnSort>
+}
 
-  const columns = useMemo(
-    () => [
-      {
-        header: 'Severity',
-        accessorKey: 'severity_number',
-        cell: (props) => (
-          <span className={classNames('flex items-center gap-2')}>
-            <LogLineSeverity severity_number={props.getValue()} />
-            <span className={lineStyle + ' font-semibold uppercase'}>
-              {props.row.original?.severity_text || 'UNKOWN'}
-            </span>
-          </span>
-        ),
-      },
-      {
-        header: 'Date',
-        accessorKey: 'timestamp',
-        cell: (props) => (
-          <span
-            className={classNames(lineStyle, {
-              'col-span-2 flex items-center gap-2': true,
-            })}
-          >
-            <Time className="!text-sm" time={props.getValue()} />
-          </span>
-        ),
-      },
-      {
-        header: 'Service',
-        accessorKey: 'service_name',
-        cell: (props) => (
-          <span
-            className={classNames(lineStyle, {
-              'col-span-2': true,
-            })}
-          >
-            {props.getValue()}
-          </span>
-        ),
-      },
-      {
-        header: 'Content',
-        accessorKey: 'body',
-        cell: (props) => (
-          <span
-            className={classNames(lineStyle, {
-              'col-span-7': true,
-            })}
-          >
-            {props.getValue()}
-          </span>
-        ),
-      },
-    ],
-    []
-  )
-
+export const OTELLogs: FC<IOTELLogs> = ({
+  data,
+  columns,
+  columnFilters,
+  globalFilter,
+  sorting,
+}) => {
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    state: { columnFilters, globalFilter },
+    state: { columnFilters, globalFilter, sorting },
   })
 
   return (
@@ -139,13 +94,21 @@ export const OTELLogs: FC<{ logs?: Array<TOTELLog> }> = ({ logs = [] }) => {
                   'col-span-1': i === 0,
                   'col-span-2': i === 1 || i === 2,
                   'col-span-7': i === 3,
+                  'cursor-pointer': header.column.getCanSort(),
                 }
               )}
               onClick={(e) => {
                 header.column.getToggleSortingHandler()(e)
               }}
             >
-              {header.column.columnDef.header as React.ReactNode}
+              <span>{header.column.columnDef.header as React.ReactNode}</span>
+              <span>
+                {header.column.getCanSort() &&
+                  {
+                    asc: <ArrowUp />,
+                    desc: <ArrowDown />,
+                  }[header.column.getIsSorted() as string]}
+              </span>
             </Text>
           ))}
         </div>
@@ -174,18 +137,121 @@ export interface IRunnerLogs {
 
 export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false)
+  const [data, _] = useState(logs)
+  const [columnFilters, setColumnFilters] = useState([])
+  const [globalFilter, setGlobalFilter] = useState('')
+  const [columnSort, setColumnSort] = useState([
+    { id: 'timestamp', desc: false },
+  ])
+  const lineStyle =
+    'tracking-wider text-sm font-mono leading-loose text-cool-grey-600 dark:text-cool-grey-500'
+
+  const columns: Array<ColumnDef<TOTELLog>> = useMemo(
+    () => [
+      {
+        header: 'Severity',
+        accessorKey: 'severity_text',
+        cell: (props) => (
+          <span className={classNames('flex items-center gap-2')}>
+            <LogLineSeverity
+              severity_number={props.row.original?.severity_number}
+            />
+            <span className={lineStyle + ' font-semibold uppercase'}>
+              {props.getValue<string>() || 'UNKOWN'}
+            </span>
+          </span>
+        ),
+        enableColumFilter: true,
+        filterFn: (row, columnId, filterValue) => {
+          const severityText = row.getValue<string>(columnId)
+          return severityText === filterValue
+        },
+      },
+      {
+        header: 'Date',
+        accessorKey: 'timestamp',
+        cell: (props) => (
+          <span
+            className={classNames(lineStyle, {
+              'col-span-2 flex items-center gap-2': true,
+            })}
+          >
+            <Time className="!text-sm" time={props.getValue<string>()} />
+          </span>
+        ),
+      },
+      {
+        header: 'Service',
+        accessorKey: 'service_name',
+        cell: (props) => (
+          <span
+            className={classNames(lineStyle, {
+              'col-span-2': true,
+            })}
+          >
+            {props.getValue<string>()}
+          </span>
+        ),
+      },
+      {
+        header: 'Content',
+        accessorKey: 'body',
+        cell: (props) => (
+          <span
+            className={classNames(lineStyle, {
+              'col-span-7': true,
+            })}
+          >
+            {props.getValue<string>()}
+          </span>
+        ),
+      },
+    ],
+    []
+  )
+
+  const handleStatusFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setColumnFilters(() => [{ id: 'severity_text', value: value }])
+  }
+
+  const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setGlobalFilter(e.target.value)
+  }
+
+  const handleColumnSort = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setColumnSort([
+      { id: 'timestamp', desc: Boolean(e.target.value === 'true') },
+    ])
+  }
 
   return (
     <>
       <Modal
-        actions={<RunnerLogsActions />}
+        actions={
+          <RunnerLogsActions
+            columnSort={columnSort}
+            columnFilters={columnFilters}
+            globalFilter={globalFilter}
+            handleGlobalFilter={handleGlobleFilter}
+            handleStatusFilter={handleStatusFilter}
+            handleColumnSort={handleColumnSort}
+          />
+        }
+        hasFixedHeight
         heading={heading}
         isOpen={isDetailsOpen}
         onClose={() => {
           setIsDetailsOpen(false)
         }}
       >
-        <OTELLogs logs={logs} />
+        <OTELLogs
+          data={data}
+          columns={columns}
+          columnFilters={columnFilters}
+          globalFilter={globalFilter}
+          sorting={columnSort}
+        />
       </Modal>
       <Section
         className="border-r"
@@ -199,7 +265,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
                 }}
               >
                 <ArrowsOutSimple />
-                Open logs
+                View all logs
               </Button>
             </div>
           </div>
@@ -216,29 +282,122 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
   )
 }
 
-const RunnerLogsActions: FC = () => {
+interface IRunnerLogsActions {
+  columnFilters: any
+  columnSort: any
+  globalFilter: string
+  handleStatusFilter: any
+  handleGlobalFilter: any
+  handleColumnSort: any
+}
+
+const RunnerLogsActions: FC<IRunnerLogsActions> = ({
+  columnSort,
+  globalFilter,
+  handleGlobalFilter,
+  handleStatusFilter,
+  handleColumnSort,
+}) => {
   return (
     <div className="flex items-center gap-4">
-      <Button
+      <Dropdown
+        alignment="right"
         className="text-base !font-medium !p-2 w-[32px] h-[32px]"
         variant="ghost"
+        id="logs-search"
+        text={<MagnifyingGlass />}
       >
-        <MagnifyingGlass />
-      </Button>
+        <div>
+          <label className="relative">
+            <MagnifyingGlass className="text-cool-grey-600 dark:text-cool-grey-500 absolute top-0.5 left-2" />
+            <input
+              className="rounded-md pl-8 pr-3.5 py-1.5 text-base border bg-white dark:bg-dark-grey-100 placeholder:text-cool-grey-600 dark:placeholder:text-cool-grey-500 md:min-w-80"
+              type="search"
+              placeholder="Search..."
+              value={globalFilter}
+              onChange={handleGlobalFilter}
+            />
+          </label>
+        </div>
+      </Dropdown>
 
-      <Button
+      <Dropdown
+        alignment="right"
         className="text-base !font-medium !p-2 w-[32px] h-[32px]"
         variant="ghost"
+        id="sort-logs"
+        text={<FunnelSimple />}
       >
-        <FunnelSimple />
-      </Button>
+        <div>
+          <RadioInput
+            name="column-sort"
+            checked={columnSort?.[0]?.desc}
+            onChange={handleColumnSort}
+            value="true"
+            labelText="Newest"
+          />
 
-      <Button
+          <RadioInput
+            name="column-sort"
+            checked={!columnSort?.[0]?.desc}
+            onChange={handleColumnSort}
+            value="false"
+            labelText="Oldest"
+          />
+        </div>
+      </Dropdown>
+
+      <Dropdown
+        alignment="right"
         className="text-base !font-medium !p-2 w-[32px] h-[32px]"
         variant="ghost"
+        id="logs-filter"
+        text={<Funnel />}
       >
-        <Funnel />
-      </Button>
+        <div>
+          <RadioInput
+            name="status-filter"
+            onChange={handleStatusFilter}
+            value="Trace"
+            labelText="Trace"
+          />
+
+          <RadioInput
+            name="status-filter"
+            onChange={handleStatusFilter}
+            value="Debug"
+            labelText="Debug"
+          />
+
+          <RadioInput
+            name="status-filter"
+            onChange={handleStatusFilter}
+            value="Info"
+            labelText="Info"
+          />
+
+          <RadioInput
+            name="status-filter"
+            onChange={handleStatusFilter}
+            value="Warn"
+            labelText="Warning"
+          />
+
+          <RadioInput
+            name="status-filter"
+            onChange={handleStatusFilter}
+            value="Error"
+            labelText="Error"
+          />
+
+          <RadioInput
+            name="status-filter"
+            onChange={handleStatusFilter}
+            value="Fatal"
+            labelText="Fatal"
+          />
+        </div>
+      </Dropdown>
     </div>
   )
 }

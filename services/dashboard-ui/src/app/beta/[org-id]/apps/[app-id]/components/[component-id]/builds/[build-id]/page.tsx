@@ -102,8 +102,8 @@ export default withPageAuthRequired(
           <RunnerLogs heading="Build logs" logs={logs as Array<TOTELLog>} />
 
           <div
-            className="divide-y flex flex-col lg:min-w-[550px]
-lg:max-w-[550px]"
+            className="divide-y flex flex-col lg:min-w-[450px]
+lg:max-w-[450px]"
           >
             {build.vcs_connection_commit && (
               <section className="flex flex-col gap-6 px-6 py-8">
