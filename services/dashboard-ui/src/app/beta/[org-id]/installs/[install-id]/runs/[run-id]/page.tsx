@@ -6,22 +6,29 @@ import {
   DashboardContent,
   Duration,
   Heading,
+  RunnerLogs,
   StatusBadge,
   Text,
   Time,
 } from '@/components'
-import { getInstall, getSandboxRun, getOrg } from '@/lib'
+import { getInstall, getRunnerLogs, getSandboxRun, getOrg } from '@/lib'
 import { sentanceCase } from '@/utils'
+import type { TOTELLog } from '@/types'
 
 export default withPageAuthRequired(
   async function SandboxRuns({ params }) {
     const installId = params?.['install-id'] as string
     const orgId = params?.['org-id'] as string
     const runId = params?.['run-id'] as string
-    const [install, org, sandboxRun] = await Promise.all([
+    const sandboxRun = await getSandboxRun({ installId, orgId, runId })
+    const [install, org, logs] = await Promise.all([
       getInstall({ installId, orgId }),
       getOrg({ orgId }),
-      getSandboxRun({ installId, orgId, runId }),
+      getRunnerLogs({
+        jobId: sandboxRun.runner_job?.id,
+        orgId,
+        runnerId: sandboxRun.runner_job?.runner_id,
+      }).catch(console.error),
     ])
 
     return (
@@ -82,15 +89,14 @@ export default withPageAuthRequired(
         }
       >
         <div className="flex flex-col lg:flex-row flex-auto">
-          <section className="flex flex-auto flex-col gap-4 px-6 py-8 border-r overflow-auto">
-            <Heading>{sentanceCase(sandboxRun.run_type)} details</Heading>
-
-            <Text>New runner logs here</Text>
-          </section>
+          <RunnerLogs
+            heading={`${sentanceCase(sandboxRun.run_type)} logs`}
+            logs={logs as Array<TOTELLog>}
+          />
 
           <div
-            className="divide-y flex flex-col lg:min-w-[550px]
-lg:max-w-[550px]"
+            className="divide-y flex flex-col lg:min-w-[450px]
+lg:max-w-[450px]"
           >
             <section className="flex flex-col gap-6 px-6 py-8">
               <Heading>Sandbox</Heading>

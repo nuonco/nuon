@@ -57,15 +57,17 @@ export default withPageAuthRequired(
             <AppInputConfig inputConfig={inputCfg as TAppInputConfig} />
           </section>
 
-          <div className="flex flex-col lg:min-w-[510px]">
+          <div className="flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
             <section className="flex flex-col gap-4 px-6 py-8 border-b">
               <Heading variant="subheading">Sandbox</Heading>
-              <AppSandboxConfig
-                sandboxConfig={sandboxCfg as TAppSandboxConfig}
-              />
-              <AppSandboxVariables
-                variables={(sandboxCfg as TAppSandboxConfig)?.variables}
-              />
+              <div className="flex flex-col gap-8">
+                <AppSandboxConfig
+                  sandboxConfig={sandboxCfg as TAppSandboxConfig}
+                />
+                <AppSandboxVariables
+                  variables={(sandboxCfg as TAppSandboxConfig)?.variables}
+                />
+              </div>
             </section>
 
             <section className="flex flex-col gap-4 px-6 py-8">

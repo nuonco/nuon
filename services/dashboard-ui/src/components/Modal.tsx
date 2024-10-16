@@ -1,13 +1,14 @@
 'use client'
 
 import classNames from 'classnames'
-import React, { type FC, useState } from 'react'
+import React, { type FC } from 'react'
 import { X } from '@phosphor-icons/react'
 import { Button, Heading } from '@/components'
 
 export interface IModal extends React.HTMLAttributes<HTMLDivElement> {
   actions?: React.ReactNode | null
   heading: React.ReactNode
+  hasFixedHeight?: boolean
   isOpen?: boolean
   onClose?: () => void
 }
@@ -17,6 +18,7 @@ export const Modal: FC<IModal> = ({
   children,
   actions = null,
   heading,
+  hasFixedHeight = false,
   isOpen = false,
   onClose = () => {},
   ...props
@@ -44,7 +46,9 @@ export const Modal: FC<IModal> = ({
             </div>
           </div>
         </header>
-        <div className="p-6 h-full max-h-[700px] overflow-auto">{children}</div>
+        <div className={classNames("p-6 h-full max-h-[700px] overflow-auto", {
+          "min-h-[700px]": hasFixedHeight,
+        })}>{children}</div>
       </div>
     </div>
   ) : null

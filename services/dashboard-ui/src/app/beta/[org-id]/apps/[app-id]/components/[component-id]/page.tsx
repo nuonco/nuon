@@ -68,8 +68,8 @@ export default withPageAuthRequired(
             </section>
           </div>
           <section
-            className="flex flex-col gap-4 px-6 py-8 border-l overflow-auto lg:min-w-[500px]
-lg:max-w-[500px]"
+            className="flex flex-col gap-4 px-6 py-8 border-l overflow-auto lg:min-w-[450px]
+lg:max-w-[450px]"
           >
             <Heading>Build history</Heading>
 

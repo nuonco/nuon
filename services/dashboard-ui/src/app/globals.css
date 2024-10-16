@@ -49,6 +49,6 @@
   overflow: hidden;
 }
 
-.history {
-  max-height: calc(100vh - 200px);
+.history {  
+  max-height: 100vh;
 }
