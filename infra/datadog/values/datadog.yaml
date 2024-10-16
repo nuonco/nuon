@@ -27,6 +27,9 @@ agents:
   tolerations:
     # this toleration affects nodes limited to a specific deployment
     # e.g. ctl-api-api and runner node groups
+    - effect: NoSchedule
+      key: CriticalAddonsOnly
+      value: "true"
     - key: "deployment"
       operator: "Exists"
       effect: "NoSchedule"
