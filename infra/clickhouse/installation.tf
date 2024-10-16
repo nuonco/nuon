@@ -191,6 +191,19 @@ resource "kubectl_manifest" "clickhouse_installation" {
             "nodeSelector" = {
               "clickhouse-installation" = "true"
             }
+            "affinity" = {
+              "podAntiAffinity" = {
+                "requiredDuringSchedulingIgnoredDuringExecution" = [
+                  {
+                    "labelSelector" = {
+                      "matchLabels" = {
+                        "clickhouse.altinity.com/chi" = "clickhouse-installation"
+                      }
+                    }
+                  },
+                ]
+              }
+            }
             "topologySpreadConstraints" = [
               # spread the pods across nodes.
               {

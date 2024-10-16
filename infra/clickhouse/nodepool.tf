@@ -32,7 +32,10 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
       "disruption" = {
         "budgets" = [
           {
-            "nodes" = "20%" // only 20% of nodes should ever be disrupted at a time
+            "nodes" = "10%"
+          },
+          {
+            "nodes" = "2"
           },
         ]
         "consolidateAfter"    = "30s"
@@ -40,9 +43,10 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
         "expireAfter"         = "${random_integer.node_ttl.result}s"
       }
       "limits" = {
-        # 6 + 1 t3a.medium boxes (these numbers accomodate prod)
+        # 12 + 1 t3a.large boxes (these numbers accomodate prod)
+        # 2    * 13
         # 4096 * 13
-        "cpu"    = 14
+        "cpu"    = 26
         "memory" = "53248Mi"
       }
       "template" = {
@@ -71,6 +75,7 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
               "operator" = "In"
               "values" = [
                 "t3a.large",
+                # "t3a.xlarge",
               ]
             },
             {
