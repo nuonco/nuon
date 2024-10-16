@@ -2,6 +2,10 @@ package installs
 
 import (
 	"context"
+	"fmt"
+	"runtime"
+
+	"os/exec"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -12,19 +16,28 @@ func (s *Service) SandboxRunLogs(ctx context.Context, installID, runID string, a
 	if err != nil {
 		return ui.PrintError(err)
 	}
-
-	view := ui.NewGetView()
-
-	log, err := s.api.GetInstallSandboxRunLogs(ctx, installID, runID)
+	cfg, err := s.api.GetCLIConfig(ctx)
 	if err != nil {
-		return view.Error(err)
+		return ui.PrintError(fmt.Errorf("couldn't get cli config: %w", err))
 	}
 
-	if asJSON {
-		ui.PrintJSON(log)
+	url := fmt.Sprintf("%s/%s/installs/%s/runs/%s", cfg.DashboardURL, s.cfg.OrgID, installID, runID)
+	var cmd *exec.Cmd
+
+	// Determine the OS and set the command accordingly
+	switch runtime.GOOS {
+	case "linux":
+		cmd = exec.Command("xdg-open", url)
+	case "darwin": // macOS
+		cmd = exec.Command("open", url)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	default:
+		// If the OS is not supported, print the URL
+		ui.PrintLn("Use the following URL to view the logs")
+		ui.PrintLn(url)
 		return nil
 	}
 
-	ui.PrintLogsFromInterface(log)
-	return nil
+	return cmd.Start()
 }
