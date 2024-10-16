@@ -53,7 +53,7 @@ resource "helm_release" "karpenter" {
   version    = "0.37.0"
 
   values = [
-    # https://github.com/aws/karpenter-provider-aws/blob/main/charts/karpenter/values.yaml
+    # https://github.com/aws/karpenter-provider-aws/blob/release-v0.37.x/charts/karpenter/values.yaml
     yamlencode({
       replicas : local.vars.managed_node_group.desired_size
       logLevel : "debug"
@@ -73,6 +73,20 @@ resource "helm_release" "karpenter" {
           effect : "NoSchedule"
         },
       ]
+      podAnnotations : {
+        "ad.datadoghq.com/controller.checks" : <<-EOT
+          {
+            "karpenter": {
+              "init_config": {},
+              "instances": [
+                {
+                  "openmetrics_endpoint": "http://%%host%%:8000/metrics"
+                }
+              ]
+            }
+          }
+        EOT
+      }
     }),
   ]
 }
