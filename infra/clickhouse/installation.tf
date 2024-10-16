@@ -191,34 +191,36 @@ resource "kubectl_manifest" "clickhouse_installation" {
             "nodeSelector" = {
               "clickhouse-installation" = "true"
             }
-            "affinity" = {
-              "podAntiAffinity" = {
-                "requiredDuringSchedulingIgnoredDuringExecution" = [
-                  {
-                    "labelSelector" = {
-                      "matchLabels" = {
-                        "clickhouse.altinity.com/chi" = "clickhouse-installation"
-                      }
-                    }
-                    "topologyKey" = "kubernetes.io/hostname"
-                  },
-                  {
-                    "labelSelector" = {
-                      "matchLabels" = {
-                        "clickhouse.altinity.com/chi" = "clickhouse-installation"
-                      }
-                    }
-                    "topologyKey" = "topology.kubernetes.io/zone"
-                  },
-                ]
-              }
-            }
+            # "affinity" = {
+            #   "podAntiAffinity" = {
+            #     "requiredDuringSchedulingIgnoredDuringExecution" = [
+            #       {
+            #         "labelSelector" = {
+            #           "matchLabels" = {
+            #             "clickhouse.altinity.com/chi" = "clickhouse-installation"
+            #           }
+            #         }
+            #         "topologyKey" = "kubernetes.io/hostname"
+            #       },
+            #       # NOTE(fd): topology alone should be enough for this
+            #       {
+            #         "labelSelector" = {
+            #           "matchLabels" = {
+            #             "clickhouse.altinity.com/chi" = "clickhouse-installation"
+            #           }
+            #         }
+            #         "topologyKey" = "topology.kubernetes.io/zone"
+            #       },
+            #     ]
+            #   }
+            # }
             "topologySpreadConstraints" = [
               # spread the pods across nodes.
               {
                 "maxSkew"           = 1
                 "topologyKey"       = "kubernetes.io/hostname"
                 "whenUnsatisfiable" = "ScheduleAnyway"
+                # "minDomains"        = local.hosts * local.shards
                 "labelSelector" = {
                   "matchLabels" = {
                     # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
@@ -228,18 +230,18 @@ resource "kubectl_manifest" "clickhouse_installation" {
                 }
               },
               # spread the pods across az:
-              {
-                "maxSkew"           = 3
-                "topologyKey"       = "topology.kubernetes.io/zone"
-                "whenUnsatisfiable" = "ScheduleAnyway"
-                "labelSelector" = {
-                  "matchLabels" = {
-                    # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
-                    #           that is, however, an assumption
-                    "clickhouse.altinity.com/chi" = "clickhouse-installation"
-                  }
-                }
-              }
+              # {
+              #   "maxSkew"           = 3
+              #   "topologyKey"       = "topology.kubernetes.io/zone"
+              #   "whenUnsatisfiable" = "ScheduleAnyway"
+              #   "labelSelector" = {
+              #     "matchLabels" = {
+              #       # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
+              #       #           that is, however, an assumption
+              #       "clickhouse.altinity.com/chi" = "clickhouse-installation"
+              #     }
+              #   }
+              # }
             ]
             "tolerations" = [{
               "key"      = "installation"
