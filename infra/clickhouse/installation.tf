@@ -1,6 +1,6 @@
 locals {
   clickhouse_manifests = toset([
-    "https://raw.githubusercontent.com/Altinity/clickhouse-operator/master/deploy/operator/clickhouse-operator-install-bundle.yaml"
+    "https://raw.githubusercontent.com/Altinity/clickhouse-operator/0.23.7/deploy/operator/clickhouse-operator-install-bundle.yaml"
   ])
 }
 
@@ -232,6 +232,14 @@ resource "kubectl_manifest" "clickhouse_installation" {
                       }
                     }
                     "topologyKey" = "kubernetes.io/hostname"
+                  },
+                  {
+                    "labelSelector" = {
+                      "matchLabels" = {
+                        "clickhouse.altinity.com/chi" = "clickhouse-installation"
+                      }
+                    }
+                    "topologyKey" = "topology.kubernetes.io/zone"
                   },
                 ]
               }
