@@ -1,4 +1,4 @@
-// TODO(nnnat): remove once we have this API changes on prod
+// TODO(nnnat): remove once we have this API change on prod
 // @ts-nocheck
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
@@ -7,15 +7,12 @@ import {
   DashboardContent,
   Heading,
   InstallCloudPlatform,
-  InstallCloudPlatformDetails,
   InstallHistory,
   InstallInputs,
-  InstallStatus,
   InstallStatuesV2,
   SubNav,
   type TLink,
 } from '@/components'
-import { InstallProvider } from '@/context'
 import { getInstall, getInstallEvents, getOrg } from '@/lib'
 
 export default withPageAuthRequired(
@@ -35,8 +32,6 @@ export default withPageAuthRequired(
       getInstallEvents({ installId, orgId }),
       getOrg({ orgId }),
     ])
-
-    console.log('install', install)
 
     return (
       <DashboardContent
@@ -65,14 +60,16 @@ export default withPageAuthRequired(
             />
           </section>
 
-          <div className="divide-y flex flex-col lg:w-[550px]">
+          <div className="divide-y flex flex-col lg:w-[500px]">
             <section className="flex flex-col gap-6 px-6 py-8">
               <Heading>Active sandbox</Heading>
 
+              <div className="flex flex-col gap-8">
               <AppSandboxConfig sandboxConfig={install?.app_sandbox_config} />
               <AppSandboxVariables
                 variables={install?.app_sandbox_config?.variables}
               />
+              </div>
             </section>
 
             {install?.install_inputs?.length &&
