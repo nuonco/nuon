@@ -200,6 +200,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
                         "clickhouse.altinity.com/chi" = "clickhouse-installation"
                       }
                     }
+                    "topologyKey" = "kubernetes.io/hostname"
                   },
                 ]
               }
