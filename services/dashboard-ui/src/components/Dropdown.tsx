@@ -23,6 +23,7 @@ export const Dropdown: FC<IDropdown> = ({
   isFullWidth = false,
   position = 'below',
   text,
+  variant,
 }) => {
   return (
     <>
@@ -44,18 +45,19 @@ export const Dropdown: FC<IDropdown> = ({
           hasCustomPadding={hasCustomPadding}
           id={`dropdown-button-${id}`}
           type="button"
+          variant={variant}
         >
           <div className="flex items-center justify-between">
             {text}
 
-            <CaretUpDown />
+            {variant !== 'ghost' && <CaretUpDown />}
           </div>
         </Button>
 
         <div className="hidden group-focus-within:block w-inherit">
           <div
             className={classNames(
-              'absolute border divide-y rounded-md shadow-md outline-none bg-white text-gray-950 dark:bg-black dark:text-gray-50',
+              'absolute border divide-y rounded-md shadow-md outline-none bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50',
               {
                 'left-0': alignment === 'left' && position !== 'beside',
                 'right-0': alignment === 'right' && position !== 'beside',

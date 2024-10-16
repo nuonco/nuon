@@ -31,7 +31,7 @@ export const InstallInputs: FC<IInstallInputs> = ({ inputs }) => {
                     key={`${key}-${i}`}
                     className="grid grid-cols-3 gap-4 py-3"
                   >
-                    <Text className="font-mono text-sm">{key}</Text>
+                    <Text className="font-mono text-sm break-all">{key}</Text>
                     <Text className="col-span-2 break-all text-sm">
                       {input.redacted_values[key]}
                     </Text>

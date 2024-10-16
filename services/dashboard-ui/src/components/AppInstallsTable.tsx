@@ -10,6 +10,7 @@ import {
   Heading,
   InstallPlatform,
   Link,
+  RadioInput,
   StatusBadge,
   Table,
   Text,
@@ -169,46 +170,33 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
             alignment="right"
           >
             <div>
-              <label className="flex gap-4 items-center w-full px-4 py-2 cursor-pointer">
-                <input
-                  className="accent-primary-600"
-                  name="status-filter"
-                  onChange={handleStatusFilter}
-                  value="error"
-                  type="radio"
-                />
-                <span>error</span>
-              </label>
-              <label className="flex gap-4 items-center w-full px-4 py-2 cursor-pointer">
-                <input
-                  className="accent-primary-600"
-                  name="status-filter"
-                  onChange={handleStatusFilter}
-                  value="processing"
-                  type="radio"
-                />
-                <span>processing</span>
-              </label>
-              <label className="flex gap-4 items-center w-full px-4 py-2 cursor-pointer">
-                <input
-                  className="accent-primary-600"
-                  name="status-filter"
-                  onChange={handleStatusFilter}
-                  value="noop"
-                  type="radio"
-                />
-                <span>noop</span>
-              </label>
-              <label className="flex gap-4 items-center w-full px-4 py-2 cursor-pointer">
-                <input
-                  className="accent-primary-600"
-                  name="status-filter"
-                  onChange={handleStatusFilter}
-                  value="active"
-                  type="radio"
-                />
-                <span>active</span>
-              </label>
+              <RadioInput
+                name="status-filter"
+                onChange={handleStatusFilter}
+                value="error"
+                labelText="Error"
+              />
+
+              <RadioInput
+                name="status-filter"
+                onChange={handleStatusFilter}
+                value="processing"
+                labelText="Processing"
+              />
+
+              <RadioInput
+                name="status-filter"
+                onChange={handleStatusFilter}
+                value="noop"
+                labelText="NOOP"
+              />
+
+              <RadioInput
+                name="status-filter"
+                onChange={handleStatusFilter}
+                value="active"
+                labelText="Active"
+              />
             </div>
           </Dropdown>
         </>
