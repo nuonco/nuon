@@ -53,6 +53,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/runners", s.AdminGetAllRunners)
 
 	// runner management methods
+	api.GET("/v1/runners/:runner_id", s.AdminGetRunner)
+	api.GET("/v1/runners/:runner_id/settings", s.AdminGetRunnerSettings)
 	api.PATCH("/v1/runners/:runner_id/settings", s.AdminUpdateRunnerSettings)
 	api.POST("/v1/runners/:runner_id/reprovision", s.AdminReprovisionRunner)
 	api.POST("/v1/runners/:runner_id/deprovision", s.AdminDeprovisionRunner)
