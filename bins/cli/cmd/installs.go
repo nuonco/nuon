@@ -18,6 +18,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		intermediateOnly bool
 		jobConfig        bool
 		runID            string
+		installCompID    string
 		inputs           []string
 	)
 
@@ -130,6 +131,8 @@ func (c *cli) installsCmd() *cobra.Command {
 	printDeployPlan.MarkFlagRequired("install-id")
 	printDeployPlan.Flags().StringVarP(&deployID, "deploy-id", "d", "", "The ID of the deploy you want to view")
 	printDeployPlan.MarkFlagRequired("deploy-id")
+	printDeployPlan.Flags().StringVarP(&installCompID, "install-component-id", "c", "", "The ID of the install component you want to view")
+	printDeployPlan.MarkFlagRequired("deploy-id")
 	printDeployPlan.Flags().BoolVar(&renderedVars, "rendered-vars", false, "Print rendered variables from deploy plan")
 	printDeployPlan.Flags().BoolVar(&intermediateOnly, "intermediate-only", false, "Print intermediate variables from deploy plan")
 	printDeployPlan.Flags().BoolVar(&jobConfig, "print-job-config", false, "Print job config from deploy plan")
@@ -142,7 +145,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "View deploy logs by install and deploy ID",
 		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.DeployLogs(cmd.Context(), id, deployID, PrintJSON)
+			return svc.DeployLogs(cmd.Context(), id, deployID, installCompID, PrintJSON)
 		}),
 	}
 	deployLogsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install whose deploy you want to view")
