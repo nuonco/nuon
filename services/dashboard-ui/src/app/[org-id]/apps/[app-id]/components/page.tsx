@@ -5,7 +5,13 @@ import {
   SubNav,
   type TLink,
 } from '@/components'
-import { getApp, getAppComponents, getComponentConfig, getOrg } from '@/lib'
+import {
+  getApp,
+  getAppComponents,
+  getComponentBuilds,
+  getComponentConfig,
+  getOrg,
+} from '@/lib'
 
 export default withPageAuthRequired(
   async function AppComponents({ params }) {
@@ -24,7 +30,10 @@ export default withPageAuthRequired(
     ])
     const hydratedComponents = await Promise.all(
       components.map(async (comp, _, arr) => {
-        const config = await getComponentConfig({ componentId: comp.id, orgId })
+        const [config, builds] = await Promise.all([
+          getComponentConfig({ componentId: comp.id, orgId }),
+          getComponentBuilds({ componentId: comp.id, orgId }),
+        ])
         const deps = arr.filter((c) =>
           comp.dependencies?.some((d) => d === c.id)
         )
@@ -33,6 +42,7 @@ export default withPageAuthRequired(
           ...comp,
           config,
           deps,
+          latestBuild: builds[0],
         }
       })
     )
