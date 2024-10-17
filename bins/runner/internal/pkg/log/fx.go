@@ -15,3 +15,10 @@ func AsSystemOTELLogger(f any) any {
 		fx.ResultTags(`name:"otelsystem"`),
 	)
 }
+
+func AsDevLogger(f any) any {
+	return fx.Annotate(
+		f,
+		fx.ResultTags(`name:"dev"`),
+	)
+}
