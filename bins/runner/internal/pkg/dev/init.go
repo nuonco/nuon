@@ -3,11 +3,20 @@ package dev
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
 
 	"github.com/pkg/errors"
 )
 
 func (d *devver) Init(ctx context.Context) error {
+	shouldMonitor := true
+	if os.Getenv("RUNNER_ID") != "" {
+		fmt.Println("disabling monitoring and restarting for new runners")
+		shouldMonitor = false
+		return nil
+	}
+
 	type step struct {
 		name string
 		fn   func(context.Context) error
@@ -22,6 +31,15 @@ func (d *devver) Init(ctx context.Context) error {
 			return errors.Wrap(err, fmt.Sprintf("unable to initialize %s", st.name))
 		}
 	}
+
+	if !shouldMonitor {
+		return nil
+	}
+	go func() {
+		if err := d.monitorRunners(); err != nil {
+			log.Fatalf("unable to monitor runners")
+		}
+	}()
 
 	return nil
 }
