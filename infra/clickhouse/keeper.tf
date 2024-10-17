@@ -60,6 +60,9 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
                 "fsGroup"   = 101
                 "runAsUser" = 101
               }
+              "nodeSelector" = {
+                "clickhouse-keeper" = "true"
+              }
               "topologySpreadConstraints" = [
                 # spread the pods across nodes.
                 {
