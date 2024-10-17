@@ -289,7 +289,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
       >
         {logs?.length ? (
           <LogsPreview
-            data={logs}
+            data={data}
             columnFilters={columnFilters}
             globalFilter={globalFilter}
             sorting={columnSort}
