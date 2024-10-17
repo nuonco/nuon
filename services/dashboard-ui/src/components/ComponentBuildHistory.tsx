@@ -90,7 +90,7 @@ const ComponentBuildEvent: FC<IComponentBuildEvent> = ({
         <Time time={build.updated_at} format="relative" variant="overline" />
 
         <Link
-          href={`/beta/${orgId}/apps/${appId}/components/${build.component_id}/builds/${build.id}`}
+          href={`/${orgId}/apps/${appId}/components/${build.component_id}/builds/${build.id}`}
           variant="ghost"
         >
           <CaretRight />

@@ -13,8 +13,8 @@ export default withPageAuthRequired(
     return (
       <DashboardContent
         breadcrumb={[
-          { href: `/beta/${org.id}/apps`, text: org.name },
-          { href: `/beta/${org.id}/installs`, text: 'Installs' },
+          { href: `/${org.id}/apps`, text: org.name },
+          { href: `/${org.id}/installs`, text: 'Installs' },
         ]}
       >
         <section className="px-6 py-8">
@@ -23,5 +23,5 @@ export default withPageAuthRequired(
       </DashboardContent>
     )
   },
-  { returnTo: '/dashboard' }
+  { returnTo: '/' }
 )

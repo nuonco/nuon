@@ -48,18 +48,18 @@ export default withPageAuthRequired(
     return (
       <DashboardContent
         breadcrumb={[
-          { href: `/beta/${org.id}/apps`, text: org.name },
-          { href: `/beta/${org.id}/installs`, text: 'Installs' },
+          { href: `/${org.id}/apps`, text: org.name },
+          { href: `/${org.id}/installs`, text: 'Installs' },
           {
-            href: `/beta/${org.id}/installs/${install.id}`,
+            href: `/${org.id}/installs/${install.id}`,
             text: install.name,
           },
           {
-            href: `/beta/${org.id}/installs/${install.id}/components/${deploy.install_component_id}`,
+            href: `/${org.id}/installs/${install.id}/components/${deploy.install_component_id}`,
             text: component.name,
           },
           {
-            href: `/beta/${org.id}/installs/${install.id}/components/${deploy.install_component_id}/deploys/${deploy.id}`,
+            href: `/${org.id}/installs/${install.id}/components/${deploy.install_component_id}/deploys/${deploy.id}`,
             text: `${component.name} ${deploy.install_deploy_type}`,
           },
         ]}
@@ -129,7 +129,7 @@ lg:max-w-[450px]"
 
                 <Text variant="caption">
                   <Link
-                    href={`/beta/${orgId}/apps/${component.app_id}/components/${component.id}/builds/${build.id}`}
+                    href={`/${orgId}/apps/${component.app_id}/components/${component.id}/builds/${build.id}`}
                   >
                     Details
                     <FiChevronRight />
@@ -171,5 +171,5 @@ lg:max-w-[450px]"
       </DashboardContent>
     )
   },
-  { returnTo: '/dashboard' }
+  { returnTo: '/' }
 )

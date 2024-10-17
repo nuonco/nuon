@@ -106,7 +106,7 @@ const InstallDeployEvent: FC<IInstallDeployEvent> = ({
         <Time time={deploy.updated_at} format="relative" variant="overline" />
 
         <Link
-          href={`/beta/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${deploy.id}`}
+          href={`/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${deploy.id}`}
           variant="ghost"
         >
           <CaretRight />

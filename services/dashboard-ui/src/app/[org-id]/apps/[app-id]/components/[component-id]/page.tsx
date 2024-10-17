@@ -5,7 +5,6 @@ import {
   DashboardContent,
   DependentComponents,
   Heading,
-  Text,
 } from '@/components'
 import {
   getApp,
@@ -35,11 +34,11 @@ export default withPageAuthRequired(
     return (
       <DashboardContent
         breadcrumb={[
-          { href: `/beta/${org.id}/apps`, text: org.name },
-          { href: `/beta/${org.id}/apps`, text: 'Apps' },
-          { href: `/beta/${org.id}/apps/${app.id}`, text: app.name },
+          { href: `/${org.id}/apps`, text: org.name },
+          { href: `/${org.id}/apps`, text: 'Apps' },
+          { href: `/${org.id}/apps/${app.id}`, text: app.name },
           {
-            href: `/beta/${org.id}/apps/${app.id}/components/${component.id}`,
+            href: `/${org.id}/apps/${app.id}/components/${component.id}`,
             text: component.name,
           },
         ]}
@@ -85,5 +84,5 @@ lg:max-w-[450px]"
       </DashboardContent>
     )
   },
-  { returnTo: '/dashboard' }
+  { returnTo: '/' }
 )

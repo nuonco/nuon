@@ -20,9 +20,9 @@ export default withPageAuthRequired(
     const orgId = params?.['org-id'] as string
     const installId = params?.['install-id'] as string
     const subNavLinks: Array<TLink> = [
-      { href: `/beta/${orgId}/installs/${installId}`, text: 'Status' },
+      { href: `/${orgId}/installs/${installId}`, text: 'Status' },
       {
-        href: `/beta/${orgId}/installs/${installId}/components`,
+        href: `/${orgId}/installs/${installId}/components`,
         text: 'Components',
       },
     ]
@@ -36,10 +36,10 @@ export default withPageAuthRequired(
     return (
       <DashboardContent
         breadcrumb={[
-          { href: `/beta/${org.id}/apps`, text: org.name },
-          { href: `/beta/${org.id}/installs`, text: 'Installs' },
+          { href: `/${org.id}/apps`, text: org.name },
+          { href: `/${org.id}/installs`, text: 'Installs' },
           {
-            href: `/beta/${org.id}/installs/${install.id}`,
+            href: `/${org.id}/installs/${install.id}`,
             text: install.name,
           },
         ]}
@@ -93,5 +93,5 @@ export default withPageAuthRequired(
       </DashboardContent>
     )
   },
-  { returnTo: '/dashboard' }
+  { returnTo: '/' }
 )
