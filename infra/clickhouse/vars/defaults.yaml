@@ -16,11 +16,11 @@ availability_zones: ["us-west-2c"]
 
 # tables we want to backup
 tables:
- - otel_log_records
- - otel_metrics_exponential_histogram
- - otel_metrics_gauge
- - otel_metrics_histogram
- - otel_metrics_sum
- - otel_traces
- - runner_heart_beats
- - runner_health_checks
+ - ctl_api.otel_log_records
+ - ctl_api.otel_metrics_exponential_histogram
+ - ctl_api.otel_metrics_gauge
+ - ctl_api.otel_metrics_histogram
+ - ctl_api.otel_metrics_sum
+ - ctl_api.otel_traces
+ - ctl_api.runner_heart_beats
+ - ctl_api.runner_health_checks

@@ -27,7 +27,7 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
           "keeper_server/tcp_port"                              = "2181"
           "listen_host"                                         = "0.0.0.0"
           "logger/console"                                      = "true"
-          "logger/level"                                        = "debug"
+          "logger/level"                                        = "information"
           "prometheus/asynchronous_metrics"                     = "true"
           "prometheus/endpoint"                                 = "/metrics"
           "prometheus/events"                                   = "true"
