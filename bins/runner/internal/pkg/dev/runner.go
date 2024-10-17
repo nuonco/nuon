@@ -6,31 +6,18 @@ import (
 	"os"
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/retry"
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 func (d *devver) initRunner(ctx context.Context) error {
-	if domains.IsRunnerID(d.runnerIDInput) {
-		fmt.Println("runner id set from input")
-		d.runnerID = d.runnerIDInput
-		os.Setenv("RUNNER_ID", d.runnerID)
-		return nil
-	}
-
 	if os.Getenv("RUNNER_ID") != "" {
 		fmt.Println("runner id set from environment")
 		d.runnerID = os.Getenv("RUNNER_ID")
 		return nil
 	}
 
-	if !generics.SliceContains(d.runnerIDInput, []string{"orgs", "installs"}) {
-		return fmt.Errorf("invalid input type %s - must be one of orgs|installs", d.runnerIDInput)
-	}
-
 	fn := func(ctx context.Context) error {
-		runners, err := d.apiClient.ListRunners(ctx, d.runnerIDInput)
+		runners, err := d.apiClient.ListRunners(ctx, "orgs")
 		if err != nil {
 			return err
 		}
