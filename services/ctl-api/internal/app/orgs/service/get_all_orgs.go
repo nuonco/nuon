@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -34,10 +35,16 @@ func (s *service) GetAllOrgs(ctx *gin.Context) {
 
 func (s *service) getAllOrgs(ctx context.Context, typ string) ([]*app.Org, error) {
 	var orgs []*app.Org
+
+	where := app.Org{}
+	if typ != "all" {
+		where.OrgType = app.OrgType(typ)
+	}
+
 	res := s.db.WithContext(ctx).
 		Preload("CreatedBy").
 		Joins("JOIN accounts ON accounts.id=orgs.created_by_id").
-		Where("org_type = ?", typ).
+		Where(where).
 		Order("orgs.created_at desc").
 		Find(&orgs)
 	if res.Error != nil {
