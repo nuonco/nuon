@@ -33,10 +33,10 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
     "apiVersion" = "batch/v1"
     "kind"       = "CronJob"
     "metadata" = {
-      "name"      = "ch-s3-backup-${replace(replace(each.key, "_", "-"), ".", "-")}"
+      "name"      = "ch-s3-backup-${replace(replace(each.key, "_", "-"), "ctl_api.", "")}"
       "namespace" = "clickhouse"
       "annotations" = {
-        "nuon.clickhouse.io/table" = replace(replace(each.key, "_", "-"), ".", "-")
+        "nuon.clickhouse.io/table" = replace(replace(each.key, "_", "-"), "ctl_api.", "")
       }
     }
     "spec" = {
@@ -72,7 +72,7 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
                   ]
                   "image"           = "clickhouse/clickhouse-server:${local.image_tag}"
                   "imagePullPolicy" = "IfNotPresent"
-                  "name"            = "ch-s3-backup-${replace(replace(each.key, "_", "-"), ".", "-")}"
+                  "name"            = "ch-s3-backup-${replace(replace(each.key, "_", "-"), "ctl_api.", "")}"
                   "volumeMounts" = [
                     {
                       "name"      = "config-volume"
