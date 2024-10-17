@@ -29,6 +29,7 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(slog.AsOTELProvider(slog.NewOTELProvider)),
 		fx.Provide(log.AsSystemLogger(log.NewSystem)),
 		fx.Provide(log.AsSystemOTELLogger(log.NewOTELSystem)),
+		fx.Provide(log.AsDevLogger(log.NewDev)),
 		fx.Provide(errs.NewRecorder),
 		fx.Provide(ocicopy.New),
 		fx.Provide(registry.New),

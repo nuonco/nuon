@@ -2,16 +2,24 @@ package containerimage
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nuonco/nuon-runner-go/models"
 
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry"
 )
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
 	srcCfg := h.state.cfg.Source
 	dstCfg := h.state.regCfg
 
+	l.Info(fmt.Sprintf("copying image from %s:%s to %s", h.state.cfg.Source.Repository, h.state.cfg.Tag, h.state.resultTag))
 	res, err := h.ociCopy.Copy(ctx,
 		srcCfg,
 		h.state.cfg.Tag,
