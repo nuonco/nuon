@@ -49,7 +49,7 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
         accessorKey: 'name',
         cell: (props) => (
           <div className="flex flex-col gap-2">
-            <Link href={`/beta/${orgId}/apps/${props.row.original.appId}`}>
+            <Link href={`/${orgId}/apps/${props.row.original.appId}`}>
               <Heading variant="subheading">{props.getValue<string>()}</Heading>
             </Link>
             <ClickToCopy>
@@ -82,7 +82,7 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
         enableSorting: false,
         cell: (props) => (
           <Link
-            href={`/beta/${orgId}/apps/${props.row.original.appId}`}
+            href={`/${orgId}/apps/${props.row.original.appId}`}
             variant="ghost"
           >
             <DotsThreeVertical />

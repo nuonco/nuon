@@ -16,5 +16,5 @@ export const GET = async (req: NextRequest) => {
     method: 'POST',
   }).catch(console.error)
 
-  return NextResponse.redirect(new URL(`/dashboard/${org_id}`, process.env?.AUTH0_BASE_URL))
+  return NextResponse.redirect(new URL(`/${org_id}/apps`, process.env?.AUTH0_BASE_URL))
 }

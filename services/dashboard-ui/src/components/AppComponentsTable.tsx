@@ -68,7 +68,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
         cell: (props) => (
           <div className="flex flex-col gap-2">
             <Link
-              href={`/beta/${orgId}/apps/${appId}/components/${props.row.original.componentId}`}
+              href={`/${orgId}/apps/${appId}/components/${props.row.original.componentId}`}
             >
               <Heading variant="subheading">{props.getValue<string>()}</Heading>
             </Link>
@@ -99,9 +99,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
                   className="bg-gray-500/10 px-2 py-1 rounded-lg border w-fit"
                   variant="caption"
                 >
-                  <Link
-                    href={`/beta/${orgId}/apps/${appId}/components/${dep.id}`}
-                  >
+                  <Link href={`/${orgId}/apps/${appId}/components/${dep.id}`}>
                     {dep?.name}
                   </Link>
                 </Text>
@@ -127,7 +125,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
         enableSorting: false,
         cell: (props) => (
           <Link
-            href={`/beta/${orgId}/apps/${appId}/components/${props.row.original.componentId}`}
+            href={`/${orgId}/apps/${appId}/components/${props.row.original.componentId}`}
             variant="ghost"
           >
             <DotsThreeVertical />

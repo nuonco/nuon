@@ -6,7 +6,6 @@ import {
   GoCheckCircleFill,
   GoClockFill,
   GoXCircleFill,
-  GoChevronRight,
 } from 'react-icons/go'
 import { CaretRight } from '@phosphor-icons/react'
 import { Link, Text, Time } from '@/components'
@@ -127,11 +126,11 @@ interface IInstallEvent {
 const InstallEvent: FC<IInstallEvent> = ({ event, isMostRecent = false }) => {
   const href =
     (event?.operation === 'deploy' &&
-      `/beta/${event.org_id}/installs/${event.install_id}/components/${event?.component_id}/deploys/${event.payload_id}`) ||
+      `/${event.org_id}/installs/${event.install_id}/components/${event?.component_id}/deploys/${event.payload_id}`) ||
     ((event?.operation === 'provision' ||
       event?.operation === 'reprovision' ||
       event?.operation === 'deprovision') &&
-      `/beta/${event.org_id}/installs/${event.install_id}/runs/${event.payload_id}`) ||
+      `/${event.org_id}/installs/${event.install_id}/runs/${event.payload_id}`) ||
     null
 
   return (

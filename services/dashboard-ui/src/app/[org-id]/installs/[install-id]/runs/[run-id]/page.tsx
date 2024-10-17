@@ -34,14 +34,14 @@ export default withPageAuthRequired(
     return (
       <DashboardContent
         breadcrumb={[
-          { href: `/beta/${org.id}/apps`, text: org.name },
-          { href: `/beta/${org.id}/installs`, text: 'Installs' },
+          { href: `/${org.id}/apps`, text: org.name },
+          { href: `/${org.id}/installs`, text: 'Installs' },
           {
-            href: `/beta/${org.id}/installs/${install.id}`,
+            href: `/${org.id}/installs/${install.id}`,
             text: install.name,
           },
           {
-            href: `/beta/${org.id}/installs/${install.id}/runs/${sandboxRun.id}`,
+            href: `/${org.id}/installs/${install.id}/runs/${sandboxRun.id}`,
             text: `${install.name} ${sandboxRun.run_type}`,
           },
         ]}
@@ -111,5 +111,5 @@ lg:max-w-[450px]"
       </DashboardContent>
     )
   },
-  { returnTo: '/dashboard' }
+  { returnTo: '/' }
 )

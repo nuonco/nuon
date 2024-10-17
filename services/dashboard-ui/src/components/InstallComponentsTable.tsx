@@ -74,7 +74,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         cell: (props) => (
           <div className="flex flex-col gap-2">
             <Link
-              href={`/beta/${orgId}/installs/${installId}/components/${props.row.original.installComponentId}`}
+              href={`/${orgId}/installs/${installId}/components/${props.row.original.installComponentId}`}
             >
               <Heading variant="subheading">{props.getValue<string>()}</Heading>
             </Link>
@@ -117,7 +117,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
                   variant="caption"
                 >
                   <Link
-                    href={`/beta/${orgId}/installs/${installId}/components/${dep.id}`}
+                    href={`/${orgId}/installs/${installId}/components/${dep.id}`}
                   >
                     {dep?.component?.name}
                   </Link>
@@ -144,7 +144,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         enableSorting: false,
         cell: (props) => (
           <Link
-            href={`/beta/${orgId}/installs/${installId}/components/${props.row.original.installComponentId}`}
+            href={`/${orgId}/installs/${installId}/components/${props.row.original.installComponentId}`}
             variant="ghost"
           >
             <DotsThreeVertical />

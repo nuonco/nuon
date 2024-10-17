@@ -102,7 +102,7 @@ export const OrgsNav: FC<IOrgsNav> = ({ orgs }) => {
           <NextLink
             className="flex items-center justify-start gap-4 rounded-md p-2 hover:bg-cool-grey-600/20"
             key={org.id}
-            href={`/beta/${org.id}/apps`}
+            href={`/${org.id}/apps`}
           >
             <OrgAvatar name={org.name} />
             <span>

@@ -38,7 +38,7 @@ export const MainNav: FC<{ orgId: string }> = ({ orgId }) => {
   const path = usePathname()
   const links: Array<TLink> = [
     {
-      href: `/beta/${orgId}/apps`,
+      href: `/${orgId}/apps`,
       text: (
         <>
           <SquaresFour />
@@ -47,7 +47,7 @@ export const MainNav: FC<{ orgId: string }> = ({ orgId }) => {
       ),
     },
     {
-      href: `/beta/${orgId}/installs`,
+      href: `/${orgId}/installs`,
       text: (
         <>
           <Wrench />
@@ -60,7 +60,7 @@ export const MainNav: FC<{ orgId: string }> = ({ orgId }) => {
   return (
     <nav className="flex-auto flex flex-col gap-2">
       {links.map((link) => {
-        const isActive = path.split('/')[3] === link.href.split('/')[3]
+        const isActive = path.split('/')[2] === link.href.split('/')[2]
         return (
           <NextLink
             key={link.href}
@@ -88,7 +88,7 @@ export const SubNav: FC<{ links: Array<TLink> }> = ({ links }) => {
   return (
     <nav className="flex items-center gap-6">
       {links.map((link) => {
-        const isActive = path.split('/')?.[5] === link.href.split('/')?.[5]
+        const isActive = path.split('/')?.[4] === link.href.split('/')?.[4]
 
         return (
           <NextLink
@@ -124,6 +124,7 @@ export const BreadcrumbNav: FC<{ links: Array<TLink> }> = ({ links }) => {
             <CaretRight className="text-cool-grey-600 dark:text-cool-grey-500" />
           ) : null}
           <Link
+            className="!inline max-w-60 truncate"
             href={link.href}
             variant="breadcrumb"
             isActive={links.length === i + 1}

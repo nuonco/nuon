@@ -58,8 +58,8 @@ export const DependentComponents: FC<IComponentDependencies> = ({
   orgId,
 }) => {
   const path = appId
-    ? `/beta/${orgId}/apps/${appId}/components`
-    : `/beta/${orgId}/installs/${installId}/components`
+    ? `/${orgId}/apps/${appId}/components`
+    : `/${orgId}/installs/${installId}/components`
 
   return (
     <div className="flex flex-wrap items-center justify-start gap-3">
