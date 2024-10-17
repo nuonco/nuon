@@ -27,7 +27,7 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
           "keeper_server/tcp_port"                              = "2181"
           "listen_host"                                         = "0.0.0.0"
           "logger/console"                                      = "true"
-          "logger/level"                                        = "trace"
+          "logger/level"                                        = "debug"
           "prometheus/asynchronous_metrics"                     = "true"
           "prometheus/endpoint"                                 = "/metrics"
           "prometheus/events"                                   = "true"
@@ -79,12 +79,12 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
               "tolerations" = [{
                 "key"      = "installation"
                 "operator" = "Equal"
-                "value"    = "clickhouse-installation"
+                "value"    = "clickhouse-keeper"
                 "effect"   = "NoSchedule"
               }]
               "containers" = [
                 {
-                  "image"           = "clickhouse/clickhouse-keeper:head-alpine"
+                  "image"           = "clickhouse/clickhouse-keeper:24.3.12.75-alpine"
                   "imagePullPolicy" = "IfNotPresent"
                   "name"            = "clickhouse-keeper"
                   "resources" = {
@@ -108,7 +108,7 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
 
   depends_on = [
     kubectl_manifest.clickhouse_operator,
-    kubectl_manifest.nodepool_clickhouse,
-    kubectl_manifest.namespace_clickhouse
+    kubectl_manifest.namespace_clickhouse,
+    kubectl_manifest.nodepool_clickhouse_keeper,
   ]
 }

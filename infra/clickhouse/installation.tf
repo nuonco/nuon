@@ -60,7 +60,7 @@ resource "kubectl_manifest" "clickhouse_installation_configmap_bootstrap" {
       #!/bin/bash
       set -e
       clickhouse client -n <<-EOSQL
-      CREATE DATABASE IF NOT EXISTS ctl_api;
+      CREATE DATABASE IF NOT EXISTS ctl_api ON CLUSTER 'simple';
       EOSQL
 
       EOT
@@ -72,6 +72,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
   # generated with tfk8s and the source below
   # https://github.com/Altinity/clickhouse-operator/blob/master/docs/quick_start.md
   # NOTE: uses toleration to deploy to the NodePool defined above
+  # NOTE: uses topologySpreadConstraints to distribute pods across nodes
 
   yaml_body = yamlencode({
     "apiVersion" = "clickhouse.altinity.com/v1"
@@ -95,12 +96,19 @@ resource "kubectl_manifest" "clickhouse_installation" {
             }
             "layout" = {
               "replicasCount" = local.replicas
-              "shardsCount"   = local.shards
+              "shardsCount"   = 1
             }
           },
         ]
         "settings" = {
-          "logger/level" = local.logLevel
+          "logger/level"                    = local.logLevel
+          "logger/console"                  = true
+          "prometheus/endpoint"             = "/metrics"
+          "prometheus/port"                 = 9363
+          "prometheus/metrics"              = true
+          "prometheus/events"               = true
+          "prometheus/asynchronous_metrics" = true
+          "prometheus/status_info"          = true
         }
         # configure to use the zookeeper nodes
         "zookeeper" = {
@@ -191,36 +199,38 @@ resource "kubectl_manifest" "clickhouse_installation" {
             "nodeSelector" = {
               "clickhouse-installation" = "true"
             }
-            # "affinity" = {
-            #   "podAntiAffinity" = {
-            #     "requiredDuringSchedulingIgnoredDuringExecution" = [
-            #       {
-            #         "labelSelector" = {
-            #           "matchLabels" = {
-            #             "clickhouse.altinity.com/chi" = "clickhouse-installation"
-            #           }
-            #         }
-            #         "topologyKey" = "kubernetes.io/hostname"
-            #       },
-            #       # NOTE(fd): topology alone should be enough for this
-            #       {
-            #         "labelSelector" = {
-            #           "matchLabels" = {
-            #             "clickhouse.altinity.com/chi" = "clickhouse-installation"
-            #           }
-            #         }
-            #         "topologyKey" = "topology.kubernetes.io/zone"
-            #       },
-            #     ]
-            #   }
-            # }
+            "affinity" = {
+              "podAntiAffinity" = {
+                "requiredDuringSchedulingIgnoredDuringExecution" = [
+                  {
+                    "labelSelector" = {
+                      "matchLabels" = {
+                        # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
+                        #           that is, however, an assumption
+                        "clickhouse.altinity.com/chi" = "clickhouse-installation"
+                      }
+                    }
+                    "topologyKey" = "kubernetes.io/hostname"
+                  },
+                  {
+                    "labelSelector" = {
+                      "matchLabels" = {
+                        # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
+                        #           that is, however, an assumption
+                        "clickhouse.altinity.com/chi" = "clickhouse-installation"
+                      }
+                    }
+                    "topologyKey" = "topology.kubernetes.io/zone"
+                  },
+                ]
+              }
+            }
             "topologySpreadConstraints" = [
               # spread the pods across nodes.
               {
                 "maxSkew"           = 1
                 "topologyKey"       = "kubernetes.io/hostname"
                 "whenUnsatisfiable" = "ScheduleAnyway"
-                # "minDomains"        = local.hosts * local.shards
                 "labelSelector" = {
                   "matchLabels" = {
                     # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
@@ -230,18 +240,18 @@ resource "kubectl_manifest" "clickhouse_installation" {
                 }
               },
               # spread the pods across az:
-              # {
-              #   "maxSkew"           = 3
-              #   "topologyKey"       = "topology.kubernetes.io/zone"
-              #   "whenUnsatisfiable" = "ScheduleAnyway"
-              #   "labelSelector" = {
-              #     "matchLabels" = {
-              #       # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
-              #       #           that is, however, an assumption
-              #       "clickhouse.altinity.com/chi" = "clickhouse-installation"
-              #     }
-              #   }
-              # }
+              {
+                "maxSkew"           = 1
+                "topologyKey"       = "topology.kubernetes.io/zone"
+                "whenUnsatisfiable" = "ScheduleAnyway"
+                "labelSelector" = {
+                  "matchLabels" = {
+                    # NOTE(fd): this label is automatically applied by the CRD so we can assume it exists.
+                    #           that is, however, an assumption
+                    "clickhouse.altinity.com/chi" = "clickhouse-installation"
+                  }
+                }
+              }
             ]
             "tolerations" = [{
               "key"      = "installation"
@@ -281,9 +291,9 @@ resource "kubectl_manifest" "clickhouse_installation" {
         }]
         "volumeClaimTemplates" = [
           {
-            "name"             = "data-volume-template"
-            "storageClassName" = "ebi"
+            "name" = "data-volume-template"
             "spec" = {
+              "storageClassName" = "ebi"
               "accessModes" = [
                 "ReadWriteOnce",
               ]
@@ -302,7 +312,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
   depends_on = [
     kubectl_manifest.clickhouse_operator,
     kubectl_manifest.nodepool_clickhouse,
-    kubectl_manifest.namespace_clickhouse,
+    kubectl_manifest.clickhouse_installation_configmap_bootstrap,
     kubectl_manifest.clickhouse_keeper_installation
   ]
 }

@@ -1,12 +1,9 @@
 locals {
-  name                   = "clickhouse"
+  replicas               = local.vars.replicas
   terraform_organization = "nuonco"
   zone                   = nonsensitive(data.tfe_outputs.infra-eks-nuon.values.private_zone)
 
   # clickhouse installation manifest values
-  hosts              = local.vars.hosts
-  replicas           = local.vars.replicas
-  shards             = local.vars.shards
   keeperReplicaCount = local.vars.keeperReplicaCount
   availability_zones = local.vars.availability_zones
 

@@ -49,7 +49,7 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
                   "command" = [
                     "bash",
                     "/usr/local/bin/backup.sh",
-                    "${each.key}",
+                    each.key,
                   ]
                   "env" = [
                     {
@@ -97,8 +97,12 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
         }
       }
       "schedule"                   = "13,37,51 */1 * * *" // TODO(fd): add some randomness +/- 3 min
-      "successfulJobsHistoryLimit" = 2
-      "failedJobsHistoryLimit"     = 1
+      "successfulJobsHistoryLimit" = 0
+      "failedJobsHistoryLimit"     = 0
     }
   })
+
+  depends_on = [
+    kubectl_manifest.clickhouse_installation
+  ]
 }

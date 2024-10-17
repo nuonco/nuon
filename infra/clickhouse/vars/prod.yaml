@@ -5,9 +5,8 @@ data_volume_storage: 100Gi
 
 logLevel: warning
 
-hosts: 3
-replicas: 3
-shards: 3
+replicas: 2
+shards: 1
 keeperReplicaCount: 3
 
 # zones controls where the ch NodePool will stand up new nodes
