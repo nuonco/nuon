@@ -257,17 +257,19 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
         className="border-r"
         actions={
           <div className="flex items-center divide-x">
-            <div className="pl-4">
-              <Button
-                className="flex items-center gap-2 text-base !font-medium"
-                onClick={() => {
-                  setIsDetailsOpen(true)
-                }}
-              >
-                <ArrowsOutSimple />
-                View all logs
-              </Button>
-            </div>
+            {logs?.length && (
+              <div className="pl-4">
+                <Button
+                  className="flex items-center gap-2 text-base !font-medium"
+                  onClick={() => {
+                    setIsDetailsOpen(true)
+                  }}
+                >
+                  <ArrowsOutSimple />
+                  View all logs
+                </Button>
+              </div>
+            )}
           </div>
         }
         heading={heading}

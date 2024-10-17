@@ -86,9 +86,11 @@ export const LogsPreview: FC<ILogsPreview> = ({ logs }) => {
             />
           ))}
       </div>
-      <Text className="text-cool-grey-600 dark:text-cool-grey-500 m-auto">
-        Plus {logs.length - 10} more lines
-      </Text>
+      {logs.length > 10 && (
+        <Text className="text-cool-grey-600 dark:text-cool-grey-500 m-auto">
+          Plus {logs.length - 10} more lines
+        </Text>
+      )}
     </div>
   )
 }
