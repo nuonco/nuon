@@ -31,6 +31,9 @@ type Config struct {
 	// some artifacts are bundled into the runner binary, to make loading them easier.
 	BundleDir   string `config:"bundle_dir"`
 	RegistryDir string `config:"registry_dir"`
+
+	// only for enabling local things
+	IsNuonctl bool `config:"is_nuonctl"`
 }
 
 func NewConfig() (*Config, error) {
