@@ -14,11 +14,12 @@ import {
   Text,
   getComponentConfigType,
 } from '@/components'
-import type { TComponent, TComponentConfig } from '@/types'
+import type { TBuild, TComponent, TComponentConfig } from '@/types'
 
 type TDataComponent = {
   deps: Array<TComponent>
   config: TComponentConfig
+  latestBuild: TBuild
 } & TComponent
 
 type TData = {
@@ -35,7 +36,7 @@ function parseComponentsToTableData(
   components: Array<TDataComponent>
 ): Array<TData> {
   return components.map((component) => ({
-    build: component.status,
+    build: component?.latestBuild?.status || 'noop',
     componentId: component.id,
     componentType: getComponentConfigType(component.config),
     configVersion: component.config_versions,
