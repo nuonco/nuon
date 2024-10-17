@@ -13,6 +13,8 @@ export default async function middleware(request: NextRequest) {
       new URL(request.url).pathname.split('/')[1] === 'beta'
     ) {
       let redirectPath = '/getting-started'
+      const orgSession = request.cookies.get('org-session')
+
       const orgs: Array<TOrg> = await (
         await fetch(`${API_URL}/v1/orgs`, {
           cache: 'no-store',
@@ -24,7 +26,13 @@ export default async function middleware(request: NextRequest) {
         })
       ).json()
 
-      if (orgs.length > 0) {
+      if (
+        orgSession &&
+        orgs.length > 0 &&
+        orgs.some((org) => org.id === orgSession?.value)
+      ) {
+        redirectPath = `/${orgSession?.value}/apps`
+      } else if (orgs.length > 0) {
         redirectPath = `/${orgs[0].id}/apps`
       }
 
