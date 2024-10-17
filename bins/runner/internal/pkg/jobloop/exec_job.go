@@ -22,7 +22,10 @@ type executeJobStep struct {
 }
 
 func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) error {
-	l := log.NewOTELJobLogger(j.loggerProvider)
+	l, err := log.NewOTELJobLogger(j.cfg, j.loggerProvider)
+	if err != nil {
+		return errors.Wrap(err, "unable to get job logger")
+	}
 	l = l.With(zap.String("runner_job.id", job.ID))
 
 	// create an execution in the API
