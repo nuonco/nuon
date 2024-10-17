@@ -36,7 +36,7 @@ export default withPageAuthRequired(
         breadcrumb={[
           { href: `/${org.id}/apps`, text: org.name },
           { href: `/${org.id}/apps`, text: 'Apps' },
-          { href: `/${org.id}/apps/${app.id}`, text: app.name },
+          { href: `/${org.id}/apps/${app.id}/components`, text: app.name },
           {
             href: `/${org.id}/apps/${app.id}/components/${component.id}`,
             text: component.name,
