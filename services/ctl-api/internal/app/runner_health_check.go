@@ -35,9 +35,9 @@ func (r *RunnerHealthCheck) BeforeCreate(tx *gorm.DB) error {
 
 func (r RunnerHealthCheck) GetTableOptions() (string, bool) {
 	options := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/runner_health_checks', '{replica}')
-	ORDER BY (created_at, runner_id)
 	PARTITION BY toDate(created_at)
-	PRIMARY KEY (created_at, runner_id)`
+	PRIMARY KEY (runner_id, created_at)
+	ORDER BY    (runner_id, created_at)`
 	return options, true
 }
 
