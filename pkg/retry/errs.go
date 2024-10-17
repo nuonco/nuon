@@ -15,7 +15,7 @@ func (e nonRetryableErr) Unwrap() error {
 }
 
 func AsNonRetryable(err error) error {
-	return &nonRetryableErr{
+	return nonRetryableErr{
 		err: err,
 	}
 }
