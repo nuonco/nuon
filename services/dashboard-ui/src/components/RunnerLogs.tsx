@@ -236,6 +236,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
             handleGlobalFilter={handleGlobleFilter}
             handleStatusFilter={handleStatusFilter}
             handleColumnSort={handleColumnSort}
+            id="modal"
           />
         }
         hasFixedHeight
@@ -257,25 +258,42 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
         className="border-r"
         actions={
           <div className="flex items-center divide-x">
-            {logs?.length && (
-              <div className="pl-4">
-                <Button
-                  className="flex items-center gap-2 text-base !font-medium"
-                  onClick={() => {
-                    setIsDetailsOpen(true)
-                  }}
-                >
-                  <ArrowsOutSimple />
-                  View all logs
-                </Button>
-              </div>
-            )}
+            {logs?.length > 0 ? (
+              <>
+                <RunnerLogsActions
+                  columnSort={columnSort}
+                  columnFilters={columnFilters}
+                  globalFilter={globalFilter}
+                  handleGlobalFilter={handleGlobleFilter}
+                  handleStatusFilter={handleStatusFilter}
+                  handleColumnSort={handleColumnSort}
+                  id="preview"
+                  shouldHideFilter
+                />
+                <div className="ml-4 pl-4">
+                  <Button
+                    className="flex items-center gap-2 text-base !font-medium"
+                    onClick={() => {
+                      setIsDetailsOpen(true)
+                    }}
+                  >
+                    <ArrowsOutSimple />
+                    View all logs
+                  </Button>
+                </div>
+              </>
+            ) : null}
           </div>
         }
         heading={heading}
       >
         {logs?.length ? (
-          <LogsPreview logs={logs} />
+          <LogsPreview
+            data={logs}
+            columnFilters={columnFilters}
+            globalFilter={globalFilter}
+            sorting={columnSort}
+          />
         ) : (
           <Text className="text-base">No logs found</Text>
         )}
@@ -291,6 +309,8 @@ interface IRunnerLogsActions {
   handleStatusFilter: any
   handleGlobalFilter: any
   handleColumnSort: any
+  id: string
+  shouldHideFilter?: boolean
 }
 
 const RunnerLogsActions: FC<IRunnerLogsActions> = ({
@@ -299,6 +319,8 @@ const RunnerLogsActions: FC<IRunnerLogsActions> = ({
   handleGlobalFilter,
   handleStatusFilter,
   handleColumnSort,
+  id,
+  shouldHideFilter = false,
 }) => {
   return (
     <div className="flex items-center gap-4">
@@ -332,7 +354,7 @@ const RunnerLogsActions: FC<IRunnerLogsActions> = ({
       >
         <div>
           <RadioInput
-            name="column-sort"
+            name={`${id}-column-sort`}
             checked={columnSort?.[0]?.desc}
             onChange={handleColumnSort}
             value="true"
@@ -340,7 +362,7 @@ const RunnerLogsActions: FC<IRunnerLogsActions> = ({
           />
 
           <RadioInput
-            name="column-sort"
+            name={`${id}-column-sort`}
             checked={!columnSort?.[0]?.desc}
             onChange={handleColumnSort}
             value="false"
@@ -349,57 +371,59 @@ const RunnerLogsActions: FC<IRunnerLogsActions> = ({
         </div>
       </Dropdown>
 
-      <Dropdown
-        alignment="right"
-        className="text-base !font-medium !p-2 w-[32px] h-[32px]"
-        variant="ghost"
-        id="logs-filter"
-        text={<Funnel />}
-      >
-        <div>
-          <RadioInput
-            name="status-filter"
-            onChange={handleStatusFilter}
-            value="Trace"
-            labelText="Trace"
-          />
+      {shouldHideFilter ? null : (
+        <Dropdown
+          alignment="right"
+          className="text-base !font-medium !p-2 w-[32px] h-[32px]"
+          variant="ghost"
+          id="logs-filter"
+          text={<Funnel />}
+        >
+          <div>
+            <RadioInput
+              name={`${id}-status-filter`}
+              onChange={handleStatusFilter}
+              value="Trace"
+              labelText="Trace"
+            />
 
-          <RadioInput
-            name="status-filter"
-            onChange={handleStatusFilter}
-            value="Debug"
-            labelText="Debug"
-          />
+            <RadioInput
+              name={`${id}-status-filter`}
+              onChange={handleStatusFilter}
+              value="Debug"
+              labelText="Debug"
+            />
 
-          <RadioInput
-            name="status-filter"
-            onChange={handleStatusFilter}
-            value="Info"
-            labelText="Info"
-          />
+            <RadioInput
+              name={`${id}-status-filter`}
+              onChange={handleStatusFilter}
+              value="Info"
+              labelText="Info"
+            />
 
-          <RadioInput
-            name="status-filter"
-            onChange={handleStatusFilter}
-            value="Warn"
-            labelText="Warning"
-          />
+            <RadioInput
+              name={`${id}-status-filter`}
+              onChange={handleStatusFilter}
+              value="Warn"
+              labelText="Warning"
+            />
 
-          <RadioInput
-            name="status-filter"
-            onChange={handleStatusFilter}
-            value="Error"
-            labelText="Error"
-          />
+            <RadioInput
+              name={`${id}-status-filter`}
+              onChange={handleStatusFilter}
+              value="Error"
+              labelText="Error"
+            />
 
-          <RadioInput
-            name="status-filter"
-            onChange={handleStatusFilter}
-            value="Fatal"
-            labelText="Fatal"
-          />
-        </div>
-      </Dropdown>
+            <RadioInput
+              name={`${id}-status-filter`}
+              onChange={handleStatusFilter}
+              value="Fatal"
+              labelText="Fatal"
+            />
+          </div>
+        </Dropdown>
+      )}
     </div>
   )
 }
