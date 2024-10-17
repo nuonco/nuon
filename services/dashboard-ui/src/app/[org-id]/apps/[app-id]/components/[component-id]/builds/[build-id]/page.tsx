@@ -48,15 +48,15 @@ export default withPageAuthRequired(
     return (
       <DashboardContent
         breadcrumb={[
-          { href: `/beta/${org.id}/apps`, text: org.name },
-          { href: `/beta/${org.id}/apps`, text: 'Apps' },
-          { href: `/beta/${org.id}/apps/${app.id}`, text: app.name },
+          { href: `/${org.id}/apps`, text: org.name },
+          { href: `/${org.id}/apps`, text: 'Apps' },
+          { href: `/${org.id}/apps/${app.id}`, text: app.name },
           {
-            href: `/beta/${org.id}/apps/${app.id}/components/${build.component_id}`,
+            href: `/${org.id}/apps/${app.id}/components/${build.component_id}`,
             text: component.name,
           },
           {
-            href: `/beta/${org.id}/apps/${app.id}/components/${build.component_id}/builds/${build.id}`,
+            href: `/${org.id}/apps/${app.id}/components/${build.component_id}/builds/${build.id}`,
             text: `${component.name} build`,
           },
         ]}
@@ -150,5 +150,5 @@ lg:max-w-[450px]"
       </DashboardContent>
     )
   },
-  { returnTo: '/dashboard' }
+  { returnTo: '/' }
 )

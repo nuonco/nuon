@@ -68,7 +68,7 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
         cell: (props) => (
           <div className="flex flex-col gap-2">
             <Link
-              href={`/beta/${orgId}/installs/${props.row.original.installId}`}
+              href={`/${orgId}/installs/${props.row.original.installId}`}
             >
               <Heading variant="subheading">{props.getValue<string>()}</Heading>
             </Link>
@@ -115,7 +115,7 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
         header: 'App',
         accessorKey: 'app',
         cell: (props) => (
-          <Link href={`/beta/${orgId}/apps/${props.row.original.appId}`}>
+          <Link href={`/${orgId}/apps/${props.row.original.appId}`}>
             <Text className="break-all">{props.getValue<string>()}</Text>
           </Link>
         ),
@@ -134,7 +134,7 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
         enableSorting: false,
         cell: (props) => (
           <Link
-            href={`/beta/${orgId}/installs/${props.row.original.installId}`}
+            href={`/${orgId}/installs/${props.row.original.installId}`}
             variant="ghost"
           >
             <DotsThreeVertical />
