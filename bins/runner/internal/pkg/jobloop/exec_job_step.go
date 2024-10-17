@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"time"
 
 	"github.com/nuonco/nuon-runner-go/models"
@@ -75,6 +76,10 @@ func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, step *executeJ
 			"status":   "error",
 			"err_type": "panic",
 		}))
+
+		l.Error("panic in " + step.name)
+		l.Error(recovered.String())
+		l.Error(string(debug.Stack()))
 		panic(recovered)
 	}
 
@@ -88,6 +93,8 @@ func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, step *executeJ
 		}))
 		return nil
 	}
+
+	l.Info("job step errored "+err.Error(), zap.String("step", step.name), zap.Error(err))
 
 	// handle the error by cleaning up the execution using the handler.
 	status := j.errToStatus(err)
