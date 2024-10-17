@@ -15,6 +15,7 @@ import {
   Heading,
   Link,
   Text,
+  ToolTip,
   VCS,
 } from '@/components'
 import { getComponentConfig, type IGetComponentConfig } from '@/lib'
@@ -512,9 +513,11 @@ const ConfigurationVariables: FC<{
           {variableKeys.map((key, i) => (
             <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-3">
               <Text className="font-mono text-sm break-all">{key}</Text>
-              <Text className="font-mono text-sm break-all col-span-2">
+              <ToolTip tipContent={variables[key]} alignment="right">
+              <Text className="font-mono text-sm break-all col-span-2 !inline truncate max-w-[200px]">
                 {variables[key]}
               </Text>
+              </ToolTip>
             </div>
           ))}
         </div>

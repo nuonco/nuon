@@ -15,9 +15,9 @@ export default withPageAuthRequired(
           <header className="flex flex-col gap-4">
             <div className="border-b flex items-center justify-between px-4 pt-6 pb-4 h-[75px]">
               <Logo />
-              <Button className="p-1.5" hasCustomPadding variant="ghost">
-                <ArrowLineLeft />
-              </Button>
+              {/* <Button className="p-1.5" hasCustomPadding variant="ghost">
+                  <ArrowLineLeft />
+                  </Button> */}
             </div>
 
             <div className="px-4">
