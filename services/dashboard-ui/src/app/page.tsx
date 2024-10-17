@@ -14,7 +14,7 @@ export default function Home() {
           <a
             className="flex flex-initial items-center w-fit gap-1 bg-gradient-to-r
 hover:scale-105 focus:scale-105 active:scale-95 from-indigo-500 via-purple-500 to-fuchsia-400 text-slate-50 dark:text-slate-950 drop-shadow-sm px-4 py-2 rounded-md text-lg transition-transform duration-75"
-            href="/api/auth/login?returnTo=/dashboard"
+            href="/api/auth/login?returnTo=/"
           >
             Login to get started <GoArrowRight />
           </a>

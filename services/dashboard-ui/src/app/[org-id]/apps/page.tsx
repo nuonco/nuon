@@ -16,8 +16,8 @@ export default withPageAuthRequired(
         {process.env.SEGMENT_WRITE_KEY && <SegmentAnalyticsSetOrg org={org} />}
         <DashboardContent
           breadcrumb={[
-            { href: `/beta/${org.id}/apps`, text: org.name },
-            { href: `/beta/${org.id}/apps`, text: 'Apps' },
+            { href: `/${org.id}/apps`, text: org.name },
+            { href: `/${org.id}/apps`, text: 'Apps' },
           ]}
         >
           <section className="px-6 py-8">
@@ -27,5 +27,5 @@ export default withPageAuthRequired(
       </>
     )
   },
-  { returnTo: '/dashboard' }
+  { returnTo: '/' }
 )

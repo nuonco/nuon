@@ -68,7 +68,7 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
         cell: (props) => (
           <div className="flex flex-col gap-2">
             <Link
-              href={`/beta/${orgId}/installs/${props.row.original.installId}`}
+              href={`/${orgId}/installs/${props.row.original.installId}`}
               variant="default"
             >
               <Heading variant="subheading">{props.getValue<string>()}</Heading>
@@ -116,7 +116,7 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
         header: 'App',
         accessorKey: 'app',
         cell: (props) => (
-          <Link href={`/beta/${orgId}/apps/${props.row.original.appId}`}>
+          <Link href={`/${orgId}/apps/${props.row.original.appId}`}>
             <Text className="break-all">{props.getValue<string>()}</Text>
           </Link>
         ),
@@ -135,7 +135,7 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
         enableSorting: false,
         cell: (props) => (
           <Link
-            href={`/beta/${orgId}/installs/${props.row.original.installId}`}
+            href={`/${orgId}/installs/${props.row.original.installId}`}
             variant="ghost"
           >
             <DotsThreeVertical />

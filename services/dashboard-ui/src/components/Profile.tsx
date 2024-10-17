@@ -120,10 +120,11 @@ export const ProfileDropdown: FC = () => {
 }
 
 export const SignOutButton: FC = () => {
-  return (
+  const { user } = useUser()
+  return user && (
     <a
       href="/api/auth/logout"
-      className="hover:bg-black/5 dark:hover:bg-white/5 h-[48px] p-1 flex items-center justify-between w-full text-sm leading-5 text-left"
+      className="hover:bg-black/5 dark:hover:bg-white/5 h-[48px] p-1 flex items-center justify-between w-full text-sm leading-5 text-left gap-2 rounded-lg"
     >
       <Profile />
       <SignOut size={16} />
