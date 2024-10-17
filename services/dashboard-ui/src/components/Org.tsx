@@ -2,15 +2,9 @@
 
 import React, { type FC, useCallback, useEffect, useState } from 'react'
 import { FaGithub } from 'react-icons/fa'
-import { GoPlus } from 'react-icons/go'
-import { Card, Dropdown, Heading, Link, Status, Text } from '@/components'
-import { OrgProvider, useOrgContext } from '@/context'
-import type { TOrg } from '@/types'
-import {
-  GITHUB_APP_NAME,
-  SHORT_POLL_DURATION,
-  initialsFromString,
-} from '@/utils'
+import { Card, Heading, Link, Status, Text } from '@/components'
+import { useOrgContext } from '@/context'
+import { GITHUB_APP_NAME, SHORT_POLL_DURATION } from '@/utils'
 
 export const OrgCard: FC = () => {
   const {
@@ -30,8 +24,8 @@ export const OrgCard: FC = () => {
           <Link href={`/dashboard/${id}`}>Details</Link>
         </Text>
 
-        <Text variant="caption" title="Try the beta of the new Nuon dashboard">
-          <Link href={`/beta/${id}/apps`}>Beta</Link>
+        <Text variant="caption" title="Try the new Nuon dashboard">
+          <Link href={`/${id}/apps`}>Beta</Link>
         </Text>
       </div>
     </Card>
