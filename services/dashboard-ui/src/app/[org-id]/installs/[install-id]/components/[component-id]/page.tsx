@@ -45,7 +45,7 @@ export default withPageAuthRequired(
           { href: `/${org.id}/apps`, text: org.name },
           { href: `/${org.id}/installs`, text: 'Installs' },
           {
-            href: `/${org.id}/installs/${install.id}`,
+            href: `/${org.id}/installs/${install.id}/components`,
             text: install.name,
           },
           {

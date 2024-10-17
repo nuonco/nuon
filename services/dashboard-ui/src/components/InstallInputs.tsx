@@ -31,8 +31,8 @@ export const InstallInputs: FC<IInstallInputs> = ({ inputs }) => {
                     key={`${key}-${i}`}
                     className="grid grid-cols-3 gap-4 py-3"
                   >
-                    <Text className="font-mono text-sm break-all">{key}</Text>
-                    <Text className="col-span-2 break-all text-sm">
+                    <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">{key}</Text>
+                    <Text className="col-span-2 break-all text-sm !inline truncate max-w-[200px]">
                       {input.redacted_values[key]}
                     </Text>
                   </div>
@@ -43,8 +43,8 @@ export const InstallInputs: FC<IInstallInputs> = ({ inputs }) => {
                     key={`${key}-${i}`}
                     className="grid grid-cols-3 gap-4 py-3"
                   >
-                    <Text className="font-mono text-sm">{key}</Text>
-                    <Text className="col-span-2 break-all text-sm">
+                    <Text className="font-mono text-sm !inline truncate max-w-[200px]">{key}</Text>
+                    <Text className="col-span-2 break-all text-sm !inline truncate max-w-[200px]">
                       {input.values[key]}
                     </Text>
                   </div>

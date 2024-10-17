@@ -86,23 +86,30 @@ const InstallDeployEvent: FC<IInstallDeployEvent> = ({
         'border rounded-md shadow-sm': isMostRecent,
       })}
     >
-      <div className="flex flex-col gap-2">
-        <span className="flex items-center gap-4">
+      <div className="flex flex-col">
+        <span className="flex items-center gap-2">
           <Status status={deploy.status} isStatusTextHidden />
-          <Text variant="label">{sentanceCase(deploy.status)}</Text>
+          <Text className="text-sm !font-medium tracking-wide">
+            {sentanceCase(deploy.status)}
+          </Text>
         </span>
 
-        <Text className="flex items-center gap-4 ml-8" variant="overline">
+        <Text className="flex items-center gap-2 ml-6 text-sm">
           <ToolTip tipContent={deploy.id}>
             <span className="truncate text-ellipsis w-16">{deploy.id}</span>
           </ToolTip>
           <>
-            / <span>{component.name}</span>
+            /{' '}
+            <ToolTip tipContent={component.name} alignment="right">
+              <span className="!inline truncate max-w-[100px]">
+                {component.name}
+              </span>
+            </ToolTip>
           </>
         </Text>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         <Time time={deploy.updated_at} format="relative" variant="overline" />
 
         <Link
