@@ -39,8 +39,8 @@ type OtelTrace struct {
 
 	// OTEL log trace attributes
 	Timestamp     time.Time `json:"timestamp" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1);"`
-	TimestampDate time.Time `json:"timestamp_date" gorm:"type:Date DEFAULT toDate(timestamp);"`
-	TimestampTime time.Time `json:"timestamp_time" gorm:"type:DateTime DEFAULT toDateTime(timestamp);"`
+	TimestampDate time.Time `json:"timestamp_date" gorm:"type:Date;default:toDate(timestamp);"`
+	TimestampTime time.Time `json:"timestamp_time" gorm:"type:DateTime;default:toDateTime(timestamp);"`
 
 	ResourceAttributes map[string]string `json:"resource_attributes" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1"`
 	ResourceSchemaURL  string            `json:"resource_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1);"`
@@ -73,8 +73,9 @@ func (r OtelTrace) GetTableOptions() (string, bool) {
 	opts := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_traces', '{replica}')
 	TTL toDateTime("timestamp") + toIntervalDay(720)
 	PARTITION BY toDate(timestamp)
-	ORDER BY (service_name, span_name, toUnixTimestamp(timestamp), trace_id)
-	SETTINGS index_granularity=8192, ttl_only_drop_parts = 1;`
+	PRIMARY KEY (runner_id, runner_job_id, runner_group_id, runner_job_execution_id)
+	ORDER BY    (runner_id, runner_job_id, runner_group_id, runner_job_execution_id, toUnixTimestamp(timestamp), span_name, trace_id)
+	SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1;`
 	return opts, true
 }
 
@@ -115,8 +116,8 @@ type OtelTraceIngestion struct {
 
 	// OTEL log trace attributes
 	Timestamp     time.Time `json:"timestamp" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1);"`
-	TimestampDate time.Time `json:"timestamp_date" gorm:"type:Date DEFAULT toDate(timestamp);"`
-	TimestampTime time.Time `json:"timestamp_time" gorm:"type:DateTime DEFAULT toDateTime(timestamp);"`
+	TimestampDate time.Time `json:"timestamp_date" gorm:"type:Date;default:toDate(timestamp);"`
+	TimestampTime time.Time `json:"timestamp_time" gorm:"type:DateTime;default:toDateTime(timestamp);"`
 
 	ResourceAttributes map[string]string `json:"resource_attributes" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1"`
 	ResourceSchemaURL  string            `json:"resource_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1);"`
