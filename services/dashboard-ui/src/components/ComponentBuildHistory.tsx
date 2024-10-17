@@ -31,10 +31,7 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
     }
 
     if (shouldPoll) {
-      const pollBuilds = setInterval(
-        fetchComponentBuilds,
-        SHORT_POLL_DURATION
-      )
+      const pollBuilds = setInterval(fetchComponentBuilds, SHORT_POLL_DURATION)
       return () => clearInterval(pollBuilds)
     }
   }, [builds, componentId, props.orgId, shouldPoll])
@@ -75,13 +72,22 @@ const ComponentBuildEvent: FC<IComponentBuildEvent> = ({
       <div className="flex flex-col">
         <span className="flex items-center gap-2">
           <Status status={build.status} isStatusTextHidden />
-          <Text className="text-sm !font-medium tracking-wide">{sentanceCase(build.status)}</Text>
+          <Text className="text-sm !font-medium tracking-wide">
+            {sentanceCase(build.status)}
+          </Text>
         </span>
 
         <Text className="flex items-center gap-2 ml-6 text-sm">
-          <ToolTip tipContent={build.id}><span className="truncate text-ellipsis w-16">{build.id}</span></ToolTip>
+          <ToolTip tipContent={build.id}>
+            <span className="truncate text-ellipsis w-16">{build.id}</span>
+          </ToolTip>
           <>
-            / <span>{build.component_name}</span>
+            /{' '}
+            <ToolTip tipContent={build.component_name} alignment="right">
+              <span className="!inline truncate max-w-[100px]">
+                {build.component_name}
+              </span>
+            </ToolTip>
           </>
         </Text>
       </div>
