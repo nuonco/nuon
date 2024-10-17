@@ -32,8 +32,8 @@ type OtelLogRecord struct {
 
 	// OTEL log message attributes
 	Timestamp          time.Time         `json:"timestamp" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1)"`
-	TimestampDate      time.Time         `json:"timestamp_date" gorm:"type:Date DEFAULT toDate(timestamp)"`
-	TimestampTime      time.Time         `json:"timestamp_time" gorm:"type:DateTime DEFAULT toDateTime(timestamp)"`
+	TimestampDate      time.Time         `json:"timestamp_date" gorm:"type:Date;default:toDate(timestamp)"`
+	TimestampTime      time.Time         `json:"timestamp_time" gorm:"type:DateTime;default:toDateTime(timestamp)"`
 	TraceID            string            `json:"trace_id" gorm:"codec:ZSTD(1);index:idx_trace_id,type:bloom_filter(0.001),granularity:1;"`
 	SpanID             string            `json:"span_id" gorm:"codec:ZSTD(1)"`
 	TraceFlags         int               `json:"trace_flags" gorm:"type:UInt8"`
@@ -62,10 +62,10 @@ func (r *OtelLogRecord) BeforeCreate(tx *gorm.DB) error {
 
 func (r OtelLogRecord) GetTableOptions() (string, bool) {
 	opts := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_log_record', '{replica}')
-	PARTITION BY toDate(timestamp_time)
-	PRIMARY KEY (service_name, timestamp_time)
-	ORDER BY (service_name, timestamp_time, timestamp)
 	TTL toDateTime("timestamp") + toIntervalDay(720)
+	PARTITION BY toDate(timestamp_time)
+	PRIMARY KEY (runner_id, runner_job_id, runner_group_id, runner_job_execution_id)
+	ORDER BY    (runner_id, runner_job_id, runner_group_id, runner_job_execution_id, timestamp_time, timestamp)
 	SETTINGS index_granularity = 8192, ttl_only_drop_parts = 0;`
 	return opts, true
 }
