@@ -66,8 +66,8 @@ export const AppSandboxVariables: FC<IAppSandboxVariables> = ({
 
         {variableKeys.map((key, i) => (
           <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-3">
-            <Text className="font-mono text-sm break-all">{key}</Text>
-            <Text className="text-sm font-mono break-all col-span-2">
+            <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">{key}</Text>
+            <Text className="text-sm font-mono break-all col-span-2 !inline truncate max-w-[200px]">
               {variables[key]}
             </Text>
           </div>

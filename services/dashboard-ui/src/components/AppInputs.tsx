@@ -33,20 +33,20 @@ export const AppInputConfig: FC<IAppInputConfig> = ({ inputConfig }) => {
               >
                 <div className="col-span-2 gap-2 flex flex-col items-start justify-start">
                   <Text className="!font-medium">{input.display_name}</Text>{' '}
-                  <Text className="font-mono text-cool-grey-600 dark:text-cool-grey-500 text-sm break-all">
+                  <Text className="font-mono text-cool-grey-600 dark:text-cool-grey-500 text-sm break-all !inline truncate max-w-[150px]">
                     {input.name}
                   </Text>
                 </div>
 
-                <Text className="col-span-2">{input.description}</Text>
+                <Text className="col-span-2 text-sm">{input.description}</Text>
 
-                <Text className="col-span-2">
+                <Text className="col-span-2 text-sm">
                   {input.default || 'No default'}
                 </Text>
 
-                <Text>{input.required ? 'True' : 'False'}</Text>
+                <Text className="text-sm">{input.required ? 'True' : 'False'}</Text>
 
-                <Text>{input.sensitive ? 'True' : 'False'}</Text>
+                <Text className="text-sm">{input.sensitive ? 'True' : 'False'}</Text>
               </div>
             ))}
           </div>
