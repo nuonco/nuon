@@ -1,10 +1,11 @@
 'use client'
 
 import classNames from 'classnames'
-import React, { type FC } from 'react'
+import React, { type FC, useEffect } from 'react'
 import { FaGithub } from 'react-icons/fa'
 import { Plus } from '@phosphor-icons/react'
 import NextLink from 'next/link'
+import { setOrgSessionCookie } from '@/app/actions'
 import { Dropdown, Link, StatusBadge, Text } from '@/components'
 import type { TOrg } from '@/types'
 import { GITHUB_APP_NAME, initialsFromString } from '@/utils'
@@ -124,6 +125,14 @@ export interface IOrgSwitcher {
 }
 
 export const OrgSwitcher: FC<IOrgSwitcher> = ({ initOrg, initOrgs }) => {
+  useEffect(() => {
+    async function setSession() {
+      await setOrgSessionCookie(initOrg.id)
+    }
+
+    setSession()
+  }, [])
+
   return (
     <Dropdown
       className="w-full"
