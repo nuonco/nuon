@@ -28,10 +28,10 @@ type OtelMetricHistogram struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal attributes
-	RunnerID             string `json:"runner_id"`
-	RunnerJobID          string `json:"runner_job_id"`
-	RunnerGroupID        string `json:"runner_group_id"`
-	RunnerJobExecutionID string `json:"runner_job_execution_id"`
+	RunnerID               string `json:"runner_id"`
+	RunnerJobID            string `json:"runner_job_id"`
+	RunnerGroupID          string `json:"runner_group_id"`
+	RunnerJobExecutionID   string `json:"runner_job_execution_id"`
 	RunnerJobExecutionStep string `json:"runner_job_execution_step"`
 
 	// OTEL log message attributes
@@ -73,7 +73,8 @@ func (m OtelMetricHistogram) GetTableOptions() (string, bool) {
 	opts := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_metrics_histogram', '{replica}')
 	TTL toDateTime("time_unix") + toIntervalDay(720)
 	PARTITION BY toDate(time_unix)
-	ORDER BY (service_name, metric_name, attributes, toUnixTimestamp64Nano(time_unix))
+	PRIMARY KEY (runner_id, runner_job_id, runner_group_id, runner_job_execution_id)
+	ORDER BY    (runner_id, runner_job_id, runner_group_id, runner_job_execution_id, toUnixTimestamp64Nano(time_unix), metric_name, attributes)
 	SETTINGS index_granularity=8192, ttl_only_drop_parts = 1;`
 	return opts, true
 }
@@ -110,10 +111,10 @@ type OtelMetricHistogramIngestion struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal attributes
-	RunnerID             string `json:"runner_id"`
-	RunnerJobID          string `json:"runner_job_id"`
-	RunnerGroupID        string `json:"runner_group_id"`
-	RunnerJobExecutionID string `json:"runner_job_execution_id"`
+	RunnerID               string `json:"runner_id"`
+	RunnerJobID            string `json:"runner_job_id"`
+	RunnerGroupID          string `json:"runner_group_id"`
+	RunnerJobExecutionID   string `json:"runner_job_execution_id"`
 	RunnerJobExecutionStep string `json:"runner_job_execution_step"`
 
 	// OTEL log message attributes
