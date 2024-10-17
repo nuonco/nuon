@@ -25,8 +25,6 @@
                     <host>clickhouse-01</host>
                     <port>9000</port>
                 </replica>
-            </shard>
-            <shard>
                 <replica>
                     <host>clickhouse-02</host>
                     <port>9000</port>
@@ -50,8 +48,8 @@
     </zookeeper>
     <macros>
         <cluster>simple</cluster>
-        <shard>02</shard>
-        <replica>01</replica>
+        <shard>01</shard>
+        <replica>02</replica>
     </macros>
     <max_server_memory_usage_to_ram_ratio>2</max_server_memory_usage_to_ram_ratio>
 </clickhouse>
