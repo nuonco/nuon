@@ -42,14 +42,14 @@ export default withPageAuthRequired(
     return (
       <DashboardContent
         breadcrumb={[
-          { href: `/beta/${org.id}/apps`, text: org.name },
-          { href: `/beta/${org.id}/installs`, text: 'Installs' },
+          { href: `/${org.id}/apps`, text: org.name },
+          { href: `/${org.id}/installs`, text: 'Installs' },
           {
-            href: `/beta/${org.id}/installs/${install.id}`,
+            href: `/${org.id}/installs/${install.id}`,
             text: install.name,
           },
           {
-            href: `/beta/${org.id}/installs/${install.id}/components/${installComponent.id}`,
+            href: `/${org.id}/installs/${install.id}/components/${installComponent.id}`,
             text: component.name,
           },
         ]}
@@ -94,5 +94,5 @@ export default withPageAuthRequired(
       </DashboardContent>
     )
   },
-  { returnTo: '/dashboard' }
+  { returnTo: '/' }
 )

@@ -12,9 +12,9 @@ export default withPageAuthRequired(
     const appId = params?.['app-id'] as string
     const orgId = params?.['org-id'] as string
     const subNavLinks: Array<TLink> = [
-      { href: `/beta/${orgId}/apps/${appId}`, text: 'Config' },
-      { href: `/beta/${orgId}/apps/${appId}/components`, text: 'Components' },
-      { href: `/beta/${orgId}/apps/${appId}/installs`, text: 'Installs' },
+      { href: `/${orgId}/apps/${appId}`, text: 'Config' },
+      { href: `/${orgId}/apps/${appId}/components`, text: 'Components' },
+      { href: `/${orgId}/apps/${appId}/installs`, text: 'Installs' },
     ]
     const [app, installs, org] = await Promise.all([
       getApp({ appId, orgId }),
@@ -25,9 +25,9 @@ export default withPageAuthRequired(
     return (
       <DashboardContent
         breadcrumb={[
-          { href: `/beta/${org.id}/apps`, text: org.name },
-          { href: `/beta/${org.id}/apps`, text: 'Apps' },
-          { href: `/beta/${org.id}/apps/${app.id}`, text: app.name },
+          { href: `/${org.id}/apps`, text: org.name },
+          { href: `/${org.id}/apps`, text: 'Apps' },
+          { href: `/${org.id}/apps/${app.id}`, text: app.name },
         ]}
         heading={app.name}
         headingUnderline={app.id}
@@ -42,5 +42,5 @@ export default withPageAuthRequired(
       </DashboardContent>
     )
   },
-  { returnTo: '/dashboard' }
+  { returnTo: '/' }
 )

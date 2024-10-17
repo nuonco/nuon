@@ -6,7 +6,7 @@ import {
   Heading,
   Logo,
   Link,
-  ProfileDropdown,
+  SignOutButton,
   Text,
   type TLink,
 } from '@/components'
@@ -23,7 +23,7 @@ export const DashboardHeader: FC = () => {
           Documentation
         </Link>
 
-        <ProfileDropdown />
+        <SignOutButton />
       </div>
     </header>
   )
