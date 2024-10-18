@@ -20,7 +20,7 @@ func NewOTELJobLogger(cfg *internal.Config, lp *log.LoggerProvider) (*zap.Logger
 		return nil, errors.Wrap(err, "unable to get dev logger")
 	}
 
-	// if running inside of nuonctl, we automatically print all logs to stdout as well
+        // if running inside of nuonctl, we automatically print all logs to stdout as well
 	if cfg.IsNuonctl {
 		double := zap.WrapCore(func(c zapcore.Core) zapcore.Core {
 			return dev.Core()
