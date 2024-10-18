@@ -18,3 +18,21 @@ func parseImageURL(url string) (string, error) {
 
 	return pieces[0], nil
 }
+
+// TrimRepositoryName trims off the serverAddress from a repo name, so when something like a full URI (with accountID)
+// is passed in, we can use the same code paths for it.
+func TrimRepositoryName(repoName, serverAddress string) (string, error) {
+	addrSubs := strings.SplitN(serverAddress, "https://", 2)
+	if len(addrSubs) != 2 {
+		return "", fmt.Errorf("malformed server address - no https:// prefix")
+	}
+
+	// trim the account prefix
+	prefix := addrSubs[1]
+	repoName = strings.TrimPrefix(repoName, prefix)
+
+	// there can be a leading `/`, which we trim
+	repoName = strings.TrimPrefix(repoName, "/")
+
+	return repoName, nil
+}
