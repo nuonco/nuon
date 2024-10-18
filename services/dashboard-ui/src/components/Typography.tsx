@@ -56,7 +56,7 @@ export const Text: FC<IText> = ({
           isOverline,
         ['text-sm font-medium leading-tight']: isLabel,
         'text-sm': variant === 'caption',
-        'font-mono text-sm tracking-wided': variant ==="id",
+        'font-mono text-sm tracking-wided font-normal text-cool-grey-600 dark:text-white/70': variant ==="id",
         [`${className}`]: Boolean(className),
       })}
       role="paragraph"
