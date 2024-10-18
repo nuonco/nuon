@@ -108,6 +108,9 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
         "volumeClaimTemplates" = [
           {
             "name" = "default"
+            "metadata" = {
+              "name" = "both-paths"
+            }
             "spec" = {
               "accessModes" = [
                 "ReadWriteOnce",
