@@ -2,13 +2,8 @@
 
 import classNames from 'classnames'
 import React, { type FC, useEffect, useState } from 'react'
-import {
-  GoCheckCircleFill,
-  GoClockFill,
-  GoXCircleFill,
-} from 'react-icons/go'
 import { CaretRight } from '@phosphor-icons/react'
-import { Link, Text, Time } from '@/components'
+import { Link, Text, Time, ToolTip } from '@/components'
 import type { TInstallEvent } from '@/types'
 import { SHORT_POLL_DURATION, sentanceCase } from '@/utils'
 
@@ -106,7 +101,7 @@ export const InstallHistory: FC<IInstallHistory> = ({
   }, [events, installId, orgId, shouldPoll])
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
       {events.map((event, i) => (
         <InstallEvent
           key={`${event.payload_id}-${i}`}
@@ -133,29 +128,36 @@ const InstallEvent: FC<IInstallEvent> = ({ event, isMostRecent = false }) => {
       `/${event.org_id}/installs/${event.install_id}/runs/${event.payload_id}`) ||
     null
 
+  console.log('operation_status', event.operation_status)
+
   return (
     <div
       className={classNames('flex items-center justify-between p-4', {
         'border rounded-md shadow-sm': isMostRecent,
       })}
     >
-      <div className="flex flex-col gap-2">
-        <span className="flex items-center gap-4">
+      <div className="flex flex-col">
+        <span className="flex items-center gap-2">
           <InstallEventStatus status={event.operation_status} />
           <Text variant="label">{sentanceCase(event.operation_status)}</Text>
         </span>
 
-        <Text className="flex items-center gap-4 ml-8" variant="overline">
+        <Text className="flex items-center gap-2 ml-3.5" variant="overline">
           <span>{event.operation_name}</span>
           {event.operation === 'deploy' && (
             <>
-              / <span>{event.component_name}</span>
+              /{' '}
+              <ToolTip tipContent={event.component_name}>
+                <span className="!inline truncate max-w-[100px]">
+                  {event.component_name}
+                </span>
+              </ToolTip>
             </>
           )}
         </Text>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         <Time time={event.updated_at} format="relative" variant="overline" />
         {href && (
           <Link href={href} variant="ghost">
@@ -167,11 +169,16 @@ const InstallEvent: FC<IInstallEvent> = ({ event, isMostRecent = false }) => {
   )
 }
 
-const InstallEventStatus: FC<{ status?: string }> = ({ status = 'waiting' }) =>
-  status === 'finished' ? (
-    <GoCheckCircleFill className="text-sm text-green-700 dark:text-green-500" />
-  ) : status === 'failed' ? (
-    <GoXCircleFill className="text-sm text-red-600 dark:text-red-500" />
-  ) : (
-    <GoClockFill className="text-sm text-yellow-600 dark:text-yellow-500" />
-  )
+const InstallEventStatus: FC<{ status?: string }> = ({
+  status = 'waiting',
+}) => (
+  <span
+    className={classNames('w-1.5 h-1.5 rounded-full', {
+      'bg-green-800 dark:bg-green-500': status === 'finished',
+      'bg-red-800 dark:bg-red-500': status === 'failed',
+      'bg-cool-grey-600 dark:bg-cool-grey-500': status === 'noop',
+      'bg-orange-800 dark:bg-orange-500':
+        status === 'waiting' || status === 'started',
+    })}
+  />
+)
