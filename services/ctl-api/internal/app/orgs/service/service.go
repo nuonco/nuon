@@ -91,6 +91,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/orgs/:org_id/admin-add-vcs-connection", s.AdminAddVCSConnection)
 	api.POST("/v1/orgs/:org_id/admin-service-account", s.AdminCreateServiceAccount)
 	api.POST("/v1/orgs/:org_id/admin-add-logo", s.AdminAddLogo)
+	api.POST("/v1/orgs/:org_id/admin-migrate", s.AdminMigrateOrg)
 
 	return nil
 }
