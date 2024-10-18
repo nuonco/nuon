@@ -34,7 +34,7 @@ type CreateIntegrationUserResponse struct {
 // @Success		201	{object} CreateIntegrationUserResponse
 // @Router			/v1/general/integration-user [post]
 func (s *service) CreateIntegrationUser(ctx *gin.Context) {
-	token, err := s.createIntegrationUser(ctx)
+	token, email, err := s.createIntegrationUser(ctx)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create integration user: %w", err))
 		return
@@ -43,21 +43,23 @@ func (s *service) CreateIntegrationUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, CreateIntegrationUserResponse{
 		APIToken:        token.Token,
 		GithubInstallID: s.cfg.IntegrationGithubInstallID,
+		Email:           email,
 	})
 }
 
-func (s *service) createIntegrationUser(ctx context.Context) (*app.Token, error) {
+func (s *service) createIntegrationUser(ctx context.Context) (*app.Token, string, error) {
 	intID := domains.NewIntegrationUserID()
 
+	email := fmt.Sprintf("%s@nuon.co", intID)
 	acct := app.Account{
-		Email:       fmt.Sprintf("%s@nuon.co", intID),
+		Email:       email,
 		Subject:     intID,
 		AccountType: app.AccountTypeIntegration,
 	}
 	res := s.db.WithContext(ctx).
 		Create(&acct)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create integration account: %w", res.Error)
+		return nil, "", fmt.Errorf("unable to create integration account: %w", res.Error)
 	}
 
 	token := app.Token{
@@ -73,8 +75,8 @@ func (s *service) createIntegrationUser(ctx context.Context) (*app.Token, error)
 	res = s.db.WithContext(ctx).
 		Create(&token)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create integration user: %w", res.Error)
+		return nil, "", fmt.Errorf("unable to create integration user: %w", res.Error)
 	}
 
-	return &token, nil
+	return &token, email, nil
 }
