@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.249
+
+Promoting fix to the container image (with aws-ecr) component.
+
 ## v0.19.219
 
 Promote to rebuild dashboard-ui.
