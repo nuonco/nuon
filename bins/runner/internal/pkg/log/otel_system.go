@@ -28,7 +28,7 @@ func NewOTELSystem(params OTELSystemParams) (*zap.Logger, error) {
 	// if running inside of nuonctl, we automatically print all logs to stdout as well
 	if params.Cfg.IsNuonctl {
 		double := zap.WrapCore(func(c zapcore.Core) zapcore.Core {
-			return params.DevLogger.Core()
+			return zapcore.NewTee(params.DevLogger.Core(), zapCore)
 		})
 
 		return zap.New(zapCore, double), nil
