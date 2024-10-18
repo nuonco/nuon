@@ -49,7 +49,7 @@ export default withPageAuthRequired(
         meta={<SubNav links={subNavLinks} />}
       >
         <div className="flex flex-col lg:flex-row flex-auto">
-          <section className="flex-auto flex flex-col gap-4 px-6 py-8 border-r overflow-auto history">
+          <section className="flex-auto flex flex-col gap-4 px-6 py-8 overflow-auto history">
             <Heading>History</Heading>
 
             <InstallHistory
@@ -60,7 +60,7 @@ export default withPageAuthRequired(
             />
           </section>
 
-          <div className="divide-y flex flex-col lg:w-[500px]">
+          <div className="divide-y flex flex-col lg:w-[500px] border-l">
             <section className="flex flex-col gap-6 px-6 py-8">
               <Heading>Active sandbox</Heading>
 
