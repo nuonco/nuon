@@ -105,6 +105,21 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
             }
           }
         ]
+        "volumeClaimTemplates" = [
+          {
+            "name" = "default"
+            "spec" = {
+              "accessModes" = [
+                "ReadWriteOnce",
+              ]
+              "resources" = {
+                "requests" = {
+                  "storage" = "10Gi"
+                }
+              }
+            }
+          }
+        ]
       }
     }
   })
