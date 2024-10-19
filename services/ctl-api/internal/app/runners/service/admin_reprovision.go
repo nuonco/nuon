@@ -23,13 +23,13 @@ type AdminReprovisionRunnerRequest struct{}
 // @Router			/v1/runners/{runner_id}/reprovision [POST]
 func (s *service) AdminReprovisionRunner(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
-	install, err := s.getRunner(ctx, runnerID)
+	runner, err := s.getRunner(ctx, runnerID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get runner: %w", err))
 		return
 	}
 
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
+	s.evClient.Send(ctx, runner.ID, &signals.Signal{
 		Type: signals.OperationReprovision,
 	})
 	ctx.JSON(http.StatusOK, true)

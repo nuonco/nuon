@@ -62,6 +62,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/force-delete", s.AdminForceDeleteRunner)
 	api.POST("/v1/runners/:runner_id/restart", s.RestartRunner)
 	api.POST("/v1/runners/:runner_id/service-account-token", s.AdminCreateRunnerServiceAccountToken)
+	api.PATCH("/v1/runners/bulk-update", s.AdminBulkUpdateRunners)
 
 	// trigger specific jobs
 	api.POST("/v1/runners/:runner_id/health-check-job", s.AdminCreateHealthCheck)
