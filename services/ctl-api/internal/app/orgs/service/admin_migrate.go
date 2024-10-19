@@ -13,6 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
+	runnersigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
@@ -89,12 +90,18 @@ func (s *service) adminMigrateOrg(ctx context.Context, org *app.Org) error {
 	}
 
 	// create org runner group
-	_, err := s.runnersHelpers.CreateOrgRunnerGroup(ctx, org)
+	rg, err := s.runnersHelpers.CreateOrgRunnerGroup(ctx, org)
 	if err != nil {
 		return errors.Wrap(err, "unable to create org runner group")
 	}
 
 	// emit org-reprovision
+	s.evClient.Send(ctx, rg.Runners[0].ID, &runnersigs.Signal{
+		Type: sigs.OperationCreated,
+	})
+	s.evClient.Send(ctx, rg.Runners[0].ID, &runnersigs.Signal{
+		Type: runnersigs.OperationProvision,
+	})
 	s.evClient.Send(ctx, org.ID, &sigs.Signal{
 		Type: sigs.OperationRestart,
 	})
