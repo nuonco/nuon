@@ -17,13 +17,14 @@ const (
 )
 
 type Repository struct {
-	Name            string `json:"name,omitempty" validate:"required"`
-	FullName        string `json:"full_name,omitempty" validate:"required"`
-	UserName        string `json:"user_name" validate:"required"`
-	GitURL          string `json:"git_url,omitempty" validate:"required"`
-	DefaultBranch   string `json:"default_branch,omitempty" validate:"required"`
-	CloneURL        string `json:"clone_url,omitempty" validate:"required"`
-	GithubInstallID string `json:"github_install_id,omitempty" validate:"required"`
+	Name             string `json:"name,omitempty" validate:"required"`
+	FullName         string `json:"full_name,omitempty" validate:"required"`
+	UserName         string `json:"user_name" validate:"required"`
+	GitURL           string `json:"git_url,omitempty" validate:"required"`
+	DefaultBranch    string `json:"default_branch,omitempty" validate:"required"`
+	CloneURL         string `json:"clone_url,omitempty" validate:"required"`
+	GithubInstallID  string `json:"github_install_id,omitempty" validate:"required"`
+	OrganizationName string `json:"organization_name,omitempty" validate:"required"`
 }
 
 // @ID GetAllVCSConnectedRepos
@@ -89,7 +90,7 @@ func (s *service) getConnectionRepos(ctx context.Context, conn *app.VCSConnectio
 				continue
 			}
 
-			allRepos = append(allRepos, &Repository{
+			repository := &Repository{
 				Name:            generics.FromPtrStr(repo.Name),
 				FullName:        generics.FromPtrStr(repo.FullName),
 				UserName:        generics.FromPtrStr(repo.Owner.Login),
@@ -97,7 +98,13 @@ func (s *service) getConnectionRepos(ctx context.Context, conn *app.VCSConnectio
 				CloneURL:        generics.FromPtrStr(repo.CloneURL),
 				DefaultBranch:   generics.FromPtrStr(repo.DefaultBranch),
 				GithubInstallID: conn.GithubInstallID,
-			})
+			}
+
+			if repo.Organization != nil {
+				repository.OrganizationName = repo.Organization.GetName()
+			}
+
+			allRepos = append(allRepos, repository)
 		}
 		if resp.NextPage < 1 {
 			break
