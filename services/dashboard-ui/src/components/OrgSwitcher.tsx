@@ -58,7 +58,7 @@ const OrgVCSConnections: FC<Pick<TOrg, 'vcs_connections'>> = ({
         vcs_connections?.map((vcs) => (
           <Text
             key={vcs?.id}
-            className="flex gap-2 items-center font-mono text-sm text-cool-grey-600 dark:text-cool-grey-500"
+            className="flex gap-2 py-4 items-center font-mono text-sm text-cool-grey-600 dark:text-cool-grey-500"
           >
             <FaGithub className="text-lg" /> {vcs?.github_install_id}
           </Text>
