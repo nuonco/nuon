@@ -4,11 +4,13 @@ import { getRunnerLogs } from './get-runner-logs'
 
 const orgId = 'org-id'
 const runnerId = 'runner-id'
+const jobId = 'job-id'
 
 test('getRunnerLogs should return an array of runner log object', async () => {
   const spec = await getRunnerLogs({
     orgId,
     runnerId,
+    jobId,
   })
 
   expect(spec).toHaveLength(3)
@@ -25,6 +27,7 @@ test('getRunnerLogs should throw an error when it can not find any runner logs',
     await getRunnerLogs({
       orgId,
       runnerId,
+      jobId,
     })
   } catch (error) {
     expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch runner logs]`)
