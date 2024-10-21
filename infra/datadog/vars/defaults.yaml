@@ -95,13 +95,12 @@ monitors:
           ],
           "options": {
               "groupby_simple_monitor" : false,
-              "new_host_delay": 120,
+              "new_host_delay": 180,
               "thresholds": {
                   "critical": 0
               },
               "notify_audit": false,
               "include_tags": true,
-              "new_group_delay": 60,
               "renotify_interval": 60,
               "escalation_message": "",
               "notify_no_data": false,
@@ -131,7 +130,6 @@ monitors:
               "notify_audit": false,
               "include_tags": true,
               "evaluation_delay": 60,
-              "new_group_delay": 60,
               "notify_no_data": false,
               "silenced": {}
           },
