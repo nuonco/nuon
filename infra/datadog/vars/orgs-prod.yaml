@@ -1,6 +1,8 @@
 ---
 pool: main
 monitors:
+  clickhouse_insert_queries_failed:
+    enabled: false
   org_is_unhealthy:
     enabled: false
   ctl_api_5xx_errors:

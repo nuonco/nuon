@@ -1,6 +1,8 @@
 ---
 pool: nuon
 monitors:
+  clickhouse_insert_queries_failed:
+    enabled: true
   org_container_waiting:
     enabled: false
   database_running_low_on_free_space:
@@ -24,35 +26,6 @@ monitors:
               "notify_audit": false,
               "include_tags": true,
               "evaluation_delay": 900,
-              "new_group_delay": 60,
-              "notify_no_data": false,
-              "silenced": {}
-          },
-          "priority": 1,
-          "restricted_roles": null
-      }
-
-  clickhouse_insert_queries_failed:
-    enabled: true
-    json: >
-      {
-          "name": "${aws_account} - Clickhouse Query: Insert Failed",
-          "type": "query alert",
-          "query": "sum(last_5m):sum:clickhouse.query.insert.failed.count{*}.as_count() > 0",
-          "message": "@slack-alerts-${env}-infra \nClickhouse insert queries are failing.",
-          "tags": [
-              "terraform:true",
-              "env:${aws_account}"
-          ],
-          "options": {
-              "groupby_simple_monitor" : false,
-              "new_host_delay": 60,
-              "thresholds": {
-                  "critical": 1
-              },
-              "notify_audit": false,
-              "include_tags": true,
-              "evaluation_delay": 60,
               "new_group_delay": 60,
               "notify_no_data": false,
               "silenced": {}

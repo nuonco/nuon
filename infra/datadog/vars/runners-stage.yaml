@@ -1,6 +1,8 @@
 ---
 pool: main
 monitors:
+  clickhouse_insert_queries_failed:
+    enabled: false
   org_container_waiting:
     enabled: false
   waypoint_job_queued:
