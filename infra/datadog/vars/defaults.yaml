@@ -124,7 +124,7 @@ monitors:
           ],
           "options": {
               "groupby_simple_monitor" : false,
-              "new_host_delay": 60,
+              "new_host_delay": 120,
               "thresholds": {
                   "critical": 0
               },
