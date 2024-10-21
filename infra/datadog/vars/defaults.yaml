@@ -97,8 +97,7 @@ monitors:
               "groupby_simple_monitor" : false,
               "new_host_delay": 120,
               "thresholds": {
-                  "critical": 1,
-                  "warning": 0.5
+                  "critical": 0
               },
               "notify_audit": false,
               "include_tags": true,
@@ -127,7 +126,7 @@ monitors:
               "groupby_simple_monitor" : false,
               "new_host_delay": 60,
               "thresholds": {
-                  "critical": 1
+                  "critical": 0
               },
               "notify_audit": false,
               "include_tags": true,
