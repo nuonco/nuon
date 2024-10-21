@@ -2,6 +2,7 @@
 
 import classNames from 'classnames'
 import React, { type FC, useEffect, useState } from 'react'
+import { CaretDown, CaretUp } from '@phosphor-icons/react'
 
 export interface IExpand extends React.HTMLAttributes<HTMLDivElement> {
   expandContent: React.ReactElement
@@ -27,16 +28,21 @@ export const Expand: FC<IExpand> = ({
     <div className={classNames('')}>
       <div
         className={classNames(
-          'cursor-pointer hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10',
-          {
-            [`${className}`]: Boolean(className),
-          }
+          'flex items-center justify-between cursor-pointer hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10 pr-2'
         )}
         onClick={() => {
           setIsExpanded(!isExpanded)
         }}
       >
-        {heading}
+        <div
+          className={classNames({
+            [`${className}`]: Boolean(className),
+          })}
+        >
+          {heading}
+        </div>
+
+        {isExpanded ? <CaretUp /> : <CaretDown />}
       </div>
       {isExpanded && (
         <div key={`${id}-content`} className="w-full">
