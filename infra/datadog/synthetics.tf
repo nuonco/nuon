@@ -48,7 +48,7 @@ resource "datadog_synthetics_test" "installers" {
 
   request_definition {
     method = local.vars.installer_synthetics.config.request_definition.method
-    url    = "${each.value}"
+    url    = each.value
   }
 
   request_headers = local.vars.installer_synthetics.config.request_headers
