@@ -8,7 +8,7 @@ import { Config, ConfigContent, Link, Text, ToolTip } from '@/components'
 import type { TInstall, TSandboxConfig } from '@/types'
 import { AWS_REGIONS, AZURE_REGIONS, getFlagEmoji } from '@/utils'
 
-const InstallPlatform: FC<{ platform: 'aws' | 'azure' | string }> = ({
+export const InstallPlatform: FC<{ platform: 'aws' | 'azure' | string }> = ({
   platform,
 }) => {
   return (
