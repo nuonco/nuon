@@ -8,10 +8,11 @@ import {
   ArrowsOutSimple,
   ArrowsInLineVertical,
   ArrowsOutLineVertical,
-  CaretUpDown,
   MagnifyingGlass,
   FunnelSimple,
   Funnel,
+  SortAscending,
+  SortDescending,
 } from '@phosphor-icons/react'
 import {
   getCoreRowModel,
@@ -129,7 +130,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
           <Expand
             key={row.id}
             id={row.id}
-            className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full border-t"
+            className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full"
             heading={
               row
                 .getVisibleCells()
@@ -140,65 +141,77 @@ export const OTELLogs: FC<IOTELLogs> = ({
                 )) as unknown as React.ReactElement
             }
             expandContent={
-              <div className="flex flex-col gap-6 p-4 bg-black/5 dark:bg-white/5">
-                <div className="flex flex-col gap-4">
-                  <Text className="text-base !font-medium leading-normal">
-                    Log attributes
-                  </Text>
-                  <div className="divide-y">
-                    <div className="grid grid-cols-3 gap-4 pb-3">
-                      <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-                        Key
-                      </Text>
-                      <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-                        Value
-                      </Text>
-                    </div>
-
-                    {Object.keys(logAttributes).map((key, i) => (
-                      <div
-                        key={`${key}-${i}`}
-                        className="grid grid-cols-3 gap-4 py-3"
-                      >
-                        <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">
-                          {key}
+              <div className="flex flex-col bg-black/5 dark:bg-white/5">
+                <Expand
+                  id={`${row.id}-log-attr`}
+                  heading={
+                    <Text className="text-base !font-medium leading-normal p-4">
+                      Log attributes
+                    </Text>
+                  }
+                  expandContent={
+                    <div className="divide-y p-4">
+                      <div className="grid grid-cols-3 gap-4 pb-3">
+                        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+                          Key
                         </Text>
-                        <Text className="text-sm font-mono break-all col-span-2 !inline truncate max-w-[200px]">
-                          {logAttributes[key]}
+                        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+                          Value
                         </Text>
                       </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-4">
-                  <Text className="text-base !font-medium leading-normal">
-                    Resource attributes
-                  </Text>
-                  <div className="divide-y">
-                    <div className="grid grid-cols-3 gap-4 pb-3">
-                      <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-                        Key
-                      </Text>
-                      <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-                        Value
-                      </Text>
-                    </div>
 
-                    {Object.keys(resourceAttributes).map((key, i) => (
-                      <div
-                        key={`${key}-${i}`}
-                        className="grid grid-cols-3 gap-4 py-3"
-                      >
-                        <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">
-                          {key}
+                      {Object.keys(logAttributes).map((key, i) => (
+                        <div
+                          key={`${key}-${i}`}
+                          className="grid grid-cols-3 gap-4 py-3"
+                        >
+                          <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">
+                            {key}
+                          </Text>
+                          <Text className="text-sm font-mono break-all col-span-2 !inline truncate max-w-[200px]">
+                            {logAttributes[key]}
+                          </Text>
+                        </div>
+                      ))}
+                    </div>
+                  }
+                  isOpen
+                />
+
+                <Expand
+                  id={`${row.id}-resource-attr`}
+                  heading={
+                    <Text className="text-base !font-medium leading-normal p-4">
+                      Resource attributes
+                    </Text>
+                  }
+                  expandContent={
+                    <div className="divide-y p-4">
+                      <div className="grid grid-cols-3 gap-4 pb-3">
+                        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+                          Key
                         </Text>
-                        <Text className="text-sm font-mono break-all col-span-2 !inline truncate max-w-[200px]">
-                          {resourceAttributes[key]}
+                        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+                          Value
                         </Text>
                       </div>
-                    ))}
-                  </div>
-                </div>
+
+                      {Object.keys(resourceAttributes).map((key, i) => (
+                        <div
+                          key={`${key}-${i}`}
+                          className="grid grid-cols-3 gap-4 py-3"
+                        >
+                          <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">
+                            {key}
+                          </Text>
+                          <Text className="text-sm font-mono break-all col-span-2 !inline truncate max-w-[200px]">
+                            {resourceAttributes[key]}
+                          </Text>
+                        </div>
+                      ))}
+                    </div>
+                  }
+                />
               </div>
             }
             isOpen={isAllExpanded}
@@ -283,7 +296,6 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
             })}
           >
             <span>{props.getValue<string>()}</span>
-            <CaretUpDown className="mr-2" />
           </span>
         ),
       },
@@ -300,10 +312,8 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
     setGlobalFilter(e.target.value)
   }
 
-  const handleColumnSort = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setColumnSort([
-      { id: 'timestamp', desc: Boolean(e.target.value === 'true') },
-    ])
+  const handleColumnSort = () => {
+    setColumnSort([{ id: 'timestamp', desc: !columnSort?.[0].desc }])
   }
 
   const handleExpandAll = () => {
@@ -419,7 +429,7 @@ const RunnerLogsActions: FC<IRunnerLogsActions> = ({
 }) => {
   return (
     <div className="flex items-center gap-4">
-      {false && (
+      {shouldShowExpandAll && (
         <Button
           className="text-base !font-medium !p-2 w-[32px] h-[32px]"
           variant="ghost"
@@ -452,31 +462,14 @@ const RunnerLogsActions: FC<IRunnerLogsActions> = ({
         </div>
       </Dropdown>
 
-      <Dropdown
-        alignment="right"
+      <Button
         className="text-base !font-medium !p-2 w-[32px] h-[32px]"
         variant="ghost"
-        id="sort-logs"
-        text={<FunnelSimple />}
+        title={columnSort?.[0].desc ? 'Sort by oldest' : 'Sort by newest'}
+        onClick={handleColumnSort}
       >
-        <div>
-          <RadioInput
-            name={`${id}-column-sort`}
-            checked={columnSort?.[0]?.desc}
-            onChange={handleColumnSort}
-            value="true"
-            labelText="Newest"
-          />
-
-          <RadioInput
-            name={`${id}-column-sort`}
-            checked={!columnSort?.[0]?.desc}
-            onChange={handleColumnSort}
-            value="false"
-            labelText="Oldest"
-          />
-        </div>
-      </Dropdown>
+        {columnSort?.[0].desc ? <SortAscending /> : <SortDescending />}
+      </Button>
 
       {shouldHideFilter ? null : (
         <Dropdown
