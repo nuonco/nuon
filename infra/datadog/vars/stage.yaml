@@ -5,6 +5,35 @@ monitors:
   org_container_waiting:
     enabled: false
 
+  clickhouse_insert_queries_failed:
+    enabled: true
+    json: >
+      {
+          "name": "${aws_account} - Clickhouse Query: Insert Failed",
+          "type": "query alert",
+          "query": "avg(last_1m):avg:clickhouse.query.insert.failed.total{environment:${aws_account}} > 1",
+          "message": "@slack-alerts-${env}-infra \nClickhouse insert queries are failing.",
+          "tags": [
+              "terraform:true",
+              "env:${aws_account}"
+          ],
+          "options": {
+              "groupby_simple_monitor" : false,
+              "new_host_delay": 60,
+              "thresholds": {
+                  "critical":1
+              },
+              "notify_audit": false,
+              "include_tags": true,
+              "evaluation_delay": 60,
+              "new_group_delay": 60,
+              "notify_no_data": false,
+              "silenced": {}
+          },
+          "priority": 1,
+          "restricted_roles": null
+      }
+
 synthetics:
   ctl_api_uptime:
     name: "${env} - CTL API Uptime"
