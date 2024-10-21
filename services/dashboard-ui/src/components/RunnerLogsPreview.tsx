@@ -116,11 +116,11 @@ export const LogsPreview: FC<ILogsPreview> = ({
             key={row.id}
             className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full"
           >
-            {row
-              .getVisibleCells()
-              .map((cell) =>
-                flexRender(cell.column.columnDef.cell, cell.getContext())
-              )}
+            {row.getVisibleCells().map((cell) => (
+              <React.Fragment key={cell.id}>
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </React.Fragment>
+            ))}
           </span>
         ))}
       </div>
