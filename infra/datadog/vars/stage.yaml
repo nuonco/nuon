@@ -11,7 +11,7 @@ monitors:
       {
           "name": "${aws_account} - Clickhouse Query: Insert Failed",
           "type": "query alert",
-          "query": "avg(last_1m):avg:clickhouse.query.insert.failed.total{environment:${aws_account}} > 1",
+          "query": "avg(last_5m):avg:clickhouse.query.insert.failed.total{environment:${aws_account}} > 1",
           "message": "@slack-alerts-${env}-infra \nClickhouse insert queries are failing.",
           "tags": [
               "terraform:true",
