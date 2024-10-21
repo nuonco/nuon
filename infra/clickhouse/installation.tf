@@ -208,7 +208,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
                           "server": "%%host%%",
                           "port": "9000",
                           "username": "teamnuon",
-                          "password": "teamnuon"
+                          "password": "teamnuon",
                           "tags": [{"env": "${local.tags.environment}"}, {"cluster": "simple"}]
                         }
                       ]
