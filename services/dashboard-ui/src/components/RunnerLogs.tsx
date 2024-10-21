@@ -122,6 +122,9 @@ export const OTELLogs: FC<IOTELLogs> = ({
       ))}
 
       {table.getRowModel().rows.map((row) => {
+        const logAttributes = row.original.log_attributes
+        const resourceAttributes = row.original.resource_attributes
+
         return (
           <Expand
             key={row.id}
@@ -135,10 +138,66 @@ export const OTELLogs: FC<IOTELLogs> = ({
                 ) as unknown as React.ReactElement
             }
             expandContent={
-              <CodeViewer
-                initCodeSource={JSON.stringify(row.original, null, 2)}
-                language="json"
-              />
+              <div className="flex flex-col gap-6 p-4 bg-black/5 dark:bg-white/5">
+                <div className="flex flex-col gap-4">
+                  <Text className="text-base !font-medium leading-normal">
+                    Log attributes
+                  </Text>
+                  <div className="divide-y">
+                    <div className="grid grid-cols-3 gap-4 pb-3">
+                      <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+                        Key
+                      </Text>
+                      <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+                        Value
+                      </Text>
+                    </div>
+
+                    {Object.keys(logAttributes).map((key, i) => (
+                      <div
+                        key={`${key}-${i}`}
+                        className="grid grid-cols-3 gap-4 py-3"
+                      >
+                        <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">
+                          {key}
+                        </Text>
+                        <Text className="text-sm font-mono break-all col-span-2 !inline truncate max-w-[200px]">
+                          {logAttributes[key]}
+                        </Text>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-4">
+                  <Text className="text-base !font-medium leading-normal">
+                    Resource attributes
+                  </Text>
+                  <div className="divide-y">
+                    <div className="grid grid-cols-3 gap-4 pb-3">
+                      <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+                        Key
+                      </Text>
+                      <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+                        Value
+                      </Text>
+                    </div>
+
+                    {Object.keys(resourceAttributes).map((key, i) => (
+                      <div
+                        key={`${key}-${i}`}
+                        className="grid grid-cols-3 gap-4 py-3"
+                      >
+                        <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">
+                          {key}
+                        </Text>
+                        <Text className="text-sm font-mono break-all col-span-2 !inline truncate max-w-[200px]">
+                          {resourceAttributes[key]}
+                        </Text>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             }
             isOpen={isAllExpanded}
           />
