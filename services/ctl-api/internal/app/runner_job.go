@@ -175,7 +175,7 @@ type RunnerJob struct {
 
 	RunnerID  string `json:"runner_id" gorm:"index:idx_runner_name,unique"`
 	OwnerID   string `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26"`
-	OwnerType string `json:"owner_type" gorm:"type:text;check:owner_type_checker,char_length(id)=26"`
+	OwnerType string `json:"owner_type" gorm:"type:text;"`
 
 	// queue timeout is how long a job can be queued, before being made available
 	QueueTimeout time.Duration `json:"queue_timeout" gorm:"default null;not null" swaggertype:"primitive,integer"`
