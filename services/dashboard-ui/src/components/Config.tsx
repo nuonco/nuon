@@ -39,7 +39,7 @@ export const ConfigContent: FC<IConfigContent> = ({
       <span className="font-normal leading-normal text-sm tracking-wide text-cool-grey-600 dark:text-cool-grey-500">
         {label}
       </span>
-      <span className="font-medium leading-normal text-sm tracking-wide max-w-52 break-all max-w-[200px] truncate">
+      <span className="font-medium leading-normal text-sm tracking-wide max-w-52 break-all max-w-[100px] truncate">
         {value}
       </span>
     </span>
