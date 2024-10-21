@@ -195,6 +195,28 @@ resource "kubectl_manifest" "clickhouse_installation" {
         # and so we can define the image_tag dynamically
         "podTemplates" = [{
           "name" = "clickhouse:${local.image_tag}"
+          "metadata" = {
+            "annotations" = {
+              # https://docs.datadoghq.com/integrations/clickhouse/?tab=containerized#overview
+              # https://github.com/DataDog/integrations-core/blob/master/clickhouse/datadog_checks/clickhouse/data/conf.yaml.example
+              "ad.datadoghq.com/clickhouse.checks" = <<-EOT
+                  {
+                    "clickhouse": {
+                      "init_config": {},
+                      "instances": [
+                        {
+                          "server": "%%host%%",
+                          "port": "9000",
+                          "username": "teamnuon",
+                          "password": "teamnuon"
+                          "tags": [{"env": "${local.tags.environment}"}, {"cluster": "simple"}]
+                        }
+                      ]
+                    }
+                  }
+                EOT
+            }
+          }
           "spec" = {
             "nodeSelector" = {
               "clickhouse-installation" = "true"
