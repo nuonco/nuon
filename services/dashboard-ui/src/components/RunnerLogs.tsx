@@ -6,6 +6,9 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowsOutSimple,
+  ArrowsInLineVertical,
+  ArrowsOutLineVertical,
+  CaretUpDown,
   MagnifyingGlass,
   FunnelSimple,
   Funnel,
@@ -22,7 +25,9 @@ import {
 } from '@tanstack/react-table'
 import {
   Button,
+  CodeViewer,
   Dropdown,
+  Expand,
   Text,
   Time,
   Section,
@@ -60,6 +65,7 @@ interface IOTELLogs {
   columnFilters: Array<ColumnFilter>
   globalFilter: string
   sorting: Array<ColumnSort>
+  isAllExpanded?: boolean
 }
 
 export const OTELLogs: FC<IOTELLogs> = ({
@@ -67,6 +73,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
   columns,
   columnFilters,
   globalFilter,
+  isAllExpanded = false,
   sorting,
 }) => {
   const table = useReactTable({
@@ -114,18 +121,29 @@ export const OTELLogs: FC<IOTELLogs> = ({
         </div>
       ))}
 
-      {table.getRowModel().rows.map((row) => (
-        <span
-          key={row.id}
-          className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full"
-        >
-          {row
-            .getVisibleCells()
-            .map((cell) =>
-              flexRender(cell.column.columnDef.cell, cell.getContext())
-            )}
-        </span>
-      ))}
+      {table.getRowModel().rows.map((row) => {
+        return (
+          <Expand
+            key={row.id}
+            id={row.id}
+            className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full border-t"
+            heading={
+              row
+                .getVisibleCells()
+                .map((cell) =>
+                  flexRender(cell.column.columnDef.cell, cell.getContext())
+                ) as unknown as React.ReactElement
+            }
+            expandContent={
+              <CodeViewer
+                initCodeSource={JSON.stringify(row.original, null, 2)}
+                language="json"
+              />
+            }
+            isOpen={isAllExpanded}
+          />
+        )
+      })}
     </div>
   )
 }
@@ -143,6 +161,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
   const [columnSort, setColumnSort] = useState([
     { id: 'timestamp', desc: false },
   ])
+  const [isAllExpanded, setIsAllExpanded] = useState(false)
   const lineStyle =
     'tracking-wider text-sm font-mono leading-loose text-cool-grey-600 dark:text-cool-grey-500'
 
@@ -199,10 +218,11 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
         cell: (props) => (
           <span
             className={classNames(lineStyle, {
-              'col-span-7': true,
+              'col-span-7 flex items-center justify-between': true,
             })}
           >
-            {props.getValue<string>()}
+            <span>{props.getValue<string>()}</span>
+            <CaretUpDown />
           </span>
         ),
       },
@@ -225,6 +245,10 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
     ])
   }
 
+  const handleExpandAll = () => {
+    setIsAllExpanded(!isAllExpanded)
+  }
+
   return (
     <>
       <Modal
@@ -236,6 +260,9 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
             handleGlobalFilter={handleGlobleFilter}
             handleStatusFilter={handleStatusFilter}
             handleColumnSort={handleColumnSort}
+            handleExpandAll={handleExpandAll}
+            isAllExpanded={isAllExpanded}
+            shouldShowExpandAll
             id="modal"
           />
         }
@@ -252,6 +279,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
           columnFilters={columnFilters}
           globalFilter={globalFilter}
           sorting={columnSort}
+          isAllExpanded={isAllExpanded}
         />
       </Modal>
       <Section
@@ -309,8 +337,11 @@ interface IRunnerLogsActions {
   handleStatusFilter: any
   handleGlobalFilter: any
   handleColumnSort: any
+  handleExpandAll?: any
+  isAllExpanded?: boolean
   id: string
   shouldHideFilter?: boolean
+  shouldShowExpandAll?: boolean
 }
 
 const RunnerLogsActions: FC<IRunnerLogsActions> = ({
@@ -319,11 +350,26 @@ const RunnerLogsActions: FC<IRunnerLogsActions> = ({
   handleGlobalFilter,
   handleStatusFilter,
   handleColumnSort,
+  handleExpandAll,
+  isAllExpanded = false,
   id,
   shouldHideFilter = false,
+  shouldShowExpandAll = false,
 }) => {
   return (
     <div className="flex items-center gap-4">
+      {false && (
+        <Button
+          className="text-base !font-medium !p-2 w-[32px] h-[32px]"
+          variant="ghost"
+          title={
+            isAllExpanded ? 'Collapse all log lines' : 'Expand all log lines'
+          }
+          onClick={handleExpandAll}
+        >
+          {isAllExpanded ? <ArrowsInLineVertical /> : <ArrowsOutLineVertical />}
+        </Button>
+      )}
       <Dropdown
         alignment="right"
         className="text-base !font-medium !p-2 w-[32px] h-[32px]"
