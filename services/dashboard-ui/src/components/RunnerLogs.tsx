@@ -133,9 +133,11 @@ export const OTELLogs: FC<IOTELLogs> = ({
             heading={
               row
                 .getVisibleCells()
-                .map((cell) =>
-                  flexRender(cell.column.columnDef.cell, cell.getContext())
-                ) as unknown as React.ReactElement
+                .map((cell) => (
+                  <React.Fragment key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </React.Fragment>
+                )) as unknown as React.ReactElement
             }
             expandContent={
               <div className="flex flex-col gap-6 p-4 bg-black/5 dark:bg-white/5">
@@ -281,7 +283,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
             })}
           >
             <span>{props.getValue<string>()}</span>
-            <CaretUpDown />
+            <CaretUpDown className="mr-2" />
           </span>
         ),
       },
