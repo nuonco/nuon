@@ -10,10 +10,14 @@ import (
 
 func New(l *zap.Logger, cfg *internal.Config) zapgorm2.Logger {
 	dl := zapgorm2.New(l)
+	dl.IgnoreRecordNotFoundError = true
+
 	if cfg.LogLevel == "DEBUG" {
 		dl.LogMode(logger.Info)
+	} else {
+		dl.LogMode(logger.Error)
 	}
-	dl.IgnoreRecordNotFoundError = true
+
 	if cfg.DBLogQueries {
 		dl = dl.LogMode(logger.Info).(zapgorm2.Logger)
 	}

@@ -29,9 +29,8 @@ type Params struct {
 
 type Client interface {
 	Send(ctx context.Context, id string, signal Signal)
-	GetWorkflowStatus(ctx context.Context, namespace string, workflowId string) (enumsv1.WorkflowExecutionStatus, error)
-	GetWorkflowCount(ctx context.Context, namespace string, workflowId string) (int64, error)
-	// GetNamespaceClient(ctx context.Context, namespace string) tclient.Client
+	GetWorkflowStatus(ctx context.Context, namespace string, workflowID string) (enumsv1.WorkflowExecutionStatus, error)
+	GetWorkflowCount(ctx context.Context, namespace string, workflowID string) (int64, error)
 }
 
 var _ Client = (*evClient)(nil)

@@ -26,6 +26,7 @@ func (a *Activities) GetJob(ctx context.Context, req GetJobRequest) (*app.Runner
 func (a *Activities) getRunnerJob(ctx context.Context, jobID string) (*app.RunnerJob, error) {
 	runnerJob := app.RunnerJob{}
 	res := a.db.WithContext(ctx).
+		Preload("Org").
 		First(&runnerJob, "id = ?", jobID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get runner job: %w", res.Error)

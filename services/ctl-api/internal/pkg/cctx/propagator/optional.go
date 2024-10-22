@@ -16,7 +16,7 @@ type optionalPropagator struct {
 
 func (s *optionalPropagator) Inject(ctx context.Context, writer workflow.HeaderWriter) error {
 	if err := s.propagator.Inject(ctx, writer); err != nil {
-		s.l.Error("propagator inject failed", zap.Error(err))
+		s.l.Debug("propagator inject failed", zap.Error(err))
 	}
 
 	return nil
@@ -24,7 +24,7 @@ func (s *optionalPropagator) Inject(ctx context.Context, writer workflow.HeaderW
 
 func (s *optionalPropagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.HeaderWriter) error {
 	if err := s.propagator.InjectFromWorkflow(ctx, writer); err != nil {
-		s.l.Error("propagator inject from workflow failed", zap.Error(err))
+		s.l.Debug("propagator inject from workflow failed", zap.Error(err))
 	}
 
 	return nil
@@ -33,7 +33,7 @@ func (s *optionalPropagator) InjectFromWorkflow(ctx workflow.Context, writer wor
 func (s *optionalPropagator) Extract(ctx context.Context, reader workflow.HeaderReader) (context.Context, error) {
 	newCtx, err := s.propagator.Extract(ctx, reader)
 	if err != nil {
-		s.l.Error("propagator extract failed", zap.Error(err))
+		s.l.Debug("propagator extract failed", zap.Error(err))
 		return ctx, nil
 	}
 
@@ -43,7 +43,7 @@ func (s *optionalPropagator) Extract(ctx context.Context, reader workflow.Header
 func (s *optionalPropagator) ExtractToWorkflow(ctx workflow.Context, reader workflow.HeaderReader) (workflow.Context, error) {
 	newCtx, err := s.propagator.ExtractToWorkflow(ctx, reader)
 	if err != nil {
-		s.l.Error("propagator extract to workflow failed", zap.Error(err))
+		s.l.Debug("propagator extract to workflow failed", zap.Error(err))
 		return ctx, nil
 	}
 

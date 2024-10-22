@@ -85,6 +85,10 @@ func (w *Workflows) deprovisionOrg(ctx workflow.Context, orgID string, sandboxMo
 			zap.String("org_name", org.Name))
 	}
 
+	if len(org.RunnerGroup.Runners) < 1 {
+		return nil
+	}
+
 	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationDeprovision,
 	})
