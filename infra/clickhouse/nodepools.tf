@@ -1,15 +1,5 @@
-# "randomize" node TTLs so that all nodes across all clusters
-# aren't going down simultaneously
-resource "random_integer" "node_ttl" {
-  min = 60 * 60 * 24 * 3 # 3 days
-  max = 60 * 60 * 24 * 4 # 4 hours
-
-  seed = "${var.env}-${local.image_tag}-${local.replicas}"
-  keepers = {
-    pseudo_version = "${var.env}-${local.image_tag}-${local.replicas}"
-  }
-}
-
+# Note: node rotation has proven problematic in the past so we are
+# opting to rotate on very long timeline, or earlier but w/ scheduled downtime.
 
 resource "kubectl_manifest" "nodepool_clickhouse" {
   # NodePool for clickhouse. uses taints to define what can deploy to it.
@@ -34,10 +24,16 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
           {
             "nodes" = "1" # only ever rotate one node at a time
           },
+          {
+            # never EVER rotate nodes during work hours
+            "nodes"    = "0"
+            "schedule" = "0 10 * * 1,2,3,4,5" # https://crontab.guru/#0_10_*_*_1,2,3,4,5
+            "duration" = "11h"
+          },
         ]
         "consolidateAfter"    = "30s"
         "consolidationPolicy" = "WhenEmpty"
-        "expireAfter"         = "${random_integer.node_ttl.result}s"
+        "expireAfter"         = "2160h"
       }
       "limits" = {
         # we use the prod limits by default. stage fits comfortably.
@@ -123,10 +119,16 @@ resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
           {
             "nodes" = "1" # only ever rotate one node at a time
           },
+          {
+            # never EVER rotate nodes during work hours
+            "nodes"    = "0"
+            "schedule" = "0 10 * * 1,2,3,4,5" # https://crontab.guru/#0_10_*_*_1,2,3,4,5
+            "duration" = "11h"
+          },
         ]
         "consolidateAfter"    = "30s"
         "consolidationPolicy" = "WhenEmpty"
-        "expireAfter"         = "${random_integer.node_ttl.result}s"
+        "expireAfter"         = "2160h"
       }
       "limits" = {
         # we need 3 keepers (2 cpu's per box, 1 cpu per pod)
