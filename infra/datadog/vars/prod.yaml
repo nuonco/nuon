@@ -98,5 +98,5 @@ installer_synthetics:
         count: 2
         interval: 1000
       monitor_options:
-        renotify_interval: 30
+        renotify_interval: 120
       monitor_priority: 1

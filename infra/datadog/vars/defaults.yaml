@@ -136,6 +136,60 @@ monitors:
           "priority": 1,
           "restricted_roles": null
       }
+  clickhouse_pod_count_low:
+    enabled: true
+    json: >
+      {
+        "name": "${aws_account} - Clickhouse Pods: Fewer than required",
+          "type": "query alert",
+          "query": "avg(last_5m):avg:kubernetes.kubelet.pod.start.duration.count{env:${aws_account},karpenter.sh/nodepool:clickhouse-installation} by {kube_node} < 2",
+          "message": "@slack-alerts-${env}-infra \nClickhouse pod count is lower than expected.",
+          "tags": [
+              "terraform:true",
+              "env:${aws_account}"
+          ],
+          "options": {
+              "groupby_simple_monitor" : false,
+              "new_host_delay": 30,
+              "thresholds": {
+                  "critical": 2
+              },
+              "notify_audit": false,
+              "on_missing_data": "default",
+              "include_tags": true,
+              "silenced": {}
+          },
+          "priority": 1,
+          "restricted_roles": null
+      }
+
+  clickhouse_containers_restarting:
+    enabled: true
+    json: >
+      {
+        "name": "${aws_account} - Clickhouse Containers: Restarts detected",
+          "type": "query alert",
+          "query": "avg(last_5m):avg:kubernetes.containers.restarts{env:${aws_account},karpenter.sh/nodepool:clickhouse-installation} by {kube_node} > 1",
+          "message": "@slack-alerts-${env}-infra \nClickhouse container restarts detected.",
+          "tags": [
+              "terraform:true",
+              "env:${aws_account}"
+          ],
+          "options": {
+              "groupby_simple_monitor" : false,
+              "new_host_delay": 30,
+              "thresholds": {
+                  "critical": 1,
+                  "warning": 0.5
+              },
+              "notify_audit": false,
+              "on_missing_data": "default",
+              "include_tags": true,
+              "silenced": {}
+          },
+          "priority": 1,
+          "restricted_roles": null
+      }
   kubernetes_container_waiting:
     enabled: true
     json: >
@@ -157,7 +211,7 @@ monitors:
               },
               "notify_audit": false,
               "include_tags": true,
-              "new_group_delay": 60,
+              "new_group_delay": 120,
               "renotify_interval": 0,
               "escalation_message": "",
               "notify_no_data": false,
@@ -187,7 +241,7 @@ monitors:
               },
               "notify_audit": false,
               "include_tags": true,
-              "new_group_delay": 60,
+              "new_group_delay": 120,
               "renotify_interval": 0,
               "escalation_message": "",
               "notify_no_data": false,
