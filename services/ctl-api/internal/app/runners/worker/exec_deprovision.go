@@ -13,11 +13,26 @@ import (
 )
 
 func (w *Workflows) executeDeprovisionOrgRunner(ctx workflow.Context, runnerID string, sandboxMode bool) error {
+	runner, err := activities.AwaitGet(ctx, activities.GetRequest{
+		RunnerID: runnerID,
+	})
+	if err != nil {
+		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to get runner")
+		return fmt.Errorf("unable to get runner: %w", err)
+	}
+
+	if runner.RunnerGroup.Platform == app.AppRunnerTypeLocal {
+		return nil
+	}
+	if runner.Org.OrgType == app.OrgTypeIntegration {
+		return nil
+	}
+
 	req := &executors.DeprovisionRunnerRequest{
 		RunnerID: runnerID,
 	}
-	var resp executors.ProvisionRunnerResponse
-	err := w.execChildWorkflow(ctx, runnerID, executors.DeprovisionRunnerWorkflowName, sandboxMode, req, &resp)
+	var resp executors.DeprovisionRunnerResponse
+	err = w.execChildWorkflow(ctx, runnerID, executors.DeprovisionRunnerWorkflowName, sandboxMode, req, &resp)
 	if err != nil {
 		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to deprovision runner")
 		return fmt.Errorf("unable to deprovision runner: %w", err)
@@ -33,6 +48,12 @@ func (w *Workflows) executeDeprovisionInstallRunner(ctx workflow.Context, runner
 	if err != nil {
 		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to get runner")
 		return fmt.Errorf("unable to get runner: %w", err)
+	}
+	if runner.RunnerGroup.Platform == app.AppRunnerTypeLocal {
+		return nil
+	}
+	if runner.Org.OrgType == app.OrgTypeIntegration {
+		return nil
 	}
 
 	install, err := activities.AwaitGetInstall(ctx, activities.GetInstallRequest{
