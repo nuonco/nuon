@@ -97,9 +97,6 @@ func (w *Workflows) OrgHealthCheck(ctx workflow.Context, req HealthCheckRequest)
 		MaximumAttempts: 1,
 	})
 
-	err = activities.AwaitPingWaypointServer(ctx, activities.PingWaypointServerRequest{
-		OrgID: req.OrgID,
-	})
 	if err != nil {
 		w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatusError, "unable to ping server")
 		status = "error"
