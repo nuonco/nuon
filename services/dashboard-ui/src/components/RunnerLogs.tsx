@@ -9,10 +9,10 @@ import {
   ArrowsInLineVertical,
   ArrowsOutLineVertical,
   MagnifyingGlass,
-  FunnelSimple,
   Funnel,
   SortAscending,
   SortDescending,
+  X,
 } from '@phosphor-icons/react'
 import {
   getCoreRowModel,
@@ -26,7 +26,6 @@ import {
 } from '@tanstack/react-table'
 import {
   Button,
-  CodeViewer,
   Dropdown,
   Expand,
   Text,
@@ -168,7 +167,8 @@ export const OTELLogs: FC<IOTELLogs> = ({
                           <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">
                             {key}
                           </Text>
-                          <Text className="text-sm font-mono break-all col-span-2 !inline truncate max-w-[200px]">
+
+                          <Text className="text-sm font-mono text-pretty col-span-2 !inline">
                             {logAttributes[key]}
                           </Text>
                         </div>
@@ -204,7 +204,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
                           <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">
                             {key}
                           </Text>
-                          <Text className="text-sm font-mono break-all col-span-2 !inline truncate max-w-[200px]">
+                          <Text className="text-sm font-mono text-pretty col-span-2 !inline">
                             {resourceAttributes[key]}
                           </Text>
                         </div>
@@ -304,8 +304,12 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
   )
 
   const handleStatusFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
+    const { value } = e.target
     setColumnFilters(() => [{ id: 'severity_text', value: value }])
+  }
+
+  const clearStatusFilter = () => {
+    setColumnFilters(() => [])
   }
 
   const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -332,6 +336,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
             handleStatusFilter={handleStatusFilter}
             handleColumnSort={handleColumnSort}
             handleExpandAll={handleExpandAll}
+            clearStatusFilter={clearStatusFilter}
             isAllExpanded={isAllExpanded}
             shouldShowExpandAll
             id="modal"
@@ -389,7 +394,6 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
         {logs?.length ? (
           <LogsPreview
             data={logs}
-            columnFilters={columnFilters}
             globalFilter={globalFilter}
             sorting={columnSort}
           />
@@ -409,6 +413,7 @@ interface IRunnerLogsActions {
   handleGlobalFilter: any
   handleColumnSort: any
   handleExpandAll?: any
+  clearStatusFilter?: any
   isAllExpanded?: boolean
   id: string
   shouldHideFilter?: boolean
@@ -422,6 +427,7 @@ const RunnerLogsActions: FC<IRunnerLogsActions> = ({
   handleStatusFilter,
   handleColumnSort,
   handleExpandAll,
+  clearStatusFilter,
   isAllExpanded = false,
   id,
   shouldHideFilter = false,
@@ -480,47 +486,59 @@ const RunnerLogsActions: FC<IRunnerLogsActions> = ({
           text={<Funnel />}
         >
           <div>
-            <RadioInput
-              name={`${id}-status-filter`}
-              onChange={handleStatusFilter}
-              value="Trace"
-              labelText="Trace"
-            />
+            <form>
+              <RadioInput
+                name={`${id}-status-filter`}
+                onChange={handleStatusFilter}
+                value="Trace"
+                labelText="Trace"
+              />
 
-            <RadioInput
-              name={`${id}-status-filter`}
-              onChange={handleStatusFilter}
-              value="Debug"
-              labelText="Debug"
-            />
+              <RadioInput
+                name={`${id}-status-filter`}
+                onChange={handleStatusFilter}
+                value="Debug"
+                labelText="Debug"
+              />
 
-            <RadioInput
-              name={`${id}-status-filter`}
-              onChange={handleStatusFilter}
-              value="Info"
-              labelText="Info"
-            />
+              <RadioInput
+                name={`${id}-status-filter`}
+                onChange={handleStatusFilter}
+                value="Info"
+                labelText="Info"
+              />
 
-            <RadioInput
-              name={`${id}-status-filter`}
-              onChange={handleStatusFilter}
-              value="Warn"
-              labelText="Warning"
-            />
+              <RadioInput
+                name={`${id}-status-filter`}
+                onChange={handleStatusFilter}
+                value="Warn"
+                labelText="Warning"
+              />
 
-            <RadioInput
-              name={`${id}-status-filter`}
-              onChange={handleStatusFilter}
-              value="Error"
-              labelText="Error"
-            />
+              <RadioInput
+                name={`${id}-status-filter`}
+                onChange={handleStatusFilter}
+                value="Error"
+                labelText="Error"
+              />
 
-            <RadioInput
-              name={`${id}-status-filter`}
-              onChange={handleStatusFilter}
-              value="Fatal"
-              labelText="Fatal"
-            />
+              <RadioInput
+                name={`${id}-status-filter`}
+                onChange={handleStatusFilter}
+                value="Fatal"
+                labelText="Fatal"
+              />
+              <hr />
+              <Button
+                className="w-full !rounded-t-none !text-sm flex items-center gap-2"
+                type="reset"
+                onClick={clearStatusFilter}
+                variant="ghost"
+              >
+                <X />
+                Clear
+              </Button>
+            </form>
           </div>
         </Dropdown>
       )}
