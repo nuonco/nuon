@@ -18,14 +18,12 @@ import type { TOTELLog } from '@/types'
 
 export interface ILogsPreview {
   data: Array<Record<string, any>>
-  columnFilters: Array<ColumnFilter>
   globalFilter: string
   sorting: Array<ColumnSort>
 }
 
 export const LogsPreview: FC<ILogsPreview> = ({
   data,
-  columnFilters,
   globalFilter,
   sorting,
 }) => {
@@ -72,7 +70,7 @@ export const LogsPreview: FC<ILogsPreview> = ({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    state: { columnFilters, globalFilter, sorting },
+    state: { globalFilter, sorting },
   })
 
   return (
