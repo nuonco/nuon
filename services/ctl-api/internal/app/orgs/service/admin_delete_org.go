@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	appsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
@@ -14,7 +15,9 @@ import (
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 )
 
-type AdminDeleteOrgRequest struct{}
+type AdminDeleteOrgRequest struct {
+	Force bool `json:"force"`
+}
 
 // @ID AdminDeleteOrg
 // @Summary delete an org and everything in it
@@ -29,19 +32,51 @@ type AdminDeleteOrgRequest struct{}
 func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
-	org, err := s.getOrgAndDependencies(ctx, orgID)
+	var req AdminDeleteOrgRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+
+	org, err := s.adminGetOrg(ctx, orgID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get org: %w", err))
+		ctx.Error(err)
+		return
+	}
+
+	if org.OrgType == app.OrgTypeIntegration {
+		err := s.deleteIntegrationOrg(ctx, org.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+
+		ctx.JSON(http.StatusOK, true)
+		return
+	}
+
+	// regular delete for orgs
+	org, err = s.getOrgAndDependencies(ctx, org.ID)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get org dependencies"))
 		return
 	}
 	orgID = org.ID
 
+	// restart the org, to ensure the event loop is active
+	s.evClient.Send(ctx, org.ID, &sigs.Signal{
+		Type: sigs.OperationRestart,
+	})
+
+	// delete the org
 	err = s.deleteOrg(ctx, orgID)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
+	// TODO(jm): this should happen in the event loop
+	// send a signal to all children
 	for _, app := range org.Apps {
 		s.evClient.Send(ctx, app.ID, &appsignals.Signal{
 			Type: appsignals.OperationDeleted,
@@ -68,6 +103,13 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 	s.evClient.Send(ctx, org.ID, &sigs.Signal{
 		Type: sigs.OperationDelete,
 	})
+
+	if req.Force {
+		s.evClient.Send(ctx, org.ID, &sigs.Signal{
+			Type: sigs.OperationForceDelete,
+		})
+	}
+
 	ctx.JSON(http.StatusOK, true)
 }
 

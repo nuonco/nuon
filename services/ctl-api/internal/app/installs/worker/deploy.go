@@ -135,15 +135,6 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 		return fmt.Errorf("unable to get install deploy: %w", err)
 	}
 
-	org, err := activities.AwaitGetOrg(ctx, activities.GetOrgRequest{
-		InstallID: installID,
-	})
-	if err != nil {
-		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to get org from database")
-		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
-		return fmt.Errorf("unable to get org: %w", err)
-	}
-
 	err = w.pollForDeployableBuild(ctx, deployID, installDeploy.ComponentBuild)
 	if err != nil {
 		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusNoop, "build is not deployable")
@@ -195,19 +186,6 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 			return fmt.Errorf("dependent component: [%s]  not active", strings.Join(inactiveDepIDs, ", "))
 		}
-	}
-
-	if org.OrgType == app.OrgTypeLegacy {
-		if err := w.execSyncLegacy(ctx, install, installDeploy, sandboxMode); err != nil {
-			return err
-		}
-		if err := w.execDeployLegacy(ctx, install, installDeploy, sandboxMode); err != nil {
-			return err
-		}
-
-		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFinished)
-		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusOK, "deploy is active")
-		return nil
 	}
 
 	if err := w.execSync(ctx, install, installDeploy, sandboxMode); err != nil {

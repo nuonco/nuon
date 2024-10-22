@@ -43,12 +43,20 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 	// However, in local development, it can be useful to run a runner and see jobs go all the way through, for
 	// testing which can be enabled by changing the sandbox-mode enable runners field.
 	if runner.RunnerGroup.Settings.SandboxMode {
+		// if the org is a sandbox mode + canary, we do not require the runner locally
+		if runner.Org.CreatedBy.AccountType == app.AccountTypeCanary {
+			w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusFinished, "success in sandbox/canary mode")
+			return nil
+		}
+
+		// if sandbox runners are enabled, then force this to run
 		if w.cfg.SandboxModeEnableRunners {
 			l.Info("enable runners enabled, so this job must be handled by a local runner",
 				zap.String("job_id", sreq.JobID),
 				zap.String("runner_id", sreq.ID),
 			)
 		} else {
+			// final case is where sandbox runners are disabled
 			l.Info("skipping job, and setting to true in sandbox mode",
 				zap.String("job_id", sreq.JobID),
 				zap.String("runner_id", sreq.ID),

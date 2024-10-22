@@ -36,14 +36,6 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusStarted)
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
 
-	if install.Org.OrgType == app.OrgTypeLegacy {
-		if err := w.provisionLegacy(ctx, install, installRun, sandboxMode); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
 	if err := w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode); err != nil {
 		return err
 	}

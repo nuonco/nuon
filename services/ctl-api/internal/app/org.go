@@ -18,6 +18,8 @@ const (
 
 	// Legacy
 	OrgTypeLegacy OrgType = "real"
+
+	OrgTypeUnknown OrgType = ""
 )
 
 type OrgStatus string
