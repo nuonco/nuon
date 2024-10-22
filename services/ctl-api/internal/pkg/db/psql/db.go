@@ -8,10 +8,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	gormlogger "gorm.io/gorm/logger"
 	"moul.io/zapgorm2"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
@@ -69,7 +67,7 @@ func (c *database) connCfg() (*pgx.ConnConfig, error) {
 }
 
 func New(v *validator.Validate,
-	l *zap.Logger,
+	l zapgorm2.Logger,
 	metricsWriter metrics.Writer,
 	lc fx.Lifecycle,
 	cfg *internal.Config,
@@ -77,14 +75,8 @@ func New(v *validator.Validate,
 	ctx := context.Background()
 	ctx, cancelFn := context.WithCancel(ctx)
 
-	dl := zapgorm2.New(l)
-	if cfg.LogLevel == "DEBUG" {
-		dl.LogMode(gormlogger.Info)
-	}
-	dl.IgnoreRecordNotFoundError = true
-
 	database := &database{
-		Logger:        dl,
+		Logger:        l,
 		PasswordFn:    FetchIamTokenPassword,
 		Host:          cfg.DBHost,
 		User:          cfg.DBUser,

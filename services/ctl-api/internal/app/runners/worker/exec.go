@@ -25,7 +25,7 @@ func (w *Workflows) execCreatePlanWorkflow(
 		l := workflow.GetLogger(ctx)
 		l.Debug("sandbox-mode enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.SandboxModeSleep.String()))
 		workflow.Sleep(ctx, w.cfg.SandboxModeSleep)
-		return generics.GetFakeObj[*planv1.CreatePlanResponse](), nil
+		return planv1.FakePlanResponse(), nil
 	}
 
 	cwo := workflow.ChildWorkflowOptions{

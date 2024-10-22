@@ -28,6 +28,7 @@ func (a *Activities) getRunner(ctx context.Context, runnerID string) (*app.Runne
 	runner := app.Runner{}
 	res := a.db.WithContext(ctx).
 		Preload("Org").
+		Preload("Org.CreatedBy").
 		Preload("Org.RunnerGroup").
 		Preload("Org.RunnerGroup.Runners").
 		Preload("RunnerGroup").

@@ -68,8 +68,6 @@ func (s *service) bulkUpdateRunners(ctx context.Context, req *AdminBulkUpdateRun
 		}
 
 		for _, runnerGroup := range runnerGroups {
-			fmt.Println("Processing RunnerGroup:", runnerGroup.ID)
-
 			updates := app.RunnerGroupSettings{
 				ContainerImageTag: req.ContainerImageTag,
 			}
