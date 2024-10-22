@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  swcMinify: true,
+  fastRefresh: true,
+  concurrentFeatures: true,
+  optimizeFonts: false,
   images: {
     remotePatterns: [
       {
