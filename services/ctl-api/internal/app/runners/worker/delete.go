@@ -26,18 +26,3 @@ func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) err
 
 	return nil
 }
-
-// @temporal-gen workflow
-// @execution-timeout 60m
-// @task-timeout 30m
-func (w *Workflows) Force_delete(ctx workflow.Context, sreq signals.RequestSignal) error {
-	_ = w.Deprovision(ctx, sreq)
-
-	if err := activities.AwaitDelete(ctx, activities.DeleteRequest{
-		RunnerID: sreq.ID,
-	}); err != nil {
-		return fmt.Errorf("unable to delete runner: %w", err)
-	}
-
-	return nil
-}
