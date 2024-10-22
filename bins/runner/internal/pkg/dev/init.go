@@ -14,7 +14,6 @@ func (d *devver) Init(ctx context.Context) error {
 	if os.Getenv("RUNNER_ID") != "" {
 		fmt.Println("disabling monitoring and restarting for new runners")
 		shouldMonitor = false
-		return nil
 	}
 
 	type step struct {
