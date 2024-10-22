@@ -27,16 +27,6 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
-	// NOTE(jm): this will be removed once the runner is in prod
-	// and all orgs are migrated.
-	if org.OrgType == app.OrgTypeLegacy {
-		if err := w.provisionLegacy(ctx, org, sreq.SandboxMode); err != nil {
-			return fmt.Errorf("unable to perform legacy org provision: %w", err)
-		}
-
-		return nil
-	}
-
 	// provision IAM roles for the org
 	orgIAMReq := &executors.ProvisionIAMRequest{
 		OrgID: sreq.ID,

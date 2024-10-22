@@ -43,14 +43,6 @@ func (w *Workflows) Build(ctx workflow.Context, sreq signals.RequestSignal) erro
 		return notify(fmt.Errorf("component is not active"))
 	}
 
-	if currentApp.Org.OrgType == app.OrgTypeLegacy {
-		if err := w.execBuildLegacy(ctx, sreq.ID, sreq.BuildID, currentApp, sreq.SandboxMode); err != nil {
-			return notify(err)
-		}
-
-		return nil
-	}
-
 	if err := w.execBuild(ctx, sreq.ID, sreq.BuildID, currentApp, sreq.SandboxMode); err != nil {
 		return notify(err)
 	}

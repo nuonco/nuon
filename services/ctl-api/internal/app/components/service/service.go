@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/pkg/waypoint/client/multi"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
@@ -27,7 +26,6 @@ type Params struct {
 	MW          metrics.Writer
 	L           *zap.Logger
 	OrgsOutputs *terraformcloud.OrgsOutputs
-	WpClient    multi.Client
 	Helpers     *helpers.Helpers
 	VcsHelpers  *vcshelpers.Helpers
 	AppsHelpers *appshelpers.Helpers
@@ -41,7 +39,6 @@ type service struct {
 	mw          metrics.Writer
 	cfg         *internal.Config
 	orgsOutputs *terraformcloud.OrgsOutputs
-	wpClient    multi.Client
 	helpers     *helpers.Helpers
 	vcsHelpers  *vcshelpers.Helpers
 	appsHelpers *appshelpers.Helpers
@@ -79,8 +76,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/components/:component_id/builds", s.CreateComponentBuild)
 	api.GET("/v1/components/:component_id/builds/latest", s.GetComponentLatestBuild)
 	api.GET("/v1/components/:component_id/builds/:build_id", s.GetComponentBuild)
-	api.GET("/v1/components/:component_id/builds/:build_id/logs", s.GetComponentBuildLogs)
-	api.GET("/v1/components/:component_id/builds/:build_id/plan", s.GetComponentBuildPlan)
 
 	api.GET("/v1/builds", s.GetComponentBuilds)
 	api.GET("/v1/components/builds/:build_id", s.GetBuild)
@@ -110,7 +105,6 @@ func New(params Params) *service {
 		db:          params.DB,
 		mw:          params.MW,
 		orgsOutputs: params.OrgsOutputs,
-		wpClient:    params.WpClient,
 		helpers:     params.Helpers,
 		vcsHelpers:  params.VcsHelpers,
 		appsHelpers: params.AppsHelpers,
