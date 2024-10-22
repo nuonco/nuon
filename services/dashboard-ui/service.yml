@@ -22,11 +22,8 @@ disable_watch: true
 local_startup_cmds: []
 local_build_cmds:
   - npm install
-  - npm run build
 local_cmds:
-  - npm start
-  # run the dasboard in dev mode
-  # - npm run dev
+  - npm run dev
 namespace: dashboard-ui
 earthly_cmds:
   # the entrypoint of the container is already run start
