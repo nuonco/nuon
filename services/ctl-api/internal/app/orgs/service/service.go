@@ -82,7 +82,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/orgs/:org_id/admin-delete", s.AdminDeleteOrg)
 	api.POST("/v1/orgs/:org_id/admin-reprovision", s.AdminReprovisionOrg)
 	api.POST("/v1/orgs/:org_id/admin-deprovision", s.AdminDeprovisionOrg)
-	api.POST("/v1/orgs/:org_id/admin-force-deprovision", s.AdminForceDeprovisionOrg)
 	api.POST("/v1/orgs/:org_id/admin-restart", s.RestartOrg)
 	api.POST("/v1/orgs/:org_id/admin-restart-children", s.RestartOrgChildren)
 	api.POST("/v1/orgs/:org_id/admin-rename", s.AdminRenameOrg)

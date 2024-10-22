@@ -25,6 +25,10 @@ func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, ap
 		w.updateStatus(ctx, runnerID, app.RunnerStatusActive, "local runner must be run locally")
 		return nil
 	}
+	if runner.Org.OrgType == app.OrgTypeIntegration {
+		w.updateStatus(ctx, runnerID, app.RunnerStatusActive, "integration mode, bypassing provisioning")
+		return nil
+	}
 
 	req := &executors.ProvisionRunnerRequest{
 		RunnerID:                 runnerID,
@@ -55,6 +59,13 @@ func (w *Workflows) executeProvisionInstallRunner(ctx workflow.Context, runnerID
 	if err != nil {
 		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to get runner")
 		return fmt.Errorf("unable to get runner: %w", err)
+	}
+
+	if runner.RunnerGroup.Platform == app.AppRunnerTypeLocal {
+		return nil
+	}
+	if runner.Org.OrgType == app.OrgTypeIntegration {
+		return nil
 	}
 
 	install, err := activities.AwaitGetInstall(ctx, activities.GetInstallRequest{

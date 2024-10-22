@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type DeleteRequest struct {
@@ -15,16 +16,67 @@ type DeleteRequest struct {
 // @temporal-gen activity
 // @by-id OrgID
 func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
-	// delete apps
-	res := a.db.WithContext(ctx).Unscoped().
-		Where("org_id = ?", req.OrgID).
-		Delete(&app.App{})
-	if res.Error != nil {
-		return fmt.Errorf("unable to delete org apps: %w", res.Error)
+	deleteObjs := []interface{}{
+		&app.RunnerJobExecutionResult{},
+		&app.RunnerJobExecution{},
+		&app.RunnerJobPlan{},
+		&app.RunnerJob{},
+		&app.Runner{},
+		&app.RunnerGroupSettings{},
+		&app.RunnerGroup{},
+		&app.InstallComponent{},
+		&app.InstallDeploy{},
+		&app.ComponentReleaseStep{},
+		&app.ComponentRelease{},
+		&app.ComponentBuild{},
+		&app.AWSECRImageConfig{},
+		&app.PublicGitVCSConfig{},
+		&app.ConnectedGithubVCSConfig{},
+		&app.ExternalImageComponentConfig{},
+		&app.JobComponentConfig{},
+		&app.DockerBuildComponentConfig{},
+		&app.TerraformModuleComponentConfig{},
+		&app.HelmComponentConfig{},
+		&app.ComponentConfigConnection{},
+		&app.ComponentDependency{},
+		&app.Component{},
+		&app.InstallSandboxRun{},
+		&app.InstallInputs{},
+		&app.InstallEvent{},
+		&app.Install{},
+		&app.AzureAccount{},
+		&app.AWSAccount{},
+		&app.AppSecret{},
+		&app.AppInputConfig{},
+		&app.AppInputGroup{},
+		&app.AppInput{},
+		&app.AppRunnerConfig{},
+		&app.AppAWSDelegationConfig{},
+		&app.AppSandboxConfig{},
+		&app.AppConfig{},
+		&app.App{},
+		&app.VCSConnectionCommit{},
+		&app.VCSConnection{},
+		&app.InstallerMetadata{},
+		&app.Installer{},
+		&app.OrgHealthCheck{},
+		&app.OrgInvite{},
+		&app.NotificationsConfig{},
+		&app.Policy{},
+		&app.AccountRole{},
+		&app.Role{},
+	}
+	for _, obj := range deleteObjs {
+		res := a.db.WithContext(ctx).Unscoped().
+			Where("org_id = ?", req.OrgID).
+			Delete(obj)
+		if res.Error != nil {
+			return fmt.Errorf("unable to delete %T for org: %w", obj, res.Error)
+		}
 	}
 
 	// delete org
-	res = a.db.WithContext(ctx).Unscoped().Delete(&app.Org{
+	res := a.db.WithContext(ctx).Unscoped().Delete(&app.Org{
 		ID: req.OrgID,
 	})
 	if res.Error != nil {
