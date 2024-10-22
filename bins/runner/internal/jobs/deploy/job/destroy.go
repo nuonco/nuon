@@ -8,8 +8,6 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
-
-	jobv1 "github.com/powertoolsdev/mono/pkg/types/plugins/job/v1"
 )
 
 func (p *handler) DestroyFunc() interface{} {
@@ -21,10 +19,10 @@ func (p *handler) destroy(
 	ji *component.JobInfo,
 	ui terminal.UI,
 	log hclog.Logger,
-) (*jobv1.Deployment, error) {
+) error {
 	stdout, _, err := ui.OutputWriters()
 	if err != nil {
-		return nil, fmt.Errorf("unable to get output writers")
+		return fmt.Errorf("unable to get output writers")
 	}
 
 	_ = hclog.New(&hclog.LoggerOptions{
@@ -33,5 +31,5 @@ func (p *handler) destroy(
 	})
 
 	// TODO(ja): deployment logic goes here
-	return nil, errors.New("not implemented")
+	return errors.New("not implemented")
 }

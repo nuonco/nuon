@@ -49,7 +49,6 @@ jobs:
         repo:
           - components
           - workflows
-          - plugins
     defaults:
       run:
         working-directory: pkg/types

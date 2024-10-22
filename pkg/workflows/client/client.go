@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+
 	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
-	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
@@ -26,7 +26,6 @@ type Client interface {
 	TriggerOrgTeardown(context.Context, *orgsv1.DeprovisionRequest) (string, error)
 
 	ExecCreatePlan(ctx context.Context, namespace string, req *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error)
-	ExecExecutePlan(ctx context.Context, namespace string, req *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error)
 
 	TriggerAppProvision(context.Context, *appsv1.ProvisionRequest) (string, error)
 }
