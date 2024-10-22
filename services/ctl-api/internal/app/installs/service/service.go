@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/pkg/waypoint/client/multi"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	componenthelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
@@ -26,7 +25,6 @@ type Params struct {
 	MW               metrics.Writer
 	Cfg              *internal.Config
 	OrgsOutputs      *terraformcloud.OrgsOutputs
-	WpClient         multi.Client
 	ComponentHelpers *componenthelpers.Helpers
 	Helpers          *helpers.Helpers
 	EvClient         eventloop.Client
@@ -39,7 +37,6 @@ type service struct {
 	mw               metrics.Writer
 	cfg              *internal.Config
 	orgsOutputs      *terraformcloud.OrgsOutputs
-	wpClient         multi.Client
 	componentHelpers *componenthelpers.Helpers
 	helpers          *helpers.Helpers
 	evClient         eventloop.Client
@@ -67,12 +64,10 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/deploys", s.CreateInstallDeploy)
 	api.GET("/v1/installs/:install_id/deploys/latest", s.GetInstallLatestDeploy)
 	api.GET("/v1/installs/:install_id/deploys/:deploy_id", s.GetInstallDeploy)
-	api.GET("/v1/installs/:install_id/deploys/:deploy_id/logs", s.GetInstallDeployLogs)
 	api.GET("/v1/installs/:install_id/deploys/:deploy_id/plan", s.GetInstallDeployPlan)
 
 	// install sandbox
 	api.GET("/v1/installs/:install_id/sandbox-runs", s.GetInstallSandboxRuns)
-	api.GET("/v1/installs/:install_id/sandbox-run/:run_id/logs", s.GetInstallSandboxRunLogs)
 
 	// install inputs
 	api.GET("/v1/installs/:install_id/inputs", s.GetInstallInputs)
@@ -130,7 +125,6 @@ func New(params Params) *service {
 		db:               params.DB,
 		mw:               params.MW,
 		orgsOutputs:      params.OrgsOutputs,
-		wpClient:         params.WpClient,
 		componentHelpers: params.ComponentHelpers,
 		helpers:          params.Helpers,
 		evClient:         params.EvClient,

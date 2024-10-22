@@ -59,15 +59,6 @@ func (w *Workflows) deprovisionOrg(ctx workflow.Context, orgID string, sandboxMo
 
 	w.updateStatus(ctx, orgID, app.OrgStatusDeprovisioning, "deprovisioning organization resources")
 
-	// NOTE(jm): this will be removed once the runner is in prod and all orgs are migrated.
-	if org.OrgType == app.OrgTypeLegacy {
-		if err := w.deprovisionLegacy(ctx, org, sandboxMode); err != nil {
-			return fmt.Errorf("unable to perform legacy org deprovision: %w", err)
-		}
-
-		return nil
-	}
-
 	// reprovision IAM roles for the org
 	orgIAMReq := &executors.DeprovisionIAMRequest{
 		OrgID: orgID,

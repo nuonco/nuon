@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-package noop.v1;
-
-option go_package = "github.com/powertoolsdev/mono/pkg/types/noop/v1";
-
-message BuildOutput {}

@@ -3,30 +3,30 @@ package job
 import (
 	"context"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	jobv1 "github.com/powertoolsdev/mono/pkg/types/plugins/job/v1"
 	"go.uber.org/zap"
+
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 )
 
 func (p *handler) deploy(
 	ctx context.Context,
-) (*jobv1.Deployment, error) {
+) error {
 	// init logger
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	clientset, err := p.getClientset()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// start k8s job
 	l.Info("starting job")
 	job, err := p.startJob(ctx, clientset)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// monitor job
@@ -34,8 +34,8 @@ func (p *handler) deploy(
 	err = p.pollJob(ctx, clientset, job)
 	if err != nil {
 		l.Error("error polling job: %v", zap.Error(err))
-		return nil, err
+		return err
 	}
 
-	return &jobv1.Deployment{}, nil
+	return nil
 }
