@@ -3,6 +3,10 @@ pool: nuon
 monitors:
   clickhouse_insert_queries_failed:
     enabled: true
+  clickhouse_pod_count_low:
+    enabled: true
+  clickhouse_containers_restarting:
+    enabled: true
   org_container_waiting:
     enabled: false
   database_running_low_on_free_space:

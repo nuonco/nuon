@@ -3,6 +3,10 @@ pool: main
 monitors:
   clickhouse_insert_queries_failed:
     enabled: false
+  clickhouse_pod_count_low:
+    enabled: false
+  clickhouse_containers_restarting:
+    enabled: false
   org_is_unhealthy:
     enabled: false
   ctl_api_5xx_errors:
