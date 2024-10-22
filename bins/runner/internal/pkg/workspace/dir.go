@@ -15,6 +15,7 @@ func (w *workspace) rootDir() string {
 }
 
 func (w *workspace) initRootDir() error {
+	w.L.Info("initializing new workspace at " + w.rootDir())
 	if err := os.MkdirAll(w.rootDir(), defaultWorkspaceDirPermissions); err != nil {
 		return err
 	}

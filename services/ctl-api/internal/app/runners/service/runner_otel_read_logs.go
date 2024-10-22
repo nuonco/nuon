@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-const PageSize int = 1000
+const PageSize int = 10000
 
 type Page struct {
 	Data  []app.OtelLogRecord `json:"data"`
@@ -24,6 +25,8 @@ type Page struct {
 // @Summary	get a runner's logs
 // @Description.markdown runner_otel_read_logs.md
 // @Param			runner_id	path	string	true	"runner ID"
+// @Param   job_id query string false	"job id"
+// @Param   job_execution_id query string false	"job execution id"
 // @Tags runners
 // @Accept			json
 // @Produce		json
@@ -41,9 +44,15 @@ func (s *service) OtelReadLogs(ctx *gin.Context) {
 	// returns pagination details in the header
 	// X-Nuon-API-Next   returns a value, a unix time in nanoseconds rn
 	// X-Nuon-API-Offset accepts a value, a unix time in nanoseconds rn
-
-	// NOTE(fd): consider checking if the runner exists in the given org
 	runnerID := ctx.Param("runner_id")
+	jobID := ctx.DefaultQuery("job_id", "")
+	jobExecutionID := ctx.DefaultQuery("job_execution_id", "")
+
+	_, err := s.getRunner(ctx, runnerID)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get runner"))
+		return
+	}
 
 	// Pagination Facts
 	// parse the offset
@@ -52,7 +61,6 @@ func (s *service) OtelReadLogs(ctx *gin.Context) {
 	if beforeStr == "" {
 		// set default value
 		before = time.Now().UTC().UnixNano()
-		fmt.Printf("before :: %+v (default)\n", before)
 	} else {
 		beforeVal, err := strconv.ParseInt(beforeStr, 10, 64)
 		if err != nil {
@@ -62,14 +70,8 @@ func (s *service) OtelReadLogs(ctx *gin.Context) {
 		before = beforeVal
 	}
 
-	// parse query params
-	job_id := ctx.DefaultQuery("job_id", "")
-	job_execution_id := ctx.DefaultQuery("job_execution_id", "")
-
-	fmt.Printf("job_id=%s job_execution_id=%s\n", job_id, job_execution_id)
-
 	// read logs from chDB
-	logs, headers, readerr := s.getRunnerLogs(ctx, runnerID, before, job_id, job_execution_id)
+	logs, headers, readerr := s.getRunnerLogs(ctx, runnerID, before, jobID, jobExecutionID)
 	if readerr != nil {
 		ctx.Error(fmt.Errorf("unable to read runner logs: %w", readerr))
 		return
@@ -83,7 +85,7 @@ func (s *service) OtelReadLogs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, logs)
 }
 
-func (s *service) getRunnerLogs(ctx context.Context, runnerID string, before int64, job_id string, job_execution_id string) ([]app.OtelLogRecord, map[string]string, error) {
+func (s *service) getRunnerLogs(ctx context.Context, runnerID string, before int64, jobID string, jobExecutionID string) ([]app.OtelLogRecord, map[string]string, error) {
 	// headers
 	headers := map[string]string{"Range-Units": "items"}
 
@@ -95,11 +97,11 @@ func (s *service) getRunnerLogs(ctx context.Context, runnerID string, before int
 	query := s.chDB.WithContext(ctx).Where("runner_id = ?", runnerID)
 	// compose query from values from query params
 
-	if job_id != "" {
-		query = query.Where("runner_job_id = ?", job_id)
+	if jobID != "" {
+		query = query.Where("runner_job_id = ?", jobID)
 	}
-	if job_execution_id != "" {
-		query = query.Where("runner_job_execution_id = ?", job_execution_id)
+	if jobExecutionID != "" {
+		query = query.Where("runner_job_execution_id = ?", jobExecutionID)
 	}
 
 	// Query: get records
