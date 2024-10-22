@@ -5,15 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/dev"
-)
-
-const (
-	localFindRunnerPeriod time.Duration = time.Second
 )
 
 func (c *cli) registerRunLocal() error {

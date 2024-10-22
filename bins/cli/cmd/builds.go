@@ -71,23 +71,6 @@ func (c *cli) buildsCmd() *cobra.Command {
 	createCmd.MarkFlagRequired("app-id")
 	buildsCmd.AddCommand(createCmd)
 
-	printPlanCmd := &cobra.Command{
-		Use:   "print-plan",
-		Short: "Print build plan",
-		Long:  "Print build plan",
-		Run: c.run(func(cmd *cobra.Command, _ []string) error {
-			svc := builds.New(c.apiClient, c.cfg)
-			return svc.PrintPlan(cmd.Context(), appID, compID, buildID, PrintJSON)
-		}),
-	}
-	printPlanCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of the component whose build you want to view")
-	printPlanCmd.MarkFlagRequired("component-id")
-	printPlanCmd.Flags().StringVarP(&buildID, "build-id", "b", "", "The build ID for the build plan you want to print")
-	printPlanCmd.MarkFlagRequired("build-id")
-	printPlanCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app the component belongs to")
-	printPlanCmd.MarkFlagRequired("app-id")
-	buildsCmd.AddCommand(printPlanCmd)
-
 	logsCmd := &cobra.Command{
 		Use:   "logs",
 		Short: "View build logs",
