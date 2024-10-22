@@ -46,7 +46,7 @@ func (w *wkflow) execTests(ctx workflow.Context,
 		var testResp activities.ExecTestScriptResponse
 		if err := w.defaultExecTestActivity(ctx, w.acts.ExecTestScript, testReq, &testResp); err != nil {
 			w.metricsWriter.Incr(ctx, "provision", "status:error", fmt.Sprintf("step:execute_test_%d", idx+1), metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
-			return fmt.Errorf("unable to execute test: %w", err)
+			return fmt.Errorf("unable to execute test %s - %w", test, err)
 		}
 		w.metricsWriter.Incr(ctx, "provision", "status:ok", fmt.Sprintf("step:execute_test_%d", idx+1), metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 	}

@@ -14,21 +14,6 @@ import (
 	"github.com/powertoolsdev/mono/services/workers-canary/internal/activities"
 )
 
-const (
-	orgWaitDuration time.Duration = time.Minute * 15
-)
-
-// NOTE(jm): this is basically a hack, because when an org is provisioned, we have to reach it over the internet, and
-// DNS polling is not reliable etc.
-func (w *wkflow) waitForOrgProvision(ctx workflow.Context, sandboxMode bool) {
-	if sandboxMode {
-		return
-	}
-
-	w.l.Info("waiting for the org to provision, before attempting terraform run")
-	workflow.Sleep(ctx, orgWaitDuration)
-}
-
 func (w *wkflow) getInstallCount(sandboxMode bool) int {
 	if sandboxMode {
 		return w.cfg.SandboxModeInstallCount
@@ -77,8 +62,6 @@ func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequ
 		return nil, orgResp.OrgID, userResp.APIToken, fmt.Errorf("unable to create vcs connection: %w", err)
 	}
 	w.l.Info("create vcs connection", zap.Any("response", vcsResp))
-
-	w.waitForOrgProvision(ctx, req.SandboxMode)
 
 	var runResp activities.RunTerraformResponse
 	if err := w.defaultTerraformRunActivity(ctx, w.acts.RunTerraform, &activities.RunTerraformRequest{

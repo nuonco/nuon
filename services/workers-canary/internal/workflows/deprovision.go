@@ -3,9 +3,10 @@ package workflows
 import (
 	"fmt"
 
+	"go.temporal.io/sdk/workflow"
+
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
-	"go.temporal.io/sdk/workflow"
 )
 
 func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequest) (*canaryv1.DeprovisionResponse, error) {
@@ -18,7 +19,9 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 	err := w.execDeprovision(ctx, req)
 	if err != nil {
 		err = fmt.Errorf("unable to deprovision canary: %w", err)
-		w.sendNotification(ctx, notificationTypeDeprovisionError, req.CanaryId, req.SandboxMode, err)
+		w.sendNotification(ctx, notificationTypeDeprovisionError, req.CanaryId, req.SandboxMode, err, map[string]string{
+			"step": "deprovision",
+		})
 		return nil, err
 	}
 

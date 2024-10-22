@@ -41,7 +41,6 @@ func New(cfg *internal.Config,
 	wkr.RegisterWorkflow(wkflows.EventLoop)
 	wkr.RegisterWorkflow(wkflows.Created)
 	wkr.RegisterWorkflow(wkflows.Delete)
-	wkr.RegisterWorkflow(wkflows.Force_delete)
 	wkr.RegisterWorkflow(wkflows.Deprovision)
 	wkr.RegisterWorkflow(wkflows.Provision)
 	wkr.RegisterWorkflow(wkflows.Reprovision)

@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
+
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
-	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 )
 
 func (w *wkflow) getCanaryID(ctx workflow.Context, req *canaryv1.ProvisionRequest) (string, error) {
@@ -45,10 +46,13 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 		return nil, err
 	}
 
-	w.sendNotification(ctx, notificationTypeCanaryStart, req.CanaryId, req.SandboxMode, nil)
+	w.sendNotification(ctx, notificationTypeCanaryStart, req.CanaryId, req.SandboxMode, nil, nil)
 	outputs, orgID, apiToken, err := w.execProvision(ctx, req)
 	if err != nil {
-		w.sendNotification(ctx, notificationTypeProvisionError, req.CanaryId, req.SandboxMode, err)
+		w.sendNotification(ctx, notificationTypeProvisionError, req.CanaryId, req.SandboxMode, err, map[string]string{
+			"step": "provision",
+			"err":  err.Error(),
+		})
 
 		if err := w.execProvisionDeprovision(ctx, orgID, req, true); err != nil {
 			l.Error("unable to deprovision", zap.Error(err))
@@ -58,7 +62,10 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 
 	err = w.execTests(ctx, req, outputs, orgID, apiToken)
 	if err != nil {
-		w.sendNotification(ctx, notificationTypeTestsError, req.CanaryId, req.SandboxMode, err)
+		w.sendNotification(ctx, notificationTypeTestsError, req.CanaryId, req.SandboxMode, err, map[string]string{
+			"step": "tests",
+			"err":  err.Error(),
+		})
 
 		if err := w.execProvisionDeprovision(ctx, orgID, req, true); err != nil {
 			l.Error("unable to deprovision", zap.Error(err))
@@ -70,7 +77,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 		l.Error("unable to deprovision", zap.Error(err))
 	}
 
-	w.sendNotification(ctx, notificationTypeCanarySuccess, req.CanaryId, req.SandboxMode, nil)
+	w.sendNotification(ctx, notificationTypeCanarySuccess, req.CanaryId, req.SandboxMode, nil, nil)
 	w.metricsWriter.Incr(ctx, "provision", "status:ok", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 	return &canaryv1.ProvisionResponse{
 		CanaryId: req.CanaryId,
