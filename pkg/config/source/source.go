@@ -47,6 +47,14 @@ func expandSourcePath(source string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to expand path")
 	}
+
+	_, err = os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("source %s does not exist", source)
+		}
+	}
+
 	path, err = filepath.EvalSymlinks(path)
 	if err != nil {
 		return "", fmt.Errorf("unable to evaluate symlinks on path")

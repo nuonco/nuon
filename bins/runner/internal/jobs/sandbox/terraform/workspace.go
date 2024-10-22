@@ -20,10 +20,11 @@ import (
 func (h *handler) getWorkspace() (workspace.Workspace, error) {
 	cfg := h.state.cfg
 
-	archDir := h.state.workspace.Source().Path
+	archDir := h.state.workspace.Source().AbsPath()
 	if cfg.DirArchive != nil {
 		archDir = cfg.DirArchive.Path
 	}
+
 	arch, err := dirarchive.New(h.v,
 		dirarchive.WithPath(archDir),
 	)
