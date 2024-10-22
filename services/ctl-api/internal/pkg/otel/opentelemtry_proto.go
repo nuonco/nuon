@@ -2,7 +2,6 @@ package otel
 
 import (
 	"encoding/hex"
-	"fmt"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -20,10 +19,8 @@ func GetValue(intValue int64, floatValue float64, dataType any) float64 {
 			return float64(intValue)
 		case pmetric.ExemplarValueTypeEmpty:
 			// TODO: make all fmts logs
-			fmt.Println("Exemplar value type is unset, use 0.0 as default")
 			return 0.0
 		default:
-			fmt.Println("Can't find a suitable value for ExemplarValueType, use 0.0 as default")
 			return 0.0
 		}
 	case pmetric.NumberDataPointValueType:
@@ -33,14 +30,11 @@ func GetValue(intValue int64, floatValue float64, dataType any) float64 {
 		case pmetric.NumberDataPointValueTypeInt:
 			return float64(intValue)
 		case pmetric.NumberDataPointValueTypeEmpty:
-			fmt.Println("DataPoint value type is unset, use 0.0 as default")
 			return 0.0
 		default:
-			fmt.Println("Can't find a suitable value for NumberDataPointValueType, use 0.0 as default")
 			return 0.0
 		}
 	default:
-		fmt.Println("unsupported ValueType, current support: ExemplarValueType, NumberDataPointValueType, ues 0.0 as default")
 		return 0.0
 	}
 }

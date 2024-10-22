@@ -36,6 +36,17 @@ func (s *service) DeleteOrg(ctx *gin.Context) {
 		return
 	}
 
+	if org.OrgType == app.OrgTypeIntegration {
+		err := s.deleteIntegrationOrg(ctx, org.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+
+		ctx.JSON(http.StatusOK, true)
+		return
+	}
+
 	err = s.deleteOrg(ctx, org.ID)
 	if err != nil {
 		ctx.Error(err)
@@ -46,6 +57,80 @@ func (s *service) DeleteOrg(ctx *gin.Context) {
 		Type: sigs.OperationDelete,
 	})
 	ctx.JSON(http.StatusOK, true)
+}
+
+func (s *service) deleteIntegrationOrg(ctx context.Context, orgID string) error {
+	deleteObjs := []interface{}{
+		&app.RunnerJobExecutionResult{},
+		&app.RunnerJobExecution{},
+		&app.RunnerJobPlan{},
+		&app.RunnerJob{},
+		&app.Runner{},
+		&app.RunnerGroupSettings{},
+		&app.RunnerGroup{},
+		&app.InstallComponent{},
+		&app.InstallDeploy{},
+		&app.ComponentReleaseStep{},
+		&app.ComponentRelease{},
+		&app.ComponentBuild{},
+		&app.AWSECRImageConfig{},
+		&app.PublicGitVCSConfig{},
+		&app.ConnectedGithubVCSConfig{},
+		&app.ExternalImageComponentConfig{},
+		&app.JobComponentConfig{},
+		&app.DockerBuildComponentConfig{},
+		&app.TerraformModuleComponentConfig{},
+		&app.HelmComponentConfig{},
+		&app.ComponentConfigConnection{},
+		&app.ComponentDependency{},
+		&app.Component{},
+		&app.InstallSandboxRun{},
+		&app.InstallInputs{},
+		&app.InstallEvent{},
+		&app.Install{},
+		&app.AzureAccount{},
+		&app.AWSAccount{},
+		&app.AppSecret{},
+		&app.AppInputConfig{},
+		&app.AppInputGroup{},
+		&app.AppInput{},
+		&app.AppRunnerConfig{},
+		&app.AppAWSDelegationConfig{},
+		&app.AppSandboxConfig{},
+		&app.AppConfig{},
+		&app.App{},
+		&app.VCSConnectionCommit{},
+		&app.VCSConnection{},
+		&app.InstallerMetadata{},
+		&app.Installer{},
+		&app.OrgHealthCheck{},
+		&app.OrgInvite{},
+		&app.NotificationsConfig{},
+		&app.Policy{},
+		&app.AccountRole{},
+		&app.Role{},
+	}
+	for _, obj := range deleteObjs {
+		res := s.db.WithContext(ctx).Unscoped().
+			Where("org_id = ?", orgID).
+			Delete(obj)
+		if res.Error != nil {
+			return fmt.Errorf("unable to delete %T for org: %w", obj, res.Error)
+		}
+	}
+
+	// delete org
+	res := s.db.WithContext(ctx).Unscoped().Delete(&app.Org{
+		ID: orgID,
+	})
+	if res.Error != nil {
+		return fmt.Errorf("unable to delete org: %w", res.Error)
+	}
+	if res.RowsAffected != 1 {
+		return fmt.Errorf("org not found %w", gorm.ErrRecordNotFound)
+	}
+
+	return nil
 }
 
 func (s *service) deleteOrg(ctx context.Context, orgID string) error {
