@@ -68,12 +68,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 				status = "error"
 				l.Info("unable to handle delete signal: %w", zap.Error(err))
 			}
-		case signals.OperationForceDelete:
-			op = "force_delete"
-			if err := w.AwaitForce_delete(ctx, sreq); err != nil {
-				status = "error"
-				l.Info("unable to handle force delete signal: %w", zap.Error(err))
-			}
+			finished = true
 		case signals.OperationCreated:
 			op = "created"
 			if err := w.AwaitCreated(ctx, sreq); err != nil {

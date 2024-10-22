@@ -2240,6 +2240,8 @@ github.com/nuonco/clickhouse-go/v2 v2.28.1 h1:BiRzWD5Dcs/n5LTUO+NbrDUXc6+i6Ncl0X
 github.com/nuonco/clickhouse-go/v2 v2.28.1/go.mod h1:z+/ndg1+oWVgVhxMh+OzVEZQOi/SmoY/gSEId5zj47I=
 github.com/nuonco/nuon-go v0.35.0 h1:1S8kJavEcgC1fZ1eUdSjwSs9CMHSqy13u3KM6KTGyBY=
 github.com/nuonco/nuon-go v0.35.0/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
+github.com/nuonco/nuon-go v0.35.1 h1:ZQZL2YjutmA9uQnN1NavTPTE5kRfaFQ17Mm3IEt0NOM=
+github.com/nuonco/nuon-go v0.35.1/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
 github.com/nuonco/nuon-runner-go v0.1.1 h1:FIxrWJdvUk/TTurps18ektZtZohZV5an+6qjyCsCjWQ=
 github.com/nuonco/nuon-runner-go v0.1.1/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
 github.com/nuonco/nuon-runner-go v0.1.2 h1:5D18oSI6Xmg71AuS9F7CN/QTlji/cOt5adouGcYhP7Q=
