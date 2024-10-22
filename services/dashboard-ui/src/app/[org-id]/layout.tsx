@@ -1,13 +1,23 @@
 // @ts-nocheck
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { ArrowLineLeft } from '@phosphor-icons/react/dist/ssr'
+import { notFound } from 'next/navigation'
 import { Button, Logo, OrgSwitcher, SignOutButton, MainNav } from '@/components'
 import { getOrg, getOrgs } from '@/lib'
 
 export default withPageAuthRequired(
   async function OrgLayout({ children, params }) {
     const orgId = params?.['org-id'] as string
-    const [org, orgs] = await Promise.all([getOrg({ orgId }), getOrgs()])
+    const [org, orgs] = await Promise.all([
+      getOrg({ orgId }).catch((error) => {
+        console.error(error)
+        notFound()
+      }),
+      getOrgs().catch((error) => {
+        console.error(error)
+        notFound()
+      }),
+    ])
 
     return (
       <div className="flex min-h-screen">
