@@ -8,18 +8,15 @@ import (
 
 func (c *cli) installsCmd() *cobra.Command {
 	var (
-		id               string
-		name             string
-		arn              string
-		region           string
-		appID            string
-		deployID         string
-		renderedVars     bool
-		intermediateOnly bool
-		jobConfig        bool
-		runID            string
-		installCompID    string
-		inputs           []string
+		id            string
+		name          string
+		arn           string
+		region        string
+		appID         string
+		deployID      string
+		runID         string
+		installCompID string
+		inputs        []string
 	)
 
 	installsCmds := &cobra.Command{
@@ -117,27 +114,6 @@ func (c *cli) installsCmd() *cobra.Command {
 	getDeployCmd.Flags().StringVarP(&deployID, "deploy-id", "d", "", "The deploy ID for the deploy log you want to view")
 	getDeployCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(getDeployCmd)
-
-	printDeployPlan := &cobra.Command{
-		Use:   "print-deploy-plan",
-		Short: "Print install deploy plan",
-		Long:  "Print install deploy plan as JSON",
-		Run: c.run(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.PrintDeployPlan(cmd.Context(), id, deployID, PrintJSON, renderedVars, intermediateOnly, jobConfig)
-		}),
-	}
-	printDeployPlan.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
-	printDeployPlan.MarkFlagRequired("install-id")
-	printDeployPlan.Flags().StringVarP(&deployID, "deploy-id", "d", "", "The ID of the deploy you want to view")
-	printDeployPlan.MarkFlagRequired("deploy-id")
-	printDeployPlan.Flags().StringVarP(&installCompID, "install-component-id", "c", "", "The ID of the install component you want to view")
-	printDeployPlan.MarkFlagRequired("deploy-id")
-	printDeployPlan.Flags().BoolVar(&renderedVars, "rendered-vars", false, "Print rendered variables from deploy plan")
-	printDeployPlan.Flags().BoolVar(&intermediateOnly, "intermediate-only", false, "Print intermediate variables from deploy plan")
-	printDeployPlan.Flags().BoolVar(&jobConfig, "print-job-config", false, "Print job config from deploy plan")
-	printDeployPlan.MarkFlagsMutuallyExclusive("rendered-vars", "intermediate-only", "print-job-config")
-	installsCmds.AddCommand(printDeployPlan)
 
 	deployLogsCmd := &cobra.Command{
 		Use:   "deploy-logs",

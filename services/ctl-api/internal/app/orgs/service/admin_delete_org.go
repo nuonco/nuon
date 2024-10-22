@@ -101,6 +101,9 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 		}
 	}
 	s.evClient.Send(ctx, org.ID, &sigs.Signal{
+		Type: sigs.OperationDeprovision,
+	})
+	s.evClient.Send(ctx, org.ID, &sigs.Signal{
 		Type: sigs.OperationDelete,
 	})
 

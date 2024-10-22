@@ -84,26 +84,3 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFinished)
 	return nil
 }
-
-// @temporal-gen workflow
-// @execution-timeout 60m
-// @task-timeout 30m
-func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) error {
-	installID := sreq.ID
-
-	if err := w.Deprovision(ctx, sreq); err != nil {
-		return err
-	}
-
-	// fail all queued deploys
-	if err := activities.AwaitFailQueuedDeploysByInstallID(ctx, installID); err != nil {
-		return fmt.Errorf("unable to fail queued install: %w", err)
-	}
-
-	// update status with response
-	if err := activities.AwaitDeleteByInstallID(ctx, installID); err != nil {
-		return fmt.Errorf("unable to delete install: %w", err)
-	}
-
-	return nil
-}
