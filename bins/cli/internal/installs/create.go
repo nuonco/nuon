@@ -74,7 +74,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, i
 			view.Success(fmt.Sprintf("successfully created install %s", ins.ID))
 			return nil
 		default:
-			view.Update(fmt.Sprintf("%s install", ins.Status))
+			view.Update(fmt.Sprintf("%s install", ins.SandboxStatus))
 		}
 
 		time.Sleep(5 * time.Second)
