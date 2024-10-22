@@ -15,7 +15,7 @@ import (
 const (
 	statusError       = "error"
 	statusActive      = "active"
-	statusAccessError = "access-error"
+	statusAccessError = "access_error"
 )
 
 func (s *Service) Create(ctx context.Context, appID, name, region, arn string, inputs []string, asJSON bool) error {
