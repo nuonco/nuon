@@ -42,7 +42,11 @@ export const Expand: FC<IExpand> = ({
           {heading}
         </div>
 
-        {isExpanded ? <CaretUp /> : <CaretDown />}
+        {isExpanded ? (
+          <CaretUp className="text-sm" />
+        ) : (
+          <CaretDown className="text-sm" />
+        )}
       </div>
       {isExpanded && (
         <div key={`${id}-content`} className="w-full">
