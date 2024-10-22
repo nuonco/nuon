@@ -30,7 +30,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/waypoint"
 )
 
 type cli struct{}
@@ -54,7 +53,6 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(protos.New),
 		fx.Provide(terraformcloud.NewTerraformCloud),
 		fx.Provide(terraformcloud.NewOrgsOutputs),
-		fx.Provide(waypoint.New),
 		fx.Provide(activities.New),
 		fx.Provide(notifications.New),
 		fx.Provide(eventloop.New),
