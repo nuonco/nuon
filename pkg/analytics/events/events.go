@@ -28,4 +28,6 @@ const (
 	HealthCheckCreated Event = "health_check_created"
 
 	HeartBeatCreated Event = "heart_beat_created"
+
+	CliCommand Event = "cli_command"
 )

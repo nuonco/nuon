@@ -65,3 +65,14 @@ func (w *writer) Track(ctx context.Context, ev events.Event, props map[string]in
 		w.handleErr("track", errors.Wrap(err, "unable to emit event"))
 	}
 }
+
+func (w *writer) Close() {
+	if w.Disable {
+		w.Logger.Debug("closing")
+		return
+	}
+
+	if err := w.client.Close(); err != nil {
+		w.handleErr("close", errors.Wrap(err, "unable to close"))
+	}
+}
