@@ -10,10 +10,11 @@ import {
   flexRender,
   useReactTable,
   type ColumnDef,
-  type ColumnFilter,
   type ColumnSort,
 } from '@tanstack/react-table'
-import { LogLineSeverity, Text, Time } from '@/components'
+import { LogLineSeverity } from '@/components/RunnerLogLineSeverity'
+import { Time } from '@/components/Time'
+import { Text } from '@/components/Typography'
 import type { TOTELLog } from '@/types'
 
 export interface ILogsPreview {

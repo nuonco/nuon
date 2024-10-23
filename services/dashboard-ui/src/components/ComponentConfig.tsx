@@ -7,7 +7,10 @@ import {
   SiHelm,
   SiTerraform,
 } from 'react-icons/si'
-import { Config, ConfigContent, Link, Text, ToolTip } from '@/components'
+import { Config, ConfigContent } from '@/components/Config'
+import { Link } from '@/components/Link'
+import { ToolTip } from '@/components/ToolTip'
+import { Text } from '@/components/Typography'
 import { TComponentConfig } from '@/types'
 
 export type TComponentConfigType =
