@@ -1,6 +1,6 @@
 import { DateTime, type DurationUnits } from 'luxon'
 import React, { type FC } from 'react'
-import { Text, type IText } from '@/components'
+import { Text, type IText } from '@/components/Typography'
 
 export interface ITime extends IText {
   format?: 'default' | 'long' | 'relative'

@@ -1,3 +1,7 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": "next/core-web-vitals",
+  "plugins": ["import"],
+  "rules": {
+    "import/no-cycle": "error"
+  }
 }
