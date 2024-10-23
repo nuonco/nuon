@@ -3,7 +3,8 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
 import { GoDotFill } from 'react-icons/go'
-import { Text, ToolTip } from '@/components'
+import { ToolTip } from '@/components/ToolTip'
+import { Text } from '@/components/Typography'
 import { sentanceCase, titleCase } from '@/utils'
 
 export type TStatus = 'active' | 'failed' | 'error' | 'waiting'

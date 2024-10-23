@@ -1,7 +1,8 @@
 import React, { type FC } from 'react'
 import { FaAws } from 'react-icons/fa'
 import { VscAzure } from 'react-icons/vsc'
-import { Config, ConfigContent, Text } from '@/components'
+import { Config, ConfigContent } from '@/components/Config'
+import { Text } from '@/components/Typography'
 import type { TAppRunnerConfig } from '@/types'
 
 export interface IAppRunnerConfig {

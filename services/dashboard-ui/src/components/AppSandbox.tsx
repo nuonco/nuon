@@ -1,6 +1,8 @@
 import React, { type FC } from 'react'
 import { FaGitAlt, FaGithub } from 'react-icons/fa'
-import { Config, ConfigContent, Text, Link } from '@/components'
+import { Config, ConfigContent } from '@/components/Config'
+import { Link } from '@/components/Link'
+import { Text } from '@/components/Typography'
 import type { TAppSandboxConfig } from '@/types'
 
 export interface IAppSandboxConfig {
@@ -35,7 +37,9 @@ export const AppSandboxConfig: FC<IAppSandboxConfig> = ({ sandboxConfig }) => {
         value={sandboxConfig?.terraform_version}
       />
     </Config>
-  ) : <Text>Missing app sandbox configuration</Text>
+  ) : (
+    <Text>Missing app sandbox configuration</Text>
+  )
 }
 
 export interface IAppSandboxVariables {
@@ -66,7 +70,9 @@ export const AppSandboxVariables: FC<IAppSandboxVariables> = ({
 
         {variableKeys.map((key, i) => (
           <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-3">
-            <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">{key}</Text>
+            <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">
+              {key}
+            </Text>
             <Text className="text-sm font-mono break-all col-span-2 !inline truncate max-w-[200px]">
               {variables[key]}
             </Text>

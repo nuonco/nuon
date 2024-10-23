@@ -1,5 +1,7 @@
 import React, { Suspense, type FC } from 'react'
-import { Card, Heading, Link, Text } from '@/components'
+import { Card } from '@/components/Card'
+import { Link } from '@/components/Link'
+import { Heading, Text } from '@/components/Typography'
 import { getComponent, type IGetComponent } from '@/lib'
 import type { TComponent, TInstallComponent } from '@/types'
 

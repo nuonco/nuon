@@ -1,5 +1,5 @@
 import React, { type FC } from 'react'
-import { Text } from '@/components'
+import { Text } from '@/components/Typography'
 import type { TAppInputConfig } from '@/types'
 
 export interface IAppInputConfig {

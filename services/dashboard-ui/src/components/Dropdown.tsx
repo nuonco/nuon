@@ -3,7 +3,7 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
 import { CaretUpDown } from '@phosphor-icons/react'
-import { Button, IButton } from '@/components'
+import { Button, IButton } from '@/components/Button'
 
 export interface IDropdown extends IButton {
   alignment?: 'left' | 'right' | 'overlay'
