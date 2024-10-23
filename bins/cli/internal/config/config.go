@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -13,31 +14,38 @@ import (
 )
 
 const (
-	defaultFilePath         string = "~/.nuon"
-	defaultAPIURL           string = "https://api.nuon.co"
-	defaultConfigFileEnvVar string = "NUON_CONFIG_FILE"
-	defaultGitHubAppName    string = "nuon-connect"
-	defaultDebugEnvVar      string = "NUON_DEBUG"
+	defaultFilePath         string        = "~/.nuon"
+	defaultAPIURL           string        = "https://api.nuon.co"
+	defaultConfigFileEnvVar string        = "NUON_CONFIG_FILE"
+	defaultGitHubAppName    string        = "nuon-connect"
+	defaultCleanupTimeout   time.Duration = time.Second * 2
 )
 
 // config holds config values, read from the `~/.nuon` config file and env vars.
 type Config struct {
 	*viper.Viper
 
-	APIToken      string `mapstructure:"api_token"`
-	APIURL        string `mapstructure:"api_url"`
-	GitHubAppName string `mapstructure:"github_app_name"`
-	OrgID         string `mapstructure:"org_id"`
-	Debug         bool
+	APIToken         string `mapstructure:"api_token"`
+	APIURL           string `mapstructure:"api_url"`
+	OrgID            string `mapstructure:"org_id"`
+	DisableTelemetry bool   `mapstructure:"disable_telemetry"`
+	Debug            bool   `mapstructure:"debug"`
+
+	// internal configuration, not designed to be used by users
+	GitHubAppName   string        `mapstructure:"github_app_name"`
+	Env             string        `mapstructure:"-"`
+	CleanupTimeout  time.Duration `mapstructure:"-"`
+	SegmentWriteKey string        `mapstructure:"-"`
 }
 
 // newConfig creates a new config instance.
 func NewConfig(customFilepath string) (*Config, error) {
 	cfg := &Config{
-		Viper:         viper.New(),
-		APIURL:        defaultAPIURL,
-		GitHubAppName: defaultGitHubAppName,
-		Debug:         Debug(),
+		Viper:          viper.New(),
+		APIURL:         defaultAPIURL,
+		GitHubAppName:  defaultGitHubAppName,
+		Debug:          Debug(),
+		CleanupTimeout: defaultCleanupTimeout,
 	}
 
 	// Read values from config file.
@@ -63,6 +71,12 @@ func NewConfig(customFilepath string) (*Config, error) {
 	if cfg.GetString("github_app_name") != "" {
 		cfg.GitHubAppName = cfg.GetString("github_app_name")
 	}
+	if cfg.GetBool("disable_telemetry") {
+		cfg.DisableTelemetry = cfg.GetBool("disable_telemetry")
+	}
+
+	cfg.Env = cfg.envFromAPIURL(cfg.APIURL)
+	cfg.SegmentWriteKey = cfg.segmentWriteKey(cfg.Env)
 
 	return cfg, nil
 }

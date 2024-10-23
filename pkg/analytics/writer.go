@@ -16,6 +16,7 @@ import (
 type Writer interface {
 	Identify(context.Context)
 	Group(context.Context)
+	Close()
 	Track(context.Context, events.Event, map[string]interface{})
 }
 
