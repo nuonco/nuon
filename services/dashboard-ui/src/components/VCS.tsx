@@ -1,6 +1,7 @@
 import React, { type FC } from 'react'
 import { FaGitAlt, FaGithub } from 'react-icons/fa'
-import { Link, Text } from '@/components'
+import { Text } from '@/components/Typography'
+import { Link } from '@/components/Link'
 import type { TVCSGit, TVCSGitHub } from '@/types'
 
 export interface IVCS {

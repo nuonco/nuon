@@ -1,5 +1,7 @@
 import React, { type FC } from 'react'
-import { Logo, Link, Nav, ProfileDropdown } from '@/components'
+import { Link } from '@/components/Link'
+import { Logo } from '@/components/Logo'
+import { SignOutButton } from '@/components/Profile'
 
 // TODO: maybe LayoutHeader?
 export const Header: FC = () => {
@@ -14,7 +16,7 @@ export const Header: FC = () => {
           Documentation
         </Link>
 
-        <ProfileDropdown />
+        <SignOutButton />
       </div>
     </header>
   )

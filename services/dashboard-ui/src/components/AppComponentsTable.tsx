@@ -3,17 +3,16 @@
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { DotsThreeVertical } from '@phosphor-icons/react'
+import { ClickToCopy } from '@/components/ClickToCopy'
 import {
-  ClickToCopy,
-  DataTableSearch,
-  Heading,
-  Link,
   StaticComponentConfigType,
-  StatusBadge,
-  Table,
-  Text,
   getComponentConfigType,
-} from '@/components'
+} from '@/components/ComponentConfig'
+import { Link } from '@/components/Link'
+import { StatusBadge } from '@/components/Status'
+import { DataTableSearch, Table } from '@/components/DataTable'
+import { Heading, Text } from '@/components/Typography'
+// eslint-disable-next-line import/no-cycle
 import type { TBuild, TComponent, TComponentConfig } from '@/types'
 
 type TDataComponent = {

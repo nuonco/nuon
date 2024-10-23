@@ -3,7 +3,10 @@
 import classNames from 'classnames'
 import React, { type FC, useEffect, useState } from 'react'
 import { CaretRight } from '@phosphor-icons/react'
-import { Link, Text, Time, ToolTip } from '@/components'
+import { Link } from '@/components/Link'
+import { Time } from '@/components/Time'
+import { ToolTip } from '@/components/ToolTip'
+import { Text } from '@/components/Typography'
 import type { TInstallEvent } from '@/types'
 import { SHORT_POLL_DURATION, sentanceCase } from '@/utils'
 

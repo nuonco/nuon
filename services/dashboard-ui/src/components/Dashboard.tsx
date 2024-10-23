@@ -1,15 +1,11 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import {
-  BreadcrumbNav,
-  ClickToCopy,
-  Heading,
-  Logo,
-  Link,
-  SignOutButton,
-  Text,
-  type TLink,
-} from '@/components'
+import { ClickToCopy } from '@/components/ClickToCopy'
+import { Link } from '@/components/Link'
+import { Logo } from '@/components/Logo'
+import { BreadcrumbNav, type TLink } from '@/components/Nav'
+import { SignOutButton } from '@/components/Profile'
+import { Heading, Text } from '@/components/Typography'
 
 export const DashboardHeader: FC = () => {
   return (

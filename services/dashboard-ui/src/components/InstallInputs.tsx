@@ -1,7 +1,7 @@
 // TODO(nnnat): remove once we have this API changes on prod
 // @ts-nocheck
 import React, { type FC } from 'react'
-import { Text } from '@/components'
+import { Text } from '@/components/Typography'
 import type { TInstall } from '@/types'
 
 export interface IInstallInputs {

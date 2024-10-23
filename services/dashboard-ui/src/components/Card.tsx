@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { Heading } from '@/components'
+import { Heading } from '@/components/Typography'
 
 export interface ICard extends React.HTMLAttributes<HTMLDivElement> {}
 
