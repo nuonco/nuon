@@ -33,8 +33,13 @@ func (c *cli) analyticsWrapCmd(f cobraRunECommand) cobraRunECommand {
 		startTS := time.Now()
 		err := f(cmd, args)
 
+		namespace := "root"
+		if cmd.Root() != nil {
+			namespace = cmd.Root().Name()
+		}
+
 		props := map[string]interface{}{
-			"namespace": cmd.Root().Name(),
+			"namespace": namespace,
 			"command":   cmd.Name(),
 			"latency":   time.Since(startTS).Seconds(),
 			"status":    "ok",
