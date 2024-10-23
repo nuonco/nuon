@@ -328,3 +328,17 @@ module "nuon-examples" {
     github = github.nuon
   }
 }
+
+module "nuon-terraform-aws-vpc" {
+  source           = "./modules/repository"
+  name             = "terraform-aws-vpc"
+  description      = "Terraform module for creating a VPC to install BYOPC installs into."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
