@@ -20,6 +20,12 @@ type AppRunnerConfig struct {
 }
 
 func (a *AppRunnerConfig) parse() error {
+	if a == nil {
+		return ErrConfig{
+			Description: "an app runner config is required",
+		}
+	}
+
 	if len(a.EnvVars) > 0 {
 		return ErrConfig{
 			Description: "env_var arrays are deprecated, please use env_vars map instead",
