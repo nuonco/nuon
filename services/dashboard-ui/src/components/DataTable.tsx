@@ -13,7 +13,7 @@ import {
 import { ArrowDown, ArrowUp, MagnifyingGlass } from '@phosphor-icons/react'
 import React, { type FC } from 'react'
 import { FiMoreVertical } from 'react-icons/fi'
-import { Link } from '@/components'
+import { Link } from '@/components/Link'
 
 export interface IDataTable {
   headers: Array<string>

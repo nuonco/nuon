@@ -1,11 +1,15 @@
-import { IGetAppConfigs } from '@/lib'
 import type { TAppSandboxConfig } from '@/types'
 import { API_URL, getFetchOpts } from '@/utils'
+
+export interface IGetAppSandboxLatestConfig {
+  appId: string
+  orgId: string
+}
 
 export async function getAppSandboxLatestConfig({
   appId,
   orgId,
-}: IGetAppConfigs): Promise<TAppSandboxConfig> {
+}: IGetAppSandboxLatestConfig): Promise<TAppSandboxConfig> {
   const data = await fetch(
     `${API_URL}/v1/apps/${appId}/sandbox-latest-config`,
     await getFetchOpts(orgId)

@@ -2,7 +2,7 @@
 
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { StatusBadge } from '@/components'
+import { StatusBadge } from '@/components/Status'
 import type { TInstall } from '@/types'
 
 export interface IInstallStatus {
