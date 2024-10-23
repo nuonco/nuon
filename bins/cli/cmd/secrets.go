@@ -24,7 +24,7 @@ func (c *cli) secretsCmd() *cobra.Command {
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "List all secrets ",
-		Run: c.run(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := secrets.New(c.apiClient, c.cfg)
 			return svc.List(cmd.Context(), appID, PrintJSON)
 		}),
@@ -39,7 +39,7 @@ func (c *cli) secretsCmd() *cobra.Command {
 		Use:   "delete",
 		Short: "Delete secret",
 		Long:  "Delete an app secret",
-		Run: c.run(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := secrets.New(c.apiClient, c.cfg)
 			return svc.Delete(cmd.Context(), appID, secretID, PrintJSON)
 		}),
@@ -62,7 +62,7 @@ func (c *cli) secretsCmd() *cobra.Command {
 		Use:               "create",
 		Short:             "Create a new secret.",
 		PersistentPreRunE: c.persistentPreRunE,
-		Run: c.run(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := secrets.New(c.apiClient, c.cfg)
 			return svc.Create(cmd.Context(), appID, name, value, PrintJSON)
 		}),

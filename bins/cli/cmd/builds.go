@@ -28,7 +28,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List builds",
 		Long:    "List your app's builds",
-		Run: c.run(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := builds.New(c.apiClient, c.cfg)
 			return svc.List(cmd.Context(), compID, appID, &limit, PrintJSON)
 		}),
@@ -43,7 +43,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Use:   "get",
 		Short: "Get build",
 		Long:  "Get component build",
-		Run: c.run(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := builds.New(c.apiClient, c.cfg)
 			return svc.Get(cmd.Context(), appID, compID, buildID, PrintJSON)
 		}),
@@ -60,7 +60,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Use:   "create",
 		Short: "Create a build",
 		Long:  "Create a build of an app component",
-		Run: c.run(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := builds.New(c.apiClient, c.cfg)
 			return svc.Create(cmd.Context(), appID, compID, PrintJSON)
 		}),
@@ -75,7 +75,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Use:   "logs",
 		Short: "View build logs",
 		Long:  "View build logs by components and build ID",
-		Run: c.run(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := builds.New(c.apiClient, c.cfg)
 			return svc.Logs(cmd.Context(), appID, compID, buildID, PrintJSON)
 		}),
