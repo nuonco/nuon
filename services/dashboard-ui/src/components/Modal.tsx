@@ -3,7 +3,8 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
 import { X } from '@phosphor-icons/react'
-import { Button, Heading } from '@/components'
+import { Button } from '@/components/Button'
+import { Heading } from '@/components/Typography'
 
 export interface IModal extends React.HTMLAttributes<HTMLDivElement> {
   actions?: React.ReactNode | null
@@ -25,7 +26,10 @@ export const Modal: FC<IModal> = ({
 }) => {
   return isOpen ? (
     <div className="absolute flex w-full h-full top-0 left-0 z-50">
-      <div className="fixed bg-black/50 dark:bg-black/75 w-full h-full" onClick={onClose} />
+      <div
+        className="fixed bg-black/50 dark:bg-black/75 w-full h-full"
+        onClick={onClose}
+      />
       <div
         className={classNames(
           'relative z-50 border rounded-lg shadow-lg m-auto w-full max-w-7xl bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50',
@@ -46,9 +50,13 @@ export const Modal: FC<IModal> = ({
             </div>
           </div>
         </header>
-        <div className={classNames("p-6 h-full max-h-[700px] overflow-auto", {
-          "min-h-[700px]": hasFixedHeight,
-        })}>{children}</div>
+        <div
+          className={classNames('p-6 h-full max-h-[700px] overflow-auto', {
+            'min-h-[700px]': hasFixedHeight,
+          })}
+        >
+          {children}
+        </div>
       </div>
     </div>
   ) : null

@@ -1,11 +1,15 @@
-import { IGetAppConfigs } from '@/lib'
 import type { TAppRunnerConfig } from '@/types'
 import { API_URL, getFetchOpts } from '@/utils'
+
+export interface IGetAppRunnerLatestConfig {
+  appId: string
+  orgId: string
+}
 
 export async function getAppRunnerLatestConfig({
   appId,
   orgId,
-}: IGetAppConfigs): Promise<TAppRunnerConfig> {
+}: IGetAppRunnerLatestConfig): Promise<TAppRunnerConfig> {
   const data = await fetch(
     `${API_URL}/v1/apps/${appId}/runner-latest-config`,
     await getFetchOpts(orgId)

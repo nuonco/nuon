@@ -3,18 +3,15 @@
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { DotsThreeVertical } from '@phosphor-icons/react'
-import {
-  ClickToCopy,
-  DataTableSearch,
-  Dropdown,
-  Heading,
-  InstallPlatform,
-  Link,
-  RadioInput,
-  StatusBadge,
-  Table,
-  Text,
-} from '@/components'
+import { ClickToCopy } from '@/components/ClickToCopy'
+import { Dropdown } from '@/components/Dropdown'
+import { InstallPlatform } from '@/components/InstallCloudPlatform'
+import { Link } from '@/components/Link'
+import { RadioInput } from '@/components/Input'
+import { StatusBadge } from '@/components/Status'
+import { DataTableSearch, Table } from '@/components/DataTable'
+import { Heading, Text } from '@/components/Typography'
+// eslint-disable-next-line import/no-cycle
 import type { TInstall } from '@/types'
 
 type TDataStatues = {

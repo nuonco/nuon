@@ -3,15 +3,11 @@
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { DotsThreeVertical } from '@phosphor-icons/react'
-import {
-  ClickToCopy,
-  DataTableSearch,
-  Heading,
-  InstallPlatform,
-  Link,
-  Table,
-  Text,
-} from '@/components'
+import { ClickToCopy } from '@/components/ClickToCopy'
+import { DataTableSearch, Table } from '@/components/DataTable'
+import { InstallPlatform } from '@/components/InstallCloudPlatform'
+import { Link } from '@/components/Link'
+import { Heading, Text } from '@/components/Typography'
 import type { TApp } from '@/types'
 
 type TData = {
