@@ -24,6 +24,12 @@ type AppSandboxConfig struct {
 }
 
 func (a *AppSandboxConfig) parse() error {
+	if a == nil {
+		return ErrConfig{
+			Description: "an app sandbox config is required",
+		}
+	}
+
 	if len(a.Vars) > 0 {
 		return ErrConfig{
 			Description: "the var array is deprecated, please use vars instead",
