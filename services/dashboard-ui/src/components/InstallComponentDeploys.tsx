@@ -9,7 +9,7 @@ import { Link } from '@/components/Link'
 import { Status } from '@/components/Status'
 import { Time } from '@/components/Time'
 import { ToolTip } from '@/components/ToolTip'
-import { Text } from '@/components/Typography'
+import { Text, Truncate } from '@/components/Typography'
 import type { TComponent, TInstallDeploy } from '@/types'
 import { SHORT_POLL_DURATION, sentanceCase } from '@/utils'
 
@@ -104,11 +104,13 @@ const InstallDeployEvent: FC<IInstallDeployEvent> = ({
           </ToolTip>
           <>
             /{' '}
-            <ToolTip tipContent={component.name} alignment="right">
-              <span className="!inline truncate max-w-[100px]">
-                {component.name}
-              </span>
-            </ToolTip>
+            {component.name.length >= 12 ? (
+              <ToolTip tipContent={component.name} alignment="right">
+                <Truncate variant="small">{component.name}</Truncate>
+              </ToolTip>
+            ) : (
+              component.name
+            )}
           </>
         </Text>
       </div>
