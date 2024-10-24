@@ -1,4 +1,4 @@
-module "noun-vpc" {
+module "nuon-vpc" {
 
   source  = "nuonco/vpc/aws"
   version = "~> 1.1.0"
