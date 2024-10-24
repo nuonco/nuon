@@ -1,6 +1,7 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { FiChevronRight, FiCloud, FiClock } from 'react-icons/fi'
 import {
+  ClickToCopy,
   ComponentConfiguration,
   DashboardContent,
   Duration,
@@ -9,6 +10,8 @@ import {
   StatusBadge,
   Text,
   Time,
+  ToolTip,
+  Truncate,
   RunnerLogs,
 } from '@/components'
 import {
@@ -87,7 +90,6 @@ export default withPageAuthRequired(
               <Text variant="overline">Status</Text>
               <StatusBadge
                 descriptionAlignment="right"
-                descriptionPosition="bottom"
                 description={deploy.status_description}
                 status={deploy.status}
               />
@@ -99,20 +101,38 @@ export default withPageAuthRequired(
             </span>
 
             <span className="flex flex-col gap-2">
-              <Text variant="overline">Build:</Text>
-              <Text variant="caption">{build.id}</Text>
+              <Text variant="overline">Build</Text>
+              <Text variant="id">
+                <ToolTip alignment="right" tipContent={build.id}>
+                  <ClickToCopy>
+                    <Truncate variant="small">{build.id}</Truncate>
+                  </ClickToCopy>
+                </ToolTip>
+              </Text>
             </span>
 
             <span className="flex flex-col gap-2">
               <Text variant="overline">Component</Text>
               <Text variant="label">{component.name}</Text>
-              <Text variant="caption">{deploy.component_id}</Text>
+              <Text variant="id">
+                <ToolTip alignment="right" tipContent={deploy.component_id}>
+                  <ClickToCopy>
+                    <Truncate variant="small">{deploy.component_id}</Truncate>
+                  </ClickToCopy>
+                </ToolTip>
+              </Text>
             </span>
 
             <span className="flex flex-col gap-2">
               <Text variant="overline">Install</Text>
               <Text variant="label">{install.name}</Text>
-              <Text variant="caption">{install.id}</Text>
+              <Text variant="id">
+                <ToolTip alignment="right" tipContent={install.id}>
+                  <ClickToCopy>
+                    <Truncate variant="small">{install.id}</Truncate>
+                  </ClickToCopy>
+                </ToolTip>
+              </Text>
             </span>
           </div>
         }
