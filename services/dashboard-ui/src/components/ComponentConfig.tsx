@@ -10,7 +10,7 @@ import {
 import { Config, ConfigContent } from '@/components/Config'
 import { Link } from '@/components/Link'
 import { ToolTip } from '@/components/ToolTip'
-import { Text } from '@/components/Typography'
+import { Text, Truncate } from '@/components/Typography'
 import { TComponentConfig } from '@/types'
 
 export type TComponentConfigType =
@@ -183,8 +183,30 @@ const ConfigurationExternalImage: FC<
 > = ({ external_image }) => {
   return (
     <>
-      <ConfigContent label="Image" value={external_image.image_url} />
-      <ConfigContent label="Directory" value={external_image.tag} />
+      <ConfigContent
+        label="Image"
+        value={
+          external_image.image_url?.length >= 12 ? (
+            <ToolTip alignment="right" tipContent={external_image.image_url}>
+              <Truncate variant="small">{external_image.image_url}</Truncate>
+            </ToolTip>
+          ) : (
+            external_image.image_url
+          )
+        }
+      />
+      <ConfigContent
+        label="Tag"
+        value={
+          external_image.tag.length >= 12 ? (
+            <ToolTip alignment="right" tipContent={external_image.tag}>
+              <Truncate variant="small">{external_image.tag}</Truncate>
+            </ToolTip>
+          ) : (
+            external_image.tag
+          )
+        }
+      />
     </>
   )
 }
@@ -200,8 +222,30 @@ const ConfigurationHelm: FC<Pick<TComponentConfig, 'helm'>> = ({ helm }) => {
 const ConfigurationJob: FC<Pick<TComponentConfig, 'job'>> = ({ job }) => {
   return (
     <>
-      <ConfigContent label="Image" value={job.image_url} />
-      <ConfigContent label="Tag" value={job.tag} />
+      <ConfigContent
+        label="Image"
+        value={
+          job.image_url.length >= 12 ? (
+            <ToolTip alignment="right" tipContent={job.image_url}>
+              <Truncate variant="small">{job.image_url}</Truncate>
+            </ToolTip>
+          ) : (
+            job.image_url
+          )
+        }
+      />
+      <ConfigContent
+        label="Tag"
+        value={
+          job.tag.length >= 12 ? (
+            <ToolTip alignment="right" tipContent={job.tag}>
+              <Truncate variant="small">{job.tag}</Truncate>
+            </ToolTip>
+          ) : (
+            job.tag
+          )
+        }
+      />
       <ConfigContent label="Command" value={job.cmd} />
     </>
   )
@@ -222,13 +266,41 @@ const ConfigurationVCS: FC<{ vcs: any }> = ({ vcs }) => {
             rel="noreferrer"
           >
             {isGithubConnected ? <FaGithub /> : <FaGitAlt />}
-            {repo?.repo}
+            {repo?.repo?.length >= 12 ? (
+              <ToolTip alignment="right" tipContent={repo?.repo}>
+                <Truncate variant="small">{repo?.repo}</Truncate>
+              </ToolTip>
+            ) : (
+              repo?.repo
+            )}
           </Link>
         }
       />
 
-      <ConfigContent label="Directory" value={repo?.directory} />
-      <ConfigContent label="Branch" value={repo?.branch} />
+      <ConfigContent
+        label="Directory"
+        value={
+          repo?.directory?.length >= 12 ? (
+            <ToolTip alignment="right" tipContent={repo?.directory}>
+              <Truncate variant="small">{repo?.directory}</Truncate>
+            </ToolTip>
+          ) : (
+            repo?.directory
+          )
+        }
+      />
+      <ConfigContent
+        label="Branch"
+        value={
+          repo?.branch?.length >= 12 ? (
+            <ToolTip alignment="right" tipContent={repo?.branch}>
+              <Truncate variant="small">{repo?.branch}</Truncate>
+            </ToolTip>
+          ) : (
+            repo?.branch
+          )
+        }
+      />
     </>
   )
 }
@@ -259,12 +331,24 @@ const ConfigurationVariables: FC<{
 
           {variableKeys.map((key, i) => (
             <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-3">
-              <Text className="font-mono text-sm break-all">{key}</Text>
-              <ToolTip tipContent={variables[key]} alignment="right">
-                <Text className="font-mono text-sm break-all col-span-2 !inline truncate max-w-[200px]">
-                  {variables[key]}
-                </Text>
-              </ToolTip>
+              <Text className="font-mono text-sm break-all">
+                {key.length >= 15 ? (
+                  <ToolTip tipContent={key} alignment="right">
+                    <Truncate variant="small">{key}</Truncate>
+                  </ToolTip>
+                ) : (
+                  key
+                )}
+              </Text>
+              <Text className="text-sm font-mono break-all col-span-2">
+                {variables[key].length >= 24 ? (
+                  <ToolTip tipContent={variables[key]} alignment="right">
+                    <Truncate variant="large">{variables[key]}</Truncate>
+                  </ToolTip>
+                ) : (
+                  variables[key]
+                )}
+              </Text>
             </div>
           ))}
         </div>

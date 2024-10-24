@@ -1,6 +1,7 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { FiCloud, FiClock } from 'react-icons/fi'
 import {
+  ClickToCopy,
   DashboardContent,
   Duration,
   ComponentConfiguration,
@@ -10,6 +11,7 @@ import {
   Time,
   Text,
   ToolTip,
+  Truncate,
 } from '@/components'
 import {
   getApp,
@@ -84,7 +86,6 @@ export default withPageAuthRequired(
               <Text variant="overline">Status</Text>
               <StatusBadge
                 descriptionAlignment="right"
-                descriptionPosition="bottom"
                 description={build.status_description}
                 status={build.status}
               />
@@ -93,7 +94,13 @@ export default withPageAuthRequired(
             <span className="flex flex-col gap-2">
               <Text variant="overline">Component</Text>
               <Text variant="label">{component.name}</Text>
-              <Text variant="id">{build.component_id}</Text>
+              <Text variant="id">
+                <ToolTip alignment="right" tipContent={build.component_id}>
+                  <ClickToCopy>
+                    <Truncate variant="small">{build.component_id}</Truncate>
+                  </ClickToCopy>
+                </ToolTip>
+              </Text>
             </span>
           </div>
         }

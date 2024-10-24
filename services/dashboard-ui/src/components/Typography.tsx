@@ -18,13 +18,17 @@ export const Heading: FC<IHeading> = ({
   return (
     <span
       aria-level={level}
-      className={classNames('font-sans flex flex-wrap gap-1 items-center word-wrap', {
-        'text-base font-semibold leading-normal': variant === 'heading',
-        'text-base font-semibold': variant === 'subheading',
-        'text-xl font-semibold leading-loose tracking-normal': variant === 'title',
-        'text-3xl font-bold': variant === 'subtitle',
-        [`${className}`]: Boolean(className),
-      })}
+      className={classNames(
+        'font-sans flex flex-wrap gap-1 items-center word-wrap',
+        {
+          'text-base font-semibold leading-normal': variant === 'heading',
+          'text-base font-semibold': variant === 'subheading',
+          'text-xl font-semibold leading-loose tracking-normal':
+            variant === 'title',
+          'text-3xl font-bold': variant === 'subtitle',
+          [`${className}`]: Boolean(className),
+        }
+      )}
       {...props}
     >
       {children}
@@ -49,14 +53,16 @@ export const Text: FC<IText> = ({
   return (
     <span
       className={classNames('flex flex-wrap items-center gap-1', {
-        ['text-base leading-normal tracking-normal font-normal']: variant === "base",
+        ['text-base leading-normal tracking-normal font-normal']:
+          variant === 'base',
         ['tracking-wide text-sm font-semibold uppercase leading-none word-wrap']:
           isStatus,
         ['text-sm tracking-wide leading-none text-gray-600 dark:text-gray-300']:
           isOverline,
         ['text-sm font-medium leading-tight']: isLabel,
         'text-sm': variant === 'caption',
-        'font-mono text-sm tracking-wided font-normal text-cool-grey-600 dark:text-white/70': variant ==="id",
+        'font-mono text-sm tracking-wided font-normal text-cool-grey-600 dark:text-white/70':
+          variant === 'id',
         [`${className}`]: Boolean(className),
       })}
       role="paragraph"
@@ -94,5 +100,30 @@ export const Code: FC<ICode> = ({
         children
       )}
     </code>
+  )
+}
+
+export interface ITruncate extends React.HTMLAttributes<HTMLSpanElement> {
+  variant?: 'default' | 'small' | 'large'
+}
+
+export const Truncate: FC<ITruncate> = ({
+  className,
+  children,
+  variant = 'default',
+  ...props
+}) => {
+  return (
+    <span
+      className={classNames('truncate inline', {
+        'max-w-[130px]': variant === 'default',
+        'max-w-[70px]': variant === 'small',
+        'max-w-[180px]': variant === 'large',
+        [`${className}`]: Boolean(className),
+      })}
+      {...props}
+    >
+      {children}
+    </span>
   )
 }
