@@ -201,10 +201,12 @@ export const OTELLogs: FC<IOTELLogs> = ({
 }
 
 function parseOTELLog(logs: Array<TOTELLog>) {
-  return logs.map((l) => ({
-    ...l,
-    timestamp: DateTime.fromISO(l.timestamp).toMillis(),
-  }))
+  return logs?.length
+    ? logs?.map((l) => ({
+        ...l,
+        timestamp: DateTime.fromISO(l.timestamp).toMillis(),
+      }))
+    : []
 }
 
 export interface IRunnerLogs {
