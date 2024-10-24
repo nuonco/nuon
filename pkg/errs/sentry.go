@@ -25,7 +25,7 @@ type SentryTagger interface {
 }
 
 // ReportToSentry reports an error to sentry, populating the data in a standardized manner for all Nuon errors.
-func ReportToSentry(err error) string {
+func ReportToSentry(err error, t *map[string]string) string {
 	event, extraDetails := report.BuildSentryReport(err)
 
 	if hints := errors.GetAllHints(err); len(hints) > 0 {
@@ -41,6 +41,8 @@ func ReportToSentry(err error) string {
 	} else {
 		event.Tags["user_facing"] = "no"
 	}
+
+
 
 	// TODO(sdboyer) decide on how to populate the Level field
 
@@ -66,6 +68,14 @@ func ReportToSentry(err error) string {
 	for k, v := range tags {
 		if _, has := event.Tags[k]; !has {
 			event.Tags[k] = v
+		}
+	}
+
+	if t != nil {
+		for k, v := range *t {
+			if _, has := event.Tags[k]; !has {
+				event.Tags[k] = v
+			}
 		}
 	}
 
