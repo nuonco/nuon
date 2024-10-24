@@ -1,6 +1,6 @@
 import React, { type FC } from 'react'
 import { Link } from '@/components/Link'
-import { Heading, Text, Code } from '@/components/Typography'
+import { Heading, Text, CodeInline } from '@/components/Typography'
 
 export const NoApps: FC = () => {
   return (
@@ -27,7 +27,9 @@ export const NoApps: FC = () => {
         <Heading>Create an app with the Nuon CLI</Heading>
         <Text>
           Create your first app using the Nuon CLI with the{' '}
-          <Code variant="inline">nuon apps create -n YOUR-APP-NAME</Code>{' '}
+          <CodeInline variant="inline">
+            nuon apps create -n YOUR-APP-NAME
+          </CodeInline>{' '}
           command. Follow our{' '}
           <Link
             href="https://docs.nuon.co/tutorials/aws-ecs-app-tutorial"
