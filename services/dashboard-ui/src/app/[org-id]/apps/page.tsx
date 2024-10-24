@@ -1,5 +1,5 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { DashboardContent, OrgAppsTable } from '@/components'
+import { DashboardContent, NoApps, OrgAppsTable } from '@/components'
 import { getApps, getOrg } from '@/lib'
 import { SegmentAnalyticsSetOrg } from '@/utils'
 
@@ -21,7 +21,11 @@ export default withPageAuthRequired(
           ]}
         >
           <section className="px-6 py-8">
-            <OrgAppsTable apps={apps} orgId={orgId} />
+            {apps.length ? (
+              <OrgAppsTable apps={apps} orgId={orgId} />
+            ) : (
+              <NoApps />
+            )}
           </section>
         </DashboardContent>
       </>

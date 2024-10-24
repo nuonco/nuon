@@ -2,6 +2,7 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppComponentsTable,
   DashboardContent,
+  NoComponents,
   SubNav,
   type TLink,
 } from '@/components'
@@ -59,11 +60,15 @@ export default withPageAuthRequired(
         meta={<SubNav links={subNavLinks} />}
       >
         <section className="px-6 py-8">
-          <AppComponentsTable
-            components={hydratedComponents}
-            appId={appId}
-            orgId={orgId}
-          />
+          {components.length ? (
+            <AppComponentsTable
+              components={hydratedComponents}
+              appId={appId}
+              orgId={orgId}
+            />
+          ) : (
+            <NoComponents />
+          )}
         </section>
       </DashboardContent>
     )

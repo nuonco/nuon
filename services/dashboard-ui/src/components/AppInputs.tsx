@@ -7,7 +7,7 @@ export interface IAppInputConfig {
 }
 
 export const AppInputConfig: FC<IAppInputConfig> = ({ inputConfig }) => {
-  return inputConfig ? (
+  return inputConfig && inputConfig?.input_groups?.length ? (
     <div className="flex flex-col gap-2">
       <div className="grid grid-cols-8 gap-4 px-3 py-2 text-cool-grey-600 dark:text-cool-grey-500 text-base">
         <Text className="!font-medium col-span-2">Name</Text>
@@ -44,14 +44,20 @@ export const AppInputConfig: FC<IAppInputConfig> = ({ inputConfig }) => {
                   {input.default || 'No default'}
                 </Text>
 
-                <Text className="text-sm">{input.required ? 'True' : 'False'}</Text>
+                <Text className="text-sm">
+                  {input.required ? 'True' : 'False'}
+                </Text>
 
-                <Text className="text-sm">{input.sensitive ? 'True' : 'False'}</Text>
+                <Text className="text-sm">
+                  {input.sensitive ? 'True' : 'False'}
+                </Text>
               </div>
             ))}
           </div>
         </div>
       ))}
     </div>
-  ) : <Text>No app inputs configured</Text>
+  ) : (
+    <Text>No app inputs configured</Text>
+  )
 }
