@@ -3,9 +3,10 @@
 import classNames from 'classnames'
 import React, { type FC, useEffect } from 'react'
 import { FaGithub } from 'react-icons/fa'
-import { Plus } from '@phosphor-icons/react'
+import { Plus, TestTube } from '@phosphor-icons/react'
 import NextLink from 'next/link'
 import { setOrgSessionCookie } from '@/app/actions'
+import { ClickToCopy } from '@/components/ClickToCopy'
 import { Dropdown } from '@/components/Dropdown'
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
@@ -43,8 +44,21 @@ export const OrgSummary: FC<IOrgSummary> = ({ org }) => {
       <OrgAvatar name={org.name} />
 
       <div>
-        <Text className="text-md !font-medium leading-normal mb-1 max-w-[150px] break-all text-left">
-          {org.name}
+        <Text
+          className={classNames(
+            'text-md !font-medium leading-normal max-w-[150px] mb-1 break-all text-left !flex-nowrap'
+          )}
+          title={org.sandbox_mode && 'Org is in sandbox mode'}
+        >
+          {org.sandbox_mode && <TestTube className="text-md" />}
+          <span
+            className={classNames('', {
+              'max-w-[120px]': org.sandbox_mode,
+              'truncate !inline': org.name.length >= 16,
+            })}
+          >
+            {org.name}
+          </span>
         </Text>
         <StatusBadge status={org.status} isWithoutBorder />
       </div>
@@ -110,8 +124,18 @@ export const OrgsNav: FC<IOrgsNav> = ({ orgs }) => {
           >
             <OrgAvatar name={org.name} />
             <span>
-              <Text className="break-all text-md font-medium leading-normal mb-1">
-                {org.name}
+              <Text
+                className="break-all text-md font-medium leading-normal mb-1 !flex-nowrap"
+                title={org.sandbox_mode && 'Sandbox mode'}
+              >
+                {org.sandbox_mode && <TestTube className="text-sm" />}
+                <span
+                  className={classNames('', {
+                    'truncate !inline max-w-[140px]': org.name.length >= 16,
+                  })}
+                >
+                  {org.name}
+                </span>
               </Text>
               <StatusBadge status={org.status} isWithoutBorder />
             </span>
@@ -149,6 +173,9 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({ initOrg, initOrgs }) => {
       <div className="flex flex-col gap-4 overflow-auto max-h-[500px] pb-2">
         <div className="pt-2 px-4">
           <OrgSummary org={initOrg} />
+          <ClickToCopy className="mt-4">
+            <Text variant="id">{initOrg.id}</Text>
+          </ClickToCopy>
         </div>
         <OrgVCSConnectionsDetails org={initOrg} />
         <OrgsNav orgs={initOrgs} />
