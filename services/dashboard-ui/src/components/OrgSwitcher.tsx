@@ -48,7 +48,7 @@ export const OrgSummary: FC<IOrgSummary> = ({ org }) => {
           className={classNames(
             'text-md !font-medium leading-normal max-w-[150px] mb-1 break-all text-left !flex-nowrap'
           )}
-          title={org.sandbox_mode && 'Org is in sandbox mode'}
+          title={org.sandbox_mode ? 'Org is in sandbox mode' : undefined}
         >
           {org.sandbox_mode && <TestTube className="text-md" />}
           <span
@@ -126,7 +126,7 @@ export const OrgsNav: FC<IOrgsNav> = ({ orgs }) => {
             <span>
               <Text
                 className="break-all text-md font-medium leading-normal mb-1 !flex-nowrap"
-                title={org.sandbox_mode && 'Sandbox mode'}
+                title={org.sandbox_mode ? 'Org is in sandbox mode' : undefined}
               >
                 {org.sandbox_mode && <TestTube className="text-sm" />}
                 <span
