@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/version"
 	"github.com/powertoolsdev/mono/pkg/analytics/events"
@@ -17,18 +17,16 @@ type (
 )
 
 // wrapCmd wraps all CLI commands, providing a central point to control error flow and handling.
-func (c *cli) wrapCmd(f cobraRunECommand) cobraRunCommand {
-	fn := c.analyticsWrapCmd(f)
+func (c *cli) wrapCmd(e events.Event, f cobraRunECommand) cobraRunCommand {
+	fn := c.analyticsWrapCmd(e, f)
 	fn = c.sentryWrapCmd(fn)
 
 	return func(cmd *cobra.Command, args []string) {
-		if err := fn(cmd, args); err != nil {
-			os.Exit(1)
-		}
+		fn(cmd, args)
 	}
 }
 
-func (c *cli) analyticsWrapCmd(f cobraRunECommand) cobraRunECommand {
+func (c *cli) analyticsWrapCmd(e events.Event, f cobraRunECommand) cobraRunECommand {
 	return func(cmd *cobra.Command, args []string) error {
 		startTS := time.Now()
 		err := f(cmd, args)
@@ -38,20 +36,29 @@ func (c *cli) analyticsWrapCmd(f cobraRunECommand) cobraRunECommand {
 			namespace = cmd.Root().Name()
 		}
 
+		flagsVisited := make([]string, 0)
+		cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+			if flag.Changed { // Check if the flag was set by the user
+				flagsVisited = append(flagsVisited, flag.Name)
+			}
+		})
+
 		props := map[string]interface{}{
 			"namespace": namespace,
+			"flags":     flagsVisited,
 			"command":   cmd.Name(),
 			"latency":   time.Since(startTS).Seconds(),
 			"status":    "ok",
 			"version":   version.Version,
 		}
+
 		if err != nil {
 			props["status"] = "error"
 			props["error"] = err.Error()
 		}
 
 		c.analyticsClient.Identify(c.ctx)
-		c.analyticsClient.Track(c.ctx, events.CliCommand, props)
+		c.analyticsClient.Track(c.ctx, e, props)
 
 		return err
 	}
