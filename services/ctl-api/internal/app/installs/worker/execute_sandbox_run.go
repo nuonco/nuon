@@ -85,6 +85,7 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 		JobID: runnerJob.ID,
 	})
 	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job failed")
 		return fmt.Errorf("unable to poll job: %w", err)
 	}
 

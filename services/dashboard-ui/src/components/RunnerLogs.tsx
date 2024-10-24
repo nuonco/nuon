@@ -262,19 +262,6 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
         ),
       },
       {
-        header: 'Service',
-        accessorKey: 'service_name',
-        cell: (props) => (
-          <span
-            className={classNames(lineStyle, {
-              'col-span-2': true,
-            })}
-          >
-            {props.getValue<string>()}
-          </span>
-        ),
-      },
-      {
         header: 'Content',
         accessorKey: 'body',
         cell: (props) => (
