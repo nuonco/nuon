@@ -31,7 +31,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List installs",
 		Long:    "List all your app's installs",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsListEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.List(cmd.Context(), appID, PrintJSON)
 		}),
@@ -43,7 +43,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "get",
 		Short: "Get an install",
 		Long:  "Get an install by ID",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsGetEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Get(cmd.Context(), id, PrintJSON)
 		}),
@@ -56,7 +56,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "create",
 		Short: "Create an install",
 		Long:  "Create a new install of your app",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsCreateEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Create(cmd.Context(), appID, name, region, arn, inputs, PrintJSON)
 		}),
@@ -77,7 +77,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "delete",
 		Short: "Delete install",
 		Long:  "Delete an install by ID",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsDeleteEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Delete(cmd.Context(), id, PrintJSON)
 		}),
@@ -92,7 +92,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "components",
 		Short: "Get install components",
 		Long:  "Get all components on an install",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsComponentsEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Components(cmd.Context(), id, PrintJSON)
 		}),
@@ -105,7 +105,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "get-deploy",
 		Short: "Get an install deploy",
 		Long:  "Get an install deploy by ID",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsGetDeployEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.GetDeploy(cmd.Context(), id, deployID, PrintJSON)
 		}),
@@ -119,7 +119,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "deploy-logs",
 		Short: "View deploy logs",
 		Long:  "View deploy logs by install and deploy ID",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsDeployLogsEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.DeployLogs(cmd.Context(), id, deployID, installCompID, PrintJSON)
 		}),
@@ -134,7 +134,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "list-deploys",
 		Short: "View all install deploys",
 		Long:  "View all install deploys by install ID",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsListDeploysEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.ListDeploys(cmd.Context(), id, PrintJSON)
 		}),
@@ -147,7 +147,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "sandbox-runs",
 		Short: "View sandbox runs",
 		Long:  "View sandbox runs by install ID",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsSandboxRunsEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.SandboxRuns(cmd.Context(), id, PrintJSON)
 		}),
@@ -160,7 +160,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "sandbox-run-logs",
 		Short: "View sandbox run logs",
 		Long:  "View sandbox run logs by run & install IDs",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsSandboxRunlogsEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.SandboxRunLogs(cmd.Context(), id, runID, PrintJSON)
 		}),
@@ -175,7 +175,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "current-inputs",
 		Short: "View current inputs",
 		Long:  "View current set app inputs",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsCurrentInputsEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.CurrentInputs(cmd.Context(), id, PrintJSON)
 		}),
@@ -188,7 +188,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "select",
 		Short: "Select your current install",
 		Long:  "Select your current install from a list or by install ID",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsSelectEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Select(cmd.Context(), appID, id, PrintJSON)
 		}),
@@ -201,7 +201,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "unset-current",
 		Short: "Unset your current install selection",
 		Long:  "Unset your current install selection.",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsUnsetCurrentEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.UnsetCurrent(cmd.Context())
 		}),
@@ -212,7 +212,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "reprovision",
 		Short: "Reproivision install",
 		Long:  "Reprovision an install sandbox",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsReprovisionEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Reprovision(cmd.Context(), id, PrintJSON)
 		}),
@@ -225,7 +225,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "deprovision",
 		Short: "reprovision install",
 		Long:  "Deprovision an install sandbox",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsDeprovisionEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Deprovision(cmd.Context(), id, PrintJSON)
 		}),
@@ -238,7 +238,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "teardown-components",
 		Short: "Teardown components on install.",
 		Long:  "Teardown all deployed components on an install",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsTeardownComponentsEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.TeardownComponents(cmd.Context(), id, PrintJSON)
 		}),
@@ -251,7 +251,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:   "deploy-components",
 		Short: "Deploy all components to an install.",
 		Long:  "Deploy all components to an install.",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(InstallsDeployComponentsEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.DeployComponents(cmd.Context(), id, PrintJSON)
 		}),
