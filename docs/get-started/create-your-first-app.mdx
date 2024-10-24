@@ -38,6 +38,10 @@ This file will be populated with sample config, which we will update in this gui
 nuon apps create --name=demo_ecs_app
 ```
 
+You should see the new app in the dashboard.
+
+![App List](/images/get-started/create-your-first-app/tutorial-2.jpeg)
+
 ### App Input
 
 This is a setting that your customer will be able to configure when they install the app.
@@ -131,12 +135,9 @@ This is a good place to stop and sync it to Nuon.
 nuon apps sync --file=nuon.demo_ecs_app.toml
 ```
 
-Once the config is synced, select the newly created app using the CLI.
-This will scope CLI commands to the new app.
+Select the app in the dashboard, and you should now see the updated inputs, sandbox, and runner configuration.
 
-```sh
-nuon apps select
-```
+![App Config](/images/get-started/create-your-first-app/tutorial-3.jpeg)
 
 ## Connect Components
 
@@ -194,44 +195,35 @@ Now that you have the components, sync the update config to Nuon.
 nuon apps sync --file=nuon.demo_ecs_app.toml
 ```
 
-Just like the app, you can use the CLI to verify they were synced successfully.
+Select the "Components" tab in the dashboard to see the updated list of components.
 
-```sh
-nuon components list
-```
-
-Initial builds for each component will also have been created.
-Verify with the CLI that they were successful.
-
-```sh
-nuon builds list
-```
+![App Components](/images/get-started/create-your-first-app/tutorial-4.jpeg)
 
 ## Create an Install
 
 Creating an install requires two steps: granting access to the AWS account via an IAM role, and then provisioning the install in that account.
-There are a few ways to do this, but the easiest is to use the installer you configured earlier, via our installer UI template.
-
+The easiest way to do this is to use the installer you configured earlier, via our installer UI template.
 You can find the template at https://github.com/nuonco/installer. Clone that and run it locally following the instructions in the README.
 
-For other approaches, see our guides [Install Access Permissions](/guides/install-access-permissions)  and [Create Installs](/guides/create-installs).
+The installer UI will guide you through granting access to your AWS account, and provisioning the install. Expect this to take about 10 minutes.
 
-### Monitor Install Creation
+<Note>
+For other ways to create and manage installs, see our guides [Install Access Permissions](/guides/install-access-permissions)  and [Create Installs](/guides/create-installs).
+</Note>
 
-To monitor the install's status, log into the [Dashboard](https://app.nuon.co/) and select your org.
-You should see a card for the install.
+### Monitoring Installs
 
-![Installs on Dashboard](/images/installs-on-dashboard.jpeg)
+As soon as you kick off the install provisioning, you should see the new install in the dashboard.
 
-Click on the card, and use the History to verify that the install is being provisioned.
-You should see events for the sandbox being provisioned and the components being deployed.
+![Install List](/images/get-started/create-your-first-app/tutorial-9.jpeg)
 
-![Install Details on Dashboard](/images/install-details-on-dashboard.jpeg)
+Click on the install in the list to monitor the provisioning process and view other details about the install.
+
+![Install Details](/images/get-started/create-your-first-app/tutorial-10.jpeg)
 
 ### Inspect the Install
 
 When the install has provisioned, and the deploys have completed, copy the install ID from the UI and curl the API to verify it's running.
-
 
 ```sh
 curl https://api.{install_id}.nuon.run/introspect/env
@@ -239,7 +231,7 @@ curl https://api.{install_id}.nuon.run/introspect/env
 
 ## Wrapping Up and Next Steps
 
-Congratulations, you just deployed an ECS service to AWS!
+Congratulations, you just deployed a BYOC app to AWS!
 A few suggestions for where to go next:
 
 - Check out our [Release Management](/guides/create-releases) guide to learn how to update installs.
