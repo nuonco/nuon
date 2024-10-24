@@ -3,10 +3,12 @@ package command
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 
 	"github.com/abiosoft/lineprefix"
+	"github.com/pkg/errors"
 )
 
 func (c *command) ExecWithOutput(ctx context.Context) ([]byte, error) {
@@ -14,7 +16,11 @@ func (c *command) ExecWithOutput(ctx context.Context) ([]byte, error) {
 		return nil, fmt.Errorf("must set stdout to nil for output")
 	}
 
-	cmd := c.buildCommand(ctx)
+	cmd, err := c.buildCommand(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to build command")
+	}
+
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get command output: %w", err)
@@ -24,8 +30,12 @@ func (c *command) ExecWithOutput(ctx context.Context) ([]byte, error) {
 }
 
 func (c *command) Exec(ctx context.Context) error {
-	cmd := c.buildCommand(ctx)
-	err := cmd.Run()
+	cmd, err := c.buildCommand(ctx)
+	if err != nil {
+		return errors.Wrap(err, "unable to build command")
+	}
+
+	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("unable to start command: %w", err)
 	}
@@ -34,7 +44,7 @@ func (c *command) Exec(ctx context.Context) error {
 }
 
 //nolint:gosec
-func (c *command) buildCommand(ctx context.Context) *exec.Cmd {
+func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, error) {
 	cmd := exec.CommandContext(ctx, c.Cmd, c.Args...)
 
 	envVars := os.Environ()
@@ -63,11 +73,22 @@ func (c *command) buildCommand(ctx context.Context) *exec.Cmd {
 		stderr = lineprefix.New(opts...)
 	}
 
+	// if file output path is set, we also write to that.
+	if c.FileOutputPath != "" {
+		fpWriter, err := os.OpenFile(c.FileOutputPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to open file output path")
+		}
+
+		stdout = io.MultiWriter(stdout, fpWriter)
+		stderr = io.MultiWriter(stderr, fpWriter)
+	}
+
 	// build the command
 	cmd.Env = envVars
 	cmd.Stdin = c.Stdin
 	cmd.Stderr = stderr
 	cmd.Stdout = stdout
 	cmd.Dir = c.Cwd
-	return cmd
+	return cmd, nil
 }
