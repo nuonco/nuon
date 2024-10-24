@@ -40,6 +40,8 @@ pkg/types/**/**connect.go
 
 go.work
 
+Brewfile.lock.json
+
 # go debug binaries
 __debug_bin
 # Ignore earthly secret files
