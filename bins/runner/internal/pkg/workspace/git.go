@@ -2,9 +2,13 @@ package workspace
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	errs "github.com/pkg/errors"
 )
 
 // NOTE(jm): this is only for backward compatibility with the existing Waypoint plan functionality.
@@ -41,21 +45,48 @@ func (w *workspace) clone(ctx context.Context) error {
 	}
 
 	// first, attempt to check out as a reference
-	w.L.Info("checking out reference/branch")
+	w.L.Info("checking out as reference")
 	coOpts := &git.CheckoutOptions{
 		Hash:  plumbing.NewHash(w.Src.Ref),
 		Force: true,
 	}
-	if err := wtree.Checkout(coOpts); err == nil {
+	err = wtree.Checkout(coOpts)
+	if err == nil {
 		return nil
 	}
 
+	w.L.Info("fetching remote branch")
+	remote, err := repo.Remote("origin")
+	if err != nil {
+		return CloneErr{
+			Url: w.Src.Url,
+			Ref: w.Src.Ref,
+			Err: err,
+		}
+	}
+
+	refSpecStr := fmt.Sprintf("refs/heads/%s:refs/heads/%s", w.Src.Ref, w.Src.Ref)
+	if err = remote.Fetch(&git.FetchOptions{
+		RefSpecs: []config.RefSpec{config.RefSpec(refSpecStr)},
+	}); err != nil {
+		if !errors.Is(err, git.NoErrAlreadyUpToDate) {
+			return CloneErr{
+				Url: w.Src.Url,
+				Ref: w.Src.Ref,
+				Err: errs.Wrap(err, "error fetching origin"),
+			}
+		}
+	}
+
 	// second, attempt to check out as a branch
+	w.L.Info("checking out branch")
+	branchRefName := plumbing.NewBranchReferenceName(w.Src.Ref)
 	coOpts = &git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(w.Src.Ref),
+		Branch: plumbing.ReferenceName(branchRefName),
 		Force:  true,
 	}
-	if err := wtree.Checkout(coOpts); err == nil {
+	err = wtree.Checkout(coOpts)
+	if err == nil {
 		return nil
 	}
 

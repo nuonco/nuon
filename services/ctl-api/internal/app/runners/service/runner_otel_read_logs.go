@@ -105,7 +105,7 @@ func (s *service) getRunnerLogs(ctx context.Context, runnerID string, before int
 	}
 
 	// Query: get records
-	res := s.chDB.WithContext(ctx).Order("timestamp asc").Limit(PageSize).Where(query).Where("toUnixTimestamp64Nano(timestamp) < ?", before).Find(&otelLogRecords)
+	res := s.chDB.WithContext(ctx).Order("timestamp desc").Limit(PageSize).Where(query).Where("toUnixTimestamp64Nano(timestamp) < ?", before).Find(&otelLogRecords)
 	if res.Error != nil {
 		return nil, headers, fmt.Errorf("unable to retrieve logs: %w", res.Error)
 	}
