@@ -18,7 +18,7 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	hclog := log.NewHClog(l)
+	hlog := log.NewHClog(l)
 
 	wkspace, err := p.getWorkspace()
 	if err != nil {
@@ -27,7 +27,7 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	tfRun, err := run.New(p.v, run.WithWorkspace(wkspace),
-		run.WithLogger(hclog),
+		run.WithLogger(hlog),
 		run.WithOutputSettings(&run.OutputSettings{
 			Credentials:    &p.state.cfg.Outputs.Auth,
 			Bucket:         p.state.cfg.Outputs.Bucket,
