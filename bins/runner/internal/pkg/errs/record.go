@@ -28,11 +28,11 @@ func (r *Recorder) ToSentry(err error) {
 		// this is probably the right way - unwrap errors all the way down to see if they're one of our types,
 		// and only rewrap it if it's not one of those types
 		case errors.Is(err, &RunnerHandlerError{}):
-			errs.ReportToSentry(err)
+			errs.ReportToSentry(err, nil)
 		case errors.Is(err, &RunnerFrameworkError{}):
-			errs.ReportToSentry(err)
+			errs.ReportToSentry(err, nil)
 		default:
-			errs.ReportToSentry(WithFrameworkError(err, ""))
+			errs.ReportToSentry(WithFrameworkError(err, ""), nil)
 		}
 	}
 }
