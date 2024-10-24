@@ -1,5 +1,5 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { DashboardContent, OrgInstallsTable } from '@/components'
+import { DashboardContent, NoInstalls, OrgInstallsTable } from '@/components'
 import { getOrg, getInstalls } from '@/lib'
 
 export default withPageAuthRequired(
@@ -18,7 +18,7 @@ export default withPageAuthRequired(
         ]}
       >
         <section className="px-6 py-8">
-          <OrgInstallsTable orgId={orgId} installs={installs} />
+          {installs.length ? <OrgInstallsTable orgId={orgId} installs={installs} /> : <NoInstalls />}
         </section>
       </DashboardContent>
     )
