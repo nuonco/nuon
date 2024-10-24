@@ -5,7 +5,11 @@ description: "Get up and running with Nuon in a few minutes."
 
 import { tutorials } from '/snippets/guides.mdx';
 
-This guide will walk you through setting up an organization, configuring an application, and deploying to an install. Once you have completed it, you will be ready to configure and deploy your own app.
+This guide will walk you through getting started with Nuon.
+
+<Note>
+You must request an org before you can complete this guide. Please reach out to us.
+</Note>
 
 ## Install the CLI
 
@@ -17,25 +21,19 @@ brew install nuonco/tap/nuon
 If you are not using Homebrew, refer to our [CLI](/cli) documentation for other installation options.
 </Note>
 
-## Create an Account
+## Authenticate
 
-Once you have installed the Nuon CLI, create a Nuon account by logging in.
+Once you have installed the Nuon CLI, log in.
 
 ```sh
 nuon login
 ```
 
-Follow the prompts in the browser and login using a Google account. Once you've logged in you can verify your API token with the `nuon orgs api-token` command. You should also now have a config file at `~/.nuon`. Values saved to this file will be used as CLI flag defaults.
+Follow the prompts in the browser and log in using a Google account. Once you've logged in you can verify your API token with the `nuon orgs api-token` command. You should also now have a config file at `~/.nuon`. Values saved to this file will be used as CLI flag defaults.
 
-## Create an Organization
+## Select your Org
 
-Now that you are logged in you can create an organization.
-
-```sh
-nuon orgs create --name {your-org-name}
-```
-
-Select the organization to start using it.
+Now that you are logged in you can select your organization to start using it.
 
 ```sh
 nuon orgs select
@@ -63,12 +61,4 @@ nuon orgs list-connected-repos
 
 ## Create an App
 
-Now that you are set up, the next step is to configure and deploy an app. We have tutorials for the most popular architectures and platforms.
-
-<CardGroup>
-    {tutorials.map((tut, key) => (
-        <Card key={key} title={tut.title} icon={tut.icon} href={tut.href}>
-            {tut.description}
-        </Card>
-    ))}
-</CardGroup>
+Now that you are set up, the next step is to [configure and deploy an app](/tutorials/aws-ecs-app-tutorial).

@@ -1,23 +1,17 @@
 ---
-title: 'Create an AWS ECS App'
-description: 'Learn how to create an AWS ECS BYOC application.'
-icon: 'aws'
+title: 'Create Your First App'
+description: 'Learn how to package an app for BYOC distribution.'
 ---
 
-import { YoutubeEmbed } from '/snippets/youtube-embed.mdx'
-
-This guide walks you through creating a BYOC application using AWS ECS, and deploying it to an install.
-At the end of this tutorial, you should know how to create a new BYOC deployment offering with your existing application.
+This guide walks you through packaging an AWS ECS application and deploying it to an install.
 
 <Note>
 All the configuration and component code used in this guide can be found in our [Guides repo](https://github.com/nuonco/guides/tree/main/aws-ecs-tutorial).
 </Note>
 
-<YoutubeEmbed src="https://www.youtube.com/embed/jGKHLKdAIPg?si=kxDuzpol9r8mp-K8"/>
-
 ## Prerequisites
 
-- [Create a Nuon account](/get-started/quickstart). You will need a working Nuon org.
+- [Set up a Nuon organization](/get-started/quickstart). You will need a working Nuon org.
 - [Set up an AWS account](https://docs.aws.amazon.com/SetUp/latest/UserGuide/setup-overview.html). This is the account you will create the install in.
 
 ## What You Will Create
@@ -29,47 +23,27 @@ This tutorial will walk you through creating the following:
 - A [Terraform component](/guides/terraform-components)
 - An [Install](/concepts/installs), using our [AWS ECS sandbox](/concepts/sandboxes)
 
-## Application Architecture
-
-When the app is deployed to the install, the following resources will be created in your AWS account.
-
-![ECS Service Architecture Diagram](/images/guides/aws-ecs-app-tutorial.jpg)
-
 ## Configure App
 
 To configure the app, you will create a TOML config file using our CLI.
 In each section below we will provide you with configuration snippets for the app itself as well as it's components.
 
-<Note>
-If you would prefer to use Terraform, see our [Terraform Configuration Management](/guides/terraform-configuration-management) guide.
-We provide Terraform sample code you can use throughout this guide.
-</Note>
-
 ### Create App
 
 Define the app itself and give it a name.
-This will create the app in Nuon and generate a config file named `nuon.<your-app>.toml`.
+This will create the app in Nuon and generate a config file named `nuon.demo_ecs_app.toml`.
 This file will be populated with sample config, which we will update in this guide.
 
-<CodeGroup>
-```sh CLI
-nuon apps create --name=<your-app>
+```sh
+nuon apps create --name=demo_ecs_app
 ```
-
-```hcl Terraform
-resource "nuon_app" "your_app" {
-  name = "<your-app>"
-}
-```
-</CodeGroup>
 
 ### App Input
 
 This is a setting that your customer will be able to configure when they install the app.
 It will be displayed on the installer page as a text field.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.demo_ecs_app.toml
 [inputs]
 [[inputs.group]]
 name = "app"
@@ -85,38 +59,15 @@ display_name = "Service Name"
 group = "app"
 ```
 
-```hcl Terraform
-resource "nuon_app_input" "your_app" {
-  app_id = nuon_app.your_app.id
-
-  group {
-    name         = "app"
-    description  = "App inputs"
-    display_name = "App inputs"
-  }
-
-  input {
-    name         = "service_name"
-    description  = "What to name the ECS service"
-    default      = "api"
-    sensitive    = false
-    display_name = "Service Name"
-    group        = "app"
-  }
-}
-```
-</CodeGroup>
-
 ### Installer
 
 Update the installer config.
 Installers provide an out-of-the-box installation flow your customers can use to install your app.
 You will use it later in this guide to create an install yourself.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.demo_ecs_app.toml
 [installer]
-name               = "My ECS App"
+name               = "Demo ECS App"
 description        = "A demo app that runs on ECS."
 documentation_url  = "https://docs.nuon.co/"
 community_url      = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
@@ -133,49 +84,19 @@ footer_markdown = """
 [Terms of Service](https://nuon.co/terms)
 """
 post_install_markdown = """
-# My ECS App
+# Demo ECS App
 
-My ECS App is being deployed.
+Demo ECS App is being deployed.
 """
-apps = ["<your-app-id>"]
+apps = ["demo_ecs_app"]
 ```
-
-```hcl Terraform
-resource "nuon_app_installer" "your_app" {
-  app_id            = nuon_app.your_app.id
-  name              = "My ECS App"
-  description       = "A demo app that runs on ECS."
-  documentation_url = "https://docs.nuon.co/"
-  community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
-  github_url        = "https://github.com/nuonco"
-  homepage_url      = "https://www.nuon.co/"
-  demo_url          = "https://www.nuon.co/"
-  logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
-  og_image_url      = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
-  favicon_url       = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
-  copyright_markdown = <<EOT
-© 2024 Nuon.
-EOT
-  footer_markdown = <<EOT
-[Terms of Service](https://nuon.co/terms)
-EOT
-  post_install_markdown = <<EOT
-# My ECS App
-
-My ECS App is being deployed.
-EOT
-  apps = ["<your-app-id>"]
-}
-```
-</CodeGroup>
 
 ### Sandbox
 
 Update the sandbox config.
 The aws-ecs sandbox will provide everything you need to run ECS services, from the ECS Fargate cluster down to the VPC.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.demo_ecs_app.toml
 [sandbox]
 terraform_version = "1.5.4"
 [sandbox.public_repo]
@@ -183,19 +104,6 @@ directory = "aws-ecs"
 repo = "nuonco/sandboxes"
 branch = "main"
 ```
-
-```hcl Terraform
-resource "nuon_app_sandbox" "your_app" {
-  app_id            = nuon_app.your_app.id
-  terraform_version = "v1.6.3"
-  public_repo = {
-    repo      = "nuonco/sandboxes"
-    branch    = "main"
-    directory = "aws-ecs"
-  }
-}
-```
-</CodeGroup>
 
 ### Runner
 
@@ -209,34 +117,19 @@ Since it runs on ECS Fargate, no resources beyond what is needed for the runner 
 You can use our ECS sandbox and runner to manage Lambda or EC2 deployments without worrying about extraneous ECS costs.
 </Tip>
 
-<CodeGroup>
-```toml TOML
+```toml nuon.demo_ecs_app.toml
 [runner]
 runner_type = "aws-ecs"
 ```
-
-```hcl Terraform
-resource "nuon_app_runner" "your_app" {
-  app_id      = nuon_app.your_app.id
-  runner_type = "aws-ecs"
-}
-```
-</CodeGroup>
 
 ### Sync App Config to Nuon
 
 You now have a complete Nuon app config.
 This is a good place to stop and sync it to Nuon.
 
-<CodeGroup>
-```sh CLI
-nuon apps sync --file=nuon.<your-app>.toml
+```sh
+nuon apps sync --file=nuon.demo_ecs_app.toml
 ```
-
-```sh Terraform
-terraform apply
-```
-</CodeGroup>
 
 Once the config is synced, select the newly created app using the CLI.
 This will scope CLI commands to the new app.
@@ -254,8 +147,7 @@ This app consists of two components: one to build the Docker image, and another 
 This is a [Docker Build component](/guides/docker-build-components) that will build the API and create a Docker image containing it.
 When released, it will sync the image to each install's ECR so ECS can pull it when creating tasks.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.demo_ecs_app.toml
 [[components]]
 name   = "docker_image"
 type = "docker_build"
@@ -266,28 +158,13 @@ directory = "aws-ecs-tutorial/components/docker-image"
 branch    = "main"
 ```
 
-```hcl Terraform
-resource "nuon_docker_build_component" "docker_image" {
-  app_id = nuon_app.your_app.id
-  name   = "docker_image"
-
-  public_repo = {
-    repo      = "nuonco/guides"
-    directory = "aws-ecs-tutorial/components/docker-image"
-    branch    = "main"
-  }
-}
-```
-</CodeGroup>
-
 ### ECS Service
 
 This component will create an ECS service using the docker image, and expose it to the internet with an ALB.
 It requires some info about the install it will run in, so we use Nuon variables to interpolate the required info on a per-install basis.
 See our [Using Variables](/guides/using-variables) guide for more info about how this works.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.demo_ecs_app.toml
 [[components]]
 name   = "ecs_service"
 type = "terraform_module"
@@ -309,92 +186,13 @@ domain_name = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
 zone_id = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
 ```
 
-```hcl Terraform
-resource "nuon_terraform_module_component" "ecs_service" {
-  app_id = nuon_app.your_app.id
-  name   = "ecs_service"
-
-  public_repo = {
-    repo      = "nuonco/guides"
-    directory = "aws-ecs-tutorial/components/ecs-service"
-    branch    = "main"
-  }
-
-  # Service config
-
-  var {
-    name  = "service_name"
-    value = "api"
-  }
-
-  var {
-    name  = "cluster_arn"
-    value = "{{.nuon.install.sandbox.outputs.ecs_cluster.arn}}"
-  }
-
-  var {
-    name  = "image_url"
-    value = "{{.nuon.components.docker_image.image.repository.uri}}"
-  }
-
-  var {
-    name  = "image_tag"
-    value = "{{.nuon.components.docker_image.image.tag}}"
-  }
-
-  var {
-    name  = "app_id"
-    value = "{{.nuon.app.id}}"
-  }
-
-  var {
-    name  = "org_id"
-    value = "{{.nuon.org.id}}"
-  }
-
-  var {
-    name  = "install_id"
-    value = "{{.nuon.install.id}}"
-  }
-
-
-  # Load balancer config
-
-  var {
-    name  = "vpc_id"
-    value = "{{.nuon.install.sandbox.outputs.vpc.id}}"
-  }
-
-  var {
-    name  = "domain_name"
-    value = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
-  }
-
-  var {
-    name  = "zone_id"
-    value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
-  }
-
-  dependencies = [
-    nuon_docker_build_component.docker_image.id
-  ]
-}
-```
-</CodeGroup>
-
 ### Sync Component Configs to Nuon
 
 Now that you have the components, sync the update config to Nuon.
 
-<CodeGroup>
-```sh CLI
-nuon apps sync --file=nuon.<your-app>.toml
+```sh
+nuon apps sync --file=nuon.demo_ecs_app.toml
 ```
-
-```sh Terraform
-terraform apply
-```
-</CodeGroup>
 
 Just like the app, you can use the CLI to verify they were synced successfully.
 
