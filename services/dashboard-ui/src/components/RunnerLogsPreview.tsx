@@ -2,6 +2,7 @@
 
 import classNames from 'classnames'
 import React, { type FC, useMemo } from 'react'
+import { DateTime } from 'luxon'
 import { ArrowDown, ArrowUp } from '@phosphor-icons/react'
 import {
   getCoreRowModel,
@@ -44,7 +45,10 @@ export const LogsPreview: FC<ILogsPreview> = ({
             <LogLineSeverity
               severity_number={props.row.original?.severity_number}
             />
-            <Time className="!text-sm" time={props.getValue<string>()} />
+            <Time
+              className="!text-sm"
+              time={DateTime.fromMillis(props.getValue<number>()).toISO()}
+            />
           </span>
         ),
       },
