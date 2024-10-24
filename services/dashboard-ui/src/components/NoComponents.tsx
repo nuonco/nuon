@@ -1,7 +1,7 @@
 import React, { type FC } from 'react'
 import { Card } from '@/components/Card'
 import { Link } from '@/components/Link'
-import { Heading, Text, Code } from '@/components/Typography'
+import { Heading, Text } from '@/components/Typography'
 
 export const NoComponents: FC = () => {
   return (
