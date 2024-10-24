@@ -2,6 +2,7 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppInstallsTable,
   DashboardContent,
+  NoInstalls,
   SubNav,
   type TLink,
 } from '@/components'
@@ -34,10 +35,14 @@ export default withPageAuthRequired(
         meta={<SubNav links={subNavLinks} />}
       >
         <section className="px-6 py-8">
-          <AppInstallsTable
-            installs={installs.map((install) => ({ ...install, app }))}
-            orgId={orgId}
-          />
+          {installs.length ? (
+            <AppInstallsTable
+              installs={installs.map((install) => ({ ...install, app }))}
+              orgId={orgId}
+            />
+          ) : (
+            <NoInstalls />
+          )}
         </section>
       </DashboardContent>
     )
