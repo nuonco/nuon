@@ -2,7 +2,8 @@ import React, { type FC } from 'react'
 import { FaGitAlt, FaGithub } from 'react-icons/fa'
 import { Config, ConfigContent } from '@/components/Config'
 import { Link } from '@/components/Link'
-import { Text } from '@/components/Typography'
+import { ToolTip } from '@/components/ToolTip'
+import { Text, Truncate } from '@/components/Typography'
 import type { TAppSandboxConfig } from '@/types'
 
 export interface IAppSandboxConfig {
@@ -26,12 +27,40 @@ export const AppSandboxConfig: FC<IAppSandboxConfig> = ({ sandboxConfig }) => {
             rel="noreferrer"
           >
             {isGithubConnected ? <FaGithub /> : <FaGitAlt />}
-            {repo?.repo}
+            {repo?.repo?.length >= 12 ? (
+              <ToolTip alignment="right" tipContent={repo?.repo}>
+                <Truncate variant="small">{repo?.repo}</Truncate>
+              </ToolTip>
+            ) : (
+              repo?.repo
+            )}
           </Link>
         }
       />
-      <ConfigContent label="Directory" value={repo?.directory} />
-      <ConfigContent label="Branch" value={repo?.branch} />
+      <ConfigContent
+        label="Directory"
+        value={
+          repo?.directory?.length >= 12 ? (
+            <ToolTip alignment="right" tipContent={repo?.directory}>
+              <Truncate variant="small">{repo?.directory}</Truncate>
+            </ToolTip>
+          ) : (
+            repo?.directory
+          )
+        }
+      />
+      <ConfigContent
+        label="Branch"
+        value={
+          repo?.branch?.length >= 12 ? (
+            <ToolTip alignment="right" tipContent={repo?.branch}>
+              <Truncate variant="small">{repo?.branch}</Truncate>
+            </ToolTip>
+          ) : (
+            repo?.branch
+          )
+        }
+      />
       <ConfigContent
         label="Terraform"
         value={sandboxConfig?.terraform_version}
@@ -70,11 +99,23 @@ export const AppSandboxVariables: FC<IAppSandboxVariables> = ({
 
         {variableKeys.map((key, i) => (
           <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-3">
-            <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">
-              {key}
+            <Text className="font-mono text-sm break-all">
+              {key.length >= 15 ? (
+                <ToolTip tipContent={key} alignment="right">
+                  <Truncate variant="small">{key}</Truncate>
+                </ToolTip>
+              ) : (
+                key
+              )}
             </Text>
-            <Text className="text-sm font-mono break-all col-span-2 !inline truncate max-w-[200px]">
-              {variables[key]}
+            <Text className="text-sm font-mono break-all col-span-2">
+              {variables[key].length >= 20 ? (
+                <ToolTip tipContent={variables[key]} alignment="right">
+                  <Truncate variant="large">{variables[key]}</Truncate>
+                </ToolTip>
+              ) : (
+                variables[key]
+              )}
             </Text>
           </div>
         ))}
