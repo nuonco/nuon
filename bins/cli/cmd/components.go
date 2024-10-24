@@ -22,7 +22,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List components",
 		Long:    "List your app's components",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(ComponentsListEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := components.New(c.apiClient)
 			return svc.List(cmd.Context(), appID, PrintJSON)
 		}),
@@ -34,7 +34,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Use:   "get",
 		Short: "Get component",
 		Long:  "Get app component by ID",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(ComponentsGetEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := components.New(c.apiClient)
 			return svc.Get(cmd.Context(), appID, id, PrintJSON)
 		}),
@@ -49,7 +49,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Use:   "delete",
 		Short: "Delete component",
 		Long:  "Delete app component by ID",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(ComponentsDeleteEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := components.New(c.apiClient)
 			return svc.Delete(cmd.Context(), appID, id, PrintJSON)
 		}),
@@ -64,7 +64,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Use:   "latest-config",
 		Short: "Latest component config",
 		Long:  "Show latest component config",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(ComponentsLatestConfigEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := components.New(c.apiClient)
 			return svc.LatestConfig(cmd.Context(), appID, id, PrintJSON)
 		}),
@@ -79,7 +79,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Use:   "list-configs",
 		Short: "List component configs",
 		Long:  "List component configs",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(ComponentsListConfigsEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := components.New(c.apiClient)
 			return svc.ListConfigs(cmd.Context(), appID, id, PrintJSON)
 		}),

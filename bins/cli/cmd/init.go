@@ -61,6 +61,7 @@ func (c *cli) initSentry() error {
 
 func (c *cli) identifyFn(ctx context.Context) (*segment.Identify, error) {
 	user, err := c.apiClient.GetCurrentUser(ctx)
+
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get current user")
 	}
@@ -77,7 +78,7 @@ func (c *cli) analyticsIDFn(ctx context.Context) (string, error) {
 		return "", errors.Wrap(err, "unable to get current user")
 	}
 
-	return user.Email, nil
+	return user.ID, nil
 }
 
 func (c *cli) initAnalytics() error {
