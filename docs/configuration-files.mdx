@@ -43,9 +43,11 @@ You can export `terraform` from your application configuration using:
 nuon apps export-terraform
 ```
 
-## Reusable components
+## Breaking up Config Files
 
-You can reuse components by using a `source` field in your config file. This is useful for sharing components between applications or splitting up large configuration files.
+As your config grows, keeping everything in a single file can become unmanagable. You can break out each section of an app config into it's own file -- and even re-use those sections with multiple apps -- using the `source` and `sources` keywords.
+
+For example, to break out each component into it's own file, you would the following.
 
 ```toml nuon.<your-app>.toml
 [[components]]
