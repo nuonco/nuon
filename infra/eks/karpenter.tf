@@ -164,11 +164,11 @@ resource "kubectl_manifest" "karpenter_provisioner" {
         expireAfter = "${random_integer.node_ttl.result}s"
         budgets = [
           {
-            nodes = "10%",
+            nodes = "1",
           },
           {
-            # only allow 1 node to be disrupted at time during work hours
-            nodes    = "1",
+            # don't allow any nodes to be disrupted during work hours
+            nodes    = "0",
             schedule = "0 10 * * 1,2,3,4,5" # https://crontab.guru/#0_10_*_*_1,2,3,4,5
             duration = "11h"
           },
