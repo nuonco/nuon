@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -19,7 +21,7 @@ type (
 // wrapCmd wraps all CLI commands, providing a central point to control error flow and handling.
 func (c *cli) wrapCmd(e events.Event, f cobraRunECommand) cobraRunCommand {
 	fn := c.analyticsWrapCmd(e, f)
-	fn = c.sentryWrapCmd(fn)
+	fn = c.sentryWrapCmd(e, fn)
 
 	return func(cmd *cobra.Command, args []string) {
 		fn(cmd, args)
@@ -64,11 +66,15 @@ func (c *cli) analyticsWrapCmd(e events.Event, f cobraRunECommand) cobraRunEComm
 	}
 }
 
-func (c *cli) sentryWrapCmd(f cobraRunECommand) cobraRunECommand {
+func (c *cli) sentryWrapCmd(e events.Event, f cobraRunECommand) cobraRunECommand {
 	return func(cmd *cobra.Command, args []string) error {
 		err := f(cmd, args)
 		if err != nil {
-			errs.ReportToSentry(err)
+			tags := map[string]string{
+				"cmd_args":  strings.Join(os.Args, " "),
+				"cli_event": string(e),
+			}
+			errs.ReportToSentry(err, &tags)
 		}
 
 		return err
