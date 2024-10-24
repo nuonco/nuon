@@ -13,8 +13,9 @@ import (
 type command struct {
 	v *validator.Validate
 
-	LinePrefix string
-	LineColor  *color.Color
+	LinePrefix     string
+	LineColor      *color.Color
+	FileOutputPath string
 
 	Cmd  string            `validate:"required"`
 	Args []string          `validate:"required"`
@@ -124,6 +125,13 @@ func WithLinePrefix(prefix string) commandOption {
 func WithLineColor(color *color.Color) commandOption {
 	return func(l *command) error {
 		l.LineColor = color
+		return nil
+	}
+}
+
+func WithFileOutput(fp string) commandOption {
+	return func(l *command) error {
+		l.FileOutputPath = fp
 		return nil
 	}
 }
