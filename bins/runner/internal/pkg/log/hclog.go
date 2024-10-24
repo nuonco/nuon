@@ -2,9 +2,10 @@ package log
 
 import (
 	"github.com/hashicorp/go-hclog"
-	wrapper "github.com/zaffka/zap-to-hclog"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/pkg/zaphclog"
 )
 
 type Params struct {
@@ -15,9 +16,9 @@ type Params struct {
 
 // NOTE(jm): this will be deprecated once rolled out to each job
 func SystemHclog(params Params) hclog.Logger {
-	return wrapper.Wrap(params.L)
+	return zaphclog.Wrap(params.L)
 }
 
 func NewHClog(l *zap.Logger) hclog.Logger {
-	return wrapper.Wrap(l)
+	return zaphclog.Wrap(l)
 }

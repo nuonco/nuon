@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	tfjson "github.com/hashicorp/terraform-json"
+
 	"github.com/powertoolsdev/mono/pkg/terraform/workspace/output"
 )
 
