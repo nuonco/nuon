@@ -103,6 +103,24 @@ export const Code: FC<ICode> = ({
   )
 }
 
+/**
+ * Styles inline text as code.
+ * @typedef {object} Props
+ * @prop {string} className
+ * @prop {JSX.Element} children
+ * @returns {JSX.Element}
+ */
+export const CodeInline: FC<ICode> = ({ className, children }) => {
+  const classes = classNames(
+    'text-sm p-4 bg-cool-grey-100 text-cool-50 font-mono break-all rounded shadow-smk !p-1 leading-3',
+    {
+      [`${className}`]: Boolean(className),
+    }
+  )
+
+  return <code className={classes}>{children}</code>
+}
+
 export interface ITruncate extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: 'default' | 'small' | 'large'
 }
