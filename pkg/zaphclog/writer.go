@@ -6,10 +6,12 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 type zaphclogWriter struct {
-	l hclog.Logger
+	l  hclog.Logger
+	zl *zap.Logger
 }
 
 func (z *zaphclogWriter) Write(byts []byte) (int, error) {

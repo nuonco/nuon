@@ -78,7 +78,8 @@ func (w Wrapper) ResetNamed(name string) hclog.Logger {
 // StandardWriter returns os.Stderr as io.Writer.
 func (w Wrapper) StandardWriter(opts *hclog.StandardLoggerOptions) io.Writer {
 	return &zaphclogWriter{
-		l: w,
+		l:    w,
+		zl: w.Zap,
 	}
 }
 
