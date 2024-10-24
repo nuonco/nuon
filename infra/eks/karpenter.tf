@@ -50,7 +50,7 @@ resource "helm_release" "karpenter" {
   chart      = "karpenter"
   name       = "karpenter"
   repository = "oci://public.ecr.aws/karpenter"
-  version    = "0.37.3"
+  version    = "0.37.4"
 
   values = [
     # https://github.com/aws/karpenter-provider-aws/blob/release-v0.37.x/charts/karpenter/values.yaml
