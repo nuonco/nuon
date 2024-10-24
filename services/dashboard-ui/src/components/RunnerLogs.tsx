@@ -2,6 +2,7 @@
 
 import classNames from 'classnames'
 import React, { type FC, useMemo, useState } from 'react'
+import { DateTime } from 'luxon'
 import {
   ArrowDown,
   ArrowUp,
@@ -199,6 +200,13 @@ export const OTELLogs: FC<IOTELLogs> = ({
   )
 }
 
+function parseOTELLog(logs: Array<TOTELLog>) {
+  return logs.map((l) => ({
+    ...l,
+    timestamp: DateTime.fromISO(l.timestamp).toMillis(),
+  }))
+}
+
 export interface IRunnerLogs {
   heading: React.ReactNode
   logs: Array<TOTELLog>
@@ -206,7 +214,7 @@ export interface IRunnerLogs {
 
 export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false)
-  const [data, _] = useState(logs)
+  const [data, _] = useState(parseOTELLog(logs))
   const [columnFilters, setColumnFilters] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [columnSort, setColumnSort] = useState([
@@ -246,7 +254,10 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
               'col-span-2 flex items-center gap-2': true,
             })}
           >
-            <Time className="!text-sm" time={props.getValue<string>()} />
+            <Time
+              className="!text-sm"
+              time={DateTime.fromMillis(props.getValue<number>()).toISO()}
+            />
           </span>
         ),
       },
@@ -370,7 +381,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
       >
         {logs?.length ? (
           <LogsPreview
-            data={logs}
+            data={data}
             globalFilter={globalFilter}
             sorting={columnSort}
           />
