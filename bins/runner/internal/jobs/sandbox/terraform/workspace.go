@@ -27,6 +27,8 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 
 	arch, err := dirarchive.New(h.v,
 		dirarchive.WithPath(archDir),
+		dirarchive.WithIgnoreDotTerraformDir(),
+		dirarchive.WithIgnoreTerraformStateFile(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create local archive: %w", err)
