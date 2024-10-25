@@ -50,7 +50,7 @@ resource "helm_release" "karpenter" {
   chart      = "karpenter"
   name       = "karpenter"
   repository = "oci://public.ecr.aws/karpenter"
-  version    = "0.37.2"
+  version    = "0.37.5"
 
   values = [
     # https://github.com/aws/karpenter-provider-aws/blob/release-v0.37.x/charts/karpenter/values.yaml
@@ -60,6 +60,9 @@ resource "helm_release" "karpenter" {
       settings : {
         clusterEndpoint : module.eks.cluster_endpoint
         clusterName : local.karpenter.cluster_name
+      }
+      webhook : {
+        enabled : false
       }
       serviceAccount : {
         annotations : {
