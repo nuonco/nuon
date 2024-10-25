@@ -43,7 +43,7 @@ terraform_version = "1.5.4"
 aws_delegation_iam_role_arn = "arn:aws:iam::xxxxxxxxxxxx:role/nuon-aws-ecs-install-access"
 
 [sandbox.public_repo]
-directory = "aws-ecs-byo-vpc"
+directory = "aws-ecs-byovpc"
 repo = "nuonco/sandboxes"
 branch = "main"
 
@@ -247,7 +247,7 @@ terraform_version = "1.5.4"
 aws_delegation_iam_role_arn = "arn:aws:iam::xxxxxxxxxxxx:role/nuon-aws-ecs-install-access"
 
 [public_repo]
-directory = "aws-ecs-byo-vpc"
+directory = "aws-ecs-byovpc"
 repo = "nuonco/sandboxes"
 branch = "main"
 
@@ -370,3 +370,4 @@ image_url = "ecr-url"
 tag = "latest"
 region = "us-west-2"
 `
+
