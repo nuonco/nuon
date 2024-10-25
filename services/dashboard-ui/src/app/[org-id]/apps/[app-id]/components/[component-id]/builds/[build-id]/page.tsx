@@ -6,7 +6,7 @@ import {
   Duration,
   ComponentConfiguration,
   Heading,
-  RunnerLogs,
+  RunnerLogsPoller,
   StatusBadge,
   Time,
   Text,
@@ -106,7 +106,15 @@ export default withPageAuthRequired(
         }
       >
         <div className="flex flex-col lg:flex-row flex-auto">
-          <RunnerLogs heading="Build logs" logs={logs as Array<TOTELLog>} />
+          <RunnerLogsPoller
+            heading="Build logs"
+            initJob={build?.runner_job}
+            initLogs={logs as Array<TOTELLog>}
+            jobId={build?.runner_job?.id}
+            orgId={orgId}
+            runnerId={build?.runner_job?.runner_id}
+            shouldPoll={Boolean(build?.runner_job)}
+          />
 
           <div
             className="divide-y flex flex-col lg:min-w-[450px]

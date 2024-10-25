@@ -3,18 +3,7 @@
 import classNames from 'classnames'
 import React, { type FC, useMemo, useState } from 'react'
 import { DateTime } from 'luxon'
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowsOutSimple,
-  ArrowsInLineVertical,
-  ArrowsOutLineVertical,
-  MagnifyingGlass,
-  Funnel,
-  SortAscending,
-  SortDescending,
-  X,
-} from '@phosphor-icons/react'
+import { ArrowDown, ArrowUp, ArrowsOutSimple } from '@phosphor-icons/react'
 import {
   getCoreRowModel,
   getFilteredRowModel,
@@ -26,13 +15,12 @@ import {
   type ColumnSort,
 } from '@tanstack/react-table'
 import { Button } from '@/components/Button'
-import { Dropdown } from '@/components/Dropdown'
 import { Expand } from '@/components/Expand'
 import { LogsPreview } from '@/components/RunnerLogsPreview'
 import { LogLineSeverity } from '@/components/RunnerLogLineSeverity'
 import { Modal } from '@/components/Modal'
 import { Section } from '@/components/Card'
-import { RadioInput } from '@/components/Input'
+import { RunnerLogsActions } from '@/components/RunnerLogsActions'
 import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import type { TOTELLog } from '@/types'
@@ -142,11 +130,11 @@ export const OTELLogs: FC<IOTELLogs> = ({
                           key={`${key}-${i}`}
                           className="grid grid-cols-3 gap-4 py-3"
                         >
-                          <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">
+                          <Text className="font-mono text-sm break-all !inline truncate max-w-[250px]">
                             {key}
                           </Text>
 
-                          <Text className="text-sm font-mono text-pretty col-span-2 !inline">
+                          <Text className="text-sm font-mono text-pretty col-span-2 !inline break-all">
                             {logAttributes[key]}
                           </Text>
                         </div>
@@ -179,10 +167,10 @@ export const OTELLogs: FC<IOTELLogs> = ({
                           key={`${key}-${i}`}
                           className="grid grid-cols-3 gap-4 py-3"
                         >
-                          <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">
+                          <Text className="font-mono text-sm break-all !inline truncate max-w-[250px]">
                             {key}
                           </Text>
-                          <Text className="text-sm font-mono text-pretty col-span-2 !inline">
+                          <Text className="text-sm font-mono text-pretty col-span-2 !inline break-all">
                             {resourceAttributes[key]}
                           </Text>
                         </div>
@@ -200,7 +188,10 @@ export const OTELLogs: FC<IOTELLogs> = ({
   )
 }
 
-function parseOTELLog(logs: Array<TOTELLog>) {
+export type TLogRecord = Omit<TOTELLog, 'timestamp'> & { timestamp: number }
+
+// convert otel log timestamp from string to milliseconds
+export function parseOTELLog(logs: Array<TOTELLog>): Array<TLogRecord> {
   return logs?.length
     ? logs?.map((l) => ({
         ...l,
@@ -211,12 +202,11 @@ function parseOTELLog(logs: Array<TOTELLog>) {
 
 export interface IRunnerLogs {
   heading: React.ReactNode
-  logs: Array<TOTELLog>
+  logs: Array<TLogRecord>
 }
 
 export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false)
-  const [data, _] = useState(parseOTELLog(logs))
   const [columnFilters, setColumnFilters] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [columnSort, setColumnSort] = useState([
@@ -269,7 +259,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
         cell: (props) => (
           <span
             className={classNames(lineStyle, {
-              'col-span-7 flex items-center justify-between': true,
+              'col-span-9 flex items-center': true,
             })}
           >
             <span>{props.getValue<string>()}</span>
@@ -327,7 +317,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
         }}
       >
         <OTELLogs
-          data={data}
+          data={logs}
           columns={columns}
           columnFilters={columnFilters}
           globalFilter={globalFilter}
@@ -370,7 +360,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
       >
         {logs?.length ? (
           <LogsPreview
-            data={data}
+            data={logs}
             globalFilter={globalFilter}
             sorting={columnSort}
           />
@@ -379,146 +369,5 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
         )}
       </Section>
     </>
-  )
-}
-
-interface IRunnerLogsActions {
-  columnFilters: any
-  columnSort: any
-  globalFilter: string
-  handleStatusFilter: any
-  handleGlobalFilter: any
-  handleColumnSort: any
-  handleExpandAll?: any
-  clearStatusFilter?: any
-  isAllExpanded?: boolean
-  id: string
-  shouldHideFilter?: boolean
-  shouldShowExpandAll?: boolean
-}
-
-const RunnerLogsActions: FC<IRunnerLogsActions> = ({
-  columnSort,
-  globalFilter,
-  handleGlobalFilter,
-  handleStatusFilter,
-  handleColumnSort,
-  handleExpandAll,
-  clearStatusFilter,
-  isAllExpanded = false,
-  id,
-  shouldHideFilter = false,
-  shouldShowExpandAll = false,
-}) => {
-  return (
-    <div className="flex items-center gap-4">
-      {shouldShowExpandAll && (
-        <Button
-          className="text-base !font-medium !p-2 w-[32px] h-[32px]"
-          variant="ghost"
-          title={
-            isAllExpanded ? 'Collapse all log lines' : 'Expand all log lines'
-          }
-          onClick={handleExpandAll}
-        >
-          {isAllExpanded ? <ArrowsInLineVertical /> : <ArrowsOutLineVertical />}
-        </Button>
-      )}
-      <Dropdown
-        alignment="right"
-        className="text-base !font-medium !p-2 w-[32px] h-[32px]"
-        variant="ghost"
-        id="logs-search"
-        text={<MagnifyingGlass />}
-      >
-        <div>
-          <label className="relative">
-            <MagnifyingGlass className="text-cool-grey-600 dark:text-cool-grey-500 absolute top-0.5 left-2" />
-            <input
-              className="rounded-md pl-8 pr-3.5 py-1.5 text-base border bg-white dark:bg-dark-grey-100 placeholder:text-cool-grey-600 dark:placeholder:text-cool-grey-500 md:min-w-80"
-              type="search"
-              placeholder="Search..."
-              value={globalFilter}
-              onChange={handleGlobalFilter}
-            />
-          </label>
-        </div>
-      </Dropdown>
-
-      <Button
-        className="text-base !font-medium !p-2 w-[32px] h-[32px]"
-        variant="ghost"
-        title={columnSort?.[0].desc ? 'Sort by oldest' : 'Sort by newest'}
-        onClick={handleColumnSort}
-      >
-        {columnSort?.[0].desc ? <SortAscending /> : <SortDescending />}
-      </Button>
-
-      {shouldHideFilter ? null : (
-        <Dropdown
-          alignment="right"
-          className="text-base !font-medium !p-2 w-[32px] h-[32px]"
-          variant="ghost"
-          id="logs-filter"
-          text={<Funnel />}
-        >
-          <div>
-            <form>
-              <RadioInput
-                name={`${id}-status-filter`}
-                onChange={handleStatusFilter}
-                value="Trace"
-                labelText="Trace"
-              />
-
-              <RadioInput
-                name={`${id}-status-filter`}
-                onChange={handleStatusFilter}
-                value="Debug"
-                labelText="Debug"
-              />
-
-              <RadioInput
-                name={`${id}-status-filter`}
-                onChange={handleStatusFilter}
-                value="Info"
-                labelText="Info"
-              />
-
-              <RadioInput
-                name={`${id}-status-filter`}
-                onChange={handleStatusFilter}
-                value="Warn"
-                labelText="Warning"
-              />
-
-              <RadioInput
-                name={`${id}-status-filter`}
-                onChange={handleStatusFilter}
-                value="Error"
-                labelText="Error"
-              />
-
-              <RadioInput
-                name={`${id}-status-filter`}
-                onChange={handleStatusFilter}
-                value="Fatal"
-                labelText="Fatal"
-              />
-              <hr />
-              <Button
-                className="w-full !rounded-t-none !text-sm flex items-center gap-2"
-                type="reset"
-                onClick={clearStatusFilter}
-                variant="ghost"
-              >
-                <X />
-                Clear
-              </Button>
-            </form>
-          </div>
-        </Dropdown>
-      )}
-    </div>
   )
 }
