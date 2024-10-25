@@ -22,6 +22,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	src := h.state.workspace.Source()
 
 	// build the image locally, pushing to the local registry
+	l.Info("building local context")
 	dockerfile, contextDir, err := h.getBuildContext(
 		src,
 		hcLog,
@@ -32,13 +33,22 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	// perform the build
-	err = h.buildWithKaniko(ctx, hcLog, dockerfile, contextDir, h.state.cfg.BuildArgs)
+	l.Info("executing build")
+	localRef, err := h.buildWithKaniko(ctx, hcLog, dockerfile, contextDir, h.state.cfg.BuildArgs)
 	if err != nil {
 		h.writeErrorResult(ctx, "execute kaniko build", err)
 		return fmt.Errorf("unable to execute job: %w", err)
 	}
 
+	l.Info("pushing build to local registry")
+	err = h.pushWithKaniko(ctx, hcLog, localRef)
+	if err != nil {
+		h.writeErrorResult(ctx, "execute kaniko push", err)
+		return fmt.Errorf("unable to execute job: %w", err)
+	}
+
 	// copy from the local registry to the destination
+	l.Info(fmt.Sprintf("copying image from %s to %s", localRef, h.state.resultTag))
 	res, err := h.ociCopy.CopyFromLocalRegistry(ctx,
 		h.state.resultTag,
 		h.state.regCfg,
