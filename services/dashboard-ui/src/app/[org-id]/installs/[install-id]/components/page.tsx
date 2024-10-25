@@ -3,6 +3,7 @@ import {
   DashboardContent,
   InstallStatuesV2,
   InstallComponentsTable,
+  NoComponents,
   SubNav,
   type TDataInstallComponent,
   type TLink,
@@ -33,33 +34,37 @@ export default withPageAuthRequired(
       getOrg({ orgId }),
     ])
 
-    const hydratedInstallComponents = await Promise.all(
-      install.install_components.map(async (comp, _, arr) => {
-        const build = await getBuild({
-          buildId: comp.install_deploys?.[0]?.build_id,
-          orgId,
-        }).catch((err) => console.error(err))
-        const config = await getComponentConfig({
-          componentId: comp.component.id,
-          componentConfigId: (build as TBuild)?.component_config_connection_id,
-          orgId,
-        })
-        const appComponent = await getComponent({
-          componentId: comp.component_id,
-          orgId,
-        })
-        const deps = arr.filter((c) =>
-          appComponent.dependencies?.some((d) => d === c.component_id)
-        )
+    const hydratedInstallComponents =
+      install.install_components && install.install_components?.length
+        ? await Promise.all(
+            install.install_components.map(async (comp, _, arr) => {
+              const build = await getBuild({
+                buildId: comp.install_deploys?.[0]?.build_id,
+                orgId,
+              }).catch((err) => console.error(err))
+              const config = await getComponentConfig({
+                componentId: comp.component.id,
+                componentConfigId: (build as TBuild)
+                  ?.component_config_connection_id,
+                orgId,
+              })
+              const appComponent = await getComponent({
+                componentId: comp.component_id,
+                orgId,
+              })
+              const deps = arr.filter((c) =>
+                appComponent.dependencies?.some((d) => d === c.component_id)
+              )
 
-        return {
-          ...comp,
-          build,
-          config,
-          deps,
-        }
-      })
-    )
+              return {
+                ...comp,
+                build,
+                config,
+                deps,
+              }
+            })
+          )
+        : []
 
     return (
       <DashboardContent
@@ -77,13 +82,17 @@ export default withPageAuthRequired(
         meta={<SubNav links={subNavLinks} />}
       >
         <section className="px-6 py-8">
-          <InstallComponentsTable
-            installComponents={
-              hydratedInstallComponents as Array<TDataInstallComponent>
-            }
-            installId={installId}
-            orgId={orgId}
-          />
+          {hydratedInstallComponents?.length ? (
+            <InstallComponentsTable
+              installComponents={
+                hydratedInstallComponents as Array<TDataInstallComponent>
+              }
+              installId={installId}
+              orgId={orgId}
+            />
+          ) : (
+            <NoComponents />
+          )}
         </section>
       </DashboardContent>
     )
