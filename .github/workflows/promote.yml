@@ -126,6 +126,7 @@ jobs:
         dir:
           - services/e2e
           - bins/cli
+          - bins/runner
     uses: ./.github/workflows/artifact.yml
     with:
       dir: ${{matrix.dir}}
