@@ -53,7 +53,9 @@ func (c *cli) initSentry() error {
 		},
 	})
 	if err != nil {
-		return errors.Wrap(err, "unable to initialize sentry")
+		wrappedErr := errors.Wrap(err, "unable to initialize sentry")
+		errs.ReportToSentry(wrappedErr, nil)
+		return wrappedErr
 	}
 
 	return nil
@@ -63,7 +65,9 @@ func (c *cli) identifyFn(ctx context.Context) (*segment.Identify, error) {
 	user, err := c.apiClient.GetCurrentUser(ctx)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get current user")
+		wrappedErr := errors.Wrap(err, "unable to get current user")
+		errs.ReportToSentry(wrappedErr, nil)
+		return nil, wrappedErr
 	}
 
 	return &segment.Identify{
@@ -82,13 +86,8 @@ func (c *cli) analyticsIDFn(ctx context.Context) (string, error) {
 }
 
 func (c *cli) initAnalytics() error {
-	l, err := zap.NewProduction()
-	if c.cfg.Env == "dev" {
-		l, err = zap.NewDevelopment()
-	}
-	if err != nil {
-		return errors.Wrap(err, "unable to get analytics logger")
-	}
+	// Disable zap logging when for analytics
+	disabledLogger := zap.NewNop()
 
 	ac, err := analytics.New(c.v,
 		analytics.WithDisable(c.cfg.DisableTelemetry),
@@ -96,7 +95,7 @@ func (c *cli) initAnalytics() error {
 		analytics.WithUserIDFn(c.analyticsIDFn),
 		analytics.WithIdentifyFn(c.identifyFn),
 		analytics.WithGroupFn(analytics.NoopGroupFn),
-		analytics.WithLogger(l),
+		analytics.WithLogger(disabledLogger),
 		analytics.WithProperties(map[string]interface{}{
 			"platform": "cli",
 			"env":      c.cfg.Env,
