@@ -9,13 +9,14 @@ import (
 
 func (h *Helpers) CreateBuildJob(ctx context.Context, runnerID string, ownerType string, ownerID string, typ app.RunnerJobType, op app.RunnerJobOperationType) (*app.RunnerJob, error) {
 	job := &app.RunnerJob{
-		RunnerID:          runnerID,
-		OwnerType:         ownerType,
-		OwnerID:           ownerID,
-		QueueTimeout:      DefaultQueueTimeout,
-		ExecutionTimeout:  h.getExecutionTimeout(typ),
-		AvailableTimeout:  DefaultAvailableTimeout,
-		MaxExecutions:     DefaultMaxExecutions,
+		RunnerID:         runnerID,
+		OwnerType:        ownerType,
+		OwnerID:          ownerID,
+		QueueTimeout:     DefaultQueueTimeout,
+		ExecutionTimeout: h.getExecutionTimeout(typ),
+		AvailableTimeout: DefaultAvailableTimeout,
+		// MaxExecutions:     DefaultMaxExecutions,
+		MaxExecutions:     1,
 		Status:            app.RunnerJobStatusQueued,
 		StatusDescription: string(app.RunnerJobStatusQueued),
 		Group:             app.RunnerJobGroupBuild,

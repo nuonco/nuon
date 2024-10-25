@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"go.uber.org/fx"
 )
@@ -10,9 +11,11 @@ import (
 func (s *Registry) LifecycleHook() fx.Hook {
 	return fx.Hook{
 		// start the background loop to update the settings
-		OnStart: func(context.Context) error {
+		OnStart: func(ctx context.Context) error {
 			s.wg.Go(func() {
-				s.ListenAndServe()
+				if err := s.ListenAndServe(); err != nil {
+					log.Fatal(err)
+				}
 			})
 
 			return nil

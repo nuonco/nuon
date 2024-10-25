@@ -17,8 +17,7 @@ type Copier interface {
 	// store is useful for copying from a local store
 	CopyFromStore(ctx context.Context, store oras.ReadOnlyTarget, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (*ocispec.Descriptor, error)
 
-	CopyFromLocalRegistry(ctx context.Context, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (*ocispec.Descriptor, error)
-	// CopyToDirectory(ctx context.Context, srcCfg *configs.OCIRegistryRepository, srcTag string) (string, error)
+	CopyFromLocalRegistry(ctx context.Context, localTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (*ocispec.Descriptor, error)
 }
 
 // this package supports the following types of inputs and outputs:

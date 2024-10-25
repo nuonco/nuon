@@ -14,7 +14,8 @@ func (r *Registry) getConfig() *configuration.Configuration {
 
 	// basic parameters for listening/logging
 	cfg.Log.Level = "info"
-	cfg.HTTP.Addr = "localhost:5000"
+	cfg.HTTP.Addr = ":5000"
+	cfg.HTTP.Host = "localhost"
 
 	// an (albeit partially outdated) configuration exists here -
 	// https://github.com/GerritForge/docker-registry/blob/master/docs/configuration.md
