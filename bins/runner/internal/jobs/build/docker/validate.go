@@ -19,6 +19,7 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 	h.state.jobExecutionID = jobExecution.ID
 	h.state.cfg = &cfg.App.Build.Use
 	h.state.regCfg = &cfg.App.Build.Registry.Use
+	h.state.resultTag = job.OwnerID
 
 	return nil
 }
