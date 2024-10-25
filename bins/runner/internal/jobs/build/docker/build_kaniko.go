@@ -2,12 +2,32 @@ package docker
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 
 	"github.com/hashicorp/go-hclog"
+	"github.com/pkg/errors"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry/local"
 )
+
+const (
+	defaultKanikoLocation string = "/kaniko/executor"
+)
+
+func (b *handler) kanikoPath() (string, error) {
+	_, err := os.Stat(defaultKanikoLocation)
+	if err == nil {
+		return defaultKanikoLocation, nil
+	}
+
+	path, err := exec.LookPath("executor")
+	if err != nil {
+		return "", errors.Wrap(err, "unable to find kaniko executor")
+	}
+
+	return path, nil
+}
 
 func (b *handler) buildWithKaniko(
 	ctx context.Context,
@@ -15,17 +35,30 @@ func (b *handler) buildWithKaniko(
 	dockerfilePath string,
 	contextDir string,
 	buildArgs map[string]*string,
-) error {
+) (string, error) {
 	log.Info("Building Docker image with kaniko...")
+	localRef := local.GetKanikoTag(b.state.resultTag)
 
-	localRef := fmt.Sprintf("localhost:5000/runner:%s", b.state.resultTag)
+	kanikoPath, err := b.kanikoPath()
+	if err != nil {
+		localRef = local.GetLocalTag(b.state.resultTag)
+		log.Info("building locally")
+		return localRef, b.buildLocal(
+			ctx,
+			log,
+			dockerfilePath,
+			contextDir,
+			buildArgs,
+			localRef,
+		)
+	}
 
 	// Start constructing our arg string for img
 	args := []string{
-		"/kaniko/executor",
+		kanikoPath,
 		"--context", "dir://" + contextDir,
 		"-f", dockerfilePath,
-		"-d", localRef,
+		"--destination", localRef,
 	}
 
 	if b.state.cfg.Target != "" {
@@ -49,10 +82,8 @@ func (b *handler) buildWithKaniko(
 	cmd.Stderr = cmd.Stdout
 
 	if err := cmd.Run(); err != nil {
-		return err
+		return "", err
 	}
 
-	log.Info("Image pushed to '%s:%s'", b.state.resultTag)
-
-	return nil
+	return "", nil
 }
