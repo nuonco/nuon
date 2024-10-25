@@ -1,13 +1,15 @@
 ---
 title: 'Configuration Files'
-description: "Configure apps using a single `.toml` file"
+description: 'Configure apps using a single `.toml` file'
 ---
-Config files allow you to define a BYOC application using a single `.toml` file. Under the hood, Nuon will handle
-keeping your configuration in sync.
+
+Config files allow you to define a BYOC application using a single `.toml` file.
+Under the hood, Nuon will handle keeping your configuration in sync.
 
 ## Create an app
 
-Config files are used to sync the configuration for a single app. To create an app and an example config file:
+Config files are used to sync the configuration for a single app. To create an
+app and an example config file:
 
 ```sh nuon
 nuon apps create --name=<app-name>
@@ -26,13 +28,15 @@ nuon apps sync
 This will sync each configuration file in the current working directory.
 
 To sync only a single file:
+
 ```sh nuon
 nuon apps sync -c <file>
 ```
 
 <Note>
-Nuon uses `terraform` to keep your application config in sync. If you would like to migrate from a config file to
-`terraform`, you can run `nuon apps export-terraform`.
+  Nuon uses `terraform` to keep your application config in sync. If you would
+  like to migrate from a config file to `terraform`, you can run `nuon apps
+  export-terraform`.
 </Note>
 
 ## Export Terraform
@@ -45,9 +49,13 @@ nuon apps export-terraform
 
 ## Breaking up Config Files
 
-As your config grows, keeping everything in a single file can become unmanagable. You can break out each section of an app config into it's own file -- and even re-use those sections with multiple apps -- using the `source` and `sources` keywords.
+As your config grows, keeping everything in a single file can become
+unmanagable. You can break out each section of an app config into it's own file
+-- and even re-use those sections with multiple apps -- using the `source` and
+`sources` keywords.
 
-For example, to break out each component into it's own file, you would the following.
+For example, to break out each component into it's own file, you would the
+following.
 
 ```toml nuon.<your-app>.toml
 [[components]]
@@ -79,10 +87,12 @@ region = "us-west-2"
 ```
 
 <Note>
-When loading a component from a source, the `components` prefix is not needed for each field, like it is in the main config file.
+  When loading a component from a source, the `components` prefix is not needed
+  for each field, like it is in the main config file.
 </Note>
 
-You can also override fields from a source config file, by setting the values directly in your main toml file:
+You can also override fields from a source config file, by setting the values
+directly in your main toml file:
 
 ```toml nuon.your-app.toml
 [[components]]
@@ -97,9 +107,11 @@ terraform_version = "1.5.3"
 
 ## Config Variables
 
-You can define config variables to be used throughout your config, allowing you to set variables for common values.
+You can define config variables to be used throughout your config, allowing you
+to set variables for common values.
 
-To add a configuration variable, add the `config_vars` block to the top of your config file:
+To add a configuration variable, add the `config_vars` block to the top of your
+config file:
 
 ```toml
 version = "v1"
@@ -115,7 +127,9 @@ You can then reference anywhere in your config:
 name = "{{.component_prefix}}_storage"
 ```
 
-<Note>Config variables do not currently work with reusable component files.</Note>
+<Note>
+  Config variables do not currently work with reusable component files.
+</Note>
 
 ## Validate
 
@@ -125,11 +139,13 @@ You can validate a config file using `nuon apps validate`:
 nuon apps validate -c nuon.<your-app>.toml
 ```
 
-The CLI will automatically generate Terraform code from your config and run `terraform validate` on it and print any errors.
+The CLI will automatically generate Terraform code from your config and run
+`terraform validate` on it and print any errors.
 
 ## Reference
 
-The configuration file allows you to configure an app similarly to the Nuon terraform provider.
+The configuration file allows you to configure an app similarly to the Nuon
+terraform provider.
 
 ### Input Config
 
@@ -155,7 +171,8 @@ display_name = "API Key"
 ```
 
 <Note>
-Inputs are not required, unless you are using a sandbox that requires inputs (such as a byovpc one).
+  Inputs are not required, unless you are using a sandbox that requires inputs
+  (such as a byovpc one).
 </Note>
 
 ### Runner Config
@@ -173,12 +190,14 @@ runner-env-var = "runner-env-var"
 ```
 
 <Note>
-Runners are a required configuration for all apps. In most cases, you do not need to customize them using environment variables.
+  Runners are a required configuration for all apps. In most cases, you do not
+  need to customize them using environment variables.
 </Note>
 
 ### Installer Config
 
-Define an [installer](/concepts/installers) for an app using an `[installer]` block.
+Define an [installer](/concepts/installers) for an app using an `[installer]`
+block.
 
 ```toml
 [installer]
@@ -217,13 +236,13 @@ apps = [
 
 Define the [sandbox](/concepts/sandboxes) for an app using a `[sandbox]` block.
 
-To define an `aws-ecs-byo-vpc` sandbox:
+To define an `aws-ecs-byovpc` sandbox:
 
 ```toml
 [sandbox]
 terraform_version = "1.5.4"
 [sandbox.public_repo]
-directory = "aws-ecs-byo-vpc"
+directory = "aws-ecs-byovpc"
 repo = "nuonco/sandboxes"
 branch = "main"
 
@@ -233,15 +252,19 @@ vpc_id = "{{.nuon.install.inputs.vpc_id}}"
 
 ### Component Config
 
-You can define components using a `[components]` block. Components must declare a `type` field and any relevant component-specific configuration.
+You can define components using a `[components]` block. Components must declare
+a `type` field and any relevant component-specific configuration.
 
 <Note>
-Each component will have dependencies automatically defined based on the order in the config file. Learn more about depencencies [here](/guides/component-dependencies).
+  Each component will have dependencies automatically defined based on the order
+  in the config file. Learn more about depencencies
+  [here](/guides/component-dependencies).
 </Note>
 
 ### Terraform Module Component
 
-To define a [terraform module component](/guides/terraform-components) use the `terraform_module` type.
+To define a [terraform module component](/guides/terraform-components) use the
+`terraform_module` type.
 
 To configure a terraform component using a connected repo:
 
@@ -266,7 +289,8 @@ account_id = "{{.nuon.install.sandbox.account.id}}"
 
 ### Helm Chart Component
 
-To define a [helm chart component](/guides/helm-chart-components) use the `helm_chart` type.
+To define a [helm chart component](/guides/helm-chart-components) use the
+`helm_chart` type.
 
 To configure a helm chart in a connected repo:
 
@@ -287,7 +311,8 @@ branch = "main"
 
 ### Docker Build Component
 
-To define a [docker build component](/guides/docker-build-components) use the `docker_build` type.
+To define a [docker build component](/guides/docker-build-components) use the
+`docker_build` type.
 
 To configure a docker build component from a private repo:
 
@@ -306,7 +331,8 @@ branch = "main"
 
 ### Container Image Component
 
-To define a [container image component](/guides/container-image-components) use the `container_image` type.
+To define a [container image component](/guides/container-image-components) use
+the `container_image` type.
 
 To configure a public container image:
 
