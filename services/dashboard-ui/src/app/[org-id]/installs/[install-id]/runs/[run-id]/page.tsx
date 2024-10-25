@@ -6,13 +6,12 @@ import {
   DashboardContent,
   Duration,
   Heading,
-  RunnerLogs,
+  RunnerLogsPoller,
   StatusBadge,
   Text,
   Time,
 } from '@/components'
 import { getInstall, getRunnerLogs, getSandboxRun, getOrg } from '@/lib'
-import { sentanceCase } from '@/utils'
 import type { TOTELLog } from '@/types'
 
 export default withPageAuthRequired(
@@ -25,9 +24,9 @@ export default withPageAuthRequired(
       getInstall({ installId, orgId }),
       getOrg({ orgId }),
       getRunnerLogs({
-        jobId: sandboxRun.runner_job?.id,
+        jobId: sandboxRun?.runner_job?.id,
         orgId,
-        runnerId: sandboxRun.runner_job?.runner_id,
+        runnerId: sandboxRun?.runner_job?.runner_id,
       }).catch(console.error),
     ])
 
@@ -89,9 +88,14 @@ export default withPageAuthRequired(
         }
       >
         <div className="flex flex-col lg:flex-row flex-auto">
-          <RunnerLogs
-            heading={`${sentanceCase(sandboxRun.run_type)} logs`}
-            logs={logs as Array<TOTELLog>}
+          <RunnerLogsPoller
+            heading={sandboxRun?.run_type + ' logs'}
+            initJob={sandboxRun?.runner_job}
+            initLogs={logs as Array<TOTELLog>}
+            jobId={sandboxRun?.runner_job?.id}
+            orgId={orgId}
+            runnerId={sandboxRun?.runner_job?.runner_id}
+            shouldPoll={Boolean(sandboxRun?.runner_job)}
           />
 
           <div
