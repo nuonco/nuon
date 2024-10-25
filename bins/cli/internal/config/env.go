@@ -17,9 +17,9 @@ func (c *Config) envFromAPIURL(url string) string {
 func (c *Config) segmentWriteKey(env string) string {
 	switch env {
 	case "production":
-		return "PzWHI08ttSjMYoJH21Z5GNqlURUqZED7"
+		return "YaAuCiuua7rbkJOuDf6wRoTuDuM4BjFY"
 	case "stage":
-		return "L7i4QsG9TetBtV9queHK6ZICH6s0OCmA"
+		return "2zX2oZQCkdHaPkoQW79fOtW20pzH7DQ2"
 	case "dev":
 		return "GHW8n0dIkdycQoRTzl2hQCvsRV8p8bGt"
 	}
