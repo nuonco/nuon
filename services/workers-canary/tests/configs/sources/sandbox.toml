@@ -1,6 +1,6 @@
 terraform_version = "1.5.4"
 [public_repo]
-directory = "aws-ecs-byo-vpc"
+directory = "aws-ecs-byovpc"
 repo = "nuonco/sandboxes"
 branch = "main"
 

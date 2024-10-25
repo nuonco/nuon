@@ -26,7 +26,7 @@ runner-env-var = "runner-env-var"
 [sandbox]
 terraform_version = "1.5.4"
 [sandbox.public_repo]
-directory = "aws-ecs-byo-vpc"
+directory = "aws-ecs-byovpc"
 repo = "nuonco/sandboxes"
 branch = "main"
 
