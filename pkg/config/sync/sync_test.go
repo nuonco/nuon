@@ -42,7 +42,7 @@ func getTestCfg(options cfgOptions) *config.AppConfig {
 			Source: "source",
 			ConnectedRepo: &config.ConnectedRepoConfig{
 				Repo:      "powertools/mono",
-				Directory: "aws-ecs-byo-vpc",
+				Directory: "aws-ecs-byovpc",
 				Branch:    "main",
 			},
 			PublicRepo: nil,
@@ -99,7 +99,7 @@ func getTestCfg(options cfgOptions) *config.AppConfig {
 					},
 					ConnectedRepo: &config.ConnectedRepoConfig{
 						Repo:      "powertools/mono",
-						Directory: "aws-ecs-byo-vpc",
+						Directory: "aws-ecs-byovpc",
 						Branch:    "main",
 					},
 				},
@@ -114,7 +114,7 @@ func getTestCfg(options cfgOptions) *config.AppConfig {
 					},
 					ConnectedRepo: &config.ConnectedRepoConfig{
 						Repo:      "powertools/mono",
-						Directory: "aws-ecs-byo-vpc",
+						Directory: "aws-ecs-byovpc",
 						Branch:    "main",
 					},
 				},
@@ -126,7 +126,7 @@ func getTestCfg(options cfgOptions) *config.AppConfig {
 				DockerBuild: &config.DockerBuildComponentConfig{
 					ConnectedRepo: &config.ConnectedRepoConfig{
 						Repo:      "powertools/mono",
-						Directory: "aws-ecs-byo-vpc",
+						Directory: "aws-ecs-byovpc",
 						Branch:    "main",
 					},
 					EnvVarMap: map[string]string{
@@ -160,22 +160,22 @@ func getTestAppConfig() *models.AppAppConfig {
 
 func TestSync(t *testing.T) {
 	tests := []struct {
-		name                           string
-		appID                          string
-		cfg                            *config.AppConfig
-		err                            error
-		existingComponentIDs           []string
-		expectedLatestConfig           *models.AppAppConfig
-		expectedLatestConfigErr        error
-		expectSyncSandBox              bool
-		expectSyncInputs               bool
-		expectSyncRunner               bool
-		expectSyncInstaller            bool
+		name                          string
+		appID                         string
+		cfg                           *config.AppConfig
+		err                           error
+		existingComponentIDs          []string
+		expectedLatestConfig          *models.AppAppConfig
+		expectedLatestConfigErr       error
+		expectSyncSandBox             bool
+		expectSyncInputs              bool
+		expectSyncRunner              bool
+		expectSyncInstaller           bool
 		expectGetComponentLatestBuild bool
-		expectSyncComponents           bool
-		expectedMsg                    string
-		expectCmpBuildScheduled        []string
-		expectedFinish                 bool
+		expectSyncComponents          bool
+		expectedMsg                   string
+		expectCmpBuildScheduled       []string
+		expectedFinish                bool
 	}{
 		{
 			name:  "fails on nil cfg",
@@ -207,37 +207,37 @@ func TestSync(t *testing.T) {
 			expectedFinish:          true,
 		},
 		{
-			name:                    "syncs as expected",
-			appID:                   "appID",
-			cfg:                     getTestCfg(cfgOptions{emptySandbox: false, emptyComponents: false}),
-			err:                     nil,
-			expectedLatestConfig:    getTestAppConfig(),
-			expectedLatestConfigErr: nil,
-			expectSyncInputs:        true,
-			expectSyncSandBox:       true,
-			expectSyncRunner:        true,
-			expectSyncInstaller:     true,
+			name:                          "syncs as expected",
+			appID:                         "appID",
+			cfg:                           getTestCfg(cfgOptions{emptySandbox: false, emptyComponents: false}),
+			err:                           nil,
+			expectedLatestConfig:          getTestAppConfig(),
+			expectedLatestConfigErr:       nil,
+			expectSyncInputs:              true,
+			expectSyncSandBox:             true,
+			expectSyncRunner:              true,
+			expectSyncInstaller:           true,
 			expectGetComponentLatestBuild: true,
-			expectedMsg:             "",
-			expectCmpBuildScheduled: []string{"idterraform1", "idhelm2", "iddocker3"},
-			expectedFinish:          true,
+			expectedMsg:                   "",
+			expectCmpBuildScheduled:       []string{"idterraform1", "idhelm2", "iddocker3"},
+			expectedFinish:                true,
 		},
 		{
-			name:                    "syncs with updated component",
-			appID:                   "appID",
-			cfg:                     getTestCfg(cfgOptions{emptySandbox: false, emptyComponents: false}),
-			err:                     nil,
-			existingComponentIDs:    []string{"idterraform1"},
-			expectedLatestConfig:    getTestAppConfig(),
-			expectedLatestConfigErr: nil,
-			expectSyncInputs:        true,
-			expectSyncSandBox:       true,
-			expectSyncRunner:        true,
-			expectSyncInstaller:     true,
+			name:                          "syncs with updated component",
+			appID:                         "appID",
+			cfg:                           getTestCfg(cfgOptions{emptySandbox: false, emptyComponents: false}),
+			err:                           nil,
+			existingComponentIDs:          []string{"idterraform1"},
+			expectedLatestConfig:          getTestAppConfig(),
+			expectedLatestConfigErr:       nil,
+			expectSyncInputs:              true,
+			expectSyncSandBox:             true,
+			expectSyncRunner:              true,
+			expectSyncInstaller:           true,
 			expectGetComponentLatestBuild: true,
-			expectedMsg:             "",
-			expectCmpBuildScheduled: []string{"idterraform1", "idhelm2", "iddocker3"},
-			expectedFinish:          true,
+			expectedMsg:                   "",
+			expectCmpBuildScheduled:       []string{"idterraform1", "idhelm2", "iddocker3"},
+			expectedFinish:                true,
 		},
 	}
 	for _, tt := range tests {
@@ -301,7 +301,7 @@ func TestSync(t *testing.T) {
 				}
 				if tt.expectGetComponentLatestBuild {
 					mockApiClient.EXPECT().GetComponentLatestBuild(ctx, mockId).Return(&models.AppComponentBuild{
-						ID: mockId,
+						ID:     mockId,
 						Status: "active",
 					}, nil)
 				}
