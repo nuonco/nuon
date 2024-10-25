@@ -131,8 +131,6 @@ const InstallEvent: FC<IInstallEvent> = ({ event, isMostRecent = false }) => {
       `/${event.org_id}/installs/${event.install_id}/runs/${event.payload_id}`) ||
     null
 
-  console.log('operation_status', event.operation_status)
-
   return (
     <div
       className={classNames('flex items-center justify-between p-4', {

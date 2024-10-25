@@ -46,6 +46,7 @@ var _ api.Service = (*service)(nil)
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.CancelRunnerJob)
 	api.GET("/v1/runners/:runner_id/logs", s.OtelReadLogs)
+  api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJob)
 	return nil
 }
 

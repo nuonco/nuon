@@ -59,3 +59,7 @@ export type TVCSCommit = components['schemas']['app.VCSConnectionCommit']
 
 // OTEL logs
 export type TOTELLog = components['schemas']['app.OtelLogRecord']
+
+// runner
+export type TRunner = components['schemas']['app.Runner']
+export type TRunnerJob = components['schemas']['app.RunnerJob']
