@@ -25,19 +25,19 @@ func (b *handler) getBuildContext(
 		dockerfile = "Dockerfile"
 	}
 	if !filepath.IsAbs(dockerfile) {
-		dockerfile = filepath.Join(src.Path, dockerfile)
+		dockerfile = filepath.Join(src.AbsPath(), dockerfile)
 	}
 
 	// If the dockerfile is outside of our build context, then we copy it
 	// into our build context.
-	relDockerfile, err := filepath.Rel(src.Path, dockerfile)
+	relDockerfile, err := filepath.Rel(src.AbsPath(), dockerfile)
 	if err != nil || strings.HasPrefix(relDockerfile, "..") {
 		id, err := ulid.New(ulid.Now(), rand.Reader)
 		if err != nil {
 			return "", "", err
 		}
 
-		newPath := filepath.Join(src.Path, fmt.Sprintf("Dockerfile-%s", id.String()))
+		newPath := filepath.Join(src.AbsPath(), fmt.Sprintf("Dockerfile-%s", id.String()))
 		if err := copyFile(dockerfile, newPath); err != nil {
 			return "", "", err
 		}
@@ -46,7 +46,7 @@ func (b *handler) getBuildContext(
 		dockerfile = newPath
 	}
 
-	path := src.Path
+	path := src.AbsPath()
 
 	if b.state.cfg.Context != "" {
 		path = b.state.cfg.Context
