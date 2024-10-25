@@ -7,12 +7,12 @@ import {
   Duration,
   Heading,
   Link,
+  RunnerLogsPoller,
   StatusBadge,
   Text,
   Time,
   ToolTip,
   Truncate,
-  RunnerLogs,
 } from '@/components'
 import {
   getBuild,
@@ -138,7 +138,15 @@ export default withPageAuthRequired(
         }
       >
         <div className="flex flex-col lg:flex-row flex-auto">
-          <RunnerLogs heading="Deploy logs" logs={logs as Array<TOTELLog>} />
+          <RunnerLogsPoller
+            heading="Deploy logs"
+            initJob={deploy?.runner_job}
+            initLogs={logs as Array<TOTELLog>}
+            jobId={deploy?.runner_job?.id}
+            orgId={orgId}
+            runnerId={deploy?.runner_job?.runner_id}
+            shouldPoll={Boolean(deploy?.runner_job)}
+          />
           <div
             className="divide-y flex flex-col lg:min-w-[450px]
 lg:max-w-[450px]"

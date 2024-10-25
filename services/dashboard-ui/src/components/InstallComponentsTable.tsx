@@ -27,7 +27,7 @@ type TData = {
   componentType: string
   configVersion: number
   installComponentId: string
-  deployDate: string
+  deployStatus: string
   dependencies: number
   deps: Array<TInstallComponent>
   name: string
@@ -41,7 +41,7 @@ function parseInstallComponentsToTableData(
     componentType: getComponentConfigType(comp.config),
     configVersion: comp.config?.version,
     installComponentId: comp.id,
-    deployDate: comp.install_deploys?.[0]?.created_at,
+    deployStatus: comp.install_deploys?.[0]?.status || 'noop',
     dependencies: comp.deps?.length || 0,
     deps: comp.deps,
     name: comp.component?.name,
@@ -94,14 +94,8 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
       },
       {
         header: 'Deployment',
-        accessorKey: 'deployDate',
-        cell: (props) => (
-          <Time
-            time={props.getValue<string>()}
-            format="relative"
-            variant="caption"
-          />
-        ),
+        accessorKey: 'deployStatus',
+        cell: (props) => <StatusBadge status={props.getValue<string>()} />,
       },
       {
         header: 'Dependencies',

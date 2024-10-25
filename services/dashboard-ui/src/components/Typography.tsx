@@ -103,16 +103,9 @@ export const Code: FC<ICode> = ({
   )
 }
 
-/**
- * Styles inline text as code.
- * @typedef {object} Props
- * @prop {string} className
- * @prop {JSX.Element} children
- * @returns {JSX.Element}
- */
 export const CodeInline: FC<ICode> = ({ className, children }) => {
   const classes = classNames(
-    'text-sm p-4 bg-cool-grey-100 text-cool-50 font-mono break-all rounded shadow-smk !p-1 leading-3',
+    'text-sm bg-cool-grey-50 text-blue-800 dark:bg-dark-grey-200 text-blue-500 font-mono break-all rounded-lg shadow-sm py-1 px-2 leading-3 border',
     {
       [`${className}`]: Boolean(className),
     }
