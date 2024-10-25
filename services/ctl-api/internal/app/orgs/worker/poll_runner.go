@@ -18,9 +18,20 @@ const (
 )
 
 func (w *Workflows) pollRunner(ctx workflow.Context, runnerID string) error {
+	timeout := workflow.Now(ctx).Add(pollRunnerTimeout)
+
+	var lastStatus app.RunnerStatus
 	for {
+		if workflow.Now(ctx).After(timeout) {
+			break
+		}
+
 		runner, err := activities.AwaitGetRunnerByID(ctx, runnerID)
 		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
+
 			return fmt.Errorf("unable to get runner from database: %w", err)
 		}
 
@@ -28,12 +39,11 @@ func (w *Workflows) pollRunner(ctx workflow.Context, runnerID string) error {
 			return nil
 		}
 
-		if runner.Status == app.RunnerStatusError {
-			return fmt.Errorf("runner is in error state")
-		}
-
+		lastStatus = runner.Status
 		workflow.Sleep(ctx, pollRunnerPeriod)
 	}
+
+	return fmt.Errorf("runner did not reach status after %s - last status %s", pollRunnerTimeout, lastStatus)
 }
 
 func (w *Workflows) pollRunnerNotFound(ctx workflow.Context, runnerID string) error {
