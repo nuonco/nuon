@@ -63,6 +63,7 @@ resource "helm_release" "karpenter" {
       }
       webhook : {
         enabled : false
+        serviceNamespace : "karpenter"
       }
       serviceAccount : {
         annotations : {
