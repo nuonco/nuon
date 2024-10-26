@@ -62,7 +62,8 @@ resource "helm_release" "karpenter" {
         clusterName : local.karpenter.cluster_name
       }
       webhook : {
-        enabled : false
+        enabled : "true"
+        port : 8443
         serviceNamespace : "karpenter"
       }
       serviceAccount : {
