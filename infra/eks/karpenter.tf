@@ -43,6 +43,44 @@ resource "aws_iam_instance_profile" "karpenter" {
   role = module.eks.eks_managed_node_groups["karpenter"].iam_role_name
 }
 
+# our CRDs where installed by the helm chart on the first run. as a result, we need to update the
+# labels on the CRDs so helm can manage them which will allow us to install the updated CRDs.
+# docs: https://karpenter.sh/docs/troubleshooting/#helm-error-when-installing-the-karpenter-crd-chart
+# NOTE(fd): we may need to remove this once it's done so it doesn't continue to overrite
+# NOTE(fd): we need to find out if this will overwrite the whole label set (run from tf ui in plan only to check)
+resource "kubernetes_labels" "karpenter_crds" {
+  for_each = toset(["ec2nodeclasses", "nodepools", "nodeclaims"])
+
+  force       = false # not necessary because the CRDs have no labels at the time of writing
+  api_version = "apiextensions.k8s.io/v1"
+  kind        = "CustomResourceDefinition"
+  metadata {
+    name = "${each.value}.karpenter.k8s.aws"
+  }
+  labels = {
+    "app.kubernetes.io/managed-by" = "Helm"
+  }
+}
+
+# install the karpenter crds: latest point version
+resource "helm_release" "karpenter_crd" {
+  namespace        = "karpenter"
+  create_namespace = true
+
+  chart      = "karpenter-crd"
+  name       = "karpenter-crd"
+  repository = "oci://public.ecr.aws/karpenter"
+  version    = "0.37.5"
+
+  values = [
+    yamlencode({
+      karpenter_namespace = "karpenter"
+    }),
+  ]
+  # depends on the labels being updated
+  depends_on = [kubernetes_labels.karpenter_crds]
+}
+
 resource "helm_release" "karpenter" {
   namespace        = "karpenter"
   create_namespace = true
@@ -62,7 +100,8 @@ resource "helm_release" "karpenter" {
         clusterName : local.karpenter.cluster_name
       }
       webhook : {
-        enabled : false
+        enabled : "true"
+        port : 8443
         serviceNamespace : "karpenter"
       }
       serviceAccount : {
@@ -93,4 +132,5 @@ resource "helm_release" "karpenter" {
       }
     }),
   ]
+  depends_on = [helm_release.karpenter_crd]
 }
