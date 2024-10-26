@@ -60,7 +60,7 @@ resource "kubernetes_labels" "karpenter_crds" {
   labels = {
     "app.kubernetes.io/managed-by"   = "Helm"
     "meta.helm.sh/release-name"      = "karpenter-crd"
-    "meta.helm.sh/release-namespace" = "karpenter"
+    "meta.helm.sh/release-namespace" = "kube-system"
   }
 }
 
