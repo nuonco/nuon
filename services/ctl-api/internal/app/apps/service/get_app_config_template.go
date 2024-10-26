@@ -1,7 +1,7 @@
 package service
 
 import (
-	"context"
+	_ "embed"
 	"fmt"
 	"net/http"
 
@@ -38,7 +38,6 @@ const (
 	AppConfigTemplateTypeContainerImage    AppConfigTemplateType = "container-image"
 	AppConfigTemplateTypeECRContainerImage AppConfigTemplateType = "ecr-container-image"
 )
-
 type AppConfigTemplate struct {
 	Format   app.AppConfigFmt
 	Type     AppConfigTemplateType
@@ -79,7 +78,7 @@ func (s *service) GetAppConfigTemplate(ctx *gin.Context) {
 
 	configType := ctx.DefaultQuery("type", string(AppConfigTemplateTypeFlat))
 
-	tmpl, err := s.createAppTemplate(ctx, app, AppConfigTemplateType(configType))
+	tmpl, err := s.createAppTemplate(app, AppConfigTemplateType(configType))
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
@@ -88,7 +87,7 @@ func (s *service) GetAppConfigTemplate(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, tmpl)
 }
 
-func (s *service) createAppTemplate(ctx context.Context, currentApp *app.App, typ AppConfigTemplateType) (*AppConfigTemplate, error) {
+func (s *service) createAppTemplate(currentApp *app.App, typ AppConfigTemplateType) (*AppConfigTemplate, error) {
 	nam := fmt.Sprintf("nuon.%s.toml", currentApp.Name)
 	switch typ {
 	case AppConfigTemplateTypeTopLevel:
@@ -167,7 +166,7 @@ func (s *service) createAppTemplate(ctx context.Context, currentApp *app.App, ty
 		return &AppConfigTemplate{
 			Filename: fmt.Sprintf("nuon-template.%s.toml", currentApp.Name),
 			Format:   app.AppConfigFmtToml,
-			Content:  fmt.Sprintf(flatAppConfigTemplate, nam, nam),
+			Content:  fmt.Sprintf(flatAppConfigTemplate, nam, nam, nam),
 		}, nil
 	}
 }
