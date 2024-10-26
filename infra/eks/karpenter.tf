@@ -33,7 +33,7 @@ module "karpenter_irsa" {
   oidc_providers = {
     ex = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:karpenter"]
+      namespace_service_accounts = ["karpenter:karpenter"]
     }
   }
 }
@@ -43,30 +43,9 @@ resource "aws_iam_instance_profile" "karpenter" {
   role = module.eks.eks_managed_node_groups["karpenter"].iam_role_name
 }
 
-# we applied some labels manually
-# this is only necessary to do once to allow the helm chart to take over the management of the crd
-# docs: https://karpenter.sh/docs/troubleshooting/#helm-error-when-installing-the-karpenter-crd-chart
-
-# install the karpenter crds: latest point version
-resource "helm_release" "karpenter_crd" {
-  namespace        = "kube-system"
-  create_namespace = true
-
-  chart      = "karpenter-crd"
-  name       = "karpenter-crd"
-  repository = "oci://public.ecr.aws/karpenter"
-  version    = "0.37.5"
-
-  values = [
-    yamlencode({
-      karpenter_namespace = "kube-system"
-    }),
-  ]
-}
-
 resource "helm_release" "karpenter" {
-  namespace        = "kube-system"
-  create_namespace = false
+  namespace        = "karpenter"
+  create_namespace = true
 
   chart      = "karpenter"
   name       = "karpenter"
@@ -83,8 +62,7 @@ resource "helm_release" "karpenter" {
         clusterName : local.karpenter.cluster_name
       }
       webhook : {
-        enabled : "true"
-        port : 8443
+        enabled : false
         serviceNamespace : "karpenter"
       }
       serviceAccount : {
@@ -115,5 +93,4 @@ resource "helm_release" "karpenter" {
       }
     }),
   ]
-  depends_on = [helm_release.karpenter_crd]
 }
