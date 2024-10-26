@@ -1,6 +1,5 @@
 package service
 
-// Deprecated
 const flatAppConfigTemplate = `# This file contains template values for common Nuon application configuration options.
 # To use it for your app, edit as needed, then rename this file to %s and run
 #
@@ -9,162 +8,63 @@ const flatAppConfigTemplate = `# This file contains template values for common N
 # See https://docs.nuon.co/concepts/apps for more information.
 
 version = "v1"
+description = " nuon sample app"
+display_name = "sample-app"
+slack_webhook_url = "https://slack.nuon.co"
 
 [installer]
-name = "installer"
-description = "one click installer"
-documentation_url = "docs-url"
-community_url = "community-url"
-homepage_url = "homepage-url"
-github_url = "github-url"
-logo_url = "logo-url"
-demo_url = "demo url"
-favicon_url = "favicon url"
+name               = "My ECS App"
+description        = "A demo app that runs on ECS."
+documentation_url  = "https://docs.nuon.co/"
+community_url      = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+github_url         = "https://github.com/nuonco"
+homepage_url       = "https://www.nuon.co/"
+demo_url           = "https://www.nuon.co/"
+logo_url           = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group.png"
+og_image_url       = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group.png"
+favicon_url        = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group.png"
+copyright_markdown = """
+© 2024 Nuon.
+"""
+footer_markdown = """
+[Terms of Service](https://nuon.co/terms)
+"""
+post_install_markdown = """
+# My ECS App
 
-# optional fields
-og_image_url = "og_image url"
-post_install_markdown = ""
-copyright_markdown = ""
-footer_markdown = ""
+My ECS App is being deployed.
+"""
+apps = ["%s"]
+
+[sandbox]
+terraform_version = "1.5.4"
+[sandbox.public_repo]
+directory = "aws-ecs"
+repo = "nuonco/sandboxes"
+branch = "main"
 
 [runner]
 runner_type = "aws-ecs"
 
-[[runner.env_var]]
-name = "runner-env-var"
-value = "runner-env-var"
-
-[sandbox]
-terraform_version = "1.5.4"
-
-# https://docs.nuon.co/guides/install-access-delegation#setup-delegation
-# if you are using delegation, otherwise remove
-# govcloud clients must reach out for additional configuration
-aws_delegation_iam_role_arn = "arn:aws:iam::xxxxxxxxxxxx:role/nuon-aws-ecs-install-access"
-
-[sandbox.public_repo]
-directory = "aws-ecs-byovpc"
-repo = "nuonco/sandboxes"
-branch = "main"
-
-[[sandbox.var]]
-name = "vpc_id"
-value = "{{.nuon.install.inputs.vpc_id}}"
-
-[inputs]
-[[inputs.group]]
-name = "sandbox"
-description = "Sandbox inputs"
-display_name = "Sandbox inputs"
-
-[[inputs.input]]
-name = "vpc_id"
-description = "vpc_id to install application into"
-default = ""
-sensitive = false
-display_name = "VPC ID"
-group = "sandbox"
-
-[[inputs.input]]
-name = "api_key"
-description = "API key"
-default = ""
-sensitive = true
-display_name = "API Key"
-group = "sandbox"
-
 [[components]]
-name = "toml_terraform"
+name   = "ecs_service"
 type = "terraform_module"
 terraform_version = "1.5.3"
-
-[components.connected_repo]
-directory = "infra"
-repo = "powertoolsdev/mono"
-branch = "main"
-
-[[components.var]]
-name = "AWS_REGION"
-value = "{{.nuon.install.sandbox.account.region}}"
-
-[[components.var]]
-name = "ACCOUNT_ID"
-value = "{{.nuon.install.sandbox.account.id}}"
-
-[[components]]
-name = "toml_infra"
-type = "terraform_module"
-terraform_version = "1.5.4"
-
-[components.connected_repo]
-directory = "deployment"
-repo = "powertoolsdev/mono"
-branch = "main"
-
-[[components.var]]
-name = "iam_role"
-value = "{{.nuon.components.infra.outputs.iam_role}}"
-
-[[components]]
-name = "toml_helm"
-type = "helm_chart"
-chart_name = "e2e-helm"
-
-[components.connected_repo]
-directory = "deployment"
-repo = "powertoolsdev/mono"
-branch = "main"
-
-[[components.values_file]]
-contents = """
-image.tag = {{.nuon.components.toml_docker_build.image.name}}
-"""
-
-[[components.value]]
-name = "api.ingresses.public_domain"
-value = "{{.nuon.components.infra.outputs.iam_role}}"
-
-[[components]]
-name = "toml_docker_build"
-type = "docker_build"
-
-dockerfile = "Dockerfile"
-
-[components.connected_repo]
-directory = "deployment"
-repo = "powertoolsdev/mono"
-branch = "main"
-
-[[components]]
-name = "toml_job"
-type = "job"
-
-image_url = "{{.nuon.components.e2e_docker_build.image.repository.uri}}"
-tag	  = "{{.nuon.components.e2e_docker_build.image.tag}}"
-cmd	  = ["printenv"]
-args	  = [""]
-
-[[components.env_var]]
-name = "PUBLIC_DOMAIN"
-value = "{{.nuon.components.infra.outputs.iam_role}}"
-
-[[components]]
-name = "toml_container_image"
-type = "container_image"
-
-[components.public]
-image_url = "kennethreitz/httpbin"
-tag = "latest"
-
-[[components]]
-name = "toml_container_image_ecr"
-type = "container_image"
-
-[components.aws_ecr]
-iam_role_arn = "iam_role_arn"
-image_url = "ecr-url"
-tag = "latest"
-region = "us-west-2"
+[components.public_repo]
+repo      = "nuonco/guides"
+directory = "aws-ecs-tutorial/components/ecs-service"
+branch    = "main"
+[components.vars]
+service_name = "{{.nuon.install.inputs.service_name}}"
+cluster_arn = "{{.nuon.install.sandbox.outputs.ecs_cluster.arn}}"
+image_url = "{{.nuon.components.docker_image.image.repository.uri}}"
+image_tag = "{{.nuon.components.docker_image.image.tag}}"
+app_id = "{{.nuon.app.id}}"
+org_id = "{{.nuon.org.id}}"
+install_id = "{{.nuon.install.id}}"
+vpc_id = "{{.nuon.install.sandbox.outputs.vpc.id}}"
+domain_name = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+zone_id = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
 `
 
 const topLevelConfig = `#:schema https://api.nuon.co/v1/general/config-schema
