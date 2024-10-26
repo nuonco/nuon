@@ -49,7 +49,7 @@ resource "aws_iam_instance_profile" "karpenter" {
 
 # install the karpenter crds: latest point version
 resource "helm_release" "karpenter_crd" {
-  namespace        = "karpenter"
+  namespace        = "kube-system"
   create_namespace = true
 
   chart      = "karpenter-crd"
@@ -65,8 +65,8 @@ resource "helm_release" "karpenter_crd" {
 }
 
 resource "helm_release" "karpenter" {
-  namespace        = "karpenter"
-  create_namespace = true
+  namespace        = "kube-system"
+  create_namespace = false
 
   chart      = "karpenter"
   name       = "karpenter"
