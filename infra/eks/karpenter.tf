@@ -43,26 +43,9 @@ resource "aws_iam_instance_profile" "karpenter" {
   role = module.eks.eks_managed_node_groups["karpenter"].iam_role_name
 }
 
-# our CRDs where installed by the helm chart on the first run. as a result, we need to update the
-# labels on the CRDs so helm can manage them which will allow us to install the updated CRDs.
+# we applied some labels manually
+# this is only necessary to do once to allow the helm chart to take over the management of the crd
 # docs: https://karpenter.sh/docs/troubleshooting/#helm-error-when-installing-the-karpenter-crd-chart
-# NOTE(fd): we may need to remove this once it's done so it doesn't continue to overrite
-# NOTE(fd): we need to find out if this will overwrite the whole label set (run from tf ui in plan only to check)
-resource "kubernetes_labels" "karpenter_crds" {
-  for_each = toset(["ec2nodeclasses.karpenter.k8s.aws", "nodepools.karpenter.sh", "nodeclaims.karpenter.sh"])
-
-  force       = false # not necessary because the CRDs have no labels at the time of writing
-  api_version = "apiextensions.k8s.io/v1"
-  kind        = "CustomResourceDefinition"
-  metadata {
-    name = each.value
-  }
-  labels = {
-    "app.kubernetes.io/managed-by"   = "Helm"
-    "meta.helm.sh/release-name"      = "karpenter-crd"
-    "meta.helm.sh/release-namespace" = "kube-system"
-  }
-}
 
 # install the karpenter crds: latest point version
 resource "helm_release" "karpenter_crd" {
@@ -79,8 +62,6 @@ resource "helm_release" "karpenter_crd" {
       karpenter_namespace = "kube-system"
     }),
   ]
-  # depends on the labels being updated
-  depends_on = [kubernetes_labels.karpenter_crds]
 }
 
 resource "helm_release" "karpenter" {
