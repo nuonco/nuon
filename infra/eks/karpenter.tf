@@ -49,13 +49,13 @@ resource "aws_iam_instance_profile" "karpenter" {
 # NOTE(fd): we may need to remove this once it's done so it doesn't continue to overrite
 # NOTE(fd): we need to find out if this will overwrite the whole label set (run from tf ui in plan only to check)
 resource "kubernetes_labels" "karpenter_crds" {
-  for_each = toset(["ec2nodeclasses", "nodepools", "nodeclaims"])
+  for_each = toset(["ec2nodeclasses.karpenter.k8s.aws", "nodepools.karpenter.sh", "nodeclaims.karpenter.sh"])
 
   force       = false # not necessary because the CRDs have no labels at the time of writing
   api_version = "apiextensions.k8s.io/v1"
   kind        = "CustomResourceDefinition"
   metadata {
-    name = "${each.value}.karpenter.k8s.aws"
+    name = each.value
   }
   labels = {
     "app.kubernetes.io/managed-by" = "Helm"
