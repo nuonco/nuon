@@ -58,90 +58,13 @@ success:
 		return nil
 	}
 
-	topLevelTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeTopDashLevel), view)
+	flatTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeFlat), view)
 	if err != nil {
 		return view.Fail(err)
 	}
 
-	installerTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeInstaller), view)
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	runnerTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeRunner), view)
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	sandboxTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeSandbox), view)
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	inputsTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeInputs), view)
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	terraformTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeTerraform), view)
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	terraformInfraTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeTerraformInfra), view)
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	helmTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeHelm), view)
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	dockerBuildTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeDockerDashBuild), view)
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	containerImageTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeContainerDashImage), view)
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	jobTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeJob), view)
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	ecrContainerTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeEcrDashContainerDashImage), view)
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
 	view.Update("successfully wrote config template files at\n" + 
-				topLevelTmpl.Filename + "\n" +
-				installerTmpl.Filename	+ "\n" +
-				runnerTmpl.Filename + "\n" +
-				sandboxTmpl.Filename + "\n" +
-				inputsTmpl.Filename + "\n" +
-				terraformTmpl.Filename + "\n" +
-				terraformInfraTmpl.Filename + "\n" +
-				helmTmpl.Filename + "\n" +
-				dockerBuildTmpl.Filename + "\n" +
-				containerImageTmpl.Filename + "\n" +
-				jobTmpl.Filename + "\n" +
-				ecrContainerTmpl.Filename + "\n",
+	flatTmpl.Filename + "\n",
 			)
 	return nil
 }
