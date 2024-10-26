@@ -76,7 +76,7 @@ resource "helm_release" "karpenter_crd" {
 
   values = [
     yamlencode({
-      karpenter_namespace = "karpenter"
+      karpenter_namespace = "kube-system"
     }),
   ]
   # depends on the labels being updated
