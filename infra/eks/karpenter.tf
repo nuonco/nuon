@@ -58,7 +58,9 @@ resource "kubernetes_labels" "karpenter_crds" {
     name = each.value
   }
   labels = {
-    "app.kubernetes.io/managed-by" = "Helm"
+    "app.kubernetes.io/managed-by"   = "Helm"
+    "meta.helm.sh/release-name"      = "karpenter-crd"
+    "meta.helm.sh/release-namespace" = "karpenter"
   }
 }
 
