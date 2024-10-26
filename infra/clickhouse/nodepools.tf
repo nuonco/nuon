@@ -53,7 +53,7 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
           "nodeClassRef" = {
             "apiVersion" = "karpenter.k8s.aws/v1beta1"
             "kind"       = "EC2NodeClass"
-            "name"       = "default"
+            "name"       = "clickhouse-installation"
           }
           "requirements" = [
             {
@@ -145,7 +145,7 @@ resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
           "nodeClassRef" = {
             "apiVersion" = "karpenter.k8s.aws/v1beta1"
             "kind"       = "EC2NodeClass"
-            "name"       = "default"
+            "name"       = "clickhouse-keeper"
           }
           "requirements" = [
             {
