@@ -12,3 +12,7 @@ root_domain: "nuon.cloud"
 vantage:
   agent:
     clusterID: ""
+
+# the default karpenter EC2NodeClass is created by default
+# any additional EC2NodeClasses should be created here
+ec2nodeclasses: []

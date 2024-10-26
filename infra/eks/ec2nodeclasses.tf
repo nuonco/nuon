@@ -47,3 +47,44 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
     helm_release.karpenter
   ]
 }
+
+# we create an ec2 node class for every nodepool to avoid issues when migrating to 1.1
+# see the note about "multiple NodePools with different kubelets that are referencing the same EC2NodeClass"
+# see vars/default.yaml
+# docs: https://karpenter.sh/docs/upgrading/v1-migration/#upgrade-procedure
+resource "kubectl_manifest" "ec2nodeclass" {
+  for_each = toset(local.vars.ec2nodeclasses)
+  yaml_body = yamlencode({
+    apiVersion = "karpenter.k8s.aws/v1beta1"
+    kind       = "EC2NodeClass"
+    metadata = {
+      name = each.value
+    }
+    spec = {
+      amiFamily       = "AL2"
+      instanceProfile = aws_iam_instance_profile.karpenter.name
+      subnetSelectorTerms = [
+        {
+          tags = {
+            "karpenter.sh/discovery" = local.karpenter.discovery_value
+          }
+        }
+      ]
+      securityGroupSelectorTerms = [
+        {
+          tags = {
+            "karpenter.sh/discovery" = local.karpenter.discovery_value
+          }
+        }
+      ]
+      tags = {
+        "karpenter.sh/discovery" = local.karpenter.discovery_value
+      }
+    }
+  })
+
+  depends_on = [
+    helm_release.karpenter,
+    kubectl_manifest.karpenter_ec2nodeclass
+  ]
+}

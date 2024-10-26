@@ -23,8 +23,6 @@ resource "kubectl_manifest" "karpenter_provisioner" {
             apiVersion = "karpenter.k8s.aws/v1beta1"
             kind       = "EC2NodeClass"
             name       = "default"
-            # https://karpenter.sh/v0.32/upgrading/v1beta1-migration/#subnetselector-securitygroupselector-and-amiselector
-            # the securityGroupSelector, subnetSelector, tags have moved to EC2NodeClass
           }
           requirements = [
             {
@@ -75,6 +73,7 @@ resource "kubectl_manifest" "karpenter_provisioner" {
   })
 
   depends_on = [
-    helm_release.karpenter
+    helm_release.karpenter,
+    kubectl_manifest.karpenter_ec2nodeclass # depend on the default nodeclass
   ]
 }

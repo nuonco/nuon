@@ -11,3 +11,9 @@ auth_map_additions:
       - "system:masters"
     trust:
       - "arn:aws:iam::814326426574:role/nuon-internal-support-prod"
+
+ec2nodeclasses:
+ - clickhouse-installation
+ - clickhouse-keeper
+ - ctl-api-api
+ - ctl-api-worker
