@@ -17,7 +17,7 @@ const (
 	statusAccessError = "access-error"
 )
 
-func (s *Service) Create(ctx context.Context, name string, isSandboxMode bool, asJSON bool) error {
+func (s *Service) Create(ctx context.Context, name string, isSandboxMode, noselect bool, asJSON bool) error {
 	if asJSON {
 		org, err := s.api.CreateOrg(ctx, &models.ServiceCreateOrgRequest{
 			Name:           &name,
@@ -60,7 +60,14 @@ func (s *Service) Create(ctx context.Context, name string, isSandboxMode bool, a
 			return view.Fail(errs.NewUserFacing("failed to create org: %s", o.StatusDescription))
 		case o.Status == statusActive:
 			view.Success(fmt.Sprintf("successfully created org %s", o.ID))
-			s.setOrgID(ctx, o.ID)
+			if !noselect {
+				if err := s.setOrgID(ctx, o.ID); err != nil {
+					s.printOrgSetMsg(name, o.ID)
+				} else {
+					view.Fail(errs.NewUserFacing("failed to set new org as current: %s", err))
+				}
+				return nil
+			}
 			return nil
 		default:
 			view.Update(fmt.Sprintf("%s org", o.Status))
