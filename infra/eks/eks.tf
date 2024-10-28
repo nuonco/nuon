@@ -37,6 +37,23 @@ module "eks" {
   cluster_endpoint_private_access = true
   cluster_endpoint_public_access  = true
 
+  cluster_addons = {
+    coredns = {
+      configuration_values = jsonencode({
+        tolerations = [
+          # Allow CoreDNS to run on the same nodes as the Karpenter controller
+          # for use during cluster creation when Karpenter nodes do not yet exist
+          {
+            key    = "karpenter.sh/controller"
+            value  = "true"
+            effect = "NoSchedule"
+          }
+        ]
+      })
+    }
+    eks-pod-identity-agent = {}
+  }
+
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
 
@@ -103,7 +120,9 @@ module "eks" {
     ]
   )
 
+
   eks_managed_node_groups = {
+    # https://aws-ia.github.io/terraform-aws-eks-blueprints/patterns/karpenter-mng/
     karpenter = {
       instance_types = local.vars.managed_node_group.instance_types
 
@@ -115,9 +134,18 @@ module "eks" {
         # Required by Karpenter
         ssm = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
       }
+      labels = {
+        # Used to ensure Karpenter runs on nodes that it does not manage
+        "karpenter.sh/controller" = "true"
+      }
       taints = {
         no_schedule_karpenter = {
           key    = "CriticalAddonsOnly"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        }
+        karpenter = {
+          key    = "karpenter.sh/controller"
           value  = "true"
           effect = "NO_SCHEDULE"
         }
