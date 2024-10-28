@@ -23,7 +23,7 @@ resource "aws_kms_alias" "eks" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 19.0"
+  version = "~> 19.21.0"
 
   # This module does something funny with state and `default_tags`
   # so it shows as a change on every apply. By using a provider w/o
