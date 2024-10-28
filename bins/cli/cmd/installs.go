@@ -17,6 +17,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		runID         string
 		installCompID string
 		inputs        []string
+		noSelect      bool
 	)
 
 	installsCmds := &cobra.Command{
@@ -58,7 +59,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "Create a new install of your app",
 		Run: c.wrapCmd(InstallsCreateEvent, func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Create(cmd.Context(), appID, name, region, arn, inputs, PrintJSON)
+			return svc.Create(cmd.Context(), appID, name, region, arn, inputs, PrintJSON, noSelect)
 		}),
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
@@ -70,6 +71,7 @@ func (c *cli) installsCmd() *cobra.Command {
 	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in")
 	createCmd.MarkFlagRequired("region")
 	createCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
+	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "Do not automatically set the created install as the current install")
 	installsCmds.AddCommand(createCmd)
 
 	confirmDelete := false
