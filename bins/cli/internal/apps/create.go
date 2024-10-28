@@ -21,7 +21,7 @@ const (
 	defaultConfigFilePermissions fs.FileMode = 0o644
 )
 
-func (s *Service) Create(ctx context.Context, appName string, appTemplate string, noTemplate, asJSON bool) error {
+func (s *Service) Create(ctx context.Context, appName string, appTemplate string, noTemplate, asJSON, noSelect bool) error {
 	view := ui.NewCreateView("app", asJSON)
 	view.Start()
 	view.Update("creating app")
@@ -44,7 +44,7 @@ func (s *Service) Create(ctx context.Context, appName string, appTemplate string
 		case currentApp.Status == statusError:
 			return view.Fail(fmt.Errorf("failed to create app: %s", currentApp.StatusDescription))
 		case currentApp.Status == statusActive:
-			view.Success(fmt.Sprintf("successfully created app %s", currentApp.ID))
+			view.Success(currentApp.ID)
 			goto success
 		default:
 			view.Update(fmt.Sprintf("%s app", currentApp.Status))
@@ -54,6 +54,14 @@ func (s *Service) Create(ctx context.Context, appName string, appTemplate string
 	}
 
 success:
+	if !noSelect {
+		if err := s.setAppID(ctx, app.ID); err == nil {
+			s.printAppSetMsg(appName, app.ID)
+		} else {
+			view.Fail(errs.NewUserFacing("failed to set new app as current: %s", err))
+		}
+	}
+
 	if noTemplate {
 		return nil
 	}
@@ -63,9 +71,9 @@ success:
 		return view.Fail(err)
 	}
 
-	view.Update("successfully wrote config template files at\n" + 
-	flatTmpl.Filename + "\n",
-			)
+	view.Update("successfully wrote config template files at\n" +
+		flatTmpl.Filename + "\n",
+	)
 	return nil
 }
 
