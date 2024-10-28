@@ -1,13 +1,13 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { FiCloud, FiClock } from 'react-icons/fi'
 import {
+  BuildStatus,
   ClickToCopy,
   DashboardContent,
   Duration,
   ComponentConfiguration,
   Heading,
   RunnerLogsPoller,
-  StatusBadge,
   Time,
   Text,
   ToolTip,
@@ -84,10 +84,10 @@ export default withPageAuthRequired(
           <div className="flex gap-6 items-start justify-start">
             <span className="flex flex-col gap-2">
               <Text variant="overline">Status</Text>
-              <StatusBadge
+              <BuildStatus
                 descriptionAlignment="right"
-                description={build.status_description}
-                status={build.status}
+                initBuild={build}
+                shouldPoll
               />
             </span>
 
