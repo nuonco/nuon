@@ -62,8 +62,16 @@ artifacts:
     RUN chmod +x ./out/$BIN
     SAVE ARTIFACT out AS LOCAL ./out
 
+kaniko:
+    # Use this FROM instruction as shortcut to use --copy=from kaniko below
+    # It's also possible to use directly COPY --from=gcr.io/kaniko-project/executor
+    FROM gcr.io/kaniko-project/executor
+
+    SAVE ARTIFACT /kaniko
+    SAVE ARTIFACT /etc/nsswitch.conf nsswitch.conf
+
 oci-artifacts:
-    FROM bitnami/kaniko:latest
+    FROM ../../images/go-base+alpine-base
 
     ARG EARTHLY_GIT_ORIGIN_URL
     ARG EARTHLY_GIT_SHORT_HASH
@@ -77,12 +85,31 @@ oci-artifacts:
     ARG cache_tag=
     ARG cache_repo=
 
-    ENV GIT_REF=$image_tag
+    RUN apk add --no-cache \
+      libc6-compat \
+      build-base \
+      make \
+      ca-certificates-bundle \
+      coreutils \
+      curl \
+      protoc \
+      jq \
+      git \
+      aws-cli \
+      zip
 
+    # copy kaniko into the final binary
+    COPY +kaniko/kaniko/* /kaniko/
+    COPY +kaniko/kaniko/.docker /kaniko/.docker
+    COPY +kaniko/nsswitch.conf /etc/nsswitch.conf
+
+    # copy nuon specific artifacts into the final binary
     COPY +build/runner /bin/runner
     COPY ../../images/certs+certs/cert.pem "$ETCSSL"
     COPY ../../images/aws-iam-authenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
     COPY ./bundle /bundle
+
+    ENV GIT_REF=$image_tag
 
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
     LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
