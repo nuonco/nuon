@@ -47,7 +47,7 @@ func (c *cli) analyticsWrapCmd(e events.Event, f cobraRunECommand) cobraRunEComm
 
 		props := map[string]interface{}{
 			"namespace": namespace,
-			"flags":     flagsVisited,
+			"cmd_args":  strings.Join(os.Args, " "),
 			"command":   cmd.Name(),
 			"latency":   time.Since(startTS).Seconds(),
 			"status":    "ok",
