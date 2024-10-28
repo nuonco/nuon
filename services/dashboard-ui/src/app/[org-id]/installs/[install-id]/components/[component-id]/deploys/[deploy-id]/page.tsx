@@ -4,6 +4,7 @@ import {
   ClickToCopy,
   ComponentConfiguration,
   DashboardContent,
+  DeployStatus,
   Duration,
   Heading,
   Link,
@@ -88,10 +89,10 @@ export default withPageAuthRequired(
           <div className="flex gap-6 items-start justify-start">
             <span className="flex flex-col gap-2">
               <Text variant="overline">Status</Text>
-              <StatusBadge
+              <DeployStatus
                 descriptionAlignment="right"
-                description={deploy.status_description}
-                status={deploy.status}
+                initDeploy={deploy}
+                shouldPoll
               />
             </span>
 
