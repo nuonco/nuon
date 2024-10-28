@@ -60,6 +60,19 @@ resource "helm_release" "karpenter" {
       settings : {
         clusterEndpoint : module.eks.cluster_endpoint
         clusterName : local.karpenter.cluster_name
+        interruptionQueue : local.karpenter.cluster_name
+      }
+      controller : {
+        resources : {
+          requests : {
+            cpu : 1
+            memory : "1Gi"
+          }
+          limits : {
+            cpu : 1
+            memory : "1Gi"
+          }
+        }
       }
       webhook : {
         enabled : "true"
