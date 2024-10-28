@@ -14,7 +14,6 @@ locals {
     cluster_name    = local.workspace_trimmed
     discovery_key   = "karpenter.sh/discovery"
     discovery_value = local.workspace_trimmed
-    version         = "1.0.6"
   }
 }
 
@@ -44,46 +43,6 @@ resource "aws_iam_instance_profile" "karpenter" {
   role = module.eks.eks_managed_node_groups["karpenter"].iam_role_name
 }
 
-# update the karpenter policy
-resource "aws_cloudformation_stack" "karpenter_policy_update" {
-  name         = "Karpenter-${local.karpenter.cluster_name}"
-  template_url = "https://raw.githubusercontent.com/aws/karpenter-provider-aws/v${local.karpenter.version}/website/content/en/preview/getting-started/getting-started-with-karpenter/cloudformation.yaml"
-
-  parameters = {
-    ClusterName = local.karpenter.cluster_name
-  }
-
-  capabilities = ["CAPABILITY_IAM"]
-}
-
-
-# we applied some labels manually
-# this is only necessary to do once to allow the helm chart to take over the management of the crd
-# docs: https://karpenter.sh/docs/troubleshooting/#helm-error-when-installing-the-karpenter-crd-chart
-
-# install the karpenter crds: latest point version
-resource "helm_release" "karpenter_crd" {
-  namespace        = "karpenter"
-  create_namespace = true
-
-  chart      = "karpenter-crd"
-  name       = "karpenter-crd"
-  repository = "oci://public.ecr.aws/karpenter"
-  version    = local.karpenter.version
-
-  wait = true
-
-  values = [
-    yamlencode({
-      karpenter_namespace = "karpenter"
-    }),
-  ]
-  depends_on = [
-    aws_cloudformation_stack.karpenter_policy_update
-  ]
-}
-
-
 resource "helm_release" "karpenter" {
   namespace        = "karpenter"
   create_namespace = true
@@ -91,8 +50,7 @@ resource "helm_release" "karpenter" {
   chart      = "karpenter"
   name       = "karpenter"
   repository = "oci://public.ecr.aws/karpenter"
-  version    = local.karpenter.version
-  skip_crds  = true # CRDs are installed by helm_release.karpenter_crd
+  version    = "0.37.5"
 
   values = [
     # https://github.com/aws/karpenter-provider-aws/blob/release-v0.37.x/charts/karpenter/values.yaml
@@ -103,7 +61,6 @@ resource "helm_release" "karpenter" {
         clusterEndpoint : module.eks.cluster_endpoint
         clusterName : local.karpenter.cluster_name
       }
-      # https://github.com/aws/karpenter-provider-aws/blob/release-v1.0.6/charts/karpenter/values.yaml#L99
       controller : {
         resources : {
           requests : {
@@ -116,11 +73,10 @@ resource "helm_release" "karpenter" {
           }
         }
       }
-      # NOTE(fd): 1.0.6 does not support webhook.serviceNamespace - keep an eye out for errors
-      # https://github.com/aws/karpenter-provider-aws/blob/release-v1.0.6/charts/karpenter/values.yaml#L140
       webhook : {
         enabled : "true"
         port : 8443
+        serviceNamespace : "karpenter"
       }
       serviceAccount : {
         annotations : {
@@ -130,10 +86,10 @@ resource "helm_release" "karpenter" {
       tolerations : [
         {
           key : "CriticalAddonsOnly"
-          value : "exists"
+          value : "true"
+          effect : "NoSchedule"
         },
       ]
-      # https://docs.datadoghq.com/integrations/karpenter/
       podAnnotations : {
         "ad.datadoghq.com/controller.checks" : <<-EOT
           {
@@ -149,9 +105,5 @@ resource "helm_release" "karpenter" {
         EOT
       }
     }),
-  ]
-
-  depends_on = [
-    helm_release.karpenter_crd
   ]
 }
