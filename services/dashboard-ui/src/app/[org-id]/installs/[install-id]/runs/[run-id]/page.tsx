@@ -7,7 +7,7 @@ import {
   Duration,
   Heading,
   RunnerLogsPoller,
-  StatusBadge,
+  SandboxRunStatus,
   Text,
   Time,
 } from '@/components'
@@ -66,11 +66,11 @@ export default withPageAuthRequired(
           <div className="flex gap-6 items-start justify-start">
             <span className="flex flex-col gap-2">
               <Text variant="overline">Status</Text>
-              <StatusBadge
+              <SandboxRunStatus
                 descriptionAlignment="right"
                 descriptionPosition="bottom"
-                description={sandboxRun.status_description}
-                status={sandboxRun.status}
+                initSandboxRun={sandboxRun}
+                shouldPoll
               />
             </span>
 
