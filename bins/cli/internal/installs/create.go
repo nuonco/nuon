@@ -10,6 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/powertoolsdev/mono/pkg/errs"
 )
 
 const (
@@ -18,7 +19,7 @@ const (
 	statusAccessError = "access_error"
 )
 
-func (s *Service) Create(ctx context.Context, appID, name, region, arn string, inputs []string, asJSON bool) error {
+func (s *Service) Create(ctx context.Context, appID, name, region, arn string, inputs []string, asJSON, noSelect bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -72,6 +73,14 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, i
 			return view.Fail(fmt.Errorf("failed to create install: %s", ins.StatusDescription))
 		case ins.SandboxStatus == statusActive:
 			view.Success(fmt.Sprintf("successfully created install %s", ins.ID))
+			if !noSelect {
+				if err := s.setInstallID(ctx, ins.ID); err != nil {
+					s.printInstallSetMsg(name, ins.ID)
+				} else {
+					view.Fail(errs.NewUserFacing("failed to set install as current: %s", err))
+				}
+				return nil
+			}
 			return nil
 		default:
 			view.Update(fmt.Sprintf("%s install", ins.SandboxStatus))
