@@ -14,7 +14,7 @@ locals {
     cluster_name    = local.workspace_trimmed
     discovery_key   = "karpenter.sh/discovery"
     discovery_value = local.workspace_trimmed
-    role_name       = "karpenter-controller-${local.workspace_trimmed}"
+    role_name       = "karpenter-controller-v1-${local.workspace_trimmed}"
     version         = "1.0.6"
   }
 }
