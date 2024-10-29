@@ -24,3 +24,5 @@ tables:
  - ctl_api.otel_traces
  - ctl_api.runner_heart_beats
  - ctl_api.runner_health_checks
+
+expiresAfter: 2160h

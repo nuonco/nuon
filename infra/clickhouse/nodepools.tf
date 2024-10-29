@@ -33,7 +33,7 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
         ]
         "consolidateAfter"    = "30s"
         "consolidationPolicy" = "WhenEmpty"
-        "expireAfter"         = "2160h"
+        "expireAfter"         = local.vars.expiresAfter
       }
       "limits" = {
         # we use the prod limits by default. stage fits comfortably.
