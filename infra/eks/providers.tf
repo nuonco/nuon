@@ -9,7 +9,7 @@ locals {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
     # This requires the awscli to be installed locally where Terraform is executed
-    args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--role-arn", local.tf_role_arn, ]
+    args = ["--region", local.vars.region, "eks", "get-token", "--cluster-name", module.eks.cluster_name, "--role-arn", local.tf_role_arn, ]
   }]
 }
 

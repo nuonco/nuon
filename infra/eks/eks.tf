@@ -22,8 +22,8 @@ resource "aws_kms_alias" "eks" {
 }
 
 module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
-  version = "~> 19.21.0"
+  # docs may be wrong: https://developer.hashicorp.com/terraform/language/modules/sources
+  source = "github.com/clowdhaus/terraform-aws-eks-v20-migrate.git?ref=3f626cc493606881f38684fc366688c36571c5c5"
 
   # This module does something funny with state and `default_tags`
   # so it shows as a change on every apply. By using a provider w/o
@@ -31,6 +31,13 @@ module "eks" {
   providers = {
     aws = aws.no_tags
   }
+
+  # new in 20.0
+  authentication_mode                      = "API_AND_CONFIG_MAP" # default
+  enable_cluster_creator_admin_permissions = true                 # for terraform
+
+  # irsa
+  enable_irsa = true # default
 
   cluster_name                    = local.workspace_trimmed
   cluster_version                 = local.cluster_version
@@ -67,42 +74,41 @@ module "eks" {
     }
   }
 
-  # commented out due to this being part of another flow
-  # manage_aws_auth_configmap = true
-
-  # aws_auth_roles = concat([
-  #   {
-  #     rolearn  = aws_iam_role.github_actions.arn
-  #     username = "gha:{{SessionName}}"
-  #     groups = [
-  #       "system:masters",
-  #     ]
-  #   },
-  #   {
-  #     rolearn  = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
-  #     username = "admin:{{SessionName}}"
-  #     groups = [
-  #       "system:masters",
-  #       "eks-console-dashboard-full-access",
-  #     ]
-  #   },
-  #   {
-  #     rolearn  = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonPowerUser"]}"
-  #     username = "power-user:{{SessionName}}"
-  #     groups = [
-  #       "engineers",
-  #       "eks-console-dashboard-full-access",
-  #     ]
-  #   },
-  #   ],
-  #   [
-  #     for add in local.vars.auth_map_additions : {
-  #       rolearn : module.extra_auth_map[add.name].iam_role_arn
-  #       username : add.name
-  #       groups : add.groups
-  #     }
-  #   ]
-  # )
+  # note(fd): this were not the issue
+  manage_aws_auth_configmap = true
+  aws_auth_roles = concat([
+    {
+      rolearn  = aws_iam_role.github_actions.arn
+      username = "gha:{{SessionName}}"
+      groups = [
+        "system:masters",
+      ]
+    },
+    {
+      rolearn  = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
+      username = "admin:{{SessionName}}"
+      groups = [
+        "system:masters",
+        "eks-console-dashboard-full-access",
+      ]
+    },
+    {
+      rolearn  = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonPowerUser"]}"
+      username = "power-user:{{SessionName}}"
+      groups = [
+        "engineers",
+        "eks-console-dashboard-full-access",
+      ]
+    },
+    ],
+    [
+      for add in local.vars.auth_map_additions : {
+        rolearn : module.extra_auth_map[add.name].iam_role_arn
+        username : add.name
+        groups : add.groups
+      }
+    ]
+  )
 
   eks_managed_node_groups = {
     karpenter = {

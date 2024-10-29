@@ -47,7 +47,7 @@ provider "registry.terraform.io/gavinbunney/kubectl" {
 
 provider "registry.terraform.io/hashicorp/aws" {
   version     = "5.73.0"
-  constraints = ">= 4.0.0, >= 4.33.0, >= 4.57.0, >= 5.46.0, >= 5.67.0, >= 5.70.0"
+  constraints = ">= 4.0.0, >= 4.33.0, >= 5.34.0, >= 5.46.0, >= 5.67.0, >= 5.70.0"
   hashes = [
     "h1:mjm0or/nzi35zjZDRspU6Htn962r3e+ZRTxzzuphD7Q=",
     "zh:0d24edc51ab6600f56d759831658a9d7a8f69b53900546b75038fc8e3f312406",
@@ -111,7 +111,7 @@ provider "registry.terraform.io/hashicorp/helm" {
 
 provider "registry.terraform.io/hashicorp/kubernetes" {
   version     = "2.33.0"
-  constraints = ">= 2.10.0, 2.33.0"
+  constraints = ">= 2.10.0, >= 2.31.0"
   hashes = [
     "h1:44s6P+u1FUHyEclCAyko9UL+PB73rGp+REnCML3hyzg=",
     "zh:255b35790b706d405e987750190658dcaefb663741b96803a9529ba5d7435329",
