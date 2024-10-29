@@ -19,16 +19,13 @@ type (
 )
 
 // wrapCmd wraps all CLI commands, providing a central point to control error flow and handling.
-func (c *cli) wrapCmd(e events.Event, f cobraRunECommand) cobraRunCommand {
-	fn := c.analyticsWrapCmd(e, f)
-	fn = c.sentryWrapCmd(e, fn)
-
+func (c *cli) wrapCmd(f cobraRunECommand) cobraRunCommand {
 	return func(cmd *cobra.Command, args []string) {
-		fn(cmd, args)
+		c.sentryWrapCmd(c.analyticsWrapCmd(f))
 	}
 }
 
-func (c *cli) analyticsWrapCmd(e events.Event, f cobraRunECommand) cobraRunECommand {
+func (c *cli) analyticsWrapCmd(f cobraRunECommand) cobraRunECommand {
 	return func(cmd *cobra.Command, args []string) error {
 		startTS := time.Now()
 		err := f(cmd, args)
@@ -60,19 +57,22 @@ func (c *cli) analyticsWrapCmd(e events.Event, f cobraRunECommand) cobraRunEComm
 		}
 
 		c.analyticsClient.Identify(c.ctx)
-		c.analyticsClient.Track(c.ctx, e, props)
+
+		eventname := strings.Join(strings.Split(cmd.CommandPath(), " ")[1:], "_")
+		c.analyticsClient.Track(c.ctx, events.Event(eventname), props)
 
 		return err
 	}
 }
 
-func (c *cli) sentryWrapCmd(e events.Event, f cobraRunECommand) cobraRunECommand {
+func (c *cli) sentryWrapCmd(f cobraRunECommand) cobraRunECommand {
 	return func(cmd *cobra.Command, args []string) error {
+		eventname := strings.Join(strings.Split(cmd.CommandPath(), " ")[1:], "_")
 		err := f(cmd, args)
 		if err != nil {
 			tags := map[string]string{
 				"cmd_args":  strings.Join(os.Args, " "),
-				"cli_event": string(e),
+				"cli_event": eventname,
 			}
 			errs.ReportToSentry(err, &tags)
 		}
