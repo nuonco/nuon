@@ -111,7 +111,7 @@ provider "registry.terraform.io/hashicorp/helm" {
 
 provider "registry.terraform.io/hashicorp/kubernetes" {
   version     = "2.33.0"
-  constraints = ">= 2.10.0, >= 2.31.0"
+  constraints = ">= 2.20.0, 2.33.0"
   hashes = [
     "h1:44s6P+u1FUHyEclCAyko9UL+PB73rGp+REnCML3hyzg=",
     "zh:255b35790b706d405e987750190658dcaefb663741b96803a9529ba5d7435329",

@@ -247,6 +247,7 @@ resource "helm_release" "vantage-k8s-agent" {
     }),
   ]
   depends_on = [
+    module.eks,
     module.bucket
   ]
 }

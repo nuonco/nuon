@@ -22,8 +22,8 @@ resource "aws_kms_alias" "eks" {
 }
 
 module "eks" {
-  # docs may be wrong: https://developer.hashicorp.com/terraform/language/modules/sources
-  source = "github.com/clowdhaus/terraform-aws-eks-v20-migrate.git?ref=3f626cc493606881f38684fc366688c36571c5c5"
+  source  = "terraform-aws-modules/eks/aws"
+  version = "20.0"
 
   # This module does something funny with state and `default_tags`
   # so it shows as a change on every apply. By using a provider w/o
@@ -52,6 +52,22 @@ module "eks" {
     provider_key_arn = aws_kms_key.eks.arn
     resources        = ["secrets"]
   }
+  cluster_addons = {
+    coredns = {
+      configuration_values = jsonencode({
+        tolerations = [
+          # Allow CoreDNS to run on the same nodes as the Karpenter controller
+          # for use during cluster creation when Karpenter nodes do not yet exist
+          {
+            key    = "karpenter.sh/controller"
+            value  = "true"
+            effect = "NoSchedule"
+          }
+        ]
+      })
+    }
+    eks-pod-identity-agent = {}
+  }
 
   node_security_group_additional_rules = {
     ingress_self_all = {
@@ -74,8 +90,67 @@ module "eks" {
     }
   }
 
-  # note(fd): this were not the issue
+  eks_managed_node_groups = {
+    karpenter = {
+      instance_types = local.vars.managed_node_group.instance_types
+
+      min_size     = local.vars.managed_node_group.min_size
+      max_size     = local.vars.managed_node_group.max_size
+      desired_size = local.vars.managed_node_group.desired_size
+
+      labels = {
+        # Used to ensure Karpenter runs on nodes that it does not manage
+        "karpenter.sh/controller" = "true"
+      }
+
+      iam_role_additional_policies = {
+        # Required by Karpenter
+        ssm = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      }
+
+      taints = {
+        no_schedule_karpenter = {
+          key    = "CriticalAddonsOnly"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        }
+        karpenter = {
+          key    = "karpenter.sh/controller"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        }
+      }
+
+      tags = {
+        "karpenter.sh/discovery" = local.karpenter.discovery_value
+      }
+    }
+  }
+
+  create_cluster_primary_security_group_tags = false
+  node_security_group_tags = merge(local.tags, {
+    # NOTE - if creating multiple security groups with this module, only tag the
+    # security group that Karpenter should utilize with the following tag
+    # (i.e. - at most, only one security group should have this tag in your account)
+    "karpenter.sh/discovery" = local.karpenter.discovery_value
+  })
+
+  # this can't rely on default_tags.
+  # full set of tags must be specified here :sob:
+  tags = merge(local.tags, {
+    "karpenter.sh/discovery" = local.karpenter.discovery_value
+  })
+}
+
+module "eks_aws_auth" {
+  source  = "terraform-aws-modules/eks/aws//modules/aws-auth"
+  version = "20.0"
+
+  # note(fd): these were removed from state manually to circumvent an issue
+  # it is expected that they are "created" via "upsert" and therefore anticiapte
+  # no change
   manage_aws_auth_configmap = true
+
   aws_auth_roles = concat([
     {
       rolearn  = aws_iam_role.github_actions.arn
@@ -110,44 +185,7 @@ module "eks" {
     ]
   )
 
-  eks_managed_node_groups = {
-    karpenter = {
-      instance_types = local.vars.managed_node_group.instance_types
-
-      min_size     = local.vars.managed_node_group.min_size
-      max_size     = local.vars.managed_node_group.max_size
-      desired_size = local.vars.managed_node_group.desired_size
-
-      iam_role_additional_policies = {
-        # Required by Karpenter
-        ssm = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-      }
-      taints = {
-        no_schedule_karpenter = {
-          key    = "CriticalAddonsOnly"
-          value  = "true"
-          effect = "NO_SCHEDULE"
-        }
-      }
-      tags = {
-        "karpenter.sh/discovery" = local.karpenter.discovery_value
-      }
-    }
-  }
-
-  create_cluster_primary_security_group_tags = false
-  node_security_group_tags = merge(local.tags, {
-    # NOTE - if creating multiple security groups with this module, only tag the
-    # security group that Karpenter should utilize with the following tag
-    # (i.e. - at most, only one security group should have this tag in your account)
-    "karpenter.sh/discovery" = local.karpenter.discovery_value
-  })
-
-  # this can't rely on default_tags.
-  # full set of tags must be specified here :sob:
-  tags = merge(local.tags, {
-    "karpenter.sh/discovery" = local.karpenter.discovery_value
-  })
+  depends_on = [module.eks]
 }
 
 resource "kubectl_manifest" "cluster_role_dashboard" {
