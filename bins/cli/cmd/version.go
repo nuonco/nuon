@@ -10,7 +10,7 @@ func (c *cli) versionCmd() *cobra.Command {
 	versionCmd := &cobra.Command{
 		Use:               "version",
 		PersistentPreRunE: c.persistentPreRunE,
-		Run: c.wrapCmd(VersionEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := version.New()
 			return svc.Version(cmd.Context(), PrintJSON)
 		}),
