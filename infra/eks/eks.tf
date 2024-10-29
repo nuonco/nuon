@@ -34,7 +34,7 @@ module "eks" {
 
   # new in 20.0
   authentication_mode                      = "API_AND_CONFIG_MAP" # default
-  enable_cluster_creator_admin_permissions = true                 # for terraform
+  enable_cluster_creator_admin_permissions = false
 
   # irsa
   enable_irsa = true # default
