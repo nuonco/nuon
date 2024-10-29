@@ -51,6 +51,7 @@ module "karpenter" {
 
   # Name needs to match role name passed to the EC2NodeClass
   node_iam_role_use_name_prefix   = false
+  node_iam_role_name              = local.workspace_trimmed
   create_pod_identity_association = true
 
   # https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest/submodules/karpenter#input_service_account
@@ -59,7 +60,7 @@ module "karpenter" {
   # irsa
   enable_irsa                     = true
   irsa_oidc_provider_arn          = module.eks.oidc_provider_arn
-  irsa_namespace_service_accounts = ["karpenter:karpenter"]
+  irsa_namespace_service_accounts = ["karpenter:karpenter"] # default
 
   tags = local.tags
 }
@@ -143,7 +144,8 @@ resource "helm_release" "karpenter" {
       tolerations : [
         {
           key : "CriticalAddonsOnly"
-          value : "exists"
+          operator : "Exists"
+          effect : "NoSchedule"
         },
         {
           key : "karpenter.sh/controller"
