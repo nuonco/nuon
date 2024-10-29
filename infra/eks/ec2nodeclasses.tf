@@ -22,7 +22,7 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
     }
     spec = {
       amiFamily = "AL2"
-      role      = module.eks.eks_managed_node_groups["karpenter"].iam_role_arn
+      role      = module.eks.eks_managed_node_groups["karpenter"].iam_role_name
       subnetSelectorTerms = [
         {
           tags = {
@@ -62,7 +62,7 @@ resource "kubectl_manifest" "ec2nodeclass" {
     }
     spec = {
       amiFamily = "AL2"
-      role      = module.eks.eks_managed_node_groups["karpenter"].iam_role_arn
+      role      = module.eks.eks_managed_node_groups["karpenter"].iam_role_name
       subnetSelectorTerms = [
         {
           tags = {

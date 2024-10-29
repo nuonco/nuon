@@ -218,3 +218,12 @@ output "twingate_service_accounts" {
     }
   }
 }
+
+output "karpenter" {
+  description = "karpenter"
+  value = {
+    iam_role_arn       = module.karpenter.iam_role_arn
+    node_iam_role_arn  = module.karpenter.node_iam_role_arn
+    node_iam_role_name = module.karpenter.node_iam_role_name
+  }
+}
