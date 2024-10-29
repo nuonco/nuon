@@ -136,6 +136,7 @@ resource "helm_release" "karpenter" {
         enabled : "true"
         port : 8443
       }
+      dnsPolicy : "default"
       serviceAccount : {
         annotations : {
           "eks.amazonaws.com/role-arn" : module.karpenter.service_account
