@@ -40,6 +40,31 @@ locals {
 #     }
 #   }
 # }
+#
+#
+resource "aws_iam_policy" "karpenter_controller_passrole_to_node_role" {
+  name        = "karpenter_controller_passrole_to_node_role"
+  description = "Allow Karpenter Controller role to PassRole to Node Role"
+
+  # Terraform's "jsonencode" function converts a
+  # Terraform expression result to valid JSON syntax.
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        "Action" : "iam:PassRole",
+        "Condition" : {
+          "StringEquals" : {
+            "iam:PassedToService" : "ec2.amazonaws.com"
+          }
+        },
+        "Effect" : "Allow",
+        "Resource" : module.karpenter.node_iam_role_arn,
+        "Sid" : "AllowPassingInstanceNodeRole"
+      }
+    ]
+  })
+}
 
 module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
@@ -53,6 +78,11 @@ module "karpenter" {
   node_iam_role_use_name_prefix   = false
   node_iam_role_arn               = module.eks.eks_managed_node_groups["karpenter"].iam_role_arn
   create_pod_identity_association = true
+
+
+  iam_role_policies = {
+    "karpenter_controller_passrole_to_node_role" = aws_iam_policy.karpenter_controller_passrole_to_node_role.arn
+  }
 
   # https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest/submodules/karpenter#input_service_account
   service_account = "karpenter" # default
@@ -102,11 +132,12 @@ resource "helm_release" "karpenter" {
   namespace        = "karpenter"
   create_namespace = true
 
-  chart      = "karpenter"
-  name       = "karpenter"
-  repository = "oci://public.ecr.aws/karpenter"
-  version    = local.karpenter.version
-  skip_crds  = true # CRDs are installed by helm_release.karpenter_crd
+  chart                             = "karpenter"
+  name                              = "karpenter"
+  repository                        = "oci://public.ecr.aws/karpenter"
+  version                           = local.karpenter.version
+  skip_crds                         = true # CRDs are installed by helm_release.karpenter_crd
+  node_iam_role_additional_policies = {}
 
   values = [
     # https://github.com/aws/karpenter-provider-aws/blob/release-v0.37.x/charts/karpenter/values.yaml
