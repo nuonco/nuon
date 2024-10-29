@@ -14,118 +14,33 @@ locals {
     cluster_name    = local.workspace_trimmed
     discovery_key   = "karpenter.sh/discovery"
     discovery_value = local.workspace_trimmed
-    version         = "1.0.6"
-    # role_name       = "karpenter-controller-v1-${local.workspace_trimmed}"
   }
 }
 
-# karpenter sa is replaced by the top-level karpenter module
-# module "karpenter_irsa" {
-#   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-#   version = "~> 5.43"
+module "karpenter_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.43"
 
-#   role_name                                  = local.karpenter.role_name
-#   attach_karpenter_controller_policy         = true
-#   enable_karpenter_instance_profile_creation = true
+  role_name                                  = "karpenter-controller-${local.workspace_trimmed}"
+  attach_karpenter_controller_policy         = true
+  enable_karpenter_instance_profile_creation = true
 
-#   karpenter_controller_cluster_id = local.karpenter.cluster_name
-#   karpenter_controller_node_iam_role_arns = [
-#     module.eks.eks_managed_node_groups["karpenter"].iam_role_arn
-#   ]
+  karpenter_controller_cluster_id = local.karpenter.cluster_name
+  karpenter_controller_node_iam_role_arns = [
+    module.eks.eks_managed_node_groups["karpenter"].iam_role_arn
+  ]
 
-#   oidc_providers = {
-#     ex = {
-#       provider_arn               = module.eks.oidc_provider_arn
-#       namespace_service_accounts = ["karpenter:karpenter"]
-#     }
-#   }
-# }
-#
-#
-resource "aws_iam_policy" "karpenter_controller_passrole_to_node_role" {
-  name        = "karpenter_controller_passrole_to_node_role"
-  description = "Allow Karpenter Controller role to PassRole to Node Role"
-
-  # Terraform's "jsonencode" function converts a
-  # Terraform expression result to valid JSON syntax.
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        "Action" : "iam:PassRole",
-        "Condition" : {
-          "StringEquals" : {
-            "iam:PassedToService" : "ec2.amazonaws.com"
-          }
-        },
-        "Effect" : "Allow",
-        "Resource" : module.karpenter.iam_role_arn,
-        "Sid" : "AllowPassingInstanceNodeRole"
-      }
-    ]
-  })
-}
-
-module "karpenter" {
-  source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 20.24"
-
-  cluster_name          = local.karpenter.cluster_name
-  enable_v1_permissions = true
-  namespace             = "karpenter"
-
-  # Name needs to match role name passed to the EC2NodeClass
-  node_iam_role_use_name_prefix   = false
-  node_iam_role_arn               = module.eks.eks_managed_node_groups["karpenter"].iam_role_arn
-  create_pod_identity_association = true
-
-
-  iam_role_policies = {
-    "karpenter_controller_passrole_to_node_role" = aws_iam_policy.karpenter_controller_passrole_to_node_role.arn
+  oidc_providers = {
+    ex = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["karpenter:karpenter"]
+    }
   }
-
-  # https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest/submodules/karpenter#input_service_account
-  service_account = "karpenter" # default
-
-  # irsa
-  enable_irsa                     = true
-  irsa_oidc_provider_arn          = module.eks.oidc_provider_arn
-  irsa_namespace_service_accounts = ["karpenter:karpenter"] # default
-
-  tags = local.tags
 }
 
-
-# this may need to be drepecated
 resource "aws_iam_instance_profile" "karpenter" {
   name = "KarpenterNodeInstanceProfile-${local.workspace_trimmed}"
   role = module.eks.eks_managed_node_groups["karpenter"].iam_role_name
-}
-
-# we applied some labels manually
-# this is only necessary to do once to allow the helm chart to take over the management of the crd
-# docs: https://karpenter.sh/docs/troubleshooting/#helm-error-when-installing-the-karpenter-crd-chart
-
-# install the karpenter crds: latest point version
-resource "helm_release" "karpenter_crd" {
-  namespace        = "karpenter"
-  create_namespace = true
-
-  chart      = "karpenter-crd"
-  name       = "karpenter-crd"
-  repository = "oci://public.ecr.aws/karpenter"
-  version    = local.karpenter.version
-
-  wait = true
-
-  values = [
-    yamlencode({
-      karpenter_namespace = "karpenter"
-    }),
-  ]
-  depends_on = [
-    module.karpenter
-  ]
 }
 
 resource "helm_release" "karpenter" {
@@ -135,8 +50,7 @@ resource "helm_release" "karpenter" {
   chart      = "karpenter"
   name       = "karpenter"
   repository = "oci://public.ecr.aws/karpenter"
-  version    = local.karpenter.version
-  skip_crds  = true # CRDs are installed by helm_release.karpenter_crd
+  version    = "0.37.5"
 
   values = [
     # https://github.com/aws/karpenter-provider-aws/blob/release-v0.37.x/charts/karpenter/values.yaml
@@ -147,7 +61,6 @@ resource "helm_release" "karpenter" {
         clusterEndpoint : module.eks.cluster_endpoint
         clusterName : local.karpenter.cluster_name
       }
-      # https://github.com/aws/karpenter-provider-aws/blob/release-v1.0.6/charts/karpenter/values.yaml#L99
       controller : {
         resources : {
           requests : {
@@ -160,31 +73,23 @@ resource "helm_release" "karpenter" {
           }
         }
       }
-      # NOTE(fd): 1.0.6 does not support webhook.serviceNamespace - keep an eye out for errors
-      # https://github.com/aws/karpenter-provider-aws/blob/release-v1.0.6/charts/karpenter/values.yaml#L140
       webhook : {
         enabled : "true"
         port : 8443
+        serviceNamespace : "karpenter"
       }
-      dnsPolicy : "Default"
       serviceAccount : {
         annotations : {
-          "eks.amazonaws.com/role-arn" : module.karpenter.service_account
+          "eks.amazonaws.com/role-arn" : module.karpenter_irsa.iam_role_arn
         }
       }
       tolerations : [
         {
           key : "CriticalAddonsOnly"
-          operator : "Exists"
-          effect : "NoSchedule"
-        },
-        {
-          key : "karpenter.sh/controller"
-          operator : "Exists"
+          value : "true"
           effect : "NoSchedule"
         },
       ]
-      # https://docs.datadoghq.com/integrations/karpenter/
       podAnnotations : {
         "ad.datadoghq.com/controller.checks" : <<-EOT
           {
@@ -200,9 +105,5 @@ resource "helm_release" "karpenter" {
         EOT
       }
     }),
-  ]
-  depends_on = [
-    module.eks_aws_auth,
-    helm_release.karpenter_crd
   ]
 }

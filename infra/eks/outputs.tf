@@ -181,10 +181,10 @@ output "self_managed_node_groups_autoscaling_group_names" {
 # Additional
 ################################################################################
 
-# output "aws_auth_configmap_yaml" {
-#   description = "Formatted yaml output for base aws-auth configmap containing roles used in cluster node groups/fargate profiles"
-#   value       = module.eks_aws_auth
-# }
+output "aws_auth_configmap_yaml" {
+  description = "Formatted yaml output for base aws-auth configmap containing roles used in cluster node groups/fargate profiles"
+  value       = module.eks.aws_auth_configmap_yaml
+}
 
 output "private_zone" {
   description = "The subdomain used as the private zone for this cluster"
@@ -216,14 +216,5 @@ output "twingate_service_accounts" {
       token = nonsensitive(twingate_service_account_key.github_actions.token)
       id    = twingate_service_account_key.github_actions.service_account_id
     }
-  }
-}
-
-output "karpenter" {
-  description = "karpenter"
-  value = {
-    iam_role_arn       = module.karpenter.iam_role_arn
-    node_iam_role_arn  = module.karpenter.node_iam_role_arn
-    node_iam_role_name = module.karpenter.node_iam_role_name
   }
 }

@@ -21,8 +21,8 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
       name = "default"
     }
     spec = {
-      amiFamily = "AL2"
-      role      = module.eks.eks_managed_node_groups["karpenter"].iam_role_name
+      amiFamily       = "AL2"
+      instanceProfile = aws_iam_instance_profile.karpenter.name # https://karpenter.sh/v0.32/concepts/nodeclasses/#specinstanceprofile
       subnetSelectorTerms = [
         {
           tags = {
@@ -61,8 +61,8 @@ resource "kubectl_manifest" "ec2nodeclass" {
       name = each.value
     }
     spec = {
-      amiFamily = "AL2"
-      role      = module.eks.eks_managed_node_groups["karpenter"].iam_role_name
+      amiFamily       = "AL2"
+      instanceProfile = aws_iam_instance_profile.karpenter.name
       subnetSelectorTerms = [
         {
           tags = {
