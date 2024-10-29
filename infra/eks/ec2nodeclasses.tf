@@ -21,8 +21,9 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
       name = "default"
     }
     spec = {
-      amiFamily       = "AL2"
-      instanceProfile = aws_iam_instance_profile.karpenter.name # https://karpenter.sh/v0.32/concepts/nodeclasses/#specinstanceprofile
+      amiFamily = "AL2"
+      # https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest/submodules/karpenter?tab=outputs
+      instanceProfile = module.karpenter.instance_profile_arn
       subnetSelectorTerms = [
         {
           tags = {
@@ -62,7 +63,7 @@ resource "kubectl_manifest" "ec2nodeclass" {
     }
     spec = {
       amiFamily       = "AL2"
-      instanceProfile = aws_iam_instance_profile.karpenter.name
+      instanceProfile = module.karpenter.instance_profile_arn
       subnetSelectorTerms = [
         {
           tags = {
