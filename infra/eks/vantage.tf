@@ -4,7 +4,7 @@
 locals {
   bucket_name   = "nuon-vantage-k8s-agent-${local.workspace_trimmed}"
   account_id    = data.aws_caller_identity.current.account_id
-  oidc_provider = data.tfe_outputs.infra-eks-nuon.values.oidc_provider
+  oidc_provider = try(data.tfe_outputs.infra-eks-nuon.values.oidc_provider, "http://example.com")
 }
 
 # bucket for deployment state
