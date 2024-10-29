@@ -27,7 +27,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Use:   "current",
 		Short: "Get current org",
 		Long:  "Get the org you are currently authenticated with",
-		Run: c.wrapCmd(OrgsCurrentEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.Current(cmd.Context(), PrintJSON)
 		}),
@@ -40,7 +40,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Use:   "health-checks",
 		Short: "List health checks",
 		Long:  "List recent health checks for the org you are currently authenticated with",
-		Run: c.wrapCmd(OrgsListHealthChecksEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.ListHealthChecks(cmd.Context(), limit, PrintJSON)
 		}),
@@ -52,7 +52,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Use:   "api-token",
 		Short: "Get api token",
 		Long:  "Get api token that is active for current org",
-		Run: c.wrapCmd(OrgsAPITokenEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.APIToken(cmd.Context(), PrintJSON)
 		}),
@@ -63,7 +63,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Use:   "id",
 		Short: "Get current org id",
 		Long:  "Get id for current org",
-		Run: c.wrapCmd(OrgsByIdEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.ID(cmd.Context(), PrintJSON)
 		}),
@@ -75,7 +75,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List orgs",
 		Long:    "List all your orgs",
-		Run: c.wrapCmd(OrgsListEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.List(cmd.Context(), PrintJSON)
 		}),
@@ -86,7 +86,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Use:   "list-connected-repos",
 		Short: "List connected repos",
 		Long:  "List repositories from connected GitHub accounts",
-		Run: c.wrapCmd(OrgsListConnectedReposEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.ConnectedRepos(cmd.Context(), PrintJSON)
 		}),
@@ -97,7 +97,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Use:   "list-vcs-connections",
 		Short: "List VCS connections",
 		Long:  "List all connected GitHub accounts",
-		Run: c.wrapCmd(OrgsListVCSConnectionsEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.VCSConnections(cmd.Context(), PrintJSON)
 		}),
@@ -108,7 +108,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Use:   "connect-github",
 		Short: "Connect GitHub account",
 		Long:  "Connect GitHub account to your Nuon org",
-		Run: c.wrapCmd(OrgsConnectedGithubEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.ConnectGithub(cmd.Context())
 		}),
@@ -121,7 +121,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Use:   "create",
 		Short: "Create new org",
 		Long:  "Create a new org and set it as the current org",
-		Run: c.wrapCmd(OrgsCreateEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.Create(cmd.Context(), name, sandbox, noSelect, PrintJSON)
 		}),
@@ -136,7 +136,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Use:   "select",
 		Short: "Select your current org",
 		Long:  "Select your current org from a list or by org ID",
-		Run: c.wrapCmd(OrgsSelectEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.Select(cmd.Context(), id, PrintJSON)
 		}),
@@ -145,10 +145,10 @@ func (c *cli) orgsCmd() *cobra.Command {
 	orgsCmd.AddCommand(selectOrgCmd)
 
 	deselectOrgCmd := &cobra.Command{
-		Use:   "unset-current",
+		Use:   "deselect",
 		Short: "Deselect your current org",
 		Long:  "Deselect your current org",
-		Run: c.wrapCmd(OrgsUnsetCurrentEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.Deselect(cmd.Context())
 		}),
@@ -159,7 +159,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Use:   "print-config",
 		Short: "Print the current cli config",
 		Long:  "Print the current cli config being used",
-		Run: c.wrapCmd(OrgsPrintConfigEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.PrintConfig(PrintJSON)
 		}),
@@ -169,7 +169,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Use:   "invite",
 		Short: "Invite a user to org",
 		Long:  "Invite a user by email to org",
-		Run: c.wrapCmd(OrgsInviteEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.CreateInvite(cmd.Context(), email, PrintJSON)
 		}),
@@ -181,7 +181,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Use:   "list-invites",
 		Short: "List all org invites",
 		Long:  "List all org invites",
-		Run: c.wrapCmd(OrgsListInvteesEvent, func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.ListInvites(cmd.Context(), limit, PrintJSON)
 		}),
