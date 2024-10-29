@@ -32,6 +32,8 @@ func (c *cli) orgsCmd() *cobra.Command {
 			return svc.Current(cmd.Context(), PrintJSON)
 		}),
 	}
+	// TODO(sdboyer) remove this eventually, obviated by marking current in the list cmd
+	currentCmd.Hidden = true
 	orgsCmd.AddCommand(currentCmd)
 
 	healthChecksCmd := &cobra.Command{

@@ -2,6 +2,7 @@ package orgs
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -30,9 +31,13 @@ func (s *Service) List(ctx context.Context, asJSON bool) error {
 		},
 	}
 
+	curID := s.cfg.GetString("org_id")
 	for _, org := range orgs {
+		if org.ID == curID {
+			org.ID = fmt.Sprintf("%s %s", org.ID, "*")
+		}
 		data = append(data, []string{
-			*&org.ID,
+			org.ID,
 			org.Name,
 			org.StatusDescription,
 			strconv.FormatBool(org.SandboxMode),

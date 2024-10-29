@@ -2,6 +2,7 @@ package apps
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
@@ -28,7 +29,11 @@ func (s *Service) List(ctx context.Context, asJSON bool) error {
 			"DESCRIPTION",
 		},
 	}
+	curID := s.cfg.GetString("app_id")
 	for _, app := range apps {
+		if app.ID == curID {
+			app.ID = fmt.Sprintf("%s %s", app.ID, "*")
+		}
 		data = append(data, []string{
 			app.ID,
 			app.Name,

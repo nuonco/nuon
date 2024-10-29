@@ -2,6 +2,7 @@ package installs
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nuonco/nuon-go/models"
 
@@ -46,7 +47,11 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) error {
 			"CREATED AT",
 		},
 	}
+	curID := s.cfg.GetString("org_id")
 	for _, install := range installs {
+		if install.ID == curID {
+			install.ID = fmt.Sprintf("%s %s", install.ID, "*")
+		}
 		data = append(data, []string{
 			install.ID,
 			install.Name,

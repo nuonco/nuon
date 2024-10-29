@@ -55,6 +55,8 @@ func (c *cli) appsCmd() *cobra.Command {
 			return svc.Get(cmd.Context(), c.cfg.GetString("app_id"), PrintJSON)
 		}),
 	}
+	// TODO(sdboyer) remove this eventually, obviated by marking current in the list cmd
+	currentCmd.Hidden = true
 	appsCmd.AddCommand(currentCmd)
 
 	latestSandboxConfigCmd := &cobra.Command{
