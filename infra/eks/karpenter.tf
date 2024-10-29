@@ -132,12 +132,11 @@ resource "helm_release" "karpenter" {
   namespace        = "karpenter"
   create_namespace = true
 
-  chart                             = "karpenter"
-  name                              = "karpenter"
-  repository                        = "oci://public.ecr.aws/karpenter"
-  version                           = local.karpenter.version
-  skip_crds                         = true # CRDs are installed by helm_release.karpenter_crd
-  node_iam_role_additional_policies = {}
+  chart      = "karpenter"
+  name       = "karpenter"
+  repository = "oci://public.ecr.aws/karpenter"
+  version    = local.karpenter.version
+  skip_crds  = true # CRDs are installed by helm_release.karpenter_crd
 
   values = [
     # https://github.com/aws/karpenter-provider-aws/blob/release-v0.37.x/charts/karpenter/values.yaml
