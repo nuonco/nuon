@@ -22,8 +22,7 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
     }
     spec = {
       amiFamily = "AL2"
-      # https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest/submodules/karpenter?tab=outputs
-      instanceProfile = module.karpenter.instance_profile_arn
+      role      = module.eks.eks_managed_node_groups["karpenter"].iam_role_arn
       subnetSelectorTerms = [
         {
           tags = {
@@ -62,8 +61,8 @@ resource "kubectl_manifest" "ec2nodeclass" {
       name = each.value
     }
     spec = {
-      amiFamily       = "AL2"
-      instanceProfile = module.karpenter.instance_profile_arn
+      amiFamily = "AL2"
+      role      = module.eks.eks_managed_node_groups["karpenter"].iam_role_arn
       subnetSelectorTerms = [
         {
           tags = {

@@ -51,7 +51,7 @@ module "karpenter" {
 
   # Name needs to match role name passed to the EC2NodeClass
   node_iam_role_use_name_prefix   = false
-  node_iam_role_name              = local.workspace_trimmed
+  node_iam_role_arn               = module.eks.eks_managed_node_groups["karpenter"].iam_role_arn
   create_pod_identity_association = true
 
   # https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest/submodules/karpenter#input_service_account
