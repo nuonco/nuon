@@ -67,41 +67,42 @@ module "eks" {
     }
   }
 
-  manage_aws_auth_configmap = true
+  # commented out due to this being part of another flow
+  # manage_aws_auth_configmap = true
 
-  aws_auth_roles = concat([
-    {
-      rolearn  = aws_iam_role.github_actions.arn
-      username = "gha:{{SessionName}}"
-      groups = [
-        "system:masters",
-      ]
-    },
-    {
-      rolearn  = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
-      username = "admin:{{SessionName}}"
-      groups = [
-        "system:masters",
-        "eks-console-dashboard-full-access",
-      ]
-    },
-    {
-      rolearn  = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonPowerUser"]}"
-      username = "power-user:{{SessionName}}"
-      groups = [
-        "engineers",
-        "eks-console-dashboard-full-access",
-      ]
-    },
-    ],
-    [
-      for add in local.vars.auth_map_additions : {
-        rolearn : module.extra_auth_map[add.name].iam_role_arn
-        username : add.name
-        groups : add.groups
-      }
-    ]
-  )
+  # aws_auth_roles = concat([
+  #   {
+  #     rolearn  = aws_iam_role.github_actions.arn
+  #     username = "gha:{{SessionName}}"
+  #     groups = [
+  #       "system:masters",
+  #     ]
+  #   },
+  #   {
+  #     rolearn  = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
+  #     username = "admin:{{SessionName}}"
+  #     groups = [
+  #       "system:masters",
+  #       "eks-console-dashboard-full-access",
+  #     ]
+  #   },
+  #   {
+  #     rolearn  = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonPowerUser"]}"
+  #     username = "power-user:{{SessionName}}"
+  #     groups = [
+  #       "engineers",
+  #       "eks-console-dashboard-full-access",
+  #     ]
+  #   },
+  #   ],
+  #   [
+  #     for add in local.vars.auth_map_additions : {
+  #       rolearn : module.extra_auth_map[add.name].iam_role_arn
+  #       username : add.name
+  #       groups : add.groups
+  #     }
+  #   ]
+  # )
 
   eks_managed_node_groups = {
     karpenter = {
