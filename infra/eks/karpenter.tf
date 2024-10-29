@@ -59,7 +59,7 @@ resource "aws_iam_policy" "karpenter_controller_passrole_to_node_role" {
           }
         },
         "Effect" : "Allow",
-        "Resource" : module.karpenter.node_iam_role_arn,
+        "Resource" : module.karpenter.iam_role_arn,
         "Sid" : "AllowPassingInstanceNodeRole"
       }
     ]
