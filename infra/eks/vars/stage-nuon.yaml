@@ -1,5 +1,4 @@
 ---
-enable_external_access: true
 tier: beta
 auth_map_additions:
   - name: eks-workers-executors

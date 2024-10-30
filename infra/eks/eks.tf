@@ -8,7 +8,15 @@ locals {
   # custom entries used for external access from other clusters
   external_access_entries = { for idx, item in local.vars.auth_map_additions : format("external-access-%s", item.name) => {
     principal_arn     = module.extra_auth_map[item.name].iam_role_arn
-    kubernetes_groups = item.groups
+    kubernetes_groups = [] # empty because they are all system:admin and those are replaced by AmazonEKSClusterAdminPolicy
+    policy_associations = {
+      cluster_admin = {
+        policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+        access_scope = {
+          type = "cluster"
+        }
+      }
+    }
   } }
 
   # default access entries used for each cluster
@@ -16,15 +24,31 @@ locals {
     "gha:{{SessionName}}" = {
       principal_arn = aws_iam_role.github_actions.arn
       kubernetes_groups = [
-        "system:masters",
+        # "system:masters",
       ],
+      policy_associations = {
+        example = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
     }
     "admin:{{SessionName}}" = {
       principal_arn = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
       kubernetes_groups = [
-        "system:masters",
+        # "system:masters",
         "eks-console-dashboard-full-access",
       ]
+      policy_associations = {
+        example = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
     },
     "power-user:{{SessionName}}" = {
       principal_arn = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonPowerUser"]}"
@@ -78,11 +102,11 @@ module "eks" {
   # Cluster access entry
   # https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest#cluster-access-entry
   # https://docs.aws.amazon.com/eks/latest/userguide/access-policies.html
-  enable_cluster_creator_admin_permissions =  true # aws-auth configmap-based auth for terraform
-  access_entries = local.vars.enable_external_access ? merge(
+  enable_cluster_creator_admin_permissions = true # aws-auth configmap-based auth for terraform
+  access_entries = merge(
     local.default_access_entries,
     local.external_access_entries
-  ) : local.default_access_entries
+  )
 
   create_kms_key = false
   cluster_encryption_config = {

@@ -1,5 +1,4 @@
 ---
-enable_external_access: true
 auth_map_additions: []
 
 alb_settings: {}
