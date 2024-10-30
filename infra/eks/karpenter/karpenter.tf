@@ -43,6 +43,7 @@ module "karpenter" {
   namespace    = var.namespace
 
   create_node_iam_role = false
+  create_access_entry  = false
   node_iam_role_arn    = var.node_iam_role_arn
 
   enable_v1_permissions = true

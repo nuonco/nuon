@@ -27,37 +27,13 @@ locals {
         # "system:masters",
       ],
       policy_associations = {
-        example = {
+        cluster_admin = {
           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
           access_scope = {
             type = "cluster"
           }
         }
       }
-    }
-    "admin:{{SessionName}}" = {
-      # principal_arn = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
-      # trying based on this: https://github.com/terraform-aws-modules/terraform-aws-eks/issues/2969
-      principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/${local.region}/${local.sso_roles["NuonAdmin"]}"
-      kubernetes_groups = [
-        # "system:masters",
-        "eks-console-dashboard-full-access",
-      ]
-      policy_associations = {
-        example = {
-          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-          access_scope = {
-            type = "cluster"
-          }
-        }
-      }
-    },
-    "power-user:{{SessionName}}" = {
-      principal_arn = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonPowerUser"]}"
-      kubernetes_groups = [
-        "engineers",
-        "eks-console-dashboard-full-access",
-      ]
     }
   }
 }
@@ -186,6 +162,35 @@ module "eks" {
   tags = merge(local.tags, {
     "karpenter.sh/discovery" = local.karpenter.discovery_value
   })
+}
+
+# service linked roles use the aws-auth configmap-based auth
+# until they are valid principals for an entry
+module "eks_aws_auth" {
+  source  = "terraform-aws-modules/eks/aws//modules/aws-auth"
+  version = "~> 20.0"
+
+  manage_aws_auth_configmap = true
+
+  aws_auth_roles = [
+    {
+      username = "admin:{{SessionName}}"
+      # trying based on this: https://github.com/terraform-aws-modules/terraform-aws-eks/issues/2969
+      role = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
+      groups = [
+        "system:masters",
+        "eks-console-dashboard-full-access",
+      ]
+    },
+    {
+      username = "power-user:{{SessionName}}"
+      role     = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonPowerUser"]}"
+      groups = [
+        "engineers",
+        "eks-console-dashboard-full-access",
+      ]
+    }
+  ]
 }
 
 resource "kubectl_manifest" "cluster_role_dashboard" {
