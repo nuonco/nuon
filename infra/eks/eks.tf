@@ -36,7 +36,9 @@ locals {
       }
     }
     "admin:{{SessionName}}" = {
-      principal_arn = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
+      # principal_arn = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
+      # trying based on this: https://github.com/terraform-aws-modules/terraform-aws-eks/issues/2969
+      principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/${local.region}/${local.sso_roles["NuonAdmin"]}"
       kubernetes_groups = [
         # "system:masters",
         "eks-console-dashboard-full-access",
