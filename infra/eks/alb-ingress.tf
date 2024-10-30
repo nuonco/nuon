@@ -44,6 +44,16 @@ resource "helm_release" "alb-ingress-controller" {
   }
 
   set {
+    name  = "region"
+    value = local.vars.region
+  }
+
+  set {
+    name  = "vpcId"
+    value = module.vpc.vpc_id
+  }
+
+  set {
     name  = "rbac.create"
     value = "true"
   }
