@@ -57,7 +57,7 @@ module "karpenter" {
 
   enable_irsa                     = true
   irsa_oidc_provider_arn          = var.oidc_provider_arn
-  irsa_namespace_service_accounts = ["karpenter:karpenter"]
+  irsa_namespace_service_accounts = ["kube-system:karpenter"]
   iam_role_tags = merge(var.tags, {
     karpenter = true
   })
@@ -113,7 +113,7 @@ resource "helm_release" "karpenter" {
         interruptionQueue : module.karpenter.queue_name
         batchMaxDuration : "15s" # a little longer than the default
       }
-      dnsPolicy : "Default"
+      dnsPolicy : "ClusterFirst"
       controller : {
         resources : {
           requests : {
@@ -133,7 +133,7 @@ resource "helm_release" "karpenter" {
       }
       # serviceAccount : {
       #   annotations : {
-      #     "eks.amazonaws.com/role-arn" : module.karpenter.service_account
+      #     "eks.amazonaws.com/role" : module.karpenter.service_account
       #   }
       # }
       tolerations : [
