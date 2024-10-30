@@ -10,13 +10,6 @@
 #    with this same strategy unless we needed to break instance types down into very granular options.
 
 
-# Note(fd): we don't need to create this anymore - the nodgroup has its own profile
-# we should use that
-# resource "aws_iam_instance_profile" "karpenter" {
-#   name = "KarpenterNodeInstanceProfile-${var.cluster_name}"
-#   role = var.node_iam_role_arn
-# }
-
 # module "karpenter_irsa" {
 #   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 #   version = "~> 5.43"
@@ -37,6 +30,15 @@
 #     }
 #   }
 # }
+
+
+# Note(fd): we cant reference the managed node group profile directly. so we create it here.
+# v2 suffix added to prevent name collision w/ any resources that failed to clean up
+resource "aws_iam_instance_profile" "karpenter" {
+  name = "KarpenterNodeInstanceProfileV2-${var.cluster_name}"
+  role = var.node_iam_role_arn
+}
+
 
 # Note(fd): we use the entry from the nodegroup
 # the nodegroup exists and has an instance profile
