@@ -6,9 +6,9 @@ resource "random_integer" "node_ttl" {
   min = 60 * 60 * 11 # 11 hours
   max = 60 * 60 * 17 # 17 hours
 
-  seed = local.karpenter.cluster_name
+  seed = var.cluster_name
   keepers = {
-    cluster_version = local.cluster_version
+    cluster_version = var.karpenter_version
   }
 }
 
@@ -26,19 +26,19 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
       subnetSelectorTerms = [
         {
           tags = {
-            "karpenter.sh/discovery" = local.karpenter.discovery_value
+            "karpenter.sh/discovery" = var.discovery_value
           }
         }
       ]
       securityGroupSelectorTerms = [
         {
           tags = {
-            "karpenter.sh/discovery" = local.karpenter.discovery_value
+            "karpenter.sh/discovery" = var.discovery_value
           }
         }
       ]
       tags = {
-        "karpenter.sh/discovery" = local.karpenter.discovery_value
+        "karpenter.sh/discovery" = var.discovery_value
       }
     }
   })
@@ -53,7 +53,7 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
 # see vars/default.yaml
 # docs: https://karpenter.sh/docs/upgrading/v1-migration/#upgrade-procedure
 resource "kubectl_manifest" "ec2nodeclass" {
-  for_each = toset(local.vars.ec2nodeclasses)
+  for_each = toset(var.ec2nodeclasses)
   yaml_body = yamlencode({
     apiVersion = "karpenter.k8s.aws/v1beta1"
     kind       = "EC2NodeClass"
@@ -66,25 +66,24 @@ resource "kubectl_manifest" "ec2nodeclass" {
       subnetSelectorTerms = [
         {
           tags = {
-            "karpenter.sh/discovery" = local.karpenter.discovery_value
+            "karpenter.sh/discovery" = var.discovery_value
           }
         }
       ]
       securityGroupSelectorTerms = [
         {
           tags = {
-            "karpenter.sh/discovery" = local.karpenter.discovery_value
+            "karpenter.sh/discovery" = var.discovery_value
           }
         }
       ]
       tags = {
-        "karpenter.sh/discovery" = local.karpenter.discovery_value
+        "karpenter.sh/discovery" = var.discovery_value
       }
     }
   })
 
   depends_on = [
     helm_release.karpenter,
-    kubectl_manifest.karpenter_ec2nodeclass
   ]
 }

@@ -1,6 +1,8 @@
 ---
-alb_settings: {}
+enable_external_access: true
 auth_map_additions: []
+
+alb_settings: {}
 managed_node_group:
   instance_types:
     - t3a.medium

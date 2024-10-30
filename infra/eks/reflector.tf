@@ -8,6 +8,6 @@ resource "helm_release" "reflector" {
   version    = "v7.1.210"
 
   depends_on = [
-    helm_release.cert_manager
+    module.eks
   ]
 }

@@ -50,6 +50,10 @@ provider "aws" {
 provider "twingate" {}
 
 provider "kubernetes" {
+  alias = "bootstrap"
+}
+
+provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
 

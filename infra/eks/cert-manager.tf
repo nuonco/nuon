@@ -55,10 +55,6 @@ resource "helm_release" "cert_manager" {
     value = "1001"
   }
 
-  depends_on = [
-    kubectl_manifest.karpenter_provisioner,
-  ]
-
   lifecycle {
     # destroying the release removes the CRDs and any custom resources
     # which would remove all certs issued by cert-manager

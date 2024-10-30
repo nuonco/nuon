@@ -76,6 +76,6 @@ resource "helm_release" "external_dns" {
   ]
 
   depends_on = [
-    kubectl_manifest.karpenter_provisioner,
+    module.eks
   ]
 }

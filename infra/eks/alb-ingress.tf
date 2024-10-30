@@ -68,7 +68,6 @@ resource "helm_release" "alb-ingress-controller" {
   ]
 
   depends_on = [
-    kubectl_manifest.karpenter_provisioner,
     helm_release.cert_manager
   ]
 }

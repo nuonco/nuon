@@ -88,6 +88,6 @@ resource "helm_release" "twingate" {
   }
 
   depends_on = [
-    kubectl_manifest.karpenter_provisioner,
+    module.eks
   ]
 }

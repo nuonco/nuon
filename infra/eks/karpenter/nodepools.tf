@@ -36,7 +36,7 @@ resource "kubectl_manifest" "karpenter_provisioner" {
             {
               "key"      = "node.kubernetes.io/instance-type"
               "operator" = "In"
-              "values"   = local.vars.managed_node_group.instance_types
+              "values"   = var.instance_types
             },
             {
               key      = "topology.kubernetes.io/zone"
@@ -74,6 +74,5 @@ resource "kubectl_manifest" "karpenter_provisioner" {
 
   depends_on = [
     helm_release.karpenter,
-    kubectl_manifest.karpenter_ec2nodeclass # depend on the default nodeclass
   ]
 }

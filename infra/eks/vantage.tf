@@ -2,9 +2,9 @@
 # Vantage Kubernetes Agent
 #
 locals {
-  bucket_name = "nuon-vantage-k8s-agent-${local.workspace_trimmed}"
+  bucket_name   = "nuon-vantage-k8s-agent-${local.workspace_trimmed}"
   account_id    = data.aws_caller_identity.current.account_id
-  oidc_provider = try(data.tfe_outputs.infra-eks-nuon.values.oidc_provider, "http://example.com")
+  oidc_provider = try(data.tfe_outputs.infra-eks-nuon.values.oidc_provider, module.eks.oidc_provider)
 }
 
 # bucket for deployment state
@@ -130,7 +130,7 @@ data "aws_iam_policy_document" "vantage_k8s_agent_trust_policy" {
       test     = "StringEquals"
       variable = "${local.oidc_provider}:sub"
       // NOTE(fd): named after the fact because we didn't know what the generator would produce
-      values   = ["system:serviceaccount:vantage:vantage-k8s-agent-service-account"]
+      values = ["system:serviceaccount:vantage:vantage-k8s-agent-service-account"]
     }
   }
 }
@@ -210,8 +210,8 @@ resource "helm_release" "vantage-k8s-agent" {
         "useDeployment"          = true
         "debug"                  = false
         "logLevel"               = "0"
-        "clusterID"              = "${local.workspace_trimmed}"
-        "token"                  = "${var.vantage_api_token}"
+        "clusterID"              = local.workspace_trimmed
+        "token"                  = var.vantage_api_token
         "collectNamespaceLabels" = "true"
         "gpu" = {
           "usageMetrics" = false
@@ -219,7 +219,7 @@ resource "helm_release" "vantage-k8s-agent" {
       }
 
       "persistS3" = {
-        "bucket" = "${local.bucket_name}"
+        "bucket" = local.bucket_name
       }
 
       "service" = {
@@ -230,19 +230,19 @@ resource "helm_release" "vantage-k8s-agent" {
 
       "resources" = {
         "limits" = {
-          "cpu" = "500m"
+          "cpu"    = "500m"
           "memory" = "1000Mi"
         }
         "requests" = {
-          "cpu" = "100m"
+          "cpu"    = "100m"
           "memory" = "100Mi"
         }
       }
       "serviceAccount" = {
         "annotations" = {
-            "eks.amazonaws.com/role-arn" = aws_iam_role.vantage_k8s_agent_role.arn
+          "eks.amazonaws.com/role-arn" = aws_iam_role.vantage_k8s_agent_role.arn
         }
-        "name": "vantage-k8s-agent-service-account"
+        "name" : "vantage-k8s-agent-service-account"
       }
     }),
   ]

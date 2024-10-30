@@ -1,9 +1,39 @@
 locals {
-  cluster_version = "1.30"
+  cluster_version = "1.31"
   region          = local.vars.region
 
   # rearrange SSO roles by name for easier access
   sso_roles = { for i, name in data.aws_iam_roles.sso_roles.names : tolist(split("_", name))[1] => name }
+
+  # custom entries used for external access from other clusters
+  external_access_entries = { for idx, item in local.vars.auth_map_additions : format("external-access-%s", item.name) => {
+    principal_arn     = module.extra_auth_map[item.name].iam_role_arn
+    kubernetes_groups = item.groups
+  } }
+
+  # default access entries used for each cluster
+  default_access_entries = {
+    "gha:{{SessionName}}" = {
+      principal_arn = aws_iam_role.github_actions.arn
+      kubernetes_groups = [
+        "system:masters",
+      ],
+    }
+    "admin:{{SessionName}}" = {
+      principal_arn = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
+      kubernetes_groups = [
+        "system:masters",
+        "eks-console-dashboard-full-access",
+      ]
+    },
+    "power-user:{{SessionName}}" = {
+      principal_arn = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonPowerUser"]}"
+      kubernetes_groups = [
+        "engineers",
+        "eks-console-dashboard-full-access",
+      ]
+    }
+  }
 }
 
 # the role names are like AWSReservedSSO_${ROLE}_${random_stuff}
@@ -21,9 +51,10 @@ resource "aws_kms_alias" "eks" {
   target_key_id = aws_kms_key.eks.id
 }
 
+# https://github.com/terraform-aws-modules/terraform-aws-eks/blob/master/docs/UPGRADE-20.0.md
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "19.0"
+  version = "20.26.1"
 
   # This module does something funny with state and `default_tags`
   # so it shows as a change on every apply. By using a provider w/o
@@ -39,6 +70,19 @@ module "eks" {
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
+
+
+  authentication_mode = "API_AND_CONFIG_MAP"
+  enable_irsa         = true
+
+  # Cluster access entry
+  # https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest#cluster-access-entry
+  # https://docs.aws.amazon.com/eks/latest/userguide/access-policies.html
+  enable_cluster_creator_admin_permissions =  true # aws-auth configmap-based auth for terraform
+  access_entries = local.vars.enable_external_access ? merge(
+    local.default_access_entries,
+    local.external_access_entries
+  ) : local.default_access_entries
 
   create_kms_key = false
   cluster_encryption_config = {
@@ -67,41 +111,9 @@ module "eks" {
     }
   }
 
-  manage_aws_auth_configmap = true
-
-  aws_auth_roles = concat([
-    {
-      rolearn  = aws_iam_role.github_actions.arn
-      username = "gha:{{SessionName}}"
-      groups = [
-        "system:masters",
-      ]
-    },
-    {
-      rolearn  = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
-      username = "admin:{{SessionName}}"
-      groups = [
-        "system:masters",
-        "eks-console-dashboard-full-access",
-      ]
-    },
-    {
-      rolearn  = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonPowerUser"]}"
-      username = "power-user:{{SessionName}}"
-      groups = [
-        "engineers",
-        "eks-console-dashboard-full-access",
-      ]
-    },
-    ],
-    [
-      for add in local.vars.auth_map_additions : {
-        rolearn : module.extra_auth_map[add.name].iam_role_arn
-        username : add.name
-        groups : add.groups
-      }
-    ]
-  )
+  cluster_addons = {
+    eks-pod-identity-agent = {}
+  }
 
   eks_managed_node_groups = {
     karpenter = {
@@ -111,13 +123,20 @@ module "eks" {
       max_size     = local.vars.managed_node_group.max_size
       desired_size = local.vars.managed_node_group.desired_size
 
-      iam_role_additional_policies = {
-        # Required by Karpenter
-        ssm = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      # TODO(fd): idk if we still need this
+      # iam_role_additional_policies = {
+      #   # Required by Karpenter
+      #   ssm = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      # }
+
+      # Used to ensure Karpenter runs on nodes that it does not manage
+      labels = {
+        "karpenter.sh/controller" = "true"
       }
+      # won't schedule on nodes it manages
       taints = {
-        no_schedule_karpenter = {
-          key    = "CriticalAddonsOnly"
+        karpenter = {
+          key    = "karpenter.sh/controller"
           value  = "true"
           effect = "NO_SCHEDULE"
         }
@@ -176,7 +195,7 @@ resource "kubectl_manifest" "cluster_role_dashboard" {
   })
 
   depends_on = [
-    helm_release.karpenter
+    module.eks
   ]
 }
 
@@ -228,6 +247,6 @@ resource "kubectl_manifest" "cluster_role_binding_engineers_edit" {
   })
 
   depends_on = [
-    helm_release.karpenter
+    module.eks
   ]
 }

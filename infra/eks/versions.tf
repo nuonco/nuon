@@ -12,11 +12,11 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 5.67.0"
+      version = ">= 5.73.0"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = ">= 2.14"
+      version = ">= 2.16.1"
     }
     kubectl = {
       source  = "gavinbunney/kubectl"
@@ -24,7 +24,7 @@ terraform {
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = ">= 2.31.0"
+      version = ">= 2.33.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -36,7 +36,7 @@ terraform {
     }
     tfe = {
       source  = "hashicorp/tfe"
-      version = ">= 0.57.1"
+      version = ">= 0.59.0"
     }
     utils = {
       source  = "cloudposse/utils"
