@@ -30,40 +30,6 @@
     }
   },
   "module": {
-    "github_terraform_aws_ou_scp-meta": {
-      "//": {
-        "metadata": {
-          "path": "org/github_terraform_aws_ou_scp-meta",
-          "uniqueId": "github_terraform_aws_ou_scp-meta"
-        }
-      },
-      "allowed_regions": [
-        "us-east-1",
-        "us-east-2",
-        "us-west-1",
-        "us-west-2"
-      ],
-      "deny_creating_iam_users": true,
-      "deny_leaving_orgs": true,
-      "deny_root_account": true,
-      "deny_s3_bucket_public_access_resources": [
-        "arn:aws:s3:::*"
-      ],
-      "deny_s3_buckets_public_access": true,
-      "limit_regions": true,
-      "protect_iam_role_resources": [
-        "arn:aws:iam::*:role/AWSReservedSSO*",
-        "arn:aws:iam::*:role/AWSServiceRole*",
-        "arn:aws:iam::*:role/OrganizationAccountAccessRole"
-      ],
-      "protect_iam_roles": true,
-      "source": "trussworks/ou-scp/aws",
-      "target": {
-        "id": "${aws_organizations_organizational_unit.meta.id}",
-        "name": "${aws_organizations_organizational_unit.meta.name}"
-      },
-      "version": "v1.5.0"
-    },
     "github_terraform_aws_ou_scp-workloads": {
       "//": {
         "metadata": {
@@ -170,7 +136,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2024-08-01T19:49:11.510Z"
+      "value": "2024-10-30T20:28:28.048Z"
     }
   },
   "provider": {
@@ -260,7 +226,7 @@
           ]
         },
         "name": "external",
-        "parent_id": "${aws_organizations_organizational_unit.meta.id}"
+        "parent_id": "${aws_organizations_organizational_unit.deleted.id}"
       },
       "govcloud-prod": {
         "//": {
@@ -555,16 +521,6 @@
           }
         },
         "name": "engineers",
-        "parent_id": "${aws_organizations_organization.org.roots[0].id}"
-      },
-      "meta": {
-        "//": {
-          "metadata": {
-            "path": "org/meta",
-            "uniqueId": "meta"
-          }
-        },
-        "name": "meta",
         "parent_id": "${aws_organizations_organization.org.roots[0].id}"
       },
       "nuon-testing": {

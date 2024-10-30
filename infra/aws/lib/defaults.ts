@@ -51,13 +51,9 @@ type orgStructure = unit[];
 
 export const desiredOrgStructure: orgStructure = [
   {
-    accounts: [],
+    accounts: [{ additionalEnvTags: ['stage', 'prod'], name: 'external' }],
     disableScp: true,
     name: 'deleted',
-  },
-  {
-    accounts: [{ additionalEnvTags: ['stage', 'prod'], name: 'external' }],
-    name: 'meta',
   },
   {
     accounts: [
