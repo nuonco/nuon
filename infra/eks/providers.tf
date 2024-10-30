@@ -100,4 +100,3 @@ provider "kubectl" {
 }
 
 provider "random" {}
-

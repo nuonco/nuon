@@ -54,6 +54,9 @@ resource "helm_release" "cert_manager" {
     name  = "securityContext.fsGroup"
     value = "1001"
   }
+  depends_on = [
+    module.eks_aws_auth
+  ]
 
   lifecycle {
     # destroying the release removes the CRDs and any custom resources

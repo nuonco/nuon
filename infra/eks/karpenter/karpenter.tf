@@ -56,6 +56,7 @@ module "karpenter" {
   })
 
   queue_name = "karpenter"
+
 }
 
 resource "helm_release" "karpenter_crd" {

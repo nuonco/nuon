@@ -68,6 +68,7 @@ resource "helm_release" "alb-ingress-controller" {
   ]
 
   depends_on = [
+    module.eks_aws_auth,
     helm_release.cert_manager
   ]
 }

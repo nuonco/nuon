@@ -88,6 +88,6 @@ resource "helm_release" "twingate" {
   }
 
   depends_on = [
-    module.eks
+    module.eks_aws_auth
   ]
 }

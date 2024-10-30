@@ -35,6 +35,42 @@ locals {
         }
       }
     }
+    "admin:{{SessionName}}" = {
+      # principal_arn = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
+      # trying based on this: https://github.com/terraform-aws-modules/terraform-aws-eks/issues/2969
+      #                                                                                                         hardcoded ⤵
+      principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/us-east-2/${local.sso_roles["NuonAdmin"]}"
+      kubernetes_groups = [
+        # "system:masters",
+        "eks-console-dashboard-full-access",
+      ]
+      policy_associations = {
+        cluster_admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
+    },
+    "power-user:{{SessionName}}" = {
+      # principal_arn = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonPowerUser"]}"
+      # trying based on this: https://github.com/terraform-aws-modules/terraform-aws-eks/issues/2969
+      #                                                                                                         hardcoded ⤵
+      principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/us-east-2/${local.sso_roles["NuonPowerUser"]}"
+      kubernetes_groups = [
+        "engineers",
+        "eks-console-dashboard-full-access",
+      ]
+      policy_associations = {
+        cluster_admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminViewPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
+    }
   }
 }
 
@@ -176,7 +212,7 @@ module "eks_aws_auth" {
     {
       username = "admin:{{SessionName}}"
       # trying based on this: https://github.com/terraform-aws-modules/terraform-aws-eks/issues/2969
-      role = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
+      rolearn = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonAdmin"]}"
       groups = [
         "system:masters",
         "eks-console-dashboard-full-access",
@@ -184,7 +220,7 @@ module "eks_aws_auth" {
     },
     {
       username = "power-user:{{SessionName}}"
-      role     = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonPowerUser"]}"
+      rolearn  = "arn:aws:iam::${local.target_account_id}:role/${local.sso_roles["NuonPowerUser"]}"
       groups = [
         "engineers",
         "eks-console-dashboard-full-access",
@@ -193,91 +229,92 @@ module "eks_aws_auth" {
   ]
 }
 
-resource "kubectl_manifest" "cluster_role_dashboard" {
-  yaml_body = yamlencode({
-    apiVersion = "rbac.authorization.k8s.io/v1"
-    kind       = "ClusterRole"
-    metadata = {
-      name = "eks-console-dashboard-full-access"
-    }
-    rules = [
-      {
-        apiGroups = ["", ]
-        resources = ["nodes", "namespaces", "pods",
-        ]
-        verbs = ["get", "list", ]
-      },
-      {
-        apiGroups = ["apps", ]
-        resources = [
-          "deployments",
-          "daemonsets",
-          "statefulsets",
-          "replicasets",
-        ]
-        verbs = ["get", "list", ]
-      },
-      {
-        apiGroups = ["batch", ]
-        resources = ["jobs", ]
-        verbs     = ["get", "list", ]
-      },
-    ]
-  })
+# remove from state manually
+# resource "kubectl_manifest" "cluster_role_dashboard" {
+#   yaml_body = yamlencode({
+#     apiVersion = "rbac.authorization.k8s.io/v1"
+#     kind       = "ClusterRole"
+#     metadata = {
+#       name = "eks-console-dashboard-full-access"
+#     }
+#     rules = [
+#       {
+#         apiGroups = ["", ]
+#         resources = ["nodes", "namespaces", "pods",
+#         ]
+#         verbs = ["get", "list", ]
+#       },
+#       {
+#         apiGroups = ["apps", ]
+#         resources = [
+#           "deployments",
+#           "daemonsets",
+#           "statefulsets",
+#           "replicasets",
+#         ]
+#         verbs = ["get", "list", ]
+#       },
+#       {
+#         apiGroups = ["batch", ]
+#         resources = ["jobs", ]
+#         verbs     = ["get", "list", ]
+#       },
+#     ]
+#   })
 
-  depends_on = [
-    module.eks
-  ]
-}
+#   depends_on = [
+#     module.eks_aws_auth
+#   ]
+# }
 
-resource "kubectl_manifest" "cluster_role_binding_dashboard" {
-  yaml_body = yamlencode({
-    apiVersion = "rbac.authorization.k8s.io/v1"
-    kind       = "ClusterRoleBinding"
-    metadata = {
-      name = "eks-console-dashboard-full-access"
-    }
-    roleRef = {
-      apiGroup = "rbac.authorization.k8s.io"
-      kind     = "ClusterRole"
-      name     = "eks-console-dashboard-full-access"
-    }
-    subjects = [
-      {
-        apiGroup = "rbac.authorization.k8s.io"
-        kind     = "Group"
-        name     = "eks-console-dashboard-full-access"
-      },
-    ]
-  })
+# resource "kubectl_manifest" "cluster_role_binding_dashboard" {
+#   yaml_body = yamlencode({
+#     apiVersion = "rbac.authorization.k8s.io/v1"
+#     kind       = "ClusterRoleBinding"
+#     metadata = {
+#       name = "eks-console-dashboard-full-access"
+#     }
+#     roleRef = {
+#       apiGroup = "rbac.authorization.k8s.io"
+#       kind     = "ClusterRole"
+#       name     = "eks-console-dashboard-full-access"
+#     }
+#     subjects = [
+#       {
+#         apiGroup = "rbac.authorization.k8s.io"
+#         kind     = "Group"
+#         name     = "eks-console-dashboard-full-access"
+#       },
+#     ]
+#   })
 
-  depends_on = [
-    kubectl_manifest.cluster_role_dashboard
-  ]
-}
+#   depends_on = [
+#     kubectl_manifest.cluster_role_dashboard
+#   ]
+# }
 
-resource "kubectl_manifest" "cluster_role_binding_engineers_edit" {
-  yaml_body = yamlencode({
-    apiVersion = "rbac.authorization.k8s.io/v1"
-    kind       = "ClusterRoleBinding"
-    metadata = {
-      name = "engineers-edit"
-    }
-    roleRef = {
-      apiGroup = "rbac.authorization.k8s.io"
-      kind     = "ClusterRole"
-      name     = "edit"
-    }
-    subjects = [
-      {
-        apiGroup = "rbac.authorization.k8s.io"
-        kind     = "Group"
-        name     = "engineers"
-      },
-    ]
-  })
+# resource "kubectl_manifest" "cluster_role_binding_engineers_edit" {
+#   yaml_body = yamlencode({
+#     apiVersion = "rbac.authorization.k8s.io/v1"
+#     kind       = "ClusterRoleBinding"
+#     metadata = {
+#       name = "engineers-edit"
+#     }
+#     roleRef = {
+#       apiGroup = "rbac.authorization.k8s.io"
+#       kind     = "ClusterRole"
+#       name     = "edit"
+#     }
+#     subjects = [
+#       {
+#         apiGroup = "rbac.authorization.k8s.io"
+#         kind     = "Group"
+#         name     = "engineers"
+#       },
+#     ]
+#   })
 
-  depends_on = [
-    module.eks
-  ]
-}
+#   depends_on = [
+#     module.eks_aws_auth
+#   ]
+# }

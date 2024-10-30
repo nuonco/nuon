@@ -8,6 +8,6 @@ resource "helm_release" "reflector" {
   version    = "v7.1.210"
 
   depends_on = [
-    module.eks
+    module.eks_aws_auth
   ]
 }
