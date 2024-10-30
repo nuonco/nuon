@@ -133,11 +133,11 @@ resource "helm_release" "karpenter" {
         port : 8443
         serviceNamespace : "karpenter"
       }
-      # serviceAccount : {
-      #   annotations : {
-      #     "eks.amazonaws.com/role" : module.karpenter.service_account
-      #   }
-      # }
+      serviceAccount : {
+        annotations : {
+          "eks.amazonaws.com/role-arn" : var.node_iam_role_arn
+        }
+      }
       tolerations : [
         {
           key : "karpenter.sh/controller"
