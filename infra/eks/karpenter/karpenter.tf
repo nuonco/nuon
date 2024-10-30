@@ -62,7 +62,7 @@ module "karpenter" {
     karpenter = true
   })
 
-  queue_name = "karpenter"
+  queue_name = ""
 
 }
 
@@ -131,11 +131,11 @@ resource "helm_release" "karpenter" {
         port : 8443
         serviceNamespace : "karpenter"
       }
-      serviceAccount : {
-        annotations : {
-          "eks.amazonaws.com/role-arn" : module.karpenter.service_account
-        }
-      }
+      # serviceAccount : {
+      #   annotations : {
+      #     "eks.amazonaws.com/role-arn" : module.karpenter.service_account
+      #   }
+      # }
       tolerations : [
         {
           key : "karpenter.sh/controller"
