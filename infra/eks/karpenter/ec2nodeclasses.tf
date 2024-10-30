@@ -9,8 +9,11 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass_default" {
       name = "default"
     }
     spec = {
-      amiFamily       = "AL2"
       instanceProfile = var.node_iam_role_name
+      # https://karpenter.sh/v1.0/concepts/nodeclasses/#specamiselectorterms
+      amiSelectorTerms = {
+        alias = "al2@latest"
+      }
       subnetSelectorTerms = [
         {
           tags = {
@@ -49,9 +52,12 @@ resource "kubectl_manifest" "ec2nodeclass" {
       name = each.value
     }
     spec = {
-      amiFamily = "AL2"
       # we use the nodegroup from the managed node group
       instanceProfile = var.node_iam_role_name
+      # https://karpenter.sh/v1.0/concepts/nodeclasses/#specamiselectorterms
+      amiSelectorTerms = {
+        alias = "al2@latest" # Note(fd): this may need to be pinned  e.g @v20241024
+      }
       subnetSelectorTerms = [
         {
           tags = {
