@@ -11,9 +11,11 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass_default" {
     spec = {
       instanceProfile = var.node_iam_role_name
       # https://karpenter.sh/v1.0/concepts/nodeclasses/#specamiselectorterms
-      amiSelectorTerms = {
-        alias = "al2@latest"
-      }
+      amiSelectorTerms = [
+        {
+          alias = "al2@latest"
+        }
+      ]
       subnetSelectorTerms = [
         {
           tags = {
