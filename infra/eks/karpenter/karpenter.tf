@@ -36,7 +36,7 @@
 # v2 suffix added to prevent name collision w/ any resources that failed to clean up
 resource "aws_iam_instance_profile" "karpenter" {
   name = "KarpenterNodeInstanceProfileV2-${var.cluster_name}"
-  role = var.node_iam_role_arn
+  role = var.node_iam_role_name
 }
 
 
