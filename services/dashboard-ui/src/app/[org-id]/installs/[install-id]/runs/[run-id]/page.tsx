@@ -3,13 +3,16 @@ import { FiCloud, FiClock } from 'react-icons/fi'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
+  ClickToCopy,
   DashboardContent,
   Duration,
   Heading,
   RunnerLogsPoller,
   SandboxRunStatus,
   Text,
+  Truncate,
   Time,
+  ToolTip,
 } from '@/components'
 import { getInstall, getRunnerLogs, getSandboxRun, getOrg } from '@/lib'
 import type { TOTELLog } from '@/types'
@@ -82,7 +85,13 @@ export default withPageAuthRequired(
             <span className="flex flex-col gap-2">
               <Text variant="overline">Install</Text>
               <Text variant="label">{install.name}</Text>
-              <Text variant="caption">{install.id}</Text>
+              <Text variant="id">
+                <ToolTip alignment="right" tipContent={install.id}>
+                  <ClickToCopy>
+                    <Truncate variant="small">{install.id}</Truncate>
+                  </ClickToCopy>
+                </ToolTip>
+              </Text>
             </span>
           </div>
         }
