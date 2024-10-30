@@ -1,17 +1,5 @@
 # uses locals from karpenter.tf
 
-# "randomize" node TTLs so that all nodes across all clusters
-# aren't going down simultaneously
-resource "random_integer" "node_ttl" {
-  min = 60 * 60 * 11 # 11 hours
-  max = 60 * 60 * 17 # 17 hours
-
-  seed = var.cluster_name
-  keepers = {
-    cluster_version = var.karpenter_version
-  }
-}
-
 # https://karpenter.sh/v1.0/concepts/nodeclasses/
 resource "kubectl_manifest" "karpenter_ec2nodeclass_default" {
   yaml_body = yamlencode({
@@ -22,7 +10,7 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass_default" {
     }
     spec = {
       amiFamily       = "AL2"
-      instanceProfile = aws_iam_instance_profile.karpenter.name # https://karpenter.sh/v1.0/concepts/nodeclasses/#specinstanceprofile
+      instanceProfile = var.node_iam_role_arn
       subnetSelectorTerms = [
         {
           tags = {
@@ -61,8 +49,9 @@ resource "kubectl_manifest" "ec2nodeclass" {
       name = each.value
     }
     spec = {
-      amiFamily       = "AL2"
-      instanceProfile = aws_iam_instance_profile.karpenter.name
+      amiFamily = "AL2"
+      # we use the nodegroup from the managed node group
+      instanceProfile = var.node_iam_role_arn
       subnetSelectorTerms = [
         {
           tags = {

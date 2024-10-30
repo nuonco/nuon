@@ -8,11 +8,14 @@
 # 2. The instance_types can be set with excessive granularity but we opt for the simplest strategy that
 #    preserves our current yaml configs. If we wanted to offer multiple instance types, we could do it
 #    with this same strategy unless we needed to break instance types down into very granular options.
-#
-resource "aws_iam_instance_profile" "karpenter" {
-  name = "KarpenterNodeInstanceProfile-${var.cluster_name}"
-  role = var.node_iam_role_arn
-}
+
+
+# Note(fd): we don't need to create this anymore - the nodgroup has its own profile
+# we should use that
+# resource "aws_iam_instance_profile" "karpenter" {
+#   name = "KarpenterNodeInstanceProfile-${var.cluster_name}"
+#   role = var.node_iam_role_arn
+# }
 
 # module "karpenter_irsa" {
 #   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
@@ -35,16 +38,20 @@ resource "aws_iam_instance_profile" "karpenter" {
 #   }
 # }
 
+# Note(fd): we use the entry from the nodegroup
+# the nodegroup exists and has an instance profile
 module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
   version = "20.26.1"
 
-  cluster_name = var.cluster_name
-  namespace    = var.namespace
+  cluster_name        = var.cluster_name
+  namespace           = var.namespace
+  create_access_entry = false
 
   create_node_iam_role = false
-  create_access_entry  = false
   node_iam_role_arn    = var.node_iam_role_arn
+
+  create_instance_profile = false #
 
   enable_v1_permissions = true
 
