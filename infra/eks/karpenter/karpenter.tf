@@ -135,7 +135,7 @@ resource "helm_release" "karpenter" {
       }
       serviceAccount : {
         annotations : {
-          "eks.amazonaws.com/role-arn" : var.node_iam_role_arn
+          "eks.amazonaws.com/role-arn" : module.karpenter.iam_role_arn
         }
       }
       tolerations : [
