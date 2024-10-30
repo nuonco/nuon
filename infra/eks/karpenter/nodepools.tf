@@ -1,12 +1,9 @@
 # uses locals from karpenter.tf
 
-# NOTE: `Provisioner` is now a `NodePool`
-# docs: https://karpenter.sh/v0.32/upgrading/v1beta1-migration/#provisioner---nodepool
-# Workaround - https://github.com/hashicorp/terraform-provider-kubernetes/issues/1380#issuecomment-967022975
-# use `tfk8s -M` to convert yaml to tf map
-resource "kubectl_manifest" "karpenter_provisioner" {
+# https://karpenter.sh/v1.0/concepts/nodepools/
+resource "kubectl_manifest" "karpenter_nodepool_default" {
   yaml_body = yamlencode({
-    apiVersion = "karpenter.sh/v1beta1"
+    apiVersion = "karpenter.sh/v1" # we are on v1 now
     kind       = "NodePool"
     metadata = {
       name = "default"
@@ -18,11 +15,11 @@ resource "kubectl_manifest" "karpenter_provisioner" {
       }
       template = {
         spec = {
-          # https://karpenter.sh/v0.32/upgrading/v1beta1-migration/#provider
+          expireAfter = "24h"
           nodeClassRef = {
-            apiVersion = "karpenter.k8s.aws/v1beta1"
-            kind       = "EC2NodeClass"
-            name       = "default"
+            group = "karpenter.k8s.aws"
+            kind  = "EC2NodeClass"
+            name  = "default"
           }
           requirements = [
             {
@@ -45,25 +42,22 @@ resource "kubectl_manifest" "karpenter_provisioner" {
                 "us-west-2a",
                 "us-west-2b",
                 "us-west-2c",
-                "us-west-2d",
               ]
             },
           ]
         }
       }
+      # https://karpenter.sh/v1.0/concepts/disruption/
       disruption = {
-        # https://karpenter.sh/v0.32/upgrading/v1beta1-migration/#ttlsecondsafterempty
-        consolidationPolicy = "WhenEmpty"
-        consolidateAfter    = "30s"
-        # https://karpenter.sh/v0.32/upgrading/v1beta1-migration/#ttlsecondsuntilexpired
-        expireAfter = "${random_integer.node_ttl.result}s"
+        consolidationPolicy = "WhenEmptyOrUnderutilized"
+        consolidateAfter    = "1m"
         budgets = [
           {
             nodes = "1",
           },
           {
             # don't allow any nodes to be disrupted during work hours
-            nodes    = "0",
+            nodes    = "1",
             schedule = "0 10 * * 1,2,3,4,5" # https://crontab.guru/#0_10_*_*_1,2,3,4,5
             duration = "11h"
           },
@@ -73,6 +67,7 @@ resource "kubectl_manifest" "karpenter_provisioner" {
   })
 
   depends_on = [
+    kubectl_manifest.ec2nodeclass,
     helm_release.karpenter,
   ]
 }

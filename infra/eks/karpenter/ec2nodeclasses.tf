@@ -12,17 +12,17 @@ resource "random_integer" "node_ttl" {
   }
 }
 
-# docs: https://karpenter.sh/v0.37/getting-started/getting-started-with-karpenter/#5-create-nodepool
-resource "kubectl_manifest" "karpenter_ec2nodeclass" {
+# https://karpenter.sh/v1.0/concepts/nodeclasses/
+resource "kubectl_manifest" "karpenter_ec2nodeclass_default" {
   yaml_body = yamlencode({
-    apiVersion = "karpenter.k8s.aws/v1beta1"
+    apiVersion = "karpenter.k8s.aws/v1"
     kind       = "EC2NodeClass"
     metadata = {
       name = "default"
     }
     spec = {
       amiFamily       = "AL2"
-      instanceProfile = aws_iam_instance_profile.karpenter.name # https://karpenter.sh/v0.32/concepts/nodeclasses/#specinstanceprofile
+      instanceProfile = aws_iam_instance_profile.karpenter.name # https://karpenter.sh/v1.0/concepts/nodeclasses/#specinstanceprofile
       subnetSelectorTerms = [
         {
           tags = {
@@ -55,7 +55,7 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
 resource "kubectl_manifest" "ec2nodeclass" {
   for_each = toset(var.ec2nodeclasses)
   yaml_body = yamlencode({
-    apiVersion = "karpenter.k8s.aws/v1beta1"
+    apiVersion = "karpenter.k8s.aws/v1"
     kind       = "EC2NodeClass"
     metadata = {
       name = each.value
