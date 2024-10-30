@@ -5,9 +5,10 @@ import React, { type FC, useEffect, useState } from 'react'
 import { CaretDown, CaretUp } from '@phosphor-icons/react'
 
 export interface IExpand extends React.HTMLAttributes<HTMLDivElement> {
-  expandContent: React.ReactElement
+  expandContent: React.ReactElement | Array<React.ReactElement>
   heading: React.ReactElement | React.ReactNode
   isOpen?: boolean
+  hasHeadingStyle?:Boolean
   id: string
 }
 
@@ -16,6 +17,7 @@ export const Expand: FC<IExpand> = ({
   expandContent,
   heading,
   id,
+  hasHeadingStyle = false,
   isOpen = false,
 }) => {
   const [isExpanded, setIsExpanded] = useState(isOpen)
@@ -25,10 +27,13 @@ export const Expand: FC<IExpand> = ({
   }, [isOpen])
 
   return (
-    <div className={classNames('')}>
+    <div className={classNames('w-full')}>
       <div
         className={classNames(
-          'flex items-center justify-between cursor-pointer hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10 pr-2'
+          'flex items-center justify-between cursor-pointer hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10 pr-2',
+          {            
+            'border-t border-b bg-cool-grey-50 dark:bg-dark-grey-200 text-cool-grey-600 dark:text-cool-grey-500 ': hasHeadingStyle
+          }
         )}
         onClick={() => {
           setIsExpanded(!isExpanded)
