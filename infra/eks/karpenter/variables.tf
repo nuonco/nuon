@@ -13,8 +13,9 @@ variable "discovery_value" {}
 variable "oidc_provider_arn" {}
 
 variable "node_iam_role_arn" {}
+variable "node_iam_role_name" {}
 
-variable "tags"{}
+variable "tags" {}
 
-variable "ec2nodeclasses"{}
-variable "instance_types"{}
+variable "ec2nodeclasses" {}
+variable "instance_types" {}

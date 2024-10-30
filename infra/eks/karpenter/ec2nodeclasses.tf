@@ -10,7 +10,7 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass_default" {
     }
     spec = {
       amiFamily       = "AL2"
-      instanceProfile = var.node_iam_role_arn
+      instanceProfile = var.node_iam_role_name
       subnetSelectorTerms = [
         {
           tags = {
@@ -51,7 +51,7 @@ resource "kubectl_manifest" "ec2nodeclass" {
     spec = {
       amiFamily = "AL2"
       # we use the nodegroup from the managed node group
-      instanceProfile = var.node_iam_role_arn
+      instanceProfile = var.node_iam_role_name
       subnetSelectorTerms = [
         {
           tags = {
