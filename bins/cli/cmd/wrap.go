@@ -20,8 +20,9 @@ type (
 
 // wrapCmd wraps all CLI commands, providing a central point to control error flow and handling.
 func (c *cli) wrapCmd(f cobraRunECommand) cobraRunCommand {
+	fn := c.sentryWrapCmd(c.analyticsWrapCmd(f))
 	return func(cmd *cobra.Command, args []string) {
-		c.sentryWrapCmd(c.analyticsWrapCmd(f))
+		fn(cmd, args)
 	}
 }
 
