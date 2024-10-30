@@ -77,9 +77,10 @@ export const DashboardContent: FC<{
             <div className="flex items-start justify-between">
               <hgroup className="flex flex-col gap-2">
                 <Heading variant="title">{heading}</Heading>
-                <ClickToCopy>
-                  <Text variant="id">{headingUnderline}</Text>
-                </ClickToCopy>
+
+                <Text variant="id">
+                  <ClickToCopy>{headingUnderline}</ClickToCopy>
+                </Text>
               </hgroup>
 
               {statues}

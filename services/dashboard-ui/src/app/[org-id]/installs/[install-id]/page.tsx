@@ -8,7 +8,7 @@ import {
   Heading,
   InstallCloudPlatform,
   InstallHistory,
-  InstallInputs,
+  InstallInputsSection,
   InstallStatuesV2,
   SubNav,
   type TLink,
@@ -65,23 +65,17 @@ export default withPageAuthRequired(
               <Heading>Active sandbox</Heading>
 
               <div className="flex flex-col gap-8">
-              <AppSandboxConfig sandboxConfig={install?.app_sandbox_config} />
-              <AppSandboxVariables
-                variables={install?.app_sandbox_config?.variables}
-              />
+                <AppSandboxConfig sandboxConfig={install?.app_sandbox_config} />
+                <AppSandboxVariables
+                  variables={install?.app_sandbox_config?.variables}
+                />
               </div>
             </section>
 
             {install?.install_inputs?.length &&
               install?.install_inputs.some(
                 (input) => input.values || input?.redacted_values
-              ) && (
-                <section className="flex flex-col gap-6 px-6 py-8">
-                  <Heading>Current inputs</Heading>
-
-                  <InstallInputs inputs={install.install_inputs} />
-                </section>
-              )}
+              ) && <InstallInputsSection inputs={install.install_inputs} />}
 
             <section className="flex flex-col gap-6 px-6 py-8">
               <Heading>Cloud platform</Heading>
