@@ -24,8 +24,14 @@ type SentryTagger interface {
 	ErrorTags() map[string]string
 }
 
+// SentryErrOption is a functional option type for passing additional options to a SentryErr.
+type SentryErrOptions struct {
+	Tags   map[string]string
+	UserID string
+}
+
 // ReportToSentry reports an error to sentry, populating the data in a standardized manner for all Nuon errors.
-func ReportToSentry(err error, t *map[string]string) string {
+func ReportToSentry(err error, opt *SentryErrOptions) string {
 	event, extraDetails := report.BuildSentryReport(err)
 
 	if hints := errors.GetAllHints(err); len(hints) > 0 {
@@ -41,8 +47,6 @@ func ReportToSentry(err error, t *map[string]string) string {
 	} else {
 		event.Tags["user_facing"] = "no"
 	}
-
-
 
 	// TODO(sdboyer) decide on how to populate the Level field
 
@@ -71,12 +75,16 @@ func ReportToSentry(err error, t *map[string]string) string {
 		}
 	}
 
-	if t != nil {
-		for k, v := range *t {
+	if opt != nil {
+		for k, v := range opt.Tags {
 			if _, has := event.Tags[k]; !has {
 				event.Tags[k] = v
 			}
 		}
+	}
+
+	if opt != nil && opt.UserID != "" {
+		event.User.ID = opt.UserID
 	}
 
 	res := sentry.CaptureEvent(event)
