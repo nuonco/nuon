@@ -45,7 +45,7 @@ synthetics:
     subtype: "http"
     status: "live"
     message: "@slack-alerts-${env}-product @pagerduty-Datadog \n\nctl-api has experienced a disruption"
-    locations: ["aws:ca-central-1", "aws:ap-south-1", "aws:eu-west-1"]
+    locations: ["aws:us-east-1", "aws:us-central-1", "aws:us-west-2"]
     tags: ["service:ctl-api", "terraform:true", "env:${aws_account}"]
     request_definition:
       method: "GET"
@@ -69,7 +69,7 @@ synthetics:
     subtype: "http"
     status: "live"
     message: "@slack-alerts-${env}-product @pagerduty-Datadog \n\ndashboard-ui has experienced a disruption"
-    locations: ["aws:ca-central-1", "aws:ap-south-1", "aws:eu-west-1"]
+    locations: ["aws:us-east-1", "aws:us-central-1", "aws:us-west-2"]
     tags: ["service:dashboard-ui", "terraform:true", "env:${aws_account}"]
     request_definition:
       method: "GET"
@@ -87,13 +87,13 @@ synthetics:
       monitor_options:
         renotify_interval: 30
       monitor_priority: 1
-  dashboard_uptime:
+  website_uptime:
     name: "${aws_account} - Website Uptime"
     type: "api"
     subtype: "http"
     status: "live"
     message: "@slack-alerts-${env}-product @pagerduty-Datadog \n\nwebsite has experienced a disruption"
-    locations: ["aws:ca-central-1", "aws:ap-south-1", "aws:eu-west-1"]
+    locations: ["aws:us-east-1", "aws:us-central-1", "aws:us-west-2"]
     tags: ["service:website", "terraform:true", "env:${aws_account}"]
     request_definition:
       method: "GET"
@@ -134,7 +134,7 @@ installer_synthetics:
     subtype: "http"
     status: "live"
     message: "@slack-alerts-${env}-product"
-    locations: ["aws:ca-central-1", "aws:ap-south-1", "aws:eu-west-1"]
+    locations: ["aws:us-east-1", "aws:us-central-1", "aws:us-west-2"]
     tags: ["service:installers", "terraform:true", "env:${env}"]
     request_definition:
       method: "GET"
