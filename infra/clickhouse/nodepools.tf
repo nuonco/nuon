@@ -7,76 +7,76 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
   # https://karpenter.sh/v1.0/concepts/nodepools/
 
   yaml_body = yamlencode({
-    "apiVersion" = "karpenter.sh/v1"
-    "kind"       = "NodePool"
-    "metadata" = {
-      "name"      = "clickhouse-installation"
-      "namespace" = "clickhouse"
-      "labels" = {
+    apiVersion = "karpenter.sh/v1"
+    kind       = "NodePool"
+    metadata = {
+      name      = "clickhouse-installation"
+      namespace = "clickhouse"
+      labels = {
         "app"                          = "clickhouse-installation"
         "app.kubernetes.io/managed-by" = "terraform"
         "clickhouse-installation"      = "true"
       }
     }
-    "spec" = {
-      "disruption" = {
-        "consolidationPolicy" = "WhenEmpty"
-        "consolidateAfter"    = "15m"
-        "budgets" = [
+    spec = {
+      disruption = {
+        consolidationPolicy = "WhenEmpty"
+        consolidateAfter    = "15m"
+        budgets = [
           {
-            "nodes" = "1" # only ever rotate one node at a time
+            nodes = "1" # only ever rotate one node at a time
           }
         ]
       }
-      "limits" = {
+      limits = {
         # we use the prod limits by default. stage fits comfortably.
         # prod wants 2 + 1 t3a.large boxes (1 shard, 2 replicas), (keeper)
         # we want 1 cpu per pod (min 6). we double this and add 2 more cpus for overhead
         # as our use of clickhouse grows, we can scale up to larger machines
-        "cpu"    = "14"
-        "memory" = "1000Gi" # no upper bound on memory: cpu count and instance type is enough
+        cpu    = "14"
+        memory = "1000Gi" # no upper bound on memory: cpu count and  type is enough
       }
-      "template" = {
-        "metadata" = {
-          "labels" = {
+      template = {
+        metadata = {
+          labels = {
             "clickhouse-installation" = "true"
           }
         }
-        "spec" = {
-          "expireAfter" = local.vars.expiresAfter
-          "nodeClassRef" = {
-            "group" = "karpenter.k8s.aws"
-            "kind"  = "EC2NodeClass"
-            "name"  = "clickhouse-installation"
+        spec = {
+          expireAfter = local.vars.expiresAfter
+          nodeClassRef = {
+            group = "karpenter.k8s.aws"
+            kind  = "EC2NodeClass"
+            name  = "clickhouse-installation"
           }
-          "requirements" = [
+          requirements = [
             {
-              "key"      = "karpenter.sh/capacity-type"
-              "operator" = "In"
-              "values" = [
+              key      = "karpenter.sh/capacity-type"
+              operator = "In"
+              values = [
                 "spot",
                 "on-demand",
               ]
             },
             {
-              "key"      = "node.kubernetes.io/instance-type"
-              "operator" = "In"
-              "values" = [
+              key      = "node.kubernetes.io/-type"
+              operator = "In"
+              values = [
                 "t3a.large",
               ]
             },
             {
-              "key"      = "topology.kubernetes.io/zone"
-              "operator" = "In"
-              "values"   = local.availability_zones
+              key      = "topology.kubernetes.io/zone"
+              operator = "In"
+              values   = local.availability_zones
             },
 
           ]
-          "taints" = [
+          taints = [
             {
-              "effect" = "NoSchedule"
-              "key"    = "installation"
-              "value"  = "clickhouse-installation"
+              effect = "NoSchedule"
+              key    = "installation"
+              value  = "clickhouse-installation"
             },
           ]
         }
@@ -95,72 +95,72 @@ resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
   # https://karpenter.sh/v1.0/concepts/nodepools/
 
   yaml_body = yamlencode({
-    "apiVersion" = "karpenter.sh/v1"
-    "kind"       = "NodePool"
-    "metadata" = {
-      "name"      = "clickhouse-keeper"
-      "namespace" = "clickhouse"
-      "labels" = {
+    apiVersion = "karpenter.sh/v1"
+    kind       = "NodePool"
+    metadata = {
+      name      = "clickhouse-keeper"
+      namespace = "clickhouse"
+      labels = {
         "app"                          = "clickhouse-keeper"
         "app.kubernetes.io/managed-by" = "terraform"
         "clickhouse-keeper"            = "true"
       }
     }
-    "spec" = {
-      "disruption" = {
-        "consolidationPolicy" = "WhenEmptyOrUnderutilized"
-        "consolidateAfter"    = "1m"
-        "budgets" = [
+    spec = {
+      disruption = {
+        consolidationPolicy = "WhenEmptyOrUnderutilized"
+        consolidateAfter    = "1m"
+        budgets = [
           {
-            "nodes" = "1" # only ever rotate one node at a time
+            nodes = "1" # only ever rotate one node at a time
           }
         ]
       }
-      "limits" = {
-        "cpu"    = "8"
-        "memory" = "32Gi" # no upper bound on memory: cpu count and instance type is enough
+      limits = {
+        cpu    = "8"
+        memory = "32Gi" # no upper bound on memory: cpu count and instance type is enough
       }
-      "template" = {
-        "metadata" = {
-          "labels" = {
+      template = {
+        metadata = {
+          labels = {
             "clickhouse-keeper" = "true"
           }
         }
-        "spec" = {
-          "expireAfter" = local.vars.expiresAfter
-          "nodeClassRef" = {
-            "group" = "karpenter.k8s.aws"
-            "kind"  = "EC2NodeClass"
-            "name"  = "clickhouse-keeper"
+        spec = {
+          expireAfter = local.vars.expiresAfter
+          nodeClassRef = {
+            group = "karpenter.k8s.aws"
+            kind  = "EC2NodeClass"
+            name  = "clickhouse-keeper"
           }
-          "requirements" = [
+          requirements = [
             {
-              "key"      = "karpenter.sh/capacity-type"
-              "operator" = "In"
-              "values" = [
+              key      = "karpenter.sh/capacity-type"
+              operator = "In"
+              values = [
                 "spot",
                 "on-demand",
               ]
             },
             {
-              "key"      = "node.kubernetes.io/instance-type"
-              "operator" = "In"
-              "values" = [
-                "t3a.large",
+              key      = "node.kubernetes.io/instance-type"
+              operator = "In"
+              values = [
+                "t3a.medium",
               ]
             },
             {
-              "key"      = "topology.kubernetes.io/zone"
-              "operator" = "In"
-              "values"   = local.availability_zones
+              key      = "topology.kubernetes.io/zone"
+              operator = "In"
+              values   = local.availability_zones
             },
 
           ]
-          "taints" = [
+          taints = [
             {
-              "effect" = "NoSchedule"
-              "key"    = "installation"
-              "value"  = "clickhouse-keeper"
+              effect = "NoSchedule"
+              key    = "installation"
+              value  = "clickhouse-keeper"
             },
           ]
         }
