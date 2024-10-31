@@ -2,6 +2,8 @@
 auth_map_additions: []
 
 alb_settings: {}
+
+# controls the managed node group, not the # of karpenter nodes
 managed_node_group:
   instance_types:
     - t3a.medium
