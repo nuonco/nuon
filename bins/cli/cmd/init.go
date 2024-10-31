@@ -43,21 +43,36 @@ func (c *cli) initConfig() error {
 }
 
 func (c *cli) initSentry() error {
+	fmt.Println(c.cfg.SentryDSN)
 	err := sentry.Init(sentry.ClientOptions{
-		Dsn: errs.SentryMainDSN,
-		// TODO(sdboyer): come up with a way of inferring from existing context that this is a dev build
+		Dsn:         c.cfg.SentryDSN,
 		Environment: c.cfg.Env,
 		Tags: map[string]string{
 			"org_id":   c.cfg.OrgID,
 			"platform": "cli",
 		},
 	})
+
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "unable to initialize sentry")
 		errs.ReportToSentry(wrappedErr, nil)
 		return wrappedErr
 	}
 
+	return nil
+}
+
+func (c *cli) initUser() error {
+	if c.cfg.APIToken == "" {
+		return nil
+	}
+
+	user, err := c.apiClient.GetCurrentUser(c.ctx)
+	if err != nil {
+		return errors.Wrap(err, "unable to get current user")
+	}
+
+	c.cfg.UserID = user.ID
 	return nil
 }
 

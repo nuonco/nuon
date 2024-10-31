@@ -36,6 +36,8 @@ type Config struct {
 	Env             string        `mapstructure:"-"`
 	CleanupTimeout  time.Duration `mapstructure:"-"`
 	SegmentWriteKey string        `mapstructure:"-"`
+	SentryDSN       string        `mapstructure:"-"`
+	UserID					string        `mapstructure:"-"`
 }
 
 // newConfig creates a new config instance.
@@ -77,6 +79,7 @@ func NewConfig(customFilepath string) (*Config, error) {
 
 	cfg.Env = cfg.envFromAPIURL(cfg.APIURL)
 	cfg.SegmentWriteKey = cfg.segmentWriteKey(cfg.Env)
+	cfg.SentryDSN = cfg.sentryDSN(cfg.Env)
 
 	return cfg, nil
 }
