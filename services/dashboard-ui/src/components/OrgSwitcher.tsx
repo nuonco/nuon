@@ -9,6 +9,7 @@ import { setOrgSessionCookie } from '@/app/actions'
 import { ClickToCopy } from '@/components/ClickToCopy'
 import { Dropdown } from '@/components/Dropdown'
 import { Link } from '@/components/Link'
+import { OrgStatus } from '@/components/OrgStatus'
 import { StatusBadge } from '@/components/Status'
 import { Text } from '@/components/Typography'
 import type { TOrg } from '@/types'
@@ -60,7 +61,7 @@ export const OrgSummary: FC<IOrgSummary> = ({ org }) => {
             {org.name}
           </span>
         </Text>
-        <StatusBadge status={org.status} isWithoutBorder />
+        <OrgStatus initOrg={org} shouldPoll />
       </div>
     </div>
   )
