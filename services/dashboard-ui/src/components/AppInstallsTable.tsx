@@ -13,7 +13,7 @@ import { DataTableSearch, Table } from '@/components/DataTable'
 import { Heading, Text } from '@/components/Typography'
 import type { TInstall } from '@/types'
 
-type TDataStatues = {
+type TDataStatuses = {
   composite_component_status: string
   runner_status: string
   sandbox_status: string
@@ -22,7 +22,7 @@ type TDataStatues = {
 type TData = {
   name: string
   installId: string
-  statues: TDataStatues
+  statuses: TDataStatuses
   app: string
   appId: string
   platform: string
@@ -32,7 +32,7 @@ function parseInstallsToTableData(installs: Array<TInstall>): Array<TData> {
   return installs.map((install) => ({
     name: install.name,
     installId: install.id,
-    statues: {
+    statuses: {
       composite_component_status: install.composite_component_status,
       runner_status: install.runner_status,
       sandbox_status: install.sandbox_status,
@@ -66,42 +66,44 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
             <Link href={`/${orgId}/installs/${props.row.original.installId}`}>
               <Heading variant="subheading">{props.getValue<string>()}</Heading>
             </Link>
-            <ClickToCopy>
-              <Text variant="id">{props.row.original.installId}</Text>
-            </ClickToCopy>
+            <Text variant="id">
+              <ClickToCopy>{props.row.original.installId}</ClickToCopy>
+            </Text>
           </div>
         ),
       },
       {
-        header: 'Statues',
-        accessorKey: 'statues',
+        header: 'Statuses',
+        accessorKey: 'statuses',
         enableSorting: false,
         enableColumnFilter: true,
         cell: (props) => (
           <div className="flex flex-col gap-2">
             <StatusBadge
-              status={props.getValue<TDataStatues>().sandbox_status}
+              status={props.getValue<TDataStatuses>().sandbox_status}
               label="Sandbox"
               isLabelStatusText
             />
             <StatusBadge
-              status={props.getValue<TDataStatues>().runner_status}
+              status={props.getValue<TDataStatuses>().runner_status}
               label="Runner"
               isLabelStatusText
             />
             <StatusBadge
-              status={props.getValue<TDataStatues>().composite_component_status}
+              status={
+                props.getValue<TDataStatuses>().composite_component_status
+              }
               label="Components"
               isLabelStatusText
             />
           </div>
         ),
         filterFn: (row, columnId, filterValue) => {
-          const statues = row.getValue<TDataStatues>(columnId)
+          const statuses = row.getValue<TDataStatuses>(columnId)
           return (
-            statues.sandbox_status.includes(filterValue) ||
-            statues.runner_status.includes(filterValue) ||
-            statues.composite_component_status.includes(filterValue)
+            statuses.sandbox_status.includes(filterValue) ||
+            statuses.runner_status.includes(filterValue) ||
+            statuses.composite_component_status.includes(filterValue)
           )
         },
       },
@@ -141,7 +143,7 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
 
   const handleStatusFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    setColumnFilters(() => [{ id: 'statues', value: value }])
+    setColumnFilters(() => [{ id: 'statuses', value: value }])
   }
 
   const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
