@@ -159,7 +159,7 @@ resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
           "taints" = [
             {
               "effect" = "NoSchedule"
-              "key"    = "keeper"
+              "key"    = "installation"
               "value"  = "clickhouse-keeper"
             },
           ]
