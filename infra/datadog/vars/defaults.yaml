@@ -250,33 +250,6 @@ monitors:
           "priority": 1,
           "restricted_roles": null
       }
-  waypoint_job_queued:
-    enabled: true
-    json: >
-      {
-          "name": "${aws_account} - Waypoint Job Queued",
-          "type": "query alert",
-          "query": "max(last_5m):max:waypoint_executor.job_state_change.max{env:${aws_account}, waypoint_job_state:queued} > 120000",
-          "message": "@slack-alerts-${env}-infra",
-          "tags": [
-              "terraform:true",
-              "env:${aws_account}",
-              "service:workers-executors"
-          ],
-          "options": {
-              "groupby_simple_monitor" : false,
-              "new_host_delay": 300,
-              "thresholds": {
-                  "critical": 120000
-              },
-              "notify_audit": false,
-              "include_tags": false,
-              "notify_no_data": false,
-              "silenced": {}
-          },
-          "priority": 2,
-          "restricted_roles": null
-      }
   temporal_schedule_to_start_timeout:
     enabled: true
     json: >
@@ -333,34 +306,6 @@ monitors:
           "priority": 1,
           "restricted_roles": null
       }
-  org_failed_to_provision:
-    enabled: true
-    json: >
-      {
-          "name": "${aws_account} - Org failed to provision",
-          "type": "event-v2 alert",
-          "query": "events(\"\\\"org failed to provision\\\" env:${aws_account}\").rollup(\"count\").last(\"5m\") > 1",
-          "message": "@slack-alerts-${env}-product",
-          "tags": [
-              "service:ctl-api",
-              "terraform:true",
-              "env:${aws_account}"
-          ],
-          "options": {
-              "groupby_simple_monitor" : false,
-              "new_host_delay": 300,
-              "thresholds": {
-                  "critical": 1
-              },
-              "enable_logs_sample": false,
-              "notify_audit": false,
-              "on_missing_data": "default",
-              "include_tags": false,
-              "silenced": {}
-          },
-          "priority": 1,
-          "restricted_roles": null
-      }
   install_failed_to_provision:
     enabled: true
     json: >
@@ -387,34 +332,6 @@ monitors:
               "silenced": {}
           },
           "priority": 4,
-          "restricted_roles": null
-      }
-  failed_to_queue_waypoint_job:
-    enabled: true
-    json: >
-      {
-          "name": "${aws_account} - Failed to queue waypoint job",
-          "type": "event-v2 alert",
-          "query": "events(\"\\\"Failed to queue waypoint job\\\" env:${aws_account}\").rollup(\"count\").last(\"5m\") > 1",
-          "message": "@slack-alerts-${env}-infra",
-          "tags": [
-              "service:workers-executors",
-              "terraform:true",
-              "env:${aws_account}"
-          ],
-          "options": {
-              "groupby_simple_monitor" : false,
-              "new_host_delay": 300,
-              "thresholds": {
-                  "critical": 1
-              },
-              "enable_logs_sample": false,
-              "notify_audit": false,
-              "on_missing_data": "default",
-              "include_tags": false,
-              "silenced": {}
-          },
-          "priority": 1,
           "restricted_roles": null
       }
   database_running_low_on_free_space:

@@ -44,7 +44,7 @@ synthetics:
     type: "api"
     subtype: "http"
     status: "live"
-    message: "@slack-alerts-${env}-product @webhook-incident-io-${env} \n\nctl-api has experienced a disruption"
+    message: "@slack-alerts-${env}-product @pagerduty-Datadog \n\nctl-api has experienced a disruption"
     locations: ["aws:ca-central-1", "aws:ap-south-1", "aws:eu-west-1"]
     tags: ["service:ctl-api", "terraform:true", "env:${aws_account}"]
     request_definition:
@@ -68,9 +68,9 @@ synthetics:
     type: "api"
     subtype: "http"
     status: "live"
-    message: "@slack-alerts-${env}-product @webhook-incident-io-${env} \n\ndashboard-ui has experienced a disruption"
+    message: "@slack-alerts-${env}-product @pagerduty-Datadog \n\ndashboard-ui has experienced a disruption"
     locations: ["aws:ca-central-1", "aws:ap-south-1", "aws:eu-west-1"]
-    tags: ["service:dashboard-api", "terraform:true", "env:${aws_account}"]
+    tags: ["service:dashboard-ui", "terraform:true", "env:${aws_account}"]
     request_definition:
       method: "GET"
       url: "https://app.nuon.co/livez"
