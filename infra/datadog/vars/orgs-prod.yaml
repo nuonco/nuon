@@ -1,3 +1,25 @@
 ---
 pool: main
-monitors: []
+monitors:
+  karpenter_node_waiting:
+    enabled: false
+  clickhouse_insert_queries_failed:
+    enabled: false
+  clickhouse_pod_count_low:
+    enabled: false
+  clickhouse_containers_restarting:
+    enabled: false
+  kubernetes_container_waiting:
+    enabled: false
+  org_container_waiting:
+    enabled: false
+  temporal_schedule_to_start_timeout:
+    enabled: false
+  org_is_unhealthy:
+    enabled: false
+  install_failed_to_provision:
+    enabled: false
+  database_running_low_on_free_space:
+    enabled: false
+  ctl_api_5xx_errors:
+    enabled: false
