@@ -8,6 +8,11 @@ auth_map_additions:
     trust:
       - "arn:aws:iam::766121324316:role/nuon-internal-support-stage"
 
+managed_node_group:
+  min_size: 2
+  max_size: 10
+  desired_size: 2
+
 ec2nodeclasses:
  - clickhouse-installation
  - clickhouse-keeper
