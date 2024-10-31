@@ -72,9 +72,10 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
             >
               <Heading variant="subheading">{props.getValue<string>()}</Heading>
             </Link>
-            <ClickToCopy>
-              <Text variant="id">{props.row.original.componentId}</Text>
-            </ClickToCopy>
+
+            <Text variant="id">
+              <ClickToCopy>{props.row.original.componentId}</ClickToCopy>
+            </Text>
           </div>
         ),
       },

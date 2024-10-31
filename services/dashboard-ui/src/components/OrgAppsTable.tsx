@@ -48,9 +48,10 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
             <Link href={`/${orgId}/apps/${props.row.original.appId}`}>
               <Heading variant="subheading">{props.getValue<string>()}</Heading>
             </Link>
-            <ClickToCopy>
-              <Text variant="id">{props.row.original.appId}</Text>
-            </ClickToCopy>
+
+            <Text variant="id">
+              <ClickToCopy>{props.row.original.appId}</ClickToCopy>
+            </Text>
           </div>
         ),
       },
