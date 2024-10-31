@@ -112,6 +112,7 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
               "name" = "both-paths"
             }
             "spec" = {
+              "storageClassName" = "ebi"
               "accessModes" = [
                 "ReadWriteOnce",
               ]
