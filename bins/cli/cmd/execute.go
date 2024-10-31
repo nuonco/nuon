@@ -34,7 +34,9 @@ func Execute() {
 	// Sentry should be flushed just the once, just prior to program exit
 	if c.cfg != nil && !c.cfg.DisableTelemetry {
 		sentry.Flush(c.cfg.CleanupTimeout)
-		c.analyticsClient.Close()
+		if c.analyticsClient != nil {
+			c.analyticsClient.Close()
+		}
 	}
 
 	if err != nil {
