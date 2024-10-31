@@ -9,7 +9,7 @@ import {
   InstallCloudPlatform,
   InstallHistory,
   InstallInputsSection,
-  InstallStatuesV2,
+  InstallStatuses,
   SubNav,
   type TLink,
 } from '@/components'
@@ -45,7 +45,7 @@ export default withPageAuthRequired(
         ]}
         heading={install.name}
         headingUnderline={install.id}
-        statues={<InstallStatuesV2 install={install} />}
+        statues={<InstallStatuses initInstall={install} shouldPoll />}
         meta={<SubNav links={subNavLinks} />}
       >
         <div className="flex flex-col lg:flex-row flex-auto">

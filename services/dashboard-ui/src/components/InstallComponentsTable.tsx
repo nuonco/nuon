@@ -77,9 +77,10 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
             >
               <Heading variant="subheading">{props.getValue<string>()}</Heading>
             </Link>
-            <ClickToCopy>
-              <Text variant="id">{props.row.original.installComponentId}</Text>
-            </ClickToCopy>
+
+            <Text variant="id">
+              <ClickToCopy>{props.row.original.installComponentId}</ClickToCopy>
+            </Text>
           </div>
         ),
       },
