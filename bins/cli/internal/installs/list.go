@@ -2,7 +2,6 @@ package installs
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon-go/models"
 
@@ -39,8 +38,8 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) error {
 
 	data := [][]string{
 		{
-			"ID",
 			"NAME",
+			"ID",
 			"SANDBOX",
 			"RUNNER",
 			"COMPONENTS",
@@ -49,12 +48,16 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) error {
 	}
 	curID := s.cfg.GetString("org_id")
 	for _, install := range installs {
-		if install.ID == curID {
-			install.ID = fmt.Sprintf("%s %s", install.ID, "*")
+		if curID != "" {
+			if install.ID == curID {
+				install.Name = "*" + install.Name
+			} else {
+				install.Name = " " + install.Name
+			}
 		}
 		data = append(data, []string{
-			install.ID,
 			install.Name,
+			install.ID,
 			install.SandboxStatus,
 			install.RunnerStatus,
 			install.CompositeComponentStatus,
