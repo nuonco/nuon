@@ -43,7 +43,6 @@ func (c *cli) initConfig() error {
 }
 
 func (c *cli) initSentry() error {
-	fmt.Println(c.cfg.SentryDSN)
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn:         c.cfg.SentryDSN,
 		Environment: c.cfg.Env,
