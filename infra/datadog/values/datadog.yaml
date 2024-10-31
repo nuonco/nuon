@@ -30,6 +30,9 @@ agents:
     - effect: NoSchedule
       key: CriticalAddonsOnly
       value: "true"
+    - key: "karpenter.sh/controller"
+      effect: NoSchedule
+      value: "true"
     - key: "deployment"
       operator: "Exists"
       effect: "NoSchedule"
