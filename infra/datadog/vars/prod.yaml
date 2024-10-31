@@ -87,6 +87,30 @@ synthetics:
       monitor_options:
         renotify_interval: 30
       monitor_priority: 1
+  dashboard_uptime:
+    name: "${aws_account} - Website Uptime"
+    type: "api"
+    subtype: "http"
+    status: "live"
+    message: "@slack-alerts-${env}-product @pagerduty-Datadog \n\nwebsite has experienced a disruption"
+    locations: ["aws:ca-central-1", "aws:ap-south-1", "aws:eu-west-1"]
+    tags: ["service:website", "terraform:true", "env:${aws_account}"]
+    request_definition:
+      method: "GET"
+      url: "https://nuon.co"
+    request_headers: {}
+    assertion:
+      type: "statusCode"
+      operator: "is"
+      target: 200
+    options_list:
+      tick_every: 60
+      retry:
+        count: 2
+        interval: 750
+      monitor_options:
+        renotify_interval: 30
+      monitor_priority: 1
 
 # installers is the list
 # config is the synthetic monitor configuration used for all installers accross the board for
