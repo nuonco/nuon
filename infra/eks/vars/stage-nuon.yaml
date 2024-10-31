@@ -13,7 +13,7 @@ managed_node_group:
   max_size: 10
   desired_size: 2
   instance_types:
-    - t3a.large
+    - t3a.medium
 
 ec2nodeclasses:
  - clickhouse-installation
