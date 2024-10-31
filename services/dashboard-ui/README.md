@@ -4,7 +4,7 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 First, you'll need to create an `.env.local` file. You can copy the `.example.env.local` file and update the required values.
 
-``` bash
+```bash
 cp .example.env.local .env.local
 ```
 
@@ -31,7 +31,6 @@ To learn more about Next.js, take a look at the following resources:
 ## Integrity checks
 
 We aim to make changes quickly and safely, using integrity checks that run in GitHub actions when you create a PR. Most text editors can be configured to format and lint code automatically and you can run these checks locally using either Earthly (e.g. `earthly +test --image_tag=local --repo=mono`) or `npm`.
-
 
 - lint (default next eslint): `npm run lint`
 
