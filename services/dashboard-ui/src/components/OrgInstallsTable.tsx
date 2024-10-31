@@ -70,9 +70,10 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
             >
               <Heading variant="subheading">{props.getValue<string>()}</Heading>
             </Link>
-            <ClickToCopy>
-              <Text variant="id">{props.row.original.installId}</Text>
-            </ClickToCopy>
+
+            <Text variant="id">
+              <ClickToCopy>{props.row.original.installId}</ClickToCopy>
+            </Text>
           </div>
         ),
       },
@@ -94,7 +95,9 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
               isLabelStatusText
             />
             <StatusBadge
-              status={props.getValue<TDataStatuses>().composite_component_status}
+              status={
+                props.getValue<TDataStatuses>().composite_component_status
+              }
               label="Components"
               isLabelStatusText
             />

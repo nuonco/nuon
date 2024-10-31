@@ -1,7 +1,7 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
-  InstallStatuesV2,
+  InstallStatuses,
   InstallComponentsTable,
   NoComponents,
   SubNav,
@@ -78,7 +78,7 @@ export default withPageAuthRequired(
         ]}
         heading={install.name}
         headingUnderline={install.id}
-        statues={<InstallStatuesV2 install={install} />}
+        statues={<InstallStatuses initInstall={install} shouldPoll />}
         meta={<SubNav links={subNavLinks} />}
       >
         <section className="px-6 py-8">
