@@ -4,10 +4,10 @@
 resource "kubectl_manifest" "nodepool_clickhouse" {
   # NodePool for clickhouse. uses taints to define what can deploy to it.
   # depends on the default EC2NodeClass in the cluster (see infra/eks)
-  # https://karpenter.sh/v0.37/concepts/nodepools/
+  # https://karpenter.sh/v1.0/concepts/nodepools/
 
   yaml_body = yamlencode({
-    "apiVersion" = "karpenter.sh/v1beta1"
+    "apiVersion" = "karpenter.sh/v1"
     "kind"       = "NodePool"
     "metadata" = {
       "name"      = "clickhouse-installation"
@@ -20,20 +20,13 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
     }
     "spec" = {
       "disruption" = {
+        "consolidationPolicy" = "WhenEmptyOrUnderutilized"
+        "consolidateAfter"    = "1m"
         "budgets" = [
           {
             "nodes" = "1" # only ever rotate one node at a time
-          },
-          {
-            # never EVER rotate nodes during work hours
-            "nodes"    = "0"
-            "schedule" = "0 10 * * 1,2,3,4,5" # https://crontab.guru/#0_10_*_*_1,2,3,4,5
-            "duration" = "11h"
-          },
+          }
         ]
-        "consolidateAfter"    = "30s"
-        "consolidationPolicy" = "WhenEmpty"
-        "expireAfter"         = local.vars.expiresAfter
       }
       "limits" = {
         # we use the prod limits by default. stage fits comfortably.
@@ -50,10 +43,11 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
           }
         }
         "spec" = {
+          "expireAfter" = local.vars.expiresAfter
           "nodeClassRef" = {
-            "apiVersion" = "karpenter.k8s.aws/v1beta1"
-            "kind"       = "EC2NodeClass"
-            "name"       = "clickhouse-installation"
+            "group" = "karpenter.k8s.aws"
+            "kind"  = "EC2NodeClass"
+            "name"  = "clickhouse-installation"
           }
           "requirements" = [
             {
@@ -69,7 +63,6 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
               "operator" = "In"
               "values" = [
                 "t3a.large",
-                # "t3a.xlarge",
               ]
             },
             {
@@ -99,10 +92,10 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
 resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
   # NodePool for clickhouse. uses taints to define what can deploy to it.
   # depends on the default EC2NodeClass in the cluster (see infra/eks)
-  # https://karpenter.sh/v0.37/concepts/nodepools/
+  # https://karpenter.sh/v1.0/concepts/nodepools/
 
   yaml_body = yamlencode({
-    "apiVersion" = "karpenter.sh/v1beta1"
+    "apiVersion" = "karpenter.sh/v1"
     "kind"       = "NodePool"
     "metadata" = {
       "name"      = "clickhouse-keeper"
@@ -115,25 +108,17 @@ resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
     }
     "spec" = {
       "disruption" = {
+        "consolidationPolicy" = "WhenEmptyOrUnderutilized"
+        "consolidateAfter"    = "1m"
         "budgets" = [
           {
             "nodes" = "1" # only ever rotate one node at a time
-          },
-          {
-            # never EVER rotate nodes during work hours
-            "nodes"    = "0"
-            "schedule" = "0 10 * * 1,2,3,4,5" # https://crontab.guru/#0_10_*_*_1,2,3,4,5
-            "duration" = "11h"
-          },
+          }
         ]
-        "consolidateAfter"    = "30s"
-        "consolidationPolicy" = "WhenEmpty"
-        "expireAfter"         = "2160h"
       }
       "limits" = {
-        # we need 3 keepers (2 cpu's per box, 1 cpu per pod)
-        "cpu"    = "6"
-        "memory" = "100Gi" # high upper bound on memory: cpu count and instance type is enough
+        "cpu"    = "8"
+        "memory" = "32Gi" # no upper bound on memory: cpu count and instance type is enough
       }
       "template" = {
         "metadata" = {
@@ -142,10 +127,11 @@ resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
           }
         }
         "spec" = {
+          "expireAfter" = local.vars.expiresAfter
           "nodeClassRef" = {
-            "apiVersion" = "karpenter.k8s.aws/v1beta1"
-            "kind"       = "EC2NodeClass"
-            "name"       = "clickhouse-keeper"
+            "group" = "karpenter.k8s.aws"
+            "kind"  = "EC2NodeClass"
+            "name"  = "clickhouse-keeper"
           }
           "requirements" = [
             {
@@ -160,7 +146,7 @@ resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
               "key"      = "node.kubernetes.io/instance-type"
               "operator" = "In"
               "values" = [
-                "t3a.medium",
+                "t3a.large",
               ]
             },
             {
@@ -173,7 +159,7 @@ resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
           "taints" = [
             {
               "effect" = "NoSchedule"
-              "key"    = "installation"
+              "key"    = "keeper"
               "value"  = "clickhouse-keeper"
             },
           ]

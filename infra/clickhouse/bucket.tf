@@ -4,7 +4,7 @@
 locals {
   bucket_name   = "nuon-clickhouse-${var.env}"
   account_id    = data.aws_caller_identity.current.account_id
-  oidc_provider = data.tfe_outputs.infra-eks-nuon.values.oidc_provider
+  oidc_provider = try(data.tfe_outputs.infra-eks-nuon.values.oidc_provider, "s3://")
 }
 
 #
