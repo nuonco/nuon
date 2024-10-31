@@ -10,6 +10,7 @@ managed_node_group:
   desired_size: 2
   min_size: 2
   max_size: 8
+
 region: "us-west-2"
 root_domain: "nuon.cloud"
 vantage:
