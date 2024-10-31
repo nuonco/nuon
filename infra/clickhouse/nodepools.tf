@@ -59,7 +59,7 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
               ]
             },
             {
-              key      = "node.kubernetes.io/-type"
+              key      = "node.kubernetes.io/instance-type"
               operator = "In"
               values = [
                 "t3a.large",
