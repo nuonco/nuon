@@ -2,7 +2,6 @@ package orgs
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -21,24 +20,29 @@ func (s *Service) List(ctx context.Context, asJSON bool) error {
 		return nil
 	}
 
+	curID := s.cfg.GetString("org_id")
+
 	data := [][]string{
 		{
+			" NAME",
 			"ID",
-			"NAME",
 			"STATUS",
 			"SANDBOX MODE",
 			"UPDATED AT",
 		},
 	}
 
-	curID := s.cfg.GetString("org_id")
 	for _, org := range orgs {
-		if org.ID == curID {
-			org.ID = fmt.Sprintf("%s %s", org.ID, "*")
+		if curID != "" {
+			if org.ID == curID {
+				org.Name = "*" + org.Name
+			} else {
+				org.Name = " " + org.Name
+			}
 		}
 		data = append(data, []string{
-			org.ID,
 			org.Name,
+			org.ID,
 			org.StatusDescription,
 			strconv.FormatBool(org.SandboxMode),
 			org.UpdatedAt,
