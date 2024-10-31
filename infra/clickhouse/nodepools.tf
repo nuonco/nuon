@@ -20,8 +20,8 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
     }
     "spec" = {
       "disruption" = {
-        "consolidationPolicy" = "WhenEmptyOrUnderutilized"
-        "consolidateAfter"    = "1m"
+        "consolidationPolicy" = "WhenEmpty"
+        "consolidateAfter"    = "15m"
         "budgets" = [
           {
             "nodes" = "1" # only ever rotate one node at a time
