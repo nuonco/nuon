@@ -31,6 +31,11 @@ func (c *cli) analyticsWrapCmd(f cobraRunECommand) cobraRunECommand {
 		startTS := time.Now()
 		err := f(cmd, args)
 
+		if c.cfg.UserID == "" {
+			// If the user is not logged in, we don't want to track any analytics
+			return err
+		}
+
 		namespace := "root"
 		if cmd.Root() != nil {
 			namespace = cmd.Root().Name()
@@ -75,7 +80,10 @@ func (c *cli) sentryWrapCmd(f cobraRunECommand) cobraRunECommand {
 				"cmd_args":  strings.Join(os.Args, " "),
 				"cli_event": eventname,
 			}
-			errs.ReportToSentry(err, &tags)
+			errs.ReportToSentry(err, &errs.SentryErrOptions{
+				Tags:   tags,
+				UserID: c.cfg.UserID,
+			})
 		}
 
 		return err
