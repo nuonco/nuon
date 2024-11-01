@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -42,7 +43,7 @@ func (m *Client) CreateAccount(ctx context.Context, email, subject string) (*app
 
 func (m *Client) CreateServiceAccount(ctx context.Context, id string) (*app.Account, error) {
 	acct := app.Account{
-		Email:       fmt.Sprintf("%s@serviceaccount.nuon.co", id),
+		Email:       account.ServiceAccountEmail(id),
 		Subject:     id,
 		AccountType: app.AccountTypeService,
 	}

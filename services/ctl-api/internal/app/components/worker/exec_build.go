@@ -5,13 +5,23 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	logv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/log/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
 func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, currentApp *app.App, sandboxMode bool) error {
+	comp, err := activities.AwaitGetComponent(ctx, activities.GetComponentRequest{
+		ComponentID: compID,
+	})
+	if err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component")
+		return fmt.Errorf("unable to get component: %w", err)
+	}
+
 	buildCfg, err := activities.AwaitGetComponentConfig(ctx, activities.GetRequest{
 		BuildID: buildID,
 	})
@@ -20,27 +30,16 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		return fmt.Errorf("unable to get build component config: %w", err)
 	}
 
+	token, err := activities.AwaitCreateJobLogTokenByRunnerID(ctx, comp.Org.RunnerGroup.Runners[0].ID)
+	if err != nil {
+		return fmt.Errorf("unable to create job log token: %w", err)
+	}
+
 	// create the sandbox plan request
 	build, err := activities.AwaitGetComponentBuildByID(ctx, buildID)
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build")
 		return fmt.Errorf("unable to get component build: %w", err)
-	}
-
-	buildPlanWorkflowID := fmt.Sprintf("%s-build-plan-%s", compID, buildID)
-	planReq := w.protos.ToBuildPlanRequest(build, buildCfg)
-	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, buildPlanWorkflowID, planReq)
-	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component config")
-		return fmt.Errorf("unable to create build plan: %w", err)
-	}
-
-	comp, err := activities.AwaitGetComponent(ctx, activities.GetComponentRequest{
-		ComponentID: compID,
-	})
-	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component")
-		return fmt.Errorf("unable to get component: %w", err)
 	}
 
 	// create the job
@@ -53,6 +52,22 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to create job")
 		return fmt.Errorf("unable to create job: %w", err)
+	}
+
+	buildPlanWorkflowID := fmt.Sprintf("%s-build-plan-%s", compID, buildID)
+	planReq := w.protos.ToBuildPlanRequest(build, buildCfg)
+	planReq.LogConfiguration = &logv1.LogConfiguration{
+		RunnerId:       comp.Org.RunnerGroup.Runners[0].ID,
+		RunnerApiToken: token.Token,
+		RunnerApiUrl:   w.cfg.RunnerAPIURL,
+		RunnerJobId:    runnerJob.ID,
+		Attrs:          logv1.NewAttrs(generics.ToStringMap(comp.Org.RunnerGroup.Settings.Metadata)),
+	}
+
+	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, buildPlanWorkflowID, planReq)
+	if err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component config")
+		return fmt.Errorf("unable to create build plan: %w", err)
 	}
 
 	// store the plan in the db

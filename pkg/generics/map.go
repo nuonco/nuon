@@ -6,6 +6,18 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+func FindMap[K comparable, T comparable](k K, inps ...map[K]T) T {
+	var empty T
+	for _, inp := range inps {
+		val, ok := inp[k]
+		if ok && val != empty {
+			return val
+		}
+	}
+
+	return empty
+}
+
 func MergeMap[K comparable, T any](src map[K]T, vals ...map[K]T) map[K]T {
 	for _, val := range vals {
 		for k, v := range val {

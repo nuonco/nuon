@@ -26,7 +26,12 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	if err != nil {
 		return errors.Wrap(err, "unable to get job logger")
 	}
-	l = l.With(zap.String("runner_job.id", job.ID))
+
+	logJobID := job.ID
+	if job.OverrideLogJobID != "" {
+		logJobID = job.OverrideLogJobID
+	}
+	l = l.With(zap.String("runner_job.id", logJobID))
 
 	// create an execution in the API
 	l.Info("creating job execution")
