@@ -198,6 +198,9 @@ type RunnerJob struct {
 
 	Executions []RunnerJobExecution `json:"executions" gorm:"constraint:OnDelete:CASCADE;"`
 	Plan       RunnerJobPlan        `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+
+	// This is a temporary field until the log-stream is shipped with nuon actions
+	OverrideLogJobID string `json:"override_log_job_id"`
 }
 
 func (r *RunnerJob) BeforeCreate(tx *gorm.DB) error {

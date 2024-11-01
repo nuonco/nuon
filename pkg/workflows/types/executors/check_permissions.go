@@ -3,7 +3,6 @@ package executors
 import (
 	"fmt"
 
-	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -11,10 +10,18 @@ const (
 	CheckPermissionsWorkflowName string = "CheckPermissions"
 )
 
+type CheckPermissionsRequest struct {
+	AWSSettings   *AWSSettings   `json:"aws_settings"`
+	AzureSettings *AzureSettings `json:"azure_settings"`
+
+	LogConfiguration *LogConfiguration `json:"log_configuration"`
+	Metadata         Metadata          `json:"metadata"`
+}
+
 type CheckPermissionsResponse struct{}
 
-func CheckPermissionsIDCallback(req *installsv1.ProvisionRequest) string {
-	return fmt.Sprintf("%s-%s-%s", req.OrgId, req.AppId, req.InstallId)
+func CheckPermissionsIDCallback(req *CheckPermissionsRequest) string {
+	return fmt.Sprintf("%s-%s-%s", req.Metadata.OrgID, req.Metadata.AppID, req.Metadata.InstallID)
 }
 
 // @temporal-gen workflow
@@ -22,7 +29,7 @@ func CheckPermissionsIDCallback(req *installsv1.ProvisionRequest) string {
 // @task-timeout 1m
 // @task-queue "executors"
 // @id-callback CheckPermissionsIDCallback
-func CheckPermissions(workflow.Context, *installsv1.ProvisionRequest) (*CheckPermissionsResponse, error) {
+func CheckPermissions(workflow.Context, *CheckPermissionsRequest) (*CheckPermissionsResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
 	return nil, nil
 }

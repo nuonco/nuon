@@ -27,6 +27,8 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 		Preload("App.Org").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
+		Preload("RunnerGroup.Runners").
+		Preload("RunnerGroup.Settings").
 		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig.AWSDelegationConfig").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
