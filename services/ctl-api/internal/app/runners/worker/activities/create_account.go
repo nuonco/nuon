@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 )
 
 type CreateAccountRequest struct {
@@ -15,7 +16,12 @@ type CreateAccountRequest struct {
 // @temporal-gen activity
 // @schedule-to-close-timeout 5s
 func (a *Activities) CreateAccount(ctx context.Context, req CreateAccountRequest) (*app.Account, error) {
-	acct, err := a.authzClient.CreateServiceAccount(ctx, req.RunnerID)
+	acct, err := a.acctClient.FindAccount(ctx, account.ServiceAccountEmail(req.RunnerID))
+	if err == nil {
+		return acct, nil
+	}
+
+	acct, err = a.authzClient.CreateServiceAccount(ctx, req.RunnerID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create service account: %w", err)
 	}

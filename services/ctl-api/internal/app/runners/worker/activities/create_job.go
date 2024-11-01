@@ -9,11 +9,12 @@ import (
 )
 
 type CreateJobRequest struct {
-	RunnerID  string
-	OwnerType string
-	OwnerID   string
-	Op        app.RunnerJobOperationType
-	Type      app.RunnerJobType
+	RunnerID    string
+	OwnerType   string
+	OwnerID     string
+	Op          app.RunnerJobOperationType
+	Type        app.RunnerJobType
+	LogStreamID string
 }
 
 // @temporal-gen activity
@@ -27,7 +28,7 @@ func (a *Activities) CreateJob(ctx context.Context, req *CreateJobRequest) (*app
 	ctx = cctx.SetOrgIDContext(ctx, runner.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, runner.CreatedByID)
 
-	job, err := a.helpers.CreateRunnerJob(ctx, req.RunnerID, req.OwnerType, req.OwnerID, req.Type, req.Op)
+	job, err := a.helpers.CreateRunnerJob(ctx, req.RunnerID, req.OwnerType, req.OwnerID, req.Type, req.Op, req.LogStreamID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create runner job: %w", err)
 	}
