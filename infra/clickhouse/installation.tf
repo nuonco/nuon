@@ -285,7 +285,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
             "containers" = [
               {
                 "name"  = "clickhouse"
-                "image" = "clickhouse/clickhouse-server:${local.image_tag}"
+                "image" = "431927561584.dkr.ecr.us-west-2.amazonaws.com/mirror/clickhouse/clickhouse-server:${local.image_tag}"
                 "env" = [{
                   "name"  = "CLICKHOUSE_ALWAYS_RUN_INITDB_SCRIPTS"
                   "value" = "true"

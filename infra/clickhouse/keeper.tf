@@ -87,7 +87,7 @@ resource "kubectl_manifest" "clickhouse_keeper_installation" {
               }]
               "containers" = [
                 {
-                  "image"           = "clickhouse/clickhouse-keeper:24.3.12.75-alpine"
+                  "image"           = "431927561584.dkr.ecr.us-west-2.amazonaws.com/mirror/clickhouse/clickhouse-keeper:24.3.12.75-alpine"
                   "imagePullPolicy" = "IfNotPresent"
                   "name"            = "clickhouse-keeper"
                   "resources" = {

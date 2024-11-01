@@ -70,7 +70,7 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
                       "value" = "teamnuon"
                     },
                   ]
-                  "image"           = "clickhouse/clickhouse-server:${local.image_tag}"
+                  "image"           = "431927561584.dkr.ecr.us-west-2.amazonaws.com/mirror/clickhouse/clickhouse-server:${local.image_tag}"
                   "imagePullPolicy" = "IfNotPresent"
                   "name"            = "ch-s3-backup-${replace(replace(each.key, "_", "-"), "ctl-api.", "")}"
                   "volumeMounts" = [
