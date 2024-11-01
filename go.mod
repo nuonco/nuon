@@ -14,7 +14,7 @@ replace github.com/ClickHouse/clickhouse-go/v2 v2.26.0 => github.com/nuonco/clic
 replace github.com/go-playground/validator/v10 v10.22.1 => github.com/go-playground/validator/v10 v10.16.0
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.3.6
+	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.11.1
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.6.0
 	github.com/DataDog/datadog-go/v5 v5.4.0
