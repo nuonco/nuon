@@ -1,4 +1,6 @@
-import React, { type FC } from 'react'
+'use client'
+
+import React, { type FC, useState } from 'react'
 import { FaDocker, FaGitAlt, FaGithub } from 'react-icons/fa'
 import { GoQuestion } from 'react-icons/go'
 import {
@@ -7,7 +9,10 @@ import {
   SiHelm,
   SiTerraform,
 } from 'react-icons/si'
+import { ArrowsOutSimple } from '@phosphor-icons/react/dist/ssr'
+import { Button } from '@/components/Button'
 import { Config, ConfigContent } from '@/components/Config'
+import { Modal } from '@/components/Modal'
 import { Link } from '@/components/Link'
 import { ToolTip } from '@/components/ToolTip'
 import { Text, Truncate } from '@/components/Typography'
@@ -311,49 +316,87 @@ const ConfigurationVariables: FC<{
 }> = ({ heading = 'Variables', variables }) => {
   const variableKeys = Object.keys(variables)
   const isEmpty = variableKeys.length === 0
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   return (
     !isEmpty && (
-      <div className="flex flex-col gap-4">
-        <div className="">
-          <Text className="text-sm !font-medium leading-normal">{heading}</Text>
-        </div>
-
-        <div className="divide-y">
-          <div className="grid grid-cols-3 gap-4 pb-3">
-            <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-              Name
+      <>
+        <Modal
+          heading={heading}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false)
+          }}
+        >
+          <ConfigVariables
+            keys={variableKeys}
+            variables={variables}
+            isNotTruncated
+          />
+        </Modal>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <Text className="text-sm !font-medium leading-normal">
+              {heading}
             </Text>
-            <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-              Value
-            </Text>
+            <Button
+              className="text-sm !font-medium flex items-center gap-2 !p-1"
+              onClick={() => {
+                setIsModalOpen(true)
+              }}
+              title={`Expand ${heading}`}
+              variant="ghost"
+            >
+              <ArrowsOutSimple />
+            </Button>
           </div>
 
-          {variableKeys.map((key, i) => (
-            <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-3">
-              <Text className="font-mono text-sm break-all">
-                {key.length >= 15 ? (
-                  <ToolTip tipContent={key} alignment="right">
-                    <Truncate variant="small">{key}</Truncate>
-                  </ToolTip>
-                ) : (
-                  key
-                )}
-              </Text>
-              <Text className="text-sm font-mono break-all col-span-2">
-                {variables[key].length >= 24 ? (
-                  <ToolTip tipContent={variables[key]} alignment="right">
-                    <Truncate variant="large">{variables[key]}</Truncate>
-                  </ToolTip>
-                ) : (
-                  variables[key]
-                )}
-              </Text>
-            </div>
-          ))}
+          <ConfigVariables keys={variableKeys} variables={variables} />
         </div>
-      </div>
+      </>
     )
+  )
+}
+
+const ConfigVariables: FC<{
+  keys: Array<string>
+  variables: Record<string, string>
+  isNotTruncated?: boolean
+}> = ({ keys, variables, isNotTruncated = false }) => {
+  return (
+    <div className="divide-y">
+      <div className="grid grid-cols-3 gap-4 pb-3">
+        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+          Name
+        </Text>
+        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+          Value
+        </Text>
+      </div>
+
+      {keys.map((key, i) => (
+        <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-3">
+          <Text className="font-mono text-sm break-all">
+            {key.length >= 15 && !isNotTruncated ? (
+              <ToolTip tipContent={key} alignment="left">
+                <Truncate variant="small">{key}</Truncate>
+              </ToolTip>
+            ) : (
+              key
+            )}
+          </Text>
+          <Text className="text-sm font-mono break-all col-span-2">
+            {variables[key].length >= 24 && !isNotTruncated ? (
+              <ToolTip tipContent={variables[key]} alignment="right">
+                <Truncate variant="large">{variables[key]}</Truncate>
+              </ToolTip>
+            ) : (
+              variables[key]
+            )}
+          </Text>
+        </div>
+      ))}
+    </div>
   )
 }
 
