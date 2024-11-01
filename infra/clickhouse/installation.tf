@@ -195,6 +195,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
         # and so we can define the image_tag dynamically
         "podTemplates" = [{
           "name" = "clickhouse:${local.image_tag}"
+          "imagePullPolicy" : "IfNotPresent"
           "metadata" = {
             "annotations" = {
               # https://docs.datadoghq.com/integrations/clickhouse/?tab=containerized#overview
