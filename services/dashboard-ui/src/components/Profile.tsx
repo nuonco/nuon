@@ -1,7 +1,6 @@
 'use client'
 
 import React, { type FC } from 'react'
-import { GoMail, GoSignOut } from 'react-icons/go'
 import { SignOut } from "@phosphor-icons/react"
 import Image from 'next/image'
 import { useUser } from '@auth0/nextjs-auth0/client'
