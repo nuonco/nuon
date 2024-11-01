@@ -94,7 +94,7 @@ func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, step *executeJ
 		return nil
 	}
 
-	l.Info("job step errored "+err.Error(), zap.String("step", step.name), zap.Error(err))
+	l.Error("job step errored "+err.Error(), zap.String("step", step.name), zap.Error(err))
 
 	// handle the error by cleaning up the execution using the handler.
 	status := j.errToStatus(err)
