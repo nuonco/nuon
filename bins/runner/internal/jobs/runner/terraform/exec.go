@@ -17,6 +17,8 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	if err != nil {
 		return err
 	}
+
+	l.Info("using terraform to provision runner")
 	hclog := log.NewHClog(l)
 
 	wkspace, err := p.getWorkspace()

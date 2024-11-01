@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package executors.v1.plan.v1.activities.v1;
 
+import "executors/v1/log/v1/log.proto";
 import "executors/v1/plan/v1/component_input.proto";
 import "executors/v1/plan/v1/plan.proto";
 import "executors/v1/plan/v1/plan_ref.proto";
@@ -20,4 +21,6 @@ message CreatePlanRequest {
   .executors.v1.plan.v1.ComponentInput component_input = 1;
   .executors.v1.plan.v1.SandboxInput sandbox_input = 2;
   .executors.v1.plan.v1.RunnerInput runner_input = 3;
+
+  .executors.v1.log.v1.LogConfiguration log_configuration = 4;
 }

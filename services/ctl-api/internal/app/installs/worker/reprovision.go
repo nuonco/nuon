@@ -37,13 +37,15 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusStarted)
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
 
-	if err := w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode); err != nil {
+	tempLogStreamID, err := w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode)
+	if err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
 		return err
 	}
 
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-		Type: runnersignals.OperationReprovision,
+		Type:        runnersignals.OperationReprovision,
+		LogStreamID: tempLogStreamID,
 	})
 	if err := w.pollRunner(ctx, install.RunnerGroup.Runners[0].ID); err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)

@@ -6,6 +6,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	runnerhelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
@@ -20,6 +21,7 @@ type Params struct {
 	EvClient         eventloop.Client
 	RunnerHelpers    *runnerhelpers.Helpers
 	SharedActivities *sharedactivities.Activities
+	AcctClient       *account.Client
 }
 
 type Activities struct {
@@ -28,6 +30,7 @@ type Activities struct {
 	helpers        *helpers.Helpers
 	evClient       eventloop.Client
 	runnersHelpers *runnerhelpers.Helpers
+	acctClient     *account.Client
 
 	*sharedactivities.Activities
 }
@@ -40,5 +43,6 @@ func New(params Params) *Activities {
 		evClient:       params.EvClient,
 		runnersHelpers: params.RunnerHelpers,
 		Activities:     params.SharedActivities,
+		acctClient:     params.AcctClient,
 	}
 }
