@@ -264,3 +264,18 @@ module "sandbox_empty" {
     aws = aws.infra-shared-prod
   }
 }
+
+module "mirror" {
+  source = "../modules/ecr"
+
+  name   = "mirror"
+  region = local.aws_settings.region
+  tags = {
+    artifact      = "mirror"
+    artifact_type = "mirrored-repository"
+  }
+
+  providers = {
+    aws = aws.infra-shared-prod
+  }
+}
