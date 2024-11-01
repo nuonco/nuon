@@ -102,7 +102,7 @@ require (
 	github.com/zclconf/go-cty v1.14.1
 	go.opentelemetry.io/collector/cmd/builder v0.108.1
 	go.opentelemetry.io/collector/component v0.104.0
-	go.opentelemetry.io/collector/config/configcompression v1.11.0
+	go.opentelemetry.io/collector/config/configcompression v1.18.0
 	go.opentelemetry.io/collector/config/confighttp v0.104.0
 	go.opentelemetry.io/collector/config/configopaque v1.11.0
 	go.opentelemetry.io/collector/config/configretry v1.11.0
