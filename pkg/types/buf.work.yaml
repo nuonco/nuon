@@ -3,6 +3,3 @@ version: v1
 directories:
   - components
   - workflows
-  - plugins
-  - external
-  - waypoint

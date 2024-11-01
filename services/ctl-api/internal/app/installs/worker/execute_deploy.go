@@ -5,21 +5,40 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	logv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/log/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
 func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, sandboxMode bool) error {
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "deploying")
 
+	token, err := activities.AwaitCreateJobLogTokenByRunnerID(ctx, install.RunnerGroup.Runners[0].ID)
+	if err != nil {
+		return fmt.Errorf("unable to create job log token: %w", err)
+	}
+
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
 		w.writeDeployEvent(ctx, installDeploy.ID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get build: %w", err)
+	}
+
+	runnerJob, err := activities.AwaitCreateDeployJob(ctx, &activities.CreateDeployJobRequest{
+		RunnerID: install.RunnerGroup.Runners[0].ID,
+		DeployID: installDeploy.ID,
+		Op:       installDeploy.Type.RunnerJobOperationType(),
+		Type:     build.ComponentConfigConnection.Type.SyncJobType(),
+	})
+	if err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
+		w.writeDeployEvent(ctx, installDeploy.ID, signals.OperationDeploy, app.OperationStatusFailed)
+		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
 	deployCfg, err := activities.AwaitGetComponentConfig(ctx, activities.GetComponentConfigRequest{
@@ -33,25 +52,20 @@ func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, insta
 
 	// create the sandbox plan request
 	planReq := w.protos.ToDeployPlanRequest(install, installDeploy, deployCfg)
+	planReq.LogConfiguration = &logv1.LogConfiguration{
+		RunnerId:       install.RunnerGroup.Runners[0].ID,
+		RunnerApiToken: token.Token,
+		RunnerApiUrl:   w.cfg.RunnerAPIURL,
+		RunnerJobId:    runnerJob.ID,
+		Attrs:          logv1.NewAttrs(generics.ToStringMap(install.RunnerGroup.Settings.Metadata)),
+	}
+
 	deployImagePlanWorkflowID := fmt.Sprintf("%s-deploy-%s", install.ID, installDeploy.ID)
 	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, deployImagePlanWorkflowID, planReq)
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create deploy plan")
 		w.writeDeployEvent(ctx, installDeploy.ID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to create plan: %w", err)
-	}
-
-	// create the job
-	runnerJob, err := activities.AwaitCreateDeployJob(ctx, &activities.CreateDeployJobRequest{
-		RunnerID: install.RunnerGroup.Runners[0].ID,
-		DeployID: installDeploy.ID,
-		Op:       installDeploy.Type.RunnerJobOperationType(),
-		Type:     build.ComponentConfigConnection.Type.SyncJobType(),
-	})
-	if err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
-		w.writeDeployEvent(ctx, installDeploy.ID, signals.OperationDeploy, app.OperationStatusFailed)
-		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
 	// store the plan in the db

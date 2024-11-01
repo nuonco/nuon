@@ -36,7 +36,8 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusStarted)
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
 
-	if err := w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode); err != nil {
+	tempLogStreamID, err := w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode)
+	if err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusFailed)
 		return err
 	}
@@ -44,7 +45,8 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 
 	// provision the runner
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-		Type: runnersignals.OperationProvision,
+		Type:        runnersignals.OperationProvision,
+		LogStreamID: tempLogStreamID,
 	})
 	if err := w.pollRunner(ctx, install.RunnerGroup.Runners[0].ID); err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusFailed)

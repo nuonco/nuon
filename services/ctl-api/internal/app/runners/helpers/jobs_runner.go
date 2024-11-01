@@ -7,7 +7,14 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-func (h *Helpers) CreateRunnerJob(ctx context.Context, runnerID string, ownerType string, ownerID string, typ app.RunnerJobType, op app.RunnerJobOperationType) (*app.RunnerJob, error) {
+func (h *Helpers) CreateRunnerJob(ctx context.Context,
+	runnerID string,
+	ownerType string,
+	ownerID string,
+	typ app.RunnerJobType,
+	op app.RunnerJobOperationType,
+	logStreamID string,
+) (*app.RunnerJob, error) {
 	job := &app.RunnerJob{
 		RunnerID:          runnerID,
 		OwnerType:         ownerType,
@@ -20,6 +27,7 @@ func (h *Helpers) CreateRunnerJob(ctx context.Context, runnerID string, ownerTyp
 		StatusDescription: string(app.RunnerJobStatusQueued),
 		Type:              typ,
 		Operation:         op,
+		OverrideLogJobID:  logStreamID,
 	}
 
 	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {

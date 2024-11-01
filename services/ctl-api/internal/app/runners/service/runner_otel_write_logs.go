@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/otel"
 
@@ -105,9 +106,9 @@ func (s *service) writeRunnerLogs(ctx context.Context, runnerID string, logs plo
 					// NOTE(fd): these locations are a convention
 					RunnerID:               runnerID,
 					RunnerGroupID:          resourceAttrsMap["runner_group.id"],
-					RunnerJobID:            logAttributesMap["runner_job.id"],
-					RunnerJobExecutionID:   logAttributesMap["runner_job_execution.id"],
-					RunnerJobExecutionStep: logAttributesMap["runner_job_execution_step.name"],
+					RunnerJobID:            generics.FindMap("runner_job.id", logAttributesMap, resourceAttrsMap),
+					RunnerJobExecutionID:   generics.FindMap("runner_job_execution.id", logAttributesMap, resourceAttrsMap),
+					RunnerJobExecutionStep: generics.FindMap("runner_job_execution_step.name", logAttributesMap, resourceAttrsMap),
 
 					// from resource
 					ResourceAttributes: otel.AttributesToMap(resourceAttrs),
