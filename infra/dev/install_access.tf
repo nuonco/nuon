@@ -12,7 +12,7 @@ module "ecs_access" {
 
 module "eks_access" {
   source = "nuonco/install-access/aws"
-  sandbox = "aws-ecs"
+  sandbox = "aws-eks"
   prefix = "dev-eks"
   enable_support_access = true
 
