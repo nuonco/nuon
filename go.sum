@@ -1762,8 +1762,6 @@ github.com/nuonco/clickhouse-go/v2 v2.28.1 h1:BiRzWD5Dcs/n5LTUO+NbrDUXc6+i6Ncl0X
 github.com/nuonco/clickhouse-go/v2 v2.28.1/go.mod h1:z+/ndg1+oWVgVhxMh+OzVEZQOi/SmoY/gSEId5zj47I=
 github.com/nuonco/nuon-go v0.35.1 h1:ZQZL2YjutmA9uQnN1NavTPTE5kRfaFQ17Mm3IEt0NOM=
 github.com/nuonco/nuon-go v0.35.1/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
-github.com/nuonco/nuon-runner-go v0.1.2 h1:5D18oSI6Xmg71AuS9F7CN/QTlji/cOt5adouGcYhP7Q=
-github.com/nuonco/nuon-runner-go v0.1.2/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
 github.com/nuonco/nuon-runner-go v0.2.0 h1:uiHKNOApB4FjrSvW0qZdjxpKbPJEK6LPr246/2QyLLM=
 github.com/nuonco/nuon-runner-go v0.2.0/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
 github.com/nuonco/sandboxes v1.34.0 h1:3ZH4qZw6tQkef7BVaKxUYjEfzghVBn+me5pWTE7Q4fc=
@@ -2075,8 +2073,8 @@ go.opentelemetry.io/collector/component v0.104.0 h1:jqu/X9rnv8ha0RNZ1a9+x7OU49Kw
 go.opentelemetry.io/collector/component v0.104.0/go.mod h1:1C7C0hMVSbXyY1ycCmaMUAR9fVwpgyiNQqxXtEWhVpw=
 go.opentelemetry.io/collector/config/configauth v0.104.0 h1:ULtjugImijpKuLgGVt0E0HwiZT7+uDUEtMquh1ODB24=
 go.opentelemetry.io/collector/config/configauth v0.104.0/go.mod h1:Til+nLLrQwwhgmfcGTX4ZRcNuMhdaWhBW1jH9DLTabQ=
-go.opentelemetry.io/collector/config/configcompression v1.11.0 h1:oTwbcLh7mWHSDUIZXkRJVdNAMoBGS39XF68goTMOQq8=
-go.opentelemetry.io/collector/config/configcompression v1.11.0/go.mod h1:6+m0GKCv7JKzaumn7u80A2dLNCuYf5wdR87HWreoBO0=
+go.opentelemetry.io/collector/config/configcompression v1.18.0 h1:4fyjChZJFC4UPk55D885wFX+xkBZGHkx11DoTRWgoJg=
+go.opentelemetry.io/collector/config/configcompression v1.18.0/go.mod h1:pnxkFCLUZLKWzYJvfSwZnPrnm0twX14CYj2ADth5xiU=
 go.opentelemetry.io/collector/config/confighttp v0.104.0 h1:KSY0FSHSjuPyrR6iA2g5oFTozYFpYcy0ssJny8gTNTQ=
 go.opentelemetry.io/collector/config/confighttp v0.104.0/go.mod h1:YgSXwuMYHANzzv+IBjHXaBMG/4G2mrseIpICHj+LB3U=
 go.opentelemetry.io/collector/config/configopaque v1.11.0 h1:Pt06PXWVmRaiSX63mzwT8Z9SV/hOc6VHNZbfZ10YY4o=
