@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import React, { type FC, useEffect } from 'react'
 import { FaGithub } from 'react-icons/fa'
 import { Plus, TestTube } from '@phosphor-icons/react'
+import Image from 'next/image'
 import NextLink from 'next/link'
 import { setOrgSessionCookie } from '@/app/actions'
 import { ClickToCopy } from '@/components/ClickToCopy'
@@ -15,21 +16,35 @@ import { Text } from '@/components/Typography'
 import type { TOrg } from '@/types'
 import { GITHUB_APP_NAME, initialsFromString } from '@/utils'
 
-export const OrgAvatar: FC<{ name: string; isSmall?: boolean }> = ({
-  name,
-  isSmall = false,
-}) => {
+export const OrgAvatar: FC<{
+  name: string
+  isSmall?: boolean
+  logoURL?: string
+}> = ({ name, isSmall = false, logoURL }) => {
+  console.log('url', logoURL)
+
   return (
     <span
       className={classNames(
-        'flex items-center justify-center p-2 rounded-md bg-cool-grey-200 text-cool-grey-600 dark:bg-dark-grey-300 dark:text-white/50 font-medium font-sans',
+        'flex items-center justify-center rounded-md bg-cool-grey-200 text-cool-grey-600 dark:bg-dark-grey-300 dark:text-white/50 font-medium font-sans',
         {
           'w-[40px] h-[40px]': !isSmall,
           'w-[30px] h-[30px]': isSmall,
+          'p-2': !logoURL,
         }
       )}
     >
-      {initialsFromString(name)}
+      {logoURL ? (
+        <Image
+          className="rounded-md"
+          height={isSmall ? 30 : 40}
+          width={isSmall ? 30 : 40}
+          src={logoURL}
+          alt="Logo"
+        />
+      ) : (
+        initialsFromString(name)
+      )}
     </span>
   )
 }
@@ -40,9 +55,10 @@ export interface IOrgSummary {
 }
 
 export const OrgSummary: FC<IOrgSummary> = ({ org }) => {
+  console.log('logging', org.logo_url)
   return (
     <div className="flex gap-4 items-center justify-start">
-      <OrgAvatar name={org.name} />
+      <OrgAvatar name={org.name} logoURL={org.logo_url} />
 
       <div>
         <Text
@@ -123,7 +139,7 @@ export const OrgsNav: FC<IOrgsNav> = ({ orgs }) => {
             key={org.id}
             href={`/${org.id}/apps`}
           >
-            <OrgAvatar name={org.name} />
+            <OrgAvatar name={org.name} logoURL={org.logo_url} />
             <span>
               <Text
                 className="break-all text-md font-medium leading-normal mb-1 !flex-nowrap"
