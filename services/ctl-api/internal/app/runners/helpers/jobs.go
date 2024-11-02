@@ -13,7 +13,7 @@ const (
 	DefaultAvailableTimeout time.Duration = time.Second * 30
 	DefaultExecutionTimeout time.Duration = time.Minute
 
-	DefaultMaxExecutions int = 3
+	DefaultMaxExecutions int = 1
 )
 
 func (s *Helpers) getExecutionTimeout(typ app.RunnerJobType) time.Duration {

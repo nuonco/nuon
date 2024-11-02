@@ -62,7 +62,7 @@ func (s *service) adminCreateJob(ctx context.Context, runnerID string, typ app.R
 		ExecutionTimeout:  time.Second * 5,
 		AvailableTimeout:  time.Second * 30,
 		OverallTimeout:    time.Minute * 5,
-		MaxExecutions:     5,
+		MaxExecutions:     1,
 		Status:            status,
 		Operation:         app.RunnerJobOperationTypeExec,
 		StatusDescription: string(status),
