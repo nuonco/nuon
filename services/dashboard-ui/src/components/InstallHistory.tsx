@@ -41,7 +41,8 @@ function parseInstallHistory(
     if (
       event.operation === 'deploy' ||
       event.operation === 'provision' ||
-      event.operation === 'reprovision'
+      event.operation === 'reprovision' ||
+      event.operation === 'deprovision'
     ) {
       const historyEvent: TInstallHistoryEvent = {
         component_id: payload?.install_component_id as string,
