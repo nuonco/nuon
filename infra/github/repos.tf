@@ -31,10 +31,3 @@ module "graveyard" {
   description = "dead code"
 }
 
-module "waypoint" {
-  source = "./modules/repository"
-
-  name        = "waypoint"
-  description = "Our internal fork of hashicorp/waypoint."
-  topics      = ["terraform"]
-}

@@ -548,3 +548,12 @@ module "eslint-config-nuon" {
   topics      = ["archived"]
   archived    = true
 }
+
+module "waypoint" {
+  source = "./modules/repository"
+
+  name        = "waypoint"
+  description = "Our internal fork of hashicorp/waypoint."
+  topics      = ["archived"]
+  archived = "true"
+}

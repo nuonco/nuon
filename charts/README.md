@@ -6,7 +6,6 @@ This directory contains both internal shared charts, as well as vendored externa
 
 We currently vendor the following charts:
 
-* `waypoint` - Vendored from https://github.com/hashicorp/waypoint-helm and used to deploy waypoint servers and runners
 * `temporal` - Vendored from https://github.com/temporalio/helm-charts and used to manage our temporal instances in
   stage and prod.
 
