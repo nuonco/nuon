@@ -18,7 +18,7 @@ module "infra-orgs-prod" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.product.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  trigger_workspaces              = [module.infra-eks-orgs-prod-main.workspace_id]
+  trigger_workspaces              = [module.infra-eks-runners-prod-main.workspace_id]
 }
 
 module "infra-orgs-stage" {
@@ -34,19 +34,7 @@ module "infra-orgs-stage" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.product.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  trigger_workspaces              = [module.infra-eks-orgs-stage-main.workspace_id]
-}
-
-module "waypoint" {
-  source = "./modules/workspace"
-
-  name                            = "waypoint"
-  repo                            = "powertoolsdev/waypoint"
-  auto_apply                      = true
-  dir                             = "infra"
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.product.id
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  trigger_workspaces              = [module.infra-eks-runners-stage-main.workspace_id]
 }
 
 module "sandboxes" {
@@ -59,36 +47,4 @@ module "sandboxes" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.product.id
-}
-
-module "infra-waypoint-orgs-prod" {
-  source = "./modules/workspace"
-
-  name                            = "infra-waypoint-orgs-prod"
-  repo                            = "powertoolsdev/mono"
-  dir                             = "infra/waypoint"
-  auto_apply                      = true
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.product.id
-  vars = {
-    env = "orgs-prod"
-  }
-  trigger_workspaces = [module.infra-eks-orgs-prod-main.workspace_id]
-}
-
-module "infra-waypoint-orgs-stage" {
-  source = "./modules/workspace"
-
-  name                            = "infra-waypoint-orgs-stage"
-  repo                            = "powertoolsdev/mono"
-  dir                             = "infra/waypoint"
-  auto_apply                      = true
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.product.id
-  vars = {
-    env = "orgs-stage"
-  }
-  trigger_workspaces = [module.infra-eks-orgs-stage-main.workspace_id]
 }

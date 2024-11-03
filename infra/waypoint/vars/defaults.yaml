@@ -1,8 +1,0 @@
----
-root_domain: nuon.cloud
-public_root_domain: nuon.co
-region: us-west-2
-chart:
-  version: "0.1.18"
-  path: "../../charts"
-  name: waypoint

@@ -57,40 +57,6 @@ module "aws-sso" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
 
-
-module "infra-datadog-orgs-prod" {
-  source = "./modules/workspace"
-
-  name                            = "infra-datadog-orgs-prod"
-  repo                            = "powertoolsdev/mono"
-  dir                             = "infra/datadog"
-  auto_apply                      = false
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials", "datadog"]
-  project_id                      = tfe_project.infra.id
-  vars = {
-    env = "orgs-prod"
-  }
-  trigger_workspaces = [module.infra-eks-orgs-prod-main.workspace_id]
-}
-
-module "infra-datadog-orgs-stage" {
-  source = "./modules/workspace"
-
-  name                            = "infra-datadog-orgs-stage"
-  repo                            = "powertoolsdev/mono"
-  dir                             = "infra/datadog"
-  auto_apply                      = false
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials", "datadog"]
-  project_id                      = tfe_project.infra.id
-  vars = {
-    env = "orgs-stage"
-  }
-  trigger_workspaces = [module.infra-eks-orgs-stage-main.workspace_id]
-}
-
-
 module "infra-datadog-runners-prod" {
   source = "./modules/workspace"
 
@@ -185,43 +151,6 @@ module "infra-clickhouse-stage" {
     env = "stage"
   }
   trigger_workspaces = [module.infra-eks-stage-nuon.workspace_id]
-}
-
-module "infra-eks-orgs-prod-main" {
-  source = "./modules/workspace"
-
-  name = "infra-eks-orgs-prod-main"
-  # repo is set to "" in order to disable VCS triggers
-  # repo                            = "powertoolsdev/mono"
-  repo                            = ""
-  dir                             = "infra/eks"
-  auto_apply                      = false
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
-  project_id                      = tfe_project.infra.id
-
-  vars = {
-    account = "orgs-prod"
-    pool    = "main"
-  }
-}
-
-module "infra-eks-orgs-stage-main" {
-  source = "./modules/workspace"
-
-  name = "infra-eks-orgs-stage-main"
-  # repo is set to "" in order to disable VCS triggers
-  # repo                            = "powertoolsdev/mono"
-  repo                            = ""
-  dir                             = "infra/eks"
-  auto_apply                      = false
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
-  project_id                      = tfe_project.infra.id
-  vars = {
-    account = "orgs-stage"
-    pool    = "main"
-  }
 }
 
 module "infra-eks-runners-prod-main" {
