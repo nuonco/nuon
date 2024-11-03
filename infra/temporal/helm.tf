@@ -30,8 +30,9 @@ resource "helm_release" "temporal" {
           }
           topologySpreadConstraints = [
             {
+              maxSkew           = 1
               topologyKey       = "kubernetes.io/hostname"
-              whenUnsatisfiable = "ScheduleAnyway"
+              whenUnsatisfiable = "DoNotSchedule"
               labelSelector = {
                 matchLabels = {
                   "app.kubernetes.io/name" : "temporal"
@@ -75,8 +76,9 @@ resource "helm_release" "temporal" {
           }
           topologySpreadConstraints = [
             {
+              maxSkew           = 1
               topologyKey       = "kubernetes.io/hostname"
-              whenUnsatisfiable = "ScheduleAnyway"
+              whenUnsatisfiable = "DoNotSchedule"
               labelSelector = {
                 matchLabels = {
                   "app.kubernetes.io/name" : "temporal"
@@ -100,8 +102,9 @@ resource "helm_release" "temporal" {
           }
           topologySpreadConstraints = [
             {
+              maxSkew           = 1
               topologyKey       = "kubernetes.io/hostname"
-              whenUnsatisfiable = "ScheduleAnyway"
+              whenUnsatisfiable = "DoNotSchedule"
               labelSelector = {
                 matchLabels = {
                   "app.kubernetes.io/name" : "temporal"
@@ -114,8 +117,9 @@ resource "helm_release" "temporal" {
         matching = {
           topologySpreadConstraints = [
             {
+              maxSkew           = 1
               topologyKey       = "kubernetes.io/hostname"
-              whenUnsatisfiable = "ScheduleAnyway"
+              whenUnsatisfiable = "DoNotSchedule"
               labelSelector = {
                 matchLabels = {
                   "app.kubernetes.io/name" : "temporal"
@@ -128,8 +132,9 @@ resource "helm_release" "temporal" {
         history = {
           topologySpreadConstraints = [
             {
+              maxSkew           = 1
               topologyKey       = "kubernetes.io/hostname"
-              whenUnsatisfiable = "ScheduleAnyway"
+              whenUnsatisfiable = "DoNotSchedule"
               labelSelector = {
                 matchLabels = {
                   "app.kubernetes.io/name" : "temporal"
@@ -142,8 +147,9 @@ resource "helm_release" "temporal" {
         frontend = {
           topologySpreadConstraints = [
             {
+              maxSkew           = 1
               topologyKey       = "kubernetes.io/hostname"
-              whenUnsatisfiable = "ScheduleAnyway"
+              whenUnsatisfiable = "DoNotSchedule"
               labelSelector = {
                 matchLabels = {
                   "app.kubernetes.io/name" : "temporal"
