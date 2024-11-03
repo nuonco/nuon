@@ -44,4 +44,4 @@ We aim to make changes quickly and safely, using integrity checks that run in Gi
 
 ## TODO
 
-- [ ] update the disruption budget to only rotate during work hours
+- [ ] update the disruption budget to only rotate during work hours.
