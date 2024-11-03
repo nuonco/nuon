@@ -64,8 +64,8 @@ func (r OtelLogRecord) GetTableOptions() (string, bool) {
 	opts := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_log_record', '{replica}')
 	TTL toDateTime("timestamp") + toIntervalDay(720)
 	PARTITION BY toDate(timestamp_time)
-	PRIMARY KEY (runner_id, runner_job_id, runner_group_id, runner_job_execution_id)
-	ORDER BY    (runner_id, runner_job_id, runner_group_id, runner_job_execution_id, timestamp_time, timestamp)
+	PRIMARY KEY  (runner_id, runner_job_id, runner_group_id, runner_job_execution_id)
+	ORDER BY     (runner_id, runner_job_id, runner_group_id, runner_job_execution_id, timestamp_time, timestamp)
 	SETTINGS index_granularity = 8192, ttl_only_drop_parts = 0;`
 	return opts, true
 }
