@@ -4,4 +4,4 @@ Our internal wiki page.
 
 ## TODO
 
-add `topologySpreadConstraints` to distribute across hosts.
+- [ ] add `topologySpreadConstraints` to distribute across hosts.

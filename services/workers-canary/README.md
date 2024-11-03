@@ -5,4 +5,4 @@ A worker that runs end-to-end tests of the Nuon platform. See more on
 
 ## TODO
 
-add `topologySpreadConstraints` to distribute across hosts.
+- [ ] add `topologySpreadConstraints` to distribute across hosts.
