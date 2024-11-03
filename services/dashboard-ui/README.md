@@ -42,4 +42,6 @@ We aim to make changes quickly and safely, using integrity checks that run in Gi
 
 ## Nodepool
 
-This runs in the default nodepool
+## TODO
+
+- [ ] update the disruption budget to only rotate during work hours
