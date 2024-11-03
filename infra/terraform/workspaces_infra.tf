@@ -227,8 +227,8 @@ module "infra-eks-orgs-stage-main" {
 module "infra-eks-runners-prod-main" {
   source = "./modules/workspace"
 
-  name = "infra-eks-runners-prod-main"
-  # repo                            = "powertoolsdev/mono"
+  name                            = "infra-eks-runners-prod-main"
+  repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
@@ -260,8 +260,8 @@ module "infra-eks-runners-stage-main" {
 module "infra-eks-prod-nuon" {
   source = "./modules/workspace"
 
-  name = "infra-eks-prod-nuon"
-  # repo                            = "powertoolsdev/mono"
+  name                            = "infra-eks-prod-nuon"
+  repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
