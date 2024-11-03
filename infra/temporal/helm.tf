@@ -28,6 +28,18 @@ resource "helm_release" "temporal" {
             repository = "431927561584.dkr.ecr.us-west-2.amazonaws.com/mirror/temporalio/server"
             tag        = local.temporal.image_tag
           }
+          topologySpreadConstraints = [
+            {
+              topologyKey       = "kubernetes.io/hostname"
+              whenUnsatisfiable = "ScheduleAnyway"
+              labelSelector = {
+                matchLabels = {
+                  "app.kubernetes.io/name" : "temporal"
+                  "app.kubernetes.io/component" : "worker"
+                }
+              }
+            }
+          ]
           config = {
             persistence = {
               default = {
@@ -61,6 +73,18 @@ resource "helm_release" "temporal" {
             repository = "431927561584.dkr.ecr.us-west-2.amazonaws.com/mirror/temporalio/admin-tools"
             tag        = "1.22.4"
           }
+          topologySpreadConstraints = [
+            {
+              topologyKey       = "kubernetes.io/hostname"
+              whenUnsatisfiable = "ScheduleAnyway"
+              labelSelector = {
+                matchLabels = {
+                  "app.kubernetes.io/name" : "temporal"
+                  "app.kubernetes.io/component" : "admintools"
+                }
+              }
+            }
+          ]
         }
 
         web = {
@@ -74,6 +98,60 @@ resource "helm_release" "temporal" {
             repository = "431927561584.dkr.ecr.us-west-2.amazonaws.com/mirror/temporalio/ui"
             tag        = "2.16.2"
           }
+          topologySpreadConstraints = [
+            {
+              topologyKey       = "kubernetes.io/hostname"
+              whenUnsatisfiable = "ScheduleAnyway"
+              labelSelector = {
+                matchLabels = {
+                  "app.kubernetes.io/name" : "temporal"
+                  "app.kubernetes.io/component" : "web"
+                }
+              }
+            }
+          ]
+        }
+        matching = {
+          topologySpreadConstraints = [
+            {
+              topologyKey       = "kubernetes.io/hostname"
+              whenUnsatisfiable = "ScheduleAnyway"
+              labelSelector = {
+                matchLabels = {
+                  "app.kubernetes.io/name" : "temporal"
+                  "app.kubernetes.io/component" : "matching"
+                }
+              }
+            }
+          ]
+        }
+        history = {
+          topologySpreadConstraints = [
+            {
+              topologyKey       = "kubernetes.io/hostname"
+              whenUnsatisfiable = "ScheduleAnyway"
+              labelSelector = {
+                matchLabels = {
+                  "app.kubernetes.io/name" : "temporal"
+                  "app.kubernetes.io/component" : "history"
+                }
+              }
+            }
+          ]
+        }
+        frontend = {
+          topologySpreadConstraints = [
+            {
+              topologyKey       = "kubernetes.io/hostname"
+              whenUnsatisfiable = "ScheduleAnyway"
+              labelSelector = {
+                matchLabels = {
+                  "app.kubernetes.io/name" : "temporal"
+                  "app.kubernetes.io/component" : "frontend"
+                }
+              }
+            }
+          ]
         }
     })
   ]
