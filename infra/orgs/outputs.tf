@@ -21,9 +21,9 @@ output "runner_k8s" {
     access_role_arns = nonsensitive(data.tfe_outputs.infra-eks-runners.values.auth_map_additional_role_arns),
 
     # information needed to access the k8s cluster
-    cluster_id        = nonsensitive(data.tfe_outputs.infra-eks-runners.values.cluster_id),
-    ca_data           = nonsensitive(data.tfe_outputs.infra-eks-runners.values.cluster_certificate_authority_data),
-    public_endpoint   = nonsensitive(data.tfe_outputs.infra-eks-runners.values.cluster_endpoint),
+    cluster_id      = nonsensitive(data.tfe_outputs.infra-eks-runners.values.cluster_id),
+    ca_data         = nonsensitive(data.tfe_outputs.infra-eks-runners.values.cluster_certificate_authority_data),
+    public_endpoint = nonsensitive(data.tfe_outputs.infra-eks-runners.values.cluster_endpoint),
 
     # NOTE since the runner access is in a different cluster, this is a local OIDC provider
     oidc_provider_url = nonsensitive(aws_iam_openid_connect_provider.runners.url)
@@ -63,34 +63,18 @@ output "ecr" {
 
 output "waypoint" {
   value = {
-    root_domain            = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.root_domain)
+    root_domain            = "deprecated"
     token_secret_namespace = "default"
     token_secret_template  = "waypoint-bootstrap-token-%[1]s"
 
     // waypoint servers and runners live in the org account+cluster.
-    cluster_id        = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_id),
-    ca_data           = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_certificate_authority_data),
-    public_endpoint   = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_endpoint),
-    oidc_provider_url = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider)
-    oidc_provider_arn = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider_arn)
+    cluster_id        = "deprecated"
+    ca_data           = "deprecated"
+    public_endpoint   = "deprecated"
+    oidc_provider_url = "deprecated"
+    oidc_provider_arn = "deprecated"
   }
 }
-
-output "bootstrap_waypoint" {
-  value = {
-    domain                 = "bootstrap.${nonsensitive(data.tfe_outputs.infra-eks-orgs.values.root_domain)}"
-    token_secret_namespace = "waypoint"
-    token_secret_template  = "waypoint-server-token"
-
-    // bootstrap waypoint runs in the orgs account+cluster.
-    cluster_id        = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_id),
-    ca_data           = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_certificate_authority_data),
-    public_endpoint   = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_endpoint),
-    oidc_provider_url = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider)
-    oidc_provider_arn = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider_arn)
-  }
-}
-
 
 # buckets for storing/managing state related to an org
 output "buckets" {
