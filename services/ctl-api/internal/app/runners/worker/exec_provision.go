@@ -103,16 +103,16 @@ func (w *Workflows) executeProvisionInstallRunner(ctx workflow.Context, runnerID
 	// create the sandbox plan request
 	planWorkflowID := fmt.Sprintf("%s-runner-provision", runnerID)
 	planReq, err := w.protos.ToRunnerInstallPlanRequest(runner, install, apiToken)
+	if err != nil {
+		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to create runner plan request")
+		return fmt.Errorf("unable to create runner plan: %w", err)
+	}
 	planReq.LogConfiguration = &logv1.LogConfiguration{
 		RunnerId:       install.RunnerGroup.Runners[0].ID,
 		RunnerApiToken: token.Token,
 		RunnerApiUrl:   w.cfg.RunnerAPIURL,
 		RunnerJobId:    logStreamID,
 		Attrs:          logv1.NewAttrs(generics.ToStringMap(runner.RunnerGroup.Settings.Metadata)),
-	}
-	if err != nil {
-		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to create runner plan request")
-		return fmt.Errorf("unable to create runner plan: %w", err)
 	}
 
 	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, planWorkflowID, planReq)
