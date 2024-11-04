@@ -182,8 +182,9 @@ output "self_managed_node_groups_autoscaling_group_names" {
 ################################################################################
 
 output "access_entries" {
-  description = "Access Entries"
-  value       = module.eks.access_entries
+  # we avoid printing the whole thing because the kubernetes_groups list of strings breaks the parser on gha
+  description = "Access Entries' ARNs"
+  value       = [for entry in module.eks.access_entries : entry.access_entry_arn]
 }
 
 output "private_zone" {
@@ -224,6 +225,6 @@ output "twingate_service_accounts" {
 ################################################################################
 
 #output "karpenter" {
-  #description = "karpenter outputs"
-  #value = module.karpenter.all
+#description = "karpenter outputs"
+#value = module.karpenter.all
 #}
