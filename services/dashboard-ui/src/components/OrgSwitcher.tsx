@@ -190,9 +190,10 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({ initOrg, initOrgs }) => {
       <div className="flex flex-col gap-4 overflow-auto max-h-[500px] pb-2">
         <div className="pt-2 px-4">
           <OrgSummary org={initOrg} />
-          <ClickToCopy className="mt-4">
-            <Text variant="id">{initOrg.id}</Text>
-          </ClickToCopy>
+
+          <Text className="mt-4" variant="id">
+            <ClickToCopy>{initOrg.id}</ClickToCopy>
+          </Text>
         </div>
         <OrgVCSConnectionsDetails org={initOrg} />
         <OrgsNav orgs={initOrgs} />
