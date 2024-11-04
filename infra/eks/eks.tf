@@ -222,7 +222,7 @@ module "eks_aws_auth" {
   manage_aws_auth_configmap = true
 
   # this needs to be converted to entries
-  aws_auth_roles = concat([
+  aws_auth_roles = [
     {
       username = "admin:{{SessionName}}"
       # trying based on this: https://github.com/terraform-aws-modules/terraform-aws-eks/issues/2969
@@ -240,14 +240,7 @@ module "eks_aws_auth" {
         "eks-console-dashboard-full-access",
       ]
     }
-    ],
-    [
-      for add in local.vars.auth_map_additions : {
-        rolearn : module.extra_auth_map[add.name].iam_role_arn
-        username : add.name
-        groups : add.groups
-      }
-  ])
+  ]
 }
 
 # remove from state manually
