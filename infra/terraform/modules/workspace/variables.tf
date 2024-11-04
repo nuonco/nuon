@@ -29,8 +29,8 @@ variable "slack_notifications_webhook_url" {
   default     = ""
 }
 
-variable "pagerduty_email_address" {
-  description = "Email address for creating Pagerduty incidents."
+variable "pagerduty_service_account_id" {
+  description = "Service account for creating Pagerduty incidents."
   type        = string
   default     = ""
 }

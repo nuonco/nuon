@@ -14,3 +14,8 @@ data "tfe_oauth_client" "github" {
 data "tfe_organization" "main" {
   name = "nuonco"
 }
+
+data "tfe_organization_membership" "pagerduty" {
+  organization = data.tfe_organization.main.name
+  username     = "pagerduty"
+}

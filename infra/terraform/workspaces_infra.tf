@@ -16,7 +16,8 @@ module "infra-artifacts" {
   project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
 }
 
 module "aws" {
@@ -30,7 +31,8 @@ module "aws" {
   project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
 }
 
 module "aws-accounts" {
@@ -44,7 +46,8 @@ module "aws-accounts" {
   project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
 }
 
 module "aws-sso" {
@@ -58,7 +61,8 @@ module "aws-sso" {
   project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
 }
 
 module "infra-datadog-runners-prod" {
@@ -69,9 +73,10 @@ module "infra-datadog-runners-prod" {
   dir                             = "infra/datadog"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = ["aws-environment-credentials", "datadog"]
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = ["aws-environment-credentials", "datadog"]
+  project_id    = tfe_project.infra.id
   vars = {
     env = "runners-prod"
   }
@@ -86,9 +91,10 @@ module "infra-datadog-runners-stage" {
   dir                             = "infra/datadog"
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = ["aws-environment-credentials", "datadog"]
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = ["aws-environment-credentials", "datadog"]
+  project_id    = tfe_project.infra.id
   vars = {
     env = "runners-stage"
   }
@@ -103,9 +109,10 @@ module "infra-datadog-prod" {
   dir                             = "infra/datadog"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = ["aws-environment-credentials", "datadog"]
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = ["aws-environment-credentials", "datadog"]
+  project_id    = tfe_project.infra.id
   vars = {
     env = "prod"
   }
@@ -120,9 +127,10 @@ module "infra-datadog-stage" {
   dir                             = "infra/datadog"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = ["aws-environment-credentials", "datadog"]
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = ["aws-environment-credentials", "datadog"]
+  project_id    = tfe_project.infra.id
   vars = {
     env = "stage"
   }
@@ -137,9 +145,10 @@ module "infra-clickhouse-prod" {
   dir                             = "infra/clickhouse"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.infra.id
   vars = {
     env = "prod"
   }
@@ -154,9 +163,10 @@ module "infra-clickhouse-stage" {
   dir                             = "infra/clickhouse"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.infra.id
   vars = {
     env = "stage"
   }
@@ -171,9 +181,10 @@ module "infra-eks-runners-prod-main" {
   dir                             = "infra/eks"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = ["aws-environment-credentials", "twingate-api-token"]
+  project_id    = tfe_project.infra.id
 
   vars = {
     account = "runners-prod"
@@ -189,9 +200,10 @@ module "infra-eks-runners-stage-main" {
   dir                             = "infra/eks"
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = ["aws-environment-credentials", "twingate-api-token"]
+  project_id    = tfe_project.infra.id
   vars = {
     account = "runners-stage"
     pool    = "main"
@@ -206,9 +218,10 @@ module "infra-eks-prod-nuon" {
   dir                             = "infra/eks"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = ["aws-environment-credentials", "twingate-api-token"]
+  project_id    = tfe_project.infra.id
   vars = {
     account = "prod"
     pool    = "nuon"
@@ -223,9 +236,10 @@ module "infra-eks-stage-nuon" {
   dir                             = "infra/eks"
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = ["aws-environment-credentials", "twingate-api-token"]
+  project_id    = tfe_project.infra.id
   vars = {
     account = "stage"
     pool    = "nuon"
@@ -240,7 +254,8 @@ module "infra-github" {
   dir                             = "infra/github"
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
   variable_sets = ["aws-environment-credentials",
     "github-admin-powertoolsdev",
     "github-admin-nuonco",
@@ -257,9 +272,10 @@ module "infra-temporal-prod" {
   dir                             = "infra/temporal"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.infra.id
   vars = {
     env = "prod"
   }
@@ -274,9 +290,10 @@ module "infra-temporal-stage" {
   dir                             = "infra/temporal"
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.infra.id
   vars = {
     env = "stage"
   }
@@ -291,8 +308,9 @@ module "infra-terraform" {
   dir                             = "infra/terraform"
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  project_id = tfe_project.infra.id
 }
 
 module "nuon-dns" {
@@ -303,9 +321,10 @@ module "nuon-dns" {
   dir                             = "infra/dns"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.infra.id
 }
 
 module "infra-vercel" {
@@ -316,9 +335,10 @@ module "infra-vercel" {
   dir                             = "infra/vercel"
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = []
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = []
+  project_id    = tfe_project.infra.id
 }
 
 module "infra-vantage" {
@@ -329,7 +349,8 @@ module "infra-vantage" {
   dir                             = "infra/vantage"
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
-  variable_sets                   = []
-  project_id                      = tfe_project.infra.id
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
+
+  variable_sets = []
+  project_id    = tfe_project.infra.id
 }

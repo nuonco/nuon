@@ -9,11 +9,11 @@ resource "tfe_notification_configuration" "slack-alerts" {
 }
 
 resource "tfe_notification_configuration" "pagerduty-incidents" {
-  count            = var.pagerduty_email_address != "" ? 1 : 0
+  count            = var.pagerduty_service_account_id != "" ? 1 : 0
   name             = "${var.name}-pagerduty-alerts"
   enabled          = true
   destination_type = "email"
   triggers         = ["run:errored"]
-  email_addresses  = [var.pagerduty_email_address]
+  email_user_ids   = [var.pagerduty_service_account_id]
   workspace_id     = tfe_workspace.workspace.id
 }

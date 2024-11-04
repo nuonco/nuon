@@ -16,7 +16,7 @@ module "dev" {
   project_id    = tfe_project.dev.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_email_address         = var.pagerduty_email_address
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.id
 
   env_vars = {
     NUON_API_URL = local.stage.api_url
