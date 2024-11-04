@@ -3,7 +3,7 @@ data "aws_organizations_organization" "orgs" {
 }
 
 data "aws_iam_roles" "nuon_sso_roles_external" {
-  provider    = aws.external
+  provider    = aws.orgs
   name_regex  = "AWSReservedSSO_Nuon.*"
   path_prefix = "/aws-reserved/sso.amazonaws.com/"
 }

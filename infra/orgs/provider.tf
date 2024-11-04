@@ -6,19 +6,6 @@ provider "aws" {
   }
 }
 
-// NOTE(jdt): this is for creating external facing roles in the `external` account
-provider "aws" {
-  region = local.region
-  alias  = "external"
-  default_tags {
-    tags = local.tags
-  }
-
-  assume_role {
-    role_arn = "arn:aws:iam::${local.accounts["external"].id}:role/terraform"
-  }
-}
-
 // NOTE(jdt): this is for fetching sso roles in the workload account
 provider "aws" {
   region = local.region
