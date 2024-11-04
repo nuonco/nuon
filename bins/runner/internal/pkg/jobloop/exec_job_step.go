@@ -13,13 +13,22 @@ import (
 
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/powertoolsdev/mono/pkg/retry"
 )
 
 func (j *jobLoop) updateJobExecutionStatus(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus) error {
-	if _, err := j.apiClient.UpdateJobExecution(ctx, jobID, jobExecutionID, &models.ServiceUpdateRunnerJobExecutionRequest{
-		Status: status,
-	}); err != nil {
-		return fmt.Errorf("unable to update job execution status: %w", err)
+	fn := func(ctx context.Context) error {
+		if _, err := j.apiClient.UpdateJobExecution(ctx, jobID, jobExecutionID, &models.ServiceUpdateRunnerJobExecutionRequest{
+			Status: status,
+		}); err != nil {
+			return fmt.Errorf("unable to update job execution status: %w", err)
+		}
+
+		return nil
+	}
+
+	if err := retry.Retry(ctx, fn, retry.WithMaxAttempts(10), retry.WithSleep(5)); err != nil {
+		return err
 	}
 
 	return nil
