@@ -30,6 +30,12 @@ func (a *AppSandboxConfig) parse() error {
 		}
 	}
 
+	if a.ConnectedRepo == nil && a.PublicRepo == nil {
+		return ErrConfig{
+			Description: "either a public repo or connected repo block must be set",
+		}
+	}
+
 	if len(a.Vars) > 0 {
 		return ErrConfig{
 			Description: "the var array is deprecated, please use vars instead",

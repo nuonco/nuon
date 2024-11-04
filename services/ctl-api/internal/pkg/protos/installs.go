@@ -26,11 +26,11 @@ func (c *Adapter) toSandboxSettings(install *app.Install) (*installsv1.SandboxSe
 	if install.AppSandboxConfig.PublicGitVCSConfig != nil {
 		sandboxSettings.PublicGitConfig = c.toPublicGitConfig(install.AppSandboxConfig.PublicGitVCSConfig.Branch,
 			install.AppSandboxConfig.PublicGitVCSConfig)
-	}
-
-	if install.AppSandboxConfig.ConnectedGithubVCSConfig != nil {
+	} else if install.AppSandboxConfig.ConnectedGithubVCSConfig != nil {
 		sandboxSettings.ConnectedGithubConfig = c.toConnectedGithubConfig(install.AppSandboxConfig.ConnectedGithubVCSConfig.Branch,
 			install.AppSandboxConfig.ConnectedGithubVCSConfig)
+	} else {
+		return nil, fmt.Errorf("invalid config no connected github repo or public repo found")
 	}
 
 	return sandboxSettings, nil
