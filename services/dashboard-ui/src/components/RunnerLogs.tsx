@@ -115,31 +115,33 @@ export const OTELLogs: FC<IOTELLogs> = ({
                     </Text>
                   }
                   expandContent={
-                    <div className="divide-y p-4">
-                      <div className="grid grid-cols-3 gap-4 pb-3">
-                        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-                          Key
-                        </Text>
-                        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-                          Value
-                        </Text>
-                      </div>
-
-                      {Object.keys(logAttributes).map((key, i) => (
-                        <div
-                          key={`${key}-${i}`}
-                          className="grid grid-cols-3 gap-4 py-3"
-                        >
-                          <Text className="font-mono text-sm break-all !inline truncate max-w-[250px]">
-                            {key}
+                    Object.keys(logAttributes)?.length && (
+                      <div className="divide-y p-4">
+                        <div className="grid grid-cols-3 gap-4 pb-3">
+                          <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+                            Key
                           </Text>
-
-                          <Text className="text-sm font-mono text-pretty col-span-2 !inline break-all">
-                            {logAttributes[key]}
+                          <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+                            Value
                           </Text>
                         </div>
-                      ))}
-                    </div>
+
+                        {Object.keys(logAttributes).map((key, i) => (
+                          <div
+                            key={`${key}-${i}`}
+                            className="grid grid-cols-3 gap-4 py-3"
+                          >
+                            <Text className="font-mono text-sm break-all !inline truncate max-w-[250px]">
+                              {key}
+                            </Text>
+
+                            <Text className="text-sm font-mono text-pretty col-span-2 !inline break-all">
+                              {logAttributes[key]}
+                            </Text>
+                          </div>
+                        ))}
+                      </div>
+                    )
                   }
                   isOpen
                 />
@@ -343,12 +345,12 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
                 />
                 <div className="ml-4 pl-4">
                   <Button
-                    className="flex items-center gap-2 text-base !font-medium"
+                    className="flex items-center gap-2 text-sm !font-medium"
                     onClick={() => {
                       setIsDetailsOpen(true)
                     }}
                   >
-                    <ArrowsOutSimple />
+                    <ArrowsOutSimple size="14" />
                     View all logs
                   </Button>
                 </div>
