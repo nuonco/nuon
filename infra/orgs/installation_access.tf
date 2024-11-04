@@ -1,4 +1,3 @@
-// NOTE(jdt): create these resources in the external account
 data "aws_iam_policy_document" "install_k8s" {
   statement {
     effect = "Allow"
@@ -34,7 +33,7 @@ data "aws_iam_policy_document" "install_k8s_trust_policy_external" {
 resource "aws_iam_policy" "install_k8s_external" {
   provider = aws.orgs
 
-  name   = "eks-policy-${var.env}-install"
+  name   = "installations-role-access-${var.env}"
   policy = data.aws_iam_policy_document.install_k8s.json
 }
 
@@ -47,7 +46,7 @@ module "install_k8s_role_external" {
 
   create_role = true
 
-  role_name = "install-k8s-admin-${var.env}"
+  role_name = "installations-role-access-${var.env}"
 
   create_custom_role_trust_policy = true
   custom_role_trust_policy        = data.aws_iam_policy_document.install_k8s_trust_policy_external.json
