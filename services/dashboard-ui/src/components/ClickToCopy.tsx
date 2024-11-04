@@ -9,7 +9,7 @@ export const ClickToCopy: FC<React.HTMLAttributes<HTMLSpanElement>> = ({
   children,
   ...props
 }) => {
-  const text = children?.valueOf()?.['props']?.children
+  const text = children?.valueOf()?.['props']?.children || children
 
   return (
     <span
