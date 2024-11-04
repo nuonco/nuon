@@ -21,8 +21,6 @@ export const OrgAvatar: FC<{
   isSmall?: boolean
   logoURL?: string
 }> = ({ name, isSmall = false, logoURL }) => {
-  console.log('url', logoURL)
-
   return (
     <span
       className={classNames(
@@ -55,7 +53,6 @@ export interface IOrgSummary {
 }
 
 export const OrgSummary: FC<IOrgSummary> = ({ org }) => {
-  console.log('logging', org.logo_url)
   return (
     <div className="flex gap-4 items-center justify-start">
       <OrgAvatar name={org.name} logoURL={org.logo_url} />
