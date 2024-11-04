@@ -29,14 +29,10 @@ variable "slack_notifications_webhook_url" {
   default     = ""
 }
 
-variable "pagerduty_events_api_url" {
-  description = "pagerduty events API URL for creating incidents"
+variable "pagerduty_email_address" {
+  description = "Email address for creating Pagerduty incidents."
   type        = string
-}
-
-variable "pagerduty_events_api_token" {
-  description = "pagerduty events token for creating incidents"
-  type        = string
+  default     = ""
 }
 
 variable "vars" {

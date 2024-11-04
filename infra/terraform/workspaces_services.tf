@@ -20,8 +20,7 @@ module "ctl-api-stage" {
   trigger_workspaces = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_events_api_url        = var.pagerduty_events_api_url
-  pagerduty_events_api_token      = var.pagerduty_events_api_token
+  pagerduty_email_address         = var.pagerduty_email_address
 }
 
 module "ctl-api-prod" {
@@ -36,8 +35,7 @@ module "ctl-api-prod" {
     tfe_token = tfe_team_token.service-accounts-prod.token
   }
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_events_api_url        = var.pagerduty_events_api_url
-  pagerduty_events_api_token      = var.pagerduty_events_api_token
+  pagerduty_email_address         = var.pagerduty_email_address
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks"]
   project_id                      = tfe_project.services.id
   trigger_workspaces              = [module.infra-eks-prod-nuon.workspace_id, module.infra-orgs-prod.workspace_id]
@@ -59,8 +57,7 @@ module "dashboard-ui-stage" {
   trigger_workspaces = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_events_api_url        = var.pagerduty_events_api_url
-  pagerduty_events_api_token      = var.pagerduty_events_api_token
+  pagerduty_email_address         = var.pagerduty_email_address
 }
 
 module "dashboard-ui-prod" {
@@ -75,8 +72,7 @@ module "dashboard-ui-prod" {
     tfe_token = tfe_team_token.service-accounts-prod.token
   }
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_events_api_url        = var.pagerduty_events_api_url
-  pagerduty_events_api_token      = var.pagerduty_events_api_token
+  pagerduty_email_address         = var.pagerduty_email_address
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks"]
   project_id                      = tfe_project.services.id
   trigger_workspaces              = [module.infra-eks-prod-nuon.workspace_id]
@@ -98,8 +94,7 @@ module "wiki-stage" {
   trigger_workspaces = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_events_api_url        = var.pagerduty_events_api_url
-  pagerduty_events_api_token      = var.pagerduty_events_api_token
+  pagerduty_email_address         = var.pagerduty_email_address
 }
 
 module "wiki-prod" {
@@ -114,8 +109,7 @@ module "wiki-prod" {
     tfe_token = tfe_team_token.service-accounts-prod.token
   }
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_events_api_url        = var.pagerduty_events_api_url
-  pagerduty_events_api_token      = var.pagerduty_events_api_token
+  pagerduty_email_address         = var.pagerduty_email_address
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks"]
   project_id                      = tfe_project.services.id
   trigger_workspaces              = [module.infra-eks-prod-nuon.workspace_id, module.infra-orgs-prod.workspace_id]
@@ -140,8 +134,7 @@ module "workers-canary-stage" {
   ]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_events_api_url        = var.pagerduty_events_api_url
-  pagerduty_events_api_token      = var.pagerduty_events_api_token
+  pagerduty_email_address         = var.pagerduty_email_address
   trigger_workspaces              = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
 }
 
@@ -164,8 +157,7 @@ module "workers-canary-prod" {
   ]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_events_api_url        = var.pagerduty_events_api_url
-  pagerduty_events_api_token      = var.pagerduty_events_api_token
+  pagerduty_email_address         = var.pagerduty_email_address
   trigger_workspaces              = [module.infra-eks-prod-nuon.workspace_id, module.infra-orgs-prod.workspace_id]
 }
 
@@ -182,8 +174,7 @@ module "workers-executors-prod" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_events_api_url        = var.pagerduty_events_api_url
-  pagerduty_events_api_token      = var.pagerduty_events_api_token
+  pagerduty_email_address         = var.pagerduty_email_address
   trigger_workspaces              = [module.infra-eks-prod-nuon.workspace_id, module.infra-orgs-prod.workspace_id]
 }
 
@@ -200,8 +191,7 @@ module "workers-executors-stage" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_events_api_url        = var.pagerduty_events_api_url
-  pagerduty_events_api_token      = var.pagerduty_events_api_token
+  pagerduty_email_address         = var.pagerduty_email_address
   trigger_workspaces              = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
 }
 
