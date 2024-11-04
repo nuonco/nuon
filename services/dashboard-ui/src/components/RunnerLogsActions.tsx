@@ -47,22 +47,32 @@ export const RunnerLogsActions: FC<IRunnerLogsActions> = ({
     <div className="flex items-center gap-4">
       {shouldShowExpandAll && (
         <Button
-          className="text-base !font-medium !p-2 w-[32px] h-[32px]"
-          variant="ghost"
+          className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-2"
           title={
             isAllExpanded ? 'Collapse all log lines' : 'Expand all log lines'
           }
           onClick={handleExpandAll}
         >
-          {isAllExpanded ? <ArrowsInLineVertical /> : <ArrowsOutLineVertical />}
+          {isAllExpanded ? (
+            <>
+              <ArrowsInLineVertical size="14" /> Collapse
+            </>
+          ) : (
+            <>
+              <ArrowsOutLineVertical size="14" /> Expand
+            </>
+          )}
         </Button>
       )}
       <Dropdown
         alignment="right"
-        className="text-base !font-medium !p-2 w-[32px] h-[32px]"
-        variant="ghost"
+        className="text-sm !font-medium !p-2 h-[32px]"
         id="logs-search"
-        text={<MagnifyingGlass />}
+        text={
+          <>
+            <MagnifyingGlass size="14" /> Search
+          </>
+        }
       >
         <div>
           <label className="relative">
@@ -79,21 +89,30 @@ export const RunnerLogsActions: FC<IRunnerLogsActions> = ({
       </Dropdown>
 
       <Button
-        className="text-base !font-medium !p-2 w-[32px] h-[32px]"
-        variant="ghost"
+        className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-2"
         title={columnSort?.[0].desc ? 'Sort by oldest' : 'Sort by newest'}
         onClick={handleColumnSort}
       >
-        {columnSort?.[0].desc ? <SortAscending /> : <SortDescending />}
+        <>
+          {columnSort?.[0].desc ? (
+            <SortAscending size="14" />
+          ) : (
+            <SortDescending size="14" />
+          )}
+          Sort
+        </>
       </Button>
 
       {shouldHideFilter ? null : (
         <Dropdown
           alignment="right"
-          className="text-base !font-medium !p-2 w-[32px] h-[32px]"
-          variant="ghost"
+          className="text-sm !font-medium !p-2 h-[32px]"
           id="logs-filter"
-          text={<Funnel />}
+          text={
+            <>
+              <Funnel size="14" /> Filter
+            </>
+          }
         >
           <div>
             <form>
@@ -140,7 +159,7 @@ export const RunnerLogsActions: FC<IRunnerLogsActions> = ({
               />
               <hr />
               <Button
-                className="w-full !rounded-t-none !text-sm flex items-center gap-2"
+                className="w-full !rounded-t-none !text-sm flex items-center gap-2 pl-4"
                 type="reset"
                 onClick={clearStatusFilter}
                 variant="ghost"
