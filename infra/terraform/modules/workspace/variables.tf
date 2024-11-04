@@ -29,6 +29,16 @@ variable "slack_notifications_webhook_url" {
   default     = ""
 }
 
+variable "pagerduty_events_api_url" {
+  description = "pagerduty events API URL for creating incidents"
+  type        = string
+}
+
+variable "pagerduty_events_api_token" {
+  description = "pagerduty events token for creating incidents"
+  type        = string
+}
+
 variable "vars" {
   description = "variables to set on the workspace"
   type        = map(any)

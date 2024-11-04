@@ -18,6 +18,8 @@ module "infra-orgs-prod" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.product.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  pagerduty_events_api_url        = var.pagerduty_events_api_url
+  pagerduty_events_api_token      = var.pagerduty_events_api_token
   trigger_workspaces              = [module.infra-eks-runners-prod-main.workspace_id]
 }
 
@@ -34,6 +36,8 @@ module "infra-orgs-stage" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.product.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  pagerduty_events_api_url        = var.pagerduty_events_api_url
+  pagerduty_events_api_token      = var.pagerduty_events_api_token
   trigger_workspaces              = [module.infra-eks-runners-stage-main.workspace_id]
 }
 
@@ -45,6 +49,8 @@ module "sandboxes" {
   auto_apply                      = true
   dir                             = "infra/sandboxes"
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  pagerduty_events_api_url        = var.pagerduty_events_api_url
+  pagerduty_events_api_token      = var.pagerduty_events_api_token
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.product.id
 }
