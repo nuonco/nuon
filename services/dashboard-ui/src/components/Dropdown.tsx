@@ -38,7 +38,7 @@ export const Dropdown: FC<IDropdown> = ({
           aria-haspopup="true"
           aria-expanded="true"
           aria-controls={`dropdown-content-${id}`}
-          className={classNames('h-full bg-white dark:bg-black', {
+          className={classNames('h-full', {
             'px-4 py-2': hasCustomPadding,
             [`${className}`]: Boolean(className),
           })}
@@ -47,7 +47,7 @@ export const Dropdown: FC<IDropdown> = ({
           type="button"
           variant={variant}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             {text}
 
             {variant !== 'ghost' && <CaretUpDown />}
