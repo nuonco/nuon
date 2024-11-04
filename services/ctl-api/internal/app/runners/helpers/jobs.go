@@ -11,7 +11,7 @@ import (
 const (
 	DefaultQueueTimeout     time.Duration = time.Hour * 24
 	DefaultAvailableTimeout time.Duration = time.Second * 30
-	DefaultExecutionTimeout time.Duration = time.Minute
+	DefaultExecutionTimeout time.Duration = time.Minute * 5
 
 	DefaultMaxExecutions int = 1
 )
@@ -21,8 +21,8 @@ func (s *Helpers) getExecutionTimeout(typ app.RunnerJobType) time.Duration {
 		// build timeouts
 		app.RunnerJobTypeDockerBuild:          time.Minute * 60,
 		app.RunnerJobTypeContainerImageBuild:  time.Minute * 15,
-		app.RunnerJobTypeHelmChartBuild:       time.Minute * 1,
-		app.RunnerJobTypeTerraformModuleBuild: time.Minute * 1,
+		app.RunnerJobTypeHelmChartBuild:       time.Minute * 5,
+		app.RunnerJobTypeTerraformModuleBuild: time.Minute * 5,
 
 		// sync timeouts
 		app.RunnerJobTypeOCISync: time.Minute * 15,
