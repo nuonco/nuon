@@ -113,9 +113,10 @@ output "cluster_iam_role_unique_id" {
 ################################################################################
 
 output "cluster_addons" {
-  description = "Map of attribute maps for all EKS cluster addons enabled"
-  value       = module.eks.cluster_addons
+  description = "List of EKS cluster addons."
+  value       = [for addon in module.eks.cluster_addons : addon.arn]
 }
+
 
 ################################################################################
 # EKS Identity Provider
@@ -181,6 +182,7 @@ output "self_managed_node_groups_autoscaling_group_names" {
 # Additional
 ################################################################################
 
+# needs to be a map; a list of string breaks the parser
 output "access_entries" {
   # we avoid printing the whole thing because the kubernetes_groups list of strings breaks the parser on gha
   description = "Access Entries' ARNs"
