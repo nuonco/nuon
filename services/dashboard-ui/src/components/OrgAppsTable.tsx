@@ -3,6 +3,7 @@
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { DotsThreeVertical } from '@phosphor-icons/react'
+import { AppSandboxRepoDirLink } from '@/components/AppSandbox'
 import { ClickToCopy } from '@/components/ClickToCopy'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { InstallPlatform } from '@/components/InstallCloudPlatform'
@@ -15,17 +16,29 @@ type TData = {
   name: string
   platform: string
   runner_type: string
-  sandbox_version: string
+  sandbox_repo: string
+  isGithubConnected: boolean
 }
 
 function parseAppsToTableData(apps: Array<TApp>): Array<TData> {
-  return apps.map((app) => ({
-    appId: app.id,
-    name: app.name,
-    platform: app.runner_config?.cloud_platform,
-    runner_type: app.runner_config.app_runner_type,
-    sandbox_version: app.sandbox_config?.terraform_version,
-  }))
+  return apps.map((app) => {
+    const isGithubConnected = Boolean(
+      app.sandbox_config?.connected_github_vcs_config
+    )
+    const repo =
+      app.sandbox_config?.connected_github_vcs_config ||
+      app.sandbox_config?.public_git_vcs_config
+    const sandbox_repo = `${repo?.repo}/${repo?.directory}`
+
+    return {
+      appId: app.id,
+      name: app.name,
+      platform: app.runner_config?.cloud_platform,
+      runner_type: app.runner_config.app_runner_type,
+      sandbox_repo,
+      isGithubConnected,
+    }
+  })
 }
 
 export interface IOrgAppsTable {
@@ -66,8 +79,13 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
       },
       {
         header: 'Sandbox',
-        accessorKey: 'sandbox_version',
-        cell: (props) => <Text>{props.getValue<string>()}</Text>,
+        accessorKey: 'sandbox_repo',
+        cell: (props) => (
+          <AppSandboxRepoDirLink
+            repoDirPath={props.getValue<string>()}
+            isGithubConnected={props.row.original.isGithubConnected}
+          />
+        ),
       },
       {
         header: 'Runner',

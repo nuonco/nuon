@@ -123,3 +123,28 @@ export const AppSandboxVariables: FC<IAppSandboxVariables> = ({
     </div>
   )
 }
+
+export const AppSandboxRepoDirLink: FC<{
+  repoDirPath: string
+  isGithubConnected: boolean
+}> = ({ repoDirPath, isGithubConnected }) => {
+  const urlParts = repoDirPath.split('/')
+  console.log('thing?', urlParts)
+
+  return (
+    <Link
+      href={`https://github.com/${urlParts[0]}/${urlParts[1]}/tree/main/${urlParts[2]}`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      {isGithubConnected ? <FaGithub /> : <FaGitAlt />}
+      {repoDirPath.length >= 26 ? (
+        <ToolTip alignment="right" tipContent={repoDirPath}>
+          <Truncate>{repoDirPath}</Truncate>
+        </ToolTip>
+      ) : (
+        <Text className="text-sm">{repoDirPath}</Text>
+      )}
+    </Link>
+  )
+}

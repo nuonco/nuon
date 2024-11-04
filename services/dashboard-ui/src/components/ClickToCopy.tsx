@@ -17,6 +17,7 @@ export const ClickToCopy: FC<React.HTMLAttributes<HTMLSpanElement>> = ({
         [`${className}`]: Boolean(className),
       })}
       onClick={() => {
+        console.log('logging', text)
         navigator.clipboard.writeText(text)
       }}
       title="Click to copy"
