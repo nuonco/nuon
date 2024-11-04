@@ -39,9 +39,3 @@ We aim to make changes quickly and safely, using integrity checks that run in Gi
 - fmt (prettier): `npm run fmt`, `npm run fmt -- --write` (to format code in src)
 
 - unit test (vitest + react-testing-lib + msw): `npm run test`, `npm run test -- --watch`
-
-## Nodepool
-
-## TODO
-
-- [ ] update the disruption budget to only rotate during work hours.
