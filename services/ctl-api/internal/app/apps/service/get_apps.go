@@ -54,6 +54,8 @@ func (s *service) getApps(ctx context.Context, orgID string) ([]*app.App, error)
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).
+		Preload("AppSandboxConfigs.PublicGitVCSConfig").
+		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
 		Model(&org).Association("Apps").Find(&apps)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get org apps: %w", err)
