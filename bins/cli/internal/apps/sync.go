@@ -87,7 +87,18 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 		for cmpID := range spinnersByComponentID {
 			cmpBuild, err := s.api.GetComponentLatestBuild(ctx, cmpID)
 			if err != nil {
+				if nuon.IsServerError(err) {
+					spinnersByComponentID[cmpID].Fail("error building component " + cmpID)
+					delete(spinnersByComponentID, cmpID)
+					continue
+				}
+				// in case we didn't wait long enough for an initial build record, ignore and loop again
 				if nuon.IsNotFound(err) {
+					continue
+				}
+				// TODO: avoid panic if we error on network issues. We should introduce a retryer at the sdk level.
+				// for now, this loop is inherently retrying.
+				if cmpBuild == nil {
 					continue
 				}
 			}
