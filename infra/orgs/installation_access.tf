@@ -26,12 +26,6 @@ data "aws_iam_policy_document" "install_k8s_trust_policy_external" {
         [
           module.support_role.iam_role_arn
         ],
-
-        # TODO: remove this and _only_ allow access to the installations role via org specific IAM roles
-        [
-          for p in local.additional_install_role_eks_principals :
-          format("arn:aws:iam::%s:role/eks/%s", local.accounts[var.env].id, p)
-        ]
       )
     }
   }

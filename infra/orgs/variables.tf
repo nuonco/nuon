@@ -3,11 +3,6 @@ locals {
     for acct in data.aws_organizations_organization.orgs.accounts : acct.name => { id : acct.id }
   }
 
-  additional_install_role_eks_principals = [
-    "eks-workers-installs",
-    "eks-workers-orgs",
-  ]
-
   org_id = data.aws_organizations_organization.orgs.id
 
   name                   = "infra-installations"
