@@ -31,8 +31,8 @@ export const Status: FC<IStatus> = ({
     status === 'bad' ||
     status === 'access-error' ||
     status === 'access_error'
-  const isNoop = status === 'noop'
-
+  const isNoop = status === 'noop' || status === ''
+  
   return (
     <span className="flex flex-col gap-0">
       {label && !isLabelStatusText ? (
@@ -49,7 +49,7 @@ export const Status: FC<IStatus> = ({
       >
         <GoDotFill className="text-lg" />
         {isStatusTextHidden || isLabelStatusText ? null : (
-          <Text variant="status">{status}</Text>
+          <Text variant="status">{status === '' ? 'Unknown' : status}</Text>
         )}
         {isLabelStatusText ? <Text variant="status">{label}</Text> : null}
       </span>
