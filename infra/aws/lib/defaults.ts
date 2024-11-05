@@ -1,4 +1,4 @@
-import { quota_code, service_code } from './enums';
+import { quota_code, service_code } from "./enums";
 
 const STAGE_REDUCED_EC2_QUOTAS = [
   {
@@ -15,15 +15,15 @@ const STAGE_REDUCED_EC2_QUOTAS = [
 ];
 
 export const allowedRegions = [
-  'us-east-1',
-  'us-east-2',
-  'us-west-1',
-  'us-west-2',
+  "us-east-1",
+  "us-east-2",
+  "us-west-1",
+  "us-west-2",
 ];
 
-export const rootDomain = 'nuon.co';
+export const rootDomain = "nuon.co";
 
-export const defaultRegion = 'us-east-2';
+export const defaultRegion = "us-east-2";
 
 type quota = {
   quotaCode: string;
@@ -51,38 +51,45 @@ type orgStructure = unit[];
 
 export const desiredOrgStructure: orgStructure = [
   {
-    accounts: [{ additionalEnvTags: ['stage', 'prod'], name: 'external' }],
+    accounts: [{ additionalEnvTags: ["stage", "prod"], name: "external" }],
     disableScp: true,
-    name: 'deleted',
+    name: "deleted",
   },
   {
+    accounts: [],
+    disableScp: true,
+    name: "nuon-public",
+  },
+
+  {
     accounts: [
-      { name: 'demo' },
-      { name: 'demo-govcloud' },
-      { name: 'public' },
-      { name: 'canary' },
+      { name: "demo" },
+      { name: "demo-govcloud" },
+      { name: "public" },
+      { name: "canary" },
+      { name: "test" },
     ],
     disableScp: true,
-    name: 'nuon-testing',
+    name: "nuon-testing",
   },
   {
     accounts: [
-      { name: 'prod' },
-      { name: 'stage' },
-      { additionalEnvTags: ['stage'], name: 'infra-shared-stage' },
-      { additionalEnvTags: ['prod'], name: 'infra-shared-prod' },
-      { additionalEnvTags: ['stage'], name: 'govcloud-stage' },
-      { additionalEnvTags: ['prod'], name: 'govcloud-prod' },
+      { name: "prod" },
+      { name: "stage" },
+      { additionalEnvTags: ["stage"], name: "infra-shared-stage" },
+      { additionalEnvTags: ["prod"], name: "infra-shared-prod" },
+      { additionalEnvTags: ["stage"], name: "govcloud-stage" },
+      { additionalEnvTags: ["prod"], name: "govcloud-prod" },
       {
-        additionalEnvTags: ['stage'],
-        name: 'orgs-stage',
+        additionalEnvTags: ["stage"],
+        name: "orgs-stage",
         // NOTE(jdt): these somehow got set really high, have to set them here to match...
         quotas: STAGE_REDUCED_EC2_QUOTAS,
       },
-      { additionalEnvTags: ['prod'], name: 'orgs-prod' },
+      { additionalEnvTags: ["prod"], name: "orgs-prod" },
       // NOTE(fd): accounts for runners
-      { additionalEnvTags: ['stage'], name: 'runners-stage' },
-      { additionalEnvTags: ['prod'], name: 'runners-prod' },
+      { additionalEnvTags: ["stage"], name: "runners-stage" },
+      { additionalEnvTags: ["prod"], name: "runners-prod" },
     ],
     defaultQuotas: [
       {
@@ -98,12 +105,19 @@ export const desiredOrgStructure: orgStructure = [
         value: 512,
       },
     ],
-    name: 'workloads',
+    name: "workloads",
   },
   {
-    accounts: [{ name: 'sandbox-jm' }, { name: 'sandbox-ja' }],
+    accounts: [
+      { name: "sandbox-jm" },
+      { name: "sandbox-ja" },
+      { name: "sandbox-sb" },
+      { name: "sandbox-rb" },
+      { name: "sandbox-fd" },
+      { name: "sandbox-nh" },
+    ],
     disableScp: true,
-    name: 'engineers',
+    name: "engineers",
   },
 ];
 
