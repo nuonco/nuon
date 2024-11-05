@@ -56,5 +56,6 @@ export const InitSegmentAnalytics: FC<{ writeKey: string }> = ({
     })
   }, [])
 
+  // eslint-disable-next-line
   return <Script id="load-env">{console.log('analytics initialized')}</Script>
 }
