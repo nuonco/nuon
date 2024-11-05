@@ -129,7 +129,6 @@ export const AppSandboxRepoDirLink: FC<{
   isGithubConnected: boolean
 }> = ({ repoDirPath, isGithubConnected }) => {
   const urlParts = repoDirPath.split('/')
-  console.log('thing?', urlParts)
 
   return (
     <Link
