@@ -18,36 +18,23 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 		return nil, fmt.Errorf("unable to get previous helm release: %w", err)
 	}
 
-	l.Info("loading helm env settings")
-	settings, err := helm.LoadEnvSettings()
-	if err != nil {
-		return nil, fmt.Errorf("unable to load env settings: %w", err)
-	}
-
-	l.Info("loading chart options")
-	cpo, chartName, err := helm.ChartPathOptions(
-		h.state.cfg.Repository,
-		h.state.cfg.Chart,
-		h.state.cfg.Version,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to load chart options: %w", err)
-	}
-
-	l.Info("loading chart")
-	c, _, err := helm.GetChart(chartName, cpo, settings)
+	l.Info("loading chart", zap.String("repo", h.state.cfg.Repository))
+	c, err := helm.GetChartByPath(h.state.cfg.Repository)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load chart: %w", err)
 	}
 
+	l.Info("found default chart values", zap.Any("values", c.Values))
+
+	l.Info("loading provided values")
 	values, err := helm.ChartValues(h.state.cfg.Values, h.state.cfg.HelmSet)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}
+	l.Info("parsed values", zap.Any("values", values))
 
 	// We have a previous release, upgrade.
 	client := action.NewUpgrade(actionCfg)
-	client.ChartPathOptions = *cpo
 	client.DryRun = false
 	client.DisableHooks = false
 	client.Wait = true
