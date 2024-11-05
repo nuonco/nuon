@@ -88,7 +88,7 @@ export const InstallHistory: FC<IInstallHistory> = ({
 
   useEffect(() => {
     const fetchInstallEvents = () => {
-      fetch(`/api/${orgId}/installs/${undefined}/events`)
+      fetch(`/api/${orgId}/installs/${installId}/events`)
         .then((res) =>
           res.json().then((e) => setInstallEvents(parseInstallHistory(e)))
         )
