@@ -159,6 +159,7 @@ const config: Config = {
       wide: '0.04rem',
     },
     lineHeight: {
+      none: '1',
       tight: '12px',
       normal: '16px',
       relaxed: '20px',

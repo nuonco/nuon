@@ -28,7 +28,7 @@ export const Dropdown: FC<IDropdown> = ({
   return (
     <>
       <div
-        className={classNames('z-10 relative inline-block text-left group', {
+        className={classNames('z-10 relative inline-block text-left group leading-none', {
           'w-full': isFullWidth,
         })}
         id={id}

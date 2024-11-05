@@ -74,7 +74,7 @@ export const RunnerLogsActions: FC<IRunnerLogsActions> = ({
           </>
         }
       >
-        <div>
+        <div className="p-2">
           <label className="relative">
             <MagnifyingGlass className="text-cool-grey-600 dark:text-cool-grey-500 absolute top-0.5 left-2" />
             <input
