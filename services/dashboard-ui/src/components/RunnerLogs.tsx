@@ -107,16 +107,16 @@ export const OTELLogs: FC<IOTELLogs> = ({
             }
             expandContent={
               <div className="flex flex-col bg-black/5 dark:bg-white/5">
-                <Expand
-                  id={`${row.id}-log-attr`}
-                  heading={
-                    <Text className="text-base !font-medium leading-normal p-4">
-                      Log attributes
-                    </Text>
-                  }
-                  expandContent={
-                    Object.keys(logAttributes)?.length && (
-                      <div className="divide-y p-4">
+                {Object.keys(logAttributes)?.length ? (
+                  <Expand
+                    id={`${row.id}-log-attr`}
+                    heading={
+                      <Text className="text-base !font-medium leading-normal p-4">
+                        Log attributes
+                      </Text>
+                    }
+                    expandContent={
+                      <div className="divide-y p-4 bg-black/5 dark:bg-white/5">
                         <div className="grid grid-cols-3 gap-4 pb-3">
                           <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
                             Key
@@ -141,10 +141,10 @@ export const OTELLogs: FC<IOTELLogs> = ({
                           </div>
                         ))}
                       </div>
-                    )
-                  }
-                  isOpen
-                />
+                    }
+                    isOpen
+                  />
+                ) : null}
 
                 <Expand
                   id={`${row.id}-resource-attr`}
@@ -154,7 +154,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
                     </Text>
                   }
                   expandContent={
-                    <div className="divide-y p-4">
+                    <div className="divide-y p-4 bg-black/5 dark:bg-white/5">
                       <div className="grid grid-cols-3 gap-4 pb-3">
                         <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
                           Key
