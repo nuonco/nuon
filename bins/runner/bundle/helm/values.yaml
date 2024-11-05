@@ -36,7 +36,7 @@ resources:
 node_pool:
   # if we want the deployment to create and run on its own NodePool, we must enable this
   # if this is false, we fall back to the default NodePool
-  enabled: true
+  enabled: false
   capacity_types:
     - spot
     - on-demand
