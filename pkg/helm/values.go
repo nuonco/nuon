@@ -3,13 +3,14 @@ package helm
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
-	"gopkg.in/yaml.v2"
+	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/strvals"
 )
 
 func ChartValues(values []string, helmSet []configs.HelmSet) (map[string]interface{}, error) {
+	// Next get all our set configs
 	base := map[string]interface{}{}
 
 	// First merge all our values from YAML documents.
@@ -18,15 +19,14 @@ func ChartValues(values []string, helmSet []configs.HelmSet) (map[string]interfa
 			continue
 		}
 
-		currentMap := map[string]interface{}{}
-		if err := yaml.Unmarshal([]byte(values), &currentMap); err != nil {
-			return nil, fmt.Errorf("---> %v %s", err, values)
+		currentVals, err := chartutil.ReadValues([]byte(values))
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to read values")
 		}
 
-		base = generics.MergeMaps(base, currentMap)
+		base = chartutil.CoalesceTables(base, currentVals.AsMap())
 	}
 
-	// Next get all our set configs
 	for _, set := range helmSet {
 		name := set.Name
 		value := set.Value
