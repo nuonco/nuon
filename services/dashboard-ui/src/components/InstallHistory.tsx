@@ -88,7 +88,7 @@ export const InstallHistory: FC<IInstallHistory> = ({
 
   useEffect(() => {
     const fetchInstallEvents = () => {
-      fetch(`/api/${orgId}/installs/${installId}/events`)
+      fetch(`/api/${orgId}/installs/${undefined}/events`)
         .then((res) =>
           res.json().then((e) => setInstallEvents(parseInstallHistory(e)))
         )
@@ -106,13 +106,13 @@ export const InstallHistory: FC<IInstallHistory> = ({
 
   return (
     <div className="flex flex-col gap-4">
-      {events.map((event, i) => (
+      {events.length ? events.map((event, i) => (
         <InstallEvent
           key={`${event.payload_id}-${i}`}
           event={event}
           isMostRecent={i === 0}
         />
-      ))}
+      )) : (<Text className="text-sm">No install events found</Text>)}
     </div>
   )
 }
