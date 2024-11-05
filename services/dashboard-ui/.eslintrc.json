@@ -2,6 +2,7 @@
   "extends": "next/core-web-vitals",
   "plugins": ["import"],
   "rules": {
-    "import/no-cycle": "error"
+    "import/no-cycle": "error",
+    "no-console": ["error", { "allow": ["error"] }]
   }
 }
