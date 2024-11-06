@@ -33,6 +33,7 @@ resource "helm_release" "alb-ingress-controller" {
   chart      = "aws-load-balancer-controller"
   version    = "1.6.1"
 
+  # https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/main/helm/aws-load-balancer-controller/README.md#configuration
   set {
     name  = "enableCertManager"
     value = "apply"

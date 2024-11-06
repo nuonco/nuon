@@ -29,6 +29,7 @@ resource "helm_release" "ebs_csi" {
   chart      = "aws-ebs-csi-driver"
   version    = "2.16.0"
 
+  # https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/charts/aws-ebs-csi-driver/values.yaml
   values = [
     yamlencode({
       node : {
@@ -42,12 +43,27 @@ resource "helm_release" "ebs_csi" {
           }
         }
         tolerations : [
+          # allow deployment to run on the same nodes as the karpenter controller
+          {
+            key    = "karpenter.sh/controller"
+            value  = "true"
+            effect = "NoSchedule"
+          },
           {
             key : "CriticalAddonsOnly"
             value : "true"
             effect : "NoSchedule"
           },
         ]
+        topologySpreadConstraints = {
+          topologyKey       = "kubernetes.io/hostname"
+          whenUnsatisfiable = "ScheduleAnyway"
+          labelSelector = {
+            matchLabels = {
+              "app.kubernetes.io/name" = "aws-ebs-csi-driver"
+            }
+          }
+        }
       }
     }),
   ]
