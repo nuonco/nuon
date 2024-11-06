@@ -55,15 +55,6 @@ resource "helm_release" "ebs_csi" {
             effect : "NoSchedule"
           },
         ]
-        topologySpreadConstraints = {
-          topologyKey       = "kubernetes.io/hostname"
-          whenUnsatisfiable = "ScheduleAnyway"
-          labelSelector = {
-            matchLabels = {
-              "app.kubernetes.io/name" = "aws-ebs-csi-driver"
-            }
-          }
-        }
       }
     }),
   ]
