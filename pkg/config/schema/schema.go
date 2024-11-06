@@ -62,7 +62,7 @@ func AppSchemaSources() (*jsonschema.Schema, error) {
 		return nil, err
 	}
 
-	err = setItemsSchemaWithAnyOfSources("components", schma, "Component")
+	err = setComponentsOrSources("components", schma)
 	if err != nil {
 		return nil, err
 	}
@@ -126,6 +126,68 @@ func setItemsSchemaWithAnyOfSources(propertyName string, schma *jsonschema.Schem
 		{
 			Ref:         "#/$defs/AppSourceConfig",
 			Description: "Source configuration object",
+		},
+	}
+
+	return nil
+}
+
+func setComponentsOrSources(propertyName string, schma *jsonschema.Schema) error {
+	schemaProperty, found := schma.Definitions["AppConfig"].Properties.Get(propertyName)
+	if !found {
+		return fmt.Errorf("unable to find %s in schema", propertyName)
+	}
+
+	helmSchema, err := HelmComponent()
+	if err != nil {
+		return err
+	}
+
+	terraformSchema, err := TerraformComponent()
+	if err != nil {
+		return err
+	}
+
+	dockerSchema, err := DockerBuildComponent()
+	if err != nil {
+		return err
+	}
+
+	jobSchema, err := JobComponent()
+	if err != nil {
+		return err
+	}
+
+	externalImageSchema, err := ExternalImageComponent()
+	if err != nil {
+		return err
+	}
+
+	schma.Definitions["HelmChartComponentConfig"] = helmSchema.Definitions["HelmChartComponentConfig"]
+	schma.Definitions["TerraformModuleComponentConfig"] = terraformSchema.Definitions["TerraformModuleComponentConfig"]
+	schma.Definitions["DockerBuildComponentConfig"] = dockerSchema.Definitions["DockerBuildComponentConfig"]
+	schma.Definitions["JobComponentConfig"] = jobSchema.Definitions["JobComponentConfig"]
+	schma.Definitions["ExternalImageComponentConfig"] = externalImageSchema.Definitions["ExternalImageComponentConfig"]
+
+	schemaProperty.Items.Ref = ""
+	schemaProperty.Items.AnyOf = []*jsonschema.Schema{
+		{
+			Ref: helmSchema.Ref,
+		},
+		{
+			Ref: terraformSchema.Ref,
+		},
+		{
+			Ref: dockerSchema.Ref,
+		},
+		{
+			Ref: jobSchema.Ref,
+		},
+		{
+			Ref: externalImageSchema.Ref,
+		},
+		{
+			Ref: "#/$defs/AppSourceConfig",
 		},
 	}
 
