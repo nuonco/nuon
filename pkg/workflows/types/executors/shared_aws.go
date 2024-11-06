@@ -8,10 +8,10 @@ import (
 )
 
 type AWSSettings struct {
-	IAMRoleARN string `json:"iam_role_arn"`
-	Region     string `json:"region"`
+	IAMRoleARN string `json:"iam_role_arn" temporaljson:"iam_role_arn"`
+	Region     string `json:"region" temporaljson:"region"`
 
-	AWSRoleDelegationSettings *AWSRoleDelegationSettings `json:"aws_role_delegation_settings"`
+	AWSRoleDelegationSettings *AWSRoleDelegationSettings `json:"aws_role_delegation_settings,omitempty" temporaljson:"aws_role_delegation_settings,omitempty"`
 }
 
 type AWSRoleDelegationSettings struct {

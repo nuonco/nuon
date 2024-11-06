@@ -31,7 +31,7 @@ type NotificationsConfig struct {
 	EnableEmailNotifications bool `json:"-" temporaljson:"enable_email_notifications"`
 
 	// generated via after query
-	SlackWebhookURLs []string `gorm:"-" json:"-" temporal_json:"slack_webhook_urls"`
+	SlackWebhookURLs []string `gorm:"-" json:"-" temporaljson:"slack_webhook_urls"`
 }
 
 func (a *NotificationsConfig) BeforeCreate(tx *gorm.DB) error {
