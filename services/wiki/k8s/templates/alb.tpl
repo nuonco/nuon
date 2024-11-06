@@ -13,6 +13,10 @@ metadata:
     alb.ingress.kubernetes.io/certificate-arn: {{ .Values.ui.alb.domain_certificate }}
     alb.ingress.kubernetes.io/aws-load-balancer-ssl-ports: https
     alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '5'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '2'
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: '2'
+    alb.ingress.kubernetes.io/healthy-threshold-count: '2'
     external-dns.alpha.kubernetes.io/hostname: {{ .Values.ui.alb.domain }}
 spec:
   ingressClassName: alb
