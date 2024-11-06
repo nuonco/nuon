@@ -22,7 +22,7 @@ data "aws_iam_policy_document" "install_k8s_trust_policy_external" {
 
     condition {
       test     = "StringLike"
-      variable = "arn"
+      variable = "aws:PrincipalArn"
       values   = ["arn:aws:iam::${local.accounts[var.env].id}:role/eks/eks-*"]
     }
 
