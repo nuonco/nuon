@@ -15,11 +15,18 @@ data "aws_iam_policy_document" "install_k8s_trust_policy_external" {
     effect  = "Allow"
     actions = ["sts:AssumeRole", ]
 
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
     condition {
       test     = "StringLike"
       variable = "arn"
       values   = ["arn:aws:iam::${local.accounts[var.env].id}:role/eks/eks-*"]
     }
+
+
   }
 
   statement {
