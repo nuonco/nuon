@@ -11,11 +11,11 @@ const (
 )
 
 type CheckPermissionsRequest struct {
-	AWSSettings   *AWSSettings   `json:"aws_settings"`
-	AzureSettings *AzureSettings `json:"azure_settings"`
+	AWSSettings   *AWSSettings   `json:"aws_settings" temporaljson:"aws_settings"`
+	AzureSettings *AzureSettings `json:"azure_settings" temporaljson:"azure_settings"`
 
-	LogConfiguration *LogConfiguration `json:"log_configuration"`
-	Metadata         Metadata          `json:"metadata"`
+	LogConfiguration *LogConfiguration `json:"log_configuration" temporaljson:"log_configuration"`
+	Metadata         Metadata          `json:"metadata" temporaljson:"metadata"`
 }
 
 type CheckPermissionsResponse struct{}
