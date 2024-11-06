@@ -50,13 +50,13 @@ func (c *cli) appsCmd() *cobra.Command {
 	currentCmd := &cobra.Command{
 		Use:   "current",
 		Short: "Get the current app",
+		// TODO(sdboyer) remove this whole subcommand, it's obviated by marking current in the list cmd
+		Hidden: true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			return svc.Get(cmd.Context(), c.cfg.GetString("app_id"), PrintJSON)
 		}),
 	}
-	// TODO(sdboyer) remove this eventually, obviated by marking current in the list cmd
-	currentCmd.Hidden = true
 	appsCmd.AddCommand(currentCmd)
 
 	latestSandboxConfigCmd := &cobra.Command{
