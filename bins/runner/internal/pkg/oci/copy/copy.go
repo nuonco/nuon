@@ -3,10 +3,10 @@ package ocicopy
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -36,7 +36,7 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 
 	var hit bool
 
-	timers := make(map[digest.Digest]time.Time)
+	timers := new(sync.Map)
 
 	fields := func(desc ocispec.Descriptor) []zap.Field {
 		return []zap.Field{
@@ -54,7 +54,7 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 		PreCopy: func(ctx context.Context, desc ocispec.Descriptor) error {
 			hit = true
 			if desc.Digest != "" {
-				timers[desc.Digest] = time.Now()
+				timers.Store(desc.Digest, time.Now())
 			}
 			l.Info(fmt.Sprintf("copying %s of size %s (digest %s)", mediaNoun(desc.MediaType), humanize.Bytes(uint64(desc.Size)), desc.Digest), fields(desc)...)
 
@@ -62,7 +62,8 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 		},
 		PostCopy: func(ctx context.Context, desc ocispec.Descriptor) error {
 			hit = true
-			if t, has := timers[desc.Digest]; has {
+			if ti, has := timers.Load(desc.Digest); has {
+				t := ti.(time.Time)
 				l.Info(fmt.Sprintf("finished copying %s of size %s in %s (digest %s)", mediaNoun(desc.MediaType), humanize.Bytes(uint64(desc.Size)), time.Since(t), desc.Digest), fields(desc)...)
 			} else {
 				l.Info(fmt.Sprintf("finished copying %s (digest %s)", mediaNoun(desc.MediaType), desc.Digest), fields(desc)...)
