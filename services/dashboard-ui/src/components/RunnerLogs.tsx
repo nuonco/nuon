@@ -329,6 +329,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
       </Modal>
       <Section
         className="border-r"
+        isHeadingFixed
         actions={
           <div className="flex items-center divide-x">
             {logs?.length > 0 ? (
