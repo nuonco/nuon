@@ -22,63 +22,60 @@ import type {
   TAppSandboxConfig,
 } from '@/types'
 
-export default withPageAuthRequired(
-  async function App({ params }) {
-    const appId = params?.['app-id'] as string
-    const orgId = params?.['org-id'] as string
-    const subNavLinks: Array<TLink> = [
-      { href: `/${orgId}/apps/${appId}`, text: 'Config' },
-      { href: `/${orgId}/apps/${appId}/components`, text: 'Components' },
-      { href: `/${orgId}/apps/${appId}/installs`, text: 'Installs' },
-    ]
+export default withPageAuthRequired(async function App({ params }) {
+  const appId = params?.['app-id'] as string
+  const orgId = params?.['org-id'] as string
+  const subNavLinks: Array<TLink> = [
+    { href: `/${orgId}/apps/${appId}`, text: 'Config' },
+    { href: `/${orgId}/apps/${appId}/components`, text: 'Components' },
+    { href: `/${orgId}/apps/${appId}/installs`, text: 'Installs' },
+  ]
 
-    const [org, app, inputCfg, runnerCfg, sandboxCfg] = await Promise.all([
-      getOrg({ orgId }),
-      getApp({ appId, orgId }),
-      getAppInputLatestConfig({ appId, orgId }).catch(console.error),
-      getAppRunnerLatestConfig({ appId, orgId }).catch(console.error),
-      getAppSandboxLatestConfig({ appId, orgId }).catch(console.error),
-    ])
+  const [org, app, inputCfg, runnerCfg, sandboxCfg] = await Promise.all([
+    getOrg({ orgId }),
+    getApp({ appId, orgId }),
+    getAppInputLatestConfig({ appId, orgId }).catch(console.error),
+    getAppRunnerLatestConfig({ appId, orgId }).catch(console.error),
+    getAppSandboxLatestConfig({ appId, orgId }).catch(console.error),
+  ])
 
-    return (
-      <DashboardContent
-        breadcrumb={[
-          { href: `/${org.id}/apps`, text: org.name },
-          { href: `/${org.id}/apps`, text: 'Apps' },
-          { href: `/${org.id}/apps/${app.id}`, text: app.name },
-        ]}
-        heading={app.name}
-        headingUnderline={app.id}
-        meta={<SubNav links={subNavLinks} />}
-      >
-        <div className="flex flex-col md:flex-row flex-auto">
-          <section className="flex flex-col gap-4 px-6 py-8 border-r w-full">
-            <Heading variant="subheading">Inputs</Heading>
-            <AppInputConfig inputConfig={inputCfg as TAppInputConfig} />
+  return (
+    <DashboardContent
+      breadcrumb={[
+        { href: `/${org.id}/apps`, text: org.name },
+        { href: `/${org.id}/apps`, text: 'Apps' },
+        { href: `/${org.id}/apps/${app.id}`, text: app.name },
+      ]}
+      heading={app.name}
+      headingUnderline={app.id}
+      meta={<SubNav links={subNavLinks} />}
+    >
+      <div className="flex flex-col md:flex-row flex-auto">
+        <section className="flex flex-col gap-4 px-6 py-8 border-r w-full">
+          <Heading variant="subheading">Inputs</Heading>
+          <AppInputConfig inputConfig={inputCfg as TAppInputConfig} />
+        </section>
+
+        <div className="flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
+          <section className="flex flex-col gap-4 px-6 py-8 border-b">
+            <Heading variant="subheading">Sandbox</Heading>
+            <div className="flex flex-col gap-8">
+              <AppSandboxConfig
+                sandboxConfig={sandboxCfg as TAppSandboxConfig}
+              />
+              <AppSandboxVariables
+                variables={(sandboxCfg as TAppSandboxConfig)?.variables}
+              />
+            </div>
           </section>
 
-          <div className="flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
-            <section className="flex flex-col gap-4 px-6 py-8 border-b">
-              <Heading variant="subheading">Sandbox</Heading>
-              <div className="flex flex-col gap-8">
-                <AppSandboxConfig
-                  sandboxConfig={sandboxCfg as TAppSandboxConfig}
-                />
-                <AppSandboxVariables
-                  variables={(sandboxCfg as TAppSandboxConfig)?.variables}
-                />
-              </div>
-            </section>
+          <section className="flex flex-col gap-4 px-6 py-8">
+            <Heading variant="subheading">Runner</Heading>
 
-            <section className="flex flex-col gap-4 px-6 py-8">
-              <Heading variant="subheading">Runner</Heading>
-
-              <AppRunnerConfig runnerConfig={runnerCfg as TAppRunnerConfig} />
-            </section>
-          </div>
+            <AppRunnerConfig runnerConfig={runnerCfg as TAppRunnerConfig} />
+          </section>
         </div>
-      </DashboardContent>
-    )
-  },
-  { returnTo: '/' }
-)
+      </div>
+    </DashboardContent>
+  )
+})

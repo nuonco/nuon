@@ -15,74 +15,71 @@ import {
   getOrg,
 } from '@/lib'
 
-export default withPageAuthRequired(
-  async function AppComponent({ params }) {
-    const appId = params?.['app-id'] as string
-    const componentId = params?.['component-id'] as string
-    const orgId = params?.['org-id'] as string
+export default withPageAuthRequired(async function AppComponent({ params }) {
+  const appId = params?.['app-id'] as string
+  const componentId = params?.['component-id'] as string
+  const orgId = params?.['org-id'] as string
 
-    const [app, appComponents, builds, component, componentConfig, org] =
-      await Promise.all([
-        getApp({ appId, orgId }),
-        getAppComponents({ appId, orgId }),
-        getComponentBuilds({ componentId, orgId }),
-        getComponent({ componentId, orgId }),
-        getComponentConfig({ componentId, orgId }),
-        getOrg({ orgId }),
-      ])
+  const [app, appComponents, builds, component, componentConfig, org] =
+    await Promise.all([
+      getApp({ appId, orgId }),
+      getAppComponents({ appId, orgId }),
+      getComponentBuilds({ componentId, orgId }),
+      getComponent({ componentId, orgId }),
+      getComponentConfig({ componentId, orgId }),
+      getOrg({ orgId }),
+    ])
 
-    return (
-      <DashboardContent
-        breadcrumb={[
-          { href: `/${org.id}/apps`, text: org.name },
-          { href: `/${org.id}/apps`, text: 'Apps' },
-          { href: `/${org.id}/apps/${app.id}/components`, text: app.name },
-          {
-            href: `/${org.id}/apps/${app.id}/components/${component.id}`,
-            text: component.name,
-          },
-        ]}
-        heading={component.name}
-        headingUnderline={component.id}
-      >
-        <div className="flex flex-col lg:flex-row flex-auto">
-          <div className="divide-y flex flex-col flex-auto">
-            {component.dependencies && (
-              <section className="flex flex-col gap-6 px-6 py-8">
-                <Heading>Dependencies</Heading>
-
-                <DependentComponents
-                  appId={appId}
-                  appComponents={appComponents}
-                  dependentIds={component.dependencies}
-                  orgId={orgId}
-                />
-              </section>
-            )}
-
+  return (
+    <DashboardContent
+      breadcrumb={[
+        { href: `/${org.id}/apps`, text: org.name },
+        { href: `/${org.id}/apps`, text: 'Apps' },
+        { href: `/${org.id}/apps/${app.id}/components`, text: app.name },
+        {
+          href: `/${org.id}/apps/${app.id}/components/${component.id}`,
+          text: component.name,
+        },
+      ]}
+      heading={component.name}
+      headingUnderline={component.id}
+    >
+      <div className="flex flex-col lg:flex-row flex-auto">
+        <div className="divide-y flex flex-col flex-auto">
+          {component.dependencies && (
             <section className="flex flex-col gap-6 px-6 py-8">
-              <Heading>Latest config</Heading>
+              <Heading>Dependencies</Heading>
 
-              <ComponentConfiguration config={componentConfig} />
+              <DependentComponents
+                appId={appId}
+                appComponents={appComponents}
+                dependentIds={component.dependencies}
+                orgId={orgId}
+              />
             </section>
-          </div>
-          <section
-            className="flex flex-col gap-4 px-6 py-8 border-l overflow-auto lg:min-w-[450px]
-lg:max-w-[450px]"
-          >
-            <Heading>Build history</Heading>
+          )}
 
-            <ComponentBuildHistory
-              appId={appId}
-              componentId={componentId}
-              initBuilds={builds}
-              orgId={orgId}
-              shouldPoll
-            />
+          <section className="flex flex-col gap-6 px-6 py-8">
+            <Heading>Latest config</Heading>
+
+            <ComponentConfiguration config={componentConfig} />
           </section>
         </div>
-      </DashboardContent>
-    )
-  },
-  { returnTo: '/' }
-)
+        <section
+          className="flex flex-col gap-4 px-6 py-8 border-l overflow-auto lg:min-w-[450px]
+lg:max-w-[450px]"
+        >
+          <Heading>Build history</Heading>
+
+          <ComponentBuildHistory
+            appId={appId}
+            componentId={componentId}
+            initBuilds={builds}
+            orgId={orgId}
+            shouldPoll
+          />
+        </section>
+      </div>
+    </DashboardContent>
+  )
+})
