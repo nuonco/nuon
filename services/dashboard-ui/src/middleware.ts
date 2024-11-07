@@ -5,7 +5,10 @@ import { API_URL } from '@/utils/configs'
 import type { TOrg } from '@/types'
 
 export default async function middleware(request: NextRequest) {
+  const headers = new Headers(request.headers)
   const session = await getSession()
+  // set origin url encase of login redirect
+  headers.set('x-origin-url', request.url)
 
   if (session) {
     if (
@@ -36,9 +39,13 @@ export default async function middleware(request: NextRequest) {
         redirectPath = `/${orgs[0].id}/apps`
       }
 
-      return NextResponse.redirect(new URL(redirectPath, request.url))
+      return NextResponse.redirect(new URL(redirectPath, request.url), {
+        headers,
+      })
     }
   }
 
-  return NextResponse.next()
+  return NextResponse.next({
+    request: { headers },
+  })
 }
