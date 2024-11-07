@@ -21,6 +21,7 @@ export const Card: FC<ICard> = ({ className, children, ...props }) => (
 export interface ISection extends React.HTMLAttributes<HTMLSelectElement> {
   actions?: React.ReactNode | null
   heading: React.ReactNode
+  isHeadingFixed?: boolean
 }
 
 export const Section: FC<ISection> = ({
@@ -28,23 +29,32 @@ export const Section: FC<ISection> = ({
   className,
   children,
   heading,
+  isHeadingFixed = false,
   ...props
 }) => {
   return (
     <section
-      className={classNames(
-        'flex flex-auto flex-col gap-4 px-6 py-8 overflow-auto',
-        {
-          [`${className}`]: Boolean(className),
-        }
-      )}
+      className={classNames('flex flex-auto flex-col gap-4', {
+        'px-6 py-8 overflow-auto': !isHeadingFixed,
+        [`${className}`]: Boolean(className),
+      })}
       {...props}
     >
-      <div className="flex items-center justify-between">
+      <div
+        className={classNames('flex items-center justify-between', {
+          'px-6 pt-8 pb-4': isHeadingFixed,
+        })}
+      >
         <Heading>{heading}</Heading>
         <div>{actions}</div>
       </div>
-      {children}
+      <div
+        className={classNames({
+          'px-6 overflow-auto': isHeadingFixed,
+        })}
+      >
+        {children}
+      </div>
     </section>
   )
 }
