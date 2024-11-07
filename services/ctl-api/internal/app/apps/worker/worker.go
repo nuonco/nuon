@@ -48,6 +48,7 @@ func New(cfg *internal.Config,
 	wkr.RegisterWorkflow(wkflows.Deprovision)
 	wkr.RegisterWorkflow(wkflows.PollDependencies)
 	wkr.RegisterWorkflow(wkflows.Provision)
+	wkr.RegisterWorkflow(wkflows.Reprovision)
 	wkr.RegisterWorkflow(wkflows.UpdateSandbox)
 
 	lc.Append(fx.Hook{
