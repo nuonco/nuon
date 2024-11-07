@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { ArrowLineLeft } from '@phosphor-icons/react/dist/ssr'
+import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { Button, Logo, OrgSwitcher, SignOutButton, MainNav } from '@/components'
 import { getOrg, getOrgs } from '@/lib'
@@ -49,5 +50,9 @@ export default withPageAuthRequired(
       </div>
     )
   },
-  { returnTo: '/' }
+  {
+    returnTo() {
+      return headers().get('x-origin-url')
+    },
+  }
 )
