@@ -2,7 +2,7 @@ import { DateTime, type DurationUnits } from 'luxon'
 import React, { type FC } from 'react'
 import { Text, type IText } from '@/components/Typography'
 
-export interface ITime extends IText {
+export interface ITime extends Omit<IText, 'role'> {
   format?: 'default' | 'long' | 'relative'
   time?: string
 }
@@ -11,7 +11,7 @@ export const Time: FC<ITime> = ({ format, time, ...props }) => {
   const datetime = time ? DateTime.fromISO(time) : DateTime.now()
 
   return (
-    <Text {...props}>
+    <Text {...props} role="time">
       {format === 'relative'
         ? datetime.toRelative()
         : datetime.toLocaleString(
@@ -23,7 +23,7 @@ export const Time: FC<ITime> = ({ format, time, ...props }) => {
   )
 }
 
-export interface IDuration extends IText {
+export interface IDuration extends Omit<IText, 'role'> {
   beginTime: string
   endTime: string
   durationUnits?: DurationUnits
@@ -54,7 +54,7 @@ export const Duration: FC<IDuration> = ({
   const duration = et.diff(bt, durationUnits)
 
   return (
-    <Text {...props}>
+    <Text {...props} role="time">
       {format === 'timer'
         ? duration.toFormat('T-hh:mm:ss:SS')
         : duration.rescale().toHuman({

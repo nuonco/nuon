@@ -6,9 +6,9 @@ import {
   ClickToCopy,
   DashboardContent,
   Duration,
-  Heading,
   RunnerLogsPoller,
   SandboxRunStatus,
+  Section,
   Text,
   Truncate,
   Time,
@@ -50,16 +50,15 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
       headingUnderline={sandboxRun.id}
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
-          <Text variant="caption">
+          <Text>
             <FiCloud />
-            <Time time={sandboxRun.created_at} variant="caption" />
+            <Time time={sandboxRun.created_at} />
           </Text>
-          <Text variant="caption">
+          <Text>
             <FiClock />
             <Duration
               beginTime={sandboxRun.created_at}
               endTime={sandboxRun.updated_at}
-              variant="caption"
             />
           </Text>
         </div>
@@ -67,7 +66,6 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
       statues={
         <div className="flex gap-6 items-start justify-start">
           <span className="flex flex-col gap-2">
-            <Text variant="overline">Status</Text>
             <SandboxRunStatus
               descriptionAlignment="right"
               descriptionPosition="bottom"
@@ -77,14 +75,18 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
           </span>
 
           <span className="flex flex-col gap-2">
-            <Text variant="overline">Type</Text>
-            <Text variant="caption">{sandboxRun.run_type}</Text>
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Type
+            </Text>
+            <Text>{sandboxRun.run_type}</Text>
           </span>
 
           <span className="flex flex-col gap-2">
-            <Text variant="overline">Install</Text>
-            <Text variant="label">{install.name}</Text>
-            <Text variant="id">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Install
+            </Text>
+            <Text variant="med-12">{install.name}</Text>
+            <Text variant="mono-12">
               <ToolTip alignment="right" tipContent={install.id}>
                 <ClickToCopy>
                   <Truncate variant="small">{install.id}</Truncate>
@@ -110,14 +112,12 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
           className="divide-y flex flex-col lg:min-w-[450px]
 lg:max-w-[450px]"
         >
-          <section className="flex flex-col gap-6 px-6 py-8">
-            <Heading>Sandbox</Heading>
-
+          <Section heading="Sandbox">
             <AppSandboxConfig sandboxConfig={sandboxRun.app_sandbox_config} />
             <AppSandboxVariables
               variables={sandboxRun.app_sandbox_config?.variables}
             />
-          </section>
+          </Section>
         </div>
       </div>
     </DashboardContent>

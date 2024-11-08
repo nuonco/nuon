@@ -105,14 +105,18 @@ export const InstallHistory: FC<IInstallHistory> = ({
   }, [events, installId, orgId, shouldPoll])
 
   return (
-    <div className="flex flex-col gap-4">
-      {events.length ? events.map((event, i) => (
-        <InstallEvent
-          key={`${event.payload_id}-${i}`}
-          event={event}
-          isMostRecent={i === 0}
-        />
-      )) : (<Text className="text-sm">No install events found</Text>)}
+    <div className="flex flex-col gap-2">
+      {events.length ? (
+        events.map((event, i) => (
+          <InstallEvent
+            key={`${event.payload_id}-${i}`}
+            event={event}
+            isMostRecent={i === 0}
+          />
+        ))
+      ) : (
+        <Text className="text-sm">No install events found</Text>
+      )}
     </div>
   )
 }
@@ -133,41 +137,43 @@ const InstallEvent: FC<IInstallEvent> = ({ event, isMostRecent = false }) => {
     null
 
   return (
-    <div
-      className={classNames('flex items-center justify-between p-4', {
-        'border rounded-md shadow-sm': isMostRecent,
-      })}
-    >
-      <div className="flex flex-col">
-        <span className="flex items-center gap-2">
-          <InstallEventStatus status={event.operation_status} />
-          <Text variant="label">{sentanceCase(event.operation_status)}</Text>
-        </span>
+    <Link className="!block w-full !p-0" href={href} variant="ghost">
+      <div
+        className={classNames('flex items-center justify-between p-4', {
+          'border rounded-md shadow-sm': isMostRecent,
+        })}
+      >
+        <div className="flex flex-col">
+          <span className="flex items-center gap-2">
+            <InstallEventStatus status={event.operation_status} />
+            <Text variant="med-12">{sentanceCase(event.operation_status)}</Text>
+          </span>
 
-        <Text className="flex items-center gap-2 ml-3.5" variant="overline">
-          <span>{event.operation_name}</span>
-          {event.operation === 'deploy' && (
-            <>
-              /{' '}
-              <ToolTip tipContent={event.component_name}>
-                <span className="!inline truncate max-w-[100px]">
-                  {event.component_name}
-                </span>
-              </ToolTip>
-            </>
+          <Text className="flex items-center gap-2 ml-3.5" variant="reg-12">
+            <span>{event.operation_name}</span>
+            {event.operation === 'deploy' && (
+              <>
+                /{' '}
+                <ToolTip tipContent={event.component_name}>
+                  <span className="!inline truncate max-w-[100px]">
+                    {event.component_name}
+                  </span>
+                </ToolTip>
+              </>
+            )}
+          </Text>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Time time={event.updated_at} format="relative" variant="reg-12" />
+          {href && (
+            <Link href={href} variant="ghost">
+              <CaretRight />
+            </Link>
           )}
-        </Text>
+        </div>
       </div>
-
-      <div className="flex items-center gap-2">
-        <Time time={event.updated_at} format="relative" variant="overline" />
-        {href && (
-          <Link href={href} variant="ghost">
-            <CaretRight />
-          </Link>
-        )}
-      </div>
-    </div>
+    </Link>
   )
 }
 

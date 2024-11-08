@@ -1,13 +1,13 @@
 import { GoArrowRight } from 'react-icons/go'
-import { Dashboard, Heading, Text } from '@/components'
+import { Dashboard, Text } from '@/components'
 
 export default function Home() {
   return (
     <Dashboard>
       <main className="flex h-full gap-6">
         <div className="flex flex-col gap-6 p-0 md:p-12 lg:p-24 lg:max-w-2xl">
-          <Heading variant="title" level={1}>BYOC for everyone.</Heading>
-          <Text className="text-lg leading-relaxed">
+          <Text variant="semi-18" level={1}>BYOC for everyone.</Text>
+          <Text className="!text-lg !leading-relaxed">
             Offer Bring Your Own Cloud in minutes, unlocking new customers,
             product capabilities and revenue.
           </Text>

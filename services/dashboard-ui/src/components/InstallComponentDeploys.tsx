@@ -6,12 +6,12 @@ import classNames from 'classnames'
 import React, { type FC, useEffect, useState } from 'react'
 import { CaretRight } from '@phosphor-icons/react'
 import { Link } from '@/components/Link'
-import { Status } from '@/components/Status'
+import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
 import { ToolTip } from '@/components/ToolTip'
 import { Text, Truncate } from '@/components/Typography'
 import type { TComponent, TInstallDeploy } from '@/types'
-import { SHORT_POLL_DURATION, sentanceCase } from '@/utils'
+import { SHORT_POLL_DURATION } from '@/utils'
 
 export interface IInstallComponentDeploys {
   component: TComponent
@@ -51,7 +51,7 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
   }, [deploys, shouldPoll])
 
   return (
-    <div>
+    <div className="flex flex-col gap-2">
       {deploys.map((deploy, i) => (
         <InstallDeployEvent
           key={`${deploy.id}-${i}`}
@@ -85,46 +85,53 @@ const InstallDeployEvent: FC<IInstallDeployEvent> = ({
   orgId,
 }) => {
   return (
-    <div
-      className={classNames('flex items-center justify-between p-4', {
-        'border rounded-md shadow-sm': isMostRecent,
-      })}
+    <Link
+      className="!block w-full !p-0"
+      href={`/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${deploy.id}`}
+      variant="ghost"
     >
-      <div className="flex flex-col">
-        <span className="flex items-center gap-2">
-          <Status status={deploy.status} isStatusTextHidden />
-          <Text className="text-sm !font-medium tracking-wide">
-            {sentanceCase(deploy.status)}
+      <div
+        className={classNames('flex items-center justify-between p-4', {
+          'border rounded-md shadow-sm': isMostRecent,
+        })}
+      >
+        <div className="flex flex-col">
+          <span className="flex items-center gap-2">
+            <StatusBadge
+              status={deploy.status}
+              isStatusTextHidden
+              isWithoutBorder
+            />
+          </span>
+
+          <Text className="flex items-center gap-2 ml-4 text-sm">
+            <ToolTip tipContent={deploy.id}>
+              <span className="truncate text-ellipsis w-16">{deploy.id}</span>
+            </ToolTip>
+            <>
+              /{' '}
+              {component.name.length >= 12 ? (
+                <ToolTip tipContent={component.name} alignment="right">
+                  <Truncate variant="small">{component.name}</Truncate>
+                </ToolTip>
+              ) : (
+                component.name
+              )}
+            </>
           </Text>
-        </span>
+        </div>
 
-        <Text className="flex items-center gap-2 ml-6 text-sm">
-          <ToolTip tipContent={deploy.id}>
-            <span className="truncate text-ellipsis w-16">{deploy.id}</span>
-          </ToolTip>
-          <>
-            /{' '}
-            {component.name.length >= 12 ? (
-              <ToolTip tipContent={component.name} alignment="right">
-                <Truncate variant="small">{component.name}</Truncate>
-              </ToolTip>
-            ) : (
-              component.name
-            )}
-          </>
-        </Text>
+        <div className="flex items-center gap-2">
+          <Time time={deploy.updated_at} format="relative" />
+
+          <Link
+            href={`/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${deploy.id}`}
+            variant="ghost"
+          >
+            <CaretRight />
+          </Link>
+        </div>
       </div>
-
-      <div className="flex items-center gap-2">
-        <Time time={deploy.updated_at} format="relative" variant="overline" />
-
-        <Link
-          href={`/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${deploy.id}`}
-          variant="ghost"
-        >
-          <CaretRight />
-        </Link>
-      </div>
-    </div>
+    </Link>
   )
 }

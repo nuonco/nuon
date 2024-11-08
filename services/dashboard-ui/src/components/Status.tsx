@@ -2,10 +2,9 @@
 
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { GoDotFill } from 'react-icons/go'
 import { ToolTip } from '@/components/ToolTip'
 import { Text } from '@/components/Typography'
-import { sentanceCase, titleCase } from '@/utils'
+import { titleCase } from '@/utils'
 
 export type TStatus = 'active' | 'failed' | 'error' | 'waiting'
 
@@ -15,51 +14,6 @@ export interface IStatus {
   isLabelStatusText?: boolean
   label?: string | false
   status?: TStatus | string
-}
-
-export const Status: FC<IStatus> = ({
-  description,
-  isLabelStatusText = false,
-  isStatusTextHidden = false,
-  label,
-  status = 'waiting',
-}) => {
-  const isActive = status === 'active' || status === 'ok'
-  const isError =
-    status === 'failed' ||
-    status === 'error' ||
-    status === 'bad' ||
-    status === 'access-error' ||
-    status === 'access_error'
-  const isNoop = status === 'noop' || status === ''
-  
-  return (
-    <span className="flex flex-col gap-0">
-      {label && !isLabelStatusText ? (
-        <Text variant="label">{label}</Text>
-      ) : null}
-      <span
-        className={classNames('flex gap-0 items-center', {
-          'text-green-800 dark:text-green-500': isActive,
-          'text-red-800 dark:text-red-500': isError,
-          'text-cool-grey-600 dark:text-cool-grey-500': isNoop,
-          'text-orange-800 dark:text-orange-500':
-            !isActive && !isError && !isNoop,
-        })}
-      >
-        <GoDotFill className="text-lg" />
-        {isStatusTextHidden || isLabelStatusText ? null : (
-          <Text variant="status">{status === '' ? 'Unknown' : status}</Text>
-        )}
-        {isLabelStatusText ? <Text variant="status">{label}</Text> : null}
-      </span>
-      {description ? (
-        <Text className="truncate" variant="caption">
-          {sentanceCase(description)}
-        </Text>
-      ) : null}
-    </span>
-  )
 }
 
 // TODO(nnnnat): rename and remove old status
@@ -111,9 +65,9 @@ export const StatusBadge: FC<IStatusBadge> = ({
   return (
     <span className="flex flex-col gap-2">
       {label && !isLabelStatusText ? (
-        <span className="text-sm tracking-wide text-cool-grey-600 dark:text-cool-grey-500">
+        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
           {label}
-        </span>
+        </Text>
       ) : null}
       {description ? (
         <ToolTip

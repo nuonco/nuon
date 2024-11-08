@@ -3,7 +3,6 @@
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { DotsThreeVertical } from '@phosphor-icons/react'
-import { ClickToCopy } from '@/components/ClickToCopy'
 import {
   StaticComponentConfigType,
   getComponentConfigType,
@@ -11,7 +10,7 @@ import {
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
 import { DataTableSearch, Table } from '@/components/DataTable'
-import { Heading, Text } from '@/components/Typography'
+import { ID, Text } from '@/components/Typography'
 // eslint-disable-next-line import/no-cycle
 import type { TBuild, TComponent, TComponentConfig } from '@/types'
 
@@ -70,12 +69,10 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
             <Link
               href={`/${orgId}/apps/${appId}/components/${props.row.original.componentId}`}
             >
-              <Heading variant="subheading">{props.getValue<string>()}</Heading>
+              <Text variant="med-14">{props.getValue<string>()}</Text>
             </Link>
 
-            <Text variant="id">
-              <ClickToCopy>{props.row.original.componentId}</ClickToCopy>
-            </Text>
+            <ID id={props.row.original.componentId} />
           </div>
         ),
       },
@@ -98,7 +95,6 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
                 <Text
                   key={`${dep.id}-${i}`}
                   className="bg-gray-500/10 px-2 py-1 rounded-lg border w-fit"
-                  variant="caption"
                 >
                   <Link href={`/${orgId}/apps/${appId}/components/${dep.id}`}>
                     {dep?.name}
@@ -106,7 +102,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
                 </Text>
               ))
             ) : (
-              <Text className="text-sm">None</Text>
+              <Text>None</Text>
             )}
           </div>
         ),
