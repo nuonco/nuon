@@ -50,7 +50,6 @@ func (s *service) getAppInstalls(ctx context.Context, appID string) ([]app.Insta
 		Preload("Installs.AWSAccount").
 		Preload("Installs.RunnerGroup").
 		Preload("Installs.RunnerGroup.Runners").
-		Preload("Installs.RunnerGroup.Runners").
 		First(&currentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
