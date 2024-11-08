@@ -3,8 +3,8 @@ import {
   ComponentConfiguration,
   DashboardContent,
   DependentComponents,
-  Heading,
   InstallComponentDeploys,
+  Section,
 } from '@/components'
 import {
   getComponent,
@@ -60,9 +60,7 @@ export default withPageAuthRequired(async function InstallComponent({
       <div className="flex flex-col lg:flex-row flex-auto">
         <div className="divide-y flex-auto  flex flex-col overlfow-auto">
           {component.dependencies && (
-            <section className="flex flex-col gap-6 px-6 py-8">
-              <Heading>Dependencies</Heading>
-
+            <Section className="flex-initial" heading="Dependencies">
               <DependentComponents
                 dependentIds={component.dependencies}
                 installComponents={
@@ -71,26 +69,25 @@ export default withPageAuthRequired(async function InstallComponent({
                 installId={installId}
                 orgId={orgId}
               />
-            </section>
+            </Section>
           )}
 
-          <section className="flex flex-col gap-6 px-6 py-8">
-            <Heading>Component config</Heading>
-
+          <Section heading="Component config">
             <ComponentConfiguration config={componentConfig} />
-          </section>
+          </Section>
         </div>
-        <section className="flex flex-col gap-4 px-6 py-8 border-l overflow-auto lg:min-w-[450px] lg:max-w-[450px]">
-          <Heading>Deploy history</Heading>
-          <InstallComponentDeploys
-            component={component}
-            initDeploys={installComponent.install_deploys}
-            installId={installId}
-            installComponentId={installComponent.id}
-            orgId={orgId}
-            shouldPoll
-          />
-        </section>
+        <div className="border-l overflow-auto lg:min-w-[450px] lg:max-w-[450px]">
+          <Section heading="Deploy history">
+            <InstallComponentDeploys
+              component={component}
+              initDeploys={installComponent.install_deploys}
+              installId={installId}
+              installComponentId={installComponent.id}
+              orgId={orgId}
+              shouldPoll
+            />
+          </Section>
+        </div>
       </div>
     </DashboardContent>
   )

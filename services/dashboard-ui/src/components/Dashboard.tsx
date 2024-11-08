@@ -1,11 +1,10 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { ClickToCopy } from '@/components/ClickToCopy'
 import { Link } from '@/components/Link'
 import { Logo } from '@/components/Logo'
 import { BreadcrumbNav, type TLink } from '@/components/Nav'
 import { SignOutButton } from '@/components/Profile'
-import { Heading, Text } from '@/components/Typography'
+import { ID, Text } from '@/components/Typography'
 
 export const DashboardHeader: FC = () => {
   return (
@@ -76,11 +75,11 @@ export const DashboardContent: FC<{
           >
             <div className="flex items-start justify-between">
               <hgroup className="flex flex-col gap-2">
-                <Heading variant="title">{heading}</Heading>
-
-                <Text variant="id">
-                  <ClickToCopy>{headingUnderline}</ClickToCopy>
+                <Text level={1} role="heading" variant="semi-18">
+                  {heading}
                 </Text>
+
+                <ID id={headingUnderline} />
               </hgroup>
 
               {statues}

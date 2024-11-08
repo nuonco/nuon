@@ -5,11 +5,11 @@ import {
   AppSandboxConfig,
   AppSandboxVariables,
   DashboardContent,
-  Heading,
   InstallCloudPlatform,
   InstallHistory,
   InstallInputsSection,
   InstallStatuses,
+  Section,
   SubNav,
   type TLink,
 } from '@/components'
@@ -48,39 +48,35 @@ export default withPageAuthRequired(async function Install({ params }) {
       meta={<SubNav links={subNavLinks} />}
     >
       <div className="flex flex-col lg:flex-row flex-auto">
-        <section className="flex-auto flex flex-col gap-4 px-6 py-8 overflow-auto history">
-          <Heading>History</Heading>
-
+        <Section heading="History" className="overflow-auto history">
           <InstallHistory
             initEvents={events}
             installId={installId}
             orgId={orgId}
             shouldPoll
           />
-        </section>
+        </Section>
 
         <div className="divide-y flex flex-col lg:w-[500px] border-l">
-          <section className="flex flex-col gap-6 px-6 py-8">
-            <Heading>Active sandbox</Heading>
-
+          <Section className="flex-initial" heading="Active sandbox">
             <div className="flex flex-col gap-8">
               <AppSandboxConfig sandboxConfig={install?.app_sandbox_config} />
               <AppSandboxVariables
                 variables={install?.app_sandbox_config?.variables}
               />
             </div>
-          </section>
+          </Section>
 
           {install?.install_inputs?.length &&
-            install?.install_inputs.some(
-              (input) => input.values || input?.redacted_values
-            ) && <InstallInputsSection inputs={install.install_inputs} />}
+          install?.install_inputs.some(
+            (input) => input.values || input?.redacted_values
+          ) ? (
+            <InstallInputsSection inputs={install.install_inputs} />
+          ) : null}
 
-          <section className="flex flex-col gap-6 px-6 py-8">
-            <Heading>Cloud platform</Heading>
-
+          <Section heading="Cloud platform">
             <InstallCloudPlatform install={install} />
-          </section>
+          </Section>
         </div>
       </div>
     </DashboardContent>
