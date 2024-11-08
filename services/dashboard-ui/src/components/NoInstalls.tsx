@@ -1,12 +1,12 @@
 import React, { type FC } from 'react'
 import { Link } from '@/components/Link'
-import { Heading, Text, CodeInline } from '@/components/Typography'
+import { Text, CodeInline } from '@/components/Typography'
 
 export const NoInstalls: FC = () => {
   return (
     <div className="max-w-xl flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <Heading variant="title">No installs created</Heading>
+        <Text variant="semi-18">No installs created</Text>
         <Text className="!text-lg !leading-loose">
           An install is an instance of an application running in a customer
           cloud account. When an install is created, each component in your
@@ -24,7 +24,7 @@ export const NoInstalls: FC = () => {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Heading>Create an install with the Nuon CLI</Heading>
+        <Text variant="semi-14">Create an install with the Nuon CLI</Text>
         <Text>
           If you&apos;ve already setup an AWS account with Nuon access create an
           install with the{' '}

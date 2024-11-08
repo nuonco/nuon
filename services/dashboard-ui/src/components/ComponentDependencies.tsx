@@ -1,45 +1,7 @@
-import React, { Suspense, type FC } from 'react'
-import { Card } from '@/components/Card'
+import React, { type FC } from 'react'
 import { Link } from '@/components/Link'
-import { Heading, Text } from '@/components/Typography'
-import { getComponent, type IGetComponent } from '@/lib'
+import { Text } from '@/components/Typography'
 import type { TComponent, TInstallComponent } from '@/types'
-
-export const ComponentDependencies: FC<IGetComponent> = async (props) => {
-  let component: TComponent
-  try {
-    component = await getComponent(props)
-  } catch (error) {
-    return (
-      <Text variant="label">Error: Can not find component dependencies</Text>
-    )
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      {component.dependencies?.length ? (
-        component.dependencies.map((d) => (
-          <Text variant="overline" key={d}>
-            {d}
-          </Text>
-        ))
-      ) : (
-        <Text variant="overline">No dependencies to show</Text>
-      )}
-    </div>
-  )
-}
-
-export const ComponentDependenciesCard: FC<
-  IGetComponent & { heading?: string }
-> = ({ heading = 'Dependencies', ...props }) => (
-  <Card className="flex-1">
-    <Heading>{heading}</Heading>
-    <Suspense fallback="Loading component dependencies...">
-      <ComponentDependencies {...props} />
-    </Suspense>
-  </Card>
-)
 
 export interface IComponentDependencies {
   appComponents?: Array<TComponent>
@@ -71,8 +33,7 @@ export const DependentComponents: FC<IComponentDependencies> = ({
           .map((dep, i) => (
             <Text
               key={`${dep.id}-${i}`}
-              className="bg-gray-500/10 leading-3  p-2 rounded-lg border w-fit"
-              variant="caption"
+              className="bg-gray-500/10 p-2 rounded-lg border w-fit"
             >
               <Link href={`${path}/${dep.id}`}>{dep.name}</Link>
             </Text>
@@ -86,8 +47,7 @@ export const DependentComponents: FC<IComponentDependencies> = ({
           .map((dep, i) => (
             <Text
               key={`${dep.id}-${i}`}
-              className="bg-gray-500/10 leading-3  p-2 rounded-lg border w-fit"
-              variant="caption"
+              className="bg-gray-500/10 p-2 rounded-lg border w-fit"
             >
               <Link href={`${path}/${dep.id}`}>{dep.component?.name}</Link>
             </Text>

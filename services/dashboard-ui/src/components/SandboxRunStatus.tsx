@@ -49,6 +49,7 @@ export const SandboxRunStatus: FC<ISandboxRunStatus> = ({
     <StatusBadge
       description={run?.status_description}
       status={run?.status}
+      label="Status"
       {...props}
     />
   )

@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
+import { ClickToCopy } from '@/components/ClickToCopy'
 
 export type THeadingVariant = 'heading' | 'subheading' | 'title' | 'subtitle'
 
@@ -36,11 +37,11 @@ export const Heading: FC<IHeading> = ({
   )
 }
 
-export interface IText extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'base' | 'caption' | 'label' | 'overline' | 'status' | 'id'
+export interface IOldText extends React.HTMLAttributes<HTMLSpanElement> {
+  variant?: 'base' | 'caption' | 'label' | 'overline' | 'status' | 'id' | 'mono'
 }
 
-export const Text: FC<IText> = ({
+export const OldText: FC<IOldText> = ({
   children,
   className,
   variant = 'base',
@@ -83,7 +84,7 @@ export const Code: FC<ICode> = ({
   variant = 'default',
 }) => {
   const classes = classNames(
-    'text-sm p-4 bg-cool-grey-800 text-cool-50 font-mono break-all flex flex-col rounded shadow-sm min-h-[3rem] max-h-[40rem] max-w-5xl overflow-auto',
+    'text-sm p-4 bg-cool-grey-50 text-blue-800 dark:bg-dark-grey-200 text-blue-500 font-mono break-all flex flex-col rounded shadow-sm min-h-[3rem] max-h-[40rem] max-w-5xl overflow-auto',
     {
       '!p-1 leading-3 min-h-min overflow-x-scroll': variant === 'inline',
       [`${className}`]: Boolean(className),
@@ -105,7 +106,7 @@ export const Code: FC<ICode> = ({
 
 export const CodeInline: FC<ICode> = ({ className, children }) => {
   const classes = classNames(
-    'text-sm bg-cool-grey-50 text-blue-800 dark:bg-dark-grey-200 text-blue-500 font-mono break-all rounded-lg shadow-sm py-1 px-2 leading-3 border',
+    'text-sm bg-cool-grey-50 text-blue-800 dark:bg-dark-grey-200 text-blue-500 font-mono break-all rounded-lg shadow-sm py-0.5 px-2 leading-3 border',
     {
       [`${className}`]: Boolean(className),
     }
@@ -138,3 +139,59 @@ export const Truncate: FC<ITruncate> = ({
     </span>
   )
 }
+
+export interface IText extends React.HTMLAttributes<HTMLSpanElement> {
+  level?: 1 | 2 | 3 | 4 | 5 | 6
+  role?: 'paragraph' | 'heading' | 'code' | 'time'
+  variant?:
+    | 'reg-12'
+    | 'reg-14'
+    | 'mono-12'
+    | 'mono-14'
+    | 'med-8'
+    | 'med-12'
+    | 'med-14'
+    | 'med-18'
+    | 'semi-14'
+    | 'semi-18'
+}
+
+export const Text: FC<IText> = ({
+  className,
+  children,
+  level,
+  role = 'paragraph',
+  variant = 'reg-12',
+  ...props
+}) => {
+  return (
+    <span
+      aria-level={role === 'heading' && level ? level : undefined}
+      className={classNames('flex flex-wrap items-center gap-1', {
+        'font-semibold text-xl leading-loose tracking-normal':
+          variant === 'semi-18',
+        'font-semibold text-base': variant === 'semi-14',
+        'font-medium text-xl': variant === 'med-18',
+        'font-medium text-base': variant === 'med-14',
+        'font-medium text-sm tracking-wide': variant === 'med-12',
+        'font-medium text-xs leading-tight tracking-wide': variant === 'med-8',
+        'text-base leading-normal': variant === 'reg-14',
+        'text-sm leading-normal tracking-wide': variant === 'reg-12',
+        'font-mono font-normal text-base leading-loose': variant === 'mono-14',
+        'font-mono font-normal text-sm leading-relaxed text-cool-grey-600 dark:text-white/70':
+          variant === 'mono-12',
+        [`${className}`]: Boolean(className),
+      })}
+      role={role}
+      {...props}
+    >
+      {children}
+    </span>
+  )
+}
+
+export const ID: FC<{ id: React.ReactElement | string }> = ({ id }) => (
+  <Text variant="mono-12">
+    <ClickToCopy>{id}</ClickToCopy>
+  </Text>
+)

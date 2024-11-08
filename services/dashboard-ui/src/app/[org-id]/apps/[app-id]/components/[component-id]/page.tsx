@@ -4,7 +4,7 @@ import {
   ComponentConfiguration,
   DashboardContent,
   DependentComponents,
-  Heading,
+  Section,
 } from '@/components'
 import {
   getApp,
@@ -47,38 +47,34 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
       <div className="flex flex-col lg:flex-row flex-auto">
         <div className="divide-y flex flex-col flex-auto">
           {component.dependencies && (
-            <section className="flex flex-col gap-6 px-6 py-8">
-              <Heading>Dependencies</Heading>
-
+            <Section className="flex-initial" heading="Dependencies">
               <DependentComponents
                 appId={appId}
                 appComponents={appComponents}
                 dependentIds={component.dependencies}
                 orgId={orgId}
               />
-            </section>
+            </Section>
           )}
 
-          <section className="flex flex-col gap-6 px-6 py-8">
-            <Heading>Latest config</Heading>
-
+          <Section heading="Latest config">
             <ComponentConfiguration config={componentConfig} />
-          </section>
+          </Section>
         </div>
-        <section
-          className="flex flex-col gap-4 px-6 py-8 border-l overflow-auto lg:min-w-[450px]
+        <div
+          className="border-l overflow-auto lg:min-w-[450px]
 lg:max-w-[450px]"
         >
-          <Heading>Build history</Heading>
-
-          <ComponentBuildHistory
-            appId={appId}
-            componentId={componentId}
-            initBuilds={builds}
-            orgId={orgId}
-            shouldPoll
-          />
-        </section>
+          <Section heading="Build history">
+            <ComponentBuildHistory
+              appId={appId}
+              componentId={componentId}
+              initBuilds={builds}
+              orgId={orgId}
+              shouldPoll
+            />
+          </Section>
+        </div>
       </div>
     </DashboardContent>
   )
