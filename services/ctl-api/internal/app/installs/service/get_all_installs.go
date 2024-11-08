@@ -57,6 +57,8 @@ func (s *service) getAllInstalls(ctx context.Context, limitVal int, orgTyp strin
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_sandbox_runs.created_at DESC")
 		}).
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
 		Joins("JOIN apps ON apps.id=installs_view_v3.app_id").
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Where("org_type = ?", orgTyp).
