@@ -1,1 +1,1 @@
-Create a static token for an account.
+[deprecated] Create a static token for an account.
