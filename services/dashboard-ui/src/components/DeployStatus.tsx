@@ -51,6 +51,7 @@ export const DeployStatus: FC<IDeployStatus> = ({
     <StatusBadge
       description={deploy?.status_description}
       status={deploy?.status}
+      label="Status"
       {...props}
     />
   )

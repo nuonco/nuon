@@ -3,7 +3,6 @@
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { DotsThreeVertical } from '@phosphor-icons/react'
-import { ClickToCopy } from '@/components/ClickToCopy'
 import {
   StaticComponentConfigType,
   getComponentConfigType,
@@ -11,8 +10,7 @@ import {
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
 import { DataTableSearch, Table } from '@/components/DataTable'
-import { Time } from '@/components/Time'
-import { Heading, Text } from '@/components/Typography'
+import { ID, Text } from '@/components/Typography'
 // eslint-disable-next-line import/no-cycle
 import type { TBuild, TComponentConfig, TInstallComponent } from '@/types'
 
@@ -75,12 +73,10 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
             <Link
               href={`/${orgId}/installs/${installId}/components/${props.row.original.installComponentId}`}
             >
-              <Heading variant="subheading">{props.getValue<string>()}</Heading>
+              <Text variant="med-14">{props.getValue<string>()}</Text>
             </Link>
 
-            <Text variant="id">
-              <ClickToCopy>{props.row.original.installComponentId}</ClickToCopy>
-            </Text>
+            <ID id={props.row.original.installComponentId} />
           </div>
         ),
       },
@@ -108,7 +104,6 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
                 <Text
                   key={`${dep.id}-${i}`}
                   className="bg-gray-500/10 px-2 py-1 rounded-lg border w-fit"
-                  variant="caption"
                 >
                   <Link
                     href={`/${orgId}/installs/${installId}/components/${dep.id}`}

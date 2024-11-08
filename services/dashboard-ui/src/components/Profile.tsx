@@ -23,10 +23,10 @@ export const Profile: FC = () => {
           alt={user.name as string}
         />
         <div className="flex flex-col gap-0">
-          <Text className="truncate" variant="label">
+          <Text className="truncate" variant="med-14">
             {user.name}
           </Text>
-          <Text className="truncate" variant="caption">
+          <Text className="truncate" variant="reg-12">
             {user.email}
           </Text>
         </div>

@@ -102,7 +102,7 @@ export const OrgVCSConnectionsDetails: FC<{ org: TOrg }> = ({ org }) => {
   return (
     <div className="flex flex-col gap-4 mx-4 py-4 border-cool-grey-600 dark:border-cool-grey-500 border-b border-dotted ">
       <div className="flex items-center justify-between">
-        <Text variant="label">GitHub Connections</Text>
+        <Text variant="med-14">GitHub Connections</Text>
         <Link
           className="flex items-center gap-2 text-sm font-medium"
           href={`https://github.com/apps/${GITHUB_APP_NAME}/installations/new?state=${org.id}`}
@@ -126,7 +126,7 @@ export interface IOrgsNav {
 export const OrgsNav: FC<IOrgsNav> = ({ orgs }) => {
   return (
     <div className="flex flex-col gap-4">
-      <Text className="px-4" variant="label">
+      <Text className="px-4" variant="med-14">
         Organizations
       </Text>
       <nav className="flex flex-col gap-0 px-1">
@@ -188,7 +188,7 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({ initOrg, initOrgs }) => {
         <div className="pt-2 px-4">
           <OrgSummary org={initOrg} />
 
-          <Text className="mt-4" variant="id">
+          <Text className="mt-4" variant="mono-12">
             <ClickToCopy>{initOrg.id}</ClickToCopy>
           </Text>
         </div>

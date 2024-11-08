@@ -3,14 +3,13 @@
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { DotsThreeVertical } from '@phosphor-icons/react'
-import { ClickToCopy } from '@/components/ClickToCopy'
 import { Dropdown } from '@/components/Dropdown'
 import { InstallPlatform } from '@/components/InstallCloudPlatform'
 import { Link } from '@/components/Link'
 import { RadioInput } from '@/components/Input'
 import { StatusBadge } from '@/components/Status'
 import { DataTableSearch, Table } from '@/components/DataTable'
-import { Heading, Text } from '@/components/Typography'
+import { ID, Text } from '@/components/Typography'
 import type { TInstall } from '@/types'
 
 type TDataStatuses = {
@@ -64,11 +63,9 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
         cell: (props) => (
           <div className="flex flex-col gap-2">
             <Link href={`/${orgId}/installs/${props.row.original.installId}`}>
-              <Heading variant="subheading">{props.getValue<string>()}</Heading>
+              <Text variant="med-14">{props.getValue<string>()}</Text>
             </Link>
-            <Text variant="id">
-              <ClickToCopy>{props.row.original.installId}</ClickToCopy>
-            </Text>
+            <ID id={props.row.original.installId} />
           </div>
         ),
       },
