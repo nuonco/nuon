@@ -16,7 +16,7 @@ type AdminDeprovisionInstallRequest struct{}
 // @Tags			installs/admin
 // @Accept			json
 // @Param			req			body	AdminDeprovisionInstallRequest	true	"Input"
-// @Param	install_id	path	string	true	"org ID for your current org"
+// @Param	install_id	path	string	true	"install ID"
 // @Produce		json
 // @Success		201	{string}	ok
 // @Router			/v1/installs/{install_id}/admin-deprovision [POST]
