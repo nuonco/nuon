@@ -63,6 +63,8 @@ func (s *service) getOrgInstalls(ctx context.Context, orgID string) ([]app.Insta
 		}).
 		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Preload("InstallComponents.Component").
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
 		Joins("JOIN apps ON apps.id=installs_view_v3.app_id").
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Order("created_at desc").
