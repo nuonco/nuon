@@ -4,12 +4,12 @@ import classNames from 'classnames'
 import React, { type FC, useEffect, useState } from 'react'
 import { CaretRight } from '@phosphor-icons/react'
 import { Link } from '@/components/Link'
-import { Status } from '@/components/Status'
+import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
 import { ToolTip } from '@/components/ToolTip'
 import { Text, Truncate } from '@/components/Typography'
 import type { TBuild } from '@/types'
-import { SHORT_POLL_DURATION, sentanceCase } from '@/utils'
+import { SHORT_POLL_DURATION } from '@/utils'
 
 export interface IComponentBuildHistory {
   appId: string
@@ -41,7 +41,7 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
   }, [builds, componentId, props.orgId, shouldPoll])
 
   return (
-    <div>
+    <div className="flex flex-col gap-2">
       {builds.map((build, i) => (
         <ComponentBuildEvent
           key={`${build.id}-${i}`}
@@ -68,46 +68,54 @@ const ComponentBuildEvent: FC<IComponentBuildEvent> = ({
   orgId,
 }) => {
   return (
-    <div
-      className={classNames('flex items-center justify-between p-4', {
-        'border rounded-md shadow-sm': isMostRecent,
-      })}
+    <Link
+      className="!block w-full !p-0"
+      href={`/${orgId}/apps/${appId}/components/${build.component_id}/builds/${build.id}`}
+      variant="ghost"
     >
-      <div className="flex flex-col">
-        <span className="flex items-center gap-2">
-          <Status status={build.status} isStatusTextHidden />
-          <Text className="text-sm !font-medium tracking-wide">
-            {sentanceCase(build.status)}
+      <div
+        className={classNames('flex items-center justify-between p-4', {
+          'border rounded-md shadow-sm': isMostRecent,
+        })}
+      >
+        <div className="flex flex-col">
+          <span className="flex items-center gap-2">
+            <StatusBadge
+              status={build.status}
+              isStatusTextHidden
+              isWithoutBorder
+            />
+          </span>
+
+          <Text className="flex items-center gap-2 ml-4">
+            <ToolTip tipContent={build.id}>
+              <Text className="truncate text-ellipsis w-16" variant="mono-12">
+                {build.id}
+              </Text>
+            </ToolTip>
+            <>
+              /{' '}
+              {build.component_name.length >= 12 ? (
+                <ToolTip tipContent={build.component_name} alignment="right">
+                  <Truncate variant="small">{build.component_name}</Truncate>
+                </ToolTip>
+              ) : (
+                build.component_name
+              )}
+            </>
           </Text>
-        </span>
+        </div>
 
-        <Text className="flex items-center gap-2 ml-6 text-sm">
-          <ToolTip tipContent={build.id}>
-            <span className="truncate text-ellipsis w-16">{build.id}</span>
-          </ToolTip>
-          <>
-            /{' '}
-            {build.component_name.length >= 12 ? (
-              <ToolTip tipContent={build.component_name} alignment="right">
-                <Truncate variant="small">{build.component_name}</Truncate>
-              </ToolTip>
-            ) : (
-              build.component_name
-            )}
-          </>
-        </Text>
+        <div className="flex items-center gap-2">
+          <Time time={build.updated_at} format="relative" />
+          <Link
+            href={`/${orgId}/apps/${appId}/components/${build.component_id}/builds/${build.id}`}
+            variant="ghost"
+          >
+            <CaretRight />
+          </Link>
+        </div>
       </div>
-
-      <div className="flex items-center gap-2">
-        <Time time={build.updated_at} format="relative" variant="overline" />
-
-        <Link
-          href={`/${orgId}/apps/${appId}/components/${build.component_id}/builds/${build.id}`}
-          variant="ghost"
-        >
-          <CaretRight />
-        </Link>
-      </div>
-    </div>
+    </Link>
   )
 }

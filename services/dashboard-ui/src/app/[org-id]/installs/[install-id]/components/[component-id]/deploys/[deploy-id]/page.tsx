@@ -6,10 +6,10 @@ import {
   DashboardContent,
   DeployStatus,
   Duration,
-  Heading,
   Link,
   RunnerLogsPoller,
   StatusBadge,
+  Section,
   Text,
   Time,
   ToolTip,
@@ -72,16 +72,15 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
       headingUnderline={deploy.id}
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
-          <Text variant="caption">
+          <Text>
             <FiCloud />
-            <Time time={deploy.created_at} variant="caption" />
+            <Time time={deploy.created_at} />
           </Text>
-          <Text variant="caption">
+          <Text>
             <FiClock />
             <Duration
               beginTime={deploy.created_at}
               endTime={deploy.updated_at}
-              variant="caption"
             />
           </Text>
         </div>
@@ -89,7 +88,6 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
       statues={
         <div className="flex gap-6 items-start justify-start">
           <span className="flex flex-col gap-2">
-            <Text variant="overline">Status</Text>
             <DeployStatus
               descriptionAlignment="right"
               initDeploy={deploy}
@@ -98,13 +96,17 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
           </span>
 
           <span className="flex flex-col gap-2">
-            <Text variant="overline">Type</Text>
-            <Text variant="caption">{deploy.install_deploy_type}</Text>
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Type
+            </Text>
+            <Text>{deploy.install_deploy_type}</Text>
           </span>
 
           <span className="flex flex-col gap-2">
-            <Text variant="overline">Build</Text>
-            <Text variant="id">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Build
+            </Text>
+            <Text variant="mono-12">
               <ToolTip alignment="right" tipContent={build.id}>
                 <ClickToCopy>
                   <Truncate variant="small">{build.id}</Truncate>
@@ -114,9 +116,11 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
           </span>
 
           <span className="flex flex-col gap-2">
-            <Text variant="overline">Component</Text>
-            <Text variant="label">{component.name}</Text>
-            <Text variant="id">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Component
+            </Text>
+            <Text variant="med-12">{component.name}</Text>
+            <Text variant="mono-12">
               <ToolTip alignment="right" tipContent={deploy.component_id}>
                 <ClickToCopy>
                   <Truncate variant="small">{deploy.component_id}</Truncate>
@@ -126,9 +130,11 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
           </span>
 
           <span className="flex flex-col gap-2">
-            <Text variant="overline">Install</Text>
-            <Text variant="label">{install.name}</Text>
-            <Text variant="id">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Install
+            </Text>
+            <Text variant="med-12">{install.name}</Text>
+            <Text variant="mono-12">
               <ToolTip alignment="right" tipContent={install.id}>
                 <ClickToCopy>
                   <Truncate variant="small">{install.id}</Truncate>
@@ -153,11 +159,10 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
           className="divide-y flex flex-col lg:min-w-[450px]
 lg:max-w-[450px]"
         >
-          <section className="flex flex-col gap-6 px-6 py-8">
-            <div className="flex items-center justify-between">
-              <Heading>Component build</Heading>
-
-              <Text variant="caption">
+          <Section
+            className="flex-initial"
+            actions={
+              <Text>
                 <Link
                   href={`/${orgId}/apps/${component.app_id}/components/${component.id}/builds/${build.id}`}
                 >
@@ -165,37 +170,40 @@ lg:max-w-[450px]"
                   <FiChevronRight />
                 </Link>
               </Text>
-            </div>
-
+            }
+            heading="Component build"
+          >
             <div className="flex items-start justify-start gap-6">
               <span className="flex flex-col gap-2">
-                <Text variant="overline">Status</Text>
                 <StatusBadge
                   description={build.status_description}
                   status={build.status}
+                  label="Status"
                 />
               </span>
 
               <span className="flex flex-col gap-2">
-                <Text variant="overline">Build date</Text>
-                <Time variant="caption" time={build.created_at} />
+                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                  Build date
+                </Text>
+                <Time time={build.created_at} />
               </span>
 
               <span className="flex flex-col gap-2">
-                <Text variant="overline">Build duration</Text>
+                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                  Build duration
+                </Text>
                 <Duration
-                  variant="caption"
                   beginTime={build.created_at}
                   endTime={build.updated_at}
                 />
               </span>
             </div>
-          </section>
-          <section className="flex flex-col gap-6 px-6 py-8">
-            <Heading>Component config</Heading>
+          </Section>
 
+          <Section heading="Component config">
             <ComponentConfiguration config={componentConfig} />
-          </section>
+          </Section>
         </div>
       </div>
     </DashboardContent>

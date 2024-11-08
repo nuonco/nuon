@@ -5,7 +5,7 @@ import {
   AppSandboxConfig,
   AppSandboxVariables,
   DashboardContent,
-  Heading,
+  Section,
   SubNav,
   type TLink,
 } from '@/components'
@@ -51,14 +51,12 @@ export default withPageAuthRequired(async function App({ params }) {
       meta={<SubNav links={subNavLinks} />}
     >
       <div className="flex flex-col md:flex-row flex-auto">
-        <section className="flex flex-col gap-4 px-6 py-8 border-r w-full">
-          <Heading variant="subheading">Inputs</Heading>
+        <Section className="border-r" heading="Inputs">
           <AppInputConfig inputConfig={inputCfg as TAppInputConfig} />
-        </section>
+        </Section>
 
-        <div className="flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
-          <section className="flex flex-col gap-4 px-6 py-8 border-b">
-            <Heading variant="subheading">Sandbox</Heading>
+        <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
+          <Section className="flex-initial" heading="Sandbox">
             <div className="flex flex-col gap-8">
               <AppSandboxConfig
                 sandboxConfig={sandboxCfg as TAppSandboxConfig}
@@ -67,13 +65,11 @@ export default withPageAuthRequired(async function App({ params }) {
                 variables={(sandboxCfg as TAppSandboxConfig)?.variables}
               />
             </div>
-          </section>
+          </Section>
 
-          <section className="flex flex-col gap-4 px-6 py-8">
-            <Heading variant="subheading">Runner</Heading>
-
+          <Section heading="Runner">
             <AppRunnerConfig runnerConfig={runnerCfg as TAppRunnerConfig} />
-          </section>
+          </Section>
         </div>
       </div>
     </DashboardContent>
