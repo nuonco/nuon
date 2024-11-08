@@ -8,7 +8,7 @@ export default async function middleware(request: NextRequest) {
   const headers = new Headers(request.headers)
   const session = await getSession()
   // set origin url encase of login redirect
-  headers.set('x-origin-url', request.url)
+  headers.set('x-origin-path', new URL(request.url).pathname)
 
   if (session) {
     if (
