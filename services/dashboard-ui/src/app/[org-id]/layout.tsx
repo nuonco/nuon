@@ -52,7 +52,7 @@ export default withPageAuthRequired(
   },
   {
     returnTo() {
-      return headers().get('x-origin-url')
+      return headers().get('x-origin-path')
     },
   }
 )
