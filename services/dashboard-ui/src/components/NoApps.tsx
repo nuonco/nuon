@@ -1,12 +1,12 @@
 import React, { type FC } from 'react'
 import { Link } from '@/components/Link'
-import { Heading, Text, CodeInline } from '@/components/Typography'
+import { Text, CodeInline } from '@/components/Typography'
 
 export const NoApps: FC = () => {
   return (
     <div className="max-w-xl flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <Heading variant="title">No apps configured</Heading>
+        <Text variant="semi-18">No apps configured</Text>
         <Text className="!text-lg !leading-loose">
           Package your existing application code and infrastructure to create
           bring-your-own-cloud installable versions of your product. Nuon apps
@@ -24,7 +24,7 @@ export const NoApps: FC = () => {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Heading>Create an app with the Nuon CLI</Heading>
+        <Text variant="semi-14">Create an app with the Nuon CLI</Text>
         <Text>
           Create your first app using the Nuon CLI with the{' '}
           <CodeInline variant="inline">

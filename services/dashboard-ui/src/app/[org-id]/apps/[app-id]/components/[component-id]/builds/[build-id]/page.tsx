@@ -8,6 +8,7 @@ import {
   ComponentConfiguration,
   Heading,
   RunnerLogsPoller,
+  Section,
   Time,
   Text,
   ToolTip,
@@ -65,24 +66,22 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
       headingUnderline={build.id}
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
-          <Text variant="caption">
+          <Text>
             <FiCloud />
-            <Time time={build.created_at} variant="caption" />
+            <Time time={build.created_at} />
           </Text>
-          <Text variant="caption">
+          <Text>
             <FiClock />
-            <Duration
-              beginTime={build.created_at}
-              endTime={build.updated_at}
-              variant="caption"
-            />
+            <Duration beginTime={build.created_at} endTime={build.updated_at} />
           </Text>
         </div>
       }
       statues={
         <div className="flex gap-6 items-start justify-start">
           <span className="flex flex-col gap-2">
-            <Text variant="overline">Status</Text>
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Status
+            </Text>
             <BuildStatus
               descriptionAlignment="right"
               initBuild={build}
@@ -91,9 +90,11 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
           </span>
 
           <span className="flex flex-col gap-2">
-            <Text variant="overline">Component</Text>
-            <Text variant="label">{component.name}</Text>
-            <Text variant="id">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Component
+            </Text>
+            <Text variant="med-12">{component.name}</Text>
+            <Text variant="mono-12">
               <ToolTip alignment="right" tipContent={build.component_id}>
                 <ClickToCopy>
                   <Truncate variant="small">{build.component_id}</Truncate>
@@ -120,14 +121,17 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
 lg:max-w-[450px]"
         >
           {build.vcs_connection_commit && (
-            <section className="flex flex-col gap-6 px-6 py-8">
-              <Heading>Commit details</Heading>
-
+            <Section className="flex-initial" heading="Commit details">
               <div className="flex gap-6 items-start justify-start">
                 <span className="flex flex-col gap-2">
-                  <Text variant="overline">SHA</Text>
+                  <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                    SHA
+                  </Text>
                   <ToolTip tipContent={build.vcs_connection_commit?.sha}>
-                    <Text className="truncate text-ellipsis w-16" variant="id">
+                    <Text
+                      className="truncate text-ellipsis w-16"
+                      variant="mono-12"
+                    >
                       {build.vcs_connection_commit?.sha}
                     </Text>
                   </ToolTip>
@@ -135,27 +139,26 @@ lg:max-w-[450px]"
 
                 {build.vcs_connection_commit?.author_name !== '' && (
                   <span className="flex flex-col gap-2">
-                    <Text variant="overline">Author</Text>
-                    <Text variant="caption">
-                      {build.vcs_connection_commit?.author_name}
+                    <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                      Author
                     </Text>
+                    <Text>{build.vcs_connection_commit?.author_name}</Text>
                   </span>
                 )}
 
                 <span className="flex flex-col gap-2">
-                  <Text variant="overline">Message</Text>
-                  <Text variant="caption">
-                    {build.vcs_connection_commit?.message}
+                  <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                    Message
                   </Text>
+                  <Text>{build.vcs_connection_commit?.message}</Text>
                 </span>
               </div>
-            </section>
+            </Section>
           )}
-          <section className="flex flex-col gap-6 px-6 py-8">
-            <Heading>Component configuration</Heading>
 
+          <Section heading="Component config">
             <ComponentConfiguration config={componentConfig} />
-          </section>
+          </Section>
         </div>
       </div>
     </DashboardContent>
