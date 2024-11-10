@@ -87,7 +87,7 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 	// queue job
 	w.evClient.Send(ctx, comp.Org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		JobID: runnerJob.ID,
-		Type:  runnersignals.OperationJobQueued,
+		Type:  runnersignals.OperationProcessJob,
 	})
 
 	// wait for the job

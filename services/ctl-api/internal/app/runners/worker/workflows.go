@@ -21,6 +21,9 @@ type Workflows struct {
 	protos   *protos.Adapter
 	mw       tmetrics.Writer
 	evClient teventloop.Client
+
+	// some silly state
+	stateTest string
 }
 
 func NewWorkflows(v *validator.Validate,

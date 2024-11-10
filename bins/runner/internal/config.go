@@ -14,6 +14,7 @@ func init() {
 	config.RegisterDefault("bundle_dir", "/bundle")
 	config.RegisterDefault("registry_dir", "/tmp/runner-registry")
 	config.RegisterDefault("log_level", "INFO")
+	config.RegisterDefault("registry_port", "5001")
 }
 
 type Config struct {
@@ -29,8 +30,9 @@ type Config struct {
 	LogLevel string `config:"log_level"`
 
 	// some artifacts are bundled into the runner binary, to make loading them easier.
-	BundleDir   string `config:"bundle_dir"`
-	RegistryDir string `config:"registry_dir"`
+	BundleDir    string `config:"bundle_dir" validate:"required"`
+	RegistryDir  string `config:"registry_dir" validate:"required"`
+	RegistryPort int    `config:"registry_port" validate:"required"`
 
 	// only for enabling local things
 	IsNuonctl bool `config:"is_nuonctl"`

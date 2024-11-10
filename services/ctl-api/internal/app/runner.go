@@ -41,7 +41,7 @@ type Runner struct {
 	Status            RunnerStatus `json:"status" gorm:"not null;default null" swaggertype:"string"`
 	StatusDescription string       `json:"status_description" gorm:"not null;default null"`
 
-	RunnerGroupID string      `json:"runner_id" gorm:"index:idx_runner_name,unique"`
+	RunnerGroupID string      `json:"runner_group_id" gorm:"index:idx_runner_name,unique"`
 	RunnerGroup   RunnerGroup `json:"-"`
 
 	Name        string `json:"name" gorm:"index:idx_runner_name,unique"`
