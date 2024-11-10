@@ -49,7 +49,6 @@ func New(params WorkerParams) (*Worker, error) {
 	wkr.RegisterActivity(params.Acts)
 
 	// register workflows
-	wkr.RegisterWorkflow(params.WKflows.OrgHealthCheck)
 	wkr.RegisterWorkflow(params.WKflows.EventLoop)
 	wkr.RegisterWorkflow(params.WKflows.Created)
 	wkr.RegisterWorkflow(params.WKflows.Delete)

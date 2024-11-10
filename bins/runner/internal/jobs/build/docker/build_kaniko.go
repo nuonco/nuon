@@ -37,11 +37,11 @@ func (b *handler) buildWithKaniko(
 	buildArgs map[string]*string,
 ) (string, error) {
 	log.Info("Building Docker image with kaniko...")
-	localRef := local.GetKanikoTag(b.state.resultTag)
+	localRef := local.GetKanikoTag(b.cfg, b.state.resultTag)
 
 	kanikoPath, err := b.kanikoPath()
 	if err != nil {
-		localRef = local.GetLocalTag(b.state.resultTag)
+		localRef = local.GetLocalTag(b.cfg, b.state.resultTag)
 		log.Info("building locally")
 		return localRef, b.buildLocal(
 			ctx,

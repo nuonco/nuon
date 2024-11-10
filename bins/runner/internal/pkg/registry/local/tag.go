@@ -2,6 +2,8 @@ package local
 
 import (
 	"fmt"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal"
 )
 
 // When we are building and pushing images locally, we have to do things _slightly_ different, to ensure we interoperate
@@ -16,21 +18,21 @@ import (
 // For running builds inside kaniko, we can simply use localhost:5001 for everything.
 
 // Return a tag that can be used to build+push from the run-local environment
-func GetLocalTag(version string) string {
-	return fmt.Sprintf("host.containers.internal:5001/runner:%s", version)
+func GetLocalTag(cfg *internal.Config, version string) string {
+	return fmt.Sprintf("host.containers.internal:%d/runner:%s", cfg.RegistryPort, version)
 }
 
 // Return a tag that can be used inside kaniko
-func GetKanikoTag(version string) string {
-	return fmt.Sprintf("localhost:5001/runner:%s", version)
+func GetKanikoTag(cfg *internal.Config, version string) string {
+	return fmt.Sprintf("localhost:%d/runner:%s", cfg.RegistryPort, version)
 }
 
 // Return the tag we _always_ use for copying
-func GetCopyTag(version string) string {
-	return fmt.Sprintf("localhost:5001/runner:%s", version)
+func GetCopyTag(cfg *internal.Config, version string) string {
+	return fmt.Sprintf("localhost:%d/runner:%s", cfg.RegistryPort, version)
 }
 
 // Return the repo we _always_ use for copying
-func GetCopyRepo() string {
-	return "localhost:5001/runner"
+func GetCopyRepo(cfg *internal.Config) string {
+	return fmt.Sprintf("localhost:%d/runner", cfg.RegistryPort)
 }

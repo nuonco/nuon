@@ -39,7 +39,7 @@ func New(params Params) (*Registry, error) {
 		cancelFn: cancelFn,
 	}
 
-	cfg := reg.getConfig()
+	cfg := reg.getConfig(params.Cfg.RegistryPort)
 	ociReg, err := ociregistry.NewRegistry(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create new registry: %w", err)

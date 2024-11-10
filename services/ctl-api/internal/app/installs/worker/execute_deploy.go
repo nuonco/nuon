@@ -87,7 +87,7 @@ func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, insta
 
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		JobID: runnerJob.ID,
-		Type:  runnersignals.OperationJobQueued,
+		Type:  runnersignals.OperationProcessJob,
 	})
 	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to execute runner job")
