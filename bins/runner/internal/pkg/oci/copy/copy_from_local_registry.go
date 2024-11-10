@@ -14,7 +14,7 @@ import (
 )
 
 func (c *copier) CopyFromLocalRegistry(ctx context.Context, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (*ocispec.Descriptor, error) {
-	localRepo := local.GetCopyRepo()
+	localRepo := local.GetCopyRepo(c.cfg)
 	repo, err := remote.NewRepository(localRepo)
 	repo.PlainHTTP = true
 	if err != nil {

@@ -16,6 +16,7 @@ type Params struct {
 
 	Prt           *protos.Adapter
 	DB            *gorm.DB `name:"psql"`
+	CHDB          *gorm.DB `name:"ch"`
 	Helpers       *helpers.Helpers
 	EVClient      eventloop.Client
 	AuthzClient   *authz.Client
@@ -24,6 +25,7 @@ type Params struct {
 
 type Activities struct {
 	db          *gorm.DB
+	chDB        *gorm.DB
 	protos      *protos.Adapter
 	helpers     *helpers.Helpers
 	evClient    eventloop.Client
@@ -34,6 +36,7 @@ type Activities struct {
 func New(params Params) *Activities {
 	return &Activities{
 		db:          params.DB,
+		chDB:        params.CHDB,
 		protos:      params.Prt,
 		helpers:     params.Helpers,
 		evClient:    params.EVClient,

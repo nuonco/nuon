@@ -32,6 +32,11 @@ func (c *client) GetRunnerServiceAccountToken(ctx context.Context, runnerID stri
 	return resp.Token, nil
 }
 
+type RunnerGroup struct {
+	Type    string `json:"type"`
+	OwnerID string `json:"owner_id"`
+}
+
 type Runner struct {
 	ID                string `json:"id"`
 	OrgID             string `json:"org_id"`
@@ -56,4 +61,34 @@ func (c *client) ListRunners(ctx context.Context, typ string) ([]Runner, error) 
 	}
 
 	return resp, nil
+}
+
+func (c *client) GetRunner(ctx context.Context, id string) (*Runner, error) {
+	endpoint := "/v1/runners/" + id
+	byts, err := c.execGetRequest(ctx, endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("unable to execute get request: %w", err)
+	}
+
+	var resp Runner
+	if err := json.Unmarshal(byts, &resp); err != nil {
+		return nil, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return &resp, nil
+}
+
+func (c *client) GetRunnerGroup(ctx context.Context, id string) (*RunnerGroup, error) {
+	endpoint := "/v1/runner-groups/" + id
+	byts, err := c.execGetRequest(ctx, endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("unable to execute get request: %w", err)
+	}
+
+	var resp RunnerGroup
+	if err := json.Unmarshal(byts, &resp); err != nil {
+		return nil, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return &resp, nil
 }

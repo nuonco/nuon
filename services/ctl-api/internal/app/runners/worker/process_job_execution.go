@@ -47,6 +47,17 @@ func (w *Workflows) processJobExecution(ctx workflow.Context, job *app.RunnerJob
 			return true, nil
 		}
 
+		// if the runner is deemed unhealthy, the job execution is marked as unknown, and the job is marked as
+		// not attempted with the correct status, this is retryable.
+		runnerStatus, err := w.getRunnerStatus(ctx, job.RunnerID)
+		if err != nil {
+			return false, err
+		}
+		if runnerStatus != app.RunnerStatusActive {
+			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusUnknown, "runner is unhealthy")
+			return true, nil
+		}
+
 		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
 		if err != nil {
 			return false, err
@@ -104,7 +115,7 @@ func (w *Workflows) processJobExecution(ctx workflow.Context, job *app.RunnerJob
 
 		// if the runner is deemed unhealthy, the job execution is marked as unknown, and the job is marked as
 		// not attempted with the correct status, this is retryable.
-		runnerStatus, err := activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
+		runnerStatus, err := w.getRunnerStatus(ctx, job.RunnerID)
 		if err != nil {
 			return false, err
 		}

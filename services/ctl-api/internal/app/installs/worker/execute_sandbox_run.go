@@ -105,7 +105,7 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 
 	// queue job
 	w.evClient.Send(ctx, install.Org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-		Type:  runnersignals.OperationJobQueued,
+		Type:  runnersignals.OperationProcessJob,
 		JobID: runnerJob.ID,
 	})
 	if err := w.pollJob(ctx, runnerJob.ID); err != nil {

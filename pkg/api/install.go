@@ -11,7 +11,17 @@ type Install struct {
 	Name          string `json:"name"`
 	SandboxStatus string `json:"sandbox_status"`
 	Status        string `json:"status"`
+
+	AWSAccount   *AWSSettings  `json:"aws_account"`
+	AzureAccount *AzureAccount `json:"azure_account"`
 }
+
+type AWSSettings struct {
+	Region     string `json:"region"`
+	IAMRoleARN string `json:"iam_role_arn"`
+}
+
+type AzureAccount struct{}
 
 func (c *client) ListInstalls(ctx context.Context, typ string) ([]Install, error) {
 	endpoint := "/v1/installs?type=" + typ
@@ -44,6 +54,21 @@ func (c *client) ForgetInstall(ctx context.Context, installID string) error {
 	}
 
 	return nil
+}
+
+func (c *client) GetInstall(ctx context.Context, installID string) (*Install, error) {
+	endpoint := fmt.Sprintf("/v1/installs/%s/admin-get", installID)
+	byts, err := c.execGetRequest(ctx, endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("unable to execute get request: %w", err)
+	}
+
+	var response Install
+	if err := json.Unmarshal(byts, &response); err != nil {
+		return nil, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return &response, nil
 }
 
 func (c *client) ReprovisionInstall(ctx context.Context, installID string) error {
