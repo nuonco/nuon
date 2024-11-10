@@ -34,7 +34,7 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 	})
 	if err != nil {
 		w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "unable to get job from database")
-		return fmt.Errorf("unable to get runner job: %w", err)
+		return fmt.Errorf("unable to update runner job: %w", err)
 	}
 
 	// Handle sandbox mode, which by _default_ will mimic processing by simply sleeping for 5 seconds (or whatever

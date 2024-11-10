@@ -36,6 +36,8 @@ func (s *service) adminGetOrg(ctx context.Context, nameOrID string) (*app.Org, e
 	res := s.db.WithContext(ctx).
 		Unscoped().
 		Preload("CreatedBy").
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
 		Where("name LIKE ?", nameOrID).
 		Or("id = ?", nameOrID).
 		First(&org)

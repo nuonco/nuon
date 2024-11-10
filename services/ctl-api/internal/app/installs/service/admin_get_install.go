@@ -6,8 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 // @ID AdminGetInstall
@@ -40,6 +41,9 @@ func (s *service) adminGetInstall(ctx context.Context, installID string) (*app.I
 		Preload("App.Org").
 		Preload("CreatedBy").
 		Preload("InstallInputs").
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Settings").
+		Preload("RunnerGroup.Runners").
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_sandbox_runs.created_at DESC")
 		}).
