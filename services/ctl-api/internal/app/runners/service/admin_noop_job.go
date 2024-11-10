@@ -40,7 +40,7 @@ func (s *service) AdminCreateNoopJob(ctx *gin.Context) {
 	}
 
 	s.evClient.Send(ctx, runnerID, &signals.Signal{
-		Type:  signals.OperationJobQueued,
+		Type:  signals.OperationProcessJob,
 		JobID: job.ID,
 	})
 

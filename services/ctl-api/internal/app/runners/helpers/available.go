@@ -36,7 +36,7 @@ func (s *Helpers) QueueJob(ctx context.Context, runnerJobID string) error {
 	}
 
 	s.evClient.Send(ctx, job.RunnerID, &signals.Signal{
-		Type:  signals.OperationJobQueued,
+		Type:  signals.OperationProcessJob,
 		JobID: runnerJobID,
 	})
 

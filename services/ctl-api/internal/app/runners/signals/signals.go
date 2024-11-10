@@ -23,10 +23,7 @@ const (
 	OperationReprovision eventloop.SignalType = "reprovision"
 	OperationDelete      eventloop.SignalType = "delete"
 	OperationForceDelete eventloop.SignalType = "force_delete"
-	OperationJobQueued   eventloop.SignalType = "job_queued"
-
-	// could this be async or interupt driven via a queue?
-	OperationJobUpdated eventloop.SignalType = "job_updated"
+	OperationProcessJob  eventloop.SignalType = "process_job"
 )
 
 type Signal struct {

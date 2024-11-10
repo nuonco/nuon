@@ -46,7 +46,7 @@ var _ api.Service = (*service)(nil)
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.CancelRunnerJob)
 	api.GET("/v1/runners/:runner_id/logs", s.OtelReadLogs)
-  api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJob)
+	api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJob)
 	return nil
 }
 
@@ -73,6 +73,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	// job management
 	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.AdminCancelRunnerJob)
 	api.GET("/v1/runner-jobs/:runner_job_id", s.AdminGetRunnerJob)
+
+	api.GET("/v1/runner-groups/:runner_group_id", s.AdminGetRunnerGroup)
 
 	return nil
 }

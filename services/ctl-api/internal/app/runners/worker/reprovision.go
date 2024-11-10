@@ -14,16 +14,14 @@ import (
 // @execution-timeout 60m
 // @task-timeout 30m
 func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal) error {
-	w.updateStatus(ctx, sreq.ID, app.RunnerStatusProvisioning, "provisioning organization resources")
-
 	runner, err := activities.AwaitGet(ctx, activities.GetRequest{
 		RunnerID: sreq.ID,
 	})
 	if err != nil {
-		w.updateStatus(ctx, sreq.ID, app.RunnerStatusError, "unable to get runner from database")
 		return fmt.Errorf("unable to get runner: %w", err)
 	}
 
+	w.updateStatus(ctx, sreq.ID, app.RunnerStatusProvisioning, "provisioning organization resources")
 	_, err = activities.AwaitCreateAccount(ctx, activities.CreateAccountRequest{
 		RunnerID: sreq.ID,
 		OrgID:    runner.ID,
@@ -47,6 +45,13 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	case app.RunnerGroupTypeInstall:
 		return w.executeProvisionInstallRunner(ctx, sreq.ID, token.Token, sreq.SandboxMode, sreq.LogStreamID)
 	}
+
+	w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
+		OrgID:       runner.OrgID,
+		RunnerID:    runner.ID,
+		SandboxMode: runner.RunnerGroup.Settings.SandboxMode,
+		Type:        string(runner.RunnerGroup.Type),
+	})
 
 	return nil
 }
