@@ -48,5 +48,12 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 		return w.executeProvisionInstallRunner(ctx, sreq.ID, token.Token, sreq.SandboxMode, sreq.LogStreamID)
 	}
 
+	w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
+		OrgID:       runner.OrgID,
+		RunnerID:    runner.ID,
+		SandboxMode: runner.RunnerGroup.Settings.SandboxMode,
+		Type:        string(runner.RunnerGroup.Type),
+	})
+
 	return nil
 }

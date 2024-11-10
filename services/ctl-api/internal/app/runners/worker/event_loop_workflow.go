@@ -98,7 +98,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			// NOTE(jm): not all jobs have to be queued, if they are created
 			// with the "available" status,
 			// such as a health check, they will immediately be picked up
-		case signals.OperationJobQueued:
+		case signals.OperationProcessJob:
 			op = "job_queued"
 			if err := w.AwaitProcessJob(ctx, sreq); err != nil {
 				status = "error"

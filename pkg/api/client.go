@@ -24,6 +24,7 @@ type Client interface {
 	RestartApp(ctx context.Context, appID string) error
 	UpdateAppSandbox(ctx context.Context, appID string) error
 
+	GetInstall(ctx context.Context, id string) (*Install, error)
 	ListInstalls(ctx context.Context, typ string) ([]Install, error)
 	ReprovisionInstall(ctx context.Context, installID string) error
 	RestartInstall(ctx context.Context, installID string) error
@@ -47,6 +48,8 @@ type Client interface {
 	CreateSeedUser(ctx context.Context) (*CreateSeedUserResponse, error)
 
 	ListRunners(ctx context.Context, typ string) ([]Runner, error)
+	GetRunner(ctx context.Context, id string) (*Runner, error)
+	GetRunnerGroup(ctx context.Context, id string) (*RunnerGroup, error)
 	GetRunnerServiceAccountToken(ctx context.Context, runnerID string, dur time.Duration) (string, error)
 }
 

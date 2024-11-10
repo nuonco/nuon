@@ -8,6 +8,7 @@ import (
 	"go.uber.org/fx"
 	"oras.land/oras-go/v2"
 
+	"github.com/powertoolsdev/mono/bins/runner/internal"
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 )
 
@@ -34,7 +35,8 @@ type Copier interface {
 //
 // The only requirement is that an OCI registry config or ORAS store is passed in.
 type copier struct {
-	v *validator.Validate
+	v   *validator.Validate
+	cfg *internal.Config
 }
 
 var _ Copier = (*copier)(nil)
@@ -42,11 +44,13 @@ var _ Copier = (*copier)(nil)
 type CopierParams struct {
 	fx.In
 
-	V *validator.Validate
+	V   *validator.Validate
+	Cfg *internal.Config
 }
 
 func New(params CopierParams) Copier {
 	return &copier{
-		v: params.V,
+		v:   params.V,
+		cfg: params.Cfg,
 	}
 }

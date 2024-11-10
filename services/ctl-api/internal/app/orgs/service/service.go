@@ -74,6 +74,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/orgs", s.GetAllOrgs)
 	api.GET("/v1/orgs/admin-get", s.AdminGetOrg)
+	api.GET("/v1/orgs/:org_id/admin-get-runner", s.AdminGetOrgRunner)
 	api.POST("/v1/orgs/admin-delete-canarys", s.AdminDeleteCanaryOrgs)
 	api.POST("/v1/orgs/admin-delete-integrations", s.AdminDeleteIntegrationOrgs)
 

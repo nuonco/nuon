@@ -38,7 +38,7 @@ func (s *service) AdminCreateShutDown(ctx *gin.Context) {
 	}
 
 	s.evClient.Send(ctx, runnerID, &signals.Signal{
-		Type:  signals.OperationJobQueued,
+		Type:  signals.OperationProcessJob,
 		JobID: job.ID,
 	})
 

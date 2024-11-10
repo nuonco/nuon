@@ -1,20 +1,22 @@
 package registry
 
 import (
+	"fmt"
+
 	"github.com/distribution/distribution/v3/configuration"
 	_ "github.com/distribution/distribution/v3/registry/storage/driver/filesystem"
 )
 
 // NOTE(jm): this represents a minimal config to run the registry in process, as essentially a local cache with no
 // characteristics
-func (r *Registry) getConfig() *configuration.Configuration {
+func (r *Registry) getConfig(port int) *configuration.Configuration {
 	cfg := &configuration.Configuration{
 		Storage: make(map[string]configuration.Parameters),
 	}
 
 	// basic parameters for listening/logging
 	cfg.Log.Level = "info"
-	cfg.HTTP.Addr = ":5001"
+	cfg.HTTP.Addr = fmt.Sprintf(":%d", port)
 	cfg.HTTP.Host = "localhost"
 
 	// an (albeit partially outdated) configuration exists here -

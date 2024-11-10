@@ -87,7 +87,7 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 
 	// queue job
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-		Type:  runnersignals.OperationJobQueued,
+		Type:  runnersignals.OperationProcessJob,
 		JobID: runnerJob.ID,
 	})
 	if err := w.pollJob(ctx, runnerJob.ID); err != nil {

@@ -105,7 +105,7 @@ func (w *Workflows) executeDeprovisionInstallRunner(ctx workflow.Context, runner
 
 	// queue job
 	w.evClient.Send(ctx, runner.Org.RunnerGroup.Runners[0].ID, &signals.Signal{
-		Type:  signals.OperationJobQueued,
+		Type:  signals.OperationProcessJob,
 		JobID: runnerJob.ID,
 	})
 	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
