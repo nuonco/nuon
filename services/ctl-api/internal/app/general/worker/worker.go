@@ -41,6 +41,7 @@ func New(cfg *internal.Config,
 		WorkflowPanicPolicy:                worker.FailWorkflow,
 	})
 	wkr.RegisterActivity(acts)
+	wkr.RegisterWorkflow(wkflows.SendReconcileSignal)
 	wkr.RegisterWorkflow(wkflows.ReconcileEventLoops)
 	wkr.RegisterWorkflow(wkflows.EventLoop)
 
