@@ -10,7 +10,7 @@ import (
 const (
 	// the health check runs at minute 17 of every hour
 	// https://crontab.guru/#17_*/1_*_*_*
-	reconcileWorkflowCronTab string = "17 */1 * * *"
+	reconcileWorkflowCronTab string = "* * * * *"
 )
 
 func (w *Workflows) startReconcileEventLoopsWorkflowCron(ctx workflow.Context, req activities.EnsureEventLoopsRequest) {
