@@ -2,7 +2,6 @@ package ecr
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-playground/validator/v10"
 
@@ -22,7 +21,6 @@ var _ Client = (*ecrAuthorizer)(nil)
 type ecrAuthorizer struct {
 	v *validator.Validate `validate:"required"`
 
-	RegistryID string `validate:"required_unless=UseDefault true"`
 	UseDefault bool
 
 	Credentials *credentials.Config `validate:"-"`
@@ -51,7 +49,7 @@ func New(v *validator.Validate, opts ...Option) (*ecrAuthorizer, error) {
 // WithRegistryID is used to set the registry id
 func WithRegistryID(registryID string) Option {
 	return func(ecr *ecrAuthorizer) error {
-		ecr.RegistryID = registryID
+		// ecr.RegistryID = registryID
 		return nil
 	}
 }
@@ -59,12 +57,12 @@ func WithRegistryID(registryID string) Option {
 // WithImageURL is used to determine the regsitry id
 func WithImageURL(url string) Option {
 	return func(ecr *ecrAuthorizer) error {
-		registryID, err := parseImageURL(url)
-		if err != nil {
-			return err
-		}
+		//registryID, err := parseImageURL(url)
+		//if err != nil {
+		//return err
+		//}
 
-		ecr.RegistryID = registryID
+		// ecr.RegistryID = registryID
 		return nil
 	}
 }
@@ -88,12 +86,6 @@ func WithCredentials(creds *credentials.Config) Option {
 // WithRepository is used to set the registry id by parsing the repository url
 func WithRepository(repository string) Option {
 	return func(ecr *ecrAuthorizer) error {
-		registryID, err := parseImageURL(repository)
-		if err != nil {
-			return fmt.Errorf("unable to parse registry id from repository: %w", err)
-		}
-
-		ecr.RegistryID = registryID
 		return nil
 	}
 }
