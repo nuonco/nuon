@@ -15,7 +15,7 @@ type TData = {
   name: string
   platform: string
   runner_type: string
-  sandbox_repo: string
+  sandbox_repo: string | null
   isGithubConnected: boolean
 }
 
@@ -27,7 +27,7 @@ function parseAppsToTableData(apps: Array<TApp>): Array<TData> {
     const repo =
       app.sandbox_config?.connected_github_vcs_config ||
       app.sandbox_config?.public_git_vcs_config
-    const sandbox_repo = `${repo?.repo}/${repo?.directory}`
+    const sandbox_repo = repo ? `${repo?.repo}/${repo?.directory}` : null
 
     return {
       appId: app.id,
@@ -77,17 +77,24 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
       {
         header: 'Sandbox',
         accessorKey: 'sandbox_repo',
-        cell: (props) => (
-          <AppSandboxRepoDirLink
-            repoDirPath={props.getValue<string>()}
-            isGithubConnected={props.row.original.isGithubConnected}
-          />
-        ),
+        cell: (props) => {
+          const repoDirPath = props.getValue<string | null>()
+          return repoDirPath ? (
+            <AppSandboxRepoDirLink
+              repoDirPath={repoDirPath}
+              isGithubConnected={props.row.original.isGithubConnected}
+            />
+          ) : (
+            <Text>No sandbox config</Text>
+          )
+        },
       },
       {
         header: 'Runner',
         accessorKey: 'runner_type',
-        cell: (props) => <Text>{props.getValue<string>()}</Text>,
+        cell: (props) => (
+          <Text>{props.getValue<string>() || 'No runner config'}</Text>
+        ),
       },
       {
         id: 'test',
