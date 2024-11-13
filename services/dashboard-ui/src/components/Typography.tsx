@@ -116,7 +116,7 @@ export const CodeInline: FC<ICode> = ({ className, children }) => {
 }
 
 export interface ITruncate extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'small' | 'large'
+  variant?: 'default' | 'small' | 'large' | 'extra-large'
 }
 
 export const Truncate: FC<ITruncate> = ({
@@ -131,6 +131,7 @@ export const Truncate: FC<ITruncate> = ({
         'max-w-[130px]': variant === 'default',
         'max-w-[70px]': variant === 'small',
         'max-w-[180px]': variant === 'large',
+        'max-w-[280px]': variant === 'extra-large',
         [`${className}`]: Boolean(className),
       })}
       {...props}
