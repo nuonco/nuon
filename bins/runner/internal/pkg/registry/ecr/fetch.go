@@ -14,7 +14,6 @@ import (
 func FetchAccessInfo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*registry.AccessInfo, error) {
 	authProvider, err := ecrauthorization.New(validator.New(),
 		ecrauthorization.WithCredentials(cfg.ECRAuth),
-		ecrauthorization.WithUseDefault(true),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get auth provider: %w", err)
