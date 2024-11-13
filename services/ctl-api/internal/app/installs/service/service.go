@@ -108,8 +108,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/admin-update-sandbox", s.AdminUpdateSandbox)
 	api.POST("/v1/installs/:install_id/admin-teardown-components", s.AdminTeardownInstallComponents)
 	api.POST("/v1/installs/:install_id/admin-deploy-components", s.AdminDeployInstallComponents)
-
 	api.POST("/v1/orgs/:org_id/admin-forget-installs", s.ForgetOrgInstalls)
+	api.PATCH("/v1/installs/:install_id/admin-update-runner", s.AdminUpdateInstallRunner)
 	api.GET("/v1/orgs/:org_id/admin-get-installs", s.AdminGetOrgInstalls)
 	return nil
 }
