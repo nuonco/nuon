@@ -12,28 +12,28 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
-func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, op app.RunnerJobOperationType, sandboxMode bool) (string, error) {
-	l := workflow.GetLogger(ctx)
-
-	token, err := activities.AwaitCreateJobLogTokenByRunnerID(ctx, install.Org.RunnerGroup.Runners[0].ID)
+func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, op app.RunnerJobOperationType, sandboxMode bool, logStreamID string) error {
+	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return "", fmt.Errorf("unable to create job log token: %w", err)
+		return err
 	}
 
 	// create the job
 	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
-		InstallID: install.ID,
-		RunnerID:  install.Org.RunnerGroup.Runners[0].ID,
-		OwnerType: "install_sandbox_runs",
-		OwnerID:   installRun.ID,
-		Op:        op,
+		InstallID:   install.ID,
+		RunnerID:    install.Org.RunnerGroup.Runners[0].ID,
+		OwnerType:   "install_sandbox_runs",
+		OwnerID:     installRun.ID,
+		Op:          op,
+		LogStreamID: logStreamID,
 	})
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create runner job")
-		return "", fmt.Errorf("unable to create runner job: %w", err)
+		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
 	// check permissions
@@ -46,19 +46,12 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 			AppID:     install.AppID,
 			InstallID: install.ID,
 		},
-		LogConfiguration: &executors.LogConfiguration{
-			RunnerID:       install.Org.RunnerGroup.Runners[0].ID,
-			RunnerAPIToken: token.Token,
-			RunnerAPIURL:   w.cfg.RunnerAPIURL,
-			RunnerJobID:    runnerJob.ID,
-			Attrs:          generics.ToStringMap(install.Org.RunnerGroup.Settings.Metadata),
-		},
 	}
 
 	if !sandboxMode {
 		if err := w.execChildWorkflow(ctx, install.ID, executors.CheckPermissionsWorkflowName, sandboxMode, checkReq, &checkResp); err != nil {
 			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusAccessError, "unable to validate credentials before install "+err.Error())
-			return "", fmt.Errorf("unable to validate credentials before install: %w", err)
+			return fmt.Errorf("unable to validate credentials before install: %w", err)
 		}
 	} else {
 		l.Info("skipping check permissions",
@@ -70,14 +63,14 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 	planReq, err := w.protos.ToInstallPlanRequest(install, installRun.ID)
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install plan request")
-		return "", fmt.Errorf("unable to get install plan request: %w", err)
+		return fmt.Errorf("unable to get install plan request: %w", err)
 	}
 	planReq.LogConfiguration = &logv1.LogConfiguration{
-		RunnerId:       install.Org.RunnerGroup.Runners[0].ID,
-		RunnerApiToken: token.Token,
-		RunnerApiUrl:   w.cfg.RunnerAPIURL,
-		RunnerJobId:    runnerJob.ID,
-		Attrs:          logv1.NewAttrs(generics.ToStringMap(install.Org.RunnerGroup.Settings.Metadata)),
+		RunnerId: install.Org.RunnerGroup.Runners[0].ID,
+		// RunnerApiToken: token.Token,
+		RunnerApiUrl: w.cfg.RunnerAPIURL,
+		RunnerJobId:  runnerJob.ID,
+		Attrs:        logv1.NewAttrs(generics.ToStringMap(install.Org.RunnerGroup.Settings.Metadata)),
 	}
 
 	// create the sandbox plan
@@ -85,14 +78,14 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, planWorkflowID, planReq)
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install plan")
-		return "", fmt.Errorf("unable to create install plan: %w", err)
+		return fmt.Errorf("unable to create install plan: %w", err)
 	}
 
 	// store the plan in the db
 	planJSON, err := protos.ToJSON(planResp.Plan)
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to convert plan to json")
-		return "", fmt.Errorf("unable to convert plan to json: %w", err)
+		return fmt.Errorf("unable to convert plan to json: %w", err)
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
@@ -100,7 +93,7 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 		PlanJSON: string(planJSON),
 	}); err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
-		return "", fmt.Errorf("unable to get install: %w", err)
+		return fmt.Errorf("unable to get install: %w", err)
 	}
 
 	// queue job
@@ -110,8 +103,8 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 	})
 	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job failed")
-		return "", fmt.Errorf("unable to poll job: %w", err)
+		return fmt.Errorf("unable to poll job: %w", err)
 	}
 
-	return runnerJob.ID, nil
+	return nil
 }

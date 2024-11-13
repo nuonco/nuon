@@ -104,3 +104,10 @@ func WithContextPropagator(propagator workflow.ContextPropagator) temporalOption
 		return nil
 	}
 }
+
+func WithContextPropagators(propagators []workflow.ContextPropagator) temporalOption {
+	return func(t *temporal) error {
+		t.propagators = propagators
+		return nil
+	}
+}

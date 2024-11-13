@@ -109,6 +109,7 @@ func (s *service) writeRunnerLogs(ctx context.Context, runnerID string, logs plo
 					RunnerJobID:            generics.FindMap("runner_job.id", logAttributesMap, resourceAttrsMap),
 					RunnerJobExecutionID:   generics.FindMap("runner_job_execution.id", logAttributesMap, resourceAttrsMap),
 					RunnerJobExecutionStep: generics.FindMap("runner_job_execution_step.name", logAttributesMap, resourceAttrsMap),
+					LogStreamID:            generics.FindMap("log_stream.id", logAttributesMap, resourceAttrsMap),
 
 					// from resource
 					ResourceAttributes: otel.AttributesToMap(resourceAttrs),

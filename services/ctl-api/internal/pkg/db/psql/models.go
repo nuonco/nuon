@@ -96,6 +96,9 @@ func AllModels() []interface{} {
 		&app.InstallDeploy{},
 		&app.InstallComponent{},
 
+		// log streams
+		&app.LogStream{},
+
 		// runner jobs and groups
 		&app.RunnerGroup{},
 		&app.RunnerGroupSettings{},

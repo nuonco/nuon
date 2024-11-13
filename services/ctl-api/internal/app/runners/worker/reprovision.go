@@ -43,7 +43,7 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	case app.RunnerGroupTypeOrg:
 		return w.executeProvisionOrgRunner(ctx, sreq.ID, token.Token, sreq.SandboxMode)
 	case app.RunnerGroupTypeInstall:
-		return w.executeProvisionInstallRunner(ctx, sreq.ID, token.Token, sreq.SandboxMode, sreq.LogStreamID)
+		return w.executeProvisionInstallRunner(ctx, sreq.ID, token.Token, sreq.SandboxMode)
 	}
 
 	w.startHealthCheckWorkflow(ctx, HealthCheckRequest{

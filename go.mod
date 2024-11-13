@@ -77,7 +77,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nuonco/clickhouse-go/v2 v2.28.1
-	github.com/nuonco/nuon-runner-go v0.2.0
+	github.com/nuonco/nuon-runner-go v0.3.0
 	github.com/nuonco/sandboxes v1.34.0
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/opencontainers/image-spec v1.1.0

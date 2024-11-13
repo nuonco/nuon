@@ -4,13 +4,17 @@ import (
 	"context"
 	"fmt"
 
+	"go.temporal.io/sdk/workflow"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/propagator"
 )
 
-type BaseSignal struct{}
+type BaseSignal struct {
+	CtxPayload *propagator.Payload `json:"ctx_payload"`
+}
 
 func (BaseSignal) WorkflowName() string {
 	return "EventLoop"
@@ -30,6 +34,44 @@ func (BaseSignal) StopOnFinish() bool {
 
 func (BaseSignal) Noop() bool {
 	return false
+}
+
+func (b *BaseSignal) PropagateContext(ctx context.Context) error {
+	payload, err := propagator.FetchPayload(ctx)
+	if err != nil {
+		return err
+	}
+
+	b.CtxPayload = payload
+	return nil
+}
+
+func (b *BaseSignal) GetWorkflowContext(ctx workflow.Context) workflow.Context {
+	if b.CtxPayload == nil {
+		return ctx
+	}
+
+	ctx = cctx.SetAccountIDWorkflowContext(ctx, b.CtxPayload.AccountID)
+	ctx = cctx.SetOrgIDWorkflowContext(ctx, b.CtxPayload.OrgID)
+	if b.CtxPayload.LogStream != nil {
+		ctx = cctx.SetLogStreamWorkflowContext(ctx, b.CtxPayload.LogStream)
+	}
+
+	return ctx
+}
+
+func (b *BaseSignal) GetContext(ctx context.Context) context.Context {
+	if b.CtxPayload == nil {
+		return ctx
+	}
+
+	ctx = cctx.SetAccountIDContext(ctx, b.CtxPayload.AccountID)
+	ctx = cctx.SetOrgIDContext(ctx, b.CtxPayload.OrgID)
+	if b.CtxPayload.LogStream != nil {
+		ctx = cctx.SetLogStreamContext(ctx, b.CtxPayload.LogStream)
+	}
+
+	return ctx
 }
 
 func (BaseSignal) GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error) {
