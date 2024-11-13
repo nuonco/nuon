@@ -3,6 +3,7 @@ package credentials
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	aws "github.com/aws/aws-sdk-go-v2/aws"
@@ -62,7 +63,12 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 
 	// if default credentials are set, just use the machine's credentials
 	if c.UseDefault {
-		awsCfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(c.Region))
+		if os.Getenv("AWS_REGION") == "" && c.Region == "" {
+			return aws.Config{}, fmt.Errorf("must set AWS_REGION in the environment or on the credentials config")
+		}
+
+		awsCfg, err := config.LoadDefaultConfig(context.TODO(),
+			config.WithRegion(c.Region))
 		if err != nil {
 			return aws.Config{}, ErrUnableToFetchStatic{err}
 		}
