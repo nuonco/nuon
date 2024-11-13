@@ -173,9 +173,10 @@ type RunnerJob struct {
 	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
 	Org   Org
 
-	RunnerID  string `json:"runner_id" gorm:"index:idx_runner_name,unique"`
-	OwnerID   string `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26"`
-	OwnerType string `json:"owner_type" gorm:"type:text;"`
+	RunnerID    string  `json:"runner_id" gorm:"index:idx_runner_name,unique"`
+	OwnerID     string  `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26"`
+	OwnerType   string  `json:"owner_type" gorm:"type:text;"`
+	LogStreamID *string `json:"log_stream_id"`
 
 	// queue timeout is how long a job can be queued, before being made available
 	QueueTimeout time.Duration `json:"queue_timeout" gorm:"default null;not null" swaggertype:"primitive,integer"`
@@ -198,9 +199,6 @@ type RunnerJob struct {
 
 	Executions []RunnerJobExecution `json:"executions" gorm:"constraint:OnDelete:CASCADE;"`
 	Plan       RunnerJobPlan        `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-
-	// This is a temporary field until the log-stream is shipped with nuon actions
-	OverrideLogJobID string `json:"override_log_job_id"`
 }
 
 func (r *RunnerJob) BeforeCreate(tx *gorm.DB) error {

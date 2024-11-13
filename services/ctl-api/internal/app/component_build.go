@@ -34,6 +34,8 @@ type ComponentBuild struct {
 	// runner details
 	RunnerJob RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;"`
 
+	LogStream LogStream `json:"log_stream" gorm:"polymorphic:Owner;"`
+
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id" gorm:"notnull"`
 	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 

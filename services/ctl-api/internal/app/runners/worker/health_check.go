@@ -99,6 +99,15 @@ func (w *Workflows) getRunnerStatus(ctx workflow.Context, runnerID string) (app.
 	// most recent heart beat
 	hb, err := activities.AwaitGetMostRecentHeartBeatRequestByRunnerID(ctx, runnerID)
 	if err != nil {
+		// NOTE(jm): this is a race condition where the job can be queued and marked available before the first
+		// runner heart beat is emitted locally.
+		//
+		// This should 🤞 never happen in stage or prod, because the provision workflow actually ensures the
+		// runner comes up, where local does not.
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return app.RunnerStatusActive, nil
+		}
+
 		return app.RunnerStatusUnknown, err
 	}
 

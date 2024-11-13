@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -27,7 +28,7 @@ func (h *Helpers) CreateRunnerJob(ctx context.Context,
 		StatusDescription: string(app.RunnerJobStatusQueued),
 		Type:              typ,
 		Operation:         op,
-		OverrideLogJobID:  logStreamID,
+		LogStreamID:       generics.ToPtr(logStreamID),
 	}
 
 	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {
