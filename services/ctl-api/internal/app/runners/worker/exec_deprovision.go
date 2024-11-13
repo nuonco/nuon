@@ -5,10 +5,12 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
@@ -78,12 +80,17 @@ func (w *Workflows) executeDeprovisionInstallRunner(ctx workflow.Context, runner
 	}
 
 	// create the job
+	logStream, err := cctx.GetLogStreamWorkflow(ctx)
+	if err != nil {
+		return errors.Wrap(err, "no log stream found")
+	}
 	runnerJob, err := activities.AwaitCreateJob(ctx, &activities.CreateJobRequest{
-		RunnerID:  runner.Org.RunnerGroup.Runners[0].ID,
-		OwnerType: "runners",
-		OwnerID:   runnerID,
-		Op:        app.RunnerJobOperationTypeDestroy,
-		Type:      runner.RunnerGroup.Platform.JobType(),
+		RunnerID:    runner.Org.RunnerGroup.Runners[0].ID,
+		OwnerType:   "runners",
+		OwnerID:     runnerID,
+		Op:          app.RunnerJobOperationTypeDestroy,
+		Type:        runner.RunnerGroup.Platform.JobType(),
+		LogStreamID: logStream.ID,
 	})
 	if err != nil {
 		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to create deprovision job")

@@ -13,6 +13,7 @@ type CreateSyncJobRequest struct {
 	DeployID string
 	Op       app.RunnerJobOperationType
 	Type     app.RunnerJobType
+	LogStreamID string
 }
 
 // @temporal-gen activity
@@ -25,7 +26,7 @@ func (a *Activities) CreateSyncJob(ctx context.Context, req *CreateSyncJobReques
 	ctx = cctx.SetAccountIDContext(ctx, deploy.CreatedByID)
 	ctx = cctx.SetOrgIDContext(ctx, deploy.OrgID)
 
-	job, err := a.runnersHelpers.CreateSyncJob(ctx, req.RunnerID, req.Type, req.Op, req.DeployID)
+	job, err := a.runnersHelpers.CreateSyncJob(ctx, req.RunnerID, req.Type, req.Op, req.DeployID, req.LogStreamID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create install sandbox job: %w", err)
 	}

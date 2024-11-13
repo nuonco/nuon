@@ -47,6 +47,10 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.CancelRunnerJob)
 	api.GET("/v1/runners/:runner_id/logs", s.OtelReadLogs)
 	api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJob)
+
+	api.GET("/v1/log-streams/:log_stream_id/logs", s.LogStreamReadLogs)
+	api.GET("/v1/log-streams/:log_stream_id", s.GetLogStream)
+
 	return nil
 }
 
@@ -75,6 +79,9 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/runner-jobs/:runner_job_id", s.AdminGetRunnerJob)
 
 	api.GET("/v1/runner-groups/:runner_group_id", s.AdminGetRunnerGroup)
+	api.POST("/v1/log-streams/:log_stream_id/log", s.OtelWriteLogs)
+	api.GET("/v1/log-streams/:log_stream_id/logs", s.LogStreamReadLogs)
+	api.GET("/v1/log-streams/:log_stream_id", s.GetLogStream)
 
 	return nil
 }
@@ -96,6 +103,9 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.GET("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id", s.GetRunnerJobExecution)
 	api.PATCH("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id", s.UpdateRunnerJobExecution)
 	api.POST("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/result", s.CreateRunnerJobExecutionResult)
+
+	// TODO(jm): these will be moved to the otel namespace
+	api.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
 
 	return nil
 }

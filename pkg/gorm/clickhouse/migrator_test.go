@@ -1,6 +1,7 @@
 package clickhouse_test
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -23,6 +24,12 @@ type User struct {
 }
 
 func TestAutoMigrate(t *testing.T) {
+	integration := os.Getenv("GORM_INTEGRATION")
+	if integration == "" {
+		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")
+		return
+	}
+
 	type UserMigrateColumn struct {
 		ID           uint64
 		Name         string
@@ -85,6 +92,12 @@ func TestAutoMigrate(t *testing.T) {
 }
 
 func TestMigrator_HasIndex(t *testing.T) {
+	integration := os.Getenv("GORM_INTEGRATION")
+	if integration == "" {
+		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")
+		return
+	}
+
 	type UserWithIndex struct {
 		FirstName string    `gorm:"index:full_name"`
 		LastName  string    `gorm:"index:full_name"`
@@ -108,6 +121,12 @@ func TestMigrator_HasIndex(t *testing.T) {
 }
 
 func TestMigrator_DontSupportEmptyDefaultValue(t *testing.T) {
+	integration := os.Getenv("GORM_INTEGRATION")
+	if integration == "" {
+		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")
+		return
+	}
+
 	options, err := clickhousego.ParseDSN(dbDSN)
 	if err != nil {
 		t.Fatalf("Can not parse dsn, got error %v", err)

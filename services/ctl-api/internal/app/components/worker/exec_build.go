@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
@@ -43,11 +44,16 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 	}
 
 	// create the job
+	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
+	if err != nil {
+		return err
+	}
 	runnerJob, err := activities.AwaitCreateBuildJob(ctx, &activities.CreateBuildJobRequest{
-		RunnerID: comp.Org.RunnerGroup.Runners[0].ID,
-		BuildID:  buildID,
-		Op:       app.RunnerJobOperationTypeBuild,
-		Type:     comp.Type.BuildJobType(),
+		RunnerID:    comp.Org.RunnerGroup.Runners[0].ID,
+		BuildID:     buildID,
+		Op:          app.RunnerJobOperationTypeBuild,
+		Type:        comp.Type.BuildJobType(),
+		LogStreamID: logStreamID,
 	})
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to create job")

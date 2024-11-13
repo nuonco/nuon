@@ -1,6 +1,7 @@
 package clickhouse_test
 
 import (
+	"os"
 	"regexp"
 	"testing"
 	"time"
@@ -11,6 +12,12 @@ import (
 )
 
 func TestUpdateLocalTable(t *testing.T) {
+	integration := os.Getenv("GORM_INTEGRATION")
+	if integration == "" {
+		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")
+		return
+	}
+
 	updateLocalTable := clickhouse.UpdateLocalTable{Suffix: "_local"}
 	for k, v := range map[string]string{
 		"alter table  hello_world.hello_world2  update id=1":                "alter table  hello_world.hello_world2_local  update id=1",
@@ -50,6 +57,12 @@ func TestUpdateLocalTable(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	integration := os.Getenv("GORM_INTEGRATION")
+	if integration == "" {
+		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")
+		return
+	}
+
 	user := User{ID: 3, Name: "update", FirstName: "zhang", LastName: "jinzhu", Age: 18, Active: true, Salary: 8.8888}
 
 	if err := DB.Create(&user).Error; err != nil {
@@ -87,6 +100,12 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestUpdateWithMap(t *testing.T) {
+	integration := os.Getenv("GORM_INTEGRATION")
+	if integration == "" {
+		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")
+		return
+	}
+
 	user := User{ID: 33, Name: "update2", FirstName: "zhang", LastName: "jinzhu", Age: 18, Active: true, Salary: 8.8888}
 
 	if err := DB.Create(&user).Error; err != nil {
