@@ -5,10 +5,14 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
 // @temporal-gen workflow
@@ -36,7 +40,18 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusStarted)
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
 
-	tempLogStreamID, err := w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode)
+	logStream, err := activities.AwaitCreateLogStreamBySandboxRunID(ctx, installRun.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to create log stream")
+	}
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("executing provision run")
+	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode, logStream.ID)
 	if err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusFailed)
 		return err
@@ -44,9 +59,9 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "install resources provisioned")
 
 	// provision the runner
+	l.Info("polling runner until active")
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-		Type:        runnersignals.OperationProvision,
-		LogStreamID: tempLogStreamID,
+		Type: runnersignals.OperationProvision,
 	})
 	if err := w.pollRunner(ctx, install.RunnerGroup.Runners[0].ID); err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusFailed)
@@ -54,5 +69,6 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	}
 
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusFinished)
+	l.Info("provision was successful")
 	return nil
 }

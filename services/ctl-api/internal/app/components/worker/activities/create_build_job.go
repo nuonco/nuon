@@ -13,10 +13,11 @@ const (
 )
 
 type CreateBuildJobRequest struct {
-	BuildID  string
-	RunnerID string
-	Op       app.RunnerJobOperationType
-	Type     app.RunnerJobType
+	BuildID     string
+	RunnerID    string
+	Op          app.RunnerJobOperationType
+	Type        app.RunnerJobType
+	LogStreamID string
 }
 
 // @temporal-gen activity
@@ -30,7 +31,7 @@ func (a *Activities) CreateBuildJob(ctx context.Context, req *CreateBuildJobRequ
 	ctx = cctx.SetAccountIDContext(ctx, bld.CreatedByID)
 	ctx = cctx.SetOrgIDContext(ctx, bld.OrgID)
 
-	job, err := a.runnersHelpers.CreateBuildJob(ctx, req.RunnerID, buildOwnerType, bld.ID, req.Type, req.Op)
+	job, err := a.runnersHelpers.CreateBuildJob(ctx, req.RunnerID, buildOwnerType, bld.ID, req.Type, req.Op, req.LogStreamID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create build job: %w", err)
 	}

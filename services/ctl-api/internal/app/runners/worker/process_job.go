@@ -9,13 +9,19 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
 // @temporal-gen workflow
 // @execution-timeout 60m
 // @task-timeout 30m
 func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal) error {
-	l := workflow.GetLogger(ctx)
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("fetching runner to ensure it is healthy")
 	runner, err := activities.AwaitGet(ctx, activities.GetRequest{
 		RunnerID: sreq.ID,
 	})
@@ -43,6 +49,7 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 	// However, in local development, it can be useful to run a runner and see jobs go all the way through, for
 	// testing which can be enabled by changing the sandbox-mode enable runners field.
 	if runner.RunnerGroup.Settings.SandboxMode {
+		l.Info("runner is in sandbox mode")
 		// if the org is a sandbox mode + canary, we do not require the runner locally
 		if runner.Org.CreatedBy.AccountType == app.AccountTypeCanary {
 			w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusFinished, "success in sandbox/canary mode")
@@ -74,6 +81,7 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 	}
 
 	for i := 0; i < runnerJob.MaxExecutions; i++ {
+		l.Info(fmt.Sprintf("attempting job execution %d of %d", i+1, runnerJob.MaxExecutions))
 		retry, err := w.processJobExecution(ctx, runnerJob)
 		if err != nil {
 			return err

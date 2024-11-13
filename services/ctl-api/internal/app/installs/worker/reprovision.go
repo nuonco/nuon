@@ -5,10 +5,14 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
 // @temporal-gen workflow
@@ -34,19 +38,31 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 		return fmt.Errorf("unable to create install: %w", err)
 	}
 
+	logStream, err := activities.AwaitCreateLogStreamBySandboxRunID(ctx, installRun.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to create log stream")
+	}
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("executing sandbox and runner provision")
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusStarted)
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
 
-	tempLogStreamID, err := w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode)
+	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode, logStream.ID)
 	if err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
 		return err
 	}
 
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-		Type:        runnersignals.OperationReprovision,
-		LogStreamID: tempLogStreamID,
+		Type: runnersignals.OperationReprovision,
 	})
+
+	l.Info("polling runner until active")
 	if err := w.pollRunner(ctx, install.RunnerGroup.Runners[0].ID); err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
 		return err
@@ -54,6 +70,7 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "install resources provisioned")
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFinished)
+	l.Info("reprovision was successful")
 
 	return nil
 }

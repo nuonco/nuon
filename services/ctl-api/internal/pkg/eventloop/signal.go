@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"go.temporal.io/sdk/workflow"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -18,6 +19,9 @@ type Signal interface {
 	Name() string
 	SignalType() SignalType
 	GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error)
+	PropagateContext(ctx context.Context) error
+	GetWorkflowContext(ctx workflow.Context) workflow.Context
+	GetContext(ctx context.Context) context.Context
 
 	// used to control different behaviours on the event loop
 	// Fail the workflow when an error is returned

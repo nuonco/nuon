@@ -1,10 +1,12 @@
 package clickhouse_test
 
 import (
-	chTypes "github.com/powertoolsdev/mono/pkg/gorm/clickhouse/pkg/types"
 	"log"
+	"os"
 	"testing"
 	"time"
+
+	chTypes "github.com/powertoolsdev/mono/pkg/gorm/clickhouse/pkg/types"
 )
 
 type Log struct {
@@ -16,6 +18,12 @@ type Log struct {
 }
 
 func TestAutoMigrateNested(t *testing.T) {
+	integration := os.Getenv("GORM_INTEGRATION")
+	if integration == "" {
+		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")
+		return
+	}
+
 	log.Printf("[TestAutoMigrateNested] Testing Simple Nested Column Migration")
 	type Log struct {
 		ID        uint64 `gorm:"primaryKey"`
