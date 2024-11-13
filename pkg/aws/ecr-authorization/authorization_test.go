@@ -74,7 +74,6 @@ func Test_ecrAuthorizer_getAuthorizationData(t *testing.T) {
 			client := test.clientFn(mockCtl)
 
 			authorizer := &ecrAuthorizer{
-				RegistryID: test.registryID,
 			}
 			resp, err := authorizer.getAuthorizationData(ctx, client)
 			if test.errExpected != nil {
