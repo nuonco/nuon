@@ -15,9 +15,12 @@ var DB *gorm.DB
 const dbDSN = "clickhouse://ctl-api:ctl-api@localhost:9000/test?dial_timeout=10s&read_timeout=20s"
 
 func init() {
-	var (
-		err error
-	)
+	integration := os.Getenv("GORM_INTEGRATION")
+	if integration == "" {
+		return
+	}
+
+	var err error
 
 	if DB, err = gorm.Open(clickhouse.Open(dbDSN), &gorm.Config{}); err != nil {
 		log.Printf("failed to connect database, got error %v", err)

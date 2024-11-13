@@ -7,9 +7,13 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
@@ -111,6 +115,19 @@ func (w *Workflows) Deploy(ctx workflow.Context, sreq signals.RequestSignal) err
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
+	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
+		DeployID: sreq.DeployID,
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to create log stream")
+	}
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("performing deploy")
 	err = w.doDeploy(ctx, sreq, install)
 	if err != nil {
 		w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusFailed)

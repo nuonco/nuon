@@ -4,15 +4,17 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"go.temporal.io/sdk/workflow"
 )
 
 type worker struct {
 	v *validator.Validate `validate:"required"`
 
-	Config     *Config       `validate:"required"`
-	Workflows  []interface{} `validate:"required,gt=0"`
-	Activities []interface{} `validate:"required,gt=0"`
-	Namespace  string        `validate:"required"`
+	Config      *Config       `validate:"required"`
+	Workflows   []interface{} `validate:"required,gt=0"`
+	Activities  []interface{} `validate:"required,gt=0"`
+	Namespace   string        `validate:"required"`
+	propagators []workflow.ContextPropagator
 }
 
 type Worker interface {
@@ -70,6 +72,13 @@ func WithWorkflow(wkflow interface{}) workerOption {
 func WithActivity(act interface{}) workerOption {
 	return func(w *worker) error {
 		w.Activities = append(w.Activities, act)
+		return nil
+	}
+}
+
+func WithContextPropagator(propagator workflow.ContextPropagator) workerOption {
+	return func(t *worker) error {
+		t.propagators = append(t.propagators, propagator)
 		return nil
 	}
 }

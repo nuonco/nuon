@@ -33,6 +33,8 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			l.Info("invalid signal", zap.Error(err))
 		}
 
+		ctx := signal.GetWorkflowContext(ctx)
+
 		startTS := workflow.Now(ctx)
 		op := ""
 		status := "ok"

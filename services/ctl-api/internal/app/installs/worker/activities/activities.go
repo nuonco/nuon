@@ -4,6 +4,7 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
@@ -24,10 +25,12 @@ type Params struct {
 	EvClient       eventloop.Client
 	SharedActs     *sharedactivities.Activities
 	AcctClient     *account.Client
+	Cfg *internal.Config
 }
 
 type Activities struct {
 	db             *gorm.DB
+	cfg *internal.Config
 	components     *protos.Adapter
 	appsHelpers    *appshelpers.Helpers
 	runnersHelpers *runnershelpers.Helpers
@@ -41,6 +44,7 @@ type Activities struct {
 func New(params Params) *Activities {
 	return &Activities{
 		db:             params.DB,
+                cfg: params.Cfg,
 		components:     params.Components,
 		appsHelpers:    params.AppsHelpers,
 		runnersHelpers: params.RunnersHelpers,

@@ -17,28 +17,15 @@ const (
 	propagationHeader string = "cctx"
 )
 
-type Payload struct {
-	OrgID     string `json:"org_id"`
-	AccountID string `json:"account_id"`
-}
-
 func (s *propagator) Inject(ctx context.Context, writer workflow.HeaderWriter) error {
-	acctID, err := cctx.AccountIDFromContext(ctx)
+	pl, err := FetchPayload(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to fetch payload from context")
 	}
 
-	orgID, err := cctx.OrgIDFromContext(ctx)
+	payload, err := converter.GetDefaultDataConverter().ToPayload(pl)
 	if err != nil {
-		return err
-	}
-
-	payload, err := converter.GetDefaultDataConverter().ToPayload(Payload{
-		OrgID:     orgID,
-		AccountID: acctID,
-	})
-	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to convert payload")
 	}
 
 	writer.Set(propagationHeader, payload)
@@ -57,9 +44,12 @@ func (s *propagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.He
 		return err
 	}
 
+	logStream, _ := cctx.GetLogStreamWorkflow(ctx)
+
 	payload, err := converter.GetDefaultDataConverter().ToPayload(Payload{
 		OrgID:     orgID,
 		AccountID: acctID,
+		LogStream: logStream,
 	})
 	if err != nil {
 		return err
@@ -92,6 +82,10 @@ func (s *propagator) Extract(ctx context.Context, reader workflow.HeaderReader) 
 	ctx = cctx.SetAccountIDContext(ctx, payload.AccountID)
 	ctx = cctx.SetOrgIDContext(ctx, payload.OrgID)
 
+	if payload.LogStream != nil {
+		ctx = cctx.SetLogStreamContext(ctx, payload.LogStream)
+	}
+
 	return ctx, nil
 }
 
@@ -104,6 +98,10 @@ func (s *propagator) ExtractToWorkflow(ctx workflow.Context, reader workflow.Hea
 
 	ctx = cctx.SetAccountIDWorkflowContext(ctx, payload.AccountID)
 	ctx = cctx.SetOrgIDWorkflowContext(ctx, payload.OrgID)
+
+	if payload.LogStream != nil {
+		ctx = cctx.SetLogStreamWorkflowContext(ctx, payload.LogStream)
+	}
 
 	return ctx, nil
 }

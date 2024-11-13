@@ -5,22 +5,16 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	logv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/log/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
 func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, sandboxMode bool) error {
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating sync plan")
-
-	token, err := activities.AwaitCreateJobLogTokenByRunnerID(ctx, install.RunnerGroup.Runners[0].ID)
-	if err != nil {
-		return fmt.Errorf("unable to create job log token: %w", err)
-	}
 
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
 	if err != nil {
@@ -30,11 +24,16 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 	}
 
 	// create the job
+	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
+	if err != nil {
+		return err
+	}
 	runnerJob, err := activities.AwaitCreateSyncJob(ctx, &activities.CreateSyncJobRequest{
-		DeployID: installDeploy.ID,
-		RunnerID: install.RunnerGroup.Runners[0].ID,
-		Op:       installDeploy.Type.RunnerJobOperationType(),
-		Type:     build.ComponentConfigConnection.Type.SyncJobType(),
+		DeployID:    installDeploy.ID,
+		RunnerID:    install.RunnerGroup.Runners[0].ID,
+		Op:          installDeploy.Type.RunnerJobOperationType(),
+		Type:        build.ComponentConfigConnection.Type.SyncJobType(),
+		LogStreamID: logStreamID,
 	})
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
@@ -53,13 +52,6 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 
 	// create the sandbox plan request
 	planReq := w.protos.ToSyncPlanRequest(install, installDeploy, deployCfg)
-	planReq.LogConfiguration = &logv1.LogConfiguration{
-		RunnerId:       install.RunnerGroup.Runners[0].ID,
-		RunnerApiToken: token.Token,
-		RunnerApiUrl:   w.cfg.RunnerAPIURL,
-		RunnerJobId:    runnerJob.ID,
-		Attrs:          logv1.NewAttrs(generics.ToStringMap(install.RunnerGroup.Settings.Metadata)),
-	}
 
 	syncImagePlanWorkflowID := fmt.Sprintf("%s-sync-plan-%s", install.ID, installDeploy.ID)
 	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, syncImagePlanWorkflowID, planReq)

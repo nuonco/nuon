@@ -1,6 +1,7 @@
 package clickhouse_test
 
 import (
+	"os"
 	"slices"
 	"testing"
 
@@ -8,6 +9,12 @@ import (
 )
 
 func TestCreate(t *testing.T) {
+	integration := os.Getenv("GORM_INTEGRATION")
+	if integration == "" {
+		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")
+		return
+	}
+
 	user := User{ID: 1, Name: "create", FirstName: "zhang", LastName: "jinzhu", Age: 18, Active: true, Salary: 8.8888, Attrs: map[string]string{
 		"a": "a",
 		"b": "b",
@@ -43,6 +50,12 @@ func TestCreate(t *testing.T) {
 }
 
 func TestBatchCreate(t *testing.T) {
+	integration := os.Getenv("GORM_INTEGRATION")
+	if integration == "" {
+		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")
+		return
+	}
+
 	users := []User{
 		{ID: 11, Name: "batch_create_1", FirstName: "zhang", LastName: "jinzhu", Age: 18, Active: true, Salary: 6},
 		{ID: 12, Name: "batch_create_2", FirstName: "zhang", LastName: "jinzhu", Age: 18, Active: false, Salary: 6.12},
@@ -68,6 +81,12 @@ func TestBatchCreate(t *testing.T) {
 }
 
 func TestCreateWithMap(t *testing.T) {
+	integration := os.Getenv("GORM_INTEGRATION")
+	if integration == "" {
+		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")
+		return
+	}
+
 	user := User{ID: 122, Name: "create2", FirstName: "zhang", LastName: "jinzhu", Age: 18, Active: true, Salary: 6.6666}
 
 	if err := DB.Table("users").Create(&map[string]interface{}{
