@@ -57,7 +57,7 @@ export const StatusBadge: FC<IStatusBadge> = ({
         })}
       />
       <span className="text-sm font-medium">
-        {titleCase(statusText as string)}
+        {statusText ? titleCase(statusText as string) : "Unknown"}
       </span>
     </span>
   )

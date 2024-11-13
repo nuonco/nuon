@@ -35,7 +35,7 @@ export const Section: FC<ISection> = ({
   return (
     <section
       className={classNames('flex flex-auto flex-col gap-4', {
-        'px-6 py-8 overflow-auto': !isHeadingFixed,
+        'px-6 py-8': !isHeadingFixed,
         [`${className}`]: Boolean(className),
       })}
       {...props}
