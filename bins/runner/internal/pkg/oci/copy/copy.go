@@ -21,12 +21,12 @@ import (
 func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (*ocispec.Descriptor, error) {
 	srcRepo, err := oci.GetRepo(ctx, srcCfg)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to get source repo")
 	}
 
 	dstRepo, err := oci.GetRepo(ctx, dstCfg)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to get destination repo")
 	}
 
 	l, err := pkgctx.Logger(ctx)
