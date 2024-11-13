@@ -9,10 +9,11 @@ import (
 )
 
 type CreateDeployJobRequest struct {
-	RunnerID string
-	DeployID string
-	Op       app.RunnerJobOperationType
-	Type     app.RunnerJobType
+	RunnerID    string
+	DeployID    string
+	Op          app.RunnerJobOperationType
+	Type        app.RunnerJobType
+	LogStreamID string
 }
 
 // @temporal-gen activity
@@ -25,7 +26,7 @@ func (a *Activities) CreateDeployJob(ctx context.Context, req *CreateDeployJobRe
 	ctx = cctx.SetAccountIDContext(ctx, deploy.CreatedByID)
 	ctx = cctx.SetOrgIDContext(ctx, deploy.OrgID)
 
-	job, err := a.runnersHelpers.CreateDeployJob(ctx, req.RunnerID, req.Type, req.Op, req.DeployID)
+	job, err := a.runnersHelpers.CreateDeployJob(ctx, req.RunnerID, req.Type, req.Op, req.DeployID, req.LogStreamID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create deploy job: %w", err)
 	}

@@ -3,8 +3,7 @@ package executors
 import "go.temporal.io/sdk/workflow"
 
 type ProvisionDNSDelegationRequest struct {
-	Metadata         *Metadata         `json:"metadata"`
-	LogConfiguration *LogConfiguration `json:"log_configuration"`
+	Metadata *Metadata `json:"metadata"`
 }
 
 func (d ProvisionDNSDelegationRequest) Validate() error {

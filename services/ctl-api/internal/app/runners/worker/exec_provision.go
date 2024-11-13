@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
@@ -56,7 +57,7 @@ func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, ap
 	return nil
 }
 
-func (w *Workflows) executeProvisionInstallRunner(ctx workflow.Context, runnerID, apiToken string, sandboxMode bool, logStreamID string) error {
+func (w *Workflows) executeProvisionInstallRunner(ctx workflow.Context, runnerID, apiToken string, sandboxMode bool) error {
 	runner, err := activities.AwaitGet(ctx, activities.GetRequest{
 		RunnerID: runnerID,
 	})
@@ -86,6 +87,11 @@ func (w *Workflows) executeProvisionInstallRunner(ctx workflow.Context, runnerID
 		return errors.Wrap(err, "unable to create token")
 	}
 
+	logStream, err := cctx.GetLogStreamWorkflow(ctx)
+	if err != nil {
+		return errors.Wrap(err, "no log stream found")
+	}
+
 	// create the job
 	runnerJob, err := activities.AwaitCreateJob(ctx, &activities.CreateJobRequest{
 		RunnerID:    runner.Org.RunnerGroup.Runners[0].ID,
@@ -93,7 +99,7 @@ func (w *Workflows) executeProvisionInstallRunner(ctx workflow.Context, runnerID
 		OwnerID:     runnerID,
 		Op:          app.RunnerJobOperationTypeCreate,
 		Type:        runner.RunnerGroup.Platform.JobType(),
-		LogStreamID: logStreamID,
+		LogStreamID: logStream.ID,
 	})
 	if err != nil {
 		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to create provision job")
@@ -111,8 +117,8 @@ func (w *Workflows) executeProvisionInstallRunner(ctx workflow.Context, runnerID
 		RunnerId:       install.RunnerGroup.Runners[0].ID,
 		RunnerApiToken: token.Token,
 		RunnerApiUrl:   w.cfg.RunnerAPIURL,
-		RunnerJobId:    logStreamID,
-		Attrs:          logv1.NewAttrs(generics.ToStringMap(runner.RunnerGroup.Settings.Metadata)),
+		// RunnerJobId:    logStreamID,
+		Attrs: logv1.NewAttrs(generics.ToStringMap(runner.RunnerGroup.Settings.Metadata)),
 	}
 
 	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, planWorkflowID, planReq)

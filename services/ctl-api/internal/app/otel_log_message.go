@@ -25,6 +25,7 @@ type OtelLogRecord struct {
 
 	// internal attributes
 	RunnerID               string `json:"runner_id"`
+	LogStreamID            string `json:"log_stream_id"`
 	RunnerJobID            string `json:"runner_job_id"`
 	RunnerGroupID          string `json:"runner_group_id"`
 	RunnerJobExecutionID   string `json:"runner_job_execution_id"`

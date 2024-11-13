@@ -4,29 +4,33 @@ import (
 	"fmt"
 
 	"go.temporal.io/sdk/client"
-	"go.uber.org/zap"
 
+	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/powertoolsdev/mono/pkg/temporal/dataconverter"
-	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
 )
 
 func (w *worker) getClient() (client.Client, func(), error) {
 	l, err := w.getLogger()
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to get logger: %w", err)
+		return nil, nil, err
 	}
 
 	dataConverter := dataconverter.NewJSONConverter()
-	c, err := client.Dial(client.Options{
-		HostPort:      w.Config.TemporalHost,
-		Namespace:     w.Namespace,
-		Logger:        temporalzap.NewLogger(l),
-		DataConverter: dataConverter,
-	})
+	tc, err := temporalclient.New(w.v,
+		temporalclient.WithAddr(w.Config.TemporalHost),
+		temporalclient.WithLogger(l),
+		temporalclient.WithNamespace(w.Config.TemporalNamespace),
+		temporalclient.WithContextPropagators(w.propagators),
+		temporalclient.WithDataConverter(dataConverter),
+	)
 	if err != nil {
-		l.Error("failed to instantiate temporal client", zap.Error(err))
-		return nil, nil, fmt.Errorf("unable to instantiate temporal client: %w", err)
+		return nil, nil, fmt.Errorf("unable to get temporal client: %w", err)
 	}
 
-	return c, c.Close, nil
+	nc, err := tc.GetNamespaceClient(w.Config.TemporalNamespace)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to get namespace client: %w", err)
+	}
+
+	return nc, nc.Close, nil
 }

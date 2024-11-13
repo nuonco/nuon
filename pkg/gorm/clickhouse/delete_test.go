@@ -1,6 +1,7 @@
 package clickhouse_test
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -8,6 +9,12 @@ import (
 )
 
 func TestDelete(t *testing.T) {
+	integration := os.Getenv("GORM_INTEGRATION")
+	if integration == "" {
+		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")
+		return
+	}
+
 	user := User{ID: 2, Name: "delete", FirstName: "zhang", LastName: "jinzhu", Age: 18, Active: true, Salary: 8.8888}
 
 	if err := DB.Create(&user).Error; err != nil {

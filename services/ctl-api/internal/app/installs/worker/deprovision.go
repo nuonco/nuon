@@ -2,13 +2,17 @@ package worker
 
 import (
 	"fmt"
+	"time"
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
 func (w *Workflows) isDeprovisionable(ctx workflow.Context, install *app.Install) (bool, error) {
@@ -53,15 +57,27 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 	if err != nil {
 		return fmt.Errorf("unable to create install: %w", err)
 	}
+	logStream, err := activities.AwaitCreateLogStreamBySandboxRunID(ctx, installRun.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to create log stream")
+	}
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+	l.Info("deprovisioning install")
 
 	isDeprovisionable, err := w.isDeprovisionable(ctx, install)
 	if err != nil {
+		l.Error("unable to determine if install is deprovisionable")
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to determine if install is deprovisionable")
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
 		return fmt.Errorf("unable to determine if install is deprovisionable: %w", err)
 	}
 
 	if !isDeprovisionable {
+		l.Error("install is not deprovisionable, this will be a NOOP")
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "install is not deprovisionable")
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusNoop)
 		return nil
@@ -71,17 +87,22 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusStarted)
 
 	// deprovision the runner
+	l.Info("starting runner deprovision")
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationDeprovision,
 	})
 
+	workflow.Sleep(ctx, time.Minute)
+
 	// wait for the runner
-	_, err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeDestroy, sandboxMode)
+	l.Info("executing deprovision")
+	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeDestroy, sandboxMode, "")
 	if err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
 		return err
 	}
 
+	l.Info("deprovision was successful")
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully deprovisioned")
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFinished)
 	return nil

@@ -134,6 +134,10 @@ func NewRunnerID() string {
 	return shortid.NewNanoID("run")
 }
 
+func NewLogStreamID() string {
+	return shortid.NewNanoID("log")
+}
+
 func IsRunnerID(val string) bool {
 	if !shortid.IsShortID(val) {
 		return false
