@@ -14,16 +14,8 @@ type Payload struct {
 }
 
 func FetchPayload(ctx context.Context) (*Payload, error) {
-	acctID, err := cctx.AccountIDFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	orgID, err := cctx.OrgIDFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+	acctID, _ := cctx.AccountIDFromContext(ctx)
+	orgID, _ := cctx.OrgIDFromContext(ctx)
 	logStream, _ := cctx.GetLogStreamContext(ctx)
 
 	return &Payload{
