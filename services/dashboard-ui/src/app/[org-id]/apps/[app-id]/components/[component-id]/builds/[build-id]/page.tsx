@@ -6,7 +6,7 @@ import {
   DashboardContent,
   Duration,
   ComponentConfiguration,
-  RunnerLogsPoller,
+  LogStreamPoller,
   Section,
   Time,
   Text,
@@ -18,7 +18,7 @@ import {
   getBuild,
   getComponent,
   getComponentConfig,
-  getRunnerLogs,
+  getLogStreamLogs,
   getOrg,
 } from '@/lib'
 import type { TOTELLog } from '@/types'
@@ -39,11 +39,9 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
       orgId,
     }),
     getOrg({ orgId }),
-    getRunnerLogs({
-      jobId: build.runner_job?.id,
-      runnerId: build.runner_job?.runner_id,
-      orgId,
-    }).catch(console.error),
+    getLogStreamLogs({ orgId, logStreamId: build.log_stream?.id }).catch(
+      console.error
+    ),
   ])
 
   return (
@@ -105,14 +103,13 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
       }
     >
       <div className="flex flex-col lg:flex-row flex-auto">
-        <RunnerLogsPoller
+        <LogStreamPoller
           heading="Build logs"
-          initJob={build?.runner_job}
           initLogs={logs as Array<TOTELLog>}
-          jobId={build?.runner_job?.id}
+          initLogStream={build.log_stream}
           orgId={orgId}
-          runnerId={build?.runner_job?.runner_id}
-          shouldPoll={Boolean(build?.runner_job)}
+          logStreamId={build.log_stream?.id}
+          shouldPoll={Boolean(build?.log_stream)}
         />
 
         <div
