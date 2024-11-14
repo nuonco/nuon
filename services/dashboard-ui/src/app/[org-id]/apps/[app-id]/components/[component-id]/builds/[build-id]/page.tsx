@@ -6,7 +6,6 @@ import {
   DashboardContent,
   Duration,
   ComponentConfiguration,
-  Heading,
   RunnerLogsPoller,
   Section,
   Time,
@@ -150,7 +149,17 @@ lg:max-w-[450px]"
                   <Text className="text-cool-grey-600 dark:text-cool-grey-500">
                     Message
                   </Text>
-                  <Text>{build.vcs_connection_commit?.message}</Text>
+                  <Text>
+                    <ToolTip
+                      tipContent={build.vcs_connection_commit?.message}
+                      alignment="right"
+                      position="top"
+                    >
+                      <Truncate variant="extra-large">
+                        {build.vcs_connection_commit?.message}
+                      </Truncate>
+                    </ToolTip>
+                  </Text>
                 </span>
               </div>
             </Section>
