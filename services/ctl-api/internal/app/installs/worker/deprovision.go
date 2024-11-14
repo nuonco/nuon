@@ -7,6 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -61,6 +62,10 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream")
 	}
+	defer func() {
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+	}()
+
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
