@@ -6,7 +6,7 @@ import {
   ClickToCopy,
   DashboardContent,
   Duration,
-  RunnerLogsPoller,
+  LogStreamPoller,
   SandboxRunStatus,
   Section,
   Text,
@@ -14,7 +14,7 @@ import {
   Time,
   ToolTip,
 } from '@/components'
-import { getInstall, getRunnerLogs, getSandboxRun, getOrg } from '@/lib'
+import { getInstall, getLogStreamLogs, getSandboxRun, getOrg } from '@/lib'
 import type { TOTELLog } from '@/types'
 
 export default withPageAuthRequired(async function SandboxRuns({ params }) {
@@ -25,10 +25,9 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
   const [install, org, logs] = await Promise.all([
     getInstall({ installId, orgId }),
     getOrg({ orgId }),
-    getRunnerLogs({
-      jobId: sandboxRun?.runner_job?.id,
+    getLogStreamLogs({
       orgId,
-      runnerId: sandboxRun?.runner_job?.runner_id,
+      logStreamId: sandboxRun?.log_stream?.id,
     }).catch(console.error),
   ])
 
@@ -98,14 +97,13 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
       }
     >
       <div className="flex flex-col lg:flex-row flex-auto">
-        <RunnerLogsPoller
+        <LogStreamPoller
           heading={sandboxRun?.run_type + ' logs'}
-          initJob={sandboxRun?.runner_job}
+          initLogStream={sandboxRun?.log_stream}
           initLogs={logs as Array<TOTELLog>}
-          jobId={sandboxRun?.runner_job?.id}
           orgId={orgId}
-          runnerId={sandboxRun?.runner_job?.runner_id}
-          shouldPoll={Boolean(sandboxRun?.runner_job)}
+          logStreamId={sandboxRun?.log_stream?.id}
+          shouldPoll={Boolean(sandboxRun?.log_stream)}
         />
 
         <div
