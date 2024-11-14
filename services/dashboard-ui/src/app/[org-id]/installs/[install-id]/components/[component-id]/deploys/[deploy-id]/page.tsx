@@ -7,7 +7,7 @@ import {
   DeployStatus,
   Duration,
   Link,
-  RunnerLogsPoller,
+  LogStreamPoller,
   StatusBadge,
   Section,
   Text,
@@ -22,7 +22,7 @@ import {
   getOrg,
   getInstall,
   getDeploy,
-  getRunnerLogs,
+  getLogStreamLogs,
 } from '@/lib'
 import type { TOTELLog } from '@/types'
 
@@ -43,9 +43,8 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
     }),
     getInstall({ installId, orgId }),
     getOrg({ orgId }),
-    getRunnerLogs({
-      jobId: deploy?.runner_job?.id,
-      runnerId: deploy?.runner_job?.runner_id,
+    getLogStreamLogs({
+      logStreamId: deploy?.log_stream?.id,
       orgId,
     }).catch(console.error),
   ])
@@ -146,14 +145,13 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
       }
     >
       <div className="flex flex-col lg:flex-row flex-auto">
-        <RunnerLogsPoller
+        <LogStreamPoller
           heading="Deploy logs"
-          initJob={deploy?.runner_job}
+          initLogStream={deploy?.log_stream}
           initLogs={logs as Array<TOTELLog>}
-          jobId={deploy?.runner_job?.id}
           orgId={orgId}
-          runnerId={deploy?.runner_job?.runner_id}
-          shouldPoll={Boolean(deploy?.runner_job)}
+          logStreamId={deploy?.log_stream?.id}
+          shouldPoll={Boolean(deploy?.log_stream)}
         />
         <div
           className="divide-y flex flex-col lg:min-w-[450px]
