@@ -63,3 +63,6 @@ export type TOTELLog = components['schemas']['app.OtelLogRecord']
 // runner
 export type TRunner = components['schemas']['app.Runner']
 export type TRunnerJob = components['schemas']['app.RunnerJob']
+
+// log stream
+export type TLogStream = components['schemas']['app.LogStream']
