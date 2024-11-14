@@ -166,7 +166,7 @@ func (s *service) createAppTemplate(currentApp *app.App, typ AppConfigTemplateTy
 		return &AppConfigTemplate{
 			Filename: fmt.Sprintf("nuon-template.%s.toml", currentApp.Name),
 			Format:   app.AppConfigFmtToml,
-			Content:  fmt.Sprintf(flatAppConfigTemplate, nam, nam, nam),
+			Content:  fmt.Sprintf(flatAppConfigTemplate, nam, nam, currentApp.Name),
 		}, nil
 	}
 }
