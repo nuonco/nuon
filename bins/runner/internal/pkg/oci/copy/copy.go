@@ -72,13 +72,13 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 		},
 	}
 
-	if !hit {
-		l.Info("nothing to copy, all image layers already present in repo")
-	}
-
 	res, err := oras.Copy(ctx, srcRepo, srcTag, dstRepo, dstTag, oras.CopyOptions{CopyGraphOptions: cpo})
 	if err != nil {
 		return nil, err
+	}
+
+	if !hit {
+		l.Info("nothing to copy, all image layers already present in repo")
 	}
 
 	return &res, nil
