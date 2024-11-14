@@ -25,6 +25,9 @@ func (w *Workflows) Build(ctx workflow.Context, sreq signals.RequestSignal) erro
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream")
 	}
+	defer func() {
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+	}()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
