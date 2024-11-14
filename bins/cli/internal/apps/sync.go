@@ -74,7 +74,7 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	for {
 		select {
 		case <-pollTimeout.Done():
-			err = errs.WithUserFacing(err, "timeout waiting for components to build")
+			err = fmt.Errorf("timeout waiting for components to build")
 			ui.PrintError(err)
 			for cmpID, spinner := range spinnersByComponentID {
 				spinner.Fail("timeout waiting for component " + cmpID + " to build")
