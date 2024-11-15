@@ -3,10 +3,9 @@
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { DotsThreeVertical } from '@phosphor-icons/react'
-import { Dropdown } from '@/components/Dropdown'
 import { InstallPlatform } from '@/components/InstallCloudPlatform'
+import { InstallsTableStatusFilter } from '@/components/InstallsTableStatusFilter'
 import { Link } from '@/components/Link'
-import { RadioInput } from '@/components/Input'
 import { StatusBadge } from '@/components/Status'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { ID, Text } from '@/components/Typography'
@@ -143,6 +142,10 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
     setColumnFilters(() => [{ id: 'statuses', value: value }])
   }
 
+  const clearStatusFilter = () => {
+    setColumnFilters(() => [])
+  }
+
   const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
     setGlobalFilter(e.target.value)
   }
@@ -156,42 +159,10 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
             value={globalFilter}
           />
 
-          <Dropdown
-            className="text-sm"
-            id="install-filter"
-            text="Filter"
-            alignment="right"
-          >
-            <div>
-              <RadioInput
-                name="status-filter"
-                onChange={handleStatusFilter}
-                value="error"
-                labelText="Error"
-              />
-
-              <RadioInput
-                name="status-filter"
-                onChange={handleStatusFilter}
-                value="processing"
-                labelText="Processing"
-              />
-
-              <RadioInput
-                name="status-filter"
-                onChange={handleStatusFilter}
-                value="noop"
-                labelText="NOOP"
-              />
-
-              <RadioInput
-                name="status-filter"
-                onChange={handleStatusFilter}
-                value="active"
-                labelText="Active"
-              />
-            </div>
-          </Dropdown>
+          <InstallsTableStatusFilter
+            handleStatusFilter={handleStatusFilter}
+            clearStatusFilter={clearStatusFilter}
+          />
         </>
       }
       data={data}
