@@ -3,10 +3,9 @@ import {
   DashboardContent,
   InstallStatuses,
   InstallComponentsTable,
+  InstallPageSubNav,
   NoComponents,
-  SubNav,
   type TDataInstallComponent,
-  type TLink,
 } from '@/components'
 import {
   getInstall,
@@ -22,14 +21,6 @@ export default withPageAuthRequired(async function InstallComponents({
 }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const subNavLinks: Array<TLink> = [
-    { href: `/${orgId}/installs/${installId}`, text: 'Status' },
-    {
-      href: `/${orgId}/installs/${installId}/components`,
-      text: 'Components',
-    },
-  ]
-
   const [install, org] = await Promise.all([
     getInstall({ orgId, installId }),
     getOrg({ orgId }),
@@ -80,7 +71,7 @@ export default withPageAuthRequired(async function InstallComponents({
       heading={install.name}
       headingUnderline={install.id}
       statues={<InstallStatuses initInstall={install} shouldPoll />}
-      meta={<SubNav links={subNavLinks} />}
+      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <section className="px-6 py-8">
         {hydratedInstallComponents?.length ? (
