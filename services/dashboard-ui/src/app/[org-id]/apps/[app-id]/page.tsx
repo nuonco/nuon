@@ -1,13 +1,12 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppInputConfig,
+  AppPageSubNav,
   AppRunnerConfig,
   AppSandboxConfig,
   AppSandboxVariables,
   DashboardContent,
   Section,
-  SubNav,
-  type TLink,
 } from '@/components'
 import {
   getApp,
@@ -25,12 +24,6 @@ import type {
 export default withPageAuthRequired(async function App({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const subNavLinks: Array<TLink> = [
-    { href: `/${orgId}/apps/${appId}`, text: 'Config' },
-    { href: `/${orgId}/apps/${appId}/components`, text: 'Components' },
-    { href: `/${orgId}/apps/${appId}/installs`, text: 'Installs' },
-  ]
-
   const [org, app, inputCfg, runnerCfg, sandboxCfg] = await Promise.all([
     getOrg({ orgId }),
     getApp({ appId, orgId }),
@@ -48,7 +41,7 @@ export default withPageAuthRequired(async function App({ params }) {
       ]}
       heading={app.name}
       headingUnderline={app.id}
-      meta={<SubNav links={subNavLinks} />}
+      meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
       <div className="flex flex-col md:flex-row flex-auto">
         <Section className="border-r" heading="Inputs">
