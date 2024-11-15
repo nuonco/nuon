@@ -66,3 +66,11 @@ export type TRunnerJob = components['schemas']['app.RunnerJob']
 
 // log stream
 export type TLogStream = components['schemas']['app.LogStream']
+
+// temp workflow type
+export type TWorkflow = {
+  id: string
+  name: string
+  on: string
+  jobs: Array<Record<string, string>>
+}
