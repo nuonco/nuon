@@ -8,24 +8,15 @@ import {
   InstallCloudPlatform,
   InstallHistory,
   InstallInputsSection,
+  InstallPageSubNav,
   InstallStatuses,
   Section,
-  SubNav,
-  type TLink,
 } from '@/components'
 import { getInstall, getInstallEvents, getOrg } from '@/lib'
 
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const subNavLinks: Array<TLink> = [
-    { href: `/${orgId}/installs/${installId}`, text: 'Status' },
-    {
-      href: `/${orgId}/installs/${installId}/components`,
-      text: 'Components',
-    },
-  ]
-
   const [install, events, org] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallEvents({ installId, orgId }),
@@ -45,7 +36,7 @@ export default withPageAuthRequired(async function Install({ params }) {
       heading={install.name}
       headingUnderline={install.id}
       statues={<InstallStatuses initInstall={install} shouldPoll />}
-      meta={<SubNav links={subNavLinks} />}
+      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <div className="flex flex-col lg:flex-row flex-auto">
         <Section heading="History" className="overflow-auto history">

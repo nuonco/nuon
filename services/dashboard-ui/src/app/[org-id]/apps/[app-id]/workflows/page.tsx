@@ -1,19 +1,34 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
-  AppInstallsTable,
   AppPageSubNav,
+  AppWorkflowsTable,
   DashboardContent,
-  NoInstalls,
+  Text,
 } from '@/components'
-import { getApp, getAppInstalls, getOrg } from '@/lib'
+import { getApp, getOrg } from '@/lib'
+import type { TWorkflow } from '@/types'
 
-export default withPageAuthRequired(async function AppInstalls({ params }) {
+const workflows: Array<TWorkflow> = [
+  {
+    id: 'wkf12345678912345',
+    name: 'Fetch logs',
+    on: 'manual',
+    jobs: [{ id: 'j-1' }],
+  },
+  {
+    id: 'wkf09876543210987',
+    name: 'Health check',
+    on: 'schedule',
+    jobs: [{ id: 'j-1' }, { id: 'j-1' }, { id: 'j-1' }, { id: 'j-1' }],
+  },
+]
+
+export default withPageAuthRequired(async function AppWorkflows({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const [app, installs, org] = await Promise.all([
-    getApp({ appId, orgId }),
-    getAppInstalls({ appId, orgId }),
+  const [org, app] = await Promise.all([
     getOrg({ orgId }),
+    getApp({ appId, orgId }),
   ])
 
   return (
@@ -28,13 +43,14 @@ export default withPageAuthRequired(async function AppInstalls({ params }) {
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
       <section className="px-6 py-8">
-        {installs.length ? (
-          <AppInstallsTable
-            installs={installs.map((install) => ({ ...install, app }))}
+        {workflows.length ? (
+          <AppWorkflowsTable
+            appId={appId}
             orgId={orgId}
+            workflows={workflows}
           />
         ) : (
-          <NoInstalls />
+          <Text>No workflows configured</Text>
         )}
       </section>
     </DashboardContent>
