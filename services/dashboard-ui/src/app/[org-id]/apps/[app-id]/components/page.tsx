@@ -1,10 +1,9 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppComponentsTable,
+  AppPageSubNav,
   DashboardContent,
   NoComponents,
-  SubNav,
-  type TLink,
 } from '@/components'
 import {
   getApp,
@@ -17,12 +16,6 @@ import {
 export default withPageAuthRequired(async function AppComponents({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const subNavLinks: Array<TLink> = [
-    { href: `/${orgId}/apps/${appId}`, text: 'Config' },
-    { href: `/${orgId}/apps/${appId}/components`, text: 'Components' },
-    { href: `/${orgId}/apps/${appId}/installs`, text: 'Installs' },
-  ]
-
   const [app, components, org] = await Promise.all([
     getApp({ appId, orgId }),
     getAppComponents({ appId, orgId }),
@@ -54,7 +47,7 @@ export default withPageAuthRequired(async function AppComponents({ params }) {
       ]}
       heading={app.name}
       headingUnderline={app.id}
-      meta={<SubNav links={subNavLinks} />}
+      meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
       <section className="px-6 py-8">
         {components.length ? (
