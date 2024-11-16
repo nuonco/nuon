@@ -28,9 +28,9 @@ func (s *Settings) fetch(ctx context.Context) error {
 
 	// NOTE: we add a few additional fields into the metadata so they appear on all tags, but can not be set by the
 	// API.
-	s.Metadata["runner.id"] = s.cfg.RunnerID
-	s.Metadata["runner.version"] = s.cfg.GitRef
-	s.OtelSchemaURL = s.cfg.RunnerAPIURL
+	s.Metadata["runner.id"] = s.Cfg.RunnerID
+	s.Metadata["runner.version"] = s.Cfg.GitRef
+	s.OtelSchemaURL = s.Cfg.RunnerAPIURL
 
 	return nil
 }

@@ -21,6 +21,7 @@ type RunnerHeartBeat struct {
 	RunnerID string `json:"runner_id"`
 
 	AliveTime time.Duration `json:"alive_time" swaggertype:"primitive,integer"`
+	Version   string        `json:"version"`
 }
 
 func (r *RunnerHeartBeat) BeforeCreate(tx *gorm.DB) error {
