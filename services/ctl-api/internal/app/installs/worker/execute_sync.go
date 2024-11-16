@@ -4,16 +4,24 @@ import (
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
 func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, sandboxMode bool) error {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("syncing image into install OCI repository")
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating sync plan")
 
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
@@ -23,7 +31,6 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 		return fmt.Errorf("unable to get build: %w", err)
 	}
 
-	// create the job
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
 		return err
@@ -54,12 +61,15 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 	planReq := w.protos.ToSyncPlanRequest(install, installDeploy, deployCfg)
 
 	syncImagePlanWorkflowID := fmt.Sprintf("%s-sync-plan-%s", install.ID, installDeploy.ID)
+	l.Info("creating sync image plan")
 	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, syncImagePlanWorkflowID, planReq)
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create sync plan")
 		w.writeDeployEvent(ctx, installDeploy.ID, signals.OperationDeploy, app.OperationStatusFailed)
+		l.Error("error creating sync image plan", zap.Error(err))
 		return fmt.Errorf("unable to create plan: %w", err)
 	}
+	l.Info("successfully created sync image plan")
 
 	// store the plan in the db
 	planJSON, err := protos.ToJSON(planResp.Plan)
@@ -85,8 +95,10 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to poll job")
 		w.writeDeployEvent(ctx, installDeploy.ID, signals.OperationDeploy, app.OperationStatusFailed)
+		l.Error("error polling sync image job", zap.Error(err))
 		return fmt.Errorf("unable to poll job: %w", err)
 	}
+	l.Info("sync image job was successfully completed")
 
 	return nil
 }

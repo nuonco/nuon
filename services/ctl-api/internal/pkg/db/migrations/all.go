@@ -140,5 +140,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "073-runner-jobs-drop-len-check-on-owner-type",
 			Fn:   a.migration073DropLengthCheckOnOwnerType,
 		},
+		{
+			Name: "074-runner-wide-view",
+			Fn:   a.migration074RunnerWideView,
+		},
 	}
 }
