@@ -158,7 +158,7 @@ func (w *Workflows) processJobExecution(ctx workflow.Context, job *app.RunnerJob
 			l.Info("job cancelled")
 			return true, nil
 		case app.RunnerJobExecutionStatusFailed:
-			l.Info("job execution cancelled")
+			l.Info("job execution failed")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "failed")
 			return true, nil
 		case app.RunnerJobExecutionStatusTimedOut:
