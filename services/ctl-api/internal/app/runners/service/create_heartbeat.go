@@ -13,6 +13,8 @@ import (
 
 type CreateRunnerHeartBeatRequest struct {
 	AliveTime time.Duration `json:"alive_time" validate:"required" swaggertype:"primitive,integer"`
+	// Making this required might break existing installs? Should update all installs to send this, then make it required?
+	Version string `json:"version"`
 }
 
 // @ID CreateRunnerHeartBeat
@@ -54,6 +56,7 @@ func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, re
 	runnerHeartBeat := app.RunnerHeartBeat{
 		RunnerID:  runnerID,
 		AliveTime: req.AliveTime,
+		Version:   req.Version,
 	}
 
 	res := s.chDB.WithContext(ctx).
