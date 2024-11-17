@@ -11,6 +11,7 @@ import (
 // @Summary	get a runner
 // @Description.markdown get_runner.md
 // @Tags runners/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param	runner_id	path	string	true	"runner ID to fetc"
 // @Produce		json

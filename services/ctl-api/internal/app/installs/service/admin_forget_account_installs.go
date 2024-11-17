@@ -29,6 +29,7 @@ func (c *AdminForgetAccountInstallsRequest) Validate(v *validator.Validate) erro
 // @Description.markdown forget_account_installs.md
 // @Param			req		body	AdminForgetAccountInstallsRequest	true	"Input"
 // @Tags			installs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Failure		400	{object}	stderr.ErrResponse

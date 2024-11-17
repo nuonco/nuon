@@ -15,6 +15,7 @@ type AdminGetOrgRequest struct {
 // @Summary get installs in an org
 // @Description.markdown admin_get_org_installs.md
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param		org_id	path	string						true	"install ID"
 // @Produce		json

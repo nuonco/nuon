@@ -24,6 +24,7 @@ type AdminDeleteOrgRequest struct {
 // @Description.markdown delete_org.md
 // @Param			org_id	path	string	true	"org ID for your current org"
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req	body	AdminDeleteOrgRequest	true	"Input"
 // @Produce		json

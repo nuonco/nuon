@@ -25,6 +25,7 @@ type AdminUpdateRunnerSettingsRequest struct {
 // @Param		runner_id	path	string						true	"runner ID"
 // @Param		req				body	AdminUpdateRunnerSettingsRequest	true	"Input"
 // @Tags runners/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		200	{object} app.RunnerGroupSettings

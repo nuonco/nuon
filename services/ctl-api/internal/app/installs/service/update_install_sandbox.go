@@ -6,8 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type AdminUpdateSandboxRequest struct{}
@@ -18,6 +19,7 @@ type AdminUpdateSandboxRequest struct{}
 // @Param			install_id	path	string						true	"app ID"
 // @Param			req			body	AdminUpdateSandboxRequest	true	"Input"
 // @Tags			installs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		200	{boolean}	true

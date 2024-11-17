@@ -22,6 +22,7 @@ type RestartOrgChildrenRequest struct{}
 // @Param			org_id	path	string				true	"org ID"
 // @Param			req		body	RestartOrgChildrenRequest	true	"Input"
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		200	{boolean}	true

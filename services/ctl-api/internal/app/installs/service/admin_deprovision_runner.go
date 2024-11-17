@@ -14,6 +14,7 @@ type AdminDeprovisionInstallRunnerRequest struct{}
 // @Description.markdown deprovision_install_runner.md
 // @Param			install_id	path	string	true	"install ID for your current install"
 // @Tags			installs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req	body	DeprovisionInstallRequest	true	"Input"
 // @Produce		json

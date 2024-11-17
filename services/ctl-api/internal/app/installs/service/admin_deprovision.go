@@ -14,6 +14,7 @@ type AdminDeprovisionInstallRequest struct{}
 // @Summary	deprovision an install, but keep it in the database
 // @Description.markdown deprovision_install.md
 // @Tags			installs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req			body	AdminDeprovisionInstallRequest	true	"Input"
 // @Param	install_id	path	string	true	"install ID"

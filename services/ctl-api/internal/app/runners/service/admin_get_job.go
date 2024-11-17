@@ -12,6 +12,7 @@ import (
 // @Description.markdown admin_get_runner_job.md
 // @Param			runner_job_id	path	string					true	"runner ID"
 // @Tags runners/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		200				{object}	app.RunnerJob

@@ -20,6 +20,7 @@ type SetSlackWebhookURLRequest struct {
 // @Description.markdown admin_set_org_slack_webhook_url.md
 // @Param			org_id	path	string	true	"org ID for org"
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req	body	SetSlackWebhookURLRequest	true	"Input"
 // @Produce		json

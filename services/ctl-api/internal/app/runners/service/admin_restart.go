@@ -17,6 +17,7 @@ type RestartRunnerRequest struct{}
 // @Param			runner_id	path	string					true	"runner ID"
 // @Param			req			body	RestartRunnerRequest	true	"Input"
 // @Tags runners/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		200	{boolean}	true
