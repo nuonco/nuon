@@ -20,6 +20,7 @@ type AdminAddVCSConnectionRequest struct {
 // @Summary get an org by name
 // @Description.markdown admin_add_vcs_connection.md
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req	body	AdminAddVCSConnectionRequest	true	"Input"
 // @Param			org_id	path	string	true	"org ID or name"

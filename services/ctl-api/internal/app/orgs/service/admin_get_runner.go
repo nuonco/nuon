@@ -10,6 +10,7 @@ import (
 // @Summary get an org runner
 // @Description.markdown admin_get_org_runner.md
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			org_id	path	string	true	"org ID for your current org"
 // @Produce		json

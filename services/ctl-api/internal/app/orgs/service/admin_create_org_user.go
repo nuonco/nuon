@@ -20,6 +20,7 @@ type AdminCreateOrgUserRequest struct {
 // @Description.markdown create_org_user.md
 // @Param			org_id	path	string	true	"org ID to add user too"
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Param			req	body	AdminCreateOrgUserRequest	true	"Input"
 // @Accept			json
 // @Produce		json

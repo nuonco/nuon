@@ -16,6 +16,7 @@ type AdminDeleteIntegrationOrgsRequest struct{}
 // @Summary delete leaked integration orgs
 // @Description.markdown delete_org.md
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req	body	AdminDeleteIntegrationOrgsRequest	true	"Input"
 // @Produce		json

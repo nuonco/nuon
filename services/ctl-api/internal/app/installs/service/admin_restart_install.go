@@ -20,6 +20,7 @@ type RestartInstallRequest struct{}
 // @Param			install_id	path	string					true	"install ID"
 // @Param			req			body	RestartInstallRequest	true	"Input"
 // @Tags			installs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		200	{boolean}	true

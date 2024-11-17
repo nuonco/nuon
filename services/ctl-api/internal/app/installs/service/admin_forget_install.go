@@ -20,6 +20,7 @@ type AdminForgetInstallRequest struct{}
 // @Param		install_id	path	string						true	"install ID"
 // @Param			req			body	AdminForgetInstallRequest	true	"Input"
 // @Tags			installs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Failure		400	{object}	stderr.ErrResponse

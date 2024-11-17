@@ -25,6 +25,7 @@ type AdminMigrateOrg struct{}
 // @Description.markdown admin_migrate_org.md
 // @Param			org_id	path	string	true	"org ID or name to update"
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req	body	AdminMigrateOrg true	"Input"
 // @Produce		json

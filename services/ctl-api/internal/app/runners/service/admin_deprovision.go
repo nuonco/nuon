@@ -15,6 +15,7 @@ type AdminDeprovisionRunnerRequest struct{}
 // @Summary	deprovision a runner, but keep it in the database
 // @Description.markdown deprovision_runner.md
 // @Tags runners/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req			body	AdminDeprovisionRunnerRequest	true	"Input"
 // @Param	runner_id	path	string	true	"runner ID to deprovision"

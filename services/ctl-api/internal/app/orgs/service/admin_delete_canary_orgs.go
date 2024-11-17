@@ -20,6 +20,7 @@ type AdminDeleteCanaryOrgsRequest struct{}
 // @Summary delete canary orgs
 // @Description.markdown delete_org.md
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req	body	AdminDeleteCanaryOrgsRequest	true	"Input"
 // @Produce		json

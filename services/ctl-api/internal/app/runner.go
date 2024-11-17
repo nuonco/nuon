@@ -47,7 +47,8 @@ type Runner struct {
 	Name        string `json:"name" gorm:"index:idx_runner_name,unique"`
 	DisplayName string `json:"display_name" gorm:"not null;default null"`
 
-	Jobs []RunnerJob `json:"jobs" gorm:"constraint:OnDelete:CASCADE;"`
+	Jobs       []RunnerJob       `json:"jobs" gorm:"constraint:OnDelete:CASCADE;"`
+	Operations []RunnerOperation `json:"operations" gorm:"constraint:OnDelete:CASCADE;"`
 
 	RunnerJob *RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;"`
 }

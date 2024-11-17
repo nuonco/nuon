@@ -24,6 +24,7 @@ type AdminAddAWSDelegationRequest struct {
 // @Summary	add a delegation config to an app
 // @Description.markdown admin_add_aws_delegation.md
 // @Tags			apps/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req		body	AdminAddAWSDelegationRequest	true	"Input"
 // @Param			app_id	path	string					true	"app id"
