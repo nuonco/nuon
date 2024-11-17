@@ -14,6 +14,7 @@ type AdminDeleteInstallRequest struct{}
 // @Summary	delete an install
 // @Description.markdown delete_install.md
 // @Tags			installs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req			body	AdminDeleteInstallRequest	true	"Input"
 // @Param			install_id	path	string						true	"install id"

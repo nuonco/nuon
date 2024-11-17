@@ -19,6 +19,7 @@ type RenameOrgRequest struct {
 // @Description.markdown rename_org.md
 // @Param			org_id	path	string	true	"org ID for your current org"
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req	body	RenameOrgRequest	true	"Input"
 // @Produce		json

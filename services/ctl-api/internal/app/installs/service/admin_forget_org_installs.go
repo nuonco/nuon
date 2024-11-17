@@ -17,6 +17,7 @@ type AdminForgetOrgInstallsRequest struct{}
 // @Param			org_id	path	string							true	"org ID"
 // @Param			req		body	AdminForgetOrgInstallsRequest	true	"Input"
 // @Tags			installs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Failure		400	{object}	stderr.ErrResponse

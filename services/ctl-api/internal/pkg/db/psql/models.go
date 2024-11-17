@@ -101,6 +101,7 @@ func AllModels() []interface{} {
 
 		// runner jobs and groups
 		&app.RunnerGroup{},
+		&app.RunnerOperation{},
 		&app.RunnerGroupSettings{},
 		&app.Runner{},
 		&app.RunnerJob{},

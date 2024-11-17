@@ -12,6 +12,7 @@ import (
 // @Description.markdown get_install_runner_group.md
 // @Param			install_id	path	string					true	"install ID"
 // @Tags			installs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		200	{boolean}	true

@@ -18,6 +18,7 @@ type AdminCreateHealthCheckJobRequest struct{}
 // @Param			runner_id	path	string						true	"runner ID"
 // @Param			req	body	AdminCreateHealthCheckJobRequest	true "Input"
 // @Tags runners/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		201	{boolean}	true

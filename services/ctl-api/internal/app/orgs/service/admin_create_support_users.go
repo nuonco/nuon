@@ -35,6 +35,7 @@ var defaultSupportUsers = [][2]string{
 // @Description.markdown create_org_support_users.md
 // @Param			org_id	path	string	true	"org ID for your current org"
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		201	{string}	ok

@@ -14,6 +14,7 @@ import (
 // @Summary	get a runner group
 // @Description.markdown get_runner_group.md
 // @Tags runners/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param	runner_group_id	path	string	true	"runner group ID to fetch"
 // @Produce		json

@@ -36,6 +36,7 @@ type StaticTokenResponse struct {
 // @Description.markdown create_static_token.md
 // @Param			req	body	StaticTokenRequest	true	"Input"
 // @Tags orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		201	{object} StaticTokenResponse

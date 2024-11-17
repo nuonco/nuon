@@ -28,6 +28,7 @@ type CreateTokenResponse struct {
 // @Param			runner_id	path	string					true	"install id"
 // @Param			req	body	AdminRunnerServiceAccountTokenRequest true	"Input"
 // @Tags runners/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		201	{object}	CreateTokenResponse

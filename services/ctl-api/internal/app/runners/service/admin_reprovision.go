@@ -15,6 +15,7 @@ type AdminReprovisionRunnerRequest struct{}
 // @Summary	reprovision a runner, but keep it in the database
 // @Description.markdown reprovision_runner.md
 // @Tags runners/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req			body	AdminReprovisionRunnerRequest	true	"Input"
 // @Param	runner_id	path	string	true	"runner ID to reprovision"

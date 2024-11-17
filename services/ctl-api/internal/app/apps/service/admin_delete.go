@@ -19,6 +19,7 @@ type AdminDeleteAppRequest struct{}
 // @Summary	delete an app
 // @Description.markdown delete_app.md
 // @Tags			apps/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req		body	AdminDeleteAppRequest	true	"Input"
 // @Param			app_id	path	string					true	"app id"

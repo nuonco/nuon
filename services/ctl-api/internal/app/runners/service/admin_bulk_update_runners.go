@@ -24,6 +24,7 @@ type AdminBulkUpdateRunnersResponse struct {
 // @Description.markdown admin_bulk_update_runners.md
 // @Param		req				body	AdminBulkUpdateRunnersRequest	true	"Input"
 // @Tags runners/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		200	{object} app.RunnerGroupSettings
