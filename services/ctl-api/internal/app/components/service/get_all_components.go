@@ -13,9 +13,9 @@ import (
 // @Summary	get all components for all orgs
 // @Description.markdown	get_all_components.md
 // @Tags			components/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
-// @Param			X-Nuon-Org-ID	header	string	true	"org ID"
 // @Success		200				{array}	app.Component
 // @Router			/v1/components [get]
 func (s *service) GetAllComponents(ctx *gin.Context) {

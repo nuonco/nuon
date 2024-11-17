@@ -20,6 +20,7 @@ type RestartAppRequest struct{}
 // @Param			app_id	path	string				true	"app ID"
 // @Param			req		body	RestartAppRequest	true	"Input"
 // @Tags			apps/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		200	{boolean}	true

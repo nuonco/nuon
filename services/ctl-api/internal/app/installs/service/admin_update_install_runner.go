@@ -18,6 +18,7 @@ type AdminUpdateInstallRunnerRequest struct {
 // @Description.markdown update_install_runner.md
 // @Param			install_id	path	string	true	"install ID for your current install"
 // @Tags			installs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req	body	AdminUpdateInstallRunnerRequest	true	"Input"
 // @Produce		json

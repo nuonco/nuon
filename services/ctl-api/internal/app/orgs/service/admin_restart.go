@@ -17,6 +17,7 @@ type RestartOrgRequest struct{}
 // @Param			org_id	path	string				true	"org ID"
 // @Param			req		body	RestartOrgRequest	true	"Input"
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Id AdminRestartOrg
 // @Accept			json
 // @Produce		json

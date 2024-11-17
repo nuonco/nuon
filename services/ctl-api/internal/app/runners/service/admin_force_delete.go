@@ -15,6 +15,7 @@ type AdminForceDeleteRunnerRequest struct{}
 // @Summary	force delete a runner
 // @Description.markdown force_delete_runner.md
 // @Tags runners/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req			body	AdminForceDeleteRunnerRequest	true	"Input"
 // @Param	runner_id	path	string	true	"runner ID to force delete"

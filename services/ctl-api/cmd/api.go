@@ -15,6 +15,7 @@ import (
 	runnersservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/service"
 	vcsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/service"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/health"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/admin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/config"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/cors"
@@ -55,6 +56,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsMiddleware(cors.New)),
 		fx.Provide(api.AsMiddleware(config.New)),
 		fx.Provide(api.AsMiddleware(invites.New)),
+		fx.Provide(api.AsMiddleware(admin.New)),
 
 		// add endpoints
 		fx.Provide(api.AsService(docs.New)),

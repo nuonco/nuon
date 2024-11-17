@@ -4,6 +4,7 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
@@ -14,6 +15,7 @@ import (
 type Params struct {
 	fx.In
 
+	Cfg           *internal.Config
 	Prt           *protos.Adapter
 	DB            *gorm.DB `name:"psql"`
 	CHDB          *gorm.DB `name:"ch"`
@@ -31,10 +33,12 @@ type Activities struct {
 	evClient    eventloop.Client
 	authzClient *authz.Client
 	acctClient  *account.Client
+	cfg         *internal.Config
 }
 
 func New(params Params) *Activities {
 	return &Activities{
+		cfg:         params.Cfg,
 		db:          params.DB,
 		chDB:        params.CHDB,
 		protos:      params.Prt,
