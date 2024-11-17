@@ -54,3 +54,18 @@ func (w *Workflows) updateJobExecutionStatus(ctx workflow.Context, jobExecutionI
 		zap.String("runner-job-execution id", jobExecutionID),
 		zap.Error(err))
 }
+
+func (w *Workflows) updateOperationStatus(ctx workflow.Context, opID string, status app.RunnerOperationStatus) {
+	err := activities.AwaitUpdateOperation(ctx, activities.UpdateOperationRequest{
+		OperationID: opID,
+		Status:      status,
+	})
+	if err == nil {
+		return
+	}
+
+	l := workflow.GetLogger(ctx)
+	l.Error("unable to update runner operation execution status",
+		zap.String("runner-operation id", opID),
+		zap.Error(err))
+}

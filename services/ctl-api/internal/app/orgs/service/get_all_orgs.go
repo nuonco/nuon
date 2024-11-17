@@ -17,6 +17,7 @@ import (
 // @Description	return all orgs
 // @Param   type query string false "type of orgs to return"	     Default(real)
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		200	{array}	app.Org

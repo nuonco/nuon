@@ -5,9 +5,12 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // @temporal-gen workflow
@@ -24,12 +27,22 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 		return fmt.Errorf("unable to get runner: %w", err)
 	}
 
+	op, err := activities.AwaitCreateOperationRequest(ctx, activities.CreateOperationRequest{
+		RunnerID:      sreq.ID,
+		OperationType: app.RunnerOperationTypeProvision,
+	})
+	if err != nil {
+		w.updateStatus(ctx, sreq.ID, app.RunnerStatusError, "unable to create operation")
+		return errors.Wrap(err, "unable to create operation")
+	}
+
 	_, err = activities.AwaitCreateAccount(ctx, activities.CreateAccountRequest{
 		RunnerID: sreq.ID,
 		OrgID:    runner.ID,
 	})
 	if err != nil {
 		w.updateStatus(ctx, sreq.ID, app.RunnerStatusError, "unable to create runner service account")
+		w.updateOperationStatus(ctx, op.ID, app.RunnerOperationStatusError)
 		return fmt.Errorf("unable to get runner: %w", err)
 	}
 
@@ -37,15 +50,33 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 		RunnerID: sreq.ID,
 	})
 	if err != nil {
+		w.updateOperationStatus(ctx, op.ID, app.RunnerOperationStatusError)
 		w.updateStatus(ctx, sreq.ID, app.RunnerStatusError, "unable to create runner token")
 		return fmt.Errorf("unable to get runner: %w", err)
 	}
 
+	// if no log stream exists, create one
+	_, err = cctx.GetLogStreamWorkflow(ctx)
+	if err != nil {
+		logStream, err := activities.AwaitCreateLogStreamByOperationID(ctx, op.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to create log stream")
+		}
+		defer func() {
+			activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+		}()
+		ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	}
+
 	switch runner.RunnerGroup.Type {
 	case app.RunnerGroupTypeOrg:
-		return w.executeProvisionOrgRunner(ctx, sreq.ID, token.Token, sreq.SandboxMode)
+		err = w.executeProvisionOrgRunner(ctx, sreq.ID, token.Token, sreq.SandboxMode)
 	case app.RunnerGroupTypeInstall:
-		return w.executeProvisionInstallRunner(ctx, sreq.ID, token.Token, sreq.SandboxMode)
+		err = w.executeProvisionInstallRunner(ctx, sreq.ID, token.Token, sreq.SandboxMode)
+	}
+	if err != nil {
+		w.updateOperationStatus(ctx, op.ID, app.RunnerOperationStatusError)
+		return err
 	}
 
 	w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
@@ -54,6 +85,7 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 		SandboxMode: runner.RunnerGroup.Settings.SandboxMode,
 		Type:        string(runner.RunnerGroup.Type),
 	})
+	w.updateOperationStatus(ctx, op.ID, app.RunnerOperationStatusFinished)
 
 	return nil
 }

@@ -13,6 +13,7 @@ import (
 // @Summary	get all releases for all orgs
 // @Description.markdown	get all releases for all orgs
 // @Tags			releases/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		200	{array}	app.ComponentRelease

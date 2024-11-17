@@ -27,6 +27,7 @@ func (c *AdminDeleteAccountRequest) Validate(v *validator.Validate) error {
 // @Description.markdown admin_delete_account.md
 // @Param			req	body	AdminDeleteAccountRequest	true	"Input"
 // @Tags orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		201	{string} ok

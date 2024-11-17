@@ -20,6 +20,7 @@ type OrgAddLogoRequest struct {
 // @Description.markdown admin_add_org_logo.md
 // @Param			org_id	path	string	true	"org ID or name to update"
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req	body	OrgAddLogoRequest	true	"Input"
 // @Produce		json

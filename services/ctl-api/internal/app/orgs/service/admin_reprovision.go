@@ -15,6 +15,7 @@ type ReprovisionOrgRequest struct{}
 // @Description.markdown reprovision_org.md
 // @Param			org_id	path	string	true	"org ID for your current org"
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req	body	ReprovisionOrgRequest	true	"Input"
 // @Produce		json
