@@ -18,6 +18,7 @@ type AdminDeprovisionOrgRequest struct {
 // @Description.markdown deprovision_org.md
 // @Param			org_id	path	string	true	"org ID for your current org"
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req	body	AdminDeprovisionOrgRequest	true	"Input"
 // @Produce		json

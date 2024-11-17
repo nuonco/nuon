@@ -56,13 +56,13 @@ func (r *Docs) RegisterInternalRoutes(g *gin.Engine) error {
 
 	admin.SwaggerInfoadmin.Version = r.cfg.Version
 	admin.SwaggerInfoadmin.Title = "Nuon Admin API"
-	admin.SwaggerInfoadmin.Schemes = []string{"http"}
 
 	g.GET("/oapi/v3", r.getOAPI3AdminSpec)
 	g.GET("/oapi/v2", r.getOAPI2AdminSpec)
 	g.GET("/docs/*any", swagger.WrapHandler(
 		swaggerfiles.Handler,
 		swagger.InstanceName("admin"),
+		swagger.PersistAuthorization(true),
 	))
 
 	return nil

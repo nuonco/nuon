@@ -14,6 +14,7 @@ import (
 // @Summary get an org by name
 // @Description.markdown admin_get_org.md
 // @Tags			orgs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param   name query string false	"org name or id"
 // @Produce		json

@@ -15,6 +15,7 @@ type ReprovisionAppRequest struct{}
 // @Description.markdown	reprovision_app.md
 // @Param			app_id	path	string	true	"app ID for your current app"
 // @Tags			apps/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param			req	body	ReprovisionAppRequest	true	"Input"
 // @Produce		json

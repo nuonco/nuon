@@ -17,6 +17,7 @@ import (
 // @Description	return all orgs
 // @Param   type query string false "type of runner to return"	     Default(orgs)
 // @Tags runners/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		200	{array}	app.Runner

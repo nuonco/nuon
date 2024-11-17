@@ -16,6 +16,7 @@ type AdminDeleteComponentRequest struct{}
 // @Param			component_id	path	string						true	"component ID"
 // @Param			req				body	AdminDeleteComponentRequest	true	"Input"
 // @Tags			components/admin
+// @Security AdminEmail
 // @Accept			json
 // @Produce		json
 // @Success		200	{boolean}	true

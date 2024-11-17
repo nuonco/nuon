@@ -17,6 +17,7 @@ import (
 // @Summary	get all installs for all orgs
 // @Description.markdown	get_all_installs.md
 // @Tags			installs/admin
+// @Security AdminEmail
 // @Accept			json
 // @Param   limit  query int	 false	"limit of installs to return"	     Default(60)
 // @Param   type query string false "type of installs to return"	     Default(real)

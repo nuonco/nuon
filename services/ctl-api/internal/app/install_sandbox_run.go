@@ -65,8 +65,10 @@ func (i *InstallSandboxRun) BeforeCreate(tx *gorm.DB) error {
 	if i.CreatedByID == "" {
 		i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
-	if i.CreatedByID == "" {
+
+	if i.OrgID == "" {
 		i.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
+
 	return nil
 }
