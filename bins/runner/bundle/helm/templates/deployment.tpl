@@ -31,6 +31,7 @@ spec:
       containers:
         - name: {{ include "common.fullname" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: Always
           command:
             - /bin/runner
             - run
