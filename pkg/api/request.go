@@ -18,6 +18,7 @@ func (c *client) execGetRequest(ctx context.Context, endpoint string) ([]byte, e
 
 	url := c.APIURL + endpoint
 	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req.Header.Add("X-Nuon-Admin-Email", c.AdminEmail)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create request: %w", err)
 	}
@@ -58,6 +59,7 @@ func (c *client) execPostRequest(ctx context.Context, endpoint string, data inte
 	if err != nil {
 		return nil, fmt.Errorf("unable to create request: %w", err)
 	}
+	req.Header.Add("X-Nuon-Admin-Email", c.AdminEmail)
 
 	res, err := httpClient.Do(req)
 	if err != nil {
