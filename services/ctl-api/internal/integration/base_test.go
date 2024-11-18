@@ -42,6 +42,7 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 
 	intApiClient, err := api.New(s.v,
 		api.WithURL(internalAPIURL),
+		api.WithAdminEmail("integration@serviceaccount.nuon.co"),
 	)
 	require.NoError(s.T(), err)
 	require.NotEmpty(s.T(), intApiClient)

@@ -58,8 +58,9 @@ var _ Client = (*client)(nil)
 type client struct {
 	v *validator.Validate
 
-	APIURL  string `validate:"required"`
-	Timeout time.Duration
+	APIURL     string `validate:"required"`
+	AdminEmail string `validate:"required"`
+	Timeout    time.Duration
 }
 
 type clientOption func(*client) error
@@ -94,6 +95,14 @@ func WithURL(url string) clientOption {
 func WithTimeout(dur time.Duration) clientOption {
 	return func(c *client) error {
 		c.Timeout = dur
+		return nil
+	}
+}
+
+// WithAdminEmail specifies the email to use
+func WithAdminEmail(email string) clientOption {
+	return func(c *client) error {
+		c.AdminEmail = email
 		return nil
 	}
 }
