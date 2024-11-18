@@ -60,6 +60,7 @@ jobs:
           registry_id=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.dir }}".ecr.registry_id')
           bucket_prefix=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.dir }}".bucket_prefix')
           region=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.dir }}".ecr.region')
+          push_latest_tag=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.dir }}".push_latest_tag')
 
           echo "ARTIFACT_ECR_REPOSITORY_URL=$repo_url" >> "$GITHUB_ENV"
           echo "ARTIFACT_ECR_REPOSITORY_ARN=$repo_arn" >> "$GITHUB_ENV"
@@ -67,6 +68,7 @@ jobs:
           echo "ARTIFACT_ECR_REGISTRY_ID=$registry_id" >> "$GITHUB_ENV"
           echo "ARTIFACT_BUCKET_PREFIX=$bucket_prefix" >> "$GITHUB_ENV"
           echo "ARTIFACT_REGION=$region" >> "$GITHUB_ENV"
+          echo "ARTIFACT_PUSH_LATEST_TAG=$push_latest_tag" >> "$GITHUB_ENV"
 
       - name: Setup for CI
         uses: powertoolsdev/mono/actions/setup-ci@main
@@ -133,3 +135,30 @@ jobs:
             --repo=${{ env.ARTIFACT_ECR_REPOSITORY_URL }} \
             --region=${{ env.ARTIFACT_REGION }} \
             --image_tag=${{ inputs.tag }}
+
+      - name: Push latest tag
+        working-directory: ${{ inputs.dir }}
+        run: |
+          earthly \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --ci \
+            --push \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
+            +oci-artifacts \
+            --repo=${{ env.ARTIFACT_ECR_REPOSITORY_URL }} \
+            --region=${{ env.ARTIFACT_REGION }} \
+            --image_tag=${{ inputs.tag }}
+
+      - name: Push latest
+        working-directory: ${{ inputs.dir }}
+        if: ${{ env.ARTIFACT_PUSH_LATEST_TAG }}
+        run: |
+          earthly \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --ci \
+            --push \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
+            +oci-artifacts \
+            --repo=${{ env.ARTIFACT_ECR_REPOSITORY_URL }} \
+            --region=${{ env.ARTIFACT_REGION }} \
+            --image_tag="latest"
