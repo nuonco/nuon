@@ -3,14 +3,24 @@ package admin
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/pkg/shortid"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 var mapper map[string]func(db *gorm.DB, id string) (string, error) = map[string]func(*gorm.DB, string) (string, error){
+	"rgr": func(db *gorm.DB, id string) (string, error) {
+		var obj app.RunnerGroup
+		res := db.First(&obj, "id = ?", id)
+		if res.Error != nil {
+			return "", errors.Wrap(res.Error, "unable to fetch runner group")
+		}
+
+		return obj.OrgID, nil
+	},
 	"run": func(db *gorm.DB, id string) (string, error) {
 		var obj app.Runner
 		res := db.First(&obj, "id = ?", id)
