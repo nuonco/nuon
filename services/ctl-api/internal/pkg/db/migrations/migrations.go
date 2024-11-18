@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 )
 
@@ -16,6 +17,7 @@ type Params struct {
 	L           *zap.Logger
 	Cfg         *internal.Config
 	AuthzClient *authz.Client
+	AcctClient  *account.Client
 }
 
 type Migrations struct {
@@ -23,6 +25,7 @@ type Migrations struct {
 	l           *zap.Logger
 	cfg         *internal.Config
 	authzClient *authz.Client
+	acctClient  *account.Client
 }
 
 func New(params Params) *Migrations {
@@ -31,5 +34,6 @@ func New(params Params) *Migrations {
 		l:           params.L,
 		cfg:         params.Cfg,
 		authzClient: params.AuthzClient,
+		acctClient:  params.AcctClient,
 	}
 }
