@@ -58,10 +58,10 @@ var mapper map[string]func(db *gorm.DB, id string) (string, error) = map[string]
 		return obj.OrgID, nil
 	},
 	"inl": func(db *gorm.DB, id string) (string, error) {
-		var obj app.Org
+		var obj app.Install
 		res := db.First(&obj, "id = ?", id)
 		if res.Error != nil {
-			return "", errors.Wrap(res.Error, "unable to fetch org")
+			return "", errors.Wrap(res.Error, "unable to fetch install")
 		}
 
 		return obj.ID, nil
