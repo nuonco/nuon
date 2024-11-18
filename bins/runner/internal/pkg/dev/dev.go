@@ -28,7 +28,10 @@ func New(runnerIDInput string) (*devver, error) {
 	v := validator.New()
 
 	adminAPIURL := os.Getenv("INTERNAL_API_URL")
-	apiClient, err := api.New(v, api.WithURL(adminAPIURL))
+	apiClient, err := api.New(v,
+		api.WithURL(adminAPIURL),
+		api.WithAdminEmail("runner-local@serviceaccount.nuon.co"),
+	)
 	if err != nil {
 		log.Fatal("unable to create admin api url for run-local")
 	}
