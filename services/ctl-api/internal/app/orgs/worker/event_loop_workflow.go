@@ -41,9 +41,11 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			l.Info("channel is open")
 		}
 
-		//if err := evSignal.Validate(w.v); err != nil {
-		//l.Info("invalid signal", zap.Error(err))
-		//}
+		if err := evSignal.Validate(w.v); err != nil {
+			l.Info("invalid signal", zap.Error(err))
+		}
+
+		ctx := evSignal.GetWorkflowContext(ctx)
 
 		startTS := workflow.Now(ctx)
 		op := ""
