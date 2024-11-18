@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -81,4 +82,11 @@ func (s *Signal) GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, 
 	}
 
 	return &currentOrg, nil
+}
+
+func (s *Signal) Validate(v *validator.Validate) error {
+	if err := v.Struct(s); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
 }
