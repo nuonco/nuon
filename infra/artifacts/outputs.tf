@@ -23,6 +23,7 @@ output "artifacts" {
       bucket_prefix  = "e2e"
       ecr            = module.e2e.all
       use_promotions = true
+      push_latest_tag = false
     }
 
     // charts
@@ -30,16 +31,19 @@ output "artifacts" {
       bucket_prefix  = "helm-demo"
       ecr            = module.helm_demo.all
       use_promotions = false
+      push_latest_tag = false
     }
     "charts/temporal" = {
       bucket_prefix  = "helm-temporal"
       ecr            = module.helm_temporal.all
       use_promotions = false
+      push_latest_tag = false
     }
     "charts/waypoint" = {
       bucket_prefix  = "helm-waypoint"
       ecr            = module.helm_waypoint.all
       use_promotions = false
+      push_latest_tag = false
     }
 
     // binaries
@@ -47,52 +51,20 @@ output "artifacts" {
       bucket_prefix  = "cli"
       ecr            = module.cli.all
       use_promotions = true
+      push_latest_tag = false
     }
     "bins/nuonctl" = {
       bucket_prefix  = "nuonctl"
       ecr            = module.nuonctl.all
       use_promotions = false
+      # this is mainly to test the functionality
+      push_latest_tag = true
     }
     "bins/runner" = {
       bucket_prefix  = "runner"
       ecr            = module.runner.all
       use_promotions = true
-    }
-
-    "bins/waypoint-plugin-exp" = {
-      bucket_prefix  = "waypoint-plugin-exp"
-      ecr            = module.waypoint_plugin_exp.all
-      use_promotions = false
-    }
-    "bins/waypoint-plugin-helm" = {
-      bucket_prefix  = "waypoint-plugin-helm"
-      ecr            = module.waypoint_plugin_helm.all
-      use_promotions = false
-    }
-    "bins/waypoint-plugin-noop" = {
-      bucket_prefix  = "waypoint-plugin-noop"
-      ecr            = module.waypoint_plugin_noop.all
-      use_promotions = false
-    }
-    "bins/waypoint-plugin-oci" = {
-      bucket_prefix  = "waypoint-plugin-oci"
-      ecr            = module.waypoint_plugin_oci.all
-      use_promotions = false
-    }
-    "bins/waypoint-plugin-oci-sync" = {
-      bucket_prefix  = "waypoint-plugin-oci-sync"
-      ecr            = module.waypoint_plugin_oci_sync.all
-      use_promotions = false
-    }
-    "bins/waypoint-plugin-terraform" = {
-      bucket_prefix  = "waypoint-plugin-terraform"
-      ecr            = module.waypoint_plugin_terraform.all
-      use_promotions = false
-    }
-    "bins/waypoint-plugin-job" = {
-      bucket_prefix  = "waypoint-plugin-job"
-      ecr            = module.waypoint_plugin_job.all
-      use_promotions = false
+      push_latest_tag = true
     }
 
     // sandboxes
@@ -100,11 +72,13 @@ output "artifacts" {
       bucket_prefix  = "sandbox/aws-eks"
       ecr            = module.sandbox_aws_eks.all
       use_promotions = true
+      push_latest_tag = false
     }
     "sandboxes/empty" = {
       bucket_prefix  = "sandbox/empty"
       ecr            = module.sandbox_empty.all
       use_promotions = true
+      push_latest_tag = false
     }
   }
 }
