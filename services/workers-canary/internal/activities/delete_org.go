@@ -19,6 +19,7 @@ type DeleteOrgResponse struct {
 func (a *Activities) DeleteOrg(ctx context.Context, req *DeleteOrgRequest) (*DeleteOrgResponse, error) {
 	internalAPIClient, err := api.New(a.v,
 		api.WithURL(a.cfg.InternalAPIURL),
+		api.WithAdminEmail("canary@serviceaccount.nuon.co"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create internal api client: %w", err)

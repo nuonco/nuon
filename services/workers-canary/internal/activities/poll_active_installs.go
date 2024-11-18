@@ -15,8 +15,8 @@ func (a *Activities) GetInstallsByOrgID(ctx context.Context, req *GetInstallsByO
 	installs := []api.Install{}
 	internalAPIClient, err := api.New(a.v,
 		api.WithURL(a.cfg.InternalAPIURL),
+		api.WithAdminEmail("canary@serviceaccount.nuon.co"),
 	)
-
 	if err != nil {
 		return installs, fmt.Errorf("unable to create internal api client: %w", err)
 	}

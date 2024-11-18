@@ -19,6 +19,7 @@ type CreateUserResponse struct {
 func (a *Activities) CreateUser(ctx context.Context, req *CreateUserRequest) (*CreateUserResponse, error) {
 	internalAPIClient, err := api.New(a.v,
 		api.WithURL(a.cfg.InternalAPIURL),
+		api.WithAdminEmail("canary@serviceaccount.nuon.co"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create internal api client: %w", err)

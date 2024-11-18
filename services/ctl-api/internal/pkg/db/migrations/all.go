@@ -144,5 +144,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "074-runner-wide-view",
 			Fn:   a.migration074RunnerWideView,
 		},
+		{
+			Name: "075-internal-accounts",
+			Fn:   a.migration075InternalAccounts,
+		},
 	}
 }
