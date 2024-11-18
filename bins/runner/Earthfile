@@ -84,6 +84,7 @@ oci-artifacts:
     ARG image_tag=
     ARG cache_tag=
     ARG cache_repo=
+    ARG push_latest_tag=
 
     RUN apk add --no-cache \
       libc6-compat \
@@ -120,4 +121,7 @@ oci-artifacts:
 
     ENTRYPOINT ["/bin/runner"]
 
+    IF [ "$push_latest_tag" == "true" ]
+	SAVE IMAGE --push --cache-from=$cache_repo:$cache_tag $repo:latest
+    END
     SAVE IMAGE --push --cache-from=$cache_repo:$cache_tag $repo:$image_tag
