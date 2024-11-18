@@ -134,5 +134,5 @@ jobs:
             +oci-artifacts \
             --repo=${{ env.ARTIFACT_ECR_REPOSITORY_URL }} \
             --region=${{ env.ARTIFACT_REGION }} \
-            --push_latest_tag=${{ env.ARTIFACT_PUSH_LATEST_TAG }}
+            --push_latest_tag=${{ env.ARTIFACT_PUSH_LATEST_TAG }} \
             --image_tag=${{ inputs.tag }}
