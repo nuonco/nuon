@@ -134,18 +134,5 @@ jobs:
             +oci-artifacts \
             --repo=${{ env.ARTIFACT_ECR_REPOSITORY_URL }} \
             --region=${{ env.ARTIFACT_REGION }} \
+            --push_latest_tag=${{ env.ARTIFACT_PUSH_LATEST_TAG }}
             --image_tag=${{ inputs.tag }}
-
-      - name: Push latest
-        working-directory: ${{ inputs.dir }}
-        if: ${{ env.ARTIFACT_PUSH_LATEST_TAG }}
-        run: |
-          earthly \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --ci \
-            --push \
-            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
-            +oci-artifacts \
-            --repo=${{ env.ARTIFACT_ECR_REPOSITORY_URL }} \
-            --region=${{ env.ARTIFACT_REGION }} \
-            --image_tag="latest"
