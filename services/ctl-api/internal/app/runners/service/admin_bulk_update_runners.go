@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type AdminBulkUpdateRunnersRequest struct {
@@ -96,6 +98,7 @@ func (s *service) bulkUpdateRunners(ctx context.Context, req *AdminBulkUpdateRun
 	orgVisited := make(map[string]bool)
 	for _, response := range updatesResponse {
 		if _, ok := orgVisited[response.OrgID]; !ok {
+			ctx = cctx.SetOrgIDContext(ctx, response.OrgID)
 			s.evClient.Send(ctx, response.OrgID, &signals.Signal{
 				Type: signals.OperationReprovision,
 			})
