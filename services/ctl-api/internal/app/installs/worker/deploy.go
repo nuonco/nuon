@@ -211,6 +211,7 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 	if err := w.execSync(ctx, install, installDeploy, sandboxMode); err != nil {
 		return err
 	}
+
 	if err := w.execDeploy(ctx, install, installDeploy, sandboxMode); err != nil {
 		return err
 	}

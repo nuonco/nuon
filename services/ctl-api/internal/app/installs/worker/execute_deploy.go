@@ -39,7 +39,7 @@ func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, insta
 		RunnerID:    install.RunnerGroup.Runners[0].ID,
 		DeployID:    installDeploy.ID,
 		Op:          installDeploy.Type.RunnerJobOperationType(),
-		Type:        build.ComponentConfigConnection.Type.SyncJobType(),
+		Type:        build.ComponentConfigConnection.Type.DeployJobType(),
 		LogStreamID: logStreamID,
 	})
 	if err != nil {
