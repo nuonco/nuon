@@ -171,7 +171,7 @@ type RunnerJob struct {
 	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_name,unique;"`
 
 	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
-	Org   Org
+	Org   Org    `json:"-"`
 
 	RunnerID    string  `json:"runner_id" gorm:"index:idx_runner_name,unique"`
 	OwnerID     string  `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26"`
