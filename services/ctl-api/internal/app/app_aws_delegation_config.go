@@ -12,7 +12,7 @@ import (
 type AppAWSDelegationConfig struct {
 	ID          string                `gorm:"primarykey" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account               `json:"created_by"`
+	CreatedBy   Account               `json:"-"`
 	CreatedAt   time.Time             `json:"created_at"`
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_aws_delegation_config,unique"`

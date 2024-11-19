@@ -37,7 +37,7 @@ func (a AppRunnerType) JobType() RunnerJobType {
 type AppRunnerConfig struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account               `json:"created_by"`
+	CreatedBy   Account               `json:"-"`
 	CreatedAt   time.Time             `json:"created_at"`
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
