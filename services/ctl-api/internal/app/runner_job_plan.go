@@ -19,7 +19,7 @@ type RunnerJobPlan struct {
 	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_job_plan,unique"`
 
 	OrgID string `json:"org_id"`
-	Org   Org
+	Org   Org    `json:"-"`
 
 	RunnerJobID string `json:"runner_job_id" gorm:"defaultnull;notnull;index:idx_runner_job_plan,unique"`
 	PlanJSON    string
