@@ -18,7 +18,7 @@ type AdminBulkUpdateRunnersRequest struct {
 
 type AdminBulkUpdateRunnersResponse struct {
 	OrgID         string `json:"org_id"`
-	RunnerGroupID string `json:"runner_id"`
+	RunnerGroupID string `json:"runner_group_id"`
 }
 
 // @ID AdminBulkUpdateRunners
@@ -29,7 +29,7 @@ type AdminBulkUpdateRunnersResponse struct {
 // @Security AdminEmail
 // @Accept			json
 // @Produce		json
-// @Success		200	{object} app.RunnerGroupSettings
+// @Success		200	{array} AdminBulkUpdateRunnersResponse
 // @Router		/v1/runners/bulk-update [PATCH]
 func (s *service) AdminBulkUpdateRunners(ctx *gin.Context) {
 	var req AdminBulkUpdateRunnersRequest
