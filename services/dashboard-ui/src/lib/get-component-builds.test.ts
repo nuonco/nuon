@@ -5,7 +5,7 @@ import { getComponentBuilds } from './get-component-builds'
 const componentId = 'component-id'
 const orgId = 'org-id'
 
-test.skip('getComponentBuilds should return an array of build object', async () => {
+test('getComponentBuilds should return an array of build object', async () => {
   const spec = await getComponentBuilds({
     componentId,
     orgId,
@@ -20,7 +20,7 @@ test.skip('getComponentBuilds should return an array of build object', async () 
   })
 })
 
-test.skip('getComponentBuilds should throw an error when it can not find any builds for the component', async () => {
+test('getComponentBuilds should throw an error when it can not find any builds for the component', async () => {
   try {
     await getComponentBuilds({
       componentId,

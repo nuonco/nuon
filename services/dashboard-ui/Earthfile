@@ -1,6 +1,6 @@
 VERSION --use-cache-command 0.6
 
-FROM node:alpine
+FROM node:18-alpine
 
 WORKDIR /src
 
