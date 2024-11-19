@@ -61,7 +61,7 @@ type RunnerJobExecution struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	OrgID string `json:"org_id"`
-	Org   Org
+	Org   Org    `json:"-"`
 
 	RunnerJobID string `json:"runner_job_id" gorm:"defaultnull;notnull"`
 

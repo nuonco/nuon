@@ -32,7 +32,7 @@ type Runner struct {
 	CreatedBy   Account `json:"-"`
 
 	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
-	Org   Org    `json:"org"`
+	Org   Org    `json:"-"`
 
 	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
