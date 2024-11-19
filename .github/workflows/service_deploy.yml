@@ -23,10 +23,11 @@ name: Deploy
         required: true
 
 concurrency: 
-  group: ${{inputs.service}}-${{inputs.env}}
+  group: ${{inputs.service}}-${{inputs.env}}-${{ github.head_ref || 'main' }}
+
   # NOTE(jm): we only want to "cancel" in flight jobs if pushing to an existing PR. If this is running on main, do not
   # cancel previous jobs.
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 defaults:
   run:
