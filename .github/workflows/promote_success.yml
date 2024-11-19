@@ -27,9 +27,9 @@ jobs:
     uses: ./.github/workflows/internal_api.yml
     with:
       env: prod
-      endpoint: /v1/runners/bulk-update
-      method: PATCH
-      data: '{"container_image_tag": "${{ inputs.tag }}" }'
+      endpoint: /v1/runners/restart
+      method: POST
+      data: "{}"
     secrets: inherit
   sdks:
     name: Update SDKs
