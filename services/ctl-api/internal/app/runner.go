@@ -29,7 +29,7 @@ func (r RunnerStatus) IsHealthy() bool {
 type Runner struct {
 	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account `json:"created_by"`
+	CreatedBy   Account `json:"-"`
 
 	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
 	Org   Org    `json:"org"`
