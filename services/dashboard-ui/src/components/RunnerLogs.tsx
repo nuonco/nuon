@@ -3,6 +3,7 @@
 import classNames from 'classnames'
 import React, { type FC, useMemo, useState } from 'react'
 import { DateTime } from 'luxon'
+import { v4 as uuid } from 'uuid'
 import { ArrowDown, ArrowUp, ArrowsOutSimple } from '@phosphor-icons/react'
 import {
   getCoreRowModel,
@@ -55,7 +56,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
     <div className="divide-y">
       {table.getHeaderGroups().map((group) => (
         <div
-          key={group.id}
+          key={uuid()}
           className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full"
         >
           {group.headers.map((header, i) => (
@@ -93,7 +94,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
 
         return (
           <Expand
-            key={row.id}
+            key={uuid()}
             id={row.id}
             className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full"
             heading={
@@ -126,9 +127,9 @@ export const OTELLogs: FC<IOTELLogs> = ({
                           </Text>
                         </div>
 
-                        {Object.keys(logAttributes).map((key, i) => (
+                        {Object.keys(logAttributes).map((key) => (
                           <div
-                            key={`${key}-${i}`}
+                            key={`${key}-${uuid()}`}
                             className="grid grid-cols-3 gap-4 py-3"
                           >
                             <Text className="font-mono text-sm break-all !inline truncate max-w-[250px]">
@@ -164,9 +165,9 @@ export const OTELLogs: FC<IOTELLogs> = ({
                         </Text>
                       </div>
 
-                      {Object.keys(resourceAttributes).map((key, i) => (
+                      {Object.keys(resourceAttributes).map((key) => (
                         <div
-                          key={`${key}-${i}`}
+                          key={`${key}-${uuid()}`}
                           className="grid grid-cols-3 gap-4 py-3"
                         >
                           <Text className="font-mono text-sm break-all !inline truncate max-w-[250px]">
