@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
+	actionsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/service"
 	appsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/service"
 	componentsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/service"
 	generalservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/service"
@@ -70,6 +71,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsService(componentsservice.New)),
 		fx.Provide(api.AsService(runnersservice.New)),
 		fx.Provide(api.AsService(releasesservice.New)),
+		fx.Provide(api.AsService(actionsservice.New)),
 
 		// add api
 		fx.Provide(fx.Annotate(api.NewAPI, fx.ParamTags(`group:"services"`, `group:"middlewares"`))),
