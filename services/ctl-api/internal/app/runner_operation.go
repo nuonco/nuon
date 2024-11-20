@@ -40,7 +40,7 @@ type RunnerOperation struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
-	RunnerID string `json:"runner_id`
+	RunnerID string `json:"runner_id"`
 	Runner   Runner `json:"-" faker:"-"`
 
 	OpType            RunnerOperationType   `json:"operation_type"`
