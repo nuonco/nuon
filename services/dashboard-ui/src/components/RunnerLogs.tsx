@@ -3,7 +3,6 @@
 import classNames from 'classnames'
 import React, { type FC, useMemo, useState } from 'react'
 import { DateTime } from 'luxon'
-import { v4 as uuid } from 'uuid'
 import { ArrowDown, ArrowUp, ArrowsOutSimple } from '@phosphor-icons/react'
 import {
   getCoreRowModel,
@@ -56,7 +55,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
     <div className="divide-y">
       {table.getHeaderGroups().map((group) => (
         <div
-          key={uuid()}
+          key={`header-${group.id}`}
           className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full"
         >
           {group.headers.map((header, i) => (
@@ -94,8 +93,8 @@ export const OTELLogs: FC<IOTELLogs> = ({
 
         return (
           <Expand
-            key={uuid()}
-            id={row.id}
+            key={row.original?.id}
+            id={row.original?.id}
             className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full"
             heading={
               row
@@ -110,7 +109,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
               <div className="flex flex-col bg-black/5 dark:bg-white/5">
                 {Object.keys(logAttributes)?.length ? (
                   <Expand
-                    id={`${row.id}-log-attr`}
+                    id={`${row.original?.id}-log-attr`}
                     heading={
                       <Text className="text-base !font-medium leading-normal p-4">
                         Log attributes
@@ -129,7 +128,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
 
                         {Object.keys(logAttributes).map((key) => (
                           <div
-                            key={`${key}-${uuid()}`}
+                            key={`${key}-${row.original?.id}`}
                             className="grid grid-cols-3 gap-4 py-3"
                           >
                             <Text className="font-mono text-sm break-all !inline truncate max-w-[250px]">
@@ -148,7 +147,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
                 ) : null}
 
                 <Expand
-                  id={`${row.id}-resource-attr`}
+                  id={`${row.original?.id}-resource-attr`}
                   heading={
                     <Text className="text-base !font-medium leading-normal p-4">
                       Resource attributes
@@ -167,7 +166,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
 
                       {Object.keys(resourceAttributes).map((key) => (
                         <div
-                          key={`${key}-${uuid()}`}
+                          key={`${key}-${row.original?.id}`}
                           className="grid grid-cols-3 gap-4 py-3"
                         >
                           <Text className="font-mono text-sm break-all !inline truncate max-w-[250px]">
