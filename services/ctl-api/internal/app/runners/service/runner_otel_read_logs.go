@@ -13,7 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-const PageSize int = 10000
+const PageSize int = 2500
 
 type Page struct {
 	Data  []app.OtelLogRecord `json:"data"`
