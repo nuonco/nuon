@@ -9,6 +9,7 @@ export interface IExpand extends React.HTMLAttributes<HTMLDivElement> {
   heading: React.ReactElement | React.ReactNode
   isOpen?: boolean
   hasHeadingStyle?:Boolean
+  headerClass?: string
   id: string
 }
 
@@ -18,6 +19,7 @@ export const Expand: FC<IExpand> = ({
   heading,
   id,
   hasHeadingStyle = false,
+  headerClass,
   isOpen = false,
 }) => {
   const [isExpanded, setIsExpanded] = useState(isOpen)
@@ -32,7 +34,8 @@ export const Expand: FC<IExpand> = ({
         className={classNames(
           'flex items-center justify-between cursor-pointer hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10 pr-2',
           {            
-            'border-t border-b bg-cool-grey-50 dark:bg-dark-grey-200 text-cool-grey-600 dark:text-cool-grey-500 ': hasHeadingStyle
+            'border-t border-b bg-cool-grey-50 dark:bg-dark-grey-200 text-cool-grey-600 dark:text-cool-grey-500 ': hasHeadingStyle,
+            [`${headerClass}`]: Boolean(headerClass)
           }
         )}
         onClick={() => {
