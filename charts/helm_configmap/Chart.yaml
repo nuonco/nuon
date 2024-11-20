@@ -1,0 +1,9 @@
+---
+apiVersion: v2
+name: configmap
+description: A helm chart to create a simple configmap.
+type: application
+version: v0.0.1
+appVersion: "0.0.1"
+
+dependencies: []
