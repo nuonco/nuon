@@ -12,7 +12,11 @@ const (
 	defaultFileType string = "file/helm"
 )
 
-type WaypointConfig configs.App[configs.NoopBuild, configs.TerraformDeploy]
+type (
+	Build          configs.NoRegistryBuild[configs.NoopBuild]
+	Deploy         configs.Deploy[configs.TerraformDeploy]
+	WaypointConfig configs.Apps[Build, Deploy]
+)
 
 type handlerState struct {
 	// set during the fetch/validate phase

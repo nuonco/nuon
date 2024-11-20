@@ -16,6 +16,7 @@ type Archive interface {
 	Ref() oras.ReadOnlyTarget
 	TmpDir() string
 	Cleanup(context.Context) error
+	BasePath() string
 }
 
 var _ Archive = (*archive)(nil)
@@ -23,6 +24,7 @@ var _ Archive = (*archive)(nil)
 type archive struct {
 	tmpDir   string
 	chartDir string
+	basePath string
 	store    *file.Store
 }
 

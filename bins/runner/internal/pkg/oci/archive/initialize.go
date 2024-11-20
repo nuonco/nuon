@@ -20,6 +20,7 @@ func (a *archive) Initialize(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to create file store: %w", err)
 	}
+	a.basePath = storeDir
 
 	a.store = store
 	return nil
