@@ -15,7 +15,8 @@ module "service" {
       essential                = true
       memory_reservation       = 100
       readonly_root_filesystem = false
-
+      entryPoint = "/bin/runner"
+      command = ["run"]
       environment = [
         {
           name  = "RUNNER_API_URL"
@@ -32,6 +33,10 @@ module "service" {
         {
           name  = "RUNNER_VERSION"
           value = var.image_tag
+        },
+        {
+          name  = "HOST_IP"
+          value = "0.0.0.0"
         },
       ]
     }
