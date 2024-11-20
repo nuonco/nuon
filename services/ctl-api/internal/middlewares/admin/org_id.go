@@ -64,7 +64,7 @@ var mapper map[string]func(db *gorm.DB, id string) (string, error) = map[string]
 			return "", errors.Wrap(res.Error, "unable to fetch install")
 		}
 
-		return obj.ID, nil
+		return obj.OrgID, nil
 	},
 	"rel": func(db *gorm.DB, id string) (string, error) {
 		var obj app.ComponentRelease
