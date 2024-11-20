@@ -22,7 +22,7 @@ func (h *handler) packageChart(l *zap.Logger) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to package chart: %w", err)
 	}
-	l.Info("succesfully packaged chart")
+	l.Info("succesfully packaged chart", zap.String("path", packagePath))
 
 	return packagePath, nil
 }
