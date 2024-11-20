@@ -13,7 +13,7 @@ const (
 )
 
 type (
-	Build          configs.NoRegistryBuild[configs.NoopBuild]
+	Build              configs.NoRegistryBuild[configs.DockerRefBuild]
 	Deploy         configs.Deploy[configs.TerraformDeploy]
 	WaypointConfig configs.Apps[Build, Deploy]
 )
