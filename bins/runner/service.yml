@@ -20,6 +20,9 @@ env:
   # LOG_LEVEL: DEBUG
   INTERNAL_API_URL: http://localhost:8082
 
+  # this controls how long a job will stay in sandbox, printing out logs every quarter second.
+  SANDBOX_JOB_DURATION: 10s
+
 disable_config_map: true
 watch_ignore_dirs: []
 
