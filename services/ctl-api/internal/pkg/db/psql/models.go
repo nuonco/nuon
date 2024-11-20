@@ -109,6 +109,13 @@ func AllModels() []interface{} {
 		&app.RunnerJobExecution{},
 		&app.RunnerJobExecutionResult{},
 
+		// diagnostics
+		&app.ActionWorkflow{},
+		&app.ActionWorkflowConfig{},
+		&app.ActionWorkflowStepConfig{},
+		&app.ActionWorkflowTriggerConfig{},
+		&app.InstallActionWorkflowRun{},
+
 		// internal
 		&app.Migration{},
 	}
