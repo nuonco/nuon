@@ -15,6 +15,7 @@ import {
   type ColumnSort,
 } from '@tanstack/react-table'
 import { Button } from '@/components/Button'
+import { ClickToCopy } from '@/components/ClickToCopy'
 import { Expand } from '@/components/Expand'
 import { LogsPreview } from '@/components/RunnerLogsPreview'
 import { LogLineSeverity } from '@/components/RunnerLogLineSeverity'
@@ -22,7 +23,7 @@ import { Modal } from '@/components/Modal'
 import { Section } from '@/components/Card'
 import { RunnerLogsActions } from '@/components/RunnerLogsActions'
 import { Time } from '@/components/Time'
-import { Text } from '@/components/Typography'
+import { Code, Text } from '@/components/Typography'
 import type { TOTELLog } from '@/types'
 
 interface IOTELLogs {
@@ -56,7 +57,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
       {table.getHeaderGroups().map((group) => (
         <div
           key={`header-${group.id}`}
-          className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full"
+          className="grid grid-cols-12 items-center justify-start gap-5 py-2 w-[calc(100%-20px)]"
         >
           {group.headers.map((header, i) => (
             <Text
@@ -64,9 +65,9 @@ export const OTELLogs: FC<IOTELLogs> = ({
               className={classNames(
                 '!font-medium text-cool-grey-600 dark:text-cool-grey-500',
                 {
-                  'col-span-1': i === 0,
-                  'col-span-2': i === 1 || i === 2,
-                  'col-span-7': i === 3,
+                  'col-span-1': i === 0 || i === 2,
+                  'col-span-2': i === 1,
+                  'col-span-8': i === 3,
                   'cursor-pointer': header.column.getCanSort(),
                 }
               )}
@@ -95,7 +96,13 @@ export const OTELLogs: FC<IOTELLogs> = ({
           <Expand
             key={row.original?.id}
             id={row.original?.id}
-            className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full"
+            headerClass={classNames({
+              'bg-primary-900/5 dark:bg-primary-400/5':
+                row.original?.service_name === 'api',
+            })}
+            className={classNames(
+              'grid grid-cols-12 items-center justify-start gap-6 py-2 w-full'
+            )}
             heading={
               row
                 .getVisibleCells()
@@ -135,9 +142,23 @@ export const OTELLogs: FC<IOTELLogs> = ({
                               {key}
                             </Text>
 
-                            <Text className="text-sm font-mono text-pretty col-span-2 !inline break-all">
-                              {logAttributes[key]}
-                            </Text>
+                            <span className="col-span-2">
+                              {key === 'intermediate-data' ? (
+                                <Code variant="preformated">
+                                  <ClickToCopy insetNotice>
+                                    {JSON.stringify(
+                                      JSON.parse(logAttributes[key]),
+                                      null,
+                                      2
+                                    )}
+                                  </ClickToCopy>
+                                </Code>
+                              ) : (
+                                <Text className="text-sm font-mono text-pretty!inline break-all">
+                                  {logAttributes[key]}
+                                </Text>
+                              )}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -256,12 +277,26 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
         ),
       },
       {
+        header: 'Service',
+        accessorKey: 'service_name',
+        enableColumSort: false,
+        cell: (props) => (
+          <span
+            className={classNames(lineStyle, {
+              'col-span-1 flex items-center': true,
+            })}
+          >
+            <span>{props.getValue<string>()}</span>
+          </span>
+        ),
+      },
+      {
         header: 'Content',
         accessorKey: 'body',
         cell: (props) => (
           <span
             className={classNames(lineStyle, {
-              'col-span-9 flex items-center': true,
+              'col-span-8 flex items-center': true,
             })}
           >
             <span>{props.getValue<string>()}</span>
