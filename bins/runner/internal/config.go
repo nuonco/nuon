@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 
@@ -15,6 +16,7 @@ func init() {
 	config.RegisterDefault("registry_dir", "/tmp/runner-registry")
 	config.RegisterDefault("log_level", "INFO")
 	config.RegisterDefault("registry_port", "5001")
+	config.RegisterDefault("sandbox_job_duration", "5s")
 }
 
 type Config struct {
@@ -35,7 +37,8 @@ type Config struct {
 	RegistryPort int    `config:"registry_port" validate:"required"`
 
 	// only for enabling local things
-	IsNuonctl bool `config:"is_nuonctl"`
+	IsNuonctl          bool          `config:"is_nuonctl"`
+	SandboxJobDuration time.Duration `config:"sandbox_job_duration"`
 }
 
 func NewConfig() (*Config, error) {
