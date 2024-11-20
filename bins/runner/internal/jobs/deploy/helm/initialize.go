@@ -15,10 +15,10 @@ const (
 )
 
 func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-        l, err := pkgctx.Logger(ctx)
-        if err != nil {
-                return err
-        }
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
 
 	l.Info("initializing archive...")
 	if err := h.state.arch.Initialize(ctx); err != nil {
@@ -30,7 +30,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 		return fmt.Errorf("unable to unpack archive: %w", err)
 	}
 
-	h.state.chartPath = filepath.Join(h.state.arch.TmpDir(), defaultChartPackageFilename)
+	h.state.chartPath = filepath.Join(h.state.arch.BasePath(), defaultChartPackageFilename)
 
 	_, err = os.Stat(h.state.chartPath)
 	if err != nil {

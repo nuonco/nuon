@@ -21,7 +21,7 @@ func (p *handler) GetWorkspace() (workspace.Workspace, error) {
 	cfg := p.state.cfg
 
 	arch, err := dirarchive.New(p.v,
-		dirarchive.WithPath(p.state.arch.TmpDir()),
+		dirarchive.WithPath(p.state.arch.BasePath()),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create local archive: %w", err)
