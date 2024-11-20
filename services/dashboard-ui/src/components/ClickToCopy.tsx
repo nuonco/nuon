@@ -4,9 +4,14 @@ import classNames from 'classnames'
 import React, { type FC, useEffect, useState } from 'react'
 import { Check, Copy } from '@phosphor-icons/react'
 
-export const ClickToCopy: FC<React.HTMLAttributes<HTMLSpanElement>> = ({
+interface IClickToCopy extends React.HTMLAttributes<HTMLSpanElement> {
+  insetNotice?: boolean
+}
+
+export const ClickToCopy: FC<IClickToCopy> = ({
   className,
   children,
+  insetNotice = false,
   ...props
 }) => {
   const [isCopied, setIsCopied] = useState(false)
@@ -39,7 +44,10 @@ export const ClickToCopy: FC<React.HTMLAttributes<HTMLSpanElement>> = ({
       {isCopied ? (
         <span
           className={classNames(
-            'bg-dark text-light dark:bg-light dark:text-dark text-sm leading-none px-2 py-1.5 rounded drop-shadow-md max-w-96 absolute z-10 -top-6 right-0'
+            'bg-dark text-light dark:bg-light dark:text-dark text-sm leading-none px-2 py-1.5 rounded drop-shadow-md max-w-96 absolute z-10 -top-6 right-0',
+            {
+              'top-0': insetNotice,
+            }
           )}
         >
           Copied
