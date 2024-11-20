@@ -61,7 +61,7 @@ func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, insta
 	planReq := w.protos.ToDeployPlanRequest(install, installDeploy, deployCfg)
 
 	l.Info("creating deploy plan")
-	deployImagePlanWorkflowID := fmt.Sprintf("%s-deploy-%s", install.ID, installDeploy.ID)
+	deployImagePlanWorkflowID := fmt.Sprintf("%s-deploy-plan-%s", install.ID, installDeploy.ID)
 	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, deployImagePlanWorkflowID, planReq)
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create deploy plan")
