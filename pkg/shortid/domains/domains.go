@@ -58,6 +58,30 @@ func NewComponentID() string {
 	return shortid.NewNanoID("cmp")
 }
 
+func NewActionID() string {
+	return shortid.NewNanoID("act")
+}
+
+func NewActionWorkflowID() string {
+	return shortid.NewNanoID("acw")
+}
+
+func NewActionWorkflowConfigID() string {
+	return shortid.NewNanoID("acc")
+}
+
+func NewActionWorkflowStepConfigID() string {
+	return shortid.NewNanoID("acs")
+}
+
+func NewActionWorkflowTriggerConfigID() string {
+	return shortid.NewNanoID("act")
+}
+
+func NewActionRunID() string {
+	return shortid.NewNanoID("acr")
+}
+
 func NewDeploymentID() string {
 	return shortid.NewNanoID("dpl")
 }

@@ -21,7 +21,7 @@ function gen_public_schema() {
     --parseInternal \
     -g public.go \
     --markdownFiles docs/public/descriptions \
-    -t apps,components,installs,installers,general,orgs,releases,sandboxes,vcs,runners
+    -t apps,actions,components,installs,installers,general,orgs,releases,sandboxes,vcs,runners
   # sleep to avoid confusingly interpolated validation & runner logs
   sleep .25
 }
@@ -46,7 +46,7 @@ function gen_admin_schema() {
     --parseDependency \
     --parseInternal -g admin.go \
     --markdownFiles docs/admin/descriptions \
-    -t orgs/admin,apps/admin,general/admin,sandboxes/admin,installs/admin,installers/admin,components/admin,runners/admin
+    -t orgs/admin,actions/admin,apps/admin,general/admin,sandboxes/admin,installs/admin,installers/admin,components/admin,runners/admin
   # sleep to avoid confusingly interpolated validation & runner logs
   sleep .25
 }
@@ -72,7 +72,7 @@ function gen_runner_schema() {
     --parseDependency \
     --parseInternal -g runner.go \
     --markdownFiles docs/runner/descriptions \
-    -t orgs/runner,apps/runner,general/runner,sandboxes/runner,installs/runner,installers/runner,components/runner,runners/runner
+    -t orgs/runner,apps/runner,general/runner,sandboxes/runner,installs/runner,installers/runner,components/runner,runners/runner,actions/runner
   # sleep to avoid confusingly interpolated validation & runner logs
   sleep .25
 }
