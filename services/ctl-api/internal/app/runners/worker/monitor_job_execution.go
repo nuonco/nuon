@@ -2,95 +2,37 @@ package worker
 
 import (
 	"fmt"
-	"time"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
-const (
-	defaultJobPollPeriod       time.Duration = time.Second * 1
-	defaultAvailablePollPeriod time.Duration = time.Second * 1
-)
+func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, error) {
+	startTS := workflow.Now(ctx)
+	tags := map[string]string{
+		"status":   "ok",
+		"job_type": string(job.Type),
+	}
+	defer func() {
+		w.mw.Incr(ctx, "runner.job_execution", metrics.ToTags(tags)...)
+		e2eLatency := workflow.Now(ctx).Sub(startTS)
+		w.mw.Timing(ctx, "runner.job_execution", e2eLatency, metrics.ToTags(tags)...)
+	}()
 
-// this function is the most core part of the runner job system, it's responsible for a.) marking a job as available and
-// then b.) waiting until it is picked up by a runner (ie: an execution exists) and then c.) finished.
-//
-// it is responsible for updating the runner job with each state, and in some cases the runner job execution.
-func (w *Workflows) processJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	availableStart := workflow.Now(ctx)
-	l.Info("marking job as available for runner to pick up")
-	w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusAvailable, "waiting for runner to reserve job")
-
-	start := workflow.Now(ctx)
-	overallTimeout := job.CreatedAt.Add(job.OverallTimeout)
-	availableTimeout := start.Add(job.AvailableTimeout)
-
-	var (
-		jobExecution      *app.RunnerJobExecution
-		jobExecutionFound bool
-	)
-
-	// poll until the job is picked up, and an execution exists
-	for !jobExecutionFound {
-		workflow.Sleep(ctx, defaultAvailablePollPeriod)
-
-		now := workflow.Now(ctx)
-		if now.After(overallTimeout) {
-			l.Error("overall job timeout reached")
-			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout")
-			return false, nil
-		}
-
-		if now.After(availableTimeout) {
-			l.Error("timeout waiting for job to be picked up")
-			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "timeout waiting for runner to pick up job")
-			return true, nil
-		}
-
-		// if the runner is deemed unhealthy, the job execution is marked as unknown, and the job is marked as
-		// not attempted with the correct status, this is retryable.
-		runnerStatus, err := w.getRunnerStatus(ctx, job.RunnerID)
-		if err != nil {
-			return false, err
-		}
-		if runnerStatus != app.RunnerStatusActive {
-			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusUnknown, "runner is unhealthy")
-			return true, nil
-		}
-
-		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
-		if err != nil {
-			return false, err
-		}
-		if jobStatus == app.RunnerJobStatusCancelled {
-			return true, nil
-		}
-
-		// fetch latest job execution
-		jobExecutionResp, err := activities.AwaitGetLatestJobExecution(ctx, activities.GetLatestJobExecutionRequest{
-			JobID:       job.ID,
-			AvailableAt: availableStart,
-		})
-		if err != nil {
-			return false, fmt.Errorf("error fetching latest job execution: %w", err)
-		}
-
-		jobExecutionFound = jobExecutionResp.Found
-		jobExecution = jobExecutionResp.JobExecution
+	jobExecution, err := activities.AwaitGetCurrentJobExecutionByJobID(ctx, job.ID)
+	if err != nil {
+		return false, fmt.Errorf("error fetching latest job execution: %w", err)
 	}
-
-	l.Info("job picked up by runner and is in progress")
-	w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusInProgress, "job execution in progress")
 
 	// poll the job execution, until it's completed
 	executionTimeout := jobExecution.CreatedAt.Add(job.ExecutionTimeout)
@@ -101,10 +43,11 @@ func (w *Workflows) processJobExecution(ctx workflow.Context, job *app.RunnerJob
 
 		// when the overall timeout is hit, we mark both the runner job and execution as timed out
 		// this is not retryable.
-		if now.After(overallTimeout) {
+		if now.After(job.CreatedAt.Add(job.OverallTimeout)) {
 			l.Error("overall timeout reached")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout")
 			w.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusTimedOut)
+			tags["status"] = "overall_timeout"
 			return false, nil
 		}
 
@@ -114,6 +57,7 @@ func (w *Workflows) processJobExecution(ctx workflow.Context, job *app.RunnerJob
 			l.Error("execution timeout reached")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "execution timeout")
 			w.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusTimedOut)
+			tags["status"] = "execution_timeout"
 			return true, nil
 		}
 
@@ -124,6 +68,7 @@ func (w *Workflows) processJobExecution(ctx workflow.Context, job *app.RunnerJob
 		if jobStatus == app.RunnerJobStatusCancelled {
 			l.Error("job was cancelled")
 			w.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusCancelled)
+			tags["status"] = "cancelled"
 			return true, nil
 		}
 
@@ -139,6 +84,7 @@ func (w *Workflows) processJobExecution(ctx workflow.Context, job *app.RunnerJob
 			l.Error("runner marked unhealthy during job")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusUnknown, "runner became unhealthy during job")
 			w.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusUnknown)
+			tags["status"] = "runner_unhealthy"
 			return true, nil
 		}
 
@@ -156,21 +102,26 @@ func (w *Workflows) processJobExecution(ctx workflow.Context, job *app.RunnerJob
 		case app.RunnerJobExecutionStatusFinished:
 			l.Info("job execution successfully finished")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFinished, "finished")
+			tags["status"] = "ok"
 			return false, nil
 		case app.RunnerJobExecutionStatusCancelled:
 			l.Info("job cancelled")
+			tags["status"] = "execution_cancelled"
 			return true, nil
 		case app.RunnerJobExecutionStatusFailed:
 			l.Info("job execution failed")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "failed")
+			tags["status"] = "execution_failed"
 			return true, nil
 		case app.RunnerJobExecutionStatusTimedOut:
 			l.Info("job execution timed out")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "execution timed out")
+			tags["status"] = "execution_timed_out"
 			return true, nil
 		case app.RunnerJobExecutionStatusNotAttempted:
 			l.Info("job execution not attempted")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "execution not attempted")
+			tags["status"] = "execution_not_attempted"
 			return true, nil
 		default:
 			continue

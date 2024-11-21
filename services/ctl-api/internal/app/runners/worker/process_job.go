@@ -82,7 +82,16 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 
 	for i := 0; i < runnerJob.MaxExecutions; i++ {
 		l.Info(fmt.Sprintf("attempting job execution %d of %d", i+1, runnerJob.MaxExecutions))
-		retry, err := w.processJobExecution(ctx, runnerJob)
+		retry, err := w.startJobExecution(ctx, runnerJob)
+		if err != nil {
+			return err
+		}
+
+		if !retry {
+			return nil
+		}
+
+		retry, err = w.monitorJobExecution(ctx, runnerJob)
 		if err != nil {
 			return err
 		}
