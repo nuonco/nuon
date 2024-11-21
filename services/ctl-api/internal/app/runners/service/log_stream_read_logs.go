@@ -13,6 +13,10 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
+const (
+	PageSize int = 250
+)
+
 // @ID LogStreamReadLogs
 // @Summary	read a log stream's logs
 // @Description.markdown log_stream_read_logs.md
@@ -80,19 +84,23 @@ func (s *service) getLogStreamLogs(ctx context.Context, runnerID string, before 
 	// prepare a slice to hold all of the record we will be writing
 	otelLogRecords := []app.OtelLogRecord{}
 
-	// get count
-	var count int64
-	query := s.chDB.WithContext(ctx).Where("log_stream_id = ?", runnerID)
-	// compose query from values from query params
-
-	// Query: get records
-	res := s.chDB.WithContext(ctx).Order("timestamp desc").Limit(PageSize).Where(query).Where("toUnixTimestamp64Nano(timestamp) < ?", before).Find(&otelLogRecords)
+	res := s.chDB.WithContext(ctx).
+		Where("log_stream_id = ? AND toUnixTimestamp64Nano(timestamp) < ?", runnerID, before).
+		Order("timestamp desc").
+		Limit(PageSize).
+		Find(&otelLogRecords)
 	if res.Error != nil {
 		return nil, headers, fmt.Errorf("unable to retrieve logs: %w", res.Error)
 	}
 
 	// Query: get record count
-	countres := s.chDB.WithContext(ctx).Find(&app.OtelLogRecord{}).Select("id").Where(query).Count(&count)
+	// get count
+	var count int64
+	countres := s.chDB.WithContext(ctx).
+		Select("id").
+		Where("log_stream_id = ? AND toUnixTimestamp64Nano(timestamp) < ?", runnerID, before).
+		Find(&[]app.OtelLogRecord{}).
+		Count(&count)
 	if countres.Error != nil {
 		return nil, headers, fmt.Errorf("unable to retrieve logs: %w", countres.Error)
 	}
