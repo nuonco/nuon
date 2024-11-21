@@ -27,7 +27,7 @@ concurrency:
 
   # NOTE(jm): we only want to "cancel" in flight jobs if pushing to an existing PR. If this is running on main, do not
   # cancel previous jobs.
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.head_ref != 'main' }}
 
 defaults:
   run:
