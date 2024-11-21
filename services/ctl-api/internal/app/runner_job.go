@@ -203,7 +203,7 @@ type RunnerJob struct {
 
 func (r *RunnerJob) BeforeCreate(tx *gorm.DB) error {
 	if r.ID == "" {
-		r.ID = domains.NewRunnerID()
+		r.ID = domains.NewRunnerJobID()
 	}
 
 	if r.CreatedByID == "" {

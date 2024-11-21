@@ -42,9 +42,9 @@ func (s *service) getRunner(ctx context.Context, runnerID string) (*app.Runner, 
 	runner := app.Runner{}
 	res := s.db.WithContext(ctx).
 		Preload("CreatedBy").
+		Preload("Org").
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Settings").
-		Preload("RunnerJob").
 		First(&runner, "id = ?", runnerID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get runner: %w", res.Error)
