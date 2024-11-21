@@ -3,7 +3,14 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { ArrowLineLeft } from '@phosphor-icons/react/dist/ssr'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
-import { Button, Logo, OrgSwitcher, SignOutButton, MainNav } from '@/components'
+import {
+  Button,
+  Logo,
+  OrgSwitcher,
+  SignOutButton,
+  MainNav,
+  NuonVersions,
+} from '@/components'
 import { getOrg, getOrgs } from '@/lib'
 
 export default withPageAuthRequired(
@@ -42,6 +49,7 @@ export default withPageAuthRequired(
             <div>
               <SignOutButton />
             </div>
+            <NuonVersions className="justify-center py-2" />
           </div>
         </aside>
         <div className="dashboard_content h-screen flex-auto md:border-l">
