@@ -11,4 +11,4 @@ tags = {
   nuon_sandbox_version = "0.10.4"
 }
 waypoint_odr_namespace            = "02w56dgii30zc23fb4kvqz77yi"
-waypoint_odr_service_account_name = "waypoint-odr-02w56dgii30zc23fb4kvqz77yi"
+waypoint_odr_service_account_name = "runner-02w56dgii30zc23fb4kvqz77yi"
