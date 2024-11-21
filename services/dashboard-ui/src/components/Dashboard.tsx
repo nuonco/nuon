@@ -3,6 +3,7 @@ import React, { type FC } from 'react'
 import { Link } from '@/components/Link'
 import { Logo } from '@/components/Logo'
 import { BreadcrumbNav, type TLink } from '@/components/Nav'
+import { NuonVersions } from '@/components/NuonVersions'
 import { SignOutButton } from '@/components/Profile'
 import { ID, Text } from '@/components/Typography'
 
@@ -13,12 +14,15 @@ export const DashboardHeader: FC = () => {
         <Logo />
       </div>
 
-      <div className="flex gap-4 items-center">
-        <Link className="text-sm" href="https://docs.nuon.co" target="_blank">
-          Documentation
-        </Link>
+      <div className="flex flex-col">
+        <div className="flex gap-4 items-center">
+          <Link href="https://docs.nuon.co" target="_blank" variant="ghost">
+            Docs
+          </Link>
 
-        <SignOutButton />
+          <SignOutButton />
+        </div>
+        <NuonVersions className="justify-end" />
       </div>
     </header>
   )
