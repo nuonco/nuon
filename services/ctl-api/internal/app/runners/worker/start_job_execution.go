@@ -21,7 +21,7 @@ const (
 // then b.) waiting until it is picked up by a runner (ie: an execution exists) and then c.) finished.
 //
 // it is responsible for updating the runner job with each state, and in some cases the runner job execution.
-func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, error) {
+func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, bool, error) {
 	startTS := workflow.Now(ctx)
 	tags := map[string]string{
 		"status":   "ok",
@@ -35,7 +35,7 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 
 	availableStart := workflow.Now(ctx)
@@ -57,34 +57,34 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 			l.Error("overall job timeout reached")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout")
 			tags["status"] = "overall_timeout"
-			return false, nil
+			return false, false, nil
 		}
 
 		if now.After(availableTimeout) {
 			l.Error("timeout waiting for job to be picked up")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "timeout waiting for runner to pick up job")
 			tags["status"] = "available_timeout"
-			return true, nil
+			return true, false, nil
 		}
 
 		// if the runner is deemed unhealthy, the job execution is marked as unknown, and the job is marked as
 		// not attempted with the correct status, this is retryable.
 		runnerStatus, err := w.getRunnerStatus(ctx, job.RunnerID)
 		if err != nil {
-			return false, err
+			return false, false, err
 		}
 		if runnerStatus != app.RunnerStatusActive {
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusUnknown, "runner is unhealthy")
 			tags["status"] = "runner_not_active"
-			return true, nil
+			return true, false, nil
 		}
 
 		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
 		if err != nil {
-			return false, err
+			return false, false, err
 		}
 		if jobStatus == app.RunnerJobStatusCancelled {
-			return true, nil
+			return true, false, nil
 		}
 
 		// fetch latest job execution
@@ -93,7 +93,7 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 			AvailableAt: availableStart,
 		})
 		if err != nil {
-			return false, fmt.Errorf("error fetching latest job execution: %w", err)
+			return false, false, fmt.Errorf("error fetching latest job execution: %w", err)
 		}
 
 		jobExecutionFound = jobExecutionResp.Found
@@ -101,5 +101,5 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 
 	l.Info("job picked up by runner and is in progress")
 	w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusInProgress, "job execution in progress")
-	return true, nil
+	return true, true, nil
 }
