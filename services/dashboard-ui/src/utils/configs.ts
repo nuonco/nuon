@@ -10,4 +10,6 @@ export const LOG_POLL_DURATION =
   (process?.env?.NEXT_PUBLIC_LOG_POLL_DURATION as unknown as number) || 1000
 export const GITHUB_APP_NAME =
   process?.env?.NEXT_PUBLIC_GITHUB_APP_NAME || 'nuon-connect'
-export const WORKFLOWS = Boolean(process?.env?.NEXT_PUBLIC_NUON_WORKFLOWS === "true") || false
+export const WORKFLOWS =
+  Boolean(process?.env?.NEXT_PUBLIC_NUON_WORKFLOWS === 'true') || false
+export const VERSION = process.env?.VERSION || '0.1.0'
