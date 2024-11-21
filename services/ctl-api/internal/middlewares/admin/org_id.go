@@ -12,6 +12,15 @@ import (
 )
 
 var mapper map[string]func(db *gorm.DB, id string) (string, error) = map[string]func(*gorm.DB, string) (string, error){
+	"job": func(db *gorm.DB, id string) (string, error) {
+		var obj app.RunnerJob
+		res := db.First(&obj, "id = ?", id)
+		if res.Error != nil {
+			return "", errors.Wrap(res.Error, "unable to fetch runner job")
+		}
+
+		return obj.OrgID, nil
+	},
 	"rgr": func(db *gorm.DB, id string) (string, error) {
 		var obj app.RunnerGroup
 		res := db.First(&obj, "id = ?", id)
