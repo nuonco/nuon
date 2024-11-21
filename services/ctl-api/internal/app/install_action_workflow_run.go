@@ -47,7 +47,7 @@ type InstallActionWorkflowRun struct {
 
 func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {
 	if i.ID == "" {
-		i.ID = domains.NewRunID()
+		i.ID = domains.NewInstallActionWorkflowRunID()
 	}
 
 	if i.CreatedByID == "" {

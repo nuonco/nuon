@@ -45,7 +45,6 @@ var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.CancelRunnerJob)
-	api.GET("/v1/runners/:runner_id/logs", s.OtelReadLogs)
 	api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJob)
 
 	api.GET("/v1/log-streams/:log_stream_id/logs", s.LogStreamReadLogs)
@@ -69,6 +68,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/service-account-token", s.AdminCreateRunnerServiceAccountToken)
 	api.POST("/v1/runners/restart", s.AdminRestartRunners)
 	api.PATCH("/v1/runners/bulk-update", s.AdminBulkUpdateRunners)
+	api.GET("/v1/runner-groups/:runner_group_id", s.AdminGetRunnerGroup)
 
 	// trigger specific jobs
 	api.POST("/v1/runners/:runner_id/health-check-job", s.AdminCreateHealthCheck)
@@ -79,10 +79,9 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.AdminCancelRunnerJob)
 	api.GET("/v1/runner-jobs/:runner_job_id", s.AdminGetRunnerJob)
 
-	api.GET("/v1/runner-groups/:runner_group_id", s.AdminGetRunnerGroup)
-	api.POST("/v1/log-streams/:log_stream_id/log", s.OtelWriteLogs)
-	api.GET("/v1/log-streams/:log_stream_id/logs", s.LogStreamReadLogs)
-	api.GET("/v1/log-streams/:log_stream_id", s.GetLogStream)
+	// otel admin endpoints
+	api.GET("/v1/log-streams/:log_stream_id/logs", s.AdminGetLogStreamLogs)
+	api.GET("/v1/log-streams/:log_stream_id", s.AdminGetLogStream)
 
 	return nil
 }

@@ -21,6 +21,15 @@ var mapper map[string]func(db *gorm.DB, id string) (string, error) = map[string]
 
 		return obj.OrgID, nil
 	},
+	"bld": func(db *gorm.DB, id string) (string, error) {
+		var obj app.ComponentBuild
+		res := db.First(&obj, "id = ?", id)
+		if res.Error != nil {
+			return "", errors.Wrap(res.Error, "unable to fetch build")
+		}
+
+		return obj.OrgID, nil
+	},
 	"run": func(db *gorm.DB, id string) (string, error) {
 		var obj app.Runner
 		res := db.First(&obj, "id = ?", id)
@@ -62,6 +71,42 @@ var mapper map[string]func(db *gorm.DB, id string) (string, error) = map[string]
 		res := db.First(&obj, "id = ?", id)
 		if res.Error != nil {
 			return "", errors.Wrap(res.Error, "unable to fetch install")
+		}
+
+		return obj.OrgID, nil
+	},
+	"dpl": func(db *gorm.DB, id string) (string, error) {
+		var obj app.InstallDeploy
+		res := db.First(&obj, "id = ?", id)
+		if res.Error != nil {
+			return "", errors.Wrap(res.Error, "unable to fetch install deploy")
+		}
+
+		return obj.OrgID, nil
+	},
+	"iar": func(db *gorm.DB, id string) (string, error) {
+		var obj app.InstallActionWorkflowRun
+		res := db.First(&obj, "id = ?", id)
+		if res.Error != nil {
+			return "", errors.Wrap(res.Error, "unable to fetch install action workflow run")
+		}
+
+		return obj.OrgID, nil
+	},
+	"rop": func(db *gorm.DB, id string) (string, error) {
+		var obj app.RunnerOperation
+		res := db.First(&obj, "id = ?", id)
+		if res.Error != nil {
+			return "", errors.Wrap(res.Error, "unable to fetch runner operation")
+		}
+
+		return obj.OrgID, nil
+	},
+	"sbr": func(db *gorm.DB, id string) (string, error) {
+		var obj app.InstallSandboxRun
+		res := db.First(&obj, "id = ?", id)
+		if res.Error != nil {
+			return "", errors.Wrap(res.Error, "unable to fetch install sandbox run")
 		}
 
 		return obj.OrgID, nil

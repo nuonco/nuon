@@ -98,8 +98,16 @@ func NewEventID() string {
 	return shortid.NewNanoID("eve")
 }
 
-func NewRunID() string {
-	return shortid.NewNanoID("run")
+func NewInstallActionWorkflowRunID() string {
+	return shortid.NewNanoID("iar")
+}
+
+func NewRunnerOperationID() string {
+	return shortid.NewNanoID("rop")
+}
+
+func NewSandboxRunID() string {
+	return shortid.NewNanoID("sbr")
 }
 
 func NewInstallID() string {
