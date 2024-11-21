@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
@@ -130,7 +131,9 @@ func (w *Workflows) processJobExecution(ctx workflow.Context, job *app.RunnerJob
 		// not attempted with the correct status, this is retryable.
 		runnerStatus, err := w.getRunnerStatus(ctx, job.RunnerID)
 		if err != nil {
-			return false, err
+			l.Warn("unable to decipher the status of the runner, so assuming it is healthy and attempting to let the job finish",
+				zap.Error(err))
+			runnerStatus = app.RunnerStatusActive
 		}
 		if runnerStatus != app.RunnerStatusActive {
 			l.Error("runner marked unhealthy during job")
