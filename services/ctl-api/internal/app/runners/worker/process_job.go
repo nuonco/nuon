@@ -82,20 +82,24 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 
 	for i := 0; i < runnerJob.MaxExecutions; i++ {
 		l.Info(fmt.Sprintf("attempting job execution %d of %d", i+1, runnerJob.MaxExecutions))
-		retry, err := w.startJobExecution(ctx, runnerJob)
+		retry, started, err := w.startJobExecution(ctx, runnerJob)
 		if err != nil {
 			return err
 		}
+		// if the job was not started, we _only_ continue if this was a retryable state
+		if !started {
+			if !retry {
+				return nil
+			}
 
-		if !retry {
-			return nil
+			continue
 		}
 
+		// job was started, and the execution
 		retry, err = w.monitorJobExecution(ctx, runnerJob)
 		if err != nil {
 			return err
 		}
-
 		if !retry {
 			return nil
 		}

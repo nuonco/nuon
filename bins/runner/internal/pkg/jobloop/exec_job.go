@@ -2,6 +2,7 @@ package jobloop
 
 import (
 	"context"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-runner-go/models"
@@ -54,6 +55,31 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		return errors.Wrap(err, "unable to get job steps")
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+	doneCh := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+			case <-doneCh:
+				return
+			}
+
+			job, err := j.apiClient.GetJob(ctx, job.ID)
+			if err != nil {
+				l.Warn("unable to fetch job cancellation status", zap.Error(err))
+				continue
+			}
+
+			if job.Status == models.AppRunnerJobStatusCancelled {
+				l.Error("job was cancelled via API, attempting to cancel execution")
+				cancel()
+			}
+		}
+	}()
+
 	for _, step := range steps {
 		l.Info("executing job step "+step.name, zap.String("step", step.name))
 		if err := j.execJobStep(ctx, l, step, job, execution); err != nil {
@@ -69,6 +95,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	if err := j.loggerProvider.ForceFlush(ctx); err != nil {
 		return errors.Wrap(err, "unable to flush logger")
 	}
+	close(doneCh)
 
 	return nil
 }
