@@ -21,7 +21,7 @@ members:
   # Ada Ban
   - username: AdaBan
     role: admin
-    
+
   # all other team members
   # shared nuon user
   - username: nuonbot
@@ -31,3 +31,5 @@ members:
   - username: Casey-00
   # Kristin Jerome
   - username: KJerome415
+  # Andrea Echstenkamper
+  - username: aechsten
