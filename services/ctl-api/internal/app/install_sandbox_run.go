@@ -59,7 +59,7 @@ type InstallSandboxRun struct {
 
 func (i *InstallSandboxRun) BeforeCreate(tx *gorm.DB) error {
 	if i.ID == "" {
-		i.ID = domains.NewRunID()
+		i.ID = domains.NewSandboxRunID()
 	}
 
 	if i.CreatedByID == "" {
