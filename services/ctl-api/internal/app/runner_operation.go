@@ -50,7 +50,7 @@ type RunnerOperation struct {
 
 func (i *RunnerOperation) BeforeCreate(tx *gorm.DB) error {
 	if i.ID == "" {
-		i.ID = domains.NewRunID()
+		i.ID = domains.NewRunnerOperationID()
 	}
 
 	if i.CreatedByID == "" {
