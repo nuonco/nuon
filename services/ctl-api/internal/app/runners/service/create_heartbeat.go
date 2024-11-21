@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -48,6 +50,21 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create runner heart beat: %w", err))
 		return
 	}
+
+	runner, err := s.getRunner(ctx, runnerID)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get runner"))
+		return
+	}
+
+	tags := metrics.ToTags(map[string]string{
+		"org_name":       runner.Org.Name,
+		"install_type":   string(runner.RunnerGroup.Type),
+		"runner_version": req.Version,
+	})
+
+	s.mw.Incr("heart_beat.incr", tags)
+	s.mw.Timing("heart_beat.alive_time", req.AliveTime, tags)
 
 	ctx.JSON(http.StatusCreated, heartBeat)
 }
