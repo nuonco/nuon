@@ -1,3 +1,4 @@
+export * from "./get-api-version"
 export * from './get-app-components'
 export * from './get-app-configs'
 export * from './get-app-input-latest-config'
