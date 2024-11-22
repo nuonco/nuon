@@ -37,17 +37,22 @@ func (s *service) GetActionWorkflowConfig(ctx *gin.Context) {
 	awcID := ctx.Param("action_workflow_config_id")
 	awc, err := s.findActionWorkflowConfig(ctx, org.ID, awcID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app %s: %w", awcID, err))
+		ctx.Error(fmt.Errorf("unable to get action workflow config %s: %w", awcID, err))
 		return
 	}
 
 	ctx.JSON(http.StatusOK, awc)
 }
 
-func (s *service) findActionWorkflowConfig(ctx context.Context, orgID, awID string) (*app.ActionWorkflowConfig, error) {
+func (s *service) findActionWorkflowConfig(ctx context.Context, orgID, awcID string) (*app.ActionWorkflowConfig, error) {
+	fmt.Println("findActionWorkflowConfig")
+	fmt.Println("orgID", orgID)
+	fmt.Println("awcID", awcID)
 	aw := app.ActionWorkflowConfig{}
 	res := s.db.WithContext(ctx).
-		Where("org_id = ? AND id = ?", orgID, awID).
+		Preload("Triggers").
+		Preload("Steps").
+		Where("org_id = ? AND id = ?", orgID, awcID).
 		First(&aw)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get action workflow config: %w", res.Error)

@@ -106,7 +106,7 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 		return nil, fmt.Errorf("unable to create action workflow config: %w", res.Error)
 	}
 
-	if err := s.createActionWorkflowTriggers(ctx, parentApp.ID, orgID, req.AppConfigID, awc.ID, req.Triggers); err != nil {
+	if err := s.createActionWorkflowTriggers(ctx, orgID, parentApp.ID, req.AppConfigID, awc.ID, req.Triggers); err != nil {
 		return nil, fmt.Errorf("unable to create action workflow triggers: %w", err)
 	}
 
