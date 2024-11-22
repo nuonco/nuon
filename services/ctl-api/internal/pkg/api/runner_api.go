@@ -6,12 +6,12 @@ import (
 
 func NewRunnerAPI(params Params) (*API, error) {
 	api := &API{
-		configuredMiddlewares: params.Cfg.RunnerMiddlewares,
 		cfg:                   params.Cfg,
 		port:                  params.Cfg.RunnerHTTPPort,
 		name:                  "runner",
 		services:              params.Services,
 		middlewares:           params.Middlewares,
+		configuredMiddlewares: params.Cfg.RunnerMiddlewares,
 		l:                     params.L,
 	}
 

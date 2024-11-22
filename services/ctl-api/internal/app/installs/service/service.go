@@ -99,6 +99,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/admin-restart", s.RestartInstall)
 	api.GET("/v1/installs/:install_id/admin-get", s.AdminGetInstall)
 	api.GET("/v1/installs/:install_id/admin-get-runner-group", s.AdminGetInstallRunnerGroup)
+	api.GET("/v1/installs/:install_id/admin-get-runner", s.AdminGetInstallRunner)
 	api.POST("/v1/installs/:install_id/admin-reprovision", s.ReprovisionInstall)
 	api.POST("/v1/installs/:install_id/admin-reprovision-runner", s.AdminReprovisionInstallRunner)
 	api.POST("/v1/installs/:install_id/admin-deprovision-runner", s.AdminDeprovisionInstallRunner)
