@@ -1,0 +1,180 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+)
+
+type CreateActionWorkflowConfigRequest struct {
+	AppConfigID string                                     `json:"app_config_id" validate:"required"`
+	Triggers    []CreateActionWorkflowConfigTriggerRequest `json:"triggers" validate:"required"`
+	Steps       []CreateActionWorkflowConfigStepRequest    `json:"steps" validate:"required"`
+}
+
+type CreateActionWorkflowConfigTriggerRequest struct {
+	Type         app.ActionWorkflowTriggerType `json:"type"`
+	CronSchedule string                        `json:"cron_schedule,omitempty"`
+}
+
+type CreateActionWorkflowConfigStepRequest struct {
+	basicVCSConfigRequest
+	Name    string             `json:"name" validate:"required"`
+	EnvVars map[string]*string `json:"env_vars" validate:"required"`
+}
+
+func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
+}
+
+// @ID CreateActionWorkflowConfig
+// @Summary	create an app
+// @Description.markdown	create_action_workflow_config.md
+// @Param			action_workflow_id	path	string	true	"action workflow ID"
+// @Tags			actions
+// @Accept			json
+// @Param			req	body CreateActionWorkflowConfigRequest true	"Input"
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.ActionWorkflowConfig
+// @Router			/v1/action-workflows/{action_workflow_id}/configs [post]
+func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	awID := ctx.Param("action_workflow_id")
+	aw, err := s.findActionWorkflow(ctx, org.ID, awID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get action workflow %s: %w", awID, err))
+		return
+	}
+
+	parentApp, err := s.findApp(ctx, org.ID, aw.AppID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get app %s: %w", parentApp.ID, err))
+		return
+	}
+
+	var req CreateActionWorkflowConfigRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
+	awc, err := s.createActionWorkflowConfig(ctx, parentApp, org.ID, awID, &req)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to create app: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, awc)
+}
+
+func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app.App, orgID string, awID string, req *CreateActionWorkflowConfigRequest) (*app.ActionWorkflowConfig, error) {
+	awc := app.ActionWorkflowConfig{
+		AppID:            parentApp.ID,
+		AppConfigID:      req.AppConfigID,
+		OrgID:            orgID,
+		ActionWorkflowID: awID,
+	}
+
+	res := s.db.WithContext(ctx).
+		Create(&awc)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create action workflow config: %w", res.Error)
+	}
+
+	if err := s.createActionWorkflowTriggers(ctx, parentApp.ID, orgID, req.AppConfigID, awc.ID, req.Triggers); err != nil {
+		return nil, fmt.Errorf("unable to create action workflow triggers: %w", err)
+	}
+
+	if err := s.createActionWorkflowSteps(ctx, parentApp, orgID, req.AppConfigID, awc.ID, req.Steps); err != nil {
+		return nil, fmt.Errorf("unable to create action workflow steps: %w", err)
+	}
+
+	return &awc, nil
+}
+
+func (s *service) createActionWorkflowTriggers(ctx context.Context, orgId, appID, appConfigID, awcID string, triggers []CreateActionWorkflowConfigTriggerRequest) error {
+	for _, trigger := range triggers {
+		newTrigger := app.ActionWorkflowTriggerConfig{
+			OrgID:                  orgId,
+			AppID:                  appID,
+			AppConfigID:            appConfigID,
+			ActionWorkflowConfigID: awcID,
+			Type:                   trigger.Type,
+			CronSchedule:           trigger.CronSchedule,
+		}
+
+		res := s.db.WithContext(ctx).
+			Create(&newTrigger)
+		if res.Error != nil {
+			return fmt.Errorf("unable to create action workflow trigger: %w", res.Error)
+		}
+	}
+
+	return nil
+}
+
+func (s *service) createActionWorkflowSteps(ctx context.Context, parentApp *app.App, orgId, appConfigID, awcID string, steps []CreateActionWorkflowConfigStepRequest) error {
+	stepIdx := 0
+	prevStepId := ""
+
+	for _, step := range steps {
+		// build the app sandbox config
+		githubVCSConfig, err := step.connectedGithubVCSConfig(ctx, parentApp, s.vcsHelpers)
+		if err != nil {
+			return fmt.Errorf("unable to create connected github vcs config: %w", err)
+		}
+
+		publicGitConfig, err := step.publicGitVCSConfig()
+		if err != nil {
+			return fmt.Errorf("unable to get public git config: %w", err)
+		}
+		newStep := app.ActionWorkflowStepConfig{
+			OrgID:                    orgId,
+			AppID:                    parentApp.ID,
+			AppConfigID:              appConfigID,
+			ActionWorkflowConfigID:   awcID,
+			Name:                     step.Name,
+			EnvVars:                  step.EnvVars,
+			Idx:                      stepIdx,
+			PreviousStepID:           prevStepId,
+			PublicGitVCSConfig:       publicGitConfig,
+			ConnectedGithubVCSConfig: githubVCSConfig,
+		}
+
+		res := s.db.WithContext(ctx).
+			Create(&newStep)
+		if res.Error != nil {
+			return fmt.Errorf("unable to create action workflow step: %w", res.Error)
+		}
+
+		prevStepId = newStep.ID
+		stepIdx++
+	}
+
+	return nil
+}

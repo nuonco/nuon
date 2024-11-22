@@ -45,8 +45,8 @@ type ActionWorkflowTriggerConfig struct {
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"-"`
 
 	// individual fields for different types
-
-	CronSchedule string `json:"cron_schedule,omitempty"`
+	Type         ActionWorkflowTriggerType `json:"type" gorm:"default null;not null"`
+	CronSchedule string                    `json:"cron_schedule,omitempty"`
 }
 
 func (a *ActionWorkflowTriggerConfig) BeforeCreate(tx *gorm.DB) error {
