@@ -8,30 +8,15 @@ import (
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/release"
 
+	"github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/pkg/helm"
 )
 
 func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration) (*release.Release, error) {
-	l.Info("loading helm env settings")
-	settings, err := helm.LoadEnvSettings()
-	if err != nil {
-		return nil, fmt.Errorf("unable to load env settings: %w", err)
-	}
-
 	l.Info("loading chart options")
-	cpo, chartName, err := helm.ChartPathOptions(
-		h.state.cfg.Repository,
-		h.state.cfg.Chart,
-		h.state.cfg.Version,
-	)
+	chart, err := helm.GetChartByPath(h.state.chartPath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to load chart options: %w", err)
-	}
-
-	l.Info("loading chart")
-	c, _, err := helm.GetChart(chartName, cpo, settings)
-	if err != nil {
-		return nil, fmt.Errorf("unable to load chart: %w", err)
+		return nil, errors.Wrap(err, "unable to get chart")
 	}
 
 	l.Info("loading chart values")
@@ -41,7 +26,6 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	}
 
 	client := action.NewInstall(actionCfg)
-	client.ChartPathOptions = *cpo
 	client.ClientOnly = false
 	client.DryRun = false
 	client.DisableHooks = false
@@ -64,7 +48,7 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.CreateNamespace = h.state.cfg.CreateNamespace
 
 	l.Info("running install")
-	rel, err := client.Run(c, values)
+	rel, err := client.Run(chart, values)
 	if err != nil {
 		return nil, fmt.Errorf("unable to install chart: %w", err)
 	}

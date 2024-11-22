@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @ID AdminGetInstallRunner
-// @Summary	get an install runner
+// @ID AdminGetInstallRunnerGroup
+// @Summary	get an install runner group
 // @Description.markdown get_install_runner_group.md
 // @Param			install_id	path	string					true	"install ID"
 // @Tags			installs/admin
@@ -16,8 +16,8 @@ import (
 // @Accept			json
 // @Produce		json
 // @Success		200	{boolean}	true
-// @Router			/v1/installs/{install_id}/admin-get-runner [GET]
-func (s *service) AdminGetInstallRunner(ctx *gin.Context) {
+// @Router			/v1/installs/{install_id}/admin-get-runner-group [GET]
+func (s *service) AdminGetInstallRunnerGroup(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
 	install, err := s.adminGetInstall(ctx, installID)
@@ -26,5 +26,5 @@ func (s *service) AdminGetInstallRunner(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, install.RunnerGroup.Runners[0])
+	ctx.JSON(http.StatusOK, install.RunnerGroup)
 }

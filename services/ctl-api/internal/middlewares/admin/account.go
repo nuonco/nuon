@@ -14,7 +14,7 @@ func (m *middleware) setAccount(ctx *gin.Context) error {
 		return nil
 	}
 
-	m.l.Info("admin email header found", zap.String("email", email))
+	m.l.Debug("admin email header found", zap.String("email", email))
 	acct, err := m.acctClient.FindAccount(ctx, email)
 	if err != nil {
 		return stderr.ErrAuthorization{
