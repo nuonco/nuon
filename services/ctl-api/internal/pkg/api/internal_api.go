@@ -6,12 +6,13 @@ import (
 
 func NewInternalAPI(params Params) (*API, error) {
 	api := &API{
-		cfg:         params.Cfg,
-		port:        params.Cfg.InternalHTTPPort,
-		name:        "internal",
-		services:    params.Services,
-		middlewares: params.Middlewares,
-		l:           params.L,
+		cfg:                   params.Cfg,
+		port:                  params.Cfg.InternalHTTPPort,
+		name:                  "internal",
+		services:              params.Services,
+		middlewares:           params.Middlewares,
+		l:                     params.L,
+		configuredMiddlewares: params.Cfg.InternalMiddlewares,
 	}
 
 	if err := api.init(); err != nil {
