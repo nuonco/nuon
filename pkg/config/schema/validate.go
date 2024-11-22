@@ -1,11 +1,14 @@
 package schema
 
 import (
-	"github.com/powertoolsdev/mono/pkg/config"
+	"context"
+
 	"github.com/xeipuuv/gojsonschema"
+
+	"github.com/powertoolsdev/mono/pkg/config"
 )
 
-func Validate(obj *config.AppConfig) ([]gojsonschema.ResultError, error) {
+func Validate(ctx context.Context, obj *config.AppConfig) ([]gojsonschema.ResultError, error) {
 	jsonBytes, err := config.ToJSON(obj)
 	if err != nil {
 		return nil, err
@@ -23,6 +26,8 @@ func Validate(obj *config.AppConfig) ([]gojsonschema.ResultError, error) {
 	if err != nil {
 		return nil, err
 	}
+
+
 
 	return res.Errors(), nil
 }
