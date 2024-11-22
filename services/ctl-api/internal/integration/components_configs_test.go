@@ -119,6 +119,7 @@ func (s *componentConfigsSuite) TestCreateHelmComponentConfig() {
 		}
 
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
+		req.ChartName = generics.ToPtr("valid-chart")
 		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
@@ -133,6 +134,7 @@ func (s *componentConfigsSuite) TestCreateHelmComponentConfig() {
 
 	s.T().Run("success with public config", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
+		req.ChartName = generics.ToPtr("valid-chart")
 		req.ConnectedGithubVcsConfig = nil
 		req.PublicGitVcsConfig.Repo = generics.ToPtr("nuonco/installer")
 
@@ -187,6 +189,7 @@ func (s *componentConfigsSuite) TestComponentConfigs() {
 		}
 
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
+		req.ChartName = generics.ToPtr("valid-chart")
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 		req.PublicGitVcsConfig = nil
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
@@ -207,6 +210,7 @@ func (s *componentConfigsSuite) TestComponentConfigs() {
 		}
 
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
+		req.ChartName = generics.ToPtr("valid-chart")
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 		req.PublicGitVcsConfig = nil
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
@@ -229,6 +233,7 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 		}
 
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
+		req.ChartName = generics.ToPtr("valid-chart")
 		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
