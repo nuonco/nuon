@@ -14,6 +14,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
 	"github.com/powertoolsdev/mono/pkg/config/sync"
+	"github.com/powertoolsdev/mono/pkg/config/validate"
 	"github.com/powertoolsdev/mono/pkg/errs"
 )
 
@@ -36,6 +37,16 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	})
 	if err != nil {
 		return err
+	}
+
+	ui.PrintLn(fmt.Sprintf("validating file \"%s\"", cfgFile))
+	err = validate.Validate(ctx, s.v, cfg)
+	if err != nil {
+		if config.IsWarningErr(err) {
+			ui.PrintError(err)
+		} else {
+			return err
+		}
 	}
 
 	syncer := sync.New(s.api, appID, cfg)
@@ -157,13 +168,6 @@ func (s *Service) Sync(ctx context.Context, all bool, file string) error {
 			Msg: "must set -all or -file, and make sure at least one nuon.<app-name>.toml file exists",
 		})
 		return err
-	}
-
-	for _, cfgFile := range cfgFiles {
-		ui.PrintLn(fmt.Sprintf("validating file \"%s\"", cfgFile.Path))
-		if err := s.validate(ctx, cfgFile, false); err != nil {
-			return ui.PrintError(err)
-		}
 	}
 
 	for _, cfgFile := range cfgFiles {
