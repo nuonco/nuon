@@ -27,10 +27,9 @@ import (
 // @Success		200				{boolean}	true
 // @Router			/v1/apps/{app_id}/secret/{secret_id} [DELETE]
 func (s *service) DeleteAppSecret(ctx *gin.Context) {
-	appID := ctx.Param("app_id")
 	secretID := ctx.Param("secret_id")
 
-	err := s.deleteAppSecret(ctx, appID, secretID)
+	err := s.deleteAppSecret(ctx, secretID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -39,7 +38,7 @@ func (s *service) DeleteAppSecret(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, true)
 }
 
-func (s *service) deleteAppSecret(ctx context.Context, appID, secretID string) error {
+func (s *service) deleteAppSecret(ctx context.Context, secretID string) error {
 	res := s.db.WithContext(ctx).
 		Delete(&app.AppSecret{
 			ID: secretID,

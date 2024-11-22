@@ -7,7 +7,7 @@ import (
 
 // @title			Nuon Admin API
 // @version		1.0.0
-// @description	Admin API for managing nuon apps, components, and installs.
+// @description	Admin API for managing nuon apps, components, installs, actions.
 // @contact.name	Nuon Support
 // @contact.email	support@nuon.co
 // @BasePath		/
