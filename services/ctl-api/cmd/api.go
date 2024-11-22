@@ -74,10 +74,12 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsService(actionsservice.New)),
 
 		// add api
-		fx.Provide(fx.Annotate(api.NewAPI, fx.ParamTags(`group:"services"`, `group:"middlewares"`))),
+		fx.Provide(api.AsAPI(api.NewPublicAPI)),
+		fx.Provide(api.AsAPI(api.NewRunnerAPI)),
+		fx.Provide(api.AsAPI(api.NewInternalAPI)),
 
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
-		fx.Invoke(func(*api.API) {}),
+		fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
 	}
 
 	providers = append(providers, c.providers()...)
