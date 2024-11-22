@@ -21,7 +21,7 @@ type ActionWorkflow struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
-	App   App    `swaggerignore:"true" json:"-"`
+	App   App    `json:"-" swaggerignore:"true"` 
 	AppID string `json:"app_id" gorm:"notnull;index:idx_app_install_name,unique"`
 
 	Configs     []ActionWorkflowConfig
