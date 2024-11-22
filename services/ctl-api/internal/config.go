@@ -48,10 +48,11 @@ type Config struct {
 	Version        string `config:"version" validate:"required"`
 	DisableMetrics bool   `config:"disable_metrics"`
 
-	ServiceName      string `config:"service_name" validate:"required"`
-	HTTPPort         string `config:"http_port" validate:"required"`
-	InternalHTTPPort string `config:"internal_http_port" validate:"required"`
-	RunnerHTTPPort   string `config:"runner_http_port" validate:"required"`
+	ServiceName             string        `config:"service_name" validate:"required"`
+	HTTPPort                string        `config:"http_port" validate:"required"`
+	InternalHTTPPort        string        `config:"internal_http_port" validate:"required"`
+	RunnerHTTPPort          string        `config:"runner_http_port" validate:"required"`
+	GracefulShutdownTimeout time.Duration `config:"graceful_shutdown_timeout" validate:"required"`
 
 	// psql connection parameters
 	DBName       string `config:"db_name" validate:"required"`
