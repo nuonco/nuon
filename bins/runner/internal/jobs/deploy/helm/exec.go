@@ -40,6 +40,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	if err != nil {
 		return fmt.Errorf("unable to initialize helm actions: %w", err)
 	}
+	actionCfg.Log = helm.Logger(l)
 
 	if job.Operation == models.AppRunnerJobOperationTypeDestroy {
 		return h.execUninstall(ctx, l, actionCfg, job, jobExecution)
@@ -57,10 +58,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	)
 	if prevRel == nil {
 		op = "install"
-		rel, err = h.install(ctx, l,actionCfg)
+		rel, err = h.install(ctx, l, actionCfg)
 	} else {
 		op = "upgrade"
-		rel, err = h.upgrade(ctx, l,actionCfg)
+		rel, err = h.upgrade(ctx, l, actionCfg)
 	}
 	if err != nil {
 		h.writeErrorResult(ctx, op, err)
