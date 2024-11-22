@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
-	"github.com/powertoolsdev/mono/pkg/config/schema"
-	"github.com/powertoolsdev/mono/pkg/errs"
+	"github.com/powertoolsdev/mono/pkg/config/validate"
 )
 
 const (
@@ -83,30 +83,9 @@ func (s *Service) validate(ctx context.Context, file parse.File, asJSON bool) er
 		return err
 	}
 
-	if err := cfg.Validate(s.v); err != nil {
+	if err := validate.Validate(ctx, s.v, cfg); err != nil {
 		return err
 	}
 
-	_, err = schema.Validate(cfg)
-	if err != nil {
-		return err
-	}
-
-	err = s.validateDuplicateComponentNames(cfg)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *Service) validateDuplicateComponentNames(cfg *config.AppConfig) error {
-	componentNames := make(map[string]bool)
-	for _, v := range cfg.Components {
-		if _, ok := componentNames[v.Name]; ok {
-			return errs.NewUserFacing("Validation error: duplicate component name %q", v.Name)
-		}
-		componentNames[v.Name] = true
-	}
 	return nil
 }

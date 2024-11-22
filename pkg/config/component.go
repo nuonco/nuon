@@ -58,3 +58,31 @@ type Component struct {
 func (c *Component) AddDependency(val string) {
 	c.Dependencies = append(c.Dependencies, val)
 }
+
+func (c *Component) AllVars() []string {
+	vars := make([]string, 0)
+
+	if c.HelmChart != nil {
+		for _, v := range c.HelmChart.Values {
+			vars = append(vars, v.Value)
+		}
+		for _, v := range c.HelmChart.ValuesMap {
+			vars = append(vars, v)
+		}
+	}
+	if c.TerraformModule != nil {
+		for _, v := range c.TerraformModule.Variables {
+			vars = append(vars, v.Value)
+		}
+
+		for _, v := range c.TerraformModule.EnvVars {
+			vars = append(vars, v.Value)
+		}
+
+		for _, v := range c.TerraformModule.EnvVarMap {
+			vars = append(vars, v)
+		}
+	}
+
+	return vars
+}
