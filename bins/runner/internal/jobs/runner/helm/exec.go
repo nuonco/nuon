@@ -40,6 +40,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	if err != nil {
 		return fmt.Errorf("unable to initialize helm actions: %w", err)
 	}
+	helmClient.Log = helm.Logger(l)
 
 	if job.Operation == models.AppRunnerJobOperationTypeDestroy {
 		return h.execUninstall(ctx, l, helmClient, job, jobExecution)

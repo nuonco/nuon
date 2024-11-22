@@ -97,6 +97,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/traces", s.OtelWriteTraces)
 	api.POST("/v1/runners/:runner_id/metrics", s.OtelWriteMetrics)
 
+	api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJob)
 	api.GET("/v1/runner-jobs/:runner_job_id/plan", s.GetRunnerJobPlan)
 	api.POST("/v1/runner-jobs/:runner_job_id/executions", s.CreateRunnerJobExecution)
 	api.GET("/v1/runner-jobs/:runner_job_id/executions", s.GetRunnerJobExecutions)
