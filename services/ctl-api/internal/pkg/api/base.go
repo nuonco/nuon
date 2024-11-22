@@ -1,0 +1,123 @@
+package api
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
+	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+)
+
+type API struct {
+	services              []Service
+	middlewares           []Middleware
+	l                     *zap.Logger
+	cfg                   *internal.Config
+	port                  string
+	name                  string
+	configuredMiddlewares []string
+
+	// created after initializing
+	srv     *http.Server
+	handler *gin.Engine
+}
+
+func (a *API) init() error {
+	a.handler = gin.Default()
+	a.srv = &http.Server{
+		Addr:    fmt.Sprintf(":%v", a.port),
+		Handler: a.handler.Handler(),
+	}
+
+	return nil
+}
+
+func (a *API) registerMiddlewares() error {
+	// register middlewares
+	middlewaresLookup := make(map[string]gin.HandlerFunc, 0)
+	for _, middleware := range a.middlewares {
+		middlewaresLookup[middleware.Name()] = middleware.Handler()
+	}
+
+	for _, middleware := range a.configuredMiddlewares {
+		a.l.Info("middleware", zap.String("name", middleware))
+		fn, ok := middlewaresLookup[middleware]
+		if !ok {
+			return fmt.Errorf("middleware not found: %s", middleware)
+		}
+		a.handler.Use(fn)
+	}
+
+	return nil
+}
+
+func (a *API) registerServices() error {
+	// register services
+	for _, svc := range a.services {
+		method, ok := map[string]func(*gin.Engine) error{
+			"runner":   svc.RegisterRunnerRoutes,
+			"public":   svc.RegisterPublicRoutes,
+			"internal": svc.RegisterInternalRoutes,
+		}[a.name]
+		if !ok {
+			return fmt.Errorf("invalid name " + a.name)
+		}
+
+		if err := method(a.handler); err != nil {
+			return fmt.Errorf("unable to register routes: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (a *API) lifecycleHooks(shutdowner fx.Shutdowner) fx.Hook {
+	return fx.Hook{
+		OnStart: func(_ context.Context) error {
+			if err := a.start(shutdowner); err != nil {
+				a.l.Error("error starting server", zap.Error(err), zap.String("name", a.name))
+			}
+
+			return nil
+		},
+		OnStop: func(_ context.Context) error {
+			if err := a.shutdown(); err != nil {
+				a.l.Error("error shutting down server", zap.Error(err), zap.String("name", a.name))
+			}
+			return nil
+		},
+	}
+}
+
+func (a *API) start(shutdowner fx.Shutdowner) error {
+	a.l.Info(fmt.Sprintf("starting %s api", a.name), zap.String("addr", a.srv.Addr))
+
+	go func() {
+		if err := a.srv.ListenAndServe(); err != nil {
+			a.l.Error(fmt.Sprintf("unable to run %s api", a.name), zap.Error(err))
+			shutdowner.Shutdown(fx.ExitCode(127))
+		}
+	}()
+
+	return nil
+}
+
+func (a *API) shutdown() error {
+	a.l.Info(fmt.Sprintf("gracefully stopping %s api", a.name), zap.String("addr", a.srv.Addr))
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, a.cfg.GracefulShutdownTimeout)
+	defer cancel()
+
+	if err := a.srv.Shutdown(ctx); err != nil {
+		return errors.Wrap(err, "unable to shutdown "+a.name)
+	}
+
+	a.l.Info("successfully stopped all handlers")
+	return nil
+}

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -71,6 +72,7 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 		// not attempted with the correct status, this is retryable.
 		runnerStatus, err := w.getRunnerStatus(ctx, job.RunnerID)
 		if err != nil {
+			l.Warn("unable to determine runner status", zap.Error(err))
 			return false, false, err
 		}
 		if runnerStatus != app.RunnerStatusActive {
