@@ -45,6 +45,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// config versions
 	api.POST("/v1/action-workflows/:action_workflow_id/configs", s.CreateActionWorkflowConfig)
 	api.GET("/v1/action-workflows/:action_workflow_id/configs", s.GetActionWorkflowConfigs)
+	api.GET("/v1/action-workflows/configs/:action_workflow_config_id", s.GetActionWorkflowConfig)
 
 	return nil
 }
