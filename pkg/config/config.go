@@ -3,12 +3,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/invopop/jsonschema"
-)
-
-const (
-	currentVersion string = "v1"
 )
 
 type AppConfig struct {
@@ -51,33 +46,6 @@ func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "sandbox", "Sandbox configuration object")
 	addDescription(schema, "installer", "Installer configuration object")
 	addDescription(schema, "components", "Component configurations")
-}
-
-func (a *AppConfig) validateVersion() error {
-	if a.Version != currentVersion {
-		return ErrConfig{
-			Description: "version must be v1",
-		}
-	}
-
-	return nil
-}
-
-func (a *AppConfig) Validate(v *validator.Validate) error {
-	fns := []func() error{
-		func() error {
-			return v.Struct(a)
-		},
-		a.validateVersion,
-		a.Installer.Validate,
-	}
-	for _, fn := range fns {
-		if err := fn(); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 type parseFn struct {
