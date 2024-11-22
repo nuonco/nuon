@@ -2,6 +2,7 @@ package ui
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/cockroachdb/errors/withstack"
@@ -57,7 +58,13 @@ func PrintError(err error) error {
 
 	var cfgErr config.ErrConfig
 	if errors.As(err, &cfgErr) {
-		pterm.Error.Println(cfgErr.Description)
+		msg := fmt.Sprintf("%s %s", cfgErr.Description, cfgErr.Error())
+		if cfgErr.Warning {
+			pterm.Warning.Println(msg)
+			return cfgErr
+		}
+
+		pterm.Error.Println(msg)
 		return cfgErr
 	}
 
