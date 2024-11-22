@@ -21,11 +21,14 @@ type ActionWorkflow struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
-	App   App    `swaggerignore:"true" json:"app"`
+	App   App    `swaggerignore:"true" json:"-"`
 	AppID string `json:"app_id" gorm:"notnull;index:idx_app_install_name,unique"`
 
 	Configs     []ActionWorkflowConfig
 	ConfigCount int `json:"config_count" gorm:"->;-:migration"`
+
+	//metadata
+	Name string `json:"name"`
 }
 
 func (a *ActionWorkflow) BeforeCreate(tx *gorm.DB) error {

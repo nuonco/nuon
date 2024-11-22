@@ -33,19 +33,18 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	// manage apps
-	// api.POST("/v1/apps/:app_id/action-workflows", s.CreateAppActionWorkflow)
-	// api.GET("/v1/apps/:app_id/action-workflows", s.GetAppActionWorkflow)
+	// work with actions apps path
+	api.POST("/v1/apps/:app_id/action-workflows", s.CreateAppActionWorkflow)
+	api.GET("/v1/apps/:app_id/action-workflows", s.GetAppActionWorkflows)
 
-	// work with actions directly
-	// api.PATCH("/v1/actions/workflows/:workflow_id", s.UpdateActionWorkflow)
-	// api.GET("/v1/actions/workflows/:workflow_id", s.GetAction)
-	// api.DELETE("/v1/actions/:action_id", s.DeleteAction)
+	//work with actions directly
+	api.PATCH("/v1/action-workflows/:action_workflow_id", s.PatchActionWorkflow)
+	api.GET("/v1/action-workflows/:action_workflow_id", s.GetActionWorkflow)
+	api.DELETE("/v1/action-workflows/:action_workflow_id", s.DeleteActionWorkflow)
 
 	// config versions
-	// api.POST("/v1/actions/workflows/:action_workflow_id/configs", s.CreateActionConfig)
-	// api.GET("/v1/actions/workflows/:action_workflow_id/configs/:config_id", s.GetActionConfig)
-	// api.GET("/v1/actions/workflows/:action_workflow_id/configs", s.GetActionConfigs)
+	api.POST("/v1/action-workflows/:action_workflow_id/configs", s.CreateActionWorkflowConfig)
+	api.GET("/v1/action-workflows/:action_workflow_id/configs", s.GetActionWorkflowConfigs)
 
 	return nil
 }
