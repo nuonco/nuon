@@ -23,14 +23,16 @@ var _ gorm.Plugin = (*metricsWriterPlugin)(nil)
 // It is semi-inspired by https://github.com/go-gorm/prometheus/blob/master/prometheus.go which takes this a step
 // further by pulling in database metrics and emitting them via prometheus, however prometheus is lower level than what
 // we have here.
-func NewMetricsPlugin(mw metrics.Writer) *metricsWriterPlugin {
+func NewMetricsPlugin(mw metrics.Writer, dbType string) *metricsWriterPlugin {
 	return &metricsWriterPlugin{
 		metricsWriter: mw,
+		dbType:        dbType,
 	}
 }
 
 type metricsWriterPlugin struct {
 	metricsWriter metrics.Writer
+	dbType        string
 }
 
 func (m *metricsWriterPlugin) Name() string {
@@ -65,17 +67,20 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB) {
 	tags := []string{}
 	if schema != nil {
 		tags = append(tags, "table:"+schema.Table)
+		tags = append(tags, "db_type:"+m.dbType)
 	}
 
 	metricCtx, err := metrics_middleware.FromContext(ctx)
-	if err == nil {
-		tags = append(tags, []string{
-			"endpoint:" + metricCtx.Endpoint,
-			"context:" + metricCtx.Context,
-			"method:" + metricCtx.Method,
-			"org_id:" + metricCtx.OrgID,
-		}...)
+	if err != nil {
+		return
 	}
+
+	tags = append(tags, []string{
+		"endpoint:" + metricCtx.Endpoint,
+		"context:" + metricCtx.Context,
+		"method:" + metricCtx.Method,
+		"org_id:" + metricCtx.OrgID,
+	}...)
 
 	m.metricsWriter.Incr("gorm_operation", tags)
 	m.metricsWriter.Timing("gorm_operation_latency", time.Since(startTS), tags)
