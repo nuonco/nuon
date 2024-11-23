@@ -51,6 +51,10 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 		return
 	}
 
+	ctx.JSON(http.StatusCreated, heartBeat)
+	return
+
+	// temporarily disabling metrics to prevent memory leak
 	runner, err := s.getRunner(ctx, runnerID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get runner"))
