@@ -7,7 +7,7 @@ import (
 )
 
 func (d *database) registerPlugins(db *gorm.DB) error {
-	db.Use(plugins.NewMetricsPlugin(d.MetricsWriter))
+	db.Use(plugins.NewMetricsPlugin(d.MetricsWriter, "psql"))
 	db.Use(plugins.NewAfterQueryPlugin())
 	db.Use(plugins.NewViewsPlugin(AllModels()))
 
