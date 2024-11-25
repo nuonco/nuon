@@ -15,7 +15,7 @@ export type TButtonVariant =
   | 'caution'
   | 'danger'
 
-export interface IButton extends React.HTMLAttributes<HTMLButtonElement> {
+export interface IButton extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   hasCustomPadding?: boolean
   type?: 'button' | 'reset' | 'submit'
   variant?: TButtonVariant
@@ -40,7 +40,8 @@ export const Button: FC<IButton> = ({
         'bg-red-700 hover:bg-red-600': variant === 'danger',
         'text-gray-50 px-5 border-transparent':
         variant === 'primary' || variant === 'danger',
-        'px-3 py-1.5': !hasCustomPadding,        
+        'px-3 py-1.5': !hasCustomPadding,
+        'cursor-not-allowed text-cool-grey-500 dark:text-cool-grey-600 hover:!bg-transparent': props.disabled,
         [`${className}`]: Boolean(className),
       })}
       {...props}
