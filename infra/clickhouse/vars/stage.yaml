@@ -15,4 +15,4 @@ availability_zones: [
   "us-west-2b",
 ]
 
-expireAfter: 1h
+expiresAfter: 1h

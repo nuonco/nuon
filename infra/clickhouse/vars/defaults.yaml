@@ -25,4 +25,4 @@ tables:
  - ctl_api.runner_heart_beats
  - ctl_api.runner_health_checks
 
-expireAfter: 2160h
+expiresAfter: 2160h

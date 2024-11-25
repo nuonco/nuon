@@ -42,8 +42,8 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
             "clickhouse-installation" = "true"
           }
         }
-        expireAfter = local.vars.expireAfter
         spec = {
+          expireAfter = local.vars.expiresAfter
           nodeClassRef = {
             group = "karpenter.k8s.aws"
             kind  = "EC2NodeClass"
@@ -127,7 +127,7 @@ resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
           }
         }
         spec = {
-          expireAfter = local.vars.expireAfter
+          expireAfter = local.vars.expiresAfter
           nodeClassRef = {
             group = "karpenter.k8s.aws"
             kind  = "EC2NodeClass"
