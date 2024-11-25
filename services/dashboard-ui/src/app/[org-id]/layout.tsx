@@ -4,6 +4,7 @@ import { ArrowLineLeft } from '@phosphor-icons/react/dist/ssr'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import {
+  AdminModal,
   Button,
   Logo,
   OrgSwitcher,
@@ -46,8 +47,9 @@ export default withPageAuthRequired(
           <div className="dashboard_nav flex-auto flex flex-col justify-between px-4 pb-6 pt-8">
             <MainNav orgId={orgId} />
 
-            <div>
+            <div className="flex flex-col gap-2">
               <SignOutButton />
+              <AdminModal orgId={orgId} />
             </div>
             <NuonVersions className="justify-center py-2" />
           </div>

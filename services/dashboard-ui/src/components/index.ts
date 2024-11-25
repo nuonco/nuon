@@ -1,3 +1,4 @@
+export * from './AdminModal'
 export * from './AppComponentsTable'
 export * from './AppInputs'
 export * from './AppInstallsTable'
