@@ -7,6 +7,7 @@ import { Info } from '@phosphor-icons/react'
 export interface IToolTip {
   alignment?: 'center' | 'left' | 'right'
   children: React.ReactNode
+  isIconHidden?: boolean
   position?: 'bottom' | 'top'
   tipContent: React.ReactNode
 }
@@ -14,6 +15,7 @@ export interface IToolTip {
 export const ToolTip: FC<IToolTip> = ({
   alignment = 'left',
   children,
+  isIconHidden = false,
   position = 'top',
   tipContent,
 }) => {
@@ -89,7 +91,7 @@ export const ToolTip: FC<IToolTip> = ({
         </span>
         <span className="flex items-center gap-1 text-sm">
           {children}
-          <Info className="text-cool-grey-600 dark:text-cool-grey-500" />
+          {isIconHidden ? null : <Info className="text-cool-grey-600 dark:text-cool-grey-500" />}
         </span>
       </span>
     </>
