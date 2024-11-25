@@ -12,24 +12,24 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
-type PatchActionWorkflowRequest struct {
+type UpdateActionWorkflowRequest struct {
 	Name string `json:"name"`
 }
 
-func (c *PatchActionWorkflowRequest) Validate(v *validator.Validate) error {
+func (c *UpdateActionWorkflowRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
 	return nil
 }
 
-// @ID PatchAppActionWorkflow
+// @ID UpdateAppActionWorkflow
 // @Summary	patch an app
-// @Description.markdown	create_app_action_workflow.md
+// @Description.markdown	update_app_action_workflow.md
 // @Param			action_workflow_id	path	string	true	"action workflow ID"
 // @Tags			actions
 // @Accept			json
-// @Param			req	body	PatchActionWorkflowRequest	true	"Input"
+// @Param			req	body	UpdateActionWorkflowRequest	true	"Input"
 // @Produce		json
 // @Security APIKey
 // @Security OrgID
@@ -40,7 +40,7 @@ func (c *PatchActionWorkflowRequest) Validate(v *validator.Validate) error {
 // @Failure		500				{object}	stderr.ErrResponse
 // @Success		201				{object}	app.ActionWorkflow
 // @Router			/v1/action-workflows/{action_workflow_id} [patch]
-func (s *service) PatchActionWorkflow(ctx *gin.Context) {
+func (s *service) UpdateActionWorkflow(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
@@ -64,7 +64,7 @@ func (s *service) PatchActionWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	app, err := s.patchActionWorkflow(ctx, org.ID, awID, &req)
+	app, err := s.updateActionWorkflow(ctx, org.ID, awID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
@@ -73,7 +73,7 @@ func (s *service) PatchActionWorkflow(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, app)
 }
 
-func (s *service) patchActionWorkflow(ctx context.Context, orgID, awID string, req *CreateAppActionWorkflowRequest) (*app.ActionWorkflow, error) {
+func (s *service) updateActionWorkflow(ctx context.Context, orgID, awID string, req *CreateAppActionWorkflowRequest) (*app.ActionWorkflow, error) {
 	aw := app.ActionWorkflow{
 		ID:   awID,
 		Name: req.Name,
