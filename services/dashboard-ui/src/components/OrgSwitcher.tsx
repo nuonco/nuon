@@ -47,12 +47,12 @@ export const OrgAvatar: FC<{
   )
 }
 
-// NOTE(nnnnat): new semiflat designed org switcher parts
 export interface IOrgSummary {
   org: TOrg
+  shouldPoll?: boolean
 }
 
-export const OrgSummary: FC<IOrgSummary> = ({ org }) => {
+export const OrgSummary: FC<IOrgSummary> = ({ org, shouldPoll = false }) => {
   return (
     <div className="flex gap-4 items-center justify-start">
       <OrgAvatar name={org.name} logoURL={org.logo_url} />
@@ -74,7 +74,7 @@ export const OrgSummary: FC<IOrgSummary> = ({ org }) => {
             {org.name}
           </span>
         </Text>
-        <OrgStatus initOrg={org} shouldPoll />
+        <OrgStatus initOrg={org} shouldPoll={shouldPoll} />
       </div>
     </div>
   )
@@ -180,13 +180,13 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({ initOrg, initOrgs }) => {
       hasCustomPadding
       id="test"
       isFullWidth
-      text={<OrgSummary org={initOrg} />}
+      text={<OrgSummary org={initOrg} shouldPoll />}
       position="overlay"
       alignment="overlay"
     >
       <div className="flex flex-col gap-4 overflow-auto max-h-[500px] pb-2">
         <div className="pt-2 px-4">
-          <OrgSummary org={initOrg} />
+          <OrgSummary org={initOrg} shouldPoll />
 
           <Text className="mt-4" variant="mono-12">
             <ClickToCopy>{initOrg.id}</ClickToCopy>

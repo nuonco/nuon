@@ -2,6 +2,8 @@ export const API_URL =
   process?.env?.NEXT_PUBLIC_API_URL ||
   process?.env?.NUON_API_URL ||
   'https://api.nuon.co'
+export const ADMIN_API_URL =
+  process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:8082'
 export const POLL_DURATION =
   (process?.env?.NEXT_PUBLIC_POLL_DURATION as unknown as number) || 45000
 export const SHORT_POLL_DURATION =

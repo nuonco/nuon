@@ -32,14 +32,14 @@ export const OrgStatus: FC<IOrgStatus> = ({
     if (shouldPoll) {
       const pollOrg = setInterval(fetchOrg, SHORT_POLL_DURATION)
 
-      if (
-        org?.status === 'active' ||
-        org?.status === 'error' ||
-        org?.status === 'failed' ||
-        org?.status === 'noop'
-      ) {
-        clearInterval(pollOrg)
-      }
+      /* if (
+       *   org?.status === 'active' ||
+       *   org?.status === 'error' ||
+       *   org?.status === 'failed' ||
+       *   org?.status === 'noop'
+       * ) {
+       *   clearInterval(pollOrg)
+       * } */
 
       return () => clearInterval(pollOrg)
     }
