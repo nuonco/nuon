@@ -44,7 +44,7 @@ func (s *service) getRunnerJob(ctx context.Context, runnerJobID string) (*app.Ru
 	res := s.db.WithContext(ctx).
 		Preload("CreatedBy").
 		Preload("Executions", func(db *gorm.DB) *gorm.DB {
-			return db.Order("runner_job_executions.created_at DESC")
+			return db.Order("runner_job_executions.created_at DESC").Limit(1)
 		}).
 		First(&runnerJob, "id = ?", runnerJobID)
 	if res.Error != nil {
