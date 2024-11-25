@@ -38,7 +38,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/apps/:app_id/action-workflows", s.GetAppActionWorkflows)
 
 	//work with actions directly
-	api.PATCH("/v1/action-workflows/:action_workflow_id", s.PatchActionWorkflow)
+	api.PATCH("/v1/action-workflows/:action_workflow_id", s.UpdateActionWorkflow)
 	api.GET("/v1/action-workflows/:action_workflow_id", s.GetActionWorkflow)
 	api.DELETE("/v1/action-workflows/:action_workflow_id", s.DeleteActionWorkflow)
 
