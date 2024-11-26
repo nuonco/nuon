@@ -17,6 +17,7 @@ import {
   reprovisionOrg,
   restartApp,
   restartInstall,
+  restartInstallRunner,
   restartOrg,
   restartOrgChildren,
   teardownInstallComponents,
@@ -95,6 +96,11 @@ export const AdminModal: FC<{ orgId: string }> = () => {
       action: () => updateInstallSandbox(params?.['install-id'] as string),
       description: 'Update install sandbox to the current app sandbox version',
       text: 'Update sandbox',
+    },
+    {
+      action: () => restartInstallRunner(params?.['install-id'] as string),
+      description: 'Restart the current install runner',
+      text: 'Restart runner',
     },
   ]
 
