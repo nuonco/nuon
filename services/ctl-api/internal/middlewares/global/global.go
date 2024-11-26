@@ -8,6 +8,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// globalEndpointList is a list of endpoints that are not scoped to an org,
+// but still need to be authenticated.
 var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"POST", "/v1/orgs"}:                          {},
 	{"GET", "/v1/orgs"}:                           {},
@@ -26,6 +28,7 @@ func (m middleware) Name() string {
 	return "global"
 }
 
+// Handler marks a request as "global" if it's being sent to one of the endpoints listed in globalEndpointList.
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		method := ctx.Request.Method
