@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
@@ -16,27 +17,36 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
-func (w *Workflows) isDeprovisionable(ctx workflow.Context, install *app.Install) (bool, error) {
+func (w *Workflows) isDeprovisionable(ctx workflow.Context, install *app.Install) (bool, []zap.Field, error) {
+	attributes := []zap.Field{
+		zap.String("sandbox.run_count", fmt.Sprintf("%d", len(install.InstallSandboxRuns))),
+		zap.String("sandbox.status", fmt.Sprintf("%s", install.InstallSandboxRuns[0].Status)),
+	}
+
+	// NOTE(fd): we may want to not fetch all of them in w/e query sets this val
 	if len(install.InstallSandboxRuns) < 1 {
-		return false, nil
+		attributes = append(attributes, zap.String("reason", fmt.Sprintf("fewer than 1 sandbox run")))
+		return false, attributes, nil
 	}
 
 	if install.InstallSandboxRuns[0].Status == app.SandboxRunStatusAccessError {
-		return false, nil
+		attributes = append(attributes, zap.String("reason", fmt.Sprintf("sandbox status is in error")))
+		return false, attributes, nil
 	}
 
 	untornCmpIds, err := activities.AwaitFetchUntornInstallDeploys(ctx, activities.FetchUntornInstallDeploysRequest{
 		InstallID: install.ID,
 	})
 	if err != nil {
-		return false, fmt.Errorf("unable to fetch untorn install deploys: %w", err)
+		return false, attributes, fmt.Errorf("unable to fetch untorn install deploys: %w", err)
 	}
 
+	attributes = append(attributes, zap.Int("sandbox.untorn_install_deploys", len(untornCmpIds)))
 	if len(untornCmpIds) > 0 {
-		return false, nil
+		return false, attributes, nil
 	}
 
-	return true, nil
+	return true, attributes, nil
 }
 
 // @temporal-gen workflow
@@ -73,16 +83,17 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 	}
 	l.Info("deprovisioning install")
 
-	isDeprovisionable, err := w.isDeprovisionable(ctx, install)
+	isDeprovisionable, attributes, err := w.isDeprovisionable(ctx, install)
 	if err != nil {
-		l.Error("unable to determine if install is deprovisionable")
+		l.Error("unable to determine if install is deprovisionable", attributes...)
+
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to determine if install is deprovisionable")
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
 		return fmt.Errorf("unable to determine if install is deprovisionable: %w", err)
 	}
 
 	if !isDeprovisionable {
-		l.Error("install is not deprovisionable, this will be a NOOP")
+		l.Error("install is not deprovisionable, this will be a NOOP", attributes...)
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "install is not deprovisionable")
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusNoop)
 		return nil
@@ -92,7 +103,7 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusStarted)
 
 	// deprovision the runner
-	l.Info("starting runner deprovision")
+	l.Info("starting runner deprovision", attributes...)
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationDeprovision,
 	})
@@ -100,14 +111,14 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 	workflow.Sleep(ctx, time.Minute)
 
 	// wait for the runner
-	l.Info("executing deprovision")
+	l.Info("executing deprovision", attributes...)
 	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeDestroy, sandboxMode, "")
 	if err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
 		return err
 	}
 
-	l.Info("deprovision was successful")
+	l.Info("deprovision was successful", attributes...)
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully deprovisioned")
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFinished)
 	return nil
