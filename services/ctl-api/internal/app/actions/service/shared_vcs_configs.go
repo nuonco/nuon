@@ -10,13 +10,13 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
-type PublicGitVCSSandboxConfigRequest struct {
+type PublicGitVCSactionWorkflowConfigRequest struct {
 	Repo      string `validate:"required"`
 	Directory string `validate:"required"`
 	Branch    string `validate:"required"`
 }
 
-type ConnectedGithubVCSSandboxConfigRequest struct {
+type ConnectedGithubVCSActionWorkflowConfigRequest struct {
 	Repo      string `validate:"required"`
 	Directory string `validate:"required"`
 
@@ -25,8 +25,8 @@ type ConnectedGithubVCSSandboxConfigRequest struct {
 }
 
 type basicVCSConfigRequest struct {
-	PublicGitVCSConfig       *PublicGitVCSSandboxConfigRequest       `json:"public_git_vcs_config" validate:"required_if=PublicGitVCSConfig nil"`
-	ConnectedGithubVCSConfig *ConnectedGithubVCSSandboxConfigRequest `json:"connected_github_vcs_config" `
+	PublicGitVCSConfig       *PublicGitVCSactionWorkflowConfigRequest       `json:"public_git_vcs_config" validate:"required_if=PublicGitVCSConfig nil"`
+	ConnectedGithubVCSConfig *ConnectedGithubVCSActionWorkflowConfigRequest `json:"connected_github_vcs_config" `
 }
 
 func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context, parentApp *app.App, vcsHelpers *vcshelpers.Helpers) (*app.ConnectedGithubVCSConfig, error) {
