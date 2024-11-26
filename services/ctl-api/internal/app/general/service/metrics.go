@@ -33,7 +33,7 @@ func (m PublishMetricInput) write(mw metrics.Writer) {
 // @ID PublishMetrics
 // @Summary	Publish a metric from different Nuon clients for telemetry purposes.
 // @Description.markdown	publish_metrics.md
-// @Tags			general
+// @Tags			general/runner
 // @Param			req	body	[]PublishMetricInput	true	"Input"
 // @Accept			json
 // @Produce		json
