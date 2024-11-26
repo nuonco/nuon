@@ -16,7 +16,7 @@ type dogstatsdClient interface {
 	statsd.ClientInterface
 }
 
-// newDogstatsdClient returns a new dogstatsd client
+// getClient returns a new dogstatsd client
 func (w *writer) getClient() (dogstatsdClient, error) {
 	if w.client != nil {
 		return w.client, nil
