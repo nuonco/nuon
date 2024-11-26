@@ -10,7 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
-type PublicGitVCSactionWorkflowConfigRequest struct {
+type PublicGitVCSActionWorkflowConfigRequest struct {
 	Repo      string `validate:"required"`
 	Directory string `validate:"required"`
 	Branch    string `validate:"required"`
@@ -25,7 +25,7 @@ type ConnectedGithubVCSActionWorkflowConfigRequest struct {
 }
 
 type basicVCSConfigRequest struct {
-	PublicGitVCSConfig       *PublicGitVCSactionWorkflowConfigRequest       `json:"public_git_vcs_config" validate:"required_if=PublicGitVCSConfig nil"`
+	PublicGitVCSConfig       *PublicGitVCSActionWorkflowConfigRequest       `json:"public_git_vcs_config" validate:"required_if=PublicGitVCSConfig nil"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSActionWorkflowConfigRequest `json:"connected_github_vcs_config" `
 }
 
