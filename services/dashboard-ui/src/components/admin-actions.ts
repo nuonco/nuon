@@ -1,6 +1,6 @@
 'use server'
 
-import { ADMIN_API_URL } from '@/utils'
+import { ADMIN_API_URL, API_URL } from '@/utils'
 
 async function adminAction(
   domain: string,
@@ -137,5 +137,16 @@ export async function updateInstallSandbox(installId: string) {
     installId,
     'admin-update-sandbox',
     'Failed to update install sandbox'
+  )
+}
+
+export async function restartInstallRunner(installId: string) {
+  const runner = await fetch(
+    `${ADMIN_API_URL}/v1/installs/${installId}/admin-get-runner`
+  ).then((r) => r.json())
+  return adminAction(
+    'runners',
+    `${runner?.id}/restart`,
+    'Failed to restart install runner'
   )
 }
