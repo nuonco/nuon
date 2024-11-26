@@ -19,7 +19,7 @@ type CreateActionWorkflowConfigRequest struct {
 }
 
 type CreateActionWorkflowConfigTriggerRequest struct {
-	Type         app.ActionWorkflowTriggerType `json:"type"`
+	Type         app.ActionWorkflowTriggerType `json:"type" validate:"required"`
 	CronSchedule string                        `json:"cron_schedule,omitempty"`
 }
 

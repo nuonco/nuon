@@ -14,7 +14,7 @@ import (
 // @ID GetActionWorkflow
 // @Summary	get an app action workflow
 // @Description.markdown	get_app_action_workflow.md
-// @Param			action_workflow_id	path	string	true	"action workflow ID"
+// @Param			action_workflow_id	path	string	true	"action workflow ID or name"
 // @Tags			actions
 // @Accept			json
 // @Produce		json
@@ -48,6 +48,7 @@ func (s *service) findActionWorkflow(ctx context.Context, orgID, awID string) (*
 	aw := app.ActionWorkflow{}
 	res := s.db.WithContext(ctx).
 		Where("org_id = ? AND id = ?", orgID, awID).
+		Or("org_id = ? AND name = ?", orgID, awID).
 		First(&aw)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get action workflow: %w", res.Error)
