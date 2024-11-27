@@ -225,7 +225,7 @@ func (c *cli) installsCmd() *cobra.Command {
 
 	deprovisionInstallCmd := &cobra.Command{
 		Use:   "deprovision",
-		Short: "reprovision install",
+		Short: "Deprovision install",
 		Long:  "Deprovision an install sandbox",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
