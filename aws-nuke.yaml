@@ -77,6 +77,20 @@ presets:
           value: AWSReservedSSO*
         - type: glob
           value: stacksets-exec-*
+        - type: glob
+          value: odr-inl*
+        - type: glob
+          value: inl*-runner-install
+        - type: glob
+          value: cert-man*
+        - type: glob
+          value: ebs-csi*
+        - type: glob
+          value: alb-*
+        # - type: glob
+        #   value: default-node-group-*
+
+external-dns-inl
         - property: Name
           value: OrganizationAccountAccessRole
         - property: Name
@@ -123,8 +137,8 @@ resource-types:
     - S3Object
     - S3Bucket
     - IAMRole
-    - IAMRolePolicy
     - IAMRolePolicyAttachment
+    - IAMRolePolicy
     - AccessAnalyzer
     - AMPWorkspace
     - AppMeshMesh
