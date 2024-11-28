@@ -39,7 +39,6 @@ func (s *Service) ListConfigs(ctx context.Context, appID string, asJSON bool) er
 			cfg.ID,
 			fmt.Sprintf("%d", cfg.Version),
 			string(cfg.Status),
-			cfg.CreatedBy.Email,
 			cfg.CreatedAt,
 		})
 	}

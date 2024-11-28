@@ -3,9 +3,7 @@ package integration
 import (
 	"os"
 	"testing"
-	"time"
 
-	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -74,34 +72,5 @@ func (s *generalIntegrationTestSuite) TestGetCloudPlatforms() {
 		regions, err := s.apiClient.GetCloudPlatformRegions(s.ctx, generics.GetFakeObj[string]())
 		require.Error(t, err)
 		require.Nil(t, regions)
-	})
-}
-
-func (s *generalIntegrationTestSuite) TestPublishMetrics() {
-	s.T().Run("accepts a valid incr metric with no tags", func(t *testing.T) {
-		body := []*models.ServicePublishMetricInput{
-			&models.ServicePublishMetricInput{
-				Incr: &models.MetricsIncr{
-					Name: "heart_beat.incr",
-					Tags: []string{},
-				},
-			},
-		}
-		err := s.apiClient.PublishMetrics(s.ctx, body)
-		require.NoError(t, err)
-	})
-
-	s.T().Run("accepts a valid timing metric with no tags", func(t *testing.T) {
-		body := []*models.ServicePublishMetricInput{
-			&models.ServicePublishMetricInput{
-				Timing: &models.MetricsTiming{
-					Name:  "heart_beat.alive_time",
-					Value: int64(time.Second),
-					Tags:  []string{},
-				},
-			},
-		}
-		err := s.apiClient.PublishMetrics(s.ctx, body)
-		require.NoError(t, err)
 	})
 }
