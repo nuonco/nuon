@@ -7,6 +7,7 @@ import (
 )
 
 type AppConfig struct {
+
 	// Config file version
 	Version string `mapstructure:"version" jsonschema:"required"`
 
@@ -34,6 +35,8 @@ type AppConfig struct {
 
 	// Components are used to connect container images, automation and infrastructure as code to your Nuon App
 	Components []*Component `mapstructure:"components"`
+
+	Actions []*ActionConfig `mapstructure:"actions"`
 }
 
 func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

@@ -46,7 +46,6 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) error {
 			secret.ID,
 			secret.Name,
 			strings.Repeat("*", int(secret.Length)),
-			secret.CreatedBy.Email,
 			createdAt.Format(time.Stamp),
 		})
 	}
