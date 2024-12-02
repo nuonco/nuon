@@ -1,14 +1,11 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -37,45 +34,11 @@ func (s *service) GetInstall(ctx *gin.Context) {
 
 	installID := ctx.Param("install_id")
 
-	install, err := s.findInstall(ctx, org.ID, installID)
+	install, err := s.helpers.GetInstallByName(ctx, installID, org.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
 		return
 	}
 
 	ctx.JSON(http.StatusOK, install)
-}
-
-func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
-	install := app.Install{}
-	res := s.db.WithContext(ctx).
-		Preload("AWSAccount").
-		Preload("AzureAccount").
-		Preload("App").
-		Preload("App.Org").
-		Preload("CreatedBy").
-		Preload("InstallInputs").
-		Preload("InstallComponents").
-		Preload("InstallComponents.Component").
-		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_deploys.created_at DESC")
-		}).
-		Preload("AppSandboxConfig").
-		Preload("AppSandboxConfig.PublicGitVCSConfig").
-		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
-		Preload("AppRunnerConfig").
-		Preload("RunnerGroup").
-		Preload("RunnerGroup.Runners").
-		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_sandbox_runs.created_at DESC")
-		}).
-		Preload("InstallSandboxRuns.AppSandboxConfig").
-		Where("name = ? AND org_id = ?", installID, orgID).
-		Or("id = ?", installID).
-		First(&install)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install: %w", res.Error)
-	}
-
-	return &install, nil
 }

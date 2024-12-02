@@ -5,6 +5,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
@@ -14,7 +15,7 @@ import (
 // @execution-timeout 60m
 // @task-timeout 30m
 func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) error {
-	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
+	install, err := helpers.AwaitGetInstallByID(ctx, sreq.ID)
 	if err != nil {
 		return err
 	}
