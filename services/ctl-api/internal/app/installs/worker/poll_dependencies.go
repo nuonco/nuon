@@ -7,8 +7,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
 const (
@@ -24,7 +24,7 @@ func (w *Workflows) PollDependencies(ctx workflow.Context, sreq signals.RequestS
 	w.writeInstallEvent(ctx, installID, signals.OperationPollDependencies, app.OperationStatusStarted)
 
 	for {
-		install, err := helpers.AwaitGetInstallByID(ctx, installID)
+		install, err := activities.AwaitGetByInstallID(ctx, installID)
 		if err != nil {
 			w.writeInstallEvent(ctx, installID, signals.OperationPollDependencies, app.OperationStatusFailed)
 			return fmt.Errorf("unable to get install and poll: %w", err)
