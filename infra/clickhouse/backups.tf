@@ -96,7 +96,7 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
           }
         }
       }
-      "schedule"                   = "13,37,51 */1 * * *" // TODO(fd): add some randomness +/- 3 min
+      "schedule"                   = "13,37 */1 * * *" // TODO(fd): add some randomness +/- 3 min
       "successfulJobsHistoryLimit" = 0
       "failedJobsHistoryLimit"     = 0
     }
