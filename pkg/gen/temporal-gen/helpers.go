@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
-	"go/token"
 	"go/types"
 	"strings"
-	"unicode"
 
 	"github.com/go-toolsmith/astfmt"
 )
@@ -18,20 +16,6 @@ type methodSymbols struct {
 	receiverType     string
 	receiverTypeName string
 	fnSym            string
-}
-
-func activityTypeFor(fn *ast.FuncDecl) string {
-	if fn.Recv != nil {
-		var recvname string
-		if x, is := fn.Recv.List[0].Type.(*ast.StarExpr); is {
-			recvname = astfmt.Sprint(x.X)
-		} else {
-			recvname = astfmt.Sprint(fn.Recv.List[0].Type)
-		}
-		return fmt.Sprintf("%sActivities", recvname)
-	} else {
-		return "Activities"
-	}
 }
 
 func extractFnSymbols(fn *ast.FuncDecl) methodSymbols {
@@ -120,62 +104,4 @@ func zerostr(rt types.Type) string {
 		return x.Obj().Name()
 	}
 	panic(fmt.Errorf("unhandled zero value generation for type: %s", rt.String()))
-}
-
-func paramsToStruct(fset *token.FileSet, fn *ast.FuncDecl) (*ast.GenDecl, error) {
-	if len(fn.Type.Params.List) < 2 {
-		return nil, withPos(fset, fn.Type.Params.Pos(), fmt.Errorf("functions annotated with as-activity must have at least two parameters"))
-	}
-
-	ret := &ast.StructType{
-		Fields: &ast.FieldList{},
-	}
-	gd := &ast.GenDecl{
-		Tok: token.TYPE,
-		Specs: []ast.Spec{
-			&ast.TypeSpec{
-				Name: &ast.Ident{
-					Name: fmt.Sprintf("%sRequest", fn.Name.Name),
-				},
-				Type: ret,
-			},
-		},
-	}
-
-	for _, param := range fn.Type.Params.List[1:] {
-		var ns []*ast.Ident
-		for _, name := range param.Names {
-			ns = append(ns, titleize(name))
-		}
-
-		ret.Fields.List = append(ret.Fields.List, &ast.Field{
-			Names: ns,
-			Type:  param.Type,
-		})
-
-		// if len(param.Names) > 1 {
-		// 	fmt.Println(param.Names)
-		// 	return nil, withPos(fset, param.Pos(), fmt.Errorf("as-activity params must be named"))
-		// }
-	}
-
-	return gd, nil
-}
-
-func titleize(ident *ast.Ident) *ast.Ident {
-	if ident == nil {
-		return nil
-	}
-
-	// Split by underscores
-	words := strings.Split(ident.Name, "_")
-	for i, word := range words {
-		if len(word) > 0 {
-			// Title case each word
-			runes := []rune(word)
-			runes[0] = unicode.ToUpper(runes[0])
-			words[i] = string(runes)
-		}
-	}
-	return &ast.Ident{Name: strings.Join(words, "")}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/token"
@@ -12,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/go-toolsmith/astfmt"
 	"golang.org/x/tools/go/packages"
 )
@@ -21,7 +21,7 @@ const (
 	GenMarker = "@temporal-gen"
 )
 
-func parseDir(ctx context.Context, dir string) ([]*BaseFile, error) {
+func loadBase(ctx context.Context, dir string) ([]*BaseFile, error) {
 	fset := token.NewFileSet()
 
 	pkgs, err := packages.Load(&packages.Config{
@@ -43,7 +43,6 @@ func parseDir(ctx context.Context, dir string) ([]*BaseFile, error) {
 			// TODO(sdboyer): this filename may be wrong if syntax checking returned nil for any files in the pkg
 			fpath := filepath.Base(pkg.CompiledGoFiles[i])
 			var actfns []ActivityFn
-			var asactfns []AsActivityFn
 			var wkffns []WorkflowFn
 			if walkerr != nil {
 				return nil, walkerr
@@ -68,50 +67,29 @@ func parseDir(ctx context.Context, dir string) ([]*BaseFile, error) {
 							continue
 						case 3:
 							if parts[1] == GenMarker {
+								if len(x.Type.Params.List) != 2 {
+									walkerr = withPos(fset, x.Type.Params.Pos(), errors.New("base activity func must have exactly two params, ctx and a request object"))
+									return false
+								}
 								switch parts[2] {
-								// TODO(sdboyer) enforce that first param is context
-								case "as-activity":
-									if len(x.Type.Params.List) < 2 {
-										fmt.Println(astfmt.Sprint(x.Type.Params.List))
-										walkerr = withPos(fset, x.Type.Params.Pos(), errors.New("base func must have at least two params, the first being ctx"))
-										return false
-									}
-									afn, err := extractAsActivityFn(fset, x, pkg)
+								case "activity":
+									afn, err := extractActivityFn(fset, x, pkg)
 									if err != nil {
 										walkerr = err
 										return false
 									}
 									if afn != nil {
-										asactfns = append(asactfns, *afn)
+										actfns = append(actfns, *afn)
 									}
-
-								case "activity", "workflow":
-									if len(x.Type.Params.List) != 2 {
-										walkerr = withPos(fset, x.Type.Params.Pos(), errors.New("base func must have exactly two params, ctx and a request object"))
+								case "workflow":
+									wfn, err := extractWorkflowFn(fset, x, pkg)
+									if err != nil {
+										walkerr = err
 										return false
 									}
-									switch parts[2] {
-									case "activity":
-										afn, err := extractActivityFn(fset, x, pkg)
-										if err != nil {
-											walkerr = err
-											return false
-										}
-										if afn != nil {
-											actfns = append(actfns, *afn)
-										}
-									case "workflow":
-										wfn, err := extractWorkflowFn(fset, x, pkg)
-										if err != nil {
-											walkerr = err
-											return false
-										}
-										if wfn != nil {
-											wkffns = append(wkffns, *wfn)
-										}
+									if wfn != nil {
+										wkffns = append(wkffns, *wfn)
 									}
-								default:
-									walkerr = withPos(fset, x.Type.Params.Pos(), errors.Newf("unrecognized temporal-gen directive %q", parts[2]))
 								}
 							}
 						}
@@ -120,14 +98,13 @@ func parseDir(ctx context.Context, dir string) ([]*BaseFile, error) {
 				return true
 			})
 
-			if len(actfns) > 0 || len(wkffns) > 0 || len(asactfns) > 0 {
+			if len(actfns) > 0 || len(wkffns) > 0 {
 				ret = append(ret, &BaseFile{
-					Path:          fpath,
-					File:          file,
-					ActivityFns:   actfns,
-					WorkflowFns:   wkffns,
-					AsActivityFns: asactfns,
-					Package:       pkg,
+					Path:        fpath,
+					File:        file,
+					ActivityFns: actfns,
+					WorkflowFns: wkffns,
+					Package:     pkg,
 				})
 			}
 		}
@@ -209,47 +186,14 @@ func extractActivityFn(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Pack
 				if match == nil {
 					return nil, withPos(fset, com.Pos(), fmt.Errorf("@by-id must be provided the name of a field on %s; got %q", astfmt.Sprint(reqtype), parts[2]))
 				}
-				ret.ById = ByIdOptions{
-					Name: match.Name(),
-					Type: match.Type().Underlying().String(),
-				}
-			case "@by-id-only":
-				ret.ByIdOnly = true
+				ret.ById = match
 			}
 		}
-	}
-
-	if ret.ByIdOnly && ret.ById.Name == "" {
-		return nil, withPos(fset, fn.Pos(), errors.New("@by-id-only may not be specified without also providing a field name via @by-id"))
 	}
 
 	return &ActivityFn{
 		Fn:   fn,
 		Opts: ret,
-	}, nil
-}
-
-func extractAsActivityFn(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Package) (*AsActivityFn, error) {
-	inner, err := extractActivityFn(fset, fn, pkg)
-	if err != nil {
-		return nil, err
-	}
-
-	// by-id not directly allowed on as-activity
-	if inner.Opts.ById.Name != "" {
-		for _, com := range fn.Doc.List {
-			parts := strings.Split(com.Text, " ")
-			if len(parts) == 3 && parts[1] == "@by-id" {
-				return nil, withPos(fset, com.Pos(), errors.New("@by-id may not be specified on as-activity functions, they are created automatically where possible"))
-			}
-		}
-	}
-
-	return &AsActivityFn{
-		Fn: fn,
-		Opts: &AsActivityGenOptions{
-			Inner: inner.Opts,
-		},
 	}, nil
 }
 
