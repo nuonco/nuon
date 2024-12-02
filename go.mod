@@ -95,7 +95,7 @@ require (
 	github.com/spf13/viper v1.17.0
 	github.com/srikrsna/protoc-gen-gotag v0.6.2
 	github.com/stoewer/go-strcase v1.3.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.3
