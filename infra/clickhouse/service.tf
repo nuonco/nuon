@@ -36,6 +36,12 @@ resource "kubectl_manifest" "clickhouse_service" {
       ]
       "sessionAffinity" = "None"
       "type"            = "ClusterIP"
+      "selector" = {
+        "clickhouse.altinity.com/app"       = "chop"
+        "clickhouse.altinity.com/chi"       = "clickhouse-installation"
+        "clickhouse.altinity.com/namespace" = "clickhouse"
+        "clickhouse.altinity.com/ready"     = "yes"
+      }
     }
   })
 
@@ -43,3 +49,4 @@ resource "kubectl_manifest" "clickhouse_service" {
     kubectl_manifest.clickhouse_installation,
   ]
 }
+
