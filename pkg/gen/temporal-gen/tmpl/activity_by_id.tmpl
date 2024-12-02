@@ -1,16 +1,7 @@
 
-{{ if .ByIdOnly }}{{ if eq .RespType "" -}}
-// {{ .ByIdFnName }} executes [{{ .BaseFnName }}] within a Temporal activity, waits for the future to complete, then returns the error, if any.
-{{- else -}}
-// {{ .ByIdFnName }} executes [{{ .BaseFnName }}] within a Temporal activity, waits for the future to complete, then returns the response or error.
-//
-// Temporal enforces that only a value XOR an error will be returned.
-{{- end }}{{ else -}}
 // {{ .ByIdFnName }} is a convenience wrapper for [{{ .AwaitFnName }}],
 // allowing the caller to provide a simple {{ .IdType }} for [{{ .ReqType }}].{{ .IdFieldName }}
 // rather than having to write out the struct for just one field.
-{{- end }}
 func {{ .ByIdFnName }}(ctx workflow.Context, {{ untitle .IdFieldName }} {{ .IdType }}) ({{ if ne .RespType "" }}{{ .RespType }}, {{ end }}error) {
-    // Assemble params onto the temporal-friendly request struct
     return {{ .AwaitFnName }}(ctx, {{if .ReqIsPtr }}&{{end}}{{ TrimPtr .ReqType }}{ {{ .IdFieldName }}: {{ untitle .IdFieldName }} })
 }
