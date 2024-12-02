@@ -139,6 +139,6 @@ func (j WorkflowJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 	}
 
 	genpath := filepath.Base(bf.Path)
-	genpath = genpath[:len(genpath)-3] + "_gen.go"
+	genpath = genpath[:len(genpath)-3] + ".workflow_gen.go"
 	return codejen.NewFile(genpath, buf.Bytes(), WorkflowJenny{}), nil
 }
