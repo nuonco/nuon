@@ -112,7 +112,7 @@ resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
         consolidateAfter    = "1m"
         budgets = [
           {
-            nodes = "1" # only ever rotate one node at a time
+            nodes = "0" # only ever rotate one node at a time
           }
         ]
       }
