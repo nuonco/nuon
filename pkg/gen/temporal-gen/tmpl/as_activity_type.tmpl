@@ -1,0 +1,12 @@
+
+
+// {{ .ActivitiesTypeName }} is a collection of wrappers around methods on [{{ .BaseTypeName }}] that are annotated with @temporal-gen as-activity. Each such method
+// has a corresponding method on this struct, but is suitable for being called as a Temporal Activity from a Temporal Workflow.
+type {{ .ActivitiesTypeName }} struct {
+    x {{ .BaseTypeName }}
+}
+
+// New{{ .ActivitiesTypeName }} creates a new instance of [{{ .ActivitiesTypeName }}] with the provided base instance of {{ .BaseTypeName }}.
+func New{{ .ActivitiesTypeName }}(base {{ .BaseTypeName }}) {{ .ActivitiesTypeName }} {
+    return {{ .ActivitiesTypeName }}{x: base}
+}

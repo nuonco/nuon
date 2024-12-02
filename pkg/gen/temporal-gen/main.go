@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"go/ast"
+	"go/parser"
 	"go/token"
-	"go/types"
 	"os"
 	"path/filepath"
 	"time"
@@ -21,13 +21,16 @@ type BaseFile struct {
 	File *ast.File
 	// ActivityFns is the list of ActivityFns in the file for which wrappers should be generated
 	ActivityFns []ActivityFn
+	// AsActivityFns is the list of ActivityFns in the file for which wrappers should be generated
+	AsActivityFns []AsActivityFn
 	// WorkflowFns is the list of WorkflowFns in the file for which wrappers should be generated
 	WorkflowFns []WorkflowFn
 	// Package is the result of loading and typechecking the package containing the funcs to be wrapped
 	Package *packages.Package
 }
 
-// ActivityFn is the IR of a Go function to be wrapped in generated code for use as a Temporal activity
+// ActivityFn is the IR of a Go function to generate a wrapper for use as a Temporal activity. Generates only a wrapper
+// for the calling (workflow) side.
 type ActivityFn struct {
 	// Fn is the node of the func for which a wrapper is to be generated
 	Fn *ast.FuncDecl
@@ -44,8 +47,27 @@ type ActivityGenOptions struct {
 	ScheduleToCloseTimeout time.Duration
 	StartToCloseTimeout    time.Duration
 	MaxRetries             int
-	ById                   *types.Var
+	ByIdOnly               bool
+	ById                   ByIdOptions
 	OptionsCallback        string
+}
+
+type ByIdOptions struct {
+	Name string
+	Type string
+}
+
+// AsActivityFn is the IR of a Go function to be made usable as a Temporal activity by generating wrappers on both
+// the workflow/calling side and the receiving invocation/activity side.
+type AsActivityFn struct {
+	// Fn is the node of the func for which a wrapper is to be generated
+	Fn *ast.FuncDecl
+	// Opts are options specified in comments on the func to be wrapped that modify generator output
+	Opts *AsActivityGenOptions
+}
+
+type AsActivityGenOptions struct {
+	Inner *ActivityGenOptions
 }
 
 // WorkflowFn is the IR of a Go function to be wrapped in generated code for use as a Temporal workflow
@@ -82,7 +104,7 @@ func main() {
 	ctx := context.Background()
 
 	// Parse files in the cwd to find inputs to our generator
-	bfs, err := loadBase(ctx, cwd)
+	bfs, err := parseDir(ctx, cwd)
 	if err != nil {
 		die(err)
 	}
@@ -95,17 +117,48 @@ func main() {
 	// Add our await jenny. Its signature is a codejen.OneToOne, which means it will be called once
 	// for each item in our inputs, and will produce one file for each of those inputs
 	pipe.Append(
-		ActivityJenny{},
-		WorkflowJenny{},
-		ActivityListJenny{},
-		WorkflowListJenny{},
+		ActivityJenny{},       // O2O. Makes call-side await wrappers for activities
+		WorkflowJenny{},       // O2O. Makes call-side await wrappers for workflows
+		ActivityListJenny{},   // M2O. Makes Temporal registration-friendly list of all activities
+		WorkflowListJenny{},   // M2O. Makes Temporal registration-friendly list of all workflows
+		AsActivityJenny{},     // O2O. Makes impl-side wrapper for an activity
+		AsActivityTypeJenny{}, // M2O. Makes struct, init fns to hold all impl-side wrappers
 	)
 
 	// Postprocessors are run on each output produced by the pipeline
 	pipe.AddPostprocessors(GoImportsMapper, SlashHeaderMapper("mono/pkg/bins/temporal-gen"))
 
-	// Run the pipeline with our inputs, and get a virtual FS back with all the outputs
+	// TODO(sdboyer) consolidate into one pipeline. This is currently two pipelines because of how the existing jennies are coupled to the BaseFile type:
+	// the basic, OSS-able jennies take a BaseFile then pick the list they want to generate from. This works OK, but presents a problem for a standard
+	// codejen.OneToOne adapter mode, because the adapter would have to mutate the BaseFile or create a whole new one with the unwrapped AsActivityFn list
+	// for the basic jennies to consume.
+	//
+	// Better approach is probably to refactor the jennies to operate on either one or a list of the actual *Fn types they want, then wrap them with an
+	// intermediate layer that decides on how to group them.
+	//
+	// Fortunately this is easy to hack around by simply having two pipelines that write to the same FS, and write the second pipeline such that
+	// it just doesn't matter the inputs are being mutated.
+
+	// New pipeline for As* jennies
+	pipe2 := codejen.JennyListWithNamer(func(base *BaseFile) string {
+		return filepath.Base(base.Path)
+	})
+	pipe2.Append(
+		codejen.AdaptOneToOne(ActivityJenny{}, transformAsActivity),
+	)
+	pipe2.AddPostprocessors(GoImportsMapper, SlashHeaderMapper("mono/pkg/bins/temporal-gen"))
+	// Run the pipelines with our inputs, and get a virtual FS back with all the outputs
 	jfs, err := pipe.GenerateFS(bfs...)
+	if err != nil {
+		die(err)
+	}
+
+	jfs2, err := pipe2.GenerateFS(bfs...)
+	if err != nil {
+		die(err)
+	}
+
+	err = jfs.Merge(jfs2)
 	if err != nil {
 		die(err)
 	}
@@ -132,4 +185,65 @@ func die(err error) {
 func withPos(fset *token.FileSet, tok token.Pos, err error) error {
 	pos := fset.Position(tok)
 	return fmt.Errorf("%s:%d:%d: %w", pos.Filename, pos.Line, pos.Column, err)
+}
+
+func transformAsActivity(bf *BaseFile) *BaseFile {
+	// TODO(sdboyer) find a more elegant way of hoisting this info than just reparsing output
+	f, err := AsActivityJenny{}.Generate(bf)
+	if err != nil {
+		panic(err)
+	}
+	// TODO need to fix this in jenny system, returning a nil file ought to cause the underlying jenny to be skipped
+	if f == nil {
+		return nil
+	}
+
+	fset := token.NewFileSet()
+	pf, err := parser.ParseFile(fset, f.RelativePath, f.Data, parser.ParseComments)
+	if err != nil {
+		panic(err)
+	}
+
+	fns, gen := make(map[string]*ast.FuncDecl), make(map[string]*ast.StructType)
+	for _, decl := range pf.Decls {
+		switch x := decl.(type) {
+		case *ast.FuncDecl:
+			fns[x.Name.Name] = x
+		case *ast.GenDecl:
+			if x.Tok == token.TYPE &&
+				len(x.Specs[0].(*ast.TypeSpec).Type.(*ast.StructType).Fields.List) == 1 &&
+				len(x.Specs[0].(*ast.TypeSpec).Type.(*ast.StructType).Fields.List[0].Names) == 1 {
+				// If it's a request struct type with only one field, then record the name of the type for later lookup
+				gen[x.Specs[0].(*ast.TypeSpec).Name.Name] = x.Specs[0].(*ast.TypeSpec).Type.(*ast.StructType)
+			}
+		}
+	}
+
+	bf.ActivityFns = make([]ActivityFn, 0, len(bf.AsActivityFns))
+	for _, fn := range bf.AsActivityFns {
+		if gfn, has := fns[fn.Fn.Name.Name]; has {
+			cfg := ActivityFn{
+				Fn:   gfn,
+				Opts: fn.Opts.Inner,
+			}
+
+			// Look up against the request struct type map
+			if greq, has := gen[gfn.Type.Params.List[1].Type.(*ast.Ident).Name]; has {
+				// if we have a match, then we can make a shortened by id fn
+				cfg.Opts.ById = ByIdOptions{
+					Name: greq.Fields.List[0].Names[0].Name,
+					Type: greq.Fields.List[0].Type.(*ast.Ident).Name,
+				}
+				// And we don't want the other function exposed at all
+				cfg.Opts.ByIdOnly = true
+			}
+
+			bf.ActivityFns = append(bf.ActivityFns, cfg)
+		} else {
+			panic(fmt.Errorf("could not find generated function %q", fn.Fn.Name.Name))
+		}
+		// TODO transform the Fn's args into the request type we'll be using
+	}
+
+	return bf
 }
