@@ -48,7 +48,7 @@ func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 	fx.New(providers...).Run()
 
 	if os.Getenv("ENV") == "prod" || os.Getenv("ENV") == "stage" {
-		l.Info("sleeping for 1 minute to ensure data dog metrics are flushed")
-		time.Sleep(time.Minute)
+		l.Info("sleeping for 30 seconds to ensure data dog metrics are flushed")
+		time.Sleep(30 * time.Second)
 	}
 }
