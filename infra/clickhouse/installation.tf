@@ -171,12 +171,6 @@ resource "kubectl_manifest" "clickhouse_installation" {
         # we define a clusterServiceTemplates so we can set an internal-hostname for access via twingate
         "serviceTemplates" = [{
           "name" = "clickhouse:${local.image_tag}"
-          "metadata" = {
-            "annotations" = {
-              "external-dns.alpha.kubernetes.io/internal-hostname" = "clickhouse.${local.zone}"
-              "external-dns.alpha.kubernetes.io/ttl"               = "60"
-            }
-          }
           # default type is ClusterIP
           "spec" = {
             "ports" = [
