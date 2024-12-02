@@ -61,8 +61,6 @@ type tvars_activityfn_byid struct {
 	ReqIsPtr    bool
 	IdFieldName string
 	IdType      string
-	ByIdOnly    bool
-	BaseFnName  string
 }
 
 // ActivityJenny is a jenny that generates a function that calls a provided base function as a Temporal activity, then awaits the response.
@@ -73,7 +71,7 @@ func (w ActivityJenny) JennyName() string {
 }
 
 func (w ActivityJenny) Generate(bf *BaseFile) (*codejen.File, error) {
-	if bf == nil || len(bf.ActivityFns) == 0 {
+	if len(bf.ActivityFns) == 0 {
 		return nil, nil
 	}
 
@@ -84,11 +82,7 @@ func (w ActivityJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 
 		wv.Options = *bfn.Opts
 		bfname := bfn.Fn.Name.String()
-		lead := "A"
-		if bfn.Opts.ById.Name != "" && bfn.Opts.ByIdOnly {
-			lead = "a"
-		}
-		wv.FnName = fmt.Sprintf("%swait%s", lead, strings.Title(bfname))
+		wv.FnName = fmt.Sprintf("Await%s", strings.Title(bfname))
 
 		wv.ReqType = astfmt.Sprint(bfn.Fn.Type.Params.List[1].Type)
 		_, wv.ReqIsPtr = bfn.Fn.Type.Params.List[1].Type.(*ast.StarExpr)
@@ -151,21 +145,15 @@ func (w ActivityJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 			return nil, fmt.Errorf("base activity func %s must have either one or two return values", bfn.Fn.Name.String())
 		}
 
-		if bfn.Opts.ById.Name != "" {
+		if bfn.Opts.ById != nil {
 			idopts := tvars_activityfn_byid{
-				ByIdFnName:  fmt.Sprintf("%sBy%s", wv.FnName, bfn.Opts.ById.Name),
+				ByIdFnName:  fmt.Sprintf("%sBy%s", wv.FnName, bfn.Opts.ById.Name()),
 				AwaitFnName: wv.FnName,
 				RespType:    wv.RespType,
 				ReqType:     wv.ReqType,
 				ReqIsPtr:    wv.ReqIsPtr,
-				IdFieldName: bfn.Opts.ById.Name,
-				IdType:      bfn.Opts.ById.Type,
-				BaseFnName:  wv.BaseFnName,
-				ByIdOnly:    bfn.Opts.ByIdOnly,
-			}
-
-			if bfn.Opts.ByIdOnly {
-				idopts.ByIdFnName = "A" + wv.FnName[1:]
+				IdFieldName: bfn.Opts.ById.Name(),
+				IdType:      bfn.Opts.ById.Type().Underlying().String(),
 			}
 			err := tmpls.Lookup("activity_by_id.tmpl").Execute(&buf, idopts)
 			if err != nil {
@@ -175,6 +163,6 @@ func (w ActivityJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 	}
 
 	genpath := filepath.Base(bf.Path)
-	genpath = genpath[:len(genpath)-3] + ".activity_gen.go"
+	genpath = genpath[:len(genpath)-3] + "_gen.go"
 	return codejen.NewFile(genpath, buf.Bytes(), ActivityJenny{}), nil
 }
