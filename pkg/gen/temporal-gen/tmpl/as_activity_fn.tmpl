@@ -1,0 +1,10 @@
+
+// {{ .FnName }} is a wrapper around [{{ .BaseFnName }}], but with its parameters encapsulated in the [{{ .RequestTypeName }}] struct. This makes it suitable 
+// to be invoked from a Temporal Workflow as an Activity.
+//
+// Do not invoke this activity directly. Instead, call [{{ .CallFuncName }}] from a workflow to invoke this func, as that
+// generated wrapper encodes the correct ActivityOptions for invoking this function.
+func (a *{{ .ActivitiesTypeName }}) {{ .FnName }}(ctx context.Context, req {{ .RequestTypeName }}) ({{ .RespType }}, error) {
+    return a.x.{{ .BaseFnName }}(ctx
+    {{- range $param := .ParamFields }}, req.{{ $param }}{{ end }})
+}

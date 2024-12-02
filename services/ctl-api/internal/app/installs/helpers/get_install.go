@@ -9,24 +9,66 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-func (h *Helpers) GetInstall(ctx context.Context, installID string) (*app.Install, error) {
+// @temporal-gen as-activity
+func (h *Helpers) GetInstallByID(ctx context.Context, installID string) (*app.Install, error) {
 	install := app.Install{}
-	res := h.db.WithContext(ctx).
-		Preload("AWSAccount").
-		Preload("AzureAccount").
-		Preload("AppSandboxConfig").
-		Preload("AppRunnerConfig").
-		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs_view_v1.created_at DESC")
-		}).
-		Preload("App").
-		Preload("App.Org").
-		Preload("RunnerGroup").
-		Preload("RunnerGroup.Runners").
-		First(&install, "id = ?", installID)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+	q := h.prepareGetInstall(ctx)
+	q.First(&install, "id = ?", installID)
+
+	if q.Error != nil {
+		return nil, fmt.Errorf("unable to get install: %w", q.Error)
 	}
 
 	return &install, nil
+}
+
+// @temporal-gen as-activity
+func (h *Helpers) GetInstallByName(ctx context.Context, installName, orgID string) (*app.Install, error) {
+	install := app.Install{}
+	q := h.prepareGetInstall(ctx)
+	q.Where("name = ? AND org_id = ?", installName, orgID).
+		First(&install)
+
+	if q.Error != nil {
+		return nil, fmt.Errorf("unable to get install: %w", q.Error)
+	}
+
+	return &install, nil
+}
+
+// prepareGetInstall prepares a gorm query object with common preloads, etc. for loading a single install
+func (h *Helpers) prepareGetInstall(ctx context.Context) *gorm.DB {
+	return h.db.WithContext(ctx).
+		Preload("CreatedBy").
+		Preload("Org").
+		Preload("Org.RunnerGroup").
+		Preload("Org.RunnerGroup.Runners").
+		Preload("App").
+		Preload("App.Org").
+		Preload("AWSAccount").
+		Preload("AzureAccount").
+		Preload("AppSandboxConfig").
+		Preload("AppSandboxConfig.AWSDelegationConfig").
+		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_inputs_view_v1.created_at DESC")
+		}).
+		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_sandbox_runs.created_at DESC")
+		}).
+
+		// load app secrets for deploys
+		Preload("App.AppSecrets").
+		Preload("AppRunnerConfig").
+
+		// load connected github
+		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
+		Preload("AppSandboxConfig.ConnectedGithubVCSConfig.VCSConnection").
+
+		// load public git
+		Preload("AppSandboxConfig.PublicGitVCSConfig").
+
+		// load runners
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
+		Preload("RunnerGroup.Runners.RunnerGroup")
 }
