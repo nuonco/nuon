@@ -8,7 +8,7 @@ resource "kubectl_manifest" "clickhouse_service" {
     "kind"       = "Service"
     "metadata" = {
       "annotations" = {
-        "external-dns.alpha.kubernetes.io/internal-hostname" = "clickhouse.nuon.us-west-2.stage.nuon.cloud"
+        "external-dns.alpha.kubernetes.io/internal-hostname" = "clickhouse.${local.zone}"
         "external-dns.alpha.kubernetes.io/ttl"               = "60"
       }
       "name"      = "clickhouse"
