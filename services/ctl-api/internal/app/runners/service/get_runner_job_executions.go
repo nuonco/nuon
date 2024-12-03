@@ -42,9 +42,8 @@ func (s *service) GetRunnerJobExecutions(ctx *gin.Context) {
 func (s *service) getRunnerJobExecutions(ctx context.Context, runnerJobID string) ([]app.RunnerJobExecution, error) {
 	var runnerJob *app.RunnerJob
 	res := s.db.WithContext(ctx).
-		Preload("CreatedBy").
 		Preload("Executions", func(db *gorm.DB) *gorm.DB {
-			return db.Order("runner_job_executions.created_at DESC")
+			return db.Order("runner_job_executions.created_at DESC").Limit(1000)
 		}).
 		First(&runnerJob, "id = ?", runnerJobID)
 
