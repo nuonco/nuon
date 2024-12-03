@@ -10,6 +10,33 @@ monitors:
     enabled: true
   org_container_waiting:
     enabled: false
+  integration_tests_failed:
+    enabled: true
+    json: >
+      {
+        "name": "stage - Integrations test failed",
+        "type": "query alert",
+        "query": "sum(last_5m):sum:integration.runs.count{status:failure} by {status}.as_count() > 0",
+        "message": "@slack-alerts-stage-infra\nIntegrations tests failed",
+        "tags": [
+              "terraform:true",
+              "env:${aws_account}"
+        ],
+        "options": {
+          "thresholds": {
+            "critical": 0
+          },
+          "notify_audit": false,
+          "threshold_windows": null,
+          "on_missing_data": "default",
+          "include_tags": true,
+          "new_group_delay": 60
+        },
+        "priority": null,
+        "restriction_policy": {
+          "bindings": []
+        }
+      }
 
 synthetics:
   ctl_api_uptime:
