@@ -73,7 +73,6 @@ func (s *service) getRunnerJobs(ctx context.Context, runnerID string, status app
 	}
 
 	res := s.db.WithContext(ctx).
-		Preload("CreatedBy").
 		Limit(limit).
 		Where(where).
 		Order("created_at desc").
