@@ -58,14 +58,14 @@ type RunnerJobExecution struct {
 
 	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt soft_delete.DeletedAt `json:"-"`
+	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_job_execution_runner_job_id,type:btree"`
 
 	OrgID string `json:"org_id"`
 	Org   Org    `json:"-"`
 
-	RunnerJobID string `json:"runner_job_id" gorm:"defaultnull;notnull"`
+	RunnerJobID string `json:"runner_job_id" gorm:"notnull;defaultnull;index:idx_runner_job_execution_runner_job_id,type:btree"`
 
-	Status RunnerJobExecutionStatus  `json:"status" gorm:"not null;default null"`
+	Status RunnerJobExecutionStatus  `json:"status" gorm:"not null;default null;index:idx_runner_job_execution_status,type:hash"`
 	Result *RunnerJobExecutionResult `json:"result"`
 }
 
