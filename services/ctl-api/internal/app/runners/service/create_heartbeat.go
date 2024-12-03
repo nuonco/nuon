@@ -53,7 +53,7 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, heartBeat)
 
-	runner, err := s.getRunner(ctx, runnerID)
+	runner, err := s.heartbeatGetRunner(ctx, runnerID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get runner"))
 		return
@@ -85,4 +85,18 @@ func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, re
 	}
 
 	return &runnerHeartBeat, nil
+}
+
+func (s *service) heartbeatGetRunner(ctx context.Context, runnerID string) (*app.Runner, error) {
+	// NOTE(fd): same as getRunner w/out the RunnerGroup.Settings preload. this is hit often enough we care to optimize.
+	runner := app.Runner{}
+	res := s.db.WithContext(ctx).
+		Preload("Org").
+		Preload("RunnerGroup").
+		First(&runner, "id = ?", runnerID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get runner: %w", res.Error)
+	}
+
+	return &runner, nil
 }

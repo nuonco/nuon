@@ -41,7 +41,6 @@ func (s *service) GetRunner(ctx *gin.Context) {
 func (s *service) getRunner(ctx context.Context, runnerID string) (*app.Runner, error) {
 	runner := app.Runner{}
 	res := s.db.WithContext(ctx).
-		Preload("CreatedBy").
 		Preload("Org").
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Settings").
