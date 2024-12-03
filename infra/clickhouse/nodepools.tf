@@ -43,7 +43,7 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
           }
         }
         spec = {
-          expireAfter = local.vars.expiresAfter
+          expireAfter = local.expireAfter
           nodeClassRef = {
             group = "karpenter.k8s.aws"
             kind  = "EC2NodeClass"
@@ -109,10 +109,10 @@ resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
     spec = {
       disruption = {
         consolidationPolicy = "WhenEmptyOrUnderutilized"
-        consolidateAfter    = "1m"
+        consolidateAfter    = "15m"
         budgets = [
           {
-            nodes = "0" # only ever rotate one node at a time
+            nodes = "0" # NOTE(fd): never disrupt/rotate
           }
         ]
       }
@@ -127,7 +127,7 @@ resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
           }
         }
         spec = {
-          expireAfter = local.vars.expiresAfter
+          expireAfter = local.expireAfter
           nodeClassRef = {
             group = "karpenter.k8s.aws"
             kind  = "EC2NodeClass"

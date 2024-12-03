@@ -14,6 +14,8 @@ locals {
 
   tables = local.vars.tables
 
+  expireAfter = local.vars.expireAfter
+
   tags = {
     environment = var.env
     pool        = local.vars.pool
