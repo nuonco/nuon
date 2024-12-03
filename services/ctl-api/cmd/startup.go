@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -23,6 +24,7 @@ func (c *cli) registerStartup() error {
 }
 
 func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
+	start := time.Now()
 	l := zap.L()
 
 	// for now, run the automigrate script
@@ -47,8 +49,16 @@ func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 	providers = append(providers, c.providers()...)
 	fx.New(providers...).Run()
 
+	// NOTE(fd): in prod and stage, we want the job container to persist for at least 60s to ensure
+	// the datadog agent picks up on its existence. We don't want this job to take longer than necessary
+	// though so we calculate it's runtime so we only sleep for as long as necessary to reach the 60s threshold.
 	if os.Getenv("ENV") == "prod" || os.Getenv("ENV") == "stage" {
-		l.Info("sleeping for 30 seconds to ensure data dog metrics are flushed")
-		time.Sleep(30 * time.Second)
+		minRunLen := time.Duration(time.Second * 60)
+		runTime := time.Now().Sub(start)
+		if runTime < minRunLen {
+			sleepFor := minRunLen - runTime
+			l.Info(fmt.Sprintf("sleeping for %d seconds to ensure data dog metrics are flushed", sleepFor))
+			time.Sleep(sleepFor)
+		}
 	}
 }
