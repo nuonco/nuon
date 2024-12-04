@@ -199,6 +199,18 @@ type RunnerJob struct {
 
 	Executions []RunnerJobExecution `json:"executions" gorm:"constraint:OnDelete:CASCADE;"`
 	Plan       RunnerJobPlan        `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+
+	// read only fields from view
+
+	ExecutionCount int `json:"execution_count" gorm:"->;-:migration"`
+}
+
+func (*RunnerJob) UseView() bool {
+	return true
+}
+
+func (*RunnerJob) ViewVersion() string {
+	return "v1"
 }
 
 func (r *RunnerJob) BeforeCreate(tx *gorm.DB) error {

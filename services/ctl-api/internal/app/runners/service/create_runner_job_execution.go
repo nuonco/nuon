@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateRunnerJobExecutionRequest struct{}
@@ -32,6 +34,23 @@ type CreateRunnerJobExecutionRequest struct{}
 func (s *service) CreateRunnerJobExecution(ctx *gin.Context) {
 	runnerJobID := ctx.Param("runner_job_id")
 
+	runnerJob, err := s.getRunnerJob(ctx, runnerJobID)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get runner job"))
+		return
+	}
+	cctx.SetOrgIDGinContext(ctx, runnerJob.OrgID)
+
+	if runnerJob.ExecutionCount >= runnerJob.MaxExecutions {
+		if _, err := s.cancelRunnerJob(ctx, runnerJobID); err != nil {
+			ctx.Error(errors.Wrap(err, "unable to cancel runner job"))
+			return
+		}
+
+		ctx.Error(fmt.Errorf("runner job has exceeded max executions"))
+		return
+	}
+
 	execution, err := s.createRunnerJobExecution(ctx, runnerJobID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create runner job execution: %w", err))
@@ -42,14 +61,8 @@ func (s *service) CreateRunnerJobExecution(ctx *gin.Context) {
 }
 
 func (s *service) createRunnerJobExecution(ctx context.Context, runnerJobID string) (*app.RunnerJobExecution, error) {
-	runnerJob, err := s.getRunnerJob(ctx, runnerJobID)
-	if err != nil {
-		return nil, err
-	}
-
 	runnerJobExecution := app.RunnerJobExecution{
 		RunnerJobID: runnerJobID,
-		OrgID:       runnerJob.OrgID,
 		Status:      app.RunnerJobExecutionStatusPending,
 	}
 
