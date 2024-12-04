@@ -5,8 +5,8 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 )
 
@@ -16,7 +16,9 @@ import (
 func (w *Workflows) DeprovisionRunner(ctx workflow.Context, sreq signals.RequestSignal) error {
 	installID := sreq.ID
 
-	install, err := helpers.AwaitGetInstallByID(ctx, installID)
+	install, err := activities.AwaitGet(ctx, activities.GetRequest{
+		InstallID: installID,
+	})
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
