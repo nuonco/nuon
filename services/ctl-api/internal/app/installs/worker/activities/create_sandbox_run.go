@@ -14,7 +14,9 @@ type CreateSandboxRunRequest struct {
 
 // @temporal-gen activity
 func (a *Activities) CreateSandboxRun(ctx context.Context, req CreateSandboxRunRequest) (*app.InstallSandboxRun, error) {
-	install, err := a.getInstall(ctx, req.InstallID)
+	install, err := a.Get(ctx, GetRequest{
+		InstallID: req.InstallID,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
