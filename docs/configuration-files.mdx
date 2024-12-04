@@ -68,7 +68,7 @@ source = "./container_image.toml"
 ```toml storage.toml
 name = "storage"
 type = "terraform_module"
-terraform_version = "1.5.3"
+terraform_version = "1.7.5"
 
 [public_repo]
 directory = "components/storage"
@@ -102,7 +102,7 @@ name = "storage"
 
 ```toml storage.toml
 type = "terraform_module"
-terraform_version = "1.5.3"
+terraform_version = "1.7.5"
 ```
 
 ## Config Variables
@@ -240,7 +240,7 @@ To define an `aws-ecs-byovpc` sandbox:
 
 ```toml
 [sandbox]
-terraform_version = "1.5.4"
+terraform_version = "1.7.5"
 [sandbox.public_repo]
 directory = "aws-ecs-byovpc"
 repo = "nuonco/sandboxes"
@@ -272,7 +272,7 @@ To configure a terraform component using a connected repo:
 [[components]]
 name = "terraform"
 type = "terraform_module"
-terraform_version = "1.5.3"
+terraform_version = "1.7.5"
 
 [components.connected_repo]
 directory = "infra"
