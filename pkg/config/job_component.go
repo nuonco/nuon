@@ -22,3 +22,7 @@ func (t *JobComponentConfig) Validate() error {
 
 	return nil
 }
+
+func (t *JobComponentConfig) Parse() error {
+	return nil
+}
