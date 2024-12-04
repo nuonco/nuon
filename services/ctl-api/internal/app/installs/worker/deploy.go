@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
@@ -109,7 +108,7 @@ func (w *Workflows) isTeardownable(install *app.Install) bool {
 func (w *Workflows) Deploy(ctx workflow.Context, sreq signals.RequestSignal) error {
 	w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusStarted)
 
-	install, err := helpers.AwaitGetInstallByID(ctx, sreq.ID)
+	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
 	if err != nil {
 		w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "unable to get install from database")
 		w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusFailed)
