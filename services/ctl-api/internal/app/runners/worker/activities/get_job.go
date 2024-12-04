@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -29,7 +31,7 @@ func (a *Activities) getRunnerJob(ctx context.Context, jobID string) (*app.Runne
 		Preload("Org").
 		First(&runnerJob, "id = ?", jobID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get runner job: %w", res.Error)
+		return nil, errors.Wrap(res.Error, "unable to get runner job: %w")
 	}
 
 	return &runnerJob, nil
