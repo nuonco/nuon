@@ -74,6 +74,10 @@ func (r *RunnerJobExecution) BeforeCreate(tx *gorm.DB) error {
 		r.ID = domains.NewRunnerID()
 	}
 
+	if r.OrgID == "" {
+		r.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+
 	if r.CreatedByID == "" {
 		r.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
