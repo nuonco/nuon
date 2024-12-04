@@ -41,7 +41,6 @@ func (s *service) GetLogStream(ctx *gin.Context) {
 func (s *service) getLogStream(ctx context.Context, logStreamID string) (*app.LogStream, error) {
 	logStream := app.LogStream{}
 	res := s.db.WithContext(ctx).
-		Preload("CreatedBy").
 		First(&logStream, "id = ?", logStreamID)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get log stream")

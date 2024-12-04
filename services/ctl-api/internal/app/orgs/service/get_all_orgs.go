@@ -43,7 +43,6 @@ func (s *service) getAllOrgs(ctx context.Context, typ string) ([]*app.Org, error
 	}
 
 	res := s.db.WithContext(ctx).
-		Preload("CreatedBy").
 		Joins("JOIN accounts ON accounts.id=orgs.created_by_id").
 		Where(where).
 		Order("orgs.created_at desc").
