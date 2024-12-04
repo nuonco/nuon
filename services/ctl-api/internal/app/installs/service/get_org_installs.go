@@ -47,7 +47,6 @@ func (s *service) getOrgInstalls(ctx context.Context, orgID string) ([]app.Insta
 	var installs []app.Install
 	res := s.db.WithContext(ctx).
 		Preload("AppSandboxConfig").
-		Preload("CreatedBy").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("App").

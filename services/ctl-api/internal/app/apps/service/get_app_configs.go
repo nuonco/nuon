@@ -48,7 +48,6 @@ func (s *service) getAppConfigs(ctx context.Context, orgID, appID string) ([]app
 	cfgs := make([]app.AppConfig, 0)
 
 	res := s.db.WithContext(ctx).
-		Preload("CreatedBy").
 		Where(app.AppConfig{
 			OrgID: orgID,
 			AppID: appID,

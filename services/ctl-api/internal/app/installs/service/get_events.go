@@ -40,7 +40,6 @@ func (s *service) GetInstallEvents(ctx *gin.Context) {
 func (s *service) getInstallEvents(ctx context.Context, installID string) ([]app.InstallEvent, error) {
 	var installEvents []app.InstallEvent
 	res := s.db.WithContext(ctx).
-		Preload("CreatedBy").
 		Where("install_id = ?", installID).
 		Order("created_at desc").
 		Find(&installEvents)
