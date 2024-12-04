@@ -49,7 +49,6 @@ func (s *service) getAllInstalls(ctx context.Context, limitVal int, orgTyp strin
 	var installs []*app.Install
 	res := s.db.WithContext(ctx).
 		Preload("AppSandboxConfig").
-		Preload("CreatedBy").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("App").
