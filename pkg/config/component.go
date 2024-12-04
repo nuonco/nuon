@@ -55,6 +55,30 @@ type Component struct {
 	ExternalImage   *ExternalImageComponentConfig   `mapstructure:"external_image,omitempty" jsonschema:"oneof_required=external_image"`
 }
 
+func (c *Component) Parse() error {
+	if c.HelmChart != nil {
+		return c.HelmChart.Parse()
+	}
+
+	if c.TerraformModule != nil {
+		return c.TerraformModule.Parse()
+	}
+
+	if c.DockerBuild != nil {
+		return c.DockerBuild.Parse()
+	}
+
+	if c.Job != nil {
+		return c.Job.Parse()
+	}
+
+	if c.ExternalImage != nil {
+		return c.ExternalImage.Parse()
+	}
+
+	return nil
+}
+
 func (c *Component) AddDependency(val string) {
 	c.Dependencies = append(c.Dependencies, val)
 }

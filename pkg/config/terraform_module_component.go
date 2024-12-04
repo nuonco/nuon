@@ -15,6 +15,10 @@ type TerraformModuleComponentConfig struct {
 	EnvVars   []EnvironmentVariable `mapstructure:"env_var,omitempty"`
 }
 
+func (t *TerraformModuleComponentConfig) Parse() error {
+	return nil
+}
+
 func (t *TerraformModuleComponentConfig) Validate(ctx ConfigContext) error {
 	if len(t.Variables) > 0 {
 		return ErrConfig{
