@@ -27,7 +27,7 @@ type TerraformModuleComponentConfig struct {
 	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 
 	// terraform configuration values
-	Version   string        `json:"version" gorm:"default:v1.5.3;notnull"`
+	Version   string        `json:"version" gorm:"default:v1.7.5;notnull"`
 	Variables pgtype.Hstore `json:"variables" gorm:"type:hstore" swaggertype:"object,string"`
 	EnvVars   pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
 
