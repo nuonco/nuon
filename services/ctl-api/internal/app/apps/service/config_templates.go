@@ -37,7 +37,7 @@ My ECS App is being deployed.
 apps = ["%s"]
 
 [sandbox]
-terraform_version = "1.5.4"
+terraform_version = "1.7.5"
 [sandbox.public_repo]
 directory = "aws-ecs"
 repo = "nuonco/sandboxes"
@@ -49,7 +49,7 @@ runner_type = "aws-ecs"
 [[components]]
 name   = "ecs_service"
 type = "terraform_module"
-terraform_version = "1.5.3"
+terraform_version = "1.7.5"
 [components.public_repo]
 repo      = "nuonco/guides"
 directory = "aws-ecs-tutorial/components/ecs-service"
@@ -139,7 +139,7 @@ runner-env-var = "runner-env-var"
 `
 
 const sandboxConfig = `#:schema https://api.nuon.co/v1/general/config-schema?source=sandbox
-terraform_version = "1.5.4"
+terraform_version = "1.7.5"
 
 # https://docs.nuon.co/guides/install-access-delegation#setup-delegation
 # if you are using delegation, otherwise remove
@@ -181,7 +181,7 @@ group = "sandbox"
 const terraformComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
 name = "toml_terraform"
 type = "terraform_module"
-terraform_version = "1.5.3"
+terraform_version = "1.7.5"
 
 [connected_repo]
 directory = "infra"
@@ -196,7 +196,7 @@ ACCOUNT_ID = "{{.nuon.install.sandbox.account.id}}"
 const terraformInfraComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
 name = "toml_infra"
 type = "terraform_module"
-terraform_version = "1.5.4"
+terraform_version = "1.7.5"
 
 [connected_repo]
 directory = "deployment"
@@ -270,4 +270,3 @@ image_url = "ecr-url"
 tag = "latest"
 region = "us-west-2"
 `
-
