@@ -43,7 +43,6 @@ func (s *service) GetAllInstallers(ctx *gin.Context) {
 func (s *service) getAllInstallers(ctx context.Context, limitVal int) ([]*app.Installer, error) {
 	var installers []*app.Installer
 	res := s.db.WithContext(ctx).
-		Preload("CreatedBy").
 		Preload("Metadata").
 		Preload("Apps").
 		Preload("Apps.Org").
