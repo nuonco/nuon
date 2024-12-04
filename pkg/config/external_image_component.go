@@ -21,3 +21,7 @@ type ExternalImageComponentConfig struct {
 func (t *ExternalImageComponentConfig) Validate() error {
 	return nil
 }
+
+func (t *ExternalImageComponentConfig) Parse() error {
+	return nil
+}
