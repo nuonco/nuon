@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
@@ -66,8 +65,7 @@ func (w *Workflows) TeardownComponents(ctx workflow.Context, sreq signals.Reques
 	installID := sreq.ID
 
 	l := workflow.GetLogger(ctx)
-
-	install, err := helpers.AwaitGetInstallByID(ctx, installID)
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}

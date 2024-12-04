@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
@@ -21,7 +20,7 @@ func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestS
 	w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusStarted)
 
 	l := workflow.GetLogger(ctx)
-	install, err := helpers.AwaitGetInstallByID(ctx, installID)
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
