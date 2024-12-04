@@ -17,3 +17,7 @@ type DockerBuildComponentConfig struct {
 func (t *DockerBuildComponentConfig) Validate() error {
 	return nil
 }
+
+func (t *DockerBuildComponentConfig) Parse() error {
+	return nil
+}
