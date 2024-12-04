@@ -23,5 +23,7 @@ monitors:
     enabled: false
   database_running_low_on_free_space:
     enabled: false
-  ctl_api_5xx_errors:
+  ctl_api_public_5xx_errors:
+    enabled: false
+  ctl_api_runner_5xx_errors:
     enabled: false
