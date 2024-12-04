@@ -7,7 +7,6 @@ import (
 )
 
 type AppConfig struct {
-
 	// Config file version
 	Version string `mapstructure:"version" jsonschema:"required"`
 
@@ -79,6 +78,13 @@ func (a *AppConfig) Parse() error {
 		parseFns = append(parseFns, parseFn{
 			"inputs",
 			a.Inputs.parse,
+		})
+	}
+
+	for idx, comp := range a.Components {
+		parseFns = append(parseFns, parseFn{
+			fmt.Sprintf("components.%d", idx),
+			comp.Parse,
 		})
 	}
 
