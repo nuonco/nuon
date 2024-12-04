@@ -62,23 +62,23 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 	}
 
 	// NOTE: uncomment to test action syncing
-	//
-	// for _, action := range s.cfg.Actions {
-	// 	obj := action
-	//
-	// 	resourceName := fmt.Sprintf("action-%s", obj.Name)
-	// 	steps = append(steps, syncStep{
-	// 		Resource: resourceName,
-	// 		Method: func(ctx context.Context) error {
-	// 			_, _, err := s.syncAction(ctx, resourceName, obj)
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	//
-	// 			return nil
-	// 		},
-	// 	})
-	// }
+
+	for _, action := range s.cfg.Actions {
+		obj := action
+
+		resourceName := fmt.Sprintf("action-%s", obj.Name)
+		steps = append(steps, syncStep{
+			Resource: resourceName,
+			Method: func(ctx context.Context) error {
+				_, _, err := s.syncAction(ctx, resourceName, obj)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			},
+		})
+	}
 
 	return steps, nil
 }
