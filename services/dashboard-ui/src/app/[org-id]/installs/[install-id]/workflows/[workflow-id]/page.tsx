@@ -1,14 +1,25 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { DashboardContent, Section, Text } from '@/components'
-import { getInstall, getOrg } from '@/lib'
+import {
+  ClickToCopy,
+  DashboardContent,
+  Duration,
+  Section,
+  StatusBadge,
+  Text,
+  Time,
+  ToolTip,
+  Truncate,
+} from '@/components'
+import { getInstall, getInstallWorkflowRun, getOrg } from '@/lib'
 
 export default withPageAuthRequired(async function InstallWorkflow({ params }) {
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
   const workflowId = params?.['workflow-id'] as string
-  const [org, install] = await Promise.all([
+  const [org, install, workflowRun] = await Promise.all([
     getOrg({ orgId }),
     getInstall({ installId, orgId }),
+    getInstallWorkflowRun({ installId, orgId, workflowRunId: workflowId }),
   ])
 
   return (
@@ -16,7 +27,10 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       breadcrumb={[
         { href: `/${org.id}/apps`, text: org.name },
         { href: `/${org.id}/installs`, text: 'Installs' },
-        { href: `/${org.id}/installs/${install.id}/workflows`, text: install.name },
+        {
+          href: `/${org.id}/installs/${install.id}/workflows`,
+          text: install.name,
+        },
         {
           href: `/${org.id}/installs/${install.id}/workflows/${workflowId}`,
           text: 'workflow name',
@@ -24,6 +38,39 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       ]}
       heading={'Workflow name'}
       headingUnderline={workflowId}
+      meta={
+        <div className="flex gap-8 items-center justify-start pb-6">
+          <Time time={workflowRun.created_at} />
+          <Duration
+            beginTime={workflowRun.created_at}
+            endTime={workflowRun.updated_at}
+          />
+        </div>
+      }
+      statues={
+        <div className="flex gap-6 items-start justify-start">
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Status
+            </Text>
+            <StatusBadge descriptionAlignment="right" status="active" />
+          </span>
+
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Install
+            </Text>
+            <Text variant="med-12">{install.name}</Text>
+            <Text variant="mono-12">
+              <ToolTip alignment="right" tipContent={install.id}>
+                <ClickToCopy>
+                  <Truncate variant="small">{install.id}</Truncate>
+                </ClickToCopy>
+              </ToolTip>
+            </Text>
+          </span>
+        </div>
+      }
     >
       <div className="flex flex-col md:flex-row flex-auto">
         <Section className="border-r" heading="Workflow logs">
@@ -31,14 +78,19 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
         </Section>
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
-          <Section className="flex-initial" heading="Actions">
-            <div className="flex flex-col gap-8">
-              <Text>More info</Text>
+          <Section
+            className="flex-initial"
+            heading={`${workflowRun?._?.steps?.length} Steps`}
+          >
+            <div className="flex flex-col gap-0 divide-y">
+              {workflowRun?._?.steps?.map((step, i) => (
+                <span key={step.id} className="py-2">
+                  <Text>
+                    {i + 1}. {step.name}
+                  </Text>
+                </span>
+              ))}
             </div>
-          </Section>
-
-          <Section heading="Config">
-            <Text>Even more info</Text>
           </Section>
         </div>
       </div>
