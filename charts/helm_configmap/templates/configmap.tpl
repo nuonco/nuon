@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: helm_configmap
+  name: helm-configmap
   namespace: {{ .Release.Namespace | quote | default "default"}}
   labels:
     foo: bar
