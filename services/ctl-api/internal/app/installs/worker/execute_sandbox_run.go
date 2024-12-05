@@ -16,7 +16,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
-func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, op app.RunnerJobOperationType, sandboxMode bool, logStreamID string) error {
+func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, op app.RunnerJobOperationType, sandboxMode bool) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
@@ -24,12 +24,11 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 
 	// create the job
 	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
-		InstallID:   install.ID,
-		RunnerID:    install.Org.RunnerGroup.Runners[0].ID,
-		OwnerType:   "install_sandbox_runs",
-		OwnerID:     installRun.ID,
-		Op:          op,
-		LogStreamID: logStreamID,
+		InstallID: install.ID,
+		RunnerID:  install.Org.RunnerGroup.Runners[0].ID,
+		OwnerType: "install_sandbox_runs",
+		OwnerID:   installRun.ID,
+		Op:        op,
 	})
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create runner job")
