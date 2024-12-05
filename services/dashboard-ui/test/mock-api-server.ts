@@ -10,7 +10,7 @@ import {
   getGetInstallSandboxRuns200Response,
 } from './mock-api-handlers'
 
-const nextProxyHandlers = [
+export const nextProxyHandlers = [
   http.get('/api/:orgId', async () => {
     await delay(300)
     return HttpResponse.json(getGetOrg200Response(), {

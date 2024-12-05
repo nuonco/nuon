@@ -3,26 +3,36 @@
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { DotsThreeVertical } from '@phosphor-icons/react'
+import { ActionTriggerType } from '@/components/ActionTriggerType'
 import { Link } from '@/components/Link'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { ID, Text } from '@/components/Typography'
-import type { TWorkflow } from '@/types'
+import type { TActionWorkflow, TActionConfigTriggerType } from '@/types'
 
 type TData = {
-  id: string
-  name: string
-  on: string
-  jobCount: number
+  id?: string
+  name?: string
+  config_count?: number
+  steps?: string[]
+  triggers?: TActionConfigTriggerType[]
 }
 
-function parseWorkflowsToTableData(workflows: Array<TWorkflow>): Array<TData> {
-  return workflows.map(({ jobs, ...wf }) => ({ ...wf, jobCount: jobs?.length }))
+function parseWorkflowsToTableData(
+  workflows: Array<TActionWorkflow>
+): Array<TData> {
+  return workflows.map((wf) => ({
+    id: wf.id,
+    name: wf.name,
+    config_count: wf.config_count,
+    steps: wf?.configs?.[0]?.steps?.map((s) => s?.name),
+    triggers: wf?.configs?.[0]?.triggers?.map((t) => t?.type),
+  }))
 }
 
 export interface IAppWorkflowsTable {
   appId: string
   orgId: string
-  workflows: Array<TWorkflow>
+  workflows: Array<TActionWorkflow>
 }
 
 export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
@@ -52,16 +62,35 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
         ),
       },
       {
-        header: 'On',
-        accessorKey: 'on',
+        header: 'Version',
+        accessorKey: 'config_count',
         cell: (props) => (
           <Text className="gap-4">{props.getValue<string>()}</Text>
         ),
       },
       {
-        header: 'Jobs',
-        accessorKey: 'jobCount',
-        cell: (props) => <Text>{props.getValue<number>()}</Text>,
+        header: 'Triggers',
+        accessorKey: 'triggers',
+        cell: (props) => (
+          <Text className="gap-4">
+            {props.getValue<TActionConfigTriggerType[]>().map((t) => (
+              <ActionTriggerType key={t} triggerType={t} />
+            ))}
+          </Text>
+        ),
+      },
+      {
+        header: 'Steps',
+        accessorKey: 'steps',
+        cell: (props) => (
+          <ol className="flex flex-col gap-1 list-decimal">
+            {props.getValue<string[]>().map((s) => (
+              <li key={s} className="text-sm">
+                <Text className="!leading-none self-start">{s}</Text>
+              </li>
+            ))}
+          </ol>
+        ),
       },
       {
         id: 'test',

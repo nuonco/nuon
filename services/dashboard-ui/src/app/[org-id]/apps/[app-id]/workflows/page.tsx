@@ -5,30 +5,15 @@ import {
   DashboardContent,
   Text,
 } from '@/components'
-import { getApp, getOrg } from '@/lib'
-import type { TWorkflow } from '@/types'
-
-const workflows: Array<TWorkflow> = [
-  {
-    id: 'wkf12345678912345',
-    name: 'Fetch logs',
-    on: 'manual',
-    jobs: [{ id: 'j-1' }],
-  },
-  {
-    id: 'wkf09876543210987',
-    name: 'Health check',
-    on: 'schedule',
-    jobs: [{ id: 'j-1' }, { id: 'j-1' }, { id: 'j-1' }, { id: 'j-1' }],
-  },
-]
+import { getApp, getAppWorkflows, getOrg } from '@/lib'
 
 export default withPageAuthRequired(async function AppWorkflows({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const [org, app] = await Promise.all([
+  const [org, app, workflows] = await Promise.all([
     getOrg({ orgId }),
     getApp({ appId, orgId }),
+    getAppWorkflows({ appId, orgId }),
   ])
 
   return (
@@ -50,7 +35,7 @@ export default withPageAuthRequired(async function AppWorkflows({ params }) {
             workflows={workflows}
           />
         ) : (
-          <Text>No workflows configured</Text>
+          <Text>No action workflows configured</Text>
         )}
       </section>
     </DashboardContent>

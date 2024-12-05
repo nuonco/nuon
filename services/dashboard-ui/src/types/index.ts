@@ -67,10 +67,14 @@ export type TRunnerJob = components['schemas']['app.RunnerJob']
 // log stream
 export type TLogStream = components['schemas']['app.LogStream']
 
-// temp workflow type
-export type TWorkflow = {
-  id: string
-  name: string
-  on: string
-  jobs: Array<Record<string, string>>
-}
+// action workflows
+export type TActionWorkflow = components['schemas']['app.ActionWorkflow']
+export type TActionConfig = components['schemas']['app.ActionWorkflowConfig']
+export type TActionConfigStep =
+  components['schemas']['app.ActionWorkflowStepConfig']
+export type TActionConfigTrigger =
+  components['schemas']['app.ActionWorkflowTriggerConfig']
+export type TActionConfigTriggerType =
+  components['schemas']['app.ActionWorkflowTriggerType']
+export type TInstallActionWorkflowRun =
+  components['schemas']['app.InstallActionWorkflowRun']
