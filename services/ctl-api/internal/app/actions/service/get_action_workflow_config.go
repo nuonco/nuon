@@ -45,9 +45,6 @@ func (s *service) GetActionWorkflowConfig(ctx *gin.Context) {
 }
 
 func (s *service) findActionWorkflowConfig(ctx context.Context, orgID, awcID string) (*app.ActionWorkflowConfig, error) {
-	fmt.Println("findActionWorkflowConfig")
-	fmt.Println("orgID", orgID)
-	fmt.Println("awcID", awcID)
 	aw := app.ActionWorkflowConfig{}
 	res := s.db.WithContext(ctx).
 		Preload("Triggers").
