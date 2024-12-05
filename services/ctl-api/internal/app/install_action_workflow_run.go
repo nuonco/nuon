@@ -41,8 +41,8 @@ type InstallActionWorkflowRun struct {
 	Status            InstallActionWorkflowRunStatus `json:"status" gorm:"notnull" swaggertype:"string"`
 	StatusDescription string                         `json:"status_description" gorm:"notnull"`
 
-	ActionWorkflowConfigID string               `json:"-"`
-	ActionWorkflowConfig   ActionWorkflowConfig `json:"action_workflow_config"`
+	ActionWorkflowConfigID string               `json:"action_workflow_config_id" gorm:"notnull"`
+	ActionWorkflowConfig   ActionWorkflowConfig `json:"_"`
 }
 
 func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {
