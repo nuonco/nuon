@@ -8,9 +8,10 @@ export interface IExpand extends React.HTMLAttributes<HTMLDivElement> {
   expandContent: React.ReactElement | Array<React.ReactElement>
   heading: React.ReactElement | React.ReactNode
   isOpen?: boolean
-  hasHeadingStyle?:Boolean
+  hasHeadingStyle?: Boolean
   headerClass?: string
   id: string
+  parentClass?: string
 }
 
 export const Expand: FC<IExpand> = ({
@@ -21,6 +22,7 @@ export const Expand: FC<IExpand> = ({
   hasHeadingStyle = false,
   headerClass,
   isOpen = false,
+  parentClass,
 }) => {
   const [isExpanded, setIsExpanded] = useState(isOpen)
 
@@ -29,24 +31,25 @@ export const Expand: FC<IExpand> = ({
   }, [isOpen])
 
   return (
-    <div className={classNames('w-full')}>
+    <div
+      className={classNames('w-full', {
+        [`${parentClass}`]: Boolean(parentClass),
+      })}
+    >
       <div
         className={classNames(
           'flex items-center justify-between cursor-pointer hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10 pr-2',
-          {            
-            'border-t border-b bg-cool-grey-50 dark:bg-dark-grey-200 text-cool-grey-600 dark:text-cool-grey-500 ': hasHeadingStyle,
-            [`${headerClass}`]: Boolean(headerClass)
+          {
+            'border-t border-b bg-cool-grey-50 dark:bg-dark-grey-200 text-cool-grey-600 dark:text-cool-grey-500 ':
+              hasHeadingStyle,
+            [`${headerClass}`]: Boolean(headerClass),
           }
         )}
         onClick={() => {
           setIsExpanded(!isExpanded)
         }}
       >
-        <div
-          className={classNames({
-            [`${className}`]: Boolean(className),
-          })}
-        >
+        <div className={classNames({ [`${className}`]: Boolean(className) })}>
           {heading}
         </div>
 

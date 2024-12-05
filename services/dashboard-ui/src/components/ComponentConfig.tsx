@@ -16,7 +16,7 @@ import { Modal } from '@/components/Modal'
 import { Link } from '@/components/Link'
 import { ToolTip } from '@/components/ToolTip'
 import { Text, Truncate } from '@/components/Typography'
-import { TComponentConfig } from '@/types'
+import { TComponentConfig, TVCSGit, TVCSGitHub } from '@/types'
 
 export type TComponentConfigType =
   | 'docker'
@@ -256,7 +256,12 @@ const ConfigurationJob: FC<Pick<TComponentConfig, 'job'>> = ({ job }) => {
   )
 }
 
-const ConfigurationVCS: FC<{ vcs: any }> = ({ vcs }) => {
+interface IConfigurationVCS {
+  connected_github_vcs_config?: TVCSGitHub;
+  public_git_vcs_config?: TVCSGit;
+}
+
+export const ConfigurationVCS: FC<{ vcs: IConfigurationVCS }> = ({ vcs }) => {
   const isGithubConnected = Boolean(vcs.connected_github_vcs_config)
   const repo = vcs.connected_github_vcs_config || vcs.public_git_vcs_config
 
@@ -310,7 +315,7 @@ const ConfigurationVCS: FC<{ vcs: any }> = ({ vcs }) => {
   )
 }
 
-const ConfigurationVariables: FC<{
+export const ConfigurationVariables: FC<{
   heading?: string
   variables: Record<string, string>
 }> = ({ heading = 'Variables', variables }) => {
