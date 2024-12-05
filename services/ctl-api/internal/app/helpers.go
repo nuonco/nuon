@@ -27,3 +27,15 @@ func orgIDFromContext(ctx context.Context) string {
 
 	return valStr
 }
+
+// logStreamIDFromContext returns the org id from the context. Notably, this depends on the `middlewares/org` to set
+// this, but we do not use that code to prevent a cycle import
+func logstreamIDFromContext(ctx context.Context) string {
+	val := ctx.Value("log_stream")
+	valObj, ok := val.(*LogStream)
+	if !ok {
+		return ""
+	}
+
+	return valObj.ID
+}

@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -228,6 +229,10 @@ func (r *RunnerJob) BeforeCreate(tx *gorm.DB) error {
 
 	if r.OrgID == "" {
 		r.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+
+	if r.LogStreamID == nil {
+		r.LogStreamID = generics.ToPtr(logstreamIDFromContext(tx.Statement.Context))
 	}
 
 	// the overall timeout can be derived by combining the various lower level timeouts.
