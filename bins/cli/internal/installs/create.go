@@ -74,7 +74,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, i
 		case ins.SandboxStatus == statusActive:
 			view.Success(fmt.Sprintf("successfully created install %s", ins.ID))
 			if !noSelect {
-				if err := s.setInstallID(ctx, ins.ID); err != nil {
+				if err := s.setInstallID(ctx, ins.ID); err == nil {
 					s.printInstallSetMsg(name, ins.ID)
 				} else {
 					view.Fail(errs.NewUserFacing("failed to set install as current: %s", err))
