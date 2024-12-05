@@ -47,6 +47,9 @@ func (s *service) GetActionWorkflow(ctx *gin.Context) {
 func (s *service) findActionWorkflow(ctx context.Context, orgID, awID string) (*app.ActionWorkflow, error) {
 	aw := app.ActionWorkflow{}
 	res := s.db.WithContext(ctx).
+		Preload("Configs").
+		Preload("Configs.Triggers").
+		Preload("Configs.Steps").
 		Where("org_id = ? AND id = ?", orgID, awID).
 		Or("org_id = ? AND name = ?", orgID, awID).
 		First(&aw)
