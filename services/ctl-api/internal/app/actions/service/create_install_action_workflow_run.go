@@ -59,21 +59,44 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		return
 	}
 
-	_, err = s.findActionWorkflowConfig(ctx, org.ID, req.ActionWorkFlowConfigID)
+	awc, err := s.findActionWorkflowConfig(ctx, org.ID, req.ActionWorkFlowConfigID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
 	}
 
-	run, err := s.createActionWorkflowRun(ctx, org.ID, installID, req)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create app: %w", err))
+	if !s.workflowConfigCanTriggerManually(awc) {
+		ctx.Error(fmt.Errorf("manual trigger is not allowed: %w", err))
 		return
 	}
 
-	// TODO: trigger a signal the action workflow run
+	// TODO: implement run
 
-	ctx.JSON(http.StatusCreated, run)
+	// run, err := s.createActionWorkflowRun(ctx, org.ID, installID, req)
+	// if err != nil {
+	// 	ctx.Error(fmt.Errorf("unable to create app: %w", err))
+	// 	return
+	// }
+
+	dummyRun := app.InstallActionWorkflowRun{
+		ID:                     "dummyrun-id",
+		OrgID:                  org.ID,
+		InstallID:              installID,
+		ActionWorkflowConfigID: req.ActionWorkFlowConfigID,
+		Status:                 app.InstallActionRunStatusQueued,
+		StatusDescription:      "Queued",
+	}
+
+	ctx.JSON(http.StatusCreated, dummyRun)
+}
+
+func (s *service) workflowConfigCanTriggerManually(config *app.ActionWorkflowConfig) bool {
+	for _, trigger := range config.Triggers {
+		if trigger.Type == app.ActionWorkflowTriggerTypeManual {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *service) createActionWorkflowRun(ctx *gin.Context, orgID, installID string, req CreateInstallActionWorkflowRunRequest) (*app.InstallActionWorkflowRun, error) {
