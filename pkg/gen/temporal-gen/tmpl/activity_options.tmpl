@@ -1,9 +1,7 @@
 {{ if ne .OptionsCallback "" }}{{ .OptionsCallback }}(){{ else -}}
 workflow.ActivityOptions{
-    ScheduleToCloseTimeout: {{- if ne .ScheduleToCloseTimeout 0 }}{{ DurationLit .ScheduleToCloseTimeout }}{{ else }}5 * time.Second{{ end }},
-    {{- if ne .StartToCloseTimeout 0 }}
+    ScheduleToCloseTimeout: {{ DurationLit .ScheduleToCloseTimeout }},
     StartToCloseTimeout: {{ DurationLit .StartToCloseTimeout }},
-    {{ end }}
     {{- if gt .MaxRetries 0 }}
     RetryPolicy: &temporal.RetryPolicy{
         MaximumAttempts: {{ .MaxRetries }},

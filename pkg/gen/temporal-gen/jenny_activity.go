@@ -7,6 +7,7 @@ import (
 	"go/types"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-toolsmith/astfmt"
 	"github.com/grafana/codejen"
@@ -83,6 +84,14 @@ func (w ActivityJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 		var wv tvars_awaitfn
 
 		wv.Options = *bfn.Opts
+
+		if wv.Options.StartToCloseTimeout == 0 {
+			wv.Options.StartToCloseTimeout = 5 * time.Second
+		}
+		if wv.Options.ScheduleToCloseTimeout == 0 {
+			wv.Options.ScheduleToCloseTimeout = wv.Options.StartToCloseTimeout * 6
+		}
+
 		bfname := bfn.Fn.Name.String()
 		lead := "A"
 		if bfn.Opts.ById.Name != "" && bfn.Opts.ByIdOnly {
