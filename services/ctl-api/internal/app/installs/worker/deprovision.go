@@ -112,7 +112,7 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 
 	// wait for the runner
 	l.Info("executing deprovision", attributes...)
-	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeDestroy, sandboxMode, "")
+	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeDestroy, sandboxMode)
 	if err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
 		return err
