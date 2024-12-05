@@ -14,7 +14,7 @@ import (
 // @ID GetActionWorkflowConfigs
 // @Summary	get action workflow for an app
 // @Description.markdown	get_action_workflow_configs.md
-// @Param			action_workflow_id	path	string	true	"app ID"
+// @Param			action_workflow_id	path	string	true	"action workflow ID"
 // @Tags			actions
 // @Accept			json
 // @Produce		json
