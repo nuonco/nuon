@@ -54,7 +54,7 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	}
 
 	l.Info("executing provision run")
-	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode, logStream.ID)
+	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode)
 	if err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusFailed)
 		return err
