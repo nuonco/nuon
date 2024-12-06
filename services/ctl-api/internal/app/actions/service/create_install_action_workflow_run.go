@@ -72,22 +72,13 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 
 	// TODO: implement run
 
-	// run, err := s.createActionWorkflowRun(ctx, org.ID, installID, req)
-	// if err != nil {
-	// 	ctx.Error(fmt.Errorf("unable to create app: %w", err))
-	// 	return
-	// }
-
-	dummyRun := app.InstallActionWorkflowRun{
-		ID:                     "dummyrun-id",
-		OrgID:                  org.ID,
-		InstallID:              installID,
-		ActionWorkflowConfigID: req.ActionWorkFlowConfigID,
-		Status:                 app.InstallActionRunStatusQueued,
-		StatusDescription:      "Queued",
+	run, err := s.createActionWorkflowRun(ctx, org.ID, installID, req)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to create app: %w", err))
+		return
 	}
 
-	ctx.JSON(http.StatusCreated, dummyRun)
+	ctx.JSON(http.StatusCreated, run)
 }
 
 func (s *service) workflowConfigCanTriggerManually(config *app.ActionWorkflowConfig) bool {
@@ -114,5 +105,11 @@ func (s *service) createActionWorkflowRun(ctx *gin.Context, orgID, installID str
 		return nil, fmt.Errorf("unable to create action workflow: %w", res.Error)
 	}
 
-	return nil, nil
+	// make sure to fetch latest
+	extantRun, err := s.findInstallActionWorkflowRun(ctx, orgID, newRun.ID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get action workflow run: %w", err)
+	}
+
+	return extantRun, nil
 }
