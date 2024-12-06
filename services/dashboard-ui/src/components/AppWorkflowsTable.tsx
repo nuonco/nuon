@@ -73,9 +73,9 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
         accessorKey: 'triggers',
         cell: (props) => (
           <Text className="gap-4">
-            {props.getValue<TActionConfigTriggerType[]>().map((t) => (
-              <ActionTriggerType key={t} triggerType={t} />
-            ))}
+            {props
+              .getValue<TActionConfigTriggerType[]>()
+              ?.map((t) => <ActionTriggerType key={t} triggerType={t} />)}
           </Text>
         ),
       },
@@ -84,7 +84,7 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
         accessorKey: 'steps',
         cell: (props) => (
           <ol className="flex flex-col gap-1 list-decimal">
-            {props.getValue<string[]>().map((s) => (
+            {props.getValue<string[]>()?.map((s) => (
               <li key={s} className="text-sm">
                 <Text className="!leading-none self-start">{s}</Text>
               </li>
