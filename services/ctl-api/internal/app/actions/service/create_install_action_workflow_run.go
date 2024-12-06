@@ -95,6 +95,7 @@ func (s *service) createActionWorkflowRun(ctx *gin.Context, orgID, installID str
 		OrgID:                  orgID,
 		InstallID:              installID,
 		ActionWorkflowConfigID: req.ActionWorkFlowConfigID,
+		TriggerType:            app.ActionWorkflowTriggerTypeManual,
 		Status:                 app.InstallActionRunStatusQueued,
 		StatusDescription:      "Queued",
 	}
