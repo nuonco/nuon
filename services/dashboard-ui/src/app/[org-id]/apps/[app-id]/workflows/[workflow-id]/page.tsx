@@ -1,3 +1,4 @@
+import cronstrue from 'cronstrue'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   ActionTriggerType,
@@ -67,9 +68,20 @@ export default withPageAuthRequired(async function AppWorkflow({ params }) {
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
           <Section className="flex-initial" heading="Triggers">
-            <div className="flex gap-2">
+            <div className="flex flex-col divide-y">
               {workflow.configs[0].triggers.map((t) => (
-                <ActionTriggerType key={t.id} triggerType={t.type} />
+                <div className="flex gap-2 py-2" key={t.id}>
+                  <ActionTriggerType triggerType={t.type} />
+                  {t.type === 'cron' ? (
+                    <Text variant="reg-12">
+                      Will run{' '}
+                      {cronstrue
+                        .toString(t.cron_schedule, { verbose: true })
+                        .toLowerCase()}
+                      .
+                    </Text>
+                  ) : null}
+                </div>
               ))}
             </div>
           </Section>
