@@ -30,7 +30,7 @@ type InstallActionWorkflowRun struct {
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
 	// runner details
-	RunnerJob RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;"`
+	RunnerJob *RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;"`
 
 	// used for RLS
 	OrgID     string  `json:"org_id" gorm:"notnull" swaggerignore:"true"`
@@ -42,7 +42,7 @@ type InstallActionWorkflowRun struct {
 	StatusDescription string                         `json:"status_description" gorm:"notnull"`
 
 	ActionWorkflowConfigID string               `json:"action_workflow_config_id" gorm:"notnull"`
-	ActionWorkflowConfig   ActionWorkflowConfig `json:"_"`
+	ActionWorkflowConfig   ActionWorkflowConfig `json:"-"`
 }
 
 func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {
