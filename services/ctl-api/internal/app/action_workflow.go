@@ -21,11 +21,11 @@ type ActionWorkflow struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
-	App   App    `json:"-" swaggerignore:"true"` 
+	App   App    `json:"-" swaggerignore:"true"`
 	AppID string `json:"app_id" gorm:"notnull;index:idx_app_install_name,unique"`
 
-	Configs     []ActionWorkflowConfig
-	ConfigCount int `json:"config_count" gorm:"->;-:migration"`
+	Configs     []ActionWorkflowConfig `json:"configs"`
+	ConfigCount int                    `json:"config_count" gorm:"->;-:migration"`
 
 	//metadata
 	Name string `json:"name"`
