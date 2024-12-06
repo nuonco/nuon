@@ -125,7 +125,7 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
                       </Text>
                     </span>
                   </div>
-                  {aW.configs[0].triggers[0].type === 'manual' ? (
+                  {aW.configs[0].triggers.find((t) => t.type === 'manual') ? (
                     <Button className="text-sm !py-2 !h-fit">
                       Run workflow
                     </Button>
