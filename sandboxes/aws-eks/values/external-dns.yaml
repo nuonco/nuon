@@ -1,6 +1,0 @@
----
-interval: 15m
-triggerLoopOnEvent: true
-policy: sync
-registry: txt
-provider: aws
