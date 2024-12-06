@@ -37,6 +37,7 @@ env:
   INTERNAL_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
   SEGMENT_WRITE_KEY: FxvXYu94xEX5iVBQT5VfnVv0aEzKdxz2
   DASHBOARD_URL: http://localhost:4000
+  TEMPORAL_MAX_CONCURRENT_ACTIVITIES: 100
 
   # The following options are common toggles for configuring local behaviour, and should not be checked in when changed
   # (unless you would like to change the default)
