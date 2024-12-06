@@ -34,7 +34,6 @@ var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// work with actions apps path
-	api.POST("/v1/action-workflows/run", s.CreateActionWorkflowRun)
 	api.POST("/v1/apps/:app_id/action-workflows", s.CreateAppActionWorkflow)
 	api.GET("/v1/apps/:app_id/action-workflows", s.GetAppActionWorkflows)
 
