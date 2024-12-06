@@ -26,7 +26,7 @@ services: |
     - go.sum
     - services/workers-executors/**
     - pkg/terraform/**
-    
+
 # infra is managed via terraform cloud
 terraform-cloud: |
   terraform:
@@ -61,8 +61,3 @@ artifacts: |
   bins/runner:
     - bins/runner/**
     - pkg/**
-
-  sandboxes/aws-eks:
-  - sandboxes/aws-eks/**
-  sandboxes/empty:
-  - sandboxes/empty/**
