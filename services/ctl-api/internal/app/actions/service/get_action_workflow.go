@@ -50,6 +50,8 @@ func (s *service) findActionWorkflow(ctx context.Context, orgID, awID string) (*
 		Preload("Configs").
 		Preload("Configs.Triggers").
 		Preload("Configs.Steps").
+		Preload("Configs.Steps.PublicGitVCSConfig").
+		Preload("Configs.Steps.ConnectedGithubVCSConfig").
 		Where("org_id = ? AND id = ?", orgID, awID).
 		Or("org_id = ? AND name = ?", orgID, awID).
 		First(&aw)
