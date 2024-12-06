@@ -24,7 +24,7 @@ const (
 type InstallActionWorkflowRun struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account               `json:"created_by"`
+	CreatedBy   Account               `json:"-"`
 	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
@@ -40,6 +40,8 @@ type InstallActionWorkflowRun struct {
 
 	Status            InstallActionWorkflowRunStatus `json:"status" gorm:"notnull" swaggertype:"string"`
 	StatusDescription string                         `json:"status_description" gorm:"notnull"`
+
+	TriggerType ActionWorkflowTriggerType `json:"trigger_type" gorm:"notnull;default:''"`
 
 	ActionWorkflowConfigID string               `json:"action_workflow_config_id" gorm:"notnull"`
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"-"`
