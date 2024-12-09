@@ -97,6 +97,7 @@ oci-artifacts:
       jq \
       git \
       aws-cli \
+      kubectl \
       zip
 
     # copy kaniko into the final binary
