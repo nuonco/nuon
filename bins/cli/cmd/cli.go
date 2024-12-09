@@ -21,12 +21,27 @@ type cli struct {
 }
 
 func (c *cli) persistentPreRunE(cmd *cobra.Command, args []string) error {
+	err := c.doPersistentPreRunE(cmd, args)
+	if err != nil {
+		// In none of the cases where this pre-run hook fails is it appropriate to print usage. But,
+		// setting SilenceUsage unconditionally would cause Cobra to not print usage at some times when
+		// it is appropriate.
+		cmd.SilenceUsage = true
+	}
+	return err
+}
+
+func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 	if err := c.initConfig(); err != nil {
 		return errors.Wrap(err, "unable to initialize config")
 	}
 
 	if err := c.initAPIClient(); err != nil {
 		return errors.Wrap(err, "unable to initialize api client")
+	}
+
+	if err := c.checkCLIVersion(); err != nil {
+		return err
 	}
 
 	if cmd.Use != "login" {
