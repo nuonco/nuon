@@ -51,7 +51,7 @@ export const Modal: FC<IModal> = ({
           </div>
         </header>
         <div
-          className={classNames('p-6 h-full max-h-[700px] overflow-auto', {
+          className={classNames('p-6 h-full max-h-[700px] overflow-y-auto overflow-x-hidden', {
             'min-h-[700px]': hasFixedHeight,
           })}
         >
