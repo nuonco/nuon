@@ -21,7 +21,7 @@ export const OrgStatus: FC<IOrgStatus> = ({
 
   useEffect(() => {
     const fetchOrg = () => {
-      fetch(`/api/${org.id}`)
+      fetch(`/api/${initOrg.id}`)
         .then((res) =>
           res.json().then((o) => {
             updateOrg(o)

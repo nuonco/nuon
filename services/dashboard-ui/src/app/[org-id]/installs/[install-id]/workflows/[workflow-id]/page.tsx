@@ -80,10 +80,10 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
           <Section
             className="flex-initial"
-            heading={`${workflowRun?._?.steps?.length} Steps`}
+            heading={`${workflowRun?.config?.steps?.length} Steps`}
           >
             <div className="flex flex-col gap-0 divide-y">
-              {workflowRun?._?.steps?.map((step, i) => (
+              {workflowRun?.config?.steps?.map((step, i) => (
                 <span key={step.id} className="py-2">
                   <Text>
                     {i + 1}. {step.name}
