@@ -48,6 +48,9 @@ func (s *service) GetInstallActionWorkflowRun(ctx *gin.Context) {
 func (s *service) findInstallActionWorkflowRun(ctx context.Context, orgID, runID string) (*app.InstallActionWorkflowRun, error) {
 	runs := &app.InstallActionWorkflowRun{}
 	res := s.db.WithContext(ctx).
+		Preload("ActionWorkflowConfig").
+		Preload("ActionWorkflowConfig.Steps").
+		Preload("ActionWorkflowConfig.Triggers").
 		Where("org_id = ? AND id = ?", orgID, runID).
 		Find(&runs)
 	if res.Error != nil {
