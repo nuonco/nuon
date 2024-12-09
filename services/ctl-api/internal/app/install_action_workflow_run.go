@@ -44,7 +44,7 @@ type InstallActionWorkflowRun struct {
 	TriggerType ActionWorkflowTriggerType `json:"trigger_type" gorm:"notnull;default:''"`
 
 	ActionWorkflowConfigID string               `json:"action_workflow_config_id" gorm:"notnull"`
-	ActionWorkflowConfig   ActionWorkflowConfig `json:"-"`
+	ActionWorkflowConfig   ActionWorkflowConfig `json:"config"`
 }
 
 func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {

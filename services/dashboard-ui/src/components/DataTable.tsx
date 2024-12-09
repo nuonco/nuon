@@ -111,7 +111,7 @@ export const Table: FC<ITable> = ({
                 >
                   <div className="flex items-center gap-4">
                     <span>
-                      {header.column.columnDef.header as React.ReactNode}
+                      {flexRender(header.column.columnDef.header, header.getContext())}
                     </span>
                     <span>
                       {header.column.getCanSort() &&

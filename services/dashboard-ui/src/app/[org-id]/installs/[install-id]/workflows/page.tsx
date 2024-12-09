@@ -1,13 +1,15 @@
 import classNames from 'classnames'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
+  ActionTriggerButton,
   ActionTriggerType,
-  Button,
   InstallPageSubNav,
   InstallStatuses,
+  InstallWorkflowRunHistory,
   DashboardContent,
   Link,
   Section,
+  StatusBadge,
   Text,
   Time,
 } from '@/components'
@@ -23,7 +25,7 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
 }) {
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
-  const [org, install, workflows] = await Promise.all([
+  const [org, install, workflowRuns] = await Promise.all([
     getOrg({ orgId }),
     getInstall({ installId, orgId }),
     getInstallWorkflowRuns({ installId, orgId }),
@@ -45,61 +47,13 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
     >
       <div className="flex flex-col md:flex-row flex-auto">
         <Section className="border-r" heading="Workflow history">
-          <div className="flex flex-col gap-2">
-            {workflows.map((w, i) => (
-              <Link
-                key={w.id}
-                className="!block w-full !p-0"
-                href={`/${orgId}/installs/${installId}/workflows/${w.id}`}
-                variant="ghost"
-              >
-                <div
-                  className={classNames(
-                    'flex items-center justify-between p-4',
-                    {
-                      'border rounded-md shadow-sm': i === 0,
-                    }
-                  )}
-                >
-                  <div className="flex flex-col">
-                    <span className="flex items-center gap-2">
-                      <span
-                        className={classNames('w-1.5 h-1.5 rounded-full', {
-                          'bg-green-800 dark:bg-green-500': true,
-                        })}
-                      />
-                      <Text variant="med-12">Succeeded</Text>
-                    </span>
-
-                    <Text
-                      className="flex items-center gap-2 ml-3.5"
-                      variant="reg-12"
-                    >
-                      <span>
-                        {
-                          appWorkflows?.find(
-                            (aw) => aw.id === w.action_workflow_config_id
-                          )?.name
-                        }
-                      </span>{' '}
-                      /
-                      <span className="!inline truncate max-w-[100px]">
-                        {w._.triggers[0].type}
-                      </span>
-                    </Text>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Time
-                      time={w.updated_at}
-                      format="relative"
-                      variant="reg-12"
-                    />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <InstallWorkflowRunHistory
+            appWorkflows={appWorkflows}
+            orgId={orgId}
+            installId={installId}
+            installWorkflowRuns={workflowRuns}
+            shouldPoll
+          />
         </Section>
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
@@ -126,9 +80,11 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
                     </span>
                   </div>
                   {aW.configs[0].triggers.find((t) => t.type === 'manual') ? (
-                    <Button className="text-sm !py-2 !h-fit">
-                      Run workflow
-                    </Button>
+                    <ActionTriggerButton
+                      installId={installId}
+                      orgId={orgId}
+                      workflowConfigId={aW.configs[0]?.id}
+                    />
                   ) : null}
                 </div>
               ))}
