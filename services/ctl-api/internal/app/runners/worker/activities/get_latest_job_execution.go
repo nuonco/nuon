@@ -22,7 +22,6 @@ type GetLatestJobExecutionResponse struct {
 }
 
 // @temporal-gen activity
-// @schedule-to-close-timeout 5s
 func (a *Activities) GetLatestJobExecution(ctx context.Context, req GetLatestJobExecutionRequest) (*GetLatestJobExecutionResponse, error) {
 	jobExecution, err := a.getLatestJobExecution(ctx, req.JobID, req.AvailableAt)
 	if err != nil {
