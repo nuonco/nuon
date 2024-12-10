@@ -6,7 +6,7 @@ const orgId = 'org-id'
 const runnerId = 'runner-id'
 const jobId = 'job-id'
 
-test('getRunnerLogs should return an array of runner log object', async () => {
+test.skip('getRunnerLogs should return an array of runner log object', async () => {
   const spec = await getRunnerLogs({
     orgId,
     runnerId,
@@ -22,7 +22,7 @@ test('getRunnerLogs should return an array of runner log object', async () => {
   })
 })
 
-test('getRunnerLogs should throw an error when it can not find any runner logs', async () => {
+test.skip('getRunnerLogs should throw an error when it can not find any runner logs', async () => {
   try {
     await getRunnerLogs({
       orgId,

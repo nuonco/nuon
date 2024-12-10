@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -21,6 +20,7 @@ const (
 // @Summary	read a log stream's logs
 // @Description.markdown log_stream_read_logs.md
 // @Param			log_stream_id	path	string	true	"log stream ID"
+// @Param			X-Nuon-API-Offset	header	string	true	"log stream offset"
 // @Tags runners
 // @Accept			json
 // @Produce		json
@@ -48,22 +48,22 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 
 	// Pagination Facts
 	// parse the offset
-	var before int64
-	beforeStr := ctx.GetHeader("X-Nuon-API-Offset")
-	if beforeStr == "" {
+	var after int64
+	afterStr := ctx.GetHeader("X-Nuon-API-Offset")
+	if afterStr == "" {
 		// set default value
-		before = time.Now().UTC().UnixNano()
+		after = 0
 	} else {
-		beforeVal, err := strconv.ParseInt(beforeStr, 10, 64)
+		afterVal, err := strconv.ParseInt(afterStr, 10, 64)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to parse pagination query params: %w", err))
 			return
 		}
-		before = beforeVal
+		after = afterVal
 	}
 
 	// read logs from chDB
-	logs, headers, readerr := s.getLogStreamLogs(ctx, logStreamID, before)
+	logs, headers, readerr := s.getLogStreamLogs(ctx, logStreamID, after)
 	if readerr != nil {
 		ctx.Error(fmt.Errorf("unable to read runner logs: %w", readerr))
 		return
@@ -77,7 +77,7 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, logs)
 }
 
-func (s *service) getLogStreamLogs(ctx context.Context, runnerID string, before int64) ([]app.OtelLogRecord, map[string]string, error) {
+func (s *service) getLogStreamLogs(ctx context.Context, runnerID string, after int64) ([]app.OtelLogRecord, map[string]string, error) {
 	// headers
 	headers := map[string]string{"Range-Units": "items"}
 
@@ -85,20 +85,25 @@ func (s *service) getLogStreamLogs(ctx context.Context, runnerID string, before 
 	otelLogRecords := []app.OtelLogRecord{}
 
 	res := s.chDB.WithContext(ctx).
-		Where("log_stream_id = ? AND toUnixTimestamp64Nano(timestamp) < ?", runnerID, before).
-		Order("timestamp desc").
+		Where("log_stream_id = ?", runnerID)
+
+	if after != 0 {
+		res.Where("toUnixTimestamp64Nano(timestamp) > ?", after)
+	}
+
+	res.
+		Order("timestamp asc").
 		Limit(PageSize).
 		Find(&otelLogRecords)
 	if res.Error != nil {
 		return nil, headers, fmt.Errorf("unable to retrieve logs: %w", res.Error)
 	}
 
-	// Query: get record count
+	// Query: get total record count
 	// get count
 	var count int64
 	countres := s.chDB.WithContext(ctx).
-		Select("id").
-		Where("log_stream_id = ? AND toUnixTimestamp64Nano(timestamp) < ?", runnerID, before).
+		Where("log_stream_id = ?", runnerID).
 		Find(&[]app.OtelLogRecord{}).
 		Count(&count)
 	if countres.Error != nil {
