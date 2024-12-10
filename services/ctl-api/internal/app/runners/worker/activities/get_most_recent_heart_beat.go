@@ -14,7 +14,6 @@ type GetMostRecentHeartBeatRequest struct {
 }
 
 // @temporal-gen activity
-// @schedule-to-close-timeout 5s
 // @by-id RunnerID
 func (a *Activities) GetMostRecentHeartBeatRequest(ctx context.Context, req GetMostRecentHeartBeatRequest) (*app.RunnerHeartBeat, error) {
 	hb, err := a.getMostRecentHeartBeat(ctx, req.RunnerID)
