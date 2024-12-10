@@ -18,7 +18,7 @@ func (h *HeartBeater) writeHeartBeat(ctx context.Context) error {
 	aliveDur := time.Since(h.startTS)
 	req := &models.ServiceCreateRunnerHeartBeatRequest{
 		AliveTime: generics.ToPtr(int64(aliveDur)),
-		Version:   h.settings.Cfg.Version,
+		Version:   h.settings.Cfg.GitRef,
 	}
 
 	if _, err := h.apiClient.CreateHeartBeat(ctx, req); err != nil {
