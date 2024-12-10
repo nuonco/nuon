@@ -16,7 +16,6 @@ type UpdateJobStatusRequest struct {
 }
 
 // @temporal-gen activity
-// @schedule-to-close-timeout 5s
 func (a *Activities) UpdateJobStatus(ctx context.Context, req UpdateJobStatusRequest) error {
 	runner := app.RunnerJob{
 		ID: req.JobID,

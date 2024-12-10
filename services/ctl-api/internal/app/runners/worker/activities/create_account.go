@@ -14,7 +14,6 @@ type CreateAccountRequest struct {
 }
 
 // @temporal-gen activity
-// @schedule-to-close-timeout 5s
 func (a *Activities) CreateAccount(ctx context.Context, req CreateAccountRequest) (*app.Account, error) {
 	acct, err := a.acctClient.FindAccount(ctx, account.ServiceAccountEmail(req.RunnerID))
 	if err == nil {
