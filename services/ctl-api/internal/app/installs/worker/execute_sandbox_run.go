@@ -96,6 +96,7 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 	}
 
 	// queue job
+	l.Info("queued job and waiting on it to be picked up by runner event loop")
 	w.evClient.Send(ctx, install.Org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type:  runnersignals.OperationProcessJob,
 		JobID: runnerJob.ID,
