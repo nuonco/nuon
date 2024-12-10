@@ -14,6 +14,10 @@ import (
 	"github.com/powertoolsdev/mono/pkg/helm"
 )
 
+const (
+	enableNamespaceLogs bool = false
+)
+
 func (h *handler) execUninstall(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	if err := h.uninstall(ctx, l, actionCfg); err != nil {
 		h.writeErrorResult(ctx, "uninstall", err)
@@ -49,10 +53,13 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 	helmClient.Log = helm.Logger(l)
 
-	l.Info("polling logs from containers in namespace", zap.String("namespace", h.state.cfg.Namespace))
-	logCtx, logCtxCancel := context.WithCancel(ctx)
-	defer logCtxCancel()
-	h.getPods(logCtx, l, kubeCfg, h.state.cfg.Namespace)
+	// TODO(jm): test this out better once we have a working install in stage
+	if enableNamespaceLogs {
+		l.Info("polling logs from containers in namespace", zap.String("namespace", h.state.cfg.Namespace))
+		logCtx, logCtxCancel := context.WithCancel(ctx)
+		defer logCtxCancel()
+		h.getPods(logCtx, l, kubeCfg, h.state.cfg.Namespace)
+	}
 
 	if job.Operation == models.AppRunnerJobOperationTypeDestroy {
 		return h.execUninstall(ctx, l, helmClient, job, jobExecution)
