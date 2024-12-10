@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	"go.uber.org/zap"
 )
 
 type AdminRestartRunnersRequest struct {
@@ -67,23 +67,18 @@ func (s *service) bulkRestartRunners(ctx context.Context) ([]AdminRestartRunners
 		}
 
 		for _, runner := range runners {
-			updatesResponse = append(updatesResponse, AdminRestartRunnersResponse{
-				OrgID:    runner.OrgID,
-				RunnerID: runner.ID,
-			})
+			_, err := s.adminCreateJob(ctx, runner.ID, app.RunnerJobTypeShutDown)
+			if err != nil {
+				s.l.Error("unable to create shutdown job", zap.String("runner_id", runner.ID), zap.Error(err))
+			} else {
+				updatesResponse = append(updatesResponse, AdminRestartRunnersResponse{
+					OrgID:    runner.OrgID,
+					RunnerID: runner.ID,
+				})
+			}
 		}
 
 		offset += batchSize
-	}
-
-	runnerVisited := make(map[string]bool)
-	for _, response := range updatesResponse {
-		if _, ok := runnerVisited[response.RunnerID]; !ok {
-			s.evClient.Send(ctx, response.RunnerID, &signals.Signal{
-				Type: signals.OperationRestart,
-			})
-			runnerVisited[response.RunnerID] = true
-		}
 	}
 
 	return updatesResponse, nil
