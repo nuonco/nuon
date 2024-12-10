@@ -21,7 +21,6 @@ func init() {
 
 type Config struct {
 	GitRef  string `config:"git_ref" validate:"required"`
-	Version string `config:"version" validate:"required"`
 
 	RunnerAPIURL   string `config:"runner_api_url" validate:"required"`
 	RunnerAPIToken string `config:"runner_api_token" validate:"required"`
