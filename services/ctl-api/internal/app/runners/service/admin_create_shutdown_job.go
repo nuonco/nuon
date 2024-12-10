@@ -34,7 +34,7 @@ func (s *service) AdminCreateShutDown(ctx *gin.Context) {
 
 	job, err := s.adminCreateJob(ctx, runnerID, app.RunnerJobTypeShutDown)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create health check job: %w", err))
+		ctx.Error(fmt.Errorf("unable to create shutdown job: %w", err))
 		return
 	}
 
