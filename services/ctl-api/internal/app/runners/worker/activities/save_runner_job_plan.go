@@ -11,7 +11,6 @@ type SaveRunnerJobPlanRequest struct {
 }
 
 // @temporal-gen activity
-// @schedule-to-close-timeout 5s
 func (a *Activities) SaveRunnerJobPlan(ctx context.Context, req *SaveRunnerJobPlanRequest) error {
 	if err := a.helpers.WriteJobPlan(ctx, req.JobID, []byte(req.PlanJSON)); err != nil {
 		return fmt.Errorf("unable to write job plan: %w", err)

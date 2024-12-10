@@ -21,7 +21,6 @@ type CreateBuildJobRequest struct {
 }
 
 // @temporal-gen activity
-// @schedule-to-close-timeout 5s
 func (a *Activities) CreateBuildJob(ctx context.Context, req *CreateBuildJobRequest) (*app.RunnerJob, error) {
 	bld, err := a.getComponentBuild(ctx, req.BuildID)
 	if err != nil {
