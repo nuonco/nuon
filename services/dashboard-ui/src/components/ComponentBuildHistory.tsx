@@ -108,12 +108,7 @@ const ComponentBuildEvent: FC<IComponentBuildEvent> = ({
 
         <div className="flex items-center gap-2">
           <Time time={build.updated_at} format="relative" />
-          <Link
-            href={`/${orgId}/apps/${appId}/components/${build.component_id}/builds/${build.id}`}
-            variant="ghost"
-          >
-            <CaretRight />
-          </Link>
+          <CaretRight />
         </div>
       </div>
     </Link>
