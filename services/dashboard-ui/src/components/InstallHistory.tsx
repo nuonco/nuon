@@ -166,11 +166,7 @@ const InstallEvent: FC<IInstallEvent> = ({ event, isMostRecent = false }) => {
 
         <div className="flex items-center gap-2">
           <Time time={event.updated_at} format="relative" variant="reg-12" />
-          {href && (
-            <Link href={href} variant="ghost">
-              <CaretRight />
-            </Link>
-          )}
+          {href && <CaretRight />}
         </div>
       </div>
     </Link>
