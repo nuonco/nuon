@@ -14,7 +14,6 @@ type CreateOperationRequest struct {
 }
 
 // @temporal-gen activity
-// @schedule-to-close-timeout 5s
 func (a *Activities) CreateOperationRequest(ctx context.Context, req CreateOperationRequest) (*app.RunnerOperation, error) {
 	op := app.RunnerOperation{
 		OpType:            req.OperationType,

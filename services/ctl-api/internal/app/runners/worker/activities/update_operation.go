@@ -15,7 +15,6 @@ type UpdateOperationRequest struct {
 }
 
 // @temporal-gen activity
-// @schedule-to-close-timeout 5s
 func (a *Activities) UpdateOperation(ctx context.Context, req UpdateOperationRequest) error {
 	currentOperation := app.RunnerOperation{
 		ID: req.OperationID,

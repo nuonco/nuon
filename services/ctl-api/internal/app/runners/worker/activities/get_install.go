@@ -14,7 +14,6 @@ type GetInstallRequest struct {
 }
 
 // @temporal-gen activity
-// @schedule-to-close-timeout 5s
 func (a *Activities) GetInstall(ctx context.Context, req GetInstallRequest) (*app.Install, error) {
 	return a.getInstall(ctx, req.InstallID)
 }

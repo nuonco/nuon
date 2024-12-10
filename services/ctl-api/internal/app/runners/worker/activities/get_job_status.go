@@ -12,7 +12,6 @@ type GetJobStatusRequest struct {
 }
 
 // @temporal-gen activity
-// @schedule-to-close-timeout 5s
 // @by-id ID
 func (a *Activities) GetJobStatus(ctx context.Context, req GetJobStatusRequest) (app.RunnerJobStatus, error) {
 	job, err := a.getRunnerJob(ctx, req.ID)
