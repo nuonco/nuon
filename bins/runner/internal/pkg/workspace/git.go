@@ -9,7 +9,9 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	errs "github.com/pkg/errors"
+	"github.com/powertoolsdev/mono/pkg/zapwriter"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // NOTE(jm): this is only for backward compatibility with the existing Waypoint plan functionality.
@@ -18,9 +20,7 @@ func (w *workspace) isGit() bool {
 }
 
 func (w *workspace) clone(ctx context.Context) error {
-	pWriter := &progressWriter{
-		l: w.L,
-	}
+	pWriter := zapwriter.New(w.L, zapcore.DebugLevel, "")
 
 	w.L.Info("cloning repository", zap.String("url", w.Src.Url))
 	repo, err := git.PlainCloneContext(ctx, w.rootDir(), false, &git.CloneOptions{
