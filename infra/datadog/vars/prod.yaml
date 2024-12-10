@@ -37,6 +37,33 @@ monitors:
           "priority": 1,
           "restricted_roles": null
       }
+  github_promotion_failed:
+    enabled: true
+    json: >
+      {
+          "name": "${aws_account} - Failed Promotion",
+          "type": "ci-pipelines alert",
+          "query": "ci-pipelines(\"ci_level:job @ci.status:error @ci.pipeline.name:promote\").rollup(\"count\").by(\"@ci.pipeline.name\").last(\"5m\") > 0",
+          "message": "@pagerduty-Datadog",
+          "tags": [
+              "terraform:true",
+              "env:${aws_account}"
+          ],
+          "options": {
+              "thresholds": {
+                  "critical": 0
+              },
+              "enable_logs_sample": false,
+              "notify_audit": false,
+              "on_missing_data": "default",
+              "include_tags": true,
+              "notify_by": [
+                  "*"
+              ],
+              "new_host_delay": 300
+          },
+          "priority": 2
+      }
 
 synthetics:
   ctl_api_public_uptime:
@@ -46,7 +73,13 @@ synthetics:
     status: "live"
     message: "@slack-alerts-${env}-product @pagerduty-Datadog \n\nctl-api-public has experienced a disruption"
     locations: ["aws:us-east-1", "aws:us-west-2"]
-    tags: ["service:ctl-api", "instance:public", "terraform:true", "env:${aws_account}"]
+    tags:
+      [
+        "service:ctl-api",
+        "instance:public",
+        "terraform:true",
+        "env:${aws_account}",
+      ]
     request_definition:
       method: "GET"
       url: "https://api.nuon.co/livez"
@@ -70,7 +103,13 @@ synthetics:
     status: "live"
     message: "@slack-alerts-${env}-product @pagerduty-Datadog \n\nctl-api-runner has experienced a disruption"
     locations: ["aws:us-east-1", "aws:us-west-2"]
-    tags: ["service:ctl-api", "instance:runner", "terraform:true", "env:${aws_account}"]
+    tags:
+      [
+        "service:ctl-api",
+        "instance:runner",
+        "terraform:true",
+        "env:${aws_account}",
+      ]
     request_definition:
       method: "GET"
       url: "https://runner.nuon.co/livez"
