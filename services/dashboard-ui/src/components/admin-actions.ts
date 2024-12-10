@@ -1,6 +1,6 @@
 'use server'
 
-import { getSession } from "@auth0/nextjs-auth0"
+import { getSession } from '@auth0/nextjs-auth0'
 import { ADMIN_API_URL } from '@/utils'
 
 async function adminAction(
@@ -8,10 +8,11 @@ async function adminAction(
   path: string,
   errMessage = 'Admin action failed'
 ) {
-  const { user } = await getSession(); 
+  const { user } = await getSession()
   try {
     const result = await fetch(`${ADMIN_API_URL}/v1/${domain}/${path}`, {
       method: 'POST',
+      body: '{}',
       headers: {
         'Content-Type': 'application/json',
         'X-Nuon-Admin-Email': user?.email,
