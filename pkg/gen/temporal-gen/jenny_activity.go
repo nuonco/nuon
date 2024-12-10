@@ -89,7 +89,10 @@ func (w ActivityJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 			wv.Options.StartToCloseTimeout = 5 * time.Second
 		}
 		if wv.Options.ScheduleToCloseTimeout == 0 {
-			wv.Options.ScheduleToCloseTimeout = wv.Options.StartToCloseTimeout * 6
+			wv.Options.ScheduleToCloseTimeout = 30 * time.Minute
+			if wv.Options.StartToCloseTimeout > wv.Options.ScheduleToCloseTimeout {
+				wv.Options.ScheduleToCloseTimeout = wv.Options.StartToCloseTimeout
+			}
 		}
 
 		bfname := bfn.Fn.Name.String()
