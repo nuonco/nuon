@@ -1,6 +1,8 @@
 import type { TOTELLog } from '@/types'
 import { API_URL, getFetchOpts } from '@/utils'
 
+// TODO(nnnnat): remove all runner logs code
+
 export interface IGetRunnerLogs {
   runnerId: string
   jobId: string
