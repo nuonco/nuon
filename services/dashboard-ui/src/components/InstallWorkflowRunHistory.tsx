@@ -2,6 +2,7 @@
 
 import classNames from 'classnames'
 import React, { type FC, useEffect } from 'react'
+import { CaretRight } from '@phosphor-icons/react'
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
@@ -78,6 +79,7 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
 
             <div className="flex items-center gap-2">
               <Time time={w.updated_at} format="relative" variant="reg-12" />
+              <CaretRight />
             </div>
           </div>
         </Link>
