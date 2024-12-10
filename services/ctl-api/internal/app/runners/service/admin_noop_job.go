@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 )
@@ -54,6 +56,16 @@ func (s *service) adminCreateJob(ctx context.Context, runnerID string, typ app.R
 		return nil, err
 	}
 
+	logStream := app.LogStream{
+		OwnerID:   runner.ID,
+		OwnerType: "runners",
+		Open:      true,
+		OrgID:     runner.OrgID,
+	}
+	if res := s.db.WithContext(ctx).Create(&logStream); res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to create log stream")
+	}
+
 	status := app.RunnerJobStatusQueued
 	runnerJob := app.RunnerJob{
 		CreatedByID:       runner.CreatedByID,
@@ -69,6 +81,7 @@ func (s *service) adminCreateJob(ctx context.Context, runnerID string, typ app.R
 		StatusDescription: string(status),
 		Type:              typ,
 		Group:             app.RunnerJobGroupOperations,
+		LogStreamID:       generics.ToPtr(logStream.ID),
 	}
 	if res := s.db.WithContext(ctx).Create(&runnerJob); res.Error != nil {
 		return nil, res.Error
