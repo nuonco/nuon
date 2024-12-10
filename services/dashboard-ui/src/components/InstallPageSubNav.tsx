@@ -10,7 +10,7 @@ export interface IInstallPageSubNav {
 export const InstallPageSubNav: FC<IInstallPageSubNav> = ({
   installId,
   orgId,
-}) => {
+}) => {  
   return (
     <SubNav
       links={[

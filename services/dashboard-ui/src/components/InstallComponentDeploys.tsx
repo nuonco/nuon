@@ -123,13 +123,7 @@ const InstallDeployEvent: FC<IInstallDeployEvent> = ({
 
         <div className="flex items-center gap-2">
           <Time time={deploy.updated_at} format="relative" />
-
-          <Link
-            href={`/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${deploy.id}`}
-            variant="ghost"
-          >
-            <CaretRight />
-          </Link>
+          <CaretRight />
         </div>
       </div>
     </Link>
