@@ -52,5 +52,6 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 	if err := h.shutdowner.Shutdown(fx.ExitCode(0)); err != nil {
 		h.errRecorder.Record("unable to shut down", err)
 	}
+
 	return nil
 }
