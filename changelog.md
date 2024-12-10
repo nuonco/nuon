@@ -301,3 +301,4 @@ Promoting support for component release by install id & dashboard updates
 ## v0.4.5
 
 Promoting support for runner restarts on promotion success
+
