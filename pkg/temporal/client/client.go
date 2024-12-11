@@ -6,6 +6,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
 	tclient "go.temporal.io/sdk/client"
+	sdktally "go.temporal.io/sdk/contrib/tally"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
@@ -56,27 +57,25 @@ type Client interface {
 
 // getClient returns a temporal client from memory, or creates a new one and caches it
 func (t *temporal) getClient() (tclient.Client, error) {
-	t.RLock()
-	client := t.Client
-	t.RUnlock()
-	if client != nil {
-		return client, nil
-	}
+	t.clientOnce.Do(func() {
+		opts := tclient.Options{
+			HostPort:           t.Addr,
+			Namespace:          t.Namespace,
+			Logger:             temporalzap.NewLogger(t.Logger),
+			DataConverter:      t.Converter,
+			ContextPropagators: t.propagators,
+		}
+		if t.tallyScope != nil {
+			opts.MetricsHandler = sdktally.NewMetricsHandler(t.tallyScope)
+		}
 
-	// no client was found, create a new one, set it and return it
-	tc, err := tclient.Dial(tclient.Options{
-		HostPort:           t.Addr,
-		Namespace:          t.Namespace,
-		Logger:             temporalzap.NewLogger(t.Logger),
-		DataConverter:      t.Converter,
-		ContextPropagators: t.propagators,
+		tc, err := tclient.Dial(opts)
+		if err != nil {
+			t.clientErr = fmt.Errorf("unable to dial temporal: %w", err)
+		} else {
+			t.Client = tc
+		}
 	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to dial temporal: %w", err)
-	}
 
-	t.Lock()
-	defer t.Unlock()
-	t.Client = tc
-	return tc, nil
+	return t.Client, t.clientErr
 }

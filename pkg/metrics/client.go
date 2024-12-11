@@ -18,15 +18,13 @@ type dogstatsdClient interface {
 
 // getClient returns a new dogstatsd client
 func (w *writer) getClient() (dogstatsdClient, error) {
-	if w.client != nil {
-		return w.client, nil
-	}
-
-	client, err := statsd.New(w.Address, statsd.WithMaxBytesPerPayload(maxBytesPerPayload))
-	if err != nil {
-		return nil, fmt.Errorf("unable to get datadog client: %w", err)
-	}
-
-	w.client = client
-	return client, nil
+	w.clientonce.Do(func() {
+		client, err := statsd.New(w.Address, statsd.WithMaxBytesPerPayload(maxBytesPerPayload))
+		if err != nil {
+			w.clienterr = fmt.Errorf("unable to get datadog client: %w", err)
+			return
+		}
+		w.client = client
+	})
+	return w.client, w.clienterr
 }
