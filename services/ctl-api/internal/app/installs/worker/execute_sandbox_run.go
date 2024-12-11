@@ -6,6 +6,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/pkg/errors"
+
 	logv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/log/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -104,6 +106,28 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job failed")
 		return fmt.Errorf("unable to poll job: %w", err)
+	}
+
+	l.Info("configuring DNS for nuon.run domain if enabled")
+	dnsReq := &executors.ProvisionDNSDelegationRequest{
+		Metadata: &executors.Metadata{
+			OrgID:     install.OrgID,
+			AppID:     install.AppID,
+			InstallID: install.ID,
+		},
+	}
+
+	if !sandboxMode {
+		_, err = executors.AwaitProvisionDNSDelegation(ctx, dnsReq)
+		if err != nil {
+			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to provision dns delegation")
+			return errors.Wrap(err, "unable to provision dns delegation")
+		}
+		l.Info("successfully provisioned dns delegation")
+	} else {
+		l.Info("skipping dns delegation provisioning",
+			zap.Any("install_id", install.ID),
+			zap.String("org_id", install.OrgID))
 	}
 
 	return nil
