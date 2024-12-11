@@ -302,3 +302,6 @@ Promoting support for component release by install id & dashboard updates
 
 Promoting support for runner restarts on promotion success
 
+## v0.4.6
+
+Promoting big fix for runner restart on promotion successh
