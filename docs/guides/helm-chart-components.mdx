@@ -15,13 +15,24 @@ To configure a Helm component, specify a repo, the required configuration values
 <CodeGroup>
 ```toml TOML
 [[components]]
-name               = "helm_chart"
-type               = "terraform_module"
-helm_chart_version = "1.6.3"
+name       = "helm_chart"
+type       = "helm_chart"
+chart_name = "<your-app>"
+
 [components.connected_repo]
-directory = "helm_chart"
+directory = "components/helm-chart"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
+
+[[components.values_file]]
+contents = """
+image.tag ={{.nuon.components.docker_build.image.name}}
+"""
+
+# alternatively, you can read from disk
+[[components.values_file]] 
+source = "./values.yaml"
+
 ```
 
 ```hcl Terraform
