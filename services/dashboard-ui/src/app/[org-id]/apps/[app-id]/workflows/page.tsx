@@ -3,7 +3,7 @@ import {
   AppPageSubNav,
   AppWorkflowsTable,
   DashboardContent,
-  Text,
+  NoActions,
 } from '@/components'
 import { getApp, getAppWorkflows, getOrg } from '@/lib'
 
@@ -35,7 +35,7 @@ export default withPageAuthRequired(async function AppWorkflows({ params }) {
             workflows={workflows}
           />
         ) : (
-          <Text>No action workflows configured</Text>
+          <NoActions />
         )}
       </section>
     </DashboardContent>

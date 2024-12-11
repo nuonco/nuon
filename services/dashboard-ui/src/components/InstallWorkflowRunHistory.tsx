@@ -39,51 +39,58 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
 
   return (
     <div className="flex flex-col gap-2">
-      {installWorkflowRuns.map((w, i) => (
-        <Link
-          key={w.id}
-          className="!block w-full !p-0"
-          href={`/${orgId}/installs/${installId}/workflows/${w.id}`}
-          variant="ghost"
-        >
-          <div
-            className={classNames('flex items-center justify-between p-4', {
-              'border rounded-md shadow-sm': i === 0,
-            })}
+      {installWorkflowRuns?.length ? (
+        installWorkflowRuns.map((w, i) => (
+          <Link
+            key={w.id}
+            className="!block w-full !p-0"
+            href={`/${orgId}/installs/${installId}/workflows/${w.id}`}
+            variant="ghost"
           >
-            <div className="flex flex-col">
-              <span className="flex items-center gap-2">
-                <StatusBadge
-                  status={w.status}
-                  isStatusTextHidden
-                  isWithoutBorder
-                />
-              </span>
-
-              <Text className="flex items-center gap-2 ml-3.5" variant="reg-12">
-                <span>
-                  {
-                    appWorkflows?.find((aw) =>
-                      aw.configs.find(
-                        (awCfg) => awCfg.id === w.action_workflow_config_id
-                      )
-                    )?.name
-                  }
-                </span>{' '}
-                /
-                <span className="!inline truncate max-w-[100px]">
-                  {w.trigger_type}
+            <div
+              className={classNames('flex items-center justify-between p-4', {
+                'border rounded-md shadow-sm': i === 0,
+              })}
+            >
+              <div className="flex flex-col">
+                <span className="flex items-center gap-2">
+                  <StatusBadge
+                    status={w.status}
+                    isStatusTextHidden
+                    isWithoutBorder
+                  />
                 </span>
-              </Text>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <Time time={w.updated_at} format="relative" variant="reg-12" />
-              <CaretRight />
+                <Text
+                  className="flex items-center gap-2 ml-3.5"
+                  variant="reg-12"
+                >
+                  <span>
+                    {
+                      appWorkflows?.find((aw) =>
+                        aw.configs.find(
+                          (awCfg) => awCfg.id === w.action_workflow_config_id
+                        )
+                      )?.name
+                    }
+                  </span>{' '}
+                  /
+                  <span className="!inline truncate max-w-[100px]">
+                    {w.trigger_type}
+                  </span>
+                </Text>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Time time={w.updated_at} format="relative" variant="reg-12" />
+                <CaretRight />
+              </div>
             </div>
-          </div>
-        </Link>
-      ))}
+          </Link>
+        ))
+      ) : (
+        <Text>No workflow runs have happened</Text>
+      )}
     </div>
   )
 }
