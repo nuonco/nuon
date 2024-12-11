@@ -114,6 +114,13 @@ func (w *Workflows) Deploy(ctx workflow.Context, sreq signals.RequestSignal) err
 		w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install: %w", err)
 	}
+	defer func() {
+		if pan := recover(); pan != nil {
+			w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "internal error")
+			w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusFailed)
+			panic(pan)
+		}
+	}()
 
 	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
 		DeployID: sreq.DeployID,

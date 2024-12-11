@@ -38,6 +38,14 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 		return fmt.Errorf("unable to create install: %w", err)
 	}
 
+	defer func() {
+		if pan := recover(); pan != nil {
+			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
+			w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
+			panic(pan)
+		}
+	}()
+
 	logStream, err := activities.AwaitCreateLogStreamBySandboxRunID(ctx, installRun.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream")
