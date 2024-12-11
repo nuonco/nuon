@@ -73,6 +73,7 @@ K8S_DEPLOY:
             --install \
             --debug \
             --atomic \
+            --timeout 30m \
 	    --namespace "$service" \
             --version "$chart_version" \
             --reset-values \
