@@ -37,6 +37,14 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 		return fmt.Errorf("unable to create install: %w", err)
 	}
 
+	defer func() {
+		if pan := recover(); pan != nil {
+			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
+			w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusFailed)
+			panic(pan)
+		}
+	}()
+
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusStarted)
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
 
