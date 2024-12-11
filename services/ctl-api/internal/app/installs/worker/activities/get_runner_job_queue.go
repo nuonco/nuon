@@ -2,10 +2,16 @@ package activities
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+)
+
+const (
+	// this means that any job more than 6 hours old will be disgarded when showing the queue depth
+	discardJobDuration time.Duration = time.Hour * 6
 )
 
 type GetRunnerJobQueueRequest struct {
@@ -22,8 +28,9 @@ func (a *Activities) GetRunnerJobQueue(ctx context.Context, req *GetRunnerJobQue
 		return nil, errors.Wrap(err, "unable to get runner job")
 	}
 
+	minJobCreatedAt := job.CreatedAt.Add(-discardJobDuration)
 	var jobs []*app.RunnerJob
-	res := a.db.WithContext(ctx).Where("runner_id = ? AND created_at < ? AND status IN ?", job.RunnerID, job.CreatedAt, []app.RunnerJobStatus{
+	res := a.db.WithContext(ctx).Where("runner_id = ? AND created_at < ? AND created_at > ? AND status IN ?", job.RunnerID, job.CreatedAt, minJobCreatedAt, []app.RunnerJobStatus{
 		app.RunnerJobStatusQueued,
 		app.RunnerJobStatusInProgress,
 	}).Order("created_at desc").Find(&jobs)
