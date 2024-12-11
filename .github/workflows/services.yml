@@ -72,7 +72,8 @@ jobs:
         id: auto_deploy
         if: ${{ github.event_name == 'pull_request' }}
         with:
-          all_of: auto-deploy
+          any_of: auto-deploy
+          none_of: promote
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           allow_failure: true
 
