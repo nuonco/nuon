@@ -37,7 +37,7 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 }
 
 // @ID CreateActionWorkflowConfig
-// @Summary	create an app
+// @Summary	create action workflow config
 // @Description.markdown	create_action_workflow_config.md
 // @Param			action_workflow_id	path	string	true	"action workflow ID"
 // @Tags			actions
