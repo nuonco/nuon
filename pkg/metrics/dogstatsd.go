@@ -23,7 +23,8 @@ func (w *writer) handleErr(err error) {
 
 func (w *writer) Flush() {
 	if w.Disable {
-		w.Log.Debug("flush")
+		// TODO(sdboyer) this is disabled until we figure out why we're apparently flushing x0000 times per second
+		// 	w.Log.Debug("flush")
 		return
 	}
 
@@ -63,6 +64,21 @@ func (w *writer) Decr(name string, tags []string) {
 	}
 
 	w.handleErr(client.Decr(name, append(w.Tags, tags...), defaultRate))
+}
+
+func (w *writer) Count(name string, value int64, tags []string) {
+	if w.Disable {
+		w.Log.Debug(fmt.Sprintf("count.%s", name))
+		return
+	}
+
+	client, err := w.getClient()
+	if err != nil {
+		w.handleErr(err)
+		return
+	}
+
+	w.handleErr(client.Count(name, value, append(w.Tags, tags...), defaultRate))
 }
 
 func (w *writer) Gauge(name string, value float64, tags []string) {
