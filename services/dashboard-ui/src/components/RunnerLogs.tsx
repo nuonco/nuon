@@ -101,7 +101,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
                 row.original?.service_name === 'api',
             })}
             className={classNames(
-              'grid grid-cols-12 items-center justify-start gap-6 py-2 w-full'
+              'grid grid-cols-12 items-start justify-start gap-6 py-2 w-full'
             )}
             heading={
               row
@@ -237,7 +237,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
   ])
   const [isAllExpanded, setIsAllExpanded] = useState(false)
   const lineStyle =
-    'tracking-wider text-sm font-mono leading-loose text-cool-grey-600 dark:text-cool-grey-500'
+    'tracking-wider text-sm font-mono text-cool-grey-600 dark:text-cool-grey-500'
 
   const columns: Array<ColumnDef<TOTELLog>> = useMemo(
     () => [
