@@ -12,6 +12,7 @@ import (
 )
 
 type AdminRestartRunnersRequest struct {
+	RunnerGroupType *app.RunnerGroupType `json:"runner_group_type,omitempty"`
 }
 
 type AdminRestartRunnersResponse struct {
@@ -36,7 +37,7 @@ func (s *service) AdminRestartRunners(ctx *gin.Context) {
 		return
 	}
 
-	updatesResponse, err := s.bulkRestartRunners(ctx)
+	updatesResponse, err := s.bulkRestartRunners(ctx, req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to restart runners: %w", err))
 		return
@@ -45,7 +46,7 @@ func (s *service) AdminRestartRunners(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, updatesResponse)
 }
 
-func (s *service) bulkRestartRunners(ctx context.Context) ([]AdminRestartRunnersResponse, error) {
+func (s *service) bulkRestartRunners(ctx context.Context, req AdminRestartRunnersRequest) ([]AdminRestartRunnersResponse, error) {
 	updatesResponse := []AdminRestartRunnersResponse{}
 	batchSize := 50
 	var runners []app.Runner
@@ -53,6 +54,7 @@ func (s *service) bulkRestartRunners(ctx context.Context) ([]AdminRestartRunners
 
 	for {
 		result := s.db.
+			Preload("RunnerGroup").
 			Joins("JOIN orgs ON runners.org_id = orgs.id AND orgs.org_type = ?", app.OrgTypeDefault).
 			Offset(offset).
 			Limit(batchSize).
@@ -71,7 +73,10 @@ func (s *service) bulkRestartRunners(ctx context.Context) ([]AdminRestartRunners
 			job, err := s.adminCreateJob(ctx, runner.ID, app.RunnerJobTypeShutDown)
 			if err != nil {
 				s.l.Error("unable to create shutdown job", zap.String("runner_id", runner.ID), zap.Error(err))
-			} else {
+				continue
+			}
+
+			if req.RunnerGroupType == nil || runner.RunnerGroup.Type == *req.RunnerGroupType {
 				updatesResponse = append(updatesResponse, AdminRestartRunnersResponse{
 					OrgID:    runner.OrgID,
 					RunnerID: runner.ID,
