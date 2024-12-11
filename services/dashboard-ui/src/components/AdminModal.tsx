@@ -3,11 +3,11 @@
 import { useParams } from 'next/navigation'
 import React, { type FC, useState } from 'react'
 import { useUser } from '@auth0/nextjs-auth0/client'
-import { CheckCircle, XCircle, Spinner } from '@phosphor-icons/react'
+import { AdminInstallActions } from "@/components/AdminInstallActions"
+import { AdminBtn } from "@/components/AdminActionButton"
 import { Button } from '@/components/Button'
 import { Grid } from '@/components/Grid'
 import { Modal } from '@/components/Modal'
-import { ToolTip } from '@/components/ToolTip'
 import { Text } from '@/components/Typography'
 import {
   addSupportUsersToOrg,
@@ -20,6 +20,7 @@ import {
   restartInstallRunner,
   restartOrg,
   restartOrgChildren,
+  shutdownInstallRunnerJob,
   teardownInstallComponents,
   updateInstallSandbox,
 } from '@/components/admin-actions'
@@ -102,6 +103,11 @@ export const AdminModal: FC<{ orgId: string }> = () => {
       description: 'Restart the current install runner',
       text: 'Restart runner',
     },
+    {
+      action: () => shutdownInstallRunnerJob(params?.['install-id'] as string),
+      description: 'Shutdown the current install runner',
+      text: 'Shutdown runner',
+    },
   ]
 
   return user && /@nuon.co\s*$/.test(user?.email) ? (
@@ -144,14 +150,13 @@ export const AdminModal: FC<{ orgId: string }> = () => {
           ) : null}
 
           {params?.['install-id'] ? (
-            <div className="flex flex-col gap-4 pt-4">
-              <Text variant="semi-18">Install admin controls</Text>
+            <AdminInstallActions installId={params?.['install-id'] as string}>
               <Grid>
                 {installActions.map((action) => (
                   <AdminAction key={action.text} {...action} />
                 ))}
               </Grid>
-            </div>
+            </AdminInstallActions>
           ) : null}
         </div>
       </Modal>
@@ -172,61 +177,3 @@ const AdminAction: FC<{ action: any; description: string; text: string }> = ({
   )
 }
 
-interface IAdminButton {
-  children: React.ReactNode
-  action: () => Promise<Record<string, any>>
-}
-
-const AdminBtn: FC<IAdminButton> = ({ children, action }) => {
-  const [actionStatus, setActionStatus] = useState<
-    'succeeded' | 'failed' | null
-  >(null)
-  const [isActing, setIsActing] = useState(false)
-
-  return (
-    <Button
-      className="flex gap-2 items-center justify-center text-base"
-      onClick={() => {
-        setIsActing(true)
-        action()
-          .then((res) => {
-            if (res.status === 201) {
-              setActionStatus('succeeded')
-            }
-            setIsActing(false)
-          })
-          .catch((err) => {
-            setActionStatus('failed')
-            console.error(err)
-            setIsActing(false)
-          })
-      }}
-      disabled={isActing}
-    >
-      {isActing ? (
-        <>
-          <Spinner className="animate-spin" /> Executing...
-        </>
-      ) : (
-        <>
-          <ActionIcon status={actionStatus} />
-          {children}
-        </>
-      )}
-    </Button>
-  )
-}
-
-const ActionIcon: FC<{ status: 'succeeded' | 'failed' | null }> = ({
-  status,
-}) => {
-  return status ? (
-    <ToolTip tipContent={`Admin action ${status}`} isIconHidden>
-      {status === 'failed' ? (
-        <XCircle className="text-red-500" />
-      ) : (
-        <CheckCircle className="text-green-500" />
-      )}
-    </ToolTip>
-  ) : null
-}
