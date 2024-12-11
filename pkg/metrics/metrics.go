@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
@@ -19,10 +20,11 @@ const (
 //go:generate mockgen -destination=mock_writer.go -source=metrics.go -package=metrics
 type Writer interface {
 	// dogstatsd metrics
-	Incr(string, []string)
-	Decr(string, []string)
-	Timing(string, time.Duration, []string)
-	Gauge(string, float64, []string)
+	Incr(name string, tags []string)
+	Decr(name string, tags []string)
+	Timing(name string, value time.Duration, tags []string)
+	Gauge(name string, value float64, tags []string)
+	Count(name string, value int64, tags []string)
 
 	// datadog specific
 	Event(e *statsd.Event)
@@ -39,7 +41,9 @@ type writer struct {
 	Log     *zap.Logger `validate:"required"`
 
 	// internal
-	client dogstatsdClient
+	clientonce sync.Once
+	client     dogstatsdClient
+	clienterr  error
 }
 
 var _ Writer = (*writer)(nil)
@@ -97,6 +101,15 @@ func WithTags(tags ...string) writerOption {
 		}
 
 		w.Tags = append(w.Tags, tags...)
+		return nil
+	}
+}
+
+func WithTagMap(tags map[string]string) writerOption {
+	return func(w *writer) error {
+		for k, v := range tags {
+			w.Tags = append(w.Tags, fmt.Sprintf("%s:%s", k, v))
+		}
 		return nil
 	}
 }

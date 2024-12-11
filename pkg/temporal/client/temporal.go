@@ -2,9 +2,12 @@ package temporal
 
 import (
 	"fmt"
+	"io"
 	"sync"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/uber-go/tally/v4"
 	tclient "go.temporal.io/sdk/client"
 	converter "go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/workflow"
@@ -25,8 +28,12 @@ type temporal struct {
 	Logger      *zap.Logger `validate:"required"`
 	LazyLoad    bool
 	Converter   converter.DataConverter
+	TallyCloser io.Closer
+	tallyScope  tally.Scope
 	propagators []workflow.ContextPropagator
 
+	clientOnce sync.Once
+	clientErr  error
 	tclient.Client
 	sync.RWMutex
 }
@@ -35,6 +42,7 @@ var _ Client = (*temporal)(nil)
 
 func New(v *validator.Validate, opts ...temporalOption) (*temporal, error) {
 	logger, _ := zap.NewProduction(zap.WithCaller(false))
+
 	tmp := &temporal{
 		v:           v,
 		Logger:      logger,
@@ -108,6 +116,16 @@ func WithContextPropagator(propagator workflow.ContextPropagator) temporalOption
 func WithContextPropagators(propagators []workflow.ContextPropagator) temporalOption {
 	return func(t *temporal) error {
 		t.propagators = propagators
+		return nil
+	}
+}
+
+func WithMetricsWriter(mw metrics.Writer) temporalOption {
+	return func(t *temporal) error {
+		// TODO(sdboyer) it would be great if this errored instead, but there's a bunch of downstream refactors that would entail
+		if mw != nil {
+			t.tallyScope, t.TallyCloser = metrics.NewTallyScope(mw)
+		}
 		return nil
 	}
 }

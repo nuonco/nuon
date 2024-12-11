@@ -32,6 +32,18 @@ func Test_writer_Incr(t *testing.T) {
 				return client
 			},
 		},
+		"happy path with tagmap": {
+			opts: func() []writerOption {
+				return []writerOption{
+					WithTagMap(map[string]string{"key": "value"}),
+				}
+			},
+			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
+				client := NewMockdogstatsdClient(mockCtl)
+				client.EXPECT().Incr(key, []string{"key:value"}, float64(1)).Return(nil)
+				return client
+			},
+		},
 		"happy path with tags": {
 			opts: func() []writerOption {
 				return []writerOption{}
@@ -40,6 +52,19 @@ func Test_writer_Incr(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Incr(key, []string{"key:value"}, float64(1)).Return(nil)
+				return client
+			},
+		},
+		"persistent and call site tags": {
+			opts: func() []writerOption {
+				return []writerOption{
+					WithTags("pkey:pvalue"),
+				}
+			},
+			tags: []string{"ckey:cvalue"},
+			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
+				client := NewMockdogstatsdClient(mockCtl)
+				client.EXPECT().Incr(key, []string{"pkey:pvalue", "ckey:cvalue"}, float64(1)).Return(nil)
 				return client
 			},
 		},
@@ -66,6 +91,9 @@ func Test_writer_Incr(t *testing.T) {
 
 			writer, err := New(v, opts...)
 			assert.NoError(t, err)
+
+			// Bypass the sync.Once
+			writer.getClient()
 			writer.client = client
 
 			writer.Incr(key, test.tags)
@@ -104,6 +132,19 @@ func Test_writer_Decr(t *testing.T) {
 				return client
 			},
 		},
+		"persistent and call site tags": {
+			opts: func() []writerOption {
+				return []writerOption{
+					WithTags("pkey:pvalue"),
+				}
+			},
+			tags: []string{"ckey:cvalue"},
+			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
+				client := NewMockdogstatsdClient(mockCtl)
+				client.EXPECT().Decr(key, []string{"pkey:pvalue", "ckey:cvalue"}, float64(1)).Return(nil)
+				return client
+			},
+		},
 		"disabled": {
 			opts: func() []writerOption {
 				return []writerOption{
@@ -127,9 +168,90 @@ func Test_writer_Decr(t *testing.T) {
 
 			writer, err := New(v, opts...)
 			assert.NoError(t, err)
+
+			// Bypass the sync.Once
+			writer.getClient()
 			writer.client = client
 
 			writer.Decr(key, test.tags)
+		})
+	}
+}
+
+func Test_writer_Count(t *testing.T) {
+	key := uuid.NewString()
+	value := int64(42)
+
+	tests := map[string]struct {
+		client func(*testing.T, *gomock.Controller) dogstatsdClient
+		opts   func() []writerOption
+		tags   []string
+	}{
+		"happy path": {
+			opts: func() []writerOption {
+				return []writerOption{
+					WithTags("key:value"),
+				}
+			},
+			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
+				client := NewMockdogstatsdClient(mockCtl)
+				client.EXPECT().Count(key, value, []string{"key:value"}, defaultRate).Return(nil)
+				return client
+			},
+		},
+		"happy path with tags": {
+			opts: func() []writerOption {
+				return []writerOption{}
+			},
+			tags: []string{"key:value"},
+			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
+				client := NewMockdogstatsdClient(mockCtl)
+				client.EXPECT().Count(key, value, []string{"key:value"}, defaultRate).Return(nil)
+				return client
+			},
+		},
+		"persistent and call site tags": {
+			opts: func() []writerOption {
+				return []writerOption{
+					WithTags("pkey:pvalue"),
+				}
+			},
+			tags: []string{"ckey:cvalue"},
+			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
+				client := NewMockdogstatsdClient(mockCtl)
+				client.EXPECT().Count(key, value, []string{"pkey:pvalue", "ckey:cvalue"}, defaultRate).Return(nil)
+				return client
+			},
+		},
+		"disabled": {
+			opts: func() []writerOption {
+				return []writerOption{
+					WithDisable(true),
+				}
+			},
+			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
+				client := NewMockdogstatsdClient(mockCtl)
+				return client
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			v := validator.New()
+			mockCtl := gomock.NewController(t)
+
+			opts := test.opts()
+			client := test.client(t, mockCtl)
+
+			writer, err := New(v, opts...)
+			assert.NoError(t, err)
+
+			// Bypass the sync.Once
+			writer.getClient()
+			writer.client = client
+
+			writer.Count(key, value, test.tags)
 		})
 	}
 }
@@ -166,6 +288,19 @@ func Test_writer_Timing(t *testing.T) {
 				return client
 			},
 		},
+		"persistent and call site tags": {
+			opts: func() []writerOption {
+				return []writerOption{
+					WithTags("pkey:pvalue"),
+				}
+			},
+			tags: []string{"ckey:cvalue"},
+			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
+				client := NewMockdogstatsdClient(mockCtl)
+				client.EXPECT().Timing(key, value, []string{"pkey:pvalue", "ckey:cvalue"}, defaultRate).Return(nil)
+				return client
+			},
+		},
 		"disabled": {
 			opts: func() []writerOption {
 				return []writerOption{
@@ -189,6 +324,9 @@ func Test_writer_Timing(t *testing.T) {
 
 			writer, err := New(v, opts...)
 			assert.NoError(t, err)
+
+			// Bypass the sync.Once
+			writer.getClient()
 			writer.client = client
 
 			writer.Timing(key, value, test.tags)
@@ -238,6 +376,9 @@ func Test_writer_Event(t *testing.T) {
 
 			writer, err := New(v, opts...)
 			assert.NoError(t, err)
+
+			// Bypass the sync.Once
+			writer.getClient()
 			writer.client = client
 
 			writer.Event(ev)
