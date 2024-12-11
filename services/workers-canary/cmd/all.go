@@ -72,6 +72,7 @@ func runAll(cmd *cobra.Command, _ []string) {
 		// register activities
 		worker.WithActivity(acts),
 		worker.WithActivity(sharedActs),
+		worker.WithMetricsWriter(tmetricsWriter.MetricsWriter),
 	)
 	if err != nil {
 		log.Fatalf("unable to initialize worker: %s", err.Error())
