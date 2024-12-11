@@ -1,6 +1,7 @@
 'use server'
 
 import { getSession } from '@auth0/nextjs-auth0'
+import type { TRunner } from '@/types'
 import { ADMIN_API_URL } from '@/utils'
 
 async function adminAction(
@@ -153,4 +154,20 @@ export async function restartInstallRunner(installId: string) {
     `${runner?.id}/restart`,
     'Failed to restart install runner'
   )
+}
+
+export async function shutdownInstallRunnerJob(installId: string) {
+  const runner = await getInstallRunner(installId)
+  return adminAction(
+    'runners',
+    `${runner?.id}/shutdown-job`,
+    'Failed to kick off install runner shutdown job'
+  )
+}
+
+export async function getInstallRunner(installId: string): Promise<TRunner> {
+  const runner = await fetch(
+    `${ADMIN_API_URL}/v1/installs/${installId}/admin-get-runner`
+  ).then((r) => r.json())
+  return runner
 }
