@@ -21,6 +21,9 @@ members:
   # Ada Ban
   - username: AdaBan
     role: admin
+  # Stephen Samraj E
+  - username: stephennuon
+    role: admin
 
   # all other team members
   # shared nuon user
