@@ -165,7 +165,7 @@ func (s *Service) Sync(ctx context.Context, all bool, file string) error {
 
 	if len(cfgFiles) < 1 {
 		ui.PrintError(&ui.CLIUserError{
-			Msg: "must set -all or -file, and make sure at least one nuon.<app-name>.toml file exists",
+			Msg: "must set -c, --file, or --all and make sure at least one nuon.<app-name>.toml file exists",
 		})
 		return err
 	}
