@@ -39,7 +39,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.Wait = true
 	client.WaitForJobs = false
 	client.Devel = h.state.cfg.Devel
-	client.DependencyUpdate = false
+	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
 	client.Namespace = h.state.cfg.Namespace
 	client.Atomic = false
