@@ -237,7 +237,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
   ])
   const [isAllExpanded, setIsAllExpanded] = useState(false)
   const lineStyle =
-    'tracking-wider text-sm font-mono text-cool-grey-600 dark:text-cool-grey-500'
+    'text-sm font-mono text-cool-grey-600 dark:text-cool-grey-500'
 
   const columns: Array<ColumnDef<TOTELLog>> = useMemo(
     () => [
