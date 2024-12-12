@@ -83,6 +83,9 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/log-streams/:log_stream_id/logs", s.AdminGetLogStreamLogs)
 	api.GET("/v1/log-streams/:log_stream_id", s.AdminGetLogStream)
 
+	// install runners
+	api.POST("/v1/installs/:install_id/runners/shutdown-job", s.AdminCreateInstallRunnerqShutDownJob)
+
 	return nil
 }
 
