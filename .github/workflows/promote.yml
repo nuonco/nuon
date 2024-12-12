@@ -112,7 +112,6 @@ jobs:
       stage: true
     secrets: inherit
 
-
   artifacts:
     # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
     name: 🚢
