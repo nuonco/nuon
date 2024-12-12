@@ -42,7 +42,7 @@ export const Modal: FC<IModal> = ({
         <header className="flex items-center justify-between px-6 py-4 border-b">
           <Heading>{heading}</Heading>
           <div className="flex items-center divide-x">
-            <div className="pr-4">{actions}</div>
+            {actions ? <div className="pr-4">{actions}</div> : null}
             <div className="pl-4">
               <Button className="!p-2" onClick={onClose}>
                 <X />
@@ -51,9 +51,12 @@ export const Modal: FC<IModal> = ({
           </div>
         </header>
         <div
-          className={classNames('p-6 h-full max-h-[700px] overflow-y-auto overflow-x-hidden', {
-            'min-h-[700px]': hasFixedHeight,
-          })}
+          className={classNames(
+            'p-6 h-full max-h-[700px] overflow-y-auto overflow-x-hidden',
+            {
+              'min-h-[700px]': hasFixedHeight,
+            }
+          )}
         >
           {children}
         </div>
