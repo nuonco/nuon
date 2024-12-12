@@ -35,12 +35,43 @@ var tests = map[string]struct {
 		msg:  "something",
 		vals: []interface{}{"test", float64(1)},
 	},
+	"with field": {
+		msg:  "something",
+		vals: []interface{}{zap.Error(fmt.Errorf("test"))},
+	},
 	"with many vals": {
 		msg: "something",
 		vals: []interface{}{
 			"test_num", float64(1),
 			"test_string", "string",
 			"test_struct", map[string]interface{}{}, // bc json
+		},
+	},
+	"field betwixt vals": {
+		msg: "something",
+		vals: []interface{}{
+			"test_num", float64(1),
+			zap.Error(fmt.Errorf("test")),
+			"test_string", "string",
+		},
+	},
+	"field and odd vals": {
+		msg: "something",
+		vals: []interface{}{
+			"test_string", "string",
+			zap.Error(fmt.Errorf("test")),
+			"test_num",
+		},
+		errExpected: errors.New("odd number of keyvals pairs"),
+	},
+	// This probably actually represents an error, but it's a pain to check for and probably vanishingly difficult to do by accident,
+	// so just gonna let it pass
+	"even vals surround field": {
+		msg: "something",
+		vals: []interface{}{
+			"test_string",
+			zap.Error(fmt.Errorf("test")),
+			"string",
 		},
 	},
 }
@@ -172,14 +203,25 @@ func testableZapLogger(w io.Writer) *zap.Logger {
 }
 
 func testKeyvals(t *testing.T, vals []interface{}, out map[string]interface{}) {
-	iters := len(vals) / 2
+	var fields []zap.Field
+	var other []any
+	for _, v := range vals {
+		switch x := v.(type) {
+		case zap.Field:
+			fields = append(fields, x)
+		default:
+			other = append(other, x)
+		}
+	}
+
+	iters := len(other) / 2
 	for i := 0; i < iters; i += 1 {
 		ix := i * 2
-		key, ok := vals[ix].(string)
+		key, ok := other[ix].(string)
 		if !ok {
-			key = fmt.Sprintf("%v", vals[ix])
+			key = fmt.Sprintf("%v", other[ix])
 		}
-		value := vals[ix+1]
+		value := other[ix+1]
 		assert.Equal(t, value, out[key])
 	}
 }
