@@ -102,6 +102,5 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 	}
 
 	l.Info("job picked up by runner and is in progress")
-	w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusInProgress, "job execution in progress")
 	return true, true, nil
 }
