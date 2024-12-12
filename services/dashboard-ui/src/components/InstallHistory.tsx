@@ -165,7 +165,17 @@ const InstallEvent: FC<IInstallEvent> = ({ event, isMostRecent = false }) => {
         </div>
 
         <div className="flex items-center gap-2">
-          <Time time={event.updated_at} format="relative" variant="reg-12" />
+          <Time
+            time={event.updated_at}
+            format="relative"
+            variant="reg-12"
+            className={classNames({
+              'text-black/60 dark:text-white/60': !Boolean(
+                event.operation_status === 'finished' ||
+                  event.operation_status === 'failed'
+              ),
+            })}
+          />
           {href && <CaretRight />}
         </div>
       </div>
