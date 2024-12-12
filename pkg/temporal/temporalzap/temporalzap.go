@@ -22,17 +22,28 @@ func NewLogger(zapLogger *zap.Logger) *Logger {
 }
 
 func (log *Logger) fields(keyvals []interface{}) []zap.Field {
-	if len(keyvals)%2 != 0 {
-		return []zap.Field{zap.Error(fmt.Errorf("odd number of keyvals pairs: %v", keyvals))}
-	}
 
 	var fields []zap.Field
-	for i := 0; i < len(keyvals); i += 2 {
-		key, ok := keyvals[i].(string)
-		if !ok {
-			key = fmt.Sprintf("%v", keyvals[i])
+	var other []any
+	for _, v := range keyvals {
+		switch x := v.(type) {
+		case zap.Field:
+			fields = append(fields, x)
+		default:
+			other = append(other, x)
 		}
-		fields = append(fields, zap.Any(key, keyvals[i+1]))
+	}
+
+	if len(other)%2 != 0 {
+		return []zap.Field{zap.Error(fmt.Errorf("odd number of keyvals pairs: %v", other))}
+	}
+
+	for i := 0; i < len(other); i += 2 {
+		key, ok := other[i].(string)
+		if !ok {
+			key = fmt.Sprintf("%v", other[i])
+		}
+		fields = append(fields, zap.Any(key, other[i+1]))
 	}
 
 	return fields
