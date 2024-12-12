@@ -30,7 +30,7 @@ export const LogsPreview: FC<ILogsPreview> = ({
   sorting,
 }) => {
   const lineStyle =
-    'tracking-wider text-sm font-mono leading-loose text-cool-grey-600 dark:text-cool-grey-500'
+    'text-sm font-mono leading-loose text-cool-grey-600 dark:text-cool-grey-500'
   const columns: Array<ColumnDef<TOTELLog>> = useMemo(
     () => [
       {
