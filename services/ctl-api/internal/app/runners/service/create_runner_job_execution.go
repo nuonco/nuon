@@ -57,6 +57,11 @@ func (s *service) CreateRunnerJobExecution(ctx *gin.Context) {
 		return
 	}
 
+	if err := s.updateRunnerJobStatus(ctx, runnerJobID, app.RunnerJobStatusInProgress, "in-progress"); err != nil {
+		ctx.Error(errors.Wrap(err, "unable to update runner job status to in progress"))
+		return
+	}
+
 	ctx.JSON(http.StatusCreated, execution)
 }
 
@@ -73,4 +78,22 @@ func (s *service) createRunnerJobExecution(ctx context.Context, runnerJobID stri
 	}
 
 	return &runnerJobExecution, nil
+}
+
+func (s *service) updateRunnerJobStatus(ctx context.Context, runnerJobID string, runnerJobStatus app.RunnerJobStatus, runnerJobStatusDescription string) error {
+	runnerJob := app.RunnerJob{
+		ID: runnerJobID,
+	}
+
+	res := s.db.WithContext(ctx).
+		Model(&runnerJob).
+		Updates(app.RunnerJob{
+			Status:            runnerJobStatus,
+			StatusDescription: runnerJobStatusDescription,
+		})
+	if res.Error != nil {
+		return errors.Wrap(res.Error, "unable to cancel runner job")
+	}
+
+	return nil
 }
