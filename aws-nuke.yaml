@@ -87,14 +87,12 @@ presets:
           value: ebs-csi*
         - type: glob
           value: alb-*
-        # - type: glob
-        #   value: default-node-group-*
-
-external-dns-inl
         - property: Name
           value: OrganizationAccountAccessRole
         - property: Name
           value: terraform
+        # - type: glob
+        #   value: default-node-group-*
 
       IAMRolePolicyAttachment:
         - property: RoleName
