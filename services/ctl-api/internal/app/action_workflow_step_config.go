@@ -11,12 +11,12 @@ import (
 )
 
 type ActionWorkflowStepConfig struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
+	ID          string                `json:"id" gorm:"primary_key;check:id_checker,char_length(id)=26"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedBy   Account               `json:"-"`
 	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_app_install_name,unique" json:"-"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_action_workflow_step_config_action_workflow_config_id_name,unique"`
 
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
@@ -29,11 +29,11 @@ type ActionWorkflowStepConfig struct {
 	AppConfigID string    `json:"app_config_id"`
 	AppConfig   AppConfig `json:"-"`
 
-	ActionWorkflowConfigID string               `json:"action_workflow_config_id"`
+	ActionWorkflowConfigID string               `json:"action_workflow_config_id" gorm:"index:idx_action_workflow_step_config_action_workflow_config_id_name,unique"`
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"-"`
 
 	// metadata
-	Name           string `json:"name"`
+	Name           string `json:"name" gorm:"index:idx_action_workflow_step_config_action_workflow_config_id_name,unique"`
 	PreviousStepID string `json:"previous_step_id"`
 	Idx            int    `json:"idx"`
 
