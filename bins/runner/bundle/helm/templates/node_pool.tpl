@@ -1,6 +1,6 @@
 {{- if .Values.node_pool.enabled }}
 
-apiVersion: karpenter.sh/v1beta1
+apiVersion: karpenter.sh/v1
 kind: NodePool
 metadata:
   name: {{ include "common.fullname" . }}
@@ -8,14 +8,12 @@ metadata:
   labels:
     {{- include "common.labels" . | nindent 4 }}
 spec:
+  {{- /* https://karpenter.sh/docs/concepts/disruption/#consolidation */}}
   disruption:
+    consolidateAfter: 120s
+    consolidationPolicy: WhenEmpty
     budgets:
     - nodes: 50%
-    consolidateAfter: 30s
-    consolidationPolicy: WhenEmpty
-    {{- with randNumeric 3 }}
-    expireAfter: {{ cat "50" . "s" | replace " " "" | quote }}
-    {{- end }}
   limits:
     cpu: {{ mul .Values.node_pool.instance_type.cpu .Values.node_pool.runner_count | add .Values.node_pool.instance_type.cpu }}
     {{- with mul .Values.node_pool.instance_type.memory .Values.node_pool.runner_count | add .Values.node_pool.instance_type.memory }}
@@ -26,12 +24,15 @@ spec:
       labels:
         {{ include "common.fullname" . }}: "true"
     spec:
+      {{- with randNumeric 3 }}
+      expireAfter: {{ cat "50" . "s" | replace " " "" | quote }}
+      {{- end }}
       taints:
         - key: deployment
           effect: NoSchedule
           value: {{ include "common.fullname" . }}
       nodeClassRef:
-        apiVersion: karpenter.k8s.aws/v1beta1
+        group: karpenter.k8s.aws
         kind: EC2NodeClass
         name: default
       requirements:
