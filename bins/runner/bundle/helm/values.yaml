@@ -38,7 +38,6 @@ node_pool:
   # if this is false, we fall back to the default NodePool
   enabled: false
   capacity_types:
-    - spot
     - on-demand
   # docs: https://karpenter.sh/v0.37/reference/instance-types/#t3amedium
   instance_type:
