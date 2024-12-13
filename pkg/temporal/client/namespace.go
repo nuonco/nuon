@@ -8,8 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
-
-	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
 )
 
 func (t *temporal) GetNamespaceClient(namespace string) (tclient.Client, error) {
@@ -18,12 +16,9 @@ func (t *temporal) GetNamespaceClient(namespace string) (tclient.Client, error) 
 		return nil, fmt.Errorf("unable to get client: %w", err)
 	}
 
-	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
-		Namespace:          namespace,
-		Logger:             temporalzap.NewLogger(t.Logger),
-		DataConverter:      t.Converter,
-		ContextPropagators: t.propagators,
-	})
+        opts := t.getOpts()
+        t.Namespace = namespace
+	client, err := tclient.NewClientFromExisting(defaultClient, opts)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
 	}

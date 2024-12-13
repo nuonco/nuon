@@ -55,19 +55,25 @@ type Client interface {
 		workflowArgs interface{}) (tclient.WorkflowRun, error)
 }
 
+func (t *temporal) getOpts() tclient.Options {
+	opts := tclient.Options{
+		HostPort:           t.Addr,
+		Logger:             temporalzap.NewLogger(t.Logger),
+		DataConverter:      t.Converter,
+		ContextPropagators: t.propagators,
+	}
+	if t.tallyScope != nil {
+		opts.MetricsHandler = sdktally.NewMetricsHandler(t.tallyScope)
+	}
+
+	return opts
+}
+
 // getClient returns a temporal client from memory, or creates a new one and caches it
 func (t *temporal) getClient() (tclient.Client, error) {
 	t.clientOnce.Do(func() {
-		opts := tclient.Options{
-			HostPort:           t.Addr,
-			Namespace:          t.Namespace,
-			Logger:             temporalzap.NewLogger(t.Logger),
-			DataConverter:      t.Converter,
-			ContextPropagators: t.propagators,
-		}
-		if t.tallyScope != nil {
-			opts.MetricsHandler = sdktally.NewMetricsHandler(t.tallyScope)
-		}
+		opts := t.getOpts()
+		opts.Namespace = t.Namespace
 
 		tc, err := tclient.Dial(opts)
 		if err != nil {
