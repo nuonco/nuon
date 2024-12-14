@@ -61,6 +61,10 @@ export type TVCSCommit = components['schemas']['app.VCSConnectionCommit']
 export type TOTELLog = components['schemas']['app.OtelLogRecord']
 
 // runner
+export type TRunnerGroup = components['schemas']['app.RunnerGroup']
+export type TRunnerGroupSettings =
+  components['schemas']['app.RunnerGroupSettings']
+export type TRunnerGroupType = components['schemas']['app.RunnerGroupType']
 export type TRunner = components['schemas']['app.Runner']
 export type TRunnerJob = components['schemas']['app.RunnerJob']
 
