@@ -10,16 +10,25 @@ import {
   InstallInputsSection,
   InstallPageSubNav,
   InstallStatuses,
+  StatusBadge,
   Section,
+  Text,
 } from '@/components'
-import { getInstall, getInstallEvents, getOrg } from '@/lib'
+import {
+  getInstall,
+  getInstallEvents,
+  getInstallRunnerGroup,
+  getOrg,
+} from '@/lib'
+import { RUNNERS } from '@/utils'
 
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const [install, events, org] = await Promise.all([
+  const [install, events, runnerGroup, org] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallEvents({ installId, orgId }),
+    getInstallRunnerGroup({ installId, orgId }),
     getOrg({ orgId }),
   ])
 
@@ -63,6 +72,22 @@ export default withPageAuthRequired(async function Install({ params }) {
             (input) => input.values || input?.redacted_values
           ) ? (
             <InstallInputsSection inputs={install.install_inputs} />
+          ) : null}
+
+          {RUNNERS ? (
+            <Section className="flex-initial" heading="Runner group">
+              <div className="flex flex-col gap-8">
+                <Text>{runnerGroup.runners?.length} runners in this group</Text>
+                <div className="divide-y">
+                  {runnerGroup.runners?.map((runner) => (
+                    <div key={runner?.id} className="flex flex-col gap-2">
+                      <StatusBadge status={runner?.status} />
+                      <Text variant="med-14">{runner?.display_name}</Text>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Section>
           ) : null}
 
           <Section heading="Cloud platform">

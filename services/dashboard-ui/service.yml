@@ -10,6 +10,7 @@ env:
   NEXT_PUBLIC_SEGMENT_WRITE_KEY: 'BejR5RWgZINK5Kc28pSn7yf1isc5Zalr'
   NUON_API_URL: http://localhost:8081
   NUON_WORKFLOWS: true
+  NUON_RUNNERS: false
 env_secrets:
   AUTH0_CLIENT_SECRET:
     name: dashboard-ui-auth0-client-secret-dev
