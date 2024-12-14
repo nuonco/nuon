@@ -69,6 +69,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/restart", s.AdminRestartRunners)
 	api.PATCH("/v1/runners/bulk-update", s.AdminBulkUpdateRunners)
 	api.GET("/v1/runner-groups/:runner_group_id", s.AdminGetRunnerGroup)
+	api.GET("/v1/runners/:runner_id/jobs/queue", s.AdminGetRunnerJobsQueue)
 
 	// trigger specific jobs
 	api.POST("/v1/runners/:runner_id/health-check-job", s.AdminCreateHealthCheck)
