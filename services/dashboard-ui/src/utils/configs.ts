@@ -14,4 +14,6 @@ export const GITHUB_APP_NAME =
   process?.env?.NEXT_PUBLIC_GITHUB_APP_NAME || 'nuon-connect'
 export const WORKFLOWS =
   Boolean(process?.env?.NUON_WORKFLOWS === 'true') || false
+export const RUNNERS =
+  Boolean(process?.env?.NUON_RUNNERS === 'true') || false
 export const VERSION = process.env?.VERSION || '0.1.0'

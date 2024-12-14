@@ -1,6 +1,6 @@
 import React, { type FC } from 'react'
 import { SubNav } from '@/components/Nav'
-import { WORKFLOWS } from '@/utils'
+import { RUNNERS, WORKFLOWS } from '@/utils'
 
 export interface IInstallPageSubNav {
   installId: string
@@ -10,7 +10,7 @@ export interface IInstallPageSubNav {
 export const InstallPageSubNav: FC<IInstallPageSubNav> = ({
   installId,
   orgId,
-}) => {  
+}) => {
   return (
     <SubNav
       links={[
@@ -19,6 +19,12 @@ export const InstallPageSubNav: FC<IInstallPageSubNav> = ({
           href: `/${orgId}/installs/${installId}/components`,
           text: 'Components',
         },
+        RUNNERS
+          ? {
+              href: `/${orgId}/installs/${installId}/runner-group`,
+              text: 'Runners',
+            }
+          : undefined,
         WORKFLOWS
           ? {
               href: `/${orgId}/installs/${installId}/workflows`,
