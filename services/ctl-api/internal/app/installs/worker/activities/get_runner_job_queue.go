@@ -32,6 +32,7 @@ func (a *Activities) GetRunnerJobQueue(ctx context.Context, req *GetRunnerJobQue
 	var jobs []*app.RunnerJob
 	res := a.db.WithContext(ctx).Where("runner_id = ? AND created_at < ? AND created_at > ? AND status IN ?", job.RunnerID, job.CreatedAt, minJobCreatedAt, []app.RunnerJobStatus{
 		app.RunnerJobStatusQueued,
+		app.RunnerJobStatusAvailable,
 		app.RunnerJobStatusInProgress,
 	}).Order("created_at desc").Find(&jobs)
 	if res.Error != nil {
