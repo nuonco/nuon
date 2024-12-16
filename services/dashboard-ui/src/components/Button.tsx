@@ -32,16 +32,19 @@ export const Button: FC<IButton> = ({
     <button
       className={classNames('rounded-md border', {
         [`${defaultStyles} border`]: variant === 'default',
-        'bg-fuchsia-700 hover:bg-fuchsia-600 focus:bg-fuchsia-600 active:bg-fuchsia-800':
+        'bg-primary-600 hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900':
           variant === 'primary',
         [`${defaultStyles} border-transparent`]: variant === 'ghost',
         [`${defaultStyles} border-red-800 text-red-800 dark:border-red-500 dark:text-red-500`]:
           variant === 'caution',
         'bg-red-700 hover:bg-red-600': variant === 'danger',
         'text-gray-50 px-5 border-transparent':
-        variant === 'primary' || variant === 'danger',
+          variant === 'primary' || variant === 'danger',
         'px-3 py-1.5': !hasCustomPadding,
-        'cursor-not-allowed text-cool-grey-500 dark:text-cool-grey-600 hover:!bg-transparent': props.disabled,
+        'cursor-not-allowed text-cool-grey-500 dark:text-cool-grey-600 hover:!bg-transparent':
+          props.disabled,
+        '!text-cool-grey-500 bg-primary-900 hover:!bg-primary-900':
+          props.disabled && variant === 'primary',
         [`${className}`]: Boolean(className),
       })}
       {...props}
