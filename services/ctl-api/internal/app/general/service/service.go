@@ -35,6 +35,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/general/cli-config", s.GetCLIConfig)
 	api.GET("/v1/general/cloud-platform/:cloud_platform/regions", s.GetCloudPlatformRegions)
 	api.GET("/v1/general/config-schema", s.GetConfigSchema)
+	api.POST("/v1/general/waitlist", s.CreateWaitlist)
 
 	return nil
 }
