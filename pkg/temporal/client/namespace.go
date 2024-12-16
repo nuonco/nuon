@@ -16,8 +16,9 @@ func (t *temporal) GetNamespaceClient(namespace string) (tclient.Client, error) 
 		return nil, fmt.Errorf("unable to get client: %w", err)
 	}
 
-        opts := t.getOpts()
-        t.Namespace = namespace
+	opts := t.getOpts()
+	opts.Namespace = namespace
+
 	client, err := tclient.NewClientFromExisting(defaultClient, opts)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
