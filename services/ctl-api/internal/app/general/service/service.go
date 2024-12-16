@@ -63,6 +63,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/restart-event-loop-reconcile-cron", s.RestartEventLoopReconcileCron)
 	api.POST("/v1/general/reconcile-event-loops", s.ReconcileEventLoops)
 
+	api.GET("/v1/general/waitlist", s.AdminGetWaitlist)
+
 	return nil
 }
 
