@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon-runner-go/models"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/release"
 
@@ -35,7 +36,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	l.Info("Initializing Helm...")
+	l.Info("Initializing Helm...", zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()})
 	actionCfg, err := h.actionInit(l)
 	if err != nil {
 		return fmt.Errorf("unable to initialize helm actions: %w", err)
@@ -46,7 +47,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return h.execUninstall(ctx, l, actionCfg, job, jobExecution)
 	}
 
-	l.Info("Checking for previous Helm release...")
+	l.Info("Checking for previous Helm release...", zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()})
 	prevRel, err := helm.GetRelease(actionCfg, h.state.cfg.Name)
 	if err != nil {
 		return fmt.Errorf("unable to get previous helm release: %w", err)
