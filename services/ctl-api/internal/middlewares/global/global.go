@@ -18,6 +18,7 @@ var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/v1/sandboxes"}:                      {},
 	{"GET", "/v1/sandboxes/:sandbox_id"}:          {},
 	{"GET", "/v1/sandboxes/:sandbox_id/releases"}: {},
+	{"POST", "/v1/general/waitlist"}:              {},
 }
 
 type middleware struct {

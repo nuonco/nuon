@@ -237,3 +237,8 @@ func NewReleaseID() string {
 func NewUserID() string {
 	return shortid.NewNanoID("usr")
 }
+
+func NewWaitListID() string {
+	return shortid.NewNanoID("wtl")
+}
+
