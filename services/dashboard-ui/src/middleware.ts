@@ -15,7 +15,7 @@ export default async function middleware(request: NextRequest) {
       new URL(request.url).pathname === '/' ||
       new URL(request.url).pathname.split('/')[1] === 'beta'
     ) {
-      let redirectPath = '/getting-started'
+      let redirectPath = '/request-access'
       const orgSession = request.cookies.get('org-session')
 
       const orgs: Array<TOrg> = await (
