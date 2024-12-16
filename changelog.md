@@ -1,6 +1,11 @@
 # Changelog
 
-This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
+This is a basic changelog where we track a minimal message whenever we do a
+promotion. There is currently no intention to publish this externally.
+
+## v0.19.343
+
+Add support for helm dependencies to the runner.
 
 ## v0.19.342
 
@@ -136,7 +141,8 @@ Fix to only attempt app deprovisioning a few times.
 
 ## v0.19.28
 
-Updating build management for public components, metrics, sandbox urls, and more.
+Updating build management for public components, metrics, sandbox urls, and
+more.
 
 ## v0.19.27
 
@@ -144,7 +150,8 @@ Promoting install changes + new commands in the cli.
 
 ## v0.19.26
 
-Promoting various improvements to event loops, health checks and installer API changes.
+Promoting various improvements to event loops, health checks and installer API
+changes.
 
 ## v0.19.24
 
@@ -168,7 +175,8 @@ Promoting a fix to auto builds, as well as updates to ECS.
 
 ## v0.19.15
 
-Promoting the ability to auto-build on release, as well as various spec/api changes.
+Promoting the ability to auto-build on release, as well as various spec/api
+changes.
 
 ## v0.19.11
 
@@ -192,7 +200,8 @@ Promoting admin endpoints.
 
 ## v0.19.6
 
-Promoting latest changes for sandbox inputs, install inputs and interpolation. Updating protos as well.
+Promoting latest changes for sandbox inputs, install inputs and interpolation.
+Updating protos as well.
 
 ## v0.19.2
 
