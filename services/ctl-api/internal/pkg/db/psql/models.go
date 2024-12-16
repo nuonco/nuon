@@ -118,5 +118,8 @@ func AllModels() []interface{} {
 
 		// internal
 		&app.Migration{},
+
+		// waitlist
+		&app.Waitlist{},
 	}
 }
