@@ -61,7 +61,7 @@ func (s *Service) Create(ctx context.Context, name string, isSandboxMode, nosele
 		case o.Status == statusActive:
 			view.Success(fmt.Sprintf("successfully created org %s", o.ID))
 			if !noselect {
-				if err := s.setOrgID(ctx, o.ID); err != nil {
+				if err := s.setOrgID(ctx, o.ID); err == nil {
 					s.printOrgSetMsg(name, o.ID)
 				} else {
 					view.Fail(errs.NewUserFacing("failed to set new org as current: %s", err))
