@@ -2,9 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --border-color-light: #DEE3E7;
+  --border-color-dark: #27252A;
+}
+
 @media (prefers-color-scheme: light) {
   * {
-    border-color: #DEE3E7;
+    border-color: var(--border-color-light);
+  }  
+
+  .timeline-event:before {
+    border-left: 1px solid var(--border-color-light);
   }
 
   .dashboard_sidebar {
@@ -18,7 +27,11 @@
 
 @media (prefers-color-scheme: dark) {
   * {
-    border-color: #27252A;
+    border-color: var(--border-color-dark);
+  }
+
+  .timeline-event:before {
+    border-left: 1px solid var(--border-color-dark);
   }
 
   .dashboard_sidebar {
@@ -29,6 +42,7 @@
     background-image:  url('../../public/sidebar-bg.svg');
   }
 }
+
 
 @layer utilities {
   .text-balance {
@@ -51,4 +65,25 @@
 
 .history {  
   max-height: calc(100vh - 200px);
+}
+
+.timeline {
+  
+}
+
+.timeline-event {
+  position: relative;
+}
+
+.timeline-event:before {  
+  content: "";
+  height: calc(100% - 1.25rem);
+  left: 1.26rem;
+  position: absolute;
+  width: 1px;
+  top: 2.4rem;
+}
+
+.timeline-event:last-of-type:before {  
+  display: none;
 }
