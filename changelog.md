@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.344
+
+Added waitlist
+
 ## v0.19.343
 
 Add support for helm dependencies to the runner.
