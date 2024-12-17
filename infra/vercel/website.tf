@@ -5,7 +5,7 @@ locals {
 resource "vercel_project" "website" {
   name           = "website"
   framework      = "astro"
-  root_directory = "services/website"
+  root_directory = "services/website-v2"
   ignore_command = "git diff HEAD^ HEAD --quiet -- ./"
 
   git_repository = {
