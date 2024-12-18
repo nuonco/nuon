@@ -44,6 +44,8 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
+	api.GET("/v1/runners/:runner_id", s.GetRunnerCtlAPI)
+	api.GET("/v1/runners/:runner_id/jobs", s.GetRunnerJobsCtlAPI)
 	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.CancelRunnerJob)
 	api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJob)
 
