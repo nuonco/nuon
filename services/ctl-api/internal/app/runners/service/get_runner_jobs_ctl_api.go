@@ -19,7 +19,7 @@ import (
 // @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
 // @Param   group query string false	"job group"	     Default("any")
 // @Param   status query string false	"job status"	     Default("available")
-// @Tags    runners/runner
+// @Tags    runners
 // @Accept			json
 // @Produce		json
 // @Security APIKey
@@ -31,7 +31,7 @@ import (
 // @Failure		500				{object}	stderr.ErrResponse
 // @Success		200				{array}	app.RunnerJob
 // @Router			/v1/runners/{runner_id}/jobs [get]
-func (s *service) GetRunnerJobs(ctx *gin.Context) {
+func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
 	groupStr := ctx.DefaultQuery("group", "any")
@@ -50,7 +50,7 @@ func (s *service) GetRunnerJobs(ctx *gin.Context) {
 	statusStr := ctx.DefaultQuery("status", "available")
 	status := app.RunnerJobStatus(statusStr)
 
-	runnerJobs, err := s.getRunnerJobs(ctx, runnerID, status, grp, limit)
+	runnerJobs, err := s.getRunnerJobsCtlAPI(ctx, runnerID, status, grp, limit)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -59,7 +59,7 @@ func (s *service) GetRunnerJobs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, runnerJobs)
 }
 
-func (s *service) getRunnerJobs(ctx context.Context, runnerID string, status app.RunnerJobStatus, grp app.RunnerJobGroup, limit int) ([]*app.RunnerJob, error) {
+func (s *service) getRunnerJobsCtlAPI(ctx context.Context, runnerID string, status app.RunnerJobStatus, grp app.RunnerJobGroup, limit int) ([]*app.RunnerJob, error) {
 	runnerJobs := []*app.RunnerJob{}
 
 	where := app.RunnerJob{
