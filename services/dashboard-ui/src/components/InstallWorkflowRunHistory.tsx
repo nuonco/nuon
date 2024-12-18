@@ -1,12 +1,7 @@
 'use client'
 
-import classNames from 'classnames'
 import React, { type FC, useEffect } from 'react'
-import { CaretRight } from '@phosphor-icons/react'
-import { Link } from '@/components/Link'
-import { StatusBadge } from '@/components/Status'
-import { Time } from '@/components/Time'
-import { Text } from '@/components/Typography'
+import { Timeline } from '@/components/Timeline'
 import { revalidateInstallWorkflowHistory } from '@/components/workflow-actions'
 import type { TActionWorkflow, TInstallActionWorkflowRun } from '@/types'
 import { SHORT_POLL_DURATION } from '@/utils'
@@ -32,65 +27,42 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
     }
 
     if (shouldPoll) {
-      const pollBuilds = setInterval(revalidateHistory, SHORT_POLL_DURATION)
-      return () => clearInterval(pollBuilds)
+      const pollWorkflowRuns = setInterval(
+        revalidateHistory,
+        SHORT_POLL_DURATION
+      )
+      return () => clearInterval(pollWorkflowRuns)
     }
   }, [shouldPoll])
 
   return (
-    <div className="flex flex-col gap-2">
-      {installWorkflowRuns?.length ? (
-        installWorkflowRuns.map((w, i) => (
-          <Link
-            key={w.id}
-            className="!block w-full !p-0"
-            href={`/${orgId}/installs/${installId}/workflows/${w.id}`}
-            variant="ghost"
-          >
-            <div
-              className={classNames('flex items-center justify-between p-4', {
-                'border rounded-md shadow-sm': i === 0,
-              })}
-            >
-              <div className="flex flex-col">
-                <span className="flex items-center gap-2">
-                  <StatusBadge
-                    status={w.status}
-                    isStatusTextHidden
-                    isWithoutBorder
-                  />
-                </span>
-
-                <Text
-                  className="flex items-center gap-2 ml-3.5"
-                  variant="reg-12"
-                >
-                  <span>
-                    {
-                      appWorkflows?.find((aw) =>
-                        aw.configs.find(
-                          (awCfg) => awCfg.id === w.action_workflow_config_id
-                        )
-                      )?.name
-                    }
-                  </span>{' '}
-                  /
-                  <span className="!inline truncate max-w-[100px]">
-                    {w.trigger_type}
-                  </span>
-                </Text>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Time time={w.updated_at} format="relative" variant="reg-12" />
-                <CaretRight />
-              </div>
-            </div>
-          </Link>
-        ))
-      ) : (
-        <Text>No workflow runs have happened</Text>
-      )}
-    </div>
+    <Timeline
+      emptyMessage="No action workflow runs have happened"
+      events={installWorkflowRuns?.map((workflowRun, i) => ({
+        id: workflowRun.id,
+        status: workflowRun.status,
+        underline: (
+          <>
+            <span>
+              {
+                appWorkflows?.find((aw) =>
+                  aw.configs.find(
+                    (awCfg) =>
+                      awCfg.id === workflowRun.action_workflow_config_id
+                  )
+                )?.name
+              }
+            </span>{' '}
+            /
+            <span className="!inline truncate max-w-[100px]">
+              {workflowRun.trigger_type}
+            </span>
+          </>
+        ),
+        time: workflowRun.updated_at,
+        href: `/${orgId}/installs/${installId}/workflows/${workflowRun.id}`,
+        isMostRecent: i === 0,
+      }))}
+    />
   )
 }
