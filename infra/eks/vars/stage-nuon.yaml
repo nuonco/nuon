@@ -20,3 +20,4 @@ ec2nodeclasses:
  - clickhouse-keeper
  - ctl-api-api
  - ctl-api-worker
+ - public
