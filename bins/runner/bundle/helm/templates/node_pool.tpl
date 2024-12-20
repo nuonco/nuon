@@ -25,7 +25,7 @@ spec:
         {{ include "common.fullname" . }}: "true"
     spec:
       {{- with randNumeric 3 }}
-      expireAfter: {{ cat "50" . "s" | replace " " "" | quote }}
+      expireAfter: {{ cat "2635" . "s" | replace " " "" | quote }}
       {{- end }}
       taints:
         - key: deployment
