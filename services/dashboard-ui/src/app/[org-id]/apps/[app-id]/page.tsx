@@ -7,9 +7,11 @@ import {
   AppSandboxVariables,
   DashboardContent,
   Section,
+  Markdown,
 } from '@/components'
 import {
   getApp,
+  getAppLatestConfig,
   getAppInputLatestConfig,
   getAppRunnerLatestConfig,
   getAppSandboxLatestConfig,
@@ -24,13 +26,15 @@ import type {
 export default withPageAuthRequired(async function App({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const [org, app, inputCfg, runnerCfg, sandboxCfg] = await Promise.all([
-    getOrg({ orgId }),
-    getApp({ appId, orgId }),
-    getAppInputLatestConfig({ appId, orgId }).catch(console.error),
-    getAppRunnerLatestConfig({ appId, orgId }).catch(console.error),
-    getAppSandboxLatestConfig({ appId, orgId }).catch(console.error),
-  ])
+  const [org, app, appConfig, inputCfg, runnerCfg, sandboxCfg] =
+    await Promise.all([
+      getOrg({ orgId }),
+      getApp({ appId, orgId }),
+      getAppLatestConfig({ appId, orgId }),
+      getAppInputLatestConfig({ appId, orgId }).catch(console.error),
+      getAppRunnerLatestConfig({ appId, orgId }).catch(console.error),
+      getAppSandboxLatestConfig({ appId, orgId }).catch(console.error),
+    ])
 
   return (
     <DashboardContent
@@ -44,9 +48,15 @@ export default withPageAuthRequired(async function App({ params }) {
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
       <div className="flex flex-col md:flex-row flex-auto">
-        <Section className="border-r" heading="Inputs">
-          <AppInputConfig inputConfig={inputCfg as TAppInputConfig} />
-        </Section>
+        <div className="divide-y flex flex-col flex-grow">
+          <Section className="border-r" heading="README">
+            <Markdown content={appConfig.readme} />
+          </Section>
+
+          <Section className="border-r" heading="Inputs">
+            <AppInputConfig inputConfig={inputCfg as TAppInputConfig} />
+          </Section>
+        </div>
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
           <Section className="flex-initial" heading="Sandbox">
