@@ -40,7 +40,8 @@ type AppConfig struct {
 	Status            AppConfigStatus `json:"status"`
 	StatusDescription string          `json:"status_description" gorm:"notnull;default null"`
 
-	State string `json:"state"`
+	State  string `json:"state"`
+	Readme string `json:"readme"`
 
 	// fields that are filled in via after query or views
 	Version int `json:"version" gorm:"->;-:migration"`
@@ -51,7 +52,7 @@ func (a AppConfig) UseView() bool {
 }
 
 func (a AppConfig) ViewVersion() string {
-	return "v1"
+	return "v2"
 }
 
 func (a *AppConfig) BeforeCreate(tx *gorm.DB) error {

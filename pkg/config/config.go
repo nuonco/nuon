@@ -16,7 +16,8 @@ type AppConfig struct {
 	DisplayName string `mapstructure:"display_name,omitempty"`
 	// Slack webhook url to receive notifications
 	SlackWebhookURL string `mapstructure:"slack_webhook_url"`
-
+	// Readme for the app
+	Readme string `mapstructure:"readme,omitempty"`
 	// Input configuration
 	Inputs *AppInputConfig `mapstructure:"inputs,omitempty"`
 	// Sandbox configuration
