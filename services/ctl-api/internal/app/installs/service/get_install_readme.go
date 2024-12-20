@@ -57,7 +57,7 @@ func (s *service) GetInstallReadme(ctx *gin.Context) {
 	// 2. grab the latest successful deploy plan
 	deploy, err := s.getInstallLatestSuccessfulDeploy(ctx, installID)
 	if err != nil {
-		response := Readme{""}
+		response := Readme{appConfig.Readme}
 		ctx.JSON(http.StatusOK, response)
 		return
 	}
