@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.345
+
+Added `readme` to AppConfig.
+
 ## v0.19.344
 
 Added waitlist
