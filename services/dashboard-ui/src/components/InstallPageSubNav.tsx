@@ -14,7 +14,11 @@ export const InstallPageSubNav: FC<IInstallPageSubNav> = ({
   return (
     <SubNav
       links={[
-        { href: `/${orgId}/installs/${installId}`, text: 'Status' },
+        { href: `/${orgId}/installs/${installId}`, text: 'Overview' },
+        {
+          href: `/${orgId}/installs/${installId}/history`,
+          text: 'History',
+        },
         {
           href: `/${orgId}/installs/${installId}/components`,
           text: 'Components',

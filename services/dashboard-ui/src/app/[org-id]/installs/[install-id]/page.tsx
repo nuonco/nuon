@@ -6,7 +6,6 @@ import {
   AppSandboxVariables,
   DashboardContent,
   InstallCloudPlatform,
-  InstallHistory,
   InstallInputsSection,
   InstallPageSubNav,
   InstallReprovisionButton,
@@ -14,21 +13,22 @@ import {
   StatusBadge,
   Section,
   Text,
+  Markdown,
 } from '@/components'
 import {
   getInstall,
-  getInstallEvents,
+  getInstallReadme,
   getInstallRunnerGroup,
   getOrg,
 } from '@/lib'
-import { RUNNERS, USER_REPROVISION } from '@/utils'
+import { RUNNERS } from '@/utils'
 
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const [install, events, runnerGroup, org] = await Promise.all([
+  const [install, { readme }, runnerGroup, org] = await Promise.all([
     getInstall({ installId, orgId }),
-    getInstallEvents({ installId, orgId }),
+    getInstallReadme({ installId, orgId }),
     getInstallRunnerGroup({ installId, orgId }),
     getOrg({ orgId }),
   ])
@@ -49,24 +49,18 @@ export default withPageAuthRequired(async function Install({ params }) {
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <div className="flex flex-col lg:flex-row flex-auto">
-        <Section
-          heading="History"
-          className="overflow-auto history"
-          actions={
-            USER_REPROVISION ? (
-              <InstallReprovisionButton installId={installId} orgId={orgId} />
-            ) : null
-          }
-        >
-          <InstallHistory
-            initEvents={events}
-            installId={installId}
-            orgId={orgId}
-            shouldPoll
-          />
+        <Section heading="README" className="overflow-auto history">
+          <Markdown content={readme} />
         </Section>
 
         <div className="divide-y flex flex-col lg:w-[500px] border-l">
+          {install?.install_inputs?.length &&
+          install?.install_inputs.some(
+            (input) => input.values || input?.redacted_values
+          ) ? (
+            <InstallInputsSection inputs={install.install_inputs} />
+          ) : null}
+
           <Section className="flex-initial" heading="Active sandbox">
             <div className="flex flex-col gap-8">
               <AppSandboxConfig sandboxConfig={install?.app_sandbox_config} />
@@ -75,13 +69,6 @@ export default withPageAuthRequired(async function Install({ params }) {
               />
             </div>
           </Section>
-
-          {install?.install_inputs?.length &&
-          install?.install_inputs.some(
-            (input) => input.values || input?.redacted_values
-          ) ? (
-            <InstallInputsSection inputs={install.install_inputs} />
-          ) : null}
 
           {RUNNERS ? (
             <Section className="flex-initial" heading="Runner group">
