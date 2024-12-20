@@ -9,6 +9,7 @@ import {
   InstallHistory,
   InstallInputsSection,
   InstallPageSubNav,
+  InstallReprovisionButton,
   InstallStatuses,
   StatusBadge,
   Section,
@@ -20,7 +21,7 @@ import {
   getInstallRunnerGroup,
   getOrg,
 } from '@/lib'
-import { RUNNERS } from '@/utils'
+import { RUNNERS, USER_REPROVISION } from '@/utils'
 
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
@@ -48,7 +49,15 @@ export default withPageAuthRequired(async function Install({ params }) {
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <div className="flex flex-col lg:flex-row flex-auto">
-        <Section heading="History" className="overflow-auto history">
+        <Section
+          heading="History"
+          className="overflow-auto history"
+          actions={
+            USER_REPROVISION ? (
+              <InstallReprovisionButton installId={installId} orgId={orgId} />
+            ) : null
+          }
+        >
           <InstallHistory
             initEvents={events}
             installId={installId}
@@ -76,13 +85,13 @@ export default withPageAuthRequired(async function Install({ params }) {
 
           {RUNNERS ? (
             <Section className="flex-initial" heading="Runner group">
-              <div className="flex flex-col gap-8">
+              <div className="flex flex-col gap-4">
                 <Text>{runnerGroup.runners?.length} runners in this group</Text>
                 <div className="divide-y">
                   {runnerGroup.runners?.map((runner) => (
                     <div key={runner?.id} className="flex flex-col gap-2">
                       <StatusBadge status={runner?.status} />
-                      <Text variant="med-14">{runner?.display_name}</Text>
+                      <Text variant="med-12">{runner?.display_name}</Text>
                     </div>
                   ))}
                 </div>
