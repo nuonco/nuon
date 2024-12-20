@@ -156,5 +156,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "077-runner-jobs-view-v1",
 			Fn:   a.migration077RunnerJobsView,
 		},
+		{
+			Name: "078-app-configs-view-v2",
+			Fn:   a.migration078AppConfigsViewV2,
+		},
 	}
 }
