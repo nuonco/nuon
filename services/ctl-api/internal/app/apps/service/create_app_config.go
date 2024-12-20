@@ -12,7 +12,10 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
-type CreateAppConfigRequest struct{}
+type CreateAppConfigRequest struct {
+	// not required Readme
+	Readme string `json:"readme,omitempty"`
+}
 
 func (c *CreateAppConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
@@ -72,6 +75,7 @@ func (s *service) createAppConfig(ctx context.Context, orgID, appID string, req 
 		AppID:             appID,
 		Status:            app.AppConfigStatusPending,
 		StatusDescription: "sync pending",
+		Readme:            req.Readme,
 	}
 
 	res := s.db.WithContext(ctx).Create(&inputs)
