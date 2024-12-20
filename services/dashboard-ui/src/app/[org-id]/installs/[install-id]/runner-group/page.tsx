@@ -13,7 +13,13 @@ import {
   Section,
   Text,
 } from '@/components'
-import { getInstall, getInstallRunnerGroup, getOrg } from '@/lib'
+import {
+  getInstall,
+  getInstallRunnerGroup,
+  getOrg,
+  getRunner,
+  getRunnerJobs,
+} from '@/lib'
 
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
@@ -23,6 +29,15 @@ export default withPageAuthRequired(async function Install({ params }) {
     getInstallRunnerGroup({ installId, orgId }),
     getOrg({ orgId }),
   ])
+
+  /* const runner = await getRunner({
+   *   orgId,
+   *   runnerId: runnerGroup?.runners?.at(0)?.id,
+   * })
+   * const runnerJobs = await getRunnerJobs({
+   *   orgId,
+   *   runnerId: runnerGroup?.runners?.at(0)?.id,
+   * }) */
 
   return (
     <DashboardContent
@@ -39,7 +54,7 @@ export default withPageAuthRequired(async function Install({ params }) {
       statues={<InstallStatuses initInstall={install} shouldPoll />}
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
-      <Section heading="Runner group">
+      <Section heading="Runner group">       
         {runnerGroup ? (
           <CodeViewer
             initCodeSource={JSON.stringify(runnerGroup, null, 2)}
