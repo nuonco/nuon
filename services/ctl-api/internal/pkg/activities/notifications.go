@@ -17,6 +17,8 @@ type SendNotificationRequest struct {
 }
 
 // @temporal-gen activity
+// @schedule-to-close-timeout 1m
+// @start-to-close-timeout 10s
 func (a *Activities) SendNotification(ctx context.Context, req SendNotificationRequest) error {
 	cfg, err := a.getNotificationsConfig(ctx, req.OrgID, req.AppID)
 	if err != nil {
