@@ -25,8 +25,8 @@ export const NuonVersions: FC<React.HTMLAttributes<HTMLDivElement>> = async ({
     >
       <Suspense fallback={<Text variant="med-8">Loading Nuon version...</Text>}>
         <>
-          <Text variant="reg-12">API: {apiVersion.version}</Text>
-          <Text variant="reg-12">UI: {VERSION}</Text>
+          <Text className="!flex-nowrap" variant="reg-12">API: <b>{apiVersion.version}</b></Text>
+          <Text className="!flex-nowrap" variant="reg-12">UI: <b>{VERSION}</b></Text>
         </>
       </Suspense>
     </div>
