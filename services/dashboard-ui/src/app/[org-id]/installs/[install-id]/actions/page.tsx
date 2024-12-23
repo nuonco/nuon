@@ -66,7 +66,7 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
                 >
                   <div key={aW.id} className="flex flex-col gap-2">
                     <Link
-                      href={`/${orgId}/apps/${install.app_id}/workflows/${aW.id}`}
+                      href={`/${orgId}/apps/${install.app_id}/actions/${aW.id}`}
                     >
                       <Text variant="med-12">{aW.name}</Text>
                     </Link>

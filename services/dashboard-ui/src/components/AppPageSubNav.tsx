@@ -15,7 +15,7 @@ export const AppPageSubNav: FC<IAppPageSubNav> = ({ appId, orgId }) => {
         { href: `/${orgId}/apps/${appId}/components`, text: 'Components' },
         { href: `/${orgId}/apps/${appId}/installs`, text: 'Installs' },
         WORKFLOWS
-          ? { href: `/${orgId}/apps/${appId}/workflows`, text: 'Workflows' }
+          ? { href: `/${orgId}/apps/${appId}/actions`, text: 'Actions' }
           : undefined,
       ]}
     />
