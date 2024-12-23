@@ -13,7 +13,7 @@ export const SignUpForm: FC = () => {
   const [successfulRequest, setSuccessfulRequest] = useState(false)
 
   return (
-    <div className="px-4 pt-12 w-full max-w-md flex flex-col gap-4">
+    <div className="pt-12 w-full max-w-md flex flex-col gap-6">
       {serverError ? (
         <div className="border border-red-300 bg-red-50 text-red-800 dark:border-red-600/30 dark:bg-red-600/10 dark:text-red-500 rounded p-3 w-full mb-2">
           <Text className="items-center" variant="reg-14">
@@ -43,7 +43,7 @@ export const SignUpForm: FC = () => {
         </>
       ) : (
         <>
-          <Text level={1} role="heading" variant="semi-18">
+          <Text className="!text-[32px]" level={1} role="heading" variant="semi-18">
             Request Access Today
           </Text>
           <Text className="!text-xl !leading-loose" variant="reg-14">
@@ -51,7 +51,7 @@ export const SignUpForm: FC = () => {
             will follow up via email within 24 hours.
           </Text>
           <form
-            className="flex flex-col gap-4 mt-4"
+            className="flex flex-col gap-6 mt-4"
             onSubmit={(e: FormEvent<HTMLFormElement>) => {
               e.preventDefault()
               setIsSubmitting(true)
@@ -76,7 +76,7 @@ export const SignUpForm: FC = () => {
             </label>
 
             <Button
-              className="!inline-flex w-fit !text-base"
+              className="!inline-flex w-fit !text-base font-medium"
               variant="primary"
               disabled={isSubmitting}
             >

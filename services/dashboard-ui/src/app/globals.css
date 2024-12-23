@@ -5,6 +5,8 @@
 :root {
   --border-color-light: #DEE3E7;
   --border-color-dark: #27252A;
+  --gradient-brand-light: linear-gradient(88.14deg, #f9519d 7.25%, #6133ff 62.82%);
+  --gradient-brand-dark: linear-gradient(88.14deg, #f72585 7.25%, #3a00ff 62.82%);
 }
 
 @media (prefers-color-scheme: light) {
@@ -22,7 +24,17 @@
 
    .dashboard_nav {
     background-image:  url('../../public/light-sidebar-bg.svg');
-  }
+   }
+
+   .text-gradient {
+     background: var(--gradient-brand-light);
+   }
+
+   @media (min-width: 1020px) {
+     .landing-graphic {
+       background-image:  url('../../public/landing-graphic-light.svg');
+     }
+   }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -40,6 +52,16 @@
 
   .dashboard_nav {
     background-image:  url('../../public/sidebar-bg.svg');
+  }
+
+  .text-gradient {
+     background: var(--gradient-brand-dark);
+  }
+
+  @media (min-width: 1020px) {
+    .landing-graphic {
+      background-image:  url('../../public/landing-graphic.svg');
+    }
   }
 }
 
@@ -87,3 +109,31 @@
 .timeline-event:last-of-type:before {  
   display: none;
 }
+
+.text-gradient { 
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (min-width: 1020px) {
+  .landing-gradient {
+    background-image:  url('../../public/dashboard-bg.svg');
+    background-repeat: no-repeat;
+    background-position: top;
+    background-attachment: local;
+  }
+
+  .landing-graphic {
+    background-repeat: no-repeat;
+    background-position: top -2rem right;
+    background-attachment: local;
+  }
+
+  .landing-toml {
+    background-image:  url('../../public/landing-actions-toml.svg');
+    background-repeat: no-repeat;
+    background-position: top right;
+  }  
+}
+

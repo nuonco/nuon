@@ -5,8 +5,8 @@ import { Dashboard, Heading, Link, Text } from '@/components'
 export default function Error({ error }) {
   return (
     <Dashboard>
-      <main className="flex h-full gap-6">
-        <div className="flex flex-col gap-6 p-0 md:p-12 lg:p-24 lg:max-w-2xl">
+      <main className="flex h-full gap-6 py-6 md:py-12 lg:py-24">
+        <div className="flex flex-col gap-6 lg:max-w-2xl">
           <Heading variant="title" level={1}>
             An error occurred
           </Heading>
