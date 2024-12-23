@@ -31,8 +31,8 @@ export const InstallPageSubNav: FC<IInstallPageSubNav> = ({
           : undefined,
         WORKFLOWS
           ? {
-              href: `/${orgId}/installs/${installId}/workflows`,
-              text: 'Workflows',
+              href: `/${orgId}/installs/${installId}/actions`,
+              text: 'Actions',
             }
           : undefined,
       ]}
