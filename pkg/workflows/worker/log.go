@@ -7,6 +7,12 @@ import (
 )
 
 func (w *worker) getLogger() (*zap.Logger, error) {
+	if w.l != nil {
+		return w.l, nil
+	}
+
+	// NOTE(jm): this should be removed, as ideally we would not be creating a logger like this anywhere in our
+	// system, but instead force everyone to pass them in via FX event loops
 	var (
 		l   *zap.Logger
 		err error

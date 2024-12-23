@@ -4,13 +4,16 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/metrics"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/pkg/metrics"
 )
 
 type worker struct {
 	v  *validator.Validate `validate:"required"`
 	mw metrics.Writer
+	l  *zap.Logger
 
 	Config      *Config       `validate:"required"`
 	Workflows   []interface{} `validate:"required,gt=0"`
@@ -81,6 +84,13 @@ func WithActivity(act interface{}) workerOption {
 func WithContextPropagator(propagator workflow.ContextPropagator) workerOption {
 	return func(t *worker) error {
 		t.propagators = append(t.propagators, propagator)
+		return nil
+	}
+}
+
+func WithLogger(l *zap.Logger) workerOption {
+	return func(w *worker) error {
+		w.l = l
 		return nil
 	}
 }
