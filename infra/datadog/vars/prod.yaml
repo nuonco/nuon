@@ -132,7 +132,7 @@ synthetics:
     subtype: "http"
     status: "live"
     message: "@slack-alerts-${env}-product @pagerduty-Datadog \n\ndashboard-ui has experienced a disruption"
-    locations: ["aws:us-east-1", "gcp:us-south1", "aws:us-west-2"]
+    locations: ["aws:us-east-1", "aws:us-west-2"]
     tags: ["service:dashboard-ui", "terraform:true", "env:${aws_account}"]
     request_definition:
       method: "GET"
@@ -156,7 +156,7 @@ synthetics:
     subtype: "http"
     status: "live"
     message: "@slack-alerts-${env}-product @pagerduty-Datadog \n\nwebsite has experienced a disruption"
-    locations: ["aws:us-east-1", "gcp:us-south1", "aws:us-west-2"]
+    locations: ["aws:us-east-1", "aws:us-west-2"]
     tags: ["service:website", "terraform:true", "env:${aws_account}"]
     request_definition:
       method: "GET"
