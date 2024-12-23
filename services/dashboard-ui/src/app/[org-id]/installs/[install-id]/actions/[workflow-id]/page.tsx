@@ -28,11 +28,11 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
         { href: `/${org.id}/apps`, text: org.name },
         { href: `/${org.id}/installs`, text: 'Installs' },
         {
-          href: `/${org.id}/installs/${install.id}/workflows`,
+          href: `/${org.id}/installs/${install.id}/actions`,
           text: install.name,
         },
         {
-          href: `/${org.id}/installs/${install.id}/workflows/${workflowId}`,
+          href: `/${org.id}/installs/${install.id}/actions/${workflowId}`,
           text: 'workflow name',
         },
       ]}

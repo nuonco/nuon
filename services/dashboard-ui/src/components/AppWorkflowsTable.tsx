@@ -52,7 +52,7 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
         cell: (props) => (
           <div className="flex flex-col gap-2">
             <Link
-              href={`/${orgId}/apps/${appId}/workflows/${props.row.original.id}`}
+              href={`/${orgId}/apps/${appId}/actions/${props.row.original.id}`}
             >
               <Text variant="med-14">{props.getValue<string>()}</Text>
             </Link>
@@ -97,7 +97,7 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
         enableSorting: false,
         cell: (props) => (
           <Link
-            href={`/${orgId}/apps/${appId}/workflows/${props.row.original.id}`}
+            href={`/${orgId}/apps/${appId}/actions/${props.row.original.id}`}
             variant="ghost"
           >
             <DotsThreeVertical />
