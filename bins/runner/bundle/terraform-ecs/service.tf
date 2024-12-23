@@ -38,6 +38,10 @@ module "service" {
           name  = "HOST_IP"
           value = "0.0.0.0"
         },
+        {
+          name  = "AWS_REGION"
+          value = "${var.region}"
+        },
       ]
     }
   }

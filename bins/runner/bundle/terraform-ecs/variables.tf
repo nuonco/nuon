@@ -33,3 +33,7 @@ variable "runner_iam_role_arn" {
 variable "vpc_id" {
   type = string
 }
+
+variable "aws_region" {
+  type = string
+}
