@@ -27,9 +27,9 @@ export default withPageAuthRequired(async function AppWorkflow({ params }) {
       breadcrumb={[
         { href: `/${org.id}/apps`, text: org.name },
         { href: `/${org.id}/apps`, text: 'Apps' },
-        { href: `/${org.id}/apps/${app.id}/workflows`, text: app.name },
+        { href: `/${org.id}/apps/${app.id}/actions`, text: app.name },
         {
-          href: `/${org.id}/apps/${app.id}/workflows/${workflowId}`,
+          href: `/${org.id}/apps/${app.id}/actions/${workflowId}`,
           text: 'workflow name',
         },
       ]}

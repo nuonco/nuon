@@ -16,7 +16,7 @@ export async function runManualWorkflow({
 }: IRunManualWorkflow) {
   try {
     postWorkflowRun({ installId, orgId, workflowConfigId })
-    revalidatePath(`/${orgId}/installs/${installId}/workflows`)
+    revalidatePath(`/${orgId}/installs/${installId}/actions`)
   } catch (error) {
     throw new Error(error.message)
   }
@@ -26,5 +26,5 @@ export async function revalidateInstallWorkflowHistory(
   orgId: string,
   installId: string
 ) {
-  revalidatePath(`/${orgId}/installs/${installId}/workflows`)
+  revalidatePath(`/${orgId}/installs/${installId}/actions`)
 }
