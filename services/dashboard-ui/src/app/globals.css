@@ -137,3 +137,11 @@
   }  
 }
 
+@media (min-width: 1200px) {
+  .landing-graphic {
+    background-repeat: no-repeat;
+    background-position: top -2rem right 8rem;
+    background-attachment: local;
+  }
+}
+
