@@ -40,6 +40,7 @@ func (b *handler) buildLocal(
 
 	args := []string{
 		"build",
+		".",
 		"-f", dockerfilePath,
 		"--tag", localRef,
 	}
