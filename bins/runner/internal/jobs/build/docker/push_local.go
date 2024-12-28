@@ -21,7 +21,6 @@ func (b *handler) pushLocal(
 
 	args := []string{
 		"push",
-		"--tls-verify=false",
 		localRef,
 	}
 
