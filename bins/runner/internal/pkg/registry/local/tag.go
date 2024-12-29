@@ -2,6 +2,7 @@ package local
 
 import (
 	"fmt"
+	"os/exec"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal"
 )
@@ -17,9 +18,25 @@ import (
 //
 // For running builds inside kaniko, we can simply use localhost:5001 for everything.
 
+// GetContainerRuntime returns the container runtime that is installed.
+func GetContainerRuntime() string {
+	if _, err := exec.LookPath("podman"); err != nil {
+		return "docker"
+	}
+	return "podman"
+}
+
+// GetLocalhostAlias returns the localhost alias for the installed container runtime.
+func GetLocalhostAlias() string {
+	if runtime := GetContainerRuntime(); runtime == "docker" {
+		return "host.docker.internal"
+	}
+	return "host.containers.internal"
+}
+
 // Return a tag that can be used to build+push from the run-local environment
 func GetLocalTag(cfg *internal.Config, version string) string {
-	return fmt.Sprintf("host.containers.internal:%d/runner:%s", cfg.RegistryPort, version)
+	return fmt.Sprintf("%s:%d/runner:%s", GetLocalhostAlias(), cfg.RegistryPort, version)
 }
 
 // Return a tag that can be used inside kaniko
