@@ -30,7 +30,7 @@ func (a *Activities) FetchInactiveDependencies(ctx context.Context, req FetchIna
 			continue
 		}
 
-		if app.InstallDeployStatus(app.InstallDeployStatus(*install.ComponentStatuses[dep.ID])) != app.InstallDeployStatusOK {
+		if app.InstallDeployStatus(app.InstallDeployStatus(*install.ComponentStatuses[dep.ID])) != app.InstallDeployStatusActive {
 			inactiveDepIds = append(inactiveDepIds, dep.ID)
 		}
 	}

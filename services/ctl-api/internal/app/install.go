@@ -82,7 +82,7 @@ func (i *Install) BeforeCreate(tx *gorm.DB) error {
 // and then roll that up into a high-level status for the install overall.
 func (i *Install) AfterQuery(tx *gorm.DB) error {
 	// get the runner status
-	i.RunnerStatus = RunnerStatusUnknown
+	i.RunnerStatus = RunnerStatusDeprovisioned
 	if len(i.RunnerGroup.Runners) > 0 {
 		i.RunnerStatus = i.RunnerGroup.Runners[0].Status
 	}
@@ -112,14 +112,14 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 func compositeComponentStatus(componentStatuses pgtype.Hstore) InstallDeployStatus {
 	// if there are no components, then there are no operations to wait for
 	if len(componentStatuses) == 0 {
-		return InstallDeployStatusNoop
+		return InstallDeployStatusPending
 	}
 
 	// check status of each component
 	activecount := 0
 	for _, status := range componentStatuses {
 		switch InstallDeployStatus(*status) {
-		case InstallDeployStatusOK:
+		case InstallDeployStatusActive:
 			activecount++
 		case InstallDeployStatusError:
 			// if any components have failed, composite status should be "error"
@@ -130,7 +130,7 @@ func compositeComponentStatus(componentStatuses pgtype.Hstore) InstallDeployStat
 
 	// if all components are active, composite status should be "active"
 	if activecount == len(componentStatuses) {
-		return InstallDeployStatusOK
+		return InstallDeployStatusActive
 	}
 
 	// if any components have not yet succeeded or failed, composite status should be "pending"

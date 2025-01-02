@@ -17,7 +17,7 @@ func (d *devver) monitorRunners() error {
 
 	for {
 		fn := func(ctx context.Context) error {
-			runners, err := d.apiClient.ListRunners(ctx, d.runnerIDInput)
+			runners, err := d.apiClient.ListRunners(ctx, d.watchRunnerType)
 			if err != nil {
 				return err
 			}
@@ -27,7 +27,7 @@ func (d *devver) monitorRunners() error {
 
 			if d.runnerID != runners[0].ID {
 				fmt.Println("new runner was found, so restarting to act as " + runners[0].ID)
-				return retry.AsNonRetryable(fmt.Errorf("new org runner has been created, restarting"))
+				return retry.AsNonRetryable(fmt.Errorf("new runner has been created, restarting"))
 			}
 			return nil
 		}

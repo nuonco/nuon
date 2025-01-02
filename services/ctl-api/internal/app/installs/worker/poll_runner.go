@@ -64,3 +64,22 @@ func (w *Workflows) pollRunner(ctx workflow.Context, runnerID string) error {
 		workflow.Sleep(ctx, pollRunnerPeriod)
 	}
 }
+
+func (w *Workflows) pollRunnerDeprovisioned(ctx workflow.Context, runnerID string) error {
+	for {
+		runner, err := activities.AwaitGetRunnerByID(ctx, runnerID)
+		if err != nil {
+			return fmt.Errorf("unable to get runner from database: %w", err)
+		}
+
+		if runner.Status == app.RunnerStatusDeprovisioned {
+			return nil
+		}
+
+		if runner.Status == app.RunnerStatusError {
+			return fmt.Errorf("runner is in error state")
+		}
+
+		workflow.Sleep(ctx, pollRunnerPeriod)
+	}
+}
