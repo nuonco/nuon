@@ -20,15 +20,8 @@ func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) err
 	}
 	installID := sreq.ID
 
-	// fail all queued deploys
-	if err := activities.AwaitFailQueuedDeploysByInstallID(ctx, installID); err != nil {
-		return fmt.Errorf("unable to fail queued install: %w", err)
-	}
 
-	if err := w.Deprovision(ctx, sreq); err != nil {
-		return err
-	}
-
+	// install is deprovisioned and no resources or the runner exist anymore
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationDelete,
 	})
