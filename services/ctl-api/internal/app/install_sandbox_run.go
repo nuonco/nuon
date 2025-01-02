@@ -23,6 +23,7 @@ const (
 	SandboxRunStatusActive         SandboxRunStatus = "active"
 	SandboxRunStatusError          SandboxRunStatus = "error"
 	SandboxRunStatusQueued         SandboxRunStatus = "queued"
+	SandboxRunStatusDeprovisioned  SandboxRunStatus = "deprovisioned"
 	SandboxRunStatusDeprovisioning SandboxRunStatus = "deprovisioning"
 	SandboxRunStatusProvisioning   SandboxRunStatus = "provisioning"
 	SandboxRunStatusReprovisioning SandboxRunStatus = "reprovisioning"

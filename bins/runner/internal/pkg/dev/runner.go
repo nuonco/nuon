@@ -17,7 +17,7 @@ func (d *devver) initRunner(ctx context.Context) error {
 	}
 
 	fn := func(ctx context.Context) error {
-		runners, err := d.apiClient.ListRunners(ctx, "orgs")
+		runners, err := d.apiClient.ListRunners(ctx, d.watchRunnerType)
 		if err != nil {
 			return err
 		}
@@ -36,7 +36,7 @@ func (d *devver) initRunner(ctx context.Context) error {
 		retry.WithTimeout(time.Hour),
 		retry.WithSleep(time.Second*5),
 		retry.WithCBHook(func(attempt int) error {
-			fmt.Println("waiting 5 seconds and trying again")
+			fmt.Println("waiting 5 seconds and trying again", d.watchRunnerType, "context")
 			return nil
 		}),
 	); err != nil {

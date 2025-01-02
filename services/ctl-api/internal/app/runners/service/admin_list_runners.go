@@ -15,7 +15,7 @@ import (
 // @Summary	Return all runners
 // @Schemes
 // @Description	return all orgs
-// @Param   type query string false "type of runner to return"	     Default(orgs)
+// @Param   type query string false "type of runner to return"	     Default(org)
 // @Tags runners/admin
 // @Security AdminEmail
 // @Accept			json
@@ -23,7 +23,7 @@ import (
 // @Success		200	{array}	app.Runner
 // @Router			/v1/runners [GET]
 func (s *service) AdminGetAllRunners(ctx *gin.Context) {
-	runnerTyp := ctx.DefaultQuery("type", "orgs")
+	runnerTyp := ctx.DefaultQuery("type", "org")
 
 	runners, err := s.getAllRunners(ctx, runnerTyp)
 	if err != nil {
@@ -36,10 +36,11 @@ func (s *service) AdminGetAllRunners(ctx *gin.Context) {
 
 func (s *service) getAllRunners(ctx context.Context, typ string) ([]*app.Runner, error) {
 	var runners []*app.Runner
+
 	res := s.db.WithContext(ctx).
 		Preload("CreatedBy").
 		Joins("JOIN runner_groups ON runner_groups.id = runners.runner_group_id").
-		Where("runner_groups.owner_type = ?", typ).
+		Where("runner_groups.type = ?", typ).
 		Order("created_at desc").
 		Find(&runners)
 	if res.Error != nil {
