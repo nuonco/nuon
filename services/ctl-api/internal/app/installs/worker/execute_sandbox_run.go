@@ -117,6 +117,11 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 		},
 	}
 
+	if op == app.RunnerJobOperationTypeDestroy {
+		return nil
+	}
+
+	l.Info("provisioning nuon.run root domain")
 	if !sandboxMode {
 		_, err = executors.AwaitProvisionDNSDelegation(ctx, dnsReq)
 		if err != nil {

@@ -35,7 +35,8 @@ func (i InstallDeployType) RunnerJobOperationType() RunnerJobOperationType {
 type InstallDeployStatus string
 
 const (
-	InstallDeployStatusOK        InstallDeployStatus = "active"
+	InstallDeployStatusActive    InstallDeployStatus = "active"
+	InstallDeployStatusInactive  InstallDeployStatus = "inactive"
 	InstallDeployStatusError     InstallDeployStatus = "error"
 	InstallDeployStatusNoop      InstallDeployStatus = "noop"
 	InstallDeployStatusPlanning  InstallDeployStatus = "planning"
