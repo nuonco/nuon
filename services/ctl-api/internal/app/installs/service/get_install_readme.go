@@ -6,13 +6,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/pkg/render"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type Readme struct {
-	ReadeMe string `json:"readme"`
+	ReadMe string `json:"readme"`
 }
 
 // @ID GetInstallReadme
@@ -87,6 +88,7 @@ func (s *service) GetInstallReadme(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, response)
 }
+
 func (s *service) getLatestAppConfig(ctx context.Context, appID string) (*app.AppConfig, error) {
 	var appConfig app.AppConfig
 	res := s.db.WithContext(ctx).Where("app_id = ?", appID).Order("created_at DESC").First(&appConfig)
@@ -104,7 +106,7 @@ func (s *service) getInstallLatestSuccessfulDeploy(ctx context.Context, installI
 		Preload("ComponentBuild.ComponentConfigConnection").
 		Preload("ComponentBuild.ComponentConfigConnection.Component").
 		Where("install_components.install_id = ?", installID).
-		First(&installDeploy, "install_deploys.status = ?", app.InstallDeployStatusOK)
+		First(&installDeploy, "install_deploys.status = ?", app.InstallDeployStatusActive)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install deploy: %w", res.Error)
 	}

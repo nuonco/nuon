@@ -2,7 +2,6 @@ package worker
 
 import (
 	"fmt"
-	"time"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -116,7 +115,10 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 		Type: runnersignals.OperationDeprovision,
 	})
 
-	workflow.Sleep(ctx, time.Minute)
+	// wait until the runner is deprovisioned
+	if err := w.pollRunnerDeprovisioned(ctx, install.RunnerGroup.Runners[0].ID); err != nil {
+		l.Error("runner was unable to be deprovisioned correctly. Continuing to deprovision sandbox", zap.Error(err))
+	}
 
 	// wait for the runner
 	l.Info("executing deprovision", attributes...)
@@ -127,7 +129,7 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 	}
 
 	l.Info("deprovision was successful", attributes...)
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully deprovisioned")
+	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioned, "successfully deprovisioned")
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFinished)
 	return nil
 }

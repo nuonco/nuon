@@ -34,7 +34,6 @@ type Signal struct {
 	Type eventloop.SignalType
 
 	DeployID string `validate:"required_if=Operation deploy" json:"deploy_id"`
-	Async    bool   `json:"async"`
 
 	eventloop.BaseSignal
 }

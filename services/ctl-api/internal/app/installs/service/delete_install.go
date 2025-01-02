@@ -41,6 +41,9 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		Type: signals.OperationTeardownComponents,
 	})
 	s.evClient.Send(ctx, installID, &signals.Signal{
+		Type: signals.OperationDeprovision,
+	})
+	s.evClient.Send(ctx, installID, &signals.Signal{
 		Type: signals.OperationDelete,
 	})
 

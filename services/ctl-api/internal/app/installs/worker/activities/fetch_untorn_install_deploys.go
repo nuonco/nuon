@@ -47,7 +47,7 @@ func (a *Activities) FetchUntornInstallDeploys(ctx context.Context, req FetchUnt
 		}
 
 		if latestDeploy != nil {
-			deployTornDown := latestDeploy.Status == app.InstallDeployStatusOK && latestDeploy.Type == app.InstallDeployTypeTeardown
+			deployTornDown := latestDeploy.Status == app.InstallDeployStatusActive && latestDeploy.Type == app.InstallDeployTypeTeardown
 			if !deployTornDown {
 				untornCmpIDs = append(untornCmpIDs, installCmp.ComponentID)
 			}

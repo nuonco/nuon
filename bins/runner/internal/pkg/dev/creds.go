@@ -134,8 +134,5 @@ func (d *devver) initInstallCreds(ctx context.Context) error {
 	os.Setenv("AWS_SECRET_ACCESS_KEY", creds.SecretAccessKey)
 	os.Setenv("AWS_SESSION_TOKEN", creds.SessionToken)
 
-	fmt.Println("since this is an install, we set the registry port to 5002 to prevent conflicts if running an org runner as well")
-	os.Setenv("REGISTRY_PORT", "5002")
-
 	return nil
 }

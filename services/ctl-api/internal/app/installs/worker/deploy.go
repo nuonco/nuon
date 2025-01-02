@@ -82,7 +82,7 @@ func (w *Workflows) anyDependencyInActive(ctx workflow.Context, install app.Inst
 			return "", fmt.Errorf("unable to get installComponent: %w", err)
 		}
 
-		if app.InstallDeployStatus(depCmp.Component.Status) != app.InstallDeployStatusOK {
+		if app.InstallDeployStatus(depCmp.Component.Status) != app.InstallDeployStatusActive {
 			return depCmp.ComponentID, fmt.Errorf("dependent component: %s, not active", depCmp.ID)
 		}
 	}
@@ -224,7 +224,12 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 	}
 
 	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFinished)
-	w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusOK, "deploy is active")
+
+	finalStatus := app.InstallDeployStatusActive
+	if installDeploy.Type == app.InstallDeployTypeTeardown {
+		finalStatus = app.InstallDeployStatusInactive
+	}
+	w.updateDeployStatus(ctx, deployID, finalStatus, "deploy job finished")
 
 	return nil
 }

@@ -49,7 +49,6 @@ func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestS
 			InstallID:   installID,
 			ComponentID: componentID,
 			BuildID:     componentBuild.ID,
-			Signal:      sreq.Async,
 		})
 		if err != nil {
 			w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
@@ -57,10 +56,6 @@ func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestS
 		}
 
 		deploys = append(deploys, installDeploy)
-	}
-
-	if sreq.Async {
-		return nil
 	}
 
 	depDeployErrored := false
