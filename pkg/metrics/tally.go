@@ -7,6 +7,10 @@ import (
 	"github.com/uber-go/tally/v4"
 )
 
+const (
+	defaultSamplingInterval time.Duration = time.Second * 10
+)
+
 // NewTallyScope creates a new tally scope with the given metrics.Writer as the backend,
 // by way of the TallyReporter wrapper.
 //
@@ -16,7 +20,7 @@ import (
 func NewTallyScope(mw Writer) (tally.Scope, io.Closer) {
 	return tally.NewRootScope(tally.ScopeOptions{
 		Reporter: &TallyReporter{mw: mw},
-	}, time.Duration(defaultRate))
+	}, defaultSamplingInterval)
 }
 
 // TallyReporter is a wrapper around the metrics.Writer interface that conforms to [tally.StatsReporter],
