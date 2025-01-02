@@ -15,16 +15,18 @@ import (
 // an AWS IAM Role if applicable. This allows us to re-enact the credential/sts environment and ensures that we can
 // easily run `nctl api seed` to automatically pick the most recent runner and process jobs.
 type devver struct {
-	runnerTyp      string
+	watchRunnerType string
+
+	// current runner state
+	runnerType     string
 	runnerID       string
-	runnerIDInput  string
 	runnerAPIToken string
 
 	apiClient api.Client
 	v         *validator.Validate
 }
 
-func New(runnerIDInput string) (*devver, error) {
+func New(watchTyp string) (*devver, error) {
 	v := validator.New()
 
 	adminAPIURL := os.Getenv("INTERNAL_API_URL")
@@ -37,9 +39,9 @@ func New(runnerIDInput string) (*devver, error) {
 	}
 
 	return &devver{
-		runnerIDInput:  runnerIDInput,
-		runnerAPIToken: os.Getenv("RUNNER_API_TOKEN"),
-		apiClient:      apiClient,
-		v:              v,
+		watchRunnerType: watchTyp,
+		runnerAPIToken:  os.Getenv("RUNNER_API_TOKEN"),
+		apiClient:       apiClient,
+		v:               v,
 	}, nil
 }

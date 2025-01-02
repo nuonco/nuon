@@ -24,6 +24,7 @@ func (d *devver) Init(ctx context.Context) error {
 		{"runner-id", d.initRunner},
 		{"runner-api-token", d.initToken},
 		{"runner-creds", d.initCreds},
+		{"runner-env", d.initEnv},
 	}
 	for _, st := range steps {
 		if err := st.fn(ctx); err != nil {

@@ -40,7 +40,7 @@ func (a *Activities) FetchUntornDependencies(ctx context.Context, req FetchUntor
 			continue
 		}
 
-		if app.InstallDeployStatus(app.InstallDeployStatus(*install.ComponentStatuses[dep.ID])) != app.InstallDeployStatusOK && installCmpDeploy.Type != app.InstallDeployTypeTeardown {
+		if app.InstallDeployStatus(app.InstallDeployStatus(*install.ComponentStatuses[dep.ID])) != app.InstallDeployStatusActive && installCmpDeploy.Type != app.InstallDeployTypeTeardown {
 			depIds = append(depIds, dep.ID)
 		}
 	}

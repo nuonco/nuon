@@ -70,6 +70,11 @@ func (w *Workflows) TeardownComponents(ctx workflow.Context, sreq signals.Reques
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
+	// fail all queued deploys
+	if err := activities.AwaitFailQueuedDeploysByInstallID(ctx, installID); err != nil {
+		return fmt.Errorf("unable to fail queued install: %w", err)
+	}
+
 	// reasons we should not try to teardown components
 	if !w.shouldTeardownComponents(install) {
 		return nil
@@ -104,7 +109,6 @@ func (w *Workflows) TeardownComponents(ctx workflow.Context, sreq signals.Reques
 			InstallID: installID, ComponentID: compID,
 			BuildID:  componentBuild.ID,
 			Teardown: true,
-			Signal:   sreq.Async,
 		})
 		if err != nil {
 			return fmt.Errorf("unable to create install deploy: %w", err)
@@ -114,7 +118,6 @@ func (w *Workflows) TeardownComponents(ctx workflow.Context, sreq signals.Reques
 			InstallID: installID,
 			RunType:   app.SandboxRunTypeDeprovision,
 		})
-
 		if err != nil {
 			return fmt.Errorf("unable to create sandbox run: %w", err)
 		}
@@ -122,18 +125,12 @@ func (w *Workflows) TeardownComponents(ctx workflow.Context, sreq signals.Reques
 		deploys = append(deploys, installDeploy)
 	}
 
-	if sreq.Async {
-		return nil
-	}
 	for _, installDeploy := range deploys {
-		// NOTE(jm): we make a best effort to teardown all components
 		sreq.Type = signals.OperationDeploy
 		sreq.DeployID = installDeploy.ID
-		if err := w.Deploy(ctx, sreq); err != nil {
-			l.Error("unable to teardown component", zap.Error(err))
 
-			// (rb) stop iterating after first error
-			break
+		if err := w.Deploy(ctx, sreq); err != nil {
+			l.Error("unable to teardown component, continuing to the next deploy", zap.Error(err))
 		}
 	}
 
