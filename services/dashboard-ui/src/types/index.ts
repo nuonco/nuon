@@ -82,3 +82,6 @@ export type TActionConfigTriggerType =
   components['schemas']['app.ActionWorkflowTriggerType']
 export type TInstallActionWorkflowRun =
   components['schemas']['app.InstallActionWorkflowRun']
+
+// App / Install Readme
+export type TReadme = components['schemas']['service.Readme']
