@@ -1,5 +1,7 @@
 // TODO(nnnat): remove once we have this API change on prod
 // @ts-nocheck
+import { type FC, Suspense } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppSandboxConfig,
@@ -8,7 +10,6 @@ import {
   InstallCloudPlatform,
   InstallInputsSection,
   InstallPageSubNav,
-  InstallReprovisionButton,
   InstallStatuses,
   StatusBadge,
   Section,
@@ -26,9 +27,8 @@ import { RUNNERS } from '@/utils'
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const [install, { readme }, runnerGroup, org] = await Promise.all([
+  const [install, runnerGroup, org] = await Promise.all([
     getInstall({ installId, orgId }),
-    getInstallReadme({ installId, orgId }),
     getInstallRunnerGroup({ installId, orgId }),
     getOrg({ orgId }),
   ])
@@ -50,7 +50,11 @@ export default withPageAuthRequired(async function Install({ params }) {
     >
       <div className="flex flex-col lg:flex-row flex-auto">
         <Section heading="README" className="overflow-auto history">
-          <Markdown content={readme} />
+          <ErrorBoundary
+            fallback={<Text variant="reg-14">Unable to load README.</Text>}
+          >
+            <LoadInstallReadme installId={installId} orgId={orgId} />
+          </ErrorBoundary>
         </Section>
 
         <div className="divide-y flex flex-col lg:w-[500px] border-l">
@@ -94,3 +98,16 @@ export default withPageAuthRequired(async function Install({ params }) {
     </DashboardContent>
   )
 })
+
+const LoadInstallReadme: FC<{ installId: string; orgId: string }> = async ({
+  installId,
+  orgId,
+}) => {
+  const installReadme = await getInstallReadme({ installId, orgId })
+
+  return (
+    <Suspense fallback="Loading install readme...">
+      <Markdown content={installReadme?.readme} />
+    </Suspense>
+  )
+}
