@@ -56,6 +56,7 @@ func (s *sync) syncAction(ctx context.Context, resource string, action *config.A
 		reqStep := &models.ServiceCreateActionWorkflowConfigStepRequest{
 			Name:    generics.ToPtr(step.Name),
 			EnvVars: step.EnvVarMap,
+			Command: &step.Command,
 		}
 
 		if s.cfg.Sandbox.ConnectedRepo != nil {
