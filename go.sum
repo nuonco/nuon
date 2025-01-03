@@ -1803,8 +1803,8 @@ github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nuonco/clickhouse-go/v2 v2.28.1 h1:BiRzWD5Dcs/n5LTUO+NbrDUXc6+i6Ncl0X703ruozcM=
 github.com/nuonco/clickhouse-go/v2 v2.28.1/go.mod h1:z+/ndg1+oWVgVhxMh+OzVEZQOi/SmoY/gSEId5zj47I=
-github.com/nuonco/nuon-go v0.36.3 h1:cbcux70CPIqhMaKAyccXJ+Rnd4X3oKJHZ9cDejGIWJY=
-github.com/nuonco/nuon-go v0.36.3/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
+github.com/nuonco/nuon-go v0.37.0 h1:+NIbX0BdXkmvh7DjFvlDZndhpylfMeN2H3vDlkXB+Ys=
+github.com/nuonco/nuon-go v0.37.0/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
 github.com/nuonco/nuon-runner-go v0.3.1 h1:VGXC8NluvsbzIzJYhwkXVMqIjkJF1Bk+56GxV1mRMXE=
 github.com/nuonco/nuon-runner-go v0.3.1/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
 github.com/nuonco/sandboxes v1.34.0 h1:3ZH4qZw6tQkef7BVaKxUYjEfzghVBn+me5pWTE7Q4fc=
