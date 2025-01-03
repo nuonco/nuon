@@ -24,6 +24,7 @@ type ActionStepConfig struct {
 	EnvVarMap     map[string]string    `mapstructure:"env_vars,omitempty"`
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"  jsonschema:"oneof_required=connected_repo"`
+	Command       string               `mapstructure:"command"`
 }
 
 func (a *ActionConfig) parse() error {
