@@ -27,6 +27,7 @@ type CreateActionWorkflowConfigStepRequest struct {
 	basicVCSConfigRequest
 	Name    string             `json:"name" validate:"required"`
 	EnvVars map[string]*string `json:"env_vars" validate:"required"`
+	Command string             `json:"command" validate:"required"`
 }
 
 func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) error {
@@ -160,6 +161,7 @@ func (s *service) createActionWorkflowSteps(ctx context.Context, parentApp *app.
 			ActionWorkflowConfigID:   awcID,
 			Name:                     step.Name,
 			EnvVars:                  step.EnvVars,
+			Command:                  step.Command,
 			Idx:                      stepIdx,
 			PreviousStepID:           prevStepId,
 			PublicGitVCSConfig:       publicGitConfig,
