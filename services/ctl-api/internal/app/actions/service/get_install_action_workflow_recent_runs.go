@@ -1,0 +1,99 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+)
+
+type ActionWorkflowRecentRunsResponse struct {
+	ActionWorkFlow app.ActionWorkflow              `json:"action_workflow"`
+	RecentRuns     []*app.InstallActionWorkflowRun `json:"recent_runs"`
+}
+
+// @ID GetInstallActionWorkflowRecentRuns
+// @Summary	get recent runs for an action workflow by install id
+// @Description.markdown	get_install_action_workflow_recent_runs.md
+// @Param			install_id	path	string	true	"install ID"
+// @Param			action_workflow_id	path	string	true	"action workflow ID"
+// @Tags			actions
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{object}	ActionWorkflowRecentRunsResponse
+// @Router			/v1/installs/{install_id}/action-workflows/{action_workflow_id}/recent-runs [get]
+func (s *service) GetInstallActionWorkflowRecentRuns(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	installID := ctx.Param("install_id")
+	install, err := s.findInstall(ctx, org.ID, installID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
+		return
+	}
+
+	actionWorkflowID := ctx.Param("action_workflow_id")
+	actionWorkflow, err := s.findActionWorkflow(ctx, org.ID, actionWorkflowID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get action workflows %s: %w", install.AppID, err))
+		return
+	}
+
+	runs, err := s.findInstallActionWorkflowRecentRuns(ctx, org.ID, installID, actionWorkflow.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install action workflow runs %s: %w", installID, err))
+		return
+	}
+
+	response := ActionWorkflowRecentRunsResponse{
+		ActionWorkFlow: *actionWorkflow,
+		RecentRuns:     runs,
+	}
+
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
+	fmt.Println("orgID", orgID)
+	install := app.Install{}
+	res := s.db.WithContext(ctx).
+		Where("id = ? and org_id = ?", installID, orgID).
+		First(&install)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+	}
+
+	return &install, nil
+}
+
+func (s *service) findInstallActionWorkflowRecentRuns(ctx context.Context, orgID, installID, actionWorkflowID string) ([]*app.InstallActionWorkflowRun, error) {
+	limit := 50 // limit to 50 runs until pagination is implemented
+	runs := []*app.InstallActionWorkflowRun{}
+	res := s.db.WithContext(ctx).
+		Joins("JOIN action_workflow_configs ON action_workflow_configs.id = install_action_workflow_runs.action_workflow_config_id").
+		Where("install_action_workflow_runs.org_id = ? AND install_action_workflow_runs.install_id = ? and action_workflow_configs.action_workflow_id = ?", orgID, installID, actionWorkflowID).
+		Order("created_at desc").
+		Limit(limit).
+		Find(&runs)
+
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get install action workflow run: %w", res.Error)
+	}
+
+	return runs, nil
+}
