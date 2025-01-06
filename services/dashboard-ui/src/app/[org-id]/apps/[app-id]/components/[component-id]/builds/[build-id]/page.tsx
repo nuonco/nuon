@@ -15,8 +15,8 @@ import {
 } from '@/components'
 import {
   getApp,
-  getBuild,
   getComponent,
+  getComponentBuild,
   getComponentConfig,
   getLogStreamLogs,
   getOrg,
@@ -29,7 +29,7 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
   const componentId = params?.['component-id'] as string
   const orgId = params?.['org-id'] as string
 
-  const build = await getBuild({ buildId, orgId })
+  const build = await getComponentBuild({ buildId, orgId })
   const [app, component, componentConfig, org, logs] = await Promise.all([
     getApp({ appId, orgId }),
     getComponent({ componentId, orgId }),

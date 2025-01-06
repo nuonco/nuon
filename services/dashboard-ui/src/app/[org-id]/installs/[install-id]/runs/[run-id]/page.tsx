@@ -14,14 +14,23 @@ import {
   Time,
   ToolTip,
 } from '@/components'
-import { getInstall, getLogStreamLogs, getSandboxRun, getOrg } from '@/lib'
+import {
+  getInstall,
+  getLogStreamLogs,
+  getInstallSandboxRun,
+  getOrg,
+} from '@/lib'
 import type { TOTELLog } from '@/types'
 
 export default withPageAuthRequired(async function SandboxRuns({ params }) {
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
   const runId = params?.['run-id'] as string
-  const sandboxRun = await getSandboxRun({ installId, orgId, runId })
+  const sandboxRun = await getInstallSandboxRun({
+    installId,
+    orgId,
+    installSandboxRunId: runId,
+  })
   const [install, org, logs] = await Promise.all([
     getInstall({ installId, orgId }),
     getOrg({ orgId }),
