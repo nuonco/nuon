@@ -66,7 +66,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	}
 
 	if !s.workflowConfigCanTriggerManually(awc) {
-		ctx.Error(fmt.Errorf("manual trigger is not allowed: %w", err))
+		ctx.Error(fmt.Errorf("manual trigger is not allowed"))
 		return
 	}
 
