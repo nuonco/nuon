@@ -2,11 +2,12 @@ import { type FC, Suspense } from 'react'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
+  Loading,
   InstallHistory,
   InstallPageSubNav,
   InstallStatuses,
-  Section,
   InstallReprovisionButton,
+  Section,
 } from '@/components'
 import { getInstall, getInstallEvents, getOrg } from '@/lib'
 import { USER_REPROVISION } from '@/utils'
@@ -37,14 +38,21 @@ export default withPageAuthRequired(async function Install({ params }) {
       <div className="flex flex-col lg:flex-row flex-auto">
         <Section
           heading="History"
-          className="overflow-auto history"
+          className="overflow-auto"
           actions={
             USER_REPROVISION ? (
               <InstallReprovisionButton installId={installId} orgId={orgId} />
             ) : null
           }
         >
-          <Suspense fallback="Loading install history...">
+          <Suspense
+            fallback={
+              <Loading
+                loadingText="Loading install history..."
+                variant="page"
+              />
+            }
+          >
             <LoadInstallHistory installId={installId} orgId={orgId} />
           </Suspense>
         </Section>
@@ -58,7 +66,6 @@ const LoadInstallHistory: FC<{ installId: string; orgId: string }> = async ({
   orgId,
 }) => {
   const events = await getInstallEvents({ installId, orgId })
-
   return (
     <InstallHistory
       initEvents={events}
