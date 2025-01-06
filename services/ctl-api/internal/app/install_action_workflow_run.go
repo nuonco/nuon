@@ -45,6 +45,10 @@ type InstallActionWorkflowRun struct {
 
 	ActionWorkflowConfigID string               `json:"action_workflow_config_id" gorm:"notnull"`
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"config"`
+
+	// after query
+	// TODO: update runner to track start and finish timestamps
+	ExecutionTime *time.Duration `json:"execution_time" gorm:"-"`
 }
 
 func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {

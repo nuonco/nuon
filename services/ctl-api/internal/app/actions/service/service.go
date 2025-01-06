@@ -51,6 +51,8 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/action-workflows/runs", s.CreateInstallActionWorkflowRun)
 	api.GET("/v1/installs/:install_id/action-workflows/runs", s.GetInstallActionWorkflowRuns)
 	api.GET("/v1/installs/:install_id/action-workflows/runs/:run_id", s.GetInstallActionWorkflowRun)
+	api.GET("/v1/installs/:install_id/action-workflows/latest-runs", s.GetInstallActionWorkflowsLatestRun)
+	api.GET("/v1/installs/:install_id/action-workflows/:action_workflow_id/recent-runs", s.GetInstallActionWorkflowRecentRuns)
 
 	return nil
 }
