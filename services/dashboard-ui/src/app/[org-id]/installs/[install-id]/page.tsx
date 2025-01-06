@@ -7,6 +7,7 @@ import {
   AppSandboxConfig,
   AppSandboxVariables,
   DashboardContent,
+  ErrorFallback,
   InstallCloudPlatform,
   InstallInputsSection,
   InstallPageSubNav,
@@ -29,7 +30,7 @@ export default withPageAuthRequired(async function Install({ params }) {
   const installId = params?.['install-id'] as string
   const [install, runnerGroup, org] = await Promise.all([
     getInstall({ installId, orgId }),
-    getInstallRunnerGroup({ installId, orgId }),
+    getInstallRunnerGroup({ installId, orgId }).catch(console.error),
     getOrg({ orgId }),
   ])
 
@@ -51,7 +52,8 @@ export default withPageAuthRequired(async function Install({ params }) {
       <div className="flex flex-col lg:flex-row flex-auto">
         <Section heading="README" className="overflow-auto history">
           <ErrorBoundary
-            fallback={<Text variant="reg-14">Unable to load README.</Text>}
+
+            fallbackRender={ErrorFallback}
           >
             <LoadInstallReadme installId={installId} orgId={orgId} />
           </ErrorBoundary>
@@ -74,7 +76,7 @@ export default withPageAuthRequired(async function Install({ params }) {
             </div>
           </Section>
 
-          {RUNNERS ? (
+          {RUNNERS && runnerGroup ? (
             <Section className="flex-initial" heading="Runner group">
               <div className="flex flex-col gap-4">
                 <Text>{runnerGroup.runners?.length} runners in this group</Text>
@@ -111,3 +113,6 @@ const LoadInstallReadme: FC<{ installId: string; orgId: string }> = async ({
     </Suspense>
   )
 }
+
+
+

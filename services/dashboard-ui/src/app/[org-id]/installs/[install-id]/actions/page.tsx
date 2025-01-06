@@ -14,9 +14,9 @@ import {
   Time,
 } from '@/components'
 import {
-  getAppWorkflows,
+  getAppActionWorkflows,
   getInstall,
-  getInstallWorkflowRuns,
+  getInstallActionWorkflowRuns,
   getOrg,
 } from '@/lib'
 
@@ -28,10 +28,13 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
   const [org, install, workflowRuns] = await Promise.all([
     getOrg({ orgId }),
     getInstall({ installId, orgId }),
-    getInstallWorkflowRuns({ installId, orgId }),
+    getInstallActionWorkflowRuns({ installId, orgId }),
   ])
 
-  const appWorkflows = await getAppWorkflows({ appId: install.app_id, orgId })
+  const appWorkflows = await getAppActionWorkflows({
+    appId: install.app_id,
+    orgId,
+  })
 
   return (
     <DashboardContent

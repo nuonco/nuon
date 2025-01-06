@@ -85,3 +85,6 @@ export type TInstallActionWorkflowRun =
 
 // App / Install Readme
 export type TReadme = components['schemas']['service.Readme']
+
+// Waitlist
+export type TWaitlist = components['schemas']['app.Waitlist']
