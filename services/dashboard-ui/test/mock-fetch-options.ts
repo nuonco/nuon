@@ -1,7 +1,7 @@
 import { afterAll, vi } from 'vitest'
 
-vi.mock('../src/utils', async (og) => {
-  const mod = await og<typeof import('../src/utils')>()
+vi.mock('../src/utils/get-fetch-opts', async (og) => {
+  const mod = await og<typeof import('../src/utils/get-fetch-opts')>()
   return {
     ...mod,
     getFetchOpts: vi.fn().mockResolvedValue({

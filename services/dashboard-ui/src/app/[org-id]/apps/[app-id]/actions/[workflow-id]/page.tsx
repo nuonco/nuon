@@ -10,7 +10,7 @@ import {
   Section,
   Text,
 } from '@/components'
-import { getApp, getOrg, getWorkflow } from '@/lib'
+import { getApp, getOrg, getAppActionWorkflow } from '@/lib'
 
 export default withPageAuthRequired(async function AppWorkflow({ params }) {
   const appId = params?.['app-id'] as string
@@ -19,7 +19,7 @@ export default withPageAuthRequired(async function AppWorkflow({ params }) {
   const [org, app, workflow] = await Promise.all([
     getOrg({ orgId }),
     getApp({ appId, orgId }),
-    getWorkflow({ orgId, workflowId }),
+    getAppActionWorkflow({ orgId, actionWorkflowId: workflowId }),
   ])
 
   return (

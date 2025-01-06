@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { postWorkflowRun } from '@/lib'
+import { runInstallActionWorkflow } from '@/lib'
 
 interface IRunManualWorkflow {
   orgId: string
@@ -15,7 +15,11 @@ export async function runManualWorkflow({
   workflowConfigId,
 }: IRunManualWorkflow) {
   try {
-    postWorkflowRun({ installId, orgId, workflowConfigId })
+    runInstallActionWorkflow({
+      installId,
+      orgId,
+      actionWorkflowConfigId: workflowConfigId,
+    })
     revalidatePath(`/${orgId}/installs/${installId}/actions`)
   } catch (error) {
     throw new Error(error.message)

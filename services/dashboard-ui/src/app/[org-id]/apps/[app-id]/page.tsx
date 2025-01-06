@@ -12,9 +12,9 @@ import {
 import {
   getApp,
   getAppLatestConfig,
-  getAppInputLatestConfig,
-  getAppRunnerLatestConfig,
-  getAppSandboxLatestConfig,
+  getAppLatestInputConfig,
+  getAppLatestRunnerConfig,
+  getAppLatestSandboxConfig,
   getOrg,
 } from '@/lib'
 import type {
@@ -31,9 +31,9 @@ export default withPageAuthRequired(async function App({ params }) {
       getOrg({ orgId }),
       getApp({ appId, orgId }),
       getAppLatestConfig({ appId, orgId }),
-      getAppInputLatestConfig({ appId, orgId }).catch(console.error),
-      getAppRunnerLatestConfig({ appId, orgId }).catch(console.error),
-      getAppSandboxLatestConfig({ appId, orgId }).catch(console.error),
+      getAppLatestInputConfig({ appId, orgId }).catch(console.error),
+      getAppLatestRunnerConfig({ appId, orgId }).catch(console.error),
+      getAppLatestSandboxConfig({ appId, orgId }).catch(console.error),
     ])
 
   return (
