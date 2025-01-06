@@ -1,7 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-import { postInstallReprovision } from '@/lib'
+import { reprovisionInstall as reprovisionInstallSandbox } from '@/lib'
 
 interface IReprovisionInstall {
   installId: string
@@ -12,6 +11,5 @@ export async function reprovisionInstall({
   installId,
   orgId,
 }: IReprovisionInstall) {
-  return postInstallReprovision({ installId, orgId })
-  // revalidatePath(`/${orgId}/installs/${installId}`)
+  return reprovisionInstallSandbox({ installId, orgId })
 }

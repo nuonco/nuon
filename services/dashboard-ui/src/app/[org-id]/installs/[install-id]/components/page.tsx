@@ -9,7 +9,7 @@ import {
 } from '@/components'
 import {
   getInstall,
-  getBuild,
+  getComponentBuild,
   getComponent,
   getComponentConfig,
   getOrg,
@@ -30,7 +30,7 @@ export default withPageAuthRequired(async function InstallComponents({
     install.install_components && install.install_components?.length
       ? await Promise.all(
           install.install_components.map(async (comp, _, arr) => {
-            const build = await getBuild({
+            const build = await getComponentBuild({
               buildId: comp.install_deploys?.[0]?.build_id,
               orgId,
             }).catch((err) => console.error(err))
