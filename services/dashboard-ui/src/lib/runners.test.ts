@@ -1,0 +1,100 @@
+import '@test/mock-fetch-options'
+import { badResponseCodes } from '@test/utils'
+import { describe, expect, test } from 'vitest'
+import {
+  getLogStream,
+  getLogStreamLogs,
+  getRunner,
+  getRunnerJob,
+  getRunnerJobs,
+} from './runners'
+
+describe('getLogStream should handle response status codes from GET log-streams/:id endpoint', () => {
+  const orgId = 'test-id'
+  const logStreamId = 'test-id'
+  test('200 status', async () => {
+    const spec = await getLogStream({ logStreamId, orgId })
+    expect(spec).toHaveProperty('id')
+    expect(spec).toHaveProperty('open')
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await getLogStream({ logStreamId, orgId }).catch((err) =>
+      expect(err).toMatchSnapshot()
+    )
+  })
+})
+
+describe('getRunner should handle response status codes from GET runners/:id endpoint', () => {
+  const orgId = 'test-id'
+  const runnerId = 'test-id'
+  test('200 status', async () => {
+    const spec = await getRunner({ runnerId, orgId })
+    expect(spec).toHaveProperty('id')
+    expect(spec).toHaveProperty('display_name')
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await getRunner({ runnerId, orgId }).catch((err) =>
+      expect(err).toMatchSnapshot()
+    )
+  })
+})
+
+describe('getRunnerJob should handle response status codes from GET runner-jobs/:id endpoint', () => {
+  const orgId = 'test-id'
+  const runnerJobId = 'test-id'
+  test('200 status', async () => {
+    const spec = await getRunnerJob({ runnerJobId, orgId })
+    expect(spec).toHaveProperty('id')
+    expect(spec).toHaveProperty('executions')
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await getRunnerJob({ runnerJobId, orgId }).catch((err) =>
+      expect(err).toMatchSnapshot()
+    )
+  })
+})
+
+describe('getRunnerJobs should handle response status codes from GET runners/:id/jobs endpoint', () => {
+  const orgId = 'test-id'
+  const runnerId = 'test-id'
+  test('200 status', async () => {
+    const spec = await getRunnerJobs({ runnerId, orgId })
+    expect(spec).toHaveLength(2)
+    spec.forEach((s) => {
+      expect(s).toHaveProperty('id')
+      expect(s).toHaveProperty('executions')
+    })
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await getRunnerJobs({ runnerId, orgId }).catch((err) =>
+      expect(err).toMatchSnapshot()
+    )
+  })
+})
+
+// NOTE: special test for log-stream logs
+
+describe('getLogStreamLogs should handle response status codes from GET log-streams/:id/logs endpoint', () => {
+  const orgId = 'test-id'
+  const logStreamId = 'test-id'
+  test('200 status', async () => {
+    const spec = await getLogStreamLogs({ logStreamId, orgId })
+    expect(spec).toHaveLength(1)
+    spec.map((s) => {
+      expect(s).toHaveProperty('timestamp')
+      expect(s).toHaveProperty('severity_number')
+      expect(s).toHaveProperty('severity_text')
+      expect(s).toHaveProperty('body')
+    })
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await getLogStreamLogs({ logStreamId, orgId }).catch((err) =>
+      expect(err).toMatchSnapshot()
+    )
+  })
+})

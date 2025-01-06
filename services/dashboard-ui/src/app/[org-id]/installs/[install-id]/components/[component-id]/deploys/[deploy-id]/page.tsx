@@ -16,12 +16,12 @@ import {
   Truncate,
 } from '@/components'
 import {
-  getBuild,
+  getComponentBuild,
   getComponent,
   getComponentConfig,
   getOrg,
   getInstall,
-  getDeploy,
+  getInstallDeploy,
   getLogStreamLogs,
 } from '@/lib'
 import type { TOTELLog } from '@/types'
@@ -32,8 +32,12 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
   const deployId = params?.['deploy-id'] as string
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
-  const deploy = await getDeploy({ deployId, installId, orgId })
-  const build = await getBuild({ orgId, buildId: deploy.build_id })
+  const deploy = await getInstallDeploy({
+    installDeployId: deployId,
+    installId,
+    orgId,
+  })
+  const build = await getComponentBuild({ orgId, buildId: deploy.build_id })
   const [component, componentConfig, install, org, logs] = await Promise.all([
     getComponent({ componentId: build.component_id, orgId }),
     getComponentConfig({

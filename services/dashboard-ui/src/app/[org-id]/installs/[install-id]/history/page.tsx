@@ -1,5 +1,4 @@
-// TODO(nnnat): remove once we have this API change on prod
-// @ts-nocheck
+import { type FC, Suspense } from 'react'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
@@ -9,21 +8,14 @@ import {
   Section,
   InstallReprovisionButton,
 } from '@/components'
-import {
-  getInstall,
-  getInstallEvents,
-  getInstallRunnerGroup,
-  getOrg,
-} from '@/lib'
+import { getInstall, getInstallEvents, getOrg } from '@/lib'
 import { USER_REPROVISION } from '@/utils'
 
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const [install, events, runnerGroup, org] = await Promise.all([
+  const [install, org] = await Promise.all([
     getInstall({ installId, orgId }),
-    getInstallEvents({ installId, orgId }),
-    getInstallRunnerGroup({ installId, orgId }),
     getOrg({ orgId }),
   ])
 
@@ -52,14 +44,27 @@ export default withPageAuthRequired(async function Install({ params }) {
             ) : null
           }
         >
-          <InstallHistory
-            initEvents={events}
-            installId={installId}
-            orgId={orgId}
-            shouldPoll
-          />
+          <Suspense fallback="Loading install history...">
+            <LoadInstallHistory installId={installId} orgId={orgId} />
+          </Suspense>
         </Section>
       </div>
     </DashboardContent>
   )
 })
+
+const LoadInstallHistory: FC<{ installId: string; orgId: string }> = async ({
+  installId,
+  orgId,
+}) => {
+  const events = await getInstallEvents({ installId, orgId })
+
+  return (
+    <InstallHistory
+      initEvents={events}
+      installId={installId}
+      orgId={orgId}
+      shouldPoll
+    />
+  )
+}

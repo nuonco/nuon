@@ -5,7 +5,7 @@ import {
   DashboardContent,
   NoActions,
 } from '@/components'
-import { getApp, getAppWorkflows, getOrg } from '@/lib'
+import { getApp, getAppActionWorkflows, getOrg } from '@/lib'
 
 export default withPageAuthRequired(async function AppWorkflows({ params }) {
   const appId = params?.['app-id'] as string
@@ -13,7 +13,7 @@ export default withPageAuthRequired(async function AppWorkflows({ params }) {
   const [org, app, workflows] = await Promise.all([
     getOrg({ orgId }),
     getApp({ appId, orgId }),
-    getAppWorkflows({ appId, orgId }),
+    getAppActionWorkflows({ appId, orgId }),
   ])
 
   return (
