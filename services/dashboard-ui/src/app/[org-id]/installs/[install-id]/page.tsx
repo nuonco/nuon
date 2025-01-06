@@ -12,6 +12,7 @@ import {
   InstallInputsSection,
   InstallPageSubNav,
   InstallStatuses,
+  Loading,
   StatusBadge,
   Section,
   Text,
@@ -51,11 +52,12 @@ export default withPageAuthRequired(async function Install({ params }) {
     >
       <div className="flex flex-col lg:flex-row flex-auto">
         <Section heading="README" className="overflow-auto history">
-          <ErrorBoundary
-
-            fallbackRender={ErrorFallback}
-          >
-            <LoadInstallReadme installId={installId} orgId={orgId} />
+          <ErrorBoundary fallbackRender={ErrorFallback}>
+            <Suspense
+              fallback={<Loading loadingText="Loading install README..." />}
+            >
+              <LoadInstallReadme installId={installId} orgId={orgId} />
+            </Suspense>
           </ErrorBoundary>
         </Section>
 
@@ -107,12 +109,5 @@ const LoadInstallReadme: FC<{ installId: string; orgId: string }> = async ({
 }) => {
   const installReadme = await getInstallReadme({ installId, orgId })
 
-  return (
-    <Suspense fallback="Loading install readme...">
-      <Markdown content={installReadme?.readme} />
-    </Suspense>
-  )
+  return <Markdown content={installReadme?.readme} />
 }
-
-
-
