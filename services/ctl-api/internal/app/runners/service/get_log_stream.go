@@ -24,7 +24,7 @@ import (
 // @Failure		403				{object}	stderr.ErrResponse
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	app.Runner
+// @Success		200				{object}	app.LogStream
 // @Router			/v1/log-streams/{log_stream_id} [get]
 func (s *service) GetLogStream(ctx *gin.Context) {
 	logStreamID := ctx.Param("log_stream_id")
