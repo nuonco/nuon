@@ -20,6 +20,7 @@ export const Card: FC<ICard> = ({ className, children, ...props }) => (
 
 export interface ISection extends React.HTMLAttributes<HTMLSelectElement> {
   actions?: React.ReactNode | null
+  childrenClassName?: string
   heading: React.ReactNode
   isHeadingFixed?: boolean
 }
@@ -28,6 +29,7 @@ export const Section: FC<ISection> = ({
   actions,
   className,
   children,
+  childrenClassName,
   heading,
   isHeadingFixed = false,
   ...props
@@ -49,8 +51,9 @@ export const Section: FC<ISection> = ({
         <div>{actions}</div>
       </div>
       <div
-        className={classNames({
+        className={classNames('h-fit', {
           'px-6 overflow-auto': isHeadingFixed,
+          [`${childrenClassName}`]: Boolean(childrenClassName),
         })}
       >
         {children}
