@@ -10,7 +10,7 @@ import {
   ToolTip,
   Truncate,
 } from '@/components'
-import { getInstall, getInstallWorkflowRun, getOrg } from '@/lib'
+import { getInstall, getInstallActionWorkflowRun, getOrg } from '@/lib'
 
 export default withPageAuthRequired(async function InstallWorkflow({ params }) {
   const installId = params?.['install-id'] as string
@@ -19,7 +19,7 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
   const [org, install, workflowRun] = await Promise.all([
     getOrg({ orgId }),
     getInstall({ installId, orgId }),
-    getInstallWorkflowRun({ installId, orgId, workflowRunId: workflowId }),
+    getInstallActionWorkflowRun({ installId, orgId, actionWorkflowRunId: workflowId }),
   ])
 
   return (

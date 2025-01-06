@@ -1,10 +1,12 @@
-"use server"
+'use server'
 
-import { postJoinWaitlist } from "@/lib"
+import { joinWaitlist, type IJoinWaitlist } from '@/lib'
+import type { TWaitlist } from '@/types'
 
-export async function requestWaitlistAccess(formData: FormData): Promise<Record<"org_name"| string, string>> {
-  const data = Object.fromEntries(formData);
+export async function requestWaitlistAccess(
+  formData: FormData
+): Promise<TWaitlist> {
+  const data = Object.fromEntries(formData) as IJoinWaitlist
 
-  return postJoinWaitlist(data);
+  return joinWaitlist(data)
 }
-
