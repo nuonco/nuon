@@ -1,3 +1,5 @@
+import { type FC, Suspense } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppInputConfig,
@@ -6,6 +8,8 @@ import {
   AppSandboxConfig,
   AppSandboxVariables,
   DashboardContent,
+  ErrorFallback,
+  Loading,
   Section,
   Markdown,
 } from '@/components'
@@ -16,25 +20,19 @@ import {
   getAppLatestRunnerConfig,
   getAppLatestSandboxConfig,
   getOrg,
+  type IGetApp,
 } from '@/lib'
-import type {
-  TAppInputConfig,
-  TAppRunnerConfig,
-  TAppSandboxConfig,
-} from '@/types'
+import type { TAppInputConfig } from '@/types'
 
 export default withPageAuthRequired(async function App({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const [org, app, appConfig, inputCfg, runnerCfg, sandboxCfg] =
-    await Promise.all([
-      getOrg({ orgId }),
-      getApp({ appId, orgId }),
-      getAppLatestConfig({ appId, orgId }),
-      getAppLatestInputConfig({ appId, orgId }).catch(console.error),
-      getAppLatestRunnerConfig({ appId, orgId }).catch(console.error),
-      getAppLatestSandboxConfig({ appId, orgId }).catch(console.error),
-    ])
+  const [org, app, appConfig, inputCfg] = await Promise.all([
+    getOrg({ orgId }),
+    getApp({ appId, orgId }),
+    getAppLatestConfig({ appId, orgId }),
+    getAppLatestInputConfig({ appId, orgId }).catch(console.error),
+  ])
 
   return (
     <DashboardContent
@@ -60,21 +58,48 @@ export default withPageAuthRequired(async function App({ params }) {
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
           <Section className="flex-initial" heading="Sandbox">
-            <div className="flex flex-col gap-8">
-              <AppSandboxConfig
-                sandboxConfig={sandboxCfg as TAppSandboxConfig}
-              />
-              <AppSandboxVariables
-                variables={(sandboxCfg as TAppSandboxConfig)?.variables}
-              />
-            </div>
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Loading loadingText="Loading latest sandbox config..." />
+                }
+              >
+                <LoadAppSandboxConfig appId={appId} orgId={orgId} />
+              </Suspense>
+            </ErrorBoundary>
           </Section>
 
           <Section heading="Runner">
-            <AppRunnerConfig runnerConfig={runnerCfg as TAppRunnerConfig} />
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Loading loadingText="Loading latest runner config..." />
+                }
+              >
+                <LoadAppRunnerConfig appId={appId} orgId={orgId} />
+              </Suspense>
+            </ErrorBoundary>
           </Section>
         </div>
       </div>
     </DashboardContent>
   )
 })
+
+const LoadAppSandboxConfig: FC<IGetApp> = async (props) => {
+  const sandboxConfig = await getAppLatestSandboxConfig(props)
+  return (
+    <div className="flex flex-col gap-8">
+      <AppSandboxConfig sandboxConfig={sandboxConfig} />
+      <AppSandboxVariables variables={sandboxConfig?.variables} />
+    </div>
+  )
+}
+
+const LoadAppRunnerConfig: FC<{ appId: string; orgId: string }> = async ({
+  appId,
+  orgId,
+}) => {
+  const runnerConfig = await getAppLatestRunnerConfig({ appId, orgId })
+  return <AppRunnerConfig runnerConfig={runnerConfig} />
+}
