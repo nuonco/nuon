@@ -3,12 +3,12 @@ package docker
 import (
 	"context"
 
-	"github.com/hashicorp/go-hclog"
+	"go.uber.org/zap"
 )
 
 func (b *handler) pushWithKaniko(
 	ctx context.Context,
-	log hclog.Logger,
+	log *zap.Logger,
 	localRef string,
 ) error {
 	_, err := b.kanikoPath()
