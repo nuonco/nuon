@@ -10,6 +10,24 @@ locals {
     }
   }
 
+  rds = {
+    engine                  = "postgres"
+    engine_version          = "15.8"
+    family                  = "postgres15"
+    major_engine_version    = "15"
+    instance_class          = "db.t4g.micro"
+    allocated_storage       = "100"
+    db_name                 = "demo"
+    port                    = 5432
+    username                = "demo"
+    multi_az                = false
+    backup_retention_period = 1
+    skip_final_snapshot     = true
+    deletion_protection     = false
+    storage_encrypted       = false
+  }
+
+
   tags = {
     terraform = "true"
   }
