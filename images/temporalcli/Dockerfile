@@ -26,6 +26,7 @@ ENTRYPOINT [ \
   "--ip", \
   "0.0.0.0", \
   "-n", "general",    \
+  "-n", "actions",   \
   "-n", "installs",   \
   "-n", "orgs",       \
   "-n", "apps",       \
@@ -33,5 +34,5 @@ ENTRYPOINT [ \
   "-n", "releases",   \
   "-n", "runners",   \
   "-n", "canary",      \
-  "--db-filename", "/var/nuon-dev-temporal.db" \
+  "--db-filename", "/tmp/nuon-dev-temporal.db" \
 ]

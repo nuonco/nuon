@@ -5,6 +5,8 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
+	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/actions"
+	actionsworkflow "github.com/powertoolsdev/mono/bins/runner/internal/jobs/actions/workflow"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/build"
 	containerimagebuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/containerimage"
 	dockerbuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/docker"
@@ -29,7 +31,6 @@ import (
 	// containerimagesync "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/containerimage"
 	noopsync "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/noop"
 	ocisync "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/oci"
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/user"
 
 	noopoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/noop"
 	shutdownoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/shutdown"
@@ -87,8 +88,9 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 		fx.Provide(jobs.AsJobHandler("runner", runnerterraform.New)),
 		fx.Provide(jobs.AsJobHandler("runner", runnerhelm.New)),
 
-		// user jobs
-		fx.Provide(jobloop.AsJobLoop(user.NewJobLoop)),
+		// actions jobs
+		fx.Provide(jobloop.AsJobLoop(actions.NewJobLoop)),
+		fx.Provide(jobs.AsJobHandler("actions", actionsworkflow.New)),
 
 		// start all job loops
 		fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),

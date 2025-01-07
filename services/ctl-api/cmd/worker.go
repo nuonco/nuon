@@ -6,6 +6,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
+	actionsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker"
+	actionsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/activities"
 	appsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker"
 	appsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 	componentsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker"
@@ -100,6 +102,15 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 			fx.Provide(runnersactivities.New),
 			fx.Provide(runnersworker.NewWorkflows),
 			fx.Provide(worker.AsWorker(runnersworker.New)),
+		)
+	}
+
+	if namespace == "all" || namespace == "actions" {
+		providers = append(providers,
+			// actions worker
+			fx.Provide(actionsactivities.New),
+			fx.Provide(actionsworker.NewWorkflows),
+			fx.Provide(worker.AsWorker(actionsworker.New)),
 		)
 	}
 

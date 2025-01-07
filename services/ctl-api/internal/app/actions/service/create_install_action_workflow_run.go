@@ -8,6 +8,8 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -65,39 +67,44 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		return
 	}
 
-	if !s.workflowConfigCanTriggerManually(awc) {
-		ctx.Error(fmt.Errorf("manual trigger is not allowed"))
+	if !awc.WorkflowConfigCanTriggerManually() {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("manual trigger is not allowed"),
+			Description: "please update action config to allow manual triggering",
+		})
 		return
 	}
 
-	// TODO: implement run
-
-	run, err := s.createActionWorkflowRun(ctx, org.ID, installID, req)
+	run, err := s.createActionWorkflowRun(ctx, installID, awc)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
 	}
 
+	s.evClient.Send(ctx, awc.ActionWorkflowID, &signals.Signal{
+		Type: signals.OperationInstallRun,
+	})
+
 	ctx.JSON(http.StatusCreated, run)
 }
 
-func (s *service) workflowConfigCanTriggerManually(config *app.ActionWorkflowConfig) bool {
-	for _, trigger := range config.Triggers {
-		if trigger.Type == app.ActionWorkflowTriggerTypeManual {
-			return true
-		}
-	}
-	return false
-}
+func (s *service) createActionWorkflowRun(ctx *gin.Context, installID string, cfg *app.ActionWorkflowConfig) (*app.InstallActionWorkflowRun, error) {
+	steps := make([]app.InstallActionWorkflowRunStep, 0)
 
-func (s *service) createActionWorkflowRun(ctx *gin.Context, orgID, installID string, req CreateInstallActionWorkflowRunRequest) (*app.InstallActionWorkflowRun, error) {
+	for _, step := range cfg.Steps {
+		steps = append(steps, app.InstallActionWorkflowRunStep{
+			Status: app.InstallActionWorkflowRunStepStatusPending,
+			StepID: step.ID,
+		})
+	}
+
 	newRun := app.InstallActionWorkflowRun{
-		OrgID:                  orgID,
 		InstallID:              installID,
-		ActionWorkflowConfigID: req.ActionWorkFlowConfigID,
+		ActionWorkflowConfigID: cfg.ID,
 		TriggerType:            app.ActionWorkflowTriggerTypeManual,
 		Status:                 app.InstallActionRunStatusQueued,
 		StatusDescription:      "Queued",
+		Steps:                  steps,
 	}
 
 	res := s.db.WithContext(ctx).
@@ -107,7 +114,7 @@ func (s *service) createActionWorkflowRun(ctx *gin.Context, orgID, installID str
 	}
 
 	// make sure to fetch latest
-	extantRun, err := s.findInstallActionWorkflowRun(ctx, orgID, newRun.ID)
+	extantRun, err := s.findInstallActionWorkflowRun(ctx, newRun.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get action workflow run: %w", err)
 	}

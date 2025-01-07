@@ -6,10 +6,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+	"google.golang.org/protobuf/encoding/protojson"
+
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows/dal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID GetInstallDeployPlan
@@ -30,20 +31,8 @@ import (
 // @Success		200				{object} planv1.Plan
 // @Router			/v1/installs/{install_id}/deploys/{deploy_id}/plan [get]
 func (s *service) GetInstallDeployPlan(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
 	installID := ctx.Param("install_id")
 	deployID := ctx.Param("deploy_id")
-
-	install, err := s.getInstall(ctx, installID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install: %w", err))
-		return
-	}
 
 	deploy, err := s.getInstallDeploy(ctx, installID, deployID)
 	if err != nil {
@@ -51,12 +40,7 @@ func (s *service) GetInstallDeployPlan(ctx *gin.Context) {
 		return
 	}
 
-	plan, err := s.getInstallDeployPlan(ctx,
-		org.ID,
-		install.AppID,
-		deploy.ComponentBuild.ComponentConfigConnection.ComponentID,
-		deployID,
-		installID, deploy.Type)
+	plan, err := s.getRunnerJobPlan(ctx, deploy.RunnerJob.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install deploy plan: %w", err))
 		return
@@ -65,33 +49,25 @@ func (s *service) GetInstallDeployPlan(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, plan)
 }
 
-func (s *service) getInstallDeployPlan(ctx context.Context, orgID, appID, componentID, deployID, installID string, deployTyp app.InstallDeployType) (*planv1.Plan, error) {
-	wkflowDal, err := dal.New(s.v, dal.WithSettings(dal.Settings{
-		DeploymentsBucket:                s.orgsOutputs.Buckets.Deployments.Name,
-		DeploymentsBucketIAMRoleTemplate: s.orgsOutputs.OrgsIAMRoleNameTemplateOutputs.DeploymentsAccess,
-	}), dal.WithOrgID(orgID))
-	if err != nil {
-		return nil, fmt.Errorf("unable to get dal for deploy plan: %w", err)
+func (s *service) getRunnerJobPlan(ctx context.Context, runnerJobID string) (*planv1.Plan, error) {
+	var runnerJobPlan app.RunnerJobPlan
+	res := s.db.WithContext(ctx).First(&runnerJobPlan, "runner_job_id = ?", runnerJobID)
+	if res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to get runner job plan")
 	}
 
-	comp, err := s.componentHelpers.GetComponent(ctx, componentID)
+	plan, err := apiPlanToProto([]byte(runnerJobPlan.PlanJSON))
 	if err != nil {
-		return nil, fmt.Errorf("unable to get component: %w", err)
+		return nil, errors.Wrap(err, "unable to parse plan")
 	}
 
-	var plan *planv1.Plan
-	switch deployTyp {
-	case app.InstallDeployTypeTeardown:
-		plan, err = wkflowDal.GetInstanceDestroyPlan(ctx, orgID, appID, componentID, deployID, installID)
-	default:
-		if comp.LatestConfig.DockerBuildComponentConfig != nil || comp.LatestConfig.ExternalImageComponentConfig != nil {
-			plan, err = wkflowDal.GetInstanceSyncPlan(ctx, orgID, appID, componentID, deployID, installID)
-		} else {
-			plan, err = wkflowDal.GetInstanceDeployPlan(ctx, orgID, appID, componentID, deployID, installID)
-		}
-	}
-	if err != nil {
-		return nil, fmt.Errorf("unable to get plan: %w", err)
+	return plan, nil
+}
+
+func apiPlanToProto(byts []byte) (*planv1.Plan, error) {
+	plan := &planv1.Plan{}
+	if err := protojson.Unmarshal(byts, plan); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal plan bytes into proto: %w", err)
 	}
 
 	return plan, nil
