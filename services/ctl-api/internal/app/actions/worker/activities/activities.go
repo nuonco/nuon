@@ -19,10 +19,11 @@ type Params struct {
 
 	DB *gorm.DB `name:"psql"`
 
-	EvClient   eventloop.Client
-	SharedActs *sharedactivities.Activities
-	AcctClient *account.Client
-	Cfg        *internal.Config
+	EvClient       eventloop.Client
+	SharedActs     *sharedactivities.Activities
+	AcctClient     *account.Client
+	Cfg            *internal.Config
+	RunnersHelpers *runnershelpers.Helpers
 }
 
 type Activities struct {
@@ -40,10 +41,11 @@ type Activities struct {
 
 func New(params Params) *Activities {
 	return &Activities{
-		db:         params.DB,
-		cfg:        params.Cfg,
-		Activities: params.SharedActs,
-		evClient:   params.EvClient,
-		acctClient: params.AcctClient,
+		db:             params.DB,
+		cfg:            params.Cfg,
+		Activities:     params.SharedActs,
+		evClient:       params.EvClient,
+		acctClient:     params.AcctClient,
+		runnersHelpers: params.RunnersHelpers,
 	}
 }

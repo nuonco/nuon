@@ -82,7 +82,8 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	}
 
 	s.evClient.Send(ctx, awc.ActionWorkflowID, &signals.Signal{
-		Type: signals.OperationInstallRun,
+		RunID: run.ID,
+		Type:  signals.OperationInstallRun,
 	})
 
 	ctx.JSON(http.StatusCreated, run)

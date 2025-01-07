@@ -97,6 +97,14 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
+	if err := activities.AwaitSaveIntermediateData(ctx, &activities.SaveIntermediateDataRequest{
+		InstallID:   install.ID,
+		RunnerJobID: runnerJob.ID,
+		PlanJSON:    string(planJSON),
+	}); err != nil {
+		return errors.Wrap(err, "unable to save install intermediate data")
+	}
+
 	// queue job
 	l.Info("queued job and waiting on it to be picked up by runner event loop")
 	w.evClient.Send(ctx, install.Org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{

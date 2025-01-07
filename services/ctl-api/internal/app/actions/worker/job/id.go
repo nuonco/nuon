@@ -8,5 +8,5 @@ func WorkflowIDCallback(req *ExecuteJobRequest) string {
 		return req.WorkflowID
 	}
 
-	return fmt.Sprintf("execute-job-%s", req.WorkflowID)
+	return fmt.Sprintf("execute-job-%s", req.JobID)
 }

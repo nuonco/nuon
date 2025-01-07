@@ -47,7 +47,7 @@ type InstallActionWorkflowRun struct {
 	ActionWorkflowConfigID string               `json:"action_workflow_config_id" gorm:"notnull"`
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"config"`
 
-	Steps []InstallActionWorkflowRunStep `json:"steps"`
+	Steps []InstallActionWorkflowRunStep `json:"steps" gorm:"constraint:OnDelete:CASCADE;"`
 
 	// after query
 	// TODO: update runner to track start and finish timestamps

@@ -24,6 +24,9 @@ func (a *Activities) getInstallActionWorkflowRun(ctx context.Context, runID stri
 		Preload("ActionWorkflowConfig.Triggers").
 		Preload("ActionWorkflowConfig.Steps").
 		Preload("LogStream").
+		Preload("Install").
+		Preload("Install.RunnerGroup").
+		Preload("Install.RunnerGroup.Runners").
 		First(&run, "id = ?", runID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
