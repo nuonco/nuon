@@ -54,8 +54,8 @@ const (
 	// operations jobs such as shutdown, restart, noop and update settings.
 	RunnerJobGroupOperations RunnerJobGroup = "operations"
 
-	// user jobs such as scripts, checks and more
-	RunnerJobGroupUser RunnerJobGroup = "user"
+	// actions workflows
+	RunnerJobGroupActions RunnerJobGroup = "actions"
 
 	RunnerJobGroupUnknown RunnerJobGroup = ""
 	RunnerJobGroupAny     RunnerJobGroup = "any"
@@ -95,6 +95,9 @@ const (
 	RunnerJobTypeRunnerHelm      RunnerJobType = "runner-helm"
 	RunnerJobTypeRunnerTerraform RunnerJobType = "runner-terraform"
 	RunnerJobTypeRunnerLocal     RunnerJobType = "runner-local"
+
+	// actions job types
+	RunnerJobTypeActionsWorkflowRun RunnerJobType = "actions-workflow"
 
 	// unknown
 	RunnerJobTypeUnknown = "unknown"
@@ -138,6 +141,9 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		// operations
 	case RunnerJobTypeNOOP, RunnerJobTypeShutDown:
 		return RunnerJobGroupOperations
+
+	case RunnerJobTypeActionsWorkflowRun:
+		return RunnerJobGroupActions
 
 	default:
 		return RunnerJobGroupUnknown
