@@ -6,6 +6,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -85,6 +87,14 @@ func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, insta
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		w.writeDeployEvent(ctx, installDeploy.ID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install: %w", err)
+	}
+
+	if err := activities.AwaitSaveIntermediateData(ctx, &activities.SaveIntermediateDataRequest{
+		InstallID:   install.ID,
+		RunnerJobID: runnerJob.ID,
+		PlanJSON:    string(planJSON),
+	}); err != nil {
+		return errors.Wrap(err, "unable to save install intermediate data")
 	}
 
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{

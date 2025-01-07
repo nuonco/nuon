@@ -73,6 +73,7 @@ func AllModels() []interface{} {
 		&app.InstallEvent{},
 		&app.InstallInputs{},
 		&app.InstallSandboxRun{},
+		&app.InstallIntermediateData{},
 
 		// component configuration
 		&app.Component{},
