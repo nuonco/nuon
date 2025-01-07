@@ -29,14 +29,15 @@ type InstallActionWorkflowRun struct {
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
-	// runner details
 	RunnerJob *RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;"`
+
+	LogStream LogStream `json:"log_stream" gorm:"polymorphic:Owner;"`
 
 	// used for RLS
 	OrgID     string  `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org       Org     `json:"-" faker:"-"`
 	InstallID string  `json:"install_id" gorm:"not null;default null"`
-	Install   Install `swaggerignore:"true" json:"-"`
+	Install   Install `swaggerignore:"true" json:"-" temporaljson:"install"`
 
 	Status            InstallActionWorkflowRunStatus `json:"status" gorm:"notnull" swaggertype:"string"`
 	StatusDescription string                         `json:"status_description" gorm:"notnull"`
@@ -45,6 +46,8 @@ type InstallActionWorkflowRun struct {
 
 	ActionWorkflowConfigID string               `json:"action_workflow_config_id" gorm:"notnull"`
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"config"`
+
+	Steps []InstallActionWorkflowRunStep `json:"steps"`
 
 	// after query
 	// TODO: update runner to track start and finish timestamps
@@ -59,7 +62,7 @@ func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {
 	if i.CreatedByID == "" {
 		i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
-	if i.CreatedByID == "" {
+	if i.OrgID == "" {
 		i.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
 	return nil

@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 // @ID GetInstallActionWorkflowRun
@@ -29,14 +29,8 @@ import (
 // @Success		200				{object}	app.InstallActionWorkflowRun
 // @Router			/v1/installs/{install_id}/action-workflows/runs/{run_id} [get]
 func (s *service) GetInstallActionWorkflowRun(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
 	runID := ctx.Param("run_id")
-	configs, err := s.findInstallActionWorkflowRun(ctx, org.ID, runID)
+	configs, err := s.findInstallActionWorkflowRun(ctx, runID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install action workflow run by id %s: %w", runID, err))
 		return
@@ -45,7 +39,12 @@ func (s *service) GetInstallActionWorkflowRun(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, configs)
 }
 
-func (s *service) findInstallActionWorkflowRun(ctx context.Context, orgID, runID string) (*app.InstallActionWorkflowRun, error) {
+func (s *service) findInstallActionWorkflowRun(ctx context.Context, runID string) (*app.InstallActionWorkflowRun, error) {
+	orgID, err := middlewares.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	runs := &app.InstallActionWorkflowRun{}
 	res := s.db.WithContext(ctx).
 		Preload("ActionWorkflowConfig").
