@@ -8,7 +8,7 @@ import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import { sentanceCase } from '@/utils'
 
-const EventStatus: FC<{ status?: string }> = ({ status = 'waiting' }) => {
+export const EventStatus: FC<{ status?: string }> = ({ status = 'waiting' }) => {
   const statusColor = {
     'bg-green-800 dark:bg-green-500':
       status === 'finished' || status === 'active',
