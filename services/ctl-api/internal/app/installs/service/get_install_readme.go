@@ -9,7 +9,6 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/render"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type Readme struct {
@@ -33,12 +32,6 @@ type Readme struct {
 // @Success		200				{object} Readme
 // @Router			/v1/installs/{install_id}/readme [get]
 func (s *service) GetInstallReadme(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
 	// 1. grab the install
 	installID := ctx.Param("install_id")
 	install, err := s.getInstall(ctx, installID)
@@ -64,12 +57,7 @@ func (s *service) GetInstallReadme(ctx *gin.Context) {
 	}
 
 	// 3. grab the plan
-	plan, err := s.getInstallDeployPlan(ctx,
-		org.ID,
-		install.AppID,
-		deploy.ComponentBuild.ComponentConfigConnection.ComponentID,
-		deploy.ID,
-		installID, deploy.Type)
+	plan, err := s.getRunnerJobPlan(ctx, deploy.RunnerJob.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install deploy plan: %w", err))
 		return
@@ -83,7 +71,7 @@ func (s *service) GetInstallReadme(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to get render readme: %w", err))
 		return
 	}
-	fmt.Printf(value)
+
 	response := Readme{value}
 
 	ctx.JSON(http.StatusOK, response)
@@ -102,6 +90,7 @@ func (s *service) getInstallLatestSuccessfulDeploy(ctx context.Context, installI
 	var installDeploy app.InstallDeploy
 	res := s.db.WithContext(ctx).
 		Joins("JOIN install_components ON install_components.id=install_deploys.install_component_id").
+		Preload("RunnerJob").
 		Preload("ComponentBuild").
 		Preload("ComponentBuild.ComponentConfigConnection").
 		Preload("ComponentBuild.ComponentConfigConnection.Component").
