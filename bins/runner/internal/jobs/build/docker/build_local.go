@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/hashicorp/go-hclog"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/powertoolsdev/mono/pkg/command"
+	"github.com/powertoolsdev/mono/pkg/zapwriter"
 )
 
 func (b *handler) dockerPath() (string, error) {
@@ -27,7 +29,7 @@ func (b *handler) dockerPath() (string, error) {
 
 func (b *handler) buildLocal(
 	ctx context.Context,
-	log hclog.Logger,
+	log *zap.Logger,
 	dockerfilePath string,
 	contextDir string,
 	buildArgs map[string]*string,
@@ -55,14 +57,14 @@ func (b *handler) buildLocal(
 		}
 	}
 
-	lw := log.StandardWriter(&hclog.StandardLoggerOptions{})
+	lf := zapwriter.New(log, zapcore.InfoLevel, "kaniko-build")
 	cmd, err := command.New(b.v,
 		command.WithCmd(dockerPath),
 		command.WithCwd(contextDir),
 		command.WithArgs(args),
 		command.WithEnv(map[string]string{}),
-		command.WithStdout(lw),
-		command.WithStderr(lw),
+		command.WithStdout(lf),
+		command.WithStderr(lf),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to create build command: %w", err)
