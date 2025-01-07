@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/docker/cli/cli/command/image/build"
-	"github.com/hashicorp/go-hclog"
 	"github.com/oklog/ulid/v2"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -18,7 +18,7 @@ import (
 
 func (b *handler) getBuildContext(
 	src *workspace.Source,
-	log hclog.Logger,
+	log *zap.Logger,
 ) (string, string, error) {
 	dockerfile := b.state.cfg.Dockerfile
 	if dockerfile == "" {
@@ -57,8 +57,8 @@ func (b *handler) getBuildContext(
 		return "", "", status.Errorf(codes.FailedPrecondition, "unable to create Docker context: %s", err)
 	}
 	log.Debug("loaded Docker context",
-		"context_dir", contextDir,
-		"dockerfile", relDockerfile,
+		zap.String("context_dir", contextDir),
+		zap.String("dockerfile", relDockerfile),
 	)
 
 	log.Info("executing build via kaniko")
