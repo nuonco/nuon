@@ -33,10 +33,11 @@ type Install struct {
 	AppRunnerConfigID string          `json:"-" swaggerignore:"true"`
 	AppRunnerConfig   AppRunnerConfig `json:"app_runner_config"`
 
-	InstallComponents  []InstallComponent  `json:"install_components,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	InstallSandboxRuns []InstallSandboxRun `json:"install_sandbox_runs,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	InstallInputs      []InstallInputs     `json:"install_inputs" gorm:"constraint:OnDelete:CASCADE;"`
-	InstallEvents      []InstallEvent      `json:"install_events" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallComponents       []InstallComponent        `json:"install_components,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallSandboxRuns      []InstallSandboxRun       `json:"install_sandbox_runs,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallInputs           []InstallInputs           `json:"install_inputs" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallEvents           []InstallEvent            `json:"install_events" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallIntermediateData []InstallIntermediateData `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
 	AWSAccount   *AWSAccount   `json:"aws_account" gorm:"constraint:OnDelete:CASCADE;"`
 	AzureAccount *AzureAccount `json:"azure_account" gorm:"constraint:OnDelete:CASCADE;"`
