@@ -38,7 +38,7 @@ export const Button: FC<IButton> = ({
         [`${defaultStyles} border-red-800 text-red-800 dark:border-red-500 dark:text-red-500`]:
           variant === 'caution',
         'bg-red-700 hover:bg-red-600': variant === 'danger',
-        'text-gray-50 px-5 border-transparent':
+        'text-gray-50 px-5 border-transparent font-medium':
           variant === 'primary' || variant === 'danger',
         'px-3 py-1.5': !hasCustomPadding,
         'cursor-not-allowed text-cool-grey-500 dark:text-cool-grey-600 hover:!bg-transparent':
