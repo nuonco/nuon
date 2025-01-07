@@ -3,6 +3,7 @@ import {
   ClickToCopy,
   DashboardContent,
   Duration,
+  LogStreamPoller,
   Section,
   StatusBadge,
   Text,
@@ -14,8 +15,10 @@ import {
   getInstall,
   getAppActionWorkflow,
   getInstallActionWorkflowRun,
+  getLogStreamLogs,
   getOrg,
 } from '@/lib'
+import type { TOTELLog } from '@/types'
 
 export default withPageAuthRequired(async function InstallWorkflow({ params }) {
   const installId = params?.['install-id'] as string
@@ -28,6 +31,11 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
     getAppActionWorkflow({ actionWorkflowId, orgId }),
     getInstallActionWorkflowRun({ installId, orgId, actionWorkflowRunId }),
   ])
+
+  const logs = await getLogStreamLogs({
+    logStreamId: workflowRun?.log_stream?.id,
+    orgId,
+  })
 
   return (
     <DashboardContent
@@ -90,9 +98,14 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       }
     >
       <div className="flex flex-col md:flex-row flex-auto">
-        <Section className="border-r" heading="Workflow logs">
-          <Text>Workflow or job logs here</Text>
-        </Section>
+        <LogStreamPoller
+          heading="Workflow logs"
+          initLogStream={workflowRun?.log_stream}
+          initLogs={logs as Array<TOTELLog>}
+          orgId={orgId}
+          logStreamId={workflowRun?.log_stream?.id}
+          shouldPoll={Boolean(workflowRun?.log_stream)}
+        />
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
           <Section
