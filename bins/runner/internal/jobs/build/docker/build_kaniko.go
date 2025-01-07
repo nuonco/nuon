@@ -5,8 +5,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/hashicorp/go-hclog"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry/local"
 )
@@ -31,7 +31,7 @@ func (b *handler) kanikoPath() (string, error) {
 
 func (b *handler) buildWithKaniko(
 	ctx context.Context,
-	log hclog.Logger,
+	log *zap.Logger,
 	dockerfilePath string,
 	contextDir string,
 	buildArgs map[string]*string,
@@ -73,7 +73,7 @@ func (b *handler) buildWithKaniko(
 		}
 	}
 
-	log.Debug("executing kaniko", "args", args)
+	log.Debug("executing kaniko", zap.Any("args", args))
 	log.Info("Executing kaniko...")
 
 	// Command output should go to the step
