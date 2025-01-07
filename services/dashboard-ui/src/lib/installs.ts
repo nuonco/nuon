@@ -1,4 +1,5 @@
 import type {
+  TActionWorkflow,
   TInstall,
   TInstallActionWorkflowRun,
   TInstallComponent,
@@ -208,5 +209,42 @@ export async function runInstallActionWorkflow({
     errorMessage: 'Unable to run action workflow on this install.',
     orgId,
     path: `installs/${installId}/action-workflows/runs`,
+  })
+}
+
+export interface IGetInstallActionWorkflowLatestRuns extends IGetInstall {}
+
+export async function getInstallActionWorkflowLatestRun({
+  installId,
+  orgId,
+}: IGetInstallActionWorkflowLatestRuns) {
+  return queryData<
+    Array<{
+      action_workflow: TActionWorkflow
+      install_action_workflow_run: TInstallActionWorkflowRun
+    }>
+  >({
+    errorMessage: 'Unable to retrieve latest install action workflow runs',
+    orgId,
+    path: `installs/${installId}/action-workflows/latest-runs`,
+  })
+}
+
+export interface IGetInstallActionWorkflowRecentRuns extends IGetInstall {
+  actionWorkflowId: string
+}
+
+export async function getInstallActionWorkflowRecentRun({
+  actionWorkflowId,
+  installId,
+  orgId,
+}: IGetInstallActionWorkflowRecentRuns) {
+  return queryData<{
+    action_workflow: TActionWorkflow
+    recent_runs: Array<TInstallActionWorkflowRun>
+  }>({
+    errorMessage: 'Unable to retrieve install action workflow runs',
+    orgId,
+    path: `installs/${installId}/action-workflows/${actionWorkflowId}/recent-runs`,
   })
 }

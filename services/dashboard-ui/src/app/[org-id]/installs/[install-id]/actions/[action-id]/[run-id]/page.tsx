@@ -10,16 +10,23 @@ import {
   ToolTip,
   Truncate,
 } from '@/components'
-import { getInstall, getInstallActionWorkflowRun, getOrg } from '@/lib'
+import {
+  getInstall,
+  getAppActionWorkflow,
+  getInstallActionWorkflowRun,
+  getOrg,
+} from '@/lib'
 
 export default withPageAuthRequired(async function InstallWorkflow({ params }) {
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
-  const workflowId = params?.['workflow-id'] as string
-  const [org, install, workflowRun] = await Promise.all([
+  const actionWorkflowId = params?.['action-id'] as string
+  const actionWorkflowRunId = params?.['run-id'] as string
+  const [org, install, actionWorkflow, workflowRun] = await Promise.all([
     getOrg({ orgId }),
     getInstall({ installId, orgId }),
-    getInstallActionWorkflowRun({ installId, orgId, actionWorkflowRunId: workflowId }),
+    getAppActionWorkflow({ actionWorkflowId, orgId }),
+    getInstallActionWorkflowRun({ installId, orgId, actionWorkflowRunId }),
   ])
 
   return (
@@ -32,12 +39,12 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
           text: install.name,
         },
         {
-          href: `/${org.id}/installs/${install.id}/actions/${workflowId}`,
-          text: 'workflow name',
+          href: `/${org.id}/installs/${install.id}/actions/${actionWorkflowId}`,
+          text: `${actionWorkflow?.name}`,
         },
       ]}
-      heading={'Workflow name'}
-      headingUnderline={workflowId}
+      heading={`${actionWorkflow?.name} execution`}
+      headingUnderline={actionWorkflowId}
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
           <Time time={workflowRun.created_at} />
@@ -53,7 +60,17 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
               Status
             </Text>
-            <StatusBadge descriptionAlignment="right" status="active" />
+            <StatusBadge
+              descriptionAlignment="right"
+              status={workflowRun?.status}
+            />
+          </span>
+
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Trigger type
+            </Text>
+            <Text variant="mono-12">{workflowRun.trigger_type}</Text>
           </span>
 
           <span className="flex flex-col gap-2">
