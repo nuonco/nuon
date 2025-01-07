@@ -16,6 +16,8 @@ import {
   getInstallActionWorkflowRuns,
   reprovisionInstall,
   runInstallActionWorkflow,
+  getInstallActionWorkflowLatestRun,
+  getInstallActionWorkflowRecentRun,
 } from './installs'
 
 describe('getInstalls should handle response status codes from GET installs endpoint', () => {
@@ -299,6 +301,48 @@ describe('runInstallActionWorkflow should handle response status codes from POST
   test.each(badResponseCodes)('%s status', async () => {
     await runInstallActionWorkflow({
       actionWorkflowConfigId,
+      installId,
+      orgId,
+    }).catch((err) => expect(err).toMatchSnapshot())
+  })
+})
+
+describe('getInstallActionWorkflowLatestRun should handle response status codes from GET installs/:id/action-workflows/latest-runs endpoint', () => {
+  const orgId = 'test-id'
+  const installId = 'test-id'
+  test('200 status', async () => {
+    const spec = await getInstallActionWorkflowLatestRun({ installId, orgId })
+    expect(spec).toHaveLength(1)
+    spec.forEach((s) => {
+      expect(s).toHaveProperty('action_workflow')
+      expect(s).toHaveProperty('install_action_workflow_run')
+    })
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await getInstallActionWorkflowLatestRun({ installId, orgId }).catch((err) =>
+      expect(err).toMatchSnapshot()
+    )
+  })
+})
+
+describe('getInstallActionWorkflowRecentRun should handle response status codes from GET installs/:id/action-workflows/:id/recent-runs endpoint', () => {
+  const orgId = 'test-id'
+  const installId = 'test-id'
+  const actionWorkflowId = 'test-id'
+  test('200 status', async () => {
+    const spec = await getInstallActionWorkflowRecentRun({
+      actionWorkflowId,
+      installId,
+      orgId,
+    })
+    expect(spec).toHaveProperty('action_workflow')
+    expect(spec).toHaveProperty('recent_runs')
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await getInstallActionWorkflowRecentRun({
+      actionWorkflowId,
       installId,
       orgId,
     }).catch((err) => expect(err).toMatchSnapshot())
