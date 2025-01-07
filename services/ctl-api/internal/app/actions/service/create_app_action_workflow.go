@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -69,6 +70,10 @@ func (s *service) CreateAppActionWorkflow(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
 	}
+
+	s.evClient.Send(ctx, app.ID, &signals.Signal{
+		Type: signals.OperationCreated,
+	})
 
 	ctx.JSON(http.StatusCreated, app)
 }

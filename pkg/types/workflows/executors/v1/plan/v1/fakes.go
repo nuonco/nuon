@@ -14,14 +14,16 @@ func FakeWaypointPlan() *Plan {
 
 func FakePlanResponse() *CreatePlanResponse {
 	intermediateData := map[string]any{
-		"org": map[string]any{
-			"id": "org-id",
-		},
-		"install": map[string]any{
-			"id": "app-id",
-		},
-		"app": map[string]any{
-			"id": "app-id",
+		"nuon": map[string]any{
+			"org": map[string]any{
+				"id": "org-id",
+			},
+			"install": map[string]any{
+				"id": "app-id",
+			},
+			"app": map[string]any{
+				"id": "app-id",
+			},
 		},
 	}
 

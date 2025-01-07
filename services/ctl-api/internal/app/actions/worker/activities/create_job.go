@@ -17,7 +17,7 @@ type CreateRunnerJobRequest struct {
 func (a *Activities) CreateRunnerJob(ctx context.Context, req *CreateRunnerJobRequest) (*app.RunnerJob, error) {
 	run, err := a.getInstallActionWorkflowRun(ctx, req.InstallActionWorkflowRunID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get deploy")
+		return nil, errors.Wrap(err, "unable to get action workflow run")
 	}
 
 	job, err := a.runnersHelpers.CreateActionsWorkflowRunJob(ctx,
