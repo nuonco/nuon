@@ -17,3 +17,17 @@ resource "tfe_project" "demo" {
   name         = "demo"
   organization = data.tfe_organization.main.name
 }
+
+module "demo_workspace" {
+  source = "./modules/workspace"
+
+  name                            = "demo"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/demo"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
+
+  variable_sets = []
+  project_id    = tfe_project.demo.id
+}
