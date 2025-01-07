@@ -50,6 +50,8 @@ func (s *service) findInstallActionWorkflowRun(ctx context.Context, runID string
 		Preload("ActionWorkflowConfig").
 		Preload("ActionWorkflowConfig.Steps").
 		Preload("ActionWorkflowConfig.Triggers").
+		Preload("LogStream").
+		Preload("RunnerJob").
 		Where("org_id = ? AND id = ?", orgID, runID).
 		Find(&runs)
 	if res.Error != nil {

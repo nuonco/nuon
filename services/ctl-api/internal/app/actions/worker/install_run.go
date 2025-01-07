@@ -48,7 +48,8 @@ func (w *Workflows) InstallRun(ctx workflow.Context, sreq signals.RequestSignal)
 	// now queue and execute the job
 	l.Info("executing runner job")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		JobID: runnerJob.ID,
+		JobID:      runnerJob.ID,
+		WorkflowID: "",
 	})
 	if err != nil {
 		return errors.Wrap(err, "runner job failed")
