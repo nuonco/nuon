@@ -7,17 +7,18 @@ import type { TActionWorkflow, TInstallActionWorkflowRun } from '@/types'
 import { SHORT_POLL_DURATION } from '@/utils'
 
 interface IInstallWorkflowRunHistory {
-  appWorkflows: Array<TActionWorkflow>
+  actionsWithRecentRuns: {
+    action_workflow: TActionWorkflow
+    recent_runs: Array<TInstallActionWorkflowRun>
+  }
   installId: string
-  installWorkflowRuns: Array<TInstallActionWorkflowRun>
   orgId: string
   shouldPoll?: boolean
 }
 
 export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
-  appWorkflows,
+  actionsWithRecentRuns,
   installId,
-  installWorkflowRuns,
   orgId,
   shouldPoll = false,
 }) => {
@@ -35,32 +36,24 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
     }
   }, [shouldPoll])
 
+  const { action_workflow, recent_runs } = actionsWithRecentRuns
+
   return (
     <Timeline
       emptyMessage="No action workflow runs have happened"
-      events={installWorkflowRuns?.map((workflowRun, i) => ({
-        id: workflowRun.id,
-        status: workflowRun.status,
+      events={recent_runs?.map((run, i) => ({
+        id: run.id,
+        status: run.status,
         underline: (
           <>
-            <span>
-              {
-                appWorkflows?.find((aw) =>
-                  aw.configs.find(
-                    (awCfg) =>
-                      awCfg.id === workflowRun.action_workflow_config_id
-                  )
-                )?.name
-              }
-            </span>{' '}
-            /
+            <span>{action_workflow.name}</span> /
             <span className="!inline truncate max-w-[100px]">
-              {workflowRun.trigger_type}
+              {run.trigger_type}
             </span>
           </>
         ),
-        time: workflowRun.updated_at,
-        href: `/${orgId}/installs/${installId}/actions/${workflowRun.id}`,
+        time: run.updated_at,
+        href: `/${orgId}/installs/${installId}/actions/${action_workflow?.id}/${run.id}`,
         isMostRecent: i === 0,
       }))}
     />
