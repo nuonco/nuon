@@ -21,10 +21,9 @@ type ActionWorkflowConfig struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
-	App   App    `json:"-" swaggerignore:"true" json:"app"`
+	App   App    `json:"-" swaggerignore:"true"`
 	AppID string `json:"app_id" gorm:"notnull;index:idx_app_install_name,unique"`
 
-	// this belongs to an app config id
 	AppConfigID string    `json:"app_config_id" gorm:"index:idx_action_workflow_id_app_config_id,unique"`
 	AppConfig   AppConfig `json:"-"`
 
@@ -33,6 +32,8 @@ type ActionWorkflowConfig struct {
 
 	Triggers []ActionWorkflowTriggerConfig `json:"triggers"`
 	Steps    []ActionWorkflowStepConfig    `json:"steps"`
+
+	Timeout time.Duration `json:"timeout" gorm:"default null;not null" swaggertype:"primitive,integer"`
 }
 
 func (a *ActionWorkflowConfig) BeforeCreate(tx *gorm.DB) error {
@@ -40,4 +41,14 @@ func (a *ActionWorkflowConfig) BeforeCreate(tx *gorm.DB) error {
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	a.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
+}
+
+func (a *ActionWorkflowConfig) WorkflowConfigCanTriggerManually() bool {
+	for _, trigger := range a.Triggers {
+		if trigger.Type == ActionWorkflowTriggerTypeManual {
+			return true
+		}
+	}
+
+	return false
 }

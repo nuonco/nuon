@@ -54,6 +54,7 @@ type Install struct {
 	CurrentInstallInputs     *InstallInputs      `json:"-" gorm:"-"`
 	CompositeComponentStatus InstallDeployStatus `json:"composite_component_status" gorm:"-" swaggertype:"string"`
 	RunnerStatus             RunnerStatus        `json:"runner_status" gorm:"-" swaggertype:"string"`
+	RunnerID                 string              `json:"runner_id" gorm:"-"`
 
 	// TODO(jm): deprecate these fields once the terraform provider has been updated
 	Status            string `json:"status" gorm:"-"`
@@ -85,6 +86,7 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	i.RunnerStatus = RunnerStatusDeprovisioned
 	if len(i.RunnerGroup.Runners) > 0 {
 		i.RunnerStatus = i.RunnerGroup.Runners[0].Status
+		i.RunnerID = i.RunnerGroup.Runners[0].ID
 	}
 
 	if len(i.InstallInputs) > 0 {
