@@ -173,7 +173,7 @@ describe('getAppActionWorkflows should handle response status codes from GET app
   const appId = 'test-id'
   test('200 status', async () => {
     const spec = await getAppActionWorkflows({ appId, orgId })
-    expect(spec).toHaveLength(2)
+    expect(spec).toHaveLength(3)
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('configs')
