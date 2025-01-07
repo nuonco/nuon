@@ -42,7 +42,7 @@ func (s *service) adminGetWaitlist(ctx context.Context) ([]WaitlistResponse, err
 	waitlistResponse := []WaitlistResponse{}
 	res := s.db.WithContext(ctx).
 		Preload("CreatedBy").
-		Order("created_at").
+		Order("created_at desc").
 		Find(&waitlist)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org: %w", res.Error)
