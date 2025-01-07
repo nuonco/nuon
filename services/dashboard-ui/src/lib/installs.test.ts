@@ -59,7 +59,7 @@ describe('getInstallComponents should handle response status codes from GET inst
   const installId = 'test-id'
   test('200 status', async () => {
     const spec = await getInstallComponents({ installId, orgId })
-    expect(spec).toHaveLength(1)
+    expect(spec).toHaveLength(4)
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('status')
@@ -113,7 +113,7 @@ describe('getInstallComponentDeploys should handle response status codes from GE
       installId,
       orgId,
     })
-    expect(spec).toHaveLength(2)
+    expect(spec).toHaveLength(5)
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('status')
@@ -254,7 +254,7 @@ describe('getInstallActionWorkflowRuns should handle response status codes from 
   const installId = 'test-id'
   test('200 status', async () => {
     const spec = await getInstallActionWorkflowRuns({ installId, orgId })
-    expect(spec).toHaveLength(1)
+    expect(spec).toHaveLength(4)
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('status')
@@ -312,7 +312,7 @@ describe('getInstallActionWorkflowLatestRun should handle response status codes 
   const installId = 'test-id'
   test('200 status', async () => {
     const spec = await getInstallActionWorkflowLatestRun({ installId, orgId })
-    expect(spec).toHaveLength(1)
+    expect(spec).toHaveLength(5)
     spec.forEach((s) => {
       expect(s).toHaveProperty('action_workflow')
       expect(s).toHaveProperty('install_action_workflow_run')
