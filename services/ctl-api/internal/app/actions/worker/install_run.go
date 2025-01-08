@@ -1,6 +1,8 @@
 package worker
 
 import (
+	"encoding/json"
+
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
@@ -8,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/job"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/plan"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
@@ -35,6 +38,14 @@ func (w *Workflows) InstallRun(ctx workflow.Context, sreq signals.RequestSignal)
 		return errors.Wrap(err, "unable to set log stream on context")
 	}
 
+	l.Info("creating plan for executing action run")
+	runPlan, err := plan.AwaitCreateActionRunPlan(ctx, &plan.CreateActionRunPlanRequest{
+		RunID: sreq.RunID,
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to create plan")
+	}
+
 	// execute job
 	l.Info("creating runner job to execute action")
 	runnerJob, err := activities.AwaitCreateRunnerJob(ctx, &activities.CreateRunnerJobRequest{
@@ -43,6 +54,18 @@ func (w *Workflows) InstallRun(ctx workflow.Context, sreq signals.RequestSignal)
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create runner job")
+	}
+
+	// save runner job plan
+	planJSON, err := json.Marshal(runPlan)
+	if err != nil {
+		return errors.Wrap(err, "unable to convert plan to json")
+	}
+	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+		JobID:    runnerJob.ID,
+		PlanJSON: string(planJSON),
+	}); err != nil {
+		return errors.Wrap(err, "unable to save runner job plan")
 	}
 
 	// now queue and execute the job

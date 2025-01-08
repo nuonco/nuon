@@ -11,7 +11,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
@@ -38,10 +38,12 @@ type ExecuteJobRequest struct {
 // @task-queue "api"
 // @id-callback WorkflowIDCallback
 func ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {
-	return app.RunnerJobStatusUnknown, nil
+	jw := &jobWorkflow{}
+
+	return jw.pollJob(ctx, req.JobID)
 }
 
-func (j *JobWorkflow) pollJob(ctx workflow.Context, jobID string) (app.RunnerJobStatus, error) {
+func (j *jobWorkflow) pollJob(ctx workflow.Context, jobID string) (app.RunnerJobStatus, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return app.RunnerJobStatusUnknown, errors.Wrap(err, "expected a log stream in the context to poll job")
