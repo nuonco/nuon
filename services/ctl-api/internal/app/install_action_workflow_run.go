@@ -51,7 +51,7 @@ type InstallActionWorkflowRun struct {
 
 	// after query
 	// TODO: update runner to track start and finish timestamps
-	ExecutionTime *time.Duration `json:"execution_time" gorm:"-"`
+	ExecutionTime *time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer"`
 }
 
 func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {
