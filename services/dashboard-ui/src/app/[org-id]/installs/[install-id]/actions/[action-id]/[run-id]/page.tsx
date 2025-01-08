@@ -20,6 +20,7 @@ import {
   getOrg,
 } from '@/lib'
 import type { TOTELLog } from '@/types'
+import { sentanceCase } from '@/utils'
 
 export default withPageAuthRequired(async function InstallWorkflow({ params }) {
   const installId = params?.['install-id'] as string
@@ -36,7 +37,7 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
   const logs = await getLogStreamLogs({
     logStreamId: workflowRun?.log_stream?.id,
     orgId,
-  })
+  }).catch(console.error)
 
   return (
     <DashboardContent
@@ -114,18 +115,22 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
             heading={`${workflowRun?.config?.steps?.length} of ${workflowRun?.config?.steps?.length} Steps`}
           >
             <div className="flex flex-col gap-2">
-              {workflowRun?.config?.steps?.map((step) => (
+              {workflowRun?.steps?.map((step) => (
                 <span key={step.id} className="py-2">
                   <span className="flex items-center gap-3">
-                    <EventStatus status="finished" />
-                    <Text variant="med-12">Finished</Text>
+                    <EventStatus status={step.status} />
+                    <Text variant="med-12">{sentanceCase(step.status)}</Text>
                   </span>
 
                   <Text
                     className="flex items-center gap-2 ml-7"
                     variant="reg-12"
                   >
-                    {step.name}
+                    {
+                      workflowRun.config.steps.find(
+                        (s) => s.id === step.step_id
+                      )?.name
+                    }
                   </Text>
                 </span>
               ))}
