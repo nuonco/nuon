@@ -22,12 +22,13 @@ name: Deploy
         type: string
         required: true
 
-concurrency: 
-  group: ${{inputs.service}}-${{inputs.env}}-${{ github.head_ref || 'main' }}
+# TODO: reenable this
+#concurrency: 
+  #group: ${{inputs.service}}-${{inputs.env}}-${{ github.head_ref || 'main' }}
 
-  # NOTE(jm): we only want to "cancel" in flight jobs if pushing to an existing PR. If this is running on main, do not
-  # cancel previous jobs.
-  cancel-in-progress: ${{ github.head_ref != 'main' }}
+  ## NOTE(jm): we only want to "cancel" in flight jobs if pushing to an existing PR. If this is running on main, do not
+  ## cancel previous jobs.
+  #cancel-in-progress: ${{ github.head_ref != 'main' }}
 
 defaults:
   run:
@@ -41,7 +42,7 @@ permissions:
 jobs:
   deploy:
     name: Deploy
-    runs-on: mono
+    runs-on: ubuntu-latest
     env:
       TF_WORKSPACE: ${{ inputs.env }}
       TF_OUT: ${{ github.workspace }}/tf-out.json
