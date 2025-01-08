@@ -5,7 +5,7 @@ import (
 )
 
 func (h *handler) Name() string {
-	return "action-workflow"
+	return "actions-workflow"
 }
 
 func (h *handler) JobType() models.AppRunnerJobType {

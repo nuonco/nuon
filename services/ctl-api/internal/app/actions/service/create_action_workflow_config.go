@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -99,6 +100,9 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 		AppConfigID:      req.AppConfigID,
 		OrgID:            orgID,
 		ActionWorkflowID: awID,
+
+		// TODO(jm): set timeout from config value and default higher up.
+		Timeout: time.Minute * 5,
 	}
 
 	res := s.db.WithContext(ctx).
