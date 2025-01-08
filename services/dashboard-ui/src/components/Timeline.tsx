@@ -8,12 +8,15 @@ import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import { sentanceCase } from '@/utils'
 
-export const EventStatus: FC<{ status?: string }> = ({ status = 'waiting' }) => {
+export const EventStatus: FC<{ status?: string }> = ({
+  status = 'waiting',
+}) => {
   const statusColor = {
     'bg-green-800 dark:bg-green-500':
       status === 'finished' || status === 'active',
     'bg-red-600 dark:bg-red-500': status === 'failed' || status === 'error',
-    'bg-cool-grey-600 dark:bg-cool-grey-500': status === 'noop',
+    'bg-cool-grey-600 dark:bg-cool-grey-500':
+      status === 'noop' || status === 'pending',
     'bg-orange-800 dark:bg-orange-500':
       status === 'waiting' ||
       status === 'started' ||
@@ -34,6 +37,7 @@ export const EventStatus: FC<{ status?: string }> = ({ status = 'waiting' }) => 
           status === 'building' ||
           status === 'queued' ||
           status === 'planning' ||
+          status === 'pending' ||
           status === 'deploying',
       })}
     >
