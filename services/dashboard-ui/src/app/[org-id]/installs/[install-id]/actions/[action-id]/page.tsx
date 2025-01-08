@@ -1,6 +1,10 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   ActionTriggerButton,
+  Config,
+  ConfigurationVCS,
+  ConfigurationVariables,
+  Expand,
   InstallWorkflowRunHistory,
   DashboardContent,
   Section,
@@ -39,7 +43,7 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
       headingUnderline={actionWithRecentRuns.action_workflow?.id}
       statues={
         <div className="flex gap-6 items-start justify-start">
-          {actionWithRecentRuns?.recent_runs ? (
+          {actionWithRecentRuns?.recent_runs?.length ? (
             <>
               <span className="flex flex-col gap-2">
                 <Text className="text-cool-grey-600 dark:text-cool-grey-500">
@@ -89,7 +93,31 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
           <Section className="flex-initial" heading="Workflow steps">
-            <div className="flex flex-col gap-2 divide-y">Steps info here</div>
+            <div className="flex flex-col gap-2">
+              {actionWithRecentRuns?.action_workflow?.configs?.[0]?.steps.map(
+                (s) => {
+                  return (
+                    <Expand
+                      isOpen
+                      id={s.id}
+                      key={s.id}
+                      parentClass="border rounded"
+                      headerClass="px-3 py-2"
+                      heading={<Text variant="med-12">{s.name}</Text>}
+                      expandContent={
+                        <div className="flex flex-col gap-4 p-3 border-t">
+                          <Config>
+                            <ConfigurationVCS vcs={s} />
+                          </Config>
+
+                          <ConfigurationVariables variables={s.env_vars} />
+                        </div>
+                      }
+                    />
+                  )
+                }
+              )}
+            </div>
           </Section>
         </div>
       </div>
