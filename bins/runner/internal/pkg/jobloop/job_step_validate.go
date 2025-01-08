@@ -10,7 +10,7 @@ import (
 )
 
 func (j *jobLoop) executeValidateJobStep(ctx context.Context, handler jobs.JobHandler, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	if j.settings.SandboxMode {
+	if j.isSandbox(job) {
 		j.execSandboxStep(ctx)
 		return nil
 	}

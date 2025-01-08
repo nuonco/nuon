@@ -12,7 +12,7 @@ func Matches(job *models.AppRunnerJob, handler JobHandler) error {
 	}
 
 	if models.AppRunnerJobStatus(job.Status) != handler.JobStatus() {
-		return fmt.Errorf("invalid job type %s", job.Type)
+		return fmt.Errorf("invalid job status %s", job.Status)
 	}
 
 	return nil
