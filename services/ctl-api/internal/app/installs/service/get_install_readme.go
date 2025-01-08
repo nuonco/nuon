@@ -67,7 +67,7 @@ func (s *service) GetInstallReadme(ctx *gin.Context) {
 	vars := plan.GetWaypointPlan().Variables
 	readme := appConfig.Readme
 
-	value, err := render.RenderString(ctx, readme, vars.IntermediateData)
+	value, err := render.RenderString(readme, vars.IntermediateData)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get render readme: %w", err))
 		return

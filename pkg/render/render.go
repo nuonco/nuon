@@ -2,7 +2,6 @@ package render
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"text/template"
 
@@ -13,7 +12,7 @@ const (
 	defaultPrefix string = "nuon"
 )
 
-func RenderString(ctx context.Context, inputVal string, intermediateData *structpb.Struct) (string, error) {
+func RenderString(inputVal string, intermediateData *structpb.Struct) (string, error) {
 	if inputVal == "" {
 		return "", nil
 	}
