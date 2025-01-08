@@ -103,7 +103,6 @@ resource "aws_cloudformation_stack" "per-resource-costs" {
   template_url = "https://vantage-public.s3.amazonaws.com/cur-setup-latest.json"
 
   parameters = {
-    VantageCrossAccountRole     = "ConnectToVantage15519-1726781115-CrossAccountRole-13HVDF0Jjh9K"
     VantageID                   = "O1XMAv_xX3ZE_wvwyHtrsg"
     VantageDomain               = "https://console.vantage.sh"
     VantagePingbackArn          = "arn:aws:sns:us-east-1:630399649041:cost-and-usage-report-connector"
