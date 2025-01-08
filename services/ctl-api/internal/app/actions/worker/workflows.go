@@ -11,6 +11,7 @@ import (
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/job"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/plan"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
@@ -38,13 +39,13 @@ type Workflows struct {
 }
 
 func (w *Workflows) All() []interface{} {
-	return []interface{}{
-		w.EventLoop,
-		w.Created,
-		w.InstallRun,
-		w.Restart,
-		job.ExecuteJob,
-	}
+	wkflows := w.ListWorkflowFns()
+
+	wkflows = append(wkflows, w.EventLoop)
+	wkflows = append(wkflows, job.ExecuteJob)
+	wkflows = append(wkflows, plan.CreateActionRunPlan)
+
+	return wkflows
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {
