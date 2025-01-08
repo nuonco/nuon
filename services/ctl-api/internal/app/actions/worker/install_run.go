@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/job"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/plan"
+	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
@@ -70,6 +71,11 @@ func (w *Workflows) InstallRun(ctx workflow.Context, sreq signals.RequestSignal)
 
 	// now queue and execute the job
 	l.Info("executing runner job")
+	// TODO(jm): this signal should be sent via the workflow, as well.
+	w.evClient.Send(ctx, run.Install.RunnerID, &runnersignals.Signal{
+		Type:  runnersignals.OperationProcessJob,
+		JobID: runnerJob.ID,
+	})
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		JobID:      runnerJob.ID,
 		WorkflowID: "",
