@@ -20,7 +20,10 @@ func (a *Activities) GetInstallActionWorkflowRun(ctx context.Context, req GetIns
 func (a *Activities) getInstallActionWorkflowRun(ctx context.Context, runID string) (*app.InstallActionWorkflowRun, error) {
 	run := app.InstallActionWorkflowRun{}
 	res := a.db.WithContext(ctx).
+		Preload("Steps").
+		Preload("Steps.Step").
 		Preload("ActionWorkflowConfig").
+		Preload("ActionWorkflowConfig.ActionWorkflow").
 		Preload("ActionWorkflowConfig.Triggers").
 		Preload("ActionWorkflowConfig.Steps").
 		Preload("LogStream").

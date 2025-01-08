@@ -8,11 +8,11 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
-func (j *JobWorkflow) logJobQueue(ctx workflow.Context, jobID string) error {
+func (j *jobWorkflow) logJobQueue(ctx workflow.Context, jobID string) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return errors.Wrap(err, "expected a log stream in the context to poll job")
