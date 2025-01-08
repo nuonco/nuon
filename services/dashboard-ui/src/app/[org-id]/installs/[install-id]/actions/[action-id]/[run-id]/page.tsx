@@ -3,6 +3,7 @@ import {
   ClickToCopy,
   DashboardContent,
   Duration,
+  EventStatus,
   LogStreamPoller,
   Section,
   StatusBadge,
@@ -110,13 +111,21 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
           <Section
             className="flex-initial"
-            heading={`${workflowRun?.config?.steps?.length} Steps`}
+            heading={`${workflowRun?.config?.steps?.length} of ${workflowRun?.config?.steps?.length} Steps`}
           >
-            <div className="flex flex-col gap-0 divide-y">
-              {workflowRun?.config?.steps?.map((step, i) => (
+            <div className="flex flex-col gap-2">
+              {workflowRun?.config?.steps?.map((step) => (
                 <span key={step.id} className="py-2">
-                  <Text>
-                    {i + 1}. {step.name}
+                  <span className="flex items-center gap-3">
+                    <EventStatus status="finished" />
+                    <Text variant="med-12">Finished</Text>
+                  </span>
+
+                  <Text
+                    className="flex items-center gap-2 ml-7"
+                    variant="reg-12"
+                  >
+                    {step.name}
                   </Text>
                 </span>
               ))}
