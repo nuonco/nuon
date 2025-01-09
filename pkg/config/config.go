@@ -82,10 +82,17 @@ func (a *AppConfig) Parse() error {
 		})
 	}
 
+	for idx, action := range a.Actions {
+		parseFns = append(parseFns, parseFn{
+			fmt.Sprintf("actions.%d", idx),
+			action.parse,
+		})
+	}
+
 	for idx, comp := range a.Components {
 		parseFns = append(parseFns, parseFn{
 			fmt.Sprintf("components.%d", idx),
-			comp.Parse,
+			comp.parse,
 		})
 	}
 
