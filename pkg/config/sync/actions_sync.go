@@ -11,7 +11,7 @@ import (
 
 func (s *sync) syncAction(ctx context.Context, resource string, action *config.ActionConfig) (string, string, error) {
 	isNew := false
-	actionWorkflow, err := s.apiClient.GetActionWorkflow(ctx, action.Name)
+	actionWorkflow, err := s.apiClient.GetAppActionWorkflow(ctx, s.appID, action.Name)
 	if err != nil {
 		if !nuon.IsNotFound(err) {
 			return "", "", err
@@ -43,6 +43,7 @@ func (s *sync) syncAction(ctx context.Context, resource string, action *config.A
 
 	request := &models.ServiceCreateActionWorkflowConfigRequest{
 		AppConfigID: generics.ToPtr(s.state.CfgID),
+		Timeout:     action.Timeout,
 	}
 
 	for _, trigger := range action.Triggers {
