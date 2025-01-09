@@ -10,6 +10,7 @@ import (
 type ActionConfig struct {
 	Source   string                 `mapstructure:"source,omitempty"`
 	Name     string                 `mapstructure:"name" jsonschema:"required"`
+	Timeout  int64                  `mapstructure:"timeout,omitempty"`
 	Triggers []*ActionTriggerConfig `mapstructure:"triggers" jsonschema:"required"`
 	Steps    []*ActionStepConfig    `mapstructure:"steps" jsonschema:"required"`
 }

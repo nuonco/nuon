@@ -17,6 +17,7 @@ type CreateActionWorkflowConfigRequest struct {
 	AppConfigID string                                     `json:"app_config_id" validate:"required"`
 	Triggers    []CreateActionWorkflowConfigTriggerRequest `json:"triggers" validate:"required"`
 	Steps       []CreateActionWorkflowConfigStepRequest    `json:"steps" validate:"required"`
+	Timeout     time.Duration                              `json:"timeout" swaggertype:"primitive,integer"`
 }
 
 type CreateActionWorkflowConfigTriggerRequest struct {
@@ -95,14 +96,16 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 }
 
 func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app.App, orgID string, awID string, req *CreateActionWorkflowConfigRequest) (*app.ActionWorkflowConfig, error) {
+	timeout := req.Timeout
+	if timeout == 0 {
+		timeout = 5 * time.Minute
+	}
 	awc := app.ActionWorkflowConfig{
 		AppID:            parentApp.ID,
 		AppConfigID:      req.AppConfigID,
 		OrgID:            orgID,
 		ActionWorkflowID: awID,
-
-		// TODO(jm): set timeout from config value and default higher up.
-		Timeout: time.Minute * 5,
+		Timeout:          timeout,
 	}
 
 	res := s.db.WithContext(ctx).
