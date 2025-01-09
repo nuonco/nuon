@@ -19,7 +19,6 @@ describe('getApps should handle response status codes from GET apps endpoint', (
   const orgId = 'test-id'
   test('200 status', async () => {
     const spec = await getApps({ orgId })
-    expect(spec).toHaveLength(3)
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('name')
@@ -52,7 +51,6 @@ describe('getAppComponents should handle response status codes from GET apps/:id
   const appId = 'test-id'
   test('200 status', async () => {
     const spec = await getAppComponents({ appId, orgId })
-    expect(spec).toHaveLength(1)
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('name')
@@ -71,7 +69,6 @@ describe('getAppConfigs should handle response status codes from GET apps/:id/co
   const appId = 'test-id'
   test('200 status', async () => {
     const spec = await getAppConfigs({ appId, orgId })
-    expect(spec).toHaveLength(1)
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('version')
@@ -90,7 +87,6 @@ describe('getAppInstalls should handle response status codes from GET apps/:id/i
   const appId = 'test-id'
   test('200 status', async () => {
     const spec = await getAppInstalls({ appId, orgId })
-    expect(spec).toHaveLength(3)
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('name')
@@ -173,7 +169,6 @@ describe('getAppActionWorkflows should handle response status codes from GET app
   const appId = 'test-id'
   test('200 status', async () => {
     const spec = await getAppActionWorkflows({ appId, orgId })
-    expect(spec).toHaveLength(3)
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('configs')

@@ -145,3 +145,34 @@
   }
 }
 
+.on-enter {
+  animation: enter 100ms ease-in-out forwards;
+  opacity: 0;
+}
+
+.on-enter.enter-left {
+  transform: translateX(-1rem);
+  transform-origin: top center;
+}
+
+.on-enter.enter-right {
+  transform: translateX(1rem);
+  transform-origin: top center;
+}
+
+.on-enter.enter-top {
+  transform: translateY(-1rem);
+  transform-origin: top center;
+}
+
+.on-enter.enter-bottom {
+  transform: translateY(1rem);
+  transform-origin: top center;
+}
+
+@keyframes enter {
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -1,4 +1,4 @@
-import { DateTime, type DurationUnits } from 'luxon'
+import { DateTime, Duration as LuxonDuration, type DurationUnits } from 'luxon'
 import React, { type FC } from 'react'
 import { Text, type IText } from '@/components/Typography'
 
@@ -23,13 +23,15 @@ export const Time: FC<ITime> = ({ format, time, ...props }) => {
   )
 }
 
+// TODO: normalize around duration format
 export interface IDuration extends Omit<IText, 'role'> {
-  beginTime: string
-  endTime: string
+  beginTime?: string
+  endTime?: string
   durationUnits?: DurationUnits
-  listStyle?: 'narrow' | 'short' | 'long'
-  unitDisplay?: 'narrow' | 'short' | 'long'
   format?: 'default' | 'timer'
+  listStyle?: 'narrow' | 'short' | 'long'
+  nanoseconds?: number
+  unitDisplay?: 'narrow' | 'short' | 'long'
 }
 
 export const Duration: FC<IDuration> = ({
@@ -46,12 +48,18 @@ export const Duration: FC<IDuration> = ({
   ],
   format = 'default',
   listStyle = 'narrow',
+  nanoseconds,
   unitDisplay = 'narrow',
   ...props
 }) => {
-  const bt = DateTime.fromISO(beginTime)
-  const et = DateTime.fromISO(endTime)
-  const duration = et.diff(bt, durationUnits)
+  let duration: LuxonDuration
+  if (nanoseconds) {
+    duration = LuxonDuration.fromMillis(Math.round(nanoseconds / 1000000))
+  } else {
+    const bt = DateTime.fromISO(beginTime)
+    const et = DateTime.fromISO(endTime)
+    duration = et.diff(bt, durationUnits)
+  }
 
   return (
     <Text {...props} role="time">
