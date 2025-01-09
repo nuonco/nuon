@@ -212,7 +212,7 @@ type RunnerJob struct {
 
 	// read only fields from gorm AfterQuery
 
-	ExecutionTime time.Duration `json:"execution_time" gorm:"-"`
+	ExecutionTime time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer"`
 
 	// read only fields from view
 
