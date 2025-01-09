@@ -3,7 +3,7 @@ import React, { type FC } from 'react'
 import type { TActionConfigTriggerType } from '@/types'
 
 interface IActionTriggerType extends React.HTMLAttributes<HTMLSpanElement> {
-  triggerType: TActionConfigTriggerType
+  triggerType: TActionConfigTriggerType | string
 }
 
 export const ActionTriggerType: FC<IActionTriggerType> = ({

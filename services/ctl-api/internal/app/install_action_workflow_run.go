@@ -51,7 +51,7 @@ type InstallActionWorkflowRun struct {
 
 	// after query
 	// TODO: update runner to track start and finish timestamps
-	ExecutionTime *time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer"`
+	ExecutionTime time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer"`
 }
 
 func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {
@@ -64,6 +64,13 @@ func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {
 	}
 	if i.OrgID == "" {
 		i.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+	return nil
+}
+
+func (i *InstallActionWorkflowRun) AfterQuery(tx *gorm.DB) error {
+	if i.RunnerJob != nil {
+		i.ExecutionTime = i.RunnerJob.ExecutionTime
 	}
 	return nil
 }
