@@ -1,4 +1,5 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
+import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   ClickToCopy,
   DashboardContent,
@@ -57,11 +58,14 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       headingUnderline={actionWorkflowId}
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
-          <Time time={workflowRun.created_at} />
-          <Duration
-            beginTime={workflowRun.created_at}
-            endTime={workflowRun.updated_at}
-          />
+          <Text>
+            <CalendarBlank size={14} />
+            <Time time={workflowRun.created_at} />
+          </Text>
+          <Text>
+            <Timer size={14} />
+            <Duration nanoseconds={workflowRun.execution_time} />
+          </Text>
         </div>
       }
       statues={
