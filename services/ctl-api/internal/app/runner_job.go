@@ -207,6 +207,13 @@ type RunnerJob struct {
 	Executions []RunnerJobExecution `json:"executions" gorm:"constraint:OnDelete:CASCADE;"`
 	Plan       RunnerJobPlan        `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
+	StartedAt  time.Time `json:"started_at"  gorm:"default:null"`
+	FinishedAt time.Time `json:"finished_at" gorm:"default:null"`
+
+	// read only fields from gorm AfterQuery
+
+	ExecutionTime time.Duration `json:"execution_time" gorm:"-"`
+
 	// read only fields from view
 
 	ExecutionCount int `json:"execution_count" gorm:"->;-:migration"`
@@ -246,5 +253,9 @@ func (r *RunnerJob) BeforeCreate(tx *gorm.DB) error {
 		r.OverallTimeout = r.QueueTimeout + time.Duration(r.MaxExecutions)*(r.AvailableTimeout+r.ExecutionTimeout)
 	}
 
+	return nil
+}
+func (c *RunnerJob) AfterQuery(tx *gorm.DB) error {
+	c.ExecutionTime = generics.GetTimeDuration(c.StartedAt, c.FinishedAt)
 	return nil
 }

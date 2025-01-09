@@ -63,7 +63,8 @@ type RunnerJobExecution struct {
 	OrgID string `json:"org_id"`
 	Org   Org    `json:"-"`
 
-	RunnerJobID string `json:"runner_job_id" gorm:"notnull;defaultnull;index:idx_runner_job_execution_runner_job_id,type:btree"`
+	RunnerJobID string    `json:"runner_job_id" gorm:"notnull;defaultnull;index:idx_runner_job_execution_runner_job_id,type:btree"`
+	RunnerJob   RunnerJob `json:"-"`
 
 	Status RunnerJobExecutionStatus  `json:"status" gorm:"not null;default null;index:idx_runner_job_execution_status,type:hash"`
 	Result *RunnerJobExecutionResult `json:"result"`
