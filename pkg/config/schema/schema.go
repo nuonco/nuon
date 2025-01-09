@@ -67,6 +67,11 @@ func AppSchemaSources() (*jsonschema.Schema, error) {
 		return nil, err
 	}
 
+	err = setItemsSchemaWithAnyOfSources("actions", schma, "ActionConfig")
+	if err != nil {
+		return nil, err
+	}
+
 	return schma, nil
 }
 
@@ -124,8 +129,7 @@ func setItemsSchemaWithAnyOfSources(propertyName string, schma *jsonschema.Schem
 			Description: fmt.Sprintf("%s configuration object", defName),
 		},
 		{
-			Ref:         "#/$defs/AppSourceConfig",
-			Description: "Source configuration object",
+			Ref: "#/$defs/AppSourceConfig",
 		},
 	}
 
