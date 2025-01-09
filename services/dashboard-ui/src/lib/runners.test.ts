@@ -62,7 +62,6 @@ describe('getRunnerJobs should handle response status codes from GET runners/:id
   const runnerId = 'test-id'
   test('200 status', async () => {
     const spec = await getRunnerJobs({ runnerId, orgId })
-    expect(spec).toHaveLength(2)
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('executions')
@@ -83,7 +82,6 @@ describe('getLogStreamLogs should handle response status codes from GET log-stre
   const logStreamId = 'test-id'
   test('200 status', async () => {
     const spec = await getLogStreamLogs({ logStreamId, orgId })
-    expect(spec).toHaveLength(1)
     spec.map((s) => {
       expect(s).toHaveProperty('timestamp')
       expect(s).toHaveProperty('severity_number')

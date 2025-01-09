@@ -80,6 +80,7 @@ func (s *service) GetInstallActionWorkflowsLatestRun(ctx *gin.Context) {
 func (s *service) findLatestInstallActionWorkflowRun(ctx context.Context, orgID, installID, actionWorkflowID string) (*app.InstallActionWorkflowRun, error) {
 	var run app.InstallActionWorkflowRun
 	res := s.db.WithContext(ctx).
+		Preload("RunnerJob").
 		Joins("JOIN action_workflow_configs ON action_workflow_configs.id = install_action_workflow_runs.action_workflow_config_id").
 		Where("install_action_workflow_runs.org_id = ? AND install_action_workflow_runs.install_id = ? and action_workflow_configs.action_workflow_id = ?", orgID, installID, actionWorkflowID).
 		Order("created_at desc").
