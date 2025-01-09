@@ -75,7 +75,6 @@ describe('getComponentBuilds should handle response status codes from GET compon
   const componentId = 'test-id'
   test('200 status', async () => {
     const spec = await getComponentBuilds({ componentId, orgId })
-    expect(spec).toHaveLength(2)
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('status')

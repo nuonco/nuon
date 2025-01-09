@@ -85,6 +85,7 @@ func (s *service) findInstallActionWorkflowRecentRuns(ctx context.Context, orgID
 	limit := 50 // limit to 50 runs until pagination is implemented
 	runs := []*app.InstallActionWorkflowRun{}
 	res := s.db.WithContext(ctx).
+		Preload("RunnerJob").
 		Joins("JOIN action_workflow_configs ON action_workflow_configs.id = install_action_workflow_runs.action_workflow_config_id").
 		Where("install_action_workflow_runs.org_id = ? AND install_action_workflow_runs.install_id = ? and action_workflow_configs.action_workflow_id = ?", orgID, installID, actionWorkflowID).
 		Order("created_at desc").
