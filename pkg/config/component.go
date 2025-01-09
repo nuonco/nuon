@@ -55,7 +55,7 @@ type Component struct {
 	ExternalImage   *ExternalImageComponentConfig   `mapstructure:"external_image,omitempty" jsonschema:"oneof_required=external_image"`
 }
 
-func (c *Component) Parse() error {
+func (c *Component) parse() error {
 	if c.HelmChart != nil {
 		return c.HelmChart.Parse()
 	}
