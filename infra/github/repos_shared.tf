@@ -455,7 +455,7 @@ module "shared-stardog" {
 
   collaborators = {
     "paulplace" = "push",
-    "pdmars" = "push"
+    "pdmars"    = "push"
   }
 
   providers = {
@@ -476,7 +476,7 @@ module "shared-stardog-installer" {
 
   collaborators = {
     "paulplace" = "push",
-    "pdmars" = "push"
+    "pdmars"    = "push"
   }
 
   providers = {
@@ -528,6 +528,43 @@ module "shared-percona-installer" {
 
   name                     = "percona-installer"
   description              = "Custom installer for percona."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+  is_fork                  = true
+
+  collaborators = {
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
+module "shared-retool" {
+  source = "./modules/repository"
+
+  name                     = "retool"
+  description              = "Nuon configuration for Retool."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
+module "shared-retool-installer" {
+  source = "./modules/repository"
+
+  name                     = "retool-installer"
+  description              = "Example installer for Retool."
   required_checks          = []
   owning_team_id           = github_team.nuonco-shared.id
   is_private               = true
