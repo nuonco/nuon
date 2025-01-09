@@ -42,6 +42,15 @@ func InputsSourceSchema() (*jsonschema.Schema, error) {
 	return r.Reflect(config.AppInputConfig{}), nil
 }
 
+func ActionSourceSchema() (*jsonschema.Schema, error) {
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.ActionConfig{}), nil
+}
+
 func DockerBuildComponent() (*jsonschema.Schema, error) {
 	r, err := reflector()
 	if err != nil {
