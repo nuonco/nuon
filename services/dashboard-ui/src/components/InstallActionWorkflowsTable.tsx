@@ -114,7 +114,7 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
           props.row.original.install_action_workflow_run ? (
             <Text>
               <Timer size={18} />
-              <Time time={props.getValue<string>()} format="relative" />
+              <Duration nanoseconds={props.getValue<number>()} />
             </Text>
           ) : (
             <Minus />

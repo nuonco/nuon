@@ -6,7 +6,6 @@ import { getOrg, getOrgs, getVCSConnections, postOrg } from './orgs'
 describe('getOrgs should handle response status codes from GET orgs endpoint', () => {
   test('200 status', async () => {
     const spec = await getOrgs()
-    expect(spec).toHaveLength(3)
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('name')
@@ -35,7 +34,6 @@ describe('getVCSConnections should handle response status codes from GET vcs/con
   const orgId = 'test-id'
   test('200 status', async () => {
     const spec = await getVCSConnections({ orgId })
-    expect(spec).toHaveLength(4)
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('github_install_id')

@@ -14,7 +14,7 @@ type TData = {
   name?: string
   config_count?: number
   steps?: string[]
-  triggers?: TActionConfigTriggerType[]
+  triggers?: TActionConfigTriggerType[] | string[]
 }
 
 function parseWorkflowsToTableData(
