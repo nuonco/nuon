@@ -15,8 +15,8 @@ module "service" {
       essential                = true
       memory_reservation       = 100
       readonly_root_filesystem = false
-      entryPoint = "/bin/runner"
-      command = ["run"]
+      entryPoint               = "/bin/runner"
+      command                  = ["run"]
       environment = [
         {
           name  = "RUNNER_API_URL"
@@ -40,7 +40,7 @@ module "service" {
         },
         {
           name  = "AWS_REGION"
-          value = "${var.region}"
+          value = "${var.aws_region}"
         },
       ]
     }
