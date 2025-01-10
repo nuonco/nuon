@@ -32,9 +32,16 @@ type CreateActionWorkflowConfigStepRequest struct {
 	Command string             `json:"command" validate:"required"`
 }
 
+const maxTimeout = time.Hour
+const defaultTimeout = 5 * time.Minute
+
 func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
+	}
+
+	if c.Timeout <= maxTimeout {
+		return fmt.Errorf("timeout cannot exceed %s", maxTimeout.String())
 	}
 	return nil
 }
@@ -98,7 +105,7 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app.App, orgID string, awID string, req *CreateActionWorkflowConfigRequest) (*app.ActionWorkflowConfig, error) {
 	timeout := req.Timeout
 	if timeout == 0 {
-		timeout = 5 * time.Minute
+		timeout = defaultTimeout
 	}
 	awc := app.ActionWorkflowConfig{
 		AppID:            parentApp.ID,
