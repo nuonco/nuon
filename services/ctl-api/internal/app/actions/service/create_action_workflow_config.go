@@ -40,7 +40,7 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 		return fmt.Errorf("invalid request: %w", err)
 	}
 
-	if c.Timeout <= maxTimeout {
+	if c.Timeout > maxTimeout {
 		return fmt.Errorf("timeout cannot exceed %s", maxTimeout.String())
 	}
 	return nil
