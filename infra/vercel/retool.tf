@@ -5,6 +5,6 @@ resource "vercel_project" "retool_installer" {
 
   git_repository = {
     type = "github"
-    repo = "nuonco-shared/retool-installer"
+    repo = "nuonco-shared/retool"
   }
 }
