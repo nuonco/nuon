@@ -23,8 +23,8 @@ func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, insta
 		return err
 	}
 
-	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "deploying")
-	l.Info("executing deploy")
+	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating deploy plan")
+	l.Info("planning and executing deploy")
 
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
 	if err != nil {
@@ -97,6 +97,7 @@ func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, insta
 		return errors.Wrap(err, "unable to save install intermediate data")
 	}
 
+	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "executing deploy")
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		JobID: runnerJob.ID,
 		Type:  runnersignals.OperationProcessJob,
