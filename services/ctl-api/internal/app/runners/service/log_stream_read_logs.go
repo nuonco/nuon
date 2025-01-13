@@ -4,16 +4,20 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	chhelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/ch/helpers"
 )
 
 const (
-	PageSize int = 250
+	PageSize             int    = 250
+	nestedAttributeRegex string = `^(?:[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)?)$` // https://regex101.com/r/179bxx/1
 )
 
 // @ID LogStreamReadLogs
@@ -56,16 +60,36 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	} else {
 		afterVal, err := strconv.ParseInt(afterStr, 10, 64)
 		if err != nil {
-			ctx.Error(fmt.Errorf("unable to parse pagination query params: %w", err))
+			ctx.Error(errors.Wrap(err, "unable to parse pagination query params"))
 			return
 		}
 		after = afterVal
 	}
 
+	// grab any and all attribute query params
+	queryParams := ctx.Request.URL.Query()
+	resourceAttrQueryParams := map[string]string{}
+	logAttrQueryParams := map[string]string{}
+	for key, value := range queryParams {
+		if strings.HasPrefix(key, "resource.") {
+			newKey := strings.Replace(key, "resource.", "", 1)
+			match, _ := regexp.MatchString(nestedAttributeRegex, newKey)
+			if match {
+				resourceAttrQueryParams[newKey] = value[0]
+			}
+		} else if strings.HasPrefix(key, "log.") {
+			newKey := strings.Replace(key, "log.", "", 1)
+			match, _ := regexp.MatchString(nestedAttributeRegex, newKey)
+			if match {
+				logAttrQueryParams[newKey] = value[0]
+			}
+		}
+	}
+
 	// read logs from chDB
-	logs, headers, readerr := s.getLogStreamLogs(ctx, logStreamID, after)
-	if readerr != nil {
-		ctx.Error(fmt.Errorf("unable to read runner logs: %w", readerr))
+	logs, headers, readErr := s.getLogStreamLogs(ctx, logStreamID, after, resourceAttrQueryParams, logAttrQueryParams)
+	if readErr != nil {
+		ctx.Error(errors.Wrap(readErr, "unable to read runner logs"))
 		return
 	}
 
@@ -77,7 +101,7 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, logs)
 }
 
-func (s *service) getLogStreamLogs(ctx context.Context, runnerID string, after int64) ([]app.OtelLogRecord, map[string]string, error) {
+func (s *service) getLogStreamLogs(ctx context.Context, runnerID string, after int64, resourceAttrQueryParams map[string]string, logAttrQueryParams map[string]string) ([]app.OtelLogRecord, map[string]string, error) {
 	// headers
 	headers := map[string]string{"Range-Units": "items"}
 
@@ -91,12 +115,22 @@ func (s *service) getLogStreamLogs(ctx context.Context, runnerID string, after i
 		res.Where("toUnixTimestamp64Nano(timestamp) > ?", after)
 	}
 
+	for key, value := range resourceAttrQueryParams {
+		columnName := chhelpers.NestedColumnName("resource_attributes", key)
+		res.Where(fmt.Sprintf("%s = ?", res.Config.NamingStrategy.ColumnName("", columnName)), value)
+	}
+
+	for key, value := range logAttrQueryParams {
+		columnName := chhelpers.NestedColumnName("log_attributes", key)
+		res.Where(fmt.Sprintf("%s = ?", res.Config.NamingStrategy.ColumnName("", columnName)), value)
+	}
+
 	res.
 		Order("timestamp asc").
 		Limit(PageSize).
 		Find(&otelLogRecords)
 	if res.Error != nil {
-		return nil, headers, fmt.Errorf("unable to retrieve logs: %w", res.Error)
+		return nil, headers, errors.Wrap(res.Error, "unable to retrieve logs")
 	}
 
 	// Query: get total record count
@@ -107,7 +141,7 @@ func (s *service) getLogStreamLogs(ctx context.Context, runnerID string, after i
 		Find(&[]app.OtelLogRecord{}).
 		Count(&count)
 	if countres.Error != nil {
-		return nil, headers, fmt.Errorf("unable to retrieve logs: %w", countres.Error)
+		return nil, headers, errors.Wrap(countres.Error, "unable to retrieve logs: %w")
 	}
 
 	// determine next
