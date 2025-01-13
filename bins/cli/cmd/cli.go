@@ -40,9 +40,10 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "unable to initialize api client")
 	}
 
-	if err := c.checkCLIVersion(); err != nil {
-		return err
-	}
+	// TODO: revisit how we handle the version notification for users
+	// if err := c.checkCLIVersion(); err != nil {
+	// 	return err
+	// }
 
 	if cmd.Use != "login" {
 		if err := c.initUser(); err != nil {
