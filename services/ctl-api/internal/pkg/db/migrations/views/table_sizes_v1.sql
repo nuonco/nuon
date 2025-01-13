@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS table_sizes_v1;
+
 CREATE
 OR REPLACE VIEW table_sizes_v1 AS
   SELECT

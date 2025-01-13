@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS action_workflows_view_v1;
+
 CREATE OR REPLACE VIEW action_workflows_view_v1 AS
   /* Load the count of configs */
   /* Build a mapping of the components and statuses */
