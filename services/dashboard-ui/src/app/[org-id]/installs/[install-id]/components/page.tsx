@@ -1,9 +1,11 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
+  InstallDeployComponentButton,
   InstallStatuses,
   InstallComponentsTable,
   InstallPageSubNav,
+  InstallReprovisionButton,
   NoComponents,
   type TDataInstallComponent,
 } from '@/components'
@@ -15,6 +17,7 @@ import {
   getOrg,
 } from '@/lib'
 import type { TBuild } from '@/types'
+import { USER_REPROVISION } from '@/utils'
 
 export default withPageAuthRequired(async function InstallComponents({
   params,
@@ -70,7 +73,22 @@ export default withPageAuthRequired(async function InstallComponents({
       ]}
       heading={install.name}
       headingUnderline={install.id}
-      statues={<InstallStatuses initInstall={install} shouldPoll />}
+      statues={
+        <div className="flex items-end gap-8">
+          <InstallStatuses initInstall={install} shouldPoll />
+          {USER_REPROVISION ? (
+            <div className="flex items-center gap-3">
+              <InstallReprovisionButton installId={installId} orgId={orgId} />
+              {install?.install_components?.length ? (
+                <InstallDeployComponentButton
+                  installId={installId}
+                  orgId={orgId}
+                />
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      }
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <section className="px-6 py-8">

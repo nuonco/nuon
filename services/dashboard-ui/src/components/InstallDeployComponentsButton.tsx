@@ -1,12 +1,12 @@
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
-import { Check, ArrowClockwise } from '@phosphor-icons/react'
+import { CloudCheck, CloudArrowUp } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
-import { reprovisionInstall } from '@/components/install-actions'
+import { deployComponents } from '@/components/install-actions'
 
-export const InstallReprovisionButton: FC<{
+export const InstallDeployComponentButton: FC<{
   installId: string
   orgId: string
 }> = ({ installId, orgId }) => {
@@ -30,20 +30,20 @@ export const InstallReprovisionButton: FC<{
       className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-2"
       onClick={() => {
         setIsLoading(true)
-        reprovisionInstall({ installId, orgId }).then(() => {
+        deployComponents({ installId, orgId }).then(() => {
           setIsLoading(false)
           setIsKickedOff(true)
         })
       }}
     >
       {isKickedOff ? (
-        <Check size="20" />
+        <CloudCheck size="20" />
       ) : isLoading ? (
         <SpinnerSVG />
       ) : (
-        <ArrowClockwise size="20" />
+        <CloudArrowUp size="20" />
       )}{' '}
-      Reprovision
+      Deploy components
     </Button>
   )
 }
