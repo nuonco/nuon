@@ -248,3 +248,16 @@ export async function getInstallActionWorkflowRecentRun({
     path: `installs/${installId}/action-workflows/${actionWorkflowId}/recent-runs`,
   })
 }
+
+export interface IDeployComponents extends IGetInstall {}
+
+export async function deployComponents({
+  installId,
+  orgId,
+}: IReprovisionInstall) {
+  return mutateData({
+    errorMessage: 'Unable to deploy components to install.',
+    orgId,
+    path: `installs/${installId}/components/deploy-all`,
+  })
+}

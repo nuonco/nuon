@@ -18,6 +18,7 @@ import {
   runInstallActionWorkflow,
   getInstallActionWorkflowLatestRun,
   getInstallActionWorkflowRecentRun,
+  deployComponents,
 } from './installs'
 
 describe('getInstalls should handle response status codes from GET installs endpoint', () => {
@@ -340,5 +341,20 @@ describe('getInstallActionWorkflowRecentRun should handle response status codes 
       installId,
       orgId,
     }).catch((err) => expect(err).toMatchSnapshot())
+  })
+})
+
+describe('deployComponents should handle response status codes from POST installs/:id/components/deploy-all endpoint', () => {
+  const orgId = 'test-id'
+  const installId = 'test-id'
+  test('200 status', async () => {
+    const spec = await deployComponents({ installId, orgId })
+    expect(spec).not.toBeNull()
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await deployComponents({ installId, orgId }).catch((err) =>
+      expect(err).toMatchSnapshot()
+    )
   })
 })
