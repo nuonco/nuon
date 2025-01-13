@@ -10,6 +10,8 @@ the subquery maps the name to a string value. the string value depends on wether
 2. if YES: we return eight asterisks, aka a redaction.
 
 */
+DROP VIEW IF EXISTS install_inputs_view_v1;
+
 CREATE
 OR REPLACE VIEW install_inputs_view_v1 AS
 SELECT
