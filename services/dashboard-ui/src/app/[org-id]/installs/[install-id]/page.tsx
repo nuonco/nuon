@@ -9,9 +9,11 @@ import {
   DashboardContent,
   ErrorFallback,
   InstallCloudPlatform,
+  InstallDeployComponentButton,
   InstallInputsSection,
   InstallPageSubNav,
   InstallStatuses,
+  InstallReprovisionButton,
   Loading,
   StatusBadge,
   Section,
@@ -24,7 +26,7 @@ import {
   getInstallRunnerGroup,
   getOrg,
 } from '@/lib'
-import { RUNNERS } from '@/utils'
+import { RUNNERS, USER_REPROVISION } from '@/utils'
 
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
@@ -47,7 +49,22 @@ export default withPageAuthRequired(async function Install({ params }) {
       ]}
       heading={install.name}
       headingUnderline={install.id}
-      statues={<InstallStatuses initInstall={install} shouldPoll />}
+      statues={
+        <div className="flex items-end gap-8">
+          <InstallStatuses initInstall={install} shouldPoll />
+          {USER_REPROVISION ? (
+            <div className="flex items-center gap-3">
+              <InstallReprovisionButton installId={installId} orgId={orgId} />
+              {install?.install_components?.length ? (
+                <InstallDeployComponentButton
+                  installId={installId}
+                  orgId={orgId}
+                />
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      }
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <div className="flex flex-col lg:flex-row flex-auto">
