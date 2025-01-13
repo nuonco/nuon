@@ -181,16 +181,10 @@ synthetics:
 # vercel projects ls  |& grep installer | tr -s ' ' | cut -d ' ' -f 2,3| jq -R -n -c '[inputs|split(" ")|{(.[0]):.[1]}] | add' | jq
 installer_synthetics:
   installers:
-    paradedb-installer: https://paradedb-installer.vercel.app
-    percona-installer: https://percona-installer.vercel.app
     stardog-installer: https://stardog-installer.vercel.app
-    athena-installer: https://athena-installer.vercel.app
-    streamkap-installer: https://streamkap-installer.vercel.app
-    weaviate-installer: https://weaviate-installer.vercel.app
-    warpstream-installer: https://warpstream-installer.vercel.app
     100xdev-installer: https://100xdev-installer.vercel.app
-    # demo-installer: https://demo-installer.vercel.app
-    # installers: https://installers.nuon.co
+    retool-installer: https://retool-installer.vercel.app
+    demo-installer: https://demo-installer.vercel.app
   config:
     name: "[prod] Installer Uptime"
     type: "api"
