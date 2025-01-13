@@ -28,7 +28,7 @@ func (s *service) AdminGetLogStreamLogs(ctx *gin.Context) {
 	}
 
 	before := time.Now().UTC().UnixNano()
-	logs, headers, err := s.getLogStreamLogs(ctx, ls.ID, before)
+	logs, headers, err := s.getLogStreamLogs(ctx, ls.ID, before, map[string]string{}, map[string]string{})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to read runner logs: %w", err))
 		return
