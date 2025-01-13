@@ -25,12 +25,8 @@ func (s *Service) GetInputConfig(ctx context.Context, appID string, asJSON bool)
 		return view.Error(err)
 	}
 
-	if asJSON {
-		ui.PrintJSON(inputCfg)
-		// TODO (sdboyer) this seems like a bug, should it always print JSON?
-		// } else {
-		// 	ui.PrintJSON(inputCfg)
-	}
+	// NOTE: ignore json flag and always output json
+	ui.PrintJSON(inputCfg)
 
 	return nil
 }
