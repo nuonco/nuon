@@ -1,6 +1,10 @@
 'use server'
 
-import { reprovisionInstall as reprovisionInstallSandbox } from '@/lib'
+// import { revalidatePath } from 'next/cache'
+import {
+  deployComponents as deployAllComponents,
+  reprovisionInstall as reprovisionInstallSandbox,
+} from '@/lib'
 
 interface IReprovisionInstall {
   installId: string
@@ -12,4 +16,19 @@ export async function reprovisionInstall({
   orgId,
 }: IReprovisionInstall) {
   return reprovisionInstallSandbox({ installId, orgId })
+}
+
+interface IDeployComponents {
+  installId: string
+  orgId: string
+}
+
+export async function deployComponents({
+  installId,
+  orgId,
+}: IDeployComponents) {
+  return deployAllComponents({
+    installId,
+    orgId,
+  })
 }
