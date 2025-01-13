@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS install_inputs_view_v3;
+
 CREATE OR REPLACE VIEW installs_view_v3 AS
   /* Load the most recent sandbox run */
   WITH sandbox_runs_partitioned AS (
