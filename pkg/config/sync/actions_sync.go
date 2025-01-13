@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"time"
 
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
@@ -41,9 +42,20 @@ func (s *sync) syncAction(ctx context.Context, resource string, action *config.A
 		}
 	}
 
+	timeout := time.Duration(0)
+	if action.Timeout != "" {
+		timeout, err = time.ParseDuration(action.Timeout)
+		if err != nil {
+			return "", "", SyncInternalErr{
+				Description: "unable to parse timeout",
+				Err:         err,
+			}
+		}
+	}
+
 	request := &models.ServiceCreateActionWorkflowConfigRequest{
 		AppConfigID: generics.ToPtr(s.state.CfgID),
-		Timeout:     action.Timeout,
+		Timeout:     timeout.Nanoseconds(),
 	}
 
 	for _, trigger := range action.Triggers {
