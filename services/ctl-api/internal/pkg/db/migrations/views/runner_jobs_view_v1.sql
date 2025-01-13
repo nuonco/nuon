@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS runner_jobs_view_v1;
+
 CREATE OR REPLACE VIEW runner_jobs_view_v1 AS
   /* Runner job execution counts */
   WITH runner_job_execution_counts AS (

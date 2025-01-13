@@ -66,16 +66,20 @@ func (a *AutoMigrate) execMigration(ctx context.Context, migration migrations.Mi
 		return nil
 	}
 
-	isApplied, err := a.isMigrationApplied(ctx, migration.Name)
-	if err != nil {
-		return fmt.Errorf("unable to see if %s was applied", migration.Name)
-	}
-	if isApplied {
-		a.metricsWriter.Incr("migration.count", metrics.ToTags(map[string]string{
-			"status": "already_applied",
-		}))
-		a.l.Debug("migration already applied", zap.String("name", migration.Name))
-		return nil
+	if !migration.AlwaysRun {
+		isApplied, err := a.isMigrationApplied(ctx, migration.Name)
+		if err != nil {
+			return fmt.Errorf("unable to see if %s was applied", migration.Name)
+		}
+		if isApplied {
+			a.metricsWriter.Incr("migration.count", metrics.ToTags(map[string]string{
+				"status": "already_applied",
+			}))
+			a.l.Debug("migration already applied", zap.String("name", migration.Name))
+			return nil
+		}
+	} else {
+		a.l.Info("running migration without checking because of `AlwaysRun`")
 	}
 
 	status := "error"
@@ -91,7 +95,8 @@ func (a *AutoMigrate) execMigration(ctx context.Context, migration migrations.Mi
 		})
 		a.metricsWriter.Incr("migration.count", metrics.ToTags(map[string]string{
 			"status":             status,
-			"status_description": statusDescription}))
+			"status_description": statusDescription,
+		}))
 	}()
 
 	if err := a.createMigration(ctx, migration.Name); err != nil {
