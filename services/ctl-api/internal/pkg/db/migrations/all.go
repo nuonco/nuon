@@ -3,9 +3,10 @@ package migrations
 import "context"
 
 type Migration struct {
-	Name     string
-	Fn       func(context.Context) error
-	Disabled bool
+	Name      string
+	Fn        func(context.Context) error
+	Disabled  bool
+	AlwaysRun bool
 }
 
 func (a *Migrations) GetAll() []Migration {
@@ -109,8 +110,9 @@ func (a *Migrations) GetAll() []Migration {
 			Fn:   a.migration063RoleDropOrgIDRequirements,
 		},
 		{
-			Name: "066-install-inputs-view-v1",
-			Fn:   a.migration066InstallInputsViewV1,
+			Name:      "066-install-inputs-view-v1",
+			Fn:        a.migration066InstallInputsViewV1,
+			AlwaysRun: true,
 		},
 		{
 			Name: "067-drop-runner-job-owner-index",
@@ -125,40 +127,46 @@ func (a *Migrations) GetAll() []Migration {
 			Fn:   a.migration069V2ToDefaultOrgs,
 		},
 		{
-			Name: "070-table-sizes-view",
-			Fn:   a.migration070TableSizesView,
+			Name:      "070-table-sizes-view",
+			Fn:        a.migration070TableSizesView,
+			AlwaysRun: true,
 		},
 		{
 			Name: "071-drop-settings-refresh-timeout",
 			Fn:   a.migration071DropSettingsRefreshTimeout,
 		},
 		{
-			Name: "072-runner-settings-group-view",
-			Fn:   a.migration072RunnerSettings,
+			Name:      "072-runner-settings-group-view",
+			Fn:        a.migration072RunnerSettings,
+			AlwaysRun: true,
 		},
 		{
 			Name: "073-runner-jobs-drop-len-check-on-owner-type",
 			Fn:   a.migration073DropLengthCheckOnOwnerType,
 		},
 		{
-			Name: "074-runner-wide-view",
-			Fn:   a.migration074RunnerWideView,
+			Name:      "074-runner-wide-view",
+			Fn:        a.migration074RunnerWideView,
+			AlwaysRun: true,
 		},
 		{
 			Name: "075-internal-accounts",
 			Fn:   a.migration075InternalAccounts,
 		},
 		{
-			Name: "076-action-workflow-configs-view",
-			Fn:   a.migration076ActionsWorkflowsView,
+			Name:      "076-action-workflow-configs-view",
+			Fn:        a.migration076ActionsWorkflowsView,
+			AlwaysRun: true,
 		},
 		{
-			Name: "077-runner-jobs-view-v1",
-			Fn:   a.migration077RunnerJobsView,
+			Name:      "077-runner-jobs-view-v1",
+			Fn:        a.migration077RunnerJobsView,
+			AlwaysRun: true,
 		},
 		{
-			Name: "078-app-configs-view-v2",
-			Fn:   a.migration078AppConfigsViewV2,
+			Name:      "078-app-configs-view-v2",
+			Fn:        a.migration078AppConfigsViewV2,
+			AlwaysRun: true,
 		},
 	}
 }

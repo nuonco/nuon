@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS runners_wide_v1;
+
 CREATE
 OR REPLACE VIEW runners_wide_v1 AS
   SELECT runner_group_settings.*, runner_groups.owner_id, runner_groups.owner_type, runners.id as runner_id from runner_groups
