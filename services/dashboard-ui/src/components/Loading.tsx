@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import React, { type FC } from 'react'
 import { Text } from '@/components/Typography'
 
-export const SpinnerSVG: FC<{ variant: 'default' | 'large' }> = ({
+export const SpinnerSVG: FC<{ variant?: 'default' | 'large' }> = ({
   variant = 'default',
 }) => {
   return (
