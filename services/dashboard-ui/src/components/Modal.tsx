@@ -1,7 +1,7 @@
 'use client'
 
 import classNames from 'classnames'
-import React, { type FC } from 'react'
+import React, { type FC, useCallback, useEffect } from 'react'
 import { X } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Heading } from '@/components/Typography'
@@ -24,6 +24,19 @@ export const Modal: FC<IModal> = ({
   onClose = () => {},
   ...props
 }) => {
+  const onEscape = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onClose()
+    }
+  }, [])
+
+  useEffect(() => {
+    document.addEventListener('keydown', onEscape, false)
+    return () => {
+      document.removeEventListener('keydown', onEscape, false)
+    }
+  }, [])
+
   return isOpen ? (
     <div className="absolute flex w-full h-full top-0 left-0 z-50">
       <div

@@ -42,6 +42,76 @@ export type TInstallEvent = Omit<
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
   org_id: string
 }
+export type TInstallDeployPlanIntermediateData = {
+  nuon: {
+    app: { id: string; secrets: Record<string, string> }
+    install: {
+      internal_domain: string
+      public_domain: string
+      inputs: Record<string, string>
+      sandbox: {
+        outputs: {
+          account: {
+            id: string
+            region: string
+          }
+          cluster: {
+            arn: string
+            certificate_authority_data: string
+            cluster_security_group_id: string
+            endpoint: string
+            name: string
+            node_security_group_id: string
+            oidc_issuer_url: string
+            platform_version: string
+            status: string
+          }
+          ecr: {
+            registry_id: string
+            registry_url: string
+            repository_arn: string
+            repository_name: string
+            repository_url: string
+          }
+          internal_domain: {
+            name: string
+            nameservers: string[]
+            zone_id: string
+          }
+          public_domain: {
+            name: string
+            nameservers: string[]
+            zone_id: string
+          }
+          runner: {
+            odr_iam_role_arn: string
+            runner_iam_role_arn: string
+          }
+          vpc: {
+            azs: string[]
+            cidr: string
+            default_security_group_id: string
+            id: string
+            name: string
+            private_subnet_cidr_blocks: string[]
+            private_subnet_ids: string[]
+            public_subnet_cidr_blocks: string[]
+            public_subnet_ids: string[]
+          }
+        }
+      }
+    }
+  }
+}
+export type TInstallDeployPlan = {
+  actual: {
+    waypoint_plan: {
+      variables: {
+        intermediate_data: TInstallDeployPlanIntermediateData
+      }
+    }
+  }
+}
 
 // sandbox
 export type TSandboxConfig = components['schemas']['app.AppSandboxConfig'] & {
