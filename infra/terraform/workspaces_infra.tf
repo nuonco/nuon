@@ -83,6 +83,24 @@ module "infra-datadog-runners-prod" {
   trigger_workspaces = [module.infra-eks-runners-prod-main.workspace_id]
 }
 
+module "infra-datadog-runners-stage" {
+  source = "./modules/workspace"
+
+  name                            = "infra-datadog-runners-stage"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/datadog"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
+
+  variable_sets = ["aws-environment-credentials", "datadog"]
+  project_id    = tfe_project.infra.id
+  vars = {
+    env = "runners-stage"
+  }
+  trigger_workspaces = [module.infra-eks-runners-stage-main.workspace_id]
+}
+
 module "infra-datadog-prod" {
   source = "./modules/workspace"
 
