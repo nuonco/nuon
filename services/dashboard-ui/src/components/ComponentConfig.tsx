@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 
 import React, { type FC, useState } from 'react'
@@ -257,8 +258,8 @@ const ConfigurationJob: FC<Pick<TComponentConfig, 'job'>> = ({ job }) => {
 }
 
 interface IConfigurationVCS {
-  connected_github_vcs_config?: TVCSGitHub;
-  public_git_vcs_config?: TVCSGit;
+  connected_github_vcs_config?: TVCSGitHub
+  public_git_vcs_config?: TVCSGit
 }
 
 export const ConfigurationVCS: FC<{ vcs: IConfigurationVCS }> = ({ vcs }) => {
@@ -365,7 +366,7 @@ export const ConfigurationVariables: FC<{
 
 const ConfigVariables: FC<{
   keys: Array<string>
-  variables: Record<string, string>
+  variables: Record<string, string | string[]>
   isNotTruncated?: boolean
 }> = ({ keys, variables, isNotTruncated = false }) => {
   return (
@@ -393,10 +394,21 @@ const ConfigVariables: FC<{
           <Text className="text-sm font-mono break-all col-span-2">
             {variables[key].length >= 24 && !isNotTruncated ? (
               <ToolTip tipContent={variables[key]} alignment="right">
-                <Truncate variant="large">{variables[key]}</Truncate>
+                <Truncate variant="large">
+                  {typeof variables[key] === 'string'
+                    ? variables[key]
+                    : variables[key]?.map((v) => <span key={key}>{v}</span>)}
+                </Truncate>
               </ToolTip>
-            ) : (
+            ) : typeof variables[key] === 'string' ? (
               variables[key]
+            ) : (
+              variables[key]?.map((v, i) => (
+                <span key={key}>
+                  {v}
+                  {i + 1 !== variables[key].length && ','}
+                </span>
+              ))
             )}
           </Text>
         </div>

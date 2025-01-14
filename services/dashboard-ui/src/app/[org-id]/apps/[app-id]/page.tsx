@@ -30,7 +30,7 @@ export default withPageAuthRequired(async function App({ params }) {
   const [org, app, appConfig, inputCfg] = await Promise.all([
     getOrg({ orgId }),
     getApp({ appId, orgId }),
-    getAppLatestConfig({ appId, orgId }),
+    getAppLatestConfig({ appId, orgId }).catch(console.error),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
   ])
 
@@ -47,9 +47,11 @@ export default withPageAuthRequired(async function App({ params }) {
     >
       <div className="flex flex-col md:flex-row flex-auto">
         <div className="divide-y flex flex-col flex-grow">
-          <Section className="border-r" heading="README">
-            <Markdown content={appConfig.readme} />
-          </Section>
+          {appConfig ? (
+            <Section className="border-r" heading="README">
+              <Markdown content={appConfig.readme} />
+            </Section>
+          ) : null}
 
           <Section className="border-r" heading="Inputs">
             <AppInputConfig inputConfig={inputCfg as TAppInputConfig} />
