@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 type RunnerServiceAccountTokenRequest struct {
@@ -73,6 +75,25 @@ func (c *client) GetRunner(ctx context.Context, id string) (*Runner, error) {
 	var resp Runner
 	if err := json.Unmarshal(byts, &resp); err != nil {
 		return nil, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return &resp, nil
+}
+
+type RunnerServiceAccount struct {
+	Email string `json:"email"`
+}
+
+func (c *client) GetRunnerServiceAccount(ctx context.Context, id string) (*RunnerServiceAccount, error) {
+	endpoint := "/v1/runners/" + id + "/service-account"
+	byts, err := c.execGetRequest(ctx, endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("unable to execute get request: %w", err)
+	}
+
+	var resp RunnerServiceAccount
+	if err := json.Unmarshal(byts, &resp); err != nil {
+		return nil, errors.Wrap(err, "unable to parse response")
 	}
 
 	return &resp, nil
