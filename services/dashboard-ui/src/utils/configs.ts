@@ -17,4 +17,6 @@ export const WORKFLOWS =
 export const RUNNERS = Boolean(process?.env?.NUON_RUNNERS === 'true') || false
 export const USER_REPROVISION =
   Boolean(process?.env?.NUON_INSTALL_REPROVISION === 'true') || false
+export const DEPLOY_INTERMEDIATE_DATA =
+  Boolean(process?.env?.NUON_DEPLOY_DATA === 'true') || false
 export const VERSION = process.env?.VERSION || '0.1.0'

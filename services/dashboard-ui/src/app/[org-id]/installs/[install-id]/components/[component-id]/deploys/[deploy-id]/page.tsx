@@ -6,6 +6,7 @@ import {
   DashboardContent,
   DeployStatus,
   Duration,
+  InstallDeployIntermediateData,
   Link,
   LogStreamPoller,
   StatusBadge,
@@ -22,9 +23,11 @@ import {
   getOrg,
   getInstall,
   getInstallDeploy,
+  getInstallDeployPlan,
   getLogStreamLogs,
 } from '@/lib'
-import type { TOTELLog } from '@/types'
+import type { TOTELLog, TInstallDeployPlan } from '@/types'
+import { DEPLOY_INTERMEDIATE_DATA } from '@/utils'
 
 export default withPageAuthRequired(async function InstallComponentDeploy({
   params,
@@ -38,20 +41,22 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
     orgId,
   })
   const build = await getComponentBuild({ orgId, buildId: deploy.build_id })
-  const [component, componentConfig, install, org, logs] = await Promise.all([
-    getComponent({ componentId: build.component_id, orgId }),
-    getComponentConfig({
-      componentId: build.component_id,
-      componentConfigId: build.component_config_connection_id,
-      orgId,
-    }),
-    getInstall({ installId, orgId }),
-    getOrg({ orgId }),
-    getLogStreamLogs({
-      logStreamId: deploy?.log_stream?.id,
-      orgId,
-    }).catch(console.error),
-  ])
+  const [component, componentConfig, install, org, logs, deployPlan] =
+    await Promise.all([
+      getComponent({ componentId: build.component_id, orgId }),
+      getComponentConfig({
+        componentId: build.component_id,
+        componentConfigId: build.component_config_connection_id,
+        orgId,
+      }),
+      getInstall({ installId, orgId }),
+      getOrg({ orgId }),
+      getLogStreamLogs({
+        logStreamId: deploy?.log_stream?.id,
+        orgId,
+      }).catch(console.error),
+      getInstallDeployPlan({ deployId, installId, orgId }).catch(console.error),
+    ])
 
   return (
     <DashboardContent
@@ -202,6 +207,17 @@ lg:max-w-[450px]"
               </span>
             </div>
           </Section>
+
+          {DEPLOY_INTERMEDIATE_DATA &&
+          (deployPlan as TInstallDeployPlan)?.actual?.waypoint_plan?.variables
+            ?.intermediate_data?.nuon?.install ? (
+            <InstallDeployIntermediateData
+              data={
+                (deployPlan as TInstallDeployPlan)?.actual?.waypoint_plan
+                  ?.variables?.intermediate_data
+              }
+            />
+          ) : null}
 
           <Section heading="Component config">
             <ComponentConfiguration config={componentConfig} />
