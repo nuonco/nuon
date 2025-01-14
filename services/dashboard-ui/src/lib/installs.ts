@@ -4,6 +4,7 @@ import type {
   TInstallActionWorkflowRun,
   TInstallComponent,
   TInstallDeploy,
+  TInstallDeployPlan,
   TInstallEvent,
   TReadme,
   TRunnerGroup,
@@ -259,5 +260,21 @@ export async function deployComponents({
     errorMessage: 'Unable to deploy components to install.',
     orgId,
     path: `installs/${installId}/components/deploy-all`,
+  })
+}
+
+export interface IGetInstallDeployPlan extends IGetInstall {
+  deployId: string
+}
+
+export async function getInstallDeployPlan({
+  deployId,
+  installId,
+  orgId,
+}: IGetInstallDeployPlan) {
+  return queryData<TInstallDeployPlan>({
+    errorMessage: 'Unable to retrieve install deplay plan.',
+    orgId,
+    path: `installs/${installId}/deploys/${deployId}/plan`,
   })
 }
