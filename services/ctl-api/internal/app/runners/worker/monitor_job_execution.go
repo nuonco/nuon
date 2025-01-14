@@ -61,6 +61,22 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			return true, nil
 		}
 
+		// if the runner was started after this execution was created, we mark the execution as in error
+		// this is retryable
+		hb, err := activities.AwaitGetMostRecentHeartBeatRequestByRunnerID(ctx, job.RunnerID)
+		if err != nil {
+			return false, err
+		}
+		if hb.StartedAt.After(jobExecution.CreatedAt) {
+			l.Error(
+				"runner restarted while job was in flight. job will be cancelled.",
+				zap.Time("runner.started_at", hb.StartedAt),
+				zap.Time("job_execution.created_at", jobExecution.CreatedAt),
+			)
+			w.updateStatus(ctx, job.RunnerID, app.RunnerStatusError, "runner restarted while job was in flight")
+			w.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusCancelled)
+		}
+
 		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
 		if err != nil {
 			return false, err
