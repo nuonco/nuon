@@ -22,6 +22,12 @@ type RunnerHeartBeat struct {
 
 	AliveTime time.Duration `json:"alive_time" swaggertype:"primitive,integer"`
 	Version   string        `json:"version"`
+	StartedAt time.Time     `json:"started_at" gorm:"-"`
+}
+
+func (r *RunnerHeartBeat) AfterQuery(tx *gorm.DB) error {
+	r.StartedAt = r.CreatedAt.Add(-1 * r.AliveTime)
+	return nil
 }
 
 func (r *RunnerHeartBeat) BeforeCreate(tx *gorm.DB) error {
