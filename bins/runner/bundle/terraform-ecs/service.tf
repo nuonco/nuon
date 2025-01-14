@@ -1,5 +1,6 @@
 module "service" {
-  source = "terraform-aws-modules/ecs/aws//modules/service"
+  source  = "terraform-aws-modules/ecs/aws//modules/service"
+  version = "5.12.0"
 
   name          = var.runner_id
   cluster_arn   = var.cluster_arn
@@ -7,8 +8,11 @@ module "service" {
   cpu           = 1024
   memory        = 4096
 
+  create_task_exec_iam_role = false
+  task_exec_iam_role_arn    = vars.runner_iam_role_arn
+
   container_definitions = {
-    "${var.runner_id}" = {
+    var.runner_id = {
       image                    = "${var.image_url}:${var.image_tag}"
       cpu                      = 512
       memory                   = 1024
@@ -40,7 +44,7 @@ module "service" {
         },
         {
           name  = "AWS_REGION"
-          value = "${var.aws_region}"
+          value = var.aws_region
         },
       ]
     }
