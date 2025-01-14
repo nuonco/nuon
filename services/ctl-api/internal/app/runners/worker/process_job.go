@@ -43,7 +43,10 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 		return fmt.Errorf("unable to update runner job: %w", err)
 	}
 	activities.AwaitUpdateJobStartedAt(ctx, activities.UpdateJobStartedAtRequest{JobID: sreq.JobID, StartedAt: workflow.Now(ctx)})
-	defer activities.AwaitUpdateJobFinishedAt(ctx, activities.UpdateJobFinishedAtRequest{JobID: sreq.JobID, FinishedAt: workflow.Now(ctx)})
+	defer func() {
+		// NOTE(fd): wrapped this in a func so the time is set correctly
+		activities.AwaitUpdateJobFinishedAt(ctx, activities.UpdateJobFinishedAtRequest{JobID: sreq.JobID, FinishedAt: workflow.Now(ctx)})
+	}()
 
 	// Handle sandbox mode, which by _default_ will mimic processing by simply sleeping for 5 seconds (or whatever
 	// is currently configured).
