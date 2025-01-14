@@ -1,0 +1,88 @@
+// @ts-nocheck
+import React, { type FC } from 'react'
+import { Section } from '@/components/Card'
+import { ConfigurationVariables } from '@/components/ComponentConfig'
+import type { TInstallDeployPlanIntermediateData } from '@/types'
+
+interface IInstallDeployIntermediateData {
+  data: TInstallDeployPlanIntermediateData
+}
+
+export const InstallDeployIntermediateData: FC<
+  IInstallDeployIntermediateData
+> = ({ data }) => {
+  return (
+    <Section
+      childrenClassName="flex flex-col gap-8"
+      heading="Rendered intermediate data"
+      className="max-h-[400px] overflow-y-auto"
+    >
+      {data?.nuon?.install?.internal_domain &&
+      data?.nuon?.install?.public_domain ? (
+        <ConfigurationVariables
+          heading="Install domains"
+          variables={{
+            internal_domain: data?.nuon?.install?.internal_domain,
+            public_domain: data?.nuon?.install?.public_domain,
+          }}
+        />
+      ) : null}
+
+      {data?.nuon?.install?.inputs ? (
+        <ConfigurationVariables
+          heading="Install inputs"
+          variables={data?.nuon?.install?.inputs}
+        />
+      ) : null}
+
+      {data?.nuon?.install?.sandbox?.outputs?.account ? (
+        <ConfigurationVariables
+          heading="Sandbox outputs account"
+          variables={data?.nuon?.install?.sandbox?.outputs?.account}
+        />
+      ) : null}
+
+      {data?.nuon?.install?.sandbox?.outputs?.cluster ? (
+        <ConfigurationVariables
+          heading="Sandbox outputs cluster"
+          variables={data?.nuon?.install?.sandbox?.outputs?.cluster}
+        />
+      ) : null}
+
+      {data?.nuon?.install?.sandbox?.outputs?.ecr ? (
+        <ConfigurationVariables
+          heading="Sandbox outputs ECR"
+          variables={data?.nuon?.install?.sandbox?.outputs?.ecr}
+        />
+      ) : null}
+
+      {data?.nuon?.install?.sandbox?.outputs?.internal_domain ? (
+        <ConfigurationVariables
+          heading="Sandbox outputs internal domain"
+          variables={data?.nuon?.install?.sandbox?.outputs?.internal_domain}
+        />
+      ) : null}
+
+      {data?.nuon?.install?.sandbox?.outputs?.public_domain ? (
+        <ConfigurationVariables
+          heading="Sandbox outputs public domain"
+          variables={data?.nuon?.install?.sandbox?.outputs?.public_domain}
+        />
+      ) : null}
+
+      {data?.nuon?.install?.sandbox?.outputs?.runner ? (
+        <ConfigurationVariables
+          heading="Sandbox outputs runner"
+          variables={data?.nuon?.install?.sandbox?.outputs?.runner}
+        />
+      ) : null}
+
+      {data?.nuon?.install?.sandbox?.outputs?.vpc ? (
+        <ConfigurationVariables
+          heading="Sandbox outputs VPC"
+          variables={data?.nuon?.install?.sandbox?.outputs?.vpc}
+        />
+      ) : null}
+    </Section>
+  )
+}
