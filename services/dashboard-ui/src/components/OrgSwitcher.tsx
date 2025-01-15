@@ -184,7 +184,7 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({ initOrg, initOrgs }) => {
       position="overlay"
       alignment="overlay"
     >
-      <div className="flex flex-col gap-4 overflow-auto max-h-[500px] pb-2">
+      <div className="flex flex-col gap-4 overflow-auto max-h-[500px] pb-2 overflow-x-hidden">
         <div className="pt-2 px-4">
           <OrgSummary org={initOrg} shouldPoll />
 

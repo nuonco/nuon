@@ -124,7 +124,13 @@ const LoadInstallReadme: FC<{ installId: string; orgId: string }> = async ({
   installId,
   orgId,
 }) => {
-  const installReadme = await getInstallReadme({ installId, orgId })
+  const installReadme = await getInstallReadme({ installId, orgId }).catch(
+    console.error
+  )
 
-  return <Markdown content={installReadme?.readme} />
+  return installReadme ? (
+    <Markdown content={installReadme?.readme} />
+  ) : (
+    <Text variant="reg-12">No install README found</Text>
+  )
 }
