@@ -3,6 +3,11 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+
+## v0.19.350
+
+Install readme error handling
+
 ## v0.19.349
 
 Install management buttons
