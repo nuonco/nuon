@@ -18,6 +18,7 @@ export const EventStatus: FC<{ status?: string }> = ({
     'bg-cool-grey-600 dark:bg-cool-grey-500':
       status === 'noop' || status === 'pending',
     'bg-orange-800 dark:bg-orange-500':
+      status === 'executing' ||
       status === 'waiting' ||
       status === 'started' ||
       status === 'in-progress' ||
@@ -31,6 +32,7 @@ export const EventStatus: FC<{ status?: string }> = ({
     <span
       className={classNames('w-4 h-4 rounded-full relative', {
         'animate-pulse':
+          status === 'executing' ||
           status === 'waiting' ||
           status === 'started' ||
           status === 'in-progress' ||
