@@ -556,7 +556,7 @@ module "shared-retool" {
     JatinNanda   = "push",
     ryanartecona = "push",
     slaminad     = "push",
-    gogoavi      = "push"
+    avimoondra      = "push"
   }
 
   providers = {
