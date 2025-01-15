@@ -40,6 +40,7 @@ export const Dropdown: FC<IDropdown> = ({
           aria-controls={`dropdown-content-${id}`}
           className={classNames('h-full', {
             'px-4 py-2': hasCustomPadding,
+            'group-focus-within:opacity-0': position === "overlay" && alignment ==="overlay" ,
             [`${className}`]: Boolean(className),
           })}
           hasCustomPadding={hasCustomPadding}
