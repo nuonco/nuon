@@ -553,25 +553,10 @@ module "shared-retool" {
   enable_branch_protection = false
 
   collaborators = {
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
-module "shared-retool-installer" {
-  source = "./modules/repository"
-
-  name                     = "retool-installer"
-  description              = "Example installer for Retool."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-  is_fork                  = true
-
-  collaborators = {
+    JatinNanda   = "push",
+    ryanartecona = "push",
+    slaminad     = "push",
+    gogoavi      = "push"
   }
 
   providers = {
