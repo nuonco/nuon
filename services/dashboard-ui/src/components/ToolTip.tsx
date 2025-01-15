@@ -91,7 +91,9 @@ export const ToolTip: FC<IToolTip> = ({
         </span>
         <span className="flex items-center gap-1 text-sm">
           {children}
-          {isIconHidden ? null : <Info className="text-cool-grey-600 dark:text-cool-grey-500" />}
+          {isIconHidden ? null : (
+            <Info className="text-cool-grey-600 dark:text-cool-grey-500" />
+          )}
         </span>
       </span>
     </>
