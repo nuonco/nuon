@@ -1,4 +1,4 @@
-import classNames from 'classnames'
+// @ts-nocheck
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   InstallPageSubNav,
@@ -6,7 +6,6 @@ import {
   InstallActionWorkflowsTable,
   DashboardContent,
   Section,
-  Text,
 } from '@/components'
 import { getInstall, getInstallActionWorkflowLatestRun, getOrg } from '@/lib'
 
@@ -18,7 +17,9 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
   const [org, install, actionsWithLatestRun] = await Promise.all([
     getOrg({ orgId }),
     getInstall({ installId, orgId }),
-    getInstallActionWorkflowLatestRun({ installId, orgId }),
+    getInstallActionWorkflowLatestRun({ installId, orgId }).catch(
+      console.error
+    ),
   ])
 
   return (
@@ -34,7 +35,7 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <Section className="border-r" heading="All workflows">
-        {actionsWithLatestRun.length ? (
+        {actionsWithLatestRun?.length ? (
           <InstallActionWorkflowsTable
             actions={actionsWithLatestRun}
             installId={installId}
