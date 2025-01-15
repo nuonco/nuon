@@ -17,6 +17,15 @@ export const InstallDeployIntermediateData: FC<
       heading="Rendered intermediate data"
       className="max-h-[400px] overflow-y-auto"
     >
+      {data?.nuon?.components
+        ? Object.keys(data?.nuon?.components).map((key) => (
+            <ConfigurationVariables
+              key={key}
+              heading={`Component ${key}`}
+              variables={data?.nuon?.components[key]?.outputs}
+            />
+          ))
+        : null}
       {data?.nuon?.install?.internal_domain &&
       data?.nuon?.install?.public_domain ? (
         <ConfigurationVariables
