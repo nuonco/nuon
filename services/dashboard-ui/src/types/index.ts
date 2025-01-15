@@ -45,6 +45,12 @@ export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
 export type TInstallDeployPlanIntermediateData = {
   nuon: {
     app: { id: string; secrets: Record<string, string> }
+    components: Record<
+      string,
+      {
+        outputs: Record<string, string>
+      }
+    >
     install: {
       internal_domain: string
       public_domain: string
