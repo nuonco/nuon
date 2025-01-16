@@ -17,6 +17,8 @@ for install_name in $(cat $TF_OUTPUTS_PATH | jq -r '.installs[]'); do
     if [[ $deploy_status == "active" ]]; then
       echo >&2 -e "deploy is active\n"
       deploying=false
+    else 
+      echo >&2 -e "deploy is not active\n"
     fi
 
     echo >&2 -e "waiting for $install_name deploy status to be active\n"
@@ -55,7 +57,7 @@ release_id=$(nuon -j releases ls -c $component_name | jq -r .[0].id)
 nuon -j releases steps -r $release_id
 echo -e "\n"
 
-component_name=e2e_infra
+component_name=e2e_docker_build
 echo >&2 -e "switched to different component $component_name\n"
 echo >&2 -e "nuon releases create --auto-build -c $component_name\n"
 nuon -j releases create --auto-build -c $component_name
