@@ -19,7 +19,7 @@ type CreateHelmComponentConfigRequest struct {
 
 	Values      map[string]*string `json:"values,omitempty" validate:"required"`
 	ValuesFiles []string           `json:"values_files,omitempty"`
-	ChartName   string             `json:"chart_name,omitempty" validate:"required,dns_rfc1035_label"`
+	ChartName   string             `json:"chart_name,omitempty" validate:"required,dns_rfc1035_label,min=5,max=62"`
 }
 
 func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error {
