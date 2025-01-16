@@ -60,3 +60,16 @@ export async function getComponentBuild({
     path: `components/builds/${buildId}`,
   })
 }
+
+export interface IGetLatestComponentBuild extends IGetComponent {}
+
+export async function getLatestComponentBuild({
+  componentId,
+  orgId,
+}: IGetLatestComponentBuild) {
+  return queryData<TBuild>({
+    errorMessage: 'Unable to retrieve component build.',
+    orgId,
+    path: `components/${componentId}/builds/latest`,
+  })
+}
