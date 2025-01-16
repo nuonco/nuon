@@ -184,14 +184,14 @@ installer_synthetics:
     stardog-installer: https://stardog-installer.vercel.app
     100xdev-installer: https://100xdev-installer.vercel.app
     retool-installer: https://retool-installer.vercel.app
-    demo-installer: https://demo-installer.vercel.app
+    # demo-installer: https://demo-installer.vercel.app
   config:
     name: "[prod] Installer Uptime"
     type: "api"
     subtype: "http"
     status: "live"
     message: "@slack-alerts-${env}-product"
-    locations: ["aws:us-east-1", "gcp:us-south1", "aws:us-west-2"]
+    locations: ["aws:us-east-1", "aws:us-west-2"]
     tags: ["service:installers", "terraform:true", "env:${env}"]
     request_definition:
       method: "GET"
