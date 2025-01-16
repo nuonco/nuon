@@ -11,20 +11,22 @@ showdown.extension('targetlink', () => {
   ]
 })
 
+
+// TODO(nnnat): unsure if we need variable highlighting
 // load extension to highlight variables
-showdown.extension('variables', () => {
-  return [
-    {
-      type: 'html',
-      regex: /(\{\{.+\}\})/g,
-      replace: '<span style="font-family: monospace; color: #555f6d">$1</span>',
-    },
-  ]
-})
+/* showdown.extension('variables', () => {
+ *   return [
+ *     {
+ *       type: 'html',
+ *       regex: /(\{\{.+\}\})/g,
+ *       replace: '<span style="font-family: monospace; color: #555f6d">$1</span>',
+ *     },
+ *   ]
+ * }) */
 
 // instantiate converter
 const markdown = new showdown.Converter({
-  extensions: ['targetlink', 'variables'],
+  extensions: ['targetlink'],
 })
 
 export const Markdown = ({ content = '' }) => (

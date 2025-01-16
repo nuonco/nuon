@@ -3,7 +3,7 @@ export const API_URL =
   process?.env?.NUON_API_URL ||
   'https://api.nuon.co'
 export const ADMIN_API_URL =
-  process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:8082'
+  process?.env?.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:8082'
 export const POLL_DURATION =
   (process?.env?.NEXT_PUBLIC_POLL_DURATION as unknown as number) || 45000
 export const SHORT_POLL_DURATION =
@@ -19,4 +19,4 @@ export const USER_REPROVISION =
   Boolean(process?.env?.NUON_INSTALL_REPROVISION === 'true') || false
 export const DEPLOY_INTERMEDIATE_DATA =
   Boolean(process?.env?.NUON_DEPLOY_DATA === 'true') || false
-export const VERSION = process.env?.VERSION || '0.1.0'
+export const VERSION = process?.env?.VERSION || '0.1.0'
