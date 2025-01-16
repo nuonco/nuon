@@ -255,7 +255,7 @@ export interface IDeployComponents extends IGetInstall {}
 export async function deployComponents({
   installId,
   orgId,
-}: IReprovisionInstall) {
+}: IDeployComponents) {
   return mutateData({
     errorMessage: 'Unable to deploy components to install.',
     orgId,
@@ -276,5 +276,22 @@ export async function getInstallDeployPlan({
     errorMessage: 'Unable to retrieve install deplay plan.',
     orgId,
     path: `installs/${installId}/deploys/${deployId}/plan`,
+  })
+}
+
+export interface IDeployComponentBuild extends IGetInstall {
+  buildId: string
+}
+
+export async function deployComponentBuild({
+  buildId,
+  installId,
+  orgId,
+}: IDeployComponentBuild) {
+  return mutateData({
+    errorMessage: 'Unable to deploy component to install.',
+    data: { build_id: buildId },
+    orgId,
+    path: `installs/${installId}/deploys`,
   })
 }

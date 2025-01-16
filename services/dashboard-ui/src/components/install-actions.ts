@@ -4,6 +4,7 @@
 import {
   deployComponents as deployAllComponents,
   reprovisionInstall as reprovisionInstallSandbox,
+  deployComponentBuild as deployComponentByBuildId,
 } from '@/lib'
 
 interface IReprovisionInstall {
@@ -28,6 +29,24 @@ export async function deployComponents({
   orgId,
 }: IDeployComponents) {
   return deployAllComponents({
+    installId,
+    orgId,
+  })
+}
+
+interface IDeployComponentBuild {
+  buildId: string
+  installId: string
+  orgId: string
+}
+
+export async function deployComponentBuild({
+  buildId,
+  installId,
+  orgId,
+}: IDeployComponentBuild) {
+  return deployComponentByBuildId({
+    buildId,
     installId,
     orgId,
   })
