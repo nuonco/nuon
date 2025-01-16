@@ -48,8 +48,5 @@ func (a *Service) Login(ctx context.Context, cliCfg *config.Config) error {
 		{"Now logged in as", user.Name, user.Email},
 	})
 
-	view.Render([][]string{
-		{"Access token", tokens.AccessToken},
-	})
 	return nil
 }
