@@ -1,16 +1,29 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
+import { type FC, Suspense } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
+import { FiChevronRight } from 'react-icons/fi'
 import {
+  Button,
   ComponentConfiguration,
   DashboardContent,
   DependentComponents,
+  Duration,
+  ErrorFallback,
   InstallComponentDeploys,
+  InstallDeployLatestBuildButton,
+  Link,
+  Loading,
+  StatusBadge,
   Section,
+  Text,
+  Time,
 } from '@/components'
 import {
   getComponent,
   getComponentConfig,
   getInstall,
   getInstallComponent,
+  getLatestComponentBuild,
   getOrg,
 } from '@/lib'
 import type { TInstallComponent } from '@/types'
@@ -71,7 +84,17 @@ export default withPageAuthRequired(async function InstallComponent({
               />
             </Section>
           )}
-
+          <ErrorBoundary fallbackRender={ErrorFallback}>
+            <Suspense
+              fallback={<Loading loadingText="Loading latest build..." />}
+            >
+              <LatestBuild
+                component={component}
+                installId={installId}
+                orgId={orgId}
+              />
+            </Suspense>
+          </ErrorBoundary>
           <Section heading="Component config">
             <ComponentConfiguration config={componentConfig} />
           </Section>
@@ -92,3 +115,58 @@ export default withPageAuthRequired(async function InstallComponent({
     </DashboardContent>
   )
 })
+
+const LatestBuild = async ({ component, installId, orgId }) => {
+  const build = await getLatestComponentBuild({
+    componentId: component?.id,
+    orgId,
+  })
+
+  return (
+    <Section
+      className="flex-initial"
+      actions={
+        <Text>
+          <Link
+            href={`/${orgId}/apps/${component.app_id}/components/${component.id}/builds/${build.id}`}
+          >
+            Details
+            <FiChevronRight />
+          </Link>
+        </Text>
+      }
+      heading="Latest build"
+    >
+      <div className="flex items-end justify-between">
+        <div className="flex items-start justify-start gap-6">
+          <span className="flex flex-col gap-2">
+            <StatusBadge
+              description={build.status_description}
+              status={build.status}
+              label="Status"
+            />
+          </span>
+
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Build date
+            </Text>
+            <Time time={build.created_at} />
+          </span>
+
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Build duration
+            </Text>
+            <Duration beginTime={build.created_at} endTime={build.updated_at} />
+          </span>
+        </div>
+        <InstallDeployLatestBuildButton
+          buildId={build?.id}
+          installId={installId}
+          orgId={orgId}
+        />
+      </div>
+    </Section>
+  )
+}
