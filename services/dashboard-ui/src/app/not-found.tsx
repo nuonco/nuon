@@ -6,11 +6,11 @@ export default function NotFound() {
       <main className="flex h-full gap-6">
         <div className="flex flex-col gap-6 py-6 md:py-12 lg:py-24 lg:max-w-2xl">
           <Text variant="semi-18" level={1}>
-            Nuon organization not found
+            Nuon data not found
           </Text>
           <div>
           <Text className="!text-lg !leading-relaxed">
-            There was an issue loading your Nuon organization.
+            There was an issue loading this data.
           </Text>
           <Text className="!text-lg !leading-relaxed">
             If this issue persist please contact Nuon{' '}
