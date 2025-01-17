@@ -3,6 +3,7 @@ package apps
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/go-playground/validator/v10"
 
@@ -47,6 +48,12 @@ func (s *Service) Validate(ctx context.Context, all bool, file string, asJSON bo
 		}
 	}
 	if file != "" {
+		if _, err := os.Stat(file); os.IsNotExist(err) {
+			return view.Error(&ui.CLIUserError{
+				Msg: "specified file doesn't exist",
+			})
+		}
+
 		appName, err := parse.AppNameFromFilename(file)
 		if err != nil {
 			return view.Error(err)

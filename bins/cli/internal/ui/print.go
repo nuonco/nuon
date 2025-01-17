@@ -31,7 +31,7 @@ func (u *CLIUserError) Error() string {
 
 func PrintError(err error) error {
 	if os.Getenv(debugEnvVar) != "" {
-		pterm.Error.Println(err.Error())
+		pterm.Error.Println(fmt.Sprintf("DEBUG: %v", err))
 	}
 
 	// Construct a stack trace if this error doesn't already have one
