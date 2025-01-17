@@ -58,7 +58,7 @@ export const LogsPreview: FC<ILogsPreview> = ({
         cell: (props) => (
           <span
             className={classNames(lineStyle, {
-              'col-span-7 max-w-[400px] truncate': true,
+              'col-span-7': true,
             })}
           >
             {props.getValue<string>()}
@@ -117,7 +117,7 @@ export const LogsPreview: FC<ILogsPreview> = ({
         {table.getRowModel().rows.map((row) => (
           <span
             key={row.id}
-            className="grid grid-cols-12 items-center justify-start gap-6 py-2 w-full"
+            className="grid grid-cols-12 items-start justify-start gap-6 py-2 w-full"
           >
             {row.getVisibleCells().map((cell) => (
               <React.Fragment key={cell.id}>

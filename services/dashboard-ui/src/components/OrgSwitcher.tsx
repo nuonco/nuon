@@ -50,32 +50,43 @@ export const OrgAvatar: FC<{
 export interface IOrgSummary {
   org: TOrg
   shouldPoll?: boolean
+  isSidebarOpen?: boolean
 }
 
-export const OrgSummary: FC<IOrgSummary> = ({ org, shouldPoll = false }) => {
+export const OrgSummary: FC<IOrgSummary> = ({
+  org,
+  shouldPoll = false,
+  isSidebarOpen = true,
+}) => {
   return (
     <div className="flex gap-4 items-center justify-start">
-      <OrgAvatar name={org.name} logoURL={org.logo_url} />
+      <OrgAvatar
+        name={org.name}
+        logoURL={org.logo_url}
+        isSmall={!isSidebarOpen}
+      />
 
-      <div>
-        <Text
-          className={classNames(
-            'text-md !font-medium leading-normal max-w-[150px] mb-1 break-all text-left !flex-nowrap'
-          )}
-          title={org.sandbox_mode ? 'Org is in sandbox mode' : undefined}
-        >
-          {org.sandbox_mode && <TestTube className="text-md" />}
-          <span
-            className={classNames('', {
-              'max-w-[120px]': org.sandbox_mode,
-              'truncate !inline': org.name.length >= 16,
-            })}
+      {isSidebarOpen ? (
+        <div>
+          <Text
+            className={classNames(
+              'text-md !font-medium leading-normal max-w-[150px] mb-1 break-all text-left !flex-nowrap'
+            )}
+            title={org.sandbox_mode ? 'Org is in sandbox mode' : undefined}
           >
-            {org.name}
-          </span>
-        </Text>
-        <OrgStatus initOrg={org} shouldPoll={shouldPoll} />
-      </div>
+            {org.sandbox_mode && <TestTube className="text-md" />}
+            <span
+              className={classNames('', {
+                'max-w-[120px]': org.sandbox_mode,
+                'truncate !inline': org.name.length >= 16,
+              })}
+            >
+              {org.name}
+            </span>
+          </Text>
+          <OrgStatus initOrg={org} shouldPoll={shouldPoll} />
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -163,9 +174,14 @@ export const OrgsNav: FC<IOrgsNav> = ({ orgs }) => {
 export interface IOrgSwitcher {
   initOrg: TOrg
   initOrgs: Array<TOrg>
+  isSidebarOpen?: boolean
 }
 
-export const OrgSwitcher: FC<IOrgSwitcher> = ({ initOrg, initOrgs }) => {
+export const OrgSwitcher: FC<IOrgSwitcher> = ({
+  initOrg,
+  initOrgs,
+  isSidebarOpen = true,
+}) => {
   useEffect(() => {
     async function setSession() {
       await setOrgSessionCookie(initOrg.id)
@@ -176,13 +192,18 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({ initOrg, initOrgs }) => {
 
   return (
     <Dropdown
-      className="w-full"
+      className={classNames('w-full', {
+        '!p-1': !isSidebarOpen,
+      })}
       hasCustomPadding
       id="test"
       isFullWidth
-      text={<OrgSummary org={initOrg} shouldPoll />}
+      text={
+        <OrgSummary org={initOrg} shouldPoll isSidebarOpen={isSidebarOpen} />
+      }
       position="overlay"
       alignment="overlay"
+      dropdownContentClassName="min-w-[250px]"
     >
       <div className="flex flex-col gap-4 overflow-auto max-h-[500px] pb-2 overflow-x-hidden">
         <div className="pt-2 px-4">

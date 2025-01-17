@@ -1,12 +1,38 @@
 import classNames from 'classnames'
-import React, { type FC } from 'react'
+import React, { type FC, Suspense } from 'react'
 import { XLogo, LinkedinLogo, GithubLogo } from '@phosphor-icons/react/dist/ssr'
 import { Link } from '@/components/Link'
 import { Logo } from '@/components/Logo'
 import { BreadcrumbNav, type TLink } from '@/components/Nav'
-import { NuonVersions } from '@/components/NuonVersions'
+import { NuonVersions, type TNuonVersions } from '@/components/NuonVersions'
 import { SignOutButton } from '@/components/Profile'
 import { ID, Text } from '@/components/Typography'
+import { getAPIVersion } from '@/lib'
+import { VERSION } from '@/utils'
+
+const HeaderVersions = async () => {
+  const apiVersion = await getAPIVersion().catch((error) => {
+    console.error(error)
+    return {
+      git_ref: 'unknown',
+      version: 'unknown',
+    }
+  })
+
+  const versions = {
+    api: apiVersion,
+    ui: {
+      version: VERSION,
+    },
+  }
+
+  return (
+    <NuonVersions
+      className="justify-end flex-col !flex-nowrap !gap-0"
+      {...(versions as TNuonVersions)}
+    />
+  )
+}
 
 export const DashboardHeader: FC = () => {
   return (
@@ -20,7 +46,9 @@ export const DashboardHeader: FC = () => {
           <Link href="https://docs.nuon.co" target="_blank" variant="ghost">
             Docs
           </Link>
-          <NuonVersions className="justify-end flex-col !flex-nowrap !gap-0" />
+          <Suspense fallback="Loading...">
+            <HeaderVersions />
+          </Suspense>
           <SignOutButton />
         </div>
       </div>
@@ -41,6 +69,7 @@ export const Dashboard: FC<{
       >
         <div className="flex flex-col gap-6 p-6 xl:px-24 w-full max-w-6xl mx-auto flex-auto">
           <DashboardHeader />
+
           {children}
         </div>
         <footer className="bg-[#1D0B2F] text-cool-grey-50">
