@@ -34,7 +34,7 @@ export const Nav: FC<{ links?: Array<TLink> }> = ({ links = [] }) => {
   )
 }
 
-export const MainNav: FC<{ orgId: string }> = ({ orgId }) => {
+export const MainNav: FC<{ orgId: string, isSidebarOpen: boolean }> = ({ orgId, isSidebarOpen }) => {
   const path = usePathname()
   const links: Array<TLink> = [
     {
@@ -42,7 +42,7 @@ export const MainNav: FC<{ orgId: string }> = ({ orgId }) => {
       text: (
         <>
           <SquaresFour />
-          Apps
+          {isSidebarOpen ? "Apps" : null}
         </>
       ),
     },
@@ -51,7 +51,7 @@ export const MainNav: FC<{ orgId: string }> = ({ orgId }) => {
       text: (
         <>
           <Wrench />
-          Installs
+          {isSidebarOpen ? "Installs" : null}
         </>
       ),
     },
@@ -65,12 +65,14 @@ export const MainNav: FC<{ orgId: string }> = ({ orgId }) => {
           <NextLink
             key={link.href}
             className={classNames(
-              'flex items-center justify-start font-sans font-medium gap-4 text-lg leading-normal rounded-md p-2.5 w-full',
+              'flex items-center font-sans font-medium gap-4 text-lg leading-normal rounded-md p-2.5 w-full',
               {
                 'text-cool-grey-600 dark:text-cool-grey-400 hover:bg-black/5 dark:hover:bg-white/10':
                   !isActive,
                 'text-primary-600 dark:text-primary-400 bg-primary-100 dark:bg-primary-600/25':
-                  isActive,
+                isActive,
+                'justify-center': !isSidebarOpen,
+                'justify-start': isSidebarOpen,
               }
             )}
             href={link.href}
