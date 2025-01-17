@@ -146,9 +146,7 @@ export async function updateInstallSandbox(installId: string) {
 }
 
 export async function restartInstallRunner(installId: string) {
-  const runner = await fetch(
-    `${ADMIN_API_URL}/v1/installs/${installId}/admin-get-runner`
-  ).then((r) => r.json())
+  const runner = await getInstallRunner(installId)
   return adminAction(
     'runners',
     `${runner?.id}/restart`,
@@ -170,4 +168,29 @@ export async function getInstallRunner(installId: string): Promise<TRunner> {
     `${ADMIN_API_URL}/v1/installs/${installId}/admin-get-runner`
   ).then((r) => r.json())
   return runner
+}
+
+export async function getOrgRunner(orgId: string): Promise<TRunner> {
+  const runner = await fetch(
+    `${ADMIN_API_URL}/v1/orgs/${orgId}/admin-get-runner`
+  ).then((r) => r.json())
+  return runner
+}
+
+export async function restartOrgRunner(orgId: string) {
+  const runner = await getOrgRunner(orgId)
+  return adminAction(
+    'runners',
+    `${runner?.id}/restart`,
+    'Failed to restart org runner'
+  )
+}
+
+export async function shutdownOrgRunnerJob(orgId: string) {
+  const runner = await getOrgRunner(orgId)
+  return adminAction(
+    'runners',
+    `${runner?.id}/shutdown-job`,
+    'Failed to kick off org runner shutdown job'
+  )
 }
