@@ -27,6 +27,7 @@ import {
   teardownInstallComponents,
   updateInstallSandbox,
 } from '@/components/admin-actions'
+import { Gear} from "@phosphor-icons/react"
 
 type TAdminAction = {
   action: () => Promise<any>
@@ -34,7 +35,7 @@ type TAdminAction = {
   text: string
 }
 
-export const AdminModal: FC<{ orgId: string }> = () => {
+export const AdminModal: FC<{ orgId: string, isSidebarOpen: boolean }> = ({ isSidebarOpen }) => {
   const params = useParams()
   const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
@@ -126,13 +127,13 @@ export const AdminModal: FC<{ orgId: string }> = () => {
   return user && /@nuon.co\s*$/.test(user?.email) ? (
     <>
       <Button
-        className="text-sm"
+        className="text-sm !font-medium flex items-center justify-center gap-2"
         onClick={() => {
           setIsOpen(true)
         }}
         variant="ghost"
       >
-        Admin controls
+        <Gear size={18} /> {isSidebarOpen ? "Admin controls" : null}
       </Button>
       <Modal
         heading="Admin controls"

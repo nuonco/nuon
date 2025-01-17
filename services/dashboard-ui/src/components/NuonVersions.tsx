@@ -1,21 +1,27 @@
 import classNames from 'classnames'
-import React, { type FC, Suspense } from 'react'
-import { getAPIVersion } from '@/lib'
-import { VERSION } from '@/utils'
+import React, { type FC } from 'react'
 import { Text } from '@/components/Typography'
 
-export const NuonVersions: FC<React.HTMLAttributes<HTMLDivElement>> = async ({
+export type TNuonVersions = {
+  api: {
+    git_ref: 'unknown'
+    version: 'unknown'
+  }
+  ui: {
+    version: 'unknown'
+  }
+}
+
+interface INuonVersion
+  extends React.HTMLAttributes<HTMLDivElement>,
+    TNuonVersions {}
+
+export const NuonVersions: FC<INuonVersion> = ({
+  api,
   className,
+  ui,
   ...props
 }) => {
-  const apiVersion = await getAPIVersion().catch((error) => {
-    console.error(error)
-    return {
-      git_ref: 'unknown',
-      version: 'unknown',
-    }
-  })
-
   return (
     <div
       {...props}
@@ -23,12 +29,12 @@ export const NuonVersions: FC<React.HTMLAttributes<HTMLDivElement>> = async ({
         [`${className}`]: Boolean(className),
       })}
     >
-      <Suspense fallback={<Text variant="med-8">Loading Nuon version...</Text>}>
-        <>
-          <Text className="!flex-nowrap" variant="reg-12">API: <b>{apiVersion.version}</b></Text>
-          <Text className="!flex-nowrap" variant="reg-12">UI: <b>{VERSION}</b></Text>
-        </>
-      </Suspense>
+      <Text className="!flex-nowrap" variant="reg-12">
+        API: <b>{api.version}</b>
+      </Text>
+      <Text className="!flex-nowrap" variant="reg-12">
+        UI: <b>{ui.version}</b>
+      </Text>
     </div>
   )
 }
