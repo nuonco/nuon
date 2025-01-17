@@ -12,6 +12,7 @@ export interface IDropdown extends IButton {
   isFullWidth?: boolean
   position?: 'above' | 'below' | 'beside' | 'overlay'
   text: React.ReactNode
+  dropdownContentClassName?: string
 }
 
 export const Dropdown: FC<IDropdown> = ({
@@ -24,13 +25,17 @@ export const Dropdown: FC<IDropdown> = ({
   position = 'below',
   text,
   variant,
+  dropdownContentClassName,
 }) => {
   return (
     <>
       <div
-        className={classNames('z-10 relative inline-block text-left group leading-none', {
-          'w-full': isFullWidth,
-        })}
+        className={classNames(
+          'z-10 relative inline-block text-left group leading-none',
+          {
+            'w-full': isFullWidth,
+          }
+        )}
         id={id}
         tabIndex={0}
       >
@@ -40,7 +45,8 @@ export const Dropdown: FC<IDropdown> = ({
           aria-controls={`dropdown-content-${id}`}
           className={classNames('h-full', {
             'px-4 py-2': hasCustomPadding,
-            'group-focus-within:opacity-0': position === "overlay" && alignment ==="overlay" ,
+            'group-focus-within:opacity-0':
+              position === 'overlay' && alignment === 'overlay',
             [`${className}`]: Boolean(className),
           })}
           hasCustomPadding={hasCustomPadding}
@@ -71,6 +77,9 @@ export const Dropdown: FC<IDropdown> = ({
                   position === 'beside' && alignment === 'right',
                 'top-0 w-inherit':
                   position === 'overlay' && alignment === 'overlay',
+                [`${dropdownContentClassName}`]: Boolean(
+                  dropdownContentClassName
+                ),
               }
             )}
             aria-labelledby={`dropdown-button-${id}`}
