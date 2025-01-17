@@ -193,6 +193,9 @@ func (c *cli) appsCmd() *cobra.Command {
 	createCmd.Flags().StringVarP(&template, "template", "", "aws-ecs", "app config template type")
 	createCmd.Flags().BoolVarP(&noTemplate, "no-template", "", false, "do not write a template config file")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "do not automatically set the new app as the current app")
+
+
+
 	appsCmd.AddCommand(createCmd)
 
 	var confirmDelete bool
