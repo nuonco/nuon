@@ -66,9 +66,9 @@ export default withPageAuthRequired(async function Install({ params }) {
         </div>
       }
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
-    >
+    >      
       <div className="flex flex-col lg:flex-row flex-auto">
-        <Section heading="README" className="history" childrenClassName="m-auto">
+        <Section heading="README" className="history" childrenClassName="mx-auto">
           <ErrorBoundary fallbackRender={ErrorFallback}>
             <Suspense
               fallback={<Loading loadingText="Loading install README..." />}
