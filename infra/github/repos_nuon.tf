@@ -342,3 +342,17 @@ module "nuon-terraform-aws-vpc" {
     github = github.nuon
   }
 }
+
+module "nuon-components" {
+  source           = "./modules/repository"
+  name             = "components"
+  description      = "Library of common components for use with nuon apps."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
