@@ -48,7 +48,7 @@ export default withPageAuthRequired(async function App({ params }) {
       <div className="flex flex-col md:flex-row flex-auto">
         <div className="divide-y flex flex-col flex-grow">
           {appConfig ? (
-            <Section className="border-r" heading="README" childrenClassName="m-auto">
+            <Section className="border-r" heading="README" childrenClassName="mx-auto">
               <Markdown content={appConfig.readme} />
             </Section>
           ) : null}

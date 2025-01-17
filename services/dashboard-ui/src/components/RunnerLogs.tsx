@@ -226,9 +226,10 @@ export function parseOTELLog(logs: Array<TOTELLog>): Array<TLogRecord> {
 export interface IRunnerLogs {
   heading: React.ReactNode
   logs: Array<TLogRecord>
+  withOutBorder?: boolean
 }
 
-export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
+export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs, withOutBorder }) => {
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false)
   const [columnFilters, setColumnFilters] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
@@ -363,7 +364,9 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs }) => {
         />
       </Modal>
       <Section
-        className="border-r"
+        className={classNames({
+          "border-r": !withOutBorder
+        })}
         isHeadingFixed
         actions={
           <div className="flex items-center divide-x">
