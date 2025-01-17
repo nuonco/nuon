@@ -3,6 +3,7 @@ package apps
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -149,6 +150,12 @@ func (s *Service) Sync(ctx context.Context, all bool, file string) error {
 		}
 	}
 	if file != "" {
+		if _, err := os.Stat(file); os.IsNotExist(err) {
+			return ui.PrintError(&ui.CLIUserError{
+				Msg: "specified file doesn't exist",
+			})
+		}
+
 		appName, err := parse.AppNameFromFilename(file)
 		if err != nil {
 			err = errs.WithUserFacing(err, "error parsing app name from file")
