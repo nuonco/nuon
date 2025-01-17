@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation'
 import React, { type FC, useState } from 'react'
 import { useUser } from '@auth0/nextjs-auth0/client'
+import { AdminOrgActions } from "@/components/AdminOrgActions"
 import { AdminInstallActions } from "@/components/AdminInstallActions"
 import { AdminBtn } from "@/components/AdminActionButton"
 import { Button } from '@/components/Button'
@@ -20,7 +21,9 @@ import {
   restartInstallRunner,
   restartOrg,
   restartOrgChildren,
+  restartOrgRunner,
   shutdownInstallRunnerJob,
+  shutdownOrgRunnerJob,
   teardownInstallComponents,
   updateInstallSandbox,
 } from '@/components/admin-actions'
@@ -56,6 +59,16 @@ export const AdminModal: FC<{ orgId: string }> = () => {
       action: () => restartOrgChildren(params?.['org-id'] as string),
       description: 'Restart all of current org children event loops',
       text: 'Restart org children',
+    },
+     {
+      action: () => restartOrgRunner(params?.['org-id'] as string),
+      description: 'Restart the current org runner',
+      text: 'Restart runner',
+    },
+    {
+      action: () => shutdownOrgRunnerJob(params?.['org-id'] as string),
+      description: 'Shutdown the current org runner job',
+      text: 'Shutdown runner job',
     },
   ]
 
@@ -105,8 +118,8 @@ export const AdminModal: FC<{ orgId: string }> = () => {
     },
     {
       action: () => shutdownInstallRunnerJob(params?.['install-id'] as string),
-      description: 'Shutdown the current install runner',
-      text: 'Shutdown runner',
+      description: 'Shutdown the current install runner job',
+      text: 'Shutdown runner job',
     },
   ]
 
@@ -129,14 +142,13 @@ export const AdminModal: FC<{ orgId: string }> = () => {
         }}
       >
         <div className="flex flex-col gap-8 divide-y">
-          <div className="flex flex-col gap-4">
-            <Text variant="semi-18">Org admin controls</Text>
+          <AdminOrgActions orgId={params?.["org-id"] as string}>
             <Grid>
               {orgActions.map((action) => (
                 <AdminAction key={action.text} {...action} />
               ))}
             </Grid>
-          </div>
+          </AdminOrgActions>
 
           {params?.['app-id'] ? (
             <div className="flex flex-col gap-4 pt-4">
@@ -176,4 +188,3 @@ const AdminAction: FC<{ action: any; description: string; text: string }> = ({
     </div>
   )
 }
-
