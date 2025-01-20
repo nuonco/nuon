@@ -15,19 +15,5 @@ func (e *HelmValues) ToMap() map[string]string {
 
 // ToVariables converts a list env vars into a variables array
 func (e *HelmValues) ToVariables() []*Variable {
-	if e == nil {
-		return nil
-	}
-
-	vars := make([]*Variable, 0)
-	for _, envVar := range e.Values {
-		ev := envVar
-		vars = append(vars, &Variable{
-			Actual: &Variable_HelmValue{
-				HelmValue: ev,
-			},
-		})
-	}
-
-	return vars
+	return []*Variable{}
 }
