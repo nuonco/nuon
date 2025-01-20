@@ -55,7 +55,7 @@ func (v *varsValidator) validateVar(inputVar string, tmplData map[string]interfa
 
 		buf := new(bytes.Buffer)
 		if err := temp.Execute(buf, tmplData); err != nil {
-			return errors.Wrap(err, "unabel to execute template")
+			return errors.Wrap(err, "unable to execute template")
 		}
 
 		outputVal := buf.String()
