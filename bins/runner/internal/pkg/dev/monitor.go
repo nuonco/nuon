@@ -12,6 +12,7 @@ import (
 )
 
 func (d *devver) monitorRunners() error {
+	fmt.Println("monitoring runners to restart ", d.watchRunnerType)
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -26,16 +27,16 @@ func (d *devver) monitorRunners() error {
 				return fmt.Errorf("no runners found")
 			}
 
+			if d.runnerID != runners[0].ID {
+				fmt.Println("new runner was found, so restarting to act as " + runners[0].ID)
+				return retry.AsNonRetryable(fmt.Errorf("new runner has been created, restarting"))
+			}
+
 			// make sure runner has a service account
 			_, err = d.apiClient.GetRunnerServiceAccount(ctx, runners[0].ID)
 			if err != nil {
 				fmt.Println("runner service account does not exist yet, polling until it does")
 				return errors.Wrap(err, "no service account created yet")
-			}
-
-			if d.runnerID != runners[0].ID {
-				fmt.Println("new runner was found, so restarting to act as " + runners[0].ID)
-				return retry.AsNonRetryable(fmt.Errorf("new runner has been created, restarting"))
 			}
 
 			return nil
