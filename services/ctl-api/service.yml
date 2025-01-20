@@ -44,7 +44,7 @@ env:
 
   # this forces all local orgs created to be sandbox mode
   FORCE_SANDBOX_MODE: false
-  SANDBOX_MODE_SLEEP: 3s
+  SANDBOX_MODE_SLEEP: 1s
   # this enables runner usage for sandbox mode
   SANDBOX_MODE_ENABLE_RUNNERS: true
   # this forces all runners to be run locally, even when outside sandbox mode
