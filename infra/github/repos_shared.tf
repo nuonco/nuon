@@ -563,3 +563,25 @@ module "shared-retool" {
     github = github.nuonco-shared
   }
 }
+
+module "shared-datadog" {
+  source = "./modules/repository"
+
+  name                     = "datadog"
+  description              = "Nuon configuration for Datadog."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {
+    JatinNanda   = "push",
+    ryanartecona = "push",
+    slaminad     = "push",
+    avimoondra      = "push"
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
