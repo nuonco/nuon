@@ -1807,6 +1807,8 @@ github.com/nuonco/nuon-go v0.38.0 h1:Uf079ax4t4EtjKxvBt9KG1fIU/XrbPaadWL5Uf1q3+8
 github.com/nuonco/nuon-go v0.38.0/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
 github.com/nuonco/nuon-runner-go v0.4.0 h1:Mo8FSPUq4m2uSyuBsGsyRDXokKi19XmpE2D5dAmf3+c=
 github.com/nuonco/nuon-runner-go v0.4.0/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
+github.com/nuonco/nuon-runner-go v0.5.0 h1:CVdi52UWVBX44jGIbR8IidQJbdvR8+2n2dh25KDZ3CM=
+github.com/nuonco/nuon-runner-go v0.5.0/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
 github.com/nuonco/sandboxes v1.34.0 h1:3ZH4qZw6tQkef7BVaKxUYjEfzghVBn+me5pWTE7Q4fc=
 github.com/nuonco/sandboxes v1.34.0/go.mod h1:HR3Srms2+H9TnFOu+FmNSKwMuT6VVWh1yGf3+eHalas=
 github.com/nwaples/rardecode/v2 v2.0.0-beta.2 h1:e3mzJFJs4k83GXBEiTaQ5HgSc/kOK8q0rDaRO0MPaOk=

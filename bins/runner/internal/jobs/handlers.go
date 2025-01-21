@@ -18,4 +18,5 @@ type JobHandler interface {
 	Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error
 	Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error
 	Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error
+	Outputs(ctx context.Context) (map[string]interface{}, error)
 }

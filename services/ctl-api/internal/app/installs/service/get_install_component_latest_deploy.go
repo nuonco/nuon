@@ -6,8 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 // @ID GetInstallComponentLatestDeploy
@@ -52,7 +53,7 @@ func (s *service) getInstallComponentLatestDeploy(ctx context.Context, installID
 		}).
 		First(&installCmp)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
 	}
 	if len(installCmp.InstallDeploys) != 1 {
 		return nil, fmt.Errorf("no deploy exists for install: %w", gorm.ErrRecordNotFound)
