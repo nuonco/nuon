@@ -3,11 +3,10 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   Loading,
-  InstallDeployComponentButton,
   InstallHistory,
+  InstallManagementDropdown,
   InstallPageSubNav,
   InstallStatuses,
-  InstallReprovisionButton,
   Section,
 } from '@/components'
 import { getInstall, getInstallEvents, getOrg } from '@/lib'
@@ -37,15 +36,13 @@ export default withPageAuthRequired(async function Install({ params }) {
         <div className="flex items-end gap-8">
           <InstallStatuses initInstall={install} shouldPoll />
           {USER_REPROVISION ? (
-            <div className="flex items-center gap-3">
-              <InstallReprovisionButton installId={installId} orgId={orgId} />
-              {install?.install_components?.length ? (
-                <InstallDeployComponentButton
-                  installId={installId}
-                  orgId={orgId}
-                />
-              ) : null}
-            </div>
+            <InstallManagementDropdown
+              installId={installId}
+              orgId={orgId}
+              hasInstallComponents={Boolean(
+                install?.install_components?.length
+              )}
+            />
           ) : null}
         </div>
       }
