@@ -5,8 +5,6 @@ import {
   CodeViewer,
   DashboardContent,
   InstallCloudPlatform,
-  InstallHistory,
-  InstallInputsSection,
   InstallPageSubNav,
   InstallStatuses,
   StatusBadge,
@@ -54,7 +52,7 @@ export default withPageAuthRequired(async function Install({ params }) {
       statues={<InstallStatuses initInstall={install} shouldPoll />}
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
-      <Section heading="Runner group">       
+      <Section heading="Runner group">
         {runnerGroup ? (
           <CodeViewer
             initCodeSource={JSON.stringify(runnerGroup, null, 2)}
