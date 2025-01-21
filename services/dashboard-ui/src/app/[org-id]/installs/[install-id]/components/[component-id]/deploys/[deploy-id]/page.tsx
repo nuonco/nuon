@@ -212,6 +212,7 @@ lg:max-w-[450px]"
           (deployPlan as TInstallDeployPlan)?.actual?.waypoint_plan?.variables
             ?.intermediate_data?.nuon ? (
             <InstallDeployIntermediateData
+              install={install}
               data={
                 (deployPlan as TInstallDeployPlan)?.actual?.waypoint_plan
                   ?.variables?.intermediate_data
