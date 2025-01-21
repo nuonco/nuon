@@ -1,7 +1,7 @@
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
-import { Check, ArrowClockwise } from '@phosphor-icons/react'
+import { Check, ArrowURightUp } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { reprovisionInstall } from '@/components/install-actions'
@@ -27,7 +27,7 @@ export const InstallReprovisionButton: FC<{
 
   return (
     <Button
-      className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-2"
+      className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-3 !rounded-none w-full"
       onClick={() => {
         setIsLoading(true)
         reprovisionInstall({ installId, orgId }).then(() => {
@@ -35,13 +35,14 @@ export const InstallReprovisionButton: FC<{
           setIsKickedOff(true)
         })
       }}
+      variant="ghost"
     >
       {isKickedOff ? (
-        <Check size="20" />
+        <Check size="18" />
       ) : isLoading ? (
         <SpinnerSVG />
       ) : (
-        <ArrowClockwise size="20" />
+        <ArrowURightUp size="18" />
       )}{' '}
       Reprovision
     </Button>

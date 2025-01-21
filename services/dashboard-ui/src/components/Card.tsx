@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { Heading, Text } from '@/components/Typography'
+import { Text } from '@/components/Typography'
 
 export interface ICard extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -43,7 +43,11 @@ export const Section: FC<ISection> = ({
       {...props}
     >
       {heading || actions ? (
-        <SectionHeader actions={actions} heading={heading} />
+        <SectionHeader
+          actions={actions}
+          heading={heading}
+          isHeadingFixed={isHeadingFixed}
+        />
       ) : null}
       <div
         className={classNames('h-fit', {
