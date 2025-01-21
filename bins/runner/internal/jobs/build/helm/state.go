@@ -32,4 +32,6 @@ type handlerState struct {
 	resultTag      string
 	jobExecutionID string
 	jobID          string
+
+	packagePath string
 }

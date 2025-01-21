@@ -15,12 +15,12 @@ const (
 )
 
 func OrgIDFromContext(ctx context.Context) (string, error) {
-	org, err := OrgFromContext(ctx)
-	if err != nil {
-		return "", err
+	orgID := ctx.Value(orgIDCtxKey)
+	if orgID == nil {
+		return "", fmt.Errorf("org id was not set on middleware context")
 	}
 
-	return org.ID, nil
+	return orgID.(string), nil
 }
 
 func OrgFromContext(ctx context.Context) (*app.Org, error) {
@@ -38,7 +38,7 @@ func SetOrgGinContext(ctx *gin.Context, org *app.Org) {
 }
 
 func SetOrgIDGinContext(ctx *gin.Context, orgID string) {
-	ctx.Set(orgCtxKey, orgID)
+	ctx.Set(orgIDCtxKey, orgID)
 }
 
 func SetOrgContext(ctx context.Context, org *app.Org) context.Context {

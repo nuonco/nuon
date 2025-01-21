@@ -68,7 +68,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 		if acctToken != nil {
-			acct, err := m.authzClient.FetchAccount(ctx, acctToken.AccountID)
+			acct, err := m.acctClient.FetchAccount(ctx, acctToken.AccountID)
 			if err != nil {
 				ctx.Error(err)
 				ctx.Abort()
@@ -99,7 +99,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		acct, err := m.authzClient.FetchAccount(ctx, acctToken.AccountID)
+		acct, err := m.acctClient.FetchAccount(ctx, acctToken.AccountID)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to fetch: %w", err))
 			ctx.Abort()

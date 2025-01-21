@@ -12,7 +12,6 @@ import (
 	"github.com/gofrs/flock"
 	"github.com/hashicorp/go-hclog"
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/log"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/action"
@@ -23,6 +22,8 @@ import (
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/registry"
 	"helm.sh/helm/v3/pkg/repo"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/log"
 )
 
 func (h *handler) packageChart(l *zap.Logger) (string, error) {

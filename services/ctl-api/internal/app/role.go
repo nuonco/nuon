@@ -30,7 +30,7 @@ type Role struct {
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
-	AccountRoles []AccountRole `gorm:"many2many:account_roles;constraint:OnDelete:CASCADE;" json:"-"`
+	Accounts []Account `gorm:"many2many:account_roles;constraint:OnDelete:CASCADE;" json:"-"`
 
 	// NOTE: not all roles have to belong to an org, this is mainly for historical reasons.
 	OrgID generics.NullString `json:"org_id" swaggerignore:"true"`
@@ -43,7 +43,7 @@ type Role struct {
 
 func (a *Role) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
-		a.ID = domains.NewAccountRoleID()
+		a.ID = domains.NewRoleID()
 	}
 	if a.CreatedByID == "" {
 		a.CreatedByID = createdByIDFromContext(tx.Statement.Context)

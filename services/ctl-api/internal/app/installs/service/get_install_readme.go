@@ -57,7 +57,7 @@ func (s *service) GetInstallReadme(ctx *gin.Context) {
 	}
 
 	// 3. grab the plan
-	plan, err := s.getRunnerJobPlan(ctx, deploy.RunnerJob.ID)
+	plan, err := s.getRunnerJobPlan(ctx, deploy.RunnerJobs[0].ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install deploy plan: %w", err))
 		return

@@ -64,7 +64,7 @@ func (m *middleware) saveAccountToken(ctx context.Context, token string, claims 
 		}
 
 		// create account
-		acct, err = m.authzClient.CreateAccount(ctx, customClaims.Email, claims.RegisteredClaims.Subject)
+		acct, err = m.acctClient.CreateAccount(ctx, customClaims.Email, claims.RegisteredClaims.Subject)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create account: %w", err)
 		}
