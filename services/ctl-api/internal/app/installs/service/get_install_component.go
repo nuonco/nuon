@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -39,6 +40,17 @@ func (s *service) GetInstallComponent(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installCmp)
 }
 
-func (s *service) getInstallComponent(ctx context.Context, installID, componentID string) (*app.Install, error) {
-	return nil, nil
+func (s *service) getInstallComponent(ctx context.Context, installID, componentID string) (*app.InstallComponent, error) {
+	installCmp := app.InstallComponent{}
+	res := s.db.WithContext(ctx).
+		Where(&app.InstallComponent{
+			InstallID:   installID,
+			ComponentID: componentID,
+		}).
+		First(&installCmp)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
+	}
+
+	return &installCmp, nil
 }

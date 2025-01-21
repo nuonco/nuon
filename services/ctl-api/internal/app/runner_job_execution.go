@@ -66,8 +66,10 @@ type RunnerJobExecution struct {
 	RunnerJobID string    `json:"runner_job_id" gorm:"notnull;defaultnull;index:idx_runner_job_execution_runner_job_id,type:btree"`
 	RunnerJob   RunnerJob `json:"-"`
 
-	Status RunnerJobExecutionStatus  `json:"status" gorm:"not null;default null;index:idx_runner_job_execution_status,type:hash"`
-	Result *RunnerJobExecutionResult `json:"result"`
+	Status RunnerJobExecutionStatus `json:"status" gorm:"not null;default null;index:idx_runner_job_execution_status,type:hash"`
+
+	Result  *RunnerJobExecutionResult `json:"result" gorm:"constraint:OnDelete:CASCADE;"`
+	Outputs *RunnerJobExecutionOutputs         `json:"outputs" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (r *RunnerJobExecution) BeforeCreate(tx *gorm.DB) error {

@@ -59,8 +59,8 @@ type InstallDeploy struct {
 	Org   Org    `json:"-" faker:"-"`
 
 	// runner details
-	RunnerJob *RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;"`
-	LogStream LogStream  `json:"log_stream" gorm:"polymorphic:Owner;"`
+	RunnerJobs []RunnerJob `json:"runner_jobs" gorm:"polymorphic:Owner;"`
+	LogStream  LogStream   `json:"log_stream" gorm:"polymorphic:Owner;"`
 
 	ComponentBuildID string         `json:"build_id" gorm:"notnull"`
 	ComponentBuild   ComponentBuild `faker:"-" json:"-"`

@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon-runner-go/models"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry"
 )
 
@@ -26,14 +26,15 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unable to get source files: %w", err)
 	}
 	l.Info("successfully packaged chart", zap.String("path", packagePath))
+	h.state.packagePath = packagePath
+
+	srcFiles, err := h.getSourceFiles()
+	if err != nil {
+		return errors.Wrap(err, "unable to get source files")
+	}
 
 	l.Info("packing chart into archive")
-	if err := h.state.arch.Pack(ctx, l, []ociarchive.FileRef{
-		{
-			AbsPath: packagePath,
-			RelPath: defaultChartPackageFilename,
-		},
-	}); err != nil {
+	if err := h.state.arch.Pack(ctx, l, srcFiles); err != nil {
 		return fmt.Errorf("unable to pack archive with helm archive: %w", err)
 	}
 

@@ -12,11 +12,12 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 type API struct {
 	services              []Service
-	middlewares           []Middleware
+	middlewares           []middlewares.Middleware
 	l                     *zap.Logger
 	cfg                   *internal.Config
 	port                  string

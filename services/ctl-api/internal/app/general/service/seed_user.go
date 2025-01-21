@@ -57,7 +57,7 @@ func (s *service) createSeedUser(ctx context.Context) (*app.Token, error) {
 			return nil, err
 		}
 
-		acct, err = s.authzClient.CreateAccount(ctx, email, email)
+		acct, err = s.acctClient.CreateAccount(ctx, email, email)
 		if err != nil {
 			return nil, err
 		}

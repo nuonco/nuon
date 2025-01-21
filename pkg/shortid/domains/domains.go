@@ -18,8 +18,8 @@ func NewAccountPolicyID() string {
 	return shortid.NewNanoID("acp")
 }
 
-func NewAccountRoleID() string {
-	return shortid.NewNanoID("acp")
+func NewRoleID() string {
+	return shortid.NewNanoID("rol")
 }
 
 func NewInstallerID() string {
@@ -241,4 +241,3 @@ func NewUserID() string {
 func NewWaitListID() string {
 	return shortid.NewNanoID("wtl")
 }
-

@@ -36,7 +36,6 @@ type Account struct {
 
 	// ReadOnly Fields
 	OrgIDs         []string        `json:"org_ids" gorm:"-"`
-	Orgs           []Org           `json:"-" gorm:"-"`
 	AllPermissions permissions.Set `json:"permissions" gorm:"-"`
 }
 
@@ -49,7 +48,6 @@ func (a *Account) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (a *Account) AfterQuery(tx *gorm.DB) error {
-	a.Orgs = make([]Org, 0)
 	a.OrgIDs = make([]string, 0)
 	a.AllPermissions = permissions.NewSet()
 
@@ -59,7 +57,7 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 			a.AllPermissions.Add(policy.Permissions)
 		}
 
-		if role.Org == nil {
+		if role.OrgID.Empty() {
 			continue
 		}
 
@@ -69,7 +67,6 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 			continue
 		}
 
-		a.Orgs = append(a.Orgs, *role.Org)
 		a.OrgIDs = append(a.OrgIDs, role.Org.ID)
 		visited[role.Org.ID] = struct{}{}
 	}

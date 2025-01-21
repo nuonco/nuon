@@ -43,6 +43,7 @@ func (s *service) GetRunnerJobExecution(ctx *gin.Context) {
 func (s *service) getRunnerJobExecution(ctx context.Context, runnerJobID, runnerJobExecutionID string) (*app.RunnerJobExecution, error) {
 	runnerJobExecution := app.RunnerJobExecution{}
 	res := s.db.WithContext(ctx).
+		Preload("RunnerJob").
 		First(&runnerJobExecution, "id = ?", runnerJobExecutionID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get runner job execution: %w", res.Error)
