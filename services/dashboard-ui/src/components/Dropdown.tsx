@@ -2,7 +2,7 @@
 
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { CaretUpDown } from '@phosphor-icons/react'
+import { CaretUpDown, CaretDown } from '@phosphor-icons/react'
 import { Button, IButton } from '@/components/Button'
 
 export interface IDropdown extends IButton {
@@ -13,6 +13,7 @@ export interface IDropdown extends IButton {
   position?: 'above' | 'below' | 'beside' | 'overlay'
   text: React.ReactNode
   dropdownContentClassName?: string
+  isDownIcon?: boolean
 }
 
 export const Dropdown: FC<IDropdown> = ({
@@ -26,6 +27,7 @@ export const Dropdown: FC<IDropdown> = ({
   text,
   variant,
   dropdownContentClassName,
+  isDownIcon = false,
 }) => {
   return (
     <>
@@ -57,7 +59,11 @@ export const Dropdown: FC<IDropdown> = ({
           <div className="flex items-center justify-between gap-2">
             {text}
 
-            {variant !== 'ghost' && <CaretUpDown />}
+            {variant !== 'ghost' && isDownIcon ? (
+              <CaretDown />
+            ) : (
+              <CaretUpDown />
+            )}
           </div>
         </Button>
 
