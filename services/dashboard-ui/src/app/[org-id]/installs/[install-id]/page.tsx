@@ -10,18 +10,21 @@ import {
   ErrorFallback,
   InstallCloudPlatform,
   InstallDeployComponentButton,
-  InstallInputsSection,
+  InstallInputs,
+  InstallInputsModal,
   InstallPageSubNav,
   InstallStatuses,
   InstallReprovisionButton,
   Loading,
   StatusBadge,
   Section,
+  SectionHeader,
   Text,
   Markdown,
 } from '@/components'
 import {
   getInstall,
+  getInstallCurrentInputs,
   getInstallReadme,
   getInstallRunnerGroup,
   getOrg,
@@ -66,9 +69,13 @@ export default withPageAuthRequired(async function Install({ params }) {
         </div>
       }
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
-    >      
+    >
       <div className="flex flex-col lg:flex-row flex-auto">
-        <Section heading="README" className="history" childrenClassName="mx-auto">
+        <Section
+          heading="README"
+          className="history"
+          childrenClassName="mx-auto"
+        >
           <ErrorBoundary fallbackRender={ErrorFallback}>
             <Suspense
               fallback={<Loading loadingText="Loading install README..." />}
@@ -79,12 +86,15 @@ export default withPageAuthRequired(async function Install({ params }) {
         </Section>
 
         <div className="divide-y flex flex-col lg:w-[500px] border-l">
-          {install?.install_inputs?.length &&
-          install?.install_inputs.some(
-            (input) => input.values || input?.redacted_values
-          ) ? (
-            <InstallInputsSection inputs={install.install_inputs} />
-          ) : null}
+          <Section>
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={<Loading loadingText="Loading install inputs..." />}
+              >
+                <LoadInstallCurrentInputs installId={installId} orgId={orgId} />
+              </Suspense>
+            </ErrorBoundary>
+          </Section>
 
           <Section className="flex-initial" heading="Active sandbox">
             <div className="flex flex-col gap-8">
@@ -132,5 +142,23 @@ const LoadInstallReadme: FC<{ installId: string; orgId: string }> = async ({
     <Markdown content={installReadme?.readme} />
   ) : (
     <Text variant="reg-12">No install README found</Text>
+  )
+}
+
+const LoadInstallCurrentInputs: FC<{
+  installId: string
+  orgId: string
+}> = async ({ installId, orgId }) => {
+  const currentInputs = await getInstallCurrentInputs({ installId, orgId })
+
+  return (
+    <>
+      <SectionHeader
+        actions={<InstallInputsModal currentInputs={currentInputs} />}
+        className="mb-4"
+        heading="Current inputs"
+      />
+      <InstallInputs currentInputs={currentInputs} />
+    </>
   )
 }
