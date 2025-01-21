@@ -16,6 +16,7 @@ import (
 	runnersservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/service"
 	vcsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/service"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/health"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/admin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/config"
@@ -45,19 +46,20 @@ func (c *cli) registerAPI() error {
 func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{
 		// add middlewares
-		fx.Provide(api.AsMiddleware(stderr.New)),
-		fx.Provide(api.AsMiddleware(global.New)),
-		fx.Provide(api.AsMiddleware(metrics.New)),
-		fx.Provide(api.AsMiddleware(metrics.NewInternal)),
-		fx.Provide(api.AsMiddleware(metrics.NewRunner)),
-		fx.Provide(api.AsMiddleware(headers.New)),
-		fx.Provide(api.AsMiddleware(auth.New)),
-		fx.Provide(api.AsMiddleware(org.New)),
-		fx.Provide(api.AsMiddleware(public.New)),
-		fx.Provide(api.AsMiddleware(cors.New)),
-		fx.Provide(api.AsMiddleware(config.New)),
-		fx.Provide(api.AsMiddleware(invites.New)),
-		fx.Provide(api.AsMiddleware(admin.New)),
+		fx.Provide(middlewares.AsMiddleware(stderr.New)),
+		fx.Provide(middlewares.AsMiddleware(global.New)),
+		fx.Provide(middlewares.AsMiddleware(metrics.New)),
+		fx.Provide(middlewares.AsMiddleware(metrics.NewInternal)),
+		fx.Provide(middlewares.AsMiddleware(metrics.NewRunner)),
+		fx.Provide(middlewares.AsMiddleware(headers.New)),
+		fx.Provide(middlewares.AsMiddleware(auth.New)),
+		fx.Provide(middlewares.AsMiddleware(org.New)),
+		fx.Provide(middlewares.AsMiddleware(org.NewRunner)),
+		fx.Provide(middlewares.AsMiddleware(public.New)),
+		fx.Provide(middlewares.AsMiddleware(cors.New)),
+		fx.Provide(middlewares.AsMiddleware(config.New)),
+		fx.Provide(middlewares.AsMiddleware(invites.New)),
+		fx.Provide(middlewares.AsMiddleware(admin.New)),
 
 		// add endpoints
 		fx.Provide(api.AsService(docs.New)),

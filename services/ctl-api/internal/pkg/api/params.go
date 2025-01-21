@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 type Params struct {
@@ -13,8 +14,8 @@ type Params struct {
 	LC         fx.Lifecycle
 	Shutdowner fx.Shutdowner
 
-	Services    []Service    `group:"services"`
-	Middlewares []Middleware `group:"middlewares"`
+	Services    []Service                `group:"services"`
+	Middlewares []middlewares.Middleware `group:"middlewares"`
 	L           *zap.Logger
 	Cfg         *internal.Config
 }

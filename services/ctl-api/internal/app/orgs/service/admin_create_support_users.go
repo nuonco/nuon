@@ -64,14 +64,14 @@ func (s *service) CreateSupportUsers(ctx *gin.Context) {
 	})
 }
 
-func (s *service) createSupportUser(ctx context.Context, email, subject, orgID string) error {
+func (s *service) createSupportUser(ctx context.Context, subject, email, orgID string) error {
 	acct, err := s.acctClient.FindAccount(ctx, email)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
 
-		acct, err = s.authzClient.CreateAccount(ctx, email, subject)
+		acct, err = s.acctClient.CreateAccount(ctx, email, subject)
 		if err != nil {
 			return err
 		}

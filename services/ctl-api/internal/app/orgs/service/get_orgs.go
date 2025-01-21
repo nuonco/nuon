@@ -1,10 +1,13 @@
 package service
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
@@ -29,5 +32,23 @@ func (s *service) GetCurrentUserOrgs(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, account.Orgs)
+	orgs, err := s.getOrgs(ctx, account.OrgIDs)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, orgs)
+}
+
+func (s *service) getOrgs(ctx context.Context, orgIDs []string) ([]app.Org, error) {
+	var orgs []app.Org
+	res := s.db.WithContext(ctx).
+		Where("id IN ?", orgIDs).
+		Find(&orgs)
+	if res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to get orgs")
+	}
+
+	return orgs, nil
 }
