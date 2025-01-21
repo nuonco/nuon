@@ -2,15 +2,16 @@
 import React, { type FC } from 'react'
 import { Section } from '@/components/Card'
 import { ConfigurationVariables } from '@/components/ComponentConfig'
-import type { TInstallDeployPlanIntermediateData } from '@/types'
+import type { TInstall, TInstallDeployPlanIntermediateData } from '@/types'
 
 interface IInstallDeployIntermediateData {
   data: TInstallDeployPlanIntermediateData
+  install: TInstall
 }
 
 export const InstallDeployIntermediateData: FC<
   IInstallDeployIntermediateData
-> = ({ data }) => {
+> = ({ data, install }) => {
   return (
     <Section
       childrenClassName="flex flex-col gap-8"
@@ -40,7 +41,7 @@ export const InstallDeployIntermediateData: FC<
       {data?.nuon?.install?.inputs ? (
         <ConfigurationVariables
           heading="Install inputs"
-          variables={data?.nuon?.install?.inputs}
+          variables={install?.install_inputs?.[0]?.redacted_values}
         />
       ) : null}
 
