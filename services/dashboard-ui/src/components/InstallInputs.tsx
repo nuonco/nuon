@@ -1,22 +1,17 @@
 'use client'
-// TODO(nnnat): remove once we have this API changes on prod
-// @ts-nocheck
 
 import React, { type FC, useState } from 'react'
-
 import { ArrowsOutSimple } from '@phosphor-icons/react/dist/ssr'
 import { Button } from '@/components/Button'
 import { Modal } from '@/components/Modal'
-import { Heading, Text } from '@/components/Typography'
-import type { TInstall } from '@/types'
+import { Text } from '@/components/Typography'
+import type { TInstallInputs } from '@/types'
 
 export interface IInstallInputs {
-  inputs: TInstall['install_inputs'] & {
-    redacted_values: Array<Record<string, string>>
-  }
+  currentInputs?: TInstallInputs
 }
 
-export const InstallInputs: FC<IInstallInputs> = ({ inputs }) => {
+export const InstallInputs: FC<IInstallInputs> = ({ currentInputs }) => {
   return (
     <div className="divide-y">
       <div className="grid grid-cols-3 gap-4 pb-3">
@@ -29,10 +24,10 @@ export const InstallInputs: FC<IInstallInputs> = ({ inputs }) => {
       </div>
 
       <div>
-        {inputs.map((input, ii) => (
-          <div className="divide-y" key={`${input.id}-${ii}`}>
-            {input?.redacted_values
-              ? Object.keys(input.redacted_values).map((key, i) => (
+        {currentInputs ? (
+          <div className="divide-y" key={currentInputs.id}>
+            {currentInputs?.redacted_values
+              ? Object.keys(currentInputs.redacted_values).map((key, i) => (
                   <div
                     key={`${key}-${i}`}
                     className="grid grid-cols-3 gap-4 py-3"
@@ -41,12 +36,12 @@ export const InstallInputs: FC<IInstallInputs> = ({ inputs }) => {
                       {key}
                     </Text>
                     <Text className="col-span-2 break-all text-sm !inline truncate max-w-[200px]">
-                      {input.redacted_values[key]}
+                      {currentInputs.redacted_values[key]}
                     </Text>
                   </div>
                 ))
-              : input?.values &&
-                Object.keys(input.values).map((key, i) => (
+              : currentInputs?.values &&
+                Object.keys(currentInputs.values).map((key, i) => (
                   <div
                     key={`${key}-${i}`}
                     className="grid grid-cols-3 gap-4 py-3"
@@ -55,20 +50,19 @@ export const InstallInputs: FC<IInstallInputs> = ({ inputs }) => {
                       {key}
                     </Text>
                     <Text className="col-span-2 break-all text-sm !inline truncate max-w-[200px]">
-                      {input.values[key]}
+                      {currentInputs.values[key]}
                     </Text>
                   </div>
                 ))}
           </div>
-        ))}
+        ) : null}
       </div>
     </div>
   )
 }
 
-export const InstallInputsSection: FC<IInstallInputs> = ({ inputs }) => {
+export const InstallInputsModal: FC<IInstallInputs> = ({ currentInputs }) => {
   const [isModalOpen, setIsModalOpen] = useState(false)
-
   return (
     <>
       <Modal
@@ -78,25 +72,18 @@ export const InstallInputsSection: FC<IInstallInputs> = ({ inputs }) => {
           setIsModalOpen(false)
         }}
       >
-        <InstallInputs inputs={inputs} />
+        <InstallInputs currentInputs={currentInputs} />
       </Modal>
-      <section className="flex flex-col gap-6 px-6 py-8">
-        <div className="flex items-center justify-between">
-          <Heading>Current inputs</Heading>
-          <Button
-            className="text-sm !font-medium flex items-center gap-2 !p-1"
-            onClick={() => {
-              setIsModalOpen(true)
-            }}
-            title="Expand install inputs"
-            variant="ghost"
-          >
-            <ArrowsOutSimple />
-          </Button>
-        </div>
-
-        <InstallInputs inputs={inputs} />
-      </section>
+      <Button
+        className="text-sm !font-medium flex items-center gap-2 !p-1"
+        onClick={() => {
+          setIsModalOpen(true)
+        }}
+        title="Expand install inputs"
+        variant="ghost"
+      >
+        <ArrowsOutSimple />
+      </Button>
     </>
   )
 }
