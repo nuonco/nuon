@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { Heading } from '@/components/Typography'
+import { Heading, Text } from '@/components/Typography'
 
 export interface ICard extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -18,10 +18,10 @@ export const Card: FC<ICard> = ({ className, children, ...props }) => (
   </div>
 )
 
-export interface ISection extends React.HTMLAttributes<HTMLSelectElement> {
+export interface ISection extends React.HTMLAttributes<HTMLDivElement> {
   actions?: React.ReactNode | null
   childrenClassName?: string
-  heading: React.ReactNode
+  heading?: React.ReactNode
   isHeadingFixed?: boolean
 }
 
@@ -42,14 +42,9 @@ export const Section: FC<ISection> = ({
       })}
       {...props}
     >
-      <div
-        className={classNames('flex items-center justify-between', {
-          'px-6 pt-8 pb-4': isHeadingFixed,
-        })}
-      >
-        <Heading>{heading}</Heading>
-        <div>{actions}</div>
-      </div>
+      {heading || actions ? (
+        <SectionHeader actions={actions} heading={heading} />
+      ) : null}
       <div
         className={classNames('h-fit', {
           'px-6 overflow-auto': isHeadingFixed,
@@ -59,5 +54,21 @@ export const Section: FC<ISection> = ({
         {children}
       </div>
     </section>
+  )
+}
+
+export const SectionHeader: FC<
+  Omit<ISection, 'children' | 'childrenClassName'>
+> = ({ actions, className, heading, isHeadingFixed }) => {
+  return (
+    <div
+      className={classNames('flex items-center justify-between', {
+        'px-6 pt-8 pb-4': isHeadingFixed,
+        [`${className}`]: Boolean(className),
+      })}
+    >
+      <Text variant="semi-14">{heading}</Text>
+      <div>{actions}</div>
+    </div>
   )
 }
