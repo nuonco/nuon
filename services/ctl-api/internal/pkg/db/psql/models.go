@@ -108,6 +108,7 @@ func AllModels() []interface{} {
 		&app.RunnerJob{},
 		&app.RunnerJobPlan{},
 		&app.RunnerJobExecution{},
+		&app.RunnerJobExecutionOutputs{},
 		&app.RunnerJobExecutionResult{},
 
 		// diagnostics

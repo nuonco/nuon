@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 const (
@@ -39,6 +40,13 @@ func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamReq
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create service account")
 	}
+
+	orgID, err := middlewares.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get org id from context")
+	}
+
+	a.authzClient.AddAccountOrgRole(ctx, app.RoleTypeRunner, orgID, svcAcct.ID)
 
 	token, err := a.acctClient.CreateToken(ctx, svcAcct.Email, defaultLogStreamTokenDuration)
 	if err != nil {

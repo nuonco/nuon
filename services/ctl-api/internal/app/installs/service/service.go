@@ -83,6 +83,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/components/deploy-all", s.DeployInstallComponents)
 	api.POST("/v1/installs/:install_id/components/:component_id/teardown", s.TeardownInstallComponent)
 	api.GET("/v1/installs/:install_id/components/:component_id/deploys", s.GetInstallComponentDeploys)
+	api.GET("/v1/installs/:install_id/components/:component_id/outputs", s.GetInstallComponentOutputs)
 	api.GET("/v1/installs/:install_id/components/:component_id/deploys/latest", s.GetInstallComponentLatestDeploy)
 
 	// install events
