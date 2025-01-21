@@ -30,7 +30,7 @@ export const InstallDeployComponentButton: FC<{
 
   return (
     <Button
-      className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-2"
+      className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-3 !rounded-none w-full"
       onClick={() => {
         setIsLoading(true)
         deployComponents({ installId, orgId }).then(() => {
@@ -38,13 +38,14 @@ export const InstallDeployComponentButton: FC<{
           setIsKickedOff(true)
         })
       }}
+      variant="ghost"
     >
       {isKickedOff ? (
-        <CloudCheck size="20" />
+        <CloudCheck size="18" />
       ) : isLoading ? (
         <SpinnerSVG />
       ) : (
-        <CloudArrowUp size="20" />
+        <CloudArrowUp size="18" />
       )}{' '}
       Deploy components
     </Button>
@@ -73,7 +74,7 @@ export const InstallDeployLatestBuildButton: FC<{
 
   return (
     <Button
-      className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-2"
+      className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-3"
       onClick={() => {
         setIsLoading(true)
         deployComponentBuild({ buildId, installId, orgId }).then(() => {
@@ -83,11 +84,11 @@ export const InstallDeployLatestBuildButton: FC<{
       }}
     >
       {isKickedOff ? (
-        <CloudCheck size="20" />
+        <CloudCheck size="18" />
       ) : isLoading ? (
         <SpinnerSVG />
       ) : (
-        <CloudArrowUp size="20" />
+        <CloudArrowUp size="18" />
       )}{' '}
       Deploy latest build
     </Button>
