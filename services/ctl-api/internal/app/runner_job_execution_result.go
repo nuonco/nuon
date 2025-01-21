@@ -25,13 +25,10 @@ type RunnerJobExecutionResult struct {
 
 	RunnerJobExecutionID string `json:"runner_job_execution_id" gorm:"defaultnull;notnull;index:idx_job_execution_result,unique"`
 
-	// TODO(jm): add richer information on the error or other tied to a job execution.
 	Success bool `json:"success"`
 
 	ErrorCode     int           `json:"error_code"`
 	ErrorMetadata pgtype.Hstore `json:"error_metadata" gorm:"type:hstore" swaggertype:"object,string"`
-
-	// TODO: enable adding outputs, image references, helm resources and more here for tracking.
 }
 
 func (r *RunnerJobExecutionResult) BeforeCreate(tx *gorm.DB) error {

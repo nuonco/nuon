@@ -48,7 +48,6 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 
 	_, err = activities.AwaitCreateAccount(ctx, activities.CreateAccountRequest{
 		RunnerID: sreq.ID,
-		OrgID:    runner.OrgID,
 	})
 	if err != nil {
 		w.updateOperationStatus(ctx, op.ID, app.RunnerOperationStatusError)

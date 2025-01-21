@@ -1,10 +1,13 @@
 package app
 
 import (
+	"encoding/json"
 	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
@@ -210,13 +213,17 @@ type RunnerJob struct {
 	StartedAt  time.Time `json:"started_at"  gorm:"default:null"`
 	FinishedAt time.Time `json:"finished_at" gorm:"default:null"`
 
-	// read only fields from gorm AfterQuery
-
-	ExecutionTime time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer"`
-
 	// read only fields from view
 
-	ExecutionCount int `json:"execution_count" gorm:"->;-:migration"`
+	ExecutionCount            int    `json:"execution_count" gorm:"->;-:migration"`
+	FinalRunnerJobExecutionID string `json:"final_runner_job_execution_id" gorm:"->;-:migration"`
+	Outputs                   []byte `json:"outputs_json" gorm:"->;-:migration;type:jsonb"`
+
+	// read only fields from gorm AfterQuery
+
+	ExecutionTime time.Duration          `json:"execution_time" gorm:"-" swaggertype:"primitive,integer"`
+	Execution     *RunnerJobExecution    `json:"-" gorm:"-"`
+	ParsedOutputs map[string]interface{} `json:"outputs" gorm:"-"`
 }
 
 func (*RunnerJob) UseView() bool {
@@ -255,7 +262,17 @@ func (r *RunnerJob) BeforeCreate(tx *gorm.DB) error {
 
 	return nil
 }
-func (c *RunnerJob) AfterQuery(tx *gorm.DB) error {
-	c.ExecutionTime = generics.GetTimeDuration(c.StartedAt, c.FinishedAt)
+
+func (r *RunnerJob) AfterQuery(tx *gorm.DB) error {
+	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
+
+	if len(r.Outputs) > 0 {
+		var outputs map[string]interface{}
+		if err := json.Unmarshal(r.Outputs, &outputs); err != nil {
+			return errors.Wrap(err, "unable to parse outputs json")
+		}
+		r.ParsedOutputs = outputs
+	}
+
 	return nil
 }

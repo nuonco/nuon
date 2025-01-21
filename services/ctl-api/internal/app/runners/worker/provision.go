@@ -38,12 +38,11 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 
 	_, err = activities.AwaitCreateAccount(ctx, activities.CreateAccountRequest{
 		RunnerID: sreq.ID,
-		OrgID:    runner.ID,
 	})
 	if err != nil {
 		w.updateStatus(ctx, sreq.ID, app.RunnerStatusError, "unable to create runner service account")
 		w.updateOperationStatus(ctx, op.ID, app.RunnerOperationStatusError)
-		return fmt.Errorf("unable to get runner: %w", err)
+		return errors.Wrap(err, "unable to create account")
 	}
 
 	token, err := activities.AwaitCreateToken(ctx, activities.CreateTokenRequest{

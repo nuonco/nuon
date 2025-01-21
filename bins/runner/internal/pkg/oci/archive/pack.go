@@ -16,9 +16,9 @@ const (
 )
 
 type FileRef struct {
-	AbsPath  string
-	RelPath  string
-	FileType string
+	AbsPath  string `mapstructure:"abs_path,omitempty"`
+	RelPath  string `mapstructure:"rel_path,omitempty"`
+	FileType string `mapstructure:"file_type,omitempty"`
 }
 
 func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef) error {
