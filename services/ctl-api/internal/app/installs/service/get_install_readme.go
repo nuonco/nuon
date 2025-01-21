@@ -91,7 +91,7 @@ func (s *service) getInstallLatestSuccessfulDeploy(ctx context.Context, installI
 	var installDeploy app.InstallDeploy
 	res := s.db.WithContext(ctx).
 		Joins("JOIN install_components ON install_components.id=install_deploys.install_component_id").
-		Preload("RunnerJob").
+		Preload("RunnerJobs").
 		Preload("ComponentBuild").
 		Preload("ComponentBuild.ComponentConfigConnection").
 		Preload("ComponentBuild.ComponentConfigConnection.Component").

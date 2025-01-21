@@ -42,7 +42,7 @@ type InstallSandboxRun struct {
 
 	// runner details
 	RunnerJob RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;"`
-	LogStream LogStream `json:"log_stream" gorm:"polymorphic:Owner;"`
+	LogStream LogStream   `json:"log_stream" gorm:"polymorphic:Owner;"`
 
 	// used for RLS
 	OrgID     string  `json:"org_id" gorm:"notnull" swaggerignore:"true"`
