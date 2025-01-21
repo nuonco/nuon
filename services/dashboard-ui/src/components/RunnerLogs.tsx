@@ -234,7 +234,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs, withOutBorder }) =>
   const [columnFilters, setColumnFilters] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [columnSort, setColumnSort] = useState([
-    { id: 'timestamp', desc: false },
+    { id: 'timestamp', desc: true },
   ])
   const [isAllExpanded, setIsAllExpanded] = useState(false)
   const lineStyle =
