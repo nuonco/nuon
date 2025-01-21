@@ -47,6 +47,7 @@ func (j *jobLoop) getJobSteps(ctx context.Context, handler jobs.JobHandler) ([]*
 			name:        "outputs",
 			fn:          j.executeOutputsJobStep,
 			cleanupFn:   j.cleanupJobStep,
+			handler:     handler,
 			startStatus: models.AppRunnerJobExecutionStatusInDashProgress,
 		},
 		// update clean up
