@@ -21,6 +21,7 @@ import {
   deployComponents,
   deployComponentBuild,
   getInstallDeployPlan,
+  getInstallCurrentInputs,
 } from './installs'
 
 describe('getInstalls should handle response status codes from GET installs endpoint', () => {
@@ -393,6 +394,25 @@ describe('getInstallDeployPlan should handle response status codes from GET inst
   test.each(badResponseCodes)('%s status', async () => {
     await getInstallDeployPlan({
       deployId,
+      installId,
+      orgId,
+    }).catch((err) => expect(err).toMatchSnapshot())
+  })
+})
+
+describe('getInstallCurrentInputs should handle response status codes from GET installs/:id/inputs/current endpoint', () => {
+  const orgId = 'test-id'
+  const installId = 'test-id'
+  test('200 status', async () => {
+    const spec = await getInstallCurrentInputs({
+      installId,
+      orgId,
+    })
+    expect(spec).toHaveProperty('redacted_values')
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await getInstallCurrentInputs({
       installId,
       orgId,
     }).catch((err) => expect(err).toMatchSnapshot())
