@@ -116,3 +116,14 @@ func (s *app) signup(ctx *gin.Context) {
 ```
 </CodeGroup>
 
+## Updating Install Input Value
+
+An install input value can be updated through our API or by using the CLI.
+
+* [API Endpoint](https://docs.nuon.co/api-ref/installs/update-an-install-input)
+
+Example of a cli command to update an install input:
+
+```sh
+nuon installs update-input --install-id=inlju8zs1g3ohctqwdtqrhizp5 --name=aws-eks-version --value=v1.29
+```
