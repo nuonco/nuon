@@ -19,26 +19,26 @@ export const InstallDeployIntermediateData: FC<
       className="max-h-[400px] overflow-y-auto"
     >
       {data?.nuon?.components
-        ? Object.keys(data?.nuon?.components).map((key) => (
-            <ConfigurationVariables
-              key={key}
-              heading={`Component ${key}`}
-              variables={data?.nuon?.components[key]?.outputs}
-            />
-          ))
-        : null}
-      {data?.nuon?.install?.internal_domain &&
-      data?.nuon?.install?.public_domain ? (
+      ? Object.keys(data?.nuon?.components).map((key) => (
         <ConfigurationVariables
-          heading="Install domains"
-          variables={{
-            internal_domain: data?.nuon?.install?.internal_domain,
-            public_domain: data?.nuon?.install?.public_domain,
-          }}
+          key={key}
+          heading={`Component ${key}`}
+          variables={data?.nuon?.components[key]?.outputs}
         />
-      ) : null}
+      ))
+      : null}
+      {data?.nuon?.install?.internal_domain &&
+       data?.nuon?.install?.public_domain ? (
+         <ConfigurationVariables
+           heading="Install domains"
+           variables={{
+             internal_domain: data?.nuon?.install?.internal_domain,
+             public_domain: data?.nuon?.install?.public_domain,
+           }}
+         />
+       ) : null}
 
-      {data?.nuon?.install?.inputs ? (
+      {install?.install_inputs?.[0]?.redacted_values ? (
         <ConfigurationVariables
           heading="Install inputs"
           variables={install?.install_inputs?.[0]?.redacted_values}

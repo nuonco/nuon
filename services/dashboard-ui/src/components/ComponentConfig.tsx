@@ -392,7 +392,7 @@ const ConfigVariables: FC<{
             )}
           </Text>
           <Text className="text-sm font-mono break-all col-span-2">
-            {variables[key].length >= 24 && !isNotTruncated ? (
+            {variables[key]?.length >= 24 && !isNotTruncated ? (
               <ToolTip tipContent={variables[key]} alignment="right">
                 <Truncate variant="large">
                   {typeof variables[key] === 'string'
@@ -401,12 +401,12 @@ const ConfigVariables: FC<{
                 </Truncate>
               </ToolTip>
             ) : typeof variables[key] === 'string' ? (
-              variables[key]
+              variables[key] ? variables[key] : ""
             ) : (
               variables[key]?.map((v, i) => (
                 <span key={key}>
                   {v}
-                  {i + 1 !== variables[key].length && ','}
+                  {i + 1 !== variables[key]?.length && ','}
                 </span>
               ))
             )}
