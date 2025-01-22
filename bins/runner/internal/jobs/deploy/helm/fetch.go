@@ -13,10 +13,10 @@ import (
 )
 
 func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-        l, err := pkgctx.Logger(ctx)
-        if err != nil {
-                return err
-        }
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
 
 	h.state = &handlerState{}
 
@@ -28,6 +28,7 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	h.state.plan = plan
 	h.state.jobID = job.ID
 	h.state.jobExecutionID = jobExecution.ID
+	h.state.outputs = map[string]interface{}{}
 
 	h.state.timeout = time.Duration(job.ExecutionTimeout)
 	l.Info("setting helm operation timeout", zap.String("duration", h.state.timeout.String()))

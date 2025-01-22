@@ -37,7 +37,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	l.Info("Initializing Helm...", zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()})
-	actionCfg, err := h.actionInit(l)
+	actionCfg, err := h.actionInit(ctx, l)
 	if err != nil {
 		return fmt.Errorf("unable to initialize helm actions: %w", err)
 	}

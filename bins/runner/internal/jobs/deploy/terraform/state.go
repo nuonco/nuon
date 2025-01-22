@@ -5,15 +5,16 @@ import (
 
 	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	terraformworkspace "github.com/powertoolsdev/mono/pkg/terraform/workspace"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
 
 const (
-	defaultFileType string = "file/helm"
+	defaultFileType string = "file/terraform"
 )
 
 type (
-	Build              configs.NoRegistryBuild[configs.DockerRefBuild]
+	Build          configs.NoRegistryBuild[configs.DockerRefBuild]
 	Deploy         configs.Deploy[configs.TerraformDeploy]
 	WaypointConfig configs.Apps[Build, Deploy]
 )
@@ -28,7 +29,7 @@ type handlerState struct {
 
 	// fields set by the plugin execution
 	arch           ociarchive.Archive
-	chartPath      string
 	jobExecutionID string
 	jobID          string
+	tfWorkspace    terraformworkspace.Workspace
 }
