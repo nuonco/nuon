@@ -1,5 +1,7 @@
 package configs
 
+import "github.com/powertoolsdev/mono/pkg/kube"
+
 type HelmSet struct {
 	Name  string `hcl:"name"`
 	Value string `hcl:"value"`
@@ -26,4 +28,6 @@ type HelmRepoDeploy struct {
 
 	ArtifactRepo *OCIRegistryRepository `hcl:"artifact_repo,block"`
 	ArtifactTag  string                 `hcl:"artifact_tag"`
+
+	ClusterInfo *kube.ClusterInfo `hcl:"cluster_info,block"`
 }

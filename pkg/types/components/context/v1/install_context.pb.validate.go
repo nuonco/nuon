@@ -61,6 +61,8 @@ func (m *AwsAccount) validate(all bool) error {
 
 	// no validation rules for Region
 
+	// no validation rules for RoleArn
+
 	if len(errors) > 0 {
 		return AwsAccountMultiError(errors)
 	}
