@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	terraformworkspace "github.com/powertoolsdev/mono/pkg/terraform/workspace"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
 
@@ -22,4 +23,5 @@ type handlerState struct {
 	// fields set by the plugin execution
 	jobExecutionID string
 	jobID          string
+	tfWorkspace    terraformworkspace.Workspace
 }

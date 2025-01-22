@@ -88,6 +88,7 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 	}
 
 	// queue job
+	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
 	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type:  runnersignals.OperationProcessJob,
 		JobID: runnerJob.ID,

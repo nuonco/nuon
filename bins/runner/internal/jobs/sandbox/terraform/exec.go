@@ -25,6 +25,7 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		p.writeErrorResult(ctx, "load terraform workspace", err)
 		return fmt.Errorf("unable to create workspace from config: %w", err)
 	}
+	p.state.tfWorkspace = wkspace
 
 	tfRun, err := run.New(p.v, run.WithWorkspace(wkspace),
 		run.WithLogger(hlog),
