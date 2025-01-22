@@ -2,6 +2,7 @@
 
 import React, { type FC } from 'react'
 import {
+  ArrowClockwise,
   ArrowsInLineVertical,
   ArrowsOutLineVertical,
   MagnifyingGlass,
@@ -13,7 +14,8 @@ import {
 
 import { Button } from '@/components/Button'
 import { Dropdown } from '@/components/Dropdown'
-import { RadioInput } from '@/components/Input'
+import { CheckboxInput } from '@/components/Input'
+import { LogLineSeverity } from '@/components/RunnerLogLineSeverity'
 
 export interface IRunnerLogsActions {
   columnFilters: any
@@ -31,6 +33,7 @@ export interface IRunnerLogsActions {
 }
 
 export const RunnerLogsActions: FC<IRunnerLogsActions> = ({
+  columnFilters,
   columnSort,
   globalFilter,
   handleGlobalFilter,
@@ -116,56 +119,104 @@ export const RunnerLogsActions: FC<IRunnerLogsActions> = ({
         >
           <div>
             <form>
-              <RadioInput
-                name={`${id}-status-filter`}
+              <CheckboxInput
+                name="trace"
                 onChange={handleStatusFilter}
+                checked={columnFilters?.at(0)?.value?.includes('Trace')}
                 value="Trace"
-                labelText="Trace"
+                labelText={
+                  <div className="flex items-center gap-1">
+                    <LogLineSeverity severity_number={4} />
+                    <span className="font-semibold font-mono uppercase">
+                      Trace
+                    </span>
+                  </div>
+                }
               />
 
-              <RadioInput
-                name={`${id}-status-filter`}
+              <CheckboxInput
+                name="debug"
                 onChange={handleStatusFilter}
+                checked={columnFilters?.at(0)?.value?.includes('Debug')}
                 value="Debug"
-                labelText="Debug"
+                labelText={
+                  <div className="flex items-center gap-1">
+                    <LogLineSeverity severity_number={8} />
+                    <span className="font-semibold !font-mono uppercase">
+                      Debug
+                    </span>
+                  </div>
+                }
               />
 
-              <RadioInput
-                name={`${id}-status-filter`}
+              <CheckboxInput
+                name="info"
                 onChange={handleStatusFilter}
+                checked={columnFilters?.at(0)?.value?.includes('Info')}
                 value="Info"
-                labelText="Info"
+                labelText={
+                  <div className="flex items-center gap-1">
+                    <LogLineSeverity severity_number={12} />
+                    <span className="font-semibold !font-mono uppercase">
+                      Info
+                    </span>
+                  </div>
+                }
               />
 
-              <RadioInput
-                name={`${id}-status-filter`}
+              <CheckboxInput
+                name="warn"
                 onChange={handleStatusFilter}
+                checked={columnFilters?.at(0)?.value?.includes('Warn')}
                 value="Warn"
-                labelText="Warning"
+                labelText={
+                  <div className="flex items-center gap-1">
+                    <LogLineSeverity severity_number={16} />
+                    <span className="font-semibold !font-mono uppercase">
+                      Warn
+                    </span>
+                  </div>
+                }
               />
 
-              <RadioInput
-                name={`${id}-status-filter`}
+              <CheckboxInput
+                name="error"
                 onChange={handleStatusFilter}
+                checked={columnFilters?.at(0)?.value?.includes('Error')}
                 value="Error"
-                labelText="Error"
+                labelText={
+                  <div className="flex items-center gap-1">
+                    <LogLineSeverity severity_number={20} />
+                    <span className="font-semibold !font-mono uppercase">
+                      Error
+                    </span>
+                  </div>
+                }
               />
 
-              <RadioInput
-                name={`${id}-status-filter`}
+              <CheckboxInput
+                name="fatal"
                 onChange={handleStatusFilter}
+                checked={columnFilters?.at(0)?.value?.includes('Fatal')}
                 value="Fatal"
-                labelText="Fatal"
+                labelText={
+                  <div className="flex items-center gap-1">
+                    <LogLineSeverity severity_number={24} />
+                    <span className="font-semibold !font-mono uppercase">
+                      Fatal
+                    </span>
+                  </div>
+                }
               />
               <hr />
               <Button
                 className="w-full !rounded-t-none !text-sm flex items-center gap-2 pl-4"
-                type="reset"
+                type="button"
                 onClick={clearStatusFilter}
                 variant="ghost"
               >
-                <X />
-                Clear
+                <ArrowClockwise />
+                Reset
               </Button>
             </form>
           </div>

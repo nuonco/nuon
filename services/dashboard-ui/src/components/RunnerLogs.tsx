@@ -229,9 +229,18 @@ export interface IRunnerLogs {
   withOutBorder?: boolean
 }
 
-export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs, withOutBorder }) => {
+export const RunnerLogs: FC<IRunnerLogs> = ({
+  heading,
+  logs,
+  withOutBorder,
+}) => {
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false)
-  const [columnFilters, setColumnFilters] = useState([])
+  const [columnFilters, setColumnFilters] = useState([
+    {
+      id: 'severity_text',
+      value: ['Trace', 'Debug', 'Info', 'Warn', 'Error', 'Fatal'],
+    },
+  ])
   const [globalFilter, setGlobalFilter] = useState('')
   const [columnSort, setColumnSort] = useState([
     { id: 'timestamp', desc: true },
@@ -256,10 +265,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs, withOutBorder }) =>
           </span>
         ),
         enableColumFilter: true,
-        filterFn: (row, columnId, filterValue) => {
-          const severityText = row.getValue<string>(columnId)
-          return severityText === filterValue
-        },
+        filterFn: 'arrIncludesSome',
       },
       {
         header: 'Date',
@@ -309,12 +315,26 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs, withOutBorder }) =>
   )
 
   const handleStatusFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target
-    setColumnFilters(() => [{ id: 'severity_text', value: value }])
+    const { checked, value } = e.target
+    setColumnFilters((state) => {
+      const values = [...state?.at(0)?.value]
+      const index = values?.indexOf(value)
+      if (checked && index < 0) {
+        values.push(value)
+      } else if (index > -1) {
+        values.splice(index, 1)
+      }
+      return [{ id: 'severity_text', value: values }]
+    })
   }
 
   const clearStatusFilter = () => {
-    setColumnFilters(() => [])
+    setColumnFilters([
+      {
+        id: 'severity_text',
+        value: ['Trace', 'Debug', 'Info', 'Warn', 'Error', 'Fatal'],
+      },
+    ])
   }
 
   const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -365,7 +385,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({ heading, logs, withOutBorder }) =>
       </Modal>
       <Section
         className={classNames({
-          "border-r": !withOutBorder
+          'border-r': !withOutBorder,
         })}
         isHeadingFixed
         actions={
