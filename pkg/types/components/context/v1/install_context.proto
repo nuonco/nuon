@@ -7,6 +7,7 @@ option go_package = "github.com/powertoolsdev/mono/pkg/types/components/context/
 message AwsAccount {
   bool federated = 1;
   string region = 2;
+  string role_arn = 3;
 }
 
 message AzureAccount {
