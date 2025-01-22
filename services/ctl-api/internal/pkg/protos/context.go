@@ -12,7 +12,8 @@ func (a *Adapter) awsAccess(install *app.Install) *contextv1.AwsAccount {
 	}
 
 	return &contextv1.AwsAccount{
-		Region: install.AWSAccount.Region,
+		Region:  install.AWSAccount.Region,
+		RoleArn: install.AWSAccount.IAMRoleARN,
 	}
 }
 

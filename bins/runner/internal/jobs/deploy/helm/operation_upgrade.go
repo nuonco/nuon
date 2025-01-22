@@ -8,7 +8,10 @@ import (
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/release"
 
+	"github.com/databus23/helm-diff/v3/manifest"
 	"github.com/pkg/errors"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/outputs"
 	"github.com/powertoolsdev/mono/pkg/helm"
 )
 
@@ -32,9 +35,8 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}
 
-	// We have a previous release, upgrade.
 	client := action.NewUpgrade(actionCfg)
-	client.DryRun = false
+	client.DryRun = true
 	client.DisableHooks = false
 	client.Wait = true
 	client.WaitForJobs = false
@@ -54,11 +56,50 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.CleanupOnFail = false
 	client.Force = false
 
-	l.Info("upgrading helm release")
+	l.Info("calculating helm diff")
 	rel, err := client.RunWithContext(ctx, prevRel.Name, chart, values)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to execute with dry-run")
+	}
+	prevMapping := manifest.Parse(prevRel.Manifest, prevRel.Namespace, true)
+	newMapping := manifest.Parse(rel.Manifest, rel.Namespace, true)
+	if err := h.logDiff(l, prevMapping, newMapping); err != nil {
+		return nil, errors.Wrap(err, "unable to execute with dry-run")
+	}
+
+	l.Info("upgrading helm release")
+	client = action.NewUpgrade(actionCfg)
+	client.DryRun = false
+	client.DisableHooks = false
+	client.Wait = true
+	client.WaitForJobs = false
+	client.Devel = h.state.cfg.Devel
+	client.DependencyUpdate = true
+	client.Timeout = h.state.timeout
+	client.Namespace = h.state.cfg.Namespace
+	client.Atomic = false
+	client.SkipCRDs = h.state.cfg.SkipCRDs
+	client.SubNotes = true
+	client.DisableOpenAPIValidation = false
+	client.Description = ""
+	client.ResetValues = false
+	client.ReuseValues = false
+	client.Recreate = false
+	client.MaxHistory = 0
+	client.CleanupOnFail = false
+	client.Force = false
+	rel, err = client.RunWithContext(ctx, prevRel.Name, chart, values)
 	if err != nil {
 		return nil, fmt.Errorf("unable to upgrade helm release: %w", err)
 	}
+
+	// NOTE(jm): we parse these here, so we have more context and the hanging action client, vs passing more stuff
+	// around.
+	outs, err := outputs.HelmOutputs(rel.Manifest, rel.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse outputs")
+	}
+	h.state.outputs = outs
 
 	return rel, nil
 }
