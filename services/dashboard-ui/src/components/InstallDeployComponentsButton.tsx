@@ -12,7 +12,8 @@ import {
 export const InstallDeployComponentButton: FC<{
   installId: string
   orgId: string
-}> = ({ installId, orgId }) => {
+  onComplete: () => void
+}> = ({ installId, orgId, ...props }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
 
@@ -30,15 +31,16 @@ export const InstallDeployComponentButton: FC<{
 
   return (
     <Button
-      className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-3 !rounded-none w-full"
+      className="text-base flex items-center gap-1"
       onClick={() => {
         setIsLoading(true)
         deployComponents({ installId, orgId }).then(() => {
           setIsLoading(false)
           setIsKickedOff(true)
+          props.onComplete()
         })
       }}
-      variant="ghost"
+      variant="primary"
     >
       {isKickedOff ? (
         <CloudCheck size="18" />

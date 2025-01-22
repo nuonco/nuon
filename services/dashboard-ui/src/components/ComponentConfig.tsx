@@ -418,7 +418,7 @@ const ConfigVariables: FC<{
               )
             ) : (
               variables[key]?.map((v, i) => (
-                <span key={key}>
+                <span key={`${key}-${i}`}>
                   {v}
                   {i + 1 !== variables[key]?.length && ','}
                 </span>
