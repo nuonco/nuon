@@ -120,15 +120,15 @@ exports[`getInstallDeploy should handle response status codes from GET installs/
 
 exports[`getInstallDeploy should handle response status codes from GET installs/:id/deploys/:id endpoint > 500 status 1`] = `[Error: Unable to retrieve install deployment.]`;
 
-exports[`getInstallDeployPlan should handle response status codes from GET installs/:id/deploys/:id/plan endpoint > 400 status 1`] = `[Error: Unable to retrieve install deplay plan.]`;
+exports[`getInstallDeployPlan should handle response status codes from GET installs/:id/deploys/:id/plan endpoint > 400 status 1`] = `[Error: Unable to retrieve install deploy plan.]`;
 
-exports[`getInstallDeployPlan should handle response status codes from GET installs/:id/deploys/:id/plan endpoint > 401 status 1`] = `[Error: Unable to retrieve install deplay plan.]`;
+exports[`getInstallDeployPlan should handle response status codes from GET installs/:id/deploys/:id/plan endpoint > 401 status 1`] = `[Error: Unable to retrieve install deploy plan.]`;
 
-exports[`getInstallDeployPlan should handle response status codes from GET installs/:id/deploys/:id/plan endpoint > 403 status 1`] = `[Error: Unable to retrieve install deplay plan.]`;
+exports[`getInstallDeployPlan should handle response status codes from GET installs/:id/deploys/:id/plan endpoint > 403 status 1`] = `[Error: Unable to retrieve install deploy plan.]`;
 
-exports[`getInstallDeployPlan should handle response status codes from GET installs/:id/deploys/:id/plan endpoint > 404 status 1`] = `[Error: Unable to retrieve install deplay plan.]`;
+exports[`getInstallDeployPlan should handle response status codes from GET installs/:id/deploys/:id/plan endpoint > 404 status 1`] = `[Error: Unable to retrieve install deploy plan.]`;
 
-exports[`getInstallDeployPlan should handle response status codes from GET installs/:id/deploys/:id/plan endpoint > 500 status 1`] = `[Error: Unable to retrieve install deplay plan.]`;
+exports[`getInstallDeployPlan should handle response status codes from GET installs/:id/deploys/:id/plan endpoint > 500 status 1`] = `[Error: Unable to retrieve install deploy plan.]`;
 
 exports[`getInstallEvents should handle response status codes from GET installs/:id/events endpoint > 400 status 1`] = `[Error: Unable to retrieve install events.]`;
 
