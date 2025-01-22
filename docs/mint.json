@@ -231,6 +231,7 @@
         "api-ref/installs/get-install-deploy-plan",
         "api-ref/installs/get-an-installs-inputs",
         "api-ref/installs/create-install-inputs",
+        "api-ref/installs/update-an-install-input",
         "api-ref/installs/get-an-installs-current-inputs",
         "api-ref/installs/get-an-installs-sandbox-runs"
       ]
