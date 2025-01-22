@@ -13,6 +13,7 @@ import {
 import { ArrowsOutSimple } from '@phosphor-icons/react/dist/ssr'
 import { Button } from '@/components/Button'
 import { Config, ConfigContent } from '@/components/Config'
+import { CodeViewer } from '@/components/Code'
 import { Modal } from '@/components/Modal'
 import { Link } from '@/components/Link'
 import { ToolTip } from '@/components/ToolTip'
@@ -157,6 +158,15 @@ export const ComponentConfiguration: FC<IComponentConfiguration> = ({
                 variables={config?.helm?.values}
               />
             )}
+          {config?.helm?.values_files?.length ? (
+            <div className="flex flex-col gap-4">
+              <Text variant="med-12">Values files</Text>
+              <CodeViewer
+                initCodeSource={config?.helm?.values_files}
+                language="yaml"
+              />
+            </div>
+          ) : null}
         </>
       )}
     </div>
@@ -401,7 +411,11 @@ const ConfigVariables: FC<{
                 </Truncate>
               </ToolTip>
             ) : typeof variables[key] === 'string' ? (
-              variables[key] ? variables[key] : ""
+              variables[key] ? (
+                variables[key]
+              ) : (
+                ''
+              )
             ) : (
               variables[key]?.map((v, i) => (
                 <span key={key}>
