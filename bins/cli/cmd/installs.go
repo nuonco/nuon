@@ -262,5 +262,22 @@ func (c *cli) installsCmd() *cobra.Command {
 	deployInstallComponentsCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(deployInstallComponentsCmd)
 
+	updateInputCmd := &cobra.Command{
+		Use:   "update-input",
+		Short: "Update install input",
+		Long:  "Update an install input value",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.UpdateInput(cmd.Context(), id, name, arn)
+		}),
+	}
+	updateInputCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to update")
+	updateInputCmd.MarkFlagRequired("install-id")
+	updateInputCmd.Flags().StringVarP(&name, "name", "n", "", "The name of the input you want to update")
+	updateInputCmd.MarkFlagRequired("name")
+	updateInputCmd.Flags().StringVarP(&arn, "value", "v", "", "The value you want to set for the input")
+	updateInputCmd.MarkFlagRequired("value")
+	installsCmds.AddCommand(updateInputCmd)
+
 	return installsCmds
 }

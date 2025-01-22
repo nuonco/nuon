@@ -43,12 +43,21 @@ display_name = "Sandbox inputs"
 name = "default"
 description = "Default inputs"
 display_name = "Default Inputs"
+
 [[inputs.input]]
-name = "api_key"
-description = "API key"
+name = "api_key_1"
+description = "API key 1"
 default = ""
 sensitive = true
-display_name = "API Key"
+display_name = "API Key 1"
+group = "default"
+
+[[inputs.input]]
+name = "api_key_2"
+description = "API key 2"
+default = ""
+sensitive = false
+display_name = "API Key 2"
 group = "default"
 
 [[components]]

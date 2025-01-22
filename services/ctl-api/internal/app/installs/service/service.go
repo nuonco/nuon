@@ -76,6 +76,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/installs/:install_id/inputs", s.GetInstallInputs)
 	api.POST("/v1/installs/:install_id/inputs", s.CreateInstallInputs)
 	api.GET("/v1/installs/:install_id/inputs/current", s.GetInstallCurrentInputs)
+	api.PATCH("/v1/installs/:install_id/inputs", s.UpdateInstallInput)
 
 	// install components
 	api.GET("/v1/installs/:install_id/components", s.GetInstallComponents)
