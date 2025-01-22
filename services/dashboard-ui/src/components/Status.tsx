@@ -39,7 +39,8 @@ export const StatusBadge: FC<IStatusBadge> = ({
     status === 'bad' ||
     status === 'access-error' ||
     status === 'access_error'
-  const isNoop = status === 'noop'
+  const isNoop =
+    status === 'noop' || status === 'inactive' || status === 'pending'
   const statusText = isLabelStatusText ? label : status
 
   const Status = (
@@ -57,7 +58,7 @@ export const StatusBadge: FC<IStatusBadge> = ({
         })}
       />
       <span className="text-sm font-medium">
-        {statusText ? titleCase(statusText as string) : "Unknown"}
+        {statusText ? titleCase(statusText as string) : 'Unknown'}
       </span>
     </span>
   )
