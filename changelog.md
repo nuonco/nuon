@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.358
+
+Display helm values files in UI.
+
 ## v0.19.357
 
 UI handle null install input values.
