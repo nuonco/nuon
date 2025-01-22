@@ -273,7 +273,7 @@ export async function getInstallDeployPlan({
   orgId,
 }: IGetInstallDeployPlan) {
   return queryData<TInstallDeployPlan>({
-    errorMessage: 'Unable to retrieve install deplay plan.',
+    errorMessage: 'Unable to retrieve install deploy plan.',
     orgId,
     path: `installs/${installId}/deploys/${deployId}/plan`,
   })
