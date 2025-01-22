@@ -1,7 +1,11 @@
 package terraform
 
-import "context"
+import (
+	"context"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/outputs"
+)
 
 func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
-	return map[string]interface{}{}, nil
+	return outputs.TerraformOutputs(ctx, h.state.tfWorkspace)
 }

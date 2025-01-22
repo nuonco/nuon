@@ -4,6 +4,7 @@ import (
 	"time"
 
 	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
+	"github.com/powertoolsdev/mono/pkg/kube"
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
@@ -31,4 +32,6 @@ type handlerState struct {
 	chartPath      string
 	jobExecutionID string
 	jobID          string
+	clusterInfo *kube.ClusterInfo
+	outputs        map[string]interface{}
 }

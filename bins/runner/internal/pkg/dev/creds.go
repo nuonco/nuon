@@ -112,6 +112,15 @@ func (d *devver) initInstallCreds(ctx context.Context) error {
         }`, os.Getenv("NUONCTL_IAM_ROLE_ARN"))
 	fmt.Println("\nNOTE: for this to work, the runner role must manually give trust permissions to our support role. Please add the following JSON to", runnerRoleARN, "\n", permissionsJSON)
 
+	runnerEKSAccessJSON := fmt.Sprintf(`{
+            "Effect": "Allow",
+            "Action": "sts:AssumeRole",
+            "Principal": {
+                "AWS": "arn:aws:iam::949309607565:root"
+            }
+        }`)
+	fmt.Println("\nNOTE: for helm deploys to work, the install role must manually give trust permissions to the runner role, until runners can access the cluster.", runnerEKSAccessJSON)
+
 	assumer, err := awsassumerole.New(d.v,
 		awsassumerole.WithRoleARN(runnerRoleARN),
 		awsassumerole.WithRoleSessionName("nuon-ctl"),
