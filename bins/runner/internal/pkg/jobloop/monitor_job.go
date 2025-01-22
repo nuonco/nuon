@@ -27,16 +27,19 @@ func (j *jobLoop) monitorJob(ctx context.Context, cancel func(), doneCh chan str
 		if job.Status == models.AppRunnerJobStatusCancelled {
 			l.Error("job was cancelled via API, attempting to cancel execution")
 			cancel()
+			return
 		}
 
 		if job.Status == models.AppRunnerJobStatusTimedDashOut {
 			l.Error("job was timed out via API, attempting to cancel execution")
 			cancel()
+			return
 		}
 
 		if job.Status == models.AppRunnerJobStatusFailed {
 			l.Error("job was failed via API, attempting to cancel execution")
 			cancel()
+			return
 		}
 	}
 }
