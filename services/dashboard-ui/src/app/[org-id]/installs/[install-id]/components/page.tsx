@@ -9,10 +9,10 @@ import {
   type TDataInstallComponent,
 } from '@/components'
 import {
-  getInstall,
   getComponentBuild,
   getComponent,
   getComponentConfig,
+  getInstall,
   getOrg,
 } from '@/lib'
 import type { TBuild } from '@/types'

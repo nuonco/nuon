@@ -1,5 +1,5 @@
 import type { TBuild, TComponent, TComponentConfig } from '@/types'
-import { queryData } from '@/utils'
+import { mutateData, queryData } from '@/utils'
 
 export interface IGetComponent {
   componentId: string
@@ -71,5 +71,22 @@ export async function getLatestComponentBuild({
     errorMessage: 'Unable to retrieve component build.',
     orgId,
     path: `components/${componentId}/builds/latest`,
+  })
+}
+
+interface ICreateComponentBuild {
+  componentId: string
+  orgId: string
+}
+
+export async function createComponentBuild({
+  componentId,
+  orgId,
+}: ICreateComponentBuild) {
+  return mutateData<TBuild>({
+    data: { use_latest: true },
+    errorMessage: 'Unable to kick off component build',
+    orgId,
+    path: `components/${componentId}/builds`,
   })
 }
