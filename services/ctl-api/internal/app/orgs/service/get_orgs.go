@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -44,7 +45,9 @@ func (s *service) GetCurrentUserOrgs(ctx *gin.Context) {
 func (s *service) getOrgs(ctx context.Context, orgIDs []string) ([]app.Org, error) {
 	var orgs []app.Org
 	res := s.db.WithContext(ctx).
-		Where("id IN ?", orgIDs).
+		Joins("JOIN accounts ON accounts.id = orgs.created_by_id").
+		Where("orgs.id IN ?", orgIDs).
+		Order(fmt.Sprintf("CASE WHEN accounts.account_type = '%s' THEN 1 ELSE 0 END, orgs.id", app.AccountTypeCanary)).
 		Find(&orgs)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get orgs")
