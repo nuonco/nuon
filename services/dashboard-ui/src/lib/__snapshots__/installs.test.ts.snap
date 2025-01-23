@@ -90,6 +90,16 @@ exports[`getInstallComponentDeploys should handle response status codes from GET
 
 exports[`getInstallComponentDeploys should handle response status codes from GET installs/:id/components/:id/deploys endpoint > 500 status 1`] = `[Error: Unable to retrieve deployments for this install component.]`;
 
+exports[`getInstallComponentOutputs should handle response status codes from GET installs/:id/components/:id/outputs endpoint > 400 status 1`] = `[Error: Unable to retrieve install component outputs.]`;
+
+exports[`getInstallComponentOutputs should handle response status codes from GET installs/:id/components/:id/outputs endpoint > 401 status 1`] = `[Error: Unable to retrieve install component outputs.]`;
+
+exports[`getInstallComponentOutputs should handle response status codes from GET installs/:id/components/:id/outputs endpoint > 403 status 1`] = `[Error: Unable to retrieve install component outputs.]`;
+
+exports[`getInstallComponentOutputs should handle response status codes from GET installs/:id/components/:id/outputs endpoint > 404 status 1`] = `[Error: Unable to retrieve install component outputs.]`;
+
+exports[`getInstallComponentOutputs should handle response status codes from GET installs/:id/components/:id/outputs endpoint > 500 status 1`] = `[Error: Unable to retrieve install component outputs.]`;
+
 exports[`getInstallComponents should handle response status codes from GET installs/:id/components endpoint > 400 status 1`] = `[Error: Unable to retrieve the components for this install.]`;
 
 exports[`getInstallComponents should handle response status codes from GET installs/:id/components endpoint > 401 status 1`] = `[Error: Unable to retrieve the components for this install.]`;

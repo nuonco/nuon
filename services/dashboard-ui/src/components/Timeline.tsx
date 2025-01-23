@@ -25,6 +25,7 @@ export const EventStatus: FC<{ status?: string }> = ({
       status === 'building' ||
       status === 'queued' ||
       status === 'planning' ||
+      status === 'syncing' ||
       status === 'deploying',
   }
 
@@ -40,6 +41,7 @@ export const EventStatus: FC<{ status?: string }> = ({
           status === 'queued' ||
           status === 'planning' ||
           status === 'pending' ||
+          status === 'syncing' ||
           status === 'deploying',
       })}
     >
@@ -77,7 +79,7 @@ export const TimelineEvent: FC<ITimelineEvent> = ({
 }) => {
   return (
     <Link
-      className="!block w-full !p-0 timeline-event"
+      className="!block w-full !p-0 timeline-event on-enter enter-right"
       href={href}
       variant="ghost"
     >
