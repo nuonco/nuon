@@ -16,8 +16,7 @@ import (
 )
 
 type UpdateInstallInputRequest struct {
-	Name  string `json:"name" validate:"required"`
-	Value string `json:"value" validate:"required"`
+	Inputs map[string]*string `json:"inputs" validate:"required,gte=1"`
 }
 
 func (c *UpdateInstallInputRequest) Validate(v *validator.Validate) error {
@@ -113,13 +112,18 @@ func (s *service) validateInstallInput(ctx context.Context, appInputConfigID str
 		return fmt.Errorf("unable to get app inputs: %w", res.Error)
 	}
 
+	appInputNames := map[string]struct{}{}
 	for _, input := range appInputs {
-		if input.Name == req.Name {
-			return nil
+		appInputNames[input.Name] = struct{}{}
+	}
+
+	for name := range req.Inputs {
+		if _, ok := appInputNames[name]; !ok {
+			return fmt.Errorf("name %s does not exist in app inputs", name)
 		}
 	}
 
-	return fmt.Errorf("name %s does not exist in app inputs", req.Name)
+	return nil
 }
 
 func (s *service) newInstallInputs(ctx context.Context, installInput app.InstallInputs, req UpdateInstallInputRequest) (*app.InstallInputs, error) {
@@ -128,7 +132,9 @@ func (s *service) newInstallInputs(ctx context.Context, installInput app.Install
 		inputs[k] = v
 	}
 
-	inputs[req.Name] = &req.Value
+	for k, v := range req.Inputs {
+		inputs[k] = v
+	}
 
 	// this update will be tied to the same AppInputConfigID tied to the latest install input
 	obj := &app.InstallInputs{
