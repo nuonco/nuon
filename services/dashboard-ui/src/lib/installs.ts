@@ -3,9 +3,11 @@ import type {
   TInstall,
   TInstallActionWorkflowRun,
   TInstallComponent,
+  TInstallComponentOutputs,
   TInstallDeploy,
   TInstallDeployPlan,
   TInstallEvent,
+  TInstallInputs,
   TReadme,
   TRunnerGroup,
   TSandboxRun,
@@ -302,9 +304,25 @@ export async function getInstallCurrentInputs({
   installId,
   orgId,
 }: IGetInstallCurrentInputs) {
-  return queryData<TInstallDeployPlan>({
+  return queryData<TInstallInputs>({
     errorMessage: 'Unable to retrieve current install inputs.',
     orgId,
     path: `installs/${installId}/inputs/current`,
+  })
+}
+
+export interface IGetInstallComponentOutputs extends IGetInstall {
+  componentId: string
+}
+
+export async function getInstallComponentOutputs({
+  componentId,
+  installId,
+  orgId,
+}: IGetInstallComponentOutputs) {
+  return queryData<TInstallComponentOutputs>({
+    errorMessage: 'Unable to retrieve install component outputs.',
+    orgId,
+    path: `installs/${installId}/components/${componentId}/outputs`,
   })
 }

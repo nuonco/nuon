@@ -38,6 +38,7 @@ export type TInstallEvent = Omit<
   payload: string
 }
 export type TInstallInputs = components['schemas']['app.InstallInputs']
+export type TInstallComponentOutputs = Record<string, string>
 
 // deploys
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
