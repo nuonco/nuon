@@ -45,7 +45,7 @@ func (s *service) getInstallComponentLatestDeploy(ctx context.Context, installID
 	installCmp := app.InstallComponent{}
 	res := s.db.WithContext(ctx).
 		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_deploys.created_at DESC").Limit(1000)
+			return db.Order("install_deploys.created_at DESC").Limit(1)
 		}).
 		Where(&app.InstallComponent{
 			InstallID:   installID,
@@ -55,7 +55,7 @@ func (s *service) getInstallComponentLatestDeploy(ctx context.Context, installID
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
 	}
-	if len(installCmp.InstallDeploys) != 1 {
+	if len(installCmp.InstallDeploys) < 1 {
 		return nil, fmt.Errorf("no deploy exists for install: %w", gorm.ErrRecordNotFound)
 	}
 
