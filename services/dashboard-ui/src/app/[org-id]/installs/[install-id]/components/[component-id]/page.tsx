@@ -3,8 +3,9 @@ import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { FiChevronRight } from 'react-icons/fi'
 import {
-  Button,
+  ClickToCopy,
   ComponentConfiguration,
+  CodeViewer,
   DashboardContent,
   DependentComponents,
   Duration,
@@ -20,9 +21,11 @@ import {
 } from '@/components'
 import {
   getComponent,
+  getComponentBuilds,
   getComponentConfig,
   getInstall,
   getInstallComponent,
+  getInstallComponentOutputs,
   getLatestComponentBuild,
   getOrg,
 } from '@/lib'
@@ -45,12 +48,13 @@ export default withPageAuthRequired(async function InstallComponent({
     getOrg({ orgId }),
   ])
 
-  const [component, componentConfig] = await Promise.all([
+  const [component, componentConfig, builds] = await Promise.all([
     getComponent({ componentId: installComponent.component_id, orgId }),
     getComponentConfig({
       componentId: installComponent?.component_id,
       orgId,
     }),
+    getComponentBuilds({ componentId: installComponent?.component_id, orgId }),
   ])
 
   return (
@@ -69,6 +73,13 @@ export default withPageAuthRequired(async function InstallComponent({
       ]}
       heading={component.name}
       headingUnderline={installComponent.id}
+      statues={
+        <InstallDeployLatestBuildButton
+          builds={builds}
+          installId={installId}
+          orgId={orgId}
+        />
+      }
     >
       <div className="flex flex-col lg:flex-row flex-auto">
         <div className="divide-y flex-auto  flex flex-col overlfow-auto">
@@ -84,19 +95,22 @@ export default withPageAuthRequired(async function InstallComponent({
               />
             </Section>
           )}
-          <ErrorBoundary fallbackRender={ErrorFallback}>
-            <Suspense
-              fallback={<Loading loadingText="Loading latest build..." />}
-            >
-              <LatestBuild
-                component={component}
-                installId={installId}
-                orgId={orgId}
-              />
-            </Suspense>
-          </ErrorBoundary>
-          <Section heading="Component config">
+          <Section
+            heading="Component config"
+            childrenClassName="flex flex-col gap-4"
+          >
             <ComponentConfiguration config={componentConfig} />
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={<Loading loadingText="Loading latest build..." />}
+              >
+                <LatestOutputs
+                  componentId={installComponent?.component_id}
+                  installId={installId}
+                  orgId={orgId}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </Section>
         </div>
         <div className="border-l overflow-auto lg:min-w-[450px] lg:max-w-[450px]">
@@ -116,7 +130,34 @@ export default withPageAuthRequired(async function InstallComponent({
   )
 })
 
-const LatestBuild = async ({ component, installId, orgId }) => {
+const LatestOutputs: FC<{
+  componentId: string
+  installId: string
+  orgId: string
+}> = async ({ componentId, installId, orgId }) => {
+  const outputs = await getInstallComponentOutputs({
+    componentId,
+    installId,
+    orgId,
+  }).catch(console.error)
+  
+  return outputs ? (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <Text variant="med-12">Outputs</Text>
+        <ClickToCopy className="hover:bg-black/10 rounded-md p-1 text-sm">
+          <span className="hidden">{JSON.stringify(outputs)}</span>
+        </ClickToCopy>
+      </div>
+      <CodeViewer
+        initCodeSource={JSON.stringify(outputs, null, 2)}
+        language="json"
+      />
+    </div>
+  ) : null
+}
+
+const LatestBuild = async ({ component, orgId }) => {
   const build = await getLatestComponentBuild({
     componentId: component?.id,
     orgId,
@@ -161,11 +202,6 @@ const LatestBuild = async ({ component, installId, orgId }) => {
             <Duration beginTime={build.created_at} endTime={build.updated_at} />
           </span>
         </div>
-        <InstallDeployLatestBuildButton
-          buildId={build?.id}
-          installId={installId}
-          orgId={orgId}
-        />
       </div>
     </Section>
   )

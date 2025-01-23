@@ -6,6 +6,7 @@ import React, { type FC, useEffect, useState } from 'react'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
 import { Truncate } from '@/components/Typography'
+import { revalidateInstallData } from "@/components/install-actions"
 import type { TComponent, TInstallDeploy } from '@/types'
 import { SHORT_POLL_DURATION } from '@/utils'
 
@@ -22,19 +23,21 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
   component,
   installId,
   installComponentId,
-  initDeploys,
+  initDeploys: deploys,
   shouldPoll = false,
   orgId,
 }) => {
-  const [deploys, setInstallComponentDeploys] = useState(initDeploys)
+//  const [deploys, setInstallComponentDeploys] = useState(initDeploys)
 
   useEffect(() => {
     const fetchInstallComponentDeploys = () => {
-      fetch(
-        `/api/${orgId}/installs/${installId}/components/${component.id}/deploys`
-      )
-        .then((res) => res.json().then((b) => setInstallComponentDeploys(b)))
-        .catch(console.error)
+      /* fetch(
+       *   `/api/${orgId}/installs/${installId}/components/${component.id}/deploys`
+       * )
+       *   .then((res) => res.json().then((b) => setInstallComponentDeploys(b)))
+       *   .catch(console.error) */
+
+      revalidateInstallData({ installId, orgId })
     }
 
     if (shouldPoll) {

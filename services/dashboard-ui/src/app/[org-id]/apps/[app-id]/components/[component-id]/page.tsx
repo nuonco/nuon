@@ -1,5 +1,6 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
+  BuildComponentButton,
   ComponentBuildHistory,
   ComponentConfiguration,
   DashboardContent,
@@ -43,6 +44,13 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
       ]}
       heading={component.name}
       headingUnderline={component.id}
+      statues={
+        <BuildComponentButton
+          appId={appId}
+          componentId={componentId}
+          orgId={orgId}
+        />
+      }
     >
       <div className="flex flex-col lg:flex-row flex-auto">
         <div className="divide-y flex flex-col flex-auto">
