@@ -33,7 +33,7 @@ type InstallComponent struct {
 }
 
 func (c *InstallComponent) BeforeCreate(tx *gorm.DB) error {
-	c.ID = domains.NewComponentID()
+	c.ID = domains.NewInstallComponentID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	c.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil

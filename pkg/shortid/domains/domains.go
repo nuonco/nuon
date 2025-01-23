@@ -54,6 +54,10 @@ func NewConfigID() string {
 	return shortid.NewNanoID("cfg")
 }
 
+func NewInstallComponentID() string {
+	return shortid.NewNanoID("inc")
+}
+
 func NewComponentID() string {
 	return shortid.NewNanoID("cmp")
 }

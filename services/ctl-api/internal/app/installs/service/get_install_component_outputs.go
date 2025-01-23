@@ -34,7 +34,7 @@ func (s *service) GetInstallComponentOutputs(ctx *gin.Context) {
 
 	installCmp, err := s.getInstallComponentOutputs(ctx, installID, componentID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get  install cmp %s: %w", installID, err))
+		ctx.Error(fmt.Errorf("unable to get outputs %s: %w", installID, err))
 		return
 	}
 
@@ -44,7 +44,7 @@ func (s *service) GetInstallComponentOutputs(ctx *gin.Context) {
 func (s *service) getInstallComponentOutputs(ctx context.Context, installID, componentID string) (map[string]interface{}, error) {
 	deploy, err := s.getInstallComponentLatestDeploy(ctx, installID, componentID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to get install component latest deploy")
 	}
 
 	var runnerJob app.RunnerJob
