@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: light dark;
   --border-color-light: #DEE3E7;
   --border-color-dark: #27252A;
   --gradient-brand-light: linear-gradient(88.14deg, #f9519d 7.25%, #6133ff 62.82%);

@@ -1,6 +1,6 @@
 'use server'
 
-// import { revalidatePath } from 'next/cache'
+import { revalidatePath } from 'next/cache'
 import {
   deployComponents as deployAllComponents,
   reprovisionInstall as reprovisionInstallSandbox,
@@ -16,7 +16,13 @@ export async function reprovisionInstall({
   installId,
   orgId,
 }: IReprovisionInstall) {
-  return reprovisionInstallSandbox({ installId, orgId })
+  try {
+    await reprovisionInstallSandbox({ installId, orgId })
+    revalidatePath(`/${orgId}/installs/${installId}`)
+  } catch (error) {
+    console.error(error)
+    throw new Error(error.message)
+  }
 }
 
 interface IDeployComponents {
@@ -28,10 +34,16 @@ export async function deployComponents({
   installId,
   orgId,
 }: IDeployComponents) {
-  return deployAllComponents({
-    installId,
-    orgId,
-  })
+  try {
+    await deployAllComponents({
+      installId,
+      orgId,
+    })
+    revalidatePath(`/${orgId}/installs/${installId}`)
+  } catch (error) {
+    console.error(error)
+    throw new Error(error.message)
+  }
 }
 
 interface IDeployComponentBuild {
@@ -45,9 +57,27 @@ export async function deployComponentBuild({
   installId,
   orgId,
 }: IDeployComponentBuild) {
-  return deployComponentByBuildId({
-    buildId,
-    installId,
-    orgId,
-  })
+  try {
+    await deployComponentByBuildId({
+      buildId,
+      installId,
+      orgId,
+    })
+    revalidatePath(`/${orgId}/installs/${installId}`)
+  } catch (error) {
+    console.error(error)
+    throw new Error(error.message)
+  }
+}
+
+interface IRevalidateInstallData {
+  installId: string
+  orgId: string
+}
+
+export async function revalidateInstallData({
+  orgId,
+  installId,
+}: IRevalidateInstallData) {
+  revalidatePath(`/${orgId}/installs/${installId}`)
 }
