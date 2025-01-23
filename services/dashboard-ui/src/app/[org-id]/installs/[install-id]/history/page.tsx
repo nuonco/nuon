@@ -72,11 +72,6 @@ const LoadInstallHistory: FC<{ installId: string; orgId: string }> = async ({
 }) => {
   const events = await getInstallEvents({ installId, orgId })
   return (
-    <InstallHistory
-      initEvents={events}
-      installId={installId}
-      orgId={orgId}
-      shouldPoll
-    />
+    <InstallHistory initEvents={events} installId={installId} orgId={orgId} />
   )
 }

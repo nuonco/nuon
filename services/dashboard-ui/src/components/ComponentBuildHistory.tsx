@@ -1,9 +1,10 @@
 'use client'
 
-import React, { type FC, useEffect, useState } from 'react'
+import React, { type FC, useEffect } from 'react'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
 import { Text, Truncate } from '@/components/Typography'
+import { revalidateAppData } from '@/components/app-actions'
 import type { TBuild } from '@/types'
 import { SHORT_POLL_DURATION } from '@/utils'
 
@@ -18,17 +19,18 @@ export interface IComponentBuildHistory {
 export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
   appId,
   componentId,
-  initBuilds,
+  initBuilds: builds,
   shouldPoll = false,
   orgId,
 }) => {
-  const [builds, setComponentBuilds] = useState(initBuilds)
+  //const [builds, setComponentBuilds] = useState(initBuilds)
 
   useEffect(() => {
     const fetchComponentBuilds = () => {
-      fetch(`/api/${orgId}/components/${componentId}/builds`)
-        .then((res) => res.json().then((b) => setComponentBuilds(b)))
-        .catch(console.error)
+      /* fetch(`/api/${orgId}/components/${componentId}/builds`)
+       *   .then((res) => res.json().then((b) => setComponentBuilds(b)))
+       *   .catch(console.error) */
+      revalidateAppData({ appId, orgId })
     }
 
     if (shouldPoll) {

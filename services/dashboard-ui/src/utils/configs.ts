@@ -7,7 +7,7 @@ export const ADMIN_API_URL =
 export const POLL_DURATION =
   (process?.env?.NEXT_PUBLIC_POLL_DURATION as unknown as number) || 45000
 export const SHORT_POLL_DURATION =
-  (process?.env?.NEXT_PUBLIC_SHORT_POLL_DURATION as unknown as number) || 15000
+  (process?.env?.NEXT_PUBLIC_SHORT_POLL_DURATION as unknown as number) || 5000
 export const LOG_POLL_DURATION =
   (process?.env?.NEXT_PUBLIC_LOG_POLL_DURATION as unknown as number) || 1000
 export const GITHUB_APP_NAME =
