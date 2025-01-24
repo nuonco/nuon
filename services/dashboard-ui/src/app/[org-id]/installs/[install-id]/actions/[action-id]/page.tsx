@@ -110,7 +110,7 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
                             <ConfigurationVCS vcs={s} />
                           </Config>
 
-                          <ConfigurationVariables variables={s.env_vars} />
+                          {s?.env_vars ? <ConfigurationVariables variables={s.env_vars} /> : null}
                         </div>
                       }
                     />
