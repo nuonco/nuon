@@ -54,6 +54,13 @@ func (s *service) getInstall(ctx context.Context, installID string) (*app.Instal
 		Preload("App.AppInputConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_input_configs.created_at DESC")
 		}).
+		Preload("App.AppSecrets", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_secrets.created_at DESC")
+		}).
+		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_sandbox_runs.created_at DESC")
+		}).
+		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Preload("App.Org").
 		Preload("AppSandboxConfig").
 		Where("name = ?", installID).

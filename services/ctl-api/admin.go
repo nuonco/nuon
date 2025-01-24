@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "github.com/powertoolsdev/mono/pkg/metrics"
+	_ "github.com/powertoolsdev/mono/pkg/types/state"
 	_ "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
 
