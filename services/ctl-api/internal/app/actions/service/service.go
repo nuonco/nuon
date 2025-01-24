@@ -70,7 +70,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.GET("/v1/action-workflows/:workflow_id/latest-config", s.GetActionWorkflowLatestConfig)
 	api.GET("/v1/action-workflows/configs/:action_workflow_config_id", s.GetActionWorkflowConfig)
 
-	api.PATCH("/v1/installs/:install_id/action-workflow-runs/:workflow_run_id/steps/:step_id", s.UpdateInstallActionWorkflowRunStep)
+	api.PUT("/v1/installs/:install_id/action-workflow-runs/:workflow_run_id/steps/:step_id", s.UpdateInstallActionWorkflowRunStep)
 	api.GET("/v1/installs/:install_id/action-workflows/runs/:run_id", s.GetInstallActionWorkflowRun)
 	return nil
 }

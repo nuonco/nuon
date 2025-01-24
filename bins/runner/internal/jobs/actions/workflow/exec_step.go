@@ -15,7 +15,7 @@ import (
 
 func (h *handler) updateStepStatus(ctx context.Context, stepID string, status models.AppInstallActionWorkflowRunStepStatus) error {
 	_, err := h.apiClient.UpdateInstallActionWorkflowRunStep(ctx, h.state.plan.InstallID, h.state.workflowCfg.ActionWorkflowID, stepID, &models.ServiceUpdateInstallActionWorkflowRunStepRequest{
-		Status: models.AppInstallActionWorkflowRunStepStatusInDashProgress,
+		Status: status,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to update step status")
@@ -36,7 +36,7 @@ func (h *handler) executeWorkflowStep(ctx context.Context, step *models.AppInsta
 	)
 
 	if err := h.updateStepStatus(ctx, step.ID, models.AppInstallActionWorkflowRunStepStatusInDashProgress); err != nil {
-		// return err
+		return errors.Wrap(err, "unable to update status")
 	}
 
 	// TODO(jm): fix this on the backend to use tokens, or whatever
@@ -46,11 +46,18 @@ func (h *handler) executeWorkflowStep(ctx context.Context, step *models.AppInsta
 		Ref: "main",
 	}
 	if err := h.createExecEnv(ctx, l, src); err != nil {
+		h.updateStepStatus(ctx, step.ID, models.AppInstallActionWorkflowRunStepStatusError)
 		return errors.Wrap(err, "unable to create exec env")
 	}
 
 	if err := h.execCommand(ctx, l, cfg, src); err != nil {
+		h.updateStepStatus(ctx, step.ID, models.AppInstallActionWorkflowRunStepStatusError)
 		return errors.Wrap(err, "unable to execute command")
+	}
+
+	l.Info("marking step as finished")
+	if err := h.updateStepStatus(ctx, step.ID, models.AppInstallActionWorkflowRunStepStatusFinished); err != nil {
+		return errors.Wrap(err, "unable to update status")
 	}
 
 	return nil
