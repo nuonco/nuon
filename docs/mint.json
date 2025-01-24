@@ -227,7 +227,6 @@
         "api-ref/installs/get-the-latest-deploy-for-an-install-component",
         "api-ref/installs/deploy-a-build-to-an-install",
         "api-ref/installs/get-an-install-deploy",
-        "api-ref/installs/get-install-deploy-logs",
         "api-ref/installs/get-install-deploy-plan",
         "api-ref/installs/get-an-installs-inputs",
         "api-ref/installs/create-install-inputs",
@@ -242,7 +241,6 @@
         "api-ref/releases/get-all-releases-for-an-app",
         "api-ref/releases/get-all-releases-for-a-component",
         "api-ref/releases/create-a-release",
-        "api-ref/releases/create-a-release-1",
         "api-ref/releases/get-a-release",
         "api-ref/releases/get-a-release-1"
       ]
