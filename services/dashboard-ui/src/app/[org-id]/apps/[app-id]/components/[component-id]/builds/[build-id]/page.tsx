@@ -2,6 +2,7 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { FiCloud, FiClock } from 'react-icons/fi'
 import {
   BuildStatus,
+  CancelRunnerJobButton,
   ClickToCopy,
   DashboardContent,
   Duration,
@@ -22,6 +23,7 @@ import {
   getOrg,
 } from '@/lib'
 import type { TOTELLog } from '@/types'
+import { CANCEL_RUNNER_JOBS } from '@/utils'
 
 export default withPageAuthRequired(async function AppComponent({ params }) {
   const appId = params?.['app-id'] as string
@@ -99,6 +101,15 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
               </ToolTip>
             </Text>
           </span>
+          {CANCEL_RUNNER_JOBS &&
+          build?.status !== 'active' &&
+          build?.status !== 'error' ? (
+            <CancelRunnerJobButton
+              jobType="build"
+              runnerJobId={build?.runner_job?.id}
+              orgId={orgId}
+            />
+          ) : null}
         </div>
       }
     >

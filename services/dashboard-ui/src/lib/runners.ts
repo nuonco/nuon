@@ -1,5 +1,5 @@
 import type { TRunner, TRunnerJob, TLogStream, TOTELLog } from '@/types'
-import { API_URL, getFetchOpts, queryData } from '@/utils'
+import { API_URL, getFetchOpts, mutateData, queryData } from '@/utils'
 
 export interface IGetRunner {
   orgId: string
@@ -85,4 +85,18 @@ export async function getLogStreamLogs({
   orgId,
 }: IGetLogStreamLogs): Promise<Array<TOTELLog>> {
   return pageLogs({ logStreamId, orgId })
+}
+
+export interface ICancelRunnerJob {
+  runnerJobId: string
+  orgId: string
+}
+
+export async function cancelRunnerJob({ orgId, runnerJobId}: ICancelRunnerJob) {
+  return mutateData<TRunnerJob>({
+    data: {},
+    errorMessage: "Unable to cancel runner job.",
+    orgId,
+    path: `runner-jobs/${runnerJobId}/cancel`
+  })
 }
