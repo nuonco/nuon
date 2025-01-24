@@ -58,7 +58,7 @@ export const LogsPreview: FC<ILogsPreview> = ({
         cell: (props) => (
           <span
             className={classNames(lineStyle, {
-              'col-span-7': true,
+              'col-span-7 break-all': true,
             })}
           >
             {props.getValue<string>()}

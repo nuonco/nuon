@@ -37,6 +37,7 @@ export const CodeViewer: FC<ICodeViewer> = ({
           fontSize: '0.75rem',
           minWidth: '100%',
           width: 'max-content',
+          maxWidth: '500px',
         }}
       />
     </div>

@@ -151,11 +151,19 @@ const LoadInstallCurrentInputs: FC<{
   return (
     <>
       <SectionHeader
-        actions={<InstallInputsModal currentInputs={currentInputs} />}
+        actions={
+          currentInputs?.redacted_values ? (
+            <InstallInputsModal currentInputs={currentInputs} />
+          ) : undefined
+        }
         className="mb-4"
         heading="Current inputs"
       />
-      <InstallInputs currentInputs={currentInputs} />
+      {currentInputs?.redacted_values ? (
+        <InstallInputs currentInputs={currentInputs} />
+      ) : (
+        <Text>No inputs configured.</Text>
+      )}
     </>
   )
 }
