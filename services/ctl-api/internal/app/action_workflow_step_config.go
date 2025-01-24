@@ -50,3 +50,11 @@ func (a *ActionWorkflowStepConfig) BeforeCreate(tx *gorm.DB) error {
 	a.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
 }
+
+func (a *ActionWorkflowStepConfig) AfterQuery(tx *gorm.DB) error {
+	if a.EnvVars == nil {
+		a.EnvVars = pgtype.Hstore{}
+	}
+
+	return nil
+}

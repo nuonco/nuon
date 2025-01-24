@@ -10,7 +10,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateInstallActionWorkflowRunRequest struct {
@@ -42,12 +41,6 @@ func (c *CreateInstallActionWorkflowRunRequest) Validate(v *validator.Validate) 
 // @Success		201				{object}  app.InstallActionWorkflowRun
 // @Router		/v1/installs/{install_id}/action-workflows/runs [post]
 func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
 	installID := ctx.Param("install_id")
 
 	var req CreateInstallActionWorkflowRunRequest
@@ -61,7 +54,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		return
 	}
 
-	awc, err := s.findActionWorkflowConfig(ctx, org.ID, req.ActionWorkFlowConfigID)
+	awc, err := s.findActionWorkflowConfig(ctx, req.ActionWorkFlowConfigID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
