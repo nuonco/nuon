@@ -15,13 +15,19 @@ import (
 
 // parse command returns a command that could be either a local script, or an inline command.
 func (h *handler) parseCommand(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *git.Source) (string, []string, error) {
+	if cfg.Command == "" {
+		l.Error("no command was defined in action step config")
+		return "", nil, errors.New("no command was defined in action step config")
+	}
+
 	dirName := git.Dir(src)
+	l.Error(cfg.Command)
 	pieces := strings.Split(cfg.Command, " ")
 	if len(pieces) < 1 {
 		return "", nil, errors.New("empty command passed to step")
 	}
 
-	scriptPath := h.state.workspace.AbsPath(filepath.Join(dirName, pieces[0]))
+	scriptPath := filepath.Join(dirName, pieces[0])
 
 	// in the "easy" case, the script is local and we can expect that.
 	if strings.HasPrefix(pieces[0], "./") {
@@ -43,14 +49,14 @@ func (h *handler) parseCommand(ctx context.Context, l *zap.Logger, cfg *models.A
 			)
 		}
 
-		return scriptPath, pieces[1:], nil
+		return h.state.workspace.AbsPath(scriptPath), pieces[1:], nil
 	}
 
 	// in the "ambiguous" case, the script could either point to something in the repo, or an outside script in the
 	// container.
 	if h.state.workspace.IsExecutable(scriptPath) {
 		l.Info("local path found in step repo, using that")
-		return scriptPath, pieces[1:], nil
+		return h.state.workspace.AbsPath(scriptPath), pieces[1:], nil
 	}
 
 	l.Info(fmt.Sprintf("%s not found in local repo, executing as regular command", pieces[0]))
