@@ -69,6 +69,9 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// install readme
 	api.GET("/v1/installs/:install_id/readme", s.GetInstallReadme)
 
+	// install state
+	api.GET("/v1/installs/:install_id/state", s.GetInstallState)
+
 	// install sandbox
 	api.GET("/v1/installs/:install_id/sandbox-runs", s.GetInstallSandboxRuns)
 
