@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/job"
@@ -25,6 +26,8 @@ func (w *Workflows) InstallRun(ctx workflow.Context, sreq signals.RequestSignal)
 		return errors.Wrap(err, "unable to get action workflow run")
 	}
 
+	w.updateRunStatus(ctx, run.ID, app.InstallActionRunStatusInProgress, "in-progress")
+
 	ls, err := activities.AwaitCreateLogStreamByActionWorkflowRunID(ctx, sreq.RunID)
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream")
@@ -36,6 +39,7 @@ func (w *Workflows) InstallRun(ctx workflow.Context, sreq signals.RequestSignal)
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, ls)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
+		w.updateRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create log stream")
 		return errors.Wrap(err, "unable to set log stream on context")
 	}
 
@@ -44,6 +48,7 @@ func (w *Workflows) InstallRun(ctx workflow.Context, sreq signals.RequestSignal)
 		RunID: sreq.RunID,
 	})
 	if err != nil {
+		w.updateRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")
 		return errors.Wrap(err, "unable to create plan")
 	}
 
@@ -54,18 +59,21 @@ func (w *Workflows) InstallRun(ctx workflow.Context, sreq signals.RequestSignal)
 		RunnerID:                   run.Install.RunnerID,
 	})
 	if err != nil {
+		w.updateRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
 		return errors.Wrap(err, "unable to create runner job")
 	}
 
 	// save runner job plan
 	planJSON, err := json.Marshal(runPlan)
 	if err != nil {
+		w.updateRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
 		return errors.Wrap(err, "unable to convert plan to json")
 	}
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 	}); err != nil {
+		w.updateRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to save job plan")
 		return errors.Wrap(err, "unable to save runner job plan")
 	}
 
@@ -81,8 +89,10 @@ func (w *Workflows) InstallRun(ctx workflow.Context, sreq signals.RequestSignal)
 		WorkflowID: "",
 	})
 	if err != nil {
+		w.updateRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "job failed")
 		return errors.Wrap(err, "runner job failed")
 	}
 
+	w.updateRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
 	return nil
 }

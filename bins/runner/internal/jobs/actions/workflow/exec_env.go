@@ -11,7 +11,14 @@ import (
 )
 
 func (h *handler) createExecEnv(ctx context.Context, l *zap.Logger, src *git.Source) error {
-	if err := git.Clone(ctx, h.state.workspace.Root(), src, l); err != nil {
+	dirName := git.Dir(src)
+	if h.state.workspace.IsDir(dirName) {
+		l.Warn(dirName + " already exists, so not recloning it")
+		return nil
+	}
+
+	dirPath := h.state.workspace.AbsPath(dirName)
+	if err := git.Clone(ctx, dirPath, src, l); err != nil {
 		return errors.Wrap(err, "unable to clone repository")
 	}
 
