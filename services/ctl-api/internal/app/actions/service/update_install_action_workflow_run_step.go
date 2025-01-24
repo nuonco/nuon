@@ -36,19 +36,11 @@ type UpdateInstallActionWorkflowRunStepRequest struct {
 // @Success		200				{object}	app.InstallActionWorkflowRunStep
 // @Router			/v1/installs/{install_id}/action-workflow-runs/{workflow_run_id}/steps/{step_id} [PUT]
 func (s *service) UpdateInstallActionWorkflowRunStep(ctx *gin.Context) {
-	installID := ctx.Param("install_id")
-	workflowRunID := ctx.Param("workflow_run_id")
 	stepID := ctx.Param("step_id")
 
 	var req UpdateInstallActionWorkflowRunStepRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
-		return
-	}
-
-	_, err := s.getInstallActionWorkflowRunStep(ctx, installID, workflowRunID, stepID)
-	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to get install action workflow steps"))
 		return
 	}
 
@@ -66,9 +58,13 @@ func (s *service) updateInstallActionWorkflowRunStep(ctx context.Context, stepID
 		Status: req.Status,
 	}
 
+	currentStep := &app.InstallActionWorkflowRunStep{
+		ID: stepID,
+	}
+
 	res := s.db.WithContext(ctx).
-		Updates(&step).
-		Where("id = ?", step.ID)
+		Model(currentStep).
+		Updates(&step)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to update step")
 	}
