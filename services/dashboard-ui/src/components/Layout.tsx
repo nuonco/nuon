@@ -26,9 +26,10 @@ export const Layout: FC<ILayout> = ({ children, org, orgs, versions }) => {
     <div className="flex min-h-screen">
       <aside
         className={classNames(
-          'dashboard_sidebar flex flex-col w-full md:max-w-72',
+          'dashboard_sidebar flex flex-col w-full',
           {
-            'md:max-w-[72px]': !isOpen,
+            'md:w-72': isOpen,
+            'md:w-[72px]': !isOpen,
           }
         )}
       >
