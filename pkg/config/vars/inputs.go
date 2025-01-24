@@ -6,6 +6,10 @@ import (
 
 func (v *varsValidator) getInputs() map[string]interface{} {
 	inps := make(map[string]interface{}, 0)
+	if v.cfg.Inputs == nil {
+		return inps
+	}
+
 	for _, inp := range v.cfg.Inputs.Inputs {
 		inps[inp.Name] = generics.GetFakeObj[string]()
 	}
