@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config/vars"
 	"github.com/powertoolsdev/mono/pkg/errs"
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/ui"
 )
 
 const (
@@ -25,10 +26,10 @@ func ValidateVersion(a *config.AppConfig) error {
 	return nil
 }
 
-func ValidateVars(ctx context.Context, obj *config.AppConfig) error {
+func ValidateVars(ctx context.Context, cfg *config.AppConfig) error {
 	if err := vars.ValidateVars(ctx, vars.ValidateVarsParams{
-		Vars:                 config.TerraformVariables(obj.Sandbox.Vars),
-		Cfg:                  obj,
+		Vars:                 config.TerraformVariables(cfg.Sandbox.Vars),
+		Cfg:                  cfg,
 		IgnoreSandboxOutputs: true,
 	}); err != nil {
 		return config.ErrConfig{
@@ -38,8 +39,8 @@ func ValidateVars(ctx context.Context, obj *config.AppConfig) error {
 		}
 	}
 	if err := vars.ValidateVars(ctx, vars.ValidateVarsParams{
-		Vars:                 generics.MapValuesToSlice(obj.Sandbox.VarMap),
-		Cfg:                  obj,
+		Vars:                 generics.MapValuesToSlice(cfg.Sandbox.VarMap),
+		Cfg:                  cfg,
 		IgnoreSandboxOutputs: true,
 	}); err != nil {
 		return config.ErrConfig{
@@ -49,10 +50,11 @@ func ValidateVars(ctx context.Context, obj *config.AppConfig) error {
 		}
 	}
 
-	for _, comp := range obj.Components {
+	for _, comp := range cfg.Components {
+		ui.Step(ctx, "validating vars for component"+comp.Name)
 		if err := vars.ValidateVars(ctx, vars.ValidateVarsParams{
 			Vars:                 comp.AllVars(),
-			Cfg:                  obj,
+			Cfg:                  cfg,
 			IgnoreSandboxOutputs: true,
 		}); err != nil {
 			return config.ErrConfig{

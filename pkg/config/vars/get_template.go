@@ -13,6 +13,9 @@ import (
 func (v *varsValidator) getTemplate(ctx context.Context) (map[string]interface{}, error) {
 	obj := generics.GetFakeObj[intermediate]()
 
+	inps := v.getInputs()
+	obj.Install.Inputs = inps
+
 	// add components
 	compOut := v.getComponents()
 	obj.Components = compOut

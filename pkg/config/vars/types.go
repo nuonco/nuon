@@ -21,7 +21,7 @@ type instanceImage struct {
 
 type instanceIntermediate struct {
 	Image   instanceImage          `json:"image"`
-	Outputs map[string]interface{} `json:"outputs"`
+	Outputs map[string]interface{} `json:"outputs" faker:"-"`
 }
 
 type appIntermediate struct {
@@ -45,7 +45,7 @@ type installIntermediate struct {
 	PublicDomain   string                     `json:"public_domain"`
 	InternalDomain string                     `json:"internal_domain"`
 	Sandbox        installSandboxIntermediate `json:"sandbox"`
-	Inputs         map[string]string          `json:"inputs"`
+	Inputs         map[string]interface{}     `json:"inputs" faker:"-"`
 }
 
 type imageIntermediate struct {
