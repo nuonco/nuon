@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	outputsFilename string = "outputs.json"
+	outputsFilename string = ".nuon-outputs.json"
 
 	outputsEnvVar string = "NUON_ACTIONS_OUTPUT_FILEPATH"
 	rootEnvVar           = "NUON_ACTIONS_ROOT"
