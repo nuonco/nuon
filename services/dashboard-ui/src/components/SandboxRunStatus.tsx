@@ -1,7 +1,9 @@
 'use client'
 
-import React, { type FC, useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import React, { type FC, useEffect } from 'react'
 import { StatusBadge } from '@/components/Status'
+import { revalidateData } from '@/components/actions'
 import type { TSandboxRun } from '@/types'
 import { SHORT_POLL_DURATION } from '@/utils'
 
@@ -13,21 +15,15 @@ export interface ISandboxRunStatus {
 }
 
 export const SandboxRunStatus: FC<ISandboxRunStatus> = ({
-  initSandboxRun,
+  initSandboxRun: run,
   shouldPoll = false,
   ...props
 }) => {
-  const [run, updateSandboxRun] = useState<TSandboxRun>(initSandboxRun)
+  const path = usePathname()
 
   useEffect(() => {
     const fetchSandboxRun = () => {
-      fetch(`/api/${run.org_id}/installs/${run.install_id}/runs/${run.id}`)
-        .then((res) =>
-          res.json().then((r) => {
-            updateSandboxRun(r)
-          })
-        )
-        .catch(console.error)
+      revalidateData({ path })
     }
     if (shouldPoll) {
       const pollSandboxRun = setInterval(fetchSandboxRun, SHORT_POLL_DURATION)

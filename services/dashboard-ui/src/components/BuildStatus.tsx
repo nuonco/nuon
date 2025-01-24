@@ -1,7 +1,9 @@
 'use client'
 
-import React, { type FC, useEffect, useState } from 'react'
+import { usePathname } from "next/navigation"
+import React, { type FC, useEffect } from 'react'
 import { StatusBadge } from '@/components/Status'
+import { revalidateData } from "@/components/actions"
 import type { TBuild } from '@/types'
 import { SHORT_POLL_DURATION } from '@/utils'
 
@@ -13,23 +15,15 @@ export interface IBuildStatus {
 }
 
 export const BuildStatus: FC<IBuildStatus> = ({
-  initBuild,
+  initBuild: build,
   shouldPoll = false,
   ...props
 }) => {
-  const [build, updateBuild] = useState<TBuild>(initBuild)
+  const path = usePathname()
 
   useEffect(() => {
     const fetchBuild = () => {
-      fetch(
-        `/api/${build?.org_id}/components/${build.component_id}/builds/${build.id}`
-      )
-        .then((res) =>
-          res.json().then((b) => {
-            updateBuild(b)
-          })
-        )
-        .catch(console.error)
+      revalidateData({ path })
     }
     if (shouldPoll) {
       const pollBuild = setInterval(fetchBuild, SHORT_POLL_DURATION)
