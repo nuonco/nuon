@@ -30,7 +30,7 @@ export default withPageAuthRequired(async function AppWorkflow({ params }) {
         { href: `/${org.id}/apps/${app.id}/actions`, text: app.name },
         {
           href: `/${org.id}/apps/${app.id}/actions/${workflowId}`,
-          text: 'workflow name',
+          text: workflow.name,
         },
       ]}
       heading={workflow.name}
@@ -39,30 +39,36 @@ export default withPageAuthRequired(async function AppWorkflow({ params }) {
       <div className="flex flex-col md:flex-row flex-auto">
         <Section className="border-r" heading="Steps">
           <div className="flex flex-col gap-4">
-            {workflow.configs[0].steps.map((s, i) => {
-              return (
-                <Expand
-                  id={s.id}
-                  key={s.id}
-                  parentClass="border rounded"
-                  headerClass="px-3 py-2"
-                  heading={
-                    <Text variant="med-12">
-                      {i + 1}. {s.name}
-                    </Text>
-                  }
-                  expandContent={
-                    <div className="flex flex-col gap-4 p-3 border-t">
-                      <Config>
-                        <ConfigurationVCS vcs={s} />
-                      </Config>
+            {workflow.configs[0].steps
+              ?.sort((a, b) => b?.idx - a?.idx)
+              ?.reverse()
+              ?.map((s, i) => {
+                return (
+                  <Expand
+                    isOpen
+                    id={s.id}
+                    key={s.id}
+                    parentClass="border rounded"
+                    headerClass="px-3 py-2"
+                    heading={
+                      <Text variant="med-12">
+                        {i + 1}. {s.name}
+                      </Text>
+                    }
+                    expandContent={
+                      <div className="flex flex-col gap-4 p-3 border-t">
+                        <Config>
+                          <ConfigurationVCS vcs={s} />
+                        </Config>
 
-                      <ConfigurationVariables variables={s.env_vars} />
-                    </div>
-                  }
-                />
-              )
-            })}
+                        {s?.env_vars ? (
+                          <ConfigurationVariables variables={s.env_vars} />
+                        ) : null}
+                      </div>
+                    }
+                  />
+                )
+              })}
           </div>
         </Section>
 

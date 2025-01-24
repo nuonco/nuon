@@ -79,7 +79,7 @@ export const TimelineEvent: FC<ITimelineEvent> = ({
 }) => {
   return (
     <Link
-      className="!block w-full !p-0 timeline-event on-enter enter-right"
+      className="!block w-full !p-0 timeline-event"
       href={href}
       variant="ghost"
     >
