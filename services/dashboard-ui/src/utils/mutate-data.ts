@@ -4,7 +4,7 @@ import { getFetchOpts } from '@/utils/get-fetch-opts'
 export interface IMutateData {
   data?: Record<string, unknown>
   errorMessage?: string
-  method?: 'POST' | 'PATCH'
+  method?: 'POST' | 'PATCH' | 'DELETE'
   orgId?: string
   path: string
   pathVersion?: 'v1'
