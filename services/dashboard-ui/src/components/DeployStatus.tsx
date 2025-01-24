@@ -1,7 +1,9 @@
 'use client'
 
-import React, { type FC, useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import React, { type FC, useEffect } from 'react'
 import { StatusBadge } from '@/components/Status'
+import { revalidateData } from "@/components/actions"
 import type { TInstallDeploy } from '@/types'
 import { SHORT_POLL_DURATION } from '@/utils'
 
@@ -13,23 +15,15 @@ export interface IDeployStatus {
 }
 
 export const DeployStatus: FC<IDeployStatus> = ({
-  initDeploy,
+  initDeploy: deploy,
   shouldPoll = false,
   ...props
 }) => {
-  const [deploy, updateDeploy] = useState<TInstallDeploy>(initDeploy)
-
+  const path = usePathname()
+  
   useEffect(() => {
     const fetchDeploy = () => {
-      fetch(
-        `/api/${deploy?.org_id}/installs/${deploy?.install_id}/deploys/${deploy?.id}`
-      )
-        .then((res) =>
-          res.json().then((d) => {
-            updateDeploy(d)
-          })
-        )
-        .catch(console.error)
+      revalidateData({ path })
     }
     if (shouldPoll) {
       const pollDeploy = setInterval(fetchDeploy, SHORT_POLL_DURATION)
