@@ -27,7 +27,8 @@ func (p *planner) createPlan(ctx workflow.Context, runID string) (*plantypes.Act
 	}
 
 	plan := &plantypes.ActionWorkflowRunPlan{
-		ID: runID,
+		InstallID: run.InstallID,
+		ID:        runID,
 		Attrs: map[string]string{
 			"action.name": run.ActionWorkflowConfig.ActionWorkflow.Name,
 			"action.id":   run.ActionWorkflowConfig.ActionWorkflow.ID,

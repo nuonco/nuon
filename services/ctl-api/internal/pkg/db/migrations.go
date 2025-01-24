@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/powertoolsdev/mono/pkg/services/config"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/migrations"
 )
@@ -98,6 +100,17 @@ func (a *AutoMigrate) execMigration(ctx context.Context, migration migrations.Mi
 			"status_description": statusDescription,
 		}))
 	}()
+
+	if migration.AlwaysRun {
+		// Note(jm): this is so we can re-run migrations, but not on every single deploy (to prevent killing the
+		// database in a case where we are flapping)
+		ts := time.Now().Round(time.Hour * 1)
+		if a.cfg.Env == config.Development {
+			ts = time.Now()
+		}
+
+		migration.Name = fmt.Sprintf("%s-%d", migration.Name, ts.Unix())
+	}
 
 	if err := a.createMigration(ctx, migration.Name); err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
