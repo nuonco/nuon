@@ -3,6 +3,7 @@ import { FiCloud, FiClock } from 'react-icons/fi'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
+  CancelRunnerJobButton,
   ClickToCopy,
   DashboardContent,
   Duration,
@@ -21,6 +22,7 @@ import {
   getOrg,
 } from '@/lib'
 import type { TOTELLog } from '@/types'
+import { CANCEL_RUNNER_JOBS } from '@/utils'
 
 export default withPageAuthRequired(async function SandboxRuns({ params }) {
   const installId = params?.['install-id'] as string
@@ -46,7 +48,7 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
         { href: `/${org.id}/apps`, text: org.name },
         { href: `/${org.id}/installs`, text: 'Installs' },
         {
-          href: `/${org.id}/installs/${install.id}`,
+          href: `/${org.id}/installs/${install.id}/history`,
           text: install.name,
         },
         {
@@ -102,6 +104,15 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
               </ToolTip>
             </Text>
           </span>
+          {CANCEL_RUNNER_JOBS &&
+          sandboxRun?.status !== 'active' &&
+          sandboxRun?.status !== 'error' ? (
+            <CancelRunnerJobButton
+              jobType="sandbox-run"
+              runnerJobId={sandboxRun?.runner_job?.id}
+              orgId={orgId}
+            />
+          ) : null}
         </div>
       }
     >

@@ -1,6 +1,7 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { FiChevronRight, FiCloud, FiClock } from 'react-icons/fi'
 import {
+  CancelRunnerJobButton,
   ClickToCopy,
   ComponentConfiguration,
   DashboardContent,
@@ -27,7 +28,7 @@ import {
   getLogStreamLogs,
 } from '@/lib'
 import type { TOTELLog, TInstallDeployPlan } from '@/types'
-import { DEPLOY_INTERMEDIATE_DATA } from '@/utils'
+import { CANCEL_RUNNER_JOBS, DEPLOY_INTERMEDIATE_DATA } from '@/utils'
 
 export default withPageAuthRequired(async function InstallComponentDeploy({
   params,
@@ -150,6 +151,15 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
               </ToolTip>
             </Text>
           </span>
+           {CANCEL_RUNNER_JOBS &&
+          deploy?.status !== 'active' &&
+          deploy?.status !== 'error' ? (
+            <CancelRunnerJobButton
+              jobType="sandbox-run"
+              runnerJobId={deploy?.runner_jobs?.at(-1)?.id}
+              orgId={orgId}
+            />
+          ) : null}
         </div>
       }
     >
