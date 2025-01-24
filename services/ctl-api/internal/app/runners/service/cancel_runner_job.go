@@ -28,7 +28,7 @@ type CancelRunnerJobRequest struct{}
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
 // @Success		202				{object}	app.RunnerJob
-// @Router			/v1/runner-jobs/{runner_job_id}/cancel [DELETE]
+// @Router			/v1/runner-jobs/{runner_job_id}/cancel [POST]
 func (s *service) CancelRunnerJob(ctx *gin.Context) {
 	runnerJobID := ctx.Param("runner_job_id")
 
