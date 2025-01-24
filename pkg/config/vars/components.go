@@ -1,5 +1,7 @@
 package vars
 
+import "github.com/powertoolsdev/mono/pkg/generics"
+
 func (v *varsValidator) getComponents() map[string]*instanceIntermediate {
 	comps := make(map[string]*instanceIntermediate, 0)
 
@@ -13,8 +15,8 @@ func (v *varsValidator) getComponents() map[string]*instanceIntermediate {
 			name = c.VarName
 		}
 
-		comps[name] = &instanceIntermediate{}
+		comps[name] = generics.GetFakeObj[*instanceIntermediate]()
 	}
 
-	return nil
+	return comps
 }
