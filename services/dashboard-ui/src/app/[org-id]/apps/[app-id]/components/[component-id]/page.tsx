@@ -48,6 +48,7 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
         <BuildComponentButton
           appId={appId}
           componentId={componentId}
+          componentName={component?.name}
           orgId={orgId}
         />
       }

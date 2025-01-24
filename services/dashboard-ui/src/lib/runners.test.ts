@@ -2,6 +2,7 @@ import '@test/mock-fetch-options'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import {
+  cancelRunnerJob,
   getLogStream,
   getLogStreamLogs,
   getRunner,
@@ -92,6 +93,22 @@ describe('getLogStreamLogs should handle response status codes from GET log-stre
 
   test.each(badResponseCodes)('%s status', async () => {
     await getLogStreamLogs({ logStreamId, orgId }).catch((err) =>
+      expect(err).toMatchSnapshot()
+    )
+  })
+})
+
+describe('cancelRunnerJob should handle response status codes from POST runner-jobs/:id/cancel endpoint', () => {
+  const orgId = 'test-id'
+  const runnerJobId = 'test-id'
+  test('200 status', async () => {
+    const spec = await cancelRunnerJob({ runnerJobId, orgId })
+    expect(spec).toHaveProperty('id')
+    expect(spec).toHaveProperty('executions')
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await cancelRunnerJob({ runnerJobId, orgId }).catch((err) =>
       expect(err).toMatchSnapshot()
     )
   })
