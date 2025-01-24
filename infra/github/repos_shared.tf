@@ -454,8 +454,8 @@ module "shared-stardog" {
   enable_branch_protection = false
 
   collaborators = {
-    "paulplace" = "push",
-    "pdmars"    = "push"
+    paulplace = "push",
+    snowell   = "push"
   }
 
   providers = {
@@ -475,8 +475,8 @@ module "shared-stardog-installer" {
   is_fork                  = true
 
   collaborators = {
-    "paulplace" = "push",
-    "pdmars"    = "push"
+    paulplace = "push",
+    snowell   = "push"
   }
 
   providers = {
@@ -556,7 +556,7 @@ module "shared-retool" {
     JatinNanda   = "push",
     ryanartecona = "push",
     slaminad     = "push",
-    avimoondra      = "push"
+    avimoondra   = "push"
   }
 
   providers = {
@@ -575,10 +575,6 @@ module "shared-datadog" {
   enable_branch_protection = false
 
   collaborators = {
-    JatinNanda   = "push",
-    ryanartecona = "push",
-    slaminad     = "push",
-    avimoondra      = "push"
   }
 
   providers = {
