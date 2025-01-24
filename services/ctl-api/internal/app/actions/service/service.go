@@ -46,12 +46,14 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// config versions
 	api.POST("/v1/action-workflows/:action_workflow_id/configs", s.CreateActionWorkflowConfig)
 	api.GET("/v1/action-workflows/:action_workflow_id/configs", s.GetActionWorkflowConfigs)
+	api.GET("/v1/action-workflows/:action_workflow_id/latest-config", s.GetActionWorkflowLatestConfig)
 	api.GET("/v1/action-workflows/configs/:action_workflow_config_id", s.GetActionWorkflowConfig)
 
 	// install runs
 	api.POST("/v1/installs/:install_id/action-workflows/runs", s.CreateInstallActionWorkflowRun)
 	api.GET("/v1/installs/:install_id/action-workflows/runs", s.GetInstallActionWorkflowRuns)
 	api.GET("/v1/installs/:install_id/action-workflows/runs/:run_id", s.GetInstallActionWorkflowRun)
+	api.GET("/v1/installs/:install_id/action-workflows/runs/:run_id/steps/:step_id", s.GetInstallActionWorkflowRunStep)
 	api.GET("/v1/installs/:install_id/action-workflows/latest-runs", s.GetInstallActionWorkflowsLatestRun)
 	api.GET("/v1/installs/:install_id/action-workflows/:action_workflow_id/recent-runs", s.GetInstallActionWorkflowRecentRuns)
 
@@ -65,6 +67,11 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	api.GET("/v1/action-workflows/:workflow_id/latest-config", s.GetActionWorkflowLatestConfig)
+	api.GET("/v1/action-workflows/configs/:action_workflow_config_id", s.GetActionWorkflowConfig)
+
+	api.PATCH("/v1/installs/:install_id/action-workflows/runs/:run_id/steps/:step_id", s.UpdateInstallActionWorkflowRunStep)
+	api.GET("/v1/installs/:install_id/action-workflows/runs/:run_id", s.GetInstallActionWorkflowRun)
 	return nil
 }
 

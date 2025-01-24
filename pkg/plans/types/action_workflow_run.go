@@ -1,7 +1,9 @@
 package plantypes
 
 type ActionWorkflowRunPlan struct {
-	ID    string            `json:"id"`
+	ID        string `json:"id"`
+	InstallID string `json:"install_id"`
+
 	Attrs map[string]string `json:"attrs"`
 
 	Steps []*ActionWorkflowRunStepPlan `json:"steps"`
