@@ -15,7 +15,7 @@ import (
 // @Summary	get an app action workflow config
 // @Description.markdown	get_action_workflow_config.md
 // @Param			action_workflow_config_id	path	string	true	"action workflow config ID"
-// @Tags			actions
+// @Tags			actions,actions/runner
 // @Accept			json
 // @Produce		json
 // @Security APIKey

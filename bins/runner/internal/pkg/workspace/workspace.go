@@ -24,6 +24,13 @@ type Workspace interface {
 	Init(context.Context) error
 	Source() *Source
 	Cleanup(context.Context) error
+
+	// helpers
+	Root() string
+	AbsPath(string) string
+	IsFile(string) bool
+	IsDir(string) bool
+	IsExecutable(string) bool
 }
 
 type workspace struct {
