@@ -54,7 +54,9 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		Preload("App").
 		Preload("App.Org").
 		Preload("CreatedBy").
-		Preload("InstallInputs").
+		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_inputs_view_v1.created_at DESC")
+		}).
 		Preload("InstallComponents").
 		Preload("InstallComponents.Component").
 		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
