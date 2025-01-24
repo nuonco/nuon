@@ -41,6 +41,10 @@ func (p *planner) createStepPlan(ctx workflow.Context, step app.InstallActionWor
 
 	// step 2 - interpolate all variables in the set
 	l.Debug("fetching install intermediate data")
+
+	// NOTE(jm): this is no longer the best way to get this intermediate data. Jordan is adding a `get-state`
+	// endpoint which we can use for this, and will replace this, long term.
+	//
 	intermediateData, err := activities.AwaitGetInstallIntermediateDataByInstallID(ctx, installID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get intermediate data")
