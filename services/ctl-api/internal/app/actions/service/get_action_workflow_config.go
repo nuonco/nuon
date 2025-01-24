@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID GetActionWorkflowConfig
@@ -28,14 +27,8 @@ import (
 // @Success		200				{object}	app.ActionWorkflowConfig
 // @Router			/v1/action-workflows/configs/{action_workflow_config_id} [get]
 func (s *service) GetActionWorkflowConfig(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
 	awcID := ctx.Param("action_workflow_config_id")
-	awc, err := s.findActionWorkflowConfig(ctx, org.ID, awcID)
+	awc, err := s.findActionWorkflowConfig(ctx, awcID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action workflow config %s: %w", awcID, err))
 		return
@@ -44,12 +37,12 @@ func (s *service) GetActionWorkflowConfig(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, awc)
 }
 
-func (s *service) findActionWorkflowConfig(ctx context.Context, orgID, awcID string) (*app.ActionWorkflowConfig, error) {
+func (s *service) findActionWorkflowConfig(ctx context.Context, awcID string) (*app.ActionWorkflowConfig, error) {
 	aw := app.ActionWorkflowConfig{}
 	res := s.db.WithContext(ctx).
 		Preload("Triggers").
 		Preload("Steps").
-		Where("org_id = ? AND id = ?", orgID, awcID).
+		Where("id = ?", awcID).
 		First(&aw)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get action workflow config: %w", res.Error)

@@ -28,13 +28,16 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 		return errors.Wrap(err, "unable to parse command")
 	}
 
-	lOut := zapwriter.New(l, zapcore.InfoLevel, cfg.ID)
-	lErr := zapwriter.New(l, zapcore.ErrorLevel, cfg.ID)
+	lOut := zapwriter.New(l, zapcore.InfoLevel, "")
+	lErr := zapwriter.New(l, zapcore.ErrorLevel, "")
+	dirName := git.Dir(src)
+	cwd := h.state.workspace.AbsPath(dirName)
 
 	cmdP, err := command.New(h.v,
 		command.WithEnv(builtInEnv),
-		command.WithCmd(args[0]),
-		command.WithArgs(args[1:]),
+		command.WithCwd(cwd),
+		command.WithCmd(cmd),
+		command.WithArgs(args[0:]),
 		command.WithCmd(cmd),
 		command.WithInheritedEnv(),
 		command.WithEnv(builtInEnv),

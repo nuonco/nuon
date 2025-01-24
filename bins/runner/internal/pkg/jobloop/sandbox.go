@@ -10,7 +10,7 @@ var ignoreSandboxMode []models.AppRunnerJobType = []models.AppRunnerJobType{
 
 func (j *jobLoop) isSandbox(job *models.AppRunnerJob) bool {
 	if job.Type == models.AppRunnerJobTypeActionsDashWorkflow {
-		return true
+		return false
 	}
 
 	return j.settings.SandboxMode

@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
+
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/git"
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
@@ -28,18 +30,27 @@ func (h *handler) executeWorkflowStep(ctx context.Context, step *models.AppInsta
 		return err
 	}
 
+	l = l.With(
+		zap.String("workflow_step_name", cfg.Name),
+		zap.String("step_run_id", step.ID),
+	)
+
 	if err := h.updateStepStatus(ctx, step.ID, models.AppInstallActionWorkflowRunStepStatusInDashProgress); err != nil {
-		return err
+		// return err
 	}
 
 	// TODO(jm): fix this on the backend to use tokens, or whatever
 	// should use the plan
 	src := &git.Source{
 		URL: "https://github.com/nuonco/actions",
-		Ref: "jm/test",
+		Ref: "main",
 	}
 	if err := h.createExecEnv(ctx, l, src); err != nil {
 		return errors.Wrap(err, "unable to create exec env")
+	}
+
+	if err := h.execCommand(ctx, l, cfg, src); err != nil {
+		return errors.Wrap(err, "unable to execute command")
 	}
 
 	return nil
