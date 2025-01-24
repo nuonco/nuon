@@ -7,6 +7,7 @@ import (
 
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/workspace"
+	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
 
 func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
@@ -17,6 +18,10 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 
 	wkspace, err := workspace.New(h.v,
 		workspace.WithLogger(l),
+		workspace.WithGitSource(&planv1.GitSource{
+			Url: "https://github.com/jonmorehouse/empty",
+			Ref: "main",
+		}),
 		workspace.WithWorkspaceID(jobExecution.ID),
 	)
 	if err != nil {
