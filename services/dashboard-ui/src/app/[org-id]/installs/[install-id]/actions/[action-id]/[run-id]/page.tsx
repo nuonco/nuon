@@ -1,17 +1,22 @@
+// TODO(nnnat): remove no check
+
+import { DateTime } from 'luxon'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
+  ActionWorkflowStatus,
   ClickToCopy,
   DashboardContent,
   Duration,
   EventStatus,
-  LogStreamPoller,
+  Expand,
+  RunnerLogs,
   Section,
-  StatusBadge,
   Text,
   Time,
   ToolTip,
   Truncate,
+  type TLogRecord,
 } from '@/components'
 import {
   getInstall,
@@ -20,8 +25,37 @@ import {
   getLogStreamLogs,
   getOrg,
 } from '@/lib'
-import type { TOTELLog } from '@/types'
+import type {
+  TOTELLog,
+  TInstallActionWorkflowRun,
+  TActionConfig,
+} from '@/types'
 import { sentanceCase } from '@/utils'
+
+// hydrate run steps with idx and name
+function hydrateRunSteps(
+  steps: TInstallActionWorkflowRun['steps'],
+  stepConfigs: TActionConfig['steps']
+) {
+  return steps.map((step) => {
+    const config = stepConfigs.find((cfg) => cfg.id === step.step_id)
+    return {
+      name: config?.name,
+      idx: config.idx,
+      ...step,
+    }
+  })
+}
+
+// convert otel log timestamp from string to milliseconds
+function parseOTELLog(logs: Array<TOTELLog>): Array<TLogRecord> {
+  return logs?.length
+    ? logs?.map((l) => ({
+        ...l,
+        timestamp: DateTime.fromISO(l.timestamp).toMillis(),
+      }))
+    : []
+}
 
 export default withPageAuthRequired(async function InstallWorkflow({ params }) {
   const installId = params?.['install-id'] as string
@@ -39,6 +73,19 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
     logStreamId: workflowRun?.log_stream?.id,
     orgId,
   }).catch(console.error)
+
+  const logSteps = (logs as unknown as Array<TOTELLog>).reduce((acc, log) => {
+    if (log.log_attributes?.workflow_step_name) {
+      if (acc?.[log.log_attributes?.workflow_step_name]) {
+        acc[log.log_attributes?.workflow_step_name].push(log)
+      } else {
+        acc = { ...acc, [log.log_attributes?.workflow_step_name]: [] }
+        acc[log.log_attributes?.workflow_step_name].push(log)
+      }
+    }
+
+    return acc
+  }, {})
 
   return (
     <DashboardContent
@@ -74,9 +121,10 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
               Status
             </Text>
-            <StatusBadge
+            <ActionWorkflowStatus
               descriptionAlignment="right"
-              status={workflowRun?.status}
+              actionWorkflowRun={workflowRun}
+              shouldPoll
             />
           </span>
 
@@ -104,40 +152,66 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       }
     >
       <div className="flex flex-col md:flex-row flex-auto">
-        <LogStreamPoller
-          heading="Workflow logs"
-          initLogStream={workflowRun?.log_stream}
-          initLogs={logs as Array<TOTELLog>}
-          orgId={orgId}
-          logStreamId={workflowRun?.log_stream?.id}
-          shouldPoll={Boolean(workflowRun?.log_stream)}
-        />
-
+        <Section heading="Workflow step logs" className="border-r">
+          <div className="flex flex-col gap-3">
+            {Object.keys(logSteps).map((step) => {
+              const workflowStep = workflowRun?.steps?.find(
+                (s) =>
+                  s?.id === logSteps[step]?.at(0)?.log_attributes?.step_run_id
+              )
+              return (
+                <Expand
+                  parentClass="border rounded divide-y"
+                  headerClass="px-3 py-2"
+                  id={step}
+                  key={step}
+                  heading={
+                    <Text variant="med-14">
+                      <EventStatus status={workflowStep?.status} />
+                      {sentanceCase(step)}
+                    </Text>
+                  }
+                  isOpen
+                  expandContent={
+                    <RunnerLogs
+                      heading={sentanceCase(step)}
+                      logs={parseOTELLog(logSteps[step])}
+                      withOutBorder
+                    />
+                  }
+                />
+              )
+            })}
+          </div>
+        </Section>
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
           <Section
             className="flex-initial"
             heading={`${workflowRun?.config?.steps?.length} of ${workflowRun?.config?.steps?.length} Steps`}
           >
             <div className="flex flex-col gap-2">
-              {workflowRun?.steps?.map((step) => (
-                <span key={step.id} className="py-2">
-                  <span className="flex items-center gap-3">
-                    <EventStatus status={step.status} />
-                    <Text variant="med-12">{sentanceCase(step.status)}</Text>
-                  </span>
+              {hydrateRunSteps(workflowRun?.steps, workflowRun?.config?.steps)
+                ?.sort(({ idx: a }, { idx: b }) => b - a)
+                ?.reverse()
+                ?.map((step) => {
+                  return (
+                    <span key={step.id} className="py-2">
+                      <span className="flex items-center gap-3">
+                        <EventStatus status={step.status} />
+                        <Text variant="med-12">
+                          {sentanceCase(step.status)}
+                        </Text>
+                      </span>
 
-                  <Text
-                    className="flex items-center gap-2 ml-7"
-                    variant="reg-12"
-                  >
-                    {
-                      workflowRun.config.steps.find(
-                        (s) => s.id === step.step_id
-                      )?.name
-                    }
-                  </Text>
-                </span>
-              ))}
+                      <Text
+                        className="flex items-center gap-2 ml-7"
+                        variant="reg-12"
+                      >
+                        {step?.name}
+                      </Text>
+                    </span>
+                  )
+                })}
             </div>
           </Section>
         </div>
