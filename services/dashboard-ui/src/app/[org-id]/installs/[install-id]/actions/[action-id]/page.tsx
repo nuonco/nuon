@@ -94,8 +94,10 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
           <Section className="flex-initial" heading="Workflow steps">
             <div className="flex flex-col gap-2">
-              {actionWithRecentRuns?.action_workflow?.configs?.[0]?.steps.map(
-                (s) => {
+              {actionWithRecentRuns?.action_workflow?.configs?.[0]?.steps
+                ?.sort((a, b) => b?.idx - a?.idx)
+                ?.reverse()
+                ?.map((s) => {
                   return (
                     <Expand
                       isOpen
@@ -110,13 +112,14 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
                             <ConfigurationVCS vcs={s} />
                           </Config>
 
-                          {s?.env_vars ? <ConfigurationVariables variables={s.env_vars} /> : null}
+                          {s?.env_vars ? (
+                            <ConfigurationVariables variables={s.env_vars} />
+                          ) : null}
                         </div>
                       }
                     />
                   )
-                }
-              )}
+                })}
             </div>
           </Section>
         </div>

@@ -7,13 +7,17 @@ import { ActionTriggerType } from '@/components/ActionTriggerType'
 import { Link } from '@/components/Link'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { ID, Text } from '@/components/Typography'
-import type { TActionWorkflow, TActionConfigTriggerType } from '@/types'
+import type {
+  TActionWorkflow,
+  TActionConfigTriggerType,
+  TActionConfigStep,
+} from '@/types'
 
 type TData = {
   id?: string
   name?: string
   config_count?: number
-  steps?: string[]
+  steps?: TActionConfigStep[]
   triggers?: TActionConfigTriggerType[] | string[]
 }
 
@@ -24,7 +28,7 @@ function parseWorkflowsToTableData(
     id: wf.id,
     name: wf.name,
     config_count: wf.config_count,
-    steps: wf?.configs?.[0]?.steps?.map((s) => s?.name),
+    steps: wf?.configs?.[0]?.steps?.map((s) => s),
     triggers: wf?.configs?.[0]?.triggers?.map((t) => t?.type),
   }))
 }
@@ -84,11 +88,15 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
         accessorKey: 'steps',
         cell: (props) => (
           <ol className="flex flex-col gap-1 list-decimal">
-            {props.getValue<string[]>()?.map((s) => (
-              <li key={s} className="text-sm">
-                <Text className="!leading-none self-start">{s}</Text>
-              </li>
-            ))}
+            {props
+              .getValue<TActionConfigStep[]>()
+              ?.sort((a, b) => b?.idx - a?.idx)
+              ?.reverse()
+              ?.map((s) => (
+                <li key={s?.id} className="text-sm">
+                  <Text className="!leading-none self-start">{s?.name}</Text>
+                </li>
+              ))}
           </ol>
         ),
       },
