@@ -1,0 +1,28 @@
+#:schema http://localhost:8081/v1/general/config-schema?source=action
+name = "action_2"
+timeout = "10m30s"
+
+[[triggers]]
+type = "post_install"
+
+[[steps]]
+name = "action_2_step_1"
+command = "python3 main.py"
+[steps.public_repo]
+directory = "aws-ecs"
+repo = "nuonco/sandboxes"
+branch = "main"
+[steps.env_vars]
+name = "NUON_INSTALL_ID"
+value = "{{.nuon.install.id}}"
+
+[[steps]]
+name = "action_2_step_2"
+command = "python3 main.py"
+[steps.public_repo]
+directory = "aws-ecs"
+repo = "nuonco/sandboxes"
+branch = "main"
+[steps.env_vars]
+name = "runner-env-var"
+value = "runner-env-var"

@@ -1,0 +1,23 @@
+# this is a sample action config file. Actions are still in active development and this file is subject to change.
+#:schema http://localhost:8081/v1/general/config-schema
+version = "v1"
+
+[sandbox]
+terraform_version = "1.8.4"
+
+[sandbox.public_repo]
+directory = "aws-ecs"
+repo = "nuonco/sandboxes"
+branch = "main"
+
+[runner]
+runner_type = "aws-ecs"
+
+[[actions]]
+source = "./actions_1.toml"
+
+[[actions]]
+source = "./actions_2.toml"
+
+[[components]]
+source = "./helm_file.toml"

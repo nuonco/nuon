@@ -1,0 +1,46 @@
+#:schema http://localhost:8081/v1/general/config-schema?source=action
+name = "action_1"
+timeout = "30m0s"
+
+[[triggers]]
+type = "cron"
+cron_schedule = "0 0 * * *"
+
+[[triggers]]
+type = "manual"
+
+# echo env
+[[steps]]
+name = "print-env"
+command = "env"
+
+[steps.public_repo]
+repo = "nuonco/actions"
+branch = "main"
+
+[steps.env_vars]
+name = "TEST_NUON_VAR"
+value = "{{.nuon.install.id}}"
+
+
+# echo something out
+[[steps]]
+name = "echo"
+command = "env"
+
+[steps.public_repo]
+repo = "nuonco/actions"
+branch = "main"
+
+# print namespace logs
+[[steps]]
+name = "namespace logs"
+command = "./kube/namespace-logs"
+[steps.public_repo]
+repo = "nuonco/actions"
+branch = "main"
+
+
+[steps.env_vars]
+name = "NAMESPACE"
+value = "{{.nuon.install.id}}"
