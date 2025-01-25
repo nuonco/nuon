@@ -14,6 +14,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
+
+	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 )
 
 type Params struct {
@@ -27,6 +29,7 @@ type Params struct {
 	OrgsOutputs      *terraformcloud.OrgsOutputs
 	ComponentHelpers *componenthelpers.Helpers
 	Helpers          *helpers.Helpers
+	AppsHelpers      *appshelpers.Helpers
 	EvClient         eventloop.Client
 }
 
@@ -39,6 +42,7 @@ type service struct {
 	orgsOutputs      *terraformcloud.OrgsOutputs
 	componentHelpers *componenthelpers.Helpers
 	helpers          *helpers.Helpers
+	appsHelpers      *appshelpers.Helpers
 	evClient         eventloop.Client
 }
 
@@ -138,5 +142,6 @@ func New(params Params) *service {
 		componentHelpers: params.ComponentHelpers,
 		helpers:          params.Helpers,
 		evClient:         params.EvClient,
+		appsHelpers:      params.AppsHelpers,
 	}
 }
