@@ -40,6 +40,65 @@ func (e *errComponentEdge) Unwrap() error {
 	return e.err
 }
 
+func (h *Helpers) OrderComponentsByDep(ctx context.Context, components []app.Component) ([]app.Component, error) {
+	if len(components) <= 1 {
+		return components, nil
+	}
+
+	g := graph.New(componentHash,
+		graph.Directed(),
+		graph.PreventCycles(),
+		graph.Rooted(),
+		graph.Acyclic())
+
+	for _, comp := range components {
+		c := &comp
+		if err := g.AddVertex(c); err != nil {
+			return nil, err
+		}
+	}
+
+	rootIDs := make([]string, 0)
+	for _, comp := range components {
+		if len(comp.Dependencies) < 1 {
+			rootIDs = append(rootIDs, comp.ID)
+			continue
+		}
+
+		for _, dep := range comp.Dependencies {
+			if err := g.AddEdge(dep.ID, comp.ID); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if len(rootIDs) < 1 {
+		// NOTE(jm): this should never happen, as that would require a cycled graph, otherwise.
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("at least one component should have 0 dependencies"),
+			Description: "at least one component should have 0 dependencies",
+		}
+	}
+
+	cmpsById := make(map[string]app.Component)
+	for _, c := range components {
+		cmpsById[c.ID] = c
+	}
+
+	orderedComponents := make([]app.Component, 0)
+	for _, rootID := range rootIDs {
+		if err := graph.BFS(g, rootID, func(compID string) bool {
+			orderedComponents = append(orderedComponents, cmpsById[compID])
+			return false
+		}); err != nil {
+			return nil, fmt.Errorf("unable to build app graph: %w", err)
+		}
+	}
+
+	return orderedComponents, nil
+
+}
+
 func (h *Helpers) GetDependencyGraph(ctx context.Context, appID string) (graph.Graph[string, *app.Component], []app.Component, error) {
 	a := app.App{}
 	res := h.db.WithContext(ctx).
