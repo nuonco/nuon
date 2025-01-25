@@ -37,7 +37,7 @@ type Readme struct {
 func (s *service) GetInstallReadme(ctx *gin.Context) {
 	// get install state
 	installID := ctx.Param("install_id")
-	installState, err := s.getInstallState(ctx, installID)
+	installState, err := s.helpers.GetInstallState(ctx, installID)
 	if err != nil {
 		response := Readme{err.Error()}
 		ctx.JSON(http.StatusOK, response)
