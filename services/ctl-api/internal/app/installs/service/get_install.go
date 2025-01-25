@@ -43,7 +43,38 @@ func (s *service) GetInstall(ctx *gin.Context) {
 		return
 	}
 
+	install, err = s.reorderInstallComponents(ctx, install)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to reorder install components: %w", err))
+		return
+	}
+
 	ctx.JSON(http.StatusOK, install)
+}
+
+func (s *service) reorderInstallComponents(ctx context.Context, install *app.Install) (*app.Install, error) {
+	installComponentsByComponentID := make(map[string]app.InstallComponent)
+	components := make([]app.Component, 0)
+	for _, ic := range install.InstallComponents {
+		installComponentsByComponentID[ic.ComponentID] = ic
+		components = append(components, ic.Component)
+	}
+
+	reorderedCmp, err := s.appsHelpers.OrderComponentsByDep(ctx, components)
+	if err != nil {
+		return nil, fmt.Errorf("unable to order components by dependency: %w", err)
+	}
+
+	reorderInstallComponents := make([]app.InstallComponent, 0)
+	for _, c := range reorderedCmp {
+		if ic, ok := installComponentsByComponentID[c.ID]; ok {
+			reorderInstallComponents = append(reorderInstallComponents, ic)
+		}
+	}
+
+	install.InstallComponents = reorderInstallComponents
+
+	return install, nil
 }
 
 func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
@@ -59,6 +90,7 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		}).
 		Preload("InstallComponents").
 		Preload("InstallComponents.Component").
+		Preload("InstallComponents.Component.Dependencies").
 		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_deploys.created_at DESC")
 		}).
