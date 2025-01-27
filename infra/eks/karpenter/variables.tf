@@ -1,5 +1,4 @@
 variable "cluster_name" {}
-
 variable "cluster_endpoint" {}
 
 variable "namespace" {}
@@ -19,3 +18,5 @@ variable "tags" {}
 
 variable "ec2nodeclasses" {}
 variable "instance_types" {}
+
+variable "additional_nodepools" {}

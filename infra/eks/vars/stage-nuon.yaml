@@ -20,3 +20,20 @@ ec2nodeclasses:
  - clickhouse-keeper
  - ctl-api-api
  - ctl-api-worker
+ - public
+
+additional_nodepools:
+  - name: public
+    instance_types:
+      - t3a.large
+    limits:
+      cpu: 250
+      memory: "500Gi"
+    expireAfter: "24h"
+    disruption:
+      consolidationPolicy: "WhenEmptyOrUnderutilized"
+      consolidateAfter: "1m"
+      # NOTE(fd): this can consolidate whenever but only one at time.
+      # differs from prod to help us identify any issues w/ node rotation.
+      budgets:
+        - nodes: "1"

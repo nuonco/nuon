@@ -71,3 +71,64 @@ resource "kubectl_manifest" "karpenter_nodepool_default" {
     helm_release.karpenter,
   ]
 }
+
+# dynamic aditional nodepools from env file
+resource "kubectl_manifest" "additional_nodepools" {
+  for_each = { for np in var.additional_nodepools : np.name => np }
+
+  yaml_body = yamlencode({
+    apiVersion = "karpenter.sh/v1" # we are on v1 now
+    kind       = "NodePool"
+    metadata = {
+      name = each.value.name
+    }
+    spec = {
+      limits = {
+        cpu    = each.value.limits.cpu
+        memory = each.value.limits.memory
+      }
+      template = {
+        spec = {
+          expireAfter = each.value.expireAfter
+          nodeClassRef = {
+            group = "karpenter.k8s.aws"
+            kind  = "EC2NodeClass"
+            name  = "default"
+          }
+          requirements = [
+            {
+              key      = "karpenter.sh/capacity-type"
+              operator = "In"
+              values = [
+                "spot",
+                "on-demand",
+              ]
+            },
+            {
+              "key"      = "node.kubernetes.io/instance-type"
+              "operator" = "In"
+              "values"   = var.instance_types
+            },
+            {
+              key      = "topology.kubernetes.io/zone"
+              operator = "In"
+              values = [
+                "us-west-2a",
+                "us-west-2b",
+                "us-west-2c",
+              ]
+            },
+          ]
+        }
+      }
+      # https://karpenter.sh/v1.0/concepts/disruption/
+      disruption = each.value.disruption
+    }
+  })
+
+  depends_on = [
+    kubectl_manifest.ec2nodeclass,
+    helm_release.karpenter,
+  ]
+}
+
