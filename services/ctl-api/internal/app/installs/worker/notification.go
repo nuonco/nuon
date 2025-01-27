@@ -4,7 +4,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
+	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 

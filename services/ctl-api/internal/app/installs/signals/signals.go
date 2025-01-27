@@ -28,12 +28,14 @@ const (
 	OperationPollDependencies   eventloop.SignalType = "poll_dependencies"
 	OperationDeployComponents   eventloop.SignalType = "deploy_components"
 	OperationTeardownComponents eventloop.SignalType = "teardown_components"
+	OperationActionWorkflowRun  eventloop.SignalType = "action_workflow_run"
 )
 
 type Signal struct {
 	Type eventloop.SignalType
 
-	DeployID string `validate:"required_if=Operation deploy" json:"deploy_id"`
+	DeployID            string `validate:"required_if=Operation deploy" json:"deploy_id"`
+	ActionWorkflowRunID string `validate:"required_if=Operation action_workflow_run" json:"action_workflow_run_id"`
 
 	eventloop.BaseSignal
 }

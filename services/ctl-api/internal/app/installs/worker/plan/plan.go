@@ -17,7 +17,7 @@ type CreateActionRunPlanRequest struct {
 // @task-timeout 1m
 // @task-queue "api"
 // @id-callback WorkflowIDCallback
-func CreateActionRunPlan(ctx workflow.Context, req *CreateActionRunPlanRequest) (*plantypes.ActionWorkflowRunPlan, error) {
+func CreateActionWorkflowRunPlan(ctx workflow.Context, req *CreateActionRunPlanRequest) (*plantypes.ActionWorkflowRunPlan, error) {
 	p := planner{}
 	return p.createPlan(ctx, req.RunID)
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
+	installsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -74,9 +74,9 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, awc.ActionWorkflowID, &signals.Signal{
-		RunID: run.ID,
-		Type:  signals.OperationInstallRun,
+	s.evClient.Send(ctx, installID, &installsignals.Signal{
+		ActionWorkflowRunID: run.ID,
+		Type:                installsignals.OperationActionWorkflowRun,
 	})
 
 	ctx.JSON(http.StatusCreated, run)

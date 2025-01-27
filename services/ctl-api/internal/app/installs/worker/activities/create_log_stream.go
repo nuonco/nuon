@@ -15,18 +15,24 @@ const (
 )
 
 type CreateLogStreamRequest struct {
-	SandboxRunID string `validate:"required"`
-	DeployID     string `validate:"required"`
+	SandboxRunID        string `validate:"required"`
+	DeployID            string `validate:"required"`
+	ActionWorkflowRunID string `validate:"required"`
 }
 
 // @temporal-gen activity
-// @by-id SandboxRunID
 func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamRequest) (*app.LogStream, error) {
 	typ := "install_sandbox_runs"
 	id := req.SandboxRunID
+
 	if req.DeployID != "" {
 		id = req.DeployID
 		typ = "install_deploys"
+	}
+
+	if req.ActionWorkflowRunID != "" {
+		id = req.ActionWorkflowRunID
+		typ = "install_action_workflow_runs"
 	}
 
 	ls := app.LogStream{

@@ -10,9 +10,10 @@ import (
 	"go.uber.org/zap"
 
 	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	pkgworkflows "github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
 )
 
 const (
@@ -26,12 +27,14 @@ type Worker struct {
 type WorkerParams struct {
 	fx.In
 
-	Cfg     *internal.Config
-	TClient temporalclient.Client
-	WKflows *Workflows
-	Acts    *activities.Activities
-	L       *zap.Logger
-	LC      fx.Lifecycle
+	Cfg              *internal.Config
+	TClient          temporalclient.Client
+	SharedWkflows    *workflows.Workflows
+	SharedActivities *workflows.Activities
+	WKflows          *Workflows
+	Acts             *activities.Activities
+	L                *zap.Logger
+	LC               fx.Lifecycle
 }
 
 func New(params WorkerParams) (*Worker, error) {
@@ -40,24 +43,25 @@ func New(params WorkerParams) (*Worker, error) {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
 	}
 
-	wkr := worker.New(client, workflows.APITaskQueue, worker.Options{
+	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
 		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
 		Interceptors:                       []interceptor.WorkerInterceptor{},
 		WorkflowPanicPolicy:                worker.FailWorkflow,
 	})
 
+	// register activities
 	wkr.RegisterActivity(params.Acts)
+	for _, acts := range params.SharedActivities.AllActivities() {
+		wkr.RegisterActivity(acts)
+	}
 
 	// register workflows
-	wkr.RegisterWorkflow(params.WKflows.EventLoop)
-	wkr.RegisterWorkflow(params.WKflows.Created)
-	wkr.RegisterWorkflow(params.WKflows.Delete)
-	wkr.RegisterWorkflow(params.WKflows.Deprovision)
-	wkr.RegisterWorkflow(params.WKflows.ForceDelete)
-	wkr.RegisterWorkflow(params.WKflows.ForceDeprovision)
-	wkr.RegisterWorkflow(params.WKflows.InviteUser)
-	wkr.RegisterWorkflow(params.WKflows.Provision)
-	wkr.RegisterWorkflow(params.WKflows.Reprovision)
+	for _, wkflow := range params.WKflows.All() {
+		wkr.RegisterWorkflow(wkflow)
+	}
+	for _, wkflow := range params.SharedWkflows.AllWorkflows() {
+		wkr.RegisterWorkflow(wkflow)
+	}
 
 	params.LC.Append(fx.Hook{
 		OnStart: func(context.Context) error {

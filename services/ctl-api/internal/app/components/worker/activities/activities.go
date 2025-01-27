@@ -8,7 +8,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	runnerhelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
-	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
@@ -17,15 +16,14 @@ import (
 type Params struct {
 	fx.In
 
-	Prt              *protos.Adapter
-	DB               *gorm.DB `name:"psql"`
-	Helpers          *helpers.Helpers
-	EvClient         eventloop.Client
-	RunnerHelpers    *runnerhelpers.Helpers
-	SharedActivities *sharedactivities.Activities
-	AcctClient       *account.Client
-	AuthzClient      *authz.Client
-	Cfg              *internal.Config
+	Prt           *protos.Adapter
+	DB            *gorm.DB `name:"psql"`
+	Helpers       *helpers.Helpers
+	EvClient      eventloop.Client
+	RunnerHelpers *runnerhelpers.Helpers
+	AcctClient    *account.Client
+	AuthzClient   *authz.Client
+	Cfg           *internal.Config
 }
 
 type Activities struct {
@@ -37,8 +35,6 @@ type Activities struct {
 	acctClient     *account.Client
 	authzClient    *authz.Client
 	cfg            *internal.Config
-
-	*sharedactivities.Activities
 }
 
 func New(params Params) *Activities {
@@ -49,7 +45,6 @@ func New(params Params) *Activities {
 		helpers:        params.Helpers,
 		evClient:       params.EvClient,
 		runnersHelpers: params.RunnerHelpers,
-		Activities:     params.SharedActivities,
 		acctClient:     params.AcctClient,
 		authzClient:    params.AuthzClient,
 	}
