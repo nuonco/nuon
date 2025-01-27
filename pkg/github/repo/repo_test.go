@@ -44,7 +44,7 @@ func Test_parseRepo(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			owner, name, err := parseRepo(test.input)
+			owner, name, err := ParseRepo(test.input)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

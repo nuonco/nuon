@@ -67,6 +67,8 @@ func (s *service) findActionWorkflows(ctx context.Context, orgID, appID string) 
 func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, error) {
 	app := app.App{}
 	res := s.db.WithContext(ctx).
+		Preload("Org").
+		Preload("Org.VCSConnections").
 		Where("name = ? AND org_id = ?", appID, orgID).
 		Or("id = ?", appID).
 		First(&app)

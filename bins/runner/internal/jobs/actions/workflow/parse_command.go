@@ -7,27 +7,28 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/git"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/git"
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 
 	"github.com/nuonco/nuon-runner-go/models"
 )
 
 // parse command returns a command that could be either a local script, or an inline command.
-func (h *handler) parseCommand(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *git.Source) (string, []string, error) {
+func (h *handler) parseCommand(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *plantypes.GitSource) (string, []string, error) {
 	if cfg.Command == "" {
 		l.Error("no command was defined in action step config")
 		return "", nil, errors.New("no command was defined in action step config")
 	}
 
 	dirName := git.Dir(src)
-	l.Error(cfg.Command)
 	pieces := strings.Split(cfg.Command, " ")
 	if len(pieces) < 1 {
 		return "", nil, errors.New("empty command passed to step")
 	}
 
-	scriptPath := filepath.Join(dirName, pieces[0])
+	scriptPath := filepath.Join(dirName, src.Path, pieces[0])
 
 	// in the "easy" case, the script is local and we can expect that.
 	if strings.HasPrefix(pieces[0], "./") {

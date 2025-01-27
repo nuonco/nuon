@@ -40,8 +40,10 @@ type ActionWorkflowStepConfig struct {
 	// all the details needed for a step
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`
-	EnvVars                  pgtype.Hstore             `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
-	Command                  string                    `json:"command" gorm:"notnull;default:''"`
+	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-"`
+
+	EnvVars pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
+	Command string        `json:"command" gorm:"notnull;default:''"`
 }
 
 func (a *ActionWorkflowStepConfig) BeforeCreate(tx *gorm.DB) error {
@@ -54,6 +56,15 @@ func (a *ActionWorkflowStepConfig) BeforeCreate(tx *gorm.DB) error {
 func (a *ActionWorkflowStepConfig) AfterQuery(tx *gorm.DB) error {
 	if a.EnvVars == nil {
 		a.EnvVars = pgtype.Hstore{}
+	}
+
+	// set the vcs connection type correctly
+	if a.ConnectedGithubVCSConfig != nil {
+		a.VCSConnectionType = VCSConnectionTypeConnectedRepo
+	} else if a.PublicGitVCSConfig != nil {
+		a.VCSConnectionType = VCSConnectionTypePublicRepo
+	} else {
+		a.VCSConnectionType = VCSConnectionTypeNone
 	}
 
 	return nil

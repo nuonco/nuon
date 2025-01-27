@@ -1,5 +1,11 @@
 package state
 
+import (
+	"encoding/json"
+
+	"github.com/pkg/errors"
+)
+
 func NewInstallState() *InstallState {
 	return &InstallState{
 		Org: orgState{},
@@ -38,4 +44,18 @@ type InstallState struct {
 	App        appState                   `json:"app"`
 	Install    installState               `json:"install"`
 	Components map[string]*ComponentState `json:"components"`
+}
+
+func (i InstallState) AsMap() (map[string]interface{}, error) {
+	byts, err := json.Marshal(i)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to convert state to json")
+	}
+
+	var obj map[string]interface{}
+	if err := json.Unmarshal(byts, &obj); err != nil {
+		return nil, errors.Wrap(err, "unable to convert to map[string]interface{}")
+	}
+
+	return obj, nil
 }
