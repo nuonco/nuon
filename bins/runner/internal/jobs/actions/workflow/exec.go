@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
+
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 
 	"github.com/nuonco/nuon-runner-go/models"
@@ -20,9 +22,20 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		stepPlan := h.state.plan.Steps[idx]
 
 		l.Info(fmt.Sprintf("executing step %s (%d of %d)", stepCfg.Name, idx+1, len(h.state.run.Steps)))
-		if err := h.executeWorkflowStep(ctx, step, stepCfg, stepPlan); err != nil {
-			return err
+		err := h.executeWorkflowStep(ctx, step, stepCfg, stepPlan)
+		if err == nil {
+			continue
 		}
+
+		remainingSteps := h.state.run.Steps[idx+1:]
+		remainingCfgs := h.state.workflowCfg.Steps[idx+1:]
+		if len(remainingSteps) > 0 {
+			if err := h.noopWorkflowSteps(ctx, remainingSteps, remainingCfgs); err != nil {
+				l.Warn(fmt.Sprintf("unable to mark %d remaining steps as NOOP after step.%d errored", idx, idx-1))
+			}
+		}
+
+		return errors.Wrap(err, fmt.Sprintf("action workflow failed on step %d", idx))
 	}
 
 	return nil
