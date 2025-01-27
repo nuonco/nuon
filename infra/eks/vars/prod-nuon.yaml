@@ -30,7 +30,7 @@ additional_nodepools:
     limits:
       cpu: 500
       memory: "1000Gi"
-    expireAfter: "30d"
+    expireAfter: "732h"
     disruption:
       consolidationPolicy: "WhenEmptyOrUnderutilized"
       consolidateAfter: "1m"
