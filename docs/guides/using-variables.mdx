@@ -140,8 +140,8 @@ Any app input can be accessed using variables. For instance, given an app input,
 
 Some component types including terraform components will provide output values that will be required as input variables to other components of the application. These outputs are available grouped under the slug version of the component name.
 
-- Template Syntax: `{{ .nuon.components.<component_name_slug>.<output_name> }}`
-- Example: `{{ .nuon.components.rds_db.db_url }}`
+- Template Syntax: `{{ .nuon.components.<component_name_slug>.outputs.<output_name> }}`
+- Example: `{{ .nuon.components.rds_db.outputs.db_url }}`
 
 ### Component Image Data from Other Components in an Application
 
