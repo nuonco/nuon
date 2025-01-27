@@ -12,12 +12,17 @@ const (
 	defaultPrefix string = "nuon"
 )
 
-func RenderString(inputVal string, intermediateData *structpb.Struct) (string, error) {
+func Render(inputVal string, data map[string]interface{}) (string, error) {
 	if inputVal == "" {
 		return "", nil
 	}
 
-	data := intermediateData.AsMap()
+	_, isPrefixed := data[defaultPrefix]
+	if !isPrefixed {
+		data = map[string]interface{}{
+			defaultPrefix: data,
+		}
+	}
 
 	temp, err := template.New("input").Option("missingkey=zero").Parse(inputVal)
 	if err != nil {
@@ -38,4 +43,8 @@ func RenderString(inputVal string, intermediateData *structpb.Struct) (string, e
 		return "", fmt.Errorf("rendered value was empty, which usually means a bad interpolation config: %s", inputVal)
 	}
 	return outputVal, nil
+}
+
+func RenderString(inputVal string, intermediateData *structpb.Struct) (string, error) {
+	return Render(inputVal, intermediateData.AsMap())
 }

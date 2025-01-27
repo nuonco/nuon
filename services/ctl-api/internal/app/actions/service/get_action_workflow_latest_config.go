@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -41,7 +42,9 @@ func (s *service) getActionWorkflowLatestConfig(ctx context.Context, awcID strin
 	aw := app.ActionWorkflowConfig{}
 	res := s.db.WithContext(ctx).
 		Preload("Triggers").
-		Preload("Steps").
+		Preload("Steps", func(db *gorm.DB) *gorm.DB {
+			return db.Order("action_workflow_step_configs.idx ASC")
+		}).
 		Order("created_at DESC").
 		Limit(1).
 		First(&aw, "action_workflow_id = ?", awcID)

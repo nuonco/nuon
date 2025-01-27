@@ -75,7 +75,7 @@ func (h *Helpers) populateSandbox(ctx context.Context, installID string, install
 	if publicVCSConfig != nil {
 		installState.Install.Sandbox.Type = publicVCSConfig.Directory
 		installState.Install.Sandbox.Version = publicVCSConfig.Branch
-	} else {
+	} else if connectedVCSConfig != nil {
 		installState.Install.Sandbox.Type = connectedVCSConfig.Directory
 		installState.Install.Sandbox.Version = connectedVCSConfig.Branch
 	}

@@ -9,19 +9,21 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	errs "github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/pkg/zapwriter"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
+	"github.com/powertoolsdev/mono/pkg/zapwriter"
 )
 
-func Clone(ctx context.Context, rootDir string, src *Source, l *zap.Logger) error {
+func Clone(ctx context.Context, rootDir string, src *plantypes.GitSource, l *zap.Logger) error {
 	cl := &workspace{}
 	return cl.clone(ctx, rootDir, src, l)
 }
 
 type workspace struct{}
 
-func (w *workspace) clone(ctx context.Context, rootDir string, src *Source, l *zap.Logger) error {
+func (w *workspace) clone(ctx context.Context, rootDir string, src *plantypes.GitSource, l *zap.Logger) error {
 	pWriter := zapwriter.New(l, zapcore.DebugLevel, "")
 
 	l.Info("cloning repository", zap.String("url", src.URL))
