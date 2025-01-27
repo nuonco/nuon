@@ -10,11 +10,10 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/job"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/plan"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
 )
 
 type Params struct {
@@ -26,6 +25,7 @@ type Params struct {
 	MW        metrics.Writer
 	EVClient  teventloop.Client
 	Analytics temporalanalytics.Writer
+	Shared    *workflows.Workflows
 }
 
 type Workflows struct {
@@ -42,8 +42,6 @@ func (w *Workflows) All() []interface{} {
 	wkflows := w.ListWorkflowFns()
 
 	wkflows = append(wkflows, w.EventLoop)
-	wkflows = append(wkflows, job.ExecuteJob)
-	wkflows = append(wkflows, plan.CreateActionRunPlan)
 
 	return wkflows
 }

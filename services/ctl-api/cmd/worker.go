@@ -23,6 +23,10 @@ import (
 	runnersworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker"
 	runnersactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
+	jobactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job/activities"
 )
 
 var namespace string
@@ -43,6 +47,16 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{
 		fx.Invoke(db.DBGroupParam(func(dbs []*gorm.DB) {})),
 	}
+
+	// shared activities and workflows
+	providers = append(
+		providers,
+		fx.Provide(jobactivities.New),
+		fx.Provide(activities.New),
+		fx.Provide(job.New),
+		fx.Provide(workflows.NewActivities),
+		fx.Provide(workflows.NewWorkflows),
+	)
 
 	// generals worker
 	if namespace == "all" || namespace == "general" {

@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/fx"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
@@ -17,23 +17,32 @@ import (
 type Workflows struct {
 	cfg      *internal.Config
 	v        *validator.Validate
-	acts     activities.Activities
 	protos   *protos.Adapter
 	mw       tmetrics.Writer
 	evClient teventloop.Client
-
-	// some silly state
-	stateTest string
 }
 
-func NewWorkflows(v *validator.Validate,
-	cfg *internal.Config,
-	metricsWriter metrics.Writer,
-	prt *protos.Adapter,
-	evClient teventloop.Client,
-) (*Workflows, error) {
-	tmw, err := tmetrics.New(v,
-		tmetrics.WithMetricsWriter(metricsWriter),
+type WorkflowParams struct {
+	fx.In
+
+	V             *validator.Validate
+	Cfg           *internal.Config
+	MetricsWriter metrics.Writer
+	Prt           *protos.Adapter
+	EvClient      teventloop.Client
+}
+
+func (w *Workflows) All() []any {
+	wkflows := []any{
+		w.EventLoop,
+	}
+
+	return append(wkflows, w.ListWorkflowFns()...)
+}
+
+func NewWorkflows(params WorkflowParams) (*Workflows, error) {
+	tmw, err := tmetrics.New(params.V,
+		tmetrics.WithMetricsWriter(params.MetricsWriter),
 		tmetrics.WithTags(map[string]string{
 			"namespace": signals.TemporalNamespace,
 			"context":   "worker",
@@ -42,12 +51,10 @@ func NewWorkflows(v *validator.Validate,
 		return nil, fmt.Errorf("unable to create temporal metrics writer: %w", err)
 	}
 	return &Workflows{
-		cfg:    cfg,
-		v:      v,
-		protos: prt,
-		//  NOTE: this field is only used to be able to fetch activity methods
-		acts:     activities.Activities{},
+		cfg:      params.Cfg,
+		v:        params.V,
+		protos:   params.Prt,
 		mw:       tmw,
-		evClient: evClient,
+		evClient: params.EvClient,
 	}, nil
 }

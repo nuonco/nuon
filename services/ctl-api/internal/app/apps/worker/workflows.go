@@ -21,6 +21,14 @@ type Workflows struct {
 	analytics temporalanalytics.Writer
 }
 
+func (w *Workflows) All() []any {
+	wkflows := []any{
+		w.EventLoop,
+	}
+
+	return append(wkflows, w.ListWorkflowFns()...)
+}
+
 type Params struct {
 	fx.In
 

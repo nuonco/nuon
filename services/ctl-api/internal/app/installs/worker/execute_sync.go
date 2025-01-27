@@ -9,10 +9,10 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 )
 
 func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, sandboxMode bool) error {
@@ -89,11 +89,12 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 
 	// queue job
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
-	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-		Type:  runnersignals.OperationProcessJob,
-		JobID: runnerJob.ID,
+	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID:   install.RunnerGroup.Runners[0].ID,
+		JobID:      runnerJob.ID,
+		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
-	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
+	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to poll job")
 		w.writeDeployEvent(ctx, installDeploy.ID, signals.OperationDeploy, app.OperationStatusFailed)
 		l.Error("error polling sync image job", zap.Error(err))

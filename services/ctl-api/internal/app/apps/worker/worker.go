@@ -10,9 +10,10 @@ import (
 	"go.uber.org/zap"
 
 	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	pkgworkflows "github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
 )
 
 const (
@@ -23,37 +24,50 @@ type Worker struct {
 	worker.Worker
 }
 
-func New(cfg *internal.Config,
-	tclient temporalclient.Client,
-	wkflows *Workflows,
-	acts *activities.Activities,
-	l *zap.Logger,
-	lc fx.Lifecycle,
-) (*Worker, error) {
-	client, err := tclient.GetNamespaceClient(defaultNamespace)
+type WorkerParams struct {
+	fx.In
+
+	Cfg     *internal.Config
+	Tclient temporalclient.Client
+	Wkflows *Workflows
+	Acts    *activities.Activities
+
+	SharedActs      *workflows.Activities
+	SharedWorkflows *workflows.Workflows
+
+	L  *zap.Logger
+	LC fx.Lifecycle
+}
+
+func New(params WorkerParams) (*Worker, error) {
+	client, err := params.Tclient.GetNamespaceClient(defaultNamespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
 	}
 
-	wkr := worker.New(client, workflows.APITaskQueue, worker.Options{
-		MaxConcurrentActivityExecutionSize: cfg.TemporalMaxConcurrentActivities,
+	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
+		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
 		Interceptors:                       []interceptor.WorkerInterceptor{},
 		WorkflowPanicPolicy:                worker.FailWorkflow,
 	})
 
-	wkr.RegisterActivity(acts)
+	// register activities
+	wkr.RegisterActivity(params.Acts)
+	for _, acts := range params.SharedActs.AllActivities() {
+		wkr.RegisterActivity(acts)
+	}
 
-	wkr.RegisterWorkflow(wkflows.EventLoop)
-	wkr.RegisterWorkflow(wkflows.Created)
-	wkr.RegisterWorkflow(wkflows.Deprovision)
-	wkr.RegisterWorkflow(wkflows.PollDependencies)
-	wkr.RegisterWorkflow(wkflows.Provision)
-	wkr.RegisterWorkflow(wkflows.Reprovision)
-	wkr.RegisterWorkflow(wkflows.UpdateSandbox)
+	// register workflows
+	for _, wkflow := range params.Wkflows.All() {
+		wkr.RegisterWorkflow(wkflow)
+	}
+	for _, wkflow := range params.SharedWorkflows.AllWorkflows() {
+		wkr.RegisterWorkflow(wkflow)
+	}
 
-	lc.Append(fx.Hook{
+	params.LC.Append(fx.Hook{
 		OnStart: func(context.Context) error {
-			l.Info("starting apps worker")
+			params.L.Info("starting apps worker")
 			go func() {
 				wkr.Run(worker.InterruptCh())
 			}()

@@ -57,8 +57,6 @@ func (w *Workflows) handleSignal(ctx workflow.Context, wkflowReq eventloop.Event
 		// actual execution signals
 	case signals.OperationConfigCreated:
 		err = w.AwaitConfigCreated(ctx, sigReq)
-	case signals.OperationInstallRun:
-		err = w.AwaitInstallRun(ctx, sigReq)
 	default:
 		err = fmt.Errorf("unhandled signal %s", signal.SignalType())
 	}
