@@ -20,6 +20,7 @@ func (a *Activities) GetComponentBuild(ctx context.Context, req GetComponentBuil
 func (a *Activities) getComponentBuild(ctx context.Context, buildID string) (*app.ComponentBuild, error) {
 	bld := app.ComponentBuild{}
 	res := a.db.WithContext(ctx).
+		Preload("CreatedBy").
 		Preload("ComponentConfigConnection").
 		Preload("ComponentConfigConnection.Component").
 		First(&bld, "id = ?", buildID)

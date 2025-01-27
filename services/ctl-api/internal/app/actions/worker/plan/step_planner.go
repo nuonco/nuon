@@ -5,7 +5,6 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/pkg/errors"
 
@@ -33,34 +32,31 @@ func (p *planner) createStepPlan(ctx workflow.Context, step app.InstallActionWor
 
 	// step 1 - fetch token for repo
 	l.Debug("creating git source for config")
-	// TODO(jm): not implemented, as requires changes from down stream executors, possibly.
-
-	if len(step.Step.EnvVars) < 1 {
-		return plan, nil
+	gitSource, err := activities.AwaitGetGitSourceByStepID(ctx, step.Step.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get git source")
 	}
+
+	plan.GitSource = gitSource
 
 	// step 2 - interpolate all variables in the set
 	l.Debug("fetching install intermediate data")
-
-	// NOTE(jm): this is no longer the best way to get this intermediate data. Jordan is adding a `get-state`
-	// endpoint which we can use for this, and will replace this, long term.
-	//
-	intermediateData, err := activities.AwaitGetInstallIntermediateDataByInstallID(ctx, installID)
+	state, err := activities.AwaitGetInstallStateByInstallID(ctx, installID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get intermediate data")
+		l.Error("unable to get install state", zap.Error(err))
+		return nil, errors.Wrap(err, "unable to get install state")
 	}
 
-	l.Debug(fmt.Sprintf("rendering %d env vars", len(step.Step.EnvVars)))
-	intermediateDataPB, err := structpb.NewStruct(intermediateData.IntermediateData)
+	stateMap, err := state.AsMap()
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create intermediate data protos")
+		return nil, errors.Wrap(err, "unable to convert state to map")
 	}
 
 	for k, v := range step.Step.EnvVars {
-		renderedVal, err := render.RenderString(*v, intermediateDataPB)
+		renderedVal, err := render.Render(*v, stateMap)
 		if err != nil {
 			l.Error(fmt.Sprintf("error rendering %s from intermediate data", *v),
-				zap.Any("intermediate-data", intermediateData.IntermediateData))
+				zap.Any("intermediate-data", stateMap))
 			return nil, err
 		}
 

@@ -3,6 +3,8 @@ package git
 import (
 	"path/filepath"
 	"strings"
+
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 )
 
 const (
@@ -10,7 +12,11 @@ const (
 )
 
 // https://powertoolsdev:token@github.com/powertoolsdev/mono.git
-func Dir(src *Source) string {
+func Dir(src *plantypes.GitSource) string {
+	if src == nil {
+		return "."
+	}
+
 	url := src.URL
 
 	url, _ = strings.CutSuffix(url, gitSuffix)
