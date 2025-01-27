@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
@@ -47,7 +48,9 @@ func (s *service) GetActionWorkflow(ctx *gin.Context) {
 func (s *service) findActionWorkflow(ctx context.Context, orgID, awID string) (*app.ActionWorkflow, error) {
 	aw := app.ActionWorkflow{}
 	res := s.db.WithContext(ctx).
-		Preload("Configs").
+		Preload("Configs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("action_workflow_configs.created_at DESC")
+		}).
 		Preload("Configs.Triggers").
 		Preload("Configs.Steps").
 		Preload("Configs.Steps.PublicGitVCSConfig").
