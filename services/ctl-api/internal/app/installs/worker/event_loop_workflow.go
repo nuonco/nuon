@@ -152,6 +152,14 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 				l.Error("unable to deploy", zap.Error(err))
 				return
 			}
+		case signals.OperationActionWorkflowRun:
+			op = "action_workflow_run"
+			err = w.AwaitActionWorkflowRun(ctx, sreq)
+			if err != nil {
+				status = "error"
+				l.Error("unable to execute action workflow run", zap.Error(err))
+				return
+			}
 		}
 	})
 

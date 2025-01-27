@@ -10,7 +10,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 )
 
@@ -27,10 +26,17 @@ type Params struct {
 type Workflows struct {
 	cfg       *internal.Config
 	v         *validator.Validate
-	acts      activities.Activities
 	mw        tmetrics.Writer
 	ev        teventloop.Client
 	analytics temporalanalytics.Writer
+}
+
+func (w *Workflows) All() []any {
+	wkflows := []any{
+		w.EventLoop,
+	}
+
+	return append(wkflows, w.ListWorkflowFns()...)
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {
@@ -45,12 +51,10 @@ func NewWorkflows(params Params) (*Workflows, error) {
 	}
 
 	return &Workflows{
-		cfg: params.Cfg,
-		v:   params.V,
-		mw:  tmw,
-		ev:  params.EVClient,
-		//  NOTE: this field is only used to be able to fetch activity methods
-		acts:      activities.Activities{},
+		cfg:       params.Cfg,
+		v:         params.V,
+		mw:        tmw,
+		ev:        params.EVClient,
 		analytics: params.Analytics,
 	}, nil
 }
