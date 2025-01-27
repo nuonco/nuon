@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
+
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
@@ -72,18 +73,18 @@ func (s *sync) syncAction(ctx context.Context, resource string, action *config.A
 			Command: &step.Command,
 		}
 
-		if s.cfg.Sandbox.ConnectedRepo != nil {
+		if step.ConnectedRepo != nil {
 			reqStep.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSActionWorkflowConfigRequest{
-				Repo:      &s.cfg.Sandbox.ConnectedRepo.Repo,
-				Branch:    s.cfg.Sandbox.ConnectedRepo.Branch,
-				Directory: &s.cfg.Sandbox.ConnectedRepo.Directory,
+				Repo:      generics.ToPtr(step.ConnectedRepo.Repo),
+				Branch:    step.ConnectedRepo.Branch,
+				Directory: generics.ToPtr(step.ConnectedRepo.Directory),
 			}
 		}
-		if s.cfg.Sandbox.PublicRepo != nil {
+		if step.PublicRepo != nil {
 			reqStep.PublicGitVcsConfig = &models.ServicePublicGitVCSActionWorkflowConfigRequest{
-				Repo:      &s.cfg.Sandbox.PublicRepo.Repo,
-				Branch:    &s.cfg.Sandbox.PublicRepo.Branch,
-				Directory: &s.cfg.Sandbox.PublicRepo.Directory,
+				Repo:      generics.ToPtr(step.PublicRepo.Repo),
+				Branch:    generics.ToPtr(step.PublicRepo.Branch),
+				Directory: generics.ToPtr(step.PublicRepo.Directory),
 			}
 		}
 
