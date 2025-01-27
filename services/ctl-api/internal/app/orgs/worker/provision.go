@@ -45,7 +45,6 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	}
 
 	// provision the runner
-	l.Error("sending provision signal")
 	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationProvision,
 	})

@@ -75,7 +75,9 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 		}
 	}()
 
-	logStream, err := activities.AwaitCreateLogStreamBySandboxRunID(ctx, installRun.ID)
+	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
+		SandboxRunID: installRun.ID,
+	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream")
 	}

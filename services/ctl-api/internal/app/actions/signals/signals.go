@@ -21,15 +21,12 @@ const (
 	OperationPollDependencies eventloop.SignalType = "poll_dependencies"
 
 	OperationConfigCreated eventloop.SignalType = "config_created"
-
-	OperationInstallRun eventloop.SignalType = "install_run"
 )
 
 type Signal struct {
 	Type eventloop.SignalType
 
 	ActionConfigID string `json:"action_config_id"`
-	RunID          string `json:"action_run_id"`
 
 	eventloop.BaseSignal
 }

@@ -11,7 +11,6 @@ import (
 	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
-	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
@@ -22,7 +21,6 @@ type Params struct {
 	DB *gorm.DB `name:"psql"`
 
 	EvClient        eventloop.Client
-	SharedActs      *sharedactivities.Activities
 	AcctClient      *account.Client
 	Cfg             *internal.Config
 	RunnersHelpers  *runnershelpers.Helpers
@@ -41,15 +39,12 @@ type Activities struct {
 	helpers         *helpers.Helpers
 	evClient        eventloop.Client
 	acctClient      *account.Client
-
-	*sharedactivities.Activities
 }
 
 func New(params Params) *Activities {
 	return &Activities{
 		db:              params.DB,
 		cfg:             params.Cfg,
-		Activities:      params.SharedActs,
 		evClient:        params.EvClient,
 		acctClient:      params.AcctClient,
 		runnersHelpers:  params.RunnersHelpers,
