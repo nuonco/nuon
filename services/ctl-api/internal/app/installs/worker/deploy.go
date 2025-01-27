@@ -157,11 +157,11 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 	}
 
 	if err := w.execSync(ctx, install, installDeploy, sandboxMode); err != nil {
-		return err
+		return errors.Wrap(err, "error syncing")
 	}
 
 	if err := w.execDeploy(ctx, install, installDeploy, sandboxMode); err != nil {
-		return err
+		return errors.Wrap(err, "error deploying")
 	}
 
 	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFinished)

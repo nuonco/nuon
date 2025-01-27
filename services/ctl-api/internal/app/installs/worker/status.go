@@ -35,3 +35,17 @@ func (w *Workflows) updateDeployStatus(ctx workflow.Context, deployID string, st
 			zap.Error(err))
 	}
 }
+
+func (w *Workflows) updateActionRunStatus(ctx workflow.Context, runID string, status app.InstallActionWorkflowRunStatus, statusDescription string) {
+	l := workflow.GetLogger(ctx)
+
+	if err := activities.AwaitUpdateInstallWorkflowRunStatus(ctx, activities.UpdateInstallWorkflowRunStatusRequest{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	}); err != nil {
+		l.Error("unable to update run status",
+			zap.String("run-id", runID),
+			zap.Error(err))
+	}
+}

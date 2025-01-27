@@ -10,7 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/plan"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
@@ -29,11 +29,19 @@ type Params struct {
 type Workflows struct {
 	cfg       *internal.Config
 	v         *validator.Validate
-	acts      activities.Activities
 	protos    *protos.Adapter
 	mw        tmetrics.Writer
 	evClient  teventloop.Client
 	analytics temporalanalytics.Writer
+}
+
+func (w *Workflows) All() []any {
+	wkflows := []any{
+		w.EventLoop,
+		plan.CreateActionWorkflowRunPlan,
+	}
+
+	return append(wkflows, w.ListWorkflowFns()...)
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {

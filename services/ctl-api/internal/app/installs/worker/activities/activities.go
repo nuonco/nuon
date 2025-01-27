@@ -8,8 +8,8 @@ import (
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
+	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
-	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
@@ -22,9 +22,9 @@ type Params struct {
 	Components     *protos.Adapter
 	AppsHelpers    *appshelpers.Helpers
 	RunnersHelpers *runnershelpers.Helpers
+	VCSHelpers     *vcshelpers.Helpers
 	Helpers        *helpers.Helpers
 	EvClient       eventloop.Client
-	SharedActs     *sharedactivities.Activities
 	AcctClient     *account.Client
 	AuthzClient    *authz.Client
 	Cfg            *internal.Config
@@ -40,8 +40,7 @@ type Activities struct {
 	evClient       eventloop.Client
 	acctClient     *account.Client
 	authzClient    *authz.Client
-
-	*sharedactivities.Activities
+	vcsHelpers     *vcshelpers.Helpers
 }
 
 func New(params Params) *Activities {
@@ -52,9 +51,9 @@ func New(params Params) *Activities {
 		appsHelpers:    params.AppsHelpers,
 		runnersHelpers: params.RunnersHelpers,
 		helpers:        params.Helpers,
-		Activities:     params.SharedActs,
 		evClient:       params.EvClient,
 		acctClient:     params.AcctClient,
 		authzClient:    params.AuthzClient,
+		vcsHelpers:     params.VCSHelpers,
 	}
 }

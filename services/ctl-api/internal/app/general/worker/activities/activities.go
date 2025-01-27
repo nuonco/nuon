@@ -10,7 +10,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
-	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
@@ -22,8 +21,6 @@ type Activities struct {
 	evClient    eventloop.Client
 	mw          metrics.Writer
 	logger      *temporalzap.Logger
-
-	*sharedactivities.Activities
 }
 
 type Params struct {
@@ -32,7 +29,6 @@ type Params struct {
 	DB          *gorm.DB `name:"psql"`
 	Prt         *protos.Adapter
 	AppsHelpers *appshelpers.Helpers
-	SharedActs  *sharedactivities.Activities
 	EvClient    eventloop.Client
 	MW          metrics.Writer
 }
@@ -47,7 +43,6 @@ func New(params Params) (*Activities, error) {
 		db:          params.DB,
 		components:  params.Prt,
 		appsHelpers: params.AppsHelpers,
-		Activities:  params.SharedActs,
 		evClient:    params.EvClient,
 		mw:          params.MW,
 		logger:      tlogger,
