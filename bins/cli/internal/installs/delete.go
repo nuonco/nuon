@@ -33,6 +33,16 @@ func (s *Service) Delete(ctx context.Context, installID string, asJSON bool) err
 	if err != nil {
 		return view.Fail(err)
 	}
+
+	// unset install_id if it is the currentInstallID
+	currentInstallID := s.GetInstallID()
+
+	if installID == currentInstallID {
+		if err := s.unsetInstallID(ctx); err != nil {
+			return view.Fail(err)
+		}
+	}
+
 	view.SuccessQueued()
 	return nil
 }
