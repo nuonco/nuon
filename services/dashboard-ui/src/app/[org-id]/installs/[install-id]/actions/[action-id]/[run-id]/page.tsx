@@ -1,6 +1,7 @@
 // TODO(nnnat): remove no check
 
 import { DateTime } from 'luxon'
+import React, { type FC, Suspense } from 'react'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
@@ -10,6 +11,7 @@ import {
   Duration,
   EventStatus,
   Expand,
+  Loading,
   RunnerLogs,
   Section,
   Text,
@@ -68,24 +70,6 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
     getAppActionWorkflow({ actionWorkflowId, orgId }),
     getInstallActionWorkflowRun({ installId, orgId, actionWorkflowRunId }),
   ])
-
-  const logs = await getLogStreamLogs({
-    logStreamId: workflowRun?.log_stream?.id,
-    orgId,
-  }).catch(console.error)
-
-  const logSteps = (logs as unknown as Array<TOTELLog>).reduce((acc, log) => {
-    if (log.log_attributes?.workflow_step_name) {
-      if (acc?.[log.log_attributes?.workflow_step_name]) {
-        acc[log.log_attributes?.workflow_step_name].push(log)
-      } else {
-        acc = { ...acc, [log.log_attributes?.workflow_step_name]: [] }
-        acc[log.log_attributes?.workflow_step_name].push(log)
-      }
-    }
-
-    return acc
-  }, {})
 
   return (
     <DashboardContent
@@ -153,36 +137,11 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
     >
       <div className="flex flex-col md:flex-row flex-auto">
         <Section heading="Workflow step logs" className="border-r">
-          <div className="flex flex-col gap-3">
-            {Object.keys(logSteps).map((step) => {
-              const workflowStep = workflowRun?.steps?.find(
-                (s) =>
-                  s?.id === logSteps[step]?.at(0)?.log_attributes?.step_run_id
-              )
-              return (
-                <Expand
-                  parentClass="border rounded divide-y"
-                  headerClass="px-3 py-2"
-                  id={step}
-                  key={step}
-                  heading={
-                    <Text variant="med-14">
-                      <EventStatus status={workflowStep?.status} />
-                      {sentanceCase(step)}
-                    </Text>
-                  }
-                  isOpen
-                  expandContent={
-                    <RunnerLogs
-                      heading={sentanceCase(step)}
-                      logs={parseOTELLog(logSteps[step])}
-                      withOutBorder
-                    />
-                  }
-                />
-              )
-            })}
-          </div>
+          <Suspense
+            fallback={<Loading loadingText="Loading action workflow steps" />}
+          >
+            <LoadLogs orgId={orgId} workflowRun={workflowRun} />
+          </Suspense>
         </Section>
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
           <Section
@@ -198,16 +157,14 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
                     <span key={step.id} className="py-2">
                       <span className="flex items-center gap-3">
                         <EventStatus status={step.status} />
-                        <Text variant="med-12">
-                          {sentanceCase(step.status)}
-                        </Text>
+                        <Text variant="med-14">{step?.name}</Text>
                       </span>
 
                       <Text
                         className="flex items-center gap-2 ml-7"
                         variant="reg-12"
                       >
-                        {step?.name}
+                        {sentanceCase(step.status)}
                       </Text>
                     </span>
                   )
@@ -219,3 +176,66 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
     </DashboardContent>
   )
 })
+
+const LoadLogs: FC<{
+  orgId: string
+  workflowRun: TInstallActionWorkflowRun
+}> = async ({ orgId, workflowRun }) => {
+  const logs = await getLogStreamLogs({
+    logStreamId: workflowRun?.log_stream?.id,
+    orgId,
+  }).catch(console.error)
+
+  if (!logs) {
+    return <Text variant="reg-14">Waiting on action workflow to run.</Text>
+  }
+
+  const logSteps = (logs as unknown as Array<TOTELLog>).reduce((acc, log) => {
+    if (log.log_attributes?.workflow_step_name) {
+      if (acc?.[log.log_attributes?.workflow_step_name]) {
+        acc[log.log_attributes?.workflow_step_name].push(log)
+      } else {
+        acc = { ...acc, [log.log_attributes?.workflow_step_name]: [] }
+        acc[log.log_attributes?.workflow_step_name].push(log)
+      }
+    }
+
+    return acc
+  }, {})
+
+  if (Object.keys(logSteps).length === 0) {
+    return <Text>Waiting onAction workflow logs.</Text>
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {Object.keys(logSteps).map((step) => {
+        const workflowStep = workflowRun?.steps?.find(
+          (s) => s?.id === logSteps[step]?.at(0)?.log_attributes?.step_run_id
+        )
+        return (
+          <Expand
+            parentClass="border rounded divide-y"
+            headerClass="px-3 py-2"
+            id={step}
+            key={step}
+            heading={
+              <Text variant="med-14">
+                <EventStatus status={workflowStep?.status} />
+                {sentanceCase(step)}
+              </Text>
+            }
+            isOpen
+            expandContent={
+              <RunnerLogs
+                heading={sentanceCase(step)}
+                logs={parseOTELLog(logSteps[step])}
+                withOutBorder
+              />
+            }
+          />
+        )
+      })}
+    </div>
+  )
+}
