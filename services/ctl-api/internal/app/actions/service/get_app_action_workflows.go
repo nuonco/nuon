@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
@@ -53,7 +54,9 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 func (s *service) findActionWorkflows(ctx context.Context, orgID, appID string) ([]*app.ActionWorkflow, error) {
 	actionWorkflows := []*app.ActionWorkflow{}
 	res := s.db.WithContext(ctx).
-		Preload("Configs").
+		Preload("Configs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("action_workflow_configs.created_at DESC")
+		}).
 		Preload("Configs.Triggers").
 		Preload("Configs.Steps").
 		Where("org_id = ? AND app_id = ?", orgID, appID).
