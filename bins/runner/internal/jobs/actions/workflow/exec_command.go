@@ -5,16 +5,18 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/git"
-	"github.com/powertoolsdev/mono/pkg/command"
-	"github.com/powertoolsdev/mono/pkg/zapwriter"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/git"
+	"github.com/powertoolsdev/mono/pkg/command"
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
+	"github.com/powertoolsdev/mono/pkg/zapwriter"
 
 	"github.com/nuonco/nuon-runner-go/models"
 )
 
-func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *git.Source) error {
+func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *plantypes.GitSource) error {
 	builtInEnv, err := h.getBuiltInEnv(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to get execution env")
@@ -30,6 +32,7 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 
 	lOut := zapwriter.New(l, zapcore.InfoLevel, "")
 	lErr := zapwriter.New(l, zapcore.ErrorLevel, "")
+
 	dirName := git.Dir(src)
 	cwd := h.state.workspace.AbsPath(dirName)
 

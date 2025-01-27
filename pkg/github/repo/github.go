@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/pkg/kube"
 )
 
@@ -102,7 +103,7 @@ func WithAppKeyClusterInfo(info *kube.ClusterInfo) Option {
 // WithRepo is used to set the repo with the org/repo format
 func WithRepo(repo string) Option {
 	return func(g *gh) error {
-		owner, name, err := parseRepo(repo)
+		owner, name, err := ParseRepo(repo)
 		if err != nil {
 			return err
 		}

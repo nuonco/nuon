@@ -32,8 +32,10 @@ type CreateActionWorkflowConfigStepRequest struct {
 	Command string             `json:"command" validate:"required"`
 }
 
-const maxTimeout = time.Hour
-const defaultTimeout = 5 * time.Minute
+const (
+	maxTimeout     = time.Hour
+	defaultTimeout = 5 * time.Minute
+)
 
 func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
@@ -158,7 +160,6 @@ func (s *service) createActionWorkflowSteps(ctx context.Context, parentApp *app.
 	prevStepId := ""
 
 	for _, step := range steps {
-		// build the app sandbox config
 		githubVCSConfig, err := step.connectedGithubVCSConfig(ctx, parentApp, s.vcsHelpers)
 		if err != nil {
 			return fmt.Errorf("unable to create connected github vcs config: %w", err)
@@ -168,6 +169,7 @@ func (s *service) createActionWorkflowSteps(ctx context.Context, parentApp *app.
 		if err != nil {
 			return fmt.Errorf("unable to get public git config: %w", err)
 		}
+
 		newStep := app.ActionWorkflowStepConfig{
 			OrgID:                    orgId,
 			AppID:                    parentApp.ID,

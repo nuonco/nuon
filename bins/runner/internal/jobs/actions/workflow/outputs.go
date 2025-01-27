@@ -72,7 +72,7 @@ func (h *handler) parseOutputs(ctx context.Context) (map[string]interface{}, err
 	}
 	defer fh.Close()
 
-	var outputs map[string]interface{}
+	outputs := make(map[string]interface{}, 0)
 
 	scanner := bufio.NewScanner(fh)
 	for scanner.Scan() {
@@ -89,14 +89,21 @@ func (h *handler) parseOutputs(ctx context.Context) (map[string]interface{}, err
 		return nil, errors.Wrap(err, "unable to scan outputs file")
 	}
 
-	return nil, nil
+	return outputs, nil
 }
 
 func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	outs, err := h.parseOutputs(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse outputs")
 	}
+
+	l.Debug("successfully parsed action workflow outputs", zap.Any("outputs", outs))
 
 	return outs, nil
 }

@@ -47,11 +47,17 @@ func (w *Workflows) Build(ctx workflow.Context, sreq signals.RequestSignal) erro
 		return fmt.Errorf("unable to get component: %w", err)
 	}
 
+	build, err := activities.AwaitGetComponentBuildByID(ctx, sreq.BuildID)
+	if err != nil {
+		w.updateBuildStatus(ctx, sreq.BuildID, app.ComponentBuildStatusError, "unable to get component build")
+		return fmt.Errorf("unable to get component build: %w", err)
+	}
+
 	notify := func(err error) error {
 		w.sendNotification(ctx, notifications.NotificationsTypeComponentBuildFailed, currentApp.ID, map[string]string{
 			"component_name": comp.Name,
 			"app_name":       currentApp.Name,
-			"created_by":     currentApp.CreatedBy.Email,
+			"created_by":     build.CreatedBy.Email,
 		})
 		return err
 	}
