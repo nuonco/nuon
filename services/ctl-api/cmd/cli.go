@@ -10,7 +10,6 @@ import (
 	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/analytics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/propagator"
@@ -53,7 +52,6 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(protos.New),
 		fx.Provide(terraformcloud.NewTerraformCloud),
 		fx.Provide(terraformcloud.NewOrgsOutputs),
-		fx.Provide(activities.New),
 		fx.Provide(notifications.New),
 		fx.Provide(eventloop.New),
 		fx.Provide(teventloop.New),

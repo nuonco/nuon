@@ -8,10 +8,10 @@ import (
 	logv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/log/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
-	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 )
 
 func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, currentApp *app.App, sandboxMode bool) error {
@@ -90,15 +90,14 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		return fmt.Errorf("unable to save runner job plan: %w", err)
 	}
 
-	// queue job
-	w.evClient.Send(ctx, comp.Org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-		JobID: runnerJob.ID,
-		Type:  runnersignals.OperationProcessJob,
-	})
-
 	// wait for the job
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building")
-	if err := w.pollJob(ctx, runnerJob.ID); err != nil {
+	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID:   comp.Org.RunnerGroup.Runners[0].ID,
+		JobID:      runnerJob.ID,
+		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", comp.ID, runnerJob.ID),
+	})
+	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "build did not complete successfully")
 		return fmt.Errorf("build job failed: %w", err)
 	}

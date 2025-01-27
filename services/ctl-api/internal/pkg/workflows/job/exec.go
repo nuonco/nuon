@@ -11,8 +11,9 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/activities"
+	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job/activities"
 )
 
 const (
@@ -28,8 +29,14 @@ var failureStatuses = []app.RunnerJobStatus{
 }
 
 type ExecuteJobRequest struct {
+	RunnerID   string `json:"runner_id" validate:"required"`
 	JobID      string `json:"job_id" validate:"required"`
 	WorkflowID string `json:"workflow_id" validate:"required"`
+}
+
+func AwaitExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {
+	var w Workflows
+	return (&w).AwaitExecuteJob(ctx, req)
 }
 
 // @temporal-gen workflow
@@ -37,19 +44,38 @@ type ExecuteJobRequest struct {
 // @task-timeout 1m
 // @task-queue "api"
 // @id-callback WorkflowIDCallback
-func ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {
-	jw := &jobWorkflow{}
+func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {
+	if err := w.queueJob(ctx, req.RunnerID, req.JobID); err != nil {
+		return app.RunnerJobStatusUnknown, errors.Wrap(err, "unable to queue job")
+	}
 
-	return jw.pollJob(ctx, req.JobID)
+	return w.pollJob(ctx, req.JobID)
 }
 
-func (j *jobWorkflow) pollJob(ctx workflow.Context, jobID string) (app.RunnerJobStatus, error) {
+func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string) error {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return errors.Wrap(err, "expected a log stream in the context to poll job")
+	}
+
+	// now queue and execute the job
+	l.Info("queueing job on runner event loop", zap.String("runner-id", runnerID))
+
+	j.evClient.Send(ctx, runnerID, &runnersignals.Signal{
+		Type:  runnersignals.OperationProcessJob,
+		JobID: jobID,
+	})
+
+	return nil
+}
+
+func (j *Workflows) pollJob(ctx workflow.Context, jobID string) (app.RunnerJobStatus, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return app.RunnerJobStatusUnknown, errors.Wrap(err, "expected a log stream in the context to poll job")
 	}
 
-	job, err := activities.AwaitGetJobByID(ctx, jobID)
+	job, err := activities.AwaitPkgWorkflowsJobGetJobByID(ctx, jobID)
 	if err != nil {
 		return app.RunnerJobStatusUnknown, errors.Wrap(err, "unable to get job and set timeout")
 	}
@@ -62,7 +88,7 @@ func (j *jobWorkflow) pollJob(ctx workflow.Context, jobID string) (app.RunnerJob
 			return app.RunnerJobStatusTimedOut, temporal.NewNonRetryableApplicationError("overall timeout reached", "api", fmt.Errorf("timeout"))
 		}
 
-		job, err := activities.AwaitGetJobByID(ctx, jobID)
+		job, err := activities.AwaitPkgWorkflowsJobGetJobByID(ctx, jobID)
 		if err != nil {
 			return app.RunnerJobStatusUnknown, fmt.Errorf("unable to get job from database: %w", err)
 		}
