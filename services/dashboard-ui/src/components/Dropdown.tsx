@@ -13,6 +13,7 @@ export interface IDropdown extends IButton {
   position?: 'above' | 'below' | 'beside' | 'overlay'
   text: React.ReactNode
   dropdownContentClassName?: string
+  wrapperClassName?: string
   isDownIcon?: boolean
 }
 
@@ -27,6 +28,7 @@ export const Dropdown: FC<IDropdown> = ({
   text,
   variant,
   dropdownContentClassName,
+  wrapperClassName,
   isDownIcon = false,
 }) => {
   return (
@@ -36,6 +38,7 @@ export const Dropdown: FC<IDropdown> = ({
           'z-10 relative inline-block text-left group leading-none',
           {
             'w-full': isFullWidth,
+            [`${wrapperClassName}`]: Boolean(wrapperClassName),
           }
         )}
         id={id}

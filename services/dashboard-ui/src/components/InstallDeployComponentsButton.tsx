@@ -137,6 +137,7 @@ export const InstallDeployLatestBuildButton: FC<{
         id="deploy-build"
         text="Deploy build"
         isDownIcon
+        wrapperClassName="z-20"
       >
         <div className="min-w-[180px] rounded-md overflow-hidden">
           <div className="w-full max-h-[250px] overflow-y-auto">
