@@ -29,30 +29,32 @@ func (w *Workflows) actionWorkflowRun(ctx workflow.Context, installID, actionWor
 		return errors.Wrap(err, "unable to get action workflow run")
 	}
 
-	w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusInProgress, "in-progress")
-
-	_, err = cctx.GetLogStreamWorkflow(ctx)
-	if err != nil {
-		ls, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
-			ActionWorkflowRunID: actionWorkflowRunID,
-		})
-		if err != nil {
-			return errors.Wrap(err, "unable to create log stream")
-		}
-
-		defer func() {
-			activities.AwaitCloseLogStreamByLogStreamID(ctx, ls.ID)
-		}()
-		ctx = cctx.SetLogStreamWorkflowContext(ctx, ls)
+	l, err := log.WorkflowLogger(ctx)
+	if err == nil {
+		l.Warn("creating a new logger for executing action")
 	}
 
-	l, err := log.WorkflowLogger(ctx)
+	w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusInProgress, "in-progress")
+
+	ls, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
+		ActionWorkflowRunID: actionWorkflowRunID,
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to create log stream")
+	}
+
+	defer func() {
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, ls.ID)
+	}()
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, ls)
+
+	l, err = log.WorkflowLogger(ctx)
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create log stream")
 		return errors.Wrap(err, "unable to set log stream on context")
 	}
 
-	ls, err := cctx.GetLogStreamWorkflow(ctx)
+	ls, err = cctx.GetLogStreamWorkflow(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to get log stream")
 	}
