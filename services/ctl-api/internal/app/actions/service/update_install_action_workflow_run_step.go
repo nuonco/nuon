@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -13,7 +14,8 @@ import (
 )
 
 type UpdateInstallActionWorkflowRunStepRequest struct {
-	Status app.InstallActionWorkflowRunStepStatus `json:"status"`
+	Status            app.InstallActionWorkflowRunStepStatus `json:"status"`
+	ExecutionDuration time.Duration                          `json:"execution_duration" swaggertype:"primitive,integer"`
 }
 
 // @ID UpdateInstallActionWorkflowRunStep
@@ -55,7 +57,8 @@ func (s *service) UpdateInstallActionWorkflowRunStep(ctx *gin.Context) {
 
 func (s *service) updateInstallActionWorkflowRunStep(ctx context.Context, stepID string, req *UpdateInstallActionWorkflowRunStepRequest) (*app.InstallActionWorkflowRunStep, error) {
 	step := app.InstallActionWorkflowRunStep{
-		Status: req.Status,
+		Status:            req.Status,
+		ExecutionDuration: req.ExecutionDuration,
 	}
 
 	currentStep := &app.InstallActionWorkflowRunStep{

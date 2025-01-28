@@ -19,7 +19,11 @@ const (
 	ActionWorkflowTriggerTypeCron ActionWorkflowTriggerType = "cron"
 
 	// can add workflow triggers for different types of events
-	ActionWorkflowTriggerTypePostInstall ActionWorkflowTriggerType = "post_install"
+	ActionWorkflowTriggerTypePreSandboxRun  ActionWorkflowTriggerType = "pre-sandbox-run"
+	ActionWorkflowTriggerTypePostSandboxRun ActionWorkflowTriggerType = "post-sandbox-run"
+
+	ActionWorkflowTriggerTypePreDeploy  ActionWorkflowTriggerType = "pre-deploy"
+	ActionWorkflowTriggerTypePostDeploy ActionWorkflowTriggerType = "post-deploy"
 )
 
 type ActionWorkflowTriggerConfig struct {
@@ -45,6 +49,7 @@ type ActionWorkflowTriggerConfig struct {
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"-"`
 
 	// individual fields for different types
+
 	Type         ActionWorkflowTriggerType `json:"type" swaggertype:"string" gorm:"default null;not null;index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique"`
 	CronSchedule string                    `json:"cron_schedule,omitempty"`
 }
