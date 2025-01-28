@@ -147,7 +147,7 @@ export async function getInstallActionWorkflowRuns({
   return queryData<Array<TInstallActionWorkflowRun>>({
     errorMessage: 'Unable to retrieve install action workflow runs.',
     orgId,
-    path: `installs/${installId}/action-workflows/runs/`,
+    path: `installs/${installId}/action-workflows/runs`,
   })
 }
 

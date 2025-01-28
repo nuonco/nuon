@@ -92,7 +92,7 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
         </Section>
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
-          <Section className="flex-initial" heading="Workflow steps">
+          <Section className="flex-initial" heading="Latest configured steps">
             <div className="flex flex-col gap-2">
               {actionWithRecentRuns?.action_workflow?.configs?.[0]?.steps
                 ?.sort((a, b) => b?.idx - a?.idx)
