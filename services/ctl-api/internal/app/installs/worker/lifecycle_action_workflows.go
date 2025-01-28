@@ -32,7 +32,7 @@ func (w *Workflows) LifecycleActionWorkflows(ctx workflow.Context, req *Lifecycl
 	if err != nil {
 		return err
 	}
-	l.Info("executing actions with trigger" + string(req.Trigger))
+	l.Info("executing actions with trigger " + string(req.Trigger))
 
 	workflows, err := activities.AwaitGetActionWorkflowsByInstallID(ctx, req.InstallID)
 	if err != nil {
