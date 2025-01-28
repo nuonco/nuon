@@ -56,6 +56,7 @@ func (s *service) GetInstallActionWorkflowsLatestRun(ctx *gin.Context) {
 
 	if len(actionWorkflows) == 0 {
 		ctx.JSON(http.StatusOK, []ActionWorkflowLatestRunResponse{})
+		return
 	}
 
 	// init response
