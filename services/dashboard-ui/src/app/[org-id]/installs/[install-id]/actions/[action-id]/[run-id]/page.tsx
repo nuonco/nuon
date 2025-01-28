@@ -6,7 +6,9 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   ActionWorkflowStatus,
+  CancelRunnerJobButton,
   ClickToCopy,
+  CodeViewer,
   DashboardContent,
   Duration,
   EventStatus,
@@ -32,7 +34,7 @@ import type {
   TInstallActionWorkflowRun,
   TActionConfig,
 } from '@/types'
-import { sentanceCase } from '@/utils'
+import { sentanceCase, CANCEL_RUNNER_JOBS } from '@/utils'
 
 // hydrate run steps with idx and name
 function hydrateRunSteps(
@@ -132,6 +134,15 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
               </ToolTip>
             </Text>
           </span>
+          {CANCEL_RUNNER_JOBS &&
+          (workflowRun?.status === 'queued' ||
+            workflowRun?.status === 'in-progress') ? (
+            <CancelRunnerJobButton
+              jobType="sandbox-run"
+              runnerJobId={workflowRun?.runner_job?.id}
+              orgId={orgId}
+            />
+          ) : null}
         </div>
       }
     >
@@ -146,7 +157,10 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
           <Section
             className="flex-initial"
-            heading={`${workflowRun?.config?.steps?.length} of ${workflowRun?.config?.steps?.length} Steps`}
+            heading={`${workflowRun?.steps?.reduce((count, step) => {
+              if (step.status === 'finished' || step.status === 'error') count++
+              return count
+            }, 0)} of ${workflowRun?.config?.steps?.length} Steps`}
           >
             <div className="flex flex-col gap-2">
               {hydrateRunSteps(workflowRun?.steps, workflowRun?.config?.steps)
@@ -160,17 +174,34 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
                         <Text variant="med-14">{step?.name}</Text>
                       </span>
 
-                      <Text
-                        className="flex items-center gap-2 ml-7"
-                        variant="reg-12"
-                      >
-                        {sentanceCase(step.status)}
+                      <Text className="flex items-center ml-7" variant="reg-12">
+                        {sentanceCase(step.status)}{' '}
+                        {step?.execution_duration > 1000 ? (
+                          <>
+                            in{' '}
+                            <Duration nanoseconds={step?.execution_duration} />
+                          </>
+                        ) : (
+                          'did not attempt'
+                        )}
                       </Text>
                     </span>
                   )
                 })}
             </div>
           </Section>
+          {workflowRun?.runner_job?.outputs ? (
+            <Section heading="Workflow outputs">
+              <CodeViewer
+                initCodeSource={JSON.stringify(
+                  workflowRun?.runner_job?.outputs || {},
+                  null,
+                  2
+                )}
+                language="json"
+              />
+            </Section>
+          ) : null}
         </div>
       </div>
     </DashboardContent>
@@ -204,7 +235,7 @@ const LoadLogs: FC<{
   }, {})
 
   if (Object.keys(logSteps).length === 0) {
-    return <Text>Waiting onAction workflow logs.</Text>
+    return <Text variant="reg-14">Waiting on action workflow logs.</Text>
   }
 
   return (
@@ -213,6 +244,7 @@ const LoadLogs: FC<{
         const workflowStep = workflowRun?.steps?.find(
           (s) => s?.id === logSteps[step]?.at(0)?.log_attributes?.step_run_id
         )
+
         return (
           <Expand
             parentClass="border rounded divide-y"
@@ -220,15 +252,23 @@ const LoadLogs: FC<{
             id={step}
             key={step}
             heading={
-              <Text variant="med-14">
+              <span className="flex gap-3 items-center">
                 <EventStatus status={workflowStep?.status} />
-                {sentanceCase(step)}
-              </Text>
+                <Text variant="med-14">{step}</Text>
+                {workflowStep?.status === 'finished' ||
+                workflowStep.status === 'error' ? (
+                  <Duration
+                    className="ml-2"
+                    nanoseconds={workflowStep?.execution_duration}
+                    variant="reg-12"
+                  />
+                ) : null}
+              </span>
             }
             isOpen
             expandContent={
               <RunnerLogs
-                heading={sentanceCase(step)}
+                heading={step}
                 logs={parseOTELLog(logSteps[step])}
                 withOutBorder
               />
