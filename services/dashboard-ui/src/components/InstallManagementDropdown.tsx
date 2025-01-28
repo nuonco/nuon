@@ -94,6 +94,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
         id="mgmt-install"
         text="Admin"
         isDownIcon
+        wrapperClassName="z-20"
       >
         <div className="min-w-[180px] rounded-md overflow-hidden">
           <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
