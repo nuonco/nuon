@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -24,6 +23,8 @@ func (c *CreateInstallInputsRequest) Validate(v *validator.Validate) error {
 	}
 	return nil
 }
+
+// DEPRECATED we should use the new UpdateInstallInputs
 
 // @ID CreateInstallInputs
 // @Summary	create install inputs
@@ -79,9 +80,6 @@ func (s *service) CreateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationReprovision,
-	})
 	ctx.JSON(http.StatusCreated, inputs)
 }
 
