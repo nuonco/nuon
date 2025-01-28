@@ -11,6 +11,7 @@ import (
 type CreateActionWorkflowRunRunnerJob struct {
 	ActionWorkflowRunID string `validate:"required"`
 	RunnerID            string `validate:"required"`
+	LogStreamID         string `validate:"required"`
 }
 
 // @temporal-gen activity
@@ -24,7 +25,7 @@ func (a *Activities) CreateActionWorkflowRunRunnerJob(ctx context.Context, req *
 	job, err := a.runnersHelpers.CreateActionsWorkflowRunJob(ctx,
 		req.RunnerID,
 		req.ActionWorkflowRunID,
-		run.LogStream.ID,
+		req.LogStreamID,
 		&run.ActionWorkflowConfig,
 	)
 	if err != nil {

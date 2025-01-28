@@ -3,7 +3,6 @@ package helpers
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -14,11 +13,6 @@ func (h *Helpers) CreateActionsWorkflowRunJob(ctx context.Context,
 	runID string, logStreamID string,
 	cfg *app.ActionWorkflowConfig,
 ) (*app.RunnerJob, error) {
-	// TODO(jm): do not commit this, and if you do, uncommit it once Rob lands the config for this
-	if cfg.Timeout < time.Second {
-		cfg.Timeout = time.Minute * 5
-	}
-
 	job := &app.RunnerJob{
 		RunnerID:          runnerID,
 		QueueTimeout:      DefaultQueueTimeout,

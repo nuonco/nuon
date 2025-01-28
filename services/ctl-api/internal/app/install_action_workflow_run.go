@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -49,8 +50,11 @@ type InstallActionWorkflowRun struct {
 
 	Steps []InstallActionWorkflowRunStep `json:"steps" gorm:"constraint:OnDelete:CASCADE;"`
 
+	RunEnvVars pgtype.Hstore `json:"run_env_vars" gorm:"type:hstore" swaggertype:"object,string"`
+
 	// after query
 	// TODO: update runner to track start and finish timestamps
+
 	ExecutionTime time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer"`
 }
 

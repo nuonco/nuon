@@ -34,3 +34,12 @@ func HasAnyPrefix(val string, prefixes ...string) bool {
 
 	return false
 }
+
+func SystemName(val string) string {
+	str := strings.ReplaceAll(string(val), " ", "-")
+	str = strings.ReplaceAll(string(val), "_", "-")
+
+	caser := cases.Lower(language.English)
+	str = caser.String(str)
+	return str
+}
