@@ -37,6 +37,8 @@ type InstallActionWorkflowRunStep struct {
 
 	StepID string                   `json:"step_id"`
 	Step   ActionWorkflowStepConfig `json:"-"`
+
+	ExecutionDuration time.Duration `json:"execution_duration" gorm:"default null;not null" swaggertype:"primitive,integer"`
 }
 
 func (i *InstallActionWorkflowRunStep) BeforeCreate(tx *gorm.DB) error {

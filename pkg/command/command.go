@@ -36,6 +36,7 @@ func New(v *validator.Validate, opts ...commandOption) (*command, error) {
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
 		Stdin:  os.Stdin,
+		Env:    make(map[string]string, 0),
 	}
 	for idx, opt := range opts {
 		if err := opt(l); err != nil {
@@ -69,7 +70,10 @@ func WithArgs(args []string) commandOption {
 // WithEnv sets the environment to run the command within
 func WithEnv(env map[string]string) commandOption {
 	return func(l *command) error {
-		l.Env = env
+		for k, v := range env {
+			l.Env[k] = v
+		}
+
 		return nil
 	}
 }
