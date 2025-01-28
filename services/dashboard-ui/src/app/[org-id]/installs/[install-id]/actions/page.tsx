@@ -4,10 +4,12 @@ import {
   InstallPageSubNav,
   InstallStatuses,
   InstallActionWorkflowsTable,
+  InstallManagementDropdown,
   DashboardContent,
   Section,
 } from '@/components'
 import { getInstall, getInstallActionWorkflowLatestRun, getOrg } from '@/lib'
+import { USER_REPROVISION } from '@/utils'
 
 export default withPageAuthRequired(async function InstallWorkflowRuns({
   params,
@@ -31,7 +33,20 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
       ]}
       heading={install.name}
       headingUnderline={install.id}
-      statues={<InstallStatuses initInstall={install} shouldPoll />}
+      statues={
+        <div className="flex items-end gap-8">
+          <InstallStatuses initInstall={install} shouldPoll />
+          {USER_REPROVISION ? (
+            <InstallManagementDropdown
+              installId={installId}
+              orgId={orgId}
+              hasInstallComponents={Boolean(
+                install?.install_components?.length
+              )}
+            />
+          ) : null}
+        </div>
+      }
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <Section className="border-r" heading="All workflows">

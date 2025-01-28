@@ -56,6 +56,9 @@ type InstallActionWorkflowRun struct {
 	// TODO: update runner to track start and finish timestamps
 
 	ExecutionTime time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer"`
+
+	// after query
+	Outputs map[string]interface{} `json:"outputs" gorm:"-"`
 }
 
 func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {
@@ -75,6 +78,10 @@ func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {
 func (i *InstallActionWorkflowRun) AfterQuery(tx *gorm.DB) error {
 	if i.RunnerJob != nil {
 		i.ExecutionTime = i.RunnerJob.ExecutionTime
+
+		if len(i.RunnerJob.ParsedOutputs) > 0 {
+			i.Outputs = i.RunnerJob.ParsedOutputs
+		}
 	}
 	return nil
 }
