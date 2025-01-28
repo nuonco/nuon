@@ -15,11 +15,11 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
-type UpdateInstallInputRequest struct {
+type UpdateInstallInputsRequest struct {
 	Inputs map[string]*string `json:"inputs" validate:"required,gte=1"`
 }
 
-func (c *UpdateInstallInputRequest) Validate(v *validator.Validate) error {
+func (c *UpdateInstallInputsRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
@@ -28,10 +28,10 @@ func (c *UpdateInstallInputRequest) Validate(v *validator.Validate) error {
 
 // @ID UpdateInstallInput
 // @Summary	Updates install input config for app
-// @Description.markdown	update_install_input.md
+// @Description.markdown	update_install_inputs.md
 // @Tags			installs
 // @Accept			json
-// @Param			req	body	UpdateInstallInputRequest	true	"Input"
+// @Param			req	body	UpdateInstallInputsRequest	true	"Input"
 // @Produce		json
 // @Param			install_id		path		string	true	"install ID"
 // @Security APIKey
@@ -43,10 +43,10 @@ func (c *UpdateInstallInputRequest) Validate(v *validator.Validate) error {
 // @Failure		500				{object}	stderr.ErrResponse
 // @Success		200				{object}	app.InstallInputs
 // @Router			/v1/installs/{install_id}/inputs [patch]
-func (s *service) UpdateInstallInput(ctx *gin.Context) {
+func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
-	var req UpdateInstallInputRequest
+	var req UpdateInstallInputsRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
@@ -104,7 +104,7 @@ func (s *service) UpdateInstallInput(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, inputs)
 }
 
-func (s *service) validateInstallInput(ctx context.Context, appInputConfigID string, req UpdateInstallInputRequest) error {
+func (s *service) validateInstallInput(ctx context.Context, appInputConfigID string, req UpdateInstallInputsRequest) error {
 	appInputs := []*app.AppInput{}
 	res := s.db.WithContext(ctx).
 		Find(&appInputs, "app_input_config_id = ?", appInputConfigID)
@@ -126,7 +126,7 @@ func (s *service) validateInstallInput(ctx context.Context, appInputConfigID str
 	return nil
 }
 
-func (s *service) newInstallInputs(ctx context.Context, installInput app.InstallInputs, req UpdateInstallInputRequest) (*app.InstallInputs, error) {
+func (s *service) newInstallInputs(ctx context.Context, installInput app.InstallInputs, req UpdateInstallInputsRequest) (*app.InstallInputs, error) {
 	inputs := map[string]*string{}
 	for k, v := range installInput.Values {
 		inputs[k] = v
