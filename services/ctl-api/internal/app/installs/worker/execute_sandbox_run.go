@@ -24,6 +24,19 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 		return err
 	}
 
+	if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
+		InstallID: install.ID,
+		Trigger:   app.ActionWorkflowTriggerTypePreSandboxRun,
+		RunEnvVars: generics.ToPtrStringMap(map[string]string{
+			"TRIGGER":          string(app.ActionWorkflowTriggerTypePreSandboxRun),
+			"SANDBOX_RUN_TYPE": string(installRun.RunType),
+			"SANDBOX_RUN_ID":   installRun.ID,
+		}),
+	}); err != nil {
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "lifecycle hooks failed")
+		return errors.Wrap(err, "lifecycle hooks failed")
+	}
+
 	// create the job
 	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
 		InstallID: install.ID,
@@ -115,6 +128,20 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job failed")
 		return fmt.Errorf("unable to execute job: %w", err)
+	}
+
+	// execute actions
+	if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
+		InstallID: install.ID,
+		Trigger:   app.ActionWorkflowTriggerTypePostSandboxRun,
+		RunEnvVars: generics.ToPtrStringMap(map[string]string{
+			"TRIGGER":          string(app.ActionWorkflowTriggerTypePostSandboxRun),
+			"SANDBOX_RUN_TYPE": string(installRun.RunType),
+			"SANDBOX_RUN_ID":   installRun.ID,
+		}),
+	}); err != nil {
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "lifecycle hooks failed")
+		return errors.Wrap(err, "lifecycle hooks failed")
 	}
 
 	l.Info("configuring DNS for nuon.run domain if enabled")

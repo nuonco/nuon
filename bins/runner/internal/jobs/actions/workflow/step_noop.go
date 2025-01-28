@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"context"
+	"time"
 
 	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/pkg/errors"
@@ -20,7 +21,7 @@ func (h *handler) noopWorkflowSteps(ctx context.Context, steps []*models.AppInst
 }
 
 func (h *handler) noopWorkflowStep(ctx context.Context, step *models.AppInstallActionWorkflowRunStep, cfg *models.AppActionWorkflowStepConfig) error {
-	if err := h.updateStepStatus(ctx, step.ID, models.AppInstallActionWorkflowRunStepStatusError); err != nil {
+	if err := h.updateStepStatus(ctx, step.ID, time.Now(), models.AppInstallActionWorkflowRunStepStatusError); err != nil {
 		return errors.Wrap(err, "unable to mark step as NOOP")
 	}
 

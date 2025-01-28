@@ -20,33 +20,46 @@ import (
 // @execution-timeout 1m
 // @task-timeout 30s
 func (w *Workflows) ActionWorkflowRun(ctx workflow.Context, sreq signals.RequestSignal) error {
-	run, err := activities.AwaitGetInstallActionWorkflowRunByRunID(ctx, sreq.ActionWorkflowRunID)
+	return w.actionWorkflowRun(ctx, sreq.ID, sreq.ActionWorkflowRunID)
+}
+
+func (w *Workflows) actionWorkflowRun(ctx workflow.Context, installID, actionWorkflowRunID string) error {
+	run, err := activities.AwaitGetInstallActionWorkflowRunByRunID(ctx, actionWorkflowRunID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get action workflow run")
 	}
 
 	w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusInProgress, "in-progress")
 
-	ls, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
-		ActionWorkflowRunID: sreq.ActionWorkflowRunID,
-	})
+	_, err = cctx.GetLogStreamWorkflow(ctx)
 	if err != nil {
-		return errors.Wrap(err, "unable to create log stream")
+		ls, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
+			ActionWorkflowRunID: actionWorkflowRunID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to create log stream")
+		}
+
+		defer func() {
+			activities.AwaitCloseLogStreamByLogStreamID(ctx, ls.ID)
+		}()
+		ctx = cctx.SetLogStreamWorkflowContext(ctx, ls)
 	}
 
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, ls.ID)
-	}()
-	ctx = cctx.SetLogStreamWorkflowContext(ctx, ls)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create log stream")
 		return errors.Wrap(err, "unable to set log stream on context")
 	}
 
+	ls, err := cctx.GetLogStreamWorkflow(ctx)
+	if err != nil {
+		return errors.Wrap(err, "unable to get log stream")
+	}
+
 	l.Info("creating plan for executing action run")
 	runPlan, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
-		RunID: sreq.ActionWorkflowRunID,
+		RunID: actionWorkflowRunID,
 	})
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")
@@ -56,8 +69,9 @@ func (w *Workflows) ActionWorkflowRun(ctx workflow.Context, sreq signals.Request
 	// execute job
 	l.Info("creating runner job to execute action")
 	runnerJob, err := activities.AwaitCreateActionWorkflowRunRunnerJob(ctx, &activities.CreateActionWorkflowRunRunnerJob{
-		ActionWorkflowRunID: sreq.ActionWorkflowRunID,
+		ActionWorkflowRunID: actionWorkflowRunID,
 		RunnerID:            run.Install.RunnerID,
+		LogStreamID:         ls.ID,
 	})
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")

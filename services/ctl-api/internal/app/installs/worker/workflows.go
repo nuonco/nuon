@@ -39,6 +39,7 @@ func (w *Workflows) All() []any {
 	wkflows := []any{
 		w.EventLoop,
 		plan.CreateActionWorkflowRunPlan,
+		w.CronActionWorkflow,
 	}
 
 	return append(wkflows, w.ListWorkflowFns()...)
