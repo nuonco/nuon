@@ -70,5 +70,8 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
 		Type: signals.OperationDeployComponents,
 	})
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationSyncActionWorkflowTriggers,
+	})
 	ctx.JSON(http.StatusCreated, install)
 }

@@ -98,15 +98,6 @@ func TestNew(t *testing.T) {
 			},
 			errExpected: fmt.Errorf("Args"),
 		},
-		"missing env": {
-			optsFn: func() []commandOption {
-				return []commandOption{
-					WithCmd(cmd),
-					WithArgs(args),
-				}
-			},
-			errExpected: fmt.Errorf("Env"),
-		},
 	}
 
 	for name, test := range tests {

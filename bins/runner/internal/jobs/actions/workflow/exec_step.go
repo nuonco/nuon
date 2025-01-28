@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -12,9 +13,10 @@ import (
 	"github.com/nuonco/nuon-runner-go/models"
 )
 
-func (h *handler) updateStepStatus(ctx context.Context, stepID string, status models.AppInstallActionWorkflowRunStepStatus) error {
+func (h *handler) updateStepStatus(ctx context.Context, stepID string, startTS time.Time, status models.AppInstallActionWorkflowRunStepStatus) error {
 	_, err := h.apiClient.UpdateInstallActionWorkflowRunStep(ctx, h.state.plan.InstallID, h.state.workflowCfg.ActionWorkflowID, stepID, &models.ServiceUpdateInstallActionWorkflowRunStepRequest{
-		Status: status,
+		Status:            status,
+		ExecutionDuration: time.Now().Sub(startTS).Nanoseconds(),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to update step status")
@@ -28,28 +30,29 @@ func (h *handler) executeWorkflowStep(ctx context.Context, step *models.AppInsta
 	if err != nil {
 		return err
 	}
+	startTS := time.Now()
 
 	l = l.With(
 		zap.String("workflow_step_name", cfg.Name),
 		zap.String("step_run_id", step.ID),
 	)
 
-	if err := h.updateStepStatus(ctx, step.ID, models.AppInstallActionWorkflowRunStepStatusInDashProgress); err != nil {
+	if err := h.updateStepStatus(ctx, step.ID, startTS, models.AppInstallActionWorkflowRunStepStatusInDashProgress); err != nil {
 		return errors.Wrap(err, "unable to update status")
 	}
 
 	if err := h.createExecEnv(ctx, l, stepPlan.GitSource); err != nil {
-		h.updateStepStatus(ctx, step.ID, models.AppInstallActionWorkflowRunStepStatusError)
+		h.updateStepStatus(ctx, step.ID, startTS, models.AppInstallActionWorkflowRunStepStatusError)
 		return errors.Wrap(err, "unable to create exec env")
 	}
 
-	if err := h.execCommand(ctx, l, cfg, stepPlan.GitSource); err != nil {
-		h.updateStepStatus(ctx, step.ID, models.AppInstallActionWorkflowRunStepStatusError)
+	if err := h.execCommand(ctx, l, cfg, stepPlan.GitSource, stepPlan.InterpolatedEnvVars); err != nil {
+		h.updateStepStatus(ctx, step.ID, startTS, models.AppInstallActionWorkflowRunStepStatusError)
 		return errors.Wrap(err, "unable to execute command")
 	}
 
 	l.Info("marking step as finished")
-	if err := h.updateStepStatus(ctx, step.ID, models.AppInstallActionWorkflowRunStepStatusFinished); err != nil {
+	if err := h.updateStepStatus(ctx, step.ID, startTS, models.AppInstallActionWorkflowRunStepStatusFinished); err != nil {
 		return errors.Wrap(err, "unable to update status")
 	}
 
