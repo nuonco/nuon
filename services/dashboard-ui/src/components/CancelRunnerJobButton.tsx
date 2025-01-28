@@ -56,6 +56,7 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
 }) => {
   const cancelJobData = cancelJobOptions[jobType]
   const pathName = usePathname()
+  const [hasBeenCanceled, setHasBeenCanceled] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
@@ -105,6 +106,7 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
                   setIsLoading(false)
                   setIsKickedOff(true)
                   setIsConfirmOpen(false)
+                  setHasBeenCanceled(true)
                   if (props.onComplete) props.onComplete()
                 }
               )
@@ -123,6 +125,7 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
         </div>
       </Modal>
       <Button
+        disabled={hasBeenCanceled}
         className="text-sm flex items-center gap-1"
         onClick={() => {
           setIsConfirmOpen(true)
