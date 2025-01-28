@@ -34,12 +34,35 @@ type ActionWorkflowConfig struct {
 	Steps    []ActionWorkflowStepConfig    `json:"steps"`
 
 	Timeout time.Duration `json:"timeout" gorm:"default null;not null" swaggertype:"primitive,integer"`
+
+	// after query fields
+
+	CronTriggers      []ActionWorkflowTriggerConfig `json:"-" temporaljson:"cron_triggers"`
+	LifecycleTriggers []ActionWorkflowTriggerConfig `json:"-" temporaljson:"lifecycle_triggers"`
 }
 
 func (a *ActionWorkflowConfig) BeforeCreate(tx *gorm.DB) error {
 	a.ID = domains.NewActionWorkflowID()
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	a.OrgID = orgIDFromContext(tx.Statement.Context)
+	return nil
+}
+
+func (a *ActionWorkflowConfig) AfterQuery(tx *gorm.DB) error {
+	a.CronTriggers = make([]ActionWorkflowTriggerConfig, 0)
+	a.LifecycleTriggers = make([]ActionWorkflowTriggerConfig, 0)
+
+	for _, trigger := range a.Triggers {
+		switch trigger.Type {
+		case ActionWorkflowTriggerTypeManual:
+			continue
+		case ActionWorkflowTriggerTypeCron:
+			a.CronTriggers = append(a.CronTriggers, trigger)
+		default:
+			a.LifecycleTriggers = append(a.LifecycleTriggers, trigger)
+		}
+	}
+
 	return nil
 }
 

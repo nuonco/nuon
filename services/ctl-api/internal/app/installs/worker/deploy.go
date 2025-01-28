@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
@@ -156,6 +157,20 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 		}
 	}
 
+	// run predeploy hooks
+	if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
+		InstallID: install.ID,
+		Trigger:   app.ActionWorkflowTriggerTypePreDeploy,
+		RunEnvVars: generics.ToPtrStringMap(map[string]string{
+			"TRIGGER":     string(app.ActionWorkflowTriggerTypePreDeploy),
+			"DEPLOY_TYPE": string(installDeploy.Type),
+			"DEPLOY_ID":   installDeploy.ID,
+		}),
+	}); err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "lifecycle hooks failed")
+		return errors.Wrap(err, "lifecycle hooks failed")
+	}
+
 	if err := w.execSync(ctx, install, installDeploy, sandboxMode); err != nil {
 		return errors.Wrap(err, "error syncing")
 	}
@@ -165,6 +180,20 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 	}
 
 	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFinished)
+
+	// run hooks after the deploy
+	if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
+		InstallID: install.ID,
+		Trigger:   app.ActionWorkflowTriggerTypePostDeploy,
+		RunEnvVars: generics.ToPtrStringMap(map[string]string{
+			"TRIGGER":     string(app.ActionWorkflowTriggerTypePostDeploy),
+			"DEPLOY_TYPE": string(installDeploy.Type),
+			"DEPLOY_ID":   installDeploy.ID,
+		}),
+	}); err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "lifecycle hooks failed")
+		return errors.Wrap(err, "lifecycle hooks failed")
+	}
 
 	finalStatus := app.InstallDeployStatusActive
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
