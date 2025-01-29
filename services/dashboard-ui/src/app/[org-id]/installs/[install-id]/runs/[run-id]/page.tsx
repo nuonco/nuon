@@ -5,6 +5,7 @@ import {
   AppSandboxVariables,
   CancelRunnerJobButton,
   ClickToCopy,
+  CodeViewer,
   DashboardContent,
   Duration,
   LogStreamPoller,
@@ -136,6 +137,29 @@ lg:max-w-[450px]"
               variables={sandboxRun.app_sandbox_config?.variables}
             />
           </Section>
+
+          {sandboxRun?.runner_job?.outputs ? (
+            <Section heading="Sandbox outputs">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Text variant="med-12">Outputs</Text>
+                  <ClickToCopy className="hover:bg-black/10 rounded-md p-1 text-sm">
+                    <span className="hidden">
+                      {JSON.stringify(sandboxRun?.runner_job.outputs)}
+                    </span>
+                  </ClickToCopy>
+                </div>
+                <CodeViewer
+                  initCodeSource={JSON.stringify(
+                    sandboxRun?.runner_job?.outputs,
+                    null,
+                    2
+                  )}
+                  language="json"
+                />
+              </div>
+            </Section>
+          ) : null}
         </div>
       </div>
     </DashboardContent>
