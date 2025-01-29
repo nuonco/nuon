@@ -217,7 +217,7 @@ type RunnerJob struct {
 
 	ExecutionCount            int    `json:"execution_count" gorm:"->;-:migration"`
 	FinalRunnerJobExecutionID string `json:"final_runner_job_execution_id" gorm:"->;-:migration"`
-	Outputs                   []byte `json:"outputs_json" gorm:"->;-:migration;type:jsonb"`
+	Outputs                   []byte `json:"outputs_json" temporaljson:"outputs_json" gorm:"->;-:migration;type:jsonb" swaggertype:"primitive,string"`
 
 	// read only fields from gorm AfterQuery
 
