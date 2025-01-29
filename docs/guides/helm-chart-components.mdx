@@ -13,6 +13,7 @@ options.
 To configure a Helm component, specify a repo, the required configuration values and version to deploy it with.
 
 <CodeGroup>
+
 ```toml TOML
 [[components]]
 name       = "helm_chart"
@@ -26,13 +27,13 @@ branch    = "main"
 
 [[components.values_file]]
 contents = """
-image.tag ={{.nuon.components.docker_build.image.name}}
+image:
+  tag: "{{.nuon.components.docker_build.image.name}}"
 """
 
 # alternatively, you can read from disk
-[[components.values_file]] 
+[[components.values_file]]
 source = "./values.yaml"
-
 ```
 
 ```hcl Terraform
@@ -48,6 +49,7 @@ resource "nuon_helm_chart_chart_component" "helm_chart" {
   }
 }
 ```
+
 </CodeGroup>
 
 You can configure Helm components to use either a public repo (using a `public_repo` block) or a private GitHub
@@ -64,12 +66,13 @@ configuration.
 One of the most important parts of deploying a Helm chart into a customer account, includes setting values properly.
 Values can be used for everything from accessing infrastructure, setting images or scaling pods.
 
-
 [Variables](/guides/using-variables) allow you to set default values for a Nuon app, expose customer configuration
 options, reference infrastructure from other components or access an image that was synced into the customer account.
 
 Examples for accessing common interpolated variables:
+
 <CodeGroup>
+
 ```toml TOML
 [[components]]
 name       = "helm_chart"
@@ -142,6 +145,7 @@ resource "nuon_helm_chart_component" "helm_chart" {
   }
 }
 ```
+
 </CodeGroup>
 
 ## Using a Helm Values File
@@ -149,6 +153,7 @@ resource "nuon_helm_chart_component" "helm_chart" {
 You can add a values file, and set multiple values at once.
 
 <CodeGroup>
+
 ```toml TOML
 [[components]]
 name       = "helm_chart"
@@ -160,7 +165,8 @@ repo      = "<your-org>/<your-repo>"
 branch    = "main"
 [[components.values_file]]
 contents = """
-image.tag = {{.nuon.components.docker_build.image.name}}
+image:
+  tag: "{{.nuon.components.docker_build.image.name}}"
 """
 ```
 
@@ -342,6 +348,7 @@ nginx:
 You could then set the domain per install in your component config.
 
 <CodeGroup>
+
 ```toml TOML
 [[components]]
 name       = "nlb"
@@ -373,10 +380,10 @@ resource "nuon_helm_chart_component" "nlb" {
   }
 }
 ```
+
 </CodeGroup>
 
 <CodeGroup>
-
 
 </CodeGroup>
 
