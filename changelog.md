@@ -3,6 +3,11 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.382
+
+Fix sidebar width in UI.
+
+
 ## v0.19.381
 
 Better action logging in UI.
