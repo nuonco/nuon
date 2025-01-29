@@ -40,8 +40,9 @@ func (w *Workflows) isDeprovisionable(ctx workflow.Context, install *app.Install
 		return false, attributes, fmt.Errorf("unable to fetch untorn install deploys: %w", err)
 	}
 
-	attributes = append(attributes, zap.Int("sandbox.untorn_install_deploys", len(untornCmpIds)))
 	if len(untornCmpIds) > 0 {
+		attributes = append(attributes, zap.Strings("sandbox.untorn_install_component_ids", untornCmpIds))
+		attributes = append(attributes, zap.String("reason", fmt.Sprintf("at least one install component cannot be torn down")))
 		return false, attributes, nil
 	}
 
