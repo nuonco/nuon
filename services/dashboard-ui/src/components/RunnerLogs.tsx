@@ -225,12 +225,14 @@ export function parseOTELLog(logs: Array<TOTELLog>): Array<TLogRecord> {
 
 export interface IRunnerLogs {
   heading: React.ReactNode
+  actions?: React.ReactNode
   logs: Array<TLogRecord>
   withOutBorder?: boolean
 }
 
 export const RunnerLogs: FC<IRunnerLogs> = ({
   heading,
+  actions,
   logs,
   withOutBorder,
 }) => {
@@ -392,6 +394,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({
           <div className="flex items-center divide-x">
             {logs?.length > 0 ? (
               <>
+                {actions ? <div className="pr-4">{actions}</div> : null}
                 <RunnerLogsActions
                   columnSort={columnSort}
                   columnFilters={columnFilters}

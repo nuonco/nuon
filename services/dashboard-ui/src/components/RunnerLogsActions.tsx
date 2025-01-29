@@ -47,7 +47,7 @@ export const RunnerLogsActions: FC<IRunnerLogsActions> = ({
   shouldShowExpandAll = false,
 }) => {
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-4 pl-4">
       {shouldShowExpandAll && (
         <Button
           className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-2"
