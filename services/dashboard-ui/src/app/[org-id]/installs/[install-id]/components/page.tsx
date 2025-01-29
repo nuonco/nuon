@@ -6,6 +6,8 @@ import {
   InstallManagementDropdown,
   InstallPageSubNav,
   NoComponents,
+  Text,
+  Time,
   type TDataInstallComponent,
 } from '@/components'
 import {
@@ -73,7 +75,20 @@ export default withPageAuthRequired(async function InstallComponents({
       heading={install.name}
       headingUnderline={install.id}
       statues={
-        <div className="flex items-end gap-8">
+        <div className="flex items-start gap-8">
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Created
+            </Text>
+            <Time variant="reg-12" time={install?.created_at} />
+          </span>
+
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Updated
+            </Text>
+            <Time variant="reg-12" time={install?.updated_at} />
+          </span>
           <InstallStatuses initInstall={install} shouldPoll />
           {USER_REPROVISION ? (
             <InstallManagementDropdown
