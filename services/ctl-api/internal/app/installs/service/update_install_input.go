@@ -26,7 +26,7 @@ func (c *UpdateInstallInputsRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID UpdateInstallInput
+// @ID UpdateInstallInputs
 // @Summary	Updates install input config for app
 // @Description.markdown	update_install_inputs.md
 // @Tags			installs
