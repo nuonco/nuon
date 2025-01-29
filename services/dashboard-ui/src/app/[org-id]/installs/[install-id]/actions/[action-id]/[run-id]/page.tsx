@@ -1,6 +1,3 @@
-// TODO(nnnat): remove no check
-
-import { DateTime } from 'luxon'
 import React, { type FC, Suspense } from 'react'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
@@ -12,15 +9,13 @@ import {
   DashboardContent,
   Duration,
   EventStatus,
-  Expand,
+  InstallActionLogStreamPoller,
   Loading,
-  RunnerLogs,
   Section,
   Text,
   Time,
   ToolTip,
   Truncate,
-  type TLogRecord,
 } from '@/components'
 import {
   getInstall,
@@ -49,16 +44,6 @@ function hydrateRunSteps(
       ...step,
     }
   })
-}
-
-// convert otel log timestamp from string to milliseconds
-function parseOTELLog(logs: Array<TOTELLog>): Array<TLogRecord> {
-  return logs?.length
-    ? logs?.map((l) => ({
-        ...l,
-        timestamp: DateTime.fromISO(l.timestamp).toMillis(),
-      }))
-    : []
 }
 
 export default withPageAuthRequired(async function InstallWorkflow({ params }) {
@@ -147,13 +132,16 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       }
     >
       <div className="flex flex-col md:flex-row flex-auto">
-        <Section heading="Workflow step logs" className="border-r">
-          <Suspense
-            fallback={<Loading loadingText="Loading action workflow steps" />}
-          >
-            <LoadLogs orgId={orgId} workflowRun={workflowRun} />
-          </Suspense>
-        </Section>
+        <Suspense
+          fallback={
+            <Section heading="Workflow step logs" className="border-r">
+              <Loading loadingText="Loading action workflow steps" />
+            </Section>
+          }
+        >
+          <LoadLogs orgId={orgId} workflowRun={workflowRun} />
+        </Suspense>
+
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
           <Section
             className="flex-initial"
@@ -217,65 +205,14 @@ const LoadLogs: FC<{
     orgId,
   }).catch(console.error)
 
-  if (!logs) {
-    return <Text variant="reg-14">Waiting on action workflow to run.</Text>
-  }
-
-  const logSteps = (logs as unknown as Array<TOTELLog>).reduce((acc, log) => {
-    if (log.log_attributes?.workflow_step_name) {
-      if (acc?.[log.log_attributes?.workflow_step_name]) {
-        acc[log.log_attributes?.workflow_step_name].push(log)
-      } else {
-        acc = { ...acc, [log.log_attributes?.workflow_step_name]: [] }
-        acc[log.log_attributes?.workflow_step_name].push(log)
-      }
-    }
-
-    return acc
-  }, {})
-
-  if (Object.keys(logSteps).length === 0) {
-    return <Text variant="reg-14">Waiting on action workflow logs.</Text>
-  }
-
   return (
-    <div className="flex flex-col gap-3">
-      {Object.keys(logSteps).map((step) => {
-        const workflowStep = workflowRun?.steps?.find(
-          (s) => s?.id === logSteps[step]?.at(0)?.log_attributes?.step_run_id
-        )
-
-        return (
-          <Expand
-            parentClass="border rounded divide-y"
-            headerClass="px-3 py-2"
-            id={step}
-            key={step}
-            heading={
-              <span className="flex gap-3 items-center">
-                <EventStatus status={workflowStep?.status} />
-                <Text variant="med-14">{step}</Text>
-                {workflowStep?.status === 'finished' ||
-                workflowStep.status === 'error' ? (
-                  <Duration
-                    className="ml-2"
-                    nanoseconds={workflowStep?.execution_duration}
-                    variant="reg-12"
-                  />
-                ) : null}
-              </span>
-            }
-            isOpen
-            expandContent={
-              <RunnerLogs
-                heading={step}
-                logs={parseOTELLog(logSteps[step])}
-                withOutBorder
-              />
-            }
-          />
-        )
-      })}
-    </div>
+    <InstallActionLogStreamPoller
+      initLogs={logs as Array<TOTELLog>}
+      initLogStream={workflowRun?.log_stream}
+      orgId={orgId}
+      logStreamId={workflowRun?.log_stream?.id}
+      workflowRun={workflowRun}
+      shouldPoll
+    />
   )
 }
