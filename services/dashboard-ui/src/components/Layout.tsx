@@ -28,8 +28,8 @@ export const Layout: FC<ILayout> = ({ children, org, orgs, versions }) => {
         className={classNames(
           'dashboard_sidebar flex flex-col w-full',
           {
-            'md:w-72': isOpen,
-            'md:w-[72px]': !isOpen,
+            'md:w-72 md:min-w-72 md:max-w-72': isOpen,
+            'md:w-[72px] md:min-w-[72px] md:max-w-[72px]': !isOpen,
           }
         )}
       >
