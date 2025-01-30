@@ -168,5 +168,10 @@ func (a *Migrations) GetAll() []Migration {
 			Fn:        a.migration078AppConfigsViewV2,
 			AlwaysRun: true,
 		},
+		{
+			Name:      "079-action-runs-active-to-finished",
+			Fn:        a.migration079ActionRunsActiveToFinished,
+			AlwaysRun: true,
+		},
 	}
 }
