@@ -19,9 +19,12 @@ export async function cancelRunnerJob({
       runnerJobId,
       orgId,
     })
+
     revalidatePath(path)
   } catch (error) {
     console.error(error)
-    throw new Error(error.message)
+    throw new Error(
+      `${error?.message || 'An error occured'}, please refresh page and try again.`
+    )
   }
 }
