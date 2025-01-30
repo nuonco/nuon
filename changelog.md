@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.384
+
+Fix org root redirect in UI.
+
 ## v0.19.383
 
 Sandbox outputs in UI.
