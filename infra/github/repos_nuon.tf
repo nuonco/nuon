@@ -370,3 +370,17 @@ module "nuon-actions" {
     github = github.nuon
   }
 }
+
+module "nuon-eks-permissions" {
+  source           = "./modules/repository"
+  name             = "eks-permissions"
+  description      = "Basic permissions for managing an EKS install."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
