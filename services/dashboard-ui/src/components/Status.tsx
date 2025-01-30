@@ -32,7 +32,8 @@ export const StatusBadge: FC<IStatusBadge> = ({
   label,
   status,
 }) => {
-  const isActive = status === 'active' || status === 'ok'
+  const isActive =
+    status === 'active' || status === 'ok' || status === 'finished'
   const isError =
     status === 'failed' ||
     status === 'error' ||
