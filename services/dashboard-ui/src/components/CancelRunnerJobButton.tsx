@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { Check, XCircle } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
@@ -56,6 +57,7 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
 }) => {
   const cancelJobData = cancelJobOptions[jobType]
   const pathName = usePathname()
+  const [cancelError, setCancelError] = useState()
   const [hasBeenCanceled, setHasBeenCanceled] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -84,6 +86,11 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
         }}
       >
         <div className="mb-6">
+          {cancelError ? (
+            <span className="flex w-full p-2 border rounded-md border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600 text-base font-medium mb-6">
+              {cancelError}
+            </span>
+          ) : null}
           <Text variant="reg-14" className="leading-relaxed">
             {cancelJobData.confirmMessage}
           </Text>
@@ -98,18 +105,25 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
             Cancel
           </Button>
           <Button
+            disabled={Boolean(cancelError)}
             className="text-sm flex items-center gap-1"
             onClick={() => {
               setIsLoading(true)
-              cancelRunnerJob({ orgId, runnerJobId, path: pathName }).then(
-                () => {
+              cancelRunnerJob({ orgId, runnerJobId, path: pathName })
+                .then(() => {
                   setIsLoading(false)
                   setIsKickedOff(true)
                   setIsConfirmOpen(false)
                   setHasBeenCanceled(true)
                   if (props.onComplete) props.onComplete()
-                }
-              )
+                })
+                .catch((error) => {
+                  setIsLoading(false)
+                  setCancelError(
+                    error?.message ||
+                      'Error occured, please refresh page and try again.'
+                  )
+                })
             }}
             variant="primary"
           >
