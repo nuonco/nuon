@@ -35,6 +35,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/route53 v1.35.5
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.54.3
 	github.com/aws/aws-sdk-go-v2/service/sts v1.31.3
+	github.com/awslabs/goformation/v7 v7.14.9
 	github.com/bradleyfalzon/ghinstallation/v2 v2.2.0
 	github.com/briandowns/spinner v1.23.0
 	github.com/bufbuild/connect-go v1.5.2
@@ -167,7 +168,6 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/aryann/difflib v0.0.0-20210328193216-ff5ff6dc229b // indirect
-	github.com/awslabs/goformation/v7 v7.14.9 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
@@ -421,7 +421,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/protostructure v0.0.0-20220321173139-813f7b927cb7 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
-	github.com/iancoleman/strcase v0.3.0 // indirect
+	github.com/iancoleman/strcase v0.3.0
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -466,7 +466,7 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nuonco/nuon-go v0.41.1
+	github.com/nuonco/nuon-go v0.43.0
 	github.com/nwaples/rardecode/v2 v2.0.0-beta.2 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
