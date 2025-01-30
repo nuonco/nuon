@@ -11,7 +11,7 @@ export default async function middleware(request: NextRequest) {
   // set origin url encase of login redirect
   headers.set('x-origin-path', pathname)
 
-  if (session) {
+  if (session && pathname !== '/favicon.ico') {
     let redirectPath = '/request-access'
     const orgSession = request.cookies.get('org-session')
 
