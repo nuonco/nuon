@@ -13,7 +13,7 @@ import (
 type InstallActionWorkflowRunStatus string
 
 const (
-	InstallActionRunStatusFinished   InstallActionWorkflowRunStatus = "active"
+	InstallActionRunStatusFinished   InstallActionWorkflowRunStatus = "finished"
 	InstallActionRunStatusQueued     InstallActionWorkflowRunStatus = "queued"
 	InstallActionRunStatusInProgress InstallActionWorkflowRunStatus = "in-progress"
 	InstallActionRunStatusError      InstallActionWorkflowRunStatus = "error"
