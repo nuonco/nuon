@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -19,6 +20,7 @@ import (
 // @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
 // @Param   group query string false	"job group"
 // @Param   status query string false	"job status"
+// @Param   statuses query string false	"job statuses"
 // @Tags    runners
 // @Accept			json
 // @Produce		json
@@ -47,10 +49,25 @@ func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 		return
 	}
 
+	statuses := []app.RunnerJobStatus{}
 	statusStr := ctx.DefaultQuery("status", "")
-	status := app.RunnerJobStatus(statusStr)
+	statusesStr := ctx.DefaultQuery("statuses", "")
 
-	runnerJobs, err := s.getRunnerJobsCtlAPI(ctx, runnerID, status, grp, limit)
+	if statusStr != "" {
+		status := app.RunnerJobStatus(statusStr)
+		statuses = append(statuses, status)
+	} else if statusesStr != "" {
+		statusesStr := strings.Split(statusesStr, ",")
+		//trim whitespace
+		for i, statusStr := range statusesStr {
+			statusesStr[i] = strings.TrimSpace(statusStr)
+		}
+		for _, statusStr := range statusesStr {
+			statuses = append(statuses, app.RunnerJobStatus(statusStr))
+		}
+	}
+
+	runnerJobs, err := s.getRunnerJobsCtlAPI(ctx, runnerID, statuses, grp, limit)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -59,22 +76,25 @@ func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, runnerJobs)
 }
 
-func (s *service) getRunnerJobsCtlAPI(ctx context.Context, runnerID string, status app.RunnerJobStatus, grp app.RunnerJobGroup, limit int) ([]*app.RunnerJob, error) {
+func (s *service) getRunnerJobsCtlAPI(ctx context.Context, runnerID string, statuses []app.RunnerJobStatus, grp app.RunnerJobGroup, limit int) ([]*app.RunnerJob, error) {
 	runnerJobs := []*app.RunnerJob{}
 
 	where := app.RunnerJob{
 		RunnerID: runnerID,
 	}
-	if status != "" {
-		where.Status = status
-	}
 	if grp != app.RunnerJobGroupAny {
 		where.Group = grp
 	}
 
-	res := s.db.WithContext(ctx).
+	tx := s.db.WithContext(ctx).
 		Limit(limit).
-		Where(where).
+		Where(where)
+
+	if len(statuses) != 0 {
+		tx = tx.Where("status in (?)", statuses)
+	}
+
+	res := tx.
 		Order("created_at desc").
 		Find(&runnerJobs)
 	if res.Error != nil {
