@@ -17,8 +17,8 @@ import (
 // @Description.markdown	get_runner_jobs.md
 // @Param			runner_id	path	string	true	"runner ID"
 // @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
-// @Param   group query string false	"job group"	     Default("any")
-// @Param   status query string false	"job status"	     Default("available")
+// @Param   group query string false	"job group"	     Default(any)
+// @Param   status query string false	"job status"	     Default(available)
 // @Tags    runners/runner
 // @Accept			json
 // @Produce		json
