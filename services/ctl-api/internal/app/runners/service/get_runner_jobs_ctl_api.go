@@ -17,8 +17,8 @@ import (
 // @Description.markdown	get_runner_jobs.md
 // @Param			runner_id	path	string	true	"runner ID"
 // @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
-// @Param   group query string false	"job group"	     Default("any")
-// @Param   status query string false	"job status"	     Default("available")
+// @Param   group query string false	"job group"
+// @Param   status query string false	"job status"
 // @Tags    runners
 // @Accept			json
 // @Produce		json
@@ -47,7 +47,7 @@ func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 		return
 	}
 
-	statusStr := ctx.DefaultQuery("status", "available")
+	statusStr := ctx.DefaultQuery("status", "")
 	status := app.RunnerJobStatus(statusStr)
 
 	runnerJobs, err := s.getRunnerJobsCtlAPI(ctx, runnerID, status, grp, limit)
@@ -65,7 +65,7 @@ func (s *service) getRunnerJobsCtlAPI(ctx context.Context, runnerID string, stat
 	where := app.RunnerJob{
 		RunnerID: runnerID,
 	}
-	if status != app.RunnerJobStatusUnknown {
+	if status != "" {
 		where.Status = status
 	}
 	if grp != app.RunnerJobGroupAny {
