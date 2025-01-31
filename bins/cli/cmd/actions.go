@@ -41,6 +41,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 	}
 
 	recentRunsCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of the install you want to view recent runs for")
+	recentRunsCmd.MarkFlagRequired("install-id")
 	recentRunsCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID of the action workflow you want to view recent runs for")
 	recentRunsCmd.MarkFlagRequired("action-workflow-id")
 	actionsCmd.AddCommand(recentRunsCmd)
@@ -56,6 +57,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 		}),
 	}
 	getRunCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of the install you want to view recent runs for")
+	getRunCmd.MarkFlagRequired("install-id")
 	getRunCmd.Flags().StringVarP(&runID, "run-id", "r", "", "The ID of the run you want to view")
 	getRunCmd.MarkFlagRequired("run-id")
 	actionsCmd.AddCommand(getRunCmd)
@@ -70,7 +72,8 @@ func (c *cli) actionsCmd() *cobra.Command {
 		}),
 	}
 
-  runCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of the install you want to view recent runs for")
+	runCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of the install you want to view recent runs for")
+	runCmd.MarkFlagRequired("install-id")
 	runCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID of the action workflow you want to view recent runs for")
 	runCmd.MarkFlagRequired("action-workflow-id")
 	actionsCmd.AddCommand(runCmd)
