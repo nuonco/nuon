@@ -1293,8 +1293,8 @@ github.com/go-toolsmith/astfmt v1.1.0/go.mod h1:OrcLlRwu0CuiIBp/8b5PYF9ktGVZUjlN
 github.com/go-toolsmith/strparse v1.0.0/go.mod h1:YI2nUKP9YGZnL/L1/DLFBfixrcjslWct4wyljWhSRy8=
 github.com/go-toolsmith/strparse v1.1.0 h1:GAioeZUK9TGxnLS+qfdqNbA4z0SSm5zVNtCQiyP2Bvw=
 github.com/go-toolsmith/strparse v1.1.0/go.mod h1:7ksGy58fsaQkGQlY8WVoBFNyEPMGuJin1rfoPS4lBSQ=
-github.com/go-viper/mapstructure/v2 v2.0.0-alpha.1 h1:TQcrn6Wq+sKGkpyPvppOz99zsMBaUOKXq6HSv655U1c=
-github.com/go-viper/mapstructure/v2 v2.0.0-alpha.1/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
+github.com/go-viper/mapstructure/v2 v2.2.1 h1:ZAaOCxANMuZx5RCeg0mBdEZk7DZasvvZIxtHqx8aGss=
+github.com/go-viper/mapstructure/v2 v2.2.1/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
 github.com/gobuffalo/attrs v0.0.0-20190224210810-a9411de4debd/go.mod h1:4duuawTqi2wkkpB4ePgWMaai6/Kc6WEz83bhFwpHzj0=
 github.com/gobuffalo/depgen v0.0.0-20190329151759-d478694a28d3/go.mod h1:3STtPUQYuzV0gBVOY3vy6CfMm/ljR4pABfrTeHNLHUY=
 github.com/gobuffalo/depgen v0.1.0/go.mod h1:+ifsuy7fhi15RWncXQQKjWS9JPkdah5sZvtHc2RXGlg=
@@ -1653,8 +1653,8 @@ github.com/knadh/koanf/providers/file v1.1.0 h1:MTjA+gRrVl1zqgetEAIaXHqYje0XSosx
 github.com/knadh/koanf/providers/file v1.1.0/go.mod h1:/faSBcv2mxPVjFrXck95qeoyoZ5myJ6uxN8OOVNJJCI=
 github.com/knadh/koanf/providers/fs v0.1.0 h1:9Hln9GS3bWTItAnGVFYyfkoAIxAFq7pvlF64pTNiDdQ=
 github.com/knadh/koanf/providers/fs v0.1.0/go.mod h1:Cva1yH8NBxkEeVZx8CUmF5TunbgO72E+GwqDbqpP2sE=
-github.com/knadh/koanf/v2 v2.1.1 h1:/R8eXqasSTsmDCsAyYj+81Wteg8AqrV9CP6gvsTsOmM=
-github.com/knadh/koanf/v2 v2.1.1/go.mod h1:4mnTRbZCK+ALuBXHZMjDfG9y714L7TykVnZkXbMU3Es=
+github.com/knadh/koanf/v2 v2.1.2 h1:I2rtLRqXRy1p01m/utEtpZSSA6dcJbgGVuE27kW2PzQ=
+github.com/knadh/koanf/v2 v2.1.2/go.mod h1:Gphfaen0q1Fc1HTgJgSTC4oRX9R2R5ErYMZJy8fLJBo=
 github.com/knz/go-libedit v1.10.1/go.mod h1:MZTVkCWyz0oBc7JOWP3wNAzd002ZbM/5hgShxwh4x8M=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
@@ -2167,8 +2167,8 @@ go.opentelemetry.io/collector/config/configtls v0.104.0 h1:bMmLz2+r+REpO7cDOR+sr
 go.opentelemetry.io/collector/config/configtls v0.104.0/go.mod h1:e33o7TWcKfe4ToLFyGISEPGMgp6ezf3yHRGY4gs9nKk=
 go.opentelemetry.io/collector/config/internal v0.104.0 h1:h3OkxTfXWWrHRyPEGMpJb4fH+54puSBuzm6GQbuEZ2o=
 go.opentelemetry.io/collector/config/internal v0.104.0/go.mod h1:KjH43jsAUFyZPeTOz7GrPORMQCK13wRMCyQpWk99gMo=
-go.opentelemetry.io/collector/confmap v0.104.0 h1:d3yuwX+CHpoyCh0iMv3rqb/vwAekjSm4ZDL6UK1nZSA=
-go.opentelemetry.io/collector/confmap v0.104.0/go.mod h1:F8Lue+tPPn2oldXcfqI75PPMJoyzgUsKVtM/uHZLA4w=
+go.opentelemetry.io/collector/confmap v1.24.0 h1:UUHVhkDCsVw14jPOarug9PDQE2vaB2ELPWMr7ARFBCA=
+go.opentelemetry.io/collector/confmap v1.24.0/go.mod h1:Rrhs+MWoaP6AswZp+ReQ2VO9dfOfcUjdjiSHBsG+nec=
 go.opentelemetry.io/collector/confmap/converter/expandconverter v0.104.0 h1:7BhJk71V8xhm8wUpuHG4CVRAPu8JajKj8VmGZ6zS7SA=
 go.opentelemetry.io/collector/confmap/converter/expandconverter v0.104.0/go.mod h1:o2xTZJpc65SyYPOAGOjyvWwQEqYSWT4Q4/gMfOYpAzc=
 go.opentelemetry.io/collector/confmap/provider/envprovider v0.104.0 h1:/3iSlUHH1Q3xeZc55oVekd4dibXzqgphXZI7EaYJ+ak=
@@ -2179,8 +2179,8 @@ go.opentelemetry.io/collector/confmap/provider/httpprovider v0.104.0 h1:6UreSAu6
 go.opentelemetry.io/collector/confmap/provider/httpprovider v0.104.0/go.mod h1:+vP6R5i9h+oYJNjp4bQHvtSHEu1t+CgSKIeZYZZRQXA=
 go.opentelemetry.io/collector/confmap/provider/httpsprovider v0.104.0 h1:y07I19lmp9VHZ58PJ3nwwd1wqumnIBeMxTNBSh/Vn6k=
 go.opentelemetry.io/collector/confmap/provider/httpsprovider v0.104.0/go.mod h1:WV1HOa0z3Ln5ZkwEW7Cm2pCHkfzYY9kBe0dLy8DqeYA=
-go.opentelemetry.io/collector/confmap/provider/yamlprovider v0.104.0 h1:itBGhyEbX+iz8kz3nc4PYxQx4bL7y87xXNUcGnbKPuY=
-go.opentelemetry.io/collector/confmap/provider/yamlprovider v0.104.0/go.mod h1:iPVsTBkRFHZ21UEfSGWk8c4maOzTp6BWWpTk+l6PjJI=
+go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.24.0 h1:Ncr7a3HbVpmjAvPHd0yQM/MV2p7HqJe+zvDPmHdjSCI=
+go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.24.0/go.mod h1:i7omVh3uK8efpr7/fSAcOh8Xiv3FLYL26wUuON9i1WI=
 go.opentelemetry.io/collector/connector v0.104.0 h1:Y82ytwZZ+EruWafEebO0dgWMH+TdkcSONEqZ5bm9JYA=
 go.opentelemetry.io/collector/connector v0.104.0/go.mod h1:78SEHel3B3taFnSBg/syW4OV9aU1Ec9KjgbgHf/L8JA=
 go.opentelemetry.io/collector/consumer v0.104.0 h1:Z1ZjapFp5mUcbkGEL96ljpqLIUMhRgQQpYKkDRtxy+4=
