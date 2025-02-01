@@ -37,7 +37,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	l.Info("Initializing Helm...", zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()})
-	actionCfg, err := h.actionInit(ctx, l)
+	actionCfg, kubeCfg, err := h.actionInit(ctx, l)
 	if err != nil {
 		return fmt.Errorf("unable to initialize helm actions: %w", err)
 	}
@@ -59,10 +59,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	)
 	if prevRel == nil {
 		op = "install"
-		rel, err = h.install(ctx, l, actionCfg)
+		rel, err = h.install(ctx, l, actionCfg, kubeCfg)
 	} else {
 		op = "upgrade"
-		rel, err = h.upgrade(ctx, l, actionCfg)
+		rel, err = h.upgrade(ctx, l, actionCfg, kubeCfg)
 	}
 	if err != nil {
 		h.writeErrorResult(ctx, op, err)

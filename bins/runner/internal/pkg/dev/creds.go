@@ -104,22 +104,24 @@ func (d *devver) initInstallCreds(ctx context.Context) error {
 	runnerRoleARN := awsassumerole.ExpandRoleName(install.AWSAccount.IAMRoleARN, roleName)
 	fmt.Println("assuming install runner IAM role", runnerRoleARN)
 	permissionsJSON := fmt.Sprintf(`{
-            "Effect": "Allow",
-            "Action": "sts:AssumeRole",
-            "Principal": {
-                "AWS": "%s"
-            }
-        }`, os.Getenv("NUONCTL_IAM_ROLE_ARN"))
+		"Effect": "Allow",
+		"Action": "sts:AssumeRole",
+		"Principal": {
+			"AWS": "%s"
+		}
+	}`, os.Getenv("NUONCTL_IAM_ROLE_ARN"))
 	fmt.Println("\nNOTE: for this to work, the runner role must manually give trust permissions to our support role. Please add the following JSON to", runnerRoleARN, "\n", permissionsJSON)
 
-	runnerEKSAccessJSON := fmt.Sprintf(`{
-            "Effect": "Allow",
-            "Action": "sts:AssumeRole",
-            "Principal": {
-                "AWS": "arn:aws:iam::949309607565:root"
-            }
-        }`)
-	fmt.Println("\nNOTE: for helm deploys to work, the install role must manually give trust permissions to the runner role, until runners can access the cluster.", runnerEKSAccessJSON)
+	// NOTE(fd): this principal should be the nuon/odr-<install.id> role
+	runnerEKSAccessJSON := fmt.Sprintf(`Add the following statement to the trust policy for the installRole: %s
+	{
+		"Effect": "Allow",
+		"Action": "sts:AssumeRole",
+		"Principal": {
+			"AWS": "%s"
+		}
+	}`, install.AWSAccount.IAMRoleARN, runnerRoleARN)
+	fmt.Println("\nNOTE: for helm deploys to work, the install role must manually give trust permissions to the runner role, until runners can access the cluster.\n\n", runnerEKSAccessJSON)
 
 	assumer, err := awsassumerole.New(d.v,
 		awsassumerole.WithRoleARN(runnerRoleARN),
