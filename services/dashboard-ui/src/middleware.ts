@@ -4,6 +4,8 @@ import type { NextRequest } from 'next/server'
 import { API_URL } from '@/utils/configs'
 import type { TOrg } from '@/types'
 
+// TODO(nnnnat): refactor this mess
+
 export default async function middleware(request: NextRequest) {
   const pathname = new URL(request.url).pathname
   const headers = new Headers(request.headers)
@@ -37,9 +39,18 @@ export default async function middleware(request: NextRequest) {
         redirectPath = `/${orgs[0].id}/apps`
       }
 
-      return NextResponse.redirect(new URL(redirectPath, request.url), {
-        headers,
-      })
+      if (
+        redirectPath === '/request-access' &&
+        pathname === '/request-access'
+      ) {
+        return NextResponse.next({
+          request: { headers },
+        })
+      } else {
+        return NextResponse.redirect(new URL(redirectPath, request.url), {
+          headers,
+        })
+      }
     } else {
       if (pathname === '/' || pathname.split('/')[1] === 'beta') {
         if (
