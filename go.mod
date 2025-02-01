@@ -113,13 +113,13 @@ require (
 	go.opentelemetry.io/collector/config/confighttp v0.104.0
 	go.opentelemetry.io/collector/config/configopaque v1.11.0
 	go.opentelemetry.io/collector/config/configretry v1.11.0
-	go.opentelemetry.io/collector/confmap v0.104.0
+	go.opentelemetry.io/collector/confmap v1.24.0
 	go.opentelemetry.io/collector/confmap/converter/expandconverter v0.104.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v0.104.0
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v0.104.0
 	go.opentelemetry.io/collector/confmap/provider/httpprovider v0.104.0
 	go.opentelemetry.io/collector/confmap/provider/httpsprovider v0.104.0
-	go.opentelemetry.io/collector/confmap/provider/yamlprovider v0.104.0
+	go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.24.0
 	go.opentelemetry.io/collector/connector v0.104.0
 	go.opentelemetry.io/collector/consumer v0.104.0
 	go.opentelemetry.io/collector/exporter v0.104.0
@@ -208,7 +208,7 @@ require (
 	github.com/go-openapi/strfmt v0.21.7 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-openapi/validate v0.22.1 // indirect
-	github.com/go-viper/mapstructure/v2 v2.0.0-alpha.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gogo/status v1.1.1 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/gonvenience/bunt v1.4.0 // indirect
@@ -237,7 +237,7 @@ require (
 	github.com/knadh/koanf/providers/env v0.1.0 // indirect
 	github.com/knadh/koanf/providers/file v1.1.0 // indirect
 	github.com/knadh/koanf/providers/fs v0.1.0 // indirect
-	github.com/knadh/koanf/v2 v2.1.1 // indirect
+	github.com/knadh/koanf/v2 v2.1.2 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
