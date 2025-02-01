@@ -53,7 +53,7 @@ func (s *service) getInstallComponentDeploys(ctx context.Context, installID, com
 		Where(install).
 		First(&install)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
 	}
 
 	return install.InstallDeploys, nil

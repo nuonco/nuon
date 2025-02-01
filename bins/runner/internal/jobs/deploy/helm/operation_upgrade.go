@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/release"
+	"k8s.io/client-go/rest"
 
 	"github.com/databus23/helm-diff/v3/manifest"
 	"github.com/pkg/errors"
@@ -15,13 +16,13 @@ import (
 	"github.com/powertoolsdev/mono/pkg/helm"
 )
 
-func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration) (*release.Release, error) {
+func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (*release.Release, error) {
 	l.Info("fetching previous release")
 	prevRel, err := helm.GetRelease(actionCfg, h.state.cfg.Name)
 	if prevRel == nil {
 		l.Warn("unable to fetch previous release, so assuming it failed and was not installed", zap.Error(err))
 		l.Info("attempting install instead of upgrade")
-		return h.install(ctx, l, actionCfg)
+		return h.install(ctx, l, actionCfg, kubeCfg)
 	}
 
 	l.Info("loading chart options")
@@ -88,6 +89,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.MaxHistory = 0
 	client.CleanupOnFail = false
 	client.Force = false
+
 	rel, err = client.RunWithContext(ctx, prevRel.Name, chart, values)
 	if err != nil {
 		return nil, fmt.Errorf("unable to upgrade helm release: %w", err)
@@ -99,6 +101,23 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse outputs")
 	}
+
+	ingressOutputs, err := outputs.K8SGetHelmReleaseIngresses(ctx, rel.Name, kubeCfg, l)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to retrieve ingresses for this release from k8s")
+	}
+	serviceOutputs, err := outputs.K8SGetHelmReleaseServices(ctx, rel.Name, kubeCfg, l)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to retrieve services for this release from k8s")
+	}
+	deploymentOutputs, err := outputs.K8SGetHelmReleaseDeployments(ctx, rel.Name, kubeCfg, l)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to retrieve deployments for this release from k8s")
+	}
+
+	outs["ingresses"] = ingressOutputs
+	outs["services"] = serviceOutputs
+	outs["deployments"] = deploymentOutputs
 	h.state.outputs = outs
 
 	return rel, nil
