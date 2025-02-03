@@ -1,0 +1,56 @@
+package helm
+
+import (
+	"context"
+
+	"go.uber.org/zap"
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/release"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+)
+
+func HelmUpgradeWithLogStreaming(
+	ctx context.Context,
+	client *action.Upgrade, releaseName string, chart *chart.Chart, values map[string]interface{},
+	kubeCfg *rest.Config,
+	l *zap.Logger,
+) (*release.Release, error) {
+	annotationSelectorKey := "meta.helm.sh/release-name"
+	annotationSelectorValue := chart.Metadata.Name
+	labelSelector := "app.kubernetes.io/managed-by=Helm"
+	l.Info(
+		"helmUpgradeWithLogStreaming Reached",
+		zap.String("annotation.selector.key", annotationSelectorKey),
+		zap.String("annotation.selector.value", annotationSelectorValue),
+		zap.String("label.selector", labelSelector),
+	)
+
+	// make k8s client
+	k8sClient, err := kubernetes.NewForConfig(kubeCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	// create log streamer context
+	streamCtx, cancelStreaming := context.WithCancel(ctx)
+	defer cancelStreaming()
+	streamer := NewLogStreamer(k8sClient, l)
+
+	// the bulk of the work is here
+	go streamLogs(streamCtx, cancelStreaming, streamer, k8sClient, labelSelector, annotationSelectorKey, annotationSelectorValue, l)
+
+	// execute the upgrade
+	rel, err := client.RunWithContext(ctx, releaseName, chart, values)
+	if err != nil {
+		// NOTE(fd): i suspect if there is an error, the log streams may already be closed, but we're not taking any chances
+		streamer.StopAllStreams()
+		return nil, err
+	}
+
+	// NOTE(fd): we dont' have to worry about the tail end of the logs since we just care that helm said we're good to go.
+	// if we did though, we would sleep here for a few second to let the remaining logs drain - e.g. short lived initContainer
+
+	return rel, nil
+}
