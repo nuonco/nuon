@@ -46,6 +46,7 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 		Joins("JOIN install_components ON install_components.id=install_deploys.install_component_id").
 		Preload("InstallComponent").
 		Preload("RunnerJobs").
+		Preload("ActionWorkflowRuns").
 		Preload("LogStream").
 		Preload("ComponentBuild").
 		Preload("ComponentBuild.ComponentConfigConnection").

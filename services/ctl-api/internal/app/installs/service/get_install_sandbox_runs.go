@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -44,6 +45,7 @@ func (s *service) getInstallSandboxRuns(ctx context.Context, installID string) (
 		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig.PublicGitVCSConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
+		Preload("ActionWorkflowRuns").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig.VCSConnection").
 		Preload("RunnerJob").
 		Preload("LogStream").
