@@ -7,15 +7,15 @@ env:
   RUNNER_API_URL: http://localhost:8083
 
   # NOTE: by default, run-local will fetch the first runner from the api and set these for you.
-  # 
-  # However, if you are working with the runner and testing jobs, you probably want to fetch the runner-id and set it 
+  #
+  # However, if you are working with the runner and testing jobs, you probably want to fetch the runner-id and set it
   # yourself, so you can use a runner for a specific org or install.
   # RUNNER_ID: <REPLACE-ME>
   BUNDLE_DIR: "./bundle"
 
   # enable the log level debug for outputting more information locally for the system logger.
   #
-  # NOTE(jm): this will not enable all debug output, as the logs are also controlled via the api but for things like 
+  # NOTE(jm): this will not enable all debug output, as the logs are also controlled via the api but for things like
   # metrics this is useful.
   # LOG_LEVEL: DEBUG
   INTERNAL_API_URL: http://localhost:8082
@@ -35,11 +35,11 @@ local_cmds:
   - /tmp/runner run-local org
   - /tmp/runner run-local install
 
-# by default, using `run-earthly` will only run the runner with the most current org, however you can use `exec-earthly  
+# by default, using `run-earthly` will only run the runner with the most current org, however you can use `exec-earthly
 # installs"` or `exec-earthly <runner-id>` to run a specific runner.
 earthly_cmds:
   - cmd: run-local
-    args: 
+    args:
       - orgs
 earthly_target: oci-artifacts
 earthly_env:
