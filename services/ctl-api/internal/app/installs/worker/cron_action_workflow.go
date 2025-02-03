@@ -2,9 +2,10 @@ package worker
 
 import (
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/workflow"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	"go.temporal.io/sdk/workflow"
 )
 
 // Run an action workflow config from a cron trigger
@@ -19,6 +20,8 @@ func (w *Workflows) CronActionWorkflow(ctx workflow.Context, req *CronActionWork
 		InstallID:        req.InstallID,
 		ActionWorkflowID: req.ActionWorkflowID,
 		TriggerType:      app.ActionWorkflowTriggerTypeCron,
+		TriggeredByID:    req.ActionWorkflowID,
+		TriggeredByType:  "action_workflows",
 		RunEnvVars:       req.RunEnvVars,
 	})
 	if err != nil {

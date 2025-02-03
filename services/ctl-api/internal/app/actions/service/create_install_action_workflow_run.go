@@ -10,10 +10,13 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	installsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
 type CreateInstallActionWorkflowRunRequest struct {
 	ActionWorkFlowConfigID string `json:"action_workflow_config_id" binding:"required"`
+
+	RunEnvVars map[string]string `json:"run_env_vars"`
 }
 
 func (c *CreateInstallActionWorkflowRunRequest) Validate(v *validator.Validate) error {
@@ -68,7 +71,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		return
 	}
 
-	run, err := s.createActionWorkflowRun(ctx, installID, awc)
+	run, err := s.createActionWorkflowRun(ctx, installID, awc, req.RunEnvVars)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
@@ -82,9 +85,8 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, run)
 }
 
-func (s *service) createActionWorkflowRun(ctx *gin.Context, installID string, cfg *app.ActionWorkflowConfig) (*app.InstallActionWorkflowRun, error) {
+func (s *service) createActionWorkflowRun(ctx *gin.Context, installID string, cfg *app.ActionWorkflowConfig, runEnvVars map[string]string) (*app.InstallActionWorkflowRun, error) {
 	steps := make([]app.InstallActionWorkflowRunStep, 0)
-
 	for _, step := range cfg.Steps {
 		steps = append(steps, app.InstallActionWorkflowRunStep{
 			Status: app.InstallActionWorkflowRunStepStatusPending,
@@ -92,26 +94,23 @@ func (s *service) createActionWorkflowRun(ctx *gin.Context, installID string, cf
 		})
 	}
 
-	newRun := app.InstallActionWorkflowRun{
-		InstallID:              installID,
-		ActionWorkflowConfigID: cfg.ID,
-		TriggerType:            app.ActionWorkflowTriggerTypeManual,
-		Status:                 app.InstallActionRunStatusQueued,
-		StatusDescription:      "Queued",
-		Steps:                  steps,
+	trigger := app.InstallActionWorkflowManualTrigger{
+		InstallActionWorkflowRun: app.InstallActionWorkflowRun{
+			InstallID:              installID,
+			ActionWorkflowConfigID: cfg.ID,
+			TriggerType:            app.ActionWorkflowTriggerTypeManual,
+			Status:                 app.InstallActionRunStatusQueued,
+			StatusDescription:      "Queued",
+			Steps:                  steps,
+			RunEnvVars:             generics.ToHstore(runEnvVars),
+		},
 	}
 
 	res := s.db.WithContext(ctx).
-		Create(&newRun)
+		Create(&trigger)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create action workflow: %w", res.Error)
 	}
 
-	// make sure to fetch latest
-	extantRun, err := s.findInstallActionWorkflowRun(ctx, newRun.ID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get action workflow run: %w", err)
-	}
-
-	return extantRun, nil
+	return &trigger.InstallActionWorkflowRun, nil
 }

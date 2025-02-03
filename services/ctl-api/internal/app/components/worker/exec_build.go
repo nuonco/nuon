@@ -54,6 +54,10 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		Op:          app.RunnerJobOperationTypeBuild,
 		Type:        comp.Type.BuildJobType(),
 		LogStreamID: logStreamID,
+		Metadata: map[string]string{
+			"component_id":       comp.ID,
+			"component_build_id": buildID,
+		},
 	})
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to create job")

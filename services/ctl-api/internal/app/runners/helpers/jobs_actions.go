@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
 func (h *Helpers) CreateActionsWorkflowRunJob(ctx context.Context,
 	runnerID string,
 	runID string, logStreamID string,
 	cfg *app.ActionWorkflowConfig,
+	metadata map[string]string,
 ) (*app.RunnerJob, error) {
 	job := &app.RunnerJob{
 		RunnerID:          runnerID,
@@ -26,7 +28,8 @@ func (h *Helpers) CreateActionsWorkflowRunJob(ctx context.Context,
 		Operation:         app.RunnerJobOperationTypeExec,
 		OwnerType:         "install_action_workflow_runs",
 		OwnerID:           runID,
-		LogStreamID:       generics.ToPtr(logStreamID),
+		LogStreamID:       pkggenerics.ToPtr(logStreamID),
+		Metadata:          generics.ToHstore(metadata),
 	}
 
 	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {

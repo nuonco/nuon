@@ -41,8 +41,9 @@ type InstallSandboxRun struct {
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
 	// runner details
-	RunnerJob RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;"`
-	LogStream LogStream   `json:"log_stream" gorm:"polymorphic:Owner;"`
+	RunnerJob          RunnerJob                  `json:"runner_job" gorm:"polymorphic:Owner;"`
+	LogStream          LogStream                  `json:"log_stream" gorm:"polymorphic:Owner;"`
+	ActionWorkflowRuns []InstallActionWorkflowRun `json:"action_workflow_runs" gorm:"polymorphic:TriggeredBy;"`
 
 	// used for RLS
 	OrgID     string  `json:"org_id" gorm:"notnull" swaggerignore:"true"`

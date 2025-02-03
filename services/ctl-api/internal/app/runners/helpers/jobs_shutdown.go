@@ -5,9 +5,13 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
-func (h *Helpers) CreateShutdownJob(ctx context.Context, runnerID string) (*app.RunnerJob, error) {
+func (h *Helpers) CreateShutdownJob(ctx context.Context,
+	runnerID string,
+	metadata map[string]string,
+) (*app.RunnerJob, error) {
 	job := &app.RunnerJob{
 		RunnerID:          runnerID,
 		QueueTimeout:      DefaultQueueTimeout,
@@ -17,6 +21,7 @@ func (h *Helpers) CreateShutdownJob(ctx context.Context, runnerID string) (*app.
 		Status:            app.RunnerJobStatusQueued,
 		StatusDescription: string(app.RunnerJobStatusQueued),
 		Type:              app.RunnerJobTypeShutDown,
+		Metadata:          generics.ToHstore(metadata),
 	}
 
 	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {
