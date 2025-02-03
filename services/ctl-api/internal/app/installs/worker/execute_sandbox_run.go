@@ -25,8 +25,10 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 	}
 
 	if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
-		InstallID: install.ID,
-		Trigger:   app.ActionWorkflowTriggerTypePreSandboxRun,
+		InstallID:       install.ID,
+		TriggerType:     app.ActionWorkflowTriggerTypePreSandboxRun,
+		TriggeredByID:   installRun.ID,
+		TriggeredByType: "install_sandbox_runs",
 		RunEnvVars: generics.ToPtrStringMap(map[string]string{
 			"TRIGGER":          string(app.ActionWorkflowTriggerTypePreSandboxRun),
 			"SANDBOX_RUN_TYPE": string(installRun.RunType),
@@ -44,6 +46,11 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 		OwnerType: "install_sandbox_runs",
 		OwnerID:   installRun.ID,
 		Op:        op,
+		Metadata: map[string]string{
+			"install_id":       install.ID,
+			"sandbox_run_id":   installRun.ID,
+			"sandbox_run_type": string(installRun.RunType),
+		},
 	})
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create runner job")
@@ -132,8 +139,10 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 
 	// execute actions
 	if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
-		InstallID: install.ID,
-		Trigger:   app.ActionWorkflowTriggerTypePostSandboxRun,
+		InstallID:       install.ID,
+		TriggerType:     app.ActionWorkflowTriggerTypePostSandboxRun,
+		TriggeredByID:   installRun.ID,
+		TriggeredByType: "install_sandbox_runs",
 		RunEnvVars: generics.ToPtrStringMap(map[string]string{
 			"TRIGGER":          string(app.ActionWorkflowTriggerTypePostSandboxRun),
 			"SANDBOX_RUN_TYPE": string(installRun.RunType),

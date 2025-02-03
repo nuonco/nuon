@@ -9,9 +9,10 @@ import (
 )
 
 type CreateActionWorkflowRunRunnerJob struct {
-	ActionWorkflowRunID string `validate:"required"`
-	RunnerID            string `validate:"required"`
-	LogStreamID         string `validate:"required"`
+	ActionWorkflowRunID string            `validate:"required"`
+	RunnerID            string            `validate:"required"`
+	LogStreamID         string            `validate:"required"`
+	Metadata            map[string]string `validate:"metadata"`
 }
 
 // @temporal-gen activity
@@ -27,6 +28,7 @@ func (a *Activities) CreateActionWorkflowRunRunnerJob(ctx context.Context, req *
 		req.ActionWorkflowRunID,
 		req.LogStreamID,
 		&run.ActionWorkflowConfig,
+		req.Metadata,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create runner job")

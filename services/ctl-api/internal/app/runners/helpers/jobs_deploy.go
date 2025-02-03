@@ -4,11 +4,19 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
-func (h *Helpers) CreateDeployJob(ctx context.Context, runnerID string, typ app.RunnerJobType, op app.RunnerJobOperationType, deployID string, logStreamID string) (*app.RunnerJob, error) {
+func (h *Helpers) CreateDeployJob(ctx context.Context,
+	runnerID string,
+	typ app.RunnerJobType,
+	op app.RunnerJobOperationType,
+	deployID string,
+	logStreamID string,
+	metadata map[string]string,
+) (*app.RunnerJob, error) {
 	job := &app.RunnerJob{
 		RunnerID:          runnerID,
 		QueueTimeout:      DefaultQueueTimeout,
@@ -22,7 +30,8 @@ func (h *Helpers) CreateDeployJob(ctx context.Context, runnerID string, typ app.
 		Operation:         op,
 		OwnerType:         "install_deploys",
 		OwnerID:           deployID,
-		LogStreamID:       generics.ToPtr(logStreamID),
+		LogStreamID:       pkggenerics.ToPtr(logStreamID),
+		Metadata:          generics.ToHstore(metadata),
 	}
 
 	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {
