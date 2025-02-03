@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
 func (h *Helpers) CreateRunnerJob(ctx context.Context,
@@ -15,6 +16,7 @@ func (h *Helpers) CreateRunnerJob(ctx context.Context,
 	typ app.RunnerJobType,
 	op app.RunnerJobOperationType,
 	logStreamID string,
+	metadata map[string]string,
 ) (*app.RunnerJob, error) {
 	job := &app.RunnerJob{
 		RunnerID:          runnerID,
@@ -28,7 +30,8 @@ func (h *Helpers) CreateRunnerJob(ctx context.Context,
 		StatusDescription: string(app.RunnerJobStatusQueued),
 		Type:              typ,
 		Operation:         op,
-		LogStreamID:       generics.ToPtr(logStreamID),
+		LogStreamID:       pkggenerics.ToPtr(logStreamID),
+		Metadata:          generics.ToHstore(metadata),
 	}
 
 	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {

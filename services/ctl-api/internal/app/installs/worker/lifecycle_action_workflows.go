@@ -14,13 +14,16 @@ import (
 // Run all workflow actions defined for a lifecycle hook
 type LifecycleActionWorkflowsRequest struct {
 	InstallID string `validate:"required" json:"install_id"`
-	Trigger   app.ActionWorkflowTriggerType
 
-	RunEnvVars map[string]*string `validate:"required" json:"data"`
+	TriggerType     app.ActionWorkflowTriggerType `json:"trigger_type"`
+	TriggeredByID   string                        `json:"triggered_by_id"`
+	TriggeredByType string                        `json:"triggered_by_type"`
+
+	RunEnvVars map[string]*string `validate:"required" json:"run_env_vars"`
 }
 
 func LifecycleActionWorkflowsID(req *LifecycleActionWorkflowsRequest) string {
-	return fmt.Sprintf("action-workflows-lifecycle-%s-%s", req.Trigger, req.InstallID)
+	return fmt.Sprintf("action-workflows-lifecycle-%s-%s", req.TriggerType, req.InstallID)
 }
 
 // @temporal-gen workflow
@@ -32,7 +35,7 @@ func (w *Workflows) LifecycleActionWorkflows(ctx workflow.Context, req *Lifecycl
 	if err != nil {
 		return err
 	}
-	l.Info("executing actions with trigger " + string(req.Trigger))
+	l.Info("executing actions with trigger " + string(req.TriggerType))
 
 	workflows, err := activities.AwaitGetActionWorkflowsByInstallID(ctx, req.InstallID)
 	if err != nil {
@@ -46,12 +49,19 @@ func (w *Workflows) LifecycleActionWorkflows(ctx workflow.Context, req *Lifecycl
 		}
 
 		for _, trigger := range cfg.LifecycleTriggers {
-			if trigger.Type != req.Trigger {
+			if trigger.Type != req.TriggerType {
 				continue
 			}
 
 			l.Info("executing action " + workflow.Name)
-			if err := w.lifecycleActionWorkflow(ctx, req.InstallID, workflow.ID, req.Trigger, req.RunEnvVars); err != nil {
+			if err := w.lifecycleActionWorkflow(ctx,
+				req.InstallID,
+				workflow.ID,
+				req.TriggerType,
+				req.RunEnvVars,
+				req.TriggeredByID,
+				req.TriggeredByType,
+			); err != nil {
 				return errors.Wrap(err, "unable to sync action workflow trigger")
 			}
 		}
@@ -60,11 +70,20 @@ func (w *Workflows) LifecycleActionWorkflows(ctx workflow.Context, req *Lifecycl
 	return nil
 }
 
-func (w *Workflows) lifecycleActionWorkflow(ctx workflow.Context, installID, actionWorkflowID string, triggerType app.ActionWorkflowTriggerType, runEnvVars map[string]*string) error {
+func (w *Workflows) lifecycleActionWorkflow(ctx workflow.Context,
+	installID,
+	actionWorkflowID string,
+	triggerType app.ActionWorkflowTriggerType,
+	runEnvVars map[string]*string,
+	triggeredByID string,
+	triggeredByType string,
+) error {
 	actionWorkflowRun, err := activities.AwaitCreateActionWorkflowRun(ctx, &activities.CreateActionWorkflowRunRequest{
 		InstallID:        installID,
 		ActionWorkflowID: actionWorkflowID,
 		TriggerType:      triggerType,
+		TriggeredByID:    triggeredByID,
+		TriggeredByType:  triggeredByType,
 		RunEnvVars:       runEnvVars,
 	})
 	if err != nil {

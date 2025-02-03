@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -45,6 +46,9 @@ type InstallActionWorkflowRun struct {
 
 	TriggerType ActionWorkflowTriggerType `json:"trigger_type" gorm:"notnull;default:''"`
 
+	TriggeredByID   string `json:"triggered_by_id" gorm:"type:text;check:triggered_by_id_checker,char_length(id)=26"`
+	TriggeredByType string `json:"triggered_by_type" gorm:"type:text;"`
+
 	ActionWorkflowConfigID string               `json:"action_workflow_config_id" gorm:"notnull"`
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"config"`
 
@@ -53,12 +57,9 @@ type InstallActionWorkflowRun struct {
 	RunEnvVars pgtype.Hstore `json:"run_env_vars" gorm:"type:hstore" swaggertype:"object,string"`
 
 	// after query
-	// TODO: update runner to track start and finish timestamps
 
-	ExecutionTime time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer"`
-
-	// after query
-	Outputs map[string]interface{} `json:"outputs" gorm:"-"`
+	ExecutionTime time.Duration          `json:"execution_time" gorm:"-" swaggertype:"primitive,integer"`
+	Outputs       map[string]interface{} `json:"outputs" gorm:"-"`
 }
 
 func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {

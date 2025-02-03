@@ -13,16 +13,33 @@ type CreateActionWorkflowRunRequest struct {
 	InstallID        string `json:"install_id" validate:"required"`
 	ActionWorkflowID string `json:"action_workflow_id" validate:"required"`
 
-	TriggerType app.ActionWorkflowTriggerType `json:"trigger_type" validate:"required"`
-	RunEnvVars  map[string]*string            `json:"run_env_vars"`
+	TriggerType     app.ActionWorkflowTriggerType `json:"trigger_type" validate:"required"`
+	TriggeredByID   string                        `json:"triggered_by_id"`
+	TriggeredByType string                        `json:"triggered_by_type"`
+
+	RunEnvVars map[string]*string `json:"run_env_vars"`
 }
 
 // @temporal-gen activity
 func (a *Activities) CreateActionWorkflowRun(ctx context.Context, req *CreateActionWorkflowRunRequest) (*app.InstallActionWorkflowRun, error) {
-	return a.createActionWorkflowRun(ctx, req.InstallID, req.ActionWorkflowID, req.TriggerType, req.RunEnvVars)
+	return a.createActionWorkflowRun(ctx,
+		req.InstallID,
+		req.ActionWorkflowID,
+		req.TriggerType,
+		req.RunEnvVars,
+		req.TriggeredByID,
+		req.TriggeredByType,
+	)
 }
 
-func (a *Activities) createActionWorkflowRun(ctx context.Context, installID, actionWorkflowID string, triggerType app.ActionWorkflowTriggerType, runEnvVars map[string]*string) (*app.InstallActionWorkflowRun, error) {
+func (a *Activities) createActionWorkflowRun(ctx context.Context,
+	installID,
+	actionWorkflowID string,
+	triggerType app.ActionWorkflowTriggerType,
+	runEnvVars map[string]*string,
+	triggeredByID string,
+	triggeredByType string,
+) (*app.InstallActionWorkflowRun, error) {
 	cfg, err := a.getActionWorkflowLatestConfig(ctx, actionWorkflowID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get latest action workflow config")
@@ -44,6 +61,8 @@ func (a *Activities) createActionWorkflowRun(ctx context.Context, installID, act
 		StatusDescription:      "Queued",
 		Steps:                  steps,
 		RunEnvVars:             pgtype.Hstore(runEnvVars),
+		TriggeredByID:          triggeredByID,
+		TriggeredByType:        triggeredByType,
 	}
 
 	res := a.db.WithContext(ctx).
