@@ -17,6 +17,7 @@ command = "env"
 [steps.public_repo]
 repo = "nuonco/actions"
 branch = "main"
+directory = "step_1"
 
 [steps.env_vars]
 name = "TEST_NUON_VAR"
@@ -31,6 +32,11 @@ command = "env"
 [steps.public_repo]
 repo = "nuonco/actions"
 branch = "main"
+directory = "step_2"
+
+[steps.env_vars]
+name = "NAMESPACE"
+value = "{{.nuon.install.id}}"
 
 # print namespace logs
 [[steps]]
@@ -39,7 +45,7 @@ command = "./kube/namespace-logs"
 [steps.public_repo]
 repo = "nuonco/actions"
 branch = "main"
-
+directory = "step_3"
 
 [steps.env_vars]
 name = "NAMESPACE"

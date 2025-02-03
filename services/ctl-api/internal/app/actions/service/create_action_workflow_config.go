@@ -16,14 +16,14 @@ import (
 
 type CreateActionWorkflowConfigRequest struct {
 	AppConfigID string                                     `json:"app_config_id" validate:"required"`
-	Triggers    []CreateActionWorkflowConfigTriggerRequest `json:"triggers" validate:"required"`
-	Steps       []CreateActionWorkflowConfigStepRequest    `json:"steps" validate:"required"`
+	Triggers    []CreateActionWorkflowConfigTriggerRequest `json:"triggers" validate:"required,dive"`
+	Steps       []CreateActionWorkflowConfigStepRequest    `json:"steps" validate:"required,dive"`
 	Timeout     time.Duration                              `json:"timeout" swaggertype:"primitive,integer"`
 }
 
 type CreateActionWorkflowConfigTriggerRequest struct {
 	Type         app.ActionWorkflowTriggerType `json:"type" validate:"required"`
-	CronSchedule string                        `json:"cron_schedule,omitempty"`
+	CronSchedule string                        `json:"cron_schedule,omitempty" validate:"cron_schedule"`
 }
 
 type CreateActionWorkflowConfigStepRequest struct {
