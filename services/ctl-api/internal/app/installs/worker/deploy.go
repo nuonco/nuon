@@ -159,8 +159,10 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 
 	// run predeploy hooks
 	if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
-		InstallID: install.ID,
-		Trigger:   app.ActionWorkflowTriggerTypePreDeploy,
+		InstallID:       install.ID,
+		TriggerType:     app.ActionWorkflowTriggerTypePreDeploy,
+		TriggeredByID:   installDeploy.ID,
+		TriggeredByType: "install_deploys",
 		RunEnvVars: generics.ToPtrStringMap(map[string]string{
 			"TRIGGER":     string(app.ActionWorkflowTriggerTypePreDeploy),
 			"DEPLOY_TYPE": string(installDeploy.Type),
@@ -183,8 +185,10 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 
 	// run hooks after the deploy
 	if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
-		InstallID: install.ID,
-		Trigger:   app.ActionWorkflowTriggerTypePostDeploy,
+		InstallID:       install.ID,
+		TriggerType:     app.ActionWorkflowTriggerTypePostDeploy,
+		TriggeredByID:   installDeploy.ID,
+		TriggeredByType: "install_deploys",
 		RunEnvVars: generics.ToPtrStringMap(map[string]string{
 			"TRIGGER":     string(app.ActionWorkflowTriggerTypePostDeploy),
 			"DEPLOY_TYPE": string(installDeploy.Type),
