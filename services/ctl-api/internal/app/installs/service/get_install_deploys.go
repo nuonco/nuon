@@ -41,6 +41,7 @@ func (s *service) GetInstallDeploys(ctx *gin.Context) {
 func (s *service) getInstallDeploys(ctx context.Context, installID string) ([]*app.InstallDeploy, error) {
 	var installDeploys []*app.InstallDeploy
 	res := s.db.WithContext(ctx).
+		Preload("ActionWorkflowRuns").
 		Preload("InstallComponent").
 		Preload("InstallComponent.Component").
 		Preload("ComponentBuild").

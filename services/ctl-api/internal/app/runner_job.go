@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -212,6 +213,8 @@ type RunnerJob struct {
 
 	StartedAt  time.Time `json:"started_at"  gorm:"default:null"`
 	FinishedAt time.Time `json:"finished_at" gorm:"default:null"`
+
+	Metadata pgtype.Hstore `json:"metadata" gorm:"type:hstore" swaggertype:"object,string"`
 
 	// read only fields from view
 

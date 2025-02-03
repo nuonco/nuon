@@ -62,6 +62,8 @@ type InstallDeploy struct {
 	RunnerJobs []RunnerJob `json:"runner_jobs" gorm:"polymorphic:Owner;"`
 	LogStream  LogStream   `json:"log_stream" gorm:"polymorphic:Owner;"`
 
+	ActionWorkflowRuns []InstallActionWorkflowRun `json:"action_workflow_runs" gorm:"polymorphic:TriggeredBy;"`
+
 	ComponentBuildID string         `json:"build_id" gorm:"notnull"`
 	ComponentBuild   ComponentBuild `faker:"-" json:"-"`
 

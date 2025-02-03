@@ -41,6 +41,12 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 		Op:          installDeploy.Type.RunnerJobOperationType(),
 		Type:        build.ComponentConfigConnection.Type.SyncJobType(),
 		LogStreamID: logStreamID,
+		Metadata: map[string]string{
+			"install_id":           install.ID,
+			"deploy_id":            installDeploy.ID,
+			"install_component_id": installDeploy.InstallComponentID,
+			"component_id":         build.ComponentConfigConnection.ComponentID,
+		},
 	})
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")

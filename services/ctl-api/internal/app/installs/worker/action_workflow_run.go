@@ -74,6 +74,11 @@ func (w *Workflows) actionWorkflowRun(ctx workflow.Context, installID, actionWor
 		ActionWorkflowRunID: actionWorkflowRunID,
 		RunnerID:            run.Install.RunnerID,
 		LogStreamID:         ls.ID,
+		Metadata: map[string]string{
+			"install_id":             installID,
+			"action_workflow_run_id": run.ID,
+			"action_workflow_id":     run.ActionWorkflowConfig.ActionWorkflowID,
+		},
 	})
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
