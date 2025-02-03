@@ -90,7 +90,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.CleanupOnFail = false
 	client.Force = false
 
-	rel, err = client.RunWithContext(ctx, prevRel.Name, chart, values)
+	rel, err = helm.HelmUpgradeWithLogStreaming(ctx, client, prevRel.Name, chart, values, kubeCfg, l)
 	if err != nil {
 		return nil, fmt.Errorf("unable to upgrade helm release: %w", err)
 	}
