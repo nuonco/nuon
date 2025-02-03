@@ -384,3 +384,17 @@ module "nuon-eks-permissions" {
     github = github.nuon
   }
 }
+
+module "nuon-policies" {
+  source           = "./modules/repository"
+  name             = "policies"
+  description      = "Default policies for sandboxes and runner-jobs."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
