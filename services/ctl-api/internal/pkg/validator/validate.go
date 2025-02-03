@@ -7,5 +7,6 @@ func New() *validator.Validate {
 
 	v.RegisterValidation("interpolatedName", interpolatedNameValidator)
 	v.RegisterValidation("entityName", entityNameValidator)
+	v.RegisterValidation("cron_schedule", cronScheduleValidator)
 	return v
 }

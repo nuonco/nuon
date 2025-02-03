@@ -16,7 +16,7 @@ type interpolatedNameString struct {
 
 func InterpolatedName(v *validator.Validate, val string) error {
 	obj := interpolatedNameString{
-		Val: val,
+Val: val,
 	}
 
 	return v.Struct(obj)
