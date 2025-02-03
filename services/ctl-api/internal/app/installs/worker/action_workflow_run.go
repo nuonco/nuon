@@ -76,6 +76,7 @@ func (w *Workflows) actionWorkflowRun(ctx workflow.Context, installID, actionWor
 		LogStreamID:         ls.ID,
 		Metadata: map[string]string{
 			"install_id":             installID,
+			"action_workflow_name":   run.ActionWorkflowConfig.ActionWorkflow.Name,
 			"action_workflow_run_id": run.ID,
 			"action_workflow_id":     run.ActionWorkflowConfig.ActionWorkflowID,
 		},
