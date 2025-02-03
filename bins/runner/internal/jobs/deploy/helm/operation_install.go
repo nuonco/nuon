@@ -63,9 +63,9 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 
 	l.Info("running helm install")
 	client.DryRun = false
-	rel, err = client.RunWithContext(ctx, chart, values)
+	rel, err = helm.HelmInstallWithLogStreaming(ctx, client, chart, values, kubeCfg, l)
 	if err != nil {
-		return nil, fmt.Errorf("unable to install chart: %w", err)
+		return nil, fmt.Errorf("unable to upgrade helm release: %w", err)
 	}
 
 	// NOTE(jm): we parse these here, so we have more context and the hanging action client, vs passing more stuff around.
