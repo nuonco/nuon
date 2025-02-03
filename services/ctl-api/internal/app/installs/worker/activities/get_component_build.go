@@ -20,6 +20,7 @@ func (a *Activities) GetComponentBuild(ctx context.Context, req GetComponentBuil
 
 		// load component config connection
 		Preload("ComponentConfigConnection").
+		Preload("ComponentConfigConnection.Component").
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig").
 		Preload("ComponentConfigConnection.HelmComponentConfig").
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig").

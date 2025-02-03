@@ -48,6 +48,7 @@ func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, insta
 			"deploy_id":            installDeploy.ID,
 			"install_component_id": installDeploy.InstallComponentID,
 			"component_id":         build.ComponentConfigConnection.ComponentID,
+			"component_name":       build.ComponentConfigConnection.Component.Name,
 		},
 	})
 	if err != nil {

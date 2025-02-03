@@ -30,7 +30,7 @@ type ComponentConfigConnection struct {
 	Org   Org    `json:"-" faker:"-"`
 
 	ComponentID string    `json:"component_id" gorm:"notnull"`
-	Component   Component `json:"-"`
+	Component   Component `json:"-" temporaljson:"component"`
 
 	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
