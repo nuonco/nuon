@@ -37,7 +37,7 @@ type ComponentBuild struct {
 	LogStream LogStream `json:"log_stream" gorm:"polymorphic:Owner;"`
 
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id" gorm:"notnull"`
-	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
+	ComponentConfigConnection   ComponentConfigConnection `json:"-" temporaljson:"component_config_connection"`
 
 	VCSConnectionCommitID *string              `json:"-"`
 	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit"`

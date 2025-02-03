@@ -46,6 +46,7 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 			"deploy_id":            installDeploy.ID,
 			"install_component_id": installDeploy.InstallComponentID,
 			"component_id":         build.ComponentConfigConnection.ComponentID,
+			"component_name":       build.ComponentConfigConnection.Component.Name,
 		},
 	})
 	if err != nil {
