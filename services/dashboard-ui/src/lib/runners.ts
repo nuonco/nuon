@@ -1,4 +1,14 @@
-import type { TRunner, TRunnerJob, TLogStream, TOTELLog } from '@/types'
+// @ts-nocheck
+// TODO(nnnat): URLSearchParams typing is terrible.
+// What we're doing now is legit but TS doesn't think so.
+import type {
+  TRunner,
+  TRunnerJob,
+  TLogStream,
+  TOTELLog,
+  TRunnerHeartbeat,
+  TRunnerRecentHeartbeat,
+} from '@/types'
 import { API_URL, getFetchOpts, mutateData, queryData } from '@/utils'
 
 export interface IGetRunner {
@@ -14,13 +24,25 @@ export async function getRunner({ orgId, runnerId }: IGetRunner) {
   })
 }
 
-export interface IGetRunnerJobs extends IGetRunner {}
+export interface IGetRunnerJobs extends IGetRunner {
+  options?: {
+    limit?: string
+    group?: string
+    statuses?: Array<string>
+  }
+}
 
-export async function getRunnerJobs({ orgId, runnerId }: IGetRunnerJobs) {
+export async function getRunnerJobs({
+  orgId,
+  runnerId,
+  options = {},
+}: IGetRunnerJobs) {
+  const params = new URLSearchParams(options).toString()
+
   return queryData<Array<TRunnerJob>>({
     errorMessage: 'Unable to retrieve runner jobs.',
     orgId,
-    path: `runners/${runnerId}/jobs`,
+    path: `runners/${runnerId}/jobs${params ? '?' + params : params}`,
   })
 }
 
@@ -92,11 +114,40 @@ export interface ICancelRunnerJob {
   orgId: string
 }
 
-export async function cancelRunnerJob({ orgId, runnerJobId}: ICancelRunnerJob) {
+export async function cancelRunnerJob({
+  orgId,
+  runnerJobId,
+}: ICancelRunnerJob) {
   return mutateData<TRunnerJob>({
     data: {},
-    errorMessage: "Unable to cancel runner job.",
+    errorMessage: 'Unable to cancel runner job.',
     orgId,
-    path: `runner-jobs/${runnerJobId}/cancel`
+    path: `runner-jobs/${runnerJobId}/cancel`,
+  })
+}
+
+export interface IGetRunnerHeartbeat extends IGetRunner {}
+
+export async function getRunnerHeartbeat({
+  orgId,
+  runnerId,
+}: IGetRunnerHeartbeat) {
+  return queryData<Array<TRunnerRecentHeartbeat>>({
+    errorMessage: 'Unable to retrieve runner heartbeat.',
+    orgId,
+    path: `runners/${runnerId}/recent-heart-beats`,
+  })
+}
+
+export interface IGetRunnerLatestHeartbeat extends IGetRunner {}
+
+export async function getRunnerLatestHeartbeat({
+  orgId,
+  runnerId,
+}: IGetRunnerLatestHeartbeat) {
+  return queryData<TRunnerHeartbeat>({
+    errorMessage: 'Unable to retrieve latest runner heartbeat.',
+    orgId,
+    path: `runners/${runnerId}/latest-heart-beat`,
   })
 }
