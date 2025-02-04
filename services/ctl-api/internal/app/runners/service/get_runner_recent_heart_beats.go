@@ -58,8 +58,8 @@ func (s *service) getRunnerRecentHeartBeats(ctx context.Context, runnerID string
 
 	err := s.chDB.WithContext(ctx).
 		Model(&runnerHeartBeat).
-		Select("runner_id, DATE_TRUNC('minute', created_at) AS truncated_time, COUNT(*) AS record_count").
-		Where("runner_id = ? AND EXTRACT(MINUTE FROM created_at) % 2 = 0 AND created_at > NOW() - INTERVAL '1 hour'", runnerID).
+		Select("runner_id, DATE_TRUNC('minute', DATE_TRUNC('minute', created_at) - toIntervalMinute(EXTRACT(MINUTE FROM created_at) % 2) AS truncated_time, COUNT(*) AS record_count").
+		Where("runner_id = ? AND created_at > NOW() - INTERVAL 62 MINUTE AND truncated_time > NOW() - INTERVAL 60 MINUTE", runnerID).
 		Group("runner_id, truncated_time").
 		Order("truncated_time ASC").
 		Scan(&results).Error
