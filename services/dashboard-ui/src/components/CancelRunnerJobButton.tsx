@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { Check, XCircle } from '@phosphor-icons/react'
-import { Button } from '@/components/Button'
+import { Button, type IButton } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Text } from '@/components/Typography'
@@ -42,11 +42,11 @@ const cancelJobOptions: Record<TCancelJobType, TCancelJobData> = {
   },
 }
 
-interface ICancelRunnerJobButton {
+interface ICancelRunnerJobButton extends IButton {
   jobType: TCancelJobType
   runnerJobId: string
   orgId: string
-  onComplete?: () => void
+  //onComplete?: () => void
 }
 
 export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
@@ -115,7 +115,7 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
                   setIsKickedOff(true)
                   setIsConfirmOpen(false)
                   setHasBeenCanceled(true)
-                  if (props.onComplete) props.onComplete()
+                  //if (props.onComplete) props.onComplete()
                 })
                 .catch((error) => {
                   setIsLoading(false)
@@ -144,6 +144,7 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
         onClick={() => {
           setIsConfirmOpen(true)
         }}
+        {...props}
       >
         {cancelJobData.buttonText}
       </Button>

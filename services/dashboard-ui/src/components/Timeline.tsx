@@ -14,9 +14,13 @@ export const EventStatus: FC<{ status?: string }> = ({
   const statusColor = {
     'bg-green-800 dark:bg-green-500':
       status === 'finished' || status === 'active',
-    'bg-red-600 dark:bg-red-500': status === 'failed' || status === 'error',
+    'bg-red-600 dark:bg-red-500':
+      status === 'failed' || status === 'error' || status === 'unknown',
     'bg-cool-grey-600 dark:bg-cool-grey-500':
-      status === 'noop' || status === 'pending' || status === 'inactive',
+      status === 'noop' ||
+      status === 'pending' ||
+      status === 'inactive' ||
+      status === 'cancelled',
     'bg-orange-800 dark:bg-orange-500':
       status === 'executing' ||
       status === 'waiting' ||
@@ -26,7 +30,8 @@ export const EventStatus: FC<{ status?: string }> = ({
       status === 'queued' ||
       status === 'planning' ||
       status === 'syncing' ||
-      status === 'deploying',
+      status === 'deploying' ||
+      status === 'available',
   }
 
   return (
@@ -42,7 +47,8 @@ export const EventStatus: FC<{ status?: string }> = ({
           status === 'planning' ||
           status === 'pending' ||
           status === 'syncing' ||
-          status === 'deploying',
+          status === 'deploying' ||
+          status === 'available',
       })}
     >
       <span

@@ -1,14 +1,27 @@
+import { type FC, Suspense } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
+import { CaretRight } from '@phosphor-icons/react/dist/ssr'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
   CodeViewer,
   DashboardContent,
+  Config,
+  ConfigContent,
+  Duration,
   InstallCloudPlatform,
+  InstallManagementDropdown,
   InstallPageSubNav,
   InstallStatuses,
+  Loading,
   StatusBadge,
+  Expand,
+  ErrorFallback,
+  Link,
+  Grid,
   Section,
+  Time,
   Text,
 } from '@/components'
 import {
@@ -17,9 +30,11 @@ import {
   getOrg,
   getRunner,
   getRunnerJobs,
+  getRunnerLatestHeartbeat,
 } from '@/lib'
+import { USER_REPROVISION } from '@/utils'
 
-export default withPageAuthRequired(async function Install({ params }) {
+export default withPageAuthRequired(async function RunnerGroup({ params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
   const [install, runnerGroup, org] = await Promise.all([
@@ -27,15 +42,6 @@ export default withPageAuthRequired(async function Install({ params }) {
     getInstallRunnerGroup({ installId, orgId }),
     getOrg({ orgId }),
   ])
-
-  /* const runner = await getRunner({
-   *   orgId,
-   *   runnerId: runnerGroup?.runners?.at(0)?.id,
-   * })
-   * const runnerJobs = await getRunnerJobs({
-   *   orgId,
-   *   runnerId: runnerGroup?.runners?.at(0)?.id,
-   * }) */
 
   return (
     <DashboardContent
@@ -49,15 +55,54 @@ export default withPageAuthRequired(async function Install({ params }) {
       ]}
       heading={install.name}
       headingUnderline={install.id}
-      statues={<InstallStatuses initInstall={install} shouldPoll />}
+      statues={
+        <div className="flex items-start gap-8">
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Created
+            </Text>
+            <Time variant="reg-12" time={install?.created_at} />
+          </span>
+
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Updated
+            </Text>
+            <Time variant="reg-12" time={install?.updated_at} />
+          </span>
+          <InstallStatuses initInstall={install} shouldPoll />
+          {USER_REPROVISION ? (
+            <InstallManagementDropdown
+              installId={installId}
+              orgId={orgId}
+              hasInstallComponents={Boolean(
+                install?.install_components?.length
+              )}
+            />
+          ) : null}
+        </div>
+      }
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
-      <Section heading="Runner group">
+      <Section heading="Runners">
         {runnerGroup ? (
-          <CodeViewer
-            initCodeSource={JSON.stringify(runnerGroup, null, 2)}
-            language="json"
-          />
+          <Grid variant="3-cols">
+            {runnerGroup?.runners?.map((runner) => (
+              <ErrorBoundary key={runner?.id} fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={
+                    <LoadingRunner display_name={runner?.display_name} />
+                  }
+                >
+                  <LoadRunner
+                    installId={installId}
+                    runnerId={runner?.id}
+                    orgId={orgId}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            ))}
+          </Grid>
         ) : (
           <Text>Install runner info here</Text>
         )}
@@ -65,3 +110,95 @@ export default withPageAuthRequired(async function Install({ params }) {
     </DashboardContent>
   )
 })
+
+const LoadingRunner: FC<{ display_name: string }> = ({ display_name }) => {
+  return (
+    <div className="border rounded px-3 py-2 flex items-center">
+      <Loading loadingText={`${display_name} is loading...`} />
+    </div>
+  )
+}
+
+const LoadRunner: FC<{
+  installId: string
+  runnerId: string
+  orgId: string
+}> = async ({ installId, runnerId, orgId }) => {
+  const [runner, runnerJobs, runnerHeartbeat] = await Promise.all([
+    getRunner({
+      orgId,
+      runnerId,
+    }),
+    getRunnerJobs({
+      orgId,
+      runnerId,
+      options: {
+        limit: '4',
+      },
+    }),
+    getRunnerLatestHeartbeat({
+      orgId,
+      runnerId,
+    }),
+  ])
+
+  return (
+    <Expand
+      parentClass="border rounded"
+      headerClass="px-3 py-2"
+      id={runner?.id}
+      isOpen
+      key={runner?.id}
+      heading={
+        <span className="flex items-center gap-3">
+          <Text variant="med-14">{runner?.display_name}</Text>
+          <StatusBadge status={runner?.status} />
+        </span>
+      }
+      expandContent={
+        <div className="flex flex-col border-t divide-y">
+          <div className="flex justify-between items-start p-3">
+            <Config>
+              <ConfigContent label="Version" value={runnerHeartbeat?.version} />
+              <ConfigContent
+                label="Alive time"
+                value={<Duration nanoseconds={runnerHeartbeat?.alive_time} />}
+              />
+            </Config>
+            <Text>
+              <Link
+                href={`/${orgId}/installs/${installId}/runner-group/${runnerId}`}
+              >
+                Details <CaretRight />
+              </Link>
+            </Text>
+          </div>
+          <div className="p-3">
+            {runnerJobs?.length ? (
+              <div className="divide-y">
+                {runnerJobs?.map((job) => (
+                  <div
+                    className="grid grid-cols-10 w-full py-3 first:pt-0 last:pb-0"
+                    key={job?.id}
+                  >
+                    <Text className="col-span-3">
+                      {job?.group === 'deploy' || job?.group === 'sync'
+                        ? job?.metadata?.component_name
+                        : job?.metadata?.action_workflow_name}
+                    </Text>
+                    <Time className="col-span-4" time={job?.updated_at} />
+                    <div className="col-span-3 flex justify-end">
+                      <StatusBadge status={job?.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Text variant="reg-12">No jobs to display.</Text>
+            )}
+          </div>
+        </div>
+      }
+    />
+  )
+}
