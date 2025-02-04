@@ -17,3 +17,23 @@ export function getFlagEmoji(countryCode = 'us') {
     .map((char) => 127397 + char.charCodeAt(0))
   return String.fromCodePoint(...codePoints)
 }
+
+export function humandReadableTriggeredBy(triggeredByType: string) {
+  let triggeredBy: string
+
+  switch (triggeredByType) {
+    case "install_deploys":
+      triggeredBy = "Deploy hook"
+      break;
+    case "install_sandbox_runs":
+      triggeredBy = "Sandbox hook"
+      break;
+    case "install_action_workflow_manual_triggers":
+      triggeredBy = "Manual run"
+      break;
+    default:
+      triggeredBy = "Cron"      
+  }
+
+  return triggeredBy
+}

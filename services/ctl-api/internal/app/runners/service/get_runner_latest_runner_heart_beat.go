@@ -23,7 +23,7 @@ import (
 // @Failure		403				{object}	stderr.ErrResponse
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{array}	app.RunnerHeartBeat
+// @Success		200				{object}	app.RunnerHeartBeat
 // @Router			/v1/runners/{runner_id}/latest-heart-beat [get]
 func (s *service) GetRunnerLatestHeartBeat(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")

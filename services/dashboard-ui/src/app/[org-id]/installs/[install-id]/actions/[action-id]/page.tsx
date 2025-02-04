@@ -12,6 +12,7 @@ import {
   Text,
 } from '@/components'
 import { getInstall, getInstallActionWorkflowRecentRun, getOrg } from '@/lib'
+import { humandReadableTriggeredBy } from '@/utils'
 
 export default withPageAuthRequired(async function InstallWorkflowRuns({
   params,
@@ -61,7 +62,9 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
                   Last trigger
                 </Text>
                 <Text variant="mono-12">
-                  {actionWithRecentRuns.recent_runs?.[0]?.trigger_type}
+                  {humandReadableTriggeredBy(
+                    actionWithRecentRuns.recent_runs?.[0]?.triggered_by_type
+                  )}
                 </Text>
               </span>
             </>

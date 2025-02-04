@@ -40,6 +40,16 @@ exports[`getRunner should handle response status codes from GET runners/:id endp
 
 exports[`getRunner should handle response status codes from GET runners/:id endpoint > 500 status 1`] = `[Error: Unable to retrieve runner.]`;
 
+exports[`getRunnerHeartbeat should handle response status codes from GET runners/:id/recent-heart-beats endpoint > 400 status 1`] = `[Error: Unable to retrieve runner heartbeat.]`;
+
+exports[`getRunnerHeartbeat should handle response status codes from GET runners/:id/recent-heart-beats endpoint > 401 status 1`] = `[Error: Unable to retrieve runner heartbeat.]`;
+
+exports[`getRunnerHeartbeat should handle response status codes from GET runners/:id/recent-heart-beats endpoint > 403 status 1`] = `[Error: Unable to retrieve runner heartbeat.]`;
+
+exports[`getRunnerHeartbeat should handle response status codes from GET runners/:id/recent-heart-beats endpoint > 404 status 1`] = `[Error: Unable to retrieve runner heartbeat.]`;
+
+exports[`getRunnerHeartbeat should handle response status codes from GET runners/:id/recent-heart-beats endpoint > 500 status 1`] = `[Error: Unable to retrieve runner heartbeat.]`;
+
 exports[`getRunnerJob should handle response status codes from GET runner-jobs/:id endpoint > 400 status 1`] = `[Error: Unable to retrieve runner job.]`;
 
 exports[`getRunnerJob should handle response status codes from GET runner-jobs/:id endpoint > 401 status 1`] = `[Error: Unable to retrieve runner job.]`;
@@ -59,3 +69,13 @@ exports[`getRunnerJobs should handle response status codes from GET runners/:id/
 exports[`getRunnerJobs should handle response status codes from GET runners/:id/jobs endpoint > 404 status 1`] = `[Error: Unable to retrieve runner jobs.]`;
 
 exports[`getRunnerJobs should handle response status codes from GET runners/:id/jobs endpoint > 500 status 1`] = `[Error: Unable to retrieve runner jobs.]`;
+
+exports[`getRunnerLatestHeartbeat should handle response status codes from GET runners/:id/latest-heart-beat endpoint > 400 status 1`] = `[Error: Unable to retrieve latest runner heartbeat.]`;
+
+exports[`getRunnerLatestHeartbeat should handle response status codes from GET runners/:id/latest-heart-beat endpoint > 401 status 1`] = `[Error: Unable to retrieve latest runner heartbeat.]`;
+
+exports[`getRunnerLatestHeartbeat should handle response status codes from GET runners/:id/latest-heart-beat endpoint > 403 status 1`] = `[Error: Unable to retrieve latest runner heartbeat.]`;
+
+exports[`getRunnerLatestHeartbeat should handle response status codes from GET runners/:id/latest-heart-beat endpoint > 404 status 1`] = `[Error: Unable to retrieve latest runner heartbeat.]`;
+
+exports[`getRunnerLatestHeartbeat should handle response status codes from GET runners/:id/latest-heart-beat endpoint > 500 status 1`] = `[Error: Unable to retrieve latest runner heartbeat.]`;
