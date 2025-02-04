@@ -29,7 +29,7 @@ type CreateActionWorkflowConfigTriggerRequest struct {
 type CreateActionWorkflowConfigStepRequest struct {
 	basicVCSConfigRequest
 	Name    string             `json:"name" validate:"required"`
-	EnvVars map[string]*string `json:"env_vars" validate:"required"`
+	EnvVars map[string]*string `json:"env_vars"`
 	Command string             `json:"command" validate:"required"`
 }
 
