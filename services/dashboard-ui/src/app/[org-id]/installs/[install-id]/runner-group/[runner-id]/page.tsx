@@ -1,7 +1,7 @@
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { CaretRight, Timer } from '@phosphor-icons/react/dist/ssr'
+import { CaretRight, Heartbeat, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   DashboardContent,
   Config,
@@ -14,6 +14,7 @@ import {
   Link,
   Section,
   Text,
+  Time,
   Timeline,
   ToolTip,
   ClickToCopy,
@@ -81,6 +82,19 @@ export default withPageAuthRequired(async function Runner({ params }) {
           </span>
           <span className="flex flex-col gap-2">
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Last heartbeat seen
+            </Text>
+            <Text>
+              <Heartbeat size={14} />
+              <Time
+                time={runnerHeartbeat.created_at}
+                format="relative"
+                variant="med-12"
+              />
+            </Text>
+          </span>
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
               Status
             </Text>
             <StatusBadge status={runner?.status} shouldPoll />
@@ -104,7 +118,8 @@ export default withPageAuthRequired(async function Runner({ params }) {
       <div className="flex flex-col md:flex-row flex-auto divide-x">
         <div className="divide-y flex flex-col flex-auto">
           <Section className="flex-initial" heading={`Heartbeat`}>
-            <Text variant="reg-14">TBD</Text>
+            <Text variant="reg-12">TBD</Text>
+
             {/* <ErrorBoundary fallbackRender={ErrorFallback}>
                 <Suspense
                 fallback={<Loading loadingText="Loading runner heartbeat..." />}
@@ -167,7 +182,7 @@ const LoadRunnerHeartbeat: FC<{
 }> = async ({ orgId, runnerId }) => {
   const heartBeats = await getRunnerHeartbeat({ orgId, runnerId })
 
-  return <RunnerHeartbeatChart heartBeats={heartBeats} />
+  return <RunnerHeartbeatChart />
 }
 
 const LoadRecentJob: FC<{
@@ -291,33 +306,45 @@ const LoadPastJobs: FC<{
   return (
     <Timeline
       emptyMessage="No runner jobs have happened yet."
-      events={runnerJobs?.map((job, i) => {
-        const hrefPath =
-          job?.group === 'deploy' || job?.group === 'sync'
-            ? `components/${job?.metadata?.install_component_id}/deploys/${job?.metadata?.deploy_id}`
-            : `actions/${job?.metadata?.action_workflow_id}/${job?.metadata?.action_workflow_run_id}`
+      events={runnerJobs
+        ?.filter((job) => job?.group !== 'operations')
+        .map((job, i) => {
+          const hrefPath =
+            job?.group === 'deploy' || job?.group === 'sync'
+              ? `components/${job?.metadata?.install_component_id}/deploys/${job?.metadata?.deploy_id}`
+              : `actions/${job?.metadata?.action_workflow_id}/${job?.metadata?.action_workflow_run_id}`
+          const name =
+            job?.group === 'deploy' || job?.group === 'sync'
+              ? job?.metadata?.component_name
+              : job?.metadata?.action_workflow_name
 
-        return {
-          id: job?.id,
-          status: job?.status,
-          underline: (
-            <>
-              <span>
-                {job?.group === 'deploy' || job?.group === 'sync'
-                  ? job?.metadata?.component_name
-                  : job?.metadata?.action_workflow_name}
-              </span>{' '}
-              /
-              <span className="!inline truncate max-w-[100px]">
-                {job?.group}
-              </span>
-            </>
-          ),
-          time: job?.updated_at,
-          href: `/${orgId}/installs/${installId}/${hrefPath}`,
-          isMostRecent: i === 0,
-        }
-      })}
+          return {
+            id: job?.id,
+            status: job?.status,
+            underline: (
+              <>
+                {name ? (
+                  name?.length >= 12 ? (
+                    <ToolTip tipContent={name} alignment="right">
+                      <Truncate variant="small">{name}</Truncate>
+                    </ToolTip>
+                  ) : (
+                    name
+                  )
+                ) : (
+                  <span>Not attempted</span>
+                )}{' '}
+                /
+                <span className="!inline truncate max-w-[100px]">
+                  {job?.group}
+                </span>
+              </>
+            ),
+            time: job?.updated_at,
+            href: `/${orgId}/installs/${installId}/${hrefPath}`,
+            isMostRecent: i === 0,
+          }
+        })}
     />
   )
 }
