@@ -23,6 +23,8 @@ import {
   Section,
   Time,
   Text,
+  Truncate,
+  ToolTip,
 } from '@/components'
 import {
   getInstall,
@@ -86,7 +88,7 @@ export default withPageAuthRequired(async function RunnerGroup({ params }) {
     >
       <Section heading="Runners">
         {runnerGroup ? (
-          <Grid variant="3-cols">
+          <Grid variant="2-cols">
             {runnerGroup?.runners?.map((runner) => (
               <ErrorBoundary key={runner?.id} fallbackRender={ErrorFallback}>
                 <Suspense
@@ -164,6 +166,12 @@ const LoadRunner: FC<{
                 label="Alive time"
                 value={<Duration nanoseconds={runnerHeartbeat?.alive_time} />}
               />
+              <ConfigContent
+                label="Last heartbeat"
+                value={
+                  <Time time={runnerHeartbeat?.created_at} format="relative" />
+                }
+              />
             </Config>
             <Text>
               <Link
@@ -176,22 +184,36 @@ const LoadRunner: FC<{
           <div className="p-3">
             {runnerJobs?.length ? (
               <div className="divide-y">
-                {runnerJobs?.map((job) => (
-                  <div
-                    className="grid grid-cols-10 w-full py-3 first:pt-0 last:pb-0"
-                    key={job?.id}
-                  >
-                    <Text className="col-span-3">
-                      {job?.group === 'deploy' || job?.group === 'sync'
-                        ? job?.metadata?.component_name
-                        : job?.metadata?.action_workflow_name}
-                    </Text>
-                    <Time className="col-span-4" time={job?.updated_at} />
-                    <div className="col-span-3 flex justify-end">
-                      <StatusBadge status={job?.status} />
+                {runnerJobs?.map((job) => {
+                  const name =
+                    job?.group === 'deploy' || job?.group === 'sync'
+                      ? job?.metadata?.component_name
+                      : job?.metadata?.action_workflow_name
+                  return (
+                    <div
+                      className="grid grid-cols-10 w-full py-3 first:pt-0 last:pb-0"
+                      key={job?.id}
+                    >
+                      <Text className="col-span-3">
+                        {name ? (
+                          name?.length >= 12 ? (
+                            <ToolTip tipContent={name} alignment="left">
+                              <Truncate variant="default">{name}</Truncate>
+                            </ToolTip>
+                          ) : (
+                            name
+                          )
+                        ) : (
+                          'Unknown job'
+                        )}
+                      </Text>
+                      <Time className="col-span-4" time={job?.updated_at} />
+                      <div className="col-span-3 flex justify-end">
+                        <StatusBadge status={job?.status} />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <Text variant="reg-12">No jobs to display.</Text>
