@@ -29,7 +29,11 @@ import type {
   TInstallActionWorkflowRun,
   TActionConfig,
 } from '@/types'
-import { sentanceCase, CANCEL_RUNNER_JOBS } from '@/utils'
+import {
+  sentanceCase,
+  CANCEL_RUNNER_JOBS,
+  humandReadableTriggeredBy,
+} from '@/utils'
 
 // hydrate run steps with idx and name
 function hydrateRunSteps(
@@ -103,7 +107,9 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
               Trigger type
             </Text>
-            <Text variant="mono-12">{workflowRun.trigger_type}</Text>
+            <Text variant="reg-12">
+              {humandReadableTriggeredBy(workflowRun?.triggered_by_type)}
+            </Text>
           </span>
 
           <span className="flex flex-col gap-2">
