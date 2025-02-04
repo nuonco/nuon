@@ -15,7 +15,10 @@ export const EventStatus: FC<{ status?: string }> = ({
     'bg-green-800 dark:bg-green-500':
       status === 'finished' || status === 'active',
     'bg-red-600 dark:bg-red-500':
-      status === 'failed' || status === 'error' || status === 'unknown',
+      status === 'failed' ||
+      status === 'error' ||
+      status === 'unknown' ||
+      status === 'timed-out',
     'bg-cool-grey-600 dark:bg-cool-grey-500':
       status === 'noop' ||
       status === 'pending' ||
