@@ -43,7 +43,9 @@ export const StatusBadge: FC<IStatusBadge> = ({
     status === 'error' ||
     status === 'bad' ||
     status === 'access-error' ||
-    status === 'access_error'
+    status === 'access_error' ||
+    status === 'timed-out' ||
+    status === 'unknown'
   const isNoop =
     status === 'noop' ||
     status === 'inactive' ||
