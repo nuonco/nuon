@@ -18,7 +18,7 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
 }) => {
   return (
     <Button
-      className="text-sm !py-2 !h-fit"
+      className="text-sm !h-fit"
       onClick={() => {
         runManualWorkflow({ installId, orgId, workflowConfigId })
       }}

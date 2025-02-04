@@ -8,6 +8,8 @@ import {
   getRunner,
   getRunnerJob,
   getRunnerJobs,
+  getRunnerHeartbeat,
+  getRunnerLatestHeartbeat,
 } from './runners'
 
 describe('getLogStream should handle response status codes from GET log-streams/:id endpoint', () => {
@@ -109,6 +111,42 @@ describe('cancelRunnerJob should handle response status codes from POST runner-j
 
   test.each(badResponseCodes)('%s status', async () => {
     await cancelRunnerJob({ runnerJobId, orgId }).catch((err) =>
+      expect(err).toMatchSnapshot()
+    )
+  })
+})
+
+describe('getRunnerHeartbeat should handle response status codes from GET runners/:id/recent-heart-beats endpoint', () => {
+  const orgId = 'test-id'
+  const runnerId = 'test-id'
+  test('200 status', async () => {
+    const spec = await getRunnerHeartbeat({ runnerId, orgId })
+    spec.map((s) => {
+      expect(s).toHaveProperty('truncated_time')
+      expect(s).toHaveProperty('record_count')
+      expect(s).toHaveProperty('runner_id')
+    })
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await getRunnerHeartbeat({ runnerId, orgId }).catch((err) =>
+      expect(err).toMatchSnapshot()
+    )
+  })
+})
+
+describe('getRunnerLatestHeartbeat should handle response status codes from GET runners/:id/latest-heart-beat endpoint', () => {
+  const orgId = 'test-id'
+  const runnerId = 'test-id'
+  test('200 status', async () => {
+    const spec = await getRunnerLatestHeartbeat({ runnerId, orgId })
+    expect(spec).toHaveProperty('id')
+    expect(spec).toHaveProperty('alive_time')
+    expect(spec).toHaveProperty('version')
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await getRunnerLatestHeartbeat({ runnerId, orgId }).catch((err) =>
       expect(err).toMatchSnapshot()
     )
   })

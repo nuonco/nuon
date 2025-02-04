@@ -4,7 +4,7 @@ import React, { type FC, useEffect } from 'react'
 import { Timeline } from '@/components/Timeline'
 import { revalidateInstallWorkflowHistory } from '@/components/workflow-actions'
 import type { TActionWorkflow, TInstallActionWorkflowRun } from '@/types'
-import { SHORT_POLL_DURATION } from '@/utils'
+import { SHORT_POLL_DURATION, humandReadableTriggeredBy } from '@/utils'
 
 interface IInstallWorkflowRunHistory {
   actionsWithRecentRuns: {
@@ -48,7 +48,7 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
           <>
             <span>{action_workflow.name}</span> /
             <span className="!inline truncate max-w-[100px]">
-              {run.trigger_type}
+              {humandReadableTriggeredBy(run?.triggered_by_type)}
             </span>
           </>
         ),
@@ -59,3 +59,5 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
     />
   )
 }
+
+
