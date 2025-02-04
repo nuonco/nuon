@@ -1,10 +1,12 @@
 'use client'
 
 import classNames from 'classnames'
-import React, { type FC } from 'react'
+import { usePathname } from 'next/navigation'
+import React, { type FC, useEffect } from 'react'
 import { ToolTip } from '@/components/ToolTip'
 import { Text } from '@/components/Typography'
-import { titleCase } from '@/utils'
+import { revalidateData } from '@/components/actions'
+import { titleCase, SHORT_POLL_DURATION } from '@/utils'
 
 export type TStatus = 'active' | 'failed' | 'error' | 'waiting'
 
@@ -21,6 +23,7 @@ export interface IStatusBadge extends IStatus {
   descriptionAlignment?: 'center' | 'left' | 'right'
   descriptionPosition?: 'bottom' | 'top'
   isWithoutBorder?: boolean
+  shouldPoll?: boolean
 }
 
 export const StatusBadge: FC<IStatusBadge> = ({
@@ -31,6 +34,7 @@ export const StatusBadge: FC<IStatusBadge> = ({
   isWithoutBorder = false,
   label,
   status,
+  shouldPoll = false,
 }) => {
   const isActive =
     status === 'active' || status === 'ok' || status === 'finished'
@@ -41,8 +45,33 @@ export const StatusBadge: FC<IStatusBadge> = ({
     status === 'access-error' ||
     status === 'access_error'
   const isNoop =
-    status === 'noop' || status === 'inactive' || status === 'pending'
+    status === 'noop' ||
+    status === 'inactive' ||
+    status === 'pending' ||
+    status === 'cancelled'
   const statusText = isLabelStatusText ? label : status
+
+  const path = usePathname()
+
+  useEffect(() => {
+    const refreshData = () => {
+      revalidateData({ path })
+    }
+    if (shouldPoll) {
+      const pollBuild = setInterval(refreshData, SHORT_POLL_DURATION)
+
+      /* if (
+       *   status === 'active' ||
+       *   status === 'error' ||
+       *   status === 'failed' ||
+       *   status === 'noop'
+       * ) {
+       *   clearInterval(pollBuild)
+       * } */
+
+      return () => clearInterval(pollBuild)
+    }
+  }, [status, shouldPoll])
 
   const Status = (
     <span
