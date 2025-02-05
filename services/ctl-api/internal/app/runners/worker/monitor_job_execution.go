@@ -90,12 +90,7 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 
 		// if the runner is deemed unhealthy, the job execution is marked as unknown, and the job is marked as
 		// not attempted with the correct status, this is retryable.
-		runnerStatus, err := w.getRunnerStatus(ctx, job.RunnerID)
-		if err != nil {
-			l.Warn("unable to decipher the status of the runner, so assuming it is healthy and attempting to let the job finish",
-				zap.Error(err))
-			runnerStatus = app.RunnerStatusActive
-		}
+		runnerStatus, err := activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
 		if runnerStatus != app.RunnerStatusActive {
 			l.Error("runner marked unhealthy during job")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusUnknown, "runner became unhealthy during job")
