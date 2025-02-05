@@ -22,6 +22,10 @@ const (
 	RunnerStatusUnknown        RunnerStatus = "unknown"
 )
 
+func (r RunnerStatus) String() string {
+	return string(r)
+}
+
 func (r RunnerStatus) Code() int {
 	switch r {
 
