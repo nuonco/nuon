@@ -22,6 +22,35 @@ const (
 	RunnerStatusUnknown        RunnerStatus = "unknown"
 )
 
+func (r RunnerStatus) Code() int {
+	switch r {
+
+	// 2xx are for unknown
+	case RunnerStatusPending:
+		return 200
+	case RunnerStatusProvisioning:
+		return 201
+
+		// 3xx statuses are for tear downs
+	case RunnerStatusDeprovisioning:
+		return 301
+	case RunnerStatusDeprovisioned:
+		return 300
+
+		// 4xx
+	case RunnerStatusError:
+		return 400
+
+		// 0 is active
+	case RunnerStatusActive:
+		return 0
+	case RunnerStatusUnknown:
+		return 500
+	default:
+		return 500
+	}
+}
+
 func (r RunnerStatus) IsHealthy() bool {
 	return r == RunnerStatusActive
 }

@@ -19,6 +19,13 @@ type RunnerHealthCheck struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	RunnerID string `json:"runner_id"`
+
+	RunnerStatus RunnerStatus `json:"status"`
+
+	// after queries
+
+	RunnerStatusCode int       `json:"status_code" gorm:"-"`
+	MinuteBucket     time.Time `json:"minute_bucket" gorm:"-"`
 }
 
 func (r *RunnerHealthCheck) BeforeCreate(tx *gorm.DB) error {
@@ -47,4 +54,10 @@ func (r RunnerHealthCheck) MigrateDB(tx *gorm.DB) *gorm.DB {
 		return tx
 	}
 	return tx.Set("gorm:table_options", opts).Set("gorm:table_cluster_options", "on cluster simple")
+}
+
+func (r *RunnerHealthCheck) AfterQuery(tx *gorm.DB) error {
+	r.RunnerStatusCode = r.RunnerStatus.Code()
+	r.MinuteBucket = r.CreatedAt.Round(time.Minute)
+	return nil
 }
