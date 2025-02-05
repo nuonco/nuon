@@ -21,7 +21,7 @@ func (a *Activities) CreateHealthCheck(ctx context.Context, req CreateHealthChec
 		RunnerStatus: req.Status,
 	}
 
-	if res := a.db.WithContext(ctx).Create(&hc); res.Error != nil {
+	if res := a.chDB.WithContext(ctx).Create(&hc); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create health check")
 	}
 
