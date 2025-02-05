@@ -20,3 +20,7 @@ type JobHandler interface {
 	Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error
 	Outputs(ctx context.Context) (map[string]interface{}, error)
 }
+
+type StatefulJobHandler interface {
+	Reset(ctx context.Context) error
+}
