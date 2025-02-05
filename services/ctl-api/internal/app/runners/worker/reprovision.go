@@ -75,13 +75,6 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 		return errors.Wrap(err, "unable to create operation")
 	}
 
-	w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
-		OrgID:       runner.OrgID,
-		RunnerID:    runner.ID,
-		SandboxMode: runner.RunnerGroup.Settings.SandboxMode,
-		Type:        string(runner.RunnerGroup.Type),
-	})
-
 	w.updateOperationStatus(ctx, op.ID, app.RunnerOperationStatusFinished)
 	return nil
 }
