@@ -19,6 +19,7 @@ import (
 // @Param			runner_id	path	string	true	"runner ID"
 // @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
 // @Param   group query string false	"job group"
+// @Param   groups query string false	"job groups"
 // @Param   status query string false	"job status"
 // @Param   statuses query string false	"job statuses"
 // @Tags    runners
@@ -36,17 +37,23 @@ import (
 func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
-	groupStr := ctx.DefaultQuery("group", "any")
-	grp := app.RunnerJobGroup(groupStr)
+	groups := []app.RunnerJobGroup{}
+	groupStr := ctx.DefaultQuery("group", "")
 
-	limitStr := ctx.DefaultQuery("limit", "60")
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("invalid limit %s: %w", limitStr, err),
-			Description: "invalid limit",
-		})
-		return
+	if groupStr != "" {
+		groups = append(groups, app.RunnerJobGroup(groupStr))
+	} else {
+		groupsStr := ctx.DefaultQuery("groups", "")
+		if groupsStr != "" {
+			groupsStr := strings.Split(groupsStr, ",")
+			//trim whitespace
+			for i, groupStr := range groupsStr {
+				groupsStr[i] = strings.TrimSpace(groupStr)
+			}
+			for _, groupStr := range groupsStr {
+				groups = append(groups, app.RunnerJobGroup(groupStr))
+			}
+		}
 	}
 
 	statuses := []app.RunnerJobStatus{}
@@ -67,7 +74,17 @@ func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 		}
 	}
 
-	runnerJobs, err := s.getRunnerJobsCtlAPI(ctx, runnerID, statuses, grp, limit)
+	limitStr := ctx.DefaultQuery("limit", "60")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("invalid limit %s: %w", limitStr, err),
+			Description: "invalid limit",
+		})
+		return
+	}
+
+	runnerJobs, err := s.getRunnerJobsCtlAPI(ctx, runnerID, statuses, groups, limit)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -76,14 +93,11 @@ func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, runnerJobs)
 }
 
-func (s *service) getRunnerJobsCtlAPI(ctx context.Context, runnerID string, statuses []app.RunnerJobStatus, grp app.RunnerJobGroup, limit int) ([]*app.RunnerJob, error) {
+func (s *service) getRunnerJobsCtlAPI(ctx context.Context, runnerID string, statuses []app.RunnerJobStatus, groups []app.RunnerJobGroup, limit int) ([]*app.RunnerJob, error) {
 	runnerJobs := []*app.RunnerJob{}
 
 	where := app.RunnerJob{
 		RunnerID: runnerID,
-	}
-	if grp != app.RunnerJobGroupAny {
-		where.Group = grp
 	}
 
 	tx := s.db.WithContext(ctx).
@@ -92,6 +106,10 @@ func (s *service) getRunnerJobsCtlAPI(ctx context.Context, runnerID string, stat
 
 	if len(statuses) != 0 {
 		tx = tx.Where("status in (?)", statuses)
+	}
+
+	if len(groups) != 0 {
+		tx = tx.Where(`"group" in (?)`, groups)
 	}
 
 	res := tx.
