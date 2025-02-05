@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"errors"
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
@@ -32,7 +33,7 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 
 	if !runner.Status.IsHealthy() {
 		w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "runner is not in a healthy state")
-		return nil
+		return errors.New("runner is not healthy")
 	}
 
 	runnerJob, err := activities.AwaitGetJob(ctx, activities.GetJobRequest{
