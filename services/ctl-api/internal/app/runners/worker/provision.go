@@ -78,12 +78,6 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 		return err
 	}
 
-	w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
-		OrgID:       runner.OrgID,
-		RunnerID:    runner.ID,
-		SandboxMode: runner.RunnerGroup.Settings.SandboxMode,
-		Type:        string(runner.RunnerGroup.Type),
-	})
 	w.updateOperationStatus(ctx, op.ID, app.RunnerOperationStatusFinished)
 
 	return nil
