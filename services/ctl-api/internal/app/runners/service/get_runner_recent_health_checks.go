@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -47,14 +48,33 @@ func (s *service) GetRunnerRecentHealthChecks(ctx *gin.Context) {
 func (s *service) getRunnerRecentHealthChecks(ctx context.Context, runnerID string) ([]*app.RunnerHealthCheck, error) {
 	healthChecks := []*app.RunnerHealthCheck{}
 
-	// last hour healthchecks
-	resp := s.chDB.WithContext(ctx).
-		Where("runner_id = ? AND created_at > NOW() - INTERVAL 60 MINUTE", runnerID).
-		Order("created_at ASC").
-		Find(&healthChecks)
+	// Using raw SQL to query the CTE and return the result
+	query := `
+		WITH RankedRecords AS (
+			SELECT 
+				rhc.*, 
+				toStartOfMinute(created_at) AS minute_bucket,
+				ROW_NUMBER() OVER (PARTITION BY toStartOfMinute(created_at) ORDER BY rhc.created_at DESC) AS row_num
+			FROM runner_health_checks AS rhc
+			WHERE created_at >= NOW() - INTERVAL 1 HOUR
+		)
+		SELECT * FROM RankedRecords
+		WHERE row_num = 1
+		AND runner_id = ?
+		ORDER BY created_at ASC
+	`
 
-	if resp.Error != nil {
-		return nil, fmt.Errorf("failed to get recent health checks: %w", resp.Error)
+	// Execute the query
+	if err := s.chDB.Raw(query, runnerID).Scan(&healthChecks).Error; err != nil {
+		return nil, fmt.Errorf("unable to get recent health checks: %w", err)
+	}
+
+	// Iterate through each health check record
+	for _, healthCheck := range healthChecks {
+		// Ensure the minute_bucket is set (in case it's not)
+		if healthCheck.MinuteBucket.IsZero() {
+			healthCheck.MinuteBucket = healthCheck.CreatedAt.Truncate(time.Minute)
+		}
 	}
 
 	return healthChecks, nil
