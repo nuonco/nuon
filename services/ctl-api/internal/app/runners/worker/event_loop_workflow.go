@@ -64,6 +64,10 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 				status = "error"
 				l.Info("unable to handle restart signal: %w", zap.Error(err))
 			}
+
+			w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
+				RunnerID: req.ID,
+			})
 		case signals.OperationDelete:
 			op = "delete"
 			if err := w.AwaitDelete(ctx, sreq); err != nil {
@@ -77,6 +81,9 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 				status = "error"
 				l.Info("unable to handle created signal: %w", zap.Error(err))
 			}
+			w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
+				RunnerID: req.ID,
+			})
 		case signals.OperationProvision:
 			op = "provision"
 			if err := w.AwaitProvision(ctx, sreq); err != nil {
