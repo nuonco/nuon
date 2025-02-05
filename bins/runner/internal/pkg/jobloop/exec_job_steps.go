@@ -12,6 +12,14 @@ func (j *jobLoop) getJobSteps(ctx context.Context, handler jobs.JobHandler) ([]*
 	return []*executeJobStep{
 		// validate step
 		{
+			name:        "resetting",
+			fn:          j.executeResetJobStep,
+			cleanupFn:   nil,
+			handler:     handler,
+			startStatus: models.AppRunnerJobExecutionStatusInitializing,
+		},
+		// validate step
+		{
 			name:        "fetching",
 			fn:          j.executeFetchJobStep,
 			cleanupFn:   nil,
