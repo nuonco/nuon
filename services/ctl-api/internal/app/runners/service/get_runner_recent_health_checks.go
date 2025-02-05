@@ -50,7 +50,7 @@ func (s *service) getRunnerRecentHealthChecks(ctx context.Context, runnerID stri
 	// last hour healthchecks
 	resp := s.chDB.WithContext(ctx).
 		Where("runner_id = ? AND created_at > NOW() - INTERVAL 60 MINUTE", runnerID).
-		Order("created_at DESC").
+		Order("created_at ASC").
 		Find(&healthChecks)
 
 	if resp.Error != nil {
