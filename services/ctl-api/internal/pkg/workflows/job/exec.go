@@ -22,6 +22,7 @@ const (
 
 var failureStatuses = []app.RunnerJobStatus{
 	app.RunnerJobStatusFailed,
+	app.RunnerJobStatusFailed,
 	app.RunnerJobStatusTimedOut,
 	app.RunnerJobStatusCancelled,
 	app.RunnerJobStatusNotAttempted,
