@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
@@ -58,12 +59,13 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 		return errors.Wrap(err, "unable to get runner status")
 	}
 
-	switch currentStatus {
-	case app.RunnerStatusProvisioning,
+	noopStatus := generics.SliceContains(currentStatus, []app.RunnerStatus{
+		app.RunnerStatusProvisioning,
 		app.RunnerStatusDeprovisioning,
 		app.RunnerStatusReprovisioning,
-		app.RunnerStatusDeprovisioned:
-	default:
+		app.RunnerStatusDeprovisioned,
+	})
+	if noopStatus {
 		_, err := activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
 			RunnerID: req.RunnerID,
 			Status:   currentStatus,
@@ -72,8 +74,10 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 			status = "error"
 			return errors.Wrap(err, "unable to create runner health check")
 		}
+		return nil
 	}
 
+	// ensure the status is created correctly
 	newStatus, err := w.getRunnerHeartBeatsStatus(ctx, req.RunnerID)
 	if err != nil {
 		status = "error_fetching_heart_beats"

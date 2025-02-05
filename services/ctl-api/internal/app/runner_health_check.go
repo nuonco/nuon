@@ -58,6 +58,6 @@ func (r RunnerHealthCheck) MigrateDB(tx *gorm.DB) *gorm.DB {
 
 func (r *RunnerHealthCheck) AfterQuery(tx *gorm.DB) error {
 	r.RunnerStatusCode = r.RunnerStatus.Code()
-	r.MinuteBucket = r.CreatedAt.Round(time.Minute)
+	r.MinuteBucket = r.CreatedAt.Truncate(time.Minute)
 	return nil
 }
