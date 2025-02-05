@@ -398,3 +398,17 @@ module "nuon-policies" {
     github = github.nuon
   }
 }
+
+module "aws-lambda-runner-phone-home" {
+  source           = "./modules/repository"
+  name             = "aws-lambda-runner-phone-home"
+  description      = "Lambda function for runner cloudformation installers to phone home."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
