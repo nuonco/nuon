@@ -35,6 +35,7 @@ type WorkflowParams struct {
 func (w *Workflows) All() []any {
 	wkflows := []any{
 		w.EventLoop,
+		w.HealthCheck,
 	}
 
 	return append(wkflows, w.ListWorkflowFns()...)
