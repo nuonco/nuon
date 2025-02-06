@@ -46,6 +46,22 @@ module "runner" {
     aws = aws.public
   }
 }
+module "runner-phone-home" {
+  source = "../modules/public-ecr"
+
+  name        = "runner"
+  description = "Nuon runner installer phone-home lambda"
+  about       = "Nuon runner installer phone-home lambda"
+  tags = {
+    artifact      = "runner-phone-home"
+    artifact_type = "binary"
+  }
+
+  region = local.aws_settings.public_region
+  providers = {
+    aws = aws.public
+  }
+}
 
 module "e2e" {
   source = "../modules/public-ecr"
