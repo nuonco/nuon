@@ -6,8 +6,12 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
+  Config,
+  ConfigContent,
   DashboardContent,
+  Duration,
   ErrorFallback,
+  ID,
   InstallCloudPlatform,
   InstallInputs,
   InstallInputsModal,
@@ -27,6 +31,7 @@ import {
   getInstallCurrentInputs,
   getInstallReadme,
   getInstallRunnerGroup,
+  getRunnerLatestHeartbeat,
   getOrg,
 } from '@/lib'
 import { RUNNERS, USER_REPROVISION } from '@/utils'
@@ -34,9 +39,8 @@ import { RUNNERS, USER_REPROVISION } from '@/utils'
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const [install, runnerGroup, org] = await Promise.all([
+  const [install, org] = await Promise.all([
     getInstall({ installId, orgId }),
-    getInstallRunnerGroup({ installId, orgId }).catch(console.error),
     getOrg({ orgId }),
   ])
 
@@ -97,6 +101,20 @@ export default withPageAuthRequired(async function Install({ params }) {
         </Section>
 
         <div className="divide-y flex flex-col lg:w-[500px] border-l">
+          {RUNNERS ? (
+            <Section className="flex-initial" heading="Runner group">
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={
+                    <Loading loadingText="Loading install runner group..." />
+                  }
+                >
+                  <LoadRunnerGroup installId={installId} orgId={orgId} />
+                </Suspense>
+              </ErrorBoundary>
+            </Section>
+          ) : null}
+
           <Section>
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
@@ -115,22 +133,6 @@ export default withPageAuthRequired(async function Install({ params }) {
               />
             </div>
           </Section>
-
-          {RUNNERS && runnerGroup ? (
-            <Section className="flex-initial" heading="Runner group">
-              <div className="flex flex-col gap-4">
-                <Text>{runnerGroup.runners?.length} runners in this group</Text>
-                <div className="divide-y">
-                  {runnerGroup.runners?.map((runner) => (
-                    <div key={runner?.id} className="flex flex-col gap-2">
-                      <StatusBadge status={runner?.status} />
-                      <Text variant="med-12">{runner?.display_name}</Text>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Section>
-          ) : null}
 
           <Section heading="Cloud platform">
             <InstallCloudPlatform install={install} />
@@ -179,5 +181,63 @@ const LoadInstallCurrentInputs: FC<{
         <Text>No inputs configured.</Text>
       )}
     </>
+  )
+}
+
+const LoadRunnerGroup: FC<{ installId: string; orgId: string }> = async ({
+  installId,
+  orgId,
+}) => {
+  const runnerGroup = await getInstallRunnerGroup({ installId, orgId })
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="divide-y">
+        {runnerGroup.runners?.map((runner) => (
+          <div key={runner?.id} className="flex flex-col gap-2">
+            <span>
+              <Text className="gap-3" variant="med-14">
+                <StatusBadge
+                  status={runner?.status}
+                  isStatusTextHidden
+                  isWithoutBorder
+                />
+                <span>{runner?.display_name}</span>
+              </Text>
+              <ID id={runner?.id} />
+            </span>
+
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={<Loading loadingText="Loading runner heartbeat..." />}
+              >
+                <LoadRunnerHeartBeat runnerId={runner?.id} orgId={orgId} />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const LoadRunnerHeartBeat: FC<{ orgId: string; runnerId: string }> = async ({
+  orgId,
+  runnerId,
+}) => {
+  const heartbeat = await getRunnerLatestHeartbeat({ runnerId, orgId })
+
+  return (
+    <Config>
+      <ConfigContent label="Version" value={heartbeat?.version} />
+      <ConfigContent
+        label="Alive time"
+        value={<Duration nanoseconds={heartbeat?.alive_time} />}
+      />
+      <ConfigContent
+        label="Last seen"
+        value={<Time time={heartbeat?.created_at} format="relative" />}
+      />
+    </Config>
   )
 }
