@@ -3,7 +3,7 @@ import React, { type FC } from 'react'
 import { Text, type IText } from '@/components/Typography'
 
 export interface ITime extends Omit<IText, 'role'> {
-  format?: 'default' | 'long' | 'relative'
+  format?: 'default' | 'long' | 'relative' | 'time-only'
   time?: string
 }
 
@@ -17,7 +17,9 @@ export const Time: FC<ITime> = ({ format, time, ...props }) => {
         : datetime.toLocaleString(
             format === 'long'
               ? DateTime.DATETIME_FULL_WITH_SECONDS
-              : DateTime.DATETIME_SHORT_WITH_SECONDS
+              : format === 'time-only'
+                ? DateTime.TIME_SIMPLE
+                : DateTime.DATETIME_SHORT_WITH_SECONDS
           )}
     </Text>
   )
