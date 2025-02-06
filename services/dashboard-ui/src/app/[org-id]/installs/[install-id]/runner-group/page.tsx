@@ -142,7 +142,7 @@ const LoadRunner: FC<{
     getRunnerLatestHeartbeat({
       orgId,
       runnerId,
-    }),
+    }).catch(console.error),
   ])
 
   return (
@@ -164,29 +164,42 @@ const LoadRunner: FC<{
             </span>
             <span>{runner?.display_name}</span>
           </Text>
-          <Text variant="reg-14">
-            <Heartbeat className="animate-pulse" size={14} />
-            <Time time={runnerHeartbeat?.created_at} format="relative" />
-          </Text>
+          {runnerHeartbeat ? (
+            <Text variant="reg-14">
+              <Heartbeat className="animate-pulse" size={14} />
+              <Time time={runnerHeartbeat?.created_at} format="relative" />
+            </Text>
+          ) : null}
         </span>
       }
       expandContent={
         <div className="flex flex-col border-t divide-y">
           <div className="flex justify-between items-start p-3">
-            <Config>
-              <ConfigContent label="Version" value={runnerHeartbeat?.version} />
-              <ConfigContent
-                label="Alive time"
-                value={<Duration nanoseconds={runnerHeartbeat?.alive_time} />}
-              />
-            </Config>
-            <Text>
-              <Link
-                href={`/${orgId}/installs/${installId}/runner-group/${runnerId}`}
-              >
-                Details <CaretRight />
-              </Link>
-            </Text>
+            {runnerHeartbeat ? (
+              <>
+                <Config>
+                  <ConfigContent
+                    label="Version"
+                    value={runnerHeartbeat?.version}
+                  />
+                  <ConfigContent
+                    label="Alive time"
+                    value={
+                      <Duration nanoseconds={runnerHeartbeat?.alive_time} />
+                    }
+                  />
+                </Config>
+                <Text>
+                  <Link
+                    href={`/${orgId}/installs/${installId}/runner-group/${runnerId}`}
+                  >
+                    Details <CaretRight />
+                  </Link>
+                </Text>
+              </>
+            ) : (
+              <Text>Runner is not online.</Text>
+            )}
           </div>
           <div className="p-3">
             {runnerJobs?.length ? (
