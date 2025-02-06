@@ -18,7 +18,7 @@ type RunnerHealthCheck struct {
 	UpdatedAt time.Time             `json:"updated_at" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1)"`
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
-	RunnerID string `json:"runner_id" gorm:"codec:ZSTD(1)"`
+	RunnerID string `json:"runner_id" gorm:"codec:ZSTD(1);index:idx_runner_health_checks_runner_id"`
 
 	RunnerStatus RunnerStatus `json:"status" gorm:"codec:ZSTD(1)"`
 
