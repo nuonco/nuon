@@ -100,8 +100,9 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 	// actual status change of a runner
 	w.mw.Incr(ctx, "runner.health_check_change", metrics.ToTags(tags)...)
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
-		RunnerID: req.RunnerID,
-		Status:   newStatus,
+		RunnerID:          req.RunnerID,
+		Status:            newStatus,
+		StatusDescription: fmt.Sprintf("status change %s -> %s in health check", currentStatus, newStatus),
 	}); err != nil {
 		status = "error"
 		return errors.Wrap(err, "unable to update runner status")
