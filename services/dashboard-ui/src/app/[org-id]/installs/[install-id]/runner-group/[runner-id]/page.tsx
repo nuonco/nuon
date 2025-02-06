@@ -120,7 +120,7 @@ export default withPageAuthRequired(async function Runner({ params }) {
         </div>
       }
     >
-      <div className="md:grid md:grid-cols-12 divide-x">
+      <div className="flex-auto md:grid md:grid-cols-12 divide-x">
         <div className="divide-y flex flex-col flex-auto col-span-8">
           <Section className="flex-initial" heading="Health checks">
             <ErrorBoundary fallbackRender={ErrorFallback}>
@@ -199,15 +199,17 @@ const LoadRecentJob: FC<{
     runnerId,
     options: {
       limit: '1',
+      groups: ['build', 'deploy', 'sync', 'actions'],
       statuses: ['finished', 'failed'],
     },
   })
 
-  const isDeploy =
-    runnerJobs?.[0]?.group === 'deploy' || runnerJobs?.[0]?.group === 'sync'
+  const job = runnerJobs?.[0]
+
+  const isDeploy = job?.group === 'deploy' || job?.group === 'sync'
   const hrefPath = isDeploy
-    ? `components/${runnerJobs?.[0]?.metadata?.install_component_id}/deploys/${runnerJobs?.[0]?.metadata?.deploy_id}`
-    : `actions/${runnerJobs?.[0]?.metadata?.action_workflow_id}/${runnerJobs?.[0]?.metadata?.action_workflow_run_id}`
+    ? `components/${job?.metadata?.install_component_id}/deploys/${job?.metadata?.deploy_id}`
+    : `actions/${job?.metadata?.action_workflow_id}/${job?.metadata?.action_workflow_run_id}`
 
   return runnerJobs?.length ? (
     <div className="flex items-start justify-between">
@@ -215,22 +217,38 @@ const LoadRecentJob: FC<{
         <ConfigContent
           label="Name"
           value={
-            isDeploy
-              ? runnerJobs?.[0]?.metadata?.component_name
-              : runnerJobs?.[0]?.metadata?.action_workflow_name
+            job?.metadata
+              ? isDeploy
+                ? job?.metadata?.component_name
+                : job?.metadata?.action_workflow_name
+              : 'Unknown'
           }
         />
 
-        <ConfigContent label="Group" value={runnerJobs?.[0]?.group} />
+        <ConfigContent label="Group" value={job?.group} />
 
-        <ConfigContent label="Type" value={runnerJobs?.[0]?.type} />
+        <ConfigContent
+          label="Status"
+          value={
+            <span className="flex items-center gap-2">
+              <StatusBadge
+                status={job?.status}
+                isWithoutBorder
+                isStatusTextHidden
+              />
+              {job?.status}
+            </span>
+          }
+        />
       </Config>
-      <Link
-        className="text-sm"
-        href={`/${orgId}/installs/${installId}/${hrefPath}`}
-      >
-        Details <CaretRight />
-      </Link>
+      {job?.metadata ? (
+        <Link
+          className="text-sm"
+          href={`/${orgId}/installs/${installId}/${hrefPath}`}
+        >
+          Details <CaretRight />
+        </Link>
+      ) : null}
     </div>
   ) : (
     <Text>No job to show.</Text>
@@ -246,6 +264,7 @@ const LoadUpcomingJobs: FC<{
     orgId,
     runnerId,
     options: {
+      groups: ['build', 'deploy', 'sync', 'actions'],
       statuses: ['available', 'queued'],
     },
   })
@@ -274,8 +293,6 @@ const LoadUpcomingJobs: FC<{
                   />
 
                   <ConfigContent label="Group" value={runnerJobs?.[0]?.group} />
-
-                  <ConfigContent label="Type" value={runnerJobs?.[0]?.type} />
                 </Config>
                 <div className="">
                   <CancelRunnerJobButton
@@ -312,6 +329,7 @@ const LoadPastJobs: FC<{
     orgId,
     runnerId,
     options: {
+      groups: ['build', 'deploy', 'sync', 'actions'],
       limit: '10',
     },
   })
@@ -345,7 +363,7 @@ const LoadPastJobs: FC<{
                     name
                   )
                 ) : (
-                  <span>Not attempted</span>
+                  <span>Unknown</span>
                 )}{' '}
                 /
                 <span className="!inline truncate max-w-[100px]">

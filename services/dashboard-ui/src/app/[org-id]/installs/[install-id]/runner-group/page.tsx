@@ -1,7 +1,7 @@
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { CaretRight } from '@phosphor-icons/react/dist/ssr'
+import { CaretRight, Heartbeat } from '@phosphor-icons/react/dist/ssr'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
@@ -154,8 +154,20 @@ const LoadRunner: FC<{
       key={runner?.id}
       heading={
         <span className="flex items-center gap-3">
-          <Text variant="med-14">{runner?.display_name}</Text>
-          <StatusBadge status={runner?.status} />
+          <Text variant="med-14" className="gap-2">
+            <span className="animate-pulse">
+              <StatusBadge
+                status={runner?.status}
+                isStatusTextHidden
+                isWithoutBorder
+              />
+            </span>
+            <span>{runner?.display_name}</span>
+          </Text>
+          <Text variant="reg-14">
+            <Heartbeat className="animate-pulse" size={14} />
+            <Time time={runnerHeartbeat?.created_at} format="relative" />
+          </Text>
         </span>
       }
       expandContent={
@@ -166,12 +178,6 @@ const LoadRunner: FC<{
               <ConfigContent
                 label="Alive time"
                 value={<Duration nanoseconds={runnerHeartbeat?.alive_time} />}
-              />
-              <ConfigContent
-                label="Last heartbeat"
-                value={
-                  <Time time={runnerHeartbeat?.created_at} format="relative" />
-                }
               />
             </Config>
             <Text>
