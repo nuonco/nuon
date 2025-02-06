@@ -14,18 +14,21 @@ type RunnerHealthCheck struct {
 	ID          string `gorm:"primary_key" json:"id"`
 	CreatedByID string `json:"created_by_id"`
 
-	CreatedAt time.Time             `json:"created_at"`
-	UpdatedAt time.Time             `json:"updated_at"`
+	CreatedAt time.Time             `json:"created_at" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1)"`
+	UpdatedAt time.Time             `json:"updated_at" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1)"`
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
-	RunnerID string `json:"runner_id"`
+	RunnerID string `json:"runner_id" gorm:"codec:ZSTD(1)"`
 
-	RunnerStatus RunnerStatus `json:"status"`
+	RunnerStatus RunnerStatus `json:"status" gorm:"codec:ZSTD(1)"`
+
+	// loaded from view
+
+	MinuteBucket time.Time `json:"minute_bucket" gorm:"->;-:migration;type:DateTime()"`
 
 	// after queries
 
-	RunnerStatusCode int       `json:"status_code" gorm:"-"`
-	MinuteBucket     time.Time `json:"minute_bucket" gorm:"-"`
+	RunnerStatusCode int `json:"status_code" gorm:"-"`
 }
 
 func (r *RunnerHealthCheck) BeforeCreate(tx *gorm.DB) error {
@@ -56,8 +59,18 @@ func (r RunnerHealthCheck) MigrateDB(tx *gorm.DB) *gorm.DB {
 	return tx.Set("gorm:table_options", opts).Set("gorm:table_cluster_options", "on cluster simple")
 }
 
+func (RunnerHealthCheck) UseView() bool {
+	return true
+}
+
+func (*RunnerHealthCheck) ViewVersion() string {
+	return "v1"
+}
+
 func (r *RunnerHealthCheck) AfterQuery(tx *gorm.DB) error {
 	r.RunnerStatusCode = r.RunnerStatus.Code()
-	r.MinuteBucket = r.CreatedAt.Truncate(time.Minute)
+
+	// NOTE(jm): this is only required because the view is not working correctly
+	r.MinuteBucket = r.CreatedAt.Truncate(time.Hour)
 	return nil
 }

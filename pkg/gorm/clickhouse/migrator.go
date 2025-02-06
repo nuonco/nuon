@@ -113,6 +113,10 @@ func (m Migrator) CreateTable(models ...interface{}) error {
 			columnSlice := make([]string, 0, len(stmt.Schema.DBNames))
 			for _, dbName := range stmt.Schema.DBNames {
 				field := stmt.Schema.FieldsByDBName[dbName]
+				if field.IgnoreMigration {
+					continue
+				}
+
 				columnSlice = append(columnSlice, "? ?")
 				args = append(args,
 					clause.Column{Name: dbName},
@@ -221,6 +225,10 @@ func (m Migrator) GetTables() (tableList []string, err error) {
 func (m Migrator) AddColumn(value interface{}, field string) error {
 	return m.RunWithValue(value, func(stmt *gorm.Statement) error {
 		if field := stmt.Schema.LookUpField(field); field != nil {
+			if field.IgnoreMigration {
+				return nil
+			}
+
 			clusterOpts := ""
 			if clusterOption, ok := m.DB.Get("gorm:table_cluster_options"); ok {
 				clusterOpts = " " + fmt.Sprint(clusterOption) + " "
@@ -257,6 +265,10 @@ func (m Migrator) DropColumn(value interface{}, name string) error {
 func (m Migrator) AlterColumn(value interface{}, field string) error {
 	return m.RunWithValue(value, func(stmt *gorm.Statement) error {
 		if field := stmt.Schema.LookUpField(field); field != nil {
+			if field.IgnoreMigration {
+				return nil
+			}
+
 			clusterOpts := ""
 			if clusterOption, ok := m.DB.Get("gorm:table_cluster_options"); ok {
 				clusterOpts = " " + fmt.Sprint(clusterOption) + " "
@@ -307,7 +319,6 @@ func (m Migrator) RenameColumn(value interface{}, oldName, newName string) error
 }
 
 func (m Migrator) HasColumn(value interface{}, field string) bool {
-
 	var count int64
 	m.RunWithValue(value, func(stmt *gorm.Statement) error {
 		currentDatabase := m.DB.Migrator().CurrentDatabase()
@@ -383,6 +394,10 @@ func (m Migrator) AutoMigrate(values ...interface{}) error {
 				// handle regular fields
 				for _, dbName := range dbNamesFiltered {
 					var foundColumn gorm.ColumnType
+					field := stmt.Schema.FieldsByDBName[dbName]
+					if field.IgnoreMigration {
+						continue
+					}
 
 					for _, columnType := range columnTypes {
 						if columnType.Name() == dbName {
@@ -398,7 +413,6 @@ func (m Migrator) AutoMigrate(values ...interface{}) error {
 						}
 					} else {
 						// found, smartly migrate
-						field := stmt.Schema.FieldsByDBName[dbName]
 						if err = execTx.Migrator().MigrateColumn(value, field, foundColumn); err != nil {
 							return err
 						}
@@ -770,7 +784,6 @@ func (m Migrator) MigrateNestedColumn(value interface{}, field *schema.Field, ch
 				log.Fatal(err)
 			}
 		}
-
 	}
 	if len(deletions) > 0 {
 		for _, key := range deletions {

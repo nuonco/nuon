@@ -14,6 +14,7 @@ type Params struct {
 	fx.In
 
 	DB          *gorm.DB `name:"psql"`
+	CHDB        *gorm.DB `name:"ch"`
 	L           *zap.Logger
 	Cfg         *internal.Config
 	AuthzClient *authz.Client
@@ -22,6 +23,7 @@ type Params struct {
 
 type Migrations struct {
 	db          *gorm.DB
+	chDB        *gorm.DB
 	l           *zap.Logger
 	cfg         *internal.Config
 	authzClient *authz.Client
@@ -31,6 +33,7 @@ type Migrations struct {
 func New(params Params) *Migrations {
 	return &Migrations{
 		db:          params.DB,
+		chDB:        params.CHDB,
 		l:           params.L,
 		cfg:         params.Cfg,
 		authzClient: params.AuthzClient,
