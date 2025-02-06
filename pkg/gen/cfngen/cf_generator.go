@@ -484,6 +484,8 @@ systemctl enable --now nuon-runner
 
 	lambdaprops := map[string]any{
 		"ServiceToken": cloudformation.GetAttPtr("RunnerPhoneHome", "Arn"),
+		"RunnerId":     intv.RunnerID,
+		"url":          intv.NotifyUrl,
 	}
 	for _, role := range cfg.Roles {
 		lambdaprops[role.StrRole()] = cloudformation.If(role.StrEnabled(), cloudformation.GetAttPtr(role.StrRole(), "Arn"), "")
@@ -495,44 +497,13 @@ systemctl enable --now nuon-runner
 	}
 
 	tmpl.Resources["RunnerPhoneHome"] = &lambda.Function{
-		Handler:     ptr("index.lambda_handler"),
+		Handler:     ptr("phonehome.lambda_handler"),
 		Runtime:     ptr("python3.9"),
 		Tags:        t.apply(nil, "phone-home-lambda"),
 		Description: ptr("Notify the Nuon API of the stack state."),
 		Code: &lambda.Function_Code{
-			ZipFile: ptr(fmt.Sprintf(`
-import json
-
-import urllib3
-import cfnresponse
-
-http = urllib3.PoolManager()
-
-def lambda_handler(event, context):
-	data = event["ResourceProperties"] | {
-		"stack_id": event["StackId"],
-		"state": event["RequestType"],
-		"runner_id": %q,
-	}
-	encoded_data = json.dumps(data).encode('utf-8')
-
-	try:
-		response = http.request(
-			"POST",
-			%q,
-			body=encoded_data,
-			headers={"Content-Type": "application/json"},
-		)
-		print("Response: ", response.data)
-		cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
-	except Exception as e:
-		print("Error: ", str(e))
-		# It's OK if notifying Nuon fails on deletion
-		if event["RequestType"] in ["Create", "Update"]:
-			cfnresponse.send(event, context, cfnresponse.FAILED, {"Error": str(e)})
-		else:
-			cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
-`, intv.RunnerID, intv.NotifyUrl)),
+			S3Bucket: ptr("nuon-artifacts"),
+			S3Key:    ptr("cfngen/runner-phone-home.zip"),
 		},
 		Role: cloudformation.GetAtt("RunnerPhoneHomeRole", "Arn"),
 	}
