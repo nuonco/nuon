@@ -145,7 +145,7 @@ export type TRunnerGroupSettings =
 export type TRunnerGroupType = components['schemas']['app.RunnerGroupType']
 export type TRunner = components['schemas']['app.Runner']
 export type TRunnerJob = components['schemas']['app.RunnerJob']
-export type TRunnerRecentHeartbeat = components['schemas']['service.RunnerRecentHeartBeatResponse']
+export type TRunnerHealthCheck = components['schemas']['app.RunnerHealthCheck']
 export type TRunnerHeartbeat = components['schemas']['app.RunnerHeartBeat']
 
 // log stream

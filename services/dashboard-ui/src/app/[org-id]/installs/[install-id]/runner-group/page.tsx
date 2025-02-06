@@ -87,8 +87,8 @@ export default withPageAuthRequired(async function RunnerGroup({ params }) {
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <Section heading="Runners">
-        {runnerGroup ? (
-          <Grid variant="2-cols">
+        {runnerGroup?.runners?.length ? (
+          <Grid variant="3-cols">
             {runnerGroup?.runners?.map((runner) => (
               <ErrorBoundary key={runner?.id} fallbackRender={ErrorFallback}>
                 <Suspense
@@ -136,6 +136,7 @@ const LoadRunner: FC<{
       runnerId,
       options: {
         limit: '4',
+        groups: ['build', 'deploy', 'sync', 'actions'],
       },
     }),
     getRunnerLatestHeartbeat({
@@ -207,7 +208,11 @@ const LoadRunner: FC<{
                           'Unknown job'
                         )}
                       </Text>
-                      <Time className="col-span-4" time={job?.updated_at} />
+                      <Time
+                        className="col-span-4"
+                        time={job?.updated_at}
+                        format="relative"
+                      />
                       <div className="col-span-3 flex justify-end">
                         <StatusBadge status={job?.status} />
                       </div>
