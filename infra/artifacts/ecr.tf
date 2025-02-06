@@ -49,7 +49,7 @@ module "runner" {
 module "runner-phone-home" {
   source = "../modules/public-ecr"
 
-  name        = "runner"
+  name        = "runner-phone-home"
   description = "Nuon runner installer phone-home lambda"
   about       = "Nuon runner installer phone-home lambda"
   tags = {
