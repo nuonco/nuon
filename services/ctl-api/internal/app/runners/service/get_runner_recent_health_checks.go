@@ -62,7 +62,7 @@ func (s *service) getRunnerRecentHealthChecks(ctx context.Context, runnerID stri
 			RunnerID: runnerID,
 		}).
 		Where("created_at > ?", startTS).
-		Order("created_at desc").
+		Order("created_at asc").
 		Find(&healthChecks)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get health checks")
