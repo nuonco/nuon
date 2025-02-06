@@ -173,5 +173,10 @@ func (a *Migrations) GetAll() []Migration {
 			Fn:        a.migration079ActionRunsActiveToFinished,
 			AlwaysRun: true,
 		},
+		{
+			Name:      "080-runner-health-checks-view-v1",
+			Fn:        a.migration080RunnerHealthChecks,
+			AlwaysRun: true,
+		},
 	}
 }
