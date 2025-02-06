@@ -1,0 +1,92 @@
+[internal]
+runner_id = "runc0yo8geuotojdlr6c34kzom"
+runner_api_token = "tok4d81ox6ntxqbmo2y3i5ligz"
+install_id = "inlynhknv17p29esh5snj1zlc5"
+# the lambda will hit this endpoint, and you can use it to see things like role ARNs in the install
+notify_url = "https://webhook.site/b558715f-d882-41bd-a78e-2d40998fb021"
+# dev currently just means it'll try to set up SSH for you
+#environment = "dev"
+
+# Everything in vendorcfg is ultimately something that is intended to come from some kind of vendor config
+[vendorcfg]
+byovpc = true
+instance_type = "t3a.medium"
+[vendorcfg.additional_tags]
+party = "time"
+
+[[vendorcfg.roles]]
+name = "provision"
+description = "Permissions required for installing the app in your cloud. Can be disabled after installation."
+display_name = "Enable Provision"
+
+[[vendorcfg.roles.policies]]
+builtin = true
+
+[[vendorcfg.roles.policies]]
+name = "CustomProvision"
+policy_json = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+        "Effect": "Allow",
+        "Action": "*",
+        "Resource": "*"
+        },
+        {
+        "Effect": "Deny",
+        "Action": [
+        "rds-db:connect",
+            "rds-data:Execute*"
+        ],
+        "Resource": "*"
+        }
+    ]
+}
+"""
+
+[[vendorcfg.roles]]
+name = "deprovision"
+description = "Permissions required for uninstalling the app from your cloud."
+display_name = "Enable Deprovision"
+
+[[vendorcfg.roles.policies]]
+builtin = true
+
+[[vendorcfg.roles.policies]]
+name = "CustomDeprovision"
+policy_json = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+        "Effect": "Allow",
+        "Action": "*",
+        "Resource": "*"
+        },
+        {
+        "Effect": "Deny",
+        "Action": [
+        "rds-db:connect",
+            "rds-data:Execute*"
+        ],
+        "Resource": "*"
+        }
+    ]
+}
+"""
+
+[[vendorcfg.roles]]
+name = "maintenance"
+description = "Permissions required for ongoing maintenance of the app."
+display_name = "Enable Maintenance"
+
+[[vendorcfg.roles.policies]]
+builtin = true
+
+[[vendorcfg.secrets]]
+name = "license_key"
+required = true
+display_name = "License Key"
+description = "Your license key for the app."
+kubernetes_secret = "default.retool_license_key"
