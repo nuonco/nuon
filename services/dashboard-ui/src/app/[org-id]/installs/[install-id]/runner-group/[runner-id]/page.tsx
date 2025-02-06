@@ -3,21 +3,23 @@ import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CaretRight, Heartbeat, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
-  DashboardContent,
+  ClickToCopy,
   Config,
   ConfigContent,
   CancelRunnerJobButton,
+  DashboardContent,
   Duration,
+  EmptyStateGraphic,
   ErrorFallback,
+  Link,
   Loading,
   StatusBadge,
-  Link,
+  RunnerHeartbeatChart,
   Section,
   Text,
   Time,
   Timeline,
   ToolTip,
-  ClickToCopy,
   Truncate,
 } from '@/components'
 import {
@@ -25,11 +27,9 @@ import {
   getOrg,
   getRunner,
   getRunnerJobs,
-  getRunnerHeartbeat,
+  getRunnerHealthChecks,
   getRunnerLatestHeartbeat,
 } from '@/lib'
-
-import { RunnerHeartbeatChart } from '@/components/RunnerHeartbeatChart'
 
 export default withPageAuthRequired(async function Runner({ params }) {
   const orgId = params?.['org-id'] as string
@@ -97,7 +97,12 @@ export default withPageAuthRequired(async function Runner({ params }) {
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
               Status
             </Text>
-            <StatusBadge status={runner?.status} shouldPoll />
+            <StatusBadge
+              status={runner?.status}
+              description={runner?.status_description}
+              descriptionAlignment="right"
+              shouldPoll
+            />
           </span>
           <span className="flex flex-col gap-2">
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
@@ -115,39 +120,25 @@ export default withPageAuthRequired(async function Runner({ params }) {
         </div>
       }
     >
-      <div className="flex flex-col md:flex-row flex-auto divide-x">
-        <div className="divide-y flex flex-col flex-auto">
-          <Section className="flex-initial" heading={`Heartbeat`}>
-            <Text variant="reg-12">TBD</Text>
-
-            {/* <ErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                fallback={<Loading loadingText="Loading runner heartbeat..." />}
-                >
-                <LoadRunnerHeartbeat runnerId={runnerId} orgId={orgId} />
-                </Suspense>
-                </ErrorBoundary> */}
-          </Section>
-          {/* <Section className="flex-initial" heading="Recent job">
-              <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-              fallback={<Loading loadingText="Loading recent job..." />}
-              >
-              <LoadRecentJob
-              installId={installId}
-              runnerId={runnerId}
-              orgId={orgId}
-              />
-              </Suspense>
-              </ErrorBoundary>
-              </Section> */}
-
-          <Section className="flex-initial" heading="Upcoming jobs ">
+      <div className="md:grid md:grid-cols-12 divide-x">
+        <div className="divide-y flex flex-col flex-auto col-span-8">
+          <Section className="flex-initial" heading="Health checks">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
-                fallback={<Loading loadingText="Loading upcoming jobs..." />}
+                fallback={
+                  <Loading loadingText="Loading runner health checks..." />
+                }
               >
-                <LoadUpcomingJobs
+                <LoadRunnerHeartbeat runnerId={runnerId} orgId={orgId} />
+              </Suspense>
+            </ErrorBoundary>
+          </Section>
+          <Section heading="Job run history">
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={<Loading loadingText="Loading runner jobs..." />}
+              >
+                <LoadPastJobs
                   installId={installId}
                   runnerId={runnerId}
                   orgId={orgId}
@@ -156,13 +147,26 @@ export default withPageAuthRequired(async function Runner({ params }) {
             </ErrorBoundary>
           </Section>
         </div>
-        <div className="divide-y flex-auto flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
-          <Section heading="Past job runs">
+        <div className="divide-y flex-auto flex flex-col col-span-4">
+          <Section className="flex-initial" heading="Recent job">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
-                fallback={<Loading loadingText="Loading runner jobs..." />}
+                fallback={<Loading loadingText="Loading recent job..." />}
               >
-                <LoadPastJobs
+                <LoadRecentJob
+                  installId={installId}
+                  runnerId={runnerId}
+                  orgId={orgId}
+                />
+              </Suspense>
+            </ErrorBoundary>
+          </Section>
+          <Section className="flex-initial" heading="Upcoming jobs ">
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={<Loading loadingText="Loading upcoming jobs..." />}
+              >
+                <LoadUpcomingJobs
                   installId={installId}
                   runnerId={runnerId}
                   orgId={orgId}
@@ -180,9 +184,9 @@ const LoadRunnerHeartbeat: FC<{
   orgId: string
   runnerId: string
 }> = async ({ orgId, runnerId }) => {
-  const heartBeats = await getRunnerHeartbeat({ orgId, runnerId })
+  const healthChecks = await getRunnerHealthChecks({ orgId, runnerId })
 
-  return <RunnerHeartbeatChart />
+  return <RunnerHeartbeatChart healthchecks={healthChecks} />
 }
 
 const LoadRecentJob: FC<{
@@ -195,6 +199,7 @@ const LoadRecentJob: FC<{
     runnerId,
     options: {
       limit: '1',
+      statuses: ['finished', 'failed'],
     },
   })
 
@@ -248,7 +253,7 @@ const LoadUpcomingJobs: FC<{
   return (
     <>
       {runnerJobs?.length ? (
-        <div className="divide-y">
+        <div className="divide-y flex-auto w-full">
           {runnerJobs?.map((job) => {
             const isDeploy = job?.group === 'deploy' || job?.group === 'sync'
             const jobType = isDeploy ? 'deploy' : 'workflow-run'
@@ -284,7 +289,15 @@ const LoadUpcomingJobs: FC<{
           })}
         </div>
       ) : (
-        <Text>No upcoming job.</Text>
+        <div className="m-auto flex flex-col items-center max-w-[200px] my-6">
+          <EmptyStateGraphic />
+          <Text className="mt-6" variant="med-14">
+            No upcoming jobs
+          </Text>
+          <Text variant="reg-12" className="text-center">
+            Runner jobs will appear here as they become available and queued.
+          </Text>
+        </div>
       )}
     </>
   )
