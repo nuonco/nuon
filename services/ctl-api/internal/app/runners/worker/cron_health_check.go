@@ -111,15 +111,6 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 }
 
 func (w *Workflows) getRunnerHeartBeatsStatus(ctx workflow.Context, runnerID string) (app.RunnerStatus, error) {
-	currentStatus, err := activities.AwaitGetRunnerStatusByID(ctx, runnerID)
-	if err != nil {
-		return app.RunnerStatusUnknown, errors.Wrap(err, "unable to get runner status")
-	}
-
-	if currentStatus != app.RunnerStatusActive {
-		return currentStatus, nil
-	}
-
 	// most recent heart beat
 	hb, err := activities.AwaitGetMostRecentHeartBeatRequestByRunnerID(ctx, runnerID)
 	if err != nil {
@@ -141,5 +132,5 @@ func (w *Workflows) getRunnerHeartBeatsStatus(ctx workflow.Context, runnerID str
 		return app.RunnerStatusError, nil
 	}
 
-	return currentStatus, nil
+	return app.RunnerStatusActive, nil
 }
