@@ -105,9 +105,7 @@ func GenerateCloudformation(cfg *AppConfigValues, intv InternalValues) (*cloudfo
 			},
 		},
 		UserData: cloudformation.Base64Ptr(fmt.Sprintf(`#!/bin/bash
-curl -X POST --json "hi" https://webhook.site/55d84b71-8539-40a6-ab16-b13e93e9274a
-yum install -y docker
-curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+yum install -y docker amazon-cloudwatch-agent
 systemctl enable --now docker
 
 # Set up things for the runner
