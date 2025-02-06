@@ -218,7 +218,7 @@ const LoadRunner: FC<{
                         {name ? (
                           name?.length >= 12 ? (
                             <ToolTip tipContent={name} alignment="left">
-                              <Truncate variant="default">{name}</Truncate>
+                              <Truncate variant="small">{name}</Truncate>
                             </ToolTip>
                           ) : (
                             name
