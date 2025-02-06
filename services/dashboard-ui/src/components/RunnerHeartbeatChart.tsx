@@ -1,14 +1,15 @@
 import classNames from 'classnames'
 import { type FC } from 'react'
+import { EmptyStateGraphic } from '@/components/EmptyStateGraphic'
 import { Time } from '@/components/Time'
 import { ToolTip } from '@/components/ToolTip'
 import { Text } from '@/components/Typography'
 import type { TRunnerHealthCheck } from '@/types'
 
 export const RunnerHeartbeatChart: FC<{
-  healthchecks: Array<TRunnerHealthCheck>
-}> = ({ healthchecks }) => {
-  return (
+  healthchecks?: Array<TRunnerHealthCheck>
+}> = ({ healthchecks = [] }) => {
+  return healthchecks?.length ? (
     <div className="flex flex-col gap-6 w-full">
       <div className="flex items-center gap-0.5">
         {healthchecks.map((healthcheck, i) => (
@@ -61,6 +62,16 @@ export const RunnerHeartbeatChart: FC<{
           />
         ))}
       </div>
+    </div>
+  ) : (
+    <div className="m-auto flex flex-col items-center max-w-[200px] my-6">
+      <EmptyStateGraphic />
+      <Text className="mt-6" variant="med-14">
+        No health check data
+      </Text>
+      <Text variant="reg-12" className="text-center">
+        Runner health checks will display here once available.
+      </Text>
     </div>
   )
 }
