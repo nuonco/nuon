@@ -24,7 +24,7 @@ type RunnerHealthCheck struct {
 
 	// loaded from view
 
-	MinuteBucket time.Time `json:"minute_bucket" gorm:"->;-:migration;type:DateTime()"`
+	MinuteBucket time.Time `json:"minute_bucket" gorm:"->;-:migration;type:DateTime64(9);codec:Delta(8),ZSTD(1)"`
 
 	// after queries
 
@@ -59,7 +59,7 @@ func (r RunnerHealthCheck) MigrateDB(tx *gorm.DB) *gorm.DB {
 	return tx.Set("gorm:table_options", opts).Set("gorm:table_cluster_options", "on cluster simple")
 }
 
-func (RunnerHealthCheck) UseView() bool {
+func (*RunnerHealthCheck) UseView() bool {
 	return true
 }
 
@@ -69,8 +69,5 @@ func (*RunnerHealthCheck) ViewVersion() string {
 
 func (r *RunnerHealthCheck) AfterQuery(tx *gorm.DB) error {
 	r.RunnerStatusCode = r.RunnerStatus.Code()
-
-	// NOTE(jm): this is only required because the view is not working correctly
-	r.MinuteBucket = r.CreatedAt.Truncate(time.Minute)
 	return nil
 }

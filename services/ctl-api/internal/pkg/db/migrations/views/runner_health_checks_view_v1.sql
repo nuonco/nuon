@@ -1,10 +1,10 @@
-CREATE OR REPLACE VIEW runner_health_checks_v1 AS
+CREATE OR REPLACE VIEW runner_health_checks_view_v1 AS
 WITH ranked_health_checks AS (
 SELECT 
 	rhc.*,
-	toStartOfMinute(toDateTime(rhc.created_at)) as minute_bucket,
+	toDateTime64(toStartOfMinute(rhc.created_at), 3) as minute_bucket,
      ROW_NUMBER() OVER (
-     	PARTITION BY rhc.runner_id, toStartOfMinute(toDateTime(rhc.created_at))
+     	PARTITION BY rhc.runner_id, toDateTime64(toStartOfMinute(rhc.created_at), 3)
         ORDER BY rhc.created_at DESC
      ) AS row_num
 FROM runner_health_checks as rhc
