@@ -225,9 +225,11 @@ const LoadRunnerHeartBeat: FC<{ orgId: string; runnerId: string }> = async ({
   orgId,
   runnerId,
 }) => {
-  const heartbeat = await getRunnerLatestHeartbeat({ runnerId, orgId })
+  const heartbeat = await getRunnerLatestHeartbeat({ runnerId, orgId }).catch(
+    console.error
+  )
 
-  return (
+  return heartbeat ? (
     <Config>
       <ConfigContent label="Version" value={heartbeat?.version} />
       <ConfigContent
@@ -239,5 +241,7 @@ const LoadRunnerHeartBeat: FC<{ orgId: string; runnerId: string }> = async ({
         value={<Time time={heartbeat?.created_at} format="relative" />}
       />
     </Config>
+  ) : (
+    <Text>Runner not online.</Text>
   )
 }
