@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW runner_health_checks_view_v1 AS
+CREATE OR REPLACE VIEW runner_health_checks_view_v1 ON CLUSTER simple AS
 WITH ranked_health_checks AS (
 SELECT 
 	rhc.*,
