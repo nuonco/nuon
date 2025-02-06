@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/pkg/retry"
 )
 
@@ -24,6 +26,14 @@ func (d *devver) initRunner(ctx context.Context) error {
 
 		if len(runners) < 1 {
 			return fmt.Errorf("no runners found")
+		}
+
+		// once a runner is created, we must wait until the service account is created (as part of the provisioning
+		// process), before running locally.
+		_, err = d.apiClient.GetRunnerServiceAccount(ctx, d.runnerID)
+		if err != nil {
+			fmt.Println("runner is created, but service account is not ready yet")
+			return errors.Wrap(err, "unable to get service account")
 		}
 
 		d.runnerID = runners[0].ID
