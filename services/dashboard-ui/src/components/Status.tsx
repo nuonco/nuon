@@ -31,6 +31,7 @@ export const StatusBadge: FC<IStatusBadge> = ({
   descriptionAlignment,
   descriptionPosition,
   isLabelStatusText = false,
+  isStatusTextHidden = false,
   isWithoutBorder = false,
   label,
   status,
@@ -89,9 +90,11 @@ export const StatusBadge: FC<IStatusBadge> = ({
           'bg-orange-800 dark:bg-orange-500': !isActive && !isError && !isNoop,
         })}
       />
-      <span className="text-sm font-medium">
-        {statusText ? titleCase(statusText as string) : 'Unknown'}
-      </span>
+      {isStatusTextHidden ? null : (
+        <span className="text-sm font-medium">
+          {statusText ? titleCase(statusText as string) : 'Unknown'}
+        </span>
+      )}
     </span>
   )
 

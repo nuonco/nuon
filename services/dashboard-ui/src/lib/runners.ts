@@ -7,7 +7,7 @@ import type {
   TLogStream,
   TOTELLog,
   TRunnerHeartbeat,
-  TRunnerRecentHeartbeat,
+  TRunnerHealthCheck,
 } from '@/types'
 import { API_URL, getFetchOpts, mutateData, queryData } from '@/utils'
 
@@ -27,8 +27,27 @@ export async function getRunner({ orgId, runnerId }: IGetRunner) {
 export interface IGetRunnerJobs extends IGetRunner {
   options?: {
     limit?: string
-    group?: string
-    statuses?: Array<string>
+    groups?: Array<
+      | 'sync'
+      | 'build'
+      | 'deploy'
+      | 'sandbox'
+      | 'runner'
+      | 'actions'
+      | 'operations'
+      | 'health-checks'
+    >
+    statuses?: Array<
+      | 'queued'
+      | 'available'
+      | 'in-progress'
+      | 'finished'
+      | 'failed'
+      | 'timed-out'
+      | 'not-attempted'
+      | 'cancelled'
+      | 'unknown'
+    >
   }
 }
 
@@ -126,16 +145,16 @@ export async function cancelRunnerJob({
   })
 }
 
-export interface IGetRunnerHeartbeat extends IGetRunner {}
+export interface IGetRunnerHealthChecks extends IGetRunner {}
 
-export async function getRunnerHeartbeat({
+export async function getRunnerHealthChecks({
   orgId,
   runnerId,
-}: IGetRunnerHeartbeat) {
-  return queryData<Array<TRunnerRecentHeartbeat>>({
-    errorMessage: 'Unable to retrieve runner heartbeat.',
+}: IGetRunnerHealthChecks) {
+  return queryData<Array<TRunnerHealthCheck>>({
+    errorMessage: 'Unable to retrieve runner recent health checks.',
     orgId,
-    path: `runners/${runnerId}/recent-heart-beats`,
+    path: `runners/${runnerId}/recent-health-checks`,
   })
 }
 

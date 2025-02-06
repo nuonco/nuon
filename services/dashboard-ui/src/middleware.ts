@@ -5,7 +5,6 @@ import { API_URL } from '@/utils/configs'
 import type { TOrg } from '@/types'
 
 // TODO(nnnnat): refactor this mess
-
 export default async function middleware(request: NextRequest) {
   const pathname = new URL(request.url).pathname
   const headers = new Headers(request.headers)
@@ -15,20 +14,21 @@ export default async function middleware(request: NextRequest) {
 
   if (session && pathname !== '/favicon.ico') {
     let redirectPath = '/request-access'
-    const orgSession = request.cookies.get('org-session')
 
-    const orgs: Array<TOrg> = await (
-      await fetch(`${API_URL}/v1/orgs`, {
-        cache: 'no-store',
-        headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
-          'Content-Type': 'application/json',
-          'X-Nuon-Org-ID': '',
-        },
-      })
-    ).json()
+    if (pathname === '/' || pathname.split('/')[1] === 'beta') {
+      const orgSession = request.cookies.get('org-session')
 
-    if (/^\/[^\/]+$/.test(pathname)) {
+      const orgs: Array<TOrg> = await (
+        await fetch(`${API_URL}/v1/orgs`, {
+          cache: 'no-store',
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+            'Content-Type': 'application/json',
+            'X-Nuon-Org-ID': '',
+          },
+        })
+      ).json()
+
       if (
         orgSession &&
         orgs.length > 0 &&
@@ -39,34 +39,9 @@ export default async function middleware(request: NextRequest) {
         redirectPath = `/${orgs[0].id}/apps`
       }
 
-      if (
-        redirectPath === '/request-access' &&
-        pathname === '/request-access'
-      ) {
-        return NextResponse.next({
-          request: { headers },
-        })
-      } else {
-        return NextResponse.redirect(new URL(redirectPath, request.url), {
-          headers,
-        })
-      }
-    } else {
-      if (pathname === '/' || pathname.split('/')[1] === 'beta') {
-        if (
-          orgSession &&
-          orgs.length > 0 &&
-          orgs.some((org) => org.id === orgSession?.value)
-        ) {
-          redirectPath = `/${orgSession?.value}/apps`
-        } else if (orgs.length > 0) {
-          redirectPath = `/${orgs[0].id}/apps`
-        }
-
-        return NextResponse.redirect(new URL(redirectPath, request.url), {
-          headers,
-        })
-      }
+      return NextResponse.redirect(new URL(redirectPath, request.url), {
+        headers,
+      })
     }
   }
 
