@@ -71,6 +71,6 @@ func (r *RunnerHealthCheck) AfterQuery(tx *gorm.DB) error {
 	r.RunnerStatusCode = r.RunnerStatus.Code()
 
 	// NOTE(jm): this is only required because the view is not working correctly
-	r.MinuteBucket = r.CreatedAt.Truncate(time.Hour)
+	r.MinuteBucket = r.CreatedAt.Truncate(time.Minute)
 	return nil
 }
