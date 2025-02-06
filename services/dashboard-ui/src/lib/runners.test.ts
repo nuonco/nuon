@@ -8,7 +8,7 @@ import {
   getRunner,
   getRunnerJob,
   getRunnerJobs,
-  getRunnerHeartbeat,
+  getRunnerHealthChecks,
   getRunnerLatestHeartbeat,
 } from './runners'
 
@@ -116,20 +116,20 @@ describe('cancelRunnerJob should handle response status codes from POST runner-j
   })
 })
 
-describe('getRunnerHeartbeat should handle response status codes from GET runners/:id/recent-heart-beats endpoint', () => {
+describe('getRunnerHealthChecks should handle response status codes from GET runners/:id/recent-health-checks endpoint', () => {
   const orgId = 'test-id'
   const runnerId = 'test-id'
   test('200 status', async () => {
-    const spec = await getRunnerHeartbeat({ runnerId, orgId })
+    const spec = await getRunnerHealthChecks({ runnerId, orgId })
     spec.map((s) => {
-      expect(s).toHaveProperty('truncated_time')
-      expect(s).toHaveProperty('record_count')
+      expect(s).toHaveProperty('minute_bucket')
+      expect(s).toHaveProperty('status_code')
       expect(s).toHaveProperty('runner_id')
     })
   })
 
   test.each(badResponseCodes)('%s status', async () => {
-    await getRunnerHeartbeat({ runnerId, orgId }).catch((err) =>
+    await getRunnerHealthChecks({ runnerId, orgId }).catch((err) =>
       expect(err).toMatchSnapshot()
     )
   })
