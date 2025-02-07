@@ -52,3 +52,29 @@ func TestSliceToGroups(t *testing.T) {
 		})
 	}
 }
+
+func TestSliceContains(t *testing.T) {
+	tests := map[string]struct {
+		val    string
+		vals   []string
+		output bool
+	}{
+		"Slice does contain string": {
+			val:    "a",
+			vals:   []string{"a", "b", "c"},
+			output: true,
+		},
+		"Slice does not contain string": {
+			val:    "a",
+			vals:   []string{"d", "e", "f"},
+			output: false,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			output := SliceContains(test.val, test.vals)
+			require.Equal(t, test.output, output)
+		})
+	}
+}
