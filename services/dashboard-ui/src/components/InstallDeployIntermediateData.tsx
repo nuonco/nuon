@@ -16,7 +16,7 @@ export const InstallDeployIntermediateData: FC<
     <Section
       childrenClassName="flex flex-col gap-8"
       heading="Rendered intermediate data"
-      className="max-h-[400px] overflow-y-auto"
+      className="flex-initial"
     >
       {data?.nuon?.components
       ? Object.keys(data?.nuon?.components).map((key) => (

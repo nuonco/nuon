@@ -148,11 +148,13 @@ const InstallActionLogPoller: FC<
                 }
                 isOpen
                 expandContent={
-                  <RunnerLogs
-                    heading={step}
-                    logs={parseOTELLog(logSteps[step])}
-                    withOutBorder
-                  />
+                  <div className="max-h-[500px] overflow-x-hidden overflow-y-auto">
+                    <RunnerLogs
+                      heading={step}
+                      logs={parseOTELLog(logSteps[step])}
+                      withOutBorder
+                    />
+                  </div>
                 }
               />
             )
