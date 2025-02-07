@@ -131,7 +131,7 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
           className="divide-y flex flex-col lg:min-w-[450px]
 lg:max-w-[450px]"
         >
-          <Section heading="Sandbox">
+          <Section className="flex-initial" heading="Sandbox">
             <AppSandboxConfig sandboxConfig={sandboxRun.app_sandbox_config} />
             <AppSandboxVariables
               variables={sandboxRun.app_sandbox_config?.variables}
