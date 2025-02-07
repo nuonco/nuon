@@ -20,9 +20,7 @@ branch = "main"
 directory = "step_1"
 
 [steps.env_vars]
-name = "TEST_NUON_VAR"
-value = "{{.nuon.install.id}}"
-
+TEST_NUON_VAR = "{{.nuon.install.id}}"
 
 # echo something out
 [[steps]]
@@ -35,8 +33,7 @@ branch = "main"
 directory = "step_2"
 
 [steps.env_vars]
-name = "NAMESPACE"
-value = "{{.nuon.install.id}}"
+NAMESPACE = "{{.nuon.install.id}}"
 
 # print namespace logs
 [[steps]]
@@ -48,5 +45,4 @@ branch = "main"
 directory = "step_3"
 
 [steps.env_vars]
-name = "NAMESPACE"
-value = "{{.nuon.install.id}}"
+NAMESPACE = "{{.nuon.install.id}}"

@@ -13,8 +13,7 @@ directory = "aws-ecs"
 repo = "nuonco/sandboxes"
 branch = "main"
 [steps.env_vars]
-name = "NUON_INSTALL_ID"
-value = "{{.nuon.install.id}}"
+NUON_INSTALL_ID = "{{.nuon.install.id}}"
 
 [[steps]]
 name = "action_2_step_2"
@@ -24,5 +23,4 @@ directory = "aws-ecs"
 repo = "nuonco/sandboxes"
 branch = "main"
 [steps.env_vars]
-name = "runner-env-var"
-value = "runner-env-var"
+runner-env-var = "runner-env-var"
