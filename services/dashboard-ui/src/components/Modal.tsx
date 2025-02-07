@@ -1,7 +1,7 @@
 'use client'
 
 import classNames from 'classnames'
-import React, { type FC, useCallback, useEffect } from 'react'
+import React, { type FC, useCallback, useEffect, useRef } from 'react'
 import { X } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Heading } from '@/components/Typography'
@@ -24,18 +24,25 @@ export const Modal: FC<IModal> = ({
   onClose = () => {},
   ...props
 }) => {
+  const contentRef = useRef(null);
   const onEscape = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       onClose()
     }
   }, [])
 
-  useEffect(() => {
+  useEffect(() => {    
     document.addEventListener('keydown', onEscape, false)
     return () => {
       document.removeEventListener('keydown', onEscape, false)
     }
   }, [])
+
+  useEffect(() => {
+    if (isOpen) {
+      contentRef?.current?.focus()
+    }
+  }, [isOpen])
 
   return isOpen ? (
     <div className="absolute flex w-full h-full top-0 left-0 z-50">
@@ -64,12 +71,14 @@ export const Modal: FC<IModal> = ({
           </div>
         </header>
         <div
+          tabIndex={-1}
           className={classNames(
-            'p-6 h-full max-h-[700px] overflow-y-auto overflow-x-hidden',
+            'p-6 h-full max-h-[700px] overflow-y-auto overflow-x-hidden focus:border',
             {
               'min-h-[700px]': hasFixedHeight,
             }
           )}
+          ref={contentRef}
         >
           {children}
         </div>
