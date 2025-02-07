@@ -49,6 +49,7 @@ type Client interface {
 
 	ListRunners(ctx context.Context, typ string) ([]Runner, error)
 	GetRunner(ctx context.Context, id string) (*Runner, error)
+	RestartRunner(ctx context.Context, runnerID string) error
 	GetRunnerGroup(ctx context.Context, id string) (*RunnerGroup, error)
 	GetRunnerServiceAccount(ctx context.Context, runnerID string) (*RunnerServiceAccount, error)
 	GetRunnerServiceAccountToken(ctx context.Context, runnerID string, dur time.Duration) (string, error)
