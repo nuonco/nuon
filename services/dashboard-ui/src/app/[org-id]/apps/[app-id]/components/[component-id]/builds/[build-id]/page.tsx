@@ -173,7 +173,7 @@ lg:max-w-[450px]"
             </Section>
           )}
 
-          <Section heading="Component config">
+          <Section className="flex-initial" heading="Component config">
             <ComponentConfiguration config={componentConfig} />
           </Section>
         </div>

@@ -185,7 +185,7 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
             </div>
           </Section>
           {workflowRun?.runner_job?.outputs ? (
-            <Section heading="Workflow outputs">
+            <Section className="flex-initial" heading="Workflow outputs">
               <CodeViewer
                 initCodeSource={JSON.stringify(
                   workflowRun?.runner_job?.outputs || {},
