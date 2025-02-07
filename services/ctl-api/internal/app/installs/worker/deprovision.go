@@ -33,15 +33,23 @@ func (w *Workflows) isDeprovisionable(ctx workflow.Context, install *app.Install
 		return false, attributes, nil
 	}
 
-	untornCmpIds, err := activities.AwaitFetchUntornInstallDeploys(ctx, activities.FetchUntornInstallDeploysRequest{
+	untornInstallDeploys, err := activities.AwaitFetchUntornInstallDeploys(ctx, activities.FetchUntornInstallDeploysRequest{
 		InstallID: install.ID,
 	})
 	if err != nil {
 		return false, attributes, fmt.Errorf("unable to fetch untorn install deploys: %w", err)
 	}
 
-	if len(untornCmpIds) > 0 {
-		attributes = append(attributes, zap.Strings("sandbox.untorn_install_component_ids", untornCmpIds))
+	if len(untornInstallDeploys) > 0 {
+		untornInlComponentIDs := []string{}
+		untornAppComponentIDs := []string{}
+		for _, idpl := range untornInstallDeploys {
+			untornInlComponentIDs = append(untornInlComponentIDs, idpl.InstallComponentID)
+			untornAppComponentIDs = append(untornAppComponentIDs, idpl.ComponentID)
+
+		}
+		attributes = append(attributes, zap.Strings("install.untorn_component_ids", untornInlComponentIDs))
+		attributes = append(attributes, zap.Strings("install.untorn_app_component_ids", untornAppComponentIDs))
 		attributes = append(attributes, zap.String("reason", fmt.Sprintf("at least one install component cannot be torn down")))
 		return false, attributes, nil
 	}
