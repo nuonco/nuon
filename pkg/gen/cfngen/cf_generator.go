@@ -97,56 +97,31 @@ func GenerateCloudformation(cfg *AppConfigValues, intv InternalValues) (*cloudfo
 		TagSpecifications: []ec2.LaunchTemplate_TagSpecification{
 			{
 				ResourceType: ptr("instance"),
-				Tags:         t.apply(nil, "runner-instance"),
+				Tags: t.apply([]tags.Tag{
+					{
+						Key:   "nuon_runner_id",
+						Value: intv.RunnerID,
+					},
+					{
+						Key:   "nuon_runner_api_url",
+						Value: intv.RunnerApiUrl,
+					},
+					{
+						// TODO(sdboyer) remove this in favor of an API call to get the token
+						Key:   "nuon_runner_api_token",
+						Value: intv.RunnerApiToken,
+					},
+				}, "runner-instance"),
 			},
 			{
 				ResourceType: ptr("network-interface"),
 				Tags:         t.apply(nil, "runner-eni"),
 			},
 		},
-		UserData: cloudformation.Base64Ptr(fmt.Sprintf(`#!/bin/bash
-yum install -y docker amazon-cloudwatch-agent
-systemctl enable --now docker
-
-# Set up things for the runner
-mkdir -p /opt/nuon/runner
-useradd runner -G docker -c "" -d /opt/nuon/runner
-chown -R runner:runner /opt/nuon/runner
-
-echo "
-RUNNER_ID=%s
-RUNNER_API_TOKEN=%s
-RUNNER_API_URL=%s
-# FIXME(sdboyer) this hack must be fixed - userdata is only run on instance creation, and ip can change on each boot
-HOST_IP=$(curl -s https://checkip.amazonaws.com)
-" > /opt/nuon/runner/env
-
-# Create systemd unit file for runner
-echo "
-[Unit]
-Description=Nuon Runner Service
-After=docker.service
-Requires=docker.service
-
-[Service]
-TimeoutStartSec=0
-User=runner
-ExecStartPre=-/usr/bin/docker exec %%n stop
-ExecStartPre=-/usr/bin/docker rm %%n
-ExecStartPre=/usr/bin/docker pull public.ecr.aws/p7e3r5y0/runner:latest
-ExecStart=/usr/bin/docker run --rm --name %%n -p 5000:5000 --detach --env-file /opt/nuon/runner/env public.ecr.aws/p7e3r5y0/runner:latest run
-Restart=always
-RestartSec=3
-
-[Install]
-WantedBy=default.target
-" > /etc/systemd/system/nuon-runner.service
-
-// Just in case SELinux might be unhappy
-/sbin/restorecon -v /etc/systemd/system/nuon-runner.service
-systemctl daemon-reload
-systemctl enable --now nuon-runner
-`, intv.RunnerID, intv.RunnerApiToken, intv.RunnerApiUrl)),
+		// in the beginning, there was a curlbash
+		UserData: cloudformation.Base64Ptr(`#!/bin/bash
+curl https://raw.githubusercontent.com/nuonco/aws-runner-init/refs/heads/main/init.sh | bash
+`),
 	}
 
 	if cfg.BYOVPC {
