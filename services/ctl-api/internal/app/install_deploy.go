@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -101,4 +102,9 @@ func (c *InstallDeploy) AfterQuery(tx *gorm.DB) error {
 	c.ComponentName = c.InstallComponent.Component.Name
 	c.ComponentConfigVersion = c.ComponentBuild.ComponentConfigVersion
 	return nil
+}
+
+func (c *InstallDeploy) IsTornDown() bool {
+	return (generics.SliceContains(c.Status, []InstallDeployStatus{InstallDeployStatusActive, InstallDeployStatusInactive})) && c.Type == InstallDeployTypeTeardown
+
 }
