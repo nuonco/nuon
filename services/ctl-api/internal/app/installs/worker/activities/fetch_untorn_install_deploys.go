@@ -14,21 +14,21 @@ type FetchUntornInstallDeploysRequest struct {
 }
 
 // @temporal-gen activity
-func (a *Activities) FetchUntornInstallDeploys(ctx context.Context, req FetchUntornInstallDeploysRequest) ([]string, error) {
+func (a *Activities) FetchUntornInstallDeploys(ctx context.Context, req FetchUntornInstallDeploysRequest) ([]*app.InstallDeploy, error) {
 	install := app.Install{}
 
+	// can still optimize here with a preload of latest deploy
 	res := a.db.WithContext(ctx).
 		Preload("InstallComponents").
-		// can still optimize here with a preload of latest deploy
 		First(&install, "id = ?", req.InstallID)
 
-	untornCmpIDs := make([]string, 0)
+	untornInstallDeploys := make([]*app.InstallDeploy, 0)
 
 	if res.Error == gorm.ErrRecordNotFound {
-		return untornCmpIDs, nil
+		return untornInstallDeploys, nil
 	}
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+		return untornInstallDeploys, fmt.Errorf("unable to get install: %w", res.Error)
 	}
 
 	for _, installCmp := range install.InstallComponents {
@@ -37,22 +37,18 @@ func (a *Activities) FetchUntornInstallDeploys(ctx context.Context, req FetchUnt
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			continue
 		}
-	
+
 		if err != nil {
-			return nil, fmt.Errorf("unable to get latest deploy: %w", err)
+			return untornInstallDeploys, fmt.Errorf("unable to get latest deploy: %w", err)
 		}
 
 		if latestDeploy == nil {
 			continue
-		}
+		} else if !latestDeploy.IsTornDown() {
+			untornInstallDeploys = append(untornInstallDeploys, latestDeploy)
 
-		if latestDeploy != nil {
-			deployTornDown := latestDeploy.Status == app.InstallDeployStatusActive && latestDeploy.Type == app.InstallDeployTypeTeardown
-			if !deployTornDown {
-				untornCmpIDs = append(untornCmpIDs, installCmp.ComponentID)
-			}
 		}
 	}
 
-	return untornCmpIDs, nil
+	return untornInstallDeploys, nil
 }
