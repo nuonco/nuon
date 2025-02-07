@@ -113,3 +113,21 @@ func (c *client) GetRunnerGroup(ctx context.Context, id string) (*RunnerGroup, e
 
 	return &resp, nil
 }
+
+func (c *client) RestartRunner(ctx context.Context, runnerID string) error {
+	endpoint := fmt.Sprintf("/v1/runners/%s/restart", runnerID)
+	byts, err := c.execPostRequest(ctx, endpoint, map[string]interface{}{})
+	if err != nil {
+		return fmt.Errorf("unable to execute post request: %w", err)
+	}
+
+	var response bool
+	if err := json.Unmarshal(byts, &response); err != nil {
+		return fmt.Errorf("unable to parse response: %w", err)
+	}
+	if !response {
+		return fmt.Errorf("unable to restart runner: %v", response)
+	}
+
+	return nil
+}
