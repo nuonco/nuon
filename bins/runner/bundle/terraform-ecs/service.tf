@@ -9,10 +9,10 @@ module "service" {
   memory        = 4096
 
   create_task_exec_iam_role = false
-  task_exec_iam_role_arn    = vars.runner_iam_role_arn
+  task_exec_iam_role_arn    = var.runner_iam_role_arn
 
   container_definitions = {
-    var.runner_id = {
+    (var.runner_id) = {
       image                    = "${var.image_url}:${var.image_tag}"
       cpu                      = 512
       memory                   = 1024
