@@ -178,5 +178,9 @@ func (a *Migrations) GetAll() []Migration {
 			Fn:        a.migration080RunnerHealthChecks,
 			AlwaysRun: true,
 		},
+		{
+			Name: "081-drop-runner-health-checks-idx",
+			Fn:   a.migration081DropRunnerHealtCheckIndex,
+		},
 	}
 }
