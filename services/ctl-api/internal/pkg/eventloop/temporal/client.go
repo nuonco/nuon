@@ -17,6 +17,7 @@ type Params struct {
 
 type Client interface {
 	Send(ctx workflow.Context, id string, signal eventloop.Signal)
+	Cancel(ctx workflow.Context, namespace, id string)
 }
 
 var _ Client = (*evClient)(nil)

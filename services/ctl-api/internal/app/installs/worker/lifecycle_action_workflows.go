@@ -37,13 +37,13 @@ func (w *Workflows) LifecycleActionWorkflows(ctx workflow.Context, req *Lifecycl
 	}
 	l.Info("executing actions with trigger " + string(req.TriggerType))
 
-	workflows, err := activities.AwaitGetActionWorkflowsByInstallID(ctx, req.InstallID)
+	installActionWorkflows, err := activities.AwaitGetActionWorkflowsByInstallID(ctx, req.InstallID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get action workflow run")
 	}
 
-	for _, workflow := range workflows {
-		cfg, err := activities.AwaitGetActionWorkflowLatestConfigByActionWorkflowID(ctx, workflow.ID)
+	for _, installWorkflow := range installActionWorkflows {
+		cfg, err := activities.AwaitGetActionWorkflowLatestConfigByActionWorkflowID(ctx, installWorkflow.ActionWorkflowID)
 		if err != nil {
 			return errors.Wrap(err, "unable to get action workflow config")
 		}
@@ -53,10 +53,11 @@ func (w *Workflows) LifecycleActionWorkflows(ctx workflow.Context, req *Lifecycl
 				continue
 			}
 
-			l.Info("executing action " + workflow.Name)
+			l.Info("executing action " + installWorkflow.ActionWorkflow.Name)
 			if err := w.lifecycleActionWorkflow(ctx,
 				req.InstallID,
-				workflow.ID,
+				installWorkflow.ID,
+				installWorkflow.ActionWorkflowID,
 				req.TriggerType,
 				req.RunEnvVars,
 				req.TriggeredByID,
@@ -72,6 +73,7 @@ func (w *Workflows) LifecycleActionWorkflows(ctx workflow.Context, req *Lifecycl
 
 func (w *Workflows) lifecycleActionWorkflow(ctx workflow.Context,
 	installID,
+	installActionWorkflowID,
 	actionWorkflowID string,
 	triggerType app.ActionWorkflowTriggerType,
 	runEnvVars map[string]*string,
@@ -79,12 +81,13 @@ func (w *Workflows) lifecycleActionWorkflow(ctx workflow.Context,
 	triggeredByType string,
 ) error {
 	actionWorkflowRun, err := activities.AwaitCreateActionWorkflowRun(ctx, &activities.CreateActionWorkflowRunRequest{
-		InstallID:        installID,
-		ActionWorkflowID: actionWorkflowID,
-		TriggerType:      triggerType,
-		TriggeredByID:    triggeredByID,
-		TriggeredByType:  triggeredByType,
-		RunEnvVars:       runEnvVars,
+		InstallActionWorkflowID: installActionWorkflowID,
+		ActionWorkflowID:        actionWorkflowID,
+		InstallID:               installID,
+		TriggerType:             triggerType,
+		TriggeredByID:           triggeredByID,
+		TriggeredByType:         triggeredByType,
+		RunEnvVars:              runEnvVars,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create action workflow config")

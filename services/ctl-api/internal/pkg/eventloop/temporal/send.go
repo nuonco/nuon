@@ -25,3 +25,15 @@ func (e *evClient) Send(wCtx workflow.Context, id string, signal eventloop.Signa
 		return nil
 	})
 }
+
+func (e *evClient) Cancel(wCtx workflow.Context, namespace, id string) {
+	workflow.SideEffect(wCtx, func(workflow.Context) interface{} {
+		ctx := context.Background()
+		ctx, cancelFn := context.WithTimeout(ctx, defaultSignalSendTimeout)
+		defer cancelFn()
+
+		ctx = cctx.ContextFromWorkflowContext(ctx, wCtx)
+		e.evClient.Cancel(ctx, namespace, id)
+		return nil
+	})
+}

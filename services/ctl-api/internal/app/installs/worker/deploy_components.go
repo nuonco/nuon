@@ -69,7 +69,7 @@ func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestS
 			w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusNoop)
 			continue
 		}
-		if err := w.Deploy(ctx, sreq); err != nil {
+		if err := w.AwaitDeploy(ctx, sreq); err != nil {
 			l.Error("unable to deploy component", zap.Error(err))
 			depDeployErrored = true
 		}

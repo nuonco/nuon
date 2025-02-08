@@ -93,6 +93,9 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if err := s.componentHelpers.EnsureInstallComponents(ctx, appID, []string{install.ID}); err != nil {
 		return nil, fmt.Errorf("unable to ensure install components: %w", err)
 	}
+	if err := s.actionsHelpers.EnsureInstallAction(ctx, appID, []string{install.ID}); err != nil {
+		return nil, fmt.Errorf("unable to ensure install components: %w", err)
+	}
 
 	loadedInstall, err := s.getInstall(ctx, install.ID)
 	if err != nil {

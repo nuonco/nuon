@@ -29,33 +29,36 @@ func (w *Workflows) SyncActionWorkflowTriggers(ctx workflow.Context, sreq signal
 	}
 
 	for _, workflow := range workflows {
-		cfg, err := activities.AwaitGetActionWorkflowLatestConfigByActionWorkflowID(ctx, workflow.ID)
+		cfg, err := activities.AwaitGetActionWorkflowLatestConfigByActionWorkflowID(ctx, workflow.ActionWorkflowID)
 		if err != nil {
 			return errors.Wrap(err, "unable to get action workflow config")
 		}
 
-		for _, trigger := range cfg.CronTriggers {
-			if err := w.syncActionWorkflowCronTrigger(ctx, sreq, workflow, &trigger); err != nil {
-				return errors.Wrap(err, "unable to sync action workflow trigger")
-			}
+		// sync the workflow cron
+		if cfg.CronTrigger == nil {
+			continue
+		}
+		if err := w.syncActionWorkflowCronTrigger(ctx, sreq, workflow, cfg.CronTrigger); err != nil {
+			return errors.Wrap(err, "unable to sync action workflow trigger")
 		}
 	}
 
 	return nil
 }
 
-func (w *Workflows) syncActionWorkflowCronTrigger(ctx workflow.Context, sreq signals.RequestSignal, aw *app.ActionWorkflow, trigger *app.ActionWorkflowTriggerConfig) error {
+func (w *Workflows) syncActionWorkflowCronTrigger(ctx workflow.Context, sreq signals.RequestSignal, iw *app.InstallActionWorkflow, trigger *app.ActionWorkflowTriggerConfig) error {
 	cwo := workflow.ChildWorkflowOptions{
-		WorkflowID:            actionWorkflowTriggerWorkflowID(sreq.ID, aw.ID),
+		WorkflowID:            actionWorkflowTriggerWorkflowID(sreq.ID, iw.ID),
 		CronSchedule:          trigger.CronSchedule,
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
-		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
+		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_ABANDON,
 	}
-	ctx = workflow.WithChildOptions(ctx, cwo)
+	dctx, _ := workflow.NewDisconnectedContext(ctx)
+	dctx = workflow.WithChildOptions(ctx, cwo)
 
-	workflow.ExecuteChildWorkflow(ctx, w.CronActionWorkflow, &CronActionWorkflowRequest{
+	workflow.ExecuteChildWorkflow(dctx, w.CronActionWorkflow, &CronActionWorkflowRequest{
 		InstallID:        sreq.ID,
-		ActionWorkflowID: aw.ID,
+		ActionWorkflowID: iw.ID,
 		RunEnvVars: map[string]*string{
 			"TRIGGER": generics.ToPtr("cron"),
 		},
