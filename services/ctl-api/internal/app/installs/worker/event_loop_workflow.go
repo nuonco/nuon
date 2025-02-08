@@ -163,14 +163,12 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		case signals.OperationSyncActionWorkflowTriggers:
 			op = "sync_action_workflow_triggers"
 
-			workflow.GoNamed(ctx, op, func(ctx workflow.Context) {
-				err = w.SyncActionWorkflowTriggers(ctx, sreq)
-				if err != nil {
-					status = "error"
-					l.Error("unable to execute sync action workflow triggers", zap.Error(err))
-					return
-				}
-			})
+			err = w.AwaitSyncActionWorkflowTriggers(ctx, sreq)
+			if err != nil {
+				status = "error"
+				l.Error("unable to execute sync action workflow triggers", zap.Error(err))
+				return
+			}
 		}
 	})
 

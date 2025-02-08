@@ -16,13 +16,21 @@ type CronActionWorkflowRequest struct {
 }
 
 func (w *Workflows) CronActionWorkflow(ctx workflow.Context, req *CronActionWorkflowRequest) error {
-	actionWorkflowRun, err := activities.AwaitCreateActionWorkflowRun(ctx, &activities.CreateActionWorkflowRunRequest{
+	installActionWorkflow, err := activities.AwaitGetInstallActionWorkflow(ctx, activities.GetInstallActionWorkflowRequest{
 		InstallID:        req.InstallID,
 		ActionWorkflowID: req.ActionWorkflowID,
-		TriggerType:      app.ActionWorkflowTriggerTypeCron,
-		TriggeredByID:    req.ActionWorkflowID,
-		TriggeredByType:  "action_workflows",
-		RunEnvVars:       req.RunEnvVars,
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to get install action workflow")
+	}
+
+	actionWorkflowRun, err := activities.AwaitCreateActionWorkflowRun(ctx, &activities.CreateActionWorkflowRunRequest{
+		InstallActionWorkflowID: installActionWorkflow.ID,
+		ActionWorkflowID:        req.ActionWorkflowID,
+		TriggerType:             app.ActionWorkflowTriggerTypeCron,
+		TriggeredByID:           req.ActionWorkflowID,
+		TriggeredByType:         "action_workflows",
+		RunEnvVars:              req.RunEnvVars,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create action workflow config")
