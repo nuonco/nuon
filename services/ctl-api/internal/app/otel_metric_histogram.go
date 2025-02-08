@@ -28,6 +28,7 @@ type OtelMetricHistogram struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal attributes
+	OrgID                  string `json:"org_id"`
 	RunnerID               string `json:"runner_id"`
 	RunnerJobID            string `json:"runner_job_id"`
 	RunnerGroupID          string `json:"runner_group_id"`
@@ -111,6 +112,7 @@ type OtelMetricHistogramIngestion struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal attributes
+	OrgID                  string `json:"org_id"`
 	RunnerID               string `json:"runner_id"`
 	RunnerJobID            string `json:"runner_job_id"`
 	RunnerGroupID          string `json:"runner_group_id"`

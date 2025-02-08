@@ -24,6 +24,7 @@ type OtelLogRecord struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal attributes
+	OrgID                  string `json:"org_id"`
 	RunnerID               string `json:"runner_id"`
 	LogStreamID            string `json:"log_stream_id"`
 	RunnerJobID            string `json:"runner_job_id"`
@@ -58,15 +59,18 @@ func (r *OtelLogRecord) BeforeCreate(tx *gorm.DB) error {
 	if r.CreatedByID == "" {
 		r.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
+	if r.OrgID == "" {
+		r.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
 	return nil
 }
 
 func (r OtelLogRecord) GetTableOptions() (string, bool) {
-	opts := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_log_record', '{replica}')
-	TTL toDateTime("timestamp") + toIntervalDay(720)
+	opts := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_log_records', '{replica}')
+	TTL toDateTime("timestamp") + toIntervalDay(30)
 	PARTITION BY toDate(timestamp_time)
-	PRIMARY KEY  (runner_id, runner_job_id, runner_group_id, runner_job_execution_id)
-	ORDER BY     (runner_id, runner_job_id, runner_group_id, runner_job_execution_id, timestamp_time, timestamp)
+	PRIMARY KEY  (org_id, log_stream_id, runner_job_id)
+	ORDER BY     (org_id, log_stream_id ,runner_job_id, timestamp_time, timestamp)
 	SETTINGS index_granularity = 8192, ttl_only_drop_parts = 0;`
 	return opts, true
 }
