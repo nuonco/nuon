@@ -26,6 +26,7 @@ type OtelMetricSummary struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal attributes
+	OrgID                  string `json:"org_id"`
 	RunnerID               string `json:"runner_id" `
 	RunnerJobID            string `json:"runner_job_id"`
 	RunnerGroupID          string `json:"runner_group_id"`
@@ -89,6 +90,9 @@ func (m *OtelMetricSummary) BeforeCreate(tx *gorm.DB) error {
 	if m.CreatedByID == "" {
 		m.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
+	if m.OrgID == "" {
+		m.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
 	return nil
 }
 
@@ -102,6 +106,7 @@ type OtelMetricSummaryIngestion struct {
 	DeletedAt soft_delete.DeletedAt `json:"-"`
 
 	// internal attributes
+	OrgID                  string `json:"org_id"`
 	RunnerID               string `json:"runner_id" `
 	RunnerJobID            string `json:"runner_job_id"`
 	RunnerGroupID          string `json:"runner_group_id"`
