@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	actionshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/helpers"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
@@ -19,15 +20,17 @@ type Params struct {
 	DB         *gorm.DB `name:"psql"`
 	Cfg        *internal.Config
 	VcsHelpers *vcshelpers.Helpers
+	Helpers    *actionshelpers.Helpers
 	EvClient   eventloop.Client
 }
 
 type service struct {
-	v          *validator.Validate
-	db         *gorm.DB
-	cfg        *internal.Config
-	vcsHelpers *vcshelpers.Helpers
-	evClient   eventloop.Client
+	v              *validator.Validate
+	db             *gorm.DB
+	cfg            *internal.Config
+	vcsHelpers     *vcshelpers.Helpers
+	actionsHelpers *actionshelpers.Helpers
+	evClient       eventloop.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -57,6 +60,10 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/installs/:install_id/action-workflows/latest-runs", s.GetInstallActionWorkflowsLatestRun)
 	api.GET("/v1/installs/:install_id/action-workflows/:action_workflow_id/recent-runs", s.GetInstallActionWorkflowRecentRuns)
 
+	// install action workflows
+	api.GET("/v1/installs/:install_id/action-workflows", s.GetInstallActionWorkflows)
+	api.POST("/v1/installs/:install_id/action-workflows/:action_workflow_id", s.GetInstallActionWorkflow)
+
 	return nil
 }
 
@@ -77,10 +84,11 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 
 func New(params Params) *service {
 	return &service{
-		cfg:        params.Cfg,
-		v:          params.V,
-		db:         params.DB,
-		vcsHelpers: params.VcsHelpers,
-		evClient:   params.EvClient,
+		cfg:            params.Cfg,
+		v:              params.V,
+		db:             params.DB,
+		vcsHelpers:     params.VcsHelpers,
+		actionsHelpers: params.Helpers,
+		evClient:       params.EvClient,
 	}
 }

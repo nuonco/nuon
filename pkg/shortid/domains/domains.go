@@ -70,6 +70,10 @@ func NewActionWorkflowID() string {
 	return shortid.NewNanoID("acw")
 }
 
+func NewInstallActionWorkflowConfigID() string {
+	return shortid.NewNanoID("iaw")
+}
+
 func NewActionWorkflowConfigID() string {
 	return shortid.NewNanoID("acc")
 }

@@ -14,21 +14,16 @@ type GetActionWorkflows struct {
 
 // @temporal-gen activity
 // @by-id InstallID
-func (a *Activities) GetActionWorkflows(ctx context.Context, req *GetActionWorkflows) ([]*app.ActionWorkflow, error) {
+func (a *Activities) GetActionWorkflows(ctx context.Context, req *GetActionWorkflows) ([]*app.InstallActionWorkflow, error) {
 	return a.getActionWorkflows(ctx, req.InstallID)
 }
 
-func (a *Activities) getActionWorkflows(ctx context.Context, installID string) ([]*app.ActionWorkflow, error) {
-	install, err := a.getInstall(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
-	}
-
-	var actionWorkflows []*app.ActionWorkflow
+func (a *Activities) getActionWorkflows(ctx context.Context, installID string) ([]*app.InstallActionWorkflow, error) {
+	var actionWorkflows []*app.InstallActionWorkflow
 
 	res := a.db.WithContext(ctx).
-		Where(app.ActionWorkflow{
-			AppID: install.AppID,
+		Where(app.InstallActionWorkflow{
+			InstallID: installID,
 		}).
 		Find(&actionWorkflows)
 	if res.Error != nil {
