@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
@@ -68,6 +69,11 @@ func (s *service) CreateAppActionWorkflow(ctx *gin.Context) {
 	app, err := s.createActionWorkflow(ctx, org.ID, appID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
+		return
+	}
+
+	if err := s.actionsHelpers.EnsureInstallAction(ctx, appID, nil); err != nil {
+		ctx.Error(errors.Wrap(err, "unable to ensure actions"))
 		return
 	}
 

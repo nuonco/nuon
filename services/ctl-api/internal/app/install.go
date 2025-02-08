@@ -34,6 +34,7 @@ type Install struct {
 	AppRunnerConfig   AppRunnerConfig `json:"app_runner_config"`
 
 	InstallComponents       []InstallComponent        `json:"install_components,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallActionWorkflows  []InstallActionWorkflow   `json:"install_action_workflows,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	InstallSandboxRuns      []InstallSandboxRun       `json:"install_sandbox_runs,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	InstallInputs           []InstallInputs           `json:"install_inputs" gorm:"constraint:OnDelete:CASCADE;"`
 	InstallEvents           []InstallEvent            `json:"install_events" gorm:"constraint:OnDelete:CASCADE;"`

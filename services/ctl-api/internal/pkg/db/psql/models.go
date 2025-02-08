@@ -116,6 +116,7 @@ func AllModels() []interface{} {
 		&app.ActionWorkflowConfig{},
 		&app.ActionWorkflowStepConfig{},
 		&app.ActionWorkflowTriggerConfig{},
+		&app.InstallActionWorkflow{},
 		&app.InstallActionWorkflowRun{},
 		&app.InstallActionWorkflowManualTrigger{},
 		&app.InstallActionWorkflowRunStep{},

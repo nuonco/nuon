@@ -29,6 +29,7 @@ type Params struct {
 
 type Client interface {
 	Send(ctx context.Context, id string, signal Signal)
+	Cancel(ctx context.Context, namespace, id string) error
 	GetWorkflowStatus(ctx context.Context, namespace string, workflowID string) (enumsv1.WorkflowExecutionStatus, error)
 	GetWorkflowCount(ctx context.Context, namespace string, workflowID string) (int64, error)
 }

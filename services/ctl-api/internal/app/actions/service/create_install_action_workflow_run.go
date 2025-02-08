@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	installsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
@@ -71,7 +72,14 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		return
 	}
 
-	run, err := s.createActionWorkflowRun(ctx, installID, awc, req.RunEnvVars)
+	//
+	installActionWorkflow, err := s.getInstallActionWorkflow(ctx, installID, awc.ID)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get install action workflow"))
+		return
+	}
+
+	run, err := s.createActionWorkflowRun(ctx, installID, installActionWorkflow.ID, awc, req.RunEnvVars)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
@@ -85,7 +93,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, run)
 }
 
-func (s *service) createActionWorkflowRun(ctx *gin.Context, installID string, cfg *app.ActionWorkflowConfig, runEnvVars map[string]string) (*app.InstallActionWorkflowRun, error) {
+func (s *service) createActionWorkflowRun(ctx *gin.Context, installID, installActionWorkflowID string, cfg *app.ActionWorkflowConfig, runEnvVars map[string]string) (*app.InstallActionWorkflowRun, error) {
 	steps := make([]app.InstallActionWorkflowRunStep, 0)
 	for _, step := range cfg.Steps {
 		steps = append(steps, app.InstallActionWorkflowRunStep{
@@ -96,13 +104,14 @@ func (s *service) createActionWorkflowRun(ctx *gin.Context, installID string, cf
 
 	trigger := app.InstallActionWorkflowManualTrigger{
 		InstallActionWorkflowRun: app.InstallActionWorkflowRun{
-			InstallID:              installID,
-			ActionWorkflowConfigID: cfg.ID,
-			TriggerType:            app.ActionWorkflowTriggerTypeManual,
-			Status:                 app.InstallActionRunStatusQueued,
-			StatusDescription:      "Queued",
-			Steps:                  steps,
-			RunEnvVars:             generics.ToHstore(runEnvVars),
+			InstallID:               installID,
+			InstallActionWorkflowID: installActionWorkflowID,
+			ActionWorkflowConfigID:  cfg.ID,
+			TriggerType:             app.ActionWorkflowTriggerTypeManual,
+			Status:                  app.InstallActionRunStatusQueued,
+			StatusDescription:       "Queued",
+			Steps:                   steps,
+			RunEnvVars:              generics.ToHstore(runEnvVars),
 		},
 	}
 
