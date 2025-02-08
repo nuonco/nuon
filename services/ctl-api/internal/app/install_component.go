@@ -23,6 +23,7 @@ type InstallComponent struct {
 
 	InstallID   string    `json:"install_id" gorm:"index:install_component_group,unique;notnull"`
 	Install     Install   `faker:"-" json:"-"`
+
 	ComponentID string    `json:"component_id" gorm:"index:install_component_group,unique;notnull"`
 	Component   Component `faker:"-" json:"component"`
 

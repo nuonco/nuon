@@ -10,8 +10,9 @@ import (
 )
 
 type CreateActionWorkflowRunRequest struct {
-	InstallID        string `json:"install_id" validate:"required"`
-	ActionWorkflowID string `json:"action_workflow_id" validate:"required"`
+	ActionWorkflowID        string `json:"action_workflow_id" validate:"required"`
+	InstallActionWorkflowID string `json:"install_action_workflow_id" validate:"required"`
+	InstallID               string `json:"install_id" validate:"required"`
 
 	TriggerType     app.ActionWorkflowTriggerType `json:"trigger_type" validate:"required"`
 	TriggeredByID   string                        `json:"triggered_by_id"`
@@ -23,22 +24,24 @@ type CreateActionWorkflowRunRequest struct {
 // @temporal-gen activity
 func (a *Activities) CreateActionWorkflowRun(ctx context.Context, req *CreateActionWorkflowRunRequest) (*app.InstallActionWorkflowRun, error) {
 	return a.createActionWorkflowRun(ctx,
-		req.InstallID,
 		req.ActionWorkflowID,
+		req.InstallActionWorkflowID,
+		req.InstallID,
 		req.TriggerType,
-		req.RunEnvVars,
 		req.TriggeredByID,
 		req.TriggeredByType,
+		req.RunEnvVars,
 	)
 }
 
 func (a *Activities) createActionWorkflowRun(ctx context.Context,
-	installID,
 	actionWorkflowID string,
+	installActionWorkflowID string,
+	installID string,
 	triggerType app.ActionWorkflowTriggerType,
-	runEnvVars map[string]*string,
 	triggeredByID string,
 	triggeredByType string,
+	runEnvVars map[string]*string,
 ) (*app.InstallActionWorkflowRun, error) {
 	cfg, err := a.getActionWorkflowLatestConfig(ctx, actionWorkflowID)
 	if err != nil {
@@ -54,15 +57,16 @@ func (a *Activities) createActionWorkflowRun(ctx context.Context,
 	}
 
 	newRun := app.InstallActionWorkflowRun{
-		InstallID:              installID,
-		ActionWorkflowConfigID: cfg.ID,
-		TriggerType:            triggerType,
-		Status:                 app.InstallActionRunStatusQueued,
-		StatusDescription:      "Queued",
-		Steps:                  steps,
-		RunEnvVars:             pgtype.Hstore(runEnvVars),
-		TriggeredByID:          triggeredByID,
-		TriggeredByType:        triggeredByType,
+		InstallActionWorkflowID: installActionWorkflowID,
+		InstallID:               installID,
+		ActionWorkflowConfigID:  cfg.ID,
+		TriggerType:             triggerType,
+		Status:                  app.InstallActionRunStatusQueued,
+		StatusDescription:       "Queued",
+		Steps:                   steps,
+		RunEnvVars:              pgtype.Hstore(runEnvVars),
+		TriggeredByID:           triggeredByID,
+		TriggeredByType:         triggeredByType,
 	}
 
 	res := a.db.WithContext(ctx).

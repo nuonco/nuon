@@ -2,9 +2,10 @@ package helpers
 
 import (
 	"context"
-	"fmt"
 
 	"gorm.io/gorm"
+
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -38,7 +39,7 @@ func (h *Helpers) GetInstall(ctx context.Context, installID string) (*app.Instal
 		Or("id = ?", installID).
 		First(&install)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+		return nil, errors.Wrap(res.Error, "unable to get install")
 	}
 
 	return &install, nil
