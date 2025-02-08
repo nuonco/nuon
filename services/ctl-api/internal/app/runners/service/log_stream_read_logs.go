@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	chhelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/ch/helpers"
 )
 
@@ -87,7 +88,12 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	}
 
 	// read logs from chDB
-	logs, headers, readErr := s.getLogStreamLogs(ctx, logStreamID, after, resourceAttrQueryParams, logAttrQueryParams)
+	orgID, err := middlewares.OrgIDFromContext(ctx)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to read org id from context"))
+		return
+	}
+	logs, headers, readErr := s.getLogStreamLogs(ctx, logStreamID, orgID, after, resourceAttrQueryParams, logAttrQueryParams)
 	if readErr != nil {
 		ctx.Error(errors.Wrap(readErr, "unable to read runner logs"))
 		return
@@ -101,7 +107,7 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, logs)
 }
 
-func (s *service) getLogStreamLogs(ctx context.Context, runnerID string, after int64, resourceAttrQueryParams map[string]string, logAttrQueryParams map[string]string) ([]app.OtelLogRecord, map[string]string, error) {
+func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgID string, after int64, resourceAttrQueryParams map[string]string, logAttrQueryParams map[string]string) ([]app.OtelLogRecord, map[string]string, error) {
 	// headers
 	headers := map[string]string{"Range-Units": "items"}
 
@@ -109,7 +115,8 @@ func (s *service) getLogStreamLogs(ctx context.Context, runnerID string, after i
 	otelLogRecords := []app.OtelLogRecord{}
 
 	res := s.chDB.WithContext(ctx).
-		Where("log_stream_id = ?", runnerID)
+		Where("org_id = ?", orgID).
+		Where("log_stream_id = ?", logStreamID)
 
 	if after != 0 {
 		res.Where("toUnixTimestamp64Nano(timestamp) > ?", after)
@@ -137,7 +144,7 @@ func (s *service) getLogStreamLogs(ctx context.Context, runnerID string, after i
 	// get count
 	var count int64
 	countres := s.chDB.WithContext(ctx).
-		Where("log_stream_id = ?", runnerID).
+		Where("log_stream_id = ?", logStreamID).
 		Find(&[]app.OtelLogRecord{}).
 		Count(&count)
 	if countres.Error != nil {

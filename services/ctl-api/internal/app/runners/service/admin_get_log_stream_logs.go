@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 // @ID AdminGetLogStreamLogs
@@ -19,6 +21,11 @@ import (
 // @Success		200				{object}	[]app.OtelLogRecord
 // @Router			/v1/log-streams/{log_stream_id}/logs [GET]
 func (s *service) AdminGetLogStreamLogs(ctx *gin.Context) {
+	orgID, err := middlewares.OrgIDFromContext(ctx)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to read org id from context"))
+		return
+	}
 	logStreamID := ctx.Param("log_stream_id")
 
 	ls, err := s.adminGetLogStream(ctx, logStreamID)
@@ -28,7 +35,7 @@ func (s *service) AdminGetLogStreamLogs(ctx *gin.Context) {
 	}
 
 	before := time.Now().UTC().UnixNano()
-	logs, headers, err := s.getLogStreamLogs(ctx, ls.ID, before, map[string]string{}, map[string]string{})
+	logs, headers, err := s.getLogStreamLogs(ctx, ls.ID, orgID, before, map[string]string{}, map[string]string{})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to read runner logs: %w", err))
 		return
