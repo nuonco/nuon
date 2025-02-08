@@ -1,5 +1,12 @@
 package state
 
-type orgState struct {
-	ID string `json:"id"`
+func NewOrgState() *OrgState {
+	return &OrgState{}
+}
+
+type OrgState struct {
+	Status    string `json:"status"`
+	Populated bool   `json:"populated"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
 }

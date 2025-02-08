@@ -4,6 +4,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	actionshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	componentshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	installshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
@@ -62,6 +63,7 @@ func (c *cli) providers() []fx.Option {
 
 		// add helpers for each domain
 		fx.Provide(vcshelpers.New),
+		fx.Provide(actionshelpers.New),
 		fx.Provide(componentshelpers.New),
 		fx.Provide(appshelpers.New),
 		fx.Provide(installshelpers.New),

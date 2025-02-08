@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -44,8 +46,25 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 	}
 
 	if c.Timeout > maxTimeout {
-		return fmt.Errorf("timeout cannot exceed %s", maxTimeout.String())
+		return stderr.ErrUser{
+			Err:         errors.New("invalid timeout"),
+			Description: "timeout cannot exceed " + maxTimeout.String(),
+		}
 	}
+
+	cronCount := 0
+	for _, trigger := range c.Triggers {
+		if trigger.Type == app.ActionWorkflowTriggerTypeCron {
+			cronCount += 1
+		}
+	}
+	if cronCount > 1 {
+		return stderr.ErrUser{
+			Err:         errors.New("more than one cron trigger defined"),
+			Description: "only one cron trigger can be defined at a time",
+		}
+	}
+
 	return nil
 }
 

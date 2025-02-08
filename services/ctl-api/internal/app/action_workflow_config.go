@@ -37,7 +37,7 @@ type ActionWorkflowConfig struct {
 
 	// after query fields
 
-	CronTriggers      []ActionWorkflowTriggerConfig `json:"-" temporaljson:"cron_triggers"`
+	CronTrigger       *ActionWorkflowTriggerConfig  `json:"-" temporaljson:"cron_trigger"`
 	LifecycleTriggers []ActionWorkflowTriggerConfig `json:"-" temporaljson:"lifecycle_triggers"`
 }
 
@@ -49,7 +49,6 @@ func (a *ActionWorkflowConfig) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (a *ActionWorkflowConfig) AfterQuery(tx *gorm.DB) error {
-	a.CronTriggers = make([]ActionWorkflowTriggerConfig, 0)
 	a.LifecycleTriggers = make([]ActionWorkflowTriggerConfig, 0)
 
 	for _, trigger := range a.Triggers {
@@ -57,7 +56,7 @@ func (a *ActionWorkflowConfig) AfterQuery(tx *gorm.DB) error {
 		case ActionWorkflowTriggerTypeManual:
 			continue
 		case ActionWorkflowTriggerTypeCron:
-			a.CronTriggers = append(a.CronTriggers, trigger)
+			a.CronTrigger = &trigger
 		default:
 			a.LifecycleTriggers = append(a.LifecycleTriggers, trigger)
 		}
