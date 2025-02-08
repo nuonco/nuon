@@ -37,7 +37,7 @@ func (c *command) Exec(ctx context.Context) error {
 
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("unable to start command: %w", err)
+		return fmt.Errorf("unable to exec command: %w", err)
 	}
 
 	return nil
