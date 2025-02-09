@@ -1818,6 +1818,8 @@ github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nuonco/clickhouse-go/v2 v2.28.1 h1:BiRzWD5Dcs/n5LTUO+NbrDUXc6+i6Ncl0X703ruozcM=
 github.com/nuonco/clickhouse-go/v2 v2.28.1/go.mod h1:z+/ndg1+oWVgVhxMh+OzVEZQOi/SmoY/gSEId5zj47I=
+github.com/nuonco/gin-swagger v1.6.2 h1:MafFLwTzIoCSmjo9dTu7KMI4XY/RSQSd/GKpyIh9/do=
+github.com/nuonco/gin-swagger v1.6.2/go.mod h1:uTjtvuQS7lK4f8KLmB376B/kb8ypjwV2/zAk6RKV0/k=
 github.com/nuonco/nuon-go v0.43.0 h1:Xh47FTkCrkE/oJkjkbl4WS0PQl5YAlPV5NIuvd+gX0c=
 github.com/nuonco/nuon-go v0.43.0/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
 github.com/nuonco/nuon-runner-go v0.6.1 h1:dEzYL9KODv/OUqndbWJEgF/GzRift4gQxJ2T2Oy1AAs=
@@ -2045,8 +2047,6 @@ github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
 github.com/swaggo/files v1.0.1 h1:J1bVJ4XHZNq0I46UU90611i9/YzdrF7x92oX1ig5IdE=
 github.com/swaggo/files v1.0.1/go.mod h1:0qXmMNH6sXNf+73t65aKeB+ApmgxdnkQzVTAj2uaMUg=
-github.com/swaggo/gin-swagger v1.6.0 h1:y8sxvQ3E20/RCyrXeFfg60r6H0Z+SwpTjMYsMm+zy8M=
-github.com/swaggo/gin-swagger v1.6.0/go.mod h1:BG00cCEy294xtVpyIAHG6+e2Qzj/xKlRdOqDkvq0uzo=
 github.com/swaggo/swag v1.16.3 h1:PnCYjPCah8FK4I26l2F/KQ4yz3sILcVUN3cTlBFA9Pg=
 github.com/swaggo/swag v1.16.3/go.mod h1:DImHIuOFXKpMFAQjcC7FG4m3Dg4+QuUgUzJmKjI/gRk=
 github.com/tetratelabs/wazero v1.8.1 h1:NrcgVbWfkWvVc4UtT4LRLDf91PsOzDzefMdwhLfA550=
