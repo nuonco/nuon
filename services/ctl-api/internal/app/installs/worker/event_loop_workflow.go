@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strconv"
 
+	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -163,12 +164,14 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		case signals.OperationSyncActionWorkflowTriggers:
 			op = "sync_action_workflow_triggers"
 
-			err = w.AwaitSyncActionWorkflowTriggers(ctx, sreq)
-			if err != nil {
-				status = "error"
-				l.Error("unable to execute sync action workflow triggers", zap.Error(err))
-				return
+			cwo := workflow.ChildWorkflowOptions{
+				TaskQueue:             "api",
+				WorkflowID:            sreq.WorkflowID(sreq.ID) + "action-workflows",
+				WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+				WaitForCancellation:   true,
 			}
+			ctx = workflow.WithChildOptions(ctx, cwo)
+			workflow.ExecuteChildWorkflow(ctx, w.ActionWorkflowTriggers, req)
 		}
 	})
 
