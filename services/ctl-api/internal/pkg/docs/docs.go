@@ -10,8 +10,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 
+	swagger "github.com/nuonco/gin-swagger"
 	swaggerfiles "github.com/swaggo/files"
-	swagger "github.com/swaggo/gin-swagger"
 )
 
 type Docs struct {
