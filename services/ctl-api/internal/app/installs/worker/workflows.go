@@ -38,6 +38,7 @@ type Workflows struct {
 func (w *Workflows) All() []any {
 	wkflows := []any{
 		w.EventLoop,
+		w.ActionWorkflowTriggers,
 		plan.CreateActionWorkflowRunPlan,
 		w.CronActionWorkflow,
 	}

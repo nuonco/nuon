@@ -4,25 +4,21 @@ import (
 	"fmt"
 
 	enumsv1 "go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func actionWorkflowTriggerWorkflowID(installID string, actionWorkflowName string) string {
-	actionWorkflowName = generics.SystemName(actionWorkflowName)
-	return fmt.Sprintf("action-workflow-trigger-%s-%s", installID, actionWorkflowName)
+func actionWorkflowTriggerWorkflowID(installID string, actionWorkflowID string) string {
+	return fmt.Sprintf("event-loop-%s-action-workflow-trigger-%s", installID, actionWorkflowID)
 }
 
-// @temporal-gen workflow
-// @execution-timeout 1m
-// @task-timeout 30s
-func (w *Workflows) SyncActionWorkflowTriggers(ctx workflow.Context, sreq signals.RequestSignal) error {
+func (w *Workflows) ActionWorkflowTriggers(ctx workflow.Context, sreq signals.RequestSignal) error {
 	workflows, err := activities.AwaitGetActionWorkflowsByInstallID(ctx, sreq.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get action workflow run")
@@ -38,30 +34,36 @@ func (w *Workflows) SyncActionWorkflowTriggers(ctx workflow.Context, sreq signal
 		if cfg.CronTrigger == nil {
 			continue
 		}
-		if err := w.syncActionWorkflowCronTrigger(ctx, sreq, workflow, cfg.CronTrigger); err != nil {
+
+		if err := w.startActionWorkflowCronTrigger(ctx, sreq, workflow, cfg.CronTrigger); err != nil {
 			return errors.Wrap(err, "unable to sync action workflow trigger")
 		}
+	}
+
+	if err := workflow.Await(ctx, func() bool {
+		return ctx.Err() != nil
+	}); err != nil {
+		if temporal.IsCanceledError(err) {
+			return nil
+		}
+		return err
 	}
 
 	return nil
 }
 
-func (w *Workflows) syncActionWorkflowCronTrigger(ctx workflow.Context, sreq signals.RequestSignal, iw *app.InstallActionWorkflow, trigger *app.ActionWorkflowTriggerConfig) error {
+func (w *Workflows) startActionWorkflowCronTrigger(ctx workflow.Context, sreq signals.RequestSignal, iw *app.InstallActionWorkflow, trigger *app.ActionWorkflowTriggerConfig) error {
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowID:            actionWorkflowTriggerWorkflowID(sreq.ID, iw.ID),
 		CronSchedule:          trigger.CronSchedule,
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
-		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_ABANDON,
+		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
 	}
 	dctx, _ := workflow.NewDisconnectedContext(ctx)
 	dctx = workflow.WithChildOptions(ctx, cwo)
 
 	workflow.ExecuteChildWorkflow(dctx, w.CronActionWorkflow, &CronActionWorkflowRequest{
-		InstallID:        sreq.ID,
-		ActionWorkflowID: iw.ID,
-		RunEnvVars: map[string]*string{
-			"TRIGGER": generics.ToPtr("cron"),
-		},
+		ID: iw.ID,
 	})
 
 	return nil
