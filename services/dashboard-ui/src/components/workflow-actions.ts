@@ -7,18 +7,23 @@ interface IRunManualWorkflow {
   orgId: string
   installId: string
   workflowConfigId: string
+  vars: Record<string, string>  
 }
 
 export async function runManualWorkflow({
   installId,
   orgId,
   workflowConfigId,
+  vars,
 }: IRunManualWorkflow) {
+  const options =  Object.keys(vars)?.length ? { run_env_vars: vars } : undefined
+  
   try {
-    runInstallActionWorkflow({
+    await runInstallActionWorkflow({
       installId,
       orgId,
       actionWorkflowConfigId: workflowConfigId,
+      options,
     })
     revalidatePath(`/${orgId}/installs/${installId}/actions`)
   } catch (error) {

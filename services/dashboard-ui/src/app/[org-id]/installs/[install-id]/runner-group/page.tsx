@@ -106,7 +106,7 @@ export default withPageAuthRequired(async function RunnerGroup({ params }) {
             ))}
           </Grid>
         ) : (
-          <Text>Install runner info here</Text>
+          <Text>No install runners</Text>
         )}
       </Section>
     </DashboardContent>

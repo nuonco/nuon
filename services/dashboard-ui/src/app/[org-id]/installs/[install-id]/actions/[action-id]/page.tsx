@@ -1,6 +1,7 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   ActionTriggerButton,
+  ClickToCopy,
   Config,
   ConfigurationVCS,
   ConfigurationVariables,
@@ -10,6 +11,8 @@ import {
   Section,
   StatusBadge,
   Text,
+  ToolTip,
+  Truncate,
 } from '@/components'
 import { getInstall, getInstallActionWorkflowRecentRun, getOrg } from '@/lib'
 import { humandReadableTriggeredBy } from '@/utils'
@@ -69,11 +72,24 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
               </span>
             </>
           ) : null}
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Install
+            </Text>
+            <Text variant="med-12">{install.name}</Text>
+            <Text variant="mono-12">
+              <ToolTip alignment="right" tipContent={install.id}>
+                <ClickToCopy>
+                  <Truncate variant="small">{install.id}</Truncate>
+                </ClickToCopy>
+              </ToolTip>
+            </Text>
+          </span>
           {actionWithRecentRuns?.action_workflow?.configs?.[0]?.triggers?.find(
             (t) => t.type === 'manual'
           ) ? (
             <ActionTriggerButton
-              variant="primary"
+              actionWorkflow={actionWithRecentRuns?.action_workflow}
               installId={installId}
               orgId={orgId}
               workflowConfigId={
