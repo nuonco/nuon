@@ -85,12 +85,8 @@ export default withPageAuthRequired(async function Install({ params }) {
       }
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
-      <div className="flex flex-col lg:flex-row flex-auto">
-        <Section
-          heading="README"
-          className="history"
-          childrenClassName="mx-auto"
-        >
+      <div className="flex flex-col lg:flex-row flex-auto divide-x">
+        <Section heading="README" className="" childrenClassName="mx-auto">
           <ErrorBoundary fallbackRender={ErrorFallback}>
             <Suspense
               fallback={<Loading loadingText="Loading install README..." />}
@@ -100,14 +96,12 @@ export default withPageAuthRequired(async function Install({ params }) {
           </ErrorBoundary>
         </Section>
 
-        <div className="divide-y flex flex-col lg:w-[500px] border-l">
+        <div className="divide-y flex flex-col lg:w-[500px]">
           {RUNNERS ? (
-            <Section className="flex-initial" heading="Runner group">
+            <Section className="flex-initial" heading="Runner">
               <ErrorBoundary fallbackRender={ErrorFallback}>
                 <Suspense
-                  fallback={
-                    <Loading loadingText="Loading install runner group..." />
-                  }
+                  fallback={<Loading loadingText="Loading install runner..." />}
                 >
                   <LoadRunnerGroup installId={installId} orgId={orgId} />
                 </Suspense>
@@ -115,7 +109,7 @@ export default withPageAuthRequired(async function Install({ params }) {
             </Section>
           ) : null}
 
-          <Section>
+          <Section className="flex-initial">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
                 fallback={<Loading loadingText="Loading install inputs..." />}

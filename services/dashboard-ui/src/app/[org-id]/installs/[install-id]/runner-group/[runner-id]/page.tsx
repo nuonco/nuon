@@ -54,8 +54,12 @@ export default withPageAuthRequired(async function Runner({ params }) {
         { href: `/${org.id}/apps`, text: org.name },
         { href: `/${org.id}/installs`, text: 'Installs' },
         {
-          href: `/${org.id}/installs/${install.id}/runner-group`,
+          href: `/${org.id}/installs/${install.id}`,
           text: install.name,
+        },
+        {
+          href: `/${org.id}/installs/${install.id}/runner-group/${runnerId}`,
+          text: runner?.display_name,
         },
       ]}
       heading={runner.display_name}
