@@ -73,7 +73,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	}
 
 	//
-	installActionWorkflow, err := s.getInstallActionWorkflow(ctx, installID, awc.ID)
+	installActionWorkflow, err := s.getInstallActionWorkflow(ctx, installID, awc.ActionWorkflowID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get install action workflow"))
 		return
