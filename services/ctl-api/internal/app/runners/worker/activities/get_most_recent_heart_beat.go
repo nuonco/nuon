@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -34,6 +36,10 @@ func (a *Activities) getMostRecentHeartBeat(ctx context.Context, runnerID string
 		Limit(1).
 		First(&hb)
 	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, temporal.NewNonRetryableApplicationError("no heart beats found", "no heart beats found", res.Error)
+		}
+
 		return nil, errors.Wrap(res.Error, "unable to get heart beats")
 	}
 
