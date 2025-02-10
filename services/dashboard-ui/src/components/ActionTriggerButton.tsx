@@ -68,7 +68,7 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
   return (
     <>
       <Modal
-        className="max-w-lg"
+        className="max-w-3xl"
         heading={`Run action workflow ${actionWorkflow?.name}?`}
         isOpen={isOpen}
         onClose={() => {
@@ -140,53 +140,57 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
               parentClass="border rounded"
               headerClass="px-2 py-2"
               expandContent={
-                <div className="flex flex-col gap-4 p-4 border-t">
+                <div className="p-4 border-t">
                   <Text>
                     Edit or add custom env vars for this manual action workflow
                     run.
                   </Text>
-                  {Object.keys(envVars).map((envVar) => (
-                    <label key={envVar} className="flex flex-col gap-1">
-                      <Text variant="med-12">{envVar}</Text>
-                      <input
-                        className="px-3 py-2 text-base rounded border bg-black/5 dark:bg-white/5 shadow-sm [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600/300"
-                        required
-                        defaultValue={envVars[envVar]}
-                        name={envVar}
-                        type="text"
-                      />
-                    </label>
-                  ))}
-                  {customVars.length
-                    ? customVars.map((cv) => (
-                        <fieldset
-                          key={cv}
-                          className="flex flex-col gap-2 py-2 border-t"
-                        >
-                          <legend className="text-base font-medium pr-2">
-                            Custom env var {cv + 1}
-                          </legend>
-                          <label className="flex flex-col gap-1">
-                            <Text variant="med-12">Name</Text>
-                            <input
-                              className="px-3 py-2 text-base rounded border bg-black/5 dark:bg-white/5 shadow-sm [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600/300"
-                              required
-                              name={`custom:${cv + 1}:name`}
-                              type="text"
-                            />
-                          </label>
-                          <label className="flex flex-col gap-1">
-                            <Text variant="med-12">Value</Text>
-                            <input
-                              className="px-3 py-2 text-base rounded border bg-black/5 dark:bg-white/5 shadow-sm [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600/300"
-                              required
-                              name={`custom:${cv + 1}:value`}
-                              type="text"
-                            />
-                          </label>
-                        </fieldset>
-                      ))
-                    : null}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
+                    {Object.keys(envVars).map((envVar) => (
+                      <label key={envVar} className="flex flex-col gap-1">
+                        <Text variant="med-12">{envVar}</Text>
+                        <input
+                          className="px-3 py-2 text-base rounded border bg-black/5 dark:bg-white/5 shadow-sm [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600/300"
+                          required
+                          defaultValue={envVars[envVar]}
+                          name={envVar}
+                          type="text"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  <div className="w-full">
+                    {customVars.length
+                      ? customVars.map((cv) => (
+                          <fieldset
+                            key={cv}
+                            className="grid grid-cols-1 md:grid-cols-2 gap-2 py-2 border-t"
+                          >
+                            <legend className="text-base font-medium pr-2">
+                              Custom env var {cv + 1}
+                            </legend>
+                            <label className="flex flex-col gap-1">
+                              <Text variant="med-12">Name</Text>
+                              <input
+                                className="px-3 py-2 text-base rounded border bg-black/5 dark:bg-white/5 shadow-sm [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600/300"
+                                required
+                                name={`custom:${cv + 1}:name`}
+                                type="text"
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1">
+                              <Text variant="med-12">Value</Text>
+                              <input
+                                className="px-3 py-2 text-base rounded border bg-black/5 dark:bg-white/5 shadow-sm [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600/300"
+                                required
+                                name={`custom:${cv + 1}:value`}
+                                type="text"
+                              />
+                            </label>
+                          </fieldset>
+                        ))
+                      : null}
+                  </div>
                   <div>
                     <Button
                       className="text-sm gap-2 flex items-center"
