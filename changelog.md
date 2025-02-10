@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.398
+
+Updatin health check and runner statuses.
+
 ## v0.19.389
 
 UI modal and section updates.
@@ -35,7 +39,6 @@ Sandbox outputs in UI.
 
 Fix sidebar width in UI.
 
-
 ## v0.19.381
 
 Better action logging in UI.
@@ -43,7 +46,7 @@ Better action logging in UI.
 ## v0.19.380
 
 Fix z-index issue with deploy dropdown.
- 
+
 ## v0.19.379
 
 Cancel runner jobs from UI.
