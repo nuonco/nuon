@@ -10,4 +10,8 @@ locals {
   tags = {
     terraform = "infra-artifacts"
   }
+
+  replicated_tags = {
+    terraform = "infra-artifacts-replicated"
+  }
 }
