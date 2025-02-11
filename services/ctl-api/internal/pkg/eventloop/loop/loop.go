@@ -54,7 +54,7 @@ func (w *Loop[T, R]) handleSignal(ctx workflow.Context, wkflowReq eventloop.Even
 
 	sigReq := w.NewRequestSignal(wkflowReq, signal)
 	handler, ok := w.Handlers[signal.SignalType()]
-	if !ok {
+	if !ok || handler == nil {
 		err = fmt.Errorf("unhandled signal %s", signal.SignalType())
 	} else {
 		err = handler(ctx, sigReq)

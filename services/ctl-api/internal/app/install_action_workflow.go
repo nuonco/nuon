@@ -34,7 +34,7 @@ type InstallActionWorkflow struct {
 }
 
 func (a *InstallActionWorkflow) BeforeCreate(tx *gorm.DB) error {
-	a.ID = domains.NewActionWorkflowConfigID()
+	a.ID = domains.NewInstallActionWorkflowConfigID()
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	a.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil

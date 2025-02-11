@@ -8,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/bulk"
 )
 
 type AppStatus string
@@ -82,4 +83,25 @@ func (a *App) AfterQuery(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (a *App) EventLoops() []bulk.EventLoop {
+	evs := make([]bulk.EventLoop, 0)
+	evs = append(evs, bulk.EventLoop{
+		Namespace: "apps",
+		ID:        a.ID,
+	})
+
+	for _, cmp := range a.Components {
+		evs = append(evs, bulk.EventLoop{
+			Namespace: "components",
+			ID:        cmp.ID,
+		})
+	}
+
+	for _, inst := range a.Installs {
+		evs = append(evs, inst.EventLoops()...)
+	}
+
+	return evs
 }
