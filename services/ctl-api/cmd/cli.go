@@ -8,6 +8,7 @@ import (
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	componentshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	installshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
+	orgshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/helpers"
 	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
@@ -65,6 +66,7 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(vcshelpers.New),
 		fx.Provide(actionshelpers.New),
 		fx.Provide(componentshelpers.New),
+		fx.Provide(orgshelpers.New),
 		fx.Provide(appshelpers.New),
 		fx.Provide(installshelpers.New),
 		fx.Provide(runnershelpers.New),

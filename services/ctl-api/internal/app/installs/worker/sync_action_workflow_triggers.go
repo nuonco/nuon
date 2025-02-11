@@ -6,7 +6,6 @@ import (
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
@@ -48,15 +47,11 @@ func (w *Workflows) ActionWorkflowTriggers(ctx workflow.Context, sreq signals.Re
 	if err := workflow.Await(ctx, func() bool {
 		return ctx.Err() != nil
 	}); err != nil {
-		l, _ := log.WorkflowLogger(ctx)
-
-		l.Error("cancel received", zap.Error(err))
 		if temporal.IsCanceledError(err) {
 			return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, sreq)
 		}
 
 		return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, sreq)
-		return err
 	}
 
 	return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, sreq)
@@ -69,6 +64,7 @@ func (w *Workflows) startActionWorkflowCronTrigger(ctx workflow.Context, sreq si
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
 	}
+
 	dctx := workflow.WithChildOptions(ctx, cwo)
 	workflow.ExecuteChildWorkflow(dctx, w.CronActionWorkflow, &CronActionWorkflowRequest{
 		ID: iw.ID,

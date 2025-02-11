@@ -6,12 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	appsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
-	componentsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
-	installsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 )
 
 type RestartOrgChildrenRequest struct{}
@@ -35,44 +30,15 @@ func (s *service) RestartOrgChildren(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
-	org, err := s.getOrgAndDependencies(ctx, orgID)
+
+	org, err := s.getOrg(ctx, orgID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org: %w", err))
 		return
 	}
-
 	s.evClient.Send(ctx, org.ID, &sigs.Signal{
-		Type: sigs.OperationRestart,
+		Type: sigs.OperationRestartChildren,
 	})
-	for _, runner := range org.RunnerGroup.Runners {
-		s.evClient.Send(ctx, runner.ID, &runnersignals.Signal{
-			Type: runnersignals.OperationRestart,
-		})
-	}
-
-	for _, app := range org.Apps {
-		s.evClient.Send(ctx, app.ID, &appsignals.Signal{
-			Type: appsignals.OperationRestart,
-		})
-
-		for _, comp := range app.Components {
-			s.evClient.Send(ctx, comp.ID, &componentsignals.Signal{
-				Type: componentsignals.OperationRestart,
-			})
-		}
-
-		for _, install := range app.Installs {
-			s.evClient.Send(ctx, install.ID, &installsignals.Signal{
-				Type: signals.OperationRestart,
-			})
-
-			for _, runner := range install.RunnerGroup.Runners {
-				s.evClient.Send(ctx, runner.ID, &runnersignals.Signal{
-					Type: runnersignals.OperationRestart,
-				})
-			}
-		}
-	}
 
 	ctx.JSON(http.StatusOK, true)
 }
