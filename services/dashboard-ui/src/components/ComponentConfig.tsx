@@ -374,6 +374,7 @@ export const ConfigurationVariables: FC<{
   )
 }
 
+// TODO(nnnat): refactor this mess
 const ConfigVariables: FC<{
   keys: Array<string>
   variables: Record<string, string | string[]>
@@ -391,7 +392,10 @@ const ConfigVariables: FC<{
       </div>
 
       {keys.map((key, i) => (
-        <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-3">
+        <div
+          key={`${key}-${i}`}
+          className="grid grid-cols-3 gap-4 py-3 items-start"
+        >
           <Text className="font-mono text-sm break-all">
             {key.length >= 15 && !isNotTruncated ? (
               <ToolTip tipContent={key} alignment="left">
@@ -416,13 +420,22 @@ const ConfigVariables: FC<{
               ) : (
                 ''
               )
-            ) : (
+            ) : Array.isArray(variables[key]) ? (
               variables[key]?.map((v, i) => (
                 <span key={`${key}-${i}`}>
                   {v}
                   {i + 1 !== variables[key]?.length && ','}
                 </span>
               ))
+            ) : (
+              <div className="flex flex-col gap-1 overflow-x-auto">
+                {variables[key] ? (
+                  <CodeViewer
+                    initCodeSource={JSON.stringify(variables[key], null, 2)}
+                    language="json"
+                  />
+                ) : null}
+              </div>
             )}
           </Text>
         </div>
