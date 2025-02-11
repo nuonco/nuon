@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/bulk"
 )
 
 type Install struct {
@@ -139,4 +140,21 @@ func compositeComponentStatus(componentStatuses pgtype.Hstore) InstallDeployStat
 
 	// if any components have not yet succeeded or failed, composite status should be "pending"
 	return InstallDeployStatusPending
+}
+
+func (i *Install) EventLoops() []bulk.EventLoop {
+	evs := make([]bulk.EventLoop, 0)
+	evs = append(evs, bulk.EventLoop{
+		Namespace: "installs",
+		ID:        i.ID,
+	})
+
+	for _, runner := range i.RunnerGroup.Runners {
+		evs = append(evs, bulk.EventLoop{
+			Namespace: "runners",
+			ID:        runner.ID,
+		})
+	}
+
+	return evs
 }

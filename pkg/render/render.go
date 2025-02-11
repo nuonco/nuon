@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"strings"
 	"time"
 
 	"github.com/Masterminds/sprig"
@@ -23,13 +22,11 @@ func RenderWithWarnings(inputVal string, data map[string]interface{}) (string, [
 	vars := Parse(inputVal)
 	warnings := make([]error, 0)
 	for _, v := range vars {
-		rendered, err := RenderVar(v, data)
+		_, err := RenderVar(v, data)
 		if err != nil {
 			warnings = append(warnings, err)
 			continue
 		}
-
-		inputVal = strings.ReplaceAll(inputVal, v.Template, rendered)
 	}
 
 	var err error

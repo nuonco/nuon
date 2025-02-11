@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/bulk"
 )
 
 type RunnerGroupType string
@@ -49,4 +50,16 @@ func (r *RunnerGroup) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (r *RunnerGroup) EventLoops() []bulk.EventLoop {
+	evs := make([]bulk.EventLoop, 0)
+	for _, runner := range r.Runners {
+		evs = append(evs, bulk.EventLoop{
+			Namespace: "runners",
+			ID:        runner.ID,
+		})
+	}
+
+	return evs
 }
