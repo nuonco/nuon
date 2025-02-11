@@ -1,190 +1,59 @@
 package worker
 
 import (
-	"errors"
-	"strconv"
-
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/loop"
 )
 
-func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest) error {
-	defaultTags := map[string]string{"sandbox_mode": strconv.FormatBool(req.SandboxMode)}
-	w.mw.Incr(ctx, "event_loop.start", metrics.ToTags(defaultTags, "op", "started")...)
-	l := workflow.GetLogger(ctx)
-
-	finished := false
-	signalChan := workflow.GetSignalChannel(ctx, req.ID)
-	selector := workflow.NewSelector(ctx)
-	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
-		var signal signals.Signal
-		channelOpen := channel.Receive(ctx, &signal)
-		if !channelOpen {
-			l.Info("channel was closed")
-			return
-		}
-
-		if err := signal.Validate(w.v); err != nil {
-			l.Info("invalid signal", zap.Error(err))
-		}
-
-		ctx := signal.GetWorkflowContext(ctx)
-
-		startTS := workflow.Now(ctx)
-		op := ""
-		status := "ok"
-		defer func() {
-			tags := generics.MergeMap(map[string]string{
-				"op":     op,
-				"status": status,
-			}, defaultTags)
-			dur := workflow.Now(ctx).Sub(startTS)
-
-			w.mw.Timing(ctx, "event_loop.signal_duration", dur, metrics.ToTags(tags)...)
-			w.mw.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
-		}()
-
-		sreq := signals.RequestSignal{
-			Signal:           &signal,
-			EventLoopRequest: req,
-		}
-
-		var err error
-		switch signal.SignalType() {
-		case signals.OperationCreated:
-			op = "created"
-			err = w.AwaitCreated(ctx, sreq)
-			if err != nil {
-				status = "error"
-				l.Error("unable to handle created signal", zap.Error(err))
-				return
-			}
-		case signals.OperationPollDependencies:
-			op = "poll_dependencies"
-			err = w.AwaitPollDependencies(ctx, sreq)
-			if err != nil {
-				status = "error"
-				l.Error("unable to handle created signal", zap.Error(err))
-				return
-			}
-		case signals.OperationProvision:
-			op = "provision"
-			err = w.AwaitProvision(ctx, sreq)
-			if err != nil {
-				status = "error"
-				l.Error("unable to provision", zap.Error(err))
-				return
-			}
-		case signals.OperationReprovisionRunner:
-			op = "reprovision_runner"
-			err = w.AwaitReprovisionRunner(ctx, sreq)
-			if err != nil {
-				status = "error"
-				l.Error("unable to reprovision runner", zap.Error(err))
-				return
-			}
-		case signals.OperationReprovision:
-			op = "reprovision"
-			err = w.AwaitReprovision(ctx, sreq)
-			if err != nil {
-				status = "error"
-				l.Error("unable to reprovision", zap.Error(err))
-				return
-			}
-		case signals.OperationDelete:
-			op = "delete"
-			err = w.AwaitDelete(ctx, sreq)
-			if err != nil {
-				status = "delete"
-				l.Error("unable to delete", zap.Error(err))
-				return
-			}
-			finished = true
-		case signals.OperationDeprovision:
-			op = "deprovision"
-			err = w.AwaitDeprovision(ctx, sreq)
-			if err != nil {
-				status = "error"
-				l.Error("unable to deprovision", zap.Error(err))
-				return
-			}
-		case signals.OperationDeprovisionRunner:
-			op = "deprovision_runner"
-			err = w.AwaitDeprovisionRunner(ctx, sreq)
-			if err != nil {
-				status = "error"
-				l.Error("unable to deprovision runner", zap.Error(err))
-				return
-			}
-		case signals.OperationForgotten:
-			op = "forgotten"
-			err = w.AwaitForget(ctx, sreq)
-			if err != nil {
-				l.Error("unable to forget", zap.Error(err))
-			}
-			finished = true
-		case signals.OperationDeployComponents:
-			op = "deploy_components"
-			err = w.AwaitDeployComponents(ctx, sreq)
-			if err != nil {
-				status = "error"
-				l.Error("unable to queue deploys for components", zap.Error(err))
-				return
-			}
-		case signals.OperationTeardownComponents:
-			op = "teardown_components"
-			err = w.AwaitTeardownComponents(ctx, sreq)
-			if err != nil {
-				status = "error"
-				l.Error("unable to queue teardown deploys for components", zap.Error(err))
-				return
-			}
-		case signals.OperationDeploy:
-			op = "deploy"
-			err = w.AwaitDeploy(ctx, sreq)
-			if err != nil {
-				status = "error"
-				l.Error("unable to deploy", zap.Error(err))
-				return
-			}
-		case signals.OperationActionWorkflowRun:
-			op = "action_workflow_run"
-			err = w.AwaitActionWorkflowRun(ctx, sreq)
-			if err != nil {
-				status = "error"
-				l.Error("unable to execute action workflow run", zap.Error(err))
-				return
-			}
-		case signals.OperationSyncActionWorkflowTriggers:
-			op = "sync_action_workflow_triggers"
-
-			cwo := workflow.ChildWorkflowOptions{
-				TaskQueue:             "api",
-				WorkflowID:            sreq.WorkflowID(sreq.ID) + "action-workflows",
-				WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
-				WaitForCancellation:   true,
-			}
-			ctx = workflow.WithChildOptions(ctx, cwo)
-			workflow.ExecuteChildWorkflow(ctx, w.ActionWorkflowTriggers, req)
-		}
-	})
-
-	for !finished {
-		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
-			w.mw.Incr(ctx, "event_loop.canceled", metrics.ToTags(defaultTags)...)
-			l.Error("workflow canceled")
-			break
-		}
-
-		selector.Select(ctx)
+func (w *Workflows) handleSyncActionWorkflowTriggers(ctx workflow.Context, sreq signals.RequestSignal) error {
+	cwo := workflow.ChildWorkflowOptions{
+		TaskQueue:             "api",
+		WorkflowID:            sreq.WorkflowID(sreq.ID) + "action-workflows",
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		WaitForCancellation:   true,
+		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
 	}
 
-	w.mw.Incr(ctx, "event_loop.finish", metrics.ToTags(defaultTags)...)
+	ctx = workflow.WithChildOptions(ctx, cwo)
+	workflow.ExecuteChildWorkflow(ctx, w.ActionWorkflowTriggers, sreq)
+
 	return nil
+}
+
+func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
+	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
+		signals.OperationCreated:            w.AwaitCreated,
+		signals.OperationPollDependencies:   w.AwaitPollDependencies,
+		signals.OperationProvision:          w.AwaitProvision,
+		signals.OperationReprovisionRunner:  w.AwaitReprovisionRunner,
+		signals.OperationReprovision:        w.AwaitReprovision,
+		signals.OperationDelete:             w.AwaitDelete,
+		signals.OperationDeprovision:        w.AwaitDeprovision,
+		signals.OperationDeprovisionRunner:  w.AwaitDeprovisionRunner,
+		signals.OperationForgotten:          w.AwaitForget,
+		signals.OperationDeployComponents:   w.AwaitDeployComponents,
+		signals.OperationTeardownComponents: w.AwaitTeardownComponents,
+		signals.OperationDeploy:             w.AwaitDeploy,
+		signals.OperationActionWorkflowRun:  w.AwaitActionWorkflowRun,
+		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
+			w.AwaitRestarted(ctx, req)
+			w.handleSyncActionWorkflowTriggers(ctx, req)
+			return nil
+		},
+		signals.OperationSyncActionWorkflowTriggers: w.handleSyncActionWorkflowTriggers,
+	}
+
+	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
+		Cfg:              w.cfg,
+		V:                w.v,
+		MW:               w.mw,
+		Handlers:         handlers,
+		NewRequestSignal: signals.NewRequestSignal,
+	}
+
+	return l.Run(ctx, req, pendingSignals)
 }

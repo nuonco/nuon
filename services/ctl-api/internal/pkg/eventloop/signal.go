@@ -7,6 +7,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"gorm.io/gorm"
 
+	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -18,23 +20,18 @@ type Signal interface {
 	Namespace() string
 	Name() string
 	SignalType() SignalType
+
+	// for managing context
 	GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error)
 	PropagateContext(ctx context.Context) error
 	GetWorkflowContext(ctx workflow.Context) workflow.Context
 	GetContext(ctx context.Context) context.Context
 
-	// used to control different behaviours on the event loop
-	// Fail the workflow when an error is returned
-	FailOnError() bool
-
-	// Stop the workflow when finished
-	StopOnFinish() bool
-
-	// Start the workflow, or restart it
+	// lifecycle methods
+	Validate(*validator.Validate) error
+	Stop() bool
+	Restart() bool
 	Start() bool
-
-	// DoNothing
-	Noop() bool
 }
 
 // SignalHandlerWorkflowID returns the standard ID to use for a signal handler child workflow
