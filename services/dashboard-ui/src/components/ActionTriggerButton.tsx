@@ -68,7 +68,7 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
   return (
     <>
       <Modal
-        className="max-w-3xl"
+        className="!max-w-3xl"
         heading={`Run action workflow ${actionWorkflow?.name}?`}
         isOpen={isOpen}
         onClose={() => {
