@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
+	enumspb "go.temporal.io/api/enums/v1"
+	"go.temporal.io/api/workflowservice/v1"
 	tclient "go.temporal.io/sdk/client"
 	sdktally "go.temporal.io/sdk/contrib/tally"
 )
@@ -23,11 +25,23 @@ type Client interface {
 		workflow interface{},
 		args ...interface{}) (tclient.WorkflowRun, error)
 
-	// ExecuteWorkflowInNamespace is a wrapper that will get a workflow in a different namespace
+	// GetWorkflowInNamespace is a wrapper that will get a workflow in a different namespace
 	GetWorkflowInNamespace(ctx context.Context,
 		namespace string,
 		workflowID string,
 		runID string) (tclient.WorkflowRun, error)
+
+	// DescribeWorkflowExecutionInNamespace is a wrapper that will get a workflow in a different namespace
+	DescribeWorkflowExecutionInNamespace(ctx context.Context,
+		namespace string,
+		workflowID string,
+		runID string) (*workflowservice.DescribeWorkflowExecutionResponse, error)
+
+	// DescribeWorkflowExecutionInNamespace is a wrapper that will get a workflow in a different namespace
+	GetWorkflowStatusInNamespace(ctx context.Context,
+		namespace string,
+		workflowID string,
+		runID string) (enumspb.WorkflowExecutionStatus, error)
 
 	// CancelWorkflowInNamespace is a wrapper that will get a workflow in a different namespace
 	CancelWorkflowInNamespace(ctx context.Context,

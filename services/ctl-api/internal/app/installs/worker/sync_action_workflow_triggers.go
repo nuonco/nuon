@@ -6,12 +6,14 @@ import (
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
 func actionWorkflowTriggerWorkflowID(installID string, actionWorkflowID string) string {
@@ -40,16 +42,24 @@ func (w *Workflows) ActionWorkflowTriggers(ctx workflow.Context, sreq signals.Re
 		}
 	}
 
+	l, _ := log.WorkflowLogger(ctx)
+	l.Info("waiting until bottom of workflow")
+
 	if err := workflow.Await(ctx, func() bool {
 		return ctx.Err() != nil
 	}); err != nil {
+		l, _ := log.WorkflowLogger(ctx)
+
+		l.Error("cancel received", zap.Error(err))
 		if temporal.IsCanceledError(err) {
-			return nil
+			return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, sreq)
 		}
+
+		return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, sreq)
 		return err
 	}
 
-	return nil
+	return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, sreq)
 }
 
 func (w *Workflows) startActionWorkflowCronTrigger(ctx workflow.Context, sreq signals.RequestSignal, iw *app.InstallActionWorkflow, trigger *app.ActionWorkflowTriggerConfig) error {
@@ -59,9 +69,7 @@ func (w *Workflows) startActionWorkflowCronTrigger(ctx workflow.Context, sreq si
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
 	}
-	dctx, _ := workflow.NewDisconnectedContext(ctx)
-	dctx = workflow.WithChildOptions(ctx, cwo)
-
+	dctx := workflow.WithChildOptions(ctx, cwo)
 	workflow.ExecuteChildWorkflow(dctx, w.CronActionWorkflow, &CronActionWorkflowRequest{
 		ID: iw.ID,
 	})
