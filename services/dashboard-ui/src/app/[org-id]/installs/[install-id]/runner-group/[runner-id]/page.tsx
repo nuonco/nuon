@@ -11,6 +11,10 @@ import {
   Duration,
   EmptyStateGraphic,
   ErrorFallback,
+  ID,
+  InstallManagementDropdown,
+  InstallStatuses,
+  InstallPageSubNav,
   Link,
   Loading,
   StatusBadge,
@@ -30,6 +34,7 @@ import {
   getRunnerHealthChecks,
   getRunnerLatestHeartbeat,
 } from '@/lib'
+import { USER_REPROVISION } from '@/utils'
 
 export default withPageAuthRequired(async function Runner({ params }) {
   const orgId = params?.['org-id'] as string
@@ -62,75 +67,103 @@ export default withPageAuthRequired(async function Runner({ params }) {
           text: runner?.display_name,
         },
       ]}
-      heading={runner.display_name}
-      headingUnderline={runner.id}
+      heading={install.name}
+      headingUnderline={install.id}
       statues={
-        <div className="flex gap-6 items-start justify-start">
+        <div className="flex items-start gap-8">
           <span className="flex flex-col gap-2">
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-              Version
+              Created
             </Text>
-            <Text variant="med-12">{runnerHeartbeat?.version}</Text>
+            <Time variant="reg-12" time={install?.created_at} />
           </span>
+
           <span className="flex flex-col gap-2">
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-              Alive time
+              Updated
             </Text>
-            <Text>
-              <Timer size={14} />
-              <Duration
-                nanoseconds={runnerHeartbeat.alive_time}
-                variant="med-12"
-              />
-            </Text>
+            <Time variant="reg-12" time={install?.updated_at} />
           </span>
-          <span className="flex flex-col gap-2">
-            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-              Last heartbeat seen
-            </Text>
-            <Text>
-              <Heartbeat size={14} />
-              <Time
-                time={runnerHeartbeat.created_at}
-                format="relative"
-                variant="med-12"
-              />
-            </Text>
-          </span>
-          <span className="flex flex-col gap-2">
-            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-              Status
-            </Text>
-            <StatusBadge
-              status={runner?.status}
-              description={runner?.status_description}
-              descriptionAlignment="right"
-              shouldPoll
+          <InstallStatuses initInstall={install} shouldPoll />
+          {USER_REPROVISION ? (
+            <InstallManagementDropdown
+              installId={installId}
+              orgId={orgId}
+              hasInstallComponents={Boolean(
+                install?.install_components?.length
+              )}
             />
-          </span>
-          <span className="flex flex-col gap-2">
-            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-              Install
-            </Text>
-            <Text variant="med-12">{install.name}</Text>
-            <Text variant="mono-12">
-              <ToolTip alignment="right" tipContent={install.id}>
-                <ClickToCopy>
-                  <Truncate variant="small">{install.id}</Truncate>
-                </ClickToCopy>
-              </ToolTip>
-            </Text>
-          </span>
+          ) : null}
         </div>
+      }
+      meta={
+        <InstallPageSubNav
+          installId={installId}
+          orgId={orgId}
+          runnerId={runnerId}
+        />
       }
     >
       <div className="flex-auto md:grid md:grid-cols-12 divide-x">
         <div className="divide-y flex flex-col flex-auto col-span-8">
-          <Section className="flex-initial" heading="Health checks">
+          <Section
+            heading={
+              <span>
+                <Text variant="med-14">{runner?.display_name} </Text>
+                <ID id={runner?.id} />
+              </span>
+            }
+          >
+            <div className="flex gap-6 items-start justify-start">
+              <span className="flex flex-col gap-2">
+                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                  Status
+                </Text>
+                <StatusBadge
+                  status={runner?.status}
+                  description={runner?.status_description}
+                  descriptionAlignment="left"
+                  shouldPoll
+                />
+              </span>
+              <span className="flex flex-col gap-2">
+                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                  Version
+                </Text>
+                <Text variant="med-12">{runnerHeartbeat?.version}</Text>
+              </span>
+              <span className="flex flex-col gap-2">
+                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                  Alive time
+                </Text>
+                <Text>
+                  <Timer size={14} />
+                  <Duration
+                    nanoseconds={runnerHeartbeat.alive_time}
+                    variant="med-12"
+                  />
+                </Text>
+              </span>
+              <span className="flex flex-col gap-2">
+                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                  Last heartbeat seen
+                </Text>
+                <Text>
+                  <Heartbeat size={14} />
+                  <Time
+                    time={runnerHeartbeat.created_at}
+                    format="relative"
+                    variant="med-12"
+                  />
+                </Text>
+              </span>
+            </div>
+          </Section>
+          <Section className="flex-initial" heading="Health status">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
                 fallback={
-                  <Loading loadingText="Loading runner health checks..." />
+                  <Loading loadingText="Loading runner health status..." />
                 }
               >
                 <LoadRunnerHeartbeat runnerId={runnerId} orgId={orgId} />
@@ -376,7 +409,9 @@ const LoadPastJobs: FC<{
               </>
             ),
             time: job?.updated_at,
-            href: `/${orgId}/installs/${installId}/${hrefPath}`,
+            href: job?.metadata
+              ? `/${orgId}/installs/${installId}/${hrefPath}`
+              : null,
             isMostRecent: i === 0,
           }
         })}
