@@ -25,7 +25,7 @@ export const InstallPageSubNav: FC<IInstallPageSubNav> = ({
           href: `/${orgId}/installs/${installId}/components`,
           text: 'Components',
         },
-        RUNNERS
+        RUNNERS && runnerId?.length
           ? {
               href: `/${orgId}/installs/${installId}/runner-group/${runnerId}`,
               text: 'Runner',
