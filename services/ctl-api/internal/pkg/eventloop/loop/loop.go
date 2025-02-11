@@ -13,10 +13,8 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
-	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const (
@@ -29,6 +27,9 @@ type Loop[T eventloop.Signal, R any] struct {
 	V                *validator.Validate
 	Handlers         map[eventloop.SignalType]func(workflow.Context, R) error
 	NewRequestSignal func(eventloop.EventLoopRequest, T) R
+
+	// hooks
+	StartupHook func(workflow.Context, eventloop.EventLoopRequest) error
 }
 
 func (w *Loop[T, R]) handleSignal(ctx workflow.Context, wkflowReq eventloop.EventLoopRequest, signal T, defaultTags map[string]string) error {
@@ -84,13 +85,7 @@ func (w *Loop[T, R]) handleSignal(ctx workflow.Context, wkflowReq eventloop.Even
 }
 
 func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []T) error {
-	version, err := sharedactivities.AwaitGetVersion(ctx, sharedactivities.GetVersionRequest{})
-	if err != nil {
-		return errors.Wrap(err, "unable to get version")
-	}
-
-	ctx = cctx.SetVersionWorkflowContext(ctx, version)
-
+	signalChan := workflow.GetSignalChannel(ctx, req.ID)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
@@ -99,7 +94,14 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 	defaultTags := map[string]string{"sandbox_mode": strconv.FormatBool(req.SandboxMode)}
 	w.MW.Incr(ctx, "event_loop.start", metrics.ToTags(defaultTags, "op", "started")...)
 
-	signalChan := workflow.GetSignalChannel(ctx, req.ID)
+	if w.StartupHook != nil {
+		if err := w.StartupHook(ctx, req); err != nil {
+			l.Error("startup hook failed, restarting", zap.Error(err))
+			w.MW.Incr(ctx, "event_loop.restart", metrics.ToTags(defaultTags, "op", "restarted", "reason", "startup_hook_failure")...)
+			req.RestartCount += 1
+			return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, req, pendingSignals)
+		}
+	}
 
 	// handle any pending signals
 	for _, pendingSignal := range pendingSignals {
@@ -123,6 +125,8 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 	signalCount := 0
 	stop := false
 	restart := false
+	cfgChange := false
+
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
 		var signal T
@@ -134,15 +138,15 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 
 		// restart requires the signal to be handed on the fresh loop
 		if signal.Restart() {
-			restart = true
 			pendingSignals = append(pendingSignals, signal)
+			restart = true
 			return
 		}
 
-		// version is not valid, so we can not attempt the job
-		if w.Cfg.Version != version {
-			restart = true
+		if w.Cfg.Version != req.Version {
 			pendingSignals = append(pendingSignals, signal)
+			req.Version = w.Cfg.Version
+			cfgChange = true
 			return
 		}
 
@@ -169,9 +173,17 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 
 		selector.Select(ctx)
 
+		if cfgChange {
+			req.VersionChangeCount += 1
+			return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, req, pendingSignals)
+		}
+
 		if restart {
 			w.MW.Incr(ctx, "event_loop.restarted", metrics.ToTags(defaultTags)...)
 			l.Error("workflow restarted")
+			// TODO(jm): this should be removed once we ensure all event loops have an active
+			// `WorkerVersion` in their request chain
+			req.Version = w.Cfg.Version
 			req.RestartCount += 1
 			pendingSignals = append(pendingSignals, w.drainSignals(signalChan)...)
 			return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, req, pendingSignals)
