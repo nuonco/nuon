@@ -77,29 +77,29 @@ resource "aws_iam_role_policy_attachment" "replication" {
 }
 
 # Create Multi-Region Access Point
-resource "aws_s3control_multi_region_access_point" "mrap" {
-  details {
-    name = "${local.bucket_name}-mrap"
+# resource "aws_s3control_multi_region_access_point" "mrap" {
+#   details {
+#     name = "${local.bucket_name}-mrap"
 
-    public_access_block {
-      block_public_acls       = false
-      block_public_policy     = false
-      ignore_public_acls      = false
-      restrict_public_buckets = false
-    }
+#     public_access_block {
+#       block_public_acls       = false
+#       block_public_policy     = false
+#       ignore_public_acls      = false
+#       restrict_public_buckets = false
+#     }
 
-    region {
-      bucket = module.bucket.s3_bucket_id
-    }
+#     region {
+#       bucket = module.bucket.s3_bucket_id
+#     }
 
-    dynamic "region" {
-      for_each = toset(local.replication_regions)
-      content {
-        bucket = "${local.bucket_name}-${region.value}"
-      }
-    }
-  }
-}
+#     dynamic "region" {
+#       for_each = toset(local.replication_regions)
+#       content {
+#         bucket = "${local.bucket_name}-${region.value}"
+#       }
+#     }
+#   }
+# }
 
 # All individual buckets and their replication configs follow.
 # Individual buckets are specified explicitly because it's not possible to use loops in provider statements, per https://github.com/hashicorp/terraform/issues/24476
@@ -139,6 +139,9 @@ resource "aws_s3_bucket_replication_configuration" "replication_ap_south_1" {
 
     filter {
       prefix = "stacks/"
+    }
+    delete_marker_replication {
+      status = "Enabled"
     }
     priority = 0
 
@@ -183,7 +186,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_eu_north_1" {
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 1
 
     destination {
       bucket        = module.bucket_eu_north_1.s3_bucket_arn
@@ -226,7 +232,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_eu_west_3" {
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 2
 
     destination {
       bucket        = module.bucket_eu_west_3.s3_bucket_arn
@@ -269,7 +278,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_eu_west_2" {
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 3
 
     destination {
       bucket        = module.bucket_eu_west_2.s3_bucket_arn
@@ -312,7 +324,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_eu_west_1" {
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 4
 
     destination {
       bucket        = module.bucket_eu_west_1.s3_bucket_arn
@@ -355,7 +370,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_ap_northeast_3" 
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 5
 
     destination {
       bucket        = module.bucket_ap_northeast_3.s3_bucket_arn
@@ -398,7 +416,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_ap_northeast_2" 
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 6
 
     destination {
       bucket        = module.bucket_ap_northeast_2.s3_bucket_arn
@@ -441,7 +462,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_ap_northeast_1" 
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 7
 
     destination {
       bucket        = module.bucket_ap_northeast_1.s3_bucket_arn
@@ -484,7 +508,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_ca_central_1" {
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 8
 
     destination {
       bucket        = module.bucket_ca_central_1.s3_bucket_arn
@@ -527,7 +554,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_sa_east_1" {
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 9
 
     destination {
       bucket        = module.bucket_sa_east_1.s3_bucket_arn
@@ -570,7 +600,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_ap_southeast_1" 
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 10
 
     destination {
       bucket        = module.bucket_ap_southeast_1.s3_bucket_arn
@@ -613,7 +646,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_ap_southeast_2" 
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 11
 
     destination {
       bucket        = module.bucket_ap_southeast_2.s3_bucket_arn
@@ -656,7 +692,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_eu_central_1" {
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 12
 
     destination {
       bucket        = module.bucket_eu_central_1.s3_bucket_arn
@@ -699,7 +738,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_us_east_1" {
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 13
 
     destination {
       bucket        = module.bucket_us_east_1.s3_bucket_arn
@@ -742,7 +784,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_us_east_2" {
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 14
 
     destination {
       bucket        = module.bucket_us_east_2.s3_bucket_arn
@@ -785,7 +830,10 @@ resource "aws_s3_bucket_replication_configuration" "replication_us_west_1" {
     filter {
       prefix = "stacks/"
     }
-    priority = 0
+    delete_marker_replication {
+      status = "Enabled"
+    }
+    priority = 15
 
     destination {
       bucket        = module.bucket_us_west_1.s3_bucket_arn
