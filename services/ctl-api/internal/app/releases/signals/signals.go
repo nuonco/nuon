@@ -34,6 +34,13 @@ type RequestSignal struct {
 	eventloop.EventLoopRequest
 }
 
+func NewRequestSignal(req eventloop.EventLoopRequest, signal *Signal) RequestSignal {
+	return RequestSignal{
+		Signal:           signal,
+		EventLoopRequest: req,
+	}
+}
+
 func (s *Signal) Validate(v *validator.Validate) error {
 	if err := v.Struct(s); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
@@ -45,6 +52,10 @@ func (s *Signal) SignalType() eventloop.SignalType {
 	return s.Type
 }
 
+func (s *Signal) Stop() bool {
+	return false
+}
+
 func (s *Signal) Namespace() string {
 	return TemporalNamespace
 }
@@ -53,11 +64,19 @@ func (s *Signal) Name() string {
 	return string(s.Type)
 }
 
+func (s *Signal) Restart() bool {
+	switch s.Type {
+	case OperationRestart:
+		return true
+	default:
+	}
+
+	return false
+}
+
 func (s *Signal) Start() bool {
 	switch s.Type {
 	case OperationCreated:
-		return true
-	case OperationRestart:
 		return true
 	default:
 	}
