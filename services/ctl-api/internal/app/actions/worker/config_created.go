@@ -26,7 +26,10 @@ func (w *Workflows) ConfigCreated(ctx workflow.Context, sreq signals.RequestSign
 
 	for _, installID := range installIDs {
 		w.evClient.Send(ctx, installID, &installsignals.Signal{
-			Type: installsignals.OperationSyncActionWorkflowTriggers,
+			// Type: installsignals.OperationSyncActionWorkflowTriggers,
+			// NOTE(JM): there is a bug in the syncing workflow in installs, where the parent workflow does
+			// not get recreated and restart the crons.
+			Type: installsignals.OperationRestart,
 		})
 	}
 

@@ -15,8 +15,9 @@ import (
 const (
 	TemporalNamespace string = "orgs"
 
-	OperationCreated eventloop.SignalType = "created"
-	OperationRestart eventloop.SignalType = "restart"
+	OperationCreated         eventloop.SignalType = "created"
+	OperationRestart         eventloop.SignalType = "restart"
+	OperationRestartChildren eventloop.SignalType = "restart_children"
 
 	OperationProvision        eventloop.SignalType = "provision"
 	OperationDelete           eventloop.SignalType = "delete"
@@ -32,7 +33,8 @@ type Signal struct {
 	Type eventloop.SignalType
 
 	// fields for this event loop signal
-	InviteID string
+	InviteID    string
+	ForceDelete bool
 
 	eventloop.BaseSignal
 }

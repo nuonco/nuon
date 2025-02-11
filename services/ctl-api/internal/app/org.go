@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/bulk"
 )
 
 type OrgType string
@@ -28,6 +29,7 @@ const (
 	OrgStatusError          OrgStatus = "error"
 	OrgStatusActive         OrgStatus = "active"
 	OrgStatusProvisioning   OrgStatus = "provisioning"
+	OrgStatusDeleting       OrgStatus = "deleting"
 	OrgStatusDeprovisioning OrgStatus = "deprovisioning"
 )
 
@@ -60,13 +62,15 @@ type Org struct {
 	Invites        []OrgInvite      `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 	HealthChecks   []OrgHealthCheck `json:"health_checks,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 
-	// NOTE(jm): with GORM, these cascades are not getting created properly. For now, we just add them here, but
-	// eventually we should be able to remove these and add them directly.
-	Runners                   []Runner                   `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	// Other relationships as part of the data model
+
+	Runners                   []Runner                   `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 	PublicGitVCSConfigs       []PublicGitVCSConfig       `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 	ConnectedGithubVCSConfigs []ConnectedGithubVCSConfig `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 	VCSConnectionCommits      []VCSConnectionCommit      `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 	AWSECRImageConfigs        []AWSECRImageConfig        `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
+	Installs                  []Install                  `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
+	Components                []Component                `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 
 	Installers        []Installer         `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 	InstallerMetadata []InstallerMetadata `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
@@ -95,4 +99,19 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 
 	o.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	return nil
+}
+
+func (o *Org) EventLoops() []bulk.EventLoop {
+	evs := make([]bulk.EventLoop, 0)
+	evs = append(evs, bulk.EventLoop{
+		Namespace: "orgs",
+		ID:        o.ID,
+	})
+	evs = append(evs, o.RunnerGroup.EventLoops()...)
+
+	for _, app := range o.Apps {
+		evs = append(evs, app.EventLoops()...)
+	}
+
+	return evs
 }
