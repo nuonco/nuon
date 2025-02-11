@@ -83,7 +83,13 @@ export default withPageAuthRequired(async function Install({ params }) {
           ) : null}
         </div>
       }
-      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
+      meta={
+        <InstallPageSubNav
+          installId={installId}
+          orgId={orgId}
+          runnerId={install?.runner_id}
+        />
+      }
     >
       <div className="flex flex-col lg:flex-row flex-auto divide-x">
         <Section heading="README" className="" childrenClassName="mx-auto">

@@ -5,11 +5,13 @@ import { RUNNERS, WORKFLOWS } from '@/utils'
 export interface IInstallPageSubNav {
   installId: string
   orgId: string
+  runnerId: string
 }
 
 export const InstallPageSubNav: FC<IInstallPageSubNav> = ({
   installId,
   orgId,
+  runnerId,
 }) => {
   return (
     <SubNav
@@ -25,8 +27,8 @@ export const InstallPageSubNav: FC<IInstallPageSubNav> = ({
         },
         RUNNERS
           ? {
-              href: `/${orgId}/installs/${installId}/runner-group`,
-              text: 'Runners',
+              href: `/${orgId}/installs/${installId}/runner-group/${runnerId}`,
+              text: 'Runner',
             }
           : undefined,
         WORKFLOWS
