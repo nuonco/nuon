@@ -84,7 +84,13 @@ export default withPageAuthRequired(async function RunnerGroup({ params }) {
           ) : null}
         </div>
       }
-      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
+      meta={
+        <InstallPageSubNav
+          installId={installId}
+          orgId={orgId}
+          runnerId={install?.runner_id}
+        />
+      }
     >
       <Section heading="Runners">
         {runnerGroup?.runners?.length ? (

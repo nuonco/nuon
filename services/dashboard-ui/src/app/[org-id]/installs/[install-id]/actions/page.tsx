@@ -62,7 +62,13 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
           ) : null}
         </div>
       }
-      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
+      meta={
+        <InstallPageSubNav
+          installId={installId}
+          orgId={orgId}
+          runnerId={install?.runner_id}
+        />
+      }
     >
       <Section className="border-r" heading="All workflows">
         {actionsWithLatestRun?.length ? (
