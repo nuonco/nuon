@@ -193,29 +193,35 @@ const LoadRunnerGroup: FC<{ installId: string; orgId: string }> = async ({
   return (
     <div className="flex flex-col gap-4">
       <div className="divide-y">
-        {runnerGroup.runners?.map((runner) => (
-          <div key={runner?.id} className="flex flex-col gap-2">
-            <span>
-              <Text className="gap-3" variant="med-14">
-                <StatusBadge
-                  status={runner?.status}
-                  isStatusTextHidden
-                  isWithoutBorder
-                />
-                <span>{runner?.display_name}</span>
-              </Text>
-              <ID id={runner?.id} />
-            </span>
+        {runnerGroup.runners?.length ? (
+          runnerGroup.runners?.map((runner) => (
+            <div key={runner?.id} className="flex flex-col gap-2">
+              <span>
+                <Text className="gap-3" variant="med-14">
+                  <StatusBadge
+                    status={runner?.status}
+                    isStatusTextHidden
+                    isWithoutBorder
+                  />
+                  <span>{runner?.display_name}</span>
+                </Text>
+                <ID id={runner?.id} />
+              </span>
 
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={<Loading loadingText="Loading runner heartbeat..." />}
-              >
-                <LoadRunnerHeartBeat runnerId={runner?.id} orgId={orgId} />
-              </Suspense>
-            </ErrorBoundary>
-          </div>
-        ))}
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={
+                    <Loading loadingText="Loading runner heartbeat..." />
+                  }
+                >
+                  <LoadRunnerHeartBeat runnerId={runner?.id} orgId={orgId} />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+          ))
+        ) : (
+          <Text>No runner found</Text>
+        )}
       </div>
     </div>
   )
