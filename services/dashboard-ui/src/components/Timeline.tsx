@@ -86,46 +86,52 @@ export const TimelineEvent: FC<ITimelineEvent> = ({
   href,
   isMostRecent = false,
 }) => {
-  return (
+  const Event = (
+    <div
+      className={classNames('flex items-center justify-between p-4', {
+        'border rounded-md shadow-sm': isMostRecent,
+      })}
+    >
+      <div className="flex flex-col">
+        <span className="flex items-center gap-3">
+          <EventStatus status={status} />
+          <Text variant="med-12">{sentanceCase(status)}</Text>
+        </span>
+
+        <Text className="flex items-center gap-2 ml-7" variant="reg-12">
+          {underline}
+        </Text>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Time
+          time={time}
+          format="relative"
+          variant="reg-12"
+          className={classNames({
+            'text-black/60 dark:text-white/60': !Boolean(
+              status === 'finished' ||
+                status === 'failed' ||
+                status === 'active' ||
+                status === 'error'
+            ),
+          })}
+        />
+        {href && <CaretRight />}
+      </div>
+    </div>
+  )
+
+  return href ? (
     <Link
       className="!block w-full !p-0 timeline-event"
       href={href}
       variant="ghost"
     >
-      <div
-        className={classNames('flex items-center justify-between p-4', {
-          'border rounded-md shadow-sm': isMostRecent,
-        })}
-      >
-        <div className="flex flex-col">
-          <span className="flex items-center gap-3">
-            <EventStatus status={status} />
-            <Text variant="med-12">{sentanceCase(status)}</Text>
-          </span>
-
-          <Text className="flex items-center gap-2 ml-7" variant="reg-12">
-            {underline}
-          </Text>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Time
-            time={time}
-            format="relative"
-            variant="reg-12"
-            className={classNames({
-              'text-black/60 dark:text-white/60': !Boolean(
-                status === 'finished' ||
-                  status === 'failed' ||
-                  status === 'active' ||
-                  status === 'error'
-              ),
-            })}
-          />
-          {href && <CaretRight />}
-        </div>
-      </div>
+      {Event}
     </Link>
+  ) : (
+    Event
   )
 }
 
