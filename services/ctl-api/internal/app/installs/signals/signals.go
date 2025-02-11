@@ -41,6 +41,13 @@ type Signal struct {
 	eventloop.BaseSignal
 }
 
+func NewRequestSignal(req eventloop.EventLoopRequest, signal *Signal) RequestSignal {
+	return RequestSignal{
+		Signal:           signal,
+		EventLoopRequest: req,
+	}
+}
+
 type RequestSignal struct {
 	*Signal
 	eventloop.EventLoopRequest
@@ -68,11 +75,29 @@ func (s *Signal) Name() string {
 	return string(s.Type)
 }
 
+func (s *Signal) Stop() bool {
+	switch s.Type {
+	case OperationDelete:
+		return true
+	default:
+	}
+
+	return false
+}
+
+func (s *Signal) Restart() bool {
+	switch s.Type {
+	case OperationRestart:
+		return true
+	default:
+	}
+
+	return false
+}
+
 func (s *Signal) Start() bool {
 	switch s.Type {
 	case OperationCreated:
-		return true
-	case OperationRestart:
 		return true
 	default:
 	}
