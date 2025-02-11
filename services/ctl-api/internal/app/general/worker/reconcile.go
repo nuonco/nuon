@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/worker/activities"
 
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 )
 
-func (w *Workflows) reconcile(ctx workflow.Context) error {
+func (w *Workflows) reconcile(ctx workflow.Context, _ signals.RequestSignal) error {
 	workflowId := fmt.Sprintf("reconcile-event-loops")
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowID:            workflowId,

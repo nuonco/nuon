@@ -24,18 +24,6 @@ func (BaseSignal) WorkflowID(id string) string {
 	return "event-loop-" + id
 }
 
-func (BaseSignal) FailOnError() bool {
-	return false
-}
-
-func (BaseSignal) StopOnFinish() bool {
-	return false
-}
-
-func (BaseSignal) Noop() bool {
-	return false
-}
-
 func (b *BaseSignal) PropagateContext(ctx context.Context) error {
 	payload, err := propagator.FetchPayload(ctx)
 	if err != nil {

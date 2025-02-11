@@ -1,131 +1,41 @@
 package worker
 
 import (
-	"errors"
-	"strconv"
-
 	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/loop"
 )
 
-func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest) error {
-	defaultTags := map[string]string{"sandbox_mode": strconv.FormatBool(req.SandboxMode)}
-	w.mw.Incr(ctx, "event_loop.start", metrics.ToTags(defaultTags, "op", "started")...)
-	l := zap.L()
-
-	finished := false
-
-	signalChan := workflow.GetSignalChannel(ctx, req.ID)
-	selector := workflow.NewSelector(ctx)
-	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
-		var signal signals.Signal
-		channelOpen := channel.Receive(ctx, &signal)
-		if !channelOpen {
-			l.Info("channel was closed")
-			return
-		}
-
-		if err := signal.Validate(w.v); err != nil {
-			l.Info("invalid signal", zap.Error(err))
-		}
-
-		ctx := signal.GetWorkflowContext(ctx)
-
-		startTS := workflow.Now(ctx)
-		op := ""
-		status := "ok"
-		defer func() {
-			tags := generics.MergeMap(map[string]string{
-				"op":     op,
-				"status": status,
-			}, defaultTags)
-			dur := workflow.Now(ctx).Sub(startTS)
-
-			w.mw.Timing(ctx, "event_loop.signal_duration", dur, metrics.ToTags(tags)...)
-			w.mw.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
-		}()
-
-		sreq := signals.RequestSignal{
-			Signal:           &signal,
-			EventLoopRequest: req,
-		}
-
-		switch signal.SignalType() {
-
-		// signals to handle operations of the runner
-		case signals.OperationRestart:
-			op = "restart"
-			if err := w.AwaitRestart(ctx, sreq); err != nil {
-				status = "error"
-				l.Info("unable to handle restart signal: %w", zap.Error(err))
-			}
-
-			w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
+func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
+	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
+		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
+			defer w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
 				RunnerID: req.ID,
 			})
-		case signals.OperationDelete:
-			op = "delete"
-			if err := w.AwaitDelete(ctx, sreq); err != nil {
-				status = "error"
-				l.Info("unable to handle delete signal: %w", zap.Error(err))
-			}
-			finished = true
-		case signals.OperationCreated:
-			op = "created"
-			if err := w.AwaitCreated(ctx, sreq); err != nil {
-				status = "error"
-				l.Info("unable to handle created signal: %w", zap.Error(err))
-			}
-			w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
+			return w.AwaitRestart(ctx, req)
+		},
+		signals.OperationDelete: w.AwaitDelete,
+		signals.OperationCreated: func(ctx workflow.Context, req signals.RequestSignal) error {
+			defer w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
 				RunnerID: req.ID,
 			})
-		case signals.OperationProvision:
-			op = "provision"
-			if err := w.AwaitProvision(ctx, sreq); err != nil {
-				status = "error"
-				l.Info("unable to handle provision signal: %w", zap.Error(err))
-			}
-		case signals.OperationReprovision:
-			op = "reprovision"
-			if err := w.AwaitReprovision(ctx, sreq); err != nil {
-				status = "error"
-				l.Info("unable to handle reprovision signal: %w", zap.Error(err))
-			}
-		case signals.OperationDeprovision:
-			op = "deprovision"
-			if err := w.AwaitDeprovision(ctx, sreq); err != nil {
-				status = "error"
-				l.Info("unable to handle deprovision signal: %w", zap.Error(err))
-			}
-
-			// operations to handle the basics
-			// NOTE(jm): not all jobs have to be queued, if they are created
-			// with the "available" status,
-			// such as a health check, they will immediately be picked up
-		case signals.OperationProcessJob:
-			op = "job_queued"
-			if err := w.AwaitProcessJob(ctx, sreq); err != nil {
-				status = "error"
-				l.Info("unable to handle queued job: %w", zap.Error(err))
-			}
-		}
-	})
-
-	for !finished {
-		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
-			w.mw.Incr(ctx, "event_loop.canceled", metrics.ToTags(defaultTags)...)
-			l.Error("workflow canceled")
-			break
-		}
-
-		selector.Select(ctx)
+			return w.AwaitCreated(ctx, req)
+		},
+		signals.OperationProvision:   w.AwaitProvision,
+		signals.OperationReprovision: w.AwaitReprovision,
+		signals.OperationDeprovision: w.AwaitDeprovision,
+		signals.OperationProcessJob:  w.AwaitProcessJob,
 	}
 
-	w.mw.Incr(ctx, "event_loop.finish", metrics.ToTags(defaultTags)...)
-	return nil
+	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
+		Cfg:              w.cfg,
+		V:                w.v,
+		MW:               w.mw,
+		Handlers:         handlers,
+		NewRequestSignal: signals.NewRequestSignal,
+	}
+
+	return l.Run(ctx, req, pendingSignals)
 }
