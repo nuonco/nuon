@@ -50,7 +50,7 @@ export default withPageAuthRequired(async function Runner({ params }) {
     getRunnerLatestHeartbeat({
       orgId,
       runnerId,
-    }),
+    }).catch(console.error),
   ])
 
   return (
@@ -126,37 +126,41 @@ export default withPageAuthRequired(async function Runner({ params }) {
                   shouldPoll
                 />
               </span>
-              <span className="flex flex-col gap-2">
-                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                  Version
-                </Text>
-                <Text variant="med-12">{runnerHeartbeat?.version}</Text>
-              </span>
-              <span className="flex flex-col gap-2">
-                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                  Alive time
-                </Text>
-                <Text>
-                  <Timer size={14} />
-                  <Duration
-                    nanoseconds={runnerHeartbeat.alive_time}
-                    variant="med-12"
-                  />
-                </Text>
-              </span>
-              <span className="flex flex-col gap-2">
-                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                  Last heartbeat seen
-                </Text>
-                <Text>
-                  <Heartbeat size={14} />
-                  <Time
-                    time={runnerHeartbeat.created_at}
-                    format="relative"
-                    variant="med-12"
-                  />
-                </Text>
-              </span>
+              {runnerHeartbeat ? (
+                <>
+                  <span className="flex flex-col gap-2">
+                    <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                      Version
+                    </Text>
+                    <Text variant="med-12">{runnerHeartbeat?.version}</Text>
+                  </span>
+                  <span className="flex flex-col gap-2">
+                    <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                      Alive time
+                    </Text>
+                    <Text>
+                      <Timer size={14} />
+                      <Duration
+                        nanoseconds={runnerHeartbeat.alive_time}
+                        variant="med-12"
+                      />
+                    </Text>
+                  </span>
+                  <span className="flex flex-col gap-2">
+                    <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                      Last heartbeat seen
+                    </Text>
+                    <Text>
+                      <Heartbeat size={14} />
+                      <Time
+                        time={runnerHeartbeat.created_at}
+                        format="relative"
+                        variant="med-12"
+                      />
+                    </Text>
+                  </span>
+                </>
+              ) : null}
             </div>
           </Section>
           <Section className="flex-initial" heading="Health status">
