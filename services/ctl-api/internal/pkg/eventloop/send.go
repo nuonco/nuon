@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
+	enumspb "go.temporal.io/api/enums/v1"
 )
 
 func (a *evClient) Send(ctx context.Context, id string, signal Signal) {
@@ -19,6 +20,23 @@ func (a *evClient) Send(ctx context.Context, id string, signal Signal) {
 		a.mw.Incr("event_loop.signal", metrics.ToStatusTag("unable to propagate"))
 		a.l.Error("unable to propagate", zap.Error(err))
 		return
+	}
+
+	if signal.Restart() {
+		status, err := a.client.GetWorkflowStatusInNamespace(ctx,
+			signal.Namespace(),
+			signal.WorkflowID(id),
+			"",
+		)
+		if err != nil {
+			a.mw.Incr("event_loop_signal", metrics.ToStatusTag("unable_to_get_workflow"))
+		}
+
+		if status != enumspb.WORKFLOW_EXECUTION_STATUS_RUNNING {
+			if err := a.startEventLoop(ctx, id, signal); err != nil {
+				a.mw.Incr("event_loop_signal", metrics.ToStatusTag("unable_to_start_event_loop"))
+			}
+		}
 	}
 
 	if signal.Start() {

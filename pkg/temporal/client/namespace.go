@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	enumspb "go.temporal.io/api/enums/v1"
+
+	"go.temporal.io/api/workflowservice/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 
@@ -39,6 +42,37 @@ func (t *temporal) ExecuteWorkflowInNamespace(ctx context.Context,
 	}
 
 	return client.ExecuteWorkflow(ctx, options, workflow, args...)
+}
+
+func (t *temporal) GetWorkflowStatusInNamespace(ctx context.Context,
+	namespace string,
+	workflowID string,
+	runID string,
+) (enumspb.WorkflowExecutionStatus, error) {
+	client, err := t.GetNamespaceClient(namespace)
+	if err != nil {
+		return enumspb.WorkflowExecutionStatus(0), errors.Wrap(err, "unable to get namespace client")
+	}
+
+	exec, err := client.DescribeWorkflowExecution(ctx, workflowID, runID)
+	if err != nil {
+		return enumspb.WorkflowExecutionStatus(0), errors.Wrap(err, "unable to get execution")
+	}
+
+	return exec.WorkflowExecutionInfo.Status, nil
+}
+
+func (t *temporal) DescribeWorkflowExecutionInNamespace(ctx context.Context,
+	namespace string,
+	workflowID string,
+	runID string,
+) (*workflowservice.DescribeWorkflowExecutionResponse, error) {
+	client, err := t.GetNamespaceClient(namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get namespace client")
+	}
+
+	return client.DescribeWorkflowExecution(ctx, workflowID, runID)
 }
 
 func (t *temporal) GetWorkflowInNamespace(ctx context.Context,

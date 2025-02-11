@@ -20,6 +20,7 @@ type Params struct {
 }
 
 type Activities struct {
+	cfg    *internal.Config
 	v      *validator.Validate
 	db     *gorm.DB
 	notifs *notifications.Notifications
@@ -27,6 +28,7 @@ type Activities struct {
 
 func New(params Params) (*Activities, error) {
 	return &Activities{
+		cfg:    params.Cfg,
 		v:      params.V,
 		db:     params.DB,
 		notifs: params.Notifs,
