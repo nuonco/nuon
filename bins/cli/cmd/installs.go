@@ -16,6 +16,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		deployID      string
 		runID         string
 		installCompID string
+		componentID   string
 		inputs        []string
 		noSelect      bool
 	)
@@ -263,6 +264,21 @@ func (c *cli) installsCmd() *cobra.Command {
 	teardownInstallComponentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	teardownInstallComponentsCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(teardownInstallComponentsCmd)
+
+		teardownInstallComponentCmd := &cobra.Command{
+		Use:   "teardown-component",
+		Short: "Teardown component on install.",
+		Long:  "Teardown all deployed components on an install",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.TeardownComponent(cmd.Context(), id, componentID, PrintJSON)
+		}),
+	}
+	teardownInstallComponentCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	teardownInstallComponentCmd.MarkFlagRequired("install-id")
+	teardownInstallComponentCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The ID of the component you want to teardown")
+	teardownInstallComponentCmd.MarkFlagRequired("component-id")
+	installsCmds.AddCommand(teardownInstallComponentCmd)
 
 	deployInstallComponentsCmd := &cobra.Command{
 		Use:   "deploy-components",
