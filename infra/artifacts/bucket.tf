@@ -7,7 +7,6 @@ locals {
     "nuonctl/*",
     "terraform-provider-nuon/*",
     "sandbox/*",
-    "stacks/*",
   ]
 }
 
@@ -56,7 +55,7 @@ data "aws_iam_policy_document" "s3_bucket_policy" {
     resources = formatlist("arn:aws:s3:::${local.bucket_name}/%s", local.public_prefixes)
     principals {
       type        = "*"
-      identifiers = ["*", ]
+      identifiers = ["*",]
     }
   }
 
@@ -70,7 +69,7 @@ data "aws_iam_policy_document" "s3_bucket_policy" {
     ]
     principals {
       type        = "*"
-      identifiers = ["*", ]
+      identifiers = ["*",]
     }
     condition {
       test     = "StringLike"
@@ -93,8 +92,8 @@ module "bucket" {
   attach_require_latest_tls_policy      = true
 
   attach_public_policy = false
-  block_public_acls    = false
-  block_public_policy  = false
+  block_public_acls = false
+  block_public_policy = false
 
   control_object_ownership = true
   object_ownership         = "BucketOwnerEnforced"
