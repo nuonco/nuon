@@ -53,7 +53,7 @@ data "aws_iam_policy_document" "replication_policy" {
       "s3:GetObjectVersionAcl",
       "s3:GetObjectVersionTagging"
     ]
-    resources = ["${module.bucket.s3_bucket_arn}/*"]
+    resources = ["${module.bucket.s3_bucket_arn}/stacks/*"]
   }
   statement {
     effect = "Allow"
@@ -77,29 +77,29 @@ resource "aws_iam_role_policy_attachment" "replication" {
 }
 
 # Create Multi-Region Access Point
-# resource "aws_s3control_multi_region_access_point" "mrap" {
-#   details {
-#     name = "${local.bucket_name}-mrap"
+resource "aws_s3control_multi_region_access_point" "mrap" {
+  details {
+    name = "${local.bucket_name}-mrap"
 
-#     public_access_block {
-#       block_public_acls       = false
-#       block_public_policy     = false
-#       ignore_public_acls      = false
-#       restrict_public_buckets = false
-#     }
+    public_access_block {
+      block_public_acls       = false
+      block_public_policy     = false
+      ignore_public_acls      = false
+      restrict_public_buckets = false
+    }
 
-#     region {
-#       bucket = module.bucket.s3_bucket_id
-#     }
+    region {
+      bucket = module.bucket.s3_bucket_id
+    }
 
-#     dynamic "region" {
-#       for_each = toset(local.replication_regions)
-#       content {
-#         bucket = "${local.bucket_name}-${region.value}"
-#       }
-#     }
-#   }
-# }
+    dynamic "region" {
+      for_each = toset(local.replication_regions)
+      content {
+        bucket = "${local.bucket_name}-${region.value}"
+      }
+    }
+  }
+}
 
 # All individual buckets and their replication configs follow.
 # Individual buckets are specified explicitly because it's not possible to use loops in provider statements, per https://github.com/hashicorp/terraform/issues/24476
