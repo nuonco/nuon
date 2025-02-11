@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/analytics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/helpers"
 	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
@@ -30,6 +31,7 @@ type Params struct {
 	RunnersHelpers  *runnershelpers.Helpers
 	AcctClient      *account.Client
 	AnalyticsClient analytics.Writer
+	Helpers         *helpers.Helpers
 }
 
 type service struct {
@@ -43,6 +45,7 @@ type service struct {
 	runnersHelpers  *runnershelpers.Helpers
 	acctClient      *account.Client
 	analyticsClient analytics.Writer
+	helpers         *helpers.Helpers
 }
 
 var _ api.Service = (*service)(nil)
@@ -113,5 +116,6 @@ func New(params Params) *service {
 		runnersHelpers:  params.RunnersHelpers,
 		analyticsClient: params.AnalyticsClient,
 		acctClient:      params.AcctClient,
+		helpers:         params.Helpers,
 	}
 }

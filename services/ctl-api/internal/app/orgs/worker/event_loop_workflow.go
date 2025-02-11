@@ -25,7 +25,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		sigs.OperationReprovision:      w.AwaitReprovision,
 		sigs.OperationDeprovision:      w.AwaitDeprovision,
 		sigs.OperationForceDeprovision: w.AwaitForceDeprovision,
-		sigs.OperationRestart:          nil,
+		sigs.OperationRestart: w.AwaitRestart,
 		sigs.OperationInviteCreated:    w.AwaitInviteUser,
 		sigs.OperationInviteAccepted:   w.AwaitInviteAccepted,
 		sigs.OperationForceDelete:      w.AwaitForceDelete,

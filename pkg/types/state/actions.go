@@ -9,7 +9,7 @@ func NewActionsState() *ActionsState {
 type ActionsState struct {
 	Populated bool `json:"populated"`
 
-	Workflows map[string]*ActionWorkflowState
+	Workflows map[string]*ActionWorkflowState `json:"workflows"`
 }
 
 func NewActionWorkflowState() *ActionWorkflowState {
