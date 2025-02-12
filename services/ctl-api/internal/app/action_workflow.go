@@ -27,12 +27,12 @@ type ActionWorkflow struct {
 	Configs     []ActionWorkflowConfig `json:"configs"`
 	ConfigCount int                    `json:"config_count" gorm:"->;-:migration"`
 
-	//metadata
+	// metadata
 	Name string `json:"name" gorm:"index:idx_action_workflow_app_id_name,unique"`
 }
 
 func (a *ActionWorkflow) BeforeCreate(tx *gorm.DB) error {
-	a.ID = domains.NewActionWorkflowConfigID()
+	a.ID = domains.NewActionWorkflowID()
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	a.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
