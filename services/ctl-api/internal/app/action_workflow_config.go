@@ -42,7 +42,7 @@ type ActionWorkflowConfig struct {
 }
 
 func (a *ActionWorkflowConfig) BeforeCreate(tx *gorm.DB) error {
-	a.ID = domains.NewActionWorkflowID()
+	a.ID = domains.NewActionWorkflowConfigID()
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	a.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
