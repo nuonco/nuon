@@ -6,9 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID DeleteActionWorkflow
@@ -29,26 +30,39 @@ import (
 // @Router			/v1/action-workflows/{action_workflow_id} [DELETE]
 func (s *service) DeleteActionWorkflow(ctx *gin.Context) {
 	awID := ctx.Param("action_workflow_id")
-
-	err := s.deleteActionWorkflow(ctx, awID)
+	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
+	err = s.deleteActionWorkflow(ctx, org.ID, awID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	// trigger signal
+	s.evClient.Send(ctx, awID, &signals.Signal{
+		Type: signals.OperationDelete,
+	})
+
 	ctx.JSON(http.StatusOK, true)
 }
 
-func (s *service) deleteActionWorkflow(ctx context.Context, awID string) error {
-	aw := app.ActionWorkflow{ID: awID}
-
-	//TODO: we may want to queue up delete
-	res := s.db.WithContext(ctx).Delete(&aw)
-	if res.Error != nil {
-		if res.Error == gorm.ErrRecordNotFound {
-			return nil
-		}
-		return fmt.Errorf("unable to delete action workflow %s: %w", awID, res.Error)
+func (s *service) deleteActionWorkflow(ctx context.Context, orgID, awID string) error {
+	aw := app.ActionWorkflow{
+		ID:                awID,
+		Status:            app.ActionWorkflowStatusDeleteQueued,
+		StatusDescription: "Delete Queued",
 	}
+
+	resp := s.db.WithContext(ctx).
+		Where("org_id = ? AND id = ?", orgID, awID).
+		Updates(&aw)
+	if resp.Error != nil {
+		return fmt.Errorf("unable to delete action workflow %s: %w", awID, resp.Error)
+	}
+
 	return nil
 }
