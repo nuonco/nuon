@@ -68,7 +68,7 @@ func (s *service) CreateAppActionWorkflow(ctx *gin.Context) {
 
 	app, err := s.createActionWorkflow(ctx, org.ID, appID, &req)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create app: %w", err))
+		ctx.Error(fmt.Errorf("unable to create action workflow: %w", err))
 		return
 	}
 

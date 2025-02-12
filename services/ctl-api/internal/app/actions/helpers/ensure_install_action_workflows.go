@@ -2,11 +2,9 @@ package helpers
 
 import (
 	"context"
-	"fmt"
-
-	"gorm.io/gorm/clause"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm/clause"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -19,7 +17,7 @@ func (h *Helpers) EnsureInstallAction(ctx context.Context, appID string, install
 		Preload("ActionWorkflows").
 		First(&parentApp, "id = ?", appID)
 	if res.Error != nil {
-		return fmt.Errorf("unable to get app: %w", res.Error)
+		return errors.Wrap(res.Error, "unable to get app")
 	}
 
 	// if install IDs are not passed in, then update all installs
@@ -45,7 +43,9 @@ func (h *Helpers) EnsureInstallAction(ctx context.Context, appID string, install
 	}
 
 	res = h.db.WithContext(ctx).
-		Clauses(clause.OnConflict{DoNothing: true}).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
 		Create(&installActs)
 	if res.Error != nil {
 		return errors.Wrap(res.Error, "unable to create install action workflows")
