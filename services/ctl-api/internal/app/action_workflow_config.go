@@ -30,8 +30,9 @@ type ActionWorkflowConfig struct {
 	ActionWorkflowID string         `json:"action_workflow_id" gorm:"index:idx_action_workflow_id_app_config_id,unique"`
 	ActionWorkflow   ActionWorkflow `json:"-"`
 
-	Triggers []ActionWorkflowTriggerConfig `json:"triggers"`
-	Steps    []ActionWorkflowStepConfig    `json:"steps"`
+	Triggers []ActionWorkflowTriggerConfig `json:"triggers" gorm:"constraint:OnDelete:CASCADE;"`
+	Steps    []ActionWorkflowStepConfig    `json:"steps"  gorm:"constraint:OnDelete:CASCADE;"`
+	Runs     []InstallActionWorkflowRun    `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
 	Timeout time.Duration `json:"timeout" gorm:"default null;not null" swaggertype:"primitive,integer"`
 
