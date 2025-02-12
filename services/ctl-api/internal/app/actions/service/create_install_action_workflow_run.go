@@ -60,7 +60,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 
 	awc, err := s.findActionWorkflowConfig(ctx, req.ActionWorkFlowConfigID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create app: %w", err))
+		ctx.Error(fmt.Errorf("unable to get app: %w", err))
 		return
 	}
 
