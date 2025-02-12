@@ -24,9 +24,8 @@ const (
 )
 
 type Signal struct {
-	Type eventloop.SignalType
-
-	ConfigID string `json:"config_id"`
+	Type       eventloop.SignalType
+	ConfigID   string `json:"config_id"`
 
 	eventloop.BaseSignal
 }
