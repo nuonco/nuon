@@ -86,9 +86,10 @@ func (s *service) CreateAppActionWorkflow(ctx *gin.Context) {
 
 func (s *service) createActionWorkflow(ctx context.Context, orgID, appID string, req *CreateAppActionWorkflowRequest) (*app.ActionWorkflow, error) {
 	newAW := app.ActionWorkflow{
-		AppID: appID,
-		OrgID: orgID,
-		Name:  req.Name,
+		AppID:  appID,
+		OrgID:  orgID,
+		Name:   req.Name,
+		Status: app.ActionWorkflowStatusActive,
 	}
 
 	res := s.db.WithContext(ctx).
