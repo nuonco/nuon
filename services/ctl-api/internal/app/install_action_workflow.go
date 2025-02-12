@@ -25,7 +25,7 @@ type InstallActionWorkflow struct {
 	InstallID string  `json:"install_id" gorm:"index:idx_install_action_workflow_id,unique" faker:"-"`
 
 	ActionWorkflow   ActionWorkflow `json:"action_workflow"`
-	ActionWorkflowID string         `json:"action_workflow_id"`
+	ActionWorkflowID string         `json:"action_workflow_id" gorm:"index:idx_install_action_workflow_id,unique"`
 
 	Runs []InstallActionWorkflowRun `faker:"-" gorm:"constraint:OnDelete:CASCADE;" json:"runs"`
 
