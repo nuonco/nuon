@@ -182,5 +182,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "081-drop-runner-health-checks-idx",
 			Fn:   a.migration081DropRunnerHealtCheckIndex,
 		},
+		{
+			Name: "082-recreate-install-action-workflows-idx",
+			Fn:   a.migration082InstallActionWorkflowsIdx,
+		},
 	}
 }
