@@ -47,16 +47,14 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
       headingUnderline={actionWithRecentRuns.action_workflow?.id}
       statues={
         <div className="flex gap-6 items-start justify-start">
-          {actionWithRecentRuns?.recent_runs?.length ? (
+          {actionWithRecentRuns?.runs?.length ? (
             <>
               <span className="flex flex-col gap-2">
                 <Text className="text-cool-grey-600 dark:text-cool-grey-500">
                   Recent status
                 </Text>
                 <StatusBadge
-                  status={
-                    actionWithRecentRuns.recent_runs?.[0]?.status || 'noop'
-                  }
+                  status={actionWithRecentRuns.runs?.[0]?.status || 'noop'}
                 />
               </span>
 
@@ -66,7 +64,7 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
                 </Text>
                 <Text variant="mono-12">
                   {humandReadableTriggeredBy(
-                    actionWithRecentRuns.recent_runs?.[0]?.triggered_by_type
+                    actionWithRecentRuns.runs?.[0]?.triggered_by_type
                   )}
                 </Text>
               </span>
