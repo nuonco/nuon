@@ -2,6 +2,7 @@ import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
+  AppCreateInstallButton,
   AppInputConfig,
   AppPageSubNav,
   AppRunnerConfig,
@@ -22,7 +23,6 @@ import {
   getOrg,
   type IGetApp,
 } from '@/lib'
-import type { TAppInputConfig } from '@/types'
 
 export default withPageAuthRequired(async function App({ params }) {
   const appId = params?.['app-id'] as string
@@ -43,19 +43,31 @@ export default withPageAuthRequired(async function App({ params }) {
       ]}
       heading={app.name}
       headingUnderline={app.id}
+      statues={
+        inputCfg ? (
+          <AppCreateInstallButton
+            platform={app?.cloud_platform}
+            inputConfig={inputCfg}
+            appId={appId}
+            orgId={orgId}
+          />
+        ) : null
+      }
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
       <div className="flex flex-col md:flex-row flex-auto">
         <div className="divide-y flex flex-col flex-grow">
           {appConfig ? (
-            <Section className="border-r" heading="README" childrenClassName="mx-auto">
+            <Section className="border-r" heading="README">
               <Markdown content={appConfig.readme} />
             </Section>
           ) : null}
 
-          <Section className="border-r" heading="Inputs">
-            <AppInputConfig inputConfig={inputCfg as TAppInputConfig} />
-          </Section>
+          {inputCfg ? (
+            <Section className="border-r" heading="Inputs">
+              <AppInputConfig inputConfig={inputCfg} />
+            </Section>
+          ) : null}
         </div>
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
