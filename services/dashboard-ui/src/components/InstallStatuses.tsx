@@ -1,11 +1,11 @@
 'use client'
 
 import classNames from 'classnames'
-import React, { type FC, useEffect } from 'react'
+import React, { type FC, useEffect, useState } from 'react'
 import { StatusBadge } from '@/components/Status'
-import { revalidateInstallData } from '@/components/install-actions'
+// import { revalidateInstallData } from '@/components/install-actions'
 import type { TInstall } from '@/types'
-import { SHORT_POLL_DURATION } from '@/utils'
+import { POLL_DURATION } from '@/utils'
 
 export interface IInstallStatus {
   initInstall: TInstall
@@ -16,25 +16,25 @@ export interface IInstallStatus {
 }
 
 export const InstallStatuses: FC<IInstallStatus> = ({
-  initInstall: install,
+  initInstall,
   isCompact = false,
   shouldPoll = false,
 }) => {
-  //const [install, updateInstall] = useState<TInstall>(initInstall)
+  const [install, updateInstall] = useState<TInstall>(initInstall)
 
   useEffect(() => {
     const fetchInstall = () => {
-      /* fetch(`/api/${install.org_id}/installs/${install.id}`)
-       *   .then((res) =>
-       *     res.json().then((o) => {
-       *       updateInstall(o)
-       *     })
-       *   )
-       *   .catch(console.error) */
-      revalidateInstallData({ installId: install.id, orgId: install.org_id })
+      fetch(`/api/${install.org_id}/installs/${install.id}`)
+        .then((res) =>
+          res.json().then((o) => {
+            updateInstall(o)
+          })
+        )
+        .catch(console.error)
+      // revalidateInstallData({ installId: install.id, orgId: install.org_id })
     }
     if (shouldPoll) {
-      const pollInstall = setInterval(fetchInstall, SHORT_POLL_DURATION)
+      const pollInstall = setInterval(fetchInstall, POLL_DURATION)
       return () => clearInterval(pollInstall)
     }
   }, [install, shouldPoll])
