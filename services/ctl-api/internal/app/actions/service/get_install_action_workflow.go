@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -44,8 +43,6 @@ func (s *service) GetInstallActionWorkflow(ctx *gin.Context) {
 
 func (s *service) getInstallActionWorkflow(ctx context.Context, installID, actionWorkflowID string) (*app.InstallActionWorkflow, error) {
 	var installActionWorkflow app.InstallActionWorkflow
-	fmt.Println(installID)
-	fmt.Println(actionWorkflowID)
 	res := s.db.WithContext(ctx).
 		Where(app.InstallActionWorkflow{
 			InstallID:        installID,
