@@ -1,19 +1,26 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
+  AppCreateInstallButton,
   AppPageSubNav,
   AppWorkflowsTable,
   DashboardContent,
   NoActions,
 } from '@/components'
-import { getApp, getAppActionWorkflows, getOrg } from '@/lib'
+import {
+  getApp,
+  getAppActionWorkflows,
+  getAppLatestInputConfig,
+  getOrg,
+} from '@/lib'
 
 export default withPageAuthRequired(async function AppWorkflows({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const [org, app, workflows] = await Promise.all([
+  const [org, app, workflows, inputCfg] = await Promise.all([
     getOrg({ orgId }),
     getApp({ appId, orgId }),
     getAppActionWorkflows({ appId, orgId }),
+    getAppLatestInputConfig({ appId, orgId }).catch(console.error),
   ])
 
   return (
@@ -25,6 +32,16 @@ export default withPageAuthRequired(async function AppWorkflows({ params }) {
       ]}
       heading={app.name}
       headingUnderline={app.id}
+      statues={
+        inputCfg ? (
+          <AppCreateInstallButton
+            platform={app?.cloud_platform}
+            inputConfig={inputCfg}
+            appId={appId}
+            orgId={orgId}
+          />
+        ) : null
+      }
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
       <section className="px-6 py-8">
