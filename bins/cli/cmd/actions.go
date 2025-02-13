@@ -40,6 +40,19 @@ func (c *cli) actionsCmd() *cobra.Command {
 		}),
 	}
 
+	deleteWorkflowCmd := &cobra.Command{
+		Use:   "delete-workflow",
+		Short: "Delete an action workflow",
+		Long:  "Delete an action workflow by ID",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := actions.New(c.v, c.apiClient, c.cfg)
+			return svc.DeleteWorkflow(cmd.Context(), actionWorkflowID)
+		}),
+	}
+	deleteWorkflowCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID of the action workflow you want to delete")
+	deleteWorkflowCmd.MarkFlagRequired("action-workflow-id")
+	actionsCmd.AddCommand(deleteWorkflowCmd)
+
 	recentRunsCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of the install you want to view recent runs for")
 	recentRunsCmd.MarkFlagRequired("install-id")
 	recentRunsCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID of the action workflow you want to view recent runs for")

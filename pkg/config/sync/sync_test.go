@@ -173,7 +173,6 @@ func TestSync(t *testing.T) {
 		expectSyncInstaller           bool
 		expectGetComponentLatestBuild bool
 		expectSyncComponents          bool
-		expectedMsg                   string
 		expectCmpBuildScheduled       []string
 		expectedFinish                bool
 	}{
@@ -187,7 +186,6 @@ func TestSync(t *testing.T) {
 			},
 			expectedLatestConfig:    nil,
 			expectedLatestConfigErr: nil,
-			expectedMsg:             "",
 			expectCmpBuildScheduled: []string{},
 			expectedFinish:          false,
 		},
@@ -202,7 +200,6 @@ func TestSync(t *testing.T) {
 			expectedLatestConfig:    getTestAppConfig(),
 			expectedLatestConfigErr: nil,
 			expectSyncInputs:        true,
-			expectedMsg:             "",
 			expectCmpBuildScheduled: []string{},
 			expectedFinish:          true,
 		},
@@ -218,7 +215,6 @@ func TestSync(t *testing.T) {
 			expectSyncRunner:              true,
 			expectSyncInstaller:           true,
 			expectGetComponentLatestBuild: true,
-			expectedMsg:                   "",
 			expectCmpBuildScheduled:       []string{"idterraform1", "idhelm2", "iddocker3"},
 			expectedFinish:                true,
 		},
@@ -235,7 +231,6 @@ func TestSync(t *testing.T) {
 			expectSyncRunner:              true,
 			expectSyncInstaller:           true,
 			expectGetComponentLatestBuild: true,
-			expectedMsg:                   "",
 			expectCmpBuildScheduled:       []string{"idterraform1", "idhelm2", "iddocker3"},
 			expectedFinish:                true,
 		},
@@ -248,10 +243,9 @@ func TestSync(t *testing.T) {
 
 			defer func() {
 				syncer := New(mockApiClient, tt.appID, tt.cfg)
-				msg, cmpBuildsScheduled, err := syncer.Sync(ctx)
+				err := syncer.Sync(ctx)
 				require.Equal(t, tt.err, err)
-				require.Equal(t, tt.expectedMsg, msg)
-				require.Equal(t, tt.expectCmpBuildScheduled, cmpBuildsScheduled)
+				require.Equal(t, tt.expectCmpBuildScheduled, syncer.GetBuildsScheduled())
 			}()
 
 			if tt.cfg == nil {
