@@ -1,5 +1,6 @@
 'use client'
 
+import classNames from 'classnames'
 import { useRouter } from 'next/navigation'
 import React, { type FC, type FormEvent, useRef, useState } from 'react'
 import { WarningOctagon, CheckCircle, Cube } from '@phosphor-icons/react'
@@ -95,7 +96,9 @@ export const AppCreateInstallButton: FC<IAppCreateInstallButton> = ({
         contentClassName="px-0 py-0"
       >
         <form
-          className="min-h-[600px] flex-auto flex flex-col gap-8 justify-between focus:outline-none relative pt-6"
+          className={classNames(
+            'min-h-[600px] flex-auto flex flex-col gap-8 justify-between focus:outline-none relative pt-6'
+          )}
           onKeyDown={handleTabChange}
           ref={formRef}
           onSubmit={(e: FormEvent<HTMLFormElement>) => {
@@ -128,13 +131,13 @@ export const AppCreateInstallButton: FC<IAppCreateInstallButton> = ({
         >
           {error ? (
             <div className="px-6">
-              <span className="flex items-center gap-3  w-full p-2 border rounded-md border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600 text-base font-medium">
+              <span className="flex items-center gap-3 w-full p-2 border rounded-md border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600 text-base font-medium">
                 <WarningOctagon size="20" /> {error}
               </span>
             </div>
           ) : null}
           {isLoading || isCreated ? (
-            <div className="flex flex-auto items-center justify-center absolute w-full bg-black/80 dark:bg-black/70 h-full z-30 top-0 on-enter">
+            <div className="flex flex-auto items-center justify-center absolute w-full bg-black/10 dark:bg-black/70 h-full z-30 top-0 on-enter">
               {isLoading ? (
                 <Loading loadingText="Creating install..." variant="page" />
               ) : null}
@@ -149,7 +152,11 @@ export const AppCreateInstallButton: FC<IAppCreateInstallButton> = ({
               ) : null}
             </div>
           ) : null}
-          <div className="flex flex-col gap-8 px-6 max-w-3xl">
+          <div
+            className={classNames('flex flex-col gap-8 px-6 max-w-3xl', {
+              blur: isLoading || isCreated,
+            })}
+          >
             <Field labelText="Install name">
               <Input type="text" name="name" required />
             </Field>
