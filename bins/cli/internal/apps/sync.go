@@ -51,18 +51,18 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	}
 
 	syncer := sync.New(s.api, appID, cfg)
-	msg, cmpbuildsScheduled, err := syncer.Sync(ctx)
+	err = syncer.Sync(ctx)
 	if err != nil {
 		return err
-	} else {
-		if msg != "" {
-			ui.PrintLn(msg)
-		}
 	}
 
 	ui.PrintSuccess("successfully synced " + cfgFile)
 
-	if len(cmpbuildsScheduled) == 0 {
+	s.notifyOrphanedComponents(ctx, syncer.OrphanedComponents())
+	s.notifyOrphanedActions(ctx, syncer.OrphanedActions())
+
+	cmpBuildsScheduled := syncer.GetBuildsScheduled()
+	if len(cmpBuildsScheduled) == 0 {
 		return nil
 	}
 
@@ -72,14 +72,14 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	multi := pterm.DefaultMultiPrinter
 
 	spinnersByComponentID := make(map[string]*pterm.SpinnerPrinter)
-	for _, cmpID := range cmpbuildsScheduled {
+	for _, cmpID := range cmpBuildsScheduled {
 		spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("building component " + cmpID)
 		spinnersByComponentID[cmpID] = spinner
 	}
 
 	multi.Start()
 
-	// NOTE: on updates components are already active and new component_builds records wait to be created.
+	// NOTE: on updates, components are already active and new component_builds records wait to be created.
 	// So we need to wait for the new component_builds to be created before we start to poll.
 	time.Sleep(time.Second * 5)
 
@@ -134,6 +134,35 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 
 		time.Sleep(defaultSyncSleep)
 	}
+}
+
+func (s *Service) notifyOrphanedComponents(ctx context.Context, cmps map[string]string) {
+	if len(cmps) == 0 {
+		return
+	}
+
+	msg := "Existing component(s) are no longer defined in the config:\n"
+
+	for name, id := range cmps {
+		msg += fmt.Sprintf("Component: Name=%s | ID=%s\n", name, id)
+	}
+
+	ui.PrintLn(msg)
+}
+
+func (s *Service) notifyOrphanedActions(ctx context.Context, actions map[string]string) {
+	if len(actions) == 0 {
+		return
+	}
+
+	msg := "Existing action(s) are no longer defined in the config:\n"
+
+	for name, id := range actions {
+		msg += fmt.Sprintf("Action: Name=%s | ID=%s\n", name, id)
+	}
+
+	ui.PrintLn(msg)
+	return
 }
 
 func (s *Service) Sync(ctx context.Context, all bool, file string) error {
