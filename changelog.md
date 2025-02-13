@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.402
+
+Revert install history to polling in UI.
+
 ## v0.19.401
 
 Revert install UI statuses to polling.
