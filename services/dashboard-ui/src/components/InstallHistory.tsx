@@ -3,7 +3,7 @@
 import React, { type FC, useEffect, useState } from 'react'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
-import { revalidateInstallData } from "@/components/install-actions"
+// import { revalidateInstallData } from "@/components/install-actions"
 import type { TInstallEvent } from '@/types'
 import { SHORT_POLL_DURATION } from '@/utils'
 
@@ -81,17 +81,17 @@ export const InstallHistory: FC<IInstallHistory> = ({
   orgId,
   shouldPoll = false,
 }) => {
-  const events = parseInstallHistory(initEvents)
-  //const [events, setInstallEvents] = useState(parseInstallHistory(initEvents))
+  // const events = parseInstallHistory(initEvents)
+  const [events, setInstallEvents] = useState(parseInstallHistory(initEvents))
 
   useEffect(() => {
     const fetchInstallEvents = () => {
-      /* fetch(`/api/${orgId}/installs/${installId}/events`)
-       *   .then((res) =>
-       *     res.json().then((e) => setInstallEvents(parseInstallHistory(e)))
-       *   )
-       *   .catch(console.error) */ 
-      revalidateInstallData({ installId, orgId })
+      fetch(`/api/${orgId}/installs/${installId}/events`)
+        .then((res) =>
+          res.json().then((e) => setInstallEvents(parseInstallHistory(e)))
+        )
+        .catch(console.error)
+      // revalidateInstallData({ installId, orgId })
     }
 
     if (shouldPoll) {
