@@ -1,6 +1,6 @@
 import { getSession } from '@auth0/nextjs-auth0'
 
-export async function getFetchOpts(orgId = '', headers = {}): Promise<RequestInit> {
+export async function getFetchOpts(orgId = '', headers = {}, abortTimeout = 5000): Promise<RequestInit> {
   const session = await getSession()
   return {
     cache: 'no-store',
@@ -10,6 +10,6 @@ export async function getFetchOpts(orgId = '', headers = {}): Promise<RequestIni
       'X-Nuon-Org-ID': orgId,
       ...headers,
     },
-    signal: AbortSignal.timeout(5000),
+    signal: AbortSignal.timeout(abortTimeout),
   }
 }
