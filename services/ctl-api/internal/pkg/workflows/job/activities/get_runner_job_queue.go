@@ -12,6 +12,7 @@ import (
 const (
 	// this means that any job more than 6 hours old will be disgarded when showing the queue depth
 	discardJobDuration time.Duration = time.Hour * 6
+	LimitQueueSize                   = 10
 )
 
 type GetRunnerJobQueueRequest struct {
@@ -34,7 +35,7 @@ func (a *Activities) PkgWorkflowsJobGetRunnerJobQueue(ctx context.Context, req *
 		app.RunnerJobStatusQueued,
 		app.RunnerJobStatusAvailable,
 		app.RunnerJobStatusInProgress,
-	}).Order("created_at desc").Find(&jobs)
+	}).Limit(LimitQueueSize).Order("created_at desc").Find(&jobs)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get runner job queue")
 	}
