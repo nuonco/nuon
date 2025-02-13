@@ -16,7 +16,7 @@ export async function queryData<T>({
 }: IQueryData): Promise<T> {
   const res = await fetch(
     `${API_URL}/${pathVersion}/${path}`,
-    await getFetchOpts(orgId)
+    await getFetchOpts(orgId, {}, 10000)
   )
 
   if (!res.ok) {
