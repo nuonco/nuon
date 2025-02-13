@@ -6,15 +6,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
-
-type ActionWorkflowRecentRunsResponse struct {
-	ActionWorkFlow app.ActionWorkflow              `json:"action_workflow"`
-	RecentRuns     []*app.InstallActionWorkflowRun `json:"recent_runs"`
-}
 
 // @ID GetInstallActionWorkflowRecentRuns
 // @Summary	get recent runs for an action workflow by install id
@@ -31,7 +29,7 @@ type ActionWorkflowRecentRunsResponse struct {
 // @Failure		403				{object}	stderr.ErrResponse
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	ActionWorkflowRecentRunsResponse
+// @Success		200				{object}	app.InstallActionWorkflow
 // @Router			/v1/installs/{install_id}/action-workflows/{action_workflow_id}/recent-runs [get]
 func (s *service) GetInstallActionWorkflowRecentRuns(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -41,31 +39,10 @@ func (s *service) GetInstallActionWorkflowRecentRuns(ctx *gin.Context) {
 	}
 
 	installID := ctx.Param("install_id")
-	install, err := s.findInstall(ctx, org.ID, installID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
-		return
-	}
-
 	actionWorkflowID := ctx.Param("action_workflow_id")
-	actionWorkflow, err := s.findActionWorkflow(ctx, org.ID, actionWorkflowID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get action workflows %s: %w", install.AppID, err))
-		return
-	}
+	iaw, err := s.getRecentRuns(ctx, org.ID, installID, actionWorkflowID)
 
-	runs, err := s.findInstallActionWorkflowRecentRuns(ctx, org.ID, installID, actionWorkflow.ID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install action workflow runs %s: %w", installID, err))
-		return
-	}
-
-	response := ActionWorkflowRecentRunsResponse{
-		ActionWorkFlow: *actionWorkflow,
-		RecentRuns:     runs,
-	}
-
-	ctx.JSON(http.StatusOK, response)
+	ctx.JSON(http.StatusOK, iaw)
 }
 
 func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
@@ -81,20 +58,26 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 	return &install, nil
 }
 
-func (s *service) findInstallActionWorkflowRecentRuns(ctx context.Context, orgID, installID, actionWorkflowID string) ([]*app.InstallActionWorkflowRun, error) {
-	limit := 50 // limit to 50 runs until pagination is implemented
-	runs := []*app.InstallActionWorkflowRun{}
+func (s *service) getRecentRuns(ctx context.Context, orgID, installID, actionWorkflowID string) (*app.InstallActionWorkflow, error) {
+	var installActionWorkflow app.InstallActionWorkflow
 	res := s.db.WithContext(ctx).
-		Preload("RunnerJob").
-		Joins("JOIN action_workflow_configs ON action_workflow_configs.id = install_action_workflow_runs.action_workflow_config_id").
-		Where("install_action_workflow_runs.org_id = ? AND install_action_workflow_runs.install_id = ? and action_workflow_configs.action_workflow_id = ?", orgID, installID, actionWorkflowID).
-		Order("created_at desc").
-		Limit(limit).
-		Find(&runs)
-
+		Where(app.InstallActionWorkflow{
+			InstallID:        installID,
+			ActionWorkflowID: actionWorkflowID,
+			OrgID:            orgID,
+		}).
+		Preload("ActionWorkflow").
+		Preload("ActionWorkflow.Configs").
+		Preload("ActionWorkflow.Configs.Steps").
+		Preload("ActionWorkflow.Configs.Steps.PublicGitVCSConfig").
+		Preload("ActionWorkflow.Configs.Steps.ConnectedGithubVCSConfig").
+		Preload("Runs", func(db *gorm.DB) *gorm.DB {
+			return db.Limit(50).Order("install_action_workflow_runs.created_at DESC")
+		}).
+		First(&installActionWorkflow)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install action workflow run: %w", res.Error)
+		return nil, errors.Wrap(res.Error, "unable to get install action workflow")
 	}
 
-	return runs, nil
+	return &installActionWorkflow, nil
 }

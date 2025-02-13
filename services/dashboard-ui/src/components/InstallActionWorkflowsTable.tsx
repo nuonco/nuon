@@ -1,14 +1,11 @@
 'use client'
 
-import classNames from 'classnames'
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import {
   CaretRight,
   Timer,
   CalendarBlank,
-  CheckCircle,
-  ClockCountdown,
   Minus,
 } from '@phosphor-icons/react'
 import { Badge } from '@/components/Badge'
@@ -18,39 +15,25 @@ import { Time, Duration } from '@/components/Time'
 import { EventStatus } from '@/components/Timeline'
 import { ID, Text } from '@/components/Typography'
 // eslint-disable-next-line import/no-cycle
-import type { TActionWorkflow, TInstallActionWorkflowRun } from '@/types'
-
-const WorkflowRunStatus: FC<{ status: string }> = ({ status }) => {
-  const statusColor = {
-    'text-green-800 dark:text-green-500':
-      status === 'finished' || status === 'active',
-    'text-red-600 dark:text-red-500': status === 'failed' || status === 'error',
-    'text-cool-grey-600 dark:text-cool-grey-500': status === 'noop',
-    'text-orange-800 dark:text-orange-500':
-      status === 'waiting' ||
-      status === 'started' ||
-      status === 'in-progress' ||
-      status === 'building' ||
-      status === 'queued' ||
-      status === 'planning' ||
-      status === 'deploying',
-  }
-
-  return (
-    <span className={classNames('w-4 h-4 rounded-full', statusColor)}>
-      {status === 'active' ? <CheckCircle /> : <ClockCountdown />}
-    </span>
-  )
-}
+import type { TActionWorkflow, TInstallActionWorkflow, TInstallActionWorkflowRun } from '@/types'
 
 type TData = {
   action_workflow: TActionWorkflow
-  install_action_workflow_run: TInstallActionWorkflowRun
+  latest_run: TInstallActionWorkflowRun
 }
+
+
+function parseActionData(actions: Array<TInstallActionWorkflow>): Array<TData> {
+  return actions?.map((a) => ({
+    action_workflow: a?.action_workflow,
+    latest_run: a?.runs?.at(0),
+  }))
+}
+
 
 export interface IInstallActionWorkflowsTable {
   installId: string
-  actions: Array<TData>
+  actions: Array<TInstallActionWorkflow>
   orgId: string
 }
 
@@ -59,7 +42,7 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
   actions,
   orgId,
 }) => {
-  const [data, _] = useState(actions)
+  const [data, _] = useState(parseActionData(actions))
   const [columnFilters, __] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
 
@@ -69,9 +52,9 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
         id: 'status',
         cell: (props) => (
           <div className="inline-flex h-12 w-full items-center justify-center">
-            {props.row.original.install_action_workflow_run ? (
+            {props.row.original?.latest_run ? (
               <EventStatus
-                status={props.row.original.install_action_workflow_run.status}
+                status={props.row.original?.latest_run?.status}
               />
             ) : (
               <EventStatus status="noop" />
@@ -96,9 +79,9 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
       },
       {
         header: 'Time since last run',
-        accessorKey: 'install_action_workflow_run.updated_at',
+        accessorKey: 'latest_run.updated_at',
         cell: (props) =>
-          props.row.original.install_action_workflow_run ? (
+          props.row.original?.latest_run ? (
             <Text>
               <CalendarBlank size={18} />
               <Time time={props.getValue<string>()} format="relative" />
@@ -109,9 +92,9 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
       },
       {
         header: 'Run duration',
-        accessorKey: 'install_action_workflow_run.execution_time',
+        accessorKey: 'latest_run.execution_time',
         cell: (props) =>
-          props.row.original.install_action_workflow_run ? (
+          props.row.original?.latest_run ? (
             <Text>
               <Timer size={18} />
               <Duration nanoseconds={props.getValue<number>()} />
@@ -122,9 +105,9 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
       },
       {
         header: 'Recent trigger',
-        accessorKey: 'install_action_workflow_run.trigger_type',
+        accessorKey: 'latest_run.trigger_type',
         cell: (props) =>
-          props.row.original.install_action_workflow_run ? (
+          props.row.original?.latest_run ? (
             <Badge variant="code">{props.getValue<string>()}</Badge>
           ) : (
             <Minus />
