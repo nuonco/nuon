@@ -95,7 +95,7 @@ export const AppCreateInstallButton: FC<IAppCreateInstallButton> = ({
         contentClassName="px-0 py-0"
       >
         <form
-          className="min-h-[600px] flex flex-col gap-8 focus:outline-none relative pt-6"
+          className="min-h-[600px] flex-auto flex flex-col gap-8 justify-between focus:outline-none relative pt-6"
           onKeyDown={handleTabChange}
           ref={formRef}
           onSubmit={(e: FormEvent<HTMLFormElement>) => {
