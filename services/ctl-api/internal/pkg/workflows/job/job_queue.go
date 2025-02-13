@@ -29,7 +29,13 @@ func (j *Workflows) logJobQueue(ctx workflow.Context, jobID string) error {
 		fields = append(fields, zap.String(fmt.Sprintf("job.%d - %s", idx, qj.Type), qj.ID))
 	}
 
-	l.Warn(fmt.Sprintf("waiting on %d jobs queued before being attempted", len(queued)), fields...)
+	switch len(queued) {
+	case 0:
+	case activities.LimitQueueSize:
+		l.Warn(fmt.Sprintf("waiting on at least %d jobs queued before being attempted", activities.LimitQueueSize), fields...)
+	default:
+		l.Warn(fmt.Sprintf("waiting on %d jobs queued before being attempted", len(queued)), fields...)
+	}
 
 	return nil
 }
