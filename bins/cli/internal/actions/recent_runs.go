@@ -17,7 +17,7 @@ func (s *Service) GetRecentRuns(ctx context.Context, installID, actionWorkflowID
 	}
 
 	if asJSON {
-		ui.PrintJSON(response.RecentRuns)
+		ui.PrintJSON(response.Runs)
 		return nil
 	}
 
@@ -31,7 +31,7 @@ func (s *Service) GetRecentRuns(ctx context.Context, installID, actionWorkflowID
 		},
 	}
 
-	for _, run := range response.RecentRuns {
+	for _, run := range response.Runs {
 		data = append(data, []string{
 			run.ID,
 			string(run.TriggerType),
