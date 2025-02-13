@@ -19,7 +19,7 @@ export async function mutateData<T>({
   pathVersion = 'v1',
 }: IMutateData): Promise<T> {
   const res = await fetch(`${API_URL}/${pathVersion}/${path}`, {
-    ...(await getFetchOpts(orgId)),
+    ...(await getFetchOpts(orgId, {}, 10000)),
     body: data && JSON.stringify(data),
     method,
   })

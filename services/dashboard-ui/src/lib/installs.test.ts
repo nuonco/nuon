@@ -2,6 +2,7 @@ import '@test/mock-fetch-options'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import {
+  createInstall,
   getInstalls,
   getInstall,
   getInstallComponent,
@@ -448,3 +449,30 @@ describe('getInstallComponentOutputs should handle response status codes from GE
   })
 })
 
+describe('createInstall should handle response status codes from POST apps/:id/installs endpoint', () => {
+  const orgId = 'test-id'
+  const appId = 'test-id'
+  const data = {
+    name: 'test',
+    aws_account: {
+      iam_role_arn: 'role',
+      region: 'us-east-1',
+    },
+  }
+  test('200 status', async () => {
+    const spec = await createInstall({
+      appId,
+      orgId,
+      data,
+    })
+    expect(spec).toHaveProperty('name')
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await createInstall({
+      appId,
+      orgId,
+      data,
+    }).catch((err) => expect(err).toMatchSnapshot())
+  })
+})
