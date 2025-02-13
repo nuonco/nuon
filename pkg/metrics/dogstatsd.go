@@ -23,8 +23,7 @@ func (w *writer) handleErr(err error) {
 
 func (w *writer) Flush() {
 	if w.Disable {
-		// TODO(sdboyer) this is disabled until we figure out why we're apparently flushing x0000 times per second
-		// 	w.Log.Debug("flush")
+		w.Log.Debug("flush")
 		return
 	}
 
@@ -68,7 +67,7 @@ func (w *writer) Decr(name string, tags []string) {
 
 func (w *writer) Count(name string, value int64, tags []string) {
 	if w.Disable {
-		w.Log.Debug(fmt.Sprintf("count.%s", name))
+		w.Log.Debug(fmt.Sprintf("count.%s", name), zap.Int64("value", value))
 		return
 	}
 
@@ -83,7 +82,7 @@ func (w *writer) Count(name string, value int64, tags []string) {
 
 func (w *writer) Gauge(name string, value float64, tags []string) {
 	if w.Disable {
-		w.Log.Debug(fmt.Sprintf("gauge.%s", name))
+		w.Log.Debug(fmt.Sprintf("gauge.%s", name), zap.Float64("value", value))
 		return
 	}
 
@@ -98,7 +97,7 @@ func (w *writer) Gauge(name string, value float64, tags []string) {
 
 func (w *writer) Timing(name string, value time.Duration, tags []string) {
 	if w.Disable {
-		w.Log.Debug(fmt.Sprintf("timing.%s", name))
+		w.Log.Debug(fmt.Sprintf("timing.%s", name), zap.String("duration", value.String()))
 		return
 	}
 
