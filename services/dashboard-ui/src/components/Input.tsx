@@ -31,16 +31,27 @@ export interface ICheckboxInput extends React.HTMLAttributes<HTMLInputElement> {
   checked?: boolean
   name: string
   labelText: React.ReactNode
-  value: string
+  labelClassName?: string
+  labelTextClassName?: string
+  value?: string
 }
 
 export const CheckboxInput: FC<ICheckboxInput> = ({
   className,
+  labelClassName,
   labelText,
+  labelTextClassName,
   ...props
 }) => {
   return (
-    <label className="flex gap-3 items-center w-full px-4 py-2 cursor-pointer hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10">
+    <label
+      className={classNames(
+        'flex gap-3 items-center w-full px-4 py-2 cursor-pointer hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10',
+        {
+          [`${labelClassName}`]: Boolean(labelClassName),
+        }
+      )}
+    >
       <input
         className={classNames('accent-primary-600 w-auto h-[14px]', {
           [`${className}`]: Boolean(className),
@@ -48,7 +59,32 @@ export const CheckboxInput: FC<ICheckboxInput> = ({
         {...props}
         type="checkbox"
       />
-      <span className="font-medium text-sm">{labelText}</span>
+      <span
+        className={classNames('font-medium text-sm', {
+          [`${labelTextClassName}`]: Boolean(labelTextClassName),
+        })}
+      >
+        {labelText}
+      </span>
     </label>
+  )
+}
+
+export const Input: FC<React.InputHTMLAttributes<HTMLInputElement>> = ({
+  className,
+  ...props
+}) => {
+  return (
+    <input
+      className={classNames(
+        'px-3 py-2 text-base rounded border shadow-sm bg-cool-grey-50 dark:bg-dark-grey-200 [&:user-invalid]:border-red-600 [&:user-invalid]:dark:border-red-600',
+        {
+          'bg-cool-grey-200 text-cool-grey-500 dark:bg-dark-grey-300 dark:text-dark-grey-900 cursor-not-allowed':
+            props?.disabled,
+          [`${classNames}`]: Boolean(classNames),
+        }
+      )}
+      {...props}
+    />
   )
 }
