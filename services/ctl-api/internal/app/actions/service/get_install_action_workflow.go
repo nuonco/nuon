@@ -52,7 +52,7 @@ func (s *service) getInstallActionWorkflow(ctx context.Context, installID, actio
 			ActionWorkflowID: actionWorkflowID,
 		}).
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_action_workflow_runs.created_at DESC")
+			return db.Limit(5).Order("install_action_workflow_runs.created_at DESC")
 		}).
 		First(&installActionWorkflow)
 	if res.Error != nil {
