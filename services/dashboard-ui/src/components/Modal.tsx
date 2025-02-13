@@ -12,6 +12,7 @@ export interface IModal extends React.HTMLAttributes<HTMLDivElement> {
   hasFixedHeight?: boolean
   isOpen?: boolean
   onClose?: () => void
+  contentClassName?: string
 }
 
 export const Modal: FC<IModal> = ({
@@ -22,16 +23,17 @@ export const Modal: FC<IModal> = ({
   hasFixedHeight = false,
   isOpen = false,
   onClose = () => {},
+  contentClassName,
   ...props
 }) => {
-  const contentRef = useRef(null);
+  const contentRef = useRef(null)
   const onEscape = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       onClose()
     }
   }, [])
 
-  useEffect(() => {    
+  useEffect(() => {
     document.addEventListener('keydown', onEscape, false)
     return () => {
       document.removeEventListener('keydown', onEscape, false)
@@ -47,12 +49,12 @@ export const Modal: FC<IModal> = ({
   return isOpen ? (
     <div className="absolute flex w-full h-full top-0 left-0 z-50">
       <div
-        className="fixed bg-black/50 dark:bg-black/75 w-full h-full"
+        className="fixed bg-black/50 dark:bg-black/75 w-full h-full on-enter"
         onClick={onClose}
       />
       <div
         className={classNames(
-          'relative z-50 border rounded-lg shadow-lg m-auto w-full max-w-7xl bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50',
+          'relative z-50 border rounded-lg shadow-lg m-auto w-full max-w-7xl bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 on-enter enter-bottom',
           {
             [`${className}`]: Boolean(className),
           }
@@ -73,9 +75,10 @@ export const Modal: FC<IModal> = ({
         <div
           tabIndex={-1}
           className={classNames(
-            'p-6 h-full max-h-[700px] overflow-y-auto overflow-x-hidden focus:border',
+            'p-6 h-full max-h-[700px] overflow-y-auto overflow-x-hidden focus:outline outline-1 outline-primary-500 dark:outline-white/40 rounded-b-lg',
             {
               'min-h-[700px]': hasFixedHeight,
+              [`${contentClassName}`]: Boolean(contentClassName),
             }
           )}
           ref={contentRef}

@@ -91,8 +91,8 @@ export default withPageAuthRequired(async function Install({ params }) {
         />
       }
     >
-      <div className="flex flex-col lg:flex-row flex-auto divide-x">
-        <Section heading="README" className="" childrenClassName="mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
+        <Section heading="README" className="md:col-span-8">
           <ErrorBoundary fallbackRender={ErrorFallback}>
             <Suspense
               fallback={<Loading loadingText="Loading install README..." />}
@@ -102,7 +102,7 @@ export default withPageAuthRequired(async function Install({ params }) {
           </ErrorBoundary>
         </Section>
 
-        <div className="divide-y flex flex-col lg:w-[500px]">
+        <div className="divide-y flex flex-col col-span-4">
           {RUNNERS ? (
             <Section className="flex-initial" heading="Runner">
               <ErrorBoundary fallbackRender={ErrorFallback}>

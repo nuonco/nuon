@@ -27,11 +27,12 @@ showdown.extension('targetlink', () => {
 // instantiate converter
 const markdown = new showdown.Converter({
   extensions: ['targetlink'],
+  tables: true,
 })
 
 export const Markdown = ({ content = '' }) => (
   <div
-    className="prose prose-sm dark:prose-invert"
+    className="prose prose-sm dark:prose-invert !max-w-full"
     dangerouslySetInnerHTML={{
       __html: markdown.makeHtml(content),
     }}
