@@ -53,6 +53,12 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		MW:               w.mw,
 		Handlers:         handlers,
 		NewRequestSignal: signals.NewRequestSignal,
+		StartupHook: func(ctx workflow.Context, req eventloop.EventLoopRequest) error {
+			w.handleSyncActionWorkflowTriggers(ctx, signals.RequestSignal{
+				EventLoopRequest: req,
+			})
+			return nil
+		},
 	}
 
 	return l.Run(ctx, req, pendingSignals)

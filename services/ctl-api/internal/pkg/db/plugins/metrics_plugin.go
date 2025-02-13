@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"gorm.io/gorm"
@@ -82,6 +83,18 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB) {
 		"org_id:" + metricCtx.OrgID,
 	}...)
 
+	respSize := 0
+	if tx.Statement.ReflectValue.IsValid() {
+		if tx.Statement.ReflectValue.Kind() == reflect.Slice {
+			respSize = tx.Statement.ReflectValue.Len()
+		} else {
+			if !tx.Statement.ReflectValue.IsZero() {
+				respSize = 1
+			}
+		}
+	}
+
 	m.metricsWriter.Incr("gorm_operation", tags)
 	m.metricsWriter.Timing("gorm_operation_latency", time.Since(startTS), tags)
+	m.metricsWriter.Gauge("gorm_operation.response_size", float64(respSize), tags)
 }
