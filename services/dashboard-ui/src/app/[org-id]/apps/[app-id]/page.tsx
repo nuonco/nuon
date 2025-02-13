@@ -55,8 +55,8 @@ export default withPageAuthRequired(async function App({ params }) {
       }
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
-      <div className="flex flex-col md:flex-row flex-auto">
-        <div className="divide-y flex flex-col flex-grow">
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto">
+        <div className="divide-y flex flex-col md:col-span-7">
           {appConfig ? (
             <Section className="border-r" heading="README">
               <Markdown content={appConfig.readme} />
@@ -70,7 +70,7 @@ export default withPageAuthRequired(async function App({ params }) {
           ) : null}
         </div>
 
-        <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
+        <div className="divide-y flex flex-col md:col-span-5">
           <Section className="flex-initial" heading="Sandbox">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
