@@ -3,6 +3,7 @@ package sync
 import (
 	"context"
 	"encoding/json"
+	"slices"
 
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
@@ -20,6 +21,11 @@ type componentState struct {
 	Checksum string                  `json:"checksum"`
 }
 
+type actionState struct {
+	Name string `json:"name"`
+	ID   string `json:"id"`
+}
+
 type state struct {
 	Version string `json:"version"`
 
@@ -29,17 +35,46 @@ type state struct {
 	RunnerConfigID  string           `json:"runner_config_id"`
 	SandboxConfigID string           `json:"sandbox_config_id"`
 	InputConfigID   string           `json:"input_config_id"`
-	ComponentIDs    []componentState `json:"components"`
+	Components      []componentState `json:"components"`
+	Actions         []actionState    `json:"actions"`
 }
 
 func (s *sync) getComponentStateById(id string) *componentState {
-	for _, comp := range s.prevState.ComponentIDs {
+	for _, comp := range s.prevState.Components {
 		if comp.ID == id {
 			return &comp
 		}
 	}
 
 	return nil
+}
+
+func (s *sync) OrphanedActions() map[string]string {
+	actions := map[string]string{}
+	currentStateNames := make([]string, 0)
+	for _, actionState := range s.state.Actions {
+		currentStateNames = append(currentStateNames, actionState.Name)
+	}
+	for _, prevActionState := range s.prevState.Actions {
+		if !slices.Contains(currentStateNames, prevActionState.Name) {
+			actions[prevActionState.Name] = prevActionState.ID
+		}
+	}
+	return actions
+}
+
+func (s *sync) OrphanedComponents() map[string]string {
+	components := map[string]string{}
+	currentStateIDs := make([]string, 0)
+	for _, compState := range s.state.Components {
+		currentStateIDs = append(currentStateIDs, compState.ID)
+	}
+	for _, prevCompState := range s.prevState.Components {
+		if !slices.Contains(currentStateIDs, prevCompState.ID) {
+			components[prevCompState.Name] = prevCompState.ID
+		}
+	}
+	return components
 }
 
 func (s *sync) fetchState(ctx context.Context) error {

@@ -26,23 +26,23 @@ type syncStep struct {
 	Method   func(context.Context) error
 }
 
-func (s *sync) Sync(ctx context.Context) (string, []string, error) {
+func (s *sync) Sync(ctx context.Context) error {
 	s.cmpBuildsScheduled = make([]string, 0)
 	if s.cfg == nil {
-		return "", s.cmpBuildsScheduled, SyncInternalErr{
+		return SyncInternalErr{
 			Description: "nil config",
 			Err:         fmt.Errorf("config is nil"),
 		}
 	}
 	if err := s.fetchState(ctx); err != nil {
-		return "", s.cmpBuildsScheduled, SyncInternalErr{
+		return SyncInternalErr{
 			Description: "unable to fetch state",
 			Err:         err,
 		}
 	}
 
 	if err := s.start(ctx); err != nil {
-		return "", s.cmpBuildsScheduled, SyncInternalErr{
+		return SyncInternalErr{
 			Description: "unable to start sync",
 			Err:         err,
 		}
@@ -50,39 +50,41 @@ func (s *sync) Sync(ctx context.Context) (string, []string, error) {
 
 	steps, err := s.syncSteps()
 	if err != nil {
-		return "", s.cmpBuildsScheduled, err
+		return err
 	}
 
 	// sync steps
 	for _, step := range steps {
 		if err := s.syncStep(ctx, step); err != nil {
-			return "", s.cmpBuildsScheduled, err
+			return err
 		}
 	}
 
 	if err := s.finish(ctx); err != nil {
-		return "", s.cmpBuildsScheduled, SyncInternalErr{
+		return SyncInternalErr{
 			Description: "unable to update config status after syncing",
 			Err:         err,
 		}
 	}
 
-	msg := s.notifyOrphanedComponents()
-
-	return msg, s.cmpBuildsScheduled, nil
+	return nil
 }
 
 func (s *sync) GetComponentStateIds() []string {
 	ids := make([]string, 0)
-	if s.state.ComponentIDs == nil {
+	if s.state.Components == nil {
 		return ids
 	}
 
-	for _, comp := range s.state.ComponentIDs {
+	for _, comp := range s.state.Components {
 		ids = append(ids, comp.ID)
 	}
 
 	return ids
+}
+
+func (s *sync) GetBuildsScheduled() []string {
+	return s.cmpBuildsScheduled
 }
 
 func New(apiClient nuon.Client, appID string, cfg *config.AppConfig) *sync {

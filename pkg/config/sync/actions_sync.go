@@ -100,5 +100,10 @@ func (s *sync) syncAction(ctx context.Context, resource string, action *config.A
 		}
 	}
 
+	s.state.Actions = append(s.state.Actions, actionState{
+		Name: action.Name,
+		ID:   actionWorkflow.ID,
+	})
+
 	return actionWorkflow.ID, savedConfig.ID, nil
 }
