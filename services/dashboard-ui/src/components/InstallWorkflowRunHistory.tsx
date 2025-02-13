@@ -3,14 +3,11 @@
 import React, { type FC, useEffect } from 'react'
 import { Timeline } from '@/components/Timeline'
 import { revalidateInstallWorkflowHistory } from '@/components/workflow-actions'
-import type { TActionWorkflow, TInstallActionWorkflowRun } from '@/types'
+import type { TInstallActionWorkflow } from '@/types'
 import { SHORT_POLL_DURATION, humandReadableTriggeredBy } from '@/utils'
 
 interface IInstallWorkflowRunHistory {
-  actionsWithRecentRuns: {
-    action_workflow: TActionWorkflow
-    recent_runs: Array<TInstallActionWorkflowRun>
-  }
+  actionsWithRecentRuns: TInstallActionWorkflow
   installId: string
   orgId: string
   shouldPoll?: boolean
@@ -36,12 +33,12 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
     }
   }, [shouldPoll])
 
-  const { action_workflow, recent_runs } = actionsWithRecentRuns
+  const { action_workflow, runs } = actionsWithRecentRuns
 
   return (
     <Timeline
       emptyMessage="No action workflow runs have happened"
-      events={recent_runs?.map((run, i) => ({
+      events={runs?.map((run, i) => ({
         id: run.id,
         status: run.status,
         underline: (
