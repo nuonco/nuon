@@ -6,7 +6,7 @@ import (
 	"html/template"
 	"time"
 
-	"github.com/Masterminds/sprig"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
 )
 
@@ -51,7 +51,7 @@ func renderFinal(inputVal string, data map[string]interface{}) (string, error) {
 		Option("missingkey=zero").
 		Parse(inputVal)
 	if err != nil {
-		return inputVal, nil
+		return inputVal, err
 	}
 
 	buf := new(bytes.Buffer)
