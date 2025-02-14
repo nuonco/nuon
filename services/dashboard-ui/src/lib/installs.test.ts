@@ -321,7 +321,7 @@ describe('getInstallActionWorkflowLatestRun should handle response status codes 
     const spec = await getInstallActionWorkflowLatestRun({ installId, orgId })
     spec.forEach((s) => {
       expect(s).toHaveProperty('action_workflow')
-      expect(s).toHaveProperty('install_action_workflow_run')
+      expect(s).toHaveProperty('runs')
     })
   })
 
@@ -343,7 +343,7 @@ describe('getInstallActionWorkflowRecentRun should handle response status codes 
       orgId,
     })
     expect(spec).toHaveProperty('action_workflow')
-    expect(spec).toHaveProperty('recent_runs')
+    expect(spec).toHaveProperty('runs')
   })
 
   test.each(badResponseCodes)('%s status', async () => {
