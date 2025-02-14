@@ -68,6 +68,7 @@ func (s *service) getRecentRuns(ctx context.Context, orgID, installID, actionWor
 		}).
 		Preload("ActionWorkflow").
 		Preload("ActionWorkflow.Configs").
+		Preload("ActionWorkflow.Configs.Triggers").
 		Preload("ActionWorkflow.Configs.Steps").
 		Preload("ActionWorkflow.Configs.Steps.PublicGitVCSConfig").
 		Preload("ActionWorkflow.Configs.Steps.ConnectedGithubVCSConfig").
