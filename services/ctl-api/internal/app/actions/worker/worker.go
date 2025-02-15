@@ -30,6 +30,7 @@ type WorkerParams struct {
 	SharedActs      *workflows.Activities
 	SharedWorkflows *workflows.Workflows
 	L               *zap.Logger
+	Interceptors    []interceptor.WorkerInterceptor `group:"interceptors"`
 
 	LC fx.Lifecycle
 }
@@ -46,7 +47,7 @@ func New(params WorkerParams) (*Worker, error) {
 
 	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
 		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
-		Interceptors:                       []interceptor.WorkerInterceptor{},
+		Interceptors:                       params.Interceptors,
 		WorkflowPanicPolicy:                worker.FailWorkflow,
 	})
 
