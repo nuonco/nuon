@@ -78,3 +78,12 @@ func ToStatusTypeTag(status, typ string) []string {
 		"type":   typ,
 	})
 }
+
+func SplitTag(tag string) (string, string) {
+	pieces := strings.SplitN(tag, ":", 2)
+	if len(pieces) == 2 {
+		return pieces[0], pieces[1]
+	}
+
+	return tag, ""
+}

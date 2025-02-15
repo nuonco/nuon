@@ -10,9 +10,7 @@ import (
 
 func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
 	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationCreated:   w.created,
-		signals.OperationReconcile: w.reconcile,
-		signals.OperationRestart:   w.restart,
+		signals.OperationCreated: w.created,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
@@ -21,6 +19,10 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		MW:               w.mw,
 		Handlers:         handlers,
 		NewRequestSignal: signals.NewRequestSignal,
+		StartupHook: func(ctx workflow.Context, req eventloop.EventLoopRequest) error {
+			w.startMetricsWorkflow(ctx)
+			return nil
+		},
 	}
 
 	return l.Run(ctx, req, pendingSignals)

@@ -91,8 +91,15 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 		return err
 	}
 
-	defaultTags := map[string]string{"sandbox_mode": strconv.FormatBool(req.SandboxMode)}
-	w.MW.Incr(ctx, "event_loop.start", metrics.ToTags(defaultTags, "op", "started")...)
+	wkflowInfo := workflow.GetInfo(ctx)
+
+	defaultTags := map[string]string{
+		"sandbox_mode": strconv.FormatBool(req.SandboxMode),
+		"namespace":    wkflowInfo.Namespace,
+	}
+	w.MW.Incr(ctx, "event_loop.start", metrics.ToTags(defaultTags)...)
+	w.MW.Gauge(ctx, "event_loop.restart_count", float64(req.RestartCount), metrics.ToTags(defaultTags)...)
+	w.MW.Gauge(ctx, "event_loop.version_change_count", float64(req.VersionChangeCount), metrics.ToTags(defaultTags)...)
 
 	if w.StartupHook != nil {
 		if err := w.StartupHook(ctx, req); err != nil {
@@ -104,6 +111,7 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 	}
 
 	// handle any pending signals
+	w.MW.Gauge(ctx, "event_loop.pending_signals", float64(len(pendingSignals)), metrics.ToTags(defaultTags)...)
 	for _, pendingSignal := range pendingSignals {
 		err := w.handleSignal(ctx, req, pendingSignal, defaultTags)
 		if err != nil {
