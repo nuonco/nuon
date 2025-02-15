@@ -25,7 +25,10 @@ type Workflows struct {
 }
 
 func (w Workflows) All() []any {
-	wkflows := []any{w.EventLoop}
+	wkflows := []any{
+		w.EventLoop,
+		w.Metrics,
+	}
 	return append(wkflows)
 }
 

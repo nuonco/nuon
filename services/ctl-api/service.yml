@@ -54,7 +54,7 @@ env:
   DISABLE_METRICS: true
   DISABLE_NOTIFICATIONS: true
   DB_LOG_QUERIES: false
-  # LOG_LEVEL: "DEBUG"
+  #LOG_LEVEL: "DEBUG"
 
 env_secrets:
   GITHUB_APP_KEY:
