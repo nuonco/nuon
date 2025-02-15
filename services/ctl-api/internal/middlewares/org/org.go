@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
@@ -89,7 +88,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 		}
 
 		cctx.SetOrgGinContext(ctx, &org)
-		metricCtx, err := metrics.FromContext(ctx)
+		metricCtx, err := cctx.MetricsContextFromGinContext(ctx)
 		if err == nil {
 			metricCtx.OrgID = orgID
 		}
