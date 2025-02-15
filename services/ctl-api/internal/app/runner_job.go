@@ -177,14 +177,14 @@ type RunnerJob struct {
 	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedBy   Account `json:"-"`
 
-	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
+	CreatedAt time.Time             `json:"created_at" gorm:"notnull;index:idx_runner_jobs_query,priority:4,sort:desc"`
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_name,unique;"`
 
 	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
 	Org   Org    `json:"-"`
 
-	RunnerID    string  `json:"runner_id" gorm:"index:idx_runner_name,unique"`
+	RunnerID    string  `json:"runner_id" gorm:"index:idx_runner_name,unique;index:idx_runner_jobs_query,priority:1"`
 	OwnerID     string  `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26"`
 	OwnerType   string  `json:"owner_type" gorm:"type:text;"`
 	LogStreamID *string `json:"log_stream_id"`
@@ -201,11 +201,11 @@ type RunnerJob struct {
 
 	MaxExecutions int `json:"max_executions" gorm:"not null;default null"`
 
-	Status            RunnerJobStatus `json:"status" gorm:"not null;default null"`
+	Status            RunnerJobStatus `json:"status" gorm:"not null;default null;index:idx_runner_jobs_query,priority:3"`
 	StatusDescription string          `json:"status_description" gorm:"not null;default null"`
 
 	Type      RunnerJobType          `json:"type" gorm:"default null;not null"`
-	Group     RunnerJobGroup         `json:"group" gorm:"default:null;not null"`
+	Group     RunnerJobGroup         `json:"group" gorm:"default:null;not null;index:idx_runner_jobs_query,priority:2"`
 	Operation RunnerJobOperationType `json:"operation" gorm:"default:null;not null"`
 
 	Executions []RunnerJobExecution `json:"executions" gorm:"constraint:OnDelete:CASCADE;"`
