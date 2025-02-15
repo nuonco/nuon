@@ -58,6 +58,7 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 			cronCount += 1
 		}
 	}
+
 	if cronCount > 1 {
 		return stderr.ErrUser{
 			Err:         errors.New("more than one cron trigger defined"),
