@@ -21,7 +21,7 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 	defer func() {
 		w.mw.Incr(ctx, "runner.job_execution", metrics.ToTags(tags)...)
 		e2eLatency := workflow.Now(ctx).Sub(startTS)
-		w.mw.Timing(ctx, "runner.job_execution", e2eLatency, metrics.ToTags(tags)...)
+		w.mw.Timing(ctx, "runner.job_execution.latency", e2eLatency, metrics.ToTags(tags)...)
 	}()
 
 	l, err := log.WorkflowLogger(ctx)
