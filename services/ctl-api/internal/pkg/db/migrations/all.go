@@ -186,5 +186,13 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "082-recreate-install-action-workflows-idx",
 			Fn:   a.migration082InstallActionWorkflowsIdx,
 		},
+		{
+			Name: "083-clickhouse-table-sizes",
+			Fn:   a.migration083ClickhouseTableSizes,
+		},
+		{
+			Name: "084-psql-table-sizes",
+			Fn:   a.migration070TableSizesView,
+		},
 	}
 }

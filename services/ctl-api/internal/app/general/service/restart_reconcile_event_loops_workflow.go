@@ -9,20 +9,19 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/signals"
 )
 
-type RestartEventLoopReconcileCronRequest struct {
-}
+type RestartGeneralEventLoopRequest struct{}
 
-// @ID RestartEventLoopReconcileCron
+// @ID RestartGeneralEventLoop
 // @Summary	restart event loop reconciliation cron job
-// @Description.markdown	restart_event_loop_reconcile_cron.md
-// @Param			req	body	RestartEventLoopReconcileCronRequest	true	"Input"
+// @Description.markdown	restart_general_event_loop.md
+// @Param			req	body	RestartGeneralEventLoopRequest	true	"Input"
 // @Tags			general/admin
 // @Accept			json
 // @Produce		json
 // @Success		201	{string}	ok
-// @Router			/v1/general/restart-event-loop-reconcile-cron [post]
-func (s *service) RestartEventLoopReconcileCron(ctx *gin.Context) {
-	var req RestartEventLoopReconcileCronRequest
+// @Router			/v1/general/restart-event-loop [post]
+func (s *service) RestartGeneralEventLoop(ctx *gin.Context) {
+	var req RestartGeneralEventLoopRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
