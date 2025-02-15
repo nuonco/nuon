@@ -78,13 +78,14 @@ func (w *Workflows) writeTableMetrics(ctx workflow.Context, typ string) error {
 	defaultTags := map[string]string{"general": "true"}
 
 	// write psql tables
-	psqlTables, err := activities.AwaitGetTableMetricsByTyp(ctx, typ)
+	tables, err := activities.AwaitGetTableMetricsByTyp(ctx, typ)
 	if err != nil {
 		return errors.Wrap(err, "unable to get table metrics")
 	}
-	for _, table := range psqlTables {
+	for _, table := range tables {
 		w.mw.Gauge(ctx, "table_size", table.SizeBytes, metrics.ToTags(generics.MergeMap(map[string]string{
-			"db_type": typ,
+			"db_type":    typ,
+			"table_name": table.TableName,
 		}, defaultTags))...)
 	}
 
