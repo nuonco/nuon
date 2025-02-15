@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
@@ -71,15 +72,35 @@ func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string) error
 }
 
 func (j *Workflows) pollJob(ctx workflow.Context, jobID string) (app.RunnerJobStatus, error) {
+	wkflowInfo := workflow.GetInfo(ctx)
+	job, err := activities.AwaitPkgWorkflowsJobGetJobByID(ctx, jobID)
+	if err != nil {
+		return app.RunnerJobStatusUnknown, errors.Wrap(err, "unable to get job and set timeout")
+	}
+
+	defaultTags := map[string]string{
+		"namespace": wkflowInfo.Namespace,
+		"status":    "ok",
+		"job_type":  string(job.Type),
+	}
+	startTS := workflow.Now(ctx)
+	defer func() {
+		j.mw.Incr(ctx, "runner_job.client.incr", metrics.ToTags(defaultTags)...)
+		e2eLatency := workflow.Now(ctx).Sub(startTS)
+		j.mw.Timing(ctx, "runner_job.client.latency", e2eLatency, metrics.ToTags(defaultTags)...)
+	}()
+
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return app.RunnerJobStatusUnknown, errors.Wrap(err, "expected a log stream in the context to poll job")
 	}
 
-	job, err := activities.AwaitPkgWorkflowsJobGetJobByID(ctx, jobID)
+	// fetch starting queued
+	queued, err := activities.AwaitPkgWorkflowsJobGetRunnerJobQueueByJobID(ctx, jobID)
 	if err != nil {
-		return app.RunnerJobStatusUnknown, errors.Wrap(err, "unable to get job and set timeout")
+		return "", errors.Wrap(err, "unable to get runner job queue")
 	}
+	j.mw.Gauge(ctx, "runner_job.client.starting_queue", float64(len(queued)), metrics.ToTags(defaultTags)...)
 
 	for {
 		// if the job is already timed out, there is no reason to continue. In some reasons, if a job fails and
