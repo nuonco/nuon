@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
-	metrics_middleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/metrics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type contextKey string
@@ -53,6 +53,13 @@ func (m *metricsWriterPlugin) beforeAll(tx *gorm.DB) {
 
 	ctx = context.WithValue(ctx, defaultContextKey, ts)
 	tx.Statement.Context = ctx
+
+	metrics, err := cctx.MetricsContextFromGinContext(ctx)
+	if err != nil {
+		return
+	}
+
+	metrics.DBQueryCount += 1
 }
 
 func (m *metricsWriterPlugin) afterAll(tx *gorm.DB) {
@@ -71,7 +78,7 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB) {
 		tags = append(tags, "db_type:"+m.dbType)
 	}
 
-	metricCtx, err := metrics_middleware.FromContext(ctx)
+	metricCtx, err := cctx.MetricsContextFromGinContext(ctx)
 	if err != nil {
 		return
 	}

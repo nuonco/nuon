@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 const (
@@ -32,11 +33,12 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 		path = strings.ReplaceAll(path, "-", "_")
 		endpoint := fmt.Sprintf("%s__%s", c.Request.Method, path)
 
-		c.Set(ContextKey, &MetricContext{
+		ctxObj := &cctx.MetricContext{
 			Endpoint: endpoint,
 			Method:   c.Request.Method,
 			Context:  m.context,
-		})
+		}
+		c.Set(cctx.MetricsKey, ctxObj)
 
 		c.Next()
 
@@ -56,6 +58,7 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 		}
 
 		m.writer.Incr("api.request.status", tags)
+		m.writer.Gauge("gorm_operation.endpoint_count", float64(ctxObj.DBQueryCount), tags)
 		m.writer.Timing("api.request.latency", time.Since(startTS), tags)
 	}
 }
