@@ -60,8 +60,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/admin-delete-account", s.AdminDeleteAccount)
 
 	// (re)start EventLoopReconcile
-	api.POST("/v1/general/restart-event-loop-reconcile-cron", s.RestartEventLoopReconcileCron)
-	api.POST("/v1/general/reconcile-event-loops", s.ReconcileEventLoops)
+	api.POST("/v1/general/restart-event-loop", s.RestartGeneralEventLoop)
 
 	api.GET("/v1/general/waitlist", s.AdminGetWaitlist)
 

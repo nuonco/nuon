@@ -126,5 +126,7 @@ func AllModels() []interface{} {
 
 		// waitlist
 		&app.Waitlist{},
+		// NOTE(jm): this is a special table used in both ch and postgres
+		&app.TableSize{},
 	}
 }

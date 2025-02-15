@@ -21,6 +21,9 @@ func AllChModels() []ChModel {
 		&app.OtelMetricGauge{},
 		&app.OtelMetricHistogram{},
 		&app.OtelMetricExponentialHistogram{},
+
+		// NOTE(jm): this is a special table used in both ch and postgres
+		&app.TableSize{},
 	}
 }
 
