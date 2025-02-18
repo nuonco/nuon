@@ -19,7 +19,7 @@ export default withPageAuthRequired(async function AppWorkflows({ params }) {
   const [org, app, workflows, inputCfg] = await Promise.all([
     getOrg({ orgId }),
     getApp({ appId, orgId }),
-    getAppActionWorkflows({ appId, orgId }),
+    getAppActionWorkflows({ appId, orgId }).catch(console.error),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
   ])
 
@@ -45,7 +45,7 @@ export default withPageAuthRequired(async function AppWorkflows({ params }) {
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
       <section className="px-6 py-8">
-        {workflows.length ? (
+        {workflows && workflows?.length ? (
           <AppWorkflowsTable
             appId={appId}
             orgId={orgId}
