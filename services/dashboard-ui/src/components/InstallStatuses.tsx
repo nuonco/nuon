@@ -46,11 +46,23 @@ export const InstallStatuses: FC<IInstallStatus> = ({
         '': isCompact,
       })}
     >
-      <StatusBadge label="Sandbox" status={install.sandbox_status} />
-      <StatusBadge label="Runner" status={install.runner_status} />
+      <StatusBadge
+        label="Sandbox"
+        status={install.sandbox_status}
+        description={install?.sandbox_status_description}
+        descriptionAlignment="right"
+      />
+      <StatusBadge
+        label="Runner"
+        status={install.runner_status}
+        description={install?.runner_status_description}
+        descriptionAlignment="right"
+      />
       <StatusBadge
         label="Components"
         status={install.composite_component_status}
+        description={install?.composite_component_status_description}
+        descriptionAlignment="right"
       />
     </div>
   )
