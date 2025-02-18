@@ -12,7 +12,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
-
 // @ID GetInstallActionWorkflowsLatestRun
 // @Summary	get latest runs for all action workflows by install id
 // @Description.markdown	get_install_action_workflows_latest_run.md
@@ -52,7 +51,13 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx context.Context, orgID,
 	res := s.db.WithContext(ctx).
 		Preload("ActionWorkflow").
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_action_workflow_runs.created_at DESC").Limit(1)
+			return db.
+				Distinct(
+					"install_id",
+					"install_action_workflow_id",
+				).
+				Select("*").
+				Order("install_action_workflow_runs.created_at DESC")
 		}).
 		Find(&iaws, "org_id = ? AND install_id = ?", orgID, installID)
 	if res.Error != nil {
