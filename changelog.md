@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.404
+
+Show install status descriptions.
+
 ## v0.19.403
 
 Fix light mode loading state of installer form in UI.
