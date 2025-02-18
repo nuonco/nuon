@@ -48,16 +48,19 @@ type Install struct {
 
 	// generated view current view
 
-	InstallNumber     int              `json:"install_number" gorm:"->;-:migration"`
-	SandboxStatus     SandboxRunStatus `json:"sandbox_status" gorm:"->;-:migration" swaggertype:"string"`
-	ComponentStatuses pgtype.Hstore    `json:"component_statuses" gorm:"type:hstore;->;-:migration" swaggertype:"object,string"`
+	InstallNumber            int              `json:"install_number" gorm:"->;-:migration"`
+	SandboxStatus            SandboxRunStatus `json:"sandbox_status" gorm:"->;-:migration" swaggertype:"string"`
+	SandboxStatusDescription string           `json:"sandbox_status_description" gorm:"-" swaggertype:"string"`
+	ComponentStatuses        pgtype.Hstore    `json:"component_statuses" gorm:"type:hstore;->;-:migration" swaggertype:"object,string"`
 
 	// after queries
 
-	CurrentInstallInputs     *InstallInputs      `json:"-" gorm:"-"`
-	CompositeComponentStatus InstallDeployStatus `json:"composite_component_status" gorm:"-" swaggertype:"string"`
-	RunnerStatus             RunnerStatus        `json:"runner_status" gorm:"-" swaggertype:"string"`
-	RunnerID                 string              `json:"runner_id" gorm:"-"`
+	CurrentInstallInputs                *InstallInputs      `json:"-" gorm:"-"`
+	CompositeComponentStatus            InstallDeployStatus `json:"composite_component_status" gorm:"-" swaggertype:"string"`
+	CompositeComponentStatusDescription string              `json:"composite_component_status_description" gorm:"-" swaggertype:"string"`
+	RunnerStatus                        RunnerStatus        `json:"runner_status" gorm:"-" swaggertype:"string"`
+	RunnerStatusDescription             string              `json:"runner_status_description" gorm:"-" swaggertype:"string"`
+	RunnerID                            string              `json:"runner_id" gorm:"-"`
 
 	// TODO(jm): deprecate these fields once the terraform provider has been updated
 	Status            string `json:"status" gorm:"-"`
@@ -89,6 +92,7 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	i.RunnerStatus = RunnerStatusDeprovisioned
 	if len(i.RunnerGroup.Runners) > 0 {
 		i.RunnerStatus = i.RunnerGroup.Runners[0].Status
+		i.RunnerStatusDescription = i.RunnerGroup.Runners[0].StatusDescription
 		i.RunnerID = i.RunnerGroup.Runners[0].ID
 	}
 
@@ -100,10 +104,12 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	i.SandboxStatus = SandboxRunStatusQueued
 	if len(i.InstallSandboxRuns) > 0 {
 		i.SandboxStatus = i.InstallSandboxRuns[0].Status
+		i.SandboxStatusDescription = i.InstallSandboxRuns[0].StatusDescription
 	}
 
 	// get the composite status of all the components
 	i.CompositeComponentStatus = compositeComponentStatus(i.ComponentStatuses)
+	i.CompositeComponentStatusDescription = compositeComponentStatusDescription(i.ComponentStatuses)
 
 	i.Status = "deprecated"
 	i.StatusDescription = "deprecated, please use individual runner, sandbox and component statuses instead"
@@ -140,6 +146,33 @@ func compositeComponentStatus(componentStatuses pgtype.Hstore) InstallDeployStat
 
 	// if any components have not yet succeeded or failed, composite status should be "pending"
 	return InstallDeployStatusPending
+}
+
+func compositeComponentStatusDescription(componentStatuses pgtype.Hstore) string {
+	// if there are no components, then there are no operations to wait for
+	if len(componentStatuses) == 0 {
+		return "No active components"
+	}
+
+	// check status of each component
+	activecount := 0
+	for _, status := range componentStatuses {
+		switch InstallDeployStatus(*status) {
+		case InstallDeployStatusActive:
+			activecount++
+		case InstallDeployStatusError:
+			// if any components have failed we can stop immediately
+			return "A component failed to deploy"
+		}
+	}
+
+	// if all components are active
+	if activecount == len(componentStatuses) {
+		return "All components have been deployed"
+	}
+
+	// if any components have not yet succeeded or failed
+	return "Waiting for components to deploy"
 }
 
 func (i *Install) EventLoops() []bulk.EventLoop {
