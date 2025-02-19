@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"errors"
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
@@ -67,6 +68,10 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 		if err != nil {
 			return false, err
 		}
+		if hb == nil {
+			return false, errors.New("no heart beats found")
+		}
+
 		if hb.StartedAt.After(jobExecution.CreatedAt) {
 			l.Error(
 				"runner restarted while job was in flight. job will be cancelled.",
