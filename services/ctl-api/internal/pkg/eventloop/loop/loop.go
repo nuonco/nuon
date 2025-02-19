@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -64,8 +65,11 @@ func (w *Loop[T, R]) handleSignal(ctx workflow.Context, wkflowReq eventloop.Even
 	op := signal.Name()
 	status := "ok"
 	if err != nil {
-		l.Error("signal handling failed", zap.Error(err), zap.String("signal", op))
 		status = "error"
+		if temporal.IsPanicError(err) {
+			status = "panic"
+		}
+		l.Error("signal handling failed", zap.Error(err), zap.String("signal", op))
 	} else {
 		l.Debug("signal handling succeeded", zap.String("signal", op))
 	}
