@@ -24,6 +24,7 @@ import (
 	runnersactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/interceptors"
 	metricsinterceptor "github.com/powertoolsdev/mono/services/ctl-api/internal/interceptors/metrics"
+	validateinterceptor "github.com/powertoolsdev/mono/services/ctl-api/internal/interceptors/validate"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/activities"
@@ -49,6 +50,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{
 		fx.Invoke(db.DBGroupParam(func(dbs []*gorm.DB) {})),
 		fx.Provide(interceptors.AsInterceptor(metricsinterceptor.New)),
+		fx.Provide(interceptors.AsInterceptor(validateinterceptor.New)),
 	}
 
 	// shared activities and workflows
