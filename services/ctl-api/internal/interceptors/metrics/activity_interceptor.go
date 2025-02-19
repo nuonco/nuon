@@ -29,15 +29,8 @@ func (a *actInterceptor) ExecuteActivity(
 	in *interceptor.ExecuteActivityInput,
 ) (interface{}, error) {
 	info := activity.GetInfo(ctx)
-
-	startTS := time.Now()
-	resp, err := a.Next.ExecuteActivity(ctx, in)
-
 	status := "ok"
-	if err != nil {
-		status = "error"
-	}
-
+	startTS := time.Now()
 	tags := map[string]string{
 		"status":        status,
 		"activity":      info.ActivityType.Name,
@@ -45,7 +38,25 @@ func (a *actInterceptor) ExecuteActivity(
 		"workflow_type": info.WorkflowType.Name,
 	}
 
-	a.mw.Incr("temporal_activity.status", metrics.ToTags(tags))
-	a.mw.Timing("temporal_activity.latency", time.Since(startTS), metrics.ToTags(tags))
+	// NOTE(jm): we emit from a defer, so we can catch any type of panic and still emit metrics.
+	defer func() {
+		rec := recover()
+		if rec != nil {
+			tags["status"] = "panic"
+		}
+
+		a.mw.Incr("temporal_activity.status", metrics.ToTags(tags))
+		a.mw.Timing("temporal_activity.latency", time.Since(startTS), metrics.ToTags(tags))
+
+		if rec != nil {
+			panic(rec)
+		}
+	}()
+
+	resp, err := a.Next.ExecuteActivity(ctx, in)
+	if err != nil {
+		status = "error"
+	}
+
 	return resp, nil
 }
