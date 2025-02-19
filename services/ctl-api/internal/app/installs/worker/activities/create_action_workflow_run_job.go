@@ -12,7 +12,7 @@ type CreateActionWorkflowRunRunnerJob struct {
 	ActionWorkflowRunID string            `validate:"required"`
 	RunnerID            string            `validate:"required"`
 	LogStreamID         string            `validate:"required"`
-	Metadata            map[string]string `validate:"metadata"`
+	Metadata            map[string]string `validate:"required"`
 }
 
 // @temporal-gen activity
