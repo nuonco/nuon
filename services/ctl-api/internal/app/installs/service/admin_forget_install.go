@@ -28,7 +28,7 @@ type AdminForgetInstallRequest struct{}
 // @Failure		500	{object}	stderr.ErrResponse
 // @Success		200	{boolean}	true
 // @Router			/v1/installs/{install_id}/admin-forget [POST]
-func (s *service) ForgetInstall(ctx *gin.Context) {
+func (s *service) AdminForgetInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
 	install, err := s.getInstall(ctx, installID)
