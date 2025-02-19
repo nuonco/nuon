@@ -10,8 +10,13 @@ import {
   Text,
   Time,
 } from '@/components'
-import { getInstall, getInstallActionWorkflowLatestRun, getOrg } from '@/lib'
-import { USER_REPROVISION } from '@/utils'
+import {
+  getInstall,
+  getInstallActionWorkflowLatestRun,
+  getOrg,
+  getAppLatestInputConfig,
+} from '@/lib'
+import { USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
 
 export default withPageAuthRequired(async function InstallWorkflowRuns({
   params,
@@ -25,6 +30,12 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
       console.error
     ),
   ])
+
+  const appInputConfigs =
+    (await getAppLatestInputConfig({
+      appId: install?.app_id,
+      orgId,
+    }).catch(console.error)) || undefined
 
   return (
     <DashboardContent
@@ -58,6 +69,9 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
               hasInstallComponents={Boolean(
                 install?.install_components?.length
               )}
+              hasUpdateInstall={INSTALL_UPDATE}
+              inputConfig={appInputConfigs}
+              install={install}
             />
           ) : null}
         </div>
