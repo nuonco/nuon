@@ -170,7 +170,7 @@ const LoadInstallReadme: FC<{ installId: string; orgId: string }> = async ({
               key={`${warn}-${i} `}
               className="flex items-center gap-3 w-full p-2 border rounded-md border-orange-400 bg-orange-300/20 text-orange-800 dark:border-orange-600 dark:bg-orange-600/5 dark:text-orange-600 text-base font-medium"
             >
-              <Warning size="20" /> {warn}
+              <Warning size={50} /> <span>{warn}</span>
             </span>
           ))
         : null}
