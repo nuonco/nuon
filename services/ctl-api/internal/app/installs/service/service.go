@@ -62,6 +62,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.DELETE("/v1/installs/:install_id", s.DeleteInstall)
 	api.POST("/v1/installs/:install_id/reprovision", s.ReprovisionInstall)
 	api.POST("/v1/installs/:install_id/deprovision", s.DeprovisionInstall)
+  api.POST("/v1/installs/:install_id/forget", s.ForgetInstall)
 
 	// install deploys
 	api.GET("/v1/installs/:install_id/deploys", s.GetInstallDeploys)
@@ -117,7 +118,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/admin-deprovision-runner", s.AdminDeprovisionInstallRunner)
 	api.POST("/v1/installs/:install_id/admin-deprovision", s.AdminDeprovisionInstall)
 	api.POST("/v1/installs/:install_id/admin-delete", s.AdminDeleteInstall)
-	api.POST("/v1/installs/:install_id/admin-forget", s.ForgetInstall)
+	api.POST("/v1/installs/:install_id/admin-forget", s.AdminForgetInstall)
 	api.POST("/v1/installs/:install_id/admin-update-sandbox", s.AdminUpdateSandbox)
 	api.POST("/v1/installs/:install_id/admin-teardown-components", s.AdminTeardownInstallComponents)
 	api.POST("/v1/installs/:install_id/admin-deploy-components", s.AdminDeployInstallComponents)
