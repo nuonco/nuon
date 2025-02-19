@@ -5,6 +5,8 @@ import {
   deployComponents as deployAllComponents,
   reprovisionInstall as reprovisionInstallSandbox,
   deployComponentBuild as deployComponentByBuildId,
+  teardownInstallComponents,
+  updateInstall as patchInstall,
 } from '@/lib'
 
 interface IReprovisionInstall {
@@ -80,4 +82,63 @@ export async function revalidateInstallData({
   installId,
 }: IRevalidateInstallData) {
   revalidatePath(`/${orgId}/installs/${installId}`)
+}
+
+interface ITeardownAllComponents {
+  installId: string
+  orgId: string
+}
+
+export async function teardownAllComponents({
+  installId,
+  orgId,
+}: ITeardownAllComponents) {
+  try {
+    await teardownInstallComponents({
+      installId,
+      orgId,
+    })
+    revalidatePath(`/${orgId}/installs/${installId}`)
+  } catch (error) {
+    console.error(error)
+    throw new Error(error.message)
+  }
+}
+
+interface IUpdateInstall {
+  installId: string
+  orgId: string
+  formData: FormData
+}
+
+export async function updateInstall({
+  installId,
+  orgId,
+  formData: fd,
+}: IUpdateInstall) {
+  const formData = Object.fromEntries(fd)
+
+  const inputs = Object.keys(formData).reduce((acc, key) => {
+    if (key.includes('inputs:')) {
+      let value: any = formData[key]
+      if (value === 'on' || value === 'off') {
+        value = Boolean(value === 'on').toString()
+      }
+
+      acc[key.replace('inputs:', '')] = value
+    }
+
+    return acc
+  }, {})
+
+  let data = {
+    inputs,
+    name: formData.name as string,
+  }
+
+  return patchInstall({
+    data,
+    installId,
+    orgId,
+  })
 }

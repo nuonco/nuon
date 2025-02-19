@@ -155,7 +155,7 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
           deploy?.status !== 'active' &&
           deploy?.status !== 'error' ? (
             <CancelRunnerJobButton
-              jobType="sandbox-run"
+              jobType="deploy"
               runnerJobId={deploy?.runner_jobs?.at(-1)?.id}
               orgId={orgId}
             />

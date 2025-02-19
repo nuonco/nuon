@@ -353,3 +353,37 @@ export async function createInstall({ appId, orgId, data }: ICreateInstall) {
     path: `apps/${appId}/installs`,
   })
 }
+
+export interface ITeardownInstallComponents extends IGetInstall {}
+
+export async function teardownInstallComponents({
+  installId,
+  orgId,
+}: ITeardownInstallComponents) {
+  return mutateData<string>({
+    errorMessage: 'Unable to teardown install components.',
+    orgId,
+    path: `installs/${installId}/components/teardown-all`,
+  })
+}
+
+export interface IUpdateInstall extends IGetInstall {
+  data: {
+    name: string
+    inputs?: Record<string, string>
+  }
+}
+
+export async function updateInstall({
+  data,
+  installId,
+  orgId,
+}: IUpdateInstall) {
+  return mutateData({
+    errorMessage: 'Unable to update install.',
+    data,
+    orgId,
+    method: 'PATCH',
+    path: `installs/${installId}`,
+  })
+}
