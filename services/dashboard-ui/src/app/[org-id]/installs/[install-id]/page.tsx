@@ -3,6 +3,7 @@
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
+import { Warning } from '@phosphor-icons/react/dist/ssr'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
@@ -27,6 +28,7 @@ import {
   Markdown,
 } from '@/components'
 import {
+  getAppLatestInputConfig,
   getInstall,
   getInstallCurrentInputs,
   getInstallReadme,
@@ -34,7 +36,7 @@ import {
   getRunnerLatestHeartbeat,
   getOrg,
 } from '@/lib'
-import { RUNNERS, USER_REPROVISION } from '@/utils'
+import { RUNNERS, USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
 
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
@@ -43,6 +45,12 @@ export default withPageAuthRequired(async function Install({ params }) {
     getInstall({ installId, orgId }),
     getOrg({ orgId }),
   ])
+
+  const appInputConfigs =
+    (await getAppLatestInputConfig({
+      appId: install?.app_id,
+      orgId,
+    }).catch(console.error)) || undefined
 
   return (
     <DashboardContent
@@ -79,6 +87,9 @@ export default withPageAuthRequired(async function Install({ params }) {
               hasInstallComponents={Boolean(
                 install?.install_components?.length
               )}
+              hasUpdateInstall={INSTALL_UPDATE}
+              install={install}
+              inputConfig={appInputConfigs}
             />
           ) : null}
         </div>
@@ -152,7 +163,19 @@ const LoadInstallReadme: FC<{ installId: string; orgId: string }> = async ({
   )
 
   return installReadme ? (
-    <Markdown content={installReadme?.readme} />
+    <div className="flex flex-col gap-3">
+      {installReadme?.warnings?.length
+        ? installReadme?.warnings?.map((warn, i) => (
+            <span
+              key={`${warn}-${i} `}
+              className="flex items-center gap-3 w-full p-2 border rounded-md border-orange-400 bg-orange-300/20 text-orange-800 dark:border-orange-600 dark:bg-orange-600/5 dark:text-orange-600 text-base font-medium"
+            >
+              <Warning size="20" /> {warn}
+            </span>
+          ))
+        : null}
+      <Markdown content={installReadme?.readme} />
+    </div>
   ) : (
     <Text variant="reg-12">No install README found</Text>
   )

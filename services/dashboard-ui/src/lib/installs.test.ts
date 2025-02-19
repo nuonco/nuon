@@ -24,6 +24,8 @@ import {
   getInstallDeployPlan,
   getInstallCurrentInputs,
   getInstallComponentOutputs,
+  teardownInstallComponents,
+  updateInstall,
 } from './installs'
 
 describe('getInstalls should handle response status codes from GET installs endpoint', () => {
@@ -473,6 +475,50 @@ describe('createInstall should handle response status codes from POST apps/:id/i
       appId,
       orgId,
       data,
+    }).catch((err) => expect(err).toMatchSnapshot())
+  })
+})
+
+describe('updateInstall should handle response status codes from PATCH installs/:id endpoint', () => {
+  const orgId = 'test-id'
+  const installId = 'test-id'
+  const data = {
+    name: 'test',
+  }
+  test('200 status', async () => {
+    const spec = await updateInstall({
+      installId,
+      orgId,
+      data,
+    })
+    expect(spec).toHaveProperty('name')
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await updateInstall({
+      installId,
+      orgId,
+      data,
+    }).catch((err) => expect(err).toMatchSnapshot())
+  })
+})
+
+describe('teardownInstallComponents should handle response status codes from POST installs/:id/components/teardown-all endpoint', () => {
+  const orgId = 'test-id'
+  const installId = 'test-id'
+
+  test('200 status', async () => {
+    const spec = await teardownInstallComponents({
+      installId,
+      orgId,
+    })
+    expect(spec).not.toBeFalsy()
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await teardownInstallComponents({
+      installId,
+      orgId,
     }).catch((err) => expect(err).toMatchSnapshot())
   })
 })

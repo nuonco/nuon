@@ -24,10 +24,10 @@ export const InstallStatuses: FC<IInstallStatus> = ({
 
   useEffect(() => {
     const fetchInstall = () => {
-      fetch(`/api/${install.org_id}/installs/${install.id}`)
+      fetch(`/api/${initInstall.org_id}/installs/${initInstall.id}`)
         .then((res) =>
-          res.json().then((o) => {
-            updateInstall(o)
+          res.json().then((i) => {
+            updateInstall(i)
           })
         )
         .catch(console.error)
