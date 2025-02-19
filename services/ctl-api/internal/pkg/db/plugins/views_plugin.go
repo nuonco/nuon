@@ -7,6 +7,13 @@ import (
 	"gorm.io/gorm"
 )
 
+var disableViewsKey string = "disable_views_key"
+
+// DisableViews is a scope that removes usage of views. Usage for when the view returns too much data or is slow.
+func WithDisableViews(db *gorm.DB) *gorm.DB {
+	return db.Set(disableViewsKey, true)
+}
+
 var _ gorm.Plugin = (*viewsPlugin)(nil)
 
 // ViewsPlugin is a plugin that enables turning on a view for specific models. This will overwrite the table name on
@@ -85,6 +92,11 @@ func (m *viewsPlugin) modelsToViewTables(db *gorm.DB) {
 
 // see note above
 func (m *viewsPlugin) enableView(tx *gorm.DB) {
+	disable, ok := tx.Get(disableViewsKey)
+	if ok && disable.(bool) {
+		return
+	}
+
 	schema := tx.Statement.Schema
 	vm, ok := m.viewModels[schema.Table]
 	if !ok {
