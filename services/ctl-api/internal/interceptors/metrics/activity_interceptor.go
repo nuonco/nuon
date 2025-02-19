@@ -2,11 +2,15 @@ package metrics
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/interceptor"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
+
+	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 )
@@ -56,6 +60,18 @@ func (a *actInterceptor) ExecuteActivity(
 	resp, err := a.Next.ExecuteActivity(ctx, in)
 	if err != nil {
 		status = "error"
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			status = "error_not_found"
+		}
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			status = "error_duplicate_key"
+		}
+
+		var vErr validator.ValidationErrors
+		if errors.As(err, &vErr) {
+			status = "error_validation"
+		}
 	}
 
 	return resp, nil
