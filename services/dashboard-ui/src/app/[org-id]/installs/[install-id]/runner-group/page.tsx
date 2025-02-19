@@ -27,6 +27,7 @@ import {
   ToolTip,
 } from '@/components'
 import {
+  getAppLatestInputConfig,
   getInstall,
   getInstallRunnerGroup,
   getOrg,
@@ -34,7 +35,7 @@ import {
   getRunnerJobs,
   getRunnerLatestHeartbeat,
 } from '@/lib'
-import { USER_REPROVISION } from '@/utils'
+import { USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
 
 export default withPageAuthRequired(async function RunnerGroup({ params }) {
   const orgId = params?.['org-id'] as string
@@ -44,6 +45,12 @@ export default withPageAuthRequired(async function RunnerGroup({ params }) {
     getInstallRunnerGroup({ installId, orgId }),
     getOrg({ orgId }),
   ])
+
+  const appInputConfigs =
+    (await getAppLatestInputConfig({
+      appId: install?.app_id,
+      orgId,
+    }).catch(console.error)) || undefined
 
   return (
     <DashboardContent
@@ -80,6 +87,9 @@ export default withPageAuthRequired(async function RunnerGroup({ params }) {
               hasInstallComponents={Boolean(
                 install?.install_components?.length
               )}
+              install={install}
+              inputConfig={appInputConfigs}
+              hasUpdateInstall={INSTALL_UPDATE}
             />
           ) : null}
         </div>

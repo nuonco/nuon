@@ -162,7 +162,7 @@ func compositeComponentStatusDescription(componentStatuses pgtype.Hstore) string
 			activecount++
 		case InstallDeployStatusError:
 			// if any components have failed we can stop immediately
-			return "A component failed to deploy"
+			return "A component is in an error state"
 		}
 	}
 
@@ -172,7 +172,7 @@ func compositeComponentStatusDescription(componentStatuses pgtype.Hstore) string
 	}
 
 	// if any components have not yet succeeded or failed
-	return "Waiting for components to deploy"
+	return "Waiting on components"
 }
 
 func (i *Install) EventLoops() []bulk.EventLoop {

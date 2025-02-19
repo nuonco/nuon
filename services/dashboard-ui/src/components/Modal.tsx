@@ -54,7 +54,7 @@ export const Modal: FC<IModal> = ({
       />
       <div
         className={classNames(
-          'relative z-50 border rounded-lg shadow-lg m-auto w-full max-w-7xl bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 on-enter enter-bottom',
+          'relative z-50 border rounded-lg shadow-lg m-auto w-full max-w-7xl bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 on-enter enter-bottom focus:outline outline-1 outline-primary-500 dark:outline-white/40',
           {
             [`${className}`]: Boolean(className),
           }
@@ -75,7 +75,7 @@ export const Modal: FC<IModal> = ({
         <div
           tabIndex={-1}
           className={classNames(
-            'p-6 h-full max-h-[700px] overflow-y-auto overflow-x-hidden focus:outline outline-1 outline-primary-500 dark:outline-white/40 rounded-b-lg',
+            'p-6 h-full max-h-[700px] overflow-y-auto overflow-x-hidden rounded-b-lg focus:outline outline-1 outline-primary-500 dark:outline-white/20',
             {
               'min-h-[700px]': hasFixedHeight,
               [`${contentClassName}`]: Boolean(contentClassName),

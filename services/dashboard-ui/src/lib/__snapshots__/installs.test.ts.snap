@@ -219,3 +219,23 @@ exports[`runInstallActionWorkflow should handle response status codes from POST 
 exports[`runInstallActionWorkflow should handle response status codes from POST installs/:id/reprovision endpoint > 404 status 1`] = `[Error: Unable to run action workflow on this install.]`;
 
 exports[`runInstallActionWorkflow should handle response status codes from POST installs/:id/reprovision endpoint > 500 status 1`] = `[Error: Unable to run action workflow on this install.]`;
+
+exports[`teardownInstallComponents should handle response status codes from POST installs/:id/components/teardown-all endpoint > 400 status 1`] = `[Error: Unable to teardown install components.]`;
+
+exports[`teardownInstallComponents should handle response status codes from POST installs/:id/components/teardown-all endpoint > 401 status 1`] = `[Error: Unable to teardown install components.]`;
+
+exports[`teardownInstallComponents should handle response status codes from POST installs/:id/components/teardown-all endpoint > 403 status 1`] = `[Error: Unable to teardown install components.]`;
+
+exports[`teardownInstallComponents should handle response status codes from POST installs/:id/components/teardown-all endpoint > 404 status 1`] = `[Error: Unable to teardown install components.]`;
+
+exports[`teardownInstallComponents should handle response status codes from POST installs/:id/components/teardown-all endpoint > 500 status 1`] = `[Error: Unable to teardown install components.]`;
+
+exports[`updateInstall should handle response status codes from PATCH installs/:id endpoint > 400 status 1`] = `[Error: Unable to update install.]`;
+
+exports[`updateInstall should handle response status codes from PATCH installs/:id endpoint > 401 status 1`] = `[Error: Unable to update install.]`;
+
+exports[`updateInstall should handle response status codes from PATCH installs/:id endpoint > 403 status 1`] = `[Error: Unable to update install.]`;
+
+exports[`updateInstall should handle response status codes from PATCH installs/:id endpoint > 404 status 1`] = `[Error: Unable to update install.]`;
+
+exports[`updateInstall should handle response status codes from PATCH installs/:id endpoint > 500 status 1`] = `[Error: Unable to update install.]`;

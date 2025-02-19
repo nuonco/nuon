@@ -11,8 +11,13 @@ import {
   Text,
   Time,
 } from '@/components'
-import { getInstall, getInstallEvents, getOrg } from '@/lib'
-import { USER_REPROVISION } from '@/utils'
+import {
+  getInstall,
+  getInstallEvents,
+  getOrg,
+  getAppLatestInputConfig,
+} from '@/lib'
+import { USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
 
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
@@ -21,6 +26,12 @@ export default withPageAuthRequired(async function Install({ params }) {
     getInstall({ installId, orgId }),
     getOrg({ orgId }),
   ])
+
+  const appInputConfigs =
+    (await getAppLatestInputConfig({
+      appId: install?.app_id,
+      orgId,
+    }).catch(console.error)) || undefined
 
   return (
     <DashboardContent
@@ -57,6 +68,9 @@ export default withPageAuthRequired(async function Install({ params }) {
               hasInstallComponents={Boolean(
                 install?.install_components?.length
               )}
+              hasUpdateInstall={INSTALL_UPDATE}
+              inputConfig={appInputConfigs}
+              install={install}
             />
           ) : null}
         </div>
