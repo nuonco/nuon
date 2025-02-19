@@ -67,7 +67,9 @@ func (s *service) getRecentRuns(ctx context.Context, orgID, installID, actionWor
 			OrgID:            orgID,
 		}).
 		Preload("ActionWorkflow").
-		Preload("ActionWorkflow.Configs").
+		Preload("ActionWorkflow.Configs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("action_workflow_configs.created_at DESC")
+		}).
 		Preload("ActionWorkflow.Configs.Triggers").
 		Preload("ActionWorkflow.Configs.Steps").
 		Preload("ActionWorkflow.Configs.Steps.PublicGitVCSConfig").
