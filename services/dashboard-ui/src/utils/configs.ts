@@ -10,8 +10,7 @@ export const SHORT_POLL_DURATION =
   (process?.env?.NEXT_PUBLIC_SHORT_POLL_DURATION as unknown as number) || 5000
 export const LOG_POLL_DURATION =
   (process?.env?.NEXT_PUBLIC_LOG_POLL_DURATION as unknown as number) || 1000
-export const GITHUB_APP_NAME =
-  process?.env?.GITHUB_APP_NAME || 'nuon-connect'
+export const GITHUB_APP_NAME = process?.env?.GITHUB_APP_NAME || 'nuon-connect'
 export const WORKFLOWS =
   Boolean(process?.env?.NUON_WORKFLOWS === 'true') || false
 export const RUNNERS = Boolean(process?.env?.NUON_RUNNERS === 'true') || false
@@ -21,4 +20,6 @@ export const DEPLOY_INTERMEDIATE_DATA =
   Boolean(process?.env?.NUON_DEPLOY_DATA === 'true') || false
 export const CANCEL_RUNNER_JOBS =
   Boolean(process?.env?.NUON_CANCEL_JOBS === 'true') || false
+export const INSTALL_UPDATE =
+  Boolean(process?.env?.NUON_INSTALL_UPDATE === 'true') || false
 export const VERSION = process?.env?.VERSION || '0.1.0'

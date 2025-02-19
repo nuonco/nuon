@@ -27,6 +27,7 @@ import {
   Truncate,
 } from '@/components'
 import {
+  getAppLatestInputConfig,
   getInstall,
   getOrg,
   getRunner,
@@ -34,7 +35,7 @@ import {
   getRunnerHealthChecks,
   getRunnerLatestHeartbeat,
 } from '@/lib'
-import { USER_REPROVISION } from '@/utils'
+import { USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
 
 export default withPageAuthRequired(async function Runner({ params }) {
   const orgId = params?.['org-id'] as string
@@ -52,6 +53,12 @@ export default withPageAuthRequired(async function Runner({ params }) {
       runnerId,
     }).catch(console.error),
   ])
+
+  const appInputConfigs =
+    (await getAppLatestInputConfig({
+      appId: install?.app_id,
+      orgId,
+    }).catch(console.error)) || undefined
 
   return (
     <DashboardContent
@@ -92,6 +99,9 @@ export default withPageAuthRequired(async function Runner({ params }) {
               hasInstallComponents={Boolean(
                 install?.install_components?.length
               )}
+              install={install}
+              inputConfig={appInputConfigs}
+              hasUpdateInstall={INSTALL_UPDATE}
             />
           ) : null}
         </div>

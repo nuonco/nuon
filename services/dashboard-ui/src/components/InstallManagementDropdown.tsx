@@ -1,27 +1,46 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import React, { type FC, useState } from 'react'
-import { ArrowURightUp, CloudArrowUp } from '@phosphor-icons/react'
+import {
+  Axe,
+  ArrowURightUp,
+  CloudArrowUp,
+  PencilSimpleLine,
+} from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Dropdown } from '@/components/Dropdown'
 import { InstallDeployComponentButton } from '@/components/InstallDeployComponentsButton'
+import { InstallForm } from '@/components/InstallForm'
 import { InstallReprovisionButton } from '@/components/InstallReprovisionButton'
+import { TeardownAllComponentsButton } from '@/components/TeardownAllComponentsButton'
 import { Modal } from '@/components/Modal'
 import { Text } from '@/components/Typography'
+import { updateInstall } from '@/components/install-actions'
+import type { TInstall, TAppInputConfig } from '@/types'
 
 interface IInstallManagementDropdown {
   hasInstallComponents?: boolean
   installId: string
   orgId: string
+  install: TInstall
+  inputConfig?: TAppInputConfig
+  hasUpdateInstall?: boolean
 }
 
 export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
   hasInstallComponents = false,
   installId,
+  install,
+  inputConfig,
   orgId,
+  hasUpdateInstall = false,
 }) => {
   const [isDeploymentOpen, setIsDeploymentOpen] = useState(false)
   const [isReprovisionOpen, setIsReprovisionOpen] = useState(false)
+  const [isTeardownOpen, setIsTeardownOpen] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const router = useRouter()
 
   return (
     <>
@@ -88,6 +107,67 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
           />
         </div>
       </Modal>
+      <Modal
+        className="max-w-lg"
+        isOpen={isTeardownOpen}
+        heading={`Teardown all components?`}
+        onClose={() => {
+          setIsTeardownOpen(false)
+        }}
+      >
+        <div className="mb-6">
+          <Text variant="reg-14" className="leading-relaxed">
+            Are you sure you want to teardown all components? This will remove
+            all components from this install but leave the sandbox and runner.
+          </Text>
+        </div>
+        <div className="flex gap-3 justify-end">
+          <Button
+            onClick={() => {
+              setIsTeardownOpen(false)
+            }}
+            className="text-base"
+          >
+            Cancel
+          </Button>
+          <TeardownAllComponentsButton
+            installId={installId}
+            orgId={orgId}
+            onComplete={() => {
+              setIsTeardownOpen(false)
+            }}
+          />
+        </div>
+      </Modal>
+
+      <Modal
+        className="!max-w-5xl"
+        isOpen={isEditOpen}
+        heading={`Edit install settings?`}
+        onClose={() => {
+          setIsEditOpen(false)
+        }}
+        contentClassName="px-0 py-0"
+      >
+        <InstallForm
+          onSubmit={(formData) => {
+            return updateInstall({
+              installId,
+              orgId,
+              formData,
+            })
+          }}
+          onSuccess={(install) => {
+            router.push(`/${orgId}/installs/${install.id}/history`)
+          }}
+          onCancel={() => {
+            setIsEditOpen(false)
+          }}
+          inputConfig={inputConfig}
+          install={install}
+        />
+      </Modal>
+
       <Dropdown
         className="text-sm !font-medium !p-2 h-[32px]"
         alignment="right"
@@ -100,6 +180,18 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
           <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
             Controls
           </Text>
+          {hasUpdateInstall ? (
+            <Button
+              className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-3 !rounded-none w-full"
+              variant="ghost"
+              onClick={() => {
+                setIsEditOpen(true)
+              }}
+            >
+              <PencilSimpleLine size="18" />
+              Edit install
+            </Button>
+          ) : null}
           <Button
             className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-3 !rounded-none w-full"
             variant="ghost"
@@ -122,10 +214,19 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
               Deploy components
             </Button>
           ) : null}
+          {hasInstallComponents && hasUpdateInstall ? (
+            <Button
+              className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-3 !rounded-none w-full"
+              variant="ghost"
+              onClick={() => {
+                setIsTeardownOpen(true)
+              }}
+            >
+              <Axe size="18" /> Teardown components
+            </Button>
+          ) : null}
         </div>
       </Dropdown>
     </>
   )
 }
-
-//

@@ -11,6 +11,7 @@ import {
   type TDataInstallComponent,
 } from '@/components'
 import {
+  getAppLatestInputConfig,
   getComponentBuild,
   getComponent,
   getComponentConfig,
@@ -18,7 +19,7 @@ import {
   getOrg,
 } from '@/lib'
 import type { TBuild } from '@/types'
-import { USER_REPROVISION } from '@/utils'
+import { USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
 
 export default withPageAuthRequired(async function InstallComponents({
   params,
@@ -29,6 +30,12 @@ export default withPageAuthRequired(async function InstallComponents({
     getInstall({ orgId, installId }),
     getOrg({ orgId }),
   ])
+
+  const appInputConfigs =
+    (await getAppLatestInputConfig({
+      appId: install?.app_id,
+      orgId,
+    }).catch(console.error)) || undefined
 
   const hydratedInstallComponents =
     install.install_components && install.install_components?.length
@@ -97,6 +104,9 @@ export default withPageAuthRequired(async function InstallComponents({
               hasInstallComponents={Boolean(
                 install?.install_components?.length
               )}
+              hasUpdateInstall={INSTALL_UPDATE}
+              inputConfig={appInputConfigs}
+              install={install}
             />
           ) : null}
         </div>
