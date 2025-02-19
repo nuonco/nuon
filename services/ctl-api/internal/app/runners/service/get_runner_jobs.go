@@ -10,6 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 )
 
 // @ID GetRunnerJobs
@@ -73,6 +74,7 @@ func (s *service) getRunnerJobs(ctx context.Context, runnerID string, status app
 	}
 
 	res := s.db.WithContext(ctx).
+		Scopes(plugins.WithDisableViews).
 		Limit(limit).
 		Where(where).
 		Order("created_at desc").
