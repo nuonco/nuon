@@ -6,7 +6,6 @@ import (
 
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
-	"gorm.io/gorm"
 
 	"github.com/pkg/errors"
 
@@ -115,11 +114,10 @@ func (w *Workflows) getRunnerHeartBeatsStatus(ctx workflow.Context, runnerID str
 	// most recent heart beat
 	hb, err := activities.AwaitGetMostRecentHeartBeatRequestByRunnerID(ctx, runnerID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return app.RunnerStatusError, nil
-		}
-
 		return app.RunnerStatusUnknown, err
+	}
+	if hb == nil {
+		return app.RunnerStatusError, nil
 	}
 
 	// update the runner status
