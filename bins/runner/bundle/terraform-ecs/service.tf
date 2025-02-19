@@ -8,8 +8,9 @@ module "service" {
   cpu           = 1024
   memory        = 4096
 
-  create_task_exec_iam_role = false
-  task_exec_iam_role_arn    = var.runner_iam_role_arn
+
+  create_tasks_iam_role = false
+  tasks_iam_role_arn    = var.runner_iam_role_arn # as opposed to task_exec_iam_role_arn
 
   container_definitions = {
     (var.runner_id) = {
