@@ -426,3 +426,17 @@ module "aws-runner-init" {
     github = github.nuon
   }
 }
+
+module "content" {
+  source           = "./modules/repository"
+  name             = "content"
+  description      = "Scratch pad for writing content, blogs and more."
+  required_checks  = []
+  is_public        = false
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
