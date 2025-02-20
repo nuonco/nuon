@@ -69,16 +69,24 @@
         "get-started/create-your-first-app",
         "get-started/why-nuon",
         "get-started/why-byoc",
-        "pricing"
+        "pricing",
+        "docs/concepts/nuon-actions"
       ]
     },
     {
       "group": "Resources",
-      "pages": ["configuration-files", "cli", "terraform-provider", "sdks"]
+      "pages": [
+        "configuration-files",
+        "cli",
+        "terraform-provider",
+        "sdks"
+      ]
     },
     {
       "group": "",
-      "pages": ["concepts/concepts"]
+      "pages": [
+        "concepts/concepts"
+      ]
     },
     {
       "group": "Concepts",
@@ -97,7 +105,9 @@
     },
     {
       "group": "",
-      "pages": ["guides/guides"]
+      "pages": [
+        "guides/guides"
+      ]
     },
     {
       "group": "Configuration",
@@ -139,11 +149,16 @@
     },
     {
       "group": "",
-      "pages": ["api-ref/getting-started"]
+      "pages": [
+        "api-ref/getting-started"
+      ]
     },
     {
       "group": "",
-      "pages": ["updates/updates", "updates/roadmap"]
+      "pages": [
+        "updates/updates",
+        "updates/roadmap"
+      ]
     },
     {
       "group": "Changelog",
@@ -163,7 +178,10 @@
     },
     {
       "group": "",
-      "pages": ["support/support", "support/faq"]
+      "pages": [
+        "support/support",
+        "support/faq"
+      ]
     },
     {
       "group": "apps",
@@ -313,4 +331,3 @@
     }
   }
 }
-

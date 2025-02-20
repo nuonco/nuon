@@ -1,0 +1,100 @@
+---
+title: 'Nuon Actions'
+description: 'Automate operational tasks and workflows in installs.'
+---
+
+Nuon Actions allow you to create automated workflows that can be run in installs. Actions are useful for debugging, running scripts, and implementing health checks.
+
+## What are Actions?
+
+Actions are reusable workflows that can be configured to run on your installs. Each action consists of:
+
+* A trigger that determines when the action runs
+* One or more steps that define what the action does
+
+Actions can be used for:
+
+* Running database migrations
+* Executing maintenance scripts
+* Collecting diagnostic information
+* Automating operational tasks
+* Running custom health checks
+
+## Configuring Actions
+
+Actions can be configured in your TOML config files. For example, if you wanted to implement a healthcheck for an AWS ALB, you would write something like this:
+
+<CodeGroup>
+```toml http_healthcheck.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=action
+
+name    = "http_healthcheck"
+timeout = "0m15s"
+
+[[triggers]]
+type          = "cron"
+cron_schedule = "*/5 * * * *"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name    = "healthcheck"
+command = "./healthcheck"
+
+[steps.public_repo]
+repo      = "nuonco/actions"
+branch    = "main"
+directory = "common"
+
+[steps.env_vars]
+ENDPOINT             = "https://your-app.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+METHOD               = "HEAD"
+EXPECTED_STATUS_CODE = "200"
+```
+
+```toml nuon.your_app.toml
+#:schema https://api.nuon.co/v1/general/config-schema
+
+version      = "v1"
+description  = "Your app on AWS."
+display_name = "Your App"
+
+[[actions]]
+source = "./actions/alb_healthcheck.toml"
+```
+</CodeGroup>
+
+<Note>We maintain a [collection of commonly-used actions](https://github.com/nuonco/actions) in an open-source repo for you to get started with.</Note>
+
+## Running Actions
+
+Actions can be triggered in several ways:
+
+* Manually via the Dashboard or CLI
+* On a schedule
+* In response to events
+
+To run an action manually:
+
+```sh
+nuon actions create-run -w <action-workflow-id> -i <install-id>
+```
+
+## Action History
+
+You can view the history of action runs using the CLI:
+
+```sh
+nuon actions list-runs -w <action-workflow-id> -i <install-id>
+```
+
+Or get details about a specific run:
+
+```sh
+nuon actions get-run -r <run-id> -i <install-id>
+```
+
+## Action Permissions
+
+Actions are run with the same permissions as the [runner](/concepts/runners) in each install.
