@@ -7,7 +7,6 @@ Nuon apps are versions of your application code and infrastructure that can be d
 reference](https://registry.terraform.io/providers/nuonco/nuon/latest/docs/resources/app) for full configuration
 options.
 
-
 <Note>
 Nuon is designed to lift and shift your existing application and infrastructure code, so you can quickly create one or more B.Y.O.C. deployable versions of your product.
 
@@ -16,36 +15,36 @@ In most cases, setting up your app should only take an afternoon.
 
 ## What Is An App?
 
-When you first setup Nuon, you will map your existing product into one or more apps. A Nuon app is a fully configured version of your product that can be installed into your customer's cloud account.
+When you first set up Nuon, you will map your existing product into one or more apps. A Nuon app is a fully configured version of your product that can be installed into your customer's cloud account.
 
 Each Nuon app consists of the following parts:
 
-* `sandbox` - the base infrastructure layer.
-* `runner` - the Nuon service that manages the install.
-* `inputs` - customer provider input values.
-* `components` - your application and infrastructure.
+* `sandbox` - The base infrastructure layer
+* `runner` - The Nuon service that manages the install
+* `inputs` - Customer-provided input values
+* `components` - Your application and infrastructure
 
-Nuon is designed so you can lift and shift your _existing_ application and infrastructure into new deployment options. Most Nuon users will create multiple apps, to offer different "flavors" of B.Y.O.C. to their customers.
+Nuon is designed so you can lift and shift your _existing_ application and infrastructure into new deployment options. Most Nuon users will create multiple apps to offer different "flavors" of B.Y.O.C. to their customers.
 
 ## App Sandbox
 
-The app sandbox is the base layer of each app, and is responsible for setting up any shared infrastructure to configure an install. In most cases, sandboxes consist of the following resources:
+The app sandbox is the base layer of each app and is responsible for setting up any shared infrastructure to configure an install. In most cases, sandboxes consist of the following resources:
 
-* basic cloud account access and controls (such as IAM on AWS).
-* basic network infrastructure (such as an AWS VPC).
-* compute infrastructure (such as a Kubernetes or ECS cluster).
+* Basic cloud account access and controls (such as IAM on AWS)
+* Basic network infrastructure (such as an AWS VPC)
+* Compute infrastructure (such as a Kubernetes or ECS cluster)
 
 Read more about sandbox configuration [here](/concepts/sandboxes).
 
 ## App Inputs
 
-App inputs allow you to define different inputs that customer's can provide. This enables you to create "configuration" knobs that your customers can manage to control your application.
+App inputs allow you to define different inputs that customers can provide. This enables you to create "configuration" knobs that your customers can manage to control your application.
 
 App inputs are commonly used to:
 
-* allow users to select regions, and provide access to an account.
-* customize infrastructure versions, such as pinning a kubernetes cluster version.
-* re-use existing infrastructure, such as providing a `vpc_id` that has been granted access.
+* Allow users to select regions and provide access to an account
+* Customize infrastructure versions, such as pinning a Kubernetes cluster version
+* Re-use existing infrastructure, such as providing a `vpc_id` that has been granted access
 
 Read more about app inputs [here](/concepts/app-inputs).
 
@@ -54,11 +53,11 @@ Read more about app inputs [here](/concepts/app-inputs).
 App components are used to connect your existing application and infrastructure code to your Nuon app.
 
 Components allow you to:
-* import existing images, or build Dockerfiles and sync these artifacts into customer accounts.
-* deploy helm charts
-* deploy terraform code
+* Import existing images, or build Dockerfiles and sync these artifacts into customer accounts
+* Deploy Helm charts
+* Deploy Terraform code
 
-Nuon apps allow you to create dependencies between components and exposes a rich configuration language to share outputs
+Nuon apps allow you to create dependencies between components and expose a rich configuration language to share outputs
 between components for configuration. You can use [variables](/guides/using-variables) to configure components with
 the outputs of other components.
 
@@ -67,22 +66,22 @@ the outputs of other components.
 Nuon deploys an app runner into each install, which is responsible for managing the install. This runner performs the
 following actions:
 
-* deploys new container artifacts and infrastructure
-* monitors running software
-* manages releases, and updating/deprovisioning parts of the app
-* operations such as logs, and more.
+* Deploys new container artifacts and infrastructure
+* Monitors running software
+* Manages releases and updating/deprovisioning parts of the app
+* Handles operations such as logs and more
 
 Read more about app runner config [here](/concepts/runners).
 
 ## App Management
 
-The [cli](/cli) exposes many operational commands to manage apps.
+The [CLI](/cli) exposes many operational commands to manage apps.
 
 To see all available commands, run: `nuon apps --help`.
 
 ### Pinning an App
 
-You can pin an app, which will set it's ID as a default argument to all app commands. This is helpful to avoid 
+You can pin an app, which will set its ID as a default argument to all app commands. This is helpful to avoid 
 having to pass `-a` to each command.
 
 <CodeGroup>
@@ -105,9 +104,9 @@ nuon apps current
 
 ### App Management Commands
 
-Commands for creating, deleting and viewing apps.
+Commands for creating, deleting, and viewing apps.
 
-**Create an app** - create an app and kickstart a [config file](/configuration-files).
+**Create an app** - Create an app and kickstart a [config file](/configuration-files).
 
 <CodeGroup>
 ```sh nuon
@@ -116,7 +115,7 @@ nuon apps create  \
 ```
 </CodeGroup>
 
-**Get an app** - get an app
+**Get an app** - Get an app
 
 <CodeGroup>
 ```sh nuon
@@ -124,7 +123,7 @@ nuon apps get
 ```
 </CodeGroup>
 
-**List all apps** - list all apps
+**List all apps** - List all apps
 
 <CodeGroup>
 ```sh nuon
@@ -132,7 +131,7 @@ nuon apps list
 ```
 </CodeGroup>
 
-**rename** - rename an app
+**Rename** - Rename an app
 
 <CodeGroup>
 ```sh nuon
@@ -142,9 +141,9 @@ nuon apps rename --name=new-name
 
 ### Configuration
 
-You can view various configs for an app, and sync configuration files using the [CLI](/cli).
+You can view various configs for an app and sync configuration files using the [CLI](/cli).
 
-**sync** - sync config files
+**Sync** - Sync config files
 
 Sync all config files in the current directory:
 <CodeGroup>
@@ -160,7 +159,7 @@ nuon apps sync -c <path-to-config.toml>
 ```
 </CodeGroup>
 
-**configs** - list all config versions for an app
+**Configs** - List all config versions for an app
 
 <CodeGroup>
 ```sh nuon
@@ -168,7 +167,7 @@ nuon apps configs
 ```
 </CodeGroup>
 
-**export-terraform** - export the current application configuration as Terraform JSON.
+**Export-terraform** - Export the current application configuration as Terraform JSON
 
 <CodeGroup>
 ```sh nuon
@@ -176,7 +175,7 @@ nuon apps export-terraform
 ```
 </CodeGroup>
 
-**runner-config** - print the current runner config
+**Runner-config** - Print the current runner config
 
 <CodeGroup>
 ```sh nuon
@@ -184,7 +183,7 @@ nuon apps runner-config
 ```
 </CodeGroup>
 
-**sandbox-config** - print the current sandbox config
+**Sandbox-config** - Print the current sandbox config
 
 <CodeGroup>
 ```sh nuon
@@ -192,7 +191,7 @@ nuon apps sandbox-config
 ```
 </CodeGroup>
 
-**input-config** - print the current input config
+**Input-config** - Print the current input config
 
 <CodeGroup>
 ```sh nuon
@@ -207,7 +206,7 @@ You can add the following metadata to your application, which is used in install
 * `display_name`
 * `description`
 
-This metadata can be added via a config file or `terraform`:
+This metadata can be added via a config file or Terraform:
 
 <CodeGroup>
 ```toml TOML
