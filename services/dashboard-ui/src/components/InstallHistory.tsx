@@ -41,6 +41,7 @@ function parseInstallHistory(
       event.operation === 'reprovision' ||
       event.operation === 'deprovision'
     ) {
+
       const historyEvent: TInstallHistoryEvent = {
         component_id: payload?.install_component_id as string,
         component_name: payload?.component_name as string,
@@ -48,7 +49,7 @@ function parseInstallHistory(
         event_id: event.id,
         install_id: event.install_id,
         operation: event.operation,
-        operation_name: event.operation_name,
+        operation_name: payload?.install_deploy_type === "teardown" ? "Teardown" : event.operation_name,
         operation_status: event.operation_status,
         org_id: event.org_id,
         payload_id: payload.id as string,
