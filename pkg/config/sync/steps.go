@@ -52,6 +52,7 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 				obj.Dependencies = deps
 				compID, err := s.syncComponent(ctx, resourceName, obj)
 				if err != nil {
+					s.reconcileStates()
 					return err
 				}
 
@@ -60,8 +61,6 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 			},
 		})
 	}
-
-	// NOTE: uncomment to test action syncing
 
 	for _, action := range s.cfg.Actions {
 		obj := action
