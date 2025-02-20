@@ -87,6 +87,7 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 	// occurred while fetching the most recent heartbeat into an appropriate status, and therefore
 	// should be done before any other checks.
 	newStatus := w.determineStatusFromHeartBeat(ctx, heartbeat)
+	status = string(newStatus)
 
 	_, err = activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
 		RunnerID: req.RunnerID,
@@ -114,11 +115,12 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 		}
 	}
 
+	// no change as the old status is the same as the new status
 	if newStatus == currentStatus {
 		return nil
 	}
 
-	// actual status change of a runner
+	// the runner changed statuses
 	w.mw.Incr(ctx, "runner.health_check_change", metrics.ToTags(tags)...)
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		RunnerID:          req.RunnerID,
