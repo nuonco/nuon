@@ -88,7 +88,7 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 	// should be done before any other checks.
 	newStatus := w.determineStatusFromHeartBeat(ctx, heartbeat)
 
-	healthcheck, err := activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
+	_, err = activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
 		RunnerID: req.RunnerID,
 		Status:   newStatus,
 	})
@@ -97,13 +97,17 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 		return errors.Wrap(err, "unable to create runner health check")
 	}
 
+	if err := w.checkRecentRestart(ctx, heartbeat, req.RunnerID); err != nil {
+		return errors.Wrap(err, "unable to check recent restart")
+	}
+
 	// If we've got a healthy status, then check to see if the version needs
 	// updating.  Only check if healthy, to avoid exacerbating issues the runner
 	// may be having. This should also prevent subsequent runs of this workflow
 	// from re-attempting the same version check, potentially creating a race
 	// condition.
 	if newStatus == app.RunnerStatusActive {
-		err = w.checkUpdateNeeded(ctx, heartbeat, healthcheck, req.RunnerID)
+		// err = w.checkUpdateNeeded(ctx, heartbeat, healthcheck, req.RunnerID)
 		if err != nil {
 			status = "error_failed_update_check"
 			return errors.Wrap(err, "failed to check for needed update")
@@ -139,6 +143,27 @@ func (w *Workflows) determineStatusFromHeartBeat(ctx workflow.Context, heartbeat
 	}
 
 	return app.RunnerStatusActive
+}
+
+func (w *Workflows) checkRecentRestart(
+	ctx workflow.Context,
+	heartbeat *app.RunnerHeartBeat,
+	runnerID string,
+) error {
+	if heartbeat.AliveTime > time.Second*5 {
+		return nil
+	}
+
+	runner, err := activities.AwaitGetByRunnerID(ctx, runnerID)
+	if err != nil {
+		// This should be unreachable, given that we already retrieved status
+		return errors.Wrap(err, "unable to get runner")
+	}
+	w.mw.Incr(ctx, "runner.restart", metrics.ToTags(map[string]string{
+		"runner_type": string(runner.RunnerGroup.Type),
+	})...)
+
+	return nil
 }
 
 func (w *Workflows) checkUpdateNeeded(
