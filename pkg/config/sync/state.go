@@ -100,3 +100,40 @@ func (s *sync) fetchState(ctx context.Context) error {
 	s.prevState = &prevState
 	return nil
 }
+
+// add previous component state to current state if it is present in the cfg and prevoius state
+// but is not present in the current state.
+// required to ensure state persists between configs if we have a partial sync.
+func (s *sync) reconcileStates() {
+	// reconcile components
+	for _, comp := range s.cfg.Components {
+		obj := comp
+
+		resourceName := obj.Name
+		prevCompState := s.getPrevComponentStateByName(resourceName)
+		if prevCompState != nil && s.getComponentStateByName(resourceName) == nil {
+			// if component is not in the current state, add it
+			s.state.Components = append(s.state.Components, *prevCompState)
+		}
+	}
+}
+
+func (s *sync) getPrevComponentStateByName(name string) *componentState {
+	for _, comp := range s.prevState.Components {
+		if comp.Name == name {
+			return &comp
+		}
+	}
+
+	return nil
+}
+
+func (s *sync) getComponentStateByName(name string) *componentState {
+	for _, comp := range s.state.Components {
+		if comp.Name == name {
+			return &comp
+		}
+	}
+
+	return nil
+}
