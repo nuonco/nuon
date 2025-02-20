@@ -151,9 +151,10 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
               </ToolTip>
             </Text>
           </span>
-           {CANCEL_RUNNER_JOBS &&
+          {CANCEL_RUNNER_JOBS &&
           deploy?.status !== 'active' &&
-          deploy?.status !== 'error' ? (
+          deploy?.status !== 'error' &&
+          deploy?.status !== 'inactive' ? (
             <CancelRunnerJobButton
               jobType="deploy"
               runnerJobId={deploy?.runner_jobs?.at(-1)?.id}

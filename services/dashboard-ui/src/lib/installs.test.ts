@@ -26,6 +26,7 @@ import {
   getInstallComponentOutputs,
   teardownInstallComponents,
   updateInstall,
+  forgetInstall,
 } from './installs'
 
 describe('getInstalls should handle response status codes from GET installs endpoint', () => {
@@ -517,6 +518,26 @@ describe('teardownInstallComponents should handle response status codes from POS
 
   test.each(badResponseCodes)('%s status', async () => {
     await teardownInstallComponents({
+      installId,
+      orgId,
+    }).catch((err) => expect(err).toMatchSnapshot())
+  })
+})
+
+describe.skip('forgetInstall should handle response status codes from POST installs/:id/forget endpoint', () => {
+  const orgId = 'test-id'
+  const installId = 'test-id'
+
+  test('200 status', async () => {
+    const spec = await forgetInstall({
+      installId,
+      orgId,
+    })
+    expect(spec).toBeTruthy()
+  })
+
+  test.each(badResponseCodes)('%s status', async () => {
+    await forgetInstall({
       installId,
       orgId,
     }).catch((err) => expect(err).toMatchSnapshot())
