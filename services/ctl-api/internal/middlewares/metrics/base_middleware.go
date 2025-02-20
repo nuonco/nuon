@@ -46,7 +46,7 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 			status = "err"
 		}
 
-		targetLatencyStatus := time.Since(startTS) > targetLatency
+		withinTargetLatency := time.Since(startTS) < targetLatency
 		statusCodeClass := fmt.Sprintf("%dxx", c.Writer.Status()/100)
 		tags := []string{
 			"status:" + status,
@@ -54,7 +54,7 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 			"endpoint:" + endpoint,
 			"method:" + c.Request.Method,
 			"context:" + m.context,
-			"within_target_latency:" + strconv.FormatBool(targetLatencyStatus),
+			"within_target_latency:" + strconv.FormatBool(withinTargetLatency),
 		}
 
 		m.writer.Incr("api.request.status", tags)

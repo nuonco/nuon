@@ -86,13 +86,18 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		Preload("App.Org").
 		Preload("CreatedBy").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs_view_v1.created_at DESC")
+			return db.Order("install_inputs_view_v1.created_at DESC").Limit(1)
 		}).
 		Preload("InstallComponents").
 		Preload("InstallComponents.Component").
 		Preload("InstallComponents.Component.Dependencies").
 		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_deploys.created_at DESC")
+			return db.
+				Distinct(
+					"install_component_id",
+				).
+				Select("*").
+				Order("install_deploys.created_at DESC")
 		}).
 		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig.PublicGitVCSConfig").
@@ -101,7 +106,7 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_sandbox_runs.created_at DESC")
+			return db.Order("install_sandbox_runs.created_at DESC").Limit(5)
 		}).
 		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Where("name = ? AND org_id = ?", installID, orgID).
