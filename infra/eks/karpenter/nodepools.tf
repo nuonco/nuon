@@ -112,7 +112,7 @@ resource "kubectl_manifest" "additional_nodepools" {
             {
               "key"      = "node.kubernetes.io/instance-type"
               "operator" = "In"
-              "values"   = var.instance_types
+              "values"   = each.value.instance_types
             },
             {
               key      = "topology.kubernetes.io/zone"

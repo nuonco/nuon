@@ -38,9 +38,15 @@ additional_nodepools:
       # in this case, between 3AM EST/8AM UTC 7AM EST/12PM UTC
       # we start the node=0 budget at 3AM and it lasts for 20 hours
       budgets:
-        - nodes: "0"
+        - nodes: "1" # allow empty nodes to be consolidated
+          reasons:
+          - "Empty"
+          - "Drifted"
+        - nodes: "1"
           schedule: "0 8 * * 1,2,3,4,5" # https://crontab.guru/#0_8_*_*_1,2,3,4,5
           duration: "20h"
+          reasons:
+          - "Underutilized"
     taints:
       - key: pool.nuon.co/public
         effect: NoSchedule
