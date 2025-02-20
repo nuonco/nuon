@@ -34,6 +34,7 @@ import (
 
 	noopoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/noop"
 	shutdownoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/shutdown"
+	updateoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/update"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/heartbeater"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
 )
@@ -78,6 +79,7 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 		fx.Provide(jobloop.AsJobLoop(operations.NewJobLoop)),
 		fx.Provide(jobs.AsJobHandler("operations", noopoperation.New)),
 		fx.Provide(jobs.AsJobHandler("operations", shutdownoperation.New)),
+		fx.Provide(jobs.AsJobHandler("operations", updateoperation.New)),
 
 		// sandbox jobs
 		fx.Provide(jobloop.AsJobLoop(sandbox.NewJobLoop)),

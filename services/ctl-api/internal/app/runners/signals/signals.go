@@ -16,14 +16,15 @@ const (
 )
 
 const (
-	OperationCreated     eventloop.SignalType = "created"
-	OperationRestart     eventloop.SignalType = "restart"
-	OperationProvision   eventloop.SignalType = "provision"
-	OperationDeprovision eventloop.SignalType = "deprovision"
-	OperationReprovision eventloop.SignalType = "reprovision"
-	OperationDelete      eventloop.SignalType = "delete"
-	OperationForceDelete eventloop.SignalType = "force_delete"
-	OperationProcessJob  eventloop.SignalType = "process_job"
+	OperationCreated       eventloop.SignalType = "created"
+	OperationRestart       eventloop.SignalType = "restart"
+	OperationProvision     eventloop.SignalType = "provision"
+	OperationDeprovision   eventloop.SignalType = "deprovision"
+	OperationReprovision   eventloop.SignalType = "reprovision"
+	OperationDelete        eventloop.SignalType = "delete"
+	OperationForceDelete   eventloop.SignalType = "force_delete"
+	OperationProcessJob    eventloop.SignalType = "process_job"
+	OperationUpdateVersion eventloop.SignalType = "update_version"
 )
 
 type Signal struct {
@@ -31,7 +32,8 @@ type Signal struct {
 
 	eventloop.BaseSignal
 
-	JobID string `validate:"required_if=Type=job_queued`
+	JobID         string `validate:"required_if=Type job_queued"`
+	HealthCheckID string `validate:"required_if=Type update_version"`
 }
 
 type RequestSignal struct {

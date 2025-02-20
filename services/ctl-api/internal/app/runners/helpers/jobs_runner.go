@@ -40,3 +40,12 @@ func (h *Helpers) CreateRunnerJob(ctx context.Context,
 
 	return job, nil
 }
+
+func (h *Helpers) GetRunnerJob(ctx context.Context, jobID string) (*app.RunnerJob, error) {
+	job := &app.RunnerJob{}
+	if res := h.db.WithContext(ctx).Where("id = ?", jobID).First(&job); res.Error != nil {
+		return nil, fmt.Errorf("unable to get runner job: %w", res.Error)
+	}
+
+	return job, nil
+}
