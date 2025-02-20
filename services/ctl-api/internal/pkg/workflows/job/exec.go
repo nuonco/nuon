@@ -122,7 +122,10 @@ func (j *Workflows) pollJob(ctx workflow.Context, jobID string) (app.RunnerJobSt
 
 		// handle failure states here
 		if generics.SliceContains(job.Status, failureStatuses) {
-			l.Error(fmt.Sprintf("job failed with %s status", job.Status), zap.Any("status", job.Status))
+			l.Error(fmt.Sprintf("job failed with status (%s) (%s)", job.Status, job.StatusDescription),
+				zap.Any("status", job.Status),
+				zap.Any("status_description", job.StatusDescription),
+			)
 			return job.Status, temporal.NewNonRetryableApplicationError("job did not succeed", "api", fmt.Errorf("job failed with status %s", job.Status))
 		}
 
