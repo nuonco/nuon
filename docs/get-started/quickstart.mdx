@@ -8,7 +8,7 @@ import { tutorials } from '/snippets/guides.mdx';
 This guide will walk you through getting started with Nuon.
 
 <Note>
-You must request an org before you can complete this guide. Please reach out to us.
+You must request an organization before you can complete this guide. Please reach out to us.
 </Note>
 
 ## Install the CLI
@@ -29,11 +29,11 @@ Once you have installed the Nuon CLI, log in.
 nuon login
 ```
 
-Follow the prompts in the browser and log in using a Google account. Once you've logged in you can verify your API token with the `nuon orgs api-token` command. You should also now have a config file at `~/.nuon`. Values saved to this file will be used as CLI flag defaults.
+Follow the prompts in the browser and log in using a Google account. Once you've logged in, you can verify your API token with the `nuon orgs api-token` command. You should also now have a config file at `~/.nuon`. Values saved to this file will be used as CLI flag defaults.
 
-## Select your Org
+## Select Your Organization
 
-Now that you are logged in you can select your organization to start using it.
+Now that you are logged in, you can select your organization to start using it.
 
 ```sh
 nuon orgs select
@@ -45,15 +45,15 @@ Confirm you have selected the correct organization.
 nuon orgs current
 ```
 
-## Connect your GitHub Account
+## Connect Your GitHub Account
 
-To deploy code from private repos you will need to connect to your GitHub account or organization.
+To deploy code from private repositories, you will need to connect to your GitHub account or organization.
 
 ```sh
 nuon orgs connect-github
 ```
 
-Confirm the repo is connected.
+Confirm the repository is connected.
 
 ```sh
 nuon orgs list-connected-repos

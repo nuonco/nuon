@@ -3,19 +3,19 @@ title: "Glossary"
 description: "Gain a basic understanding of what Nuon is and how it works."
 ---
 
-Nuon is a platform you can use to build, deploy and manage BYOC apps. This page provides an overview of basic concepts essential to understanding how Nuon works.
+Nuon is a platform you can use to build, deploy, and manage BYOC apps. This page provides an overview of basic concepts essential to understanding how Nuon works.
 
 ## Organizations
 
-In Nuon, organizations are the top-level workspace under which all operations are performed. All your apps and VCS connections are created under your org, and you grant team members access by adding them to your org.
+In Nuon, organizations are the top-level workspace under which all operations are performed. All your apps and VCS connections are created under your organization, and you grant team members access by adding them to your organization.
 
 ### Org Server and Runner
 
-When you create an org, we provisiona single-tennant server and build runner for you. The server manages the execution of builds and deploys, and is the only part of our system that has access to your source code and your customer installs.
+When you create an organization, we provision a single-tenant server and build runner for you. The server manages the execution of builds and deploys. It is the only part of our system that has access to your source code and your customer installs.
 
 ### VCS Connections
 
-In order to use source code from private repos for your components, you need to connect your Nuon org to your version control system. Refer to our [Connect Github guide](/guides/vcs) for more details.
+In order to use source code from private repositories for your components, you need to connect your Nuon organization to your Version Control System (VCS). Refer to our [Connect GitHub guide](/guides/vcs) for more details.
 
 ## Apps
 
@@ -23,7 +23,7 @@ Nuon apps are versions of your application code and infrastructure that can be d
 
 ### Components
 
-Nuon app components are how you tell Nuon what your app consists of. We currently support:
+Nuon app components define what your app consists of. We currently support:
 
 - [Dockerfiles](/guides/docker-build-components)
 - [Container Images](/guides/container-image-components)
@@ -40,10 +40,10 @@ An install is an instance of your app running in a customer's cloud. Refer to ou
 
 ## Installers
 
-An installer provides a convenient way for your customers to install your app in their cloud. Configure an installer with your branding, custom content and metadata, and the apps you want the installer to support. You can then use it to power a customer-friendly installation UI flow. Refer to our [Installers guide](/concepts/installers) for more information.
+An installer provides a convenient way for your customers to install your app in their cloud. Configure an installer with your branding, custom content, and metadata, along with the apps you want the installer to support. You can then use it to power a customer-friendly installation UI flow. Refer to our [Installers guide](/concepts/installers) for more information.
 
 ## Builds, Deploys, and Releases
 
-A build packages your a component's source code into an artifact that can be deployed to customer installs. A deploy syncs a component build to a customer install, and then provisions the resources that component defines.
+A build packages your component's source code into an artifact that can be deployed to customer installs. A deploy syncs a component build to a customer install and then provisions the resources that component defines.
 
 Releases orchestrate creating deploys, saving you the overhead of managing thousands of installs yourself. Refer to our [Creating a Release guide](/guides/create-releases) for more details.

@@ -1,26 +1,26 @@
 ---
 title: 'Components'
-description: 'Connect and configure your application using your existing container images, infrastructure as code and devops automation.' 
+description: 'Connect and configure your application using your existing container images, infrastructure as code, and DevOps automation.' 
 ---
 
-Nuon supports several different component types which allow you to connect your existing devops automation, 
-infrastructure as code and containers to your app.
+Nuon supports several different component types that allow you to connect your existing DevOps automation, 
+infrastructure as code, and containers to your app.
 
 ## What is a Component?
 
-A component represents a part of your application, Nuon supports the following components:
+A component represents a part of your application. Nuon supports the following component types:
 
-* [Docker](/guides/docker-build-components) - any Dockerfile that can be built.
-* [Container Images](/guides/container-image-components) - any prebuilt OCI image.
-* [Helm Charts](/guides/helm-chart-components) - any Helm chart located in a repository.
-* [Terraform](/guides/terraform-components) - any Terraform module.
-* [Jobs](/guides/job-components) - any script that can be executed using an OCI image.
+* [Docker](/guides/docker-build-components) - Any Dockerfile that can be built
+* [Container Images](/guides/container-image-components) - Any prebuilt OCI image
+* [Helm Charts](/guides/helm-chart-components) - Any Helm chart located in a repository
+* [Terraform](/guides/terraform-components) - Any Terraform module
+* [Jobs](/guides/job-components) - Any script that can be executed using an OCI image
 
-Setting up an application requires definining and testing your application configuration.
+Setting up an application requires defining and testing your application configuration.
 
 ## Component Management
 
-The [cli](/cli) exposes many operational commands to manage components.
+The [CLI](/cli) exposes many operational commands to manage components.
 
 To see all available commands, run: `nuon components --help`.
 
@@ -31,7 +31,7 @@ component command.
 
 ### Pinning a Component
 
-You can pin a component, which will set it's ID as a default argument to all component commands. This is helpful to avoid 
+You can pin a component, which will set its ID as a default argument to all component commands. This is helpful to avoid 
 having to pass `-c` to each command.
 
 <CodeGroup>
@@ -54,7 +54,7 @@ nuon components current
 
 ### Component Management Commands
 
-Commands for working with components
+Commands for working with components:
 
 <Note>
 Components can only be created using the Terraform provider or configuration file.
@@ -69,29 +69,25 @@ nuon components get
 
 **List components** - List components for an app.
 
-<Note>
-It is not recommended to delete components using the CLI, but rather to manage them using Terraform or config files.
-</Note>
-
 <CodeGroup>
 ```sh nuon
 nuon components list
 ```
 </CodeGroup>
 
-**Delete a component** - delete a component
+**Delete a component** - Delete a component.
 
 <Note>
-It is not recommended to delete components using the CLI, but rather to manage them using Terraform or config files.
+It is not recommended to delete components using the CLI. Instead, manage them using Terraform or config files.
 </Note>
 
 <CodeGroup>
 ```sh nuon
-nuon components delete  -c component_id
+nuon components delete -c component_id
 ```
 </CodeGroup>
 
-**Print a component config** - print the latest configuration for a component.
+**Print a component config** - Print the latest configuration for a component.
 
 <CodeGroup>
 ```sh nuon
@@ -104,7 +100,7 @@ nuon components latest-config
 All components must be built before releasing. The release commands support an `-auto-build` flag which will trigger a 
 build.
 
-**Create a build** - create a build using the latest component configuration.
+**Create a build** - Create a build using the latest component configuration.
 
 <CodeGroup>
 ```sh nuon
@@ -112,7 +108,7 @@ nuon builds create -c component_id
 ```
 </CodeGroup>
 
-**List builds** - list builds for a component.
+**List builds** - List builds for a component.
 
 <CodeGroup>
 ```sh nuon
@@ -120,7 +116,7 @@ nuon builds list
 ```
 </CodeGroup>
 
-**Get a build** - print out build details.
+**Get a build** - Print out build details.
 
 <CodeGroup>
 ```sh nuon
@@ -128,7 +124,7 @@ nuon builds get -b <build-id>
 ```
 </CodeGroup>
 
-**Logs** - show logs for a build.
+**Logs** - Show logs for a build.
 
 <CodeGroup>
 ```sh nuon
@@ -136,7 +132,7 @@ nuon builds logs -b <build-id>
 ```
 </CodeGroup>
 
-**Print Plan** - print a build plan with configuration for the build.
+**Print Plan** - Print a build plan with configuration for the build.
 
 <CodeGroup>
 ```sh nuon
