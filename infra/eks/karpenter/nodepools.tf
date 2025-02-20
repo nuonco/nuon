@@ -90,7 +90,7 @@ resource "kubectl_manifest" "additional_nodepools" {
       template = {
         metadata = {
           labels = {
-            "pool.nuon.com" : each.value.name
+            "pool.nuon.co" : each.value.name
           }
         }
         spec = {
