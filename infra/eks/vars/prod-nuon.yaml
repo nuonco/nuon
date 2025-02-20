@@ -41,3 +41,7 @@ additional_nodepools:
         - nodes: "0"
           schedule: "0 8 * * 1,2,3,4,5" # https://crontab.guru/#0_8_*_*_1,2,3,4,5
           duration: "20h"
+    taints:
+      - key: pool.nuon.co/public
+        effect: NoSchedule
+

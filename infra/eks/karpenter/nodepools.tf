@@ -88,6 +88,11 @@ resource "kubectl_manifest" "additional_nodepools" {
         memory = each.value.limits.memory
       }
       template = {
+        metadata = {
+          labels = {
+            "pool.nuon.com" : each.value.name
+          }
+        }
         spec = {
           expireAfter = each.value.expireAfter
           nodeClassRef = {
@@ -119,6 +124,7 @@ resource "kubectl_manifest" "additional_nodepools" {
               ]
             },
           ]
+          taints = each.value.taints
         }
       }
       # https://karpenter.sh/v1.0/concepts/disruption/

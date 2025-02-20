@@ -37,3 +37,7 @@ additional_nodepools:
       # differs from prod to help us identify any issues w/ node rotation.
       budgets:
         - nodes: "1"
+    taints:
+      - key: pool.nuon.co/public
+        effect: NoSchedule
+
