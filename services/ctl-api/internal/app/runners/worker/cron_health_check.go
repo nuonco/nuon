@@ -12,7 +12,9 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 const (
@@ -44,10 +46,9 @@ type HealthCheckRequest struct {
 func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) error {
 	startTS := workflow.Now(ctx)
 	status := "ok"
-	tags := map[string]string{
-		"status": status,
-	}
+	tags := map[string]string{}
 	defer func() {
+		tags["status"] = status
 		e2eLatency := workflow.Now(ctx).Sub(startTS)
 		w.mw.Incr(ctx, "runner.health_check", metrics.ToTags(tags)...)
 		w.mw.Timing(ctx, "runner.health_check_timing", e2eLatency, metrics.ToTags(tags)...)
@@ -76,20 +77,38 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 		return nil
 	}
 
-	// ensure the status is created correctly
-	newStatus, err := w.getRunnerHeartBeatsStatus(ctx, req.RunnerID)
+	// The next few checks require the most recent heartbeat. Fetch it, then pass it down to them
+	heartbeat, err := activities.AwaitGetMostRecentHeartBeatRequestByRunnerID(ctx, req.RunnerID)
 	if err != nil {
 		status = "error_fetching_heart_beats"
 		return errors.Wrap(err, "unable to get status from heart beats")
 	}
 
-	_, err = activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
+	// Ensure the status is created correctly. This will also translate any error that might have
+	// occurred while fetching the most recent heartbeat into an appropriate status, and therefore
+	// should be done before any other checks.
+	newStatus := w.determineStatusFromHeartBeat(ctx, heartbeat)
+
+	healthcheck, err := activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
 		RunnerID: req.RunnerID,
 		Status:   newStatus,
 	})
 	if err != nil {
 		status = "error"
 		return errors.Wrap(err, "unable to create runner health check")
+	}
+
+	// If we've got a healthy status, then check to see if the version needs
+	// updating.  Only check if healthy, to avoid exacerbating issues the runner
+	// may be having. This should also prevent subsequent runs of this workflow
+	// from re-attempting the same version check, potentially creating a race
+	// condition.
+	if newStatus == app.RunnerStatusActive {
+		err = w.checkUpdateNeeded(ctx, heartbeat, healthcheck, req.RunnerID)
+		if err != nil {
+			status = "error_failed_update_check"
+			return errors.Wrap(err, "failed to check for needed update")
+		}
 	}
 
 	if newStatus == currentStatus {
@@ -110,21 +129,50 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 	return nil
 }
 
-func (w *Workflows) getRunnerHeartBeatsStatus(ctx workflow.Context, runnerID string) (app.RunnerStatus, error) {
-	// most recent heart beat
-	hb, err := activities.AwaitGetMostRecentHeartBeatRequestByRunnerID(ctx, runnerID)
-	if err != nil {
-		return app.RunnerStatusUnknown, err
-	}
-	if hb == nil {
-		return app.RunnerStatusError, nil
+func (w *Workflows) determineStatusFromHeartBeat(ctx workflow.Context, heartbeat *app.RunnerHeartBeat) app.RunnerStatus {
+	if heartbeat == nil {
+		return app.RunnerStatusError
 	}
 
-	// update the runner status
 	minHeartBeatTS := workflow.Now(ctx).Add(-heartBeatTimeout)
-	if hb.CreatedAt.Before(minHeartBeatTS) {
-		return app.RunnerStatusError, nil
+	if heartbeat.CreatedAt.Before(minHeartBeatTS) {
+		return app.RunnerStatusError
 	}
 
-	return app.RunnerStatusActive, nil
+	return app.RunnerStatusActive
+}
+
+func (w *Workflows) checkUpdateNeeded(
+	ctx workflow.Context,
+	heartbeat *app.RunnerHeartBeat,
+	healthcheck *app.RunnerHealthCheck,
+	runnerID string,
+) error {
+	runner, err := activities.AwaitGetByRunnerID(ctx, runnerID)
+	if err != nil {
+		// This should be unreachable, given that we already retrieved status
+		return errors.Wrap(err, "unable to get runner")
+	}
+
+	var needsUpdate bool
+	if runner.RunnerGroup.Settings.ExpectedVersion == "latest" {
+		needsUpdate = heartbeat.Version != w.cfg.Version
+	} else if heartbeat.Version != runner.RunnerGroup.Settings.ExpectedVersion {
+		// NOTE(sdboyer) this branch is unreachable until we have a versioning
+		// strategy other than latest.
+		needsUpdate = true
+	}
+
+	if needsUpdate {
+		w.evClient.Send(ctx, runnerID, &signals.RequestSignal{
+			Signal: &signals.Signal{
+				Type:          signals.OperationUpdateVersion,
+				HealthCheckID: healthcheck.ID,
+			},
+			EventLoopRequest: eventloop.EventLoopRequest{
+				ID: runnerID,
+			},
+		})
+	}
+	return nil
 }
