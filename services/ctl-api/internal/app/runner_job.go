@@ -178,7 +178,7 @@ type RunnerJob struct {
 	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedBy   Account `json:"-"`
 
-	CreatedAt time.Time             `json:"created_at" gorm:"notnull;index:idx_runner_jobs_query,priority:4,sort:desc"`
+	CreatedAt time.Time             `json:"created_at" gorm:"notnull;index:idx_runner_jobs_query,priority:4,sort:desc;index:idx_runner_jobs_owner_id,priority:2,sort:desc"`
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_name,unique;"`
 
@@ -186,7 +186,7 @@ type RunnerJob struct {
 	Org   Org    `json:"-"`
 
 	RunnerID    string  `json:"runner_id" gorm:"index:idx_runner_name,unique;index:idx_runner_jobs_query,priority:1"`
-	OwnerID     string  `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26"`
+	OwnerID     string  `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1"`
 	OwnerType   string  `json:"owner_type" gorm:"type:text;"`
 	LogStreamID *string `json:"log_stream_id"`
 
