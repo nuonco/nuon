@@ -28,6 +28,7 @@ type RunnerGroupSettings struct {
 	// configuration for deploying the runner
 	ContainerImageURL string `json:"container_image_url"  gorm:"default null;not null"`
 	ContainerImageTag string `json:"container_image_tag"  gorm:"default null;not null"`
+	ExpectedVersion   string `json:"-" temporaljson:"expected_version" gorm:"-"`
 	RunnerAPIURL      string `json:"runner_api_url" gorm:"default null;not null"`
 
 	// configuration for managing the runner server side
@@ -62,5 +63,10 @@ func (r *RunnerGroupSettings) BeforeCreate(tx *gorm.DB) error {
 		r.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
 
+	return nil
+}
+
+func (r *RunnerGroupSettings) AfterQuery(tx *gorm.DB) error {
+	r.ExpectedVersion = r.ContainerImageTag
 	return nil
 }

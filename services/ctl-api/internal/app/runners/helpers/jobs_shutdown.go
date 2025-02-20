@@ -2,31 +2,24 @@ package helpers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
 func (h *Helpers) CreateShutdownJob(ctx context.Context,
 	runnerID string,
+	ownerID string,
+	logStreamID string,
 	metadata map[string]string,
 ) (*app.RunnerJob, error) {
-	job := &app.RunnerJob{
-		RunnerID:          runnerID,
-		QueueTimeout:      DefaultQueueTimeout,
-		ExecutionTimeout:  DefaultExecutionTimeout,
-		AvailableTimeout:  DefaultAvailableTimeout,
-		MaxExecutions:     DefaultMaxExecutions,
-		Status:            app.RunnerJobStatusQueued,
-		StatusDescription: string(app.RunnerJobStatusQueued),
-		Type:              app.RunnerJobTypeShutDown,
-		Metadata:          generics.ToHstore(metadata),
-	}
-
-	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {
-		return nil, fmt.Errorf("unable to create job: %w", res.Error)
-	}
-
-	return job, nil
+	return h.CreateRunnerJob(
+		ctx,
+		runnerID,
+		"runners",
+		ownerID,
+		app.RunnerJobTypeShutDown,
+		app.RunnerJobOperationTypeExec,
+		logStreamID,
+		metadata,
+	)
 }

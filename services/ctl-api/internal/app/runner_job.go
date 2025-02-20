@@ -89,8 +89,9 @@ const (
 	RunnerJobTypeJobNOOPDeploy   RunnerJobType = "noop-deploy"
 
 	// operations job types
-	RunnerJobTypeShutDown RunnerJobType = "shut-down"
-	RunnerJobTypeNOOP     RunnerJobType = "noop"
+	RunnerJobTypeShutDown      RunnerJobType = "shut-down"
+	RunnerJobTypeUpdateVersion RunnerJobType = "update-version"
+	RunnerJobTypeNOOP          RunnerJobType = "noop"
 
 	// sandbox job types
 	RunnerJobTypeSandboxTerraform RunnerJobType = "sandbox-terraform"
@@ -143,7 +144,7 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		return RunnerJobGroupHealthChecks
 
 		// operations
-	case RunnerJobTypeNOOP, RunnerJobTypeShutDown:
+	case RunnerJobTypeNOOP, RunnerJobTypeShutDown, RunnerJobTypeUpdateVersion:
 		return RunnerJobGroupOperations
 
 	case RunnerJobTypeActionsWorkflowRun:

@@ -23,10 +23,11 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			})
 			return w.AwaitCreated(ctx, req)
 		},
-		signals.OperationProvision:   w.AwaitProvision,
-		signals.OperationReprovision: w.AwaitReprovision,
-		signals.OperationDeprovision: w.AwaitDeprovision,
-		signals.OperationProcessJob:  w.AwaitProcessJob,
+		signals.OperationProvision:     w.AwaitProvision,
+		signals.OperationReprovision:   w.AwaitReprovision,
+		signals.OperationDeprovision:   w.AwaitDeprovision,
+		signals.OperationProcessJob:    w.AwaitProcessJob,
+		signals.OperationUpdateVersion: w.AwaitUpdateVersion,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
