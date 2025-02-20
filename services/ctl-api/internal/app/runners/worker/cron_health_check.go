@@ -2,6 +2,7 @@ package worker
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	enumsv1 "go.temporal.io/api/enums/v1"
@@ -12,9 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 const (
@@ -163,16 +162,22 @@ func (w *Workflows) checkUpdateNeeded(
 		needsUpdate = true
 	}
 
-	if needsUpdate {
-		w.evClient.Send(ctx, runnerID, &signals.RequestSignal{
-			Signal: &signals.Signal{
-				Type:          signals.OperationUpdateVersion,
-				HealthCheckID: healthcheck.ID,
-			},
-			EventLoopRequest: eventloop.EventLoopRequest{
-				ID: runnerID,
-			},
-		})
-	}
+	// NOTE(jm): if we need an update, we just write a metric
+	w.mw.Incr(ctx, "runner.version_update", metrics.ToTags(map[string]string{
+		"runner_type":          string(runner.RunnerGroup.Type),
+		"needs_version_update": strconv.FormatBool(needsUpdate),
+	})...)
+
+	//if needsUpdate {
+	//w.evClient.Send(ctx, runnerID, &signals.RequestSignal{
+	//Signal: &signals.Signal{
+	//Type:          signals.OperationUpdateVersion,
+	//HealthCheckID: healthcheck.ID,
+	//},
+	//EventLoopRequest: eventloop.EventLoopRequest{
+	//ID: runnerID,
+	//},
+	//})
+	//}
 	return nil
 }
