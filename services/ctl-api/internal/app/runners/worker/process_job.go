@@ -32,6 +32,7 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 	}
 
 	if !runner.Status.IsHealthy() {
+		l.Warn("runner is not healthy, not attempting")
 		w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "runner is not in a healthy state")
 		return errors.New("runner is not healthy")
 	}
