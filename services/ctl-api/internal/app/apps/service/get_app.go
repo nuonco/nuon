@@ -51,12 +51,12 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 		Preload("Org").
 		Preload("Components").
 		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_configs_view_v2.created_at DESC")
+			return db.Order("app_configs_view_v2.created_at DESC").Limit(5)
 		}).
 
 		//
 		Preload("AppInputConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_input_configs.created_at DESC")
+			return db.Order("app_input_configs.created_at DESC").Limit(5)
 		}).
 		Preload("AppInputConfigs.AppInputs").
 		Preload("AppInputConfigs.AppInputs.AppInputGroup").
@@ -64,12 +64,12 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 
 		// runner config
 		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_runner_configs.created_at DESC")
+			return db.Order("app_runner_configs.created_at DESC").Limit(5)
 		}).
 
 		// sandbox configs
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_sandbox_configs.created_at DESC")
+			return db.Order("app_sandbox_configs.created_at DESC").Limit(5)
 		}).
 		Preload("AppSandboxConfigs.PublicGitVCSConfig").
 		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
