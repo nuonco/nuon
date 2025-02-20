@@ -194,5 +194,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "084-psql-table-sizes",
 			Fn:   a.migration070TableSizesView,
 		},
+		{
+			Name: "085-actions-latest-runs",
+			Fn:   a.migration085ActionsLatestRuns,
+		},
 	}
 }

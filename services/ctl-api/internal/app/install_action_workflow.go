@@ -15,14 +15,14 @@ type InstallActionWorkflow struct {
 	CreatedBy   Account               `json:"-"`
 	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_install_action_workflow_id,unique"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_install_action_workflow_id,unique;index:idx_iaw_org_id_install_id,priority:3"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	OrgID string `json:"org_id" gorm:"notnull;index:idx_iaw_org_id_install_id,priority:1" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
 	Install   Install `json:"-" swaggerignore:"true"`
-	InstallID string  `json:"install_id" gorm:"index:idx_install_action_workflow_id,unique" faker:"-"`
+	InstallID string  `json:"install_id" gorm:"index:idx_install_action_workflow_id,unique;index:idx_iaw_org_id_install_id,priority:2" faker:"-"`
 
 	ActionWorkflow   ActionWorkflow `json:"action_workflow"`
 	ActionWorkflowID string         `json:"action_workflow_id" gorm:"index:idx_install_action_workflow_id,unique"`
