@@ -103,7 +103,7 @@ export const InstallForm: FC<IInstallForm> = ({
         {error ? (
           <div className="px-6">
             <span className="flex items-center gap-3 w-full p-2 border rounded-md border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600 text-base font-medium">
-              <WarningOctagon size="20" /> {error}
+              <WarningOctagon size={50} /> {error}
             </span>
           </div>
         ) : null}

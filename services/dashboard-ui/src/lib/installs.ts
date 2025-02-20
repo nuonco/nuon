@@ -379,11 +379,21 @@ export async function updateInstall({
   installId,
   orgId,
 }: IUpdateInstall) {
-  return mutateData({
+  return mutateData<TInstall>({
     errorMessage: 'Unable to update install.',
     data,
     orgId,
     method: 'PATCH',
     path: `installs/${installId}`,
+  })
+}
+
+export interface IForgetInstall extends IGetInstall {}
+
+export async function forgetInstall({ installId, orgId }: IForgetInstall) {
+  return mutateData<boolean>({
+    errorMessage: 'Unable to forget install.',
+    orgId,
+    path: `installs/${installId}/forget`,
   })
 }
