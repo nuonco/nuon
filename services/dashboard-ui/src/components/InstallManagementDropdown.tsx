@@ -7,9 +7,12 @@ import {
   ArrowURightUp,
   CloudArrowUp,
   PencilSimpleLine,
+  Trash,
+  WarningOctagon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Dropdown } from '@/components/Dropdown'
+import { ForgetInstallButton } from '@/components/ForgetInstallButton'
 import { InstallDeployComponentButton } from '@/components/InstallDeployComponentsButton'
 import { InstallForm } from '@/components/InstallForm'
 import { InstallReprovisionButton } from '@/components/InstallReprovisionButton'
@@ -40,6 +43,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
   const [isReprovisionOpen, setIsReprovisionOpen] = useState(false)
   const [isTeardownOpen, setIsTeardownOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isForgetOpen, setIsForgetOpen] = useState(false)
   const router = useRouter()
 
   return (
@@ -168,6 +172,49 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
         />
       </Modal>
 
+      <Modal
+        className="max-w-lg"
+        isOpen={isForgetOpen}
+        heading={
+          <span className="flex items-center gap-3">
+            Forget {install.name}?
+          </span>
+        }
+        onClose={() => {
+          setIsForgetOpen(false)
+        }}
+      >
+        <div className="flex flex-col gap-4 mb-6">
+          <span className="flex items-center gap-3 w-full py-2.5 pr-4 pl-2 border rounded-md border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600 text-sm font-medium leading-normal">
+            <WarningOctagon size={30} /> This should only be used in cases where
+            an install was broken in an unordinary way and needs to be manually
+            removed.
+          </span>
+          <Text variant="reg-14" className="leading-relaxed">
+            Are you sure you want to forget {install?.name}? <br /> This action
+            will remove the install and can not be undone.
+          </Text>
+        </div>
+        <div className="flex gap-3 justify-end">
+          <Button
+            onClick={() => {
+              setIsForgetOpen(false)
+            }}
+            className="text-base"
+          >
+            Cancel
+          </Button>
+          <ForgetInstallButton
+            installId={installId}
+            orgId={orgId}
+            onComplete={() => {
+              setIsForgetOpen(false)
+              router.push(`/${orgId}/installs`)
+            }}
+          />
+        </div>
+      </Modal>
+
       <Dropdown
         className="text-sm !font-medium !p-2 h-[32px]"
         alignment="right"
@@ -224,6 +271,21 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
             >
               <Axe size="18" /> Teardown components
             </Button>
+          ) : null}
+          {hasUpdateInstall ? (
+            <>
+              <hr />
+              <Button
+                className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-3 !rounded-none w-full text-red-800 dark:text-red-500"
+                variant="ghost"
+                onClick={() => {
+                  setIsForgetOpen(true)
+                }}
+              >
+                <Trash size="18" />
+                Forget install
+              </Button>
+            </>
           ) : null}
         </div>
       </Dropdown>
