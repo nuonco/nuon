@@ -25,7 +25,7 @@ ec2nodeclasses:
 additional_nodepools:
   - name: public
     instance_types:
-      - t3a.large
+      - t3a.xlarge
     limits:
       cpu: 250
       memory: "500Gi"
@@ -33,11 +33,19 @@ additional_nodepools:
     disruption:
       consolidationPolicy: "WhenEmptyOrUnderutilized"
       consolidateAfter: "1m"
-      # NOTE(fd): this can consolidate whenever but only one at time.
-      # differs from prod to help us identify any issues w/ node rotation.
+      # NOTE(fd): perform disruptions during off hours
+      # in this case, between 3AM EST/8AM UTC 7AM EST/12PM UTC
+      # we start the node=0 budget at 3AM and it lasts for 20 hours
       budgets:
+        - nodes: "1" # allow empty nodes to be consolidated
+          reasons:
+          - "Empty"
+          - "Drifted"
         - nodes: "1"
+          schedule: "0 8 * * 1,2,3,4,5" # https://crontab.guru/#0_8_*_*_1,2,3,4,5
+          duration: "20h"
+          reasons:
+          - "Underutilized"
     taints:
       - key: pool.nuon.co/public
         effect: NoSchedule
-
