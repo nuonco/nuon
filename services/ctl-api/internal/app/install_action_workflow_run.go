@@ -27,7 +27,7 @@ type InstallActionWorkflowRun struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at" gorm:"notnull;index:idx_iawr_iaw_id_delete_id_created_at,priority:3"`
+	CreatedAt   time.Time             `json:"created_at" gorm:"notnull;index:idx_iawr_iaw_id_delete_id_created_at,priority:3;index:idx_install_action_runs_query,priority:3,sort:desc"`
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull;index:idx_iawr_iaw_id_delete_id_created_at,priority:2"`
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
@@ -39,10 +39,10 @@ type InstallActionWorkflowRun struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
-	InstallID string  `json:"install_id" gorm:"not null;default null"`
+	InstallID string  `json:"install_id" gorm:"not null;default null;index:idx_install_action_runs_query,priority:1"`
 	Install   Install `swaggerignore:"true" json:"-" temporaljson:"install"`
 
-	InstallActionWorkflowID string                `json:"install_action_workflow_id" gorm:"index:idx_iawr_iaw_id_delete_id_created_at,priority:1"`
+	InstallActionWorkflowID string                `json:"install_action_workflow_id" gorm:"index:idx_iawr_iaw_id_delete_id_created_at,priority:1;index:idx_install_action_runs_query,priority:2"`
 	InstallActionWorkflow   InstallActionWorkflow `json:"install_action_workflow"`
 
 	Status            InstallActionWorkflowRunStatus `json:"status" gorm:"notnull" swaggertype:"string"`

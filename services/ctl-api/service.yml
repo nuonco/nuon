@@ -53,7 +53,7 @@ env:
   DISABLE_ANALYTICS: true
   DISABLE_METRICS: true
   DISABLE_NOTIFICATIONS: true
-  DB_LOG_QUERIES: false
+  #DB_LOG_QUERIES: true
   #LOG_LEVEL: "DEBUG"
 
 env_secrets:
