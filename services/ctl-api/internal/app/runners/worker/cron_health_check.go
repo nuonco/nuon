@@ -7,6 +7,7 @@ import (
 
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
 const (
@@ -193,18 +195,32 @@ func (w *Workflows) checkUpdateNeeded(
 	w.mw.Incr(ctx, "runner.version_update", metrics.ToTags(map[string]string{
 		"runner_type":          string(runner.RunnerGroup.Type),
 		"needs_version_update": strconv.FormatBool(needsUpdate),
+		"expected_latest":      strconv.FormatBool(runner.RunnerGroup.Settings.ExpectedVersion == "latest"),
 	})...)
 
-	//if needsUpdate {
-	//w.evClient.Send(ctx, runnerID, &signals.RequestSignal{
-	//Signal: &signals.Signal{
-	//Type:          signals.OperationUpdateVersion,
-	//HealthCheckID: healthcheck.ID,
-	//},
-	//EventLoopRequest: eventloop.EventLoopRequest{
-	//ID: runnerID,
-	//},
-	//})
-	//}
+	if needsUpdate {
+		l, err := log.WorkflowLogger(ctx)
+		if err != nil {
+			return nil
+		}
+		l.Info("sending signal to update out-of-date runner",
+			zap.String("runner_id", runnerID),
+			zap.String("runner_type", string(runner.RunnerGroup.Type)),
+			zap.String("expected_version", runner.RunnerGroup.Settings.ExpectedVersion),
+			zap.String("reported_version", heartbeat.Version),
+			zap.String("api_version", w.cfg.Version),
+		)
+
+		//w.evClient.Send(ctx, runnerID, &signals.RequestSignal{
+		//Signal: &signals.Signal{
+		//Type:          signals.OperationUpdateVersion,
+		//HealthCheckID: healthcheck.ID,
+		//},
+		//EventLoopRequest: eventloop.EventLoopRequest{
+		//ID: runnerID,
+		//},
+		//})
+	}
+
 	return nil
 }
