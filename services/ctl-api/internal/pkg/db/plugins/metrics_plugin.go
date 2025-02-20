@@ -2,10 +2,14 @@ package plugins
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	"gorm.io/gorm"
+
+	"github.com/DataDog/datadog-go/v5/statsd"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
@@ -14,7 +18,8 @@ import (
 type contextKey string
 
 const (
-	defaultContextKey contextKey = "gorm_metrics_plugin"
+	defaultContextKey contextKey    = "gorm_metrics_plugin"
+	targetLatency     time.Duration = time.Millisecond * 50
 )
 
 var _ gorm.Plugin = (*metricsWriterPlugin)(nil)
@@ -72,11 +77,13 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB) {
 	}
 	startTS := val.(time.Time)
 	dur := time.Since(startTS)
+	withinTargetLatency := time.Since(startTS) < targetLatency
 
 	tags := []string{}
 	if schema != nil {
 		tags = append(tags, "table:"+schema.Table)
 		tags = append(tags, "db_type:"+m.dbType)
+		tags = append(tags, "within_target_latency:"+strconv.FormatBool(withinTargetLatency))
 	}
 
 	metricCtx, err := cctx.MetricsContextFromGinContext(ctx)
@@ -108,4 +115,24 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB) {
 	m.metricsWriter.Timing("gorm_operation_latency", dur, tags)
 	m.metricsWriter.Gauge("gorm_operation.response_size", float64(respSize), tags)
 	m.metricsWriter.Gauge("gorm_operation.preload_count", preloadCount, tags)
+
+	if m.dbType == "ch" {
+		return
+	}
+
+	if dur < targetLatency {
+		return
+	}
+
+	m.metricsWriter.Event(&statsd.Event{
+		Title: "Slow query" + metricCtx.Endpoint,
+		Text: fmt.Sprintf("Slow query identified for table %s and endpoint %s\n\nPrepared SQL: %s\nVars: %v\nFinal SQL: %s",
+			schema.Table,
+			metricCtx.Endpoint,
+			tx.Statement.SQL.String(),
+			tx.Statement.Vars,
+			tx.Dialector.Explain(tx.Statement.SQL.String(), tx.Statement.Vars...),
+		),
+		Tags: tags,
+	})
 }
