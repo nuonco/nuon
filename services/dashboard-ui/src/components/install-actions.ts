@@ -7,6 +7,7 @@ import {
   deployComponentBuild as deployComponentByBuildId,
   teardownInstallComponents,
   updateInstall as patchInstall,
+  forgetInstall as forget,
 } from '@/lib'
 
 interface IReprovisionInstall {
@@ -141,4 +142,13 @@ export async function updateInstall({
     installId,
     orgId,
   })
+}
+
+interface IForgetInstall {
+  installId: string
+  orgId: string
+}
+
+export async function forgetInstall(params: IForgetInstall) {
+  return forget(params)
 }
