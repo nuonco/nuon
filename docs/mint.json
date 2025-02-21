@@ -109,7 +109,8 @@
         "guides/terraform-components",
         "guides/helm-chart-components",
         "guides/job-components",
-        "guides/component-dependencies"
+        "guides/component-dependencies",
+        "guides/nuon-actions"
       ]
     },
     {
@@ -314,4 +315,3 @@
     }
   }
 }
-

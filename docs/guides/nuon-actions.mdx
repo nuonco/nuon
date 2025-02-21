@@ -1,0 +1,111 @@
+---
+title: 'Nuon Actions'
+description: "Remotely execute custom workflows in installs."
+---
+
+Nuon Actions allows you to define and remotely execute custom workflows in installs. Using Actions, you can automate common tasks, implement healthchecks, and even automate runbooks to handle incidents.
+
+# Configuring Workflows
+
+Action workflows can be configured in your app's TOML config. For example, to define an HTTP healthcheck:
+
+<CodeGroup>
+```toml http_healthcheck.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=action
+
+name    = "http_healthcheck"
+timeout = "0m15s"
+
+[[triggers]]
+type          = "cron"
+cron_schedule = "*/5 * * * *"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name    = "healthcheck"
+command = "./healthcheck"
+
+[steps.public_repo]
+repo      = "nuonco/actions"
+branch    = "main"
+directory = "common"
+
+[steps.env_vars]
+ENDPOINT             = "https://your-app.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+METHOD               = "HEAD"
+EXPECTED_STATUS_CODE = "200"
+```
+
+```toml nuon.your_app.toml
+#:schema https://api.nuon.co/v1/general/config-schema
+
+version      = "v1"
+description  = "Your app on AWS."
+display_name = "Your App"
+
+[[actions]]
+source = "./actions/alb_healthcheck.toml"
+```
+</CodeGroup>
+
+Once configured and synced, you will see the workflow in the "Actions" tab for your app.
+
+Following that example, we can describe the parts of a workflow.
+
+## Timeout
+
+Each workflow must have a timeout limiting how long it can run. The maxiumum allowed timeout is 30 minutes. Timeouts must be provided as valid Golang time.Duration strings.
+
+The example workflow will timeoute after 15 seconds, more than enough time to make a simple HTTP request.
+
+## Triggers
+
+Actions can be triggered manually, on a cron, or by install events. You can define multiple triggers for an action.
+
+| Trigger Type | Attributes | Description |
+|------------|-------------|-------------|
+| **manual** | | Manually triggered the CLI or Vendor Dashboard |
+| **cron** | cron_schedule | Scheduled to run at specific time intervals defined by a crontab |
+| **pre-sandbox-run** | | Executes before a sandbox run begins |
+| **post-sandbox-run** | | Executes after a sandbox run completes |
+| **pre-deploy** | | Executes before a component deploy begins |
+| **post-deploy** | | Executes after a component deploy completes |
+
+The example action defines two triggers. It will run every five minutes, and can also be triggered manually at any time.
+
+```toml
+[[triggers]]
+type          = "cron"
+cron_schedule = "*/5 * * * *"
+
+[[triggers]]
+type = "manual"
+```
+
+## Steps
+
+Each step in an action requires a command to be run. You can optionally load a script from a repo and provide env vars to configure the environment the command will run in.
+
+The example action is pretty simple, so it has only one step. It loads a curl script from our [open-source repo of commonly-used scripts](https://github.com/nuonco/actions), and sets a few env vars to configure it.
+
+```toml
+[[steps]]
+name    = "healthcheck"
+command = "./healthcheck"
+
+[steps.public_repo]
+repo      = "nuonco/actions"
+branch    = "main"
+directory = "common"
+
+[steps.env_vars]
+ENDPOINT             = "https://your-app.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+METHOD               = "HEAD"
+EXPECTED_STATUS_CODE = "200"
+```
+
+# Monitoring Workflow Runs
+
+Actions workflow runs can be monitored on the "Actions" tab in each Install. You can see a list of all workflow runs, and inspect each run to see logs, what triggered the run, and whether is succeeded or not.
