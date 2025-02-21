@@ -195,7 +195,7 @@ func (a *Migrations) GetAll() []Migration {
 			Fn:   a.migration070TableSizesView,
 		},
 		{
-			Name: "085-actions-latest-runs",
+			Name: "085-actions-latest-runs-view",
 			Fn:   a.migration085ActionsLatestRuns,
 		},
 	}
