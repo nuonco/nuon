@@ -49,3 +49,8 @@ additional_nodepools:
     taints:
       - key: pool.nuon.co/public
         effect: NoSchedule
+
+karpenter:
+  instance_types:
+    - t3a.medium
+    - t3a.large

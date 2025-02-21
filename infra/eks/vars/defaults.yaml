@@ -21,5 +21,8 @@ vantage:
 # any additional EC2NodeClasses should be created here
 ec2nodeclasses: []
 
-
 additional_nodepools: []
+
+karpenter:
+  instance_types:
+    - t3a.medium

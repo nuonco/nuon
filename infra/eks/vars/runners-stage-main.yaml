@@ -21,3 +21,8 @@ managed_node_group:
     - t3a.medium
 
 tier: beta
+
+karpenter:
+  instance_types:
+    - t3a.small
+    - t3a.medium

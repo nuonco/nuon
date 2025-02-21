@@ -21,3 +21,7 @@ managed_node_group:
     - m5.large
 
 tier: stable
+
+karpenter:
+  instance_types:
+    - t3a.medium

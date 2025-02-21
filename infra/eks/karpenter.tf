@@ -22,6 +22,6 @@ module "karpenter" {
   oidc_provider_arn    = module.eks.oidc_provider_arn
   tags                 = local.tags
   ec2nodeclasses       = local.vars.ec2nodeclasses
-  instance_types       = local.vars.managed_node_group.instance_types
+  instance_types       = local.vars.karpenter.instance_types
   additional_nodepools = local.vars.additional_nodepools
 }
