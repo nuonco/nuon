@@ -91,7 +91,7 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 	newStatus := w.determineStatusFromHeartBeat(ctx, heartbeat)
 	status = string(newStatus)
 
-	_, err = activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
+	healthcheck, err := activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
 		RunnerID: req.RunnerID,
 		Status:   newStatus,
 	})
@@ -110,7 +110,7 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 	// from re-attempting the same version check, potentially creating a race
 	// condition.
 	if newStatus == app.RunnerStatusActive {
-		// err = w.checkUpdateNeeded(ctx, heartbeat, healthcheck, req.RunnerID)
+		err = w.checkUpdateNeeded(ctx, heartbeat, healthcheck, req.RunnerID)
 		if err != nil {
 			status = "error_failed_update_check"
 			return errors.Wrap(err, "failed to check for needed update")
