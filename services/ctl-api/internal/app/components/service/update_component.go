@@ -11,8 +11,8 @@ import (
 )
 
 type UpdateComponentRequest struct {
-	Name    string `json:"name" validate:"required,interpolatedName"`
-	VarName string `json:"var_name" validate:"interpolatedName"`
+	Name    string `json:"name" validate:"required,interpolated_name"`
+	VarName string `json:"var_name" validate:"interpolated_name"`
 
 	Dependencies []string `json:"dependencies"`
 }
