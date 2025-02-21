@@ -133,11 +133,10 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 	}
 
 	// execute the event loop
-	pendingSignals = make([]T, 0)
+	clear(pendingSignals)
 	signalCount := 0
 	stop := false
 	restart := false
-	cfgChange := false
 
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
@@ -152,13 +151,6 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 		if signal.Restart() {
 			pendingSignals = append(pendingSignals, signal)
 			restart = true
-			return
-		}
-
-		if w.Cfg.Version != req.Version {
-			pendingSignals = append(pendingSignals, signal)
-			req.Version = w.Cfg.Version
-			cfgChange = true
 			return
 		}
 
@@ -184,11 +176,6 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 		}
 
 		selector.Select(ctx)
-
-		if cfgChange {
-			req.VersionChangeCount += 1
-			return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, req, pendingSignals)
-		}
 
 		if restart {
 			w.MW.Incr(ctx, "event_loop.restarted", metrics.ToTags(defaultTags)...)
