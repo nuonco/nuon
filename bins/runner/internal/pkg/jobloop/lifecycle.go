@@ -2,26 +2,12 @@ package jobloop
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/sourcegraph/conc/panics"
 	"go.uber.org/fx"
 )
 
-func (s *jobLoop) panicWrapper(fn func()) func() {
-	return func() {
-		var pc panics.Catcher
-		pc.Try(fn)
-
-		recovered := pc.Recovered()
-		if recovered != nil {
-			fmt.Println("job execution: \n" + string(recovered.Stack))
-		}
-	}
-}
-
 func (s *jobLoop) Start() error {
-	s.pool.Go(s.panicWrapper(s.worker))
+	s.pool.Go(s.worker)
 	return nil
 }
 
