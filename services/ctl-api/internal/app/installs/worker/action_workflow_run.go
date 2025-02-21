@@ -33,12 +33,16 @@ func (w *Workflows) actionWorkflowRun(ctx workflow.Context, installID, actionWor
 	if err == nil {
 		l.Warn("creating a new logger for executing action")
 	}
+	parentLS, _ := cctx.GetLogStreamWorkflow(ctx)
 
-	w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusInProgress, "in-progress")
-
-	ls, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
+	lsReq := activities.CreateLogStreamRequest{
 		ActionWorkflowRunID: actionWorkflowRunID,
-	})
+	}
+	if parentLS != nil {
+		lsReq.ParentLogStreamID = parentLS.ID
+	}
+	w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusInProgress, "in-progress")
+	ls, err := activities.AwaitCreateLogStream(ctx, lsReq)
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream")
 	}

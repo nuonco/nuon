@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/otel"
@@ -49,9 +51,20 @@ func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 		return
 	}
 
+	logStream, err := s.getLogStream(ctx, logStreamID)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get log stream"))
+		return
+	}
+
 	// write the logs to the db
-	writeErr := s.writeLogStreamLogs(ctx, logStreamID, expreq)
-	if writeErr != nil {
+	logs := s.toLogStreamLogs(logStreamID, expreq)
+	if !logStream.ParentLogStreamID.Empty() {
+		logs = append(logs, s.toLogStreamLogs(logStream.ParentLogStreamID.String, expreq)...)
+	}
+
+	err = s.writeLogStreamLogs(ctx, logs)
+	if err != nil {
 		ctx.Error(fmt.Errorf("unable to write runner logs: %w", err))
 		return
 	}
@@ -59,7 +72,7 @@ func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, "ok")
 }
 
-func (s *service) writeLogStreamLogs(ctx context.Context, logStreamID string, logs plogotlp.ExportRequest) error {
+func (s *service) toLogStreamLogs(logStreamID string, logs plogotlp.ExportRequest) []app.OtelLogRecord {
 	// prepare a slice to hold all of the record we will be writing
 	otelLogRecords := []app.OtelLogRecord{}
 
@@ -137,11 +150,17 @@ func (s *service) writeLogStreamLogs(ctx context.Context, logStreamID string, lo
 		}
 	}
 
+	return otelLogRecords
+}
+
+func (s *service) writeLogStreamLogs(ctx context.Context, logs []app.OtelLogRecord) error {
 	// write the otel logs to the db
-	res := s.chDB.WithContext(ctx).Create(&otelLogRecords)
+	res := s.chDB.WithContext(ctx).
+		Create(&logs)
 	if res.Error != nil {
 		return fmt.Errorf("unable to ingest logs: %w", res.Error)
 	}
+
 	// save to db
 	return nil
 }
