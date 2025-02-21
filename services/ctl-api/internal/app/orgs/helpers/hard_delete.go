@@ -56,7 +56,6 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		&app.VCSConnection{},
 		&app.InstallerMetadata{},
 		&app.Installer{},
-		&app.OrgHealthCheck{},
 		&app.OrgInvite{},
 		&app.NotificationsConfig{},
 		&app.Policy{},

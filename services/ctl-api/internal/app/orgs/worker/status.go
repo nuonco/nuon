@@ -20,16 +20,3 @@ func (w *Workflows) updateStatus(ctx workflow.Context, orgID string, status app.
 			zap.Error(err))
 	}
 }
-
-func (w *Workflows) updateHealthCheckStatus(ctx workflow.Context, orgHealthCheckID string, status app.OrgHealthCheckStatus, statusDescription string) {
-	if err := activities.AwaitUpdateHealthCheckStatus(ctx, activities.UpdateHealthCheckStatusRequest{
-		OrgHealthCheckID:  orgHealthCheckID,
-		Status:            status,
-		StatusDescription: statusDescription,
-	}); err != nil {
-		l := workflow.GetLogger(ctx)
-		l.Error("unable to update org health check status",
-			zap.String("health-check-id", orgHealthCheckID),
-			zap.Error(err))
-	}
-}

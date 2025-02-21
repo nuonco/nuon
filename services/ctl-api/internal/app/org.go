@@ -57,10 +57,9 @@ type Org struct {
 
 	LogoURL string `json:"logo_url"`
 
-	Apps           []App            `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	VCSConnections []VCSConnection  `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	Invites        []OrgInvite      `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-	HealthChecks   []OrgHealthCheck `json:"health_checks,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	Apps           []App           `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	VCSConnections []VCSConnection `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	Invites        []OrgInvite     `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
 	// Other relationships as part of the data model
 
@@ -78,17 +77,9 @@ type Org struct {
 	Roles        []Role        `faker:"-" swaggerignore:"true" json:"roles,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	Policies     []Policy      `faker:"-" swaggerignore:"true" json:"policies,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	AccountRoles []AccountRole `faker:"-" swaggerignore:"true" json:"account_roles,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-
-	// Filled in at read time
-	LatestHealthCheck OrgHealthCheck `json:"latest_health_check" gorm:"-"`
 }
 
 func (o *Org) AfterQuery(tx *gorm.DB) error {
-	if len(o.HealthChecks) < 1 {
-		return nil
-	}
-
-	o.LatestHealthCheck = o.HealthChecks[0]
 	return nil
 }
 
