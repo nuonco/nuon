@@ -208,8 +208,8 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
             installId={installId}
             orgId={orgId}
             onComplete={() => {
-              setIsForgetOpen(false)
               router.push(`/${orgId}/installs`)
+              setIsForgetOpen(false)
             }}
           />
         </div>
