@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
 )
 
 // the system logger is used to log all things that should not be sent to our API via OTEL
@@ -17,8 +16,7 @@ type OTELSystemParams struct {
 
 	Cfg       *internal.Config
 	LP        *log.LoggerProvider `name:"otel"`
-	Settings  *settings.Settings
-	DevLogger *zap.Logger `name:"dev"`
+	DevLogger *zap.Logger         `name:"dev"`
 }
 
 func NewOTELSystem(params OTELSystemParams) (*zap.Logger, error) {
