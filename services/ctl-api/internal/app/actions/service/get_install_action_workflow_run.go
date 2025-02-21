@@ -30,13 +30,13 @@ import (
 // @Router			/v1/installs/{install_id}/action-workflows/runs/{run_id} [get]
 func (s *service) GetInstallActionWorkflowRun(ctx *gin.Context) {
 	runID := ctx.Param("run_id")
-	configs, err := s.findInstallActionWorkflowRun(ctx, runID)
+	run, err := s.findInstallActionWorkflowRun(ctx, runID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install action workflow run by id %s: %w", runID, err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, configs)
+	ctx.JSON(http.StatusOK, run)
 }
 
 func (s *service) findInstallActionWorkflowRun(ctx context.Context, runID string) (*app.InstallActionWorkflowRun, error) {
@@ -45,7 +45,7 @@ func (s *service) findInstallActionWorkflowRun(ctx context.Context, runID string
 		return nil, err
 	}
 
-	runs := &app.InstallActionWorkflowRun{}
+	run := &app.InstallActionWorkflowRun{}
 	res := s.db.WithContext(ctx).
 		Preload("ActionWorkflowConfig").
 		Preload("ActionWorkflowConfig.Steps").
@@ -54,10 +54,10 @@ func (s *service) findInstallActionWorkflowRun(ctx context.Context, runID string
 		Preload("RunnerJob").
 		Preload("Steps", ).
 		Where("org_id = ? AND id = ?", orgID, runID).
-		Find(&runs)
+		First(&run)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install action workflow runs: %w", res.Error)
 	}
 
-	return runs, nil
+	return run, nil
 }
