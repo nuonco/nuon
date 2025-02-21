@@ -1,7 +1,9 @@
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
+import { Section } from '@/components/Card'
 import { RunnerLogs, parseOTELLog } from '@/components/RunnerLogs'
+import { Text } from '@/components/Typography'
 import type { TOTELLog, TLogStream } from '@/types'
 import { LOG_POLL_DURATION, SHORT_POLL_DURATION, sentanceCase } from '@/utils'
 
@@ -44,6 +46,14 @@ export const LogStreamPoller: FC<ILogStreamPoller> = ({
       }
     }
   }, [logStream, shouldPoll])
+
+  if (!logStream?.id) {
+    return (
+      <Section heading={sentanceCase(props.heading)} className="border-r">
+        <Text>Waiting on log stream to start.</Text>
+      </Section>
+    )
+  }
 
   return <LogPoller {...props} shouldPoll={isPolling} />
 }
