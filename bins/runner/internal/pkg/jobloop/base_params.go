@@ -2,7 +2,6 @@ package jobloop
 
 import (
 	nuonrunner "github.com/nuonco/nuon-runner-go"
-	"go.opentelemetry.io/otel/sdk/log"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
@@ -23,6 +22,5 @@ type BaseParams struct {
 	ErrRecorder *errs.Recorder
 	MW          metrics.Writer
 
-	L              *zap.Logger         `name:"otelsystem"`
-	LoggerProvider *log.LoggerProvider `name:"otel"`
+	L *zap.Logger `name:"system"`
 }
