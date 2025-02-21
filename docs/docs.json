@@ -37,36 +37,23 @@
       },
       {
         "tab": "Concepts",
-        "groups": [
-          {
-            "group": "Concepts",
-            "pages": ["concepts/concepts"]
-          },
-          {
-            "group": "Concepts",
-            "pages": [
-              "concepts/overview",
-              "concepts/apps",
-              "concepts/components",
-              "concepts/installs",
-              "concepts/nuon-actions",
-              "concepts/installers",
-              "concepts/platforms",
-              "concepts/runners",
-              "concepts/sandboxes",
-              "concepts/app-inputs",
-              "concepts/app-secrets"
-            ]
-          }
+        "pages": [
+          "concepts/overview",
+          "concepts/apps",
+          "concepts/components",
+          "concepts/installs",
+          "concepts/nuon-actions",
+          "concepts/installers",
+          "concepts/platforms",
+          "concepts/runners",
+          "concepts/sandboxes",
+          "concepts/app-inputs",
+          "concepts/app-secrets"
         ]
       },
       {
         "tab": "Guides",
         "groups": [
-          {
-            "group": "Guides",
-            "pages": ["guides/guides"]
-          },
           {
             "group": "Configuration",
             "pages": [
@@ -236,37 +223,24 @@
       },
       {
         "tab": "Updates",
-        "groups": [
-          {
-            "group": "Updates",
-            "pages": ["updates/updates", "updates/roadmap"]
-          },
-          {
-            "group": "Changelog",
-            "pages": [
-              "updates/changelog",
-              "updates/011-apps-metadata-helpers",
-              "updates/010-input-groups",
-              "updates/009-config-file-improvements",
-              "updates/008-self-hosted-installers",
-              "updates/007-installs-ui",
-              "updates/006-config-files",
-              "updates/005-improved-installers-guides",
-              "updates/004-sdks-github-action",
-              "updates/003-ecs-support",
-              "updates/001-new-year-new-docs"
-            ]
-          }
+        "pages": [
+          "updates/roadmap",
+          "updates/changelog",
+          "updates/011-apps-metadata-helpers",
+          "updates/010-input-groups",
+          "updates/009-config-file-improvements",
+          "updates/008-self-hosted-installers",
+          "updates/007-installs-ui",
+          "updates/006-config-files",
+          "updates/005-improved-installers-guides",
+          "updates/004-sdks-github-action",
+          "updates/003-ecs-support",
+          "updates/001-new-year-new-docs"
         ]
       },
       {
         "tab": "Support",
-        "groups": [
-          {
-            "group": "Support",
-            "pages": ["support/support", "support/faq"]
-          }
-        ]
+        "pages": ["support/support", "support/faq"]
       }
     ],
     "global": {
@@ -333,4 +307,3 @@
     }
   ]
 }
-
