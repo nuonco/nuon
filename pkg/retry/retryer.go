@@ -18,6 +18,11 @@ type retryer struct {
 	timeout time.Duration
 }
 
+func (r *retryer) Wrap(fn func(context.Context) error) func(context.Context) error {
+	r.fn = fn
+	return r.exec
+}
+
 func (r *retryer) exec(ctx context.Context) error {
 	attempt := 0
 
@@ -30,7 +35,7 @@ func (r *retryer) exec(ctx context.Context) error {
 	var err error
 	for attempt <= r.maxAttempts || r.maxAttempts < 0 {
 		if attempt > 0 {
-			if err = r.retryCBHook(attempt); err != nil {
+			if err = r.retryCBHook(ctx, attempt); err != nil {
 				return errors.Wrap(err, "retry callback hook failed")
 			}
 

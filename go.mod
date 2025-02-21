@@ -85,7 +85,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nuonco/clickhouse-go/v2 v2.28.1
 	github.com/nuonco/gin-swagger v1.6.2
-	github.com/nuonco/nuon-runner-go v0.8.0
+	github.com/nuonco/nuon-runner-go v0.9.0
 	github.com/nuonco/sandboxes v1.34.0
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/opencontainers/image-spec v1.1.0
