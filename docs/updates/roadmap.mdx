@@ -4,65 +4,48 @@ description: "Learn more about what we are working on"
 icon: road
 ---
 
-Refer to our roadmap to learn more about the larger, foundational features we are building. For most smaller and 
-iterative features based on customer feedback, we generally ship within a week.
+Refer to our roadmap to learn more about the larger, foundational features we are building. Please share your feedback on our roadmap and <a href="mailto:team@nuon.co">let us know</a> if you would like us to consider something not listed below.
 
-Please share your feedback on our roadmap and <a href="mailto:team@nuon.co">let us know</a> if you would like us to consider something not listed below.
+# February 2025
 
-## Typescript SDK
+## Config File Directories
 
-_June 2024_
+Ensuring all TOML config files you need are linked in the right way to an app config is a lot of overhead. We're adding support for syncing directories of config files, so you no longer need to manage this complexity.
 
-We are building a Typescript SDK that will allow anyone to use our API directly from their own application.
+## Runner Cloudformation Stack
 
-## Runner V2
+Cross-account access is required when provisioning installs. While this access can be removed afterwards, cutomers would prefer if it weren't required at all. We're working on a new Cloudformation-based installation flow that will obviate the need for cross-account access entirely.
 
-_June 2024_
+## Secrets
 
-We are building a new runner, that will serve as the foundation of our day-2 operations, and replace our existing 
-runner. We are designing this runner to be more secure, faster and operationally simplified.
+Customers need to be able to provide secrets when installing an app, without those secrets being accessible by either Nuon or the Vendor. Building on the Cloudformation installation flow, we're adding the ability for customers to provide secrets, which will be saved directly to AWS Secrets Store. These secrets will stay within the customer's network, and will not be accessible from the Nuon Control Plane.
 
-This will allow us to build more custom day-2 operations tooling into the product.
+## Break Glass Controls
 
-## Programmable Runner Diagnostics and OTEL
+In the event of an incident, a Vendor may need elevated access to a customer's network. Building on the Runner Cloudformation Stack, we're enabling Vendors to create "Break Glass" stacks, that a Customer can use to grant temporary, elevated access to their network.
 
-_July 2024_
+## Build Runner UI
 
-We are building a custom diagnostics and scripting runtime on top of the runner. This will allow our customers to:
+Vendors need to be able to monitor and inspect the state of their Build Runners. We're adding a new section to the Vendor Dashboard that will show the same info about build runners that we currently show for Install Runners.
 
-1. Use template scripts, or write custom scripts to query logs, metrics and other observability data.
-1. Write custom diagnostic scripts that can be used to monitor your application.
-1. Run operational scripts such as `terraform`, `helm` and others.
+# March 2025
 
-This will serve as the foundation for our day-2 tooling that allows you to integrate your existing stack and build more 
-visibility into your customer installs.
+## Plan-Only Jobs
 
-## CLI V2
+Vendors need to be able to preview the effect running a job on an install will have. To support this, we're adding the ability to run "plan-only" jobs, that will create and display a plan for what the job will do, without actually running it.
 
-_July 2024_
+## Deprovisioning Improvements
 
-We are shipping a redesigned CLI that will be extendable, easier to use and designed to interactively onboard.
+Even with careful planning and well-tested Infra-as-Code, deprovisioning an install can be a difficult process. We're making improvements to this process to make uninstalling apps easier and more reliable.
 
-## GCP Support
+## App Versioning
 
-_July 2024_
+It needs to be easier for Vendors to create and release new versions of their apps. We're adding the ability to tag an entire app config, instead of versioning each component separately.
 
-We are adding GCP support in early July, and will create a first class experience for kubernetes/non-kubernetes apps on 
-GCP.
+## Release Management Improvements
 
-## Template Apps
+Building on the App Versioning feature, we will make several improvements to Releases that will make it easier for both Vendors and Customers to manage updating installs.
 
-_August 2024_
+## Input Types
 
-We will be adding a more PAAS (platform as a service) like experience which will allow anyone with a `Dockerfile` to 
-create a BYOC offering of their application.
-
-## Integrations into your stack 
-
-_August 2024_
-
-Our new runner, and programmable diagnostics will allow us to collect richer observability and health data on your 
-installs. From there, you will be able to integrate this data into your own stack and tools with everything from webhook 
-notifications, to forwarding of metrics and logs.
-
-Currently, we support [notifications](/guides/notifications) to get slack notifications for some install and app events.
+All app inputs are currently strings, which can be awkward to work with when you need a different variable type. We're adding types to inputs, so they can be displayed in a more intuitive way, and be easier to use in component code.
