@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
@@ -15,9 +16,11 @@ const (
 )
 
 type CreateLogStreamRequest struct {
-	SandboxRunID        string `validate:"required"`
-	DeployID            string `validate:"required"`
-	ActionWorkflowRunID string `validate:"required"`
+	SandboxRunID        string
+	DeployID            string
+	ActionWorkflowRunID string
+
+	ParentLogStreamID string
 }
 
 // @temporal-gen activity
@@ -36,9 +39,10 @@ func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamReq
 	}
 
 	ls := app.LogStream{
-		OwnerType: typ,
-		OwnerID:   id,
-		Open:      true,
+		OwnerType:         typ,
+		OwnerID:           id,
+		Open:              true,
+		ParentLogStreamID: generics.NewNullString(req.ParentLogStreamID),
 	}
 
 	res := a.db.WithContext(ctx).Create(&ls)

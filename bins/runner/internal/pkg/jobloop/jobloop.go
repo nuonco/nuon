@@ -6,7 +6,6 @@ import (
 	nuonrunner "github.com/nuonco/nuon-runner-go"
 	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/sourcegraph/conc/pool"
-	"go.opentelemetry.io/otel/sdk/log"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
@@ -38,11 +37,10 @@ type jobLoop struct {
 	settings *settings.Settings
 	cfg      *internal.Config
 
-	ctx            context.Context
-	ctxCancel      func()
-	l              *zap.Logger
-	loggerProvider *log.LoggerProvider
-	mw             metrics.Writer
+	ctx       context.Context
+	ctxCancel func()
+	l         *zap.Logger
+	mw        metrics.Writer
 }
 
 func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params BaseParams) *jobLoop {
@@ -56,14 +54,13 @@ func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params B
 		jobGroup:    jobGroup,
 		jobHandlers: handlers,
 
-		pool:           pool.New().WithMaxGoroutines(1),
-		ctx:            ctx,
-		ctxCancel:      cancelFn,
-		l:              params.L,
-		loggerProvider: params.LoggerProvider,
-		settings:       params.Settings,
-		cfg:            params.Cfg,
-                mw: params.MW,
+		pool:      pool.New().WithMaxGoroutines(1),
+		ctx:       ctx,
+		ctxCancel: cancelFn,
+		l:         params.L,
+		settings:  params.Settings,
+		cfg:       params.Cfg,
+		mw:        params.MW,
 	}
 
 	params.LC.Append(jl.LifecycleHook())
