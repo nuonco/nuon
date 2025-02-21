@@ -46,7 +46,7 @@ func (d *devver) monitorRunners() error {
 			retry.WithMaxAttempts(-1),
 			retry.WithTimeout(time.Hour),
 			retry.WithSleep(time.Second*5),
-			retry.WithCBHook(func(attempt int) error {
+			retry.WithCBHook(func(_ context.Context, attempt int) error {
 				fmt.Println("waiting 5 seconds and trying again")
 				return nil
 			}),
