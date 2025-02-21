@@ -28,6 +28,16 @@ func (u ErrUser) Error() string {
 	return u.Err.Error()
 }
 
+// A not ready error
+type ErrNotReady struct {
+	Err         error
+	Description string
+}
+
+func (u ErrNotReady) Error() string {
+	return u.Err.Error()
+}
+
 type ErrResponse struct {
 	Error       string `json:"error"`
 	UserError   bool   `json:"user_error"`

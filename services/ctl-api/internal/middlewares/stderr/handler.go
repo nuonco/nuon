@@ -73,6 +73,22 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		var nrErr ErrNotReady
+		if errors.As(err, &nrErr) {
+			// NOTE(jm): there really is not a good status code for "not ready".
+			//
+			// our options are:
+			// 503 which implies a service issue.
+			// 404 which implies not found
+			// 3xx
+			c.JSON(http.StatusConflict, ErrResponse{
+				Error:       err.Error(),
+				UserError:   true,
+				Description: sysErr.Description,
+			})
+			return
+		}
+
 		var authzErr ErrAuthorization
 		if errors.As(err, &authzErr) {
 			c.JSON(http.StatusForbidden, ErrResponse{
