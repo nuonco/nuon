@@ -12,7 +12,7 @@ import (
 )
 
 type CreateAppSecretRequest struct {
-	Name  string `json:"name" validate:"required,entityName"`
+	Name  string `json:"name" validate:"required,entity_name"`
 	Value string `json:"value" validate:"required"`
 }
 

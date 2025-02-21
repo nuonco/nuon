@@ -11,7 +11,7 @@ var (
 )
 
 type entityNameString struct {
-	Val string `validate:"entityName"`
+	Val string `validate:"entity_name"`
 }
 
 func entityName(v *validator.Validate, val string) error {
@@ -27,5 +27,11 @@ func entityNameValidator(fl validator.FieldLevel) bool {
 		return false
 	}
 
-	return entityNameRegex.MatchString(fl.Field().String())
+	matched := entityNameRegex.MatchString(fl.Field().String())
+
+	if !matched {
+		return false
+	}
+
+	return true
 }
