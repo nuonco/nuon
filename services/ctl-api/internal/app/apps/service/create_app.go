@@ -16,7 +16,7 @@ import (
 )
 
 type CreateAppRequest struct {
-	Name            string `json:"name" validate:"required,entityName"`
+	Name            string `json:"name" validate:"required,entity_name"`
 	Description     string `json:"description"`
 	DisplayName     string `json:"display_name"`
 	SlackWebhookURL string `json:"slack_webhook_url"`
@@ -24,6 +24,14 @@ type CreateAppRequest struct {
 
 func (c *CreateAppRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
+		if err := v.Struct(c); err != nil {
+			// Check if the error is related to the "entity_name" tag
+			for _, err := range err.(validator.ValidationErrors) {
+				if err.Tag() == "entity_name" {
+					return fmt.Errorf("name should be lowercase alphanumeric with _ or -")
+				}
+			}
+		}
 		return fmt.Errorf("invalid request: %w", err)
 	}
 	return nil
