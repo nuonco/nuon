@@ -44,7 +44,6 @@ func AllModels() []interface{} {
 		// org basics
 		&app.Org{},
 		&app.OrgInvite{},
-		&app.OrgHealthCheck{},
 
 		// installers
 		&app.Installer{},
