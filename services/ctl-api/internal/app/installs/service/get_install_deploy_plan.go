@@ -11,6 +11,7 @@ import (
 
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 // @ID GetInstallDeployPlan
@@ -40,6 +41,14 @@ func (s *service) GetInstallDeployPlan(ctx *gin.Context) {
 		return
 	}
 
+	if len(deploy.RunnerJobs) < 1 {
+		ctx.Error(stderr.ErrSystem{
+			Err:         errors.New("runner job is not ready yet"),
+			Description: "runner job is not ready yet",
+		})
+		return
+	}
+
 	plan, err := s.getRunnerJobPlan(ctx, deploy.RunnerJobs[0].ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install deploy plan: %w", err))
@@ -51,7 +60,8 @@ func (s *service) GetInstallDeployPlan(ctx *gin.Context) {
 
 func (s *service) getRunnerJobPlan(ctx context.Context, runnerJobID string) (*planv1.Plan, error) {
 	var runnerJobPlan app.RunnerJobPlan
-	res := s.db.WithContext(ctx).First(&runnerJobPlan, "runner_job_id = ?", runnerJobID)
+	res := s.db.WithContext(ctx).
+		First(&runnerJobPlan, "runner_job_id = ?", runnerJobID)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get runner job plan")
 	}
