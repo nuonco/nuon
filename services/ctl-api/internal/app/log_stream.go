@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -30,7 +31,12 @@ type LogStream struct {
 
 	Attrs pgtype.Hstore `json:"attrs" gorm:"type:hstore" swaggertype:"object,string"`
 
+	ParentLogStreamID generics.NullString `json:"-" swaggerignore:"true"`
+	ParentLogStream   *LogStream          `json:"-" faker:"-"`
+
 	RunnerJobs []RunnerJob `json:"-"`
+
+	// fields not stored in the DB
 
 	WriteToken   string `json:"write_token" temporaljson:"write_token" gorm:"-"`
 	RunnerAPIURL string `json:"runner_api_url" temporaljson:"runner_api_url" gorm:"-"`

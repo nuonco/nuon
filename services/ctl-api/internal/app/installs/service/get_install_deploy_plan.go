@@ -42,7 +42,7 @@ func (s *service) GetInstallDeployPlan(ctx *gin.Context) {
 	}
 
 	if len(deploy.RunnerJobs) < 1 {
-		ctx.Error(stderr.ErrSystem{
+		ctx.Error(stderr.ErrNotReady{
 			Err:         errors.New("runner job is not ready yet"),
 			Description: "runner job is not ready yet",
 		})
