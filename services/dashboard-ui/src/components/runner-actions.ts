@@ -24,7 +24,7 @@ export async function cancelRunnerJob({
   } catch (error) {
     console.error(error)
     throw new Error(
-      `${error?.message || 'An error occured'}, please refresh page and try again.`
+      `${error?.message || 'An error occured.'} Please refresh page and try again.`
     )
   }
 }
