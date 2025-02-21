@@ -48,6 +48,33 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 	availableTimeout := start.Add(job.AvailableTimeout)
 
 	var jobExecutionFound bool
+	var runnerStatus app.RunnerStatus
+	for runnerStatus != app.RunnerStatusActive {
+		workflow.Sleep(ctx, defaultAvailablePollPeriod)
+
+		now := workflow.Now(ctx)
+		if now.After(overallTimeout) {
+			l.Error("overall job timeout reached")
+			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout waiting for runner to be healthy")
+			tags["status"] = "runner_unhealthy"
+			return false, false, nil
+		}
+
+		if now.After(availableTimeout) {
+			l.Error("timeout waiting for job to be picked up")
+			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "timeout waiting for runner to become healthy")
+			tags["status"] = "runner_unhealthy"
+			return true, false, nil
+		}
+
+		// if the runner is deemed unhealthy, the job execution is marked as unknown, and the job is marked as
+		// not attempted with the correct status, this is retryable.
+		runnerStatus, err = activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
+		if err != nil {
+			l.Warn("unable to determine runner status", zap.Error(err))
+			return false, false, err
+		}
+	}
 
 	// poll until the job is picked up, and an execution exists
 	for !jobExecutionFound {
@@ -68,28 +95,6 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 			return true, false, nil
 		}
 
-		// if the runner is deemed unhealthy, the job execution is marked as unknown, and the job is marked as
-		// not attempted with the correct status, this is retryable.
-		runnerStatus, err := activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
-		if err != nil {
-			l.Warn("unable to determine runner status", zap.Error(err))
-			return false, false, err
-		}
-		if runnerStatus != app.RunnerStatusActive {
-			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusUnknown, "runner is unhealthy")
-			tags["status"] = "runner_not_active"
-			return true, false, nil
-		}
-
-		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
-		if err != nil {
-			return false, false, err
-		}
-		if jobStatus == app.RunnerJobStatusCancelled {
-			return true, false, nil
-		}
-
-		// fetch latest job execution
 		jobExecutionResp, err := activities.AwaitGetLatestJobExecution(ctx, activities.GetLatestJobExecutionRequest{
 			JobID:       job.ID,
 			AvailableAt: availableStart,
@@ -97,7 +102,6 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 		if err != nil {
 			return false, false, fmt.Errorf("error fetching latest job execution: %w", err)
 		}
-
 		jobExecutionFound = jobExecutionResp.Found
 	}
 

@@ -66,4 +66,5 @@ services/ctl-api/ctl-api
 services/workers-executors/workers-executors
 services/workers-canary/workers-canary
 bins/runner/runner
+bins/nuonctl/nuonctl
 .parrot.md

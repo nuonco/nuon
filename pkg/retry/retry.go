@@ -17,9 +17,26 @@ type retryOpt func(*retryer) error
 type RetryFn func(context.Context) error
 
 // retry cb is used to expose a callback hook to users, useful for printing output and more.
-type RetryCBHook func(int) error
+type RetryCBHook func(context.Context, int) error
 
-func noopRetryCBHook(_ int) error { return nil }
+func noopRetryCBHook(context.Context, int) error { return nil }
+
+func New(opts ...retryOpt) (*retryer, error) {
+	retryer := &retryer{
+		retryCBHook: noopRetryCBHook,
+		maxAttempts: defaultMaxAttempts,
+		sleep:       defaultSleep,
+		timeout:     time.Duration(0),
+	}
+
+	for _, opt := range opts {
+		if err := opt(retryer); err != nil {
+			return nil, errors.Wrap(err, "unable to apply option")
+		}
+	}
+
+	return retryer, nil
+}
 
 func Retry(ctx context.Context, fn RetryFn, opts ...retryOpt) error {
 	retryer := &retryer{
