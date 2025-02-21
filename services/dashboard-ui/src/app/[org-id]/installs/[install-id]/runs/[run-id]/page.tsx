@@ -107,7 +107,8 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
           </span>
           {CANCEL_RUNNER_JOBS &&
           sandboxRun?.status !== 'active' &&
-          sandboxRun?.status !== 'error' ? (
+          sandboxRun?.status !== 'error' &&
+          sandboxRun?.runner_job?.id ? (
             <CancelRunnerJobButton
               jobType="sandbox-run"
               runnerJobId={sandboxRun?.runner_job?.id}

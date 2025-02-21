@@ -154,7 +154,8 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
           {CANCEL_RUNNER_JOBS &&
           deploy?.status !== 'active' &&
           deploy?.status !== 'error' &&
-          deploy?.status !== 'inactive' ? (
+          deploy?.status !== 'inactive' &&
+          deploy?.runner_jobs?.length ? (
             <CancelRunnerJobButton
               jobType="deploy"
               runnerJobId={deploy?.runner_jobs?.at(-1)?.id}

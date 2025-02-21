@@ -126,6 +126,7 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
             </Text>
           </span>
           {CANCEL_RUNNER_JOBS &&
+          workflowRun?.runner_job?.id &&
           (workflowRun?.status === 'queued' ||
             workflowRun?.status === 'in-progress') ? (
             <CancelRunnerJobButton
