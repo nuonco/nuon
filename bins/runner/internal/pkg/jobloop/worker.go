@@ -4,6 +4,7 @@ import (
 	"time"
 
 	smithytime "github.com/aws/smithy-go/time"
+	"github.com/sourcegraph/conc/panics"
 	"go.uber.org/zap"
 )
 
@@ -43,12 +44,28 @@ func (j *jobLoop) worker() {
 
 		job := jobs[0]
 
-		if err := j.executeJob(j.ctx, job); err != nil {
-			j.errRecorder.ToSentry(err)
+		// execute the job
+		var pc panics.Catcher
+		pc.Try(func() {
+			err = j.executeJob(j.ctx, job)
+		})
+		if err != nil {
 			j.errRecorder.Record("job failed", err)
 		}
+
+		// if a panic is _recorded_ we do not restart the runner automatically.
+		if rc := pc.Recovered(); err != nil {
+			j.l.Error("job panic",
+				zap.String("stack-trace", rc.String()),
+				zap.String("job-type", string(job.Type)),
+				zap.String("job-group", string(job.Group)),
+			)
+		}
+
+		// iterate for the next loop
 		if err := smithytime.SleepWithContext(j.ctx, defaultJobPollBackoff); err != nil {
 			return
 		}
+
 	}
 }
