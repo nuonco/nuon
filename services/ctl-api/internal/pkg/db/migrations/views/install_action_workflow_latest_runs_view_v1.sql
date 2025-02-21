@@ -5,7 +5,7 @@ CREATE OR REPLACE VIEW install_action_workflow_runs_latest_view_v1 AS
   WITH install_action_workflow_runs_with_count AS (
     SELECT
        rje.*,
-       ROW_NUMBER() OVER (PARTITION BY rje.install_action_workflow_id ORDER BY rje.created_at) as execution_number
+       ROW_NUMBER() OVER (PARTITION BY rje.install_action_workflow_id ORDER BY rje.created_at DESC) as execution_number
     FROM
        install_action_workflow_runs rje
   )
