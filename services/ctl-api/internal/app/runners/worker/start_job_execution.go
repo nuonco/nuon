@@ -74,6 +74,16 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 			l.Warn("unable to determine runner status", zap.Error(err))
 			return false, false, err
 		}
+
+		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
+		if err != nil {
+			return false, false, nil
+		}
+		if jobStatus == app.RunnerJobStatusCancelled {
+			l.Error("job was cancelled")
+			tags["status"] = "job_cancelled"
+			return false, false, nil
+		}
 	}
 
 	// poll until the job is picked up, and an execution exists
@@ -93,6 +103,16 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "timeout waiting for runner to pick up job")
 			tags["status"] = "available_timeout"
 			return true, false, nil
+		}
+
+		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
+		if err != nil {
+			return false, false, nil
+		}
+		if jobStatus == app.RunnerJobStatusCancelled {
+			l.Error("job was cancelled")
+			tags["status"] = "job_cancelled"
+			return false, false, nil
 		}
 
 		jobExecutionResp, err := activities.AwaitGetLatestJobExecution(ctx, activities.GetLatestJobExecutionRequest{

@@ -10,10 +10,3 @@ func AsSystemProvider(f any) any {
 		fx.ResultTags(`name:"system"`),
 	)
 }
-
-func AsOTELProvider(f any) any {
-	return fx.Annotate(
-		f,
-		fx.ResultTags(`name:"otel"`),
-	)
-}

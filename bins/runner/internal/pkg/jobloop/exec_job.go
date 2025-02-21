@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/errs"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/log"
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/slog"
 )
 
 type executeJobStep struct {
@@ -22,7 +23,12 @@ type executeJobStep struct {
 }
 
 func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) error {
-	l, err := log.NewOTELJobLogger(j.cfg, j.loggerProvider)
+	jl, err := slog.NewOTELProvider(j.cfg, j.settings, job.LogStreamID)
+	if err != nil {
+		return errors.Wrap(err, "unable to create otel provider")
+	}
+
+	l, err := log.NewOTELJobLogger(j.cfg, jl)
 	if err != nil {
 		return errors.Wrap(err, "unable to get job logger")
 	}
@@ -75,7 +81,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	}
 
 	l.Info("finished job", zap.String("name", handler.Name()))
-	if err := j.loggerProvider.ForceFlush(ctx); err != nil {
+	if err := jl.ForceFlush(ctx); err != nil {
 		return errors.Wrap(err, "unable to flush logger")
 	}
 	close(doneCh)
