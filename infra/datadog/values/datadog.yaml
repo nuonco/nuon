@@ -40,3 +40,6 @@ agents:
       operator: "Equal"
       value: "clickhouse-installation"
       effect: "NoSchedule"
+    - key: "pool.nuon.co/public"
+      operator: "Exists"
+      effect: "NoSchedule"
