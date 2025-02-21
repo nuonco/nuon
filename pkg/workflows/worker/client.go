@@ -22,7 +22,6 @@ func (w *worker) getClient() (client.Client, func(), error) {
 		temporalclient.WithNamespace(w.Config.TemporalNamespace),
 		temporalclient.WithContextPropagators(w.propagators),
 		temporalclient.WithDataConverter(dataConverter),
-		temporalclient.WithMetricsWriter(w.mw),
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get temporal client: %w", err)
