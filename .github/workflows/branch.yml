@@ -16,7 +16,7 @@ jobs:
         continue-on-error: true
         with:
           regex: '([a-z])+\/([a-z0-9])+'
-          allowed_prefixes: "ab,cp,nh,ja,jm,cb,fd,rb,se,sdboyer,dependabot,revert"
+          allowed_prefixes: "ab,cp,nh,ja,jm,cb,fd,rb,se,sdboyer,dependabot,revert,devin"
           ignore: main
           min_length: 5
 
