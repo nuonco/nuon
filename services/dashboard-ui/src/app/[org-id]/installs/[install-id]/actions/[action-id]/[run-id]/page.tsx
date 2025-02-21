@@ -40,8 +40,8 @@ function hydrateRunSteps(
   steps: TInstallActionWorkflowRun['steps'],
   stepConfigs: TActionConfig['steps']
 ) {
-  return steps.map((step) => {
-    const config = stepConfigs.find((cfg) => cfg.id === step.step_id)
+  return steps?.map((step) => {
+    const config = stepConfigs?.find((cfg) => cfg.id === step.step_id)
     return {
       name: config?.name,
       idx: config.idx,
