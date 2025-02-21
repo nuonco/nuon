@@ -39,10 +39,8 @@
         "tab": "Concepts",
         "groups": [
           {
-            "group": "",
-            "pages": [
-              "concepts/concepts"
-            ]
+            "group": "Concepts",
+            "pages": ["concepts/concepts"]
           },
           {
             "group": "Concepts",
@@ -66,10 +64,8 @@
         "tab": "Guides",
         "groups": [
           {
-            "group": "",
-            "pages": [
-              "guides/guides"
-            ]
+            "group": "Guides",
+            "pages": ["guides/guides"]
           },
           {
             "group": "Configuration",
@@ -116,10 +112,8 @@
         "tab": "API Reference",
         "groups": [
           {
-            "group": "",
-            "pages": [
-              "api-ref/getting-started"
-            ]
+            "group": "API Reference",
+            "pages": ["api-ref/getting-started"]
           },
           {
             "group": "apps",
@@ -244,11 +238,8 @@
         "tab": "Updates",
         "groups": [
           {
-            "group": "",
-            "pages": [
-              "updates/updates",
-              "updates/roadmap"
-            ]
+            "group": "Updates",
+            "pages": ["updates/updates", "updates/roadmap"]
           },
           {
             "group": "Changelog",
@@ -272,11 +263,8 @@
         "tab": "Support",
         "groups": [
           {
-            "group": "",
-            "pages": [
-              "support/support",
-              "support/faq"
-            ]
+            "group": "Support",
+            "pages": ["support/support", "support/faq"]
           }
         ]
       }
@@ -345,3 +333,4 @@
     }
   ]
 }
+
