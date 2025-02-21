@@ -240,7 +240,7 @@
       },
       {
         "tab": "Support",
-        "pages": ["support/support", "support/faq"]
+        "pages": ["support/support"]
       }
     ],
     "global": {
