@@ -49,6 +49,8 @@ func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
 		Preload("HealthChecks", func(db *gorm.DB) *gorm.DB {
 			return db.Order("org_health_checks.created_at DESC").Limit(1)
 		}).
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
 		Preload("VCSConnections").
 		First(&org, "id = ?", orgID)
 	if res.Error != nil {
