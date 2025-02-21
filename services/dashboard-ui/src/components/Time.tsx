@@ -55,7 +55,10 @@ export const Duration: FC<IDuration> = ({
   ...props
 }) => {
   let duration: LuxonDuration
-  if (nanoseconds) {
+  if (nanoseconds !== undefined) {
+    if (nanoseconds === 0) {      
+      return <Text {...props}>Unknown</Text>
+    }
     duration = LuxonDuration.fromMillis(Math.round(nanoseconds / 1000000))
   } else {
     const bt = DateTime.fromISO(beginTime)
