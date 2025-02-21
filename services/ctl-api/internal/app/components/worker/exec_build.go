@@ -57,6 +57,8 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		Metadata: map[string]string{
 			"component_id":       comp.ID,
 			"component_build_id": buildID,
+			"component_name":     comp.Name,
+			"app_id":             currentApp.ID,
 		},
 	})
 	if err != nil {
