@@ -73,10 +73,11 @@ func (a *Migrations) GetAll() []Migration {
 			Fn:       a.migration056CreateTokensTable,
 			Disabled: true,
 		},
-		{
-			Name: "057-authz-cleanup",
-			Fn:   a.migration057CleanupOldAuthz,
-		},
+		// This migration removed because the table has been removed
+		// {
+		// 	Name: "057-authz-cleanup",
+		// 	Fn:   a.migration057CleanupOldAuthz,
+		// },
 		{
 			Name: "058-aws-region-types",
 			Fn:   a.migration058AWSRegionTypes,
