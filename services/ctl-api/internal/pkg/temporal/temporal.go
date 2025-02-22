@@ -33,6 +33,7 @@ func New(params Params) (temporalclient.Client, error) {
 		temporalclient.WithNamespace(params.Cfg.TemporalNamespace),
 		temporalclient.WithDataConverter(dataConverter),
 		temporalclient.WithContextPropagator(params.Propagator),
+		temporalclient.WithMetricsWriter(params.MW),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get temporal client: %w", err)
