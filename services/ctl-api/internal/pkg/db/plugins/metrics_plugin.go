@@ -115,6 +115,7 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB) {
 	m.metricsWriter.Timing("gorm_operation_latency", dur, tags)
 	m.metricsWriter.Gauge("gorm_operation.response_size", float64(respSize), tags)
 	m.metricsWriter.Gauge("gorm_operation.preload_count", preloadCount, tags)
+	m.metricsWriter.Gauge("gorm_operation.rows_affected", float64(tx.RowsAffected), tags)
 
 	if m.dbType == "ch" {
 		return
