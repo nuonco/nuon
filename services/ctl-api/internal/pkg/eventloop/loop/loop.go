@@ -133,7 +133,7 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 	}
 
 	// execute the event loop
-	clear(pendingSignals)
+	pendingSignals = make([]T, 0)
 	signalCount := 0
 	stop := false
 	restart := false
