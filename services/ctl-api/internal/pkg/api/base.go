@@ -30,7 +30,7 @@ type API struct {
 }
 
 func (a *API) init() error {
-	a.handler = gin.Default()
+	a.handler = gin.New()
 	a.srv = &http.Server{
 		Addr:    fmt.Sprintf(":%v", a.port),
 		Handler: a.handler.Handler(),

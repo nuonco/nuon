@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID GetInstallActionWorkflowRun
@@ -40,7 +40,7 @@ func (s *service) GetInstallActionWorkflowRun(ctx *gin.Context) {
 }
 
 func (s *service) findInstallActionWorkflowRun(ctx context.Context, runID string) (*app.InstallActionWorkflowRun, error) {
-	orgID, err := middlewares.OrgIDFromContext(ctx)
+	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (s *service) findInstallActionWorkflowRun(ctx context.Context, runID string
 		Preload("ActionWorkflowConfig.Triggers").
 		Preload("LogStream").
 		Preload("RunnerJob").
-		Preload("Steps", ).
+		Preload("Steps").
 		Where("org_id = ? AND id = ?", orgID, runID).
 		First(&run)
 	if res.Error != nil {
