@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID GetOrgs
@@ -27,7 +27,7 @@ import (
 // @Success		200				{array}		app.Org
 // @Router			/v1/orgs [GET]
 func (s *service) GetCurrentUserOrgs(ctx *gin.Context) {
-	account, err := authcontext.FromGinContext(ctx)
+	account, err := cctx.AccountFromGinContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

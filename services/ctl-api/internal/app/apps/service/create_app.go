@@ -11,7 +11,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
-	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -60,7 +59,7 @@ func (s *service) CreateApp(ctx *gin.Context) {
 		return
 	}
 
-	user, err := authcontext.FromGinContext(ctx)
+	user, err := cctx.AccountFromGinContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

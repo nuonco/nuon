@@ -11,7 +11,6 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
@@ -46,7 +45,7 @@ func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
 // @Success		201				{object}	app.Org
 // @Router			/v1/orgs [POST]
 func (s *service) CreateOrg(ctx *gin.Context) {
-	acct, err := authcontext.FromGinContext(ctx)
+	acct, err := cctx.AccountFromGinContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
