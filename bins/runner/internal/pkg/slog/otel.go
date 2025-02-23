@@ -3,6 +3,7 @@ package slog
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/sdk/log"
@@ -40,7 +41,9 @@ func NewOTELProvider(cfg *internal.Config, set *settings.Settings, logStreamID s
 	lp := log.NewLoggerProvider(
 		log.WithResource(rsrc),
 		log.WithProcessor(
-			log.NewBatchProcessor(logExporter),
+			log.NewBatchProcessor(logExporter,
+				log.WithExportMaxBatchSize(25),
+				log.WithExportInterval(time.Second*5)),
 		),
 	)
 

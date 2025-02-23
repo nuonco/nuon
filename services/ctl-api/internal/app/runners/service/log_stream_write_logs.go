@@ -68,10 +68,9 @@ func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 	// write the logs to the db
 	logs := s.toLogStreamLogs(logStreamID, expreq)
 
-	// NOTE(jm): temporarily disable these until we understand the patterns of the API
-	//if !logStream.ParentLogStreamID.Empty() {
-	//logs = append(logs, s.toLogStreamLogs(logStream.ParentLogStreamID.String, expreq)...)
-	//}
+	if !logStream.ParentLogStreamID.Empty() {
+		logs = append(logs, s.toLogStreamLogs(logStream.ParentLogStreamID.String, expreq)...)
+	}
 
 	err = s.writeLogStreamLogs(ctx, logs)
 	if err != nil {
