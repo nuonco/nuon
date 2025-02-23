@@ -4,8 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-
-	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID GetCurrentUser
@@ -23,7 +22,7 @@ import (
 // @Success		200				{object}	app.Account
 // @Router			/v1/general/current-user [GET]
 func (s *service) GetCurrentUser(ctx *gin.Context) {
-	acct, err := authcontext.FromGinContext(ctx)
+	acct, err := cctx.AccountFromGinContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

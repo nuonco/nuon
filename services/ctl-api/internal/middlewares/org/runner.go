@@ -2,8 +2,10 @@ package org
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
@@ -12,7 +14,9 @@ import (
 
 var _ middlewares.Middleware = (*runnerMiddleware)(nil)
 
-type runnerMiddleware struct{}
+type runnerMiddleware struct {
+	l *zap.Logger
+}
 
 func (m *runnerMiddleware) Name() string {
 	return "runner_org"
@@ -25,7 +29,7 @@ func (m *runnerMiddleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		acct, err := middlewares.AccountFromContext(ctx)
+		acct, err := cctx.AccountFromContext(ctx)
 		if err != nil {
 			ctx.Error(stderr.ErrSystem{
 				Err:         fmt.Errorf("no runner account in request"),
@@ -35,16 +39,28 @@ func (m *runnerMiddleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		if len(acct.OrgIDs) != 1 {
+		if len(acct.OrgIDs) > 1 {
+			m.l.Warn("runner associated with more than one org",
+				zap.String("org_ids", strings.Join(acct.OrgIDs, ",")),
+			)
 			ctx.Error(stderr.ErrAuthorization{
 				Err:         fmt.Errorf("runner account associated with more than one org"),
-				Description: fmt.Sprintf("please retry request with %s header", orgIDHeaderKey),
+				Description: fmt.Sprintf("please retry request correct runner account"),
+			})
+			ctx.Abort()
+			return
+		}
+		if len(acct.OrgIDs) < 1 {
+			ctx.Error(stderr.ErrAuthorization{
+				Err:         fmt.Errorf("runner account not associated any org"),
+				Description: fmt.Sprintf("please retry request correct runner account"),
 			})
 			ctx.Abort()
 			return
 		}
 
-		middlewares.SetOrgIDGinContext(ctx, acct.OrgIDs[0])
+		cctx.SetOrgIDGinContext(ctx, acct.OrgIDs[0])
+		cctx.SetOrgGinContext(ctx, acct.Orgs[0])
 	}
 }
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID AdminGetLogStreamLogs
@@ -21,7 +21,7 @@ import (
 // @Success		200				{object}	[]app.OtelLogRecord
 // @Router			/v1/log-streams/{log_stream_id}/logs [GET]
 func (s *service) AdminGetLogStreamLogs(ctx *gin.Context) {
-	orgID, err := middlewares.OrgIDFromContext(ctx)
+	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to read org id from context"))
 		return
