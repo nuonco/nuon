@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -38,7 +37,7 @@ func (s *service) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	acct, err := authcontext.FromGinContext(ctx)
+	acct, err := cctx.AccountFromGinContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

@@ -36,6 +36,7 @@ type Account struct {
 
 	// ReadOnly Fields
 	OrgIDs         []string        `json:"org_ids" gorm:"-"`
+	Orgs           []*Org          `json:"-" gorm:"-"`
 	AllPermissions permissions.Set `json:"permissions" gorm:"-"`
 }
 
@@ -68,6 +69,7 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 		}
 
 		a.OrgIDs = append(a.OrgIDs, role.Org.ID)
+		a.Orgs = append(a.Orgs, role.Org)
 		visited[role.Org.ID] = struct{}{}
 	}
 
