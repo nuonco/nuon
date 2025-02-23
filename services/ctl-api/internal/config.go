@@ -126,6 +126,9 @@ type Config struct {
 	// analytics configuration
 	SegmentWriteKey  string `config:"segment_write_key" validate:"required"`
 	DisableAnalytics bool   `config:"disable_analytics"`
+
+	// Force debug mode for everything
+	ForceDebugMode bool `config:"force_debug_mode"`
 }
 
 func NewConfig() (*Config, error) {

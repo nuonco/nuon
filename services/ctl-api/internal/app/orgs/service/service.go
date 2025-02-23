@@ -92,6 +92,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/orgs/:org_id/admin-service-account", s.AdminCreateServiceAccount)
 	api.POST("/v1/orgs/:org_id/admin-add-logo", s.AdminAddLogo)
 	api.POST("/v1/orgs/:org_id/admin-migrate", s.AdminMigrateOrg)
+	api.POST("/v1/orgs/:org_id/admin-debug-mode", s.AdminDebugModeOrg)
 
 	return nil
 }
