@@ -5,12 +5,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 func CanCreate(ctx *gin.Context, objectID string) error {
-	acct, err := authcontext.FromGinContext(ctx)
+	acct, err := cctx.AccountFromContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -23,7 +23,7 @@ func CanCreate(ctx *gin.Context, objectID string) error {
 }
 
 func CanRead(ctx *gin.Context, objectID string) error {
-	acct, err := authcontext.FromGinContext(ctx)
+	acct, err := cctx.AccountFromContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func CanRead(ctx *gin.Context, objectID string) error {
 }
 
 func CanUpdate(ctx *gin.Context, objectID string) error {
-	acct, err := authcontext.FromGinContext(ctx)
+	acct, err := cctx.AccountFromContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func CanUpdate(ctx *gin.Context, objectID string) error {
 }
 
 func CanDelete(ctx *gin.Context, objectID string) error {
-	acct, err := authcontext.FromGinContext(ctx)
+	acct, err := cctx.AccountFromContext(ctx)
 	if err != nil {
 		return err
 	}

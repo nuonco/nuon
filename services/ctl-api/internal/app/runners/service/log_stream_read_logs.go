@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	chhelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/ch/helpers"
 )
 
@@ -88,7 +88,7 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	}
 
 	// read logs from chDB
-	orgID, err := middlewares.OrgIDFromContext(ctx)
+	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to read org id from context"))
 		return

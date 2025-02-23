@@ -48,7 +48,8 @@ type Org struct {
 
 	SandboxMode bool `json:"sandbox_mode" gorm:"notnull"`
 
-	OrgType OrgType `json:"-"`
+	OrgType   OrgType `json:"-"`
+	DebugMode bool    `json:"-"`
 
 	NotificationsConfig   NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty"`
 	NotificationsConfigID string              `json:"-"`

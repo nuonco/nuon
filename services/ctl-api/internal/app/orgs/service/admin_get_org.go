@@ -39,11 +39,12 @@ func (s *service) adminGetOrg(ctx context.Context, nameOrID string) (*app.Org, e
 		Preload("CreatedBy").
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
-		Where("name LIKE ?", nameOrID).
+		Where("name = ?", nameOrID).
+		Or("name LIKE ?", nameOrID).
 		Or("id = ?", nameOrID).
 		First(&org)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get org: %w", res.Error)
+		return nil, fmt.Errorf("unable to get org by name or id: %w", res.Error)
 	}
 
 	return &org, nil
