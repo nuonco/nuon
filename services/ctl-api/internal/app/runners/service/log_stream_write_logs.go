@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/otel"
 
@@ -57,11 +58,20 @@ func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 		return
 	}
 
+	s.mw.Incr("otel.log_stream.batch", metrics.ToTags(map[string]string{
+		"log_stream_type": logStream.OwnerType,
+	}))
+	s.mw.Gauge("otel.log_stream.batch_size", float64(len(byts)), metrics.ToTags(map[string]string{
+		"log_stream_type": logStream.OwnerType,
+	}))
+
 	// write the logs to the db
 	logs := s.toLogStreamLogs(logStreamID, expreq)
-	if !logStream.ParentLogStreamID.Empty() {
-		logs = append(logs, s.toLogStreamLogs(logStream.ParentLogStreamID.String, expreq)...)
-	}
+
+	// NOTE(jm): temporarily disable these until we understand the patterns of the API
+	//if !logStream.ParentLogStreamID.Empty() {
+	//logs = append(logs, s.toLogStreamLogs(logStream.ParentLogStreamID.String, expreq)...)
+	//}
 
 	err = s.writeLogStreamLogs(ctx, logs)
 	if err != nil {
