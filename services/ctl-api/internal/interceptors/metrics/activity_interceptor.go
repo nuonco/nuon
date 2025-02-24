@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
+	"github.com/powertoolsdev/mono/pkg/errs"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 )
 
@@ -53,6 +54,11 @@ func (a *actInterceptor) ExecuteActivity(
 		a.mw.Timing("temporal_activity.latency", time.Since(startTS), metrics.ToTags(tags))
 
 		if rec != nil {
+			if err, is := rec.(error); is {
+				errs.ReportToSentry(err, &errs.SentryErrOptions{
+					Tags: tags,
+				})
+			}
 			panic(rec)
 		}
 	}()
