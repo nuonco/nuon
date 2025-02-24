@@ -207,7 +207,11 @@ func (w *Workflows) checkUpdateNeeded(
 	} else if heartbeat.Version != runner.RunnerGroup.Settings.ExpectedVersion {
 		// NOTE(sdboyer) this branch is unreachable until we have a versioning
 		// strategy other than latest.
-		needsUpdate = true
+		//
+		// However, a lot of older orgs _do_ have something other than `latest`
+		// set for their expected version, and as a result they're looping here.
+		// So we just never update these, until we have a better strategy.
+		needsUpdate = false
 	}
 
 	// NOTE(jm): if we need an update, we just write a metric
