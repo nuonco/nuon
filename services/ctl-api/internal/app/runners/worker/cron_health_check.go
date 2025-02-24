@@ -100,17 +100,24 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 		return errors.Wrap(err, "unable to create runner health check")
 	}
 
-	if err := w.checkRecentRestart(ctx, heartbeat, req.RunnerID); err != nil {
+	runner, err := activities.AwaitGetByRunnerID(ctx, req.RunnerID)
+	if err != nil {
+		// This should be unreachable, given that we already retrieved status
+		return errors.Wrap(err, "unable to get runner")
+	}
+
+	restarting, err := w.checkRestart(ctx, heartbeat, runner)
+	if err != nil {
 		return errors.Wrap(err, "unable to check recent restart")
 	}
 
-	// If we've got a healthy status, then check to see if the version needs
-	// updating.  Only check if healthy, to avoid exacerbating issues the runner
-	// may be having. This should also prevent subsequent runs of this workflow
-	// from re-attempting the same version check, potentially creating a race
-	// condition.
-	if newStatus == app.RunnerStatusActive {
-		err = w.checkUpdateNeeded(ctx, heartbeat, healthcheck, req.RunnerID)
+	// If we've got a healthy status and a restart is not already planned, then
+	// check to see if the version needs updating.  Only check if healthy, to
+	// avoid exacerbating issues the runner may be having. This should also
+	// prevent subsequent runs of this workflow from re-attempting the same
+	// version check, potentially creating a race condition.
+	if !restarting && newStatus == app.RunnerStatusActive {
+		err = w.checkUpdateNeeded(ctx, heartbeat, healthcheck, runner)
 		if err != nil {
 			status = "error_failed_update_check"
 			return errors.Wrap(err, "failed to check for needed update")
@@ -149,39 +156,51 @@ func (w *Workflows) determineStatusFromHeartBeat(ctx workflow.Context, heartbeat
 	return app.RunnerStatusActive
 }
 
-func (w *Workflows) checkRecentRestart(
+// Check if there was a recent restart, and force one if the runner has been running for
+// longer than the configured time.
+func (w *Workflows) checkRestart(
 	ctx workflow.Context,
 	heartbeat *app.RunnerHeartBeat,
-	runnerID string,
-) error {
-	if heartbeat.AliveTime > time.Second*5 {
-		return nil
+	runner *app.Runner,
+) (bool, error) {
+	// TODO(sdboyer) replace with actual value from group settings when actually implementing the call
+	ttl := time.Hour * 8
+	if heartbeat.AliveTime < time.Second*5 {
+		w.mw.Incr(ctx, "runner.restart", metrics.ToTags(map[string]string{
+			"runner_type": string(runner.RunnerGroup.Type),
+		})...)
+	} else if heartbeat.AliveTime > ttl {
+		w.mw.Incr(ctx, "runner.ttl_exceeded", metrics.ToTags(map[string]string{
+			"runner_type": string(runner.RunnerGroup.Type),
+			"ttl":         ttl.String(),
+			"alive_for":   heartbeat.AliveTime.String(),
+		})...)
+
+		// TODO(sdboyer) temporary for more granular clarity than the metric gives. Remove once restart is implemented
+		l, err := log.WorkflowLogger(ctx)
+		if err != nil {
+			return false, err
+		}
+		l.Info("runner ttl exceeded, scheduling restart",
+			zap.String("runner_id", runner.ID),
+			zap.String("runner_type", string(runner.RunnerGroup.Type)),
+			zap.String("ttl", runner.RunnerGroup.Settings.ExpectedVersion),
+			zap.String("alive_for", heartbeat.Version),
+		)
+
+		// TODO(sdboyer) actually dispatch a call in addition to the telemetry
+		return true, nil
 	}
 
-	runner, err := activities.AwaitGetByRunnerID(ctx, runnerID)
-	if err != nil {
-		// This should be unreachable, given that we already retrieved status
-		return errors.Wrap(err, "unable to get runner")
-	}
-	w.mw.Incr(ctx, "runner.restart", metrics.ToTags(map[string]string{
-		"runner_type": string(runner.RunnerGroup.Type),
-	})...)
-
-	return nil
+	return false, nil
 }
 
 func (w *Workflows) checkUpdateNeeded(
 	ctx workflow.Context,
 	heartbeat *app.RunnerHeartBeat,
 	healthcheck *app.RunnerHealthCheck,
-	runnerID string,
+	runner *app.Runner,
 ) error {
-	runner, err := activities.AwaitGetByRunnerID(ctx, runnerID)
-	if err != nil {
-		// This should be unreachable, given that we already retrieved status
-		return errors.Wrap(err, "unable to get runner")
-	}
-
 	var needsUpdate bool
 	if runner.RunnerGroup.Settings.ExpectedVersion == "latest" {
 		needsUpdate = heartbeat.Version != w.cfg.Version
@@ -204,7 +223,7 @@ func (w *Workflows) checkUpdateNeeded(
 			return nil
 		}
 		l.Info("sending signal to update out-of-date runner",
-			zap.String("runner_id", runnerID),
+			zap.String("runner_id", runner.ID),
 			zap.String("runner_type", string(runner.RunnerGroup.Type)),
 			zap.String("expected_version", runner.RunnerGroup.Settings.ExpectedVersion),
 			zap.String("reported_version", heartbeat.Version),
