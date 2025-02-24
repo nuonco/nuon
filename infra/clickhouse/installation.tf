@@ -65,6 +65,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
           "prometheus/events"               = true
           "prometheus/asynchronous_metrics" = true
           "prometheus/status_info"          = true
+          "max_concurrent_queries"          = 2500
         }
         # configure to use the zookeeper nodes
         "zookeeper" = {
