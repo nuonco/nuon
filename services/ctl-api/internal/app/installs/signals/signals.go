@@ -49,7 +49,7 @@ func NewRequestSignal(req eventloop.EventLoopRequest, signal *Signal) RequestSig
 }
 
 type RequestSignal struct {
-	*Signal
+	*Signal `validate:"required"`
 	eventloop.EventLoopRequest
 }
 

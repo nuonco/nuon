@@ -1,14 +1,12 @@
 package metrics
 
 import (
-	"context"
 	"errors"
 	"time"
 
-	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/interceptor"
+	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 
 	"github.com/go-playground/validator/v10"
 
@@ -16,42 +14,43 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 )
 
-var _ interceptor.ActivityInboundInterceptor = (*actInterceptor)(nil)
+var _ interceptor.WorkflowInboundInterceptor = (*wfInterceptor)(nil)
 
-type actInterceptor struct {
-	interceptor.ActivityInboundInterceptorBase
+type wfInterceptor struct {
+	interceptor.WorkflowInboundInterceptorBase
 
 	mw metrics.Writer
 	l  *zap.Logger
 }
 
-func (a *actInterceptor) Init(outbound interceptor.ActivityOutboundInterceptor) error {
+func (a *wfInterceptor) Init(outbound interceptor.WorkflowOutboundInterceptor) error {
 	return a.Next.Init(outbound)
 }
 
-func (a *actInterceptor) ExecuteActivity(
-	ctx context.Context,
-	in *interceptor.ExecuteActivityInput,
+func (a *wfInterceptor) ExecuteWorkflow(
+	ctx workflow.Context,
+	in *interceptor.ExecuteWorkflowInput,
 ) (interface{}, error) {
-	info := activity.GetInfo(ctx)
-	status := "ok"
+	info := workflow.GetInfo(ctx)
 	startTS := time.Now()
 	tags := map[string]string{
-		"status":        status,
-		"activity":      info.ActivityType.Name,
-		"namespace":     info.WorkflowNamespace,
+		"status":        "ok",
+		"task_queue":    info.TaskQueueName,
+		"namespace":     info.Namespace,
 		"workflow_type": info.WorkflowType.Name,
 	}
+	status := "ok"
 
 	// NOTE(jm): we emit from a defer, so we can catch any type of panic and still emit metrics.
 	defer func() {
 		rec := recover()
+		tags["status"] = status
 		if rec != nil {
 			tags["status"] = "panic"
 		}
 
-		a.mw.Incr("temporal_activity.status", metrics.ToTags(tags))
-		a.mw.Timing("temporal_activity.latency", time.Since(startTS), metrics.ToTags(tags))
+		a.mw.Incr("temporal_workflow.status", metrics.ToTags(tags))
+		a.mw.Timing("temporal_workflow.latency", time.Since(startTS), metrics.ToTags(tags))
 
 		if rec != nil {
 			// TODO(sdboyer) replace this with something that goes to dd
@@ -64,16 +63,9 @@ func (a *actInterceptor) ExecuteActivity(
 		}
 	}()
 
-	resp, err := a.Next.ExecuteActivity(ctx, in)
+	resp, err := a.Next.ExecuteWorkflow(ctx, in)
 	if err != nil {
 		status = "error"
-
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			status = "error_not_found"
-		}
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			status = "error_duplicate_key"
-		}
 
 		var vErr validator.ValidationErrors
 		if errors.As(err, &vErr) {
