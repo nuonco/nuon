@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { CaretRight, Heartbeat, Timer } from '@phosphor-icons/react/dist/ssr'
@@ -16,6 +15,7 @@ import {
   StatusBadge,
   RunnerHeartbeatChart,
   Section,
+  SubNav,
   Text,
   Time,
   Timeline,
@@ -43,9 +43,6 @@ export default async function OrgDashboard({ params }) {
     }).catch(console.error),
   ])
 
-  /* if (false) {
-   *   redirect(`/${orgId}/apps`)
-   * } else { */
   return (
     <DashboardContent
       breadcrumb={[{ href: `/${orgId}`, text: org?.name }]}
@@ -169,7 +166,6 @@ export default async function OrgDashboard({ params }) {
       </div>
     </DashboardContent>
   )
-  /* } */
 }
 
 const LoadRunnerHeartbeat: FC<{
