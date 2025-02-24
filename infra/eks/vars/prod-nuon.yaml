@@ -47,6 +47,3 @@ additional_nodepools:
           duration: "20h"
           reasons:
           - "Underutilized"
-    taints:
-      - key: pool.nuon.co/public
-        effect: NoSchedule

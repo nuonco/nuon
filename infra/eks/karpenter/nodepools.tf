@@ -124,7 +124,13 @@ resource "kubectl_manifest" "additional_nodepools" {
               ]
             },
           ]
-          taints = each.value.taints
+          taints = [
+            {
+              key    = "pool.nuon.co"
+              value  = each.value.name
+              effect = "NoSchedule"
+            }
+          ]
         }
       }
       # https://karpenter.sh/v1.0/concepts/disruption/

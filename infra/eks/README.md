@@ -2,6 +2,10 @@
 
 Deploy all infrastructure needed to run a nuon EKS cluster
 
+## Nodepools
+
+See [`karpenter`](./karpenter)
+
 ### Setup
 
 We use Terraform Cloud as remote state store as well as remote execution agent.
