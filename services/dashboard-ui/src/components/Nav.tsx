@@ -90,7 +90,7 @@ export const SubNav: FC<{ links: Array<TLink> }> = ({ links }) => {
   return (
     <nav className="flex items-center gap-6">
       {links.map((link) => {
-        const isActive = path.split('/')?.[4] === link.href.split('/')?.[4]
+        const isActive = path.split('/')?.at(-1) === link.href.split('/')?.at(-1)
 
         return (
           <NextLink
