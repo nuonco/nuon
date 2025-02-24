@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
-	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/powertoolsdev/mono/pkg/errs"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/pkg/errs"
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
@@ -104,10 +104,12 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 	}
 
 	wkflowInfo := workflow.GetInfo(ctx)
+	pendingSignals = w.filterSignals(ctx, wkflowInfo, pendingSignals)
 
 	defaultTags := map[string]string{
 		"sandbox_mode": strconv.FormatBool(req.SandboxMode),
 		"namespace":    wkflowInfo.Namespace,
+		"task_queue":   wkflowInfo.TaskQueueName,
 	}
 	w.MW.Incr(ctx, "event_loop.start", metrics.ToTags(defaultTags)...)
 	w.MW.Gauge(ctx, "event_loop.restart_count", float64(req.RestartCount), metrics.ToTags(defaultTags)...)
@@ -163,7 +165,7 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 		}
 
 		if err := signal.Validate(w.V); err != nil {
-			l.Info("invalid signal", zap.Error(err))
+			l.Error("invalid signal", zap.Error(err))
 		}
 
 		signalCount += 1
@@ -192,7 +194,7 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 			// `WorkerVersion` in their request chain
 			req.Version = w.Cfg.Version
 			req.RestartCount += 1
-			pendingSignals = append(pendingSignals, w.drainSignals(signalChan)...)
+			pendingSignals = append(pendingSignals, w.filterSignals(ctx, wkflowInfo, w.drainSignals(signalChan))...)
 			return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, req, pendingSignals)
 		}
 
@@ -200,11 +202,65 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 			w.MW.Incr(ctx, "event_loop.max_signals", metrics.ToTags(defaultTags)...)
 			l.Error("workflow hit max signals")
 			req.RestartCount += 1
-			pendingSignals = append(pendingSignals, w.drainSignals(signalChan)...)
+			pendingSignals = append(pendingSignals, w.filterSignals(ctx, wkflowInfo, w.drainSignals(signalChan))...)
 			return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, req, pendingSignals)
 		}
 	}
 
 	w.MW.Incr(ctx, "event_loop.finish", metrics.ToTags(defaultTags)...)
 	return nil
+}
+
+// This is a temporary (let's hope) function for identifying unpopulated/nil signals and reporting on them
+func (w *Loop[T, R]) validateSignal(ctx workflow.Context, info *workflow.Info, sig T, depth int) bool {
+	// send these in a defer, because nil signals will panic on these calls
+	tags := map[string]string{
+		"namespace":       info.Namespace,
+		"task_queue":      info.TaskQueueName,
+		"original_run_id": info.OriginalRunID,
+	}
+
+	var ret bool
+	err := sig.Validate(w.V)
+
+	// Getting info from the signal may panic if we have a nil, so set up a defer first
+	defer func() {
+		rec := recover()
+		if rec != nil || err != nil {
+			w.MW.Incr(ctx, "event_loop.invalid_signal", metrics.ToTags(tags)...)
+
+			if rec != nil {
+				// We might have both a validation error and a panic. Overwrite if we have the panic.
+				if rerr, ok := rec.(error); ok {
+					err = errors.WithStackDepth(errors.Wrap(rerr, "panic getting data from signal, likely nil"), depth)
+				} else {
+					err = errors.NewWithDepthf(depth, "panic, but recovery type was not an error: %s", rec)
+				}
+			} else {
+				// panic handler supersedes the regular validation err
+				err = errors.WithStackDepth(err, depth)
+			}
+
+			// TODO(sdboyer) replace this with something that goes to dd
+			errs.ReportToSentry(err, &errs.SentryErrOptions{
+				Tags: tags,
+			})
+		} else {
+			ret = true
+		}
+	}()
+	tags["workflow_type"] = sig.Name()
+
+	ret = err == nil
+	return ret // overridden by defer, no matter what
+}
+
+func (w *Loop[T, R]) filterSignals(ctx workflow.Context, info *workflow.Info, sigs []T) []T {
+	ret := make([]T, 0, len(sigs))
+	for _, sig := range sigs {
+		if w.validateSignal(ctx, info, sig, 2) {
+			ret = append(ret, sig)
+		}
+	}
+	return ret
 }

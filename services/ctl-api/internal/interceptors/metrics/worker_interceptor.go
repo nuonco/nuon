@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"go.temporal.io/sdk/interceptor"
+	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
@@ -28,6 +29,19 @@ func (m *workerInterceptor) InterceptActivity(
 ) interceptor.ActivityInboundInterceptor {
 	return &actInterceptor{
 		interceptor.ActivityInboundInterceptorBase{
+			Next: next,
+		},
+		m.mw,
+		m.l,
+	}
+}
+
+func (m *workerInterceptor) InterceptWorkflow(
+	ctx workflow.Context,
+	next interceptor.WorkflowInboundInterceptor,
+) interceptor.WorkflowInboundInterceptor {
+	return &wfInterceptor{
+		interceptor.WorkflowInboundInterceptorBase{
 			Next: next,
 		},
 		m.mw,
