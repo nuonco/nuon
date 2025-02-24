@@ -12,6 +12,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/powertoolsdev/mono/pkg/errs"
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
@@ -79,6 +80,13 @@ func (w *Loop[T, R]) handleSignal(ctx workflow.Context, wkflowReq eventloop.Even
 		"op":     op,
 		"status": status,
 	}, defaultTags)
+
+	switch status {
+	case "error", "panic":
+		errs.ReportToSentry(err, &errs.SentryErrOptions{
+			Tags: tags,
+		})
+	}
 
 	dur := workflow.Now(ctx).Sub(startTS)
 
