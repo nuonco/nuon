@@ -1,0 +1,38 @@
+package viewsql
+
+import (
+	_ "embed"
+)
+
+//go:embed installs_view_v3.sql
+var InstallsViewV3 string
+
+//go:embed app_configs_view_v2.sql
+var AppConfigViewV2 string
+
+//go:embed component_config_connections_v1.sql
+var ComponentConfigConnectionsV1 string
+
+//go:embed install_action_workflow_latest_runs_view_v1.sql
+var InstallActionWorkflowLatestRunsViewV1 string
+
+//go:embed install_inputs_view_v1.sql
+var InstallInputsViewV1 string
+
+//go:embed runner_health_checks_view_v1.sql
+var RunnerHealthCheckViewV1 string
+
+//go:embed runner_jobs_view_v1.sql
+var RunnerJobViewV1 string
+
+//go:embed runner_settings_v1.sql
+var RunnerSettingsV1 string
+
+//go:embed runner_wide_v1.sql
+var RunnerWideV1 string
+
+//go:embed psql_table_sizes_v1.sql
+var PSQLTableSizesV1 string
+
+//go:embed ch_table_sizes_v1.sql
+var CHTableSizesV1 string

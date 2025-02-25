@@ -37,6 +37,24 @@ func MergeMap[K comparable, T any](src map[K]T, vals ...map[K]T) map[K]T {
 	return src
 }
 
+func SubMap[K comparable, T any](newVals, oldVals map[K]T) map[K]T {
+	addVals := make(map[K]T, 0)
+	for k, v := range newVals {
+		if _, ok := oldVals[k]; ok {
+			continue
+		}
+
+		addVals[k] = v
+	}
+
+	return addVals
+}
+
+// DiffMaps returns two additions, the additions that need to be added, and the ones that need to be deleted
+func DiffMaps[K comparable, T any](newVals, oldVals map[K]T) (map[K]T, map[K]T) {
+	return SubMap(newVals, oldVals), SubMap(oldVals, newVals)
+}
+
 func ToMapstructure(inp interface{}) (map[string]interface{}, error) {
 	var obj map[string]interface{}
 	if err := mapstructure.Decode(inp, &obj); err != nil {

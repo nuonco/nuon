@@ -78,7 +78,7 @@ watch_ignore:
 # the startup commands for ctl api are way too long and must be run only when booting the app
 disable_watch_rerun_startup_commands: true
 local_startup_cmds:
-  - go generate ./...
+  # - go generate ./...
   - go build -o /tmp/svc-ctl-api
   - /tmp/svc-ctl-api startup
 local_build_cmds:
