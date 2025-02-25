@@ -6,10 +6,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// This callObjMethod function, is copied from
+// This CallObjMethod function, is copied from
 // https://raw.githubusercontent.com/go-gorm/gorm/master/callbacks/callmethod.go, which is how the gorm hooks dispatch
 // calls to model functions.
-func callObjMethod(db *gorm.DB, fc func(value interface{}, tx *gorm.DB) bool) {
+func CallObjMethod(db *gorm.DB, fc func(value interface{}, tx *gorm.DB) bool) {
 	tx := db.Session(&gorm.Session{NewDB: true})
 
 	if called := fc(db.Statement.ReflectValue.Interface(), tx); !called {

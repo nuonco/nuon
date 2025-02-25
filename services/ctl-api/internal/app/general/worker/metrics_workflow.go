@@ -39,10 +39,10 @@ func (w *Workflows) Metrics(ctx workflow.Context) error {
 
 	methods := map[string]func(workflow.Context) error{
 		"psql_tables": func(ctx workflow.Context) error {
-			return w.writeTableMetrics(ctx, "psql")
+			return w.writePSQLTableMetrics(ctx)
 		},
 		"clickhouse_tables": func(ctx workflow.Context) error {
-			return w.writeTableMetrics(ctx, "ch")
+			return w.writeCHTableMetrics(ctx)
 		},
 		"temporal_orgs": func(ctx workflow.Context) error {
 			return w.temporalNamespaceMetrics(ctx, "orgs")
@@ -74,17 +74,35 @@ func (w *Workflows) Metrics(ctx workflow.Context) error {
 	return nil
 }
 
-func (w *Workflows) writeTableMetrics(ctx workflow.Context, typ string) error {
+func (w *Workflows) writeCHTableMetrics(ctx workflow.Context) error {
 	defaultTags := map[string]string{"general": "true"}
 
 	// write psql tables
-	tables, err := activities.AwaitGetTableMetricsByTyp(ctx, typ)
+	tables, err := activities.AwaitGetCHTableMetrics(ctx, activities.GetCHTableMetricsRequest{})
 	if err != nil {
 		return errors.Wrap(err, "unable to get table metrics")
 	}
 	for _, table := range tables {
 		w.mw.Gauge(ctx, "table_size", table.SizeBytes, metrics.ToTags(generics.MergeMap(map[string]string{
-			"db_type":    typ,
+			"db_type":    "ch",
+			"table_name": table.TableName,
+		}, defaultTags))...)
+	}
+
+	return nil
+}
+
+func (w *Workflows) writePSQLTableMetrics(ctx workflow.Context) error {
+	defaultTags := map[string]string{"general": "true"}
+
+	// write psql tables
+	tables, err := activities.AwaitGetPSQLTableMetrics(ctx, activities.GetPSQLTableMetricsRequest{})
+	if err != nil {
+		return errors.Wrap(err, "unable to get table metrics")
+	}
+	for _, table := range tables {
+		w.mw.Gauge(ctx, "table_size", table.SizeBytes, metrics.ToTags(generics.MergeMap(map[string]string{
+			"db_type":    "psql",
 			"table_name": table.TableName,
 		}, defaultTags))...)
 	}

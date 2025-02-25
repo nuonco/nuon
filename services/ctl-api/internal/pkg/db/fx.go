@@ -2,17 +2,17 @@ package db
 
 import "go.uber.org/fx"
 
-func AsPSQL(f any) any {
+func AsMigrator(f any) any {
 	return fx.Annotate(
 		f,
-		fx.ResultTags(`name:"psql"`, `name:"dbs"`),
+		fx.ResultTags(`group:"migrators"`),
 	)
 }
 
-func AsCH(f any) any {
+func DBMigratorParam(f any) any {
 	return fx.Annotate(
 		f,
-		fx.ResultTags(`name:"ch"`, `name:"dbs"`),
+		fx.ParamTags(`group:"migrators"`),
 	)
 }
 

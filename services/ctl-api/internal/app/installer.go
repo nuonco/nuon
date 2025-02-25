@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type InstallerType string
@@ -50,4 +51,13 @@ func (a *Installer) BeforeCreate(tx *gorm.DB) error {
 
 func (a *Installer) AfterQuery(tx *gorm.DB) error {
 	return nil
+}
+
+func (*Installer) JoinTables() []migrations.JoinTable {
+	return []migrations.JoinTable{
+		{
+			Field:     "Apps",
+			JoinTable: &InstallerApp{},
+		},
+	}
 }
