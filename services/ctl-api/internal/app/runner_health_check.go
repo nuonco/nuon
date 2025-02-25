@@ -7,6 +7,9 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 // clickhouse table
@@ -43,21 +46,17 @@ func (r *RunnerHealthCheck) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (r RunnerHealthCheck) GetTableOptions() (string, bool) {
+func (r RunnerHealthCheck) GetTableOptions() string {
 	options := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/runner_health_checks', '{replica}')
 	TTL toDateTime(created_at) + toIntervalDay(7)
 	PARTITION BY toDate(created_at)
 	PRIMARY KEY (runner_id, created_at)
 	ORDER BY    (runner_id, created_at)`
-	return options, true
+	return options
 }
 
-func (r RunnerHealthCheck) MigrateDB(tx *gorm.DB) *gorm.DB {
-	opts, hasOpts := r.GetTableOptions()
-	if !hasOpts {
-		return tx
-	}
-	return tx.Set("gorm:table_options", opts).Set("gorm:table_cluster_options", "on cluster simple")
+func (r RunnerHealthCheck) GetTableClusterOptions() string {
+	return "on cluster simple"
 }
 
 func (*RunnerHealthCheck) UseView() bool {
@@ -66,6 +65,15 @@ func (*RunnerHealthCheck) UseView() bool {
 
 func (*RunnerHealthCheck) ViewVersion() string {
 	return "v1"
+}
+
+func (i *RunnerHealthCheck) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name: views.DefaultViewName(db, &RunnerHealthCheck{}, 1),
+			SQL:  viewsql.RunnerHealthCheckViewV1,
+		},
+	}
 }
 
 func (r *RunnerHealthCheck) AfterQuery(tx *gorm.DB) error {

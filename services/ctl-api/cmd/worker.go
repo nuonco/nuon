@@ -48,10 +48,10 @@ func (c *cli) registerWorker() error {
 
 func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{
-		fx.Invoke(db.DBGroupParam(func(dbs []*gorm.DB) {})),
 		fx.Provide(interceptors.AsInterceptor(metricsinterceptor.New)),
 		fx.Provide(interceptors.AsInterceptor(validateinterceptor.New)),
 	}
+	providers = append(providers, c.providers()...)
 
 	// shared activities and workflows
 	providers = append(
@@ -134,8 +134,8 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	}
 
 	providers = append(providers,
+		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {})),
 	)
-	providers = append(providers, c.providers()...)
 	fx.New(providers...).Run()
 }

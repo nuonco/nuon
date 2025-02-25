@@ -10,6 +10,9 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type RunnerGroupSettings struct {
@@ -49,6 +52,20 @@ type RunnerGroupSettings struct {
 	// specific configuration for cloud specific runners, such as AWS or Azure
 	AWSIAMRoleARN         string `json:"aws_iam_role_arn"`
 	K8sServiceAccountName string `json:"k8s_service_account_name"`
+}
+
+func (i *RunnerGroupSettings) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+
+		{
+			Name: views.CustomViewName(db, &RunnerGroupSettings{}, "settings_v1"),
+			SQL:  viewsql.RunnerSettingsV1,
+		},
+		{
+			Name: views.CustomViewName(db, &RunnerGroupSettings{}, "wide_v1"),
+			SQL:  viewsql.RunnerWideV1,
+		},
+	}
 }
 
 func (r *RunnerGroupSettings) BeforeCreate(tx *gorm.DB) error {

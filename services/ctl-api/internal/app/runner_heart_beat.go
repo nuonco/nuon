@@ -41,19 +41,15 @@ func (r *RunnerHeartBeat) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (r RunnerHeartBeat) GetTableOptions() (string, bool) {
+func (r RunnerHeartBeat) GetTableOptions() string {
 	options := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/runner_heart_beats', '{replica}')
 	TTL toDateTime(created_at) + toIntervalDay(3)
 	PARTITION BY toDate(created_at)
 	PRIMARY KEY (runner_id, created_at)
 	ORDER BY    (runner_id, created_at)`
-	return options, true
+	return options
 }
 
-func (r RunnerHeartBeat) MigrateDB(tx *gorm.DB) *gorm.DB {
-	opts, hasOpts := r.GetTableOptions()
-	if !hasOpts {
-		return tx
-	}
-	return tx.Set("gorm:table_options", opts).Set("gorm:table_cluster_options", "on cluster simple")
+func (r RunnerHeartBeat) GetTableClusterOptions() string {
+	return "on cluster simple"
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 // @ID GetMigrations
@@ -16,7 +16,7 @@ import (
 // @Tags			general/admin
 // @Accept			json
 // @Produce		json
-// @Success		200 {array} app.Migration
+// @Success		200 {array} migrations.MigrationModel
 // @Router			/v1/general/migrations [get]
 func (s *service) GetMigrations(ctx *gin.Context) {
 	migrations, err := s.getMigrations(ctx)
@@ -28,8 +28,8 @@ func (s *service) GetMigrations(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, migrations)
 }
 
-func (s *service) getMigrations(ctx context.Context) ([]*app.Migration, error) {
-	var migrations []*app.Migration
+func (s *service) getMigrations(ctx context.Context) ([]*migrations.MigrationModel, error) {
+	var migrations []*migrations.MigrationModel
 
 	res := s.db.WithContext(ctx).
 		Order("created_at DESC").
