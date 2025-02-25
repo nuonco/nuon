@@ -22,9 +22,9 @@ describe('getLogStream should handle response status codes from GET log-streams/
   })
 
   test.each(badResponseCodes)('%s status', async () => {
-    await getLogStream({ logStreamId, orgId }).catch((err) =>
-      expect(err).toMatchSnapshot()
-    )
+    await getLogStream({ logStreamId, orgId })
+      .then((err) => expect(err).toMatchSnapshot())
+      .catch((err) => expect(err).toMatchSnapshot())
   })
 })
 
@@ -38,9 +38,9 @@ describe('getRunner should handle response status codes from GET runners/:id end
   })
 
   test.each(badResponseCodes)('%s status', async () => {
-    await getRunner({ runnerId, orgId }).catch((err) =>
-      expect(err).toMatchSnapshot()
-    )
+    await getRunner({ runnerId, orgId })
+      .then((err) => expect(err).toMatchSnapshot())
+      .catch((err) => expect(err).toMatchSnapshot())
   })
 })
 
@@ -54,9 +54,9 @@ describe('getRunnerJob should handle response status codes from GET runner-jobs/
   })
 
   test.each(badResponseCodes)('%s status', async () => {
-    await getRunnerJob({ runnerJobId, orgId }).catch((err) =>
-      expect(err).toMatchSnapshot()
-    )
+    await getRunnerJob({ runnerJobId, orgId })
+      .then((err) => expect(err).toMatchSnapshot())
+      .catch((err) => expect(err).toMatchSnapshot())
   })
 })
 
@@ -72,9 +72,9 @@ describe('getRunnerJobs should handle response status codes from GET runners/:id
   })
 
   test.each(badResponseCodes)('%s status', async () => {
-    await getRunnerJobs({ runnerId, orgId }).catch((err) =>
-      expect(err).toMatchSnapshot()
-    )
+    await getRunnerJobs({ runnerId, orgId })
+      .then((err) => expect(err).toMatchSnapshot())
+      .catch((err) => expect(err).toMatchSnapshot())
   })
 })
 
@@ -129,9 +129,9 @@ describe('getRunnerHealthChecks should handle response status codes from GET run
   })
 
   test.each(badResponseCodes)('%s status', async () => {
-    await getRunnerHealthChecks({ runnerId, orgId }).catch((err) =>
-      expect(err).toMatchSnapshot()
-    )
+    await getRunnerHealthChecks({ runnerId, orgId })
+      .then((err) => expect(err).toMatchSnapshot())
+      .catch((err) => expect(err).toMatchSnapshot())
   })
 })
 
@@ -146,8 +146,8 @@ describe('getRunnerLatestHeartbeat should handle response status codes from GET 
   })
 
   test.each(badResponseCodes)('%s status', async () => {
-    await getRunnerLatestHeartbeat({ runnerId, orgId }).catch((err) =>
-      expect(err).toMatchSnapshot()
-    )
+    await getRunnerLatestHeartbeat({ runnerId, orgId })
+      .then((err) => expect(err).toMatchSnapshot())
+      .catch((err) => expect(err).toMatchSnapshot())
   })
 })
