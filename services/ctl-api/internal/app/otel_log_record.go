@@ -65,20 +65,15 @@ func (r *OtelLogRecord) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (r OtelLogRecord) GetTableOptions() (string, bool) {
-	opts := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_log_records', '{replica}')
+func (r OtelLogRecord) GetTableOptions() string {
+	return `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_log_records', '{replica}')
 	TTL toDateTime("timestamp") + toIntervalDay(30)
 	PARTITION BY toDate(timestamp_time)
 	PRIMARY KEY  (org_id, log_stream_id, runner_job_id)
 	ORDER BY     (org_id, log_stream_id ,runner_job_id, timestamp_time, timestamp)
 	SETTINGS index_granularity = 8192, ttl_only_drop_parts = 0;`
-	return opts, true
 }
 
-func (r OtelLogRecord) MigrateDB(db *gorm.DB) *gorm.DB {
-	opts, hasOpts := r.GetTableOptions()
-	if !hasOpts {
-		return db
-	}
-	return db.Set("gorm:table_options", opts).Set("gorm:table_cluster_options", "on cluster simple")
+func (r OtelLogRecord) GetTableClusterOptions() string {
+	return "on cluster simple"
 }

@@ -12,6 +12,9 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type RunnerJobStatus string
@@ -236,6 +239,15 @@ func (*RunnerJob) UseView() bool {
 
 func (*RunnerJob) ViewVersion() string {
 	return "v1"
+}
+
+func (i *RunnerJob) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name: views.DefaultViewName(db, &RunnerJob{}, 1),
+			SQL:  viewsql.RunnerJobViewV1,
+		},
+	}
 }
 
 func (r *RunnerJob) BeforeCreate(tx *gorm.DB) error {

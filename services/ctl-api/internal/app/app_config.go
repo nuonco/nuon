@@ -7,6 +7,9 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type AppConfigStatus string
@@ -53,6 +56,15 @@ func (a AppConfig) UseView() bool {
 
 func (a AppConfig) ViewVersion() string {
 	return "v2"
+}
+
+func (i *AppConfig) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name: views.DefaultViewName(db, &AppConfig{}, 2),
+			SQL:  viewsql.AppConfigViewV2,
+		},
+	}
 }
 
 func (a *AppConfig) BeforeCreate(tx *gorm.DB) error {

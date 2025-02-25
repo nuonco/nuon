@@ -8,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type ComponentStatus string
@@ -144,4 +145,13 @@ func (c *Component) BeforeCreate(tx *gorm.DB) error {
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	c.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
+}
+
+func (c *Component) JoinTables() []migrations.JoinTable {
+	return []migrations.JoinTable{
+		{
+			Field:     "Dependencies",
+			JoinTable: &ComponentDependency{},
+		},
+	}
 }
