@@ -16,7 +16,6 @@ import {
   getComponent,
   getComponentConfig,
   getInstall,
-  getOrg,
 } from '@/lib'
 import type { TBuild } from '@/types'
 import { USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
@@ -26,10 +25,7 @@ export default withPageAuthRequired(async function InstallComponents({
 }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const [install, org] = await Promise.all([
-    getInstall({ orgId, installId }),
-    getOrg({ orgId }),
-  ])
+  const [install] = await Promise.all([getInstall({ orgId, installId })])
 
   const appInputConfigs =
     (await getAppLatestInputConfig({
@@ -72,10 +68,9 @@ export default withPageAuthRequired(async function InstallComponents({
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/installs`, text: 'Installs' },
+        { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${org.id}/installs/${install.id}`,
+          href: `/${orgId}/installs/${install.id}`,
           text: install.name,
         },
       ]}
