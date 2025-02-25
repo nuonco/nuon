@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import NextLink from 'next/link'
 import { usePathname } from 'next/navigation'
 import React, { type FC } from 'react'
-import { CaretRight, SquaresFour, Wrench } from '@phosphor-icons/react'
+import { CaretRight, SquaresFour, Wrench, Cube } from '@phosphor-icons/react'
 import { Link } from './Link'
 
 export type TLink = {
@@ -50,7 +50,7 @@ export const MainNav: FC<{ orgId: string, isSidebarOpen: boolean }> = ({ orgId, 
       href: `/${orgId}/installs`,
       text: (
         <>
-          <Wrench />
+          <Cube />
           {isSidebarOpen ? "Installs" : null}
         </>
       ),

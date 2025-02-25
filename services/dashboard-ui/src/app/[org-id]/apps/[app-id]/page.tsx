@@ -4,6 +4,7 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppCreateInstallButton,
   AppInputConfig,
+  AppInputConfigModal,
   AppPageSubNav,
   AppRunnerConfig,
   AppSandboxConfig,
@@ -20,15 +21,13 @@ import {
   getAppLatestInputConfig,
   getAppLatestRunnerConfig,
   getAppLatestSandboxConfig,
-  getOrg,
   type IGetApp,
 } from '@/lib'
 
 export default withPageAuthRequired(async function App({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const [org, app, appConfig, inputCfg] = await Promise.all([
-    getOrg({ orgId }),
+  const [app, appConfig, inputCfg] = await Promise.all([
     getApp({ appId, orgId }),
     getAppLatestConfig({ appId, orgId }).catch(console.error),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
@@ -37,9 +36,8 @@ export default withPageAuthRequired(async function App({ params }) {
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/apps`, text: 'Apps' },
-        { href: `/${org.id}/apps/${app.id}`, text: app.name },
+        { href: `/${orgId}/apps`, text: 'Apps' },
+        { href: `/${orgId}/apps/${app.id}`, text: app.name },
       ]}
       heading={app.name}
       headingUnderline={app.id}
@@ -62,15 +60,24 @@ export default withPageAuthRequired(async function App({ params }) {
               <Markdown content={appConfig.readme} />
             </Section>
           ) : null}
-
-          {inputCfg ? (
-            <Section className="border-r" heading="Inputs">
-              <AppInputConfig inputConfig={inputCfg} />
-            </Section>
-          ) : null}
         </div>
 
         <div className="divide-y flex flex-col md:col-span-5">
+          {inputCfg ? (
+            <Section
+              className="flex-initial"
+              heading="Inputs"
+              actions={
+                <AppInputConfigModal
+                  inputConfig={inputCfg}
+                  appName={app?.name}
+                />
+              }
+            >
+              <AppInputConfig inputConfig={inputCfg} />
+            </Section>
+          ) : null}
+
           <Section className="flex-initial" heading="Sandbox">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense

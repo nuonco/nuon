@@ -21,7 +21,6 @@ import {
   getComponentBuild,
   getComponent,
   getComponentConfig,
-  getOrg,
   getInstall,
   getInstallDeploy,
   getInstallDeployPlan,
@@ -42,7 +41,7 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
     orgId,
   })
   const build = await getComponentBuild({ orgId, buildId: deploy.build_id })
-  const [component, componentConfig, install, org, logs, deployPlan] =
+  const [component, componentConfig, install, logs, deployPlan] =
     await Promise.all([
       getComponent({ componentId: build.component_id, orgId }),
       getComponentConfig({
@@ -51,7 +50,6 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
         orgId,
       }),
       getInstall({ installId, orgId }),
-      getOrg({ orgId }),
       getLogStreamLogs({
         logStreamId: deploy?.log_stream?.id,
         orgId,
@@ -62,18 +60,17 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/installs`, text: 'Installs' },
+        { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${org.id}/installs/${install.id}`,
+          href: `/${orgId}/installs/${install.id}`,
           text: install.name,
         },
         {
-          href: `/${org.id}/installs/${install.id}/components/${deploy.install_component_id}`,
+          href: `/${orgId}/installs/${install.id}/components/${deploy.install_component_id}`,
           text: component.name,
         },
         {
-          href: `/${org.id}/installs/${install.id}/components/${deploy.install_component_id}/deploys/${deploy.id}`,
+          href: `/${orgId}/installs/${install.id}/components/${deploy.install_component_id}/deploys/${deploy.id}`,
           text: `${component.name} ${deploy.install_deploy_type}`,
         },
       ]}

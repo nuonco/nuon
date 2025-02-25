@@ -27,7 +27,6 @@ import {
   getInstallComponent,
   getInstallComponentOutputs,
   getLatestComponentBuild,
-  getOrg,
 } from '@/lib'
 import type { TInstallComponent } from '@/types'
 
@@ -38,14 +37,13 @@ export default withPageAuthRequired(async function InstallComponent({
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
 
-  const [install, installComponent, org] = await Promise.all([
+  const [install, installComponent] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallComponent({
       installComponentId,
       installId,
       orgId,
     }),
-    getOrg({ orgId }),
   ])
 
   const [component, componentConfig, builds] = await Promise.all([
@@ -60,14 +58,13 @@ export default withPageAuthRequired(async function InstallComponent({
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/installs`, text: 'Installs' },
+        { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${org.id}/installs/${install.id}/components`,
+          href: `/${orgId}/installs/${install.id}/components`,
           text: install.name,
         },
         {
-          href: `/${org.id}/installs/${install.id}/components/${installComponent.id}`,
+          href: `/${orgId}/installs/${install.id}/components/${installComponent.id}`,
           text: component.name,
         },
       ]}

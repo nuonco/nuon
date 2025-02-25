@@ -13,7 +13,6 @@ import {
   getComponent,
   getComponentBuilds,
   getComponentConfig,
-  getOrg,
 } from '@/lib'
 
 export default withPageAuthRequired(async function AppComponent({ params }) {
@@ -21,24 +20,22 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
   const componentId = params?.['component-id'] as string
   const orgId = params?.['org-id'] as string
 
-  const [app, appComponents, builds, component, componentConfig, org] =
+  const [app, appComponents, builds, component, componentConfig] =
     await Promise.all([
       getApp({ appId, orgId }),
       getAppComponents({ appId, orgId }),
       getComponentBuilds({ componentId, orgId }),
       getComponent({ componentId, orgId }),
       getComponentConfig({ componentId, orgId }),
-      getOrg({ orgId }),
     ])
 
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/apps`, text: 'Apps' },
-        { href: `/${org.id}/apps/${app.id}/components`, text: app.name },
+        { href: `/${orgId}/apps`, text: 'Apps' },
+        { href: `/${orgId}/apps/${app.id}/components`, text: app.name },
         {
-          href: `/${org.id}/apps/${app.id}/components/${component.id}`,
+          href: `/${orgId}/apps/${app.id}/components/${component.id}`,
           text: component.name,
         },
       ]}

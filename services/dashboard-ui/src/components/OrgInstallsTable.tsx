@@ -2,7 +2,7 @@
 
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { DotsThreeVertical } from '@phosphor-icons/react'
+import { CaretRight } from '@phosphor-icons/react'
 import { InstallPlatform } from '@/components/InstallCloudPlatform'
 import { InstallsTableStatusFilter } from '@/components/InstallsTableStatusFilter'
 import { Link } from '@/components/Link'
@@ -134,7 +134,7 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
             href={`/${orgId}/installs/${props.row.original.installId}`}
             variant="ghost"
           >
-            <DotsThreeVertical />
+            <CaretRight />
           </Link>
         ),
       },

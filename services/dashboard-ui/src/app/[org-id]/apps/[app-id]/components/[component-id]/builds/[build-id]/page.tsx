@@ -20,7 +20,6 @@ import {
   getComponentBuild,
   getComponentConfig,
   getLogStreamLogs,
-  getOrg,
 } from '@/lib'
 import type { TOTELLog } from '@/types'
 import { CANCEL_RUNNER_JOBS } from '@/utils'
@@ -32,7 +31,7 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
   const orgId = params?.['org-id'] as string
 
   const build = await getComponentBuild({ buildId, orgId })
-  const [app, component, componentConfig, org, logs] = await Promise.all([
+  const [app, component, componentConfig, logs] = await Promise.all([
     getApp({ appId, orgId }),
     getComponent({ componentId, orgId }),
     getComponentConfig({
@@ -40,7 +39,6 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
       componentConfigId: build.component_config_connection_id,
       orgId,
     }),
-    getOrg({ orgId }),
     getLogStreamLogs({ orgId, logStreamId: build.log_stream?.id }).catch(
       console.error
     ),
@@ -49,15 +47,14 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/apps`, text: 'Apps' },
-        { href: `/${org.id}/apps/${app.id}/components`, text: app.name },
+        { href: `/${orgId}/apps`, text: 'Apps' },
+        { href: `/${orgId}/apps/${app.id}/components`, text: app.name },
         {
-          href: `/${org.id}/apps/${app.id}/components/${build.component_id}`,
+          href: `/${orgId}/apps/${app.id}/components/${build.component_id}`,
           text: component.name,
         },
         {
-          href: `/${org.id}/apps/${app.id}/components/${build.component_id}/builds/${build.id}`,
+          href: `/${orgId}/apps/${app.id}/components/${build.component_id}/builds/${build.id}`,
           text: `${component.name} build`,
         },
       ]}

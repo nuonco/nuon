@@ -2,7 +2,7 @@
 
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { DotsThreeVertical } from '@phosphor-icons/react'
+import { CaretRight } from '@phosphor-icons/react'
 import { AppSandboxRepoDirLink } from '@/components/AppSandbox'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { InstallPlatform } from '@/components/InstallCloudPlatform'
@@ -104,7 +104,7 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
             href={`/${orgId}/apps/${props.row.original.appId}`}
             variant="ghost"
           >
-            <DotsThreeVertical />
+            <CaretRight />
           </Link>
         ),
       },
