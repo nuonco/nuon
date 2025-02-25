@@ -56,7 +56,7 @@ export default withPageAuthRequired(async function App({ params }) {
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto">
         <div className="divide-y flex flex-col md:col-span-7">
           {appConfig ? (
-            <Section className="border-r" heading="README">
+            <Section className="border-r overflow-x-auto" heading="README">
               <Markdown content={appConfig.readme} />
             </Section>
           ) : null}

@@ -122,6 +122,7 @@ export async function getInstallReadme({
     errorMessage: 'Unable to retrieve the install README.',
     orgId,
     path: `installs/${installId}/readme`,
+    abortTimeout: 100000,
   })
 }
 
