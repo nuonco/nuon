@@ -29,7 +29,6 @@ import {
 import {
   getAppLatestInputConfig,
   getInstall,
-  getOrg,
   getRunner,
   getRunnerJobs,
   getRunnerHealthChecks,
@@ -41,13 +40,12 @@ export default withPageAuthRequired(async function Runner({ params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
   const runnerId = params?.['runner-id'] as string
-  const [install, runner, org, runnerHeartbeat] = await Promise.all([
+  const [install, runner, runnerHeartbeat] = await Promise.all([
     getInstall({ installId, orgId }),
     getRunner({
       orgId,
       runnerId,
     }),
-    getOrg({ orgId }),
     getRunnerLatestHeartbeat({
       orgId,
       runnerId,
@@ -63,14 +61,13 @@ export default withPageAuthRequired(async function Runner({ params }) {
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/installs`, text: 'Installs' },
+        { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${org.id}/installs/${install.id}`,
+          href: `/${orgId}/installs/${install.id}`,
           text: install.name,
         },
         {
-          href: `/${org.id}/installs/${install.id}/runner-group/${runnerId}`,
+          href: `/${orgId}/installs/${install.id}/runner-group/${runnerId}`,
           text: runner?.display_name,
         },
       ]}

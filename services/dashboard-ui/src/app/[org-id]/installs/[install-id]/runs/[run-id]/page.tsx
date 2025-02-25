@@ -16,12 +16,7 @@ import {
   Time,
   ToolTip,
 } from '@/components'
-import {
-  getInstall,
-  getLogStreamLogs,
-  getInstallSandboxRun,
-  getOrg,
-} from '@/lib'
+import { getInstall, getLogStreamLogs, getInstallSandboxRun } from '@/lib'
 import type { TOTELLog } from '@/types'
 import { CANCEL_RUNNER_JOBS } from '@/utils'
 
@@ -34,9 +29,8 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
     orgId,
     installSandboxRunId: runId,
   })
-  const [install, org, logs] = await Promise.all([
+  const [install, logs] = await Promise.all([
     getInstall({ installId, orgId }),
-    getOrg({ orgId }),
     getLogStreamLogs({
       orgId,
       logStreamId: sandboxRun?.log_stream?.id,
@@ -46,14 +40,13 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/installs`, text: 'Installs' },
+        { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${org.id}/installs/${install.id}/history`,
+          href: `/${orgId}/installs/${install.id}/history`,
           text: install.name,
         },
         {
-          href: `/${org.id}/installs/${install.id}/runs/${sandboxRun.id}`,
+          href: `/${orgId}/installs/${install.id}/runs/${sandboxRun.id}`,
           text: `${install.name} ${sandboxRun.run_type}`,
         },
       ]}

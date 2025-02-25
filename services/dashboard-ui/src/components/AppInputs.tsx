@@ -1,19 +1,29 @@
-import React, { type FC } from 'react'
+'use client'
+
+import React, { type FC, useState } from 'react'
+import { ArrowsOutSimple, Check, Minus } from '@phosphor-icons/react'
+import { Button } from '@/components/Button'
 import { Expand } from '@/components/Expand'
-import { Text } from '@/components/Typography'
+import { Modal } from '@/components/Modal'
+import { ToolTip } from '@/components/ToolTip'
+import { Text, Truncate } from '@/components/Typography'
 import type { TAppInputConfig } from '@/types'
 
 export interface IAppInputConfig {
   inputConfig: TAppInputConfig
+  isNotTruncated?: boolean
 }
 
-export const AppInputConfig: FC<IAppInputConfig> = ({ inputConfig }) => {
+export const AppInputConfig: FC<IAppInputConfig> = ({
+  inputConfig,
+  isNotTruncated = false,
+}) => {
   return inputConfig && inputConfig?.input_groups?.length ? (
     <div className="flex flex-col gap-2">
       <div className="grid grid-cols-8 gap-4 px-3 py-2 text-cool-grey-600 dark:text-cool-grey-500 text-base">
         <Text className="!font-medium col-span-2">Name</Text>
-        <Text className="!font-medium col-span-2">Description</Text>
-        <Text className="!font-medium col-span-2">Default</Text>
+        <Text className="!font-medium col-span-3">Description</Text>
+        <Text className="!font-medium">Default</Text>
         <Text className="!font-medium">Required</Text>
         <Text className="!font-medium">Sensitive</Text>
       </div>
@@ -27,7 +37,7 @@ export const AppInputConfig: FC<IAppInputConfig> = ({ inputConfig }) => {
               <Text className="col-span-2 !font-medium">
                 {group.display_name}
               </Text>
-              <Text className="col-span-2 text-sm">{group.description}</Text>
+              <Text className="col-span-6 text-sm">{group.description}</Text>
             </div>
           }
           id={`${group.id}-${i}`}
@@ -41,25 +51,31 @@ export const AppInputConfig: FC<IAppInputConfig> = ({ inputConfig }) => {
                 >
                   <div className="col-span-2 gap-2 flex flex-col items-start justify-start">
                     <Text className="!font-medium">{input.display_name}</Text>{' '}
-                    <Text className="font-mono text-cool-grey-600 dark:text-cool-grey-500 text-sm break-all !inline truncate max-w-[150px]">
-                      {input.name}
-                    </Text>
+                    {input?.name?.length >= 14 && !isNotTruncated ? (
+                      <ToolTip tipContent={input.name}>
+                        <Text className="font-mono text-cool-grey-600 dark:text-cool-grey-500 text-sm">
+                          <Truncate variant="small">{input.name}</Truncate>
+                        </Text>
+                      </ToolTip>
+                    ) : (
+                      <Text className="font-mono text-cool-grey-600 dark:text-cool-grey-500 text-sm">
+                        {input.name}
+                      </Text>
+                    )}
                   </div>
 
-                  <Text className="col-span-2 text-sm">
+                  <Text className="col-span-3 text-sm">
                     {input.description}
                   </Text>
 
-                  <Text className="col-span-2 text-sm">
-                    {input.default || 'No default'}
+                  <Text className="text-sm">{input.default || 'None'}</Text>
+
+                  <Text className="text-sm">
+                    {input.required ? <Check /> : <Minus />}
                   </Text>
 
                   <Text className="text-sm">
-                    {input.required ? 'True' : 'False'}
-                  </Text>
-
-                  <Text className="text-sm">
-                    {input.sensitive ? 'True' : 'False'}
+                    {input.sensitive ? <Check /> : <Minus />}
                   </Text>
                 </div>
               ))}
@@ -70,5 +86,35 @@ export const AppInputConfig: FC<IAppInputConfig> = ({ inputConfig }) => {
     </div>
   ) : (
     <Text>No app inputs configured</Text>
+  )
+}
+
+export const AppInputConfigModal: FC<IAppInputConfig & { appName: string }> = ({
+  appName,
+  inputConfig,
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  return (
+    <>
+      <Modal
+        heading={`${appName} inputs`}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+        }}
+      >
+        <AppInputConfig inputConfig={inputConfig} isNotTruncated />
+      </Modal>
+      <Button
+        className="text-sm !font-medium flex items-center gap-2 !p-1"
+        onClick={() => {
+          setIsModalOpen(true)
+        }}
+        title="Expand install inputs"
+        variant="ghost"
+      >
+        <ArrowsOutSimple />
+      </Button>
+    </>
   )
 }
