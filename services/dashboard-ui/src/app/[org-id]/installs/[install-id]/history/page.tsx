@@ -11,21 +11,13 @@ import {
   Text,
   Time,
 } from '@/components'
-import {
-  getInstall,
-  getInstallEvents,
-  getOrg,
-  getAppLatestInputConfig,
-} from '@/lib'
+import { getInstall, getInstallEvents, getAppLatestInputConfig } from '@/lib'
 import { USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
 
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const [install, org] = await Promise.all([
-    getInstall({ installId, orgId }),
-    getOrg({ orgId }),
-  ])
+  const [install] = await Promise.all([getInstall({ installId, orgId })])
 
   const appInputConfigs =
     (await getAppLatestInputConfig({
@@ -36,10 +28,9 @@ export default withPageAuthRequired(async function Install({ params }) {
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/installs`, text: 'Installs' },
+        { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${org.id}/installs/${install.id}`,
+          href: `/${orgId}/installs/${install.id}`,
           text: install.name,
         },
       ]}

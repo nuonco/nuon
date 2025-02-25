@@ -6,18 +6,12 @@ import {
   DashboardContent,
   NoActions,
 } from '@/components'
-import {
-  getApp,
-  getAppActionWorkflows,
-  getAppLatestInputConfig,
-  getOrg,
-} from '@/lib'
+import { getApp, getAppActionWorkflows, getAppLatestInputConfig } from '@/lib'
 
 export default withPageAuthRequired(async function AppWorkflows({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const [org, app, workflows, inputCfg] = await Promise.all([
-    getOrg({ orgId }),
+  const [app, workflows, inputCfg] = await Promise.all([
     getApp({ appId, orgId }),
     getAppActionWorkflows({ appId, orgId }).catch(console.error),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
@@ -26,9 +20,8 @@ export default withPageAuthRequired(async function AppWorkflows({ params }) {
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/apps`, text: 'Apps' },
-        { href: `/${org.id}/apps/${app.id}`, text: app.name },
+        { href: `/${orgId}/apps`, text: 'Apps' },
+        { href: `/${orgId}/apps/${app.id}`, text: app.name },
       ]}
       heading={app.name}
       headingUnderline={app.id}

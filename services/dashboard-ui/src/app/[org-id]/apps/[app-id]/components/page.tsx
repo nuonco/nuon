@@ -11,17 +11,15 @@ import {
   getAppComponents,
   getComponentBuilds,
   getComponentConfig,
-  getOrg,
   getAppLatestInputConfig,
 } from '@/lib'
 
 export default withPageAuthRequired(async function AppComponents({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const [app, components, org, inputCfg] = await Promise.all([
+  const [app, components, inputCfg] = await Promise.all([
     getApp({ appId, orgId }),
     getAppComponents({ appId, orgId }),
-    getOrg({ orgId }),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
   ])
   const hydratedComponents = await Promise.all(
@@ -44,9 +42,8 @@ export default withPageAuthRequired(async function AppComponents({ params }) {
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/apps`, text: 'Apps' },
-        { href: `/${org.id}/apps/${app.id}`, text: app.name },
+        { href: `/${orgId}/apps`, text: 'Apps' },
+        { href: `/${orgId}/apps/${app.id}`, text: app.name },
       ]}
       heading={app.name}
       headingUnderline={app.id}

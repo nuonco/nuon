@@ -6,24 +6,22 @@ import {
   DashboardContent,
   NoInstalls,
 } from '@/components'
-import { getApp, getAppInstalls, getOrg, getAppLatestInputConfig } from '@/lib'
+import { getApp, getAppInstalls, getAppLatestInputConfig } from '@/lib'
 
 export default withPageAuthRequired(async function AppInstalls({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const [app, installs, org, inputCfg] = await Promise.all([
+  const [app, installs, inputCfg] = await Promise.all([
     getApp({ appId, orgId }),
     getAppInstalls({ appId, orgId }),
-    getOrg({ orgId }),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
   ])
 
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/apps`, text: 'Apps' },
-        { href: `/${org.id}/apps/${app.id}`, text: app.name },
+        { href: `/${orgId}/apps`, text: 'Apps' },
+        { href: `/${orgId}/apps/${app.id}`, text: app.name },
       ]}
       heading={app.name}
       headingUnderline={app.id}
