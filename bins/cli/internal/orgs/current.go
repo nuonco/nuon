@@ -24,8 +24,6 @@ func (s *Service) Current(ctx context.Context, asJSON bool) error {
 		{"id", org.ID},
 		{"name", org.Name},
 		{"status", org.StatusDescription},
-		{"health-check status", string(org.LatestHealthCheck.Status)},
-		{"latest health-check", org.LatestHealthCheck.CreatedAt},
 		{"sandbox mode", strconv.FormatBool(org.SandboxMode)},
 		{"created at", org.CreatedAt},
 		{"updated at", org.UpdatedAt},
