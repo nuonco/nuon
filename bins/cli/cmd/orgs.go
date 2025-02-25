@@ -36,18 +36,6 @@ func (c *cli) orgsCmd() *cobra.Command {
 	currentCmd.Hidden = true
 	orgsCmd.AddCommand(currentCmd)
 
-	healthChecksCmd := &cobra.Command{
-		Use:   "health-checks",
-		Short: "List health checks",
-		Long:  "List recent health checks for the org you are currently authenticated with",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.ListHealthChecks(cmd.Context(), limit, PrintJSON)
-		}),
-	}
-	healthChecksCmd.Flags().Int64VarP(&limit, "limit", "l", 60, "Maximum health checks to return")
-	orgsCmd.AddCommand(healthChecksCmd)
-
 	apiTokenCmd := &cobra.Command{
 		Use:   "api-token",
 		Short: "Get api token",
