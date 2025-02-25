@@ -28,7 +28,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/size"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/timeout"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/docs"
@@ -62,6 +64,9 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(middlewares.AsMiddleware(invites.New)),
 		fx.Provide(middlewares.AsMiddleware(admin.New)),
 		fx.Provide(middlewares.AsMiddleware( log.New)),
+		fx.Provide(middlewares.AsMiddleware( log.New)),
+		fx.Provide(middlewares.AsMiddleware(size.New)),
+		fx.Provide(middlewares.AsMiddleware(timeout.New)),
 
 		// add endpoints
 		fx.Provide(api.AsService(docs.New)),
