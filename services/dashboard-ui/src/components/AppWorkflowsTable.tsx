@@ -2,7 +2,7 @@
 
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { DotsThreeVertical } from '@phosphor-icons/react'
+import { CaretRight } from '@phosphor-icons/react'
 import { ActionTriggerType } from '@/components/ActionTriggerType'
 import { Link } from '@/components/Link'
 import { DataTableSearch, Table } from '@/components/DataTable'
@@ -108,7 +108,7 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
             href={`/${orgId}/apps/${appId}/actions/${props.row.original.id}`}
             variant="ghost"
           >
-            <DotsThreeVertical />
+            <CaretRight />
           </Link>
         ),
       },

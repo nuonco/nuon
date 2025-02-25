@@ -1,6 +1,7 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { DashboardContent, NoApps, OrgAppsTable } from '@/components'
 import { getApps, getOrg } from '@/lib'
+// TODO(nnnat): move segment init script to org dashboard
 import { SegmentAnalyticsSetOrg } from '@/utils'
 
 export default withPageAuthRequired(async function Apps({ params }) {
@@ -12,8 +13,7 @@ export default withPageAuthRequired(async function Apps({ params }) {
       {process.env.SEGMENT_WRITE_KEY && <SegmentAnalyticsSetOrg org={org} />}
       <DashboardContent
         breadcrumb={[
-          { href: `/${org.id}/apps`, text: org.name },
-          { href: `/${org.id}/apps`, text: 'Apps' },
+          { href: `/${orgId}/apps`, text: 'Apps' },
         ]}
       >
         <section className="px-6 py-8">

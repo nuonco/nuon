@@ -30,7 +30,6 @@ import {
   getAppLatestInputConfig,
   getInstall,
   getInstallRunnerGroup,
-  getOrg,
   getRunner,
   getRunnerJobs,
   getRunnerLatestHeartbeat,
@@ -40,10 +39,9 @@ import { USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
 export default withPageAuthRequired(async function RunnerGroup({ params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const [install, runnerGroup, org] = await Promise.all([
+  const [install, runnerGroup] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallRunnerGroup({ installId, orgId }),
-    getOrg({ orgId }),
   ])
 
   const appInputConfigs =
@@ -55,10 +53,9 @@ export default withPageAuthRequired(async function RunnerGroup({ params }) {
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/installs`, text: 'Installs' },
+        { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${org.id}/installs/${install.id}`,
+          href: `/${orgId}/installs/${install.id}`,
           text: install.name,
         },
       ]}
