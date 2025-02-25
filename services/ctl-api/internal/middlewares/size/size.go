@@ -19,6 +19,9 @@ func (m *middleware) Name() string {
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+	}
 	return limits.RequestSizeLimiter(m.cfg.MaxRequestSize)
 }
 
