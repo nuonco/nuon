@@ -10,14 +10,13 @@ import {
   Section,
   Text,
 } from '@/components'
-import { getApp, getOrg, getAppActionWorkflow } from '@/lib'
+import { getApp, getAppActionWorkflow } from '@/lib'
 
 export default withPageAuthRequired(async function AppWorkflow({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
   const workflowId = params?.['workflow-id'] as string
-  const [org, app, workflow] = await Promise.all([
-    getOrg({ orgId }),
+  const [app, workflow] = await Promise.all([
     getApp({ appId, orgId }),
     getAppActionWorkflow({ orgId, actionWorkflowId: workflowId }),
   ])
@@ -25,11 +24,10 @@ export default withPageAuthRequired(async function AppWorkflow({ params }) {
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/apps`, text: 'Apps' },
-        { href: `/${org.id}/apps/${app.id}/actions`, text: app.name },
+        { href: `/${orgId}/apps`, text: 'Apps' },
+        { href: `/${orgId}/apps/${app.id}/actions`, text: app.name },
         {
-          href: `/${org.id}/apps/${app.id}/actions/${workflowId}`,
+          href: `/${orgId}/apps/${app.id}/actions/${workflowId}`,
           text: workflow.name,
         },
       ]}

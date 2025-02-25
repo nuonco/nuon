@@ -2,7 +2,7 @@
 
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { DotsThreeVertical } from '@phosphor-icons/react'
+import { CaretRight } from '@phosphor-icons/react'
 import {
   StaticComponentConfigType,
   getComponentConfigType,
@@ -125,7 +125,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
             href={`/${orgId}/apps/${appId}/components/${props.row.original.componentId}`}
             variant="ghost"
           >
-            <DotsThreeVertical />
+            <CaretRight />
           </Link>
         ),
       },
