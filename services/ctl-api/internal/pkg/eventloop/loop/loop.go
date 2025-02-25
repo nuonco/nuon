@@ -227,7 +227,7 @@ func (w *Loop[T, R]) validateSignal(ctx workflow.Context, info *workflow.Info, s
 	defer func() {
 		rec := recover()
 		if rec != nil || err != nil {
-			w.MW.Incr(ctx, "event_loop.invalid_signal", metrics.ToTags(tags)...)
+			w.MW.Incr(ctx, "event_loop.invalid_signals", metrics.ToTags(tags)...)
 
 			if rec != nil {
 				// We might have both a validation error and a panic. Overwrite if we have the panic.
