@@ -163,6 +163,10 @@ func (w *Workflows) checkRestart(
 	heartbeat *app.RunnerHeartBeat,
 	runner *app.Runner,
 ) (bool, error) {
+	w.mw.Gauge(ctx, "runner.alivetime", float64(heartbeat.AliveTime.Seconds()), metrics.ToTags(map[string]string{
+		"runner_type": string(runner.RunnerGroup.Type),
+	})...)
+
 	// TODO(sdboyer) replace with actual value from group settings when actually implementing the call
 	ttl := time.Hour * 8
 	if heartbeat.AliveTime < time.Second*5 {
