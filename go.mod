@@ -14,6 +14,7 @@ replace github.com/spf13/viper v1.4.0 => github.com/spf13/viper v1.7.1
 replace github.com/ClickHouse/clickhouse-go/v2 v2.26.0 => github.com/nuonco/clickhouse-go/v2 v2.28.1
 
 replace github.com/go-playground/validator/v10 v10.22.1 => github.com/go-playground/validator/v10 v10.16.0
+replace github.com/go-playground/validator/v10 v10.23.0 => github.com/go-playground/validator/v10 v10.16.0
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
@@ -473,7 +474,7 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nuonco/nuon-go v0.47.0
+	github.com/nuonco/nuon-go v0.47.1
 	github.com/nwaples/rardecode/v2 v2.0.0-beta.2 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
