@@ -8,6 +8,9 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type InstallInputs struct {
@@ -35,6 +38,15 @@ func (i *InstallInputs) UseView() bool {
 
 func (i *InstallInputs) ViewVersion() string {
 	return "v1"
+}
+
+func (i *InstallInputs) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name: views.DefaultViewName(db, &InstallInputs{}, 1),
+			SQL:  viewsql.InstallInputsViewV1,
+		},
+	}
 }
 
 func (a *InstallInputs) BeforeCreate(tx *gorm.DB) error {

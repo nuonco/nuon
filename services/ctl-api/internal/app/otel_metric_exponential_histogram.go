@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/nuonco/clickhouse-go/v2"
+
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 
 	"gorm.io/gorm"
@@ -86,14 +87,6 @@ func (m OtelMetricExponentialHistogram) GetTableOptions() (string, bool) {
 
 func (m OtelMetricExponentialHistogram) TableName() string {
 	return "otel_metrics_exponential_histogram"
-}
-
-func (m OtelMetricExponentialHistogram) MigrateDB(db *gorm.DB) *gorm.DB {
-	opts, hasOpts := m.GetTableOptions()
-	if !hasOpts {
-		return db
-	}
-	return db.Set("gorm:table_options", opts).Set("gorm:table_cluster_options", "on cluster simple")
 }
 
 func (m *OtelMetricExponentialHistogram) BeforeCreate(tx *gorm.DB) error {

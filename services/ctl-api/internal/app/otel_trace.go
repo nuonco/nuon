@@ -1,9 +1,9 @@
 package app
 
 import (
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
-
 	"time"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
@@ -69,22 +69,18 @@ type OtelTrace struct {
 	Links  []OtelTraceLink  `gorm:"type:Nested(trace_id String, span_id String, span_state String, attributes Map(LowCardinality(String), String));"`
 }
 
-func (r OtelTrace) GetTableOptions() (string, bool) {
+func (r OtelTrace) GetTableOptions() string {
 	opts := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_traces', '{replica}')
 	TTL toDateTime("timestamp") + toIntervalDay(720)
 	PARTITION BY toDate(timestamp)
 	PRIMARY KEY (runner_id, runner_job_id, runner_group_id, runner_job_execution_id)
 	ORDER BY    (runner_id, runner_job_id, runner_group_id, runner_job_execution_id, toUnixTimestamp(timestamp), span_name, trace_id)
 	SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1;`
-	return opts, true
+	return opts
 }
 
-func (r OtelTrace) MigrateDB(db *gorm.DB) *gorm.DB {
-	opts, hasOpts := r.GetTableOptions()
-	if !hasOpts {
-		return db
-	}
-	return db.Set("gorm:table_options", opts).Set("gorm:table_cluster_options", "on cluster simple")
+func (r OtelTrace) GetTableClusterOptions() string {
+	return "on cluster simple"
 }
 
 func (r *OtelTrace) BeforeCreate(tx *gorm.DB) error {

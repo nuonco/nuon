@@ -11,6 +11,11 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/ch"
+	chmigrations "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/ch/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/psql"
+	psqlmigrations "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/psql/migrations"
 )
 
 func (c *cli) registerStartup() error {
@@ -29,22 +34,27 @@ func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 
 	// for now, run the automigrate script
 	providers := []fx.Option{
-		fx.Provide(db.NewAutoMigrate),
-		fx.Invoke(func(l *zap.Logger, db *db.AutoMigrate, shutdowner fx.Shutdowner) {
+		fx.Provide(psqlmigrations.New),
+		fx.Provide(chmigrations.New),
+		fx.Provide(db.AsMigrator(psql.NewPSQLMigrator)),
+		fx.Provide(db.AsMigrator(ch.NewCHMigrator)),
+		fx.Invoke(db.DBMigratorParam(func(migs []*migrations.Migrator, shutdowner fx.Shutdowner) {
 			ctx := context.Background()
 			ctx, cancelFn := context.WithTimeout(ctx, time.Minute*5)
 			defer cancelFn()
 
 			code := 0
-			if err := db.Execute(ctx); err != nil {
-				l.Error("unable to auto migrate", zap.Error(err))
-				code = 1
+			for _, mig := range migs {
+				if err := mig.Exec(ctx); err != nil {
+					l.Error("unable to execute migrator", zap.Error(err))
+					code = 1
+				}
 			}
 
 			if err := shutdowner.Shutdown(fx.ExitCode(code)); err != nil {
 				l.Error("unable to shut down", zap.Error(err))
 			}
-		}),
+		})),
 	}
 	providers = append(providers, c.providers()...)
 	fx.New(providers...).Run()
