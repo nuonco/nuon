@@ -38,6 +38,10 @@ func init() {
 	// runner defaults
 	config.RegisterDefault("runner_container_image_url", "public.ecr.aws/p7e3r5y0/runner")
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
+
+	// max request sizes to prevent too large of requests
+	config.RegisterDefault("max_request_size", 1024*50)
+	config.RegisterDefault("max_request_duration", time.Second*5)
 }
 
 type Config struct {
@@ -126,6 +130,9 @@ type Config struct {
 	// analytics configuration
 	SegmentWriteKey  string `config:"segment_write_key" validate:"required"`
 	DisableAnalytics bool   `config:"disable_analytics"`
+
+	MaxRequestSize     int64         `config:"max_request_size" validate:"required"`
+	MaxRequestDuration time.Duration `config:"max_request_duration" validate:"required"`
 
 	// Force debug mode for everything
 	ForceDebugMode bool `config:"force_debug_mode"`

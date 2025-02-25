@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Service) GetLivezHandler(ctx *gin.Context) {
-	// ping psql
+        // ping psql
 	sqlDB, err := s.db.DB()
 	if err != nil {
 		ctx.Error(stderr.ErrSystem{
