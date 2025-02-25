@@ -1,6 +1,7 @@
 package stderr
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -137,6 +138,15 @@ func (m *middleware) Handler() gin.HandlerFunc {
 				Error:       fmt.Sprintf("invalid input for %s", vErr[0].Field()),
 				UserError:   true,
 				Description: fmt.Sprintf("invalid request input: %s", err),
+			})
+			return
+		}
+
+		if errors.Is(err, context.DeadlineExceeded) {
+			c.JSON(http.StatusInternalServerError, ErrResponse{
+				Error:       "timeout",
+				UserError:   true,
+				Description: "we were unable to complete this request within time.",
 			})
 			return
 		}
