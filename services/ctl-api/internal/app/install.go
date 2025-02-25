@@ -9,6 +9,10 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/bulk"
 )
 
@@ -73,6 +77,30 @@ func (i *Install) UseView() bool {
 
 func (i *Install) ViewVersion() string {
 	return "v3"
+}
+
+func (i *Install) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name: views.DefaultViewName(db, &Install{}, 3),
+			SQL:  viewsql.InstallsViewV3,
+		},
+		{
+			Name: views.CustomViewName(db, &Install{}, "migration_test"),
+			SQL:  `SELECT * FROM installs ORDER BY created_at DESC`,
+		},
+	}
+}
+
+func (i *Install) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &Install{}, "migration_test"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (i *Install) BeforeCreate(tx *gorm.DB) error {

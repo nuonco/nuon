@@ -1,35 +1,12 @@
 package psql
 
-import "github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+import (
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+)
 
-type joinTable struct {
-	Model     interface{}
-	Field     string
-	JoinTable interface{}
-}
-
-func JoinTables() []joinTable {
-	// NOTE: we have to register all join tables manually, since we use soft deletes + custom ID functions
-	return []joinTable{
-		{
-			&app.Component{},
-			"Dependencies",
-			&app.ComponentDependency{},
-		},
-		{
-			&app.Installer{},
-			"Apps",
-			&app.InstallerApp{},
-		},
-		{
-			&app.Account{},
-			"Roles",
-			&app.AccountRole{},
-		},
-	}
-}
-
-// declare all models in the correct order they should be migrated.
+// declare all
+// models in the correct order they should be migrated.
 func AllModels() []interface{} {
 	return []interface{}{
 		// management, auth and user management
@@ -121,11 +98,11 @@ func AllModels() []interface{} {
 		&app.InstallActionWorkflowRunStep{},
 
 		// internal
-		&app.Migration{},
+		&migrations.MigrationModel{},
 
 		// waitlist
 		&app.Waitlist{},
 		// NOTE(jm): this is a special table used in both ch and postgres
-		&app.TableSize{},
+		&app.PSQLTableSize{},
 	}
 }

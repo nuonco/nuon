@@ -47,7 +47,9 @@ func (c *cli) registerAPI() error {
 }
 
 func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
-	providers := []fx.Option{
+	providers := make([]fx.Option, 0)
+	providers = append(providers, c.providers()...)
+	providers = append(providers,
 		// add middlewares
 		fx.Provide(middlewares.AsMiddleware(stderr.New)),
 		fx.Provide(middlewares.AsMiddleware(global.New)),
@@ -89,8 +91,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 		fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
-	}
+	)
 
-	providers = append(providers, c.providers()...)
 	fx.New(providers...).Run()
 }

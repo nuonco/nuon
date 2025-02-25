@@ -8,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AccountType string
@@ -74,4 +75,13 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (*Account) JoinTables() []migrations.JoinTable {
+	return []migrations.JoinTable{
+		{
+			Field:     "Roles",
+			JoinTable: &AccountRole{},
+		},
+	}
 }

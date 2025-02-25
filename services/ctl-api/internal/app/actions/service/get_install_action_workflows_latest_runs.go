@@ -10,7 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetInstallActionWorkflowsLatestRuns
@@ -47,21 +47,15 @@ func (s *service) GetInstallActionWorkflowsLatestRuns(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, iaws)
 }
 
-func OverrideTable(name string) func(*gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Table(name)
-	}
-}
-
 func (s *service) getInstallActionWorkflowsLatestRun(ctx context.Context, orgID, installID string) ([]*app.InstallActionWorkflow, error) {
 	iaws := []*app.InstallActionWorkflow{}
 	res := s.db.WithContext(ctx).
 		Preload("ActionWorkflow").
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(OverrideTable("install_action_workflow_runs_latest_view_v1"))
+			return db.Scopes(scopes.WithOverrideTable("install_action_workflow_runs_latest_view_v1"))
 		}).
 		Preload("Runs.RunnerJob", func(db *gorm.DB) *gorm.DB {
-			return plugins.WithDisableViews(db)
+			return scopes.WithDisableViews(db)
 		}).
 		Find(&iaws, "org_id = ? AND install_id = ?", orgID, installID)
 	if res.Error != nil {
