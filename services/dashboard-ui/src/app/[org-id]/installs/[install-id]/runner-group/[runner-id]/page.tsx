@@ -114,6 +114,7 @@ export default withPageAuthRequired(async function Runner({ params }) {
       <div className="flex-auto md:grid md:grid-cols-12 divide-x">
         <div className="divide-y flex flex-col flex-auto col-span-8">
           <Section
+            className="flex-initial"
             heading={
               <span>
                 <Text variant="med-14">{runner?.display_name} </Text>
