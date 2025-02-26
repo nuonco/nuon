@@ -1,5 +1,5 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { FiChevronRight, FiCloud, FiClock } from 'react-icons/fi'
+import { CalendarBlank, CaretRight, Timer } from "@phosphor-icons/react/dist/ssr"
 import {
   CancelRunnerJobButton,
   ClickToCopy,
@@ -79,11 +79,11 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
           <Text>
-            <FiCloud />
+            <CalendarBlank />
             <Time time={deploy.created_at} />
           </Text>
           <Text>
-            <FiClock />
+            <Timer />
             <Duration
               beginTime={deploy.created_at}
               endTime={deploy.updated_at}
@@ -183,7 +183,7 @@ lg:max-w-[450px]"
                   href={`/${orgId}/apps/${component.app_id}/components/${component.id}/builds/${build.id}`}
                 >
                   Details
-                  <FiChevronRight />
+                  <CaretRight />
                 </Link>
               </Text>
             }

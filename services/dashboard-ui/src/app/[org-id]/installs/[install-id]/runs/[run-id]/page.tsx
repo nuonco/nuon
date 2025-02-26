@@ -1,5 +1,5 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { FiCloud, FiClock } from 'react-icons/fi'
+import { CalendarBlank, Timer } from "@phosphor-icons/react/dist/ssr"
 import {
   AppSandboxConfig,
   AppSandboxVariables,
@@ -55,11 +55,11 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
           <Text>
-            <FiCloud />
+            <CalendarBlank />
             <Time time={sandboxRun.created_at} />
           </Text>
           <Text>
-            <FiClock />
+            <Timer />
             <Duration
               beginTime={sandboxRun.created_at}
               endTime={sandboxRun.updated_at}
