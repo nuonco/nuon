@@ -2,7 +2,7 @@
 
 Clickhouse support for GORM
 
-[![test status](https://github.com/go-gorm/clickhouse/workflows/tests/badge.svg?branch=master "test status")](https://github.com/go-gorm/clickhouse/actions)
+[![test status](https://github.com/go-gorm/clickhouse/workflows/tests/badge.svg?branch=master 'test status')](https://github.com/go-gorm/clickhouse/actions)
 
 ## Quick Start
 
