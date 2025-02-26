@@ -92,9 +92,7 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
             <Text variant="med-12">{component.name}</Text>
             <Text variant="mono-12">
               <ToolTip alignment="right" tipContent={build.component_id}>
-                <ClickToCopy>
-                  <Truncate variant="small">{build.component_id}</Truncate>
-                </ClickToCopy>
+                <ClickToCopy>{build.component_id}</ClickToCopy>
               </ToolTip>
             </Text>
           </span>
