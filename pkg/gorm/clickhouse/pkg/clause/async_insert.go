@@ -17,7 +17,7 @@ func (AsyncInsert) Name() string {
 
 // Build build where clause
 func (a AsyncInsert) Build(builder clause.Builder) {
-	builder.WriteString(" SETTINGS async_insert=1")
+	builder.WriteString(" SETTINGS async_insert=1, wait_for_async_insert=1")
 }
 
 // ModifyStatement implements the StatementModifier interface
@@ -54,7 +54,7 @@ func Register(db *gorm.DB) {
 				tableEndPos := matches[3]
 
 				// Insert our SETTINGS clause right after the table name
-				newSQL := sql[:tableEndPos] + " SETTINGS async_insert=1" + sql[tableEndPos:]
+				newSQL := sql[:tableEndPos] + " SETTINGS async_insert=1, wait_for_async_insert=1" + sql[tableEndPos:]
 
 				// Reset the SQL buffer and write our new SQL
 				db.Statement.SQL.Reset()

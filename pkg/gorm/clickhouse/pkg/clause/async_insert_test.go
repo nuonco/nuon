@@ -62,7 +62,7 @@ func TestAsyncInsertClause(t *testing.T) {
 		"b": "b",
 	}}
 	result = dummyDb.Clauses(chClause.AsyncInsert{}).Create(&user)
-	AssertSQL(t, result, "INSERT INTO `users` SETTINGS async_insert=1 (`name`,`first_name`,`last_name`,`age`,`active`,`salary`,`attrs`,`created_at`,`updated_at`,`id`) VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING `id`")
+	AssertSQL(t, result, "INSERT INTO `users` SETTINGS async_insert=1, wait_for_async_insert=1 (`name`,`first_name`,`last_name`,`age`,`active`,`salary`,`attrs`,`created_at`,`updated_at`,`id`) VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING `id`")
 
 	// w/out async_insert
 	user.ID = 201
