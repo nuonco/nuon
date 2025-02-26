@@ -30,9 +30,6 @@ func (m *middleware) onTimeout(c *gin.Context) {
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
-	}
 	return timeout.New(
 		timeout.WithTimeout(m.cfg.MaxRequestDuration),
 		timeout.WithHandler(func(c *gin.Context) {
