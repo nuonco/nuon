@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	limits "github.com/gin-contrib/size"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 )
 
@@ -19,9 +20,6 @@ func (m *middleware) Name() string {
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
-	}
 	return limits.RequestSizeLimiter(m.cfg.MaxRequestSize)
 }
 
