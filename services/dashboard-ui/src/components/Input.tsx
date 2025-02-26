@@ -70,17 +70,19 @@ export const CheckboxInput: FC<ICheckboxInput> = ({
   )
 }
 
-export const Input: FC<React.InputHTMLAttributes<HTMLInputElement>> = ({
+export const Input: FC<React.InputHTMLAttributes<HTMLInputElement> & {isSearch?: boolean}> = ({
   className,
+  isSearch = false,
   ...props
 }) => {
   return (
     <input
       className={classNames(
-        'px-3 py-2 text-base rounded border shadow-sm bg-cool-grey-50 dark:bg-dark-grey-200 [&:user-invalid]:border-red-600 [&:user-invalid]:dark:border-red-600',
+        'px-3 py-2 text-base rounded border shadow-sm bg-cool-grey-50 dark:bg-dark-grey-200 [&:user-invalid]:border-red-600 [&:user-invalid]:dark:border-red-600 focus:outline outline-1 outline-primary-500 dark:outline-primary-400',
         {
           'bg-cool-grey-200 text-cool-grey-500 dark:bg-dark-grey-300 dark:text-dark-grey-900 cursor-not-allowed':
-            props?.disabled,
+          props?.disabled,
+          "!pl-8 !pr-3.5": isSearch,       
           [`${classNames}`]: Boolean(classNames),
         }
       )}
