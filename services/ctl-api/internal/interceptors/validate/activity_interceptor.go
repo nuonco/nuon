@@ -40,10 +40,16 @@ func (a *actInterceptor) ExecuteActivity(
 	switch argType.Kind() {
 	case reflect.Struct, reflect.Pointer:
 		info := activity.GetInfo(ctx)
-		status := "ok"
+		tags := map[string]string{
+			"status":        "ok",
+			"activity":      info.ActivityType.Name,
+			"namespace":     info.WorkflowNamespace,
+			"workflow_type": info.WorkflowType.Name,
+		}
+		defer a.mw.Incr("temporal_activity.request_validation", metrics.ToTags(tags))
 
 		if err := a.v.StructCtx(ctx, in.Args[0]); err != nil {
-			status = "error"
+			tags["status"] = "error"
 			a.l.Error("invalid activity request",
 				zap.Error(err),
 				zap.String("activity", info.ActivityType.Name),
@@ -61,14 +67,6 @@ func (a *actInterceptor) ExecuteActivity(
 				"validate error",
 				errors.Wrap(err, "unable to validate activity in middleware"))
 		}
-
-		tags := map[string]string{
-			"status":        status,
-			"activity":      info.ActivityType.Name,
-			"namespace":     info.WorkflowNamespace,
-			"workflow_type": info.WorkflowType.Name,
-		}
-		a.mw.Incr("temporal_activity.request_validation", metrics.ToTags(tags))
 	default:
 	}
 
