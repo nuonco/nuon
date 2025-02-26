@@ -2,26 +2,25 @@
 
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import {
-  CaretRight,
-  Timer,
-  CalendarBlank,
-  Minus,
-} from '@phosphor-icons/react'
+import { CaretRight, Timer, CalendarBlank, Minus } from '@phosphor-icons/react'
 import { Badge } from '@/components/Badge'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { Link } from '@/components/Link'
+import { StatusBadge } from '@/components/Status'
 import { Time, Duration } from '@/components/Time'
 import { EventStatus } from '@/components/Timeline'
 import { ID, Text } from '@/components/Typography'
 // eslint-disable-next-line import/no-cycle
-import type { TActionWorkflow, TInstallActionWorkflow, TInstallActionWorkflowRun } from '@/types'
+import type {
+  TActionWorkflow,
+  TInstallActionWorkflow,
+  TInstallActionWorkflowRun,
+} from '@/types'
 
 type TData = {
   action_workflow: TActionWorkflow
   latest_run: TInstallActionWorkflowRun
 }
-
 
 function parseActionData(actions: Array<TInstallActionWorkflow>): Array<TData> {
   return actions?.map((a) => ({
@@ -29,7 +28,6 @@ function parseActionData(actions: Array<TInstallActionWorkflow>): Array<TData> {
     latest_run: a?.runs?.at(0),
   }))
 }
-
 
 export interface IInstallActionWorkflowsTable {
   installId: string
@@ -48,20 +46,6 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
 
   const columns: Array<ColumnDef<TData>> = useMemo(
     () => [
-      {
-        id: 'status',
-        cell: (props) => (
-          <div className="inline-flex h-12 w-full items-center justify-center">
-            {props.row.original?.latest_run ? (
-              <EventStatus
-                status={props.row.original?.latest_run?.status}
-              />
-            ) : (
-              <EventStatus status="noop" />
-            )}
-          </div>
-        ),
-      },
       {
         header: 'Name',
         accessorKey: 'action_workflow.name',
@@ -112,6 +96,19 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
           ) : (
             <Minus />
           ),
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        cell: (props) => (
+          <div className="inline-flex h-12 w-full">
+            {props.row.original?.latest_run ? (
+              <StatusBadge status={props.row.original?.latest_run?.status} />
+            ) : (
+              <Minus />
+            )}
+          </div>
+        ),
       },
       {
         id: 'test',
