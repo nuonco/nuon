@@ -11,6 +11,7 @@ import (
 	"moul.io/zapgorm2"
 
 	"github.com/powertoolsdev/mono/pkg/gorm/clickhouse"
+	chClause "github.com/powertoolsdev/mono/pkg/gorm/clickhouse/pkg/clause"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 )
@@ -83,6 +84,9 @@ func New(params Params, lc fx.Lifecycle) (*gorm.DB, error) {
 	if err := database.registerPlugins(db); err != nil {
 		return nil, fmt.Errorf("unable to register plugins: %w", err)
 	}
+
+	// Register clickhouse clause for AsyncInsert
+	chClause.Register(db)
 
 	lc.Append(fx.Hook{
 		OnStart: func(_ context.Context) error {
