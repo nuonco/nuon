@@ -41,7 +41,7 @@ func init() {
 
 	// max request sizes to prevent too large of requests
 	config.RegisterDefault("max_request_size", 1024*50)
-	config.RegisterDefault("max_request_duration", time.Second*5)
+	config.RegisterDefault("max_request_duration", time.Second*30)
 }
 
 type Config struct {
