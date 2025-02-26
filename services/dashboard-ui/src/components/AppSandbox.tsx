@@ -27,7 +27,7 @@ export const AppSandboxConfig: FC<IAppSandboxConfig> = ({ sandboxConfig }) => {
             rel="noreferrer"
           >
             {isGithubConnected ? <FaGithub /> : <FaGitAlt />}
-            {repo?.repo?.length >= 12 ? (
+            {repo?.repo?.length >= 32 ? (
               <ToolTip alignment="right" tipContent={repo?.repo}>
                 <Truncate variant="small">{repo?.repo}</Truncate>
               </ToolTip>
