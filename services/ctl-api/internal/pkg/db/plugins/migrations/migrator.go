@@ -43,7 +43,8 @@ type Params struct {
 	Opts      *Opts
 
 	// DB can be any gorm compatible db
-	DB *gorm.DB
+	DB     *gorm.DB
+	DBType string
 
 	L   *zap.Logger
 	Cfg *internal.Config
@@ -55,6 +56,7 @@ func New(params Params) *Migrator {
 		globalMigrations: params.Migrations,
 		models:           params.Models,
 		db:               params.DB,
+		dbType:           params.DBType,
 		l:                params.L,
 		cfg:              params.Cfg,
 		mw:               params.MW,
@@ -70,6 +72,7 @@ type Migrator struct {
 	globalMigrations []Migration
 	migrationDB      *gorm.DB
 	db               *gorm.DB
+	dbType           string
 	tableOpts        map[string]string
 	cfg              *internal.Config
 	mw               metrics.Writer
