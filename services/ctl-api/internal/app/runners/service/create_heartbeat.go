@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
+	chClause "github.com/powertoolsdev/mono/pkg/gorm/clickhouse/pkg/clause"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -76,7 +77,9 @@ func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, re
 		Version:   req.Version,
 	}
 
-	res := s.chDB.WithContext(ctx).
+	res := s.chDB.
+		Clauses(chClause.AsyncInsert{}).
+		WithContext(ctx).
 		Create(&runnerHeartBeat)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create runner heart beat: %w", res.Error)
