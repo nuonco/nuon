@@ -30,7 +30,7 @@ export const RadioInput: FC<IRadioInput> = ({
 export interface ICheckboxInput extends React.HTMLAttributes<HTMLInputElement> {
   checked?: boolean
   name: string
-  labelText: React.ReactNode
+  labelText?: React.ReactNode
   labelClassName?: string
   labelTextClassName?: string
   value?: string
@@ -59,30 +59,30 @@ export const CheckboxInput: FC<ICheckboxInput> = ({
         {...props}
         type="checkbox"
       />
-      <span
-        className={classNames('font-medium text-sm', {
-          [`${labelTextClassName}`]: Boolean(labelTextClassName),
-        })}
-      >
-        {labelText}
-      </span>
+      {labelText ? (
+        <span
+          className={classNames('font-medium text-sm', {
+            [`${labelTextClassName}`]: Boolean(labelTextClassName),
+          })}
+        >
+          {labelText}
+        </span>
+      ) : null}
     </label>
   )
 }
 
-export const Input: FC<React.InputHTMLAttributes<HTMLInputElement> & {isSearch?: boolean}> = ({
-  className,
-  isSearch = false,
-  ...props
-}) => {
+export const Input: FC<
+  React.InputHTMLAttributes<HTMLInputElement> & { isSearch?: boolean }
+> = ({ className, isSearch = false, ...props }) => {
   return (
     <input
       className={classNames(
         'px-3 py-2 text-base rounded border shadow-sm bg-cool-grey-50 dark:bg-dark-grey-200 [&:user-invalid]:border-red-600 [&:user-invalid]:dark:border-red-600 focus:outline outline-1 outline-primary-500 dark:outline-primary-400',
         {
           'bg-cool-grey-200 text-cool-grey-500 dark:bg-dark-grey-300 dark:text-dark-grey-900 cursor-not-allowed':
-          props?.disabled,
-          "!pl-8 !pr-3.5": isSearch,       
+            props?.disabled,
+          '!pl-8 !pr-3.5': isSearch,
           [`${classNames}`]: Boolean(classNames),
         }
       )}
