@@ -36,7 +36,7 @@ func init() {
 
 func RunMigrations() {
 	allModels := []interface{}{&User{}, &Log{}}
-	rand.Seed(time.Now().UnixNano())
+	rand.New(rand.NewSource(time.Now().UnixNano()))
 	rand.Shuffle(len(allModels), func(i, j int) { allModels[i], allModels[j] = allModels[j], allModels[i] })
 
 	if err := DB.Migrator().DropTable(allModels...); err != nil {
