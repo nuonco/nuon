@@ -30,7 +30,7 @@ export const Button: FC<IButton> = ({
 }) => {
   return (
     <button
-      className={classNames('rounded-md border', {
+      className={classNames('rounded-md border focus:outline outline-1 outline-primary-500 dark:outline-primary-400', {
         [`${defaultStyles} border`]: variant === 'default',
         'bg-primary-600 hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900':
           variant === 'primary',
