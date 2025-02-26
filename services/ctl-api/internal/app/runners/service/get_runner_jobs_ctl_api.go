@@ -11,6 +11,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetRunnerJobs
@@ -113,6 +114,7 @@ func (s *service) getRunnerJobsCtlAPI(ctx context.Context, runnerID string, stat
 	}
 
 	res := tx.
+		Scopes(scopes.WithDisableViews).
 		Order("created_at desc").
 		Find(&runnerJobs)
 	if res.Error != nil {
