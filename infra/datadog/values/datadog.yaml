@@ -43,3 +43,6 @@ agents:
     - key: "pool.nuon.co/public"
       operator: "Exists"
       effect: "NoSchedule"
+    - key: "pool.nuon.co"
+      operator: "Exists"
+      effect: "NoSchedule"
