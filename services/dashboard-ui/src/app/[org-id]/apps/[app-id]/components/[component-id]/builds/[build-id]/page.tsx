@@ -1,5 +1,5 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { FiCloud, FiClock } from 'react-icons/fi'
+import { CalendarBlank, Timer } from "@phosphor-icons/react/dist/ssr"
 import {
   BuildStatus,
   CancelRunnerJobButton,
@@ -63,11 +63,11 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
           <Text>
-            <FiCloud />
+            <CalendarBlank />
             <Time time={build.created_at} />
           </Text>
           <Text>
-            <FiClock />
+            <Timer />
             <Duration beginTime={build.created_at} endTime={build.updated_at} />
           </Text>
         </div>
