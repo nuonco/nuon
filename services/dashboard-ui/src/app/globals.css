@@ -19,7 +19,10 @@
 }
 
 @media (prefers-color-scheme: light) {
-  * {
+  *,
+  .prose :where(hr):not(:where([class~="not-prose"], [class~="not-prose"] *)),
+  .prose :where(tbody tr):not(:where([class~="not-prose"], [class~="not-prose"] *)),
+  .prose :where(thead):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
     border-color: var(--border-color-light);
   }
 
@@ -51,7 +54,10 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  * {
+  *,
+  .prose :where(hr):not(:where([class~="not-prose"], [class~="not-prose"] *)),
+  .prose :where(tbody tr):not(:where([class~="not-prose"], [class~="not-prose"] *)),
+  .prose :where(thead):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
     border-color: var(--border-color-dark);
   }
 
