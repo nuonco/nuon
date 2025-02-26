@@ -2,7 +2,6 @@
 
 import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
-import { ErrorBoundary } from 'react-error-boundary'
 import { Check, XCircle } from '@phosphor-icons/react'
 import { Button, type IButton } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
@@ -125,15 +124,15 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
                   )
                 })
             }}
-            variant="primary"
+            variant="danger"
           >
             {isKickedOff ? (
               <Check size="16" />
             ) : isLoading ? (
               <SpinnerSVG />
-            ) : (
-              <XCircle size="16" />
-            )}{' '}
+            ) : 
+              null
+            }{' '}
             Cancel
           </Button>
         </div>
