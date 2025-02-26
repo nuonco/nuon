@@ -1,10 +1,12 @@
 package clickhouse_test
 
 import (
+	"fmt"
 	"os"
 	"slices"
 	"testing"
 
+	chClause "github.com/powertoolsdev/mono/pkg/gorm/clickhouse/pkg/clause"
 	"gorm.io/gorm/utils/tests"
 )
 
@@ -47,6 +49,26 @@ func TestCreate(t *testing.T) {
 	if !slices.Contains(names, user.Name) {
 		t.Errorf("name should be included in the result")
 	}
+}
+
+func TestCreateAsync(t *testing.T) {
+	integration := os.Getenv("GORM_INTEGRATION")
+	if integration == "" {
+		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")
+		return
+	}
+
+	for i := range 100 {
+		id := uint64(200 + i)
+		user := User{ID: id, Name: "create", FirstName: "Async", LastName: fmt.Sprintf("Insert:%d", id), Age: 18, Active: true, Salary: 8.8888, Attrs: map[string]string{
+			"a": "a",
+			"b": "b",
+		}}
+		if err := DB.Clauses(chClause.AsyncInsert{}).Create(&user).Error; err != nil {
+			t.Fatalf("failed to create user, got error %v", err)
+		}
+	}
+
 }
 
 func TestBatchCreate(t *testing.T) {
