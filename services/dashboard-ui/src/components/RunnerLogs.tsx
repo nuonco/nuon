@@ -68,7 +68,6 @@ export const OTELLogs: FC<IOTELLogs> = ({
                   'col-span-1': i === 0 || i === 2,
                   'col-span-2': i === 1,
                   'col-span-8': i === 3,
-                  'cursor-pointer': header.column.getCanSort(),
                 }
               )}
               onClick={(e) => {

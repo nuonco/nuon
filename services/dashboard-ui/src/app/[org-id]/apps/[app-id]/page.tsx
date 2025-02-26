@@ -63,7 +63,7 @@ export default withPageAuthRequired(async function App({ params }) {
         </div>
 
         <div className="divide-y flex flex-col md:col-span-5">
-          {inputCfg ? (
+          {inputCfg && inputCfg?.input_groups?.length ? (
             <Section
               className="flex-initial"
               heading="Inputs"
