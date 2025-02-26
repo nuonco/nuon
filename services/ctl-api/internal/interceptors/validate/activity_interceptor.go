@@ -5,8 +5,10 @@ import (
 	"reflect"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/interceptor"
+	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
@@ -47,16 +49,17 @@ func (a *actInterceptor) ExecuteActivity(
 				zap.String("activity", info.ActivityType.Name),
 				zap.String("namespace", info.WorkflowNamespace),
 				zap.String("workflow_type", info.WorkflowType.Name),
+				zap.Any("request_object", in.Args[0]),
 			)
 
 			// TODO(jm): eventually, this will return once we know there are _zero_ instances of bad
 			// requests in production. However, doing that now means we might be relying on some
 			// unvalidateatble requests in prod.
 			//
-			//return nil, temporal.NewNonRetryableApplicationError(
-			//"validate error",
-			//"validate error",
-			//errors.Wrap(err, "unable to validate activity in middleware"))
+			return nil, temporal.NewNonRetryableApplicationError(
+				"validate error",
+				"validate error",
+				errors.Wrap(err, "unable to validate activity in middleware"))
 		}
 
 		tags := map[string]string{
