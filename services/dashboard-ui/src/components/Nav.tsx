@@ -37,11 +37,20 @@ export const Nav: FC<{ links?: Array<TLink> }> = ({ links = [] }) => {
 export const MainNav: FC<{ orgId: string, isSidebarOpen: boolean }> = ({ orgId, isSidebarOpen }) => {
   const path = usePathname()
   const links: Array<TLink> = [
+    /* {
+     *   href: `/${orgId}`,
+     *   text: (
+     *     <>
+     *       <SquaresFour />
+     *       {isSidebarOpen ? "Dashboard" : null}
+     *     </>
+     *   ),
+     * }, */
     {
       href: `/${orgId}/apps`,
       text: (
         <>
-          <SquaresFour />
+          <SquaresFour weight="bold" />
           {isSidebarOpen ? "Apps" : null}
         </>
       ),
@@ -50,7 +59,7 @@ export const MainNav: FC<{ orgId: string, isSidebarOpen: boolean }> = ({ orgId, 
       href: `/${orgId}/installs`,
       text: (
         <>
-          <Cube />
+          <Cube weight="bold" />
           {isSidebarOpen ? "Installs" : null}
         </>
       ),

@@ -92,9 +92,7 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
             <Text variant="med-12">{install.name}</Text>
             <Text variant="mono-12">
               <ToolTip alignment="right" tipContent={install.id}>
-                <ClickToCopy>
-                  <Truncate variant="small">{install.id}</Truncate>
-                </ClickToCopy>
+                <ClickToCopy>{install.id}</ClickToCopy>
               </ToolTip>
             </Text>
           </span>
