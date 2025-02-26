@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
-	chClause "github.com/powertoolsdev/mono/pkg/gorm/clickhouse/pkg/clause"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/otel"
@@ -166,7 +165,6 @@ func (s *service) toLogStreamLogs(logStreamID string, logs plogotlp.ExportReques
 func (s *service) writeLogStreamLogs(ctx context.Context, logs []app.OtelLogRecord) error {
 	// write the otel logs to the db
 	res := s.chDB.WithContext(ctx).
-		Clauses(chClause.AsyncInsert{}).
 		Create(&logs)
 	if res.Error != nil {
 		return fmt.Errorf("unable to ingest logs: %w", res.Error)
