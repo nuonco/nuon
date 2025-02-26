@@ -14,7 +14,7 @@ import {
 
 import { Button } from '@/components/Button'
 import { Dropdown } from '@/components/Dropdown'
-import { CheckboxInput } from '@/components/Input'
+import { CheckboxInput, Input } from '@/components/Input'
 import { LogLineSeverity } from '@/components/RunnerLogLineSeverity'
 
 export interface IRunnerLogsActions {
@@ -81,12 +81,13 @@ export const RunnerLogsActions: FC<IRunnerLogsActions> = ({
         <div className="p-2">
           <label className="relative">
             <MagnifyingGlass className="text-cool-grey-600 dark:text-cool-grey-500 absolute top-0.5 left-2" />
-            <input
-              className="rounded-md pl-8 pr-3.5 py-1.5 text-base border bg-white dark:bg-dark-grey-100 placeholder:text-cool-grey-600 dark:placeholder:text-cool-grey-500 md:min-w-80"
+            <Input
+              className="md:min-w-80"
               type="search"
               placeholder="Search..."
               value={globalFilter}
               onChange={handleGlobalFilter}
+              isSearch
             />
           </label>
         </div>
