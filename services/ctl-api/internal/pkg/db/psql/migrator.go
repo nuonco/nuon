@@ -1,8 +1,6 @@
 package psql
 
 import (
-	"context"
-
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -27,25 +25,15 @@ type PSQLParams struct {
 
 func NewPSQLMigrator(p PSQLParams, lc fx.Lifecycle) *migrations.Migrator {
 	opts := migrations.NewOpts()
-	mig := migrations.New(migrations.Params{
+	return migrations.New(migrations.Params{
 		Models:       AllModels(),
 		Migrations:   p.Migrations.All(),
 		MigrationsDB: p.MigrationsDB,
 		DB:           p.DB,
+		DBType:       "psql",
 		L:            p.L,
 		Cfg:          p.Cfg,
 		MW:           p.MetricsWriter,
 		Opts:         opts,
 	})
-
-	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			return mig.Exec(ctx)
-		},
-		OnStop: func(ctx context.Context) error {
-			return nil
-		},
-	})
-
-	return mig
 }
