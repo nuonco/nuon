@@ -9,19 +9,19 @@ import {
   Funnel,
   SortAscending,
   SortDescending,
-  X,
 } from '@phosphor-icons/react'
-
 import { Button } from '@/components/Button'
 import { Dropdown } from '@/components/Dropdown'
 import { CheckboxInput, Input } from '@/components/Input'
 import { LogLineSeverity } from '@/components/RunnerLogLineSeverity'
+import { RunnerLogFilterDropdown } from '@/components/RunnerLogFilterDropdown'
 
 export interface IRunnerLogsActions {
   columnFilters: any
   columnSort: any
   globalFilter: string
   handleStatusFilter: any
+  handleStatusOnlyFilter: any
   handleGlobalFilter: any
   handleColumnSort: any
   handleExpandAll?: any
@@ -38,6 +38,7 @@ export const RunnerLogsActions: FC<IRunnerLogsActions> = ({
   globalFilter,
   handleGlobalFilter,
   handleStatusFilter,
+  handleStatusOnlyFilter,
   handleColumnSort,
   handleExpandAll,
   clearStatusFilter,
@@ -107,123 +108,13 @@ export const RunnerLogsActions: FC<IRunnerLogsActions> = ({
           Sort
         </>
       </Button>
-
       {shouldHideFilter ? null : (
-        <Dropdown
-          alignment="right"
-          className="text-sm !font-medium !p-2 h-[32px]"
-          id="logs-filter"
-          text={
-            <>
-              <Funnel size="14" /> Filter
-            </>
-          }
-          isDownIcon
-        >
-          <div>
-            <form>
-              <CheckboxInput
-                name="trace"
-                onChange={handleStatusFilter}
-                checked={columnFilters?.at(0)?.value?.includes('Trace')}
-                value="Trace"
-                labelText={
-                  <div className="flex items-center gap-1">
-                    <LogLineSeverity severity_number={4} />
-                    <span className="font-semibold font-mono uppercase">
-                      Trace
-                    </span>
-                  </div>
-                }
-              />
-
-              <CheckboxInput
-                name="debug"
-                onChange={handleStatusFilter}
-                checked={columnFilters?.at(0)?.value?.includes('Debug')}
-                value="Debug"
-                labelText={
-                  <div className="flex items-center gap-1">
-                    <LogLineSeverity severity_number={8} />
-                    <span className="font-semibold !font-mono uppercase">
-                      Debug
-                    </span>
-                  </div>
-                }
-              />
-
-              <CheckboxInput
-                name="info"
-                onChange={handleStatusFilter}
-                checked={columnFilters?.at(0)?.value?.includes('Info')}
-                value="Info"
-                labelText={
-                  <div className="flex items-center gap-1">
-                    <LogLineSeverity severity_number={12} />
-                    <span className="font-semibold !font-mono uppercase">
-                      Info
-                    </span>
-                  </div>
-                }
-              />
-
-              <CheckboxInput
-                name="warn"
-                onChange={handleStatusFilter}
-                checked={columnFilters?.at(0)?.value?.includes('Warn')}
-                value="Warn"
-                labelText={
-                  <div className="flex items-center gap-1">
-                    <LogLineSeverity severity_number={16} />
-                    <span className="font-semibold !font-mono uppercase">
-                      Warn
-                    </span>
-                  </div>
-                }
-              />
-
-              <CheckboxInput
-                name="error"
-                onChange={handleStatusFilter}
-                checked={columnFilters?.at(0)?.value?.includes('Error')}
-                value="Error"
-                labelText={
-                  <div className="flex items-center gap-1">
-                    <LogLineSeverity severity_number={20} />
-                    <span className="font-semibold !font-mono uppercase">
-                      Error
-                    </span>
-                  </div>
-                }
-              />
-
-              <CheckboxInput
-                name="fatal"
-                onChange={handleStatusFilter}
-                checked={columnFilters?.at(0)?.value?.includes('Fatal')}
-                value="Fatal"
-                labelText={
-                  <div className="flex items-center gap-1">
-                    <LogLineSeverity severity_number={24} />
-                    <span className="font-semibold !font-mono uppercase">
-                      Fatal
-                    </span>
-                  </div>
-                }
-              />
-              <hr />
-              <Button
-                className="w-full !rounded-t-none !text-sm flex items-center gap-2 pl-4"
-                type="button"
-                onClick={clearStatusFilter}
-                variant="ghost"
-              >
-                <ArrowClockwise />
-                Reset
-              </Button>
-            </form>
-          </div>
-        </Dropdown>
+        <RunnerLogFilterDropdown
+          clearStatusFilter={clearStatusFilter}
+          columnFilters={columnFilters}
+          handleStatusFilter={handleStatusFilter}
+          handleStatusOnlyFilter={handleStatusOnlyFilter}
+        />
       )}
     </div>
   )

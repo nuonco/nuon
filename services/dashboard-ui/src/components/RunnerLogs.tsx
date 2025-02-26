@@ -329,6 +329,12 @@ export const RunnerLogs: FC<IRunnerLogs> = ({
     })
   }
 
+  const handleStatusOnlyFilter = (e) => {
+    setColumnFilters([
+      { id: 'severity_text', value: [e?.currentTarget?.value] },
+    ])
+  }
+
   const clearStatusFilter = () => {
     setColumnFilters([
       {
@@ -360,6 +366,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({
             globalFilter={globalFilter}
             handleGlobalFilter={handleGlobleFilter}
             handleStatusFilter={handleStatusFilter}
+            handleStatusOnlyFilter={handleStatusOnlyFilter}
             handleColumnSort={handleColumnSort}
             handleExpandAll={handleExpandAll}
             clearStatusFilter={clearStatusFilter}
@@ -399,6 +406,7 @@ export const RunnerLogs: FC<IRunnerLogs> = ({
                   columnFilters={columnFilters}
                   globalFilter={globalFilter}
                   handleGlobalFilter={handleGlobleFilter}
+                  handleStatusOnlyFilter={handleStatusOnlyFilter}
                   handleStatusFilter={handleStatusFilter}
                   handleColumnSort={handleColumnSort}
                   id="preview"
