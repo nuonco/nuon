@@ -26,7 +26,7 @@ export const Modal: FC<IModal> = ({
   contentClassName,
   ...props
 }) => {
-  const contentRef = useRef(null)
+  const modalRef = useRef(null)
   const onEscape = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       onClose()
@@ -42,7 +42,7 @@ export const Modal: FC<IModal> = ({
 
   useEffect(() => {
     if (isOpen) {
-      contentRef?.current?.focus()
+      modalRef?.current?.focus()
     }
   }, [isOpen])
 
@@ -60,6 +60,8 @@ export const Modal: FC<IModal> = ({
           }
         )}
         {...props}
+        tabIndex={-1}
+        ref={modalRef}
       >
         <header className="flex items-center justify-between px-6 py-4 border-b">
           <Heading>{heading}</Heading>
@@ -81,7 +83,6 @@ export const Modal: FC<IModal> = ({
               [`${contentClassName}`]: Boolean(contentClassName),
             }
           )}
-          ref={contentRef}
         >
           {children}
         </div>
