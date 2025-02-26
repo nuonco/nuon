@@ -1,8 +1,6 @@
 package ch
 
 import (
-	"context"
-
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -29,12 +27,13 @@ func NewCHMigrator(p ChParams, lc fx.Lifecycle) *migrations.Migrator {
 	opts := migrations.NewOpts()
 	opts.CreateViewSQLTmpl = "CREATE OR REPLACE VIEW %s ON CLUSTER simple AS %s"
 
-	mig := migrations.New(migrations.Params{
+	return migrations.New(migrations.Params{
 		Opts:         opts,
 		Migrations:   chmigrations.All(),
 		Models:       AllModels(),
 		MigrationsDB: p.MigrationsDB,
 		DB:           p.DB,
+		DBType:       "ch",
 		L:            p.L,
 		Cfg:          p.Cfg,
 		MW:           p.MetricsWriter,
@@ -42,14 +41,4 @@ func NewCHMigrator(p ChParams, lc fx.Lifecycle) *migrations.Migrator {
 			"gorm:table_cluster_options": "on cluster simple",
 		},
 	})
-	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			return mig.Exec(ctx)
-		},
-		OnStop: func(ctx context.Context) error {
-			return nil
-		},
-	})
-
-	return mig
 }
