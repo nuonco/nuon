@@ -322,32 +322,43 @@ const LoadUpcomingJobs: FC<{
     <>
       {runnerJobs?.length ? (
         <div className="divide-y flex-auto w-full">
+          <div className="grid grid-cols-10 pb-1 mb-1">
+            <Text
+              className="col-span-4 font-normal leading-normal text-sm tracking-wide text-cool-grey-600 dark:text-cool-grey-500"
+              variant="med-12"
+            >
+              Name
+            </Text>
+            <Text
+              className="col-span-4 font-normal leading-normal text-sm tracking-wide text-cool-grey-600 dark:text-cool-grey-500"
+              variant="med-12"
+            >
+              Group
+            </Text>
+          </div>
           {runnerJobs?.map((job) => {
             const isDeploy = job?.group === 'deploy' || job?.group === 'sync'
             const jobType = isDeploy ? 'deploy' : 'workflow-run'
 
             return (
               <div
-                className="flex items-center justify-between w-full py-3"
+                className="flex items-center justify-between w-full py-2 grid grid-cols-10 gap-2"
                 key={job.id}
               >
-                <Config>
-                  <ConfigContent
-                    label="Name"
-                    value={
-                      isDeploy
-                        ? job?.metadata?.component_name
-                        : job?.metadata?.action_workflow_name
-                    }
-                  />
+                <Text className="col-span-4">
+                  {isDeploy
+                    ? job?.metadata?.component_name
+                    : job?.metadata?.action_workflow_name}
+                </Text>
 
-                  <ConfigContent label="Group" value={runnerJobs?.[0]?.group} />
-                </Config>
-                <div className="">
+                <Text className="col-span-4">{runnerJobs?.[0]?.group}</Text>
+
+                <div className="col-span-2">
                   <CancelRunnerJobButton
                     runnerJobId={job?.id}
                     orgId={orgId}
                     jobType={jobType}
+                    variant="ghost"
                   />
                 </div>
               </div>

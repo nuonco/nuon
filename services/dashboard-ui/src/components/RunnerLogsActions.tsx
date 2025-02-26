@@ -76,6 +76,7 @@ export const RunnerLogsActions: FC<IRunnerLogsActions> = ({
             <MagnifyingGlass size="14" /> Search
           </>
         }
+        isDownIcon
       >
         <div className="p-2">
           <label className="relative">
@@ -116,6 +117,7 @@ export const RunnerLogsActions: FC<IRunnerLogsActions> = ({
               <Funnel size="14" /> Filter
             </>
           }
+          isDownIcon
         >
           <div>
             <form>

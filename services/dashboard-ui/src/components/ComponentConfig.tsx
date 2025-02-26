@@ -202,7 +202,7 @@ const ConfigurationExternalImage: FC<
       <ConfigContent
         label="Image"
         value={
-          external_image.image_url?.length >= 12 ? (
+          external_image.image_url?.length >= 32 ? (
             <ToolTip alignment="right" tipContent={external_image.image_url}>
               <Truncate variant="small">{external_image.image_url}</Truncate>
             </ToolTip>
@@ -241,7 +241,7 @@ const ConfigurationJob: FC<Pick<TComponentConfig, 'job'>> = ({ job }) => {
       <ConfigContent
         label="Image"
         value={
-          job.image_url.length >= 12 ? (
+          job.image_url.length >= 32 ? (
             <ToolTip alignment="right" tipContent={job.image_url}>
               <Truncate variant="small">{job.image_url}</Truncate>
             </ToolTip>
@@ -287,9 +287,9 @@ export const ConfigurationVCS: FC<{ vcs: IConfigurationVCS }> = ({ vcs }) => {
             rel="noreferrer"
           >
             {isGithubConnected ? <FaGithub /> : <FaGitAlt />}
-            {repo?.repo?.length >= 12 ? (
+            {repo?.repo?.length >= 32 ? (
               <ToolTip alignment="right" tipContent={repo?.repo}>
-                <Truncate variant="small">{repo?.repo}</Truncate>
+                <Truncate variant="large">{repo?.repo}</Truncate>
               </ToolTip>
             ) : (
               repo?.repo

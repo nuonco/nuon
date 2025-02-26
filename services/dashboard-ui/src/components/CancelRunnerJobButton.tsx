@@ -140,7 +140,7 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
       </Modal>
       <Button
         disabled={hasBeenCanceled}
-        className="text-sm flex items-center gap-1"
+        className="text-sm flex items-center gap-1 text-red-800 dark:text-red-500"
         onClick={() => {
           setIsConfirmOpen(true)
         }}
