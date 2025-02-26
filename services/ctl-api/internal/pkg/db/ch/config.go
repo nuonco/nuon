@@ -36,7 +36,9 @@ func (c *database) chOptions() *clickhousecore.Options {
 		},
 		TLS: tlsCfg,
 		Settings: clickhousecore.Settings{
-			"max_execution_time": 60,
+			"max_execution_time":    60,
+			"async_insert":          1,
+			"wait_for_async_insert": 1,
 		},
 		DialTimeout: c.DialTimeout,
 		ReadTimeout: c.ReadTimeout,
