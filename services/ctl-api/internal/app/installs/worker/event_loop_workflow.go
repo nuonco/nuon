@@ -20,7 +20,7 @@ func (w *Workflows) handleSyncActionWorkflowTriggers(ctx workflow.Context, sreq 
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
-	workflow.ExecuteChildWorkflow(ctx, w.ActionWorkflowTriggers)
+	workflow.ExecuteChildWorkflow(ctx, w.ActionWorkflowTriggers, sreq)
 	return nil
 }
 
