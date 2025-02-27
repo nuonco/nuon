@@ -129,7 +129,7 @@ func (w *Workflows) temporalNamespaceMetrics(ctx workflow.Context, ns string) er
 		}, defaultTags))...)
 
 	w.mw.Gauge(ctx, "eventloops.expected_count",
-		float64(m.AllWorkflows),
+		float64(m.ExpectedEventLoops),
 		metrics.ToTags(generics.MergeMap(map[string]string{}, defaultTags))...)
 
 	return nil
