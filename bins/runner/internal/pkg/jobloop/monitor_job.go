@@ -13,9 +13,11 @@ func (j *jobLoop) monitorJob(ctx context.Context, cancel func(), doneCh chan str
 	defer ticker.Stop()
 	for {
 		select {
-		case <-ticker.C:
+		case <-ctx.Done():
+			return
 		case <-doneCh:
 			return
+		case <-ticker.C:
 		}
 
 		job, err := j.apiClient.GetJob(ctx, jobID)

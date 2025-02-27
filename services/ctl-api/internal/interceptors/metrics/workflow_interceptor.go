@@ -73,5 +73,5 @@ func (a *wfInterceptor) ExecuteWorkflow(
 		}
 	}
 
-	return resp, nil
+	return resp, err
 }

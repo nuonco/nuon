@@ -31,11 +31,17 @@ func (a *Activities) PkgWorkflowsJobGetRunnerJobQueue(ctx context.Context, req *
 
 	minJobCreatedAt := job.CreatedAt.Add(-discardJobDuration)
 	var jobs []*app.RunnerJob
-	res := a.db.WithContext(ctx).Where("runner_id = ? AND created_at < ? AND created_at > ? AND status IN ?", job.RunnerID, job.CreatedAt, minJobCreatedAt, []app.RunnerJobStatus{
-		app.RunnerJobStatusQueued,
-		app.RunnerJobStatusAvailable,
-		app.RunnerJobStatusInProgress,
-	}).Limit(LimitQueueSize).Order("created_at desc").Find(&jobs)
+	res := a.db.WithContext(ctx).
+		Where("runner_id = ? AND created_at < ? AND created_at > ? AND status IN ?", job.RunnerID, job.CreatedAt, minJobCreatedAt, []app.RunnerJobStatus{
+			app.RunnerJobStatusQueued,
+			app.RunnerJobStatusAvailable,
+			app.RunnerJobStatusInProgress,
+		}).
+		Where(app.RunnerJob{
+			Group: job.Group,
+		}).
+		Limit(LimitQueueSize).
+		Order("created_at desc").Find(&jobs)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get runner job queue")
 	}
