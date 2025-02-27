@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"go.uber.org/zap"
+
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 )
 
 const (
@@ -20,7 +21,10 @@ func (j *jobLoop) execSandboxStep(ctx context.Context) error {
 	}
 
 	duration := j.cfg.SandboxJobDuration / totalSteps
-	l.Info("sandbox mode enabled, faking job output", zap.String("step", "initialize"))
+	l.Info("sandbox mode enabled, faking job output",
+		zap.String("step", "initialize"),
+		zap.Duration("duration", j.cfg.SandboxJobDuration),
+	)
 
 	timeout := time.NewTimer(duration)
 	ticker := time.NewTicker(logPeriod)

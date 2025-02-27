@@ -12,13 +12,15 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job/activities"
 )
 
 const (
-	pollJobPeriod time.Duration = time.Second * 10
+	pollJobPeriod              time.Duration = time.Second * 10
+	pollJobMaxWorkflowDuration               = time.Minute * 2
 )
 
 var failureStatuses = []app.RunnerJobStatus{
@@ -47,11 +49,19 @@ func AwaitExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJo
 // @task-queue "api"
 // @id-callback WorkflowIDCallback
 func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {
+	if workflow.GetInfo(ctx).ContinuedExecutionRunID != "" {
+		return w.pollJob(ctx, req)
+	}
+
 	if err := w.queueJob(ctx, req.RunnerID, req.JobID); err != nil {
 		return app.RunnerJobStatusUnknown, errors.Wrap(err, "unable to queue job")
 	}
 
-	return w.pollJob(ctx, req.JobID)
+	if _, err := w.pollJob(ctx, req); err != nil {
+		return app.RunnerJobStatus(""), err
+	}
+
+	return app.RunnerJobStatusUnknown, nil
 }
 
 func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string) error {
@@ -71,7 +81,8 @@ func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string) error
 	return nil
 }
 
-func (j *Workflows) pollJob(ctx workflow.Context, jobID string) (app.RunnerJobStatus, error) {
+func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {
+	jobID := req.JobID
 	wkflowInfo := workflow.GetInfo(ctx)
 	job, err := activities.AwaitPkgWorkflowsJobGetJobByID(ctx, jobID)
 	if err != nil {
@@ -108,6 +119,10 @@ func (j *Workflows) pollJob(ctx workflow.Context, jobID string) (app.RunnerJobSt
 		now := workflow.Now(ctx)
 		if now.After(job.CreatedAt.Add(job.OverallTimeout)) {
 			return app.RunnerJobStatusTimedOut, temporal.NewNonRetryableApplicationError("overall timeout reached", "api", fmt.Errorf("timeout"))
+		}
+
+		if now.After(startTS.Add(pollJobMaxWorkflowDuration)) {
+			return job.Status, workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, req)
 		}
 
 		job, err := activities.AwaitPkgWorkflowsJobGetJobByID(ctx, jobID)
