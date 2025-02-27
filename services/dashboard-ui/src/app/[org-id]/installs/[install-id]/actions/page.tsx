@@ -1,4 +1,5 @@
-// @ts-nocheck
+import { Suspense, type FC } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   InstallPageSubNav,
@@ -6,6 +7,8 @@ import {
   InstallActionWorkflowsTable,
   InstallManagementDropdown,
   DashboardContent,
+  ErrorFallback,
+  Loading,
   Section,
   Text,
   Time,
@@ -23,12 +26,9 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
 }) {
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
-  const [org, install, actionsWithLatestRun] = await Promise.all([
+  const [org, install] = await Promise.all([
     getOrg({ orgId }),
     getInstall({ installId, orgId }),
-    getInstallActionWorkflowLatestRun({ installId, orgId }).catch(
-      console.error
-    ),
   ])
 
   const appInputConfigs =
@@ -84,17 +84,37 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
         />
       }
     >
-      <Section className="border-r" heading="All workflows">
-        {actionsWithLatestRun?.length ? (
-          <InstallActionWorkflowsTable
-            actions={actionsWithLatestRun}
-            installId={installId}
-            orgId={orgId}
-          />
-        ) : (
-          'No actions configured on this app'
-        )}
+      <Section heading="All workflows">
+        <ErrorBoundary fallbackRender={ErrorFallback}>
+          <Suspense
+            fallback={
+              <Loading variant="page" loadingText="Loading actions..." />
+            }
+          >
+            <LoadInstallActions installId={installId} orgId={orgId} />
+          </Suspense>
+        </ErrorBoundary>
       </Section>
     </DashboardContent>
   )
 })
+
+const LoadInstallActions: FC<{ installId: string; orgId: string }> = async ({
+  installId,
+  orgId,
+}) => {
+  const actionsWithLatestRun = await getInstallActionWorkflowLatestRun({
+    installId,
+    orgId,
+  })
+
+  return actionsWithLatestRun?.length ? (
+    <InstallActionWorkflowsTable
+      actions={actionsWithLatestRun}
+      installId={installId}
+      orgId={orgId}
+    />
+  ) : (
+    <Text variant="reg-14">No actions configured on this app.</Text>
+  )
+}
