@@ -38,7 +38,7 @@ export const SpinnerSVG: FC<{ variant?: 'default' | 'large' }> = ({
 
 export interface ILoading {
   loadingText?: string
-  variant?: 'default' | 'page'
+  variant?: 'default' | 'page' | 'stack'
 }
 
 export const Loading: FC<ILoading> = ({
@@ -53,11 +53,15 @@ export const Loading: FC<ILoading> = ({
     >
       <span
         className={classNames('flex items-center', {
-          'flex-col gap-4 m-auto': variant === 'page',
+          'flex-col gap-4 m-auto': variant === 'page' || variant === 'stack',
           'gap-2': variant === 'default',
         })}
       >
-        <SpinnerSVG variant={variant === 'page' ? 'large' : 'default'} />
+        <SpinnerSVG
+          variant={
+            variant === 'page' || variant === 'stack' ? 'large' : 'default'
+          }
+        />
         <Text variant="reg-14">{loadingText}</Text>
       </span>
     </div>

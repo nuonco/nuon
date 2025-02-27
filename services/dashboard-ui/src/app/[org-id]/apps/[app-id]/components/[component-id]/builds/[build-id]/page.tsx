@@ -1,13 +1,17 @@
+import { type FC, Suspense } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { CalendarBlank, Timer } from "@phosphor-icons/react/dist/ssr"
+import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   BuildStatus,
   CancelRunnerJobButton,
   ClickToCopy,
+  ComponentConfiguration,
   DashboardContent,
   Duration,
-  ComponentConfiguration,
+  ErrorFallback,
   LogStreamPoller,
+  Loading,
   Section,
   Time,
   Text,
@@ -21,7 +25,7 @@ import {
   getComponentConfig,
   getLogStreamLogs,
 } from '@/lib'
-import type { TOTELLog } from '@/types'
+import type { TBuild, TOTELLog } from '@/types'
 import { CANCEL_RUNNER_JOBS } from '@/utils'
 
 export default withPageAuthRequired(async function AppComponent({ params }) {
@@ -31,14 +35,9 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
   const orgId = params?.['org-id'] as string
 
   const build = await getComponentBuild({ buildId, orgId })
-  const [app, component, componentConfig, logs] = await Promise.all([
+  const [app, component, logs] = await Promise.all([
     getApp({ appId, orgId }),
     getComponent({ componentId, orgId }),
-    getComponentConfig({
-      componentId,
-      componentConfigId: build.component_config_connection_id,
-      orgId,
-    }),
     getLogStreamLogs({ orgId, logStreamId: build.log_stream?.id }).catch(
       console.error
     ),
@@ -169,10 +168,58 @@ lg:max-w-[450px]"
           )}
 
           <Section className="flex-initial" heading="Component config">
-            <ComponentConfiguration config={componentConfig} />
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Loading
+                    variant="stack"
+                    loadingText="Loading component config..."
+                  />
+                }
+              >
+                <LoadComponentConfig
+                  componentId={componentId}
+                  componentConfigId={build?.component_config_connection_id}
+                  orgId={orgId}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </Section>
         </div>
       </div>
     </DashboardContent>
   )
 })
+
+const LoadBuildLogs: FC<{ build: TBuild; orgId: string }> = async ({
+  build,
+  orgId,
+}) => {
+  const logs = await getLogStreamLogs({
+    orgId,
+    logStreamId: build.log_stream?.id,
+  }).catch(console.error)
+  return (
+    <LogStreamPoller
+      heading="Build logs"
+      initLogs={logs as Array<TOTELLog>}
+      initLogStream={build.log_stream}
+      orgId={orgId}
+      logStreamId={build.log_stream?.id}
+      shouldPoll={Boolean(build?.log_stream)}
+    />
+  )
+}
+
+const LoadComponentConfig: FC<{
+  componentId: string
+  componentConfigId: string
+  orgId: string
+}> = async ({ componentId, componentConfigId, orgId }) => {
+  const componentConfig = await getComponentConfig({
+    componentId,
+    componentConfigId,
+    orgId,
+  })
+  return <ComponentConfiguration config={componentConfig} />
+}
