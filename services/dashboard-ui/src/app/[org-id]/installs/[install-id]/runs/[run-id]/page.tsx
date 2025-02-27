@@ -1,5 +1,5 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { CalendarBlank, Timer } from "@phosphor-icons/react/dist/ssr"
+import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
@@ -124,10 +124,12 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
 lg:max-w-[450px]"
         >
           <Section className="flex-initial" heading="Sandbox">
-            <AppSandboxConfig sandboxConfig={sandboxRun.app_sandbox_config} />
-            <AppSandboxVariables
-              variables={sandboxRun.app_sandbox_config?.variables}
-            />
+            <div className="flex flex-col gap-3">
+              <AppSandboxConfig sandboxConfig={sandboxRun.app_sandbox_config} />
+              <AppSandboxVariables
+                variables={sandboxRun.app_sandbox_config?.variables}
+              />
+            </div>
           </Section>
 
           {sandboxRun?.runner_job?.outputs ? (
