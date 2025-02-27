@@ -152,15 +152,19 @@ lg:max-w-[450px]"
                     Message
                   </Text>
                   <Text>
-                    <ToolTip
-                      tipContent={build.vcs_connection_commit?.message}
-                      alignment="right"
-                      position="top"
-                    >
-                      <Truncate variant="extra-large">
-                        {build.vcs_connection_commit?.message}
-                      </Truncate>
-                    </ToolTip>
+                    {build.vcs_connection_commit?.message?.length >= 32 ? (
+                      <ToolTip
+                        tipContent={build.vcs_connection_commit?.message}
+                        alignment="right"
+                        position="top"
+                      >
+                        <Truncate variant="large">
+                          {build.vcs_connection_commit?.message}
+                        </Truncate>
+                      </ToolTip>
+                    ) : (
+                      build?.vcs_connection_commit?.message
+                    )}
                   </Text>
                 </span>
               </div>
