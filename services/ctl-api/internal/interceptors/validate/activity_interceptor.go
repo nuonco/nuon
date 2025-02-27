@@ -5,10 +5,8 @@ import (
 	"reflect"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/pkg/errors"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/interceptor"
-	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
@@ -62,10 +60,10 @@ func (a *actInterceptor) ExecuteActivity(
 			// requests in production. However, doing that now means we might be relying on some
 			// unvalidateatble requests in prod.
 			//
-			return nil, temporal.NewNonRetryableApplicationError(
-				"validate error",
-				"validate error",
-				errors.Wrap(err, "unable to validate activity in middleware"))
+			// return nil, temporal.NewNonRetryableApplicationError(
+			// 	"validate error",
+			// 	"validate error",
+			// 	errors.Wrap(err, "unable to validate activity in middleware"))
 		}
 	default:
 	}
