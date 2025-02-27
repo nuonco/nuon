@@ -30,7 +30,7 @@ export const LogsPreview: FC<ILogsPreview> = ({
   sorting,
 }) => {
   const lineStyle =
-    'text-sm font-mono leading-loose text-cool-grey-600 dark:text-cool-grey-500'
+    'text-sm font-mono text-cool-grey-600 dark:text-cool-grey-500'
   const columns: Array<ColumnDef<TOTELLog>> = useMemo(
     () => [
       {
@@ -117,7 +117,7 @@ export const LogsPreview: FC<ILogsPreview> = ({
         {table.getRowModel().rows.map((row) => (
           <span
             key={row.id}
-            className="grid grid-cols-12 items-start justify-start gap-6 py-2 w-full"
+            className="grid grid-cols-12 items-start justify-start gap-6 py-1 w-full"
           >
             {row.getVisibleCells().map((cell) => (
               <React.Fragment key={cell.id}>
