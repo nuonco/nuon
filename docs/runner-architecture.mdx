@@ -1,0 +1,50 @@
+---
+title: 'Runner Architecture'
+description: 'How Nuon makes BYOC possible.'
+---
+
+When building Nuon, the central design challenge we faced was how to allow vendors to manage an app in a customer's cloud account without requiring cross-account access. Through multiple iterations -- and a lot of learning things the hard way -- we have arrived at our current architecture, built around the Nuon Runner.
+
+## Overview
+
+At a high level, the Nuon platform consists of a Control Plane, remotely controlling Runners deployed into different accounts. The Control Plane does not send commands to the Runners. Instead, the Runners poll the Control Plane, waiting to be told to run a job. This allows the Control Plane to orchestrate jobs for all the Runners, without having any access to the accounts the Runners are hosted in.
+
+**No cross-account access is required to provision, maintain, and deprovision an install.**
+
+![runner-architecture](/images/runner-architecture.webp)
+
+Now that you have a high-level view of the architecture, let's dive into the details.
+
+## The Nuon Runner
+
+The Runner itself is pretty simple. It is a stateless, stand-alone Golang binary, and it does three things:
+
+1. Polls the Control Plane for jobs.
+1. Runs jobs.
+1. Pipes logs from those jobs to the Control Plane.
+
+<Note>These are logs from the job itself, such as the output from `helm install` or `terraform apply`. **These are not application logs**. The Runner does not collect logs from your application.</Note>
+
+The level of access the runner has within the customer account can be controlled via permissions and policies. It can also be disabled and re-enabled by the customer if they don't want it running at all times.
+
+## The Nuon Control Plane
+
+The Control Plane is a more complex piece of machinery than the Runner. It is capable of orchestrating and monitoring jobs across many numbers of Runners, and acts as a single pane of glass across all of your app installs in all of your customer's environments.
+
+### The Control API
+
+The central component of the Control Plane is the Control API. This is the interface used to orchestrate and inspect apps, installs, and jobs. The Dashboard and CLI are built on top of this, and you can integrate with it yourself to build custom interfaces for both internal and customer use.
+
+<Note>The Control Plane is multi-tennant, although we do logically isolate data and resources by org. However, we are working on providing Nuon itself as a BYOC app. If you are interested in the BYOC version of the Nuon Control Plane, please reach out to us.</Note>
+
+### The Runner API
+
+We maintain a separate API for Runners to interact with. This is the API they poll for jobs, and write logs and metrics to.
+
+### The Build Runner
+
+The first step to provisioning your app components in an install is building an OCI artifact for Runners to pull. Because all of your Installs will be using the same artifacts, we provision a Build Runner for you in the Control Plane.
+
+This is exactly the same executable used in Installs, and it works exactly the same way, except it only runs build jobs. This is the only part of the Control Plane that touches your source code and build artifacts.
+
+<Note>While the rest of the Control Plane is multi-tennant, Build Runners are always single-tennant. Each Runner is deployed to its own host and does not share any resources with other Runners.</Note>
