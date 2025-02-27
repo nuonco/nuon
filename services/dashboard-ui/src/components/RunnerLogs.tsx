@@ -100,7 +100,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
                 row.original?.service_name === 'api',
             })}
             className={classNames(
-              'grid grid-cols-12 items-start justify-start gap-6 py-2 w-full'
+              'grid grid-cols-12 items-start justify-start gap-6 py-1 w-full'
             )}
             heading={
               row
@@ -117,13 +117,13 @@ export const OTELLogs: FC<IOTELLogs> = ({
                   <Expand
                     id={`${row.original?.id}-log-attr`}
                     heading={
-                      <Text className="text-base !font-medium leading-normal p-4">
+                      <Text className="text-base !font-medium leading-normal px-4 py-2">
                         Log attributes
                       </Text>
                     }
                     expandContent={
-                      <div className="divide-y p-4 bg-black/5 dark:bg-white/5">
-                        <div className="grid grid-cols-3 gap-4 pb-3">
+                      <div className="divide-y px-4 py-2 bg-black/5 dark:bg-white/5">
+                        <div className="grid grid-cols-3 gap-4 pb-2">
                           <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
                             Key
                           </Text>
@@ -135,7 +135,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
                         {Object.keys(logAttributes).map((key) => (
                           <div
                             key={`${key}-${row.original?.id}`}
-                            className="grid grid-cols-3 gap-4 py-3"
+                            className="grid grid-cols-3 gap-4 py-2"
                           >
                             <Text className="font-mono text-sm break-all !inline truncate max-w-[250px]">
                               {key}
@@ -169,13 +169,13 @@ export const OTELLogs: FC<IOTELLogs> = ({
                 <Expand
                   id={`${row.original?.id}-resource-attr`}
                   heading={
-                    <Text className="text-base !font-medium leading-normal p-4">
+                    <Text className="text-base !font-medium leading-normal px-4 py-2">
                       Resource attributes
                     </Text>
                   }
                   expandContent={
-                    <div className="divide-y p-4 bg-black/5 dark:bg-white/5">
-                      <div className="grid grid-cols-3 gap-4 pb-3">
+                    <div className="divide-y px-4 py-2 bg-black/5 dark:bg-white/5">
+                      <div className="grid grid-cols-3 gap-4 pb-2">
                         <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
                           Key
                         </Text>
@@ -187,7 +187,7 @@ export const OTELLogs: FC<IOTELLogs> = ({
                       {Object.keys(resourceAttributes).map((key) => (
                         <div
                           key={`${key}-${row.original?.id}`}
-                          className="grid grid-cols-3 gap-4 py-3"
+                          className="grid grid-cols-3 gap-4 py-2"
                         >
                           <Text className="font-mono text-sm break-all !inline truncate max-w-[250px]">
                             {key}
