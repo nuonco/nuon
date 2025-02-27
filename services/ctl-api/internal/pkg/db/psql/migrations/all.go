@@ -8,5 +8,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "01-create-internal-accounts",
 			Fn:   m.migration01InternalAccounts,
 		},
+		{
+			Name: "002-drop-old-actions-run-index",
+			Fn:   m.Migration002DropOldActionsRunIndex,
+		},
 	}
 }
