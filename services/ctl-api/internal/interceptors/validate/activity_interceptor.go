@@ -44,7 +44,9 @@ func (a *actInterceptor) ExecuteActivity(
 			"namespace":     info.WorkflowNamespace,
 			"workflow_type": info.WorkflowType.Name,
 		}
-		defer a.mw.Incr("temporal_activity.request_validation", metrics.ToTags(tags))
+		defer func() {
+			a.mw.Incr("temporal_activity.request_validation", metrics.ToTags(tags))
+		}()
 
 		if err := a.v.StructCtx(ctx, in.Args[0]); err != nil {
 			tags["status"] = "error"
@@ -60,10 +62,7 @@ func (a *actInterceptor) ExecuteActivity(
 			// requests in production. However, doing that now means we might be relying on some
 			// unvalidateatble requests in prod.
 			//
-			// return nil, temporal.NewNonRetryableApplicationError(
-			// 	"validate error",
-			// 	"validate error",
-			// 	errors.Wrap(err, "unable to validate activity in middleware"))
+			// return nil, errors.Wrapf(err, "activity request object validation failed")
 		}
 	default:
 	}
