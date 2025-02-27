@@ -59,6 +59,7 @@ func (m *Migrator) toGormIndexes(obj any, idxs []Index) []gorm.Index {
 
 func (m *Migrator) applyIndexes(ctx context.Context, obj any) error {
 	im, ok := m.toIndexMode(obj)
+
 	if !ok {
 		return nil
 	}
@@ -75,6 +76,7 @@ func (m *Migrator) applyIndexes(ctx context.Context, obj any) error {
 			Err:   errors.Wrap(err, "unable to get indexes"),
 		}
 	}
+
 	toAdd, toDel := generics.DiffMaps(expected, existing)
 
 	for _, idx := range toAdd {
@@ -117,11 +119,15 @@ func (m *Migrator) applyIndex(ctx context.Context, obj any, idx Index) error {
 		clause.Column{Name: idx.Name},
 		clause.Table{Name: plugins.TableName(m.db, obj)},
 	}
-	for _, col := range idx.Columns {
-		args = append(args, clause.Column{
-			Name: col,
-		})
+
+	columns := ""
+	for i, col := range idx.Columns {
+		if i > 0 {
+			columns += ", "
+		}
+		columns += col
 	}
+	args = append(args, clause.Expr{SQL: columns})
 
 	tmpl := m.opts.CreateIndexTmpl
 	if idx.UniqueValue.Valid && idx.UniqueValue.Bool {
