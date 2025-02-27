@@ -1,19 +1,23 @@
+import { Suspense, type FC } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppCreateInstallButton,
   AppPageSubNav,
   AppWorkflowsTable,
   DashboardContent,
+  ErrorFallback,
+  Loading,
   NoActions,
+  Section,
 } from '@/components'
 import { getApp, getAppActionWorkflows, getAppLatestInputConfig } from '@/lib'
 
 export default withPageAuthRequired(async function AppWorkflows({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const [app, workflows, inputCfg] = await Promise.all([
+  const [app, inputCfg] = await Promise.all([
     getApp({ appId, orgId }),
-    getAppActionWorkflows({ appId, orgId }).catch(console.error),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
   ])
 
@@ -37,17 +41,29 @@ export default withPageAuthRequired(async function AppWorkflows({ params }) {
       }
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
-      <section className="px-6 py-8">
-        {workflows && workflows?.length ? (
-          <AppWorkflowsTable
-            appId={appId}
-            orgId={orgId}
-            workflows={workflows}
-          />
-        ) : (
-          <NoActions />
-        )}
-      </section>
+      <Section>
+        <ErrorBoundary fallbackRender={ErrorFallback}>
+          <Suspense
+            fallback={
+              <Loading variant="page" loadingText="Loading actions..." />
+            }
+          >
+            <LoadAppActions appId={appId} orgId={orgId} />
+          </Suspense>
+        </ErrorBoundary>
+      </Section>
     </DashboardContent>
   )
 })
+
+const LoadAppActions: FC<{ appId: string; orgId: string }> = async ({
+  appId,
+  orgId,
+}) => {
+  const actions = await getAppActionWorkflows({ appId, orgId })
+  return actions && actions?.length ? (
+    <AppWorkflowsTable appId={appId} orgId={orgId} workflows={actions} />
+  ) : (
+    <NoActions />
+  )
+}
