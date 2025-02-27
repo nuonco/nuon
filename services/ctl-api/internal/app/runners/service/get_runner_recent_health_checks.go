@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetRunnerRecentHealthChecks
@@ -58,6 +59,7 @@ func (s *service) getRunnerRecentHealthChecks(ctx context.Context, runnerID stri
 	healthChecks := []*app.RunnerHealthCheck{}
 
 	res := s.chDB.WithContext(ctx).
+		Scopes(scopes.WithOverrideTable("runner_health_checks_view_v1")).
 		Where(app.RunnerHealthCheck{
 			RunnerID: runnerID,
 		}).
