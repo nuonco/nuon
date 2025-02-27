@@ -56,14 +56,12 @@ func (m middleware) Handler() gin.HandlerFunc {
 			}
 
 			org, err := cctx.OrgFromContext(c)
-			if err != nil {
-				m.l.Debug("no org in middleware")
-				return false
+			if err == nil {
+				if org.DebugMode {
+					return false
+				}
 			}
 
-			if org.DebugMode {
-				return false
-			}
 			if len(c.Errors) > 0 {
 				return false
 			}
