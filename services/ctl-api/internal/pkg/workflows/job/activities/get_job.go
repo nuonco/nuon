@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type GetJobRequest struct {
@@ -16,6 +17,7 @@ type GetJobRequest struct {
 func (a *Activities) PkgWorkflowsJobGetJob(ctx context.Context, req *GetJobRequest) (*app.RunnerJob, error) {
 	job := app.RunnerJob{}
 	res := a.db.WithContext(ctx).
+	Scopes(scopes.WithDisableViews).
 		First(&job, "id = ?", req.ID)
 
 	if res.Error != nil {

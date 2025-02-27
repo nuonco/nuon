@@ -234,7 +234,7 @@ type RunnerJob struct {
 }
 
 func (*RunnerJob) UseView() bool {
-	return true
+	return false
 }
 
 func (*RunnerJob) ViewVersion() string {
