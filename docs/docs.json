@@ -27,6 +27,7 @@
           {
             "group": "Resources",
             "pages": [
+              "runner-architecture",
               "configuration-files",
               "cli",
               "terraform-provider",
