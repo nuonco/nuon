@@ -1,10 +1,15 @@
+import { Suspense, type FC } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppCreateInstallButton,
   AppComponentsTable,
   AppPageSubNav,
   DashboardContent,
+  ErrorFallback,
+  Loading,
   NoComponents,
+  Section,
 } from '@/components'
 import {
   getApp,
@@ -17,27 +22,10 @@ import {
 export default withPageAuthRequired(async function AppComponents({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const [app, components, inputCfg] = await Promise.all([
+  const [app, inputCfg] = await Promise.all([
     getApp({ appId, orgId }),
-    getAppComponents({ appId, orgId }),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
   ])
-  const hydratedComponents = await Promise.all(
-    components.map(async (comp, _, arr) => {
-      const [config, builds] = await Promise.all([
-        getComponentConfig({ componentId: comp.id, orgId }),
-        getComponentBuilds({ componentId: comp.id, orgId }),
-      ])
-      const deps = arr.filter((c) => comp.dependencies?.some((d) => d === c.id))
-
-      return {
-        ...comp,
-        config,
-        deps,
-        latestBuild: builds[0],
-      }
-    })
-  )
 
   return (
     <DashboardContent
@@ -59,17 +47,51 @@ export default withPageAuthRequired(async function AppComponents({ params }) {
       }
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
-      <section className="px-6 py-8">
-        {components.length ? (
-          <AppComponentsTable
-            components={hydratedComponents}
-            appId={appId}
-            orgId={orgId}
-          />
-        ) : (
-          <NoComponents />
-        )}
-      </section>
+      <Section>
+        <ErrorBoundary fallbackRender={ErrorFallback}>
+          <Suspense
+            fallback={
+              <Loading variant="page" loadingText="Loading components..." />
+            }
+          >
+            <LoadAppComponents appId={appId} orgId={orgId} />
+          </Suspense>
+        </ErrorBoundary>
+      </Section>
     </DashboardContent>
   )
 })
+
+const LoadAppComponents: FC<{ appId: string; orgId: string }> = async ({
+  appId,
+  orgId,
+}) => {
+  const components = await getAppComponents({ appId, orgId })
+
+  const hydratedComponents = await Promise.all(
+    components.map(async (comp, _, arr) => {
+      const [config, builds] = await Promise.all([
+        getComponentConfig({ componentId: comp.id, orgId }),
+        getComponentBuilds({ componentId: comp.id, orgId }),
+      ])
+      const deps = arr.filter((c) => comp.dependencies?.some((d) => d === c.id))
+
+      return {
+        ...comp,
+        config,
+        deps,
+        latestBuild: builds[0],
+      }
+    })
+  )
+
+  return components.length ? (
+    <AppComponentsTable
+      components={hydratedComponents}
+      appId={appId}
+      orgId={orgId}
+    />
+  ) : (
+    <NoComponents />
+  )
+}
