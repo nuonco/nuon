@@ -109,7 +109,7 @@ func (w *Workflows) actionWorkflowRun(ctx workflow.Context, installID, actionWor
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		RunnerID:   run.Install.RunnerID,
 		JobID:      runnerJob.ID,
-		WorkflowID: "actions-install-run-" + run.ID,
+		WorkflowID: "actions-install-run-exec-job" + run.ID,
 	})
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "job failed")
