@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
@@ -30,9 +31,9 @@ type InstallActionWorkflowRun struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at" gorm:"notnull;index:idx_iawr_iaw_id_delete_id_created_at,priority:3,sort:desc;index:idx_install_action_runs_query,priority:3,sort:desc"`
+	CreatedAt   time.Time             `json:"created_at" gorm:"notnull;index:idx_install_action_runs_query,priority:3,sort:desc"`
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_iawr_iaw_id_delete_id_created_at,priority:2"`
+	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
 	RunnerJob *RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;"`
 
@@ -45,7 +46,7 @@ type InstallActionWorkflowRun struct {
 	InstallID string  `json:"install_id" gorm:"not null;default null;index:idx_install_action_runs_query,priority:1"`
 	Install   Install `swaggerignore:"true" json:"-" temporaljson:"install"`
 
-	InstallActionWorkflowID string                `json:"install_action_workflow_id" gorm:"index:idx_iawr_iaw_id_delete_id_created_at,priority:1;index:idx_install_action_runs_query,priority:2"`
+	InstallActionWorkflowID string                `json:"install_action_workflow_id" gorm:"index:idx_install_action_runs_query,priority:2"`
 	InstallActionWorkflow   InstallActionWorkflow `json:"install_action_workflow"`
 
 	Status            InstallActionWorkflowRunStatus `json:"status" gorm:"notnull" swaggertype:"string"`
@@ -78,6 +79,18 @@ func (i *InstallActionWorkflowRun) Views(db *gorm.DB) []migrations.View {
 	}
 }
 
+func (i *InstallActionWorkflowRun) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &InstallActionWorkflowRun{}, "preload"),
+			Columns: []string{
+				"install_action_workflow_id",
+				"deleted_at",
+				"created_at DESC",
+			},
+		},
+	}
+}
 
 func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {
 	if i.ID == "" {
