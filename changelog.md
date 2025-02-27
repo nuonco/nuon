@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.442
+
+Improved log filtering in UI.
+
 ## v0.19.441
 
 Add event loop instrumentation.
