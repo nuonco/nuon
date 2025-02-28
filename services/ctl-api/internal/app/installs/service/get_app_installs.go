@@ -15,6 +15,7 @@ import (
 // @Summary	get all installs for an app
 // @Description.markdown	get_app_installs.md
 // @Param			app_id	path	string	true	"app ID"
+// @Param		  q	query	string	false	"search query"
 // @Tags			installs
 // @Accept			json
 // @Produce		json
@@ -29,28 +30,41 @@ import (
 // @Router			/v1/apps/{app_id}/installs [GET]
 func (s *service) GetAppInstalls(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
-
-	installs, err := s.getAppInstalls(ctx, appID)
+	q := ctx.Query("q")
+	fmt.Println("appID", appID)
+	fmt.Println("q", q)
+	installs, err := s.getAppInstalls(ctx, appID, q)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create install: %w", err))
+		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusOK, installs)
 }
 
-func (s *service) getAppInstalls(ctx context.Context, appID string) ([]app.Install, error) {
+func (s *service) getAppInstalls(ctx context.Context, appID string, q string) ([]app.Install, error) {
 	currentApp := &app.App{}
-	res := s.db.WithContext(ctx).
-		Preload("Installs").
+	tx := s.db.WithContext(ctx)
+
+	if q != "" {
+		tx = tx.Preload("Installs", "name ILIKE ?", "%"+q+"%")
+	}
+
+	if q == "" {
+		tx = tx.Preload("Installs")
+	}
+
+	tx = tx.
 		Preload("Installs.AppSandboxConfig").
 		Preload("Installs.InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_sandbox_runs.created_at DESC")
 		}).
 		Preload("Installs.AWSAccount").
 		Preload("Installs.RunnerGroup").
-		Preload("Installs.RunnerGroup.Runners").
-		First(&currentApp, "id = ?", appID)
+		Preload("Installs.RunnerGroup.Runners")
+
+	res := tx.First(&currentApp, "id = ?", appID)
+
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
