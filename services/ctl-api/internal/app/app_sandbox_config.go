@@ -11,6 +11,8 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 const (
@@ -58,6 +60,19 @@ type AppSandboxConfig struct {
 
 	// fields set via after query
 	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-" swaggertype:"string"`
+}
+
+func (c *AppSandboxConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AppSandboxConfig{}, "preload"),
+			Columns: []string{
+				"app_id",
+				"deleted_at",
+				"created_at DESC",
+			},
+		},
+	}
 }
 
 // NOTE: currently, only public repo vcs configs are supported when rendering policies and artifacts
