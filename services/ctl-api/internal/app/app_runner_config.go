@@ -8,6 +8,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AppRunnerType string
@@ -52,6 +54,19 @@ type AppRunnerConfig struct {
 	// fields set via after query
 
 	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-"`
+}
+
+func (a *AppRunnerConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AppRunnerConfig{}, "preload"),
+			Columns: []string{
+				"app_id",
+				"deleted_at",
+				"created_at DESC",
+			},
+		},
+	}
 }
 
 func (a *AppRunnerConfig) BeforeCreate(tx *gorm.DB) error {
