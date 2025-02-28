@@ -33,13 +33,13 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	res := s.db.WithContext(ctx).
 		Preload("Components").
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_sandbox_configs.created_at DESC")
+			return db.Order("app_sandbox_configs.created_at DESC").Limit(1)
 		}).
 		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_runner_configs.created_at DESC")
+			return db.Order("app_runner_configs.created_at DESC").Limit(1)
 		}).
 		Preload("AppInputConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_input_configs.created_at DESC")
+			return db.Order("app_input_configs.created_at DESC").Limit(1)
 		}).
 		First(&parentApp, "id = ?", appID)
 	if res.Error != nil {

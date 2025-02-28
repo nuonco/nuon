@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AppInputConfig struct {
@@ -25,6 +27,19 @@ type AppInputConfig struct {
 	AppInputGroups []AppInputGroup `json:"input_groups" gorm:"constraint:OnDelete:CASCADE;"`
 
 	InstallInputs []InstallInputs `json:"install_inputs" gorm:"constraint:OnDelete:CASCADE"`
+}
+
+func (a *AppInputConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AppInputConfig{}, "preload"),
+			Columns: []string{
+				"app_id",
+				"deleted_at",
+				"created_at DESC",
+			},
+		},
+	}
 }
 
 func (a *AppInputConfig) BeforeCreate(tx *gorm.DB) error {
