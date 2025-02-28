@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/interceptor"
+	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
@@ -58,11 +59,11 @@ func (a *actInterceptor) ExecuteActivity(
 				zap.Any("request_object", in.Args[0]),
 			)
 
-			// TODO(jm): eventually, this will return once we know there are _zero_ instances of bad
-			// requests in production. However, doing that now means we might be relying on some
-			// unvalidateatble requests in prod.
-			//
-			// return nil, errors.Wrapf(err, "activity request object validation failed")
+			return nil, temporal.NewNonRetryableApplicationError(
+				"invalid activity request",
+				"invalid activity request",
+				err,
+			)
 		}
 	default:
 	}
