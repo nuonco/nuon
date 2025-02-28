@@ -3,14 +3,12 @@ package worker
 import (
 	"fmt"
 
-	"github.com/DataDog/datadog-go/v5/statsd"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -65,21 +63,6 @@ func (w *Workflows) startActionWorkflowCronTrigger(ctx workflow.Context, sreq si
 		CronSchedule:          trigger.CronSchedule,
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
-	}
-
-	// NOTE(sdboyer) this appears to be the point where empty ids entered the system,
-	// causing a lot of invalid downstream activities. Check for it here and fail fast.
-	if iw.ID == "" {
-		w.mw.Event(ctx, &statsd.Event{
-			Title:          "Empty install action workflow ID provided to start cron workflow",
-			Text:           "Empty install action workflow ID provided to start cron workflow",
-			AlertType:      statsd.Error,
-			AggregationKey: "install_action_workflow_empty_id",
-			Tags: metrics.ToTags(map[string]string{
-				"install_id": sreq.ID,
-			}),
-		})
-		return errors.New("install action workflow id must not be empty")
 	}
 
 	dctx := workflow.WithChildOptions(ctx, cwo)
