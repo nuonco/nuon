@@ -7,7 +7,7 @@ import (
 )
 
 func (s *jobLoop) Start() error {
-	s.pool.Go(s.worker)
+	s.pool.Go(s.runWorker)
 	return nil
 }
 
