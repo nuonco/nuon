@@ -68,6 +68,7 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode)
 	if err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, err.Error())
 		return err
 	}
 
@@ -78,6 +79,7 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	l.Info("polling runner until active")
 	if err := w.pollRunner(ctx, install.RunnerGroup.Runners[0].ID); err != nil {
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, err.Error())
 		return err
 	}
 
