@@ -2,6 +2,7 @@ package jobloop
 
 import (
 	"context"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-runner-go/models"
@@ -35,7 +36,6 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 
 	l = l.With(zap.String("runner_job.id", job.ID))
 	l = l.With(zap.String("log_stream.id", job.LogStreamID))
-	l = l.With(zap.String("service.name", "runner"))
 
 	// create an execution in the API
 	l.Info("creating job execution")
@@ -60,7 +60,12 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	ctx, cancel = context.WithTimeout(ctx, time.Duration(job.ExecutionTimeout))
+	defer cancel()
+
 	doneCh := make(chan struct{})
+	defer close(doneCh)
 	go func() {
 		j.monitorJob(ctx, cancel, doneCh, job.ID, l)
 	}()
@@ -85,7 +90,6 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	if err := jl.ForceFlush(ctx); err != nil {
 		return errors.Wrap(err, "unable to flush logger")
 	}
-	close(doneCh)
 
 	return nil
 }
