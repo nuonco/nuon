@@ -1,10 +1,11 @@
 package app
 
 import (
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
-	"gorm.io/gorm"
 )
 
 type CHTableSize struct {
@@ -24,7 +25,7 @@ func (*CHTableSize) ViewVersion() string {
 func (i *CHTableSize) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name: views.DefaultViewName(db, &PSQLTableSize{}, 1),
+			Name: views.DefaultViewName(db, &CHTableSize{}, 1),
 			SQL:  viewsql.CHTableSizesV1,
 		},
 	}
