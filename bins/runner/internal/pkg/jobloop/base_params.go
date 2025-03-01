@@ -14,7 +14,8 @@ import (
 type BaseParams struct {
 	fx.In
 
-	LC fx.Lifecycle
+	LC         fx.Lifecycle
+	Shutdowner fx.Shutdowner
 
 	Client      nuonrunner.Client
 	Settings    *settings.Settings
