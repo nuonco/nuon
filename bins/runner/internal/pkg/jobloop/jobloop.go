@@ -37,10 +37,11 @@ type jobLoop struct {
 	settings *settings.Settings
 	cfg      *internal.Config
 
-	ctx       context.Context
-	ctxCancel func()
-	l         *zap.Logger
-	mw        metrics.Writer
+	ctx        context.Context
+	ctxCancel  func()
+	l          *zap.Logger
+	mw         metrics.Writer
+	shutdowner fx.Shutdowner
 }
 
 func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params BaseParams) *jobLoop {
@@ -54,13 +55,14 @@ func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params B
 		jobGroup:    jobGroup,
 		jobHandlers: handlers,
 
-		pool:      pool.New().WithMaxGoroutines(1),
-		ctx:       ctx,
-		ctxCancel: cancelFn,
-		l:         params.L,
-		settings:  params.Settings,
-		cfg:       params.Cfg,
-		mw:        params.MW,
+		pool:       pool.New().WithMaxGoroutines(1),
+		ctx:        ctx,
+		ctxCancel:  cancelFn,
+		l:          params.L,
+		settings:   params.Settings,
+		cfg:        params.Cfg,
+		mw:         params.MW,
+		shutdowner: params.Shutdowner,
 	}
 
 	params.LC.Append(jl.LifecycleHook())
