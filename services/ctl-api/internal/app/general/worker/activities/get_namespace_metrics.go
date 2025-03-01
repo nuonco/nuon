@@ -5,9 +5,10 @@ import (
 	"regexp"
 
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"go.temporal.io/api/workflowservice/v1"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 var eventLoopRegex = regexp.MustCompile(`^event-loop-[a-zA-Z0-9_-]{26}$`)
@@ -25,6 +26,7 @@ type NamespaceMetrics struct {
 // @temporal-gen activity
 // @by-id Name
 // @schedule-to-close-timeout 120s
+// @start-to-close-timeout 120s
 func (a *Activities) GetNamespaceMetrics(ctx context.Context, req GetNamespaceMetricsRequest) (*NamespaceMetrics, error) {
 	metrics, err := a.getNamespaceMetrics(ctx, req.Name)
 	if err != nil {
