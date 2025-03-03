@@ -1,9 +1,11 @@
 package jobloop
 
 import (
+	"context"
 	"time"
 
 	smithytime "github.com/aws/smithy-go/time"
+	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/conc/panics"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -33,11 +35,15 @@ func (j *jobLoop) worker() error {
 		default:
 		}
 
+		// TODO(sdboyer): testing hypothesis that this may be hanging indefinitely on HTTP blips;
+		// if confirmed, this timeout should be removed and generalized; if disconfirmed, remove it anyway.
+		tctx, cancel := context.WithTimeoutCause(j.ctx, time.Second*5, errors.Wrapf(context.DeadlineExceeded, "polling for jobs in group %s timed out", j.jobGroup))
 		var lim *int64
-		jobs, err := j.apiClient.GetJobs(j.ctx,
+		jobs, err := j.apiClient.GetJobs(tctx,
 			j.jobGroup,
 			j.jobStatus,
 			lim)
+		cancel()
 		if err != nil {
 			j.l.Error("unable to fetch jobs", zap.Error(err))
 
