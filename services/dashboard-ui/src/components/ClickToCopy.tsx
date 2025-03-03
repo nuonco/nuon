@@ -46,7 +46,7 @@ export const ClickToCopy: FC<IClickToCopy> = ({
           className={classNames(
             'bg-dark text-light dark:bg-light dark:text-dark text-sm leading-none px-2 py-1.5 rounded drop-shadow-md max-w-96 absolute z-10 -top-6 right-0',
             {
-              'top-0': insetNotice,
+              '-top-1 right-5': insetNotice,
             }
           )}
         >

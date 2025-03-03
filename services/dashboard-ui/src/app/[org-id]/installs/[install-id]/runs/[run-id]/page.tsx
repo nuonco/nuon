@@ -8,33 +8,28 @@ import {
   CodeViewer,
   DashboardContent,
   Duration,
-  LogStreamPoller,
+  LogStreamProvider,
+  OperationLogsSection,
   SandboxRunStatus,
   Section,
   Text,
-  Truncate,
   Time,
   ToolTip,
 } from '@/components'
-import { getInstall, getLogStreamLogs, getInstallSandboxRun } from '@/lib'
-import type { TOTELLog } from '@/types'
-import { CANCEL_RUNNER_JOBS } from '@/utils'
+import { getInstall, getInstallSandboxRun } from '@/lib'
+import { CANCEL_RUNNER_JOBS, sentanceCase } from '@/utils'
 
 export default withPageAuthRequired(async function SandboxRuns({ params }) {
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
   const runId = params?.['run-id'] as string
-  const sandboxRun = await getInstallSandboxRun({
-    installId,
-    orgId,
-    installSandboxRunId: runId,
-  })
-  const [install, logs] = await Promise.all([
+  const [install, sandboxRun] = await Promise.all([
     getInstall({ installId, orgId }),
-    getLogStreamLogs({
+    getInstallSandboxRun({
+      installId,
       orgId,
-      logStreamId: sandboxRun?.log_stream?.id,
-    }).catch(console.error),
+      installSandboxRunId: runId,
+    }),
   ])
 
   return (
@@ -109,20 +104,16 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
         </div>
       }
     >
-      <div className="flex flex-col lg:flex-row flex-auto">
-        <LogStreamPoller
-          heading={sandboxRun?.run_type + ' logs'}
-          initLogStream={sandboxRun?.log_stream}
-          initLogs={logs as Array<TOTELLog>}
-          orgId={orgId}
-          logStreamId={sandboxRun?.log_stream?.id}
-          shouldPoll={Boolean(sandboxRun?.log_stream)}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
+        <div className="md:col-span-8">
+          <LogStreamProvider initLogStream={sandboxRun?.log_stream}>
+            <OperationLogsSection
+              heading={sentanceCase(sandboxRun?.run_type) + ' logs'}
+            />
+          </LogStreamProvider>
+        </div>
 
-        <div
-          className="divide-y flex flex-col lg:min-w-[450px]
-lg:max-w-[450px]"
-        >
+        <div className="divide-y flex flex-col md:col-span-4">
           <Section className="flex-initial" heading="Sandbox">
             <div className="flex flex-col gap-3">
               <AppSandboxConfig sandboxConfig={sandboxRun.app_sandbox_config} />

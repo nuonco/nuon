@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getLogStreamLogs } from '@/lib'
+import { API_URL, getFetchOpts } from '@/utils'
 
 export const GET = withApiAuthRequired(async (req: NextRequest) => {
   const [orgId, _, logStreamId] = req.url.split('/').slice(4, 7)
-  
-  let logs = []
-  try {
-    logs = await getLogStreamLogs({ orgId, logStreamId })
-  } catch (error) {
-    console.error(error)
-  }
+  const offset = req?.headers?.get('x-nuon-api-offset') || '0'
+  const fetchOpts = await getFetchOpts(orgId, { 'X-Nuon-API-Offset': offset })
 
-  return NextResponse.json(logs)
+  return fetch(`${API_URL}/v1/log-streams/${logStreamId}/logs`, fetchOpts).then(
+    (res) => {
+      const next = res?.headers?.get('x-nuon-api-next') || '0'
+      return res.json().then((logs) => {
+        return NextResponse.json(logs, {
+          status: 200,
+          headers: {
+            'X-Nuon-API-Next': next,
+          },
+        })
+      })
+    }
+  )
 })

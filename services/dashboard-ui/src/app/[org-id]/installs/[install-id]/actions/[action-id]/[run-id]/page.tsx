@@ -1,7 +1,8 @@
-import React, { type FC, Suspense } from 'react'
+import React from 'react'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
+  ActionLogsSection,
   ActionWorkflowStatus,
   CancelRunnerJobButton,
   ClickToCopy,
@@ -9,26 +10,19 @@ import {
   DashboardContent,
   Duration,
   EventStatus,
-  InstallActionLogStreamPoller,
-  Loading,
+  LogStreamProvider,
   Section,
   Text,
   Time,
   ToolTip,
-  Truncate,
 } from '@/components'
 import {
   getInstall,
   getAppActionWorkflow,
   getInstallActionWorkflowRun,
-  getLogStreamLogs,
   getOrg,
 } from '@/lib'
-import type {
-  TOTELLog,
-  TInstallActionWorkflowRun,
-  TActionConfig,
-} from '@/types'
+import type { TInstallActionWorkflowRun, TActionConfig } from '@/types'
 import {
   sentanceCase,
   CANCEL_RUNNER_JOBS,
@@ -136,18 +130,14 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
         </div>
       }
     >
-      <div className="flex flex-col md:flex-row flex-auto">
-        <Suspense
-          fallback={
-            <Section heading="Workflow step logs" className="border-r">
-              <Loading loadingText="Loading action workflow steps" />
-            </Section>
-          }
-        >
-          <LoadLogs orgId={orgId} workflowRun={workflowRun} />
-        </Suspense>
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
+        <div className="md:col-span-8">
+          <LogStreamProvider initLogStream={workflowRun?.log_stream}>
+            <ActionLogsSection workflowRun={workflowRun} />
+          </LogStreamProvider>
+        </div>
 
-        <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
+        <div className="divide-y flex flex-col md:col-span-4">
           <Section
             className="flex-initial"
             heading={`${workflowRun?.steps?.reduce((count, step) => {
@@ -200,24 +190,3 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
     </DashboardContent>
   )
 })
-
-const LoadLogs: FC<{
-  orgId: string
-  workflowRun: TInstallActionWorkflowRun
-}> = async ({ orgId, workflowRun }) => {
-  const logs = await getLogStreamLogs({
-    logStreamId: workflowRun?.log_stream?.id,
-    orgId,
-  }).catch(console.error)
-
-  return (
-    <InstallActionLogStreamPoller
-      initLogs={logs as Array<TOTELLog>}
-      initLogStream={workflowRun?.log_stream}
-      orgId={orgId}
-      logStreamId={workflowRun?.log_stream?.id}
-      workflowRun={workflowRun}
-      shouldPoll
-    />
-  )
-}
