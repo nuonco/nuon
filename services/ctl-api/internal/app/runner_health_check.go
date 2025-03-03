@@ -60,7 +60,7 @@ func (r RunnerHealthCheck) GetTableClusterOptions() string {
 }
 
 func (*RunnerHealthCheck) UseView() bool {
-	return true
+	return false
 }
 
 func (*RunnerHealthCheck) ViewVersion() string {
