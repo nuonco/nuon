@@ -2,6 +2,7 @@ package jobloop
 
 import (
 	"context"
+	"os"
 	"time"
 
 	smithytime "github.com/aws/smithy-go/time"
@@ -17,14 +18,18 @@ const (
 )
 
 func (j *jobLoop) runWorker() {
-	l := j.l.With(zap.Any("group", j.jobGroup))
+	l, _ := zap.NewProduction()
+	l = l.With(zap.Any("group", j.jobGroup))
 
 	if err := j.worker(); err != nil {
 		l.Warn("job loop stopped due to error", zap.Error(err))
 	}
 
 	l.Warn("shutting down runner due to closing job loop")
-	j.shutdowner.Shutdown(fx.ExitCode(1))
+	os.Exit(155)
+	if err := j.shutdowner.Shutdown(fx.ExitCode(1)); err != nil {
+		l.Warn("unable to shut down", zap.Error(err))
+	}
 }
 
 func (j *jobLoop) worker() error {

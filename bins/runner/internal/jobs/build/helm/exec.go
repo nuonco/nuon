@@ -21,10 +21,11 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	l.Info("packaging chart", zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()})
 	packagePath, err := h.packageChart(l)
-	l.Info("packaged chart", zapcore.Field{Key: "package_path", Type: zapcore.StringType, String: packagePath})
 	if err != nil {
 		return fmt.Errorf("unable to get source files: %w", err)
 	}
+	l.Info("packaged chart", zapcore.Field{Key: "package_path", Type: zapcore.StringType, String: packagePath})
+
 	l.Info("successfully packaged chart", zap.String("path", packagePath))
 	h.state.packagePath = packagePath
 
