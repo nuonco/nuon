@@ -1,5 +1,9 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { CalendarBlank, CaretRight, Timer } from "@phosphor-icons/react/dist/ssr"
+import {
+  CalendarBlank,
+  CaretRight,
+  Timer,
+} from '@phosphor-icons/react/dist/ssr'
 import {
   CancelRunnerJobButton,
   ClickToCopy,
@@ -9,7 +13,8 @@ import {
   Duration,
   InstallDeployIntermediateData,
   Link,
-  LogStreamPoller,
+  LogStreamProvider,
+  OperationLogsSection,
   StatusBadge,
   Section,
   Text,
@@ -24,9 +29,8 @@ import {
   getInstall,
   getInstallDeploy,
   getInstallDeployPlan,
-  getLogStreamLogs,
 } from '@/lib'
-import type { TOTELLog, TInstallDeployPlan } from '@/types'
+import type { TInstallDeployPlan } from '@/types'
 import { CANCEL_RUNNER_JOBS, DEPLOY_INTERMEDIATE_DATA } from '@/utils'
 
 export default withPageAuthRequired(async function InstallComponentDeploy({
@@ -41,21 +45,16 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
     orgId,
   })
   const build = await getComponentBuild({ orgId, buildId: deploy.build_id })
-  const [component, componentConfig, install, logs, deployPlan] =
-    await Promise.all([
-      getComponent({ componentId: build.component_id, orgId }),
-      getComponentConfig({
-        componentId: build.component_id,
-        componentConfigId: build.component_config_connection_id,
-        orgId,
-      }),
-      getInstall({ installId, orgId }),
-      getLogStreamLogs({
-        logStreamId: deploy?.log_stream?.id,
-        orgId,
-      }).catch(console.error),
-      getInstallDeployPlan({ deployId, installId, orgId }).catch(console.error),
-    ])
+  const [component, componentConfig, install, deployPlan] = await Promise.all([
+    getComponent({ componentId: build.component_id, orgId }),
+    getComponentConfig({
+      componentId: build.component_id,
+      componentConfigId: build.component_config_connection_id,
+      orgId,
+    }),
+    getInstall({ installId, orgId }),
+    getInstallDeployPlan({ deployId, installId, orgId }).catch(console.error),
+  ])
 
   return (
     <DashboardContent
@@ -162,19 +161,14 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
         </div>
       }
     >
-      <div className="flex flex-col lg:flex-row flex-auto">
-        <LogStreamPoller
-          heading="Deploy logs"
-          initLogStream={deploy?.log_stream}
-          initLogs={logs as Array<TOTELLog>}
-          orgId={orgId}
-          logStreamId={deploy?.log_stream?.id}
-          shouldPoll={Boolean(deploy?.log_stream)}
-        />
-        <div
-          className="divide-y flex flex-col lg:min-w-[450px]
-lg:max-w-[450px]"
-        >
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
+        <div className="md:col-span-8">
+          <LogStreamProvider initLogStream={deploy?.log_stream}>
+            <OperationLogsSection heading="Deploy logs" />
+          </LogStreamProvider>
+        </div>
+
+        <div className="divide-y flex flex-col md:col-span-4">
           <Section
             className="flex-initial"
             actions={
