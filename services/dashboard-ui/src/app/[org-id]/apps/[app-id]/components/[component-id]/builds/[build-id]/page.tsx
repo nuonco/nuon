@@ -10,8 +10,9 @@ import {
   DashboardContent,
   Duration,
   ErrorFallback,
-  LogStreamPoller,
   Loading,
+  LogStreamProvider,
+  OperationLogsSection,
   Section,
   Time,
   Text,
@@ -23,9 +24,7 @@ import {
   getComponent,
   getComponentBuild,
   getComponentConfig,
-  getLogStreamLogs,
 } from '@/lib'
-import type { TBuild, TOTELLog } from '@/types'
 import { CANCEL_RUNNER_JOBS } from '@/utils'
 
 export default withPageAuthRequired(async function AppComponent({ params }) {
@@ -35,12 +34,9 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
   const orgId = params?.['org-id'] as string
 
   const build = await getComponentBuild({ buildId, orgId })
-  const [app, component, logs] = await Promise.all([
+  const [app, component] = await Promise.all([
     getApp({ appId, orgId }),
     getComponent({ componentId, orgId }),
-    getLogStreamLogs({ orgId, logStreamId: build.log_stream?.id }).catch(
-      console.error
-    ),
   ])
 
   return (
@@ -107,20 +103,13 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
         </div>
       }
     >
-      <div className="flex flex-col lg:flex-row flex-auto">
-        <LogStreamPoller
-          heading="Build logs"
-          initLogs={logs as Array<TOTELLog>}
-          initLogStream={build.log_stream}
-          orgId={orgId}
-          logStreamId={build.log_stream?.id}
-          shouldPoll={Boolean(build?.log_stream)}
-        />
-
-        <div
-          className="divide-y flex flex-col lg:min-w-[450px]
-lg:max-w-[450px]"
-        >
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
+        <div className="md:col-span-8">
+          <LogStreamProvider initLogStream={build?.log_stream}>
+            <OperationLogsSection heading="Build logs" />
+          </LogStreamProvider>
+        </div>
+        <div className="divide-y flex flex-col md:col-span-4">
           {build.vcs_connection_commit && (
             <Section className="flex-initial" heading="Commit details">
               <div className="flex gap-6 items-start justify-start">
@@ -194,26 +183,6 @@ lg:max-w-[450px]"
     </DashboardContent>
   )
 })
-
-const LoadBuildLogs: FC<{ build: TBuild; orgId: string }> = async ({
-  build,
-  orgId,
-}) => {
-  const logs = await getLogStreamLogs({
-    orgId,
-    logStreamId: build.log_stream?.id,
-  }).catch(console.error)
-  return (
-    <LogStreamPoller
-      heading="Build logs"
-      initLogs={logs as Array<TOTELLog>}
-      initLogStream={build.log_stream}
-      orgId={orgId}
-      logStreamId={build.log_stream?.id}
-      shouldPoll={Boolean(build?.log_stream)}
-    />
-  )
-}
 
 const LoadComponentConfig: FC<{
   componentId: string
