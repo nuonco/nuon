@@ -41,9 +41,6 @@ earthly_cmds:
   - cmd: run-local
     args:
       - orgs
-  - cmd: run-local
-    args:
-      - installs
 earthly_target: oci-artifacts
 earthly_env:
   INTERNAL_API_URL: http://host.docker.internal:8082
