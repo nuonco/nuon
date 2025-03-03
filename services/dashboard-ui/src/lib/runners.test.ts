@@ -4,7 +4,6 @@ import { describe, expect, test } from 'vitest'
 import {
   cancelRunnerJob,
   getLogStream,
-  getLogStreamLogs,
   getRunner,
   getRunnerJob,
   getRunnerJobs,
@@ -75,28 +74,6 @@ describe('getRunnerJobs should handle response status codes from GET runners/:id
     await getRunnerJobs({ runnerId, orgId })
       .then((err) => expect(err).toMatchSnapshot())
       .catch((err) => expect(err).toMatchSnapshot())
-  })
-})
-
-// NOTE: special test for log-stream logs
-
-describe('getLogStreamLogs should handle response status codes from GET log-streams/:id/logs endpoint', () => {
-  const orgId = 'test-id'
-  const logStreamId = 'test-id'
-  test('200 status', async () => {
-    const spec = await getLogStreamLogs({ logStreamId, orgId })
-    spec.map((s) => {
-      expect(s).toHaveProperty('timestamp')
-      expect(s).toHaveProperty('severity_number')
-      expect(s).toHaveProperty('severity_text')
-      expect(s).toHaveProperty('body')
-    })
-  })
-
-  test.each(badResponseCodes)('%s status', async () => {
-    await getLogStreamLogs({ logStreamId, orgId }).catch((err) =>
-      expect(err).toMatchSnapshot()
-    )
   })
 })
 

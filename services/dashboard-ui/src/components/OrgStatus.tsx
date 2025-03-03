@@ -3,7 +3,7 @@
 import React, { type FC, useEffect, useState } from 'react'
 import { StatusBadge } from '@/components/Status'
 import type { TOrg } from '@/types'
-import { SHORT_POLL_DURATION } from '@/utils'
+import { POLL_DURATION } from '@/utils'
 
 export interface IOrgStatus {
   descriptionAlignment?: 'center' | 'left' | 'right'
@@ -30,7 +30,7 @@ export const OrgStatus: FC<IOrgStatus> = ({
         .catch(console.error)
     }
     if (shouldPoll) {
-      const pollOrg = setInterval(fetchOrg, SHORT_POLL_DURATION)
+      const pollOrg = setInterval(fetchOrg, POLL_DURATION)
 
       /* if (
        *   org?.status === 'active' ||
