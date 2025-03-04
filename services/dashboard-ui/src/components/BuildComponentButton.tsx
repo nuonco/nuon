@@ -1,7 +1,7 @@
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
-import { Check, Hammer } from '@phosphor-icons/react'
+import { Check, Hammer, WarningOctagon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
@@ -18,6 +18,7 @@ export const BuildComponentButton: FC<{
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
+  const [error, setError] = useState()
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -42,6 +43,11 @@ export const BuildComponentButton: FC<{
         }}
       >
         <div className="mb-6">
+          {error ? (
+            <span className="flex items-center gap-3  w-full p-2 border rounded-md border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600 text-base font-medium">
+              <WarningOctagon size="20" /> {error}
+            </span>
+          ) : null}
           <Text variant="reg-14" className="leading-relaxed">
             Are you sure you want to build {componentName}?
           </Text>
@@ -59,12 +65,20 @@ export const BuildComponentButton: FC<{
             className="text-sm flex items-center gap-1"
             onClick={() => {
               setIsLoading(true)
-              createComponentBuild({ appId, componentId, orgId }).then(() => {
-                setIsLoading(false)
-                setIsKickedOff(true)
-                setIsConfirmOpen(false)
-                if (props.onComplete) props.onComplete()
-              })
+              createComponentBuild({ appId, componentId, orgId })
+                .then(() => {
+                  setIsLoading(false)
+                  setIsKickedOff(true)
+                  setIsConfirmOpen(false)
+                  if (props.onComplete) props.onComplete()
+                })
+                .catch((err) => {
+                  setError(
+                    err?.message ||
+                      'Error occured, please refresh page and try again.'
+                  )
+                  setIsLoading(false)
+                })
             }}
             variant="primary"
           >
