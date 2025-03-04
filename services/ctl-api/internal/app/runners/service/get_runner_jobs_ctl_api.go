@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -18,11 +18,13 @@ import (
 // @Summary	get runner jobs
 // @Description.markdown	get_runner_jobs.md
 // @Param			runner_id	path	string	true	"runner ID"
+// @Param   offset query int	 false	"offset of jobs to return"	Default(0)
 // @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
 // @Param   group query string false	"job group"
 // @Param   groups query string false	"job groups"
 // @Param   status query string false	"job status"
 // @Param   statuses query string false	"job statuses"
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags    runners
 // @Accept			json
 // @Produce		json
@@ -94,7 +96,7 @@ func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, runnerJobs)
 }
 
-func (s *service) getRunnerJobsCtlAPI(ctx context.Context, runnerID string, statuses []app.RunnerJobStatus, groups []app.RunnerJobGroup, limit int) ([]*app.RunnerJob, error) {
+func (s *service) getRunnerJobsCtlAPI(ctx *gin.Context, runnerID string, statuses []app.RunnerJobStatus, groups []app.RunnerJobGroup, limit int) ([]*app.RunnerJob, error) {
 	runnerJobs := []*app.RunnerJob{}
 
 	where := app.RunnerJob{
@@ -103,6 +105,7 @@ func (s *service) getRunnerJobsCtlAPI(ctx context.Context, runnerID string, stat
 
 	tx := s.db.WithContext(ctx).
 		Limit(limit).
+		Scopes(scopes.WithPagination).
 		Where(where)
 
 	if len(statuses) != 0 {
@@ -119,6 +122,11 @@ func (s *service) getRunnerJobsCtlAPI(ctx context.Context, runnerID string, stat
 		Find(&runnerJobs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get runner jobs: %w", res.Error)
+	}
+
+	runnerJobs, err := db.HandlePaginatedResponse(ctx, runnerJobs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return runnerJobs, nil

@@ -25,7 +25,7 @@ env:
   INTERNAL_HTTP_PORT: 8082
   RUNNER_HTTP_PORT: 8083
   GRACEFUL_SHUTDOWN_TIMEOUT: 1s
-  MIDDLEWARES: log,public_metrics,error,public,timeout,size,global,auth,org,invites,headers,cors,config
+  MIDDLEWARES: log,public_metrics,error,public,timeout,size,global,auth,org,pagination,invites,headers,cors,config
   RUNNER_MIDDLEWARES: log,runner_metrics,error,timeout,size,public,auth,runner_org,headers,cors,config
   INTERNAL_MIDDLEWARES: log,internal_metrics,error,timeout,size,public,global,config,admin
   GITHUB_APP_ID: !!string 261597
