@@ -23,3 +23,11 @@ export const CANCEL_RUNNER_JOBS =
 export const INSTALL_UPDATE =
   Boolean(process?.env?.NUON_INSTALL_UPDATE === 'true') || false
 export const VERSION = process?.env?.VERSION || '0.1.0'
+export const ORG_DASHBOARD =
+  Boolean(process?.env?.NUON_ORG_DASHBOARD === 'true') || false
+export const ORG_RUNNER =
+  Boolean(process?.env?.NUON_ORG_RUNNER === 'true') || false
+export const ORG_SETTINGS =
+  Boolean(process?.env?.NUON_ORG_SETTINGS === 'true') || false
+export const ORG_SUPPORT =
+  Boolean(process?.env?.NUON_ORG_SUPPORT === 'true') || false
