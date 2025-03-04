@@ -74,7 +74,7 @@ func RenderVar(v Var, data map[string]interface{}) (string, error) {
 
 	buf := new(bytes.Buffer)
 	if err := temp.Execute(buf, data); err != nil {
-		var execErr template.Error
+		var execErr *template.Error
 		if errors.As(err, &execErr) {
 			return "", RenderErr{
 				Template: v.Template,
