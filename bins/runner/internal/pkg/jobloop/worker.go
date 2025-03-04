@@ -77,7 +77,7 @@ func (j *jobLoop) worker() error {
 		}
 
 		// if a panic is _recorded_ we do not restart the runner automatically.
-		if rc := pc.Recovered(); err != nil {
+		if rc := pc.Recovered(); rc != nil {
 			j.l.Error("job panic",
 				zap.String("stack-trace", rc.String()),
 				zap.String("job-type", string(job.Type)),
