@@ -24,7 +24,9 @@ members:
   # Stephen Samraj E
   - username: stephennuon
     role: admin
-
+  # Harsh Thakur
+  - username: RealHarshThakur
+    role: admin
   # all other team members
   # shared nuon user
   - username: nuonbot
