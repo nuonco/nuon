@@ -20,16 +20,6 @@ exports[`getLogStream should handle response status codes from GET log-streams/:
 
 exports[`getLogStream should handle response status codes from GET log-streams/:id endpoint > 500 status 1`] = `[Error: Unable to retrieve log stream.]`;
 
-exports[`getLogStreamLogs should handle response status codes from GET log-streams/:id/logs endpoint > 400 status 1`] = `[Error: Failed to fetch log stream logs]`;
-
-exports[`getLogStreamLogs should handle response status codes from GET log-streams/:id/logs endpoint > 401 status 1`] = `[Error: Failed to fetch log stream logs]`;
-
-exports[`getLogStreamLogs should handle response status codes from GET log-streams/:id/logs endpoint > 403 status 1`] = `[Error: Failed to fetch log stream logs]`;
-
-exports[`getLogStreamLogs should handle response status codes from GET log-streams/:id/logs endpoint > 404 status 1`] = `[Error: Failed to fetch log stream logs]`;
-
-exports[`getLogStreamLogs should handle response status codes from GET log-streams/:id/logs endpoint > 500 status 1`] = `[Error: Failed to fetch log stream logs]`;
-
 exports[`getRunner should handle response status codes from GET runners/:id endpoint > 400 status 1`] = `[Error: Unable to retrieve runner.]`;
 
 exports[`getRunner should handle response status codes from GET runners/:id endpoint > 401 status 1`] = `[Error: Unable to retrieve runner.]`;

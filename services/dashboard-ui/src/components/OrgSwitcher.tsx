@@ -1,7 +1,7 @@
 'use client'
 
 import classNames from 'classnames'
-import React, { type FC, useEffect } from 'react'
+import React, { type FC, useEffect, useState } from 'react'
 import { FaGithub } from 'react-icons/fa'
 import { Plus, TestTube } from '@phosphor-icons/react'
 import Image from 'next/image'
@@ -14,7 +14,7 @@ import { OrgStatus } from '@/components/OrgStatus'
 import { StatusBadge } from '@/components/Status'
 import { Text } from '@/components/Typography'
 import type { TOrg } from '@/types'
-import { GITHUB_APP_NAME, initialsFromString } from '@/utils'
+import { GITHUB_APP_NAME, POLL_DURATION, initialsFromString } from '@/utils'
 
 export const OrgAvatar: FC<{
   name: string
@@ -182,12 +182,27 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({
   initOrgs,
   isSidebarOpen = true,
 }) => {
+  const [org, updateOrg] = useState<TOrg>(initOrg)
+
   useEffect(() => {
     async function setSession() {
       await setOrgSessionCookie(initOrg.id)
     }
 
     setSession()
+
+    const fetchOrg = () => {
+      fetch(`/api/${initOrg.id}`)
+        .then((res) =>
+          res.json().then((o) => {
+            updateOrg(o)
+          })
+        )
+        .catch(console.error)
+    }
+
+    const pollOrg = setInterval(fetchOrg, POLL_DURATION)
+    return () => clearInterval(pollOrg)
   }, [])
 
   return (
@@ -198,22 +213,20 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({
       hasCustomPadding
       id="test"
       isFullWidth
-      text={
-        <OrgSummary org={initOrg} shouldPoll isSidebarOpen={isSidebarOpen} />
-      }
+      text={<OrgSummary org={org} isSidebarOpen={isSidebarOpen} />}
       position="overlay"
       alignment="overlay"
       dropdownContentClassName="min-w-[250px]"
     >
       <div className="flex flex-col gap-4 overflow-auto max-h-[500px] pb-2 overflow-x-hidden">
         <div className="pt-2 px-4">
-          <OrgSummary org={initOrg} shouldPoll />
+          <OrgSummary org={org} />
 
           <Text className="mt-4" variant="mono-12">
-            <ClickToCopy>{initOrg.id}</ClickToCopy>
+            <ClickToCopy>{org.id}</ClickToCopy>
           </Text>
         </div>
-        <OrgVCSConnectionsDetails org={initOrg} />
+        <OrgVCSConnectionsDetails org={org} />
         <OrgsNav orgs={initOrgs} />
       </div>
     </Dropdown>
