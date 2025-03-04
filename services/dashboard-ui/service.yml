@@ -15,6 +15,10 @@ env:
   NUON_DEPLOY_DATA: true
   NUON_CANCEL_JOBS: true
   NUON_INSTALL_UPDATE: true
+  NUON_ORG_DASHBOARD: false
+  NUON_ORG_SETTINGS: false
+  NUON_ORG_SUPPORT: false
+  NUON_ORG_RUNNER: true
 env_secrets:
   AUTH0_CLIENT_SECRET:
     name: dashboard-ui-auth0-client-secret-dev

@@ -4,7 +4,13 @@ import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { Layout } from '@/components'
 import { getAPIVersion, getOrg, getOrgs } from '@/lib'
-import { VERSION } from '@/utils'
+import {
+  ORG_DASHBOARD,
+  ORG_RUNNER,
+  ORG_SETTINGS,
+  ORG_SUPPORT,
+  VERSION,
+} from '@/utils'
 
 export default withPageAuthRequired(
   async function OrgLayout({ children, params }) {
@@ -36,6 +42,12 @@ export default withPageAuthRequired(
           ui: {
             version: VERSION,
           },
+        }}
+        featureFlags={{
+          ORG_DASHBOARD,
+          ORG_RUNNER,
+          ORG_SETTINGS,
+          ORG_SUPPORT,
         }}
       >
         {children}
