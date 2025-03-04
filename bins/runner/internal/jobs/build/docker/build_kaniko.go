@@ -2,13 +2,17 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry/local"
+	"github.com/powertoolsdev/mono/pkg/command"
+	"github.com/powertoolsdev/mono/pkg/zapwriter"
 )
 
 const (
@@ -31,21 +35,23 @@ func (b *handler) kanikoPath() (string, error) {
 
 func (b *handler) buildWithKaniko(
 	ctx context.Context,
-	log *zap.Logger,
+	l *zap.Logger,
 	dockerfilePath string,
 	contextDir string,
 	buildArgs map[string]*string,
 ) (string, error) {
-	log.Info("Building Docker image with kaniko...")
+	l.Info("Building Docker image with kaniko...")
 	localRef := local.GetKanikoTag(b.cfg, b.state.resultTag)
+
+	lf := zapwriter.New(l, zapcore.InfoLevel, "kaniko-build")
 
 	kanikoPath, err := b.kanikoPath()
 	if err != nil {
 		localRef = local.GetLocalTag(b.cfg, b.state.resultTag)
-		log.Info("building locally")
+		l.Info("building locally")
 		return localRef, b.buildLocal(
 			ctx,
-			log,
+			l,
 			dockerfilePath,
 			contextDir,
 			buildArgs,
@@ -54,10 +60,11 @@ func (b *handler) buildWithKaniko(
 	}
 
 	// Start constructing our arg string for img
+	l.Error("context-dir is set to "+contextDir+" assuming that + "+dockerfilePath+" is either within this directory or resolves relative to this.", zap.String("dir", contextDir))
 	args := []string{
-		kanikoPath,
-		"--context", "dir://" + contextDir,
+		"--context", "dir://.",
 		"-f", dockerfilePath,
+		"--log-format", "text",
 		"--destination", localRef,
 	}
 
@@ -73,17 +80,32 @@ func (b *handler) buildWithKaniko(
 		}
 	}
 
-	log.Debug("executing kaniko", zap.Any("args", args))
-	log.Info("Executing kaniko...")
+	l.Debug("executing kaniko", zap.Any("args", args))
+	l.Info("Executing kaniko...")
 
-	// Command output should go to the step
-	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = cmd.Stdout
-
-	if err := cmd.Run(); err != nil {
-		return "", err
+	cmd, err := command.New(b.v,
+		command.WithCmd(kanikoPath),
+		command.WithCwd(contextDir),
+		command.WithArgs(args),
+		command.WithEnv(map[string]string{}),
+		command.WithStdout(lf),
+		command.WithStderr(lf),
+	)
+	if err != nil {
+		return "", fmt.Errorf("unable to create build command: %w", err)
+	}
+	if err := cmd.Exec(ctx); err != nil {
+		return "", fmt.Errorf("unable to build: %w", err)
 	}
 
-	return "", nil
+	//// Command output should go to the step
+	//cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+	//cmd.Stdout = lf
+	//cmd.Stderr = lf
+
+	//if err := cmd.Run(); err != nil {
+	//return "", err
+	//}
+
+	return localRef, nil
 }
