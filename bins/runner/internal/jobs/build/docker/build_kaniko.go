@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -33,6 +34,12 @@ func (b *handler) kanikoPath() (string, error) {
 	return path, nil
 }
 
+type kanikoBuildLine struct {
+	Msg   string `json:"msg"`
+	Level string `json:"level"`
+	Time  string `json:"time"`
+}
+
 func (b *handler) buildWithKaniko(
 	ctx context.Context,
 	l *zap.Logger,
@@ -43,7 +50,31 @@ func (b *handler) buildWithKaniko(
 	l.Info("Building Docker image with kaniko...")
 	localRef := local.GetKanikoTag(b.cfg, b.state.resultTag)
 
-	lf := zapwriter.New(l, zapcore.InfoLevel, "kaniko-build")
+	lf := zapwriter.NewWithOpts(l,
+		zapwriter.WithLogLevel(zapcore.InfoLevel),
+		zapwriter.WithLineFormatter(func(str string) string {
+			var line kanikoBuildLine
+			if err := json.Unmarshal([]byte(str), &line); err != nil {
+				return str
+			}
+			return line.Msg
+		}),
+		zapwriter.WithLineLeveler(func(str string) zapcore.Level {
+			var line kanikoBuildLine
+			if err := json.Unmarshal([]byte(str), &line); err != nil {
+				return zapcore.ErrorLevel
+			}
+
+			if line.Level == "info" {
+				return zapcore.InfoLevel
+			}
+			if line.Level == "err" {
+				return zapcore.ErrorLevel
+			}
+
+			return zapcore.InfoLevel
+		}),
+	)
 
 	kanikoPath, err := b.kanikoPath()
 	if err != nil {
@@ -64,7 +95,7 @@ func (b *handler) buildWithKaniko(
 	args := []string{
 		"--context", "dir://.",
 		"-f", dockerfilePath,
-		"--log-format", "text",
+		"--log-format", "json",
 		"--destination", localRef,
 	}
 
@@ -80,9 +111,10 @@ func (b *handler) buildWithKaniko(
 		}
 	}
 
-	l.Debug("executing kaniko", zap.Any("args", args))
-	l.Info("Executing kaniko...")
-
+	l.Debug("executing kaniko",
+		zap.Any("args", args),
+		zap.String("cwd", contextDir),
+	)
 	cmd, err := command.New(b.v,
 		command.WithCmd(kanikoPath),
 		command.WithCwd(contextDir),
@@ -97,15 +129,6 @@ func (b *handler) buildWithKaniko(
 	if err := cmd.Exec(ctx); err != nil {
 		return "", fmt.Errorf("unable to build: %w", err)
 	}
-
-	//// Command output should go to the step
-	//cmd := exec.CommandContext(ctx, args[0], args[1:]...)
-	//cmd.Stdout = lf
-	//cmd.Stderr = lf
-
-	//if err := cmd.Run(); err != nil {
-	//return "", err
-	//}
 
 	return localRef, nil
 }
