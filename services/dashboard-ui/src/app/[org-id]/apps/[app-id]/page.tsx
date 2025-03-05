@@ -13,6 +13,7 @@ import {
   ErrorFallback,
   Loading,
   Section,
+  Text,
   Markdown,
 } from '@/components'
 import {
@@ -59,7 +60,11 @@ export default withPageAuthRequired(async function App({ params }) {
             <Section className="border-r overflow-x-auto" heading="README">
               <Markdown content={appConfig.readme} />
             </Section>
-          ) : null}
+          ) : (
+            <Section className="border-r overflow-x-auto" heading="README">
+              <Text>No markdown in app config.</Text>
+            </Section>
+          )}
         </div>
 
         <div className="divide-y flex flex-col md:col-span-5">
