@@ -14,7 +14,7 @@ import {
   ToolTip,
   Truncate,
 } from '@/components'
-import { getInstall, getInstallActionWorkflowRecentRun, getOrg } from '@/lib'
+import { getInstall, getInstallActionWorkflowRecentRun } from '@/lib'
 import { humandReadableTriggeredBy } from '@/utils'
 
 export default withPageAuthRequired(async function InstallWorkflowRuns({
@@ -23,8 +23,7 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
   const actionWorkflowId = params?.['action-id'] as string
-  const [org, install, actionWithRecentRuns] = await Promise.all([
-    getOrg({ orgId }),
+  const [install, actionWithRecentRuns] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallActionWorkflowRecentRun({ actionWorkflowId, installId, orgId }),
   ])
@@ -32,14 +31,13 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/installs`, text: 'Installs' },
+        { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${org.id}/installs/${install.id}/actions`,
+          href: `/${orgId}/installs/${install.id}/actions`,
           text: install.name,
         },
         {
-          href: `/${org.id}/installs/${install.id}/actions/${actionWorkflowId}`,
+          href: `/${orgId}/installs/${install.id}/actions/${actionWorkflowId}`,
           text: actionWithRecentRuns?.action_workflow?.name,
         },
       ]}
