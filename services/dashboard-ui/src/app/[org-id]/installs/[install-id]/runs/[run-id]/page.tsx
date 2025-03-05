@@ -42,7 +42,7 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
         },
         {
           href: `/${orgId}/installs/${install.id}/runs/${sandboxRun.id}`,
-          text: `${install.name} ${sandboxRun.run_type}`,
+          text: sandboxRun.id,
         },
       ]}
       heading={`${install.name} ${sandboxRun.run_type}`}

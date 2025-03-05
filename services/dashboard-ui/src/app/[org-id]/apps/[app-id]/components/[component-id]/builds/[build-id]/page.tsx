@@ -50,7 +50,7 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
         },
         {
           href: `/${orgId}/apps/${app.id}/components/${build.component_id}/builds/${build.id}`,
-          text: `${component.name} build`,
+          text: build.id,
         },
       ]}
       heading={`${component.name} build`}
