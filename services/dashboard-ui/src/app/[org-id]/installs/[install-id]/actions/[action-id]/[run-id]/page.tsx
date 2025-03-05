@@ -20,7 +20,6 @@ import {
   getInstall,
   getAppActionWorkflow,
   getInstallActionWorkflowRun,
-  getOrg,
 } from '@/lib'
 import type { TInstallActionWorkflowRun, TActionConfig } from '@/types'
 import {
@@ -49,8 +48,7 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
   const orgId = params?.['org-id'] as string
   const actionWorkflowId = params?.['action-id'] as string
   const actionWorkflowRunId = params?.['run-id'] as string
-  const [org, install, actionWorkflow, workflowRun] = await Promise.all([
-    getOrg({ orgId }),
+  const [install, actionWorkflow, workflowRun] = await Promise.all([
     getInstall({ installId, orgId }),
     getAppActionWorkflow({ actionWorkflowId, orgId }),
     getInstallActionWorkflowRun({ installId, orgId, actionWorkflowRunId }),
@@ -59,15 +57,18 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/installs`, text: 'Installs' },
+        { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${org.id}/installs/${install.id}/actions`,
+          href: `/${orgId}/installs/${install.id}/actions`,
           text: install.name,
         },
         {
-          href: `/${org.id}/installs/${install.id}/actions/${actionWorkflowId}`,
+          href: `/${orgId}/installs/${install.id}/actions/${actionWorkflowId}`,
           text: `${actionWorkflow?.name}`,
+        },
+        {
+          href: `/${orgId}/installs/${install.id}/actions/${actionWorkflowId}/${workflowRun.id}`,
+          text: workflowRun.id,
         },
       ]}
       heading={`${actionWorkflow?.name} execution`}
