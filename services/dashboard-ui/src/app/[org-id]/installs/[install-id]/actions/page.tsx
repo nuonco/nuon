@@ -16,7 +16,6 @@ import {
 import {
   getInstall,
   getInstallActionWorkflowLatestRun,
-  getOrg,
   getAppLatestInputConfig,
 } from '@/lib'
 import { USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
@@ -26,10 +25,7 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
 }) {
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
-  const [org, install] = await Promise.all([
-    getOrg({ orgId }),
-    getInstall({ installId, orgId }),
-  ])
+  const [install] = await Promise.all([getInstall({ installId, orgId })])
 
   const appInputConfigs =
     (await getAppLatestInputConfig({
@@ -40,9 +36,8 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
   return (
     <DashboardContent
       breadcrumb={[
-        { href: `/${org.id}/apps`, text: org.name },
-        { href: `/${org.id}/installs`, text: 'Installs' },
-        { href: `/${org.id}/installs/${install.id}`, text: install.name },
+        { href: `/${orgId}/installs`, text: 'Installs' },
+        { href: `/${orgId}/installs/${install.id}`, text: install.name },
       ]}
       heading={install.name}
       headingUnderline={install.id}

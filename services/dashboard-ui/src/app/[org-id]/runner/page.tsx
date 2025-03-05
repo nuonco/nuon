@@ -29,8 +29,7 @@ import {
   getRunnerLatestHeartbeat,
 } from '@/lib'
 
-// TODO(nnnat): future org level dashboard
-export default async function OrgDashboard({ params }) {
+export default async function OrgRunner({ params }) {
   const orgId = params?.['org-id'] as string
   const org = await getOrg({ orgId })
   const runnerId = org?.runner_group?.runners?.at(0)?.id
@@ -44,7 +43,7 @@ export default async function OrgDashboard({ params }) {
 
   return (
     <DashboardContent
-      breadcrumb={[{ href: `/${orgId}`, text: org?.name }]}
+      breadcrumb={[{ href: `/${orgId}/runner`, text: "Runner" }]}
       heading={org?.name}
       headingUnderline={org?.id}
       statues={

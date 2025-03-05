@@ -70,7 +70,7 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
         },
         {
           href: `/${orgId}/installs/${install.id}/components/${deploy.install_component_id}/deploys/${deploy.id}`,
-          text: `${component.name} ${deploy.install_deploy_type}`,
+          text: deploy.id,
         },
       ]}
       heading={`${component.name} ${deploy.install_deploy_type}`}
