@@ -1,11 +1,8 @@
 package zapwriter
 
 import (
-	"bufio"
-	"bytes"
 	"io"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -13,40 +10,58 @@ import (
 var _ io.Writer = (*zapWriter)(nil)
 
 func New(l *zap.Logger, level zapcore.Level, prefix string) *zapWriter {
-	return &zapWriter{
-		l:      l,
-		level:  level,
-		prefix: prefix,
+	return NewWithOpts(l,
+		WithLogLevel(level),
+		WithPrefix(prefix),
+	)
+}
+
+func NewWithOpts(l *zap.Logger, opts ...optFn) *zapWriter {
+	zw := &zapWriter{
+		l:     l,
+		level: zapcore.InfoLevel,
 	}
+
+	for _, opt := range opts {
+		opt(zw)
+	}
+
+	return zw
 }
 
 type zapWriter struct {
 	l      *zap.Logger
 	level  zapcore.Level
 	prefix string
+
+	lineFormatter func(string) string
+	lineLeveler   func(string) zapcore.Level
 }
 
-func (z *zapWriter) Write(byts []byte) (int, error) {
-	buf := bytes.NewBuffer(byts)
+type optFn func(*zapWriter)
 
-	scanner := bufio.NewScanner(buf)
-	for scanner.Scan() {
-		msg := z.prefix + scanner.Text()
-
-		switch z.level {
-		case zapcore.ErrorLevel:
-			z.l.Error(msg)
-		case zapcore.InfoLevel:
-			z.l.Info(msg)
-		case zapcore.DebugLevel:
-			z.l.Debug(msg)
-		default:
-			z.l.Info(msg)
+func WithPrefix(prefix string) optFn {
+	return func(r *zapWriter) {
+		r.lineFormatter = func(str string) string {
+			return prefix + str
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		return 0, errors.Wrap(err, "unable to scan output")
-	}
+}
 
-	return len(byts), nil
+func WithLogLevel(level zapcore.Level) optFn {
+	return func(r *zapWriter) {
+		r.level = level
+	}
+}
+
+func WithLineFormatter(fn func(string) string) optFn {
+	return func(r *zapWriter) {
+		r.lineFormatter = fn
+	}
+}
+
+func WithLineLeveler(fn func(string) zapcore.Level) optFn {
+	return func(r *zapWriter) {
+		r.lineLeveler = fn
+	}
 }
