@@ -9,6 +9,7 @@ import {
   updateInstall as patchInstall,
   forgetInstall as forget,
 } from '@/lib'
+import { API_URL, mutateData } from '@/utils'
 
 interface IReprovisionInstall {
   installId: string
@@ -132,13 +133,24 @@ export async function updateInstall({
     return acc
   }, {})
 
-  let data = {
-    inputs,
-    name: formData.name as string,
+  if (Object.keys(inputs)?.length > 0) {
+    try {
+      await mutateData({
+        errorMessage: 'Unable to update install inputs',
+        data: { inputs },
+        method: 'PATCH',
+        orgId,
+        path: `installs/${installId}/inputs`,
+      })
+    } catch (error) {
+      console.error(error?.message)
+    }
   }
 
   return patchInstall({
-    data,
+    data: {
+      name: formData.name as string,
+    },
     installId,
     orgId,
   })

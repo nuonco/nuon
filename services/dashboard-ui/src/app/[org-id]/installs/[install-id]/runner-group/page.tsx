@@ -11,7 +11,6 @@ import {
   ConfigContent,
   Duration,
   InstallCloudPlatform,
-  InstallManagementDropdown,
   InstallPageSubNav,
   InstallStatuses,
   Loading,
@@ -26,15 +25,15 @@ import {
   Truncate,
   ToolTip,
 } from '@/components'
+import { InstallManagementDropdown } from '@/components/Installs'
 import {
-  getAppLatestInputConfig,
   getInstall,
   getInstallRunnerGroup,
   getRunner,
   getRunnerJobs,
   getRunnerLatestHeartbeat,
 } from '@/lib'
-import { USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
+import { USER_REPROVISION } from '@/utils'
 
 export default withPageAuthRequired(async function RunnerGroup({ params }) {
   const orgId = params?.['org-id'] as string
@@ -43,12 +42,6 @@ export default withPageAuthRequired(async function RunnerGroup({ params }) {
     getInstall({ installId, orgId }),
     getInstallRunnerGroup({ installId, orgId }),
   ])
-
-  const appInputConfigs =
-    (await getAppLatestInputConfig({
-      appId: install?.app_id,
-      orgId,
-    }).catch(console.error)) || undefined
 
   return (
     <DashboardContent
@@ -79,14 +72,11 @@ export default withPageAuthRequired(async function RunnerGroup({ params }) {
           <InstallStatuses initInstall={install} shouldPoll />
           {USER_REPROVISION ? (
             <InstallManagementDropdown
-              installId={installId}
               orgId={orgId}
               hasInstallComponents={Boolean(
                 install?.install_components?.length
               )}
               install={install}
-              inputConfig={appInputConfigs}
-              hasUpdateInstall={INSTALL_UPDATE}
             />
           ) : null}
         </div>
