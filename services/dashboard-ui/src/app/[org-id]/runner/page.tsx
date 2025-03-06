@@ -45,7 +45,7 @@ export default async function OrgRunner({ params }) {
   if (org?.features?.['org-runner']) {
     return (
       <DashboardContent
-        breadcrumb={[{ href: `/${orgId}/runner`, text: 'Runner' }]}
+        breadcrumb={[{ href: `/${orgId}/runner`, text: 'Build runner' }]}
         heading={org?.name}
         headingUnderline={org?.id}
         statues={
