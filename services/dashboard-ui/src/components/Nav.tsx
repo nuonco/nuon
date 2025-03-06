@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import React, { type FC } from 'react'
 import {
   AppWindow,
+  ArrowSquareOut,
   Books,
   CaretRight,
   Cube,
@@ -63,7 +64,7 @@ export const MainNav: FC<{
       text: (
         <>
           <SneakerMove weight="bold" />
-          {isSidebarOpen ? 'Runner' : null}
+          {isSidebarOpen ? 'Build runner' : null}
         </>
       ),
     },
@@ -100,13 +101,14 @@ export const MainNav: FC<{
         <>
           <Books weight="bold" />
           {isSidebarOpen ? 'Developer docs' : null}
+          <ArrowSquareOut size="14" />
         </>
       ),
       isExternal: true,
     },
 
     {
-      href: `/releases`,
+      href: `/${orgId}/releases`,
       text: (
         <>
           <ListDashes weight="bold" />
@@ -117,7 +119,9 @@ export const MainNav: FC<{
   ]
 
   const NavLink: FC<{ link: TLink }> = ({ link }) => {
-    const isActive = path.split('/')[2] === link.href.split('/')[2]
+    const pathParts = path.split('/')
+    const hrefParts = link.href.split('/')
+    const isActive = pathParts[2] === hrefParts[2]
     const classes = classNames(
       'flex items-center font-sans font-medium gap-4 text-lg leading-normal rounded-md p-2.5 w-full',
       {
@@ -149,8 +153,8 @@ export const MainNav: FC<{
 
       {featureFlags['ORG_SETTINGS'] ? (
         <div
-          className={classNames('flex flex-col gap-2 py-2 my-4', {
-            'border-y': !isSidebarOpen,
+          className={classNames('flex flex-col gap-2 pt-2 mt-4', {
+            'border-t': !isSidebarOpen,
           })}
         >
           <Text
@@ -169,7 +173,9 @@ export const MainNav: FC<{
       ) : null}
 
       {featureFlags['ORG_SUPPORT'] ? (
-        <div className={classNames('flex flex-col gap-2', {})}>
+        <div className={classNames('flex flex-col gap-2 pt-2 mt-4', {
+          'border-t': !isSidebarOpen,
+        })}>
           <Text
             className={classNames('text-cool-grey-600 dark:text-white/70', {
               hidden: !isSidebarOpen,

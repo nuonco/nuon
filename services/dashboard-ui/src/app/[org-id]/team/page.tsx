@@ -1,67 +1,48 @@
+import { redirect } from 'next/navigation'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { CaretRight, Heartbeat, Timer } from '@phosphor-icons/react/dist/ssr'
-import {
-  Config,
-  ConfigContent,
-  CancelRunnerJobButton,
-  DashboardContent,
-  Duration,
-  EmptyStateGraphic,
-  ErrorFallback,
-  ID,
-  Link,
-  Loading,
-  StatusBadge,
-  RunnerHeartbeatChart,
-  Section,
-  SubNav,
-  Text,
-  Time,
-  Timeline,
-  ToolTip,
-  Truncate,
-} from '@/components'
-import {
-  getOrg,
-  getRunner,
-  getRunnerHealthChecks,
-  getRunnerJobs,
-  getRunnerLatestHeartbeat,
-} from '@/lib'
+import { DashboardContent, StatusBadge, Section, Text } from '@/components'
+import { getOrg } from '@/lib'
 
 export default async function OrgTeam({ params }) {
   const orgId = params?.['org-id'] as string
   const org = await getOrg({ orgId })
 
-  return (
-    <DashboardContent
-      breadcrumb={[{ href: `/${orgId}`, text: org?.name }]}
-      heading={org?.name}
-      headingUnderline={org?.id}
-      statues={
-        <span className="flex flex-col gap-2">
-          <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-            Status
-          </Text>
-          <StatusBadge
-            status={org?.status}
-            description={org?.status_description}
-            descriptionAlignment="right"
-            shouldPoll
-          />
-        </span>
-      }
-      meta={
-        <SubNav
-          links={[
-            { href: `/${orgId}`, text: 'Runner' },
-            { href: `/${orgId}/team`, text: 'Team' },
-          ]}
-        />
-      }
-    >
-      <Section>Team members</Section>
-    </DashboardContent>
-  )
+  if (org?.features?.['org-settings']) {
+    return (
+      <DashboardContent
+        breadcrumb={[{ href: `/${orgId}`, text: 'Team' }]}
+        heading={org?.name}
+        headingUnderline={org?.id}
+        statues={
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Status
+            </Text>
+            <StatusBadge
+              status={org?.status}
+              description={org?.status_description}
+              descriptionAlignment="right"
+              shouldPoll
+            />
+          </span>
+        }
+      >
+        <div className="flex-auto md:grid md:grid-cols-12 divide-x">
+          <div className="divide-y flex flex-col flex-auto col-span-8">
+            <Section heading="Members">
+              <Text variant="reg-12">TKTK</Text>
+            </Section>
+          </div>
+          <div className="divide-y flex flex-col flex-auto col-span-4">
+            <Section heading="Invites">
+              <Text variant="reg-12">TKTK</Text>
+            </Section>
+          </div>
+        </div>
+      </DashboardContent>
+    )
+  } else {
+    redirect(`/${orgId}/apps`)
+  }
 }
