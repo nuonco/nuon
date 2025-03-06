@@ -14,8 +14,11 @@ import type { TInstall } from '@/types'
 
 type TDataStatuses = {
   composite_component_status: string
+  composite_component_status_description: string
   runner_status: string
+  runner_status_description: string
   sandbox_status: string
+  sandbox_status_description: string
 }
 
 type TData = {
@@ -33,8 +36,12 @@ function parseInstallsToTableData(installs: Array<TInstall>): Array<TData> {
     installId: install.id,
     statuses: {
       composite_component_status: install.composite_component_status,
+      composite_component_status_description:
+        install.composite_component_status_description,
       runner_status: install.runner_status,
+      runner_status_description: install.runner_status_description,
       sandbox_status: install.sandbox_status,
+      sandbox_status_description: install.sandbox_status_description,
     },
     app: install.app.name,
     appId: install.app.id,
@@ -82,11 +89,19 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
           <div className="flex flex-col gap-2">
             <StatusBadge
               status={props.getValue<TDataStatuses>().sandbox_status}
+              description={
+                props?.getValue<TDataStatuses>()?.sandbox_status_description
+              }
+              descriptionAlignment="right"
               label="Sandbox"
               isLabelStatusText
             />
             <StatusBadge
               status={props.getValue<TDataStatuses>().runner_status}
+              description={
+                props?.getValue<TDataStatuses>()?.runner_status_description
+              }
+              descriptionAlignment="right"
               label="Runner"
               isLabelStatusText
             />
@@ -94,6 +109,11 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
               status={
                 props.getValue<TDataStatuses>().composite_component_status
               }
+              description={
+                props?.getValue<TDataStatuses>()
+                  ?.composite_component_status_description
+              }
+              descriptionAlignment="right"
               label="Components"
               isLabelStatusText
             />
