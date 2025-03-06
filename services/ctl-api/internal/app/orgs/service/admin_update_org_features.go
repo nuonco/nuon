@@ -63,6 +63,10 @@ func (s *service) AdminUpdateOrgFeatures(ctx *gin.Context) {
 
 func (s *service) validateOrgFeatures(ctx context.Context, features map[string]bool) error {
 	orgFeatures := make(map[string]bool)
+	if _, ok := features["all"]; ok {
+		return nil
+	}
+
 	for _, value := range app.GetFeatures() {
 		orgFeatures[string(value)] = true
 	}
@@ -80,10 +84,16 @@ func (s *service) updateOrgFeatures(ctx context.Context, org *app.Org, updateFea
 		ID: org.ID,
 	}
 
-	// add features from org.Features not in features
-	for feature, enabled := range org.Features {
-		if _, ok := updateFeatures[feature]; !ok {
-			updateFeatures[feature] = enabled
+	if allValue, ok := updateFeatures["all"]; ok {
+		for feature := range org.Features {
+			updateFeatures[feature] = allValue
+		}
+	} else {
+		// add features from org.Features not in features
+		for feature, enabled := range org.Features {
+			if _, ok := updateFeatures[feature]; !ok {
+				updateFeatures[feature] = enabled
+			}
 		}
 	}
 
