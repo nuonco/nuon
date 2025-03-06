@@ -16,7 +16,6 @@ import {
   InstallCloudPlatform,
   InstallInputs,
   InstallInputsModal,
-  InstallManagementDropdown,
   InstallPageSubNav,
   InstallStatuses,
   Loading,
@@ -27,26 +26,20 @@ import {
   Time,
   Markdown,
 } from '@/components'
+import { InstallManagementDropdown } from '@/components/Installs'
 import {
-  getAppLatestInputConfig,
   getInstall,
   getInstallCurrentInputs,
   getInstallReadme,
   getInstallRunnerGroup,
   getRunnerLatestHeartbeat,
 } from '@/lib'
-import { RUNNERS, USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
+import { RUNNERS, USER_REPROVISION } from '@/utils'
 
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const [install] = await Promise.all([getInstall({ installId, orgId })])
-
-  const appInputConfigs =
-    (await getAppLatestInputConfig({
-      appId: install?.app_id,
-      orgId,
-    }).catch(console.error)) || undefined
+  const install = await getInstall({ installId, orgId })
 
   return (
     <DashboardContent
@@ -77,14 +70,11 @@ export default withPageAuthRequired(async function Install({ params }) {
           <InstallStatuses initInstall={install} shouldPoll />
           {USER_REPROVISION ? (
             <InstallManagementDropdown
-              installId={installId}
               orgId={orgId}
               hasInstallComponents={Boolean(
                 install?.install_components?.length
               )}
-              hasUpdateInstall={INSTALL_UPDATE}
               install={install}
-              inputConfig={appInputConfigs}
             />
           ) : null}
         </div>
