@@ -94,6 +94,9 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/orgs/:org_id/admin-migrate", s.AdminMigrateOrg)
 	api.POST("/v1/orgs/:org_id/admin-debug-mode", s.AdminDebugModeOrg)
 	api.POST("/v1/orgs/:org_id/admin-forget", s.AdminForgetOrg)
+	api.GET("/v1/orgs/admin-features", s.AdminGetOrgFeatures)
+	api.PATCH("/v1/orgs/:org_id/admin-features", s.AdminUpdateOrgFeatures)
+	api.PATCH("/v1/orgs/admin-features", s.AdminUpdateOrgsFeatures)
 
 	return nil
 }

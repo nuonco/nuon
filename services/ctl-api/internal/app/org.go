@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/types"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/bulk"
 )
 
@@ -31,6 +32,14 @@ const (
 	OrgStatusProvisioning   OrgStatus = "provisioning"
 	OrgStatusDeleting       OrgStatus = "deleting"
 	OrgStatusDeprovisioning OrgStatus = "deprovisioning"
+)
+
+// org feature flags
+type OrgFeature string
+
+const (
+	OrgFeatureAPIPagination OrgFeature = "api-pagination"
+	OrgFeatureOrgDashboard  OrgFeature = "org-dashboard"
 )
 
 type Org struct {
@@ -58,9 +67,10 @@ type Org struct {
 
 	LogoURL string `json:"logo_url"`
 
-	Apps           []App           `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	VCSConnections []VCSConnection `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	Invites        []OrgInvite     `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	Apps           []App               `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	VCSConnections []VCSConnection     `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	Invites        []OrgInvite         `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	Features       types.StringBoolMap `json:"features" gorm:"type:jsonb;default null"`
 
 	// Other relationships as part of the data model
 
@@ -81,10 +91,44 @@ type Org struct {
 }
 
 func (o *Org) AfterQuery(tx *gorm.DB) error {
+	if o.Features == nil {
+		o.Features = make(map[string]bool, 0)
+	}
+
+	actieFeatures := GetFeatures()
+
+	// if active feature not in features, add it
+	for _, feature := range actieFeatures {
+		if _, ok := o.Features[string(feature)]; !ok {
+			o.Features[string(feature)] = false
+		}
+	}
+
+	afLookup := make(map[string]bool)
+	for _, feature := range GetFeatures() {
+		afLookup[string(feature)] = true
+	}
+
+	// if feature key not in active features, remove it
+	for key := range o.Features {
+		if !afLookup[key] {
+			delete(o.Features, key)
+		}
+	}
 	return nil
 }
 
 func (o *Org) BeforeCreate(tx *gorm.DB) error {
+	if o.Features == nil {
+		o.Features = make(map[string]bool, 0)
+	}
+
+	for _, feature := range GetFeatures() {
+		if _, ok := o.Features[string(feature)]; !ok {
+			o.Features[string(feature)] = false
+		}
+	}
+
 	if o.ID == "" {
 		o.ID = domains.NewOrgID()
 	}
@@ -106,4 +150,12 @@ func (o *Org) EventLoops() []bulk.EventLoop {
 	}
 
 	return evs
+}
+
+// active feature flags for an orgs
+func GetFeatures() []OrgFeature {
+	return []OrgFeature{
+		OrgFeatureAPIPagination,
+		OrgFeatureOrgDashboard,
+	}
 }
