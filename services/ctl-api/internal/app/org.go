@@ -40,6 +40,9 @@ type OrgFeature string
 const (
 	OrgFeatureAPIPagination OrgFeature = "api-pagination"
 	OrgFeatureOrgDashboard  OrgFeature = "org-dashboard"
+	OrgFeatureOrgRunner     OrgFeature = "org-runner"
+	OrgFeatureOrgSettings   OrgFeature = "org-settings"
+	OrgFeatureOrgSupport    OrgFeature = "org-support"
 )
 
 type Org struct {
@@ -157,5 +160,8 @@ func GetFeatures() []OrgFeature {
 	return []OrgFeature{
 		OrgFeatureAPIPagination,
 		OrgFeatureOrgDashboard,
+		OrgFeatureOrgRunner,
+		OrgFeatureOrgSettings,
+		OrgFeatureOrgSupport,
 	}
 }
