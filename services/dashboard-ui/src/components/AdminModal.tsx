@@ -3,8 +3,10 @@
 import { useParams } from 'next/navigation'
 import React, { type FC, useState } from 'react'
 import { useUser } from '@auth0/nextjs-auth0/client'
+import { Gear} from "@phosphor-icons/react"
 import { AdminOrgActions } from "@/components/AdminOrgActions"
 import { AdminInstallActions } from "@/components/AdminInstallActions"
+import { AdminOrgFeatures } from "@/components/AdminOrgFeatures"
 import { AdminBtn } from "@/components/AdminActionButton"
 import { Button } from '@/components/Button'
 import { Grid } from '@/components/Grid'
@@ -27,7 +29,7 @@ import {
   teardownInstallComponents,
   updateInstallSandbox,
 } from '@/components/admin-actions'
-import { Gear} from "@phosphor-icons/react"
+import type { TOrg } from "@/types"
 
 type TAdminAction = {
   action: () => Promise<any>
@@ -35,7 +37,7 @@ type TAdminAction = {
   text: string
 }
 
-export const AdminModal: FC<{ orgId: string, isSidebarOpen: boolean }> = ({ isSidebarOpen }) => {
+export const AdminModal: FC<{ orgId: string, org: TOrg, isSidebarOpen: boolean }> = ({ isSidebarOpen, org }) => {
   const params = useParams()
   const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
@@ -148,6 +150,7 @@ export const AdminModal: FC<{ orgId: string, isSidebarOpen: boolean }> = ({ isSi
               {orgActions.map((action) => (
                 <AdminAction key={action.text} {...action} />
               ))}
+              <AdminOrgFeatures org={org} />
             </Grid>
           </AdminOrgActions>
 

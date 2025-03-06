@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { CaretRight, Heartbeat, Timer } from '@phosphor-icons/react/dist/ssr'
@@ -41,129 +42,133 @@ export default async function OrgRunner({ params }) {
     }).catch(console.error),
   ])
 
-  return (
-    <DashboardContent
-      breadcrumb={[{ href: `/${orgId}/runner`, text: "Runner" }]}
-      heading={org?.name}
-      headingUnderline={org?.id}
-      statues={
-        <span className="flex flex-col gap-2">
-          <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-            Status
-          </Text>
-          <StatusBadge
-            status={org?.status}
-            description={org?.status_description}
-            descriptionAlignment="right"
-            shouldPoll
-          />
-        </span>
-      }
-    >
-      <div className="flex-auto md:grid md:grid-cols-12 divide-x">
-        <div className="divide-y flex flex-col flex-auto col-span-8">
-          <Section
-            heading={
-              <span>
-                <Text variant="med-14">{runner?.display_name} </Text>
-                <ID id={runner?.id} />
-              </span>
-            }
-            className="flex-initial"
-          >
-            <div className="flex gap-6 items-start justify-start">
-              <span className="flex flex-col gap-2">
-                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                  Status
-                </Text>
-                <StatusBadge
-                  status={runner?.status}
-                  description={runner?.status_description}
-                  descriptionAlignment="left"
-                  shouldPoll
-                />
-              </span>
-              {runnerHeartbeat ? (
-                <>
-                  <span className="flex flex-col gap-2">
-                    <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                      Version
-                    </Text>
-                    <Text variant="med-12">{runnerHeartbeat?.version}</Text>
-                  </span>
-                  <span className="flex flex-col gap-2">
-                    <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                      Alive time
-                    </Text>
-                    <Text>
-                      <Timer size={14} />
-                      <Duration
-                        nanoseconds={runnerHeartbeat.alive_time}
-                        variant="med-12"
-                      />
-                    </Text>
-                  </span>
-                  <span className="flex flex-col gap-2">
-                    <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                      Last heartbeat seen
-                    </Text>
-                    <Text>
-                      <Heartbeat size={14} />
-                      <Time
-                        time={runnerHeartbeat.created_at}
-                        format="relative"
-                        variant="med-12"
-                      />
-                    </Text>
-                  </span>
-                </>
-              ) : null}
-            </div>
-          </Section>
-          <Section className="flex-initial" heading="Health status">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading loadingText="Loading runner health status..." />
-                }
-              >
-                <LoadRunnerHeartbeat runnerId={runnerId} orgId={orgId} />
-              </Suspense>
-            </ErrorBoundary>
-          </Section>
-          <Section heading="Job run history">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={<Loading loadingText="Loading runner jobs..." />}
-              >
-                <LoadPastJobs runnerId={runnerId} orgId={orgId} />
-              </Suspense>
-            </ErrorBoundary>
-          </Section>
+  if (org?.features?.['org-runner']) {
+    return (
+      <DashboardContent
+        breadcrumb={[{ href: `/${orgId}/runner`, text: 'Runner' }]}
+        heading={org?.name}
+        headingUnderline={org?.id}
+        statues={
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Status
+            </Text>
+            <StatusBadge
+              status={org?.status}
+              description={org?.status_description}
+              descriptionAlignment="right"
+              shouldPoll
+            />
+          </span>
+        }
+      >
+        <div className="flex-auto md:grid md:grid-cols-12 divide-x">
+          <div className="divide-y flex flex-col flex-auto col-span-8">
+            <Section
+              heading={
+                <span>
+                  <Text variant="med-14">{runner?.display_name} </Text>
+                  <ID id={runner?.id} />
+                </span>
+              }
+              className="flex-initial"
+            >
+              <div className="flex gap-6 items-start justify-start">
+                <span className="flex flex-col gap-2">
+                  <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                    Status
+                  </Text>
+                  <StatusBadge
+                    status={runner?.status}
+                    description={runner?.status_description}
+                    descriptionAlignment="left"
+                    shouldPoll
+                  />
+                </span>
+                {runnerHeartbeat ? (
+                  <>
+                    <span className="flex flex-col gap-2">
+                      <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                        Version
+                      </Text>
+                      <Text variant="med-12">{runnerHeartbeat?.version}</Text>
+                    </span>
+                    <span className="flex flex-col gap-2">
+                      <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                        Alive time
+                      </Text>
+                      <Text>
+                        <Timer size={14} />
+                        <Duration
+                          nanoseconds={runnerHeartbeat.alive_time}
+                          variant="med-12"
+                        />
+                      </Text>
+                    </span>
+                    <span className="flex flex-col gap-2">
+                      <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                        Last heartbeat seen
+                      </Text>
+                      <Text>
+                        <Heartbeat size={14} />
+                        <Time
+                          time={runnerHeartbeat.created_at}
+                          format="relative"
+                          variant="med-12"
+                        />
+                      </Text>
+                    </span>
+                  </>
+                ) : null}
+              </div>
+            </Section>
+            <Section className="flex-initial" heading="Health status">
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={
+                    <Loading loadingText="Loading runner health status..." />
+                  }
+                >
+                  <LoadRunnerHeartbeat runnerId={runnerId} orgId={orgId} />
+                </Suspense>
+              </ErrorBoundary>
+            </Section>
+            <Section heading="Job run history">
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={<Loading loadingText="Loading runner jobs..." />}
+                >
+                  <LoadPastJobs runnerId={runnerId} orgId={orgId} />
+                </Suspense>
+              </ErrorBoundary>
+            </Section>
+          </div>
+          <div className="divide-y flex flex-col flex-auto col-span-4">
+            <Section className="flex-initial" heading="Recent job">
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={<Loading loadingText="Loading recent job..." />}
+                >
+                  <LoadRecentJob runnerId={runnerId} orgId={orgId} />
+                </Suspense>
+              </ErrorBoundary>
+            </Section>
+            <Section className="flex-initial" heading="Upcoming jobs ">
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={<Loading loadingText="Loading upcoming jobs..." />}
+                >
+                  <LoadUpcomingJobs runnerId={runnerId} orgId={orgId} />
+                </Suspense>
+              </ErrorBoundary>
+            </Section>
+          </div>
         </div>
-        <div className="divide-y flex flex-col flex-auto col-span-4">
-          <Section className="flex-initial" heading="Recent job">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={<Loading loadingText="Loading recent job..." />}
-              >
-                <LoadRecentJob runnerId={runnerId} orgId={orgId} />
-              </Suspense>
-            </ErrorBoundary>
-          </Section>
-          <Section className="flex-initial" heading="Upcoming jobs ">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={<Loading loadingText="Loading upcoming jobs..." />}
-              >
-                <LoadUpcomingJobs runnerId={runnerId} orgId={orgId} />
-              </Suspense>
-            </ErrorBoundary>
-          </Section>
-        </div>
-      </div>
-    </DashboardContent>
-  )
+      </DashboardContent>
+    )
+  } else {
+    redirect(`/${orgId}/apps`)
+  }
 }
 
 const LoadRunnerHeartbeat: FC<{
