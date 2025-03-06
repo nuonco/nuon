@@ -3,7 +3,6 @@ import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CaretRight, Heartbeat, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
-  ClickToCopy,
   Config,
   ConfigContent,
   CancelRunnerJobButton,
@@ -12,7 +11,6 @@ import {
   EmptyStateGraphic,
   ErrorFallback,
   ID,
-  InstallManagementDropdown,
   InstallStatuses,
   InstallPageSubNav,
   Link,
@@ -26,15 +24,15 @@ import {
   ToolTip,
   Truncate,
 } from '@/components'
+import { InstallManagementDropdown } from '@/components/Installs'
 import {
-  getAppLatestInputConfig,
   getInstall,
   getRunner,
   getRunnerJobs,
   getRunnerHealthChecks,
   getRunnerLatestHeartbeat,
 } from '@/lib'
-import { USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
+import { USER_REPROVISION } from '@/utils'
 
 export default withPageAuthRequired(async function Runner({ params }) {
   const orgId = params?.['org-id'] as string
@@ -51,12 +49,6 @@ export default withPageAuthRequired(async function Runner({ params }) {
       runnerId,
     }).catch(console.error),
   ])
-
-  const appInputConfigs =
-    (await getAppLatestInputConfig({
-      appId: install?.app_id,
-      orgId,
-    }).catch(console.error)) || undefined
 
   return (
     <DashboardContent
@@ -91,14 +83,11 @@ export default withPageAuthRequired(async function Runner({ params }) {
           <InstallStatuses initInstall={install} shouldPoll />
           {USER_REPROVISION ? (
             <InstallManagementDropdown
-              installId={installId}
               orgId={orgId}
               hasInstallComponents={Boolean(
                 install?.install_components?.length
               )}
               install={install}
-              inputConfig={appInputConfigs}
-              hasUpdateInstall={INSTALL_UPDATE}
             />
           ) : null}
         </div>
