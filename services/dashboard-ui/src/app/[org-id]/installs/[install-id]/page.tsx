@@ -3,7 +3,6 @@
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { Warning } from '@phosphor-icons/react/dist/ssr'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
@@ -19,6 +18,7 @@ import {
   InstallPageSubNav,
   InstallStatuses,
   Loading,
+  Notice,
   StatusBadge,
   Section,
   SectionHeader,
@@ -151,12 +151,9 @@ const LoadInstallReadme: FC<{ installId: string; orgId: string }> = async ({
     <div className="flex flex-col gap-3">
       {installReadme?.warnings?.length
         ? installReadme?.warnings?.map((warn, i) => (
-            <span
-              key={`${warn}-${i} `}
-              className="flex items-center gap-3 w-full p-2 border rounded-md border-orange-400 bg-orange-300/20 text-orange-800 dark:border-orange-600 dark:bg-orange-600/5 dark:text-orange-600 text-base font-medium"
-            >
-              <Warning size={50} /> <span>{warn}</span>
-            </span>
+            <Notice key={i.toString()} variant="warn">
+              {warn}
+            </Notice>
           ))
         : null}
       <Markdown content={installReadme?.readme} />

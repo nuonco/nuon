@@ -68,26 +68,35 @@ export async function restartOrgChildren(orgId: string) {
   )
 }
 
-export async function updateOrgFeature(orgId: string, formData: FormData, list: Array<string>) {
+export async function updateOrgFeature(
+  orgId: string,
+  formData: FormData,
+  list: Array<string>
+) {
   const data = Object.fromEntries(formData)
-  const features = list.reduce((acc, feat) => {  
-    acc[feat] = data.hasOwnProperty(feat)    
-    return acc
-  }, {})
+  const features = data['all']
+    ? { all: true }
+    : list.reduce((acc, feat) => {
+        acc[feat] = data.hasOwnProperty(feat)
+        return acc
+      }, {})
   const { user } = await getSession()
-  
+
   try {
-    const result = await fetch(`${ADMIN_API_URL}/v1/orgs/${orgId}/admin-features`, {
-      method: 'PATCH',
-      body: JSON.stringify({ features }),
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Nuon-Admin-Email': user?.email,
-      },
-    }).then((r) => r.json())
+    const result = await fetch(
+      `${ADMIN_API_URL}/v1/orgs/${orgId}/admin-features`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ features }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Nuon-Admin-Email': user?.email,
+        },
+      }
+    ).then((r) => r.json())
     return { status: 201, result }
   } catch (error) {
-    throw new Error("Unable to update org features")
+    throw new Error('Unable to update org features')
   }
 }
 
