@@ -5,10 +5,6 @@ import { notFound } from 'next/navigation'
 import { Layout } from '@/components'
 import { getAPIVersion, getOrg, getOrgs } from '@/lib'
 import {
-  ORG_DASHBOARD,
-  ORG_RUNNER,
-  ORG_SETTINGS,
-  ORG_SUPPORT,
   VERSION,
 } from '@/utils'
 
@@ -44,10 +40,10 @@ export default withPageAuthRequired(
           },
         }}
         featureFlags={{
-          ORG_DASHBOARD,
-          ORG_RUNNER,
-          ORG_SETTINGS,
-          ORG_SUPPORT,
+          ORG_DASHBOARD: org?.features?.['org-dashboard'],
+          ORG_RUNNER: org?.features?.['org-runner'],
+          ORG_SETTINGS: org.features?.['org-settings'],
+          ORG_SUPPORT: org.features?.['org-support'],
         }}
       >
         {children}

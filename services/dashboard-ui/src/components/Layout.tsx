@@ -70,7 +70,7 @@ export const Layout: FC<ILayout> = ({
 
           <div className="flex flex-col gap-2">
             <SignOutButton isSidebarOpen={isOpen} />
-            <AdminModal orgId={org?.id} isSidebarOpen={isOpen} />
+            <AdminModal orgId={org?.id} isSidebarOpen={isOpen} org={org} />
             {isOpen ? (
               <NuonVersions
                 className="justify-center py-2 flex-initial"

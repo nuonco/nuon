@@ -25,14 +25,14 @@ import {
 } from '@/components'
 import { getOrg } from '@/lib'
 
-export default async function OrgDashboard({ params }) {
+export default async function OrgReleases({ params }) {
   const orgId = params?.['org-id'] as string
   const org = await getOrg({ orgId })
 
-  if (org?.features?.['org-dashboard']) {
+  if (org?.features?.['org-support']) {
     return (
       <DashboardContent
-        breadcrumb={[{ href: `/${orgId}`, text: 'Dashboard' }]}
+        breadcrumb={[{ href: `/releases`, text: 'Releases' }]}
         heading={org?.name}
         headingUnderline={org?.id}
         statues={
@@ -51,10 +51,7 @@ export default async function OrgDashboard({ params }) {
       >
         <div className="flex-auto md:grid md:grid-cols-12 divide-x">
           <div className="divide-y flex flex-col flex-auto col-span-8">
-            <Section heading="Overview" className="flex-initial">
-              <Text variant="reg-12">TKTK</Text>
-            </Section>
-            <Section className="flex-initial" heading="Workspaces">
+            <Section heading="Changelog" className="flex-initial">
               <Text variant="reg-12">TKTK</Text>
             </Section>
           </div>
@@ -84,7 +81,7 @@ export default async function OrgDashboard({ params }) {
                 </Link>
               </div>
             </Section>
-            <Section className="flex-initial" heading="Recent activity">
+            <Section className="flex-initial" heading="Recent features">
               <Text variant="reg-12">TKTK</Text>
             </Section>
           </div>
@@ -92,10 +89,6 @@ export default async function OrgDashboard({ params }) {
       </DashboardContent>
     )
   } else {
-    if (org?.features?.['org-runner']) {
-      redirect(`/${orgId}/runner`)
-    } else {
-      redirect(`/${orgId}/apps`)
-    }
+    redirect(`/${orgId}/apps`)
   }
 }
