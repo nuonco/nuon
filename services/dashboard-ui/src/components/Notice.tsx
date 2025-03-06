@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { Warning, WarningOctagon } from '@phosphor-icons/react'
+import { Warning, WarningOctagon } from '@phosphor-icons/react/dist/ssr'
 
 interface INotice {
   children: React.ReactNode
