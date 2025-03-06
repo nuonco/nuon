@@ -65,6 +65,15 @@ export const AdminOrgFeatures: FC<{ org: TOrg }> = ({ org }) => {
               }}
               className="flex flex-col gap-2"
             >
+              <div className="w-fit">
+                <CheckboxInput
+                  labelText="All features"
+                  name="all"
+                  defaultChecked={Object.keys(org?.features).every(
+                    (key) => org.features?.[key]
+                  )}
+                />
+              </div>
               <div className="grid grid-cols-4">
                 {featuresList.map((feature) => (
                   <CheckboxInput
