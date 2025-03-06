@@ -97,6 +97,9 @@ func (s *service) updateOrgFeatures(ctx context.Context, org *app.Org, updateFea
 		}
 	}
 
+	// Remove the "all" key from updateFeatures if it exists
+	delete(updateFeatures, "all")
+
 	res := s.db.WithContext(ctx).Model(&o).Updates(app.Org{
 		Features: updateFeatures,
 	})
