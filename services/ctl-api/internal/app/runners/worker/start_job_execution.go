@@ -27,6 +27,7 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 	tags := map[string]string{
 		"status":   "ok",
 		"job_type": string(job.Type),
+		"job_group": string(job.Group),
 	}
 	defer func() {
 		w.mw.Incr(ctx, "runner.job_execution_start", metrics.ToTags(tags)...)
