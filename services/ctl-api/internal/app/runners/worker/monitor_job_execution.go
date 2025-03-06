@@ -16,8 +16,9 @@ import (
 func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, error) {
 	startTS := workflow.Now(ctx)
 	tags := map[string]string{
-		"status":   "ok",
-		"job_type": string(job.Type),
+		"status":    "ok",
+		"job_type":  string(job.Type),
+		"job_group": string(job.Group),
 	}
 	defer func() {
 		w.mw.Incr(ctx, "runner.job_execution", metrics.ToTags(tags)...)
