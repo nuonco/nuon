@@ -3,35 +3,28 @@ import {
   DashboardContent,
   InstallStatuses,
   InstallComponentsTable,
-  InstallManagementDropdown,
   InstallPageSubNav,
   NoComponents,
   Text,
   Time,
   type TDataInstallComponent,
 } from '@/components'
+import { InstallManagementDropdown } from '@/components/Installs'
 import {
-  getAppLatestInputConfig,
   getComponentBuild,
   getComponent,
   getComponentConfig,
   getInstall,
 } from '@/lib'
 import type { TBuild } from '@/types'
-import { USER_REPROVISION, INSTALL_UPDATE } from '@/utils'
+import { USER_REPROVISION } from '@/utils'
 
 export default withPageAuthRequired(async function InstallComponents({
   params,
 }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const [install] = await Promise.all([getInstall({ orgId, installId })])
-
-  const appInputConfigs =
-    (await getAppLatestInputConfig({
-      appId: install?.app_id,
-      orgId,
-    }).catch(console.error)) || undefined
+  const install = await getInstall({ orgId, installId })
 
   const hydratedInstallComponents =
     install.install_components && install.install_components?.length
@@ -94,13 +87,10 @@ export default withPageAuthRequired(async function InstallComponents({
           <InstallStatuses initInstall={install} shouldPoll />
           {USER_REPROVISION ? (
             <InstallManagementDropdown
-              installId={installId}
               orgId={orgId}
               hasInstallComponents={Boolean(
                 install?.install_components?.length
               )}
-              hasUpdateInstall={INSTALL_UPDATE}
-              inputConfig={appInputConfigs}
               install={install}
             />
           ) : null}
