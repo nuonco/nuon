@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
 type AdminUpdateOrgsFeaturesRequest struct {
@@ -46,34 +47,16 @@ func (s *service) AdminUpdateOrgsFeatures(ctx *gin.Context) {
 }
 
 func (s *service) bulkUpdateOrgFeatures(ctx context.Context, features map[string]bool) error {
-	batchSize := 50
-	var orgs []*app.Org
-	offset := 0
-
-	for {
-		result := s.db.
-			Offset(offset).
-			Limit(batchSize).
-			Find(&orgs).
-			Order("created_at ASC")
-
-		if result.Error != nil {
-			return fmt.Errorf("unable to fetch orgs: %w", result.Error)
-		}
-
-		if len(orgs) == 0 {
-			break
-		}
-
+	processBatch := func(orgs []*app.Org) error {
 		for _, org := range orgs {
 			err := s.updateOrgFeatures(ctx, org, features)
 			if err != nil {
 				return fmt.Errorf("unable to update org features: %w", err)
 			}
 		}
-
-		offset += batchSize
+		return nil
 	}
 
-	return nil
+	query := s.db.Model(&app.Org{}).Order("created_at ASC")
+	return generics.BatchProcessing(ctx, 50, query, processBatch)
 }
