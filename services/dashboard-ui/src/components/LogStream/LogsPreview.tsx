@@ -24,7 +24,7 @@ export const LogsPreview: FC<ILogsPreview> = ({ logs }) => {
         cell: (props) => (
           <span
             className={classNames(lineStyle, {
-              'col-span-4 flex items-center gap-2': true,
+              'col-span-3 flex items-center gap-2': true,
             })}
           >
             <LogLineSeverity
@@ -43,7 +43,7 @@ export const LogsPreview: FC<ILogsPreview> = ({ logs }) => {
         cell: (props) => (
           <span
             className={classNames(lineStyle, {
-              'col-span-7 break-all': true,
+              'col-span-8 break-all': true,
             })}
           >
             {props.getValue<string>()}

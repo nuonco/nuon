@@ -26,7 +26,7 @@ export const OperationLogsSection: FC<IOperationLogsSection> = ({
       <Section
         heading={heading}
         actions={
-          !error && !isLoading ? (
+          !error && logs?.length  ? (
             <div className="flex items-center divide-x">
               {actions ? <div className="mr-4">{actions}</div> : null}
               <div className="pl-4">
@@ -43,7 +43,7 @@ export const OperationLogsSection: FC<IOperationLogsSection> = ({
           <div>
             <ErrorFallback error={error} resetErrorBoundary={() => {}} />
           </div>
-        ) : isLoading ? (
+        ) : !logs?.length && isLoading ? (
           <div className="mt-12">
             <Loading loadingText="Loading logs..." variant="stack" />
           </div>
