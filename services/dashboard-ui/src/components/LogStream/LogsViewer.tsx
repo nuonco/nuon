@@ -158,7 +158,7 @@ export const LogsViewer: FC<ILogsViewer> = ({
                                 <Code variant="preformated">
                                   <ClickToCopy
                                     className="!items-start justify-between"
-                                    insetNotice
+                                    noticeClassName="-top-1 right-5"
                                   >
                                     {JSON.stringify(
                                       JSON.parse(logAttributes[key]),
