@@ -15,11 +15,15 @@ type TLogError = Record<string | 'message', string>
 
 interface ILogsContext {
   isLoading: boolean
+  isPolling: boolean
   logs?: Array<TLogRecord>
   error?: TLogError
 }
 
-const LogsContext = createContext<ILogsContext>({ isLoading: true })
+const LogsContext = createContext<ILogsContext>({
+  isLoading: true,
+  isPolling: false,
+})
 
 interface ILogsProvider {
   children: React.ReactNode
@@ -33,28 +37,36 @@ export const LogsProvider: FC<ILogsProvider> = ({
   shouldPoll = false,
 }) => {
   const [isLoading, setIsLoading] = useState(true)
+  const [isPolling, setIsPolling] = useState(logStream.open && shouldPoll)
   const [nextPage, setNextPage] = useState('0')
   const [logs, updateLogs] = useState([])
   const [error, setError] = useState()
 
   const fetchLogs = () => {
+    setIsLoading(true)
     fetch(`/api/${logStream?.org_id}/log-streams/${logStream?.id}/logs`, {
       headers: { 'X-NUON-API-Offset': nextPage },
     })
       .then((res) => {
         const next = res.headers.get('x-nuon-api-next') || '0'
+        const keepLoading = next !== '0'
 
         if (next !== nextPage) setNextPage(next)
         res.json().then((l) => {
-          setIsLoading(false)
           updateLogs((state) =>
             [...state, ...parseOTELLog(l)].filter(
               (log, i, arr) => i === arr.findIndex((lr) => lr?.id === log?.id)
             )
           )
+          if (!keepLoading) {
+            setIsLoading(false)
+          }
         })
       })
-      .catch((err) => setError(err))
+      .catch((err) => {
+        setError(err)
+        setIsLoading(false)
+      })
   }
 
   useEffect(() => {
@@ -72,16 +84,25 @@ export const LogsProvider: FC<ILogsProvider> = ({
   useEffect(() => {
     if (shouldPoll) {
       const pollLogs = setInterval(fetchLogs, 1000)
+
+      if (logStream.open) {
+        setIsPolling(true)
+      }
+
       if (!logStream?.open) {
+        setIsPolling(false)
         clearInterval(pollLogs)
       }
 
-      return () => clearInterval(pollLogs)
+      return () => {
+        setIsPolling(false)
+        clearInterval(pollLogs)
+      }
     }
   }, [logStream])
 
   return (
-    <LogsContext.Provider value={{ error, isLoading, logs }}>
+    <LogsContext.Provider value={{ error, isLoading, isPolling, logs }}>
       {children}
     </LogsContext.Provider>
   )
