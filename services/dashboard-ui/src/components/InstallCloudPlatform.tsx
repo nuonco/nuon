@@ -4,10 +4,11 @@ import React, { type FC } from 'react'
 import { FaAws } from 'react-icons/fa'
 import { VscAzure } from 'react-icons/vsc'
 import { QuestionMark } from '@phosphor-icons/react'
+import { ClickToCopy } from '@/components/ClickToCopy'
 import { Config, ConfigContent } from '@/components/Config'
 import { Link } from '@/components/Link'
 import { ToolTip } from '@/components/ToolTip'
-import { Text } from '@/components/Typography'
+import { Code, Text } from '@/components/Typography'
 import type { TInstall, TSandboxConfig } from '@/types'
 import { AWS_REGIONS, AZURE_REGIONS, getFlagEmoji } from '@/utils'
 
@@ -75,11 +76,15 @@ const AWSAccount: FC<Pick<TInstall, 'aws_account'>> = ({ aws_account }) => {
         <Text className="text-sm tracking-wide text-cool-grey-600 dark:text-cool-grey-500">
           IAM role ARN
         </Text>
-        <ToolTip tipContent={aws_account.iam_role_arn} alignment="right">
-          <Text className="truncate text-ellipsis w-16 text-sm font-mono">
+
+        <Code className="w-fit">
+          <ClickToCopy
+            className="!items-start"
+            noticeClassName="-top-[5px] right-5"
+          >
             {aws_account.iam_role_arn}
-          </Text>
-        </ToolTip>
+          </ClickToCopy>
+        </Code>
       </span>
     </>
   )
