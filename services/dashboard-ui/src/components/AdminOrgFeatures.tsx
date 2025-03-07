@@ -28,6 +28,7 @@ export const AdminOrgFeatures: FC<{ org: TOrg }> = ({ org }) => {
         })
       )
       .catch((err) => {
+        setIsLoading(false)
         setError(err?.message || 'Unable to fetch org features list')
       })
   }, [])
@@ -102,7 +103,7 @@ export const AdminOrgFeatures: FC<{ org: TOrg }> = ({ org }) => {
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-3">
-                      <SpinnerSVG /> Updatting
+                      <SpinnerSVG /> Updating
                     </span>
                   ) : (
                     'Update'
