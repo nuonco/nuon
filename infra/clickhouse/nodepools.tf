@@ -54,7 +54,6 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
               key      = "karpenter.sh/capacity-type"
               operator = "In"
               values = [
-                "spot",
                 "on-demand",
               ]
             },
@@ -138,7 +137,6 @@ resource "kubectl_manifest" "nodepool_clickhouse_keeper" {
               key      = "karpenter.sh/capacity-type"
               operator = "In"
               values = [
-                "spot",
                 "on-demand",
               ]
             },
