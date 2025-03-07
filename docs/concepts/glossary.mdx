@@ -1,0 +1,45 @@
+---
+title: "Glossary"
+description: "Basic terminology of the Nuon Platform."
+---
+
+This page defines terms you will see throughout our product and documentation.
+
+## User Terms
+
+| Term | Definition |
+| --- | --- |
+| Vendor | A BYOC software provider. |
+| Customer | A BYOC software consumer. |
+| Customer Account | The cloud account where a Vendor deploys a BYOC App. Owned by their Customer. |
+
+## System Components
+
+| Term | Definition |
+| --- | --- |
+| Nuon Platform | The software that we provide to Vendors and Customers to support providing and consuming BYOC applications. |
+| Nuon Control Plane | The part of the Nuon platform that orchestrates jobs for runners. |
+| Nuon Runner | The part of the Nuon platform that executes jobs. The runners being orchestrated by the Nuon Control Plane can collectively be considered the Data Plane. |
+| Organization | A business unit that operates Apps and Installs. A Vendor will be given one or more Orgs to use. |
+| App | A BYOC application, composed of a sandbox, inputs, components, and actions. Provided by a Vendor to a Customer. |
+| Build | An OCI artifact packaging a Component. Stored in a private OCI registry alongside the Nuon Control Plane. |
+| Inputs | A Vendor-defined input for an App, that can be set by a Customer when creating an Install. Input values can be used by the Sandbox, Components, and Action Workflows of the App. |
+| Sandbox | The “root” component of an App. Defines the base infrastructure required by the App Components. |
+| Component | Part of an App. Nuon supports Terraform modules, Helm charts, Docker files, and container images. Can be deployed and updated independently of the rest of the app. |
+| Action Workflow | A series of commands, defined by a Vendor, that can be run in an Install. |
+| Build Runner | A Nuon Runner that builds docker images and packages OCI artifacts for Install runners to pull. Deployed alongside the Nuon Control Plane, but technically part of the Data Plane. Single-tenant. |
+| Install Runner | The Nuon Runner deployed in the Customer Account for an Install. It executes tasks to sync artifacts, provision, maintain, and deprovision the sandbox and components, and run actions in the Install. Single-tenant. |
+| Install | A single-tennant deployment of a BYOC app. Typically deployed into a cloud account owned by a Customer. |
+
+## Processes
+
+| Term | Definition |
+| --- | --- |
+| Provision | The process of creating an Install in a Customer’s cloud account. |
+| Reprovision | The process of re-creating an Install in a Customer’s account. Basically a factory reset of the Install. |
+| Deprovision | The process of removing an Install from a Customer’s account. |
+| Sync | The process of copying a Build from the Control Plane’s registry to an Install’s registry. |
+| Sandbox Run | The process of provisioning the Sandbox in an Install. |
+| Component Deploy | The process of provisioning a Component in an Install. |
+| Action Workflow Run | The process of executing an Action Workflow in an Install. |
+| Release | A process that orchestrates Deploys of a Component in one or more Installs. |

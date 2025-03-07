@@ -1,49 +1,28 @@
 ---
-title: "Glossary"
-description: "Gain a basic understanding of what Nuon is and how it works."
+title: "Concepts"
+description: "Get up to speed on BYOC and Nuon."
 ---
 
-Nuon is a platform you can use to build, deploy, and manage BYOC apps. This page provides an overview of basic concepts essential to understanding how Nuon works.
+This section of our docs outlines the basic concepts you should understand to get the most of Nuon and the BYOC model.
 
-## Organizations
+<CardGroup cols={2}>
+  <Card title="Glossary" icon="font" href="/concepts/glossary">
+    Summary of the entire platform.
+  </Card>
 
-In Nuon, organizations are the top-level workspace under which all operations are performed. All your apps and VCS connections are created under your organization, and you grant team members access by adding them to your organization.
+  <Card title="Apps" icon="code" href="/concepts/apps">
+    Learn about apps.
+  </Card>
 
-### Org Server and Runner
+  <Card title="Installs" icon="code" href="/concepts/installs">
+    Learn about installs.
+  </Card>
 
-When you create an organization, we provision a single-tenant server and build runner for you. The server manages the execution of builds and deploys. It is the only part of our system that has access to your source code and your customer installs.
+  <Card title="Components" icon="code" href="/concepts/components">
+    Learn about components.
+  </Card>
 
-### VCS Connections
-
-In order to use source code from private repositories for your components, you need to connect your Nuon organization to your Version Control System (VCS). Refer to our [Connect GitHub guide](/guides/vcs) for more details.
-
-## Apps
-
-Nuon apps are versions of your application code and infrastructure that can be deployed into a customer cloud account. Refer to our [Apps configuration guide](/concepts/apps) for more details.
-
-### Components
-
-Nuon app components define what your app consists of. We currently support:
-
-- [Dockerfiles](/guides/docker-build-components)
-- [Container Images](/guides/container-image-components)
-- [Terraform](/guides/terraform-components)
-- [Helm Charts](/guides/helm-chart-components)
-
-### Sandboxes
-
-A Sandbox defines the base infrastructure you want to use for an app's installs. It provides the base infrastructure components will run on top of, as well as a runner that manages deploys. Refer to our [Sandboxes configuration guide](/concepts/sandboxes) for more details.
-
-## Installs
-
-An install is an instance of your app running in a customer's cloud. Refer to our [Create Installs guide](/guides/create-installs) for more details.
-
-## Installers
-
-An installer provides a convenient way for your customers to install your app in their cloud. Configure an installer with your branding, custom content, and metadata, along with the apps you want the installer to support. You can then use it to power a customer-friendly installation UI flow. Refer to our [Installers guide](/concepts/installers) for more information.
-
-## Builds, Deploys, and Releases
-
-A build packages your component's source code into an artifact that can be deployed to customer installs. A deploy syncs a component build to a customer install and then provisions the resources that component defines.
-
-Releases orchestrate creating deploys, saving you the overhead of managing thousands of installs yourself. Refer to our [Creating a Release guide](/guides/create-releases) for more details.
+  <Card title="Nuon Actions" icon="code" href="/concepts/nuon-actions">
+    Learn about Nuon Actions.
+  </Card>
+</CardGroup>
