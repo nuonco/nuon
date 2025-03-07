@@ -5,13 +5,13 @@ import React, { type FC, useEffect, useState } from 'react'
 import { Check, Copy } from '@phosphor-icons/react'
 
 interface IClickToCopy extends React.HTMLAttributes<HTMLSpanElement> {
-  insetNotice?: boolean
+  noticeClassName?: string
 }
 
 export const ClickToCopy: FC<IClickToCopy> = ({
   className,
   children,
-  insetNotice = false,
+  noticeClassName,
   ...props
 }) => {
   const [isCopied, setIsCopied] = useState(false)
@@ -45,8 +45,8 @@ export const ClickToCopy: FC<IClickToCopy> = ({
         <span
           className={classNames(
             'bg-dark text-light dark:bg-light dark:text-dark text-sm leading-none px-2 py-1.5 rounded drop-shadow-md max-w-96 absolute z-10 -top-6 right-0',
-            {
-              '-top-1 right-5': insetNotice,
+            {             
+              [`${noticeClassName}`]: Boolean(noticeClassName),
             }
           )}
         >
@@ -54,7 +54,9 @@ export const ClickToCopy: FC<IClickToCopy> = ({
         </span>
       ) : null}
       {children}
-      {isCopied ? <Check /> : <Copy />}
+      <span>
+        {isCopied ? <Check /> : <Copy />}
+      </span>
     </span>
   )
 }
