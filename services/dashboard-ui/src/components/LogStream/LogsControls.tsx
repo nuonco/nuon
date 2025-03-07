@@ -20,9 +20,9 @@ export const LogsControls: FC<ILogsControls> = ({
   showLogSearch = true,
   showLogSort = true,
 }) => {
-  const { error, isLoading } = useLogs()
+  const { error, logs } = useLogs()
 
-  return !error && !isLoading ? (
+  return !error && logs.length ? (
     <div className="flex items-center gap-4">
       {showLogExpand ? <LogsExpandButton /> : null}
       {showLogSearch ? <LogsSearchDropdown /> : null}

@@ -11,10 +11,12 @@ import {
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table'
+import { useLogs } from './logs-context'
 import { useLogsViewer } from './logs-viewer-context'
 import type { TLogRecord } from './types'
 import { ClickToCopy } from '@/components/ClickToCopy'
 import { Expand } from '@/components/Expand'
+import { SpinnerSVG } from '@/components/Loading'
 import { Code, Text } from '@/components/Typography'
 
 interface ILogsViewer {
@@ -30,6 +32,7 @@ export const LogsViewer: FC<ILogsViewer> = ({
   showLogAttr = false,
   enableLogFilter = false,
 }) => {
+  const { isLoading, isPolling } = useLogs()
   const { columnFilters, columnSort, globalFilter, isAllExpanded } =
     useLogsViewer()
   const table = useReactTable({
@@ -64,8 +67,8 @@ export const LogsViewer: FC<ILogsViewer> = ({
                       'col-span-8': i === 3,
                     }
                   : {
-                      'col-span-4': i === 0,
-                      'col-span-8': i === 1,
+                      'col-span-3': i === 0,
+                      'col-span-9': i === 1,
                     }
               )}
               onClick={(e) => {
@@ -84,6 +87,17 @@ export const LogsViewer: FC<ILogsViewer> = ({
           ))}
         </div>
       ))}
+
+      {data?.length && isLoading && !isPolling ? (
+        <div className="w-full py-2 flex on-enter">
+          <Text
+            className="flex items-center gap-3 m-auto text-cool-grey-600 dark:text-white/70"
+            variant="reg-14"
+          >
+            <SpinnerSVG /> Loading more log lines...
+          </Text>
+        </div>
+      ) : null}
 
       {table.getRowModel().rows.map((row) => {
         const logAttributes = row.original.log_attributes
