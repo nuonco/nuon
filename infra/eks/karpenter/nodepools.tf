@@ -26,7 +26,6 @@ resource "kubectl_manifest" "karpenter_nodepool_default" {
               key      = "karpenter.sh/capacity-type"
               operator = "In"
               values = [
-                "spot",
                 "on-demand",
               ]
             },
@@ -105,7 +104,6 @@ resource "kubectl_manifest" "additional_nodepools" {
               key      = "karpenter.sh/capacity-type"
               operator = "In"
               values = [
-                "spot",
                 "on-demand",
               ]
             },
