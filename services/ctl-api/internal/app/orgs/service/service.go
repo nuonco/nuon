@@ -61,6 +61,9 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.PATCH("/v1/orgs/current", s.UpdateOrg)
 	api.POST("/v1/orgs/current/user", s.CreateUser)
 
+	// accounts
+	api.GET("/v1/orgs/current/accounts", s.GetOrgAccounts)
+
 	// invites
 	api.GET("/v1/orgs/current/invites", s.GetOrgInvites)
 	api.POST("/v1/orgs/current/invites", s.CreateOrgInvite)
