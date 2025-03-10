@@ -14,45 +14,21 @@ Runner configurations are managed using a runner config, and depending on which 
 have different capabilities (or not be compatible).
 
 To configure your app runner:
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [runner]
 runner_type = "aws-eks"
 ```
-
-```hcl Terraform
-resource "nuon_app_runner" "<your-app>" {
-  app_id = nuon_app.<your-app>.id
-
-  runner_type = "aws-eks"
-}
-```
-</CodeGroup>
 
 
 You can set environment variables in your runner config using an `env_var`. Environment variables are set when runners
 are performing jobs such as provisioning, updating and monitoring.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [runner]
 runner_type = "aws-eks"
 [runner.env_vars]
 ENV_VAR_KEY = "value"
 ```
-
-```hcl Terraform
-resource "nuon_app_runner" "<your-app>" {
-  app_id = nuon_app.<your-app>.id
-
-  runner_type = "aws-eks"
-  env_var {
-    name = "ENV_VAR_KEY"
-    value = "value"
-  }
-}
-```
-</CodeGroup>
 
 ## Runner Types
 
@@ -69,20 +45,10 @@ This runner is granted `ClusterAdmin` permissions, so that it can properly manag
 
 To configure an AWS EKS runner:
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [runner]
 runner_type = "aws-eks"
 ```
-
-```hcl Terraform
-resource "nuon_app_runner" "<your-app>" {
-  app_id = nuon_app.<your-app>.id
-
-  runner_type = "aws-eks"
-}
-```
-</CodeGroup>
 
 <br />
 
@@ -95,20 +61,11 @@ The `aws-eks` runner is _only_ compatible with `aws-eks` sandboxes.
 The AWS ECS runner is deployed using ECS Fargate.
 
 To configure an ecs runner:
-<CodeGroup>
-```toml TOML
+
+```toml nuon.<your-app>.toml
 [runner]
 runner_type = "aws-ecs"
 ```
-
-```hcl Terraform
-resource "nuon_app_runner" "<your-app>" {
-  app_id = nuon_app.<your-app>.id
-
-  runner_type = "aws-ecs"
-}
-```
-</CodeGroup>
 
 <br />
 
@@ -126,20 +83,10 @@ This runner is granted `ClusterAdmin` permissions, so that it can properly manag
 
 To configure an Azure AKS runner:
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [runner]
 runner_type = "azure-aks"
 ```
-
-```hcl Terraform
-resource "nuon_app_runner" "<your-app>" {
-  app_id = nuon_app.<your-app>.id
-
-  runner_type = "azure-aks"
-}
-```
-</CodeGroup>
 
 ## Runner Responsibilities
 

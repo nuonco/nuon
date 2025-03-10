@@ -1,6 +1,7 @@
 ---
 title: 'Notifications'
 description: "Notifications for application events"
+icon: 'code'
 ---
 
 We support sending slack notifications for apps and orgs.
@@ -12,19 +13,9 @@ Incoming Webhook URL](https://api.slack.com/messaging/webhooks).
 
 To add notifications for an app, update the app metadata to set the webhook url:
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 slack_webhook_url = "<slack-webhook-url>"
 ```
-
-```hcl Terraform
-resource "nuon_app" "<your-app>" {
-  name = "your_app"
-
-  slack_webhook_url = "<slack-webhook-url>"
-}
-```
-</CodeGroup>
 
 
 <Note>
