@@ -30,8 +30,7 @@ In order for components to work with `aws-eks-byovpc` sandbox, subnets must be t
 The `eks-byovpc` sandbox requires adding a `"kubernetes.io/role/internal-elb:1"` tag to all private subnets, and a `"kubernetes.io/role/elb:1"` tag to all public subnets.
 </Note>
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [inputs]
 [[inputs.input]]
 name         = "vpc_id"
@@ -50,35 +49,6 @@ branch    = "main"
 vpc_id = "{{.nuon.install.inputs.vpc_id}}"
 ```
 
-```hcl Terraform
-resource "nuon_app_sandbox" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-  terraform_version = "v1.6.3"
-
-  public_repo = {
-    repo      = "nuonco/sandboxes"
-    directory = "aws-eks"
-    branch    = "main"
-  }
-
-  var {
-    name  = "vpc_id"
-    value = "{{.nuon.install.inputs.vpc_id}}"
-  }
-}
-
-resource "nuon_app_input" "<your-app>" {
-  app_id = nuon_app.<your-app>.id
-
-  input {
-    name        = "vpc_id"
-    description = "customer-provided vpc id"
-    required    = true
-  }
-}
-```
-</CodeGroup>
-
 ### AWS ECS BYOVPC
 
 [AWS ECS BYOVPC](https://registry.terraform.io/modules/nuonco/ecs-byovpc-sandbox/aws/latest) is a sandbox for provisioning an ECS app in a customer-provided VPC.
@@ -89,8 +59,7 @@ This sandbox also needs to be given private and public subnets to use. There are
 1. Tag the public subnets in the target VPC with `visibility:public`, and the private subnets with `visibility:private`. This is the default behavior
 1. Define app inputs named `private_subnet_ids` and `public_subnet_ids` that each accept a comma-separated string of subnet IDs, and pass them to the sandbox using vars. These will override any tagged subnets that are found.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [inputs]
 
 [[inputs.input]]
@@ -127,71 +96,12 @@ private_subnet_ids = "{{.nuon.install.inputs.private_subnet_ids}}"
 public_subnet_ids  = "{{.nuon.install.inputs.public_subnet_ids}}"
 ```
 
-```hcl Terraform
-resource "nuon_app_sandbox" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-  terraform_version = "v1.6.3"
-
-  public_repo = {
-    repo      = "nuonco/sandboxes"
-    branch    = "main"
-    directory = "aws-ecs"
-  }
-
-  var {
-    name  = "vpc_id"
-    value = "{{.nuon.install.inputs.vpc_id}}"
-  }
-
-  # Delete these vars to use tagged subnets instead.
-  var {
-    name  = "private_subnet_ids"
-    value = "{{.nuon.install.inputs.private_subnet_ids}}"
-  }
-  var {
-    name  = "public_subnet_ids"
-    value = "{{.nuon.install.inputs.public_subnet_ids}}"
-  }
-}
-
-resource "nuon_app_input" "<your-app>" {
-  app_id = nuon_app.<your-app>.id
-
-  input {
-    name         = "vpc_id"
-    description  = "customer-provided vpc id"
-    required     = true
-    sensitive    = false
-    display_name = "VPC ID"
-    required     = true
-  }
-
-  # Delete these inputs to use tagged subnets instead.
-  input {
-    name         = "private_subnet_ids"
-    description  = "Subnets for private resources"
-    sensitive    = false
-    display_name = "Private Subnet IDs"
-    required     = false
-  }
-  input {
-    name         = "public_subnet_ids"
-    description  = "Subnets for public resources"
-    sensitive    = false
-    display_name = "Public Subnets"
-    required     = false
-  }
-}
-```
-</CodeGroup>
-
 ### Azure AKS BYOVPN
 
 The [Azure AKS BYOVPN](https://registry.terraform.io/modules/nuonco/aks-byovpn-sandbox/azure/latest) sandbox creates an AKS cluster in a customer-provided VPN.
 It requires `resource_group_name`, `network_name`, and `subnet_name`.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [inputs]
 [[inputs.input]]
 name         = "resource_group_name"
@@ -228,65 +138,3 @@ subnet_name         = "{{.nuon.install.inputs.subnet_name}}"
 [runner]
 runner_type = "azure-aks"
 ```
-
-```hcl Terraform
-resource "nuon_app_sandbox" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-  terraform_version = "v1.6.3"
-
-  public_repo = {
-    repo      = "nuonco/sandboxes"
-    branch    = "main"
-    directory = "azure-aks-byovpn"
-  }
-
-  var {
-    name  = "resource_group_name"
-    value = "{{.nuon.install.inputs.resource_group_name}}"
-  }
-
-  var {
-    name  = "network_name"
-    value = "{{.nuon.install.inputs.network_name}}"
-  }
-
-  var {
-    name  = "subnet_name"
-    value = "{{.nuon.install.inputs.subnet_name}}"
-  }
-}
-
-resource "nuon_app_runner" "<your-app>" {
-  app_id      = nuon_app.<your-app>.id
-  runner_type = "aws-aks"
-}
-
-resource "nuon_app_input" "<your-app>" {
-  app_id = nuon_app.<your-app>.id
-
-  input {
-    name         = "resource_group_name"
-    description  = "The Resource Group of the VPN to install the app in."
-    sensitive    = false
-    display_name = "Resource Group Name"
-    required     = true
-  }
-
-  input {
-    name         = "network_name"
-    description  = "The VPN to install the app in."
-    sensitive    = false
-    display_name = "Network Name"
-    required     = true
-  }
-
-  input {
-    name         = "subnet_name"
-    description  = "The Subnet in the VPN to install the app in."
-    sensitive    = false
-    display_name = "Subnet Name"
-    required     = true
-  }
-}
-```
-</CodeGroup>
