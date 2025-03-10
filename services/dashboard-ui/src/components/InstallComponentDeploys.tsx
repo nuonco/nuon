@@ -6,7 +6,7 @@ import React, { type FC, useEffect, useState } from 'react'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
 import { Truncate } from '@/components/Typography'
-import { revalidateInstallData } from "@/components/install-actions"
+import { revalidateInstallData } from '@/components/install-actions'
 import type { TComponent, TInstallDeploy } from '@/types'
 import { SHORT_POLL_DURATION } from '@/utils'
 
@@ -27,7 +27,7 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
   shouldPoll = false,
   orgId,
 }) => {
-//  const [deploys, setInstallComponentDeploys] = useState(initDeploys)
+  //  const [deploys, setInstallComponentDeploys] = useState(initDeploys)
 
   useEffect(() => {
     const fetchInstallComponentDeploys = () => {
@@ -51,7 +51,8 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
 
   return (
     <Timeline
-      emptyMessage="No deployments to show"
+      emptyMessage={`Waiting for ${component?.name} to deploy.`}
+      emptyTitle="No deployments yet"
       events={deploys.map((d, i) => ({
         id: d.id,
         status: d.status,

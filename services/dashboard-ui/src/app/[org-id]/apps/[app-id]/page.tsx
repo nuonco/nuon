@@ -10,7 +10,9 @@ import {
   AppSandboxConfig,
   AppSandboxVariables,
   DashboardContent,
+  EmptyStateGraphic,
   ErrorFallback,
+  Link,
   Loading,
   Section,
   Text,
@@ -62,7 +64,16 @@ export default withPageAuthRequired(async function App({ params }) {
             </Section>
           ) : (
             <Section className="border-r overflow-x-auto" heading="README">
-              <Text>No markdown in app config.</Text>
+              <div className="m-auto flex flex-col items-center max-w-[200px] my-6">
+                <EmptyStateGraphic variant="table" />
+                <Text className="mt-6" variant="med-14">
+                  No README in app config
+                </Text>
+                <Text variant="reg-12" className="text-center !inline-block">
+                  You can add a README for your app in your app config TOML
+                  file.
+                </Text>
+              </div>
             </Section>
           )}
         </div>
@@ -113,11 +124,31 @@ export default withPageAuthRequired(async function App({ params }) {
 })
 
 const LoadAppSandboxConfig: FC<IGetApp> = async (props) => {
-  const sandboxConfig = await getAppLatestSandboxConfig(props)
-  return (
+  const sandboxConfig = await getAppLatestSandboxConfig(props).catch(
+    console.error
+  )
+  return sandboxConfig ? (
     <div className="flex flex-col gap-8">
       <AppSandboxConfig sandboxConfig={sandboxConfig} />
       <AppSandboxVariables variables={sandboxConfig?.variables} />
+    </div>
+  ) : (
+    <div className="m-auto flex flex-col items-center max-w-[200px] my-6">
+      <EmptyStateGraphic variant="table" />
+      <Text className="mt-6" variant="med-14">
+        No app sandbox config
+      </Text>
+      <Text variant="reg-12" className="text-center !inline-block">
+        Read more about app sandbox configs{' '}
+        <Link
+          className="!inline-block"
+          href="https://docs.nuon.co/concepts/sandboxes"
+          target="_blank"
+        >
+          here
+        </Link>
+        .
+      </Text>
     </div>
   )
 }
@@ -126,6 +157,28 @@ const LoadAppRunnerConfig: FC<{ appId: string; orgId: string }> = async ({
   appId,
   orgId,
 }) => {
-  const runnerConfig = await getAppLatestRunnerConfig({ appId, orgId })
-  return <AppRunnerConfig runnerConfig={runnerConfig} />
+  const runnerConfig = await getAppLatestRunnerConfig({ appId, orgId }).catch(
+    console.error
+  )
+  return runnerConfig ? (
+    <AppRunnerConfig runnerConfig={runnerConfig} />
+  ) : (
+    <div className="m-auto flex flex-col items-center max-w-[200px] my-6">
+      <EmptyStateGraphic variant="table" />
+      <Text className="mt-6" variant="med-14">
+        No app runner config
+      </Text>
+      <Text variant="reg-12" className="text-center !inline-block">
+        Read more about app runner configs{' '}
+        <Link
+          className="!inline-block"
+          href="https://docs.nuon.co/concepts/runners"
+          target="_blank"
+        >
+          here
+        </Link>
+        .
+      </Text>
+    </div>
+  )
 }

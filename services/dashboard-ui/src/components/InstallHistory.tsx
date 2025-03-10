@@ -41,7 +41,6 @@ function parseInstallHistory(
       event.operation === 'reprovision' ||
       event.operation === 'deprovision'
     ) {
-
       const historyEvent: TInstallHistoryEvent = {
         component_id: payload?.install_component_id as string,
         component_name: payload?.component_name as string,
@@ -49,7 +48,10 @@ function parseInstallHistory(
         event_id: event.id,
         install_id: event.install_id,
         operation: event.operation,
-        operation_name: payload?.install_deploy_type === "teardown" ? "Teardown" : event.operation_name,
+        operation_name:
+          payload?.install_deploy_type === 'teardown'
+            ? 'Teardown'
+            : event.operation_name,
         operation_status: event.operation_status,
         org_id: event.org_id,
         payload_id: payload.id as string,
@@ -106,7 +108,8 @@ export const InstallHistory: FC<IInstallHistory> = ({
 
   return (
     <Timeline
-      emptyMessage="No install events to show"
+      emptyTitle="No install history yet"
+      emptyMessage="Waiting for install provision and deployments start."
       events={events.map((e) => ({
         id: e.payload_id,
         status: e.operation_status,

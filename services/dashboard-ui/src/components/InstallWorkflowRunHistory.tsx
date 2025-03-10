@@ -37,7 +37,8 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
 
   return (
     <Timeline
-      emptyMessage="No action workflow runs have happened"
+      emptyTitle="No workflow runs yet"
+      emptyMessage={`Waiting on ${actionsWithRecentRuns?.action_workflow?.name} workflow to run.`}
       events={runs?.map((run, i) => ({
         id: run.id,
         status: run.status,
@@ -56,5 +57,3 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
     />
   )
 }
-
-

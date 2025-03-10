@@ -41,7 +41,8 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
 
   return (
     <Timeline
-      emptyMessage="No component builds to show"
+      emptyTitle="No component buids yet"
+      emptyMessage={`Waiting on components builds.`}
       events={builds.map((b, i) => ({
         id: b.id,
         status: b.status,
