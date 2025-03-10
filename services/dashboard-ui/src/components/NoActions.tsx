@@ -13,7 +13,7 @@ export const NoActions: FC = () => {
           <br />
           <Link
             className="!inline"
-            href="https://docs.nuon.co/concepts/actions"
+            href="https://docs.nuon.co/concepts/nuon-actions"
             target="_blank"
           >
             Learn more
@@ -23,11 +23,11 @@ export const NoActions: FC = () => {
       </div>
 
       {/* <div className="flex flex-col gap-2">
-          <Text variant="semi-14">Create an app with the Nuon CLI</Text>
+          <Text variant="semi-14">Add an action to an app with the Nuon CLI</Text>
           <Text>
-          Create your first app using the Nuon CLI with the{' '}
+          Create your first action using the Nuon CLI with the{' '}
           <CodeInline variant="inline">
-          nuon apps create -n YOUR-APP-NAME
+          nuon action create -n YOUR-APP-NAME
           </CodeInline>{' '}
           command. Follow our{' '}
           <Link

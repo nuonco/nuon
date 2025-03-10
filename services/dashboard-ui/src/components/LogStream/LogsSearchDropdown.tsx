@@ -1,8 +1,9 @@
 'use client'
 
 import React, { type FC } from 'react'
-import { MagnifyingGlass } from '@phosphor-icons/react'
+import { MagnifyingGlass, XCircle } from '@phosphor-icons/react'
 import { useLogsViewer } from './logs-viewer-context'
+import { Button } from '@/components/Button'
 import { Dropdown } from '@/components/Dropdown'
 import { Input } from '@/components/Input'
 
@@ -10,6 +11,7 @@ export interface ILogsSearchDropdown {}
 
 export const LogsSearchDropdown: FC<ILogsSearchDropdown> = ({}) => {
   const { globalFilter, handleGlobalFilter } = useLogsViewer()
+
   return (
     <Dropdown
       alignment="right"
@@ -33,6 +35,17 @@ export const LogsSearchDropdown: FC<ILogsSearchDropdown> = ({}) => {
             onChange={handleGlobalFilter}
             isSearch
           />
+          {globalFilter !== '' ? (
+            <Button
+              className="!p-0.5 absolute top-1/2 right-1.5 -translate-y-1/2"
+              variant="ghost"
+              title="clear search"
+              value=""
+              onClick={handleGlobalFilter}
+            >
+              <XCircle />
+            </Button>
+          ) : null}
         </label>
       </div>
     </Dropdown>

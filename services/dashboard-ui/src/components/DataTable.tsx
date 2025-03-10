@@ -9,11 +9,20 @@ import {
   useReactTable,
   type ColumnDef,
   type ColumnFilter,
+  type Table as TTable,
 } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, MagnifyingGlass } from '@phosphor-icons/react'
+import {
+  ArrowDown,
+  ArrowUp,
+  MagnifyingGlass,
+  XCircle,
+} from '@phosphor-icons/react'
 import React, { type FC } from 'react'
 import { FiMoreVertical } from 'react-icons/fi'
+import { Button } from '@/components/Button'
+import { EmptyStateGraphic } from '@/components/EmptyStateGraphic'
 import { Link } from '@/components/Link'
+import { Text } from '@/components/Typography'
 
 export interface IDataTable {
   headers: Array<string>
@@ -62,9 +71,11 @@ export const DataTable: FC<IDataTable> = ({ headers, initData }) => {
 }
 
 export interface ITable extends React.HTMLAttributes<HTMLTableElement> {
-  data: Array<Record<string, any>>
   columns: Array<ColumnDef<any>>
   columnFilters: Array<ColumnFilter>
+  data: Array<Record<string, any>>
+  emptyMessage?: string
+  emptyTitle?: string
   globalFilter: string
   header?: React.ReactNode
 }
@@ -73,6 +84,8 @@ export const Table: FC<ITable> = ({
   data,
   columns,
   columnFilters,
+  emptyMessage,
+  emptyTitle,
   globalFilter,
   header,
   ...props
@@ -130,21 +143,29 @@ export const Table: FC<ITable> = ({
           ))}
         </thead>
         <tbody className="divide-y">
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell, i) => (
-                <td
-                  className={classNames('p-4', {
-                    'align-top': row.getVisibleCells().length !== i + 1,
-                    'align-center': row.getVisibleCells().length === i + 1,
-                  })}
-                  key={cell.id}
-                >
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {table.getRowModel().rows?.length ? (
+            table.getRowModel().rows.map((row) => (
+              <tr key={row.id}>
+                {row.getVisibleCells().map((cell, i) => (
+                  <td
+                    className={classNames('p-4', {
+                      'align-top': row.getVisibleCells().length !== i + 1,
+                      'align-center': row.getVisibleCells().length === i + 1,
+                    })}
+                    key={cell.id}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))
+          ) : (
+            <EmptyTableRows
+              table={table}
+              emptyMessage={emptyMessage}
+              emptyTitle={emptyTitle}
+            />
+          )}
         </tbody>
       </table>
     </div>
@@ -159,12 +180,49 @@ export const DataTableSearch: FC<{
     <label className="relative">
       <MagnifyingGlass className="text-cool-grey-600 dark:text-cool-grey-500 absolute top-2.5 left-2" />
       <input
-        className="rounded-md pl-8 pr-3.5 py-1.5 text-base border bg-white dark:bg-dark-grey-100 placeholder:text-cool-grey-600 dark:placeholder:text-cool-grey-500 md:min-w-80"
+        className="rounded-md pl-8 pr-3.5 py-1.5 h-[36px] text-base border bg-white dark:bg-dark-grey-100 placeholder:text-cool-grey-600 dark:placeholder:text-cool-grey-500 md:min-w-80"
         type="search"
         placeholder="Search..."
         value={value}
         onChange={handleOnChange}
       />
+      {value !== '' ? (
+        <Button
+          className="!p-0.5 absolute top-1/2 right-1.5 -translate-y-1/2"
+          variant="ghost"
+          title="clear search"
+          value=""
+          onClick={handleOnChange}
+        >
+          <XCircle />
+        </Button>
+      ) : null}
     </label>
+  )
+}
+
+export const EmptyTableRows: FC<{
+  table: TTable<any>
+  emptyMessage?: string
+  emptyTitle?: string
+}> = ({
+  emptyMessage = 'No data to display',
+  emptyTitle = 'Nothing to show',
+  table,
+}) => {
+  return (
+    <tr>
+      <td className="p-4" colSpan={table.getAllColumns()?.length}>
+        <div className="m-auto flex flex-col items-center max-w-[200px] my-6">
+          <EmptyStateGraphic variant="table" />
+          <Text className="mt-6" variant="med-14">
+            {emptyTitle}
+          </Text>
+          <Text variant="reg-12" className="text-center">
+            {emptyMessage}
+          </Text>
+        </div>
+      </td>
+    </tr>
   )
 }

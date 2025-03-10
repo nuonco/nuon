@@ -167,7 +167,7 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
   }
 
   const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGlobalFilter(e.target.value)
+    setGlobalFilter(e.target.value || '')
   }
 
   return (
@@ -188,6 +188,8 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
       data={data}
       columns={columns}
       columnFilters={columnFilters}
+      emptyMessage="Reset your search or clear your filters and try again."
+      emptyTitle="No installs found"
       globalFilter={globalFilter}
     />
   )
