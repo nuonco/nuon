@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.464
+
+Fix action log loading in UI.
+
 ## v0.19.463
 
 Improved logs pagination in UI.
