@@ -27,8 +27,7 @@ Sandboxes can ensure isolation, reproducability and repeatability with each inst
 
 To configure a sandbox, specify a repo and the correct parameters for your sandbox.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [sandbox]
 terraform_version = "v1.6.3"
 [sandbox.public_repo]
@@ -36,20 +35,6 @@ repo = "nuonco/sandboxes"
 directory = "aws-eks"
 branch = "main"
 ```
-
-```hcl Terraform
-resource "nuon_app_sandbox" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-  terraform_version = "v1.6.3"
-
-  public_repo = {
-    repo      = "nuonco/sandboxes"
-    directory = "aws-eks"
-    branch    = "main"
-  }
-}
-```
-</CodeGroup>
 
 You can configure sandboxes to use either a public repo (using a `public_repo` block) or a private GitHub
 repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
@@ -74,8 +59,7 @@ These projects are what you will reference in your sandbox config.
 [AWS EKS](https://registry.terraform.io/modules/nuonco/eks-sandbox/aws/latest) is a sandbox for provisioning an EKS app. This sandbox
 creates a new VPC, EKS cluster, IAM and installs a set of Helm resources.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [sandbox]
 terraform_version = "v1.6.3"
 [sandbox.public_repo]
@@ -83,20 +67,6 @@ repo = "nuonco/sandboxes"
 directory = "aws-eks"
 branch = "main"
 ```
-
-```hcl Terraform
-resource "nuon_app_sandbox" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-  terraform_version = "v1.6.3"
-
-  public_repo = {
-    repo      = "nuonco/sandboxes"
-    branch    = "main"
-    directory = "aws-eks"
-  }
-}
-```
-</CodeGroup>
 
 <br />
 
@@ -109,8 +79,7 @@ There is also a [Bring Your Own Network](/guides/bring-your-own-network#aws-eks-
 [AWS ECS](https://registry.terraform.io/modules/nuonco/ecs-sandbox/aws/latest) is a sandbox for provisioning an ECS app. This sandbox
 creates a new VPC, ECS cluster and IAM resources.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [sandbox]
 terraform_version = "v1.6.3"
 [sandbox.public_repo]
@@ -118,20 +87,6 @@ repo = "nuonco/sandboxes"
 directory = "aws-ecs"
 branch = "main"
 ```
-
-```hcl Terraform
-resource "nuon_app_sandbox" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-  terraform_version = "v1.6.3"
-
-  public_repo = {
-    repo      = "nuonco/sandboxes"
-    directory = "aws-ecs"
-    branch    = "main"
-  }
-}
-```
-</CodeGroup>
 
 <br />
 
@@ -143,8 +98,7 @@ There is also a [Bring Your Own Network](/guides/bring-your-own-network#aws-ecs-
 
 The [Azure AKS](https://registry.terraform.io/modules/nuonco/aks-sandbox/azure/latest) sandbox creates a VPN and an AKS cluster.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [sandbox]
 terraform_version = "1.7.5"
 [sandbox.public_repo]
@@ -155,25 +109,6 @@ branch = "main"
 [runner]
 runner_type = "azure-aks"
 ```
-
-```hcl Terraform
-resource "nuon_app_sandbox" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-  terraform_version = "v1.6.3"
-
-  public_repo = {
-    repo      = "nuonco/sandboxes"
-    directory = "aws-aks"
-    branch    = "main"
-  }
-}
-
-resource "nuon_app_runner" "main" {
-  app_id      = nuon_app.<your-app>.id
-  runner_type = "aws-aks"
-}
-```
-</CodeGroup>
 
 <br />
 
@@ -188,8 +123,7 @@ Nuon managed sandboxes are [open source](https://github.com/nuonco/sandboxes) an
 To pin any sandbox, you can set a tag such as `v0.0.1` as the branch field. Use the value `main` to use the latest
 version at all times.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [sandbox]
 terraform_version = "v1.6.3"
 [sandbox.public_repo]
@@ -198,29 +132,13 @@ directory = "aws-eks"
 branch = "v0.0.1"
 ```
 
-```hcl Terraform
-resource "nuon_app_sandbox" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-  terraform_version = "v1.6.3"
-
-  public_repo = {
-    repo      = "nuonco/sandboxes"
-    branch    = "v0.0.1"
-    directory = "aws-eks"
-  }
-}
-
-```
-</CodeGroup>
-
 ## Sandbox Outputs
 
 Sandbox outputs are used by the Nuon platform to install the runner, and made accessible to all components [using variables](/guides/using-variables).
 
 You can use any output from your selected sandbox by setting a config value on your component:
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [[components]]
 name   = "e2e_helm"
 type = "helm_chart"
@@ -233,26 +151,6 @@ branch    = "main"
 account_region = "{{.nuon.install.sandbox.outputs.account.region}}"
 ```
 
-```hcl Terraform
-resource "nuon_helm_chart_component" "e2e" {
-  name   = "e2e_helm"
-  app_id = nuon_app.<your-app>.id
-
-  chart_name = "e2e-helm"
-  connected_repo = {
-    repo      = "org/repo"
-    directory = "chart"
-    branch    = "main"
-  }
-
-  value {
-    name  = "account_region"
-    value = "{{.nuon.install.sandbox.outputs.account.region}}"
-  }
-}
-```
-</CodeGroup>
-
 ## Configure Sandboxes
 
 Each managed sandbox has a set of variable inputs. Most variables are either supplied by the Nuon platform during install, via inputs, or by setting default values.
@@ -260,8 +158,8 @@ Each managed sandbox has a set of variable inputs. Most variables are either sup
 ### Use Default Values
 
 To configure a sandbox parameter with a default value for your app:
-<CodeGroup>
-```toml TOML
+
+```toml nuon.<your-app>.toml
 [sandbox]
 terraform_version = "v1.6.3"
 [sandbox.public_repo]
@@ -272,25 +170,6 @@ branch = "main"
 cluster_version = "1.28"
 ```
 
-```hcl Terraform
-resource "nuon_app_sandbox" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-  terraform_version = "v1.6.3"
-
-  public_repo = {
-    repo      = "nuonco/sandboxes"
-    directory = "aws-eks"
-    branch    = "main"
-  }
-
-  var {
-    name = "cluster_version"
-    value = "1.28"
-  }
-}
-```
-</CodeGroup>
-
 ### Use App Inputs
 
 App inputs allow you to collect customer input values such as resource IDs, tokens and more. These inputs are accesible
@@ -298,8 +177,7 @@ to all components and your sandbox, [using variables](/guides/using-variables#in
 
 To configure a sandbox parameter using an app input:
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [inputs]
 [[inputs.input]]
 name = "cluster_version"
@@ -316,35 +194,6 @@ branch = "main"
 cluster_version = "{{.nuon.install.inputs.cluster_version}}"
 ```
 
-```hcl Terraform
-resource "nuon_app_sandbox" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-  terraform_version = "v1.6.3"
-
-  public_repo = {
-    repo      = "nuonco/sandboxes"
-    branch    = "main"
-    directory = "aws-eks"
-  }
-
-  var {
-    name = "cluster_version"
-    value = "{{.nuon.install.inputs.cluster_version}}"
-  }
-}
-
-resource "nuon_app_input" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-
-  input {
-    name = "cluster_version"
-    description = "Kubernetes cluster version"
-    default = "v.1.27"
-  }
-}
-```
-</CodeGroup>
-
 ## Create a Custom Sandbox
 
 While our [open source sandboxes](https://github.com/nuonco/sandboxes) are a great starting point, you can always fork them, or create your own sandbox to support customizing.
@@ -352,8 +201,7 @@ While our [open source sandboxes](https://github.com/nuonco/sandboxes) are a gre
 To use a custom sandbox, simply update your config to point to your new sandbox code. Custom sandboxes can also use private GitHub repos, that are connected to Nuon.
 
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [sandbox]
 terraform_version = "v1.6.3"
 [sandbox.public_repo]
@@ -361,20 +209,6 @@ repo = "your-org/private-repo"
 directory = "sandbox"
 branch = "main"
 ```
-
-```hcl Terraform
-resource "nuon_app_sandbox" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-  terraform_version = "v1.6.3"
-
-  connected_repo = {
-    repo      = "your-org/private-repo"
-    directory = "sandbox"
-    branch    = "main"
-  }
-}
-```
-</CodeGroup>
 
 <br />
 
