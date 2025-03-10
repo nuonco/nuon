@@ -117,7 +117,7 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
   )
 
   const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGlobalFilter(e.target.value)
+    setGlobalFilter(e.target.value || '')
   }
 
   return (
@@ -133,6 +133,8 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
       data={data}
       columns={columns}
       columnFilters={columnFilters}
+      emptyMessage="Reset your search and try again."
+      emptyTitle="No actions found"
       globalFilter={globalFilter}
     />
   )

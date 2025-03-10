@@ -8,7 +8,6 @@ import { DataTableSearch, Table } from '@/components/DataTable'
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
 import { Time, Duration } from '@/components/Time'
-import { EventStatus } from '@/components/Timeline'
 import { ID, Text } from '@/components/Typography'
 // eslint-disable-next-line import/no-cycle
 import type {
@@ -127,7 +126,7 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
   )
 
   const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGlobalFilter(e.target.value)
+    setGlobalFilter(e.target.value || '')
   }
 
   return (
@@ -143,6 +142,8 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
       data={data}
       columns={columns}
       columnFilters={columnFilters}
+      emptyMessage="Reset your search and try again."
+      emptyTitle="No actions found"
       globalFilter={globalFilter}
     />
   )

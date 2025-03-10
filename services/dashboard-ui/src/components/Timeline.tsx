@@ -3,6 +3,7 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
 import { CaretRight } from '@phosphor-icons/react'
+import { EmptyStateGraphic } from '@/components/EmptyStateGraphic'
 import { Link } from '@/components/Link'
 import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
@@ -138,11 +139,13 @@ export const TimelineEvent: FC<ITimelineEvent> = ({
 export interface ITimeline {
   events: Array<ITimelineEvent>
   emptyMessage?: string
+  emptyTitle?: string
 }
 
 export const Timeline: FC<ITimeline> = ({
   events,
   emptyMessage = 'No events to show',
+  emptyTitle = "Nothing to show",
 }) => {
   return (
     <div className="flex flex-col gap-2 timeline">
@@ -151,7 +154,15 @@ export const Timeline: FC<ITimeline> = ({
           <TimelineEvent key={event.id} {...event} isMostRecent={i === 0} />
         ))
       ) : (
-        <Text variant="reg-14">{emptyMessage}</Text>
+        <div className="m-auto flex flex-col items-center max-w-[200px] my-6">
+          <EmptyStateGraphic variant="history" />
+          <Text className="mt-6" variant="med-14">
+            {emptyTitle}
+          </Text>
+          <Text variant="reg-12" className="text-center">
+            {emptyMessage}
+          </Text>
+        </div>
       )}
     </div>
   )
