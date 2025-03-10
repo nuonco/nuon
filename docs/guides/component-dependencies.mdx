@@ -1,6 +1,7 @@
 ---
 title: 'Component Dependencies'
 description: "Component dependencies allow you to create dependencies between components, and model your app as a graph."
+icon: 'code'
 ---
 
 ## Why Dependencies?
@@ -9,8 +10,7 @@ Most applications have either explicit or implicit dependencies between the diff
 
 For example, given an app that comprises a [Helm chart](/guides/helm-chart-components) component and a [Terraform component](./terraform-components):
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [[components]]
 name       = "helm"
 type       = "helm_chart"
@@ -32,38 +32,6 @@ repo      = "<your-org>/<your-repo>"
 branch    = "main"
 ```
 
-```hcl Terraform
-resource "nuon_helm_chart_component" "helm" {
-  name   = "helm"
-  app_id = nuon_app.<your-app>.id
-
-  chart_name = "helm"
-  connected_repo = {
-    directory = "components/helm"
-    repo      = "<your-org>/<your-repo>"
-    branch    = "main"
-  }
-
-  value {
-    name  = "database_url"
-    value = "{{.nuon.components.database.outputs.database_url}}"
-  }
-}
-
-resource "nuon_terraform_module_component" "terraform" {
-  name   = "database"
-  app_id = nuon_app.<your-app>.id
-  terraform_version = "v1.6.3"
-
-  connected_repo = {
-    directory = "components/terraform"
-    repo      = "<your-org>/<your-repo>"
-    branch    = "main"
-  }
-}
-```
-</CodeGroup>
-
 In this example, the `helm` chart requires that the database be provisioned _before_ it is deployed. Otherwise, the
 database will not exist yet, and the `database_url` output will not be defined.
 
@@ -80,9 +48,7 @@ The dependency graph is directed and _acyclic_, which means circular dependencie
 Nuon checks for cycles and will error if you attempt to define one.
 </Warning>
 
-### TOML
-
-If you're using the TOML config, dependencies will be inferred from the order of the components in the file.
+Dependencies will be inferred from the order of the components in your app config file.
 Every component will automatically depend on the component defined before it.
 If you re-order the components in the file, the dependencies will be updated.
 
@@ -111,48 +77,6 @@ repo      = "<your-org>/<your-repo>"
 branch    = "main"
 [components.values]
 database_url = "{{.nuon.components.database.outputs.database_url}}"
-```
-
-### Terraform
-
-Terraform doesn't care how you order resources in your configs, you must explicitly define dependencies when using the Terraform provider.
-While this requires a bit more work, it does give you full contol over the dependency graph.
-
-To define the dependencies for a component, add a `dependencies` field referencing the IDs of the other components that it depends on.
-
-```hcl
-resource "nuon_helm_chart_component" "helm" {
-  name       = "helm"
-  app_id     = nuon_app.<your-app>.id
-  chart_name = "helm"
-
-  connected_repo = {
-    directory = "components/helm"
-    repo      = "<your-org>/<your-repo>"
-    branch    = "main"
-  }
-
-  value = {
-    name  = "database_url"
-    value = "{{.nuon.components.database.outputs.database_url}}"
-  }
-
-  dependencies = [
-    nuon_terraform_module_component.database.id
-  ]
-}
-
-resource "nuon_terraform_module_component" "terraform" {
-  name   = "database"
-  app_id = nuon_app.<your-app>.id
-  terraform_version = "v1.6.3"
-
-  connected_repo = {
-    directory = "components/database"
-    repo      = "<your-org>/<your-repo>"
-    branch    = "main"
-  }
-}
 ```
 
 ## Install Provisioning

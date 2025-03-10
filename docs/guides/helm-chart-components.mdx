@@ -1,6 +1,7 @@
 ---
 title: 'Helm Chart Components'
 description: "Helm chart components allow you to connect an existing Helm chart and deploy it into your customer's cloud account."
+icon: 'code'
 ---
 
 Helm chart components allow you to deploy any helm from a public or connected repo. Please refer to the [Helm
@@ -12,9 +13,7 @@ options.
 
 To configure a Helm component, specify a repo, the required configuration values and version to deploy it with.
 
-<CodeGroup>
-
-```toml TOML
+```toml nuon.<your-app>.toml
 [[components]]
 name       = "helm_chart"
 type       = "helm_chart"
@@ -36,22 +35,6 @@ image:
 source = "./values.yaml"
 ```
 
-```hcl Terraform
-resource "nuon_helm_chart_chart_component" "helm_chart" {
-  name               = "helm_chart"
-  app_id             = nuon_app.<your-app>.id
-  helm_chart_version = "1.6.3"
-
-  connected_repo = {
-    directory = "helm_chart"
-    repo      = "<your-org>/<your-repo>"
-    branch    = "main"
-  }
-}
-```
-
-</CodeGroup>
-
 You can configure Helm components to use either a public repo (using a `public_repo` block) or a private GitHub
 repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
 
@@ -71,9 +54,7 @@ options, reference infrastructure from other components or access an image that 
 
 Examples for accessing common interpolated variables:
 
-<CodeGroup>
-
-```toml TOML
+```toml nuon.<your-app>.toml
 [[components]]
 name       = "helm_chart"
 type       = "helm_chart"
@@ -96,65 +77,11 @@ public_root_domain   = "{{.nuon.install.public_domain}}"
 internal_root_domain = "{{.nuon.install.internal_domain}}"
 ```
 
-```hcl Terraform
-resource "nuon_helm_chart_component" "helm_chart" {
-  name   = "helm_chart"
-  app_id = nuon_app.<your-app>.id
-
-  chart_name = "<your-app>"
-  connected_repo = {
-    directory = "components/helm-chart"
-    repo      = "<your-org>/<your-repo>"
-    branch    = "main"
-  }
-
-  // access a synced image
-  value {
-    name = "image_repository"
-    value = "{{.nuon.components.image.image.repository.uri}}"
-  }
-  value {
-    name = "image_tag"
-    value = "{{.nuon.components.image.image.tag}}"
-  }
-
-  // access outputs from a terraform component
-  value {
-    name = "output_value"
-    value = "{{.nuon.components.terraform.outputs.output_value}}"
-  }
-
-  // access outputs from the sandbox
-  value {
-    name = "aws_region"
-    value = "{{.nuon.install.sandbox.outputs.aws_region}}"
-  }
-  value {
-    name = "vpc_id"
-    value = "{{.nuon.install.sandbox.outputs.vpc.id}}"
-  }
-
-  // access information about the install domain
-  value {
-    name = "public_root_domain"
-    value = "{{.nuon.install.public_domain}}"
-  }
-  value {
-    name = "internal_root_domain"
-    value = "{{.nuon.install.internal_domain}}"
-  }
-}
-```
-
-</CodeGroup>
-
 ## Using a Helm Values File
 
 You can add a values file, and set multiple values at once.
 
-<CodeGroup>
-
-```toml TOML
+```toml nuon.<your-app>.toml
 [[components]]
 name       = "helm_chart"
 type       = "helm_chart"
@@ -169,27 +96,6 @@ image:
   tag: "{{.nuon.components.docker_build.image.name}}"
 """
 ```
-
-```hcl Terraform
-resource "nuon_helm_chart_component" "images" {
-  name       = "helm_chart"
-  app_id     = nuon_app.<your-app>.id
-  chart_name = "<your-app>"
-
-  connected_repo = {
-    directory = "components/helm-chart"
-    repo      = "<your-org>/<your-repo>"
-    branch    = "main"
-  }
-
-  values_file {
-    contents = yamlencode({
-      "image.tag": "{{.nuon.components.docker_build.image.name}}"
-    })
-  }
-}
-```
-</CodeGroup>
 
 <br />
 
@@ -221,7 +127,7 @@ If you want to leverage AWS services, you can provision an NLB that uses an ACM 
 
 Your chart would contain a Service resource, configured so that the operator will create an NLB.
 
-```yaml
+```yaml nlb_public.tpl
 ---
 apiVersion: v1
 kind: Service
@@ -263,28 +169,18 @@ nlbs:
 
 Then, you could set those values per install with the following component config.
 
-```hcl
-resource "nuon_helm_chart_component" "nlb" {
-  name   = "nlb"
-  app_id = nuon_app.<your-app>.id
-
-  chart_name = "nlb"
-  connected_repo = {
-    directory = "chart"
-    repo      = "<your-org>/<your-repo>"
-    branch    = "main"
-  }
-
-  value {
-    name = "nlbs.public_domain"
-    value = "nlb.{{.nuon.install.public_domain}}"
-  }
-
-  value {
-    name = "nlbs.public_domain_certificate_arn"
-    value = "{{.nuon.components.infra.outputs.public_domain_certificate_arn}}"
-  }
-}
+```toml nuon.<your-app>.toml
+[[components]]
+name       = "nlb"
+type       = "helm_chart"
+chart_name = "nlb"
+[components.connected_repo]
+directory = "components/nlb"
+repo      = "<your-org>/<your-repo>"
+branch    = "main"
+[components.values]
+"nlbs.public_domain"                 = "nlb.{{.nuon.install.public_domain}}"
+"nlbs.public_domain_certificate_arn" = "{{.nuon.components.infra.outputs.public_domain_certificate_arn}}"
 ```
 
 ### Nginx Ingress with Cert Manager
@@ -293,7 +189,7 @@ If you would prefer to manage resources within Kubernetes instead, you could use
 
 In your chart, you would define the Ingress and Certificate resources.
 
-```yaml
+```yaml api_public.tpl
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -347,9 +243,7 @@ nginx:
 
 You could then set the domain per install in your component config.
 
-<CodeGroup>
-
-```toml TOML
+```toml nuon.<your-app>.toml
 [[components]]
 name       = "nlb"
 type       = "helm_chart"
@@ -361,31 +255,6 @@ branch    = "main"
 [components.values]
 "nlbs.public_domain"                 = "nlb.{{.nuon.install.public_domain}}"
 ```
-
-```hcl Terraform
-resource "nuon_helm_chart_component" "nlb" {
-  name   = "nlb"
-  app_id = nuon_app.<your-app>.id
-
-  chart_name = "nlb"
-  connected_repo = {
-    directory = "components/nlb"
-    repo      = "<your-org>/<your-repo>"
-    branch    = "main"
-  }
-
-  value {
-    name = "nlbs.public_domain"
-    value = "nlb.{{.nuon.install.public_domain}}"
-  }
-}
-```
-
-</CodeGroup>
-
-<CodeGroup>
-
-</CodeGroup>
 
 <br />
 

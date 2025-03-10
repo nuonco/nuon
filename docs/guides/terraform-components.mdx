@@ -1,6 +1,7 @@
 ---
 title: 'Terraform Components'
 description: "Terraform components allow you to provision infrastructure in your customer's cloud account to power your install."
+icon: 'code'
 ---
 
 Terraform components allow you to deploy Terraform from a public or connected repo, to provision infrastructure
@@ -16,8 +17,7 @@ In order for Terraform modules to properly work with Nuon, they must specify an 
 
 To configure a Terraform component, specify a repo, the required configuration values, and the version of Terraform to run it with.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [[components]]
 name              = "infra"
 type              = "terraform_module"
@@ -28,21 +28,6 @@ repo      = "<your-org>/<your-repo>"
 branch    = "main"
 ```
 
-```hcl Terraform
-resource "nuon_terraform_module_component" "infra" {
-  name              = "infra"
-  app_id            = nuon_app.<your-app>.id
-  terraform_version = "1.6.3"
-
-  connected_repo = {
-    directory = "components/infra"
-    repo      = "<your-org>/<your-repo>"
-    branch    = "main"
-  }
-}
-```
-</CodeGroup>
-
 You can configure Terraform components to use either a public repo (using a `public_repo` block) or a private GitHub
 repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
 
@@ -52,8 +37,7 @@ You can configure terraform variables for a component using [component variables
 
 These variables can access inputs, other components, the sandbox, and details on the install itself.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [[components]]
 name              = "lambda_function"
 type              = "terraform_module"
@@ -67,31 +51,6 @@ AWS_REGION = "{{.nuon.install.sandbox.outputs.account.region}}"
 [components.vars]
 database_instance = "{{.nuon.install.inputs.database_instance}}"
 ```
-
-```hcl Terraform
-resource "nuon_terraform_module_component" "lambda_function" {
-  name   = "lambda_function"
-  app_id = nuon_app.<your-app>.id
-  terraform_version = "1.6.3"
-
-  connected_repo = {
-    directory = "components/lambda-function"
-    repo      = "<your-org>/<your-repo>"
-    branch    = "main"
-  }
-
-  env_var {
-    name = "AWS_REGION"
-    value = "{{.nuon.install.sandbox.outputs.account.region}}"
-  }
-
-  var {
-    name = "database_instance"
-    value = "{{.nuon.install.inputs.database_instance}}"
-  }
-}
-```
-</CodeGroup>
 
 ## Configuring Env Vars
 
