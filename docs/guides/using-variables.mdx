@@ -8,8 +8,7 @@ The components of your application can get custom configuration settings applied
 
 You can set these variables as vars in your Terraform configuration. For example, if you wanted to set values in a Helm chart:
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [[components]]
 name       = "helm_chart"
 type       = "helm_chart"
@@ -26,39 +25,6 @@ branch    = "main"
 # reference the install
 "reference-to-install-attribute" = "{{.nuon.install.public_domain}}"
 ```
-
-```hcl
-resource "nuon_helm_chart_component" "helm_chart" {
-  name       = "helm_chart"
-  app_id     = nuon_app.<your-app>.id
-  chart_name = "<your-app>"
-
-  connected_repo = {
-    directory = "components/helm-chart"
-    repo      = "<your-org>/<your-repo>"
-    branch    = "main"
-  }
-
-  # manually set a variable
-  value {
-    name  = "some-var-name"
-    value = "some-var-value"
-  }
-
-  # reference another component
-  value {
-    name  = "reference-to-other-component"
-    value = "{{.nuon.components.some_other_component.outputs.s3_bucket_name}}"
-  }
-
-  # reference the install
-  value {
-    name  = "reference-to-install-attribute"
-    value = "{{.nuon.install.public_domain}}"
-  }
-}
-```
-</CodeGroup>
 
 Example directly-set value would be
 

@@ -1,0 +1,110 @@
+---
+title: Using READMEs
+description: Use READMEs to support operating installs.
+icon: code
+---
+
+App READMEs allow you to define documentation for an app that can be rendered per-install. This guide will get you started using READMEs to support operating installs of your apps.
+
+## Adding a README to an App
+
+To add a README to an app, define the `readme` field in your app config. We'll start with something simple.
+
+```toml nuon.<your-app>.toml
+name = "My App"
+readme = "This is the README for My App."
+```
+
+Sync your config, and you should see this rendered on the Overview of each install of that app.
+
+## Formatting
+
+READMEs are technically just a string field, but our rendering in the Dashboard supports Markdown. You can also use TOML's multi-line strings to make formatting easier. Let's use both to add some more structure and content.
+
+```toml nuon.<your-app>.toml
+name = "My App"
+readme = """
+# My App
+
+This is the README for My App.
+
+## Sandbox
+
+This app uses the aws-eks sandbox.
+
+## Components
+
+This app consists of the following components.
+
+| Name | Type |
+|------|------|
+| api | container_image |
+| deployment | helm_chart |
+
+"""
+```
+
+<Note>Because Markdown accepts HTML, you can also use HTML/CSS/JS. However, we can't gaurantee that all valid HTML/CSS/JS will work when rendered in the Dashboard. Proceed with caution.</Note>
+
+## Variables
+
+READMEs support variables. These will be rendered server-side in the context of each install, just as they are in component and actions fields. We will use variables here to add some install info. We can also parametrize the app info, to make sure the README is up to date if we change the app config later.
+
+```toml nuon.<your-app>.toml
+name = "My App"
+readme = """
+# {{.nuon.app.name}}
+
+This is the README for {{.nuon.app.name}} in install {{.nuon.install.name}}.
+
+## Sandbox
+
+This app uses the {{.nuon.sandbox.type}} sandbox.
+
+## Components
+
+This app consists of the following components.
+
+- api
+- deployment
+
+```
+
+Additionally, because READMEs are designed to be rendered on a webpage, and variables use Golang templating, you have access to the full power of [Golang's templating language](https://pkg.go.dev/text/template). Let's use that to add component statuses.
+
+```toml nuon.<your-app>.toml
+name = "My App"
+readme = """
+# {{.nuon.app.name}}
+
+This is the README for {{.nuon.app.name}} in install {{.nuon.install.name}}.
+
+## Sandbox
+
+This app uses the {{.nuon.sandbox.type}} sandbox.
+
+## Components
+
+{{ if .nuon.components.populated }}
+
+This install is running the following app components.
+
+| Name | Status |
+|------|------|
+{{- range $name, $component := .nuon.components.components }}
+| `{{ $name }}` | `{{ $component.status }}` |
+{{- end }}
+
+{{ else }}
+
+__No app components are active in this install. You may need to run "Deploy Components" for this install.__
+
+{{ end }}
+
+```
+
+Because the Dashboard polls the Control Plane, you will get get near-real-time statuses for each component.
+
+## Conclusion
+
+You should now have the basic info you need to get started creating READMEs for your own apps.

@@ -11,8 +11,7 @@ There are two steps to setting up an installer: configuring the isntaller metada
 Configure an installer for your app by adding an installer block to one of your app configs.
 For example, if you had both an AWS EKS and Azure AKS versions of your app, your config would look something like this.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [installer]
 name                  = "Your App"
 description           = "A demo app."
@@ -44,42 +43,6 @@ apps = [
   "<your-azure-aks-app-id>"
 ]
 ```
-
-```hcl Terraform
-resource "nuon_app_installer" "<your-app>" {
-  app_id                = nuon_app.<your-app>.id
-  name                  = "Your App"
-  description           = "A demo app."
-  homepage_url          = "https://www.nuon.co/"
-  documentation_url     = "https://docs.nuon.co/"
-  community_url         = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
-  github_url            = "https://github.com/nuonco"
-  demo_url              = "https://www.nuon.co/"
-  logo_url              = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
-  og_image_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
-  favicon_url           = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
-
-  post_install_markdown = <<EOT
-# Your App
-
-Your App is being deployed.
-EOT
-
-  copyright_markdown = <<EOT
-© 2024 Nuon.
-EOT
-
-  footer_markdown = <<EOT
-[Terms of Service](https://nuon.co/terms)
-EOT
-
-  apps = [
-    "<your-aws-eks-app-id>",
-    "<your-azure-aks-app-id>"
-  ]
-}
-```
-</CodeGroup>
 
 You can run `nuon installers list` to confirm the installer was created.
 Once your installer has been created, you can set up a UI using either our template or the API.

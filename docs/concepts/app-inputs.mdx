@@ -9,7 +9,6 @@ Inputs are used to collect customer provider values, for configuring your app.
 
 Add inputs to your app using the following configuration block
 
-<CodeGroup>
 ```toml TOML
 [inputs]
 [[inputs.input]]
@@ -20,22 +19,6 @@ default      = ""
 required     = true
 sensitive    = false
 ```
-
-```hcl Terraform
-resource "nuon_app_input" "<your-app>" {
-  app_id = nuon_app.<your-app>.id
-
-  input {
-    name         = "vpc_id"
-    display_name = "VPC ID"
-    description  = "ID of the VPC to install the app into."
-    default      = ""
-    required     = true
-    sensitive    = false
-  }
-}
-```
-</CodeGroup>
 
 ## Configuration Using App Inputs
 
@@ -49,8 +32,8 @@ All inputs are accessed using `{{.nuon.install.inputs.<input-name>}}`.
 You can configure sandboxes by using install inputs as `var`s.
 
 For example, to use the `vpc_id` input, as a variable to configure the `aws-eks-byovpc` sandbox:
-<CodeGroup>
-```toml TOML
+
+```toml nuon.<your-app>.toml
 [sandbox]
 terraform_version = "1.6.3"
 [sandbox.public_repo]
@@ -61,25 +44,6 @@ branch    = "main"
 vpc_id = "{{.nuon.install.inputs.vpc_id}}"
 ```
 
-```hcl Terraform
-resource "nuon_app_sandbox" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-  terraform_version = "1.6.3"
-
-  public_repo = {
-    repo      = "nuonco/sandboxes"
-    branch    = "main"
-    directory = "aws-eks-byovpc"
-  }
-
-  var {
-    name = "vpc_id"
-    value = "{{.nuon.install.inputs.vpc_id}}"
-  }
-}
-```
-</CodeGroup>
-
 ### Configuring Components
 
 Depending upon the component type, you can use install inputs to configure components using Helm values, Terraform
@@ -87,8 +51,7 @@ variables or environment variables.
 
 To use inputs in a Terraform module.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [[components]]
 name              = "database"
 type              = "terraform_module"
@@ -102,35 +65,9 @@ DATABASE_PASSWORD = "{{.nuon.install.inputs.database_password}}"
 DATABASE_HOST     = "{{.nuon.install.inputs.database_host}}"
 ```
 
-```hcl Terraform
-resource "nuon_terraform_module_component" "database" {
-  name   = "database"
-  app_id = nuon_app.<your-app>.id
-  terraform_version = "1.6.3"
-
-  connected_repo = {
-    directory = "terraform"
-    repo      = "your-org/your-repo"
-    branch    = "main"
-  }
-
-  env_var {
-    name  = "DATABASE_PASSWORD"
-    value = "{{.nuon.install.inputs.database_password}}"
-  }
-
-  var {
-    name  = "DATABASE_HOST"
-    value = "{{.nuon.install.inputs.database_host}}"
-  }
-}
-```
-</CodeGroup>
-
 To use inputs in a Helm chart.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [[components]]
 name   = "database"
 [components.connected_repo]
@@ -142,34 +79,9 @@ DATABASE_PASSWORD = "{{.nuon.install.inputs.database_password}}"
 DATABASE_HOST     = "{{.nuon.install.inputs.database_host}}"
 ```
 
-```hcl Terraform
-resource "nuon_helm_chart_component" "app" {
-  name   = "database"
-  app_id = nuon_app.<your-app>.id
-
-  connected_repo = {
-    directory = "helm"
-    repo      = "your-org/your-repo"
-    branch    = "main"
-  }
-
-  value {
-    name  = "DATABASE_PASSWORD"
-    value = "{{.nuon.install.inputs.database_password}}"
-  }
-
-  value {
-    name  = "DATABASE_HOST"
-    value = "{{.nuon.install.inputs.database_host}}"
-  }
-}
-```
-</CodeGroup>
-
 To use inputs in a Docker image.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [[components]]
 name   = "docker-build"
 type   = "docker_build"
@@ -182,30 +94,9 @@ branch    = "main"
 docker_build_registry_password = "{{.nuon.install.inputs.docker_build_registry_password}}"
 ```
 
-```hcl Terraform
-resource "nuon_docker_build_component" "docker-build" {
-  name   = "docker-build"
-  app_id = nuon_app.<your-app>.id
-
-  connected_repo = {
-    directory = "."
-    repo      = "your-org/your-repo"
-    branch    = "main"
-  }
-
-  # use an input to pass in a docker registry password, when building an image
-  env_var {
-    name = "docker_build_registry_password"
-    value = "{{.nuon.install.inputs.docker_build_registry_password}}"
-  }
-}
-```
-</CodeGroup>
-
 To use inputs in a Kubernetes job.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [[components]]
 name      = "job"
 type      = "job"
@@ -215,23 +106,6 @@ tag       = "latest"
 ENV_VAR_API_TOKEN = "{{.nuon.install.inputs.api_token}}"
 ```
 
-```hcl Terraform
-resource "nuon_job_component" "job" {
-  name      = "job"
-  app_id    = nuon_app.<your-app>.id
-
-  image_url = "httpbin"
-  tag       = "latest"
-
-  # use an input to pass in some type of api token
-  env_var {
-    name  = "ENV_VAR_API_TOKEN"
-    value = "{{.nuon.install.inputs.api_token}}"
-  }
-}
-```
-</CodeGroup>
-
 ## App Input Groups
 
 You can organize inputs into groups, which are useful for structuring how they are visualized in the installer. By 
@@ -240,8 +114,7 @@ default, all inputs are created in the `default` group.
 To create a group, and add an input to it, simply declare the group in your config or terraform and set the `group` 
 field on any input belonging to it.
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 [[inputs.group]]
 name = "sandbox"
 description = "Sandbox inputs"
@@ -255,28 +128,6 @@ sensitive = false
 display_name = "VPC ID"
 group = "sandbox"
 ```
-
-```hcl Terraform
-resource "nuon_app_input_config" "app" {
-  app_id = nuon_app.<your-app>.id
-
-  group {
-    name = "sandbox_inputs"
-    description = "inputs for a sandbox"
-    display_name = "Sandbox Inputs"
-  }
-
-  input {
-    name         = "vpc id"
-    description = "vpc id"
-    required     = true
-    display_name = "vpc ID"
-    sensitive    = false
-    group = "sandbox_inputs"
-  }
-}
-```
-</CodeGroup>
 
 ## App Inputs For Customer Resources
 
