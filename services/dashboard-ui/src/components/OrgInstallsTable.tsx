@@ -172,7 +172,7 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
   }
 
   const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGlobalFilter(e.target.value)
+    setGlobalFilter(e.target.value || '')
   }
 
   return (
@@ -193,6 +193,8 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
       data={data}
       columns={columns}
       columnFilters={columnFilters}
+      emptyMessage="Reset your search or clear your filter and try again."
+      emptyTitle="No installs found"
       globalFilter={globalFilter}
     />
   )

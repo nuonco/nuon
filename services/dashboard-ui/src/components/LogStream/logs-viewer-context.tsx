@@ -66,7 +66,7 @@ export const LogsViewerProvider: FC<ILogsViewerProvider> = ({
   }
 
   const handleGlobalFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGlobalFilter(e.target.value)
+    setGlobalFilter(e.target.value || "")
   }
 
   const handleColumnSort = () => {

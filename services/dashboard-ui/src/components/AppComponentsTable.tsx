@@ -134,7 +134,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
   )
 
   const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGlobalFilter(e.target.value)
+    setGlobalFilter(e.target.value || '')
   }
 
   return (
@@ -150,6 +150,8 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
       data={data}
       columns={columns}
       columnFilters={columnFilters}
+      emptyMessage="Reset your search and try again."
+      emptyTitle="No components found"
       globalFilter={globalFilter}
     />
   )
