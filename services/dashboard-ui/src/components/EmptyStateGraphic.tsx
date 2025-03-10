@@ -2,8 +2,14 @@ import classNames from 'classnames'
 import React, { type FC } from 'react'
 import Image from 'next/image'
 
-export const EmptyStateGraphic: FC<{ isDarkModeOnly?: boolean }> = ({
+interface IEmptyStateGraphic {
+  isDarkModeOnly?: boolean
+  variant?: "404" | "actions" | "diagram" | "history" | "search" | "table"
+}
+
+export const EmptyStateGraphic: FC<IEmptyStateGraphic> = ({
   isDarkModeOnly = false,
+  variant = "404",
 }) => {
   return (
     <>
@@ -12,7 +18,7 @@ export const EmptyStateGraphic: FC<{ isDarkModeOnly?: boolean }> = ({
           hidden: isDarkModeOnly,
           'dark:hidden': !isDarkModeOnly,
         })}
-        src="/empty-diagram-light.svg"
+        src={`/empty-state/${variant}-light.svg`}
         alt=""
         height={90}
         width={150}
@@ -22,7 +28,7 @@ export const EmptyStateGraphic: FC<{ isDarkModeOnly?: boolean }> = ({
           block: isDarkModeOnly,
           hidden: !isDarkModeOnly,
         })}
-        src="/empty-diagram-dark.svg"
+        src={`/empty-state/${variant}-dark.svg`}
         alt=""
         height={90}
         width={150}
