@@ -61,17 +61,13 @@ Nuon apps allow you to create dependencies between components and expose a rich 
 between components for configuration. You can use [variables](/guides/using-variables) to configure components with
 the outputs of other components.
 
-## App Runner
+## App READMEs
 
-Nuon deploys an app runner into each install, which is responsible for managing the install. This runner performs the
-following actions:
+When running an App in an Install, you often need to document important info. It can also be nice to have some level of programmability, such being able to render a button that will trigger an Action. Additionally, this documentation must be rendered per-Install because certain values -- such as URLs -- will be different for each Install.
 
-* Deploys new container artifacts and infrastructure
-* Monitors running software
-* Manages releases and updating/deprovisioning parts of the app
-* Handles operations such as logs and more
+App READMEs were introduced to support this. Each App has a `readme` text field where you can define a Markdown document which will be rendered in the Dashboard for each Install of that App. You can use all valid Markdown, including HTML. You can also use variables, so that the document will be custom-rendered for each Install.
 
-Read more about app runner config [here](/concepts/runners).
+See the [Using READMEs](guides/using-readmes) guide for more details.
 
 ## App Management
 
@@ -208,17 +204,7 @@ You can add the following metadata to your application, which is used in install
 
 This metadata can be added via a config file or Terraform:
 
-<CodeGroup>
-```toml TOML
+```toml nuon.<your-app>.toml
 display_name = "Your App"
 description = "your app"
 ```
-
-```hcl Terraform
-resource "nuon_app" "<your-app>" {
-  name = "your_app"
-  display_name = "Your App"
-  description = "App description"
-}
-```
-</CodeGroup>

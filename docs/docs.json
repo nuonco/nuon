@@ -30,7 +30,6 @@
               "runner-architecture",
               "configuration-files",
               "cli",
-              "terraform-provider",
               "sdks"
             ]
           }
@@ -43,7 +42,7 @@
           "concepts/apps",
           "concepts/components",
           "concepts/installs",
-          "concepts/nuon-actions",
+          "concepts/actions",
           "concepts/installers",
           "concepts/platforms",
           "concepts/runners",
@@ -63,9 +62,8 @@
               "guides/container-image-components",
               "guides/terraform-components",
               "guides/helm-chart-components",
-              "guides/job-components",
               "guides/component-dependencies",
-              "guides/nuon-actions"
+              "guides/actions"
             ]
           },
           {
@@ -75,24 +73,19 @@
               "guides/install-access-delegation",
               "guides/create-installs",
               "guides/create-builds",
-              "guides/migrations",
               "guides/create-releases",
               "guides/using-variables",
+              "guides/using-readmes",
               "guides/bring-your-own-network",
               "guides/custom-domains",
               "guides/azure-support",
               "guides/sandbox-orgs",
-              "guides/team-management",
-              "guides/terraform-configuration-management"
+              "guides/team-management"
             ]
           },
           {
             "group": "Integrations",
-            "pages": [
-              "guides/sdk-integration",
-              "guides/notifications",
-              "guides/github-actions"
-            ]
+            "pages": ["guides/notifications", "guides/github-actions"]
           }
         ]
       },
@@ -135,7 +128,6 @@
               "api-ref/components/create-a-docker-build-component-config",
               "api-ref/components/create-an-external-image-component-config",
               "api-ref/components/create-a-helm-component-config",
-              "api-ref/components/create-a-job-component-config",
               "api-ref/components/get-latest-config-for-a-component",
               "api-ref/components/create-a-terraform-component-config"
             ]
