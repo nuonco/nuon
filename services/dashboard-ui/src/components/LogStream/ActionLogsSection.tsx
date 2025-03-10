@@ -60,7 +60,7 @@ export const ActionLogsSection: FC<IActionLogsSection> = ({ workflowRun }) => {
         <div>
           <ErrorFallback error={error} resetErrorBoundary={() => {}} />
         </div>
-      ) : isLoading ? (
+      ) : isLoading && !logs?.length ? (
         <div className="mt-12">
           <Loading loadingText="Loading workflow logs..." variant="stack" />
         </div>
