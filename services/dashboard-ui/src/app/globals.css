@@ -267,3 +267,7 @@
 .heartbeat-item-parent:hover + .heartbeat-item-parent .heartbeat-item {
   transform: scaleY(115%);
 }
+
+.prose :where(table):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  width: fit-content;
+}
