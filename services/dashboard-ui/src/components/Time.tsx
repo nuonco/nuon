@@ -1,3 +1,5 @@
+"use client"
+
 import { DateTime, Duration as LuxonDuration, type DurationUnits } from 'luxon'
 import React, { type FC } from 'react'
 import { Minus } from "@phosphor-icons/react/dist/ssr"
