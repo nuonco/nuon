@@ -9,7 +9,14 @@ import { Modal } from '@/components/Modal'
 import { Text } from '@/components/Typography'
 import { cancelRunnerJob } from '@/components/runner-actions'
 
-type TCancelJobType = 'build' | 'deploy' | 'sandbox-run' | 'workflow-run'
+export type TCancelJobType =
+  | 'build'
+  | 'deploy'
+  | 'sandbox-run'
+  | 'workflow-run'
+  | 'sandbox'
+  | 'actions'
+  | 'sync'
 
 type TCancelJobData = {
   buttonText: string
@@ -27,14 +34,30 @@ const cancelJobOptions: Record<TCancelJobType, TCancelJobData> = {
     buttonText: 'Cancel deploy',
     confirmHeading: 'Cancel component deployment?',
     confirmMessage:
-      'Are you sure you want to cancel this component depolyment?',
+      'Are you sure you want to cancel this component deployment?',
+  },
+  sync: {
+    buttonText: 'Cancel sync',
+    confirmHeading: 'Cancel component sync?',
+    confirmMessage: 'Are you sure you want to cancel this component sync?',
   },
   'sandbox-run': {
     buttonText: 'Cancel sandbox job',
     confirmHeading: 'Cancel sandbox job?',
     confirmMessage: 'Are you sure you want to cancel this sandbox job?',
   },
+
+  sandbox: {
+    buttonText: 'Cancel sandbox job',
+    confirmHeading: 'Cancel sandbox job?',
+    confirmMessage: 'Are you sure you want to cancel this sandbox job?',
+  },
   'workflow-run': {
+    buttonText: 'Cancel action',
+    confirmHeading: 'Cancel action workflow?',
+    confirmMessage: 'Are you sure you want to cancel this action workflow?',
+  },
+  actions: {
     buttonText: 'Cancel action',
     confirmHeading: 'Cancel action workflow?',
     confirmMessage: 'Are you sure you want to cancel this action workflow?',
@@ -130,9 +153,7 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
               <Check size="16" />
             ) : isLoading ? (
               <SpinnerSVG />
-            ) : 
-              null
-            }{' '}
+            ) : null}{' '}
             Cancel
           </Button>
         </div>

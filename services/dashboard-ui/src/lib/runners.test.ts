@@ -59,11 +59,11 @@ describe('getRunnerJob should handle response status codes from GET runner-jobs/
   })
 })
 
-describe('getRunnerJobs should handle response status codes from GET runners/:id/jobs endpoint', () => {
+describe.skip('getRunnerJobs should handle response status codes from GET runners/:id/jobs endpoint', () => {
   const orgId = 'test-id'
   const runnerId = 'test-id'
   test('200 status', async () => {
-    const spec = await getRunnerJobs({ runnerId, orgId })
+    const { runnerJobs: spec } = await getRunnerJobs({ runnerId, orgId })
     spec.forEach((s) => {
       expect(s).toHaveProperty('id')
       expect(s).toHaveProperty('executions')

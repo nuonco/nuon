@@ -2,11 +2,9 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
-import { Layout } from '@/components'
+import { Layout, OrgProvider } from '@/components'
 import { getAPIVersion, getOrg, getOrgs } from '@/lib'
-import {
-  VERSION,
-} from '@/utils'
+import { VERSION } from '@/utils'
 
 export default withPageAuthRequired(
   async function OrgLayout({ children, params }) {
@@ -30,24 +28,26 @@ export default withPageAuthRequired(
     ])
 
     return (
-      <Layout
-        org={org}
-        orgs={orgs}
-        versions={{
-          api: apiVersion,
-          ui: {
-            version: VERSION,
-          },
-        }}
-        featureFlags={{
-          ORG_DASHBOARD: org?.features?.['org-dashboard'],
-          ORG_RUNNER: org?.features?.['org-runner'],
-          ORG_SETTINGS: org.features?.['org-settings'],
-          ORG_SUPPORT: org.features?.['org-support'],
-        }}
-      >
-        {children}
-      </Layout>
+      <OrgProvider initOrg={org} shouldPoll>
+        <Layout
+          org={org}
+          orgs={orgs}
+          versions={{
+            api: apiVersion,
+            ui: {
+              version: VERSION,
+            },
+          }}
+          featureFlags={{
+            ORG_DASHBOARD: org?.features?.['org-dashboard'],
+            ORG_RUNNER: org?.features?.['org-runner'],
+            ORG_SETTINGS: org.features?.['org-settings'],
+            ORG_SUPPORT: org.features?.['org-support'],
+          }}
+        >
+          {children}
+        </Layout>
+      </OrgProvider>
     )
   },
   {
