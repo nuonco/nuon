@@ -29,6 +29,7 @@ type workspace struct {
 	Hooks     hooks.Hooks           `validate:"required"`
 
 	DisableCleanup bool
+	ControlCache   bool
 
 	// internal vars for managing the workspace
 	tmpDirRoot string
@@ -96,6 +97,13 @@ func WithBinary(bin binary.Binary) workspaceOption {
 func WithDisableCleanup(disable bool) workspaceOption {
 	return func(w *workspace) error {
 		w.DisableCleanup = disable
+		return nil
+	}
+}
+
+func WithControlCache(control bool) workspaceOption {
+	return func(w *workspace) error {
+		w.ControlCache = control
 		return nil
 	}
 }
