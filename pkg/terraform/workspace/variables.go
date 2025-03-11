@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -60,6 +61,12 @@ func (w *workspace) LoadVariables(ctx context.Context) error {
 		if err := w.writeFile(defaultVariablesFilename, byts, defaultFilePermissions); err != nil {
 			return fmt.Errorf("unable to write file: %w", err)
 		}
+	}
+
+	// if we want the workspace to control the cache location, we must explicitly set the TF_PLUGIN_CACHE_DIR env var
+	// this means we get a per-run cache that is automatically cleaned up along w/ the rest of the workspace
+	if w.ControlCache {
+		w.envVars["TF_PLUGIN_CACHE_DIR"] = path.Join(w.root, ".plugin-cache")
 	}
 
 	return nil
