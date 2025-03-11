@@ -1,17 +1,24 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
+	"gorm.io/gorm"
 )
 
 // @ID GetAppRunnerConfigs
 // @Summary	get app runner configs
 // @Description.markdown	get_app_runner_configs.md
 // @Param			app_id	path	string	true	"app ID"
+// @Param   offset query int	 false	"offset of jobs to return"	Default(0)
+// @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			apps
 // @Accept			json
 // @Produce		json
@@ -32,16 +39,35 @@ func (s *service) GetAppRunnerConfigs(ctx *gin.Context) {
 	}
 
 	appID := ctx.Param("app_id")
-	app, err := s.findApp(ctx, org.ID, appID)
+	configs, err := s.findAppRunnerConfigs(ctx, org.ID, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
 		return
 	}
 
-	if len(app.AppRunnerConfigs) < 1 {
+	if len(configs) < 1 {
 		ctx.Error(fmt.Errorf("no app runner configs found for app"))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, app.AppRunnerConfigs)
+	ctx.JSON(http.StatusOK, configs)
+}
+
+func (s *service) findAppRunnerConfigs(ctx context.Context, orgID, appID string) ([]app.AppRunnerConfig, error) {
+	app := app.App{}
+	res := s.db.WithContext(ctx).
+		// runner config
+		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.
+				Scopes(scopes.WithPagination).
+				Order("app_runner_configs.created_at DESC")
+		}).
+		Where("name = ? AND org_id = ?", appID, orgID).
+		Or("id = ?", appID).
+		First(&app)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get app: %w", res.Error)
+	}
+
+	return app.AppRunnerConfigs, nil
 }

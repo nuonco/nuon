@@ -30,6 +30,9 @@ type Repository struct {
 // @ID GetAllVCSConnectedRepos
 // @Summary	get all vcs connected repos for an org
 // @Description.markdown get_all_vcs_connected_repos.md
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			vcs
 // @Accept			json
 // @Produce		json

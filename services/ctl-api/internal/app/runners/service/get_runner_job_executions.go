@@ -9,11 +9,15 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetRunnerJobExecutions
 // @Summary	get runner job executions
 // @Description.markdown	get_runner_job_executions.md
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Param			runner_job_id	path	string	true	"runner job ID"
 // @Tags runners/runner,runners
 // @Accept			json
@@ -42,6 +46,7 @@ func (s *service) GetRunnerJobExecutions(ctx *gin.Context) {
 func (s *service) getRunnerJobExecutions(ctx context.Context, runnerJobID string) ([]app.RunnerJobExecution, error) {
 	var runnerJob *app.RunnerJob
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Preload("Executions", func(db *gorm.DB) *gorm.DB {
 			return db.Order("runner_job_executions.created_at DESC").Limit(1000)
 		}).

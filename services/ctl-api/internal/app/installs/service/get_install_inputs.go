@@ -9,11 +9,15 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetInstallInputs
 // @Summary	get an installs inputs
 // @Description.markdown	get_install_inputs.md
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			installs
 // @Accept			json
 // @Produce		json
@@ -43,7 +47,9 @@ func (s *service) getInstallInputs(ctx context.Context, installID string) ([]app
 	var install app.Install
 	res := s.db.WithContext(ctx).
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs_view_v1.created_at DESC")
+			return db.
+				Scopes(scopes.WithPagination).
+				Order("install_inputs_view_v1.created_at DESC")
 		}).
 		First(&install, "id = ?", installID)
 	if res.Error != nil {

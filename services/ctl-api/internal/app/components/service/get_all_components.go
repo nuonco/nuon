@@ -7,11 +7,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetAllComponents
 // @Summary	get all components for all orgs
 // @Description.markdown	get_all_components.md
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			components/admin
 // @Security AdminEmail
 // @Accept			json
@@ -30,6 +34,7 @@ func (s *service) GetAllComponents(ctx *gin.Context) {
 func (s *service) getAllComponents(ctx context.Context) ([]*app.Component, error) {
 	var components []*app.Component
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Order("created_at desc").
 		Preload("Dependencies").
 		Find(&components)

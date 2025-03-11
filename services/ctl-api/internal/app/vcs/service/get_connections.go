@@ -8,11 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetOrgVCSConnections
 // @Summary	get vcs connection for an org
 // @Description.markdown	get_org_vcs_connections.md
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			vcs
 // @Accept			json
 // @Produce		json
@@ -44,7 +48,9 @@ func (s *service) GetConnections(ctx *gin.Context) {
 func (s *service) getOrgConnections(ctx context.Context, orgID string) ([]*app.VCSConnection, error) {
 	var vcsConns []*app.VCSConnection
 
-	res := s.db.WithContext(ctx).Where("org_id = ?", orgID).Find(&vcsConns)
+	res := s.db.
+		Scopes(scopes.WithPagination).
+		WithContext(ctx).Where("org_id = ?", orgID).Find(&vcsConns)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get vcs connections: %w", res.Error)
 	}
