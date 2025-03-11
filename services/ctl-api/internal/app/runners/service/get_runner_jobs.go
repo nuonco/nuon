@@ -17,9 +17,11 @@ import (
 // @Summary	get runner jobs
 // @Description.markdown	get_runner_jobs.md
 // @Param			runner_id	path	string	true	"runner ID"
-// @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
 // @Param   group query string false	"job group"	     Default(any)
 // @Param   status query string false	"job status"	     Default(available)
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags    runners/runner
 // @Accept			json
 // @Produce		json
@@ -74,7 +76,10 @@ func (s *service) getRunnerJobs(ctx context.Context, runnerID string, status app
 	}
 
 	res := s.db.WithContext(ctx).
-		Scopes(scopes.WithDisableViews).
+		Scopes(
+			scopes.WithDisableViews,
+			scopes.WithPagination,
+		).
 		Limit(limit).
 		Where(where).
 		Order("created_at desc").

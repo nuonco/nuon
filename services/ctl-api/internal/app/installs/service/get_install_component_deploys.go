@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
 
@@ -15,6 +16,10 @@ import (
 // @Description.markdown	get_install_component_deploys.md
 // @Param			install_id		path	string	true	"install ID"
 // @Param			component_id	path	string	true	"component ID"
+// @Param			install_id	path	string	true	"install ID"
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			installs
 // @Accept			json
 // @Produce		json
@@ -46,7 +51,9 @@ func (s *service) getInstallComponentDeploys(ctx context.Context, installID, com
 		InstallID:   installID,
 	}
 	res := s.db.WithContext(ctx).Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
-		return db.Order("install_deploys.created_at DESC").Limit(1000)
+		return db.
+			Scopes(scopes.WithPagination).
+			Order("install_deploys.created_at DESC").Limit(1000)
 	}).
 		Preload("InstallDeploys.ComponentBuild").
 		Preload("InstallDeploys.ComponentBuild.VCSConnectionCommit").

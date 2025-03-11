@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetAllInstallers
@@ -16,11 +17,14 @@ import (
 // @Description.markdown	get_all_installers.md
 // @Tags			installers/admin
 // @Accept			json
-// @Param   limit  query int	 false	"limit of installers to return"	     Default(60)
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Produce		json
 // @Success		200	{array}	app.Installer
 // @Router			/v1/installers [get]
 func (s *service) GetAllInstallers(ctx *gin.Context) {
+	// TODO: remove limit when pagination is enabled
 	limitStr := ctx.DefaultQuery("limit", "60")
 	limitVal, err := strconv.Atoi(limitStr)
 	if err != nil {
@@ -43,6 +47,7 @@ func (s *service) GetAllInstallers(ctx *gin.Context) {
 func (s *service) getAllInstallers(ctx context.Context, limitVal int) ([]*app.Installer, error) {
 	var installers []*app.Installer
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Preload("Metadata").
 		Preload("Apps").
 		Preload("Apps.Org").
