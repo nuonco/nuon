@@ -129,7 +129,7 @@ const LoadRunner: FC<{
   runnerId: string
   orgId: string
 }> = async ({ installId, runnerId, orgId }) => {
-  const [runner, runnerJobs, runnerHeartbeat] = await Promise.all([
+  const [runner, { runnerJobs }, runnerHeartbeat] = await Promise.all([
     getRunner({
       orgId,
       runnerId,
