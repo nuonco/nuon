@@ -8,12 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetInstallDeploys
 // @Summary	get all deploys to an install
 // @Description.markdown	get_install_deploys.md
 // @Param			install_id	path	string	true	"install ID"
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			installs
 // @Accept			json
 // @Produce		json
@@ -41,6 +45,7 @@ func (s *service) GetInstallDeploys(ctx *gin.Context) {
 func (s *service) getInstallDeploys(ctx context.Context, installID string) ([]*app.InstallDeploy, error) {
 	var installDeploys []*app.InstallDeploy
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Preload("ActionWorkflowRuns").
 		Preload("InstallComponent").
 		Preload("InstallComponent.Component").

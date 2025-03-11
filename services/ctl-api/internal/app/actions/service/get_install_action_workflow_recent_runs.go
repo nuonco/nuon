@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetInstallActionWorkflowRecentRuns
@@ -19,6 +21,10 @@ import (
 // @Description.markdown	get_install_action_workflow_recent_runs.md
 // @Param			install_id	path	string	true	"install ID"
 // @Param			action_workflow_id	path	string	true	"action workflow ID"
+// @Param			action_workflow_id	path	string	true	"action workflow ID"
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			actions
 // @Accept			json
 // @Produce		json
@@ -58,8 +64,15 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 	return &install, nil
 }
 
-func (s *service) getRecentRuns(ctx context.Context, orgID, installID, actionWorkflowID string) (*app.InstallActionWorkflow, error) {
+func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkflowID string) (*app.InstallActionWorkflow, error) {
 	var installActionWorkflow app.InstallActionWorkflow
+	// TODO remove reading from query params
+	limitStr := ctx.DefaultQuery("limit", "50")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert limit to int: %w", err)
+	}
+
 	res := s.db.WithContext(ctx).
 		Where(app.InstallActionWorkflow{
 			InstallID:        installID,
@@ -68,14 +81,19 @@ func (s *service) getRecentRuns(ctx context.Context, orgID, installID, actionWor
 		}).
 		Preload("ActionWorkflow").
 		Preload("ActionWorkflow.Configs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("action_workflow_configs.created_at DESC")
+			return db.
+				Order("action_workflow_configs.created_at DESC").
+				Limit(1)
 		}).
 		Preload("ActionWorkflow.Configs.Triggers").
 		Preload("ActionWorkflow.Configs.Steps").
 		Preload("ActionWorkflow.Configs.Steps.PublicGitVCSConfig").
 		Preload("ActionWorkflow.Configs.Steps.ConnectedGithubVCSConfig").
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
-			return db.Limit(50).Order("install_action_workflow_runs.created_at DESC")
+			return db.
+				Scopes(scopes.WithPagination).
+				Order("install_action_workflow_runs.created_at DESC").
+				Limit(limit)
 		}).
 		First(&installActionWorkflow)
 	if res.Error != nil {

@@ -8,12 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
 
 // @ID GetApps
 // @Summary	get all apps for the current org
 // @Description.markdown	get_apps.md
+// @Param   offset query int	 false	"offset of jobs to return"	Default(0)
+// @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			apps
 // @Accept			json
 // @Produce		json
@@ -48,6 +52,7 @@ func (s *service) getApps(ctx context.Context, orgID string) ([]*app.App, error)
 	}
 
 	err := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_runner_configs.created_at DESC")
 		}).

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID AdminGetAllRunners
@@ -16,6 +17,9 @@ import (
 // @Schemes
 // @Description	return all orgs
 // @Param   type query string false "type of runner to return"	     Default(org)
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags runners/admin
 // @Security AdminEmail
 // @Accept			json
@@ -38,6 +42,7 @@ func (s *service) getAllRunners(ctx context.Context, typ string) ([]*app.Runner,
 	var runners []*app.Runner
 
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Preload("CreatedBy").
 		Joins("JOIN runner_groups ON runner_groups.id = runners.runner_group_id").
 		Where("runner_groups.type = ?", typ).
