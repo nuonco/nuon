@@ -5,7 +5,6 @@ import type {
   TRunner,
   TRunnerJob,
   TLogStream,
-  TOTELLog,
   TRunnerHeartbeat,
   TRunnerHealthCheck,
 } from '@/types'
@@ -24,45 +23,70 @@ export async function getRunner({ orgId, runnerId }: IGetRunner) {
   })
 }
 
+export type TRunnerJobGroup =
+  | 'sync'
+  | 'build'
+  | 'deploy'
+  | 'sandbox'
+  | 'runner'
+  | 'actions'
+  | 'operations'
+  | 'health-checks'
+
+export type TRunnerJobStatus =
+  | 'queued'
+  | 'available'
+  | 'in-progress'
+  | 'finished'
+  | 'failed'
+  | 'timed-out'
+  | 'not-attempted'
+  | 'cancelled'
+  | 'unknown'
+
 export interface IGetRunnerJobs extends IGetRunner {
   options?: {
+    offset?: string
     limit?: string
-    groups?: Array<
-      | 'sync'
-      | 'build'
-      | 'deploy'
-      | 'sandbox'
-      | 'runner'
-      | 'actions'
-      | 'operations'
-      | 'health-checks'
-    >
-    statuses?: Array<
-      | 'queued'
-      | 'available'
-      | 'in-progress'
-      | 'finished'
-      | 'failed'
-      | 'timed-out'
-      | 'not-attempted'
-      | 'cancelled'
-      | 'unknown'
-    >
+    groups?: Array<TRunnerJobGroup>
+    statuses?: Array<TRunnerJobStatus>
   }
+}
+
+export type TPagination = {
+  hasNext: string
+  offset: string
 }
 
 export async function getRunnerJobs({
   orgId,
   runnerId,
   options = {},
-}: IGetRunnerJobs) {
+}: IGetRunnerJobs): Promise<{
+  runnerJobs: Array<TRunnerJob>
+  pageData?: TPagination
+}> {
   const params = new URLSearchParams(options).toString()
 
-  return queryData<Array<TRunnerJob>>({
-    errorMessage: 'Unable to retrieve runner jobs.',
-    orgId,
-    path: `runners/${runnerId}/jobs${params ? '?' + params : params}`,
-  })
+  // return queryData<Array<TRunnerJob>>({
+  //   errorMessage: 'Unable to retrieve runner jobs.',
+  //   orgId,
+  //   path: `runners/${runnerId}/jobs${params ? '?' + params : params}`,
+  // })
+
+  const res = await fetch(
+    `${API_URL}/v1/runners/${runnerId}/jobs${params ? '?' + params : params}`,
+    await getFetchOpts(orgId, { 'x-nuon-pagination-enabled': true })
+  )
+  const runnerJobs = await res.json()
+
+  return {
+    runnerJobs,
+    pageData: {
+      hasNext: res.headers.get('x-nuon-page-next') || 'false',
+      offset: res.headers?.get('x-nuon-page-offset') || '0',
+    },
+  }
 }
 
 export interface IGetRunnerJob extends Omit<IGetRunner, 'runnerId'> {
