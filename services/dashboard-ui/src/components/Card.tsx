@@ -22,6 +22,7 @@ export interface ISection extends React.HTMLAttributes<HTMLDivElement> {
   actions?: React.ReactNode | null
   childrenClassName?: string
   heading?: React.ReactNode
+    headingClassName?: string
   isHeadingFixed?: boolean
 }
 
@@ -31,6 +32,7 @@ export const Section: FC<ISection> = ({
   children,
   childrenClassName,
   heading,
+  headingClassName,
   isHeadingFixed = false,
   ...props
 }) => {
@@ -46,6 +48,7 @@ export const Section: FC<ISection> = ({
         <SectionHeader
           actions={actions}
           heading={heading}
+          className={headingClassName}
           isHeadingFixed={isHeadingFixed}
         />
       ) : null}
