@@ -3,6 +3,7 @@ package loop
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
@@ -21,6 +22,7 @@ import (
 
 const (
 	maxSignals int = 10
+	checkExistsInterval = 3 * time.Minute
 )
 
 // Loop is the generic implementation of Nuon's Temporal-backed event loop. Start an event
@@ -163,6 +165,19 @@ func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.Event
 	signalCount := 0
 	stop := false
 	restart := false
+	checkExists := func() () {
+		exists := true
+		var err error
+		if w.ExistsHook != nil {
+			exists, err = w.ExistsHook(ctx, req)
+			if err != nil {
+				// This should only be reachable in the event of an underlying temporal error.
+				l.Error("error checking for existence of underlying object", zap.Error(err))
+			}
+		}
+		stop = !exists
+	}
+
 
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
@@ -173,18 +188,7 @@ func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.Event
 			return
 		}
 
-		exists := true
-		if w.ExistsHook != nil {
-			exists, err = w.ExistsHook(ctx, req)
-			if err != nil {
-				// This should only be reachable in the event of an underlying temporal error.
-				l.Error("error checking for existence", zap.Error(err))
-				return
-			}
-		}
-
-		stop = !exists
-
+		checkExists()
 		if stop {
 			// By aborting here if the underlying object does not exist, we encode that no event loop-based cleanup may occur
 			// after the underlying object is deleted.
@@ -212,6 +216,10 @@ func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.Event
 		}
 	})
 
+	existsFut := func(f workflow.Future) {
+		checkExists()
+	}
+
 	for !stop {
 		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
 			w.MW.Incr(ctx, "event_loop.canceled", metrics.ToTags(defaultTags)...)
@@ -219,7 +227,10 @@ func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.Event
 			break
 		}
 
-		selector.Select(ctx)
+		// Register a new future on the selector with a fresh timeout that will fire
+		// the exists check
+		fsel := selector.AddFuture(workflow.NewTimer(ctx, checkExistsInterval), existsFut)
+		fsel.Select(ctx)
 
 		if restart {
 			w.MW.Incr(ctx, "event_loop.restarted", metrics.ToTags(defaultTags)...)
