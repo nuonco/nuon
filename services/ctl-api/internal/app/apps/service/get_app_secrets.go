@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
 
@@ -14,6 +15,9 @@ import (
 // @Summary	get app secrets
 // @Description.markdown	get_app_secrets.md
 // @Param			app_id	path	string	true	"app ID"
+// @Param   offset query int	 false	"offset of jobs to return"	Default(0)
+// @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			apps
 // @Accept			json
 // @Produce		json
@@ -44,7 +48,9 @@ func (s *service) getAppSecrets(ctx context.Context, appID string) ([]app.AppSec
 	res := s.db.WithContext(ctx).
 		Preload("AppSecrets.CreatedBy").
 		Preload("AppSecrets", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_secrets.created_at DESC")
+			return db.
+				Scopes(scopes.WithPagination).
+				Order("app_secrets.created_at DESC")
 		}).
 		First(&currentApp, "id = ?", appID)
 	if res.Error != nil {

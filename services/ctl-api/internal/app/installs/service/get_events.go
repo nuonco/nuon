@@ -7,12 +7,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetInstallEvents
 // @Summary	get events for an install
 // @Description.markdown	 get_install_events.md
 // @Param			install_id	path	string	true	"install ID"
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			installs
 // @Accept			json
 // @Produce		json
@@ -40,6 +44,7 @@ func (s *service) GetInstallEvents(ctx *gin.Context) {
 func (s *service) getInstallEvents(ctx context.Context, installID string) ([]app.InstallEvent, error) {
 	var installEvents []app.InstallEvent
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Where("install_id = ?", installID).
 		Order("created_at desc").
 		Find(&installEvents)

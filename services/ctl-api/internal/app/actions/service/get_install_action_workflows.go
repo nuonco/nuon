@@ -10,12 +10,16 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetInstallActionWorkflows
 // @Summary	get an installs action workflows
 // @Description.markdown	get_install_action_workflows.md
 // @Param			install_id	path	string	true	"install ID"
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			installs
 // @Accept			json
 // @Produce		json
@@ -43,7 +47,9 @@ func (s *service) getInstallActionWorkflows(ctx context.Context, installID strin
 	install := &app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("InstallActionWorkflows", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_action_workflows.created_at DESC")
+			return db.
+				Scopes(scopes.WithPagination).
+				Order("install_action_workflows.created_at DESC")
 		}).
 		Preload("InstallActionWorkflows.ActionWorkflow").
 		First(&install, "id = ?", installID)

@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetAppInstalls
@@ -16,6 +17,9 @@ import (
 // @Description.markdown	get_app_installs.md
 // @Param			app_id	path	string	true	"app ID"
 // @Param		  q	query	string	false	"search query"
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			installs
 // @Accept			json
 // @Produce		json
@@ -31,8 +35,7 @@ import (
 func (s *service) GetAppInstalls(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	q := ctx.Query("q")
-	fmt.Println("appID", appID)
-	fmt.Println("q", q)
+
 	installs, err := s.getAppInstalls(ctx, appID, q)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
@@ -44,7 +47,8 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 
 func (s *service) getAppInstalls(ctx context.Context, appID string, q string) ([]app.Install, error) {
 	currentApp := &app.App{}
-	tx := s.db.WithContext(ctx)
+	tx := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination)
 
 	if q != "" {
 		tx = tx.Preload("Installs", "name ILIKE ?", "%"+q+"%")

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetComponentReleases
@@ -14,6 +15,9 @@ import (
 // @Summary	get all releases for a component
 // @Description.markdown	get_component_releases.md
 // @Param			component_id	path	string	true	"component ID"
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			releases
 // @Accept			json
 // @Produce		json
@@ -41,6 +45,7 @@ func (s *service) GetComponentReleases(ctx *gin.Context) {
 func (s *service) getComponentReleases(ctx context.Context, componentID string) ([]app.ComponentRelease, error) {
 	var releases []app.ComponentRelease
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		// join component-releases to component-builds to component-config-connections to components
 		Joins("JOIN component_builds ON component_builds.id=component_releases.component_build_id").
 		Joins("JOIN component_config_connections ON component_config_connections.id=component_builds.component_config_connection_id").

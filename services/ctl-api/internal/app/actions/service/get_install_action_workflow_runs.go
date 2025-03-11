@@ -9,12 +9,16 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetInstallActionWorkflowRuns
 // @Summary	get action workflow runs by install id
 // @Description.markdown	get_install_action_workflow_runs.md
 // @Param			install_id	path	string	true	"install ID"
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			actions
 // @Accept			json
 // @Produce		json
@@ -47,6 +51,7 @@ func (s *service) GetInstallActionWorkflowRuns(ctx *gin.Context) {
 func (s *service) findInstallActionWorkflowRuns(ctx context.Context, orgID, installID string) ([]*app.InstallActionWorkflowRun, error) {
 	runs := []*app.InstallActionWorkflowRun{}
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Where("org_id = ? AND install_id = ?", orgID, installID).
 		Order("created_at desc").
 		Find(&runs)

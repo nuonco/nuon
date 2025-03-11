@@ -8,11 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetOrgComponents
 // @Summary	get all components for an org
 // @Description.markdown	get_org_components.md
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			components
 // @Accept			json
 // @Produce		json
@@ -45,6 +49,7 @@ func (s *service) getOrgComponents(ctx context.Context, orgID string) ([]app.Com
 	comps := []app.Component{}
 
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Joins("JOIN apps on apps.id=components.app_id").
 		Where("apps.org_id = ?", orgID).
 		Order("created_at desc").

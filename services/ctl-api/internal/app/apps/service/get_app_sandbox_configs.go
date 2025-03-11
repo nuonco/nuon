@@ -1,17 +1,24 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
+	"gorm.io/gorm"
 )
 
 // @ID GetAppSandboxConfigs
 // @Summary	get app sandbox configs
 // @Description.markdown	get_app_sandbox_configs.md
 // @Param			app_id	path	string	true	"app ID"
+// @Param   offset query int	 false	"offset of jobs to return"	Default(0)
+// @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			apps
 // @Accept			json
 // @Produce		json
@@ -32,16 +39,38 @@ func (s *service) GetAppSandboxConfigs(ctx *gin.Context) {
 	}
 
 	appID := ctx.Param("app_id")
-	app, err := s.findApp(ctx, org.ID, appID)
+	cfgs, err := s.findAppSandboxConfigs(ctx, org.ID, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
 		return
 	}
 
-	if len(app.AppSandboxConfigs) < 1 {
+	if len(cfgs) < 1 {
 		ctx.Error(fmt.Errorf("no app sandbox configs found for app"))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, app.AppSandboxConfigs)
+	ctx.JSON(http.StatusOK, cfgs)
+}
+
+func (s *service) findAppSandboxConfigs(ctx context.Context, orgID, appID string) ([]app.AppSandboxConfig, error) {
+	app := app.App{}
+	res := s.db.WithContext(ctx).
+		// sandbox configs
+		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.
+				Scopes(scopes.WithPagination).
+				Order("app_sandbox_configs.created_at DESC")
+		}).
+		Preload("AppSandboxConfigs.PublicGitVCSConfig").
+		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
+		Preload("AppSandboxConfigs.AWSDelegationConfig").
+		Where("name = ? AND org_id = ?", appID, orgID).
+		Or("id = ?", appID).
+		First(&app)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get app: %w", res.Error)
+	}
+
+	return app.AppSandboxConfigs, nil
 }
