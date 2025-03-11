@@ -11,6 +11,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetAllInstalls
@@ -19,12 +20,15 @@ import (
 // @Tags			installs/admin
 // @Security AdminEmail
 // @Accept			json
-// @Param   limit  query int	 false	"limit of installs to return"	     Default(60)
 // @Param   type query string false "type of installs to return"	     Default(real)
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Produce		json
 // @Success		200	{array}	app.Install
 // @Router			/v1/installs [get]
 func (s *service) GetAllInstalls(ctx *gin.Context) {
+	// TODO: remove after pagination is enabled
 	limitStr := ctx.DefaultQuery("limit", "60")
 	limitVal, err := strconv.Atoi(limitStr)
 	if err != nil {
@@ -48,6 +52,7 @@ func (s *service) GetAllInstalls(ctx *gin.Context) {
 func (s *service) getAllInstalls(ctx context.Context, limitVal int, orgTyp string) ([]*app.Install, error) {
 	var installs []*app.Install
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Preload("AppSandboxConfig").
 		Preload("AWSAccount").
 		Preload("AzureAccount").

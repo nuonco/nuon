@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
 
@@ -14,6 +15,9 @@ import (
 // @Summary	get a release
 // @Description.markdown	get_release.md
 // @Param			release_id	path	string	true	"release ID"
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			releases
 // @Accept			json
 // @Produce		json
@@ -41,7 +45,9 @@ func (s *service) getReleaseSteps(ctx context.Context, releaseID string) ([]app.
 	var release app.ComponentRelease
 	res := s.db.WithContext(ctx).
 		Preload("ComponentReleaseSteps", func(db *gorm.DB) *gorm.DB {
-			return db.Order("component_release_steps.created_at DESC")
+			return db.
+				Scopes(scopes.WithPagination).
+				Order("component_release_steps.created_at DESC")
 		}).
 		Preload("ComponentReleaseSteps.InstallDeploys").
 		First(&release, "id = ?", releaseID)

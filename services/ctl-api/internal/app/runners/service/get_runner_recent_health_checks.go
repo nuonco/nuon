@@ -17,6 +17,9 @@ import (
 // @Description.markdown get_runner_recent_health_checks.md
 // @Param			runner_id	path	string	true	"runner ID"
 // @Param   window query string false	"window of health checks to return"	     Default(1h)
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags runners
 // @Accept			json
 // @Produce		json
@@ -59,7 +62,10 @@ func (s *service) getRunnerRecentHealthChecks(ctx context.Context, runnerID stri
 	healthChecks := []*app.RunnerHealthCheck{}
 
 	res := s.chDB.WithContext(ctx).
-		Scopes(scopes.WithOverrideTable("runner_health_checks_view_v1")).
+		Scopes(
+			scopes.WithOverrideTable("runner_health_checks_view_v1"),
+			scopes.WithPagination,
+		).
 		Where(app.RunnerHealthCheck{
 			RunnerID: runnerID,
 		}).

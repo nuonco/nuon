@@ -17,13 +17,13 @@ import (
 // @ID GetRunnerJobs
 // @Summary	get runner jobs
 // @Description.markdown	get_runner_jobs.md
-// @Param			runner_id	path	string	true	"runner ID"
-// @Param   offset query int	 false	"offset of jobs to return"	Default(0)
-// @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
 // @Param   group query string false	"job group"
 // @Param   groups query string false	"job groups"
 // @Param   status query string false	"job status"
 // @Param   statuses query string false	"job statuses"
+// @Param			runner_id	path	string	true	"runner ID"
+// @Param   offset query int	 false	"offset of jobs to return"	Default(0)
+// @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
 // @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags    runners
 // @Accept			json
