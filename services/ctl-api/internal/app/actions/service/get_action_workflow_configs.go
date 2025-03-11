@@ -10,12 +10,16 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetActionWorkflowConfigs
 // @Summary	get action workflow for an app
 // @Description.markdown	get_action_workflow_configs.md
 // @Param			action_workflow_id	path	string	true	"action workflow ID"
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			actions
 // @Accept			json
 // @Produce		json
@@ -48,6 +52,7 @@ func (s *service) GetActionWorkflowConfigs(ctx *gin.Context) {
 func (s *service) findActionWorkflowConfigs(ctx context.Context, orgID, awID string) ([]*app.ActionWorkflowConfig, error) {
 	actionWorkflowConfigs := []*app.ActionWorkflowConfig{}
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Preload("Triggers").
 		Preload("Steps", func(db *gorm.DB) *gorm.DB {
 			return db.Order("action_workflow_step_configs.idx ASC")

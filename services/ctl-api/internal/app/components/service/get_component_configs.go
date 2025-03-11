@@ -5,12 +5,18 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
+	"gorm.io/gorm"
 )
 
 // @ID GetComponentConfigs
 // @Summary	get all configs for a component
 // @Description.markdown	get_component_configs.md
 // @Param			component_id	path	string	true	"component ID"
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			components
 // @Accept			json
 // @Produce		json
@@ -26,11 +32,54 @@ import (
 func (s *service) GetComponentConfigs(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 
-	comp, err := s.helpers.GetComponent(ctx, cmpID)
+	cfgs, err := s.getComponentConfigs(ctx, cmpID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get component configs: %w", err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, comp.ComponentConfigs)
+	ctx.JSON(http.StatusOK, cfgs)
+}
+
+func (s *service) getComponentConfigs(ctx *gin.Context, cmpID string) ([]app.ComponentConfigConnection, error) {
+	cmp := app.Component{}
+	res := s.db.WithContext(ctx).
+		// preload configs
+		Preload("ComponentConfigs").
+		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.
+				Scopes(scopes.WithPagination).
+				Order("component_config_connections_view_v1.created_at DESC")
+		}).
+
+		// preload all terraform configs
+		Preload("ComponentConfigs.TerraformModuleComponentConfig").
+		Preload("ComponentConfigs.TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
+
+		// preload all helm configs
+		Preload("ComponentConfigs.HelmComponentConfig").
+		Preload("ComponentConfigs.HelmComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
+
+		// preload all docker configs
+		Preload("ComponentConfigs.DockerBuildComponentConfig").
+		Preload("ComponentConfigs.DockerBuildComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
+
+		// preload all external image configs
+		Preload("ComponentConfigs.ExternalImageComponentConfig").
+		Preload("ComponentConfigs.ExternalImageComponentConfig.AWSECRImageConfig").
+
+		// preload all job configs
+		Preload("ComponentConfigs.JobComponentConfig").
+		First(&cmp, "id = ?", cmpID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get component: %w", res.Error)
+	}
+
+	return cmp.ComponentConfigs, nil
 }

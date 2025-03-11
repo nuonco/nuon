@@ -11,14 +11,17 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetComponentBuilds
 // @Summary	get builds for components
 // @Description.markdown	get_component_builds.md
-// @Param  limit  query int	 false	"limit of builds to return"	     Default(60)
 // @Param  component_id query string false	"component id to filter by"
 // @Param  app_id query string false	"app id to filter by"
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			components
 // @Accept			json
 // @Produce		json
@@ -39,7 +42,7 @@ func (s *service) GetComponentBuilds(ctx *gin.Context) {
 		return
 	}
 
-	limitStr := ctx.DefaultQuery("limit", "60")
+	limitStr := ctx.DefaultQuery("limit", "50")
 	limitVal, err := strconv.Atoi(limitStr)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
@@ -69,6 +72,7 @@ func (s *service) getAppBuilds(ctx context.Context, appID string, limit int) ([]
 	// query all builds that belong to the component id, starting at the component to ensure the component exists
 	// via the double join.
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Preload("ComponentConfigConnection").
 		Preload("VCSConnectionCommit").
 		Preload("ComponentConfigConnection.Component").
@@ -91,6 +95,7 @@ func (s *service) getComponentBuilds(ctx context.Context, cmpID string) ([]app.C
 	// query all builds that belong to the component id, starting at the component to ensure the component exists
 	// via the double join.
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("component_config_connections_view_v1.created_at DESC")
 		}).

@@ -10,11 +10,15 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetOrgs
 // @Summary	Return current user's orgs
 // @Description.markdown get_orgs.md
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			orgs
 // @Accept			json
 // @Produce		json
@@ -45,6 +49,7 @@ func (s *service) GetCurrentUserOrgs(ctx *gin.Context) {
 func (s *service) getOrgs(ctx context.Context, orgIDs []string) ([]app.Org, error) {
 	var orgs []app.Org
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Joins("JOIN accounts ON accounts.id = orgs.created_by_id").
 		Where("orgs.id IN ?", orgIDs).
 		Order(fmt.Sprintf("CASE WHEN accounts.account_type = '%s' THEN 1 ELSE 0 END, orgs.id", app.AccountTypeCanary)).

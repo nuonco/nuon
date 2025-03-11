@@ -9,12 +9,16 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetAppConfigs
 // @Summary	get app configs
 // @Description.markdown	get_app_configs.md
 // @Param			app_id	path	string	true	"app ID"
+// @Param   offset query int	 false	"offset of jobs to return"	Default(0)
+// @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			apps
 // @Accept			json
 // @Produce		json
@@ -48,6 +52,7 @@ func (s *service) getAppConfigs(ctx context.Context, orgID, appID string) ([]app
 	cfgs := make([]app.AppConfig, 0)
 
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Where(app.AppConfig{
 			OrgID: orgID,
 			AppID: appID,

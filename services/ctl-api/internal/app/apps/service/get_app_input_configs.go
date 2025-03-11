@@ -1,17 +1,24 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
+	"gorm.io/gorm"
 )
 
 // @ID GetAppInputConfigs
 // @Summary	get app input configs
 // @Description.markdown	get_app_input_configs.md
 // @Param			app_id	path	string	true	"app ID"
+// @Param   offset query int	 false	"offset of jobs to return"	Default(0)
+// @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			apps
 // @Accept			json
 // @Produce		json
@@ -32,11 +39,34 @@ func (s *service) GetAppInputConfigs(ctx *gin.Context) {
 	}
 
 	appID := ctx.Param("app_id")
-	app, err := s.findApp(ctx, org.ID, appID)
+	cfgs, err := s.findAppInputConfigs(ctx, org.ID, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, app.AppInputConfigs)
+	ctx.JSON(http.StatusOK, cfgs)
+}
+
+func (s *service) findAppInputConfigs(ctx context.Context, orgID, appID string) ([]app.AppInputConfig, error) {
+	app := app.App{}
+	res := s.db.WithContext(ctx).
+		Preload("Org").
+		Preload("Components").
+		Preload("AppInputConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.
+				Scopes(scopes.WithPagination).
+				Order("app_input_configs.created_at DESC")
+		}).
+		Preload("AppInputConfigs.AppInputs").
+		Preload("AppInputConfigs.AppInputs.AppInputGroup").
+		Preload("AppInputConfigs.AppInputGroups.AppInputs").
+		Where("name = ? AND org_id = ?", appID, orgID).
+		Or("id = ?", appID).
+		First(&app)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get app: %w", res.Error)
+	}
+
+	return app.AppInputConfigs, nil
 }

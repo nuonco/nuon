@@ -10,12 +10,16 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
 
 // @ID GetOrgInvites
 // @Summary	Return org invites
 // @Description.markdown get_org_invites.md
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags			orgs
 // @Accept			json
 // @Produce		json
@@ -35,6 +39,7 @@ func (s *service) GetOrgInvites(ctx *gin.Context) {
 		return
 	}
 
+// TODO: remove when pagination is enabled
 	limitStr := ctx.DefaultQuery("limit", "60")
 	limitVal, err := strconv.Atoi(limitStr)
 	if err != nil {
@@ -59,7 +64,9 @@ func (s *service) getOrgInvites(ctx context.Context, orgID string, limit int) ([
 
 	res := s.db.WithContext(ctx).
 		Preload("Invites", func(db *gorm.DB) *gorm.DB {
-			return db.Order("org_invites.created_at DESC").Limit(limit)
+			return db.
+				Scopes(scopes.WithPagination).
+				Order("org_invites.created_at DESC").Limit(limit)
 		}).
 		First(&org, "id = ?", orgID)
 	if res.Error != nil {
