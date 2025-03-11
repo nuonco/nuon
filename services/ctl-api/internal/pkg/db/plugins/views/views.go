@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-
 var _ gorm.Plugin = (*viewsPlugin)(nil)
 
 // ViewsPlugin is a plugin that enables turning on a view for specific models. This will overwrite the table name on
@@ -92,6 +91,9 @@ func (m *viewsPlugin) enableView(tx *gorm.DB) {
 	}
 
 	schema := tx.Statement.Schema
+	if schema == nil {
+		return
+	}
 	vm, ok := m.viewModels[schema.Table]
 	if !ok {
 		return

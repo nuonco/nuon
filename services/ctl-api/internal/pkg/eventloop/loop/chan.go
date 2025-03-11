@@ -2,10 +2,10 @@ package loop
 
 import "go.temporal.io/sdk/workflow"
 
-func (l *Loop[T, R]) drainSignals(ch workflow.ReceiveChannel) []T {
-	var signals []T
+func (l *Loop[SignalType, ReqSig]) drainSignals(ch workflow.ReceiveChannel) []SignalType {
+	var signals []SignalType
 	for {
-		var signal T
+		var signal SignalType
 		ok := ch.ReceiveAsync(&signal)
 		if !ok {
 			break
