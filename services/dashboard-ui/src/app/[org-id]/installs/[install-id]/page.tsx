@@ -91,7 +91,7 @@ export default withPageAuthRequired(async function Install({ params }) {
         <Section heading="README" className="md:col-span-8">
           <ErrorBoundary fallbackRender={ErrorFallback}>
             <Suspense
-              fallback={<Loading loadingText="Loading install README..." />}
+              fallback={<Loading variant="stack" loadingText="Loading install README..." />}
             >
               <LoadInstallReadme installId={installId} orgId={orgId} />
             </Suspense>
