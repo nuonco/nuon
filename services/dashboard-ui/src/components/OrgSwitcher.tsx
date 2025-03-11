@@ -10,6 +10,7 @@ import { setOrgSessionCookie } from '@/app/actions'
 import { ClickToCopy } from '@/components/ClickToCopy'
 import { Dropdown } from '@/components/Dropdown'
 import { Link } from '@/components/Link'
+import { useOrg } from '@/components/Orgs'
 import { OrgStatus } from '@/components/OrgStatus'
 import { StatusBadge } from '@/components/Status'
 import { Text } from '@/components/Typography'
@@ -178,32 +179,32 @@ export interface IOrgSwitcher {
 }
 
 export const OrgSwitcher: FC<IOrgSwitcher> = ({
-  initOrg,
   initOrgs,
   isSidebarOpen = true,
 }) => {
-  const [org, updateOrg] = useState<TOrg>(initOrg)
+  const { org } = useOrg()
+  //  const [org, updateOrg] = useState<TOrg>(initOrg)
 
-  useEffect(() => {
-    async function setSession() {
-      await setOrgSessionCookie(initOrg.id)
-    }
+  /* useEffect(() => {
+   *   async function setSession() {
+   *     await setOrgSessionCookie(initOrg.id)
+   *   }
 
-    setSession()
+   *   setSession()
 
-    const fetchOrg = () => {
-      fetch(`/api/${initOrg.id}`)
-        .then((res) =>
-          res.json().then((o) => {
-            updateOrg(o)
-          })
-        )
-        .catch(console.error)
-    }
+   *   const fetchOrg = () => {
+   *     fetch(`/api/${initOrg.id}`)
+   *       .then((res) =>
+   *         res.json().then((o) => {
+   *           updateOrg(o)
+   *         })
+   *       )
+   *       .catch(console.error)
+   *   }
 
-    const pollOrg = setInterval(fetchOrg, POLL_DURATION)
-    return () => clearInterval(pollOrg)
-  }, [])
+   *   const pollOrg = setInterval(fetchOrg, POLL_DURATION)
+   *   return () => clearInterval(pollOrg)
+   * }, []) */
 
   return (
     <Dropdown

@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { CaretRight, Heartbeat, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
