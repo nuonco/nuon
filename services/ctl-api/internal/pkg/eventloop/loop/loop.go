@@ -23,18 +23,34 @@ const (
 	maxSignals int = 10
 )
 
-type Loop[T eventloop.Signal, R any] struct {
+// Loop is the generic implementation of Nuon's Temporal-backed event loop. Start an event
+// loop by creating an instance of Loop, then calling [*Loop.Run].
+//
+// Each event loop is bound to a single domain of signals. The signal domain is defined by
+// the SignalType constraint.
+//
+// ReqSig is the type of the request signal used while processing signals. It is derived from
+// from the SignalType.
+// TODO(sdboyer): refactor to get rid of the need for the explicit request signal type
+type Loop[SignalType eventloop.Signal, ReqSig any] struct {
 	Cfg              *internal.Config
 	MW               tmetrics.Writer
 	V                *validator.Validate
-	Handlers         map[eventloop.SignalType]func(workflow.Context, R) error
-	NewRequestSignal func(eventloop.EventLoopRequest, T) R
+	Handlers         map[eventloop.SignalType]func(workflow.Context, ReqSig) error
+	NewRequestSignal func(eventloop.EventLoopRequest, SignalType) ReqSig
 
 	// hooks
+
+	// StartupHook is called once, before the event loop starts in a call to Run
 	StartupHook func(workflow.Context, eventloop.EventLoopRequest) error
+
+	// checkExistsHook is called before each signal is processed to check if the
+	// underlying object exists. The check is skipped if no implementation is
+	// provided.
+	ExistsHook func(workflow.Context, eventloop.EventLoopRequest) (bool, error)
 }
 
-func (w *Loop[T, R]) handleSignal(ctx workflow.Context, wkflowReq eventloop.EventLoopRequest, signal T, defaultTags map[string]string) error {
+func (w *Loop[SignalType, ReqSig]) handleSignal(ctx workflow.Context, wkflowReq eventloop.EventLoopRequest, signal SignalType, defaultTags map[string]string) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
@@ -96,7 +112,7 @@ func (w *Loop[T, R]) handleSignal(ctx workflow.Context, wkflowReq eventloop.Even
 	return nil
 }
 
-func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []T) error {
+func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []SignalType) error {
 	signalChan := workflow.GetSignalChannel(ctx, req.ID)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -143,39 +159,57 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 	}
 
 	// execute the event loop
-	pendingSignals = make([]T, 0)
+	pendingSignals = make([]SignalType, 0)
 	signalCount := 0
 	stop := false
 	restart := false
 
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
-		var signal T
+		var signal SignalType
 		channelOpen := channel.Receive(ctx, &signal)
 		if !channelOpen {
 			l.Info("channel was closed")
 			return
 		}
 
-		// restart requires the signal to be handed on the fresh loop
-		if signal.Restart() {
-			pendingSignals = append(pendingSignals, signal)
-			restart = true
-			return
+		exists := true
+		if w.ExistsHook != nil {
+			exists, err = w.ExistsHook(ctx, req)
+			if err != nil {
+				// This should only be reachable in the event of an underlying temporal error.
+				l.Error("error checking for existence", zap.Error(err))
+				return
+			}
 		}
 
-		if err := signal.Validate(w.V); err != nil {
-			l.Error("invalid signal", zap.Error(err))
-		}
+		stop = !exists
 
-		signalCount += 1
-		err = w.handleSignal(ctx, req, signal, defaultTags)
-		if err != nil {
-			l.Error("error handling signal", zap.Error(err))
-			return
-		}
+		if stop {
+			// By aborting here if the underlying object does not exist, we encode that no event loop-based cleanup may occur
+			// after the underlying object is deleted.
+			l.Warn("underlying object does not exist, shutting down event loop", zap.Error(err))
+		} else {
+			// restart requires the signal to be handed on the fresh loop
+			if signal.Restart() {
+				pendingSignals = append(pendingSignals, signal)
+				restart = true
+				return
+			}
 
-		stop = signal.Stop()
+			if err := signal.Validate(w.V); err != nil {
+				l.Error("invalid signal", zap.Error(err))
+			}
+
+			signalCount += 1
+			err = w.handleSignal(ctx, req, signal, defaultTags)
+			if err != nil {
+				l.Error("error handling signal", zap.Error(err))
+				return
+			}
+
+			stop = signal.Stop()
+		}
 	})
 
 	for !stop {
@@ -212,7 +246,7 @@ func (w *Loop[T, R]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, p
 }
 
 // This is a temporary (let's hope) function for identifying unpopulated/nil signals and reporting on them
-func (w *Loop[T, R]) validateSignal(ctx workflow.Context, info *workflow.Info, sig T, depth int) bool {
+func (w *Loop[SignalType, ReqSig]) validateSignal(ctx workflow.Context, info *workflow.Info, sig SignalType, depth int) bool {
 	// send these in a defer, because nil signals will panic on these calls
 	tags := map[string]string{
 		"namespace":       info.Namespace,
@@ -255,8 +289,8 @@ func (w *Loop[T, R]) validateSignal(ctx workflow.Context, info *workflow.Info, s
 	return ret // overridden by defer, no matter what
 }
 
-func (w *Loop[T, R]) filterSignals(ctx workflow.Context, info *workflow.Info, sigs []T) []T {
-	ret := make([]T, 0, len(sigs))
+func (w *Loop[SignalType, ReqSig]) filterSignals(ctx workflow.Context, info *workflow.Info, sigs []SignalType) []SignalType {
+	ret := make([]SignalType, 0, len(sigs))
 	for _, sig := range sigs {
 		if w.validateSignal(ctx, info, sig, 2) {
 			ret = append(ret, sig)
