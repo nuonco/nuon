@@ -91,6 +91,7 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 		workspace.WithBinary(bin),
 		workspace.WithVariables(vars),
 		workspace.WithVariables(authVars),
+		workspace.WithControlCache(true),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create workspace: %w", err)
