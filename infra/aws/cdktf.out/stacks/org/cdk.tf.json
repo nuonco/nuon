@@ -11,6 +11,7 @@
         "cross-stack-output-aws_organizations_account.canary.id": "cross-stack-output-aws_organizations_accountcanaryid",
         "cross-stack-output-aws_organizations_account.demo-govcloud.id": "cross-stack-output-aws_organizations_accountdemo-govcloudid",
         "cross-stack-output-aws_organizations_account.demo.id": "cross-stack-output-aws_organizations_accountdemoid",
+        "cross-stack-output-aws_organizations_account.external.id": "cross-stack-output-aws_organizations_accountexternalid",
         "cross-stack-output-aws_organizations_account.govcloud-prod.id": "cross-stack-output-aws_organizations_accountgovcloud-prodid",
         "cross-stack-output-aws_organizations_account.govcloud-stage.id": "cross-stack-output-aws_organizations_accountgovcloud-stageid",
         "cross-stack-output-aws_organizations_account.infra-shared-prod.id": "cross-stack-output-aws_organizations_accountinfra-shared-prodid",
@@ -41,11 +42,18 @@
           "uniqueId": "github_terraform_aws_ou_scp-workloads"
         }
       },
-      "allowed_regions": ["us-east-1", "us-east-2", "us-west-1", "us-west-2"],
+      "allowed_regions": [
+        "us-east-1",
+        "us-east-2",
+        "us-west-1",
+        "us-west-2"
+      ],
       "deny_creating_iam_users": true,
       "deny_leaving_orgs": true,
       "deny_root_account": true,
-      "deny_s3_bucket_public_access_resources": ["arn:aws:s3:::*"],
+      "deny_s3_bucket_public_access_resources": [
+        "arn:aws:s3:::*"
+      ],
       "deny_s3_buckets_public_access": true,
       "limit_regions": true,
       "protect_iam_role_resources": [
@@ -74,6 +82,10 @@
     "cross-stack-output-aws_organizations_accountdemoid": {
       "sensitive": true,
       "value": "${aws_organizations_account.demo.id}"
+    },
+    "cross-stack-output-aws_organizations_accountexternalid": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.external.id}"
     },
     "cross-stack-output-aws_organizations_accountgovcloud-prodid": {
       "sensitive": true,
@@ -149,7 +161,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2024-10-30T21:16:15.372Z"
+      "value": "2025-03-12T20:47:06.573Z"
     }
   },
   "provider": {
@@ -180,7 +192,9 @@
         "email": "aws-accounts+canary@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "canary",
         "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
@@ -196,7 +210,9 @@
         "email": "aws-accounts+demo@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "demo",
         "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
@@ -212,10 +228,30 @@
         "email": "aws-accounts+demo-govcloud@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "demo-govcloud",
         "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
+      },
+      "external": {
+        "//": {
+          "metadata": {
+            "path": "org/external",
+            "uniqueId": "external"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+external@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "external",
+        "parent_id": "${aws_organizations_organizational_unit.deleted.id}"
       },
       "govcloud-prod": {
         "//": {
@@ -228,7 +264,9 @@
         "email": "aws-accounts+govcloud-prod@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "govcloud-prod",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
@@ -244,7 +282,9 @@
         "email": "aws-accounts+govcloud-stage@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "govcloud-stage",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
@@ -260,7 +300,9 @@
         "email": "aws-accounts+infra-shared-prod@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "infra-shared-prod",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
@@ -276,7 +318,9 @@
         "email": "aws-accounts+infra-shared-stage@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "infra-shared-stage",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
@@ -292,7 +336,9 @@
         "email": "aws-accounts+orgs-prod@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "orgs-prod",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
@@ -308,7 +354,9 @@
         "email": "aws-accounts+orgs-stage@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "orgs-stage",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
@@ -324,7 +372,9 @@
         "email": "aws-accounts+prod@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "prod",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
@@ -340,7 +390,9 @@
         "email": "aws-accounts+public@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "public",
         "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
@@ -356,7 +408,9 @@
         "email": "aws-accounts+runners-prod@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "runners-prod",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
@@ -372,7 +426,9 @@
         "email": "aws-accounts+runners-stage@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "runners-stage",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
@@ -388,7 +444,9 @@
         "email": "aws-accounts+sandbox-fd@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "sandbox-fd",
         "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
@@ -404,7 +462,9 @@
         "email": "aws-accounts+sandbox-ja@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "sandbox-ja",
         "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
@@ -420,7 +480,9 @@
         "email": "aws-accounts+sandbox-jm@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "sandbox-jm",
         "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
@@ -436,7 +498,9 @@
         "email": "aws-accounts+sandbox-nh@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "sandbox-nh",
         "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
@@ -452,7 +516,9 @@
         "email": "aws-accounts+sandbox-rb@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "sandbox-rb",
         "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
@@ -468,7 +534,9 @@
         "email": "aws-accounts+sandbox-sb@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "sandbox-sb",
         "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
@@ -484,7 +552,9 @@
         "email": "aws-accounts+stage@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "stage",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
@@ -500,7 +570,9 @@
         "email": "aws-accounts+test@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
-          "ignore_changes": ["iam_user_access_to_billing"]
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
         },
         "name": "test",
         "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
@@ -651,6 +723,17 @@
         },
         "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"demo-govcloud\"]}}}}",
         "name": "demo-govcloud-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
+      "env_tag_policy_external": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_external",
+            "uniqueId": "env_tag_policy_external"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"external\",\"stage\",\"prod\"]}}}}",
+        "name": "external-environment-tag-policy",
         "type": "TAG_POLICY"
       },
       "env_tag_policy_govcloud-prod": {
@@ -892,6 +975,16 @@
         },
         "policy_id": "${aws_organizations_policy.env_tag_policy_demo-govcloud.id}",
         "target_id": "${aws_organizations_account.demo-govcloud.id}"
+      },
+      "env_tag_policy_attach_external": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_external",
+            "uniqueId": "env_tag_policy_attach_external"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_external.id}",
+        "target_id": "${aws_organizations_account.external.id}"
       },
       "env_tag_policy_attach_govcloud-prod": {
         "//": {
