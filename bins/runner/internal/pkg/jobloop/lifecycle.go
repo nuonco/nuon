@@ -6,27 +6,29 @@ import (
 	"go.uber.org/fx"
 )
 
-func (s *jobLoop) Start() error {
-	s.pool.Go(s.runWorker)
+func (j *jobLoop) Start() error {
+	j.setStarted()
+	j.pool.Go(j.runWorker)
 	return nil
 }
 
-func (s *jobLoop) Stop() error {
-	s.ctxCancel()
-	s.pool.Wait()
+func (j *jobLoop) Stop() error {
+	j.ctxCancel()
+	j.pool.Wait()
+	j.setStopped()
 	return nil
 }
 
-func (s *jobLoop) LifecycleHook() fx.Hook {
+func (j *jobLoop) LifecycleHook() fx.Hook {
 	return fx.Hook{
 		// start the background loop to update the settings
 		OnStart: func(context.Context) error {
-			return s.Start()
+			return j.Start()
 		},
 
 		// stop the loop and wait for the background goroutine to return
 		OnStop: func(context.Context) error {
-			return s.Stop()
+			return j.Stop()
 		},
 	}
 }
