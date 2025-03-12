@@ -1,13 +1,13 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
@@ -53,7 +53,7 @@ func (s *service) GetAppSandboxConfigs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, cfgs)
 }
 
-func (s *service) findAppSandboxConfigs(ctx context.Context, orgID, appID string) ([]app.AppSandboxConfig, error) {
+func (s *service) findAppSandboxConfigs(ctx *gin.Context, orgID, appID string) ([]app.AppSandboxConfig, error) {
 	app := app.App{}
 	res := s.db.WithContext(ctx).
 		// sandbox configs
@@ -71,6 +71,13 @@ func (s *service) findAppSandboxConfigs(ctx context.Context, orgID, appID string
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
+
+	cfgs, err := db.HandlePaginatedResponse(ctx, app.AppSandboxConfigs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app sandbox configs: %w", err)
+	}
+
+	app.AppSandboxConfigs = cfgs
 
 	return app.AppSandboxConfigs, nil
 }

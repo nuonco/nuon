@@ -1,13 +1,13 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -45,7 +45,7 @@ func (s *service) GetOrgComponents(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, component)
 }
 
-func (s *service) getOrgComponents(ctx context.Context, orgID string) ([]app.Component, error) {
+func (s *service) getOrgComponents(ctx *gin.Context, orgID string) ([]app.Component, error) {
 	comps := []app.Component{}
 
 	res := s.db.WithContext(ctx).
@@ -56,6 +56,11 @@ func (s *service) getOrgComponents(ctx context.Context, orgID string) ([]app.Com
 		Find(&comps)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get components: %w", res.Error)
+	}
+
+	comps, err := db.HandlePaginatedResponse(ctx, comps)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return comps, nil

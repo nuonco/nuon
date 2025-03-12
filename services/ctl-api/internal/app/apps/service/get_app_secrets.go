@@ -1,12 +1,12 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
@@ -42,7 +42,7 @@ func (s *service) GetAppSecrets(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, secrets)
 }
 
-func (s *service) getAppSecrets(ctx context.Context, appID string) ([]app.AppSecret, error) {
+func (s *service) getAppSecrets(ctx *gin.Context, appID string) ([]app.AppSecret, error) {
 	var currentApp app.App
 
 	res := s.db.WithContext(ctx).
@@ -56,6 +56,13 @@ func (s *service) getAppSecrets(ctx context.Context, appID string) ([]app.AppSec
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app secrets: %w", res.Error)
 	}
+
+	secrets, err := db.HandlePaginatedResponse(ctx, currentApp.AppSecrets)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app secrets: %w", err)
+	}
+
+	currentApp.AppSecrets = secrets
 
 	return currentApp.AppSecrets, nil
 }

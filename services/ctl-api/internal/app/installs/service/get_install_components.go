@@ -1,12 +1,12 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
@@ -41,7 +41,7 @@ func (s *service) GetInstallComponents(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installComponents)
 }
 
-func (s *service) getInstallComponents(ctx context.Context, installID string) ([]app.InstallComponent, error) {
+func (s *service) getInstallComponents(ctx *gin.Context, installID string) ([]app.InstallComponent, error) {
 	install := &app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("InstallComponents", func(db *gorm.DB) *gorm.DB {
@@ -60,6 +60,13 @@ func (s *service) getInstallComponents(ctx context.Context, installID string) ([
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install components: %w", res.Error)
 	}
+
+	cmps, err := db.HandlePaginatedResponse(ctx, install.InstallComponents)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+	}
+
+	install.InstallComponents = cmps
 
 	return install.InstallComponents, nil
 }

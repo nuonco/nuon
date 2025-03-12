@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -10,6 +9,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -46,7 +46,7 @@ func (s *service) GetCurrentUserOrgs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, orgs)
 }
 
-func (s *service) getOrgs(ctx context.Context, orgIDs []string) ([]app.Org, error) {
+func (s *service) getOrgs(ctx *gin.Context, orgIDs []string) ([]app.Org, error) {
 	var orgs []app.Org
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithPagination).
@@ -56,6 +56,11 @@ func (s *service) getOrgs(ctx context.Context, orgIDs []string) ([]app.Org, erro
 		Find(&orgs)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get orgs")
+	}
+
+	orgs, err := db.HandlePaginatedResponse(ctx, orgs)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to handle paginated response")
 	}
 
 	return orgs, nil
