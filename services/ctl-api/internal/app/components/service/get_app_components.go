@@ -1,13 +1,13 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -48,7 +48,7 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, reorderedCmp)
 }
 
-func (s *service) getAppComponents(ctx context.Context, appID string) ([]app.Component, error) {
+func (s *service) getAppComponents(ctx *gin.Context, appID string) ([]app.Component, error) {
 	currentApp := &app.App{}
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithPagination).
@@ -59,6 +59,13 @@ func (s *service) getAppComponents(ctx context.Context, appID string) ([]app.Com
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
+
+	cmps, err := db.HandlePaginatedResponse(ctx, currentApp.Components)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+	}
+
+	currentApp.Components = cmps
 
 	return currentApp.Components, nil
 }

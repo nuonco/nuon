@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -62,7 +62,7 @@ func (s *service) GetRunnerJobs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, runnerJobs)
 }
 
-func (s *service) getRunnerJobs(ctx context.Context, runnerID string, status app.RunnerJobStatus, grp app.RunnerJobGroup, limit int) ([]*app.RunnerJob, error) {
+func (s *service) getRunnerJobs(ctx *gin.Context, runnerID string, status app.RunnerJobStatus, grp app.RunnerJobGroup, limit int) ([]*app.RunnerJob, error) {
 	runnerJobs := []*app.RunnerJob{}
 
 	where := app.RunnerJob{
@@ -86,6 +86,11 @@ func (s *service) getRunnerJobs(ctx context.Context, runnerID string, status app
 		Find(&runnerJobs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get runner jobs: %w", res.Error)
+	}
+
+	runnerJobs, err := db.HandlePaginatedResponse(ctx, runnerJobs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return runnerJobs, nil

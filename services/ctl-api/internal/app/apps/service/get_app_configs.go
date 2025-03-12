@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -9,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -48,7 +48,7 @@ func (s *service) GetAppConfigs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, cfgs)
 }
 
-func (s *service) getAppConfigs(ctx context.Context, orgID, appID string) ([]app.AppConfig, error) {
+func (s *service) getAppConfigs(ctx *gin.Context, orgID, appID string) ([]app.AppConfig, error) {
 	cfgs := make([]app.AppConfig, 0)
 
 	res := s.db.WithContext(ctx).
@@ -61,6 +61,11 @@ func (s *service) getAppConfigs(ctx context.Context, orgID, appID string) ([]app
 		Find(&cfgs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app configs: %w", res.Error)
+	}
+
+	cfgs, err := db.HandlePaginatedResponse(ctx, cfgs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app configs: %w", err)
 	}
 
 	return cfgs, nil

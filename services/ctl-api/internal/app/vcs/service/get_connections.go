@@ -1,13 +1,13 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -45,7 +45,7 @@ func (s *service) GetConnections(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, vcsConns)
 }
 
-func (s *service) getOrgConnections(ctx context.Context, orgID string) ([]*app.VCSConnection, error) {
+func (s *service) getOrgConnections(ctx *gin.Context, orgID string) ([]*app.VCSConnection, error) {
 	var vcsConns []*app.VCSConnection
 
 	res := s.db.
@@ -53,6 +53,11 @@ func (s *service) getOrgConnections(ctx context.Context, orgID string) ([]*app.V
 		WithContext(ctx).Where("org_id = ?", orgID).Find(&vcsConns)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get vcs connections: %w", res.Error)
+	}
+
+	vcsConns, err := db.HandlePaginatedResponse(ctx, vcsConns)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return vcsConns, nil

@@ -1,13 +1,13 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
@@ -53,7 +53,7 @@ func (s *service) GetAppRunnerConfigs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, configs)
 }
 
-func (s *service) findAppRunnerConfigs(ctx context.Context, orgID, appID string) ([]app.AppRunnerConfig, error) {
+func (s *service) findAppRunnerConfigs(ctx *gin.Context, orgID, appID string) ([]app.AppRunnerConfig, error) {
 	app := app.App{}
 	res := s.db.WithContext(ctx).
 		// runner config
@@ -68,6 +68,13 @@ func (s *service) findAppRunnerConfigs(ctx context.Context, orgID, appID string)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
+
+	cfgs, err := db.HandlePaginatedResponse(ctx, app.AppRunnerConfigs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app runner configs: %w", err)
+	}
+
+	app.AppRunnerConfigs = cfgs
 
 	return app.AppRunnerConfigs, nil
 }

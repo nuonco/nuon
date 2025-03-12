@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -9,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -43,7 +43,7 @@ func (s *service) GetRunnerJobExecutions(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, runnerJobs)
 }
 
-func (s *service) getRunnerJobExecutions(ctx context.Context, runnerJobID string) ([]app.RunnerJobExecution, error) {
+func (s *service) getRunnerJobExecutions(ctx *gin.Context, runnerJobID string) ([]app.RunnerJobExecution, error) {
 	var runnerJob *app.RunnerJob
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithPagination).
@@ -55,6 +55,13 @@ func (s *service) getRunnerJobExecutions(ctx context.Context, runnerJobID string
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get runner job: %w", res.Error)
 	}
+
+	executions, err := db.HandlePaginatedResponse(ctx, runnerJob.Executions)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+	}
+
+	runnerJob.Executions = executions
 
 	return runnerJob.Executions, nil
 }
