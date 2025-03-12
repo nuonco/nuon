@@ -278,6 +278,13 @@
   "integrations": {
     "ga4": {
       "measurementId": "G-2TTM318ZK2"
+    },
+    "segment": {
+      "key": "4kncfCQZQU22093f1Z3BxMlGJd4iNQzs"
+    },
+    "hotjar": {
+      "hjid": "5335876",
+      "hjsv": ""
     }
   },
   "redirects": [
