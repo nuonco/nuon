@@ -1,7 +1,7 @@
 package service
 
 import (
-	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -58,7 +59,7 @@ func (s *service) GetRunnerRecentHealthChecks(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, healthChecks)
 }
 
-func (s *service) getRunnerRecentHealthChecks(ctx context.Context, runnerID string, startTS time.Time) ([]*app.RunnerHealthCheck, error) {
+func (s *service) getRunnerRecentHealthChecks(ctx *gin.Context, runnerID string, startTS time.Time) ([]*app.RunnerHealthCheck, error) {
 	healthChecks := []*app.RunnerHealthCheck{}
 
 	res := s.chDB.WithContext(ctx).
@@ -74,6 +75,11 @@ func (s *service) getRunnerRecentHealthChecks(ctx context.Context, runnerID stri
 		Find(&healthChecks)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get health checks")
+	}
+
+	healthChecks, err := db.HandlePaginatedResponse(ctx, healthChecks)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return healthChecks, nil

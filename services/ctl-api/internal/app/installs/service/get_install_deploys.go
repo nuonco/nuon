@@ -1,13 +1,13 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -42,7 +42,7 @@ func (s *service) GetInstallDeploys(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installDeploys)
 }
 
-func (s *service) getInstallDeploys(ctx context.Context, installID string) ([]*app.InstallDeploy, error) {
+func (s *service) getInstallDeploys(ctx *gin.Context, installID string) ([]*app.InstallDeploy, error) {
 	var installDeploys []*app.InstallDeploy
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithPagination).
@@ -58,6 +58,11 @@ func (s *service) getInstallDeploys(ctx context.Context, installID string) ([]*a
 		Find(&installDeploys)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install deploys: %w", res.Error)
+	}
+
+	installDeploys, err := db.HandlePaginatedResponse(ctx, installDeploys)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return installDeploys, nil

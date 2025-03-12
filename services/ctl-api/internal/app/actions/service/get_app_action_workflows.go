@@ -10,6 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -56,7 +57,7 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, actionWorkflows)
 }
 
-func (s *service) findActionWorkflows(ctx context.Context, orgID, appID string) ([]*app.ActionWorkflow, error) {
+func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID string) ([]*app.ActionWorkflow, error) {
 	actionWorkflows := []*app.ActionWorkflow{}
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithPagination).
@@ -70,6 +71,12 @@ func (s *service) findActionWorkflows(ctx context.Context, orgID, appID string) 
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get action workflows: %w", res.Error)
 	}
+
+	actionWorkflows, err := db.HandlePaginatedResponse(ctx, actionWorkflows)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+	}
+
 	return actionWorkflows, nil
 }
 

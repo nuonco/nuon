@@ -1,12 +1,12 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
@@ -41,7 +41,7 @@ func (s *service) GetReleaseSteps(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, steps)
 }
 
-func (s *service) getReleaseSteps(ctx context.Context, releaseID string) ([]app.ComponentReleaseStep, error) {
+func (s *service) getReleaseSteps(ctx *gin.Context, releaseID string) ([]app.ComponentReleaseStep, error) {
 	var release app.ComponentRelease
 	res := s.db.WithContext(ctx).
 		Preload("ComponentReleaseSteps", func(db *gorm.DB) *gorm.DB {
@@ -55,5 +55,11 @@ func (s *service) getReleaseSteps(ctx context.Context, releaseID string) ([]app.
 		return nil, fmt.Errorf("unable to get release: %w", res.Error)
 	}
 
+	steps, err := db.HandlePaginatedResponse(ctx, release.ComponentReleaseSteps)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+	}
+
+	release.ComponentReleaseSteps = steps
 	return release.ComponentReleaseSteps, nil
 }

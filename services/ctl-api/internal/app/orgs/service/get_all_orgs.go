@@ -1,13 +1,13 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -38,7 +38,7 @@ func (s *service) GetAllOrgs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, orgs)
 }
 
-func (s *service) getAllOrgs(ctx context.Context, typ string) ([]*app.Org, error) {
+func (s *service) getAllOrgs(ctx *gin.Context, typ string) ([]*app.Org, error) {
 	var orgs []*app.Org
 
 	where := app.Org{}
@@ -54,6 +54,11 @@ func (s *service) getAllOrgs(ctx context.Context, typ string) ([]*app.Org, error
 		Find(&orgs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all orgs: %w", res.Error)
+	}
+
+	orgs, err := db.HandlePaginatedResponse(ctx, orgs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return orgs, nil

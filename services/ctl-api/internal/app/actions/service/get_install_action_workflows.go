@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -10,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -43,7 +43,7 @@ func (s *service) GetInstallActionWorkflows(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installActionWorkflows)
 }
 
-func (s *service) getInstallActionWorkflows(ctx context.Context, installID string) ([]app.InstallActionWorkflow, error) {
+func (s *service) getInstallActionWorkflows(ctx *gin.Context, installID string) ([]app.InstallActionWorkflow, error) {
 	install := &app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("InstallActionWorkflows", func(db *gorm.DB) *gorm.DB {
@@ -56,6 +56,13 @@ func (s *service) getInstallActionWorkflows(ctx context.Context, installID strin
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get install action workflows")
 	}
+
+	iaws, err := db.HandlePaginatedResponse(ctx, install.InstallActionWorkflows)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to handle paginated response")
+	}
+
+	install.InstallActionWorkflows = iaws
 
 	return install.InstallActionWorkflows, nil
 }

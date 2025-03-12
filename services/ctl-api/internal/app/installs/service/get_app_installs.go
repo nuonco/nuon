@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -9,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -45,7 +45,7 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installs)
 }
 
-func (s *service) getAppInstalls(ctx context.Context, appID string, q string) ([]app.Install, error) {
+func (s *service) getAppInstalls(ctx *gin.Context, appID string, q string) ([]app.Install, error) {
 	currentApp := &app.App{}
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithPagination)
@@ -73,5 +73,11 @@ func (s *service) getAppInstalls(ctx context.Context, appID string, q string) ([
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
+	installs, err := db.HandlePaginatedResponse(ctx, currentApp.Installs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+	}
+
+	currentApp.Installs = installs
 	return currentApp.Installs, nil
 }
