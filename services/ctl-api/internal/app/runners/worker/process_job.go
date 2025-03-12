@@ -44,6 +44,12 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 		w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "unable to get job from database")
 		return fmt.Errorf("unable to update runner job: %w", err)
 	}
+
+	// do not execute any jobs in the  HealthChecks group
+	if runnerJob.Group == app.RunnerJobGroupOperations && runnerJob.Type == app.RunnerJobTypeHealthCheck {
+		l.Info("processing job from group:operations type:health-check")
+	}
+
 	activities.AwaitUpdateJobStartedAt(ctx, activities.UpdateJobStartedAtRequest{JobID: sreq.JobID, StartedAt: workflow.Now(ctx)})
 	defer func() {
 		// NOTE(fd): wrapped this in a func so the time is set correctly

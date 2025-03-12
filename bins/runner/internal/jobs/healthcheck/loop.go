@@ -1,22 +1,22 @@
 package healthcheck
 
 import (
+	"github.com/nuonco/nuon-runner-go/models"
+
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
-
-	"github.com/nuonco/nuon-runner-go/models"
 )
 
 const (
-	jobGroup models.AppRunnerJobGroup = models.AppRunnerJobGroupHealthDashChecks
+	jobGroup models.AppRunnerJobGroup = models.AppRunnerJobGroupOperations
 )
 
-type JobLoopParams struct {
+type SyncParams struct {
 	jobloop.BaseParams
 
-	JobHandlers []jobs.JobHandler `group:"healthchecks"`
+	Handlers []jobs.JobHandler `group:"healthchecks"`
 }
 
-func NewJobLoop(params JobLoopParams) jobloop.JobLoop {
-	return jobloop.New(params.JobHandlers, jobGroup, params.BaseParams)
+func NewJobLoop(params SyncParams) jobloop.JobLoop {
+	return jobloop.New(params.Handlers, jobGroup, params.BaseParams)
 }
