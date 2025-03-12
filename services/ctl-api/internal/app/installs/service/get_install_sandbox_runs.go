@@ -1,13 +1,13 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -42,7 +42,7 @@ func (s *service) GetInstallSandboxRuns(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installSandboxRuns)
 }
 
-func (s *service) getInstallSandboxRuns(ctx context.Context, installID string) ([]app.InstallSandboxRun, error) {
+func (s *service) getInstallSandboxRuns(ctx *gin.Context, installID string) ([]app.InstallSandboxRun, error) {
 	var installSandboxRuns []app.InstallSandboxRun
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithPagination).
@@ -59,6 +59,11 @@ func (s *service) getInstallSandboxRuns(ctx context.Context, installID string) (
 		Find(&installSandboxRuns)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install sandbox runs: %w", res.Error)
+	}
+
+	installSandboxRuns, err := db.HandlePaginatedResponse(ctx, installSandboxRuns)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return installSandboxRuns, nil

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -66,7 +66,7 @@ func (s *service) GetComponentBuilds(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, blds)
 }
 
-func (s *service) getAppBuilds(ctx context.Context, appID string, limit int) ([]app.ComponentBuild, error) {
+func (s *service) getAppBuilds(ctx *gin.Context, appID string, limit int) ([]app.ComponentBuild, error) {
 	blds := []app.ComponentBuild{}
 
 	// query all builds that belong to the component id, starting at the component to ensure the component exists
@@ -86,10 +86,15 @@ func (s *service) getAppBuilds(ctx context.Context, appID string, limit int) ([]
 		return nil, fmt.Errorf("unable to get app builds: %w", res.Error)
 	}
 
+	blds, err := db.HandlePaginatedResponse(ctx, blds)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+	}
+
 	return blds, nil
 }
 
-func (s *service) getComponentBuilds(ctx context.Context, cmpID string) ([]app.ComponentBuild, error) {
+func (s *service) getComponentBuilds(ctx *gin.Context, cmpID string) ([]app.ComponentBuild, error) {
 	cmp := app.Component{}
 
 	// query all builds that belong to the component id, starting at the component to ensure the component exists
@@ -113,6 +118,11 @@ func (s *service) getComponentBuilds(ctx context.Context, cmpID string) ([]app.C
 	blds := make([]app.ComponentBuild, 0)
 	for _, cfg := range cmp.ComponentConfigs {
 		blds = append(blds, cfg.ComponentBuilds...)
+	}
+
+	blds, err := db.HandlePaginatedResponse(ctx, blds)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return blds, nil

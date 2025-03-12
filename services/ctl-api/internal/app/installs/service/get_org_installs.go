@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -10,6 +9,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -47,7 +47,7 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, install)
 }
 
-func (s *service) getOrgInstalls(ctx context.Context, orgID string) ([]app.Install, error) {
+func (s *service) getOrgInstalls(ctx *gin.Context, orgID string) ([]app.Install, error) {
 	var installs []app.Install
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithPagination).
@@ -75,6 +75,11 @@ func (s *service) getOrgInstalls(ctx context.Context, orgID string) ([]app.Insta
 		Find(&installs, "installs_view_v3.org_id = ?", orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org installs: %w", res.Error)
+	}
+
+	installs, err := db.HandlePaginatedResponse(ctx, installs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return installs, nil

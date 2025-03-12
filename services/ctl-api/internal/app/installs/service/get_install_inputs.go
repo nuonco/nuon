@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -9,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -43,7 +43,7 @@ func (s *service) GetInstallInputs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installInputs)
 }
 
-func (s *service) getInstallInputs(ctx context.Context, installID string) ([]app.InstallInputs, error) {
+func (s *service) getInstallInputs(ctx *gin.Context, installID string) ([]app.InstallInputs, error) {
 	var install app.Install
 	res := s.db.WithContext(ctx).
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
@@ -55,6 +55,13 @@ func (s *service) getInstallInputs(ctx context.Context, installID string) ([]app
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install inputs: %w", res.Error)
 	}
+
+	i, err := db.HandlePaginatedResponse(ctx, install.InstallInputs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+	}
+
+	install.InstallInputs = i
 
 	return install.InstallInputs, nil
 }

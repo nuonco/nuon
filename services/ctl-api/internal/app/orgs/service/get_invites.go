@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
@@ -39,7 +39,7 @@ func (s *service) GetOrgInvites(ctx *gin.Context) {
 		return
 	}
 
-// TODO: remove when pagination is enabled
+	// TODO: remove when pagination is enabled
 	limitStr := ctx.DefaultQuery("limit", "60")
 	limitVal, err := strconv.Atoi(limitStr)
 	if err != nil {
@@ -59,7 +59,7 @@ func (s *service) GetOrgInvites(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, orgs)
 }
 
-func (s *service) getOrgInvites(ctx context.Context, orgID string, limit int) ([]app.OrgInvite, error) {
+func (s *service) getOrgInvites(ctx *gin.Context, orgID string, limit int) ([]app.OrgInvite, error) {
 	var org *app.Org
 
 	res := s.db.WithContext(ctx).
@@ -73,5 +73,11 @@ func (s *service) getOrgInvites(ctx context.Context, orgID string, limit int) ([
 		return nil, fmt.Errorf("unable to get invites: %w", res.Error)
 	}
 
+	invites, err := db.HandlePaginatedResponse(ctx, org.Invites)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+	}
+
+	org.Invites = invites
 	return org.Invites, nil
 }
