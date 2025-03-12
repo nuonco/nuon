@@ -1,13 +1,13 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
@@ -48,7 +48,7 @@ func (s *service) GetAppInputConfigs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, cfgs)
 }
 
-func (s *service) findAppInputConfigs(ctx context.Context, orgID, appID string) ([]app.AppInputConfig, error) {
+func (s *service) findAppInputConfigs(ctx *gin.Context, orgID, appID string) ([]app.AppInputConfig, error) {
 	app := app.App{}
 	res := s.db.WithContext(ctx).
 		Preload("Org").
@@ -67,6 +67,13 @@ func (s *service) findAppInputConfigs(ctx context.Context, orgID, appID string) 
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
+
+	cfgs, err := db.HandlePaginatedResponse(ctx, app.AppInputConfigs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app input configs: %w", err)
+	}
+
+	app.AppInputConfigs = cfgs
 
 	return app.AppInputConfigs, nil
 }

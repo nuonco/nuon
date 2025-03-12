@@ -1,13 +1,13 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
@@ -45,7 +45,7 @@ func (s *service) GetApps(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, apps)
 }
 
-func (s *service) getApps(ctx context.Context, orgID string) ([]*app.App, error) {
+func (s *service) getApps(ctx *gin.Context, orgID string) ([]*app.App, error) {
 	var apps []*app.App
 	org := &app.Org{
 		ID: orgID,
@@ -62,6 +62,11 @@ func (s *service) getApps(ctx context.Context, orgID string) ([]*app.App, error)
 		Preload("AppSandboxConfigs.PublicGitVCSConfig").
 		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
 		Model(&org).Association("Apps").Find(&apps)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org apps: %w", err)
+	}
+
+	apps, err = db.HandlePaginatedResponse(ctx, apps)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get org apps: %w", err)
 	}

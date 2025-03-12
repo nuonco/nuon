@@ -1,13 +1,13 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -38,7 +38,7 @@ func (s *service) AdminGetAllRunners(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, runners)
 }
 
-func (s *service) getAllRunners(ctx context.Context, typ string) ([]*app.Runner, error) {
+func (s *service) getAllRunners(ctx *gin.Context, typ string) ([]*app.Runner, error) {
 	var runners []*app.Runner
 
 	res := s.db.WithContext(ctx).
@@ -50,6 +50,11 @@ func (s *service) getAllRunners(ctx context.Context, typ string) ([]*app.Runner,
 		Find(&runners)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all runners: %w", res.Error)
+	}
+
+	runners, err := db.HandlePaginatedResponse(ctx, runners)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return runners, nil
