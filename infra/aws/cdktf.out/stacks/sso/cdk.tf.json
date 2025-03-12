@@ -71,7 +71,7 @@
   "output": {
     "sso-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-03-12T20:47:06.647Z"
+      "value": "2025-03-12T21:20:20.647Z"
     }
   },
   "provider": {
@@ -131,20 +131,6 @@
         "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
         "principal_type": "GROUP",
         "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountdemo-govcloudid}",
-        "target_type": "AWS_ACCOUNT"
-      },
-      "nuonadmin-external": {
-        "//": {
-          "metadata": {
-            "path": "sso/nuonadmin-external",
-            "uniqueId": "nuonadmin-external"
-          }
-        },
-        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
-        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
-        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
-        "principal_type": "GROUP",
-        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountexternalid}",
         "target_type": "AWS_ACCOUNT"
       },
       "nuonadmin-govcloud-prod": {
@@ -439,20 +425,6 @@
         "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
         "principal_type": "GROUP",
         "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountdemo-govcloudid}",
-        "target_type": "AWS_ACCOUNT"
-      },
-      "nuonpoweruser-external": {
-        "//": {
-          "metadata": {
-            "path": "sso/nuonpoweruser-external",
-            "uniqueId": "nuonpoweruser-external"
-          }
-        },
-        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
-        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
-        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
-        "principal_type": "GROUP",
-        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountexternalid}",
         "target_type": "AWS_ACCOUNT"
       },
       "nuonpoweruser-govcloud-prod": {

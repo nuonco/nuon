@@ -12,7 +12,6 @@
         "canary-gh-oidc-provider": "canary-gh-oidc-provider",
         "demo-gh-oidc-provider": "demo-gh-oidc-provider",
         "demo-govcloud-gh-oidc-provider": "demo-govcloud-gh-oidc-provider",
-        "external-gh-oidc-provider": "external-gh-oidc-provider",
         "govcloud-prod-gh-oidc-provider": "govcloud-prod-gh-oidc-provider",
         "govcloud-stage-gh-oidc-provider": "govcloud-stage-gh-oidc-provider",
         "infra-shared-prod-gh-oidc-provider": "infra-shared-prod-gh-oidc-provider",
@@ -74,7 +73,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-03-12T20:47:06.746Z"
+      "value": "2025-03-12T21:20:20.709Z"
     },
     "canary-gh-oidc-provider": {
       "description": "The Github OIDC provider for the canary account",
@@ -87,10 +86,6 @@
     "demo-govcloud-gh-oidc-provider": {
       "description": "The Github OIDC provider for the demo-govcloud account",
       "value": "${aws_iam_openid_connect_provider.demo-govcloud-github-oidc-provider}"
-    },
-    "external-gh-oidc-provider": {
-      "description": "The Github OIDC provider for the external account",
-      "value": "${aws_iam_openid_connect_provider.external-github-oidc-provider}"
     },
     "govcloud-prod-gh-oidc-provider": {
       "description": "The Github OIDC provider for the govcloud-prod account",
@@ -177,91 +172,6 @@
           }
         ],
         "region": "us-east-2"
-      },
-      {
-        "alias": "external",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountexternalid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "external-us-east-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountexternalid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-1"
-      },
-      {
-        "alias": "external-us-east-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountexternalid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "external-us-west-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountexternalid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-1"
-      },
-      {
-        "alias": "external-us-west-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountexternalid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-2"
       },
       {
         "alias": "demo",
@@ -2082,16 +1992,6 @@
         "account_alias": "nuon-demo",
         "provider": "aws.demo"
       },
-      "external-iam-alias": {
-        "//": {
-          "metadata": {
-            "path": "accounts/external-iam-alias",
-            "uniqueId": "external-iam-alias"
-          }
-        },
-        "account_alias": "nuon-external",
-        "provider": "aws.external"
-      },
       "govcloud-prod-iam-alias": {
         "//": {
           "metadata": {
@@ -2319,23 +2219,6 @@
           "sts.amazonaws.com"
         ],
         "provider": "aws.demo-govcloud",
-        "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1",
-          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
-        ],
-        "url": "https://token.actions.githubusercontent.com"
-      },
-      "external-github-oidc-provider": {
-        "//": {
-          "metadata": {
-            "path": "accounts/external-github-oidc-provider",
-            "uniqueId": "external-github-oidc-provider"
-          }
-        },
-        "client_id_list": [
-          "sts.amazonaws.com"
-        ],
-        "provider": "aws.external",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
           "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
@@ -2697,22 +2580,6 @@
         "name": "terraform",
         "path": "/",
         "provider": "aws.demo"
-      },
-      "external-terraform-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/external-terraform-role",
-            "uniqueId": "external-terraform-role"
-          }
-        },
-        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
-        "description": "Terraform role to assume",
-        "managed_policy_arns": [
-          "arn:aws:iam::aws:policy/AdministratorAccess"
-        ],
-        "name": "terraform",
-        "path": "/",
-        "provider": "aws.external"
       },
       "govcloud-prod-terraform-role": {
         "//": {
@@ -3093,36 +2960,6 @@
         },
         "aws_service_name": "spot.amazonaws.com",
         "provider": "aws.demo"
-      },
-      "external-opensearch-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/external-opensearch-service-linked-role",
-            "uniqueId": "external-opensearch-service-linked-role"
-          }
-        },
-        "aws_service_name": "opensearchservice.amazonaws.com",
-        "provider": "aws.external"
-      },
-      "external-spot-fleet-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/external-spot-fleet-service-linked-role",
-            "uniqueId": "external-spot-fleet-service-linked-role"
-          }
-        },
-        "aws_service_name": "spotfleet.amazonaws.com",
-        "provider": "aws.external"
-      },
-      "external-spot-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/external-spot-service-linked-role",
-            "uniqueId": "external-spot-service-linked-role"
-          }
-        },
-        "aws_service_name": "spot.amazonaws.com",
-        "provider": "aws.external"
       },
       "govcloud-prod-opensearch-service-linked-role": {
         "//": {
@@ -3708,20 +3545,6 @@
         "type": "NS",
         "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
       },
-      "external-ns-delegation": {
-        "//": {
-          "metadata": {
-            "path": "accounts/external-ns-delegation",
-            "uniqueId": "external-ns-delegation"
-          }
-        },
-        "name": "external.nuon.co",
-        "provider": "aws",
-        "records": "${aws_route53_zone.external-hosted-zone.name_servers}",
-        "ttl": 300,
-        "type": "NS",
-        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
-      },
       "govcloud-prod-ns-delegation": {
         "//": {
           "metadata": {
@@ -4005,16 +3828,6 @@
         },
         "name": "demo.nuon.co",
         "provider": "aws.demo"
-      },
-      "external-hosted-zone": {
-        "//": {
-          "metadata": {
-            "path": "accounts/external-hosted-zone",
-            "uniqueId": "external-hosted-zone"
-          }
-        },
-        "name": "external.nuon.co",
-        "provider": "aws.external"
       },
       "govcloud-prod-hosted-zone": {
         "//": {

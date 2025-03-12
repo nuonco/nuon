@@ -11,7 +11,6 @@
         "cross-stack-output-aws_organizations_account.canary.id": "cross-stack-output-aws_organizations_accountcanaryid",
         "cross-stack-output-aws_organizations_account.demo-govcloud.id": "cross-stack-output-aws_organizations_accountdemo-govcloudid",
         "cross-stack-output-aws_organizations_account.demo.id": "cross-stack-output-aws_organizations_accountdemoid",
-        "cross-stack-output-aws_organizations_account.external.id": "cross-stack-output-aws_organizations_accountexternalid",
         "cross-stack-output-aws_organizations_account.govcloud-prod.id": "cross-stack-output-aws_organizations_accountgovcloud-prodid",
         "cross-stack-output-aws_organizations_account.govcloud-stage.id": "cross-stack-output-aws_organizations_accountgovcloud-stageid",
         "cross-stack-output-aws_organizations_account.infra-shared-prod.id": "cross-stack-output-aws_organizations_accountinfra-shared-prodid",
@@ -82,10 +81,6 @@
     "cross-stack-output-aws_organizations_accountdemoid": {
       "sensitive": true,
       "value": "${aws_organizations_account.demo.id}"
-    },
-    "cross-stack-output-aws_organizations_accountexternalid": {
-      "sensitive": true,
-      "value": "${aws_organizations_account.external.id}"
     },
     "cross-stack-output-aws_organizations_accountgovcloud-prodid": {
       "sensitive": true,
@@ -161,7 +156,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-03-12T20:47:06.573Z"
+      "value": "2025-03-12T21:20:20.607Z"
     }
   },
   "provider": {
@@ -234,24 +229,6 @@
         },
         "name": "demo-govcloud",
         "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
-      },
-      "external": {
-        "//": {
-          "metadata": {
-            "path": "org/external",
-            "uniqueId": "external"
-          }
-        },
-        "close_on_deletion": true,
-        "email": "aws-accounts+external@powertools.dev",
-        "iam_user_access_to_billing": "ALLOW",
-        "lifecycle": {
-          "ignore_changes": [
-            "iam_user_access_to_billing"
-          ]
-        },
-        "name": "external",
-        "parent_id": "${aws_organizations_organizational_unit.deleted.id}"
       },
       "govcloud-prod": {
         "//": {
@@ -618,16 +595,6 @@
       }
     },
     "aws_organizations_organizational_unit": {
-      "deleted": {
-        "//": {
-          "metadata": {
-            "path": "org/deleted",
-            "uniqueId": "deleted"
-          }
-        },
-        "name": "deleted",
-        "parent_id": "${aws_organizations_organization.org.roots[0].id}"
-      },
       "engineers": {
         "//": {
           "metadata": {
@@ -723,17 +690,6 @@
         },
         "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"demo-govcloud\"]}}}}",
         "name": "demo-govcloud-environment-tag-policy",
-        "type": "TAG_POLICY"
-      },
-      "env_tag_policy_external": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_external",
-            "uniqueId": "env_tag_policy_external"
-          }
-        },
-        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"external\",\"stage\",\"prod\"]}}}}",
-        "name": "external-environment-tag-policy",
         "type": "TAG_POLICY"
       },
       "env_tag_policy_govcloud-prod": {
@@ -975,16 +931,6 @@
         },
         "policy_id": "${aws_organizations_policy.env_tag_policy_demo-govcloud.id}",
         "target_id": "${aws_organizations_account.demo-govcloud.id}"
-      },
-      "env_tag_policy_attach_external": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_attach_external",
-            "uniqueId": "env_tag_policy_attach_external"
-          }
-        },
-        "policy_id": "${aws_organizations_policy.env_tag_policy_external.id}",
-        "target_id": "${aws_organizations_account.external.id}"
       },
       "env_tag_policy_attach_govcloud-prod": {
         "//": {
