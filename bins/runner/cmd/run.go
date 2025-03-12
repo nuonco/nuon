@@ -18,7 +18,6 @@ import (
 	jobdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/job"
 	noopdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/noop"
 	terraformdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/terraform"
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/healthcheck"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner"
 	runnerhelm "github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner/helm"
@@ -32,6 +31,7 @@ import (
 	noopsync "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/noop"
 	ocisync "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/oci"
 
+	check "github.com/powertoolsdev/mono/bins/runner/internal/jobs/healthcheck/check"
 	noopoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/noop"
 	shutdownoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/shutdown"
 	updateoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/update"
@@ -52,6 +52,24 @@ func (c *cli) registerRun() error {
 
 func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{
+		// common providers
+		// operation jobs
+		fx.Provide(jobloop.AsOperationsJobLoop(operations.NewJobLoop)),
+		fx.Provide(jobs.AsJobHandler("operations", noopoperation.New)),
+		fx.Provide(jobs.AsJobHandler("operations", shutdownoperation.New)),
+		fx.Provide(jobs.AsJobHandler("operations", updateoperation.New)),
+		fx.Provide(jobs.AsJobHandler("operations", check.New)),
+
+		// sync jobs
+		fx.Provide(jobloop.AsJobLoop(sync.NewJobLoop)),
+		fx.Provide(jobs.AsJobHandler("sync", ocisync.New)),
+		fx.Provide(jobs.AsJobHandler("sync", noopsync.New)),
+
+		// start all job loops
+		fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
+		fx.Invoke(jobloop.WithOperationsJobLoops(func([]jobloop.JobLoop) {})),
+
+		// org-only providers
 		// build jobs
 		fx.Provide(jobloop.AsJobLoop(build.NewJobLoop)),
 		fx.Provide(jobs.AsJobHandler("builds", dockerbuild.New)),
@@ -59,27 +77,6 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 		fx.Provide(jobs.AsJobHandler("builds", helmbuild.New)),
 		fx.Provide(jobs.AsJobHandler("builds", terraformbuild.New)),
 		fx.Provide(jobs.AsJobHandler("builds", noopbuild.New)),
-
-		// deploy jobs
-		fx.Provide(jobloop.AsJobLoop(deploy.NewJobLoop)),
-		fx.Provide(jobs.AsJobHandler("deploys", helmdeploy.New)),
-		fx.Provide(jobs.AsJobHandler("deploys", jobdeploy.New)),
-		fx.Provide(jobs.AsJobHandler("deploys", noopdeploy.New)),
-		fx.Provide(jobs.AsJobHandler("deploys", terraformdeploy.New)),
-
-		// sync jobs
-		fx.Provide(jobloop.AsJobLoop(sync.NewJobLoop)),
-		fx.Provide(jobs.AsJobHandler("sync", ocisync.New)),
-		fx.Provide(jobs.AsJobHandler("sync", noopsync.New)),
-
-		// healthcheck jobs
-		fx.Provide(jobloop.AsJobLoop(healthcheck.NewJobLoop)),
-
-		// operation jobs
-		fx.Provide(jobloop.AsJobLoop(operations.NewJobLoop)),
-		fx.Provide(jobs.AsJobHandler("operations", noopoperation.New)),
-		fx.Provide(jobs.AsJobHandler("operations", shutdownoperation.New)),
-		fx.Provide(jobs.AsJobHandler("operations", updateoperation.New)),
 
 		// sandbox jobs
 		fx.Provide(jobloop.AsJobLoop(sandbox.NewJobLoop)),
@@ -90,16 +87,25 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 		fx.Provide(jobs.AsJobHandler("runner", runnerterraform.New)),
 		fx.Provide(jobs.AsJobHandler("runner", runnerhelm.New)),
 
+		// install-only proviers
+		// deploy jobs
+		fx.Provide(jobloop.AsJobLoop(deploy.NewJobLoop)),
+		fx.Provide(jobs.AsJobHandler("deploys", helmdeploy.New)),
+		fx.Provide(jobs.AsJobHandler("deploys", jobdeploy.New)),
+		fx.Provide(jobs.AsJobHandler("deploys", noopdeploy.New)),
+		fx.Provide(jobs.AsJobHandler("deploys", terraformdeploy.New)),
+
 		// actions jobs
 		fx.Provide(jobloop.AsJobLoop(actions.NewJobLoop)),
 		fx.Provide(jobs.AsJobHandler("actions", actionsworkflow.New)),
 
-		// start all job loops
-		fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
 		fx.Invoke(func(*heartbeater.HeartBeater) {}),
 		fx.Invoke(func(*registry.Registry) {}),
 	}
 
 	providers = append(providers, c.providers()...)
+
+	// we need a way to determine what kind of runner we are running as
+
 	fx.New(providers...).Run()
 }

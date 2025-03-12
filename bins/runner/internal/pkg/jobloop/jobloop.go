@@ -2,6 +2,7 @@ package jobloop
 
 import (
 	"context"
+	"time"
 
 	nuonrunner "github.com/nuonco/nuon-runner-go"
 	"github.com/nuonco/nuon-runner-go/models"
@@ -20,6 +21,10 @@ type JobLoop interface {
 	Start() error
 	Stop() error
 	LifecycleHook() fx.Hook
+	// healthcheck
+	GetHealthcheck() (Healthcheck, string)
+	SetLatestHealthcheckAt() error
+	TimeSinceLastHealthcheck() time.Duration
 }
 
 var _ JobLoop = (*jobLoop)(nil)
@@ -42,6 +47,9 @@ type jobLoop struct {
 	l          *zap.Logger
 	mw         metrics.Writer
 	shutdowner fx.Shutdowner
+
+	// for healthcheck
+	healthcheck Healthcheck
 }
 
 func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params BaseParams) *jobLoop {
@@ -67,5 +75,5 @@ func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params B
 
 	params.LC.Append(jl.LifecycleHook())
 
-	return nil
+	return jl
 }
