@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
@@ -80,6 +81,13 @@ func (s *service) getComponentConfigs(ctx *gin.Context, cmpID string) ([]app.Com
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}
+
+	cfgs, err := db.HandlePaginatedResponse(ctx, cmp.ComponentConfigs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+	}
+
+	cmp.ComponentConfigs = cfgs
 
 	return cmp.ComponentConfigs, nil
 }

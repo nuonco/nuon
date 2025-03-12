@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -9,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -39,16 +39,16 @@ func (s *service) GetInstallActionWorkflowRuns(ctx *gin.Context) {
 	}
 
 	installID := ctx.Param("install_id")
-	configs, err := s.findInstallActionWorkflowRuns(ctx, org.ID, installID)
+	runs, err := s.findInstallActionWorkflowRuns(ctx, org.ID, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install action workflow runs %s: %w", installID, err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, configs)
+	ctx.JSON(http.StatusOK, runs)
 }
 
-func (s *service) findInstallActionWorkflowRuns(ctx context.Context, orgID, installID string) ([]*app.InstallActionWorkflowRun, error) {
+func (s *service) findInstallActionWorkflowRuns(ctx *gin.Context, orgID, installID string) ([]*app.InstallActionWorkflowRun, error) {
 	runs := []*app.InstallActionWorkflowRun{}
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithPagination).
@@ -57,6 +57,11 @@ func (s *service) findInstallActionWorkflowRuns(ctx context.Context, orgID, inst
 		Find(&runs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install action workflow runs: %w", res.Error)
+	}
+
+	runs, err := db.HandlePaginatedResponse(ctx, runs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install action workflow runs: %w", err)
 	}
 
 	return runs, nil

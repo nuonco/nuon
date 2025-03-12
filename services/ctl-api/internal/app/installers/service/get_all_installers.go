@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -44,7 +44,7 @@ func (s *service) GetAllInstallers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installs)
 }
 
-func (s *service) getAllInstallers(ctx context.Context, limitVal int) ([]*app.Installer, error) {
+func (s *service) getAllInstallers(ctx *gin.Context, limitVal int) ([]*app.Installer, error) {
 	var installers []*app.Installer
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithPagination).
@@ -56,6 +56,11 @@ func (s *service) getAllInstallers(ctx context.Context, limitVal int) ([]*app.In
 		Find(&installers)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get installers: %w", res.Error)
+	}
+
+	installers, err := db.HandlePaginatedResponse(ctx, installers)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return installers, nil

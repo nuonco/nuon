@@ -1,12 +1,12 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -31,13 +31,18 @@ func (s *service) GetAllReleases(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, releases)
 }
 
-func (s *service) getAllReleases(ctx context.Context) ([]*app.ComponentRelease, error) {
+func (s *service) getAllReleases(ctx *gin.Context) ([]*app.ComponentRelease, error) {
 	var releases []*app.ComponentRelease
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithPagination).
 		Find(&releases)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all releases: %w", res.Error)
+	}
+
+	releases, err := db.HandlePaginatedResponse(ctx, releases)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return releases, nil

@@ -1,12 +1,12 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -42,7 +42,7 @@ func (s *service) GetComponentReleases(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installs)
 }
 
-func (s *service) getComponentReleases(ctx context.Context, componentID string) ([]app.ComponentRelease, error) {
+func (s *service) getComponentReleases(ctx *gin.Context, componentID string) ([]app.ComponentRelease, error) {
 	var releases []app.ComponentRelease
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithPagination).
@@ -55,6 +55,11 @@ func (s *service) getComponentReleases(ctx context.Context, componentID string) 
 		Find(&releases)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to load component releases")
+	}
+
+	releases, err := db.HandlePaginatedResponse(ctx, releases)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return releases, nil

@@ -13,6 +13,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -98,6 +99,11 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 		First(&installActionWorkflow)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get install action workflow")
+	}
+
+	installActionWorkflow.Runs, err = db.HandlePaginatedResponse(ctx, installActionWorkflow.Runs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return &installActionWorkflow, nil
