@@ -25,6 +25,7 @@ const (
 	OperationForceDelete   eventloop.SignalType = "force_delete"
 	OperationProcessJob    eventloop.SignalType = "process_job"
 	OperationUpdateVersion eventloop.SignalType = "update_version"
+	OperationHealthcheck   eventloop.SignalType = "healthcheck"
 )
 
 type Signal struct {
