@@ -86,9 +86,9 @@ export const RunnerUpcomingJobs: FC<IRunnerUpcomingJobs> = async ({
         </div>
       ) : (
         <div className="m-auto flex flex-col items-center max-w-[200px] my-6">
-          <EmptyStateGraphic variant="diagram" />
-          <Text className="mt-6" variant="med-14">
-            No upcoming jobs
+          <EmptyStateGraphic variant="table" />
+          <Text className="mt-3 mb-1" variant="med-12">
+            No jobs in queue yet!
           </Text>
           <Text variant="reg-12" className="text-center">
             Runner jobs will appear here as they become available and queued.

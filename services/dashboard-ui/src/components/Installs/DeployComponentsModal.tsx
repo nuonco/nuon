@@ -99,13 +99,13 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
           )
         : null}
       <Button
-        className="text-sm !font-medium !p-2 h-[32px] flex items-center gap-3 !rounded-none w-full"
+        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full"
         variant="ghost"
         onClick={() => {
           setIsOpen(true)
         }}
       >
-        <CloudArrowUp size="18" />
+        <CloudArrowUp size="16" />
         Deploy components
       </Button>
     </>

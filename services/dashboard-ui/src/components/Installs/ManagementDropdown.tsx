@@ -1,11 +1,11 @@
 import React, { type FC } from 'react'
+import { BreakGlassLink } from './BreakGlassLink'
 import { DeployComponentsModal } from './DeployComponentsModal'
 import { EditModal } from './EditModal'
 import { ForgetModal } from './ForgetModal'
 import { ReprovisionModal } from './ReprovisionModal'
 import { TeardownComponentsModal } from './TeardownComponentsModal'
 import { Dropdown } from '@/components/Dropdown'
-import { Button } from '@/components/Button'
 import { Text } from '@/components/Typography'
 import type { TInstall } from '@/types'
 
@@ -29,7 +29,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
       isDownIcon
       wrapperClassName="z-20"
     >
-      <div className="min-w-[180px] rounded-md overflow-hidden">
+      <div className="min-w-[256px] rounded-md overflow-hidden p-2 flex flex-col gap-1">
         <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
           Controls
         </Text>
@@ -44,7 +44,8 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
         ) : null}
 
         <>
-          <hr />
+          <hr className="my-2" />
+          <BreakGlassLink installId={install.id} />
           <ForgetModal install={install} orgId={orgId} />
         </>
       </div>
