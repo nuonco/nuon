@@ -1,8 +1,9 @@
 'use client'
 
-import React, { type FC, useMemo, useState } from 'react'
+import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight } from '@phosphor-icons/react'
+import { BuildAllComponentsButton } from '@/components/Components'
 import {
   StaticComponentConfigType,
   getComponentConfigType,
@@ -55,9 +56,13 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
   components,
   orgId,
 }) => {
-  const [data, _] = useState(parseComponentsToTableData(components))
+  const [data, updateData] = useState(parseComponentsToTableData(components))
   const [columnFilters, __] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
+
+  useEffect(() => {
+    updateData(parseComponentsToTableData(components))
+  }, [components])
 
   const columns: Array<ColumnDef<TData>> = useMemo(
     () => [
@@ -110,7 +115,13 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
       {
         header: 'Build',
         accessorKey: 'build',
-        cell: (props) => <StatusBadge status={props.getValue<string>()} />,
+        cell: (props) => (
+          <StatusBadge
+            shouldPoll={props?.row.index === 0}
+            pollDuration={10000}
+            status={props.getValue<string>()}
+          />
+        ),
       },
       {
         header: 'Config',
@@ -140,12 +151,17 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
   return (
     <Table
       header={
-        <>
+        <div className="w-full flex items-start justify-between">
           <DataTableSearch
             handleOnChange={handleGlobleFilter}
             value={globalFilter}
           />
-        </>
+          <BuildAllComponentsButton
+            appId={appId}
+            components={components}
+            orgId={orgId}
+          />
+        </div>
       }
       data={data}
       columns={columns}
