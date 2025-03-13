@@ -59,7 +59,7 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
                     {
                       // this is the service url
                       "name"  = "CLICKHOUSE_URL"
-                      "value" = "clickhouse-clickhouse-installation.clickhouse.svc.cluster.local"
+                      "value" = "clickhouse.clickhouse.svc.cluster.local"
                     },
                     {
                       "name"  = "CLICKHOUSE_USERNAME"
@@ -96,7 +96,7 @@ resource "kubectl_manifest" "clickhouse_backup_crons" {
           }
         }
       }
-      "schedule"                   = "13,37 */1 * * *" // TODO(fd): add some randomness +/- 3 min
+      "schedule"                   = "*/15 * * * *"
       "successfulJobsHistoryLimit" = 0
       "failedJobsHistoryLimit"     = 0
     }
