@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.466
+
+Break glass and team pages in UI.
+
 ## v0.19.465
 
 Render timestamps on client side in UI.
