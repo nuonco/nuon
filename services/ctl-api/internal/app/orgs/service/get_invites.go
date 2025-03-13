@@ -24,7 +24,6 @@ import (
 // @Accept			json
 // @Produce		json
 // @Security APIKey
-// @Param   limit  query int	 false	"limit of health checks to return"	     Default(60)
 // @Failure		400				{object}	stderr.ErrResponse
 // @Failure		401				{object}	stderr.ErrResponse
 // @Failure		403				{object}	stderr.ErrResponse
