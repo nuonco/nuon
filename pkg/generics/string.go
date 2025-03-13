@@ -43,3 +43,13 @@ func SystemName(val string) string {
 	str = caser.String(str)
 	return str
 }
+
+func StringOneOf(val string, vals ...string) bool {
+	for _, v := range vals {
+		if v == val {
+			return true
+		}
+	}
+
+	return false
+}
