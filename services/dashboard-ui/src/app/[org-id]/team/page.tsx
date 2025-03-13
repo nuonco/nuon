@@ -1,8 +1,17 @@
 import { redirect } from 'next/navigation'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { DashboardContent, StatusBadge, Section, Text } from '@/components'
+import {
+  DashboardContent,
+  ErrorFallback,
+  Loading,
+  StatusBadge,
+  Section,
+  Text,
+} from '@/components'
 import { getOrg } from '@/lib'
+import type { TAccount } from '@/types'
+import { API_URL, getFetchOpts } from '@/utils'
 
 export default async function OrgTeam({ params }) {
   const orgId = params?.['org-id'] as string
@@ -31,7 +40,13 @@ export default async function OrgTeam({ params }) {
         <div className="flex-auto md:grid md:grid-cols-12 divide-x">
           <div className="divide-y flex flex-col flex-auto col-span-8">
             <Section heading="Members">
-              <Text variant="reg-12">TKTK</Text>
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={<Loading loadingText="Loading org members..." />}
+                >
+                  <OrgMembers orgId={orgId} />
+                </Suspense>
+              </ErrorBoundary>
             </Section>
           </div>
           <div className="divide-y flex flex-col flex-auto col-span-4">
@@ -45,4 +60,23 @@ export default async function OrgTeam({ params }) {
   } else {
     redirect(`/${orgId}/apps`)
   }
+}
+
+const OrgMembers: FC<{ orgId: string }> = async ({ orgId }) => {
+  const members = await fetch(
+    `${API_URL}/v1/orgs/current/accounts`,
+    await getFetchOpts(orgId)
+  )
+    .then((res) => res.json() as Promise<Array<TAccount>>)
+    .catch(console.error)
+
+  return (
+    <div className="flex flex-col gap-2">
+      {members && members?.length ? (
+        members?.map((member) => <span key={member?.id}>{member?.email}</span>)
+      ) : (
+        <span>No members in this org</span>
+      )}
+    </div>
+  )
 }

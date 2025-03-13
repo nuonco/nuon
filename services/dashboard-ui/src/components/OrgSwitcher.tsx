@@ -62,8 +62,8 @@ export const OrgSummary: FC<IOrgSummary> = ({
   return (
     <div className="flex gap-4 items-center justify-start">
       <OrgAvatar
-        name={org.name}
-        logoURL={org.logo_url}
+        name={org?.name}
+        logoURL={org?.logo_url}
         isSmall={!isSidebarOpen}
       />
 
@@ -73,16 +73,16 @@ export const OrgSummary: FC<IOrgSummary> = ({
             className={classNames(
               'text-md !font-medium leading-normal max-w-[150px] mb-1 break-all text-left !flex-nowrap'
             )}
-            title={org.sandbox_mode ? 'Org is in sandbox mode' : undefined}
+            title={org?.sandbox_mode ? 'Org is in sandbox mode' : undefined}
           >
-            {org.sandbox_mode && <TestTube className="text-md" />}
+            {org?.sandbox_mode && <TestTube className="text-md" />}
             <span
               className={classNames('', {
-                'max-w-[120px]': org.sandbox_mode,
-                'truncate !inline': org.name.length >= 16,
+                'max-w-[120px]': org?.sandbox_mode,
+                'truncate !inline': org?.name?.length >= 16,
               })}
             >
-              {org.name}
+              {org?.name}
             </span>
           </Text>
           <OrgStatus initOrg={org} shouldPoll={shouldPoll} />

@@ -1,3 +1,4 @@
+import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
@@ -17,7 +18,10 @@ import {
 } from '@/components'
 import { getOrg, getRunner } from '@/lib'
 
-export default async function OrgRunner({ params, searchParams }) {
+export default withPageAuthRequired(async function OrgRunner({
+  params,
+  searchParams,
+}) {
   const orgId = params?.['org-id'] as string
   const org = await getOrg({ orgId })
   const runnerId = org?.runner_group?.runners?.at(0)?.id
@@ -104,7 +108,7 @@ export default async function OrgRunner({ params, searchParams }) {
                   <RunnerPastJobs
                     runnerId={runnerId}
                     orgId={orgId}
-                    offset={searchParams['past-jobs'] || '0'}
+                    offset={(searchParams['past-jobs'] as string) || '0'}
                   />
                 </Suspense>
               </ErrorBoundary>
@@ -154,4 +158,4 @@ export default async function OrgRunner({ params, searchParams }) {
   } else {
     redirect(`/${orgId}/apps`)
   }
-}
+})
