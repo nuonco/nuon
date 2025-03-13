@@ -107,7 +107,7 @@ export const BreakGlassForm: FC<IBreakGlassForm> = ({ install }) => {
                     I acknowledge that I understand and accept the changes to
                     the installation permissions.
                   </Text>
-                  <Text variant="reg-12">
+                  <Text className="!font-normal" variant="reg-12">
                     I recognize that these modifications may impact access,
                     permissions, and resource management, and I agree to use
                     these settings responsibly and in compliance with

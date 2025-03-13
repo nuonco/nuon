@@ -1,7 +1,7 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { FiChevronRight } from 'react-icons/fi'
+import { CaretRight } from '@phosphor-icons/react/dist/ssr'
 import {
   ClickToCopy,
   ComponentConfiguration,
@@ -80,19 +80,18 @@ export default withPageAuthRequired(async function InstallComponent({
     >
       <div className="flex flex-col lg:flex-row flex-auto">
         <div className="divide-y flex-auto  flex flex-col overlfow-auto">
-          {component.dependencies && (
-            <Section className="flex-initial" heading="Dependencies">
-              <DependentComponents
-                dependentIds={component.dependencies}
-                installComponents={
-                  install?.install_components as Array<TInstallComponent>
-                }
-                installId={installId}
-                orgId={orgId}
-              />
-            </Section>
-          )}
           <Section
+            actions={
+              <Text>
+                <Link
+                  href={`/${orgId}/apps/${component.app_id}/components/${component.id}`}
+                >
+                  Details
+                  <CaretRight />
+                </Link>
+              </Text>
+            }
+            className="flex-initial"
             heading="Component config"
             childrenClassName="flex flex-col gap-4"
           >
@@ -109,6 +108,18 @@ export default withPageAuthRequired(async function InstallComponent({
               </Suspense>
             </ErrorBoundary>
           </Section>
+          {component.dependencies && (
+            <Section className="flex-initial" heading="Dependencies">
+              <DependentComponents
+                dependentIds={component.dependencies}
+                installComponents={
+                  install?.install_components as Array<TInstallComponent>
+                }
+                installId={installId}
+                orgId={orgId}
+              />
+            </Section>
+          )}
         </div>
         <div className="border-l overflow-auto lg:min-w-[450px] lg:max-w-[450px]">
           <Section heading="Deploy history">
@@ -137,7 +148,7 @@ const LatestOutputs: FC<{
     installId,
     orgId,
   }).catch(console.error)
-  
+
   return outputs ? (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
@@ -169,7 +180,7 @@ const LatestBuild = async ({ component, orgId }) => {
             href={`/${orgId}/apps/${component.app_id}/components/${component.id}/builds/${build.id}`}
           >
             Details
-            <FiChevronRight />
+            <CaretRight />
           </Link>
         </Text>
       }
