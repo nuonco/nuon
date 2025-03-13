@@ -73,7 +73,9 @@ export default withPageAuthRequired(async function OrgRunner({
                 <ErrorBoundary fallbackRender={ErrorFallback}>
                   <Suspense
                     fallback={
-                      <Loading loadingText="Loading runner heartbeat..." />
+                      <span className="flex self-end">
+                        <Loading loadingText="Loading runner heartbeat..." />
+                      </span>
                     }
                   >
                     <RunnerHeartbeat runnerId={runnerId} orgId={orgId} />
