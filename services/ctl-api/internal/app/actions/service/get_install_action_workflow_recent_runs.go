@@ -22,7 +22,6 @@ import (
 // @Description.markdown	get_install_action_workflow_recent_runs.md
 // @Param			install_id	path	string	true	"install ID"
 // @Param			action_workflow_id	path	string	true	"action workflow ID"
-// @Param			action_workflow_id	path	string	true	"action workflow ID"
 // @Param   offset query int	 false	"offset of results to return"	Default(0)
 // @Param   limit  query int	 false	"limit of results to return"	     Default(10)
 // @Param   x-nuon-pagination-enabled header bool false "Enable pagination"

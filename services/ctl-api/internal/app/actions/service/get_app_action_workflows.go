@@ -18,7 +18,6 @@ import (
 // @Summary	get action workflows for an app
 // @Description.markdown	get_app_action_workflows.md
 // @Param			app_id	path	string	true	"app ID"
-// @Param			action_workflow_id	path	string	true	"action workflow ID"
 // @Param   offset query int	 false	"offset of results to return"	Default(0)
 // @Param   limit  query int	 false	"limit of results to return"	     Default(10)
 // @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
