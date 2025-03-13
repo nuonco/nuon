@@ -34,3 +34,9 @@ resource "pagerduty_service" "workers-executors" {
     name                    = "workers-executors-0"   
     escalation_policy       = pagerduty_escalation_policy.support.id
 }
+
+
+resource "pagerduty_service" "unrouted-events" {
+    name = "unrouted-events-0"
+    escalation_policy = pagerduty_escalation_policy.support.id
+}
