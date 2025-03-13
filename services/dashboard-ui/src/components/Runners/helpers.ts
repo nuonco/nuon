@@ -45,6 +45,9 @@ export function jobName(job: TRunnerJob): string {
     case 'actions':
       name = job?.metadata?.action_workflow_name
       break
+    case 'operations':
+      name = job?.type
+      break
     default:
       name = 'Unknown'
   }

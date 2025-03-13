@@ -24,7 +24,8 @@ export const EventStatus: FC<{ status?: string }> = ({
       status === 'noop' ||
       status === 'pending' ||
       status === 'inactive' ||
-      status === 'cancelled',
+      status === 'cancelled' ||
+      status === 'not-attempted',
     'bg-orange-800 dark:bg-orange-500':
       status === 'executing' ||
       status === 'waiting' ||
@@ -145,7 +146,7 @@ export interface ITimeline {
 export const Timeline: FC<ITimeline> = ({
   events,
   emptyMessage = 'No events to show',
-  emptyTitle = "Nothing to show",
+  emptyTitle = 'Nothing to show',
 }) => {
   return (
     <div className="flex flex-col gap-2 timeline">

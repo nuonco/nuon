@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
-import { Check, XCircle } from '@phosphor-icons/react'
+import { Check } from '@phosphor-icons/react'
 import { Button, type IButton } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
@@ -68,7 +68,6 @@ interface ICancelRunnerJobButton extends IButton {
   jobType: TCancelJobType
   runnerJobId: string
   orgId: string
-  //onComplete?: () => void
 }
 
 export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
@@ -79,7 +78,7 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
 }) => {
   const cancelJobData = cancelJobOptions[jobType]
   const pathName = usePathname()
-  const [cancelError, setCancelError] = useState()
+  const [cancelError, setCancelError] = useState<string>()
   const [hasBeenCanceled, setHasBeenCanceled] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -137,13 +136,12 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
                   setIsKickedOff(true)
                   setIsConfirmOpen(false)
                   setHasBeenCanceled(true)
-                  //if (props.onComplete) props.onComplete()
                 })
                 .catch((error) => {
+                  console.error(error?.message)
                   setIsLoading(false)
                   setCancelError(
-                    error?.message ||
-                      'Error occured, please refresh page and try again.'
+                    'Error occured, please refresh page and try again.'
                   )
                 })
             }}
