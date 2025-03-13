@@ -30,6 +30,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job/activities"
+	signalsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/signals/activities"
 )
 
 var namespace string
@@ -57,6 +58,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	providers = append(
 		providers,
 		fx.Provide(jobactivities.New),
+		fx.Provide(signalsactivities.New),
 		fx.Provide(activities.New),
 		fx.Provide(job.New),
 		fx.Provide(workflows.NewActivities),
