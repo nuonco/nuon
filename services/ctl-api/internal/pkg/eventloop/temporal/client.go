@@ -11,8 +11,7 @@ import (
 type Params struct {
 	fx.In
 
-	EVClient eventloop.Client
-	L        *zap.Logger
+	L *zap.Logger
 }
 
 type Client interface {
@@ -23,13 +22,11 @@ type Client interface {
 var _ Client = (*evClient)(nil)
 
 type evClient struct {
-	evClient eventloop.Client
-	l        *zap.Logger
+	l *zap.Logger
 }
 
 func New(params Params) Client {
 	return &evClient{
-		evClient: params.EVClient,
-		l:        params.L,
+		l: params.L,
 	}
 }
