@@ -102,3 +102,24 @@ export async function createAppInstall({
     data,
   })
 }
+
+interface IBuildComponents {
+  appId: string
+  componentIds: Array<string>
+  orgId: string
+}
+
+export async function buildComponents({
+  appId,
+  componentIds,
+  orgId,
+}: IBuildComponents) {
+  return Promise.all(
+    componentIds.map(
+      async (cId) => await createBuild({ componentId: cId, orgId })
+    )
+  ).then((builds) => {
+    revalidatePath(`/${orgId}/apps/${appId}`)
+    return builds
+  })
+}
