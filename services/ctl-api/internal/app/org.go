@@ -38,11 +38,12 @@ const (
 type OrgFeature string
 
 const (
-	OrgFeatureAPIPagination OrgFeature = "api-pagination"
-	OrgFeatureOrgDashboard  OrgFeature = "org-dashboard"
-	OrgFeatureOrgRunner     OrgFeature = "org-runner"
-	OrgFeatureOrgSettings   OrgFeature = "org-settings"
-	OrgFeatureOrgSupport    OrgFeature = "org-support"
+	OrgFeatureAPIPagination     OrgFeature = "api-pagination"
+	OrgFeatureOrgDashboard      OrgFeature = "org-dashboard"
+	OrgFeatureOrgRunner         OrgFeature = "org-runner"
+	OrgFeatureOrgSettings       OrgFeature = "org-settings"
+	OrgFeatureOrgSupport        OrgFeature = "org-support"
+	OrgFeatureInstallBreakGlass OrgFeature = "install-break-glass"
 )
 
 type Org struct {
@@ -163,5 +164,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureOrgRunner,
 		OrgFeatureOrgSettings,
 		OrgFeatureOrgSupport,
+		OrgFeatureInstallBreakGlass,
 	}
 }

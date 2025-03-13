@@ -50,6 +50,6 @@ export const RunnerHeartbeat: FC<IRunnerHeartbeat> = async ({
       </span>
     </>
   ) : (
-    <span>No runner heartbeat found</span>
+    <Text className="self-end">No runner heartbeat found</Text>
   )
 }

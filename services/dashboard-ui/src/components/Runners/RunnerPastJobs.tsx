@@ -14,7 +14,7 @@ interface IRunnerPastJobs {
 }
 
 export const RunnerPastJobs: FC<IRunnerPastJobs> = async ({
-  groups = ['build', 'deploy', 'sync', 'actions'],
+  groups = ['build', 'deploy', 'sync', 'actions', 'operations'],
   offset,
   orgId,
   runnerId,
@@ -34,42 +34,37 @@ export const RunnerPastJobs: FC<IRunnerPastJobs> = async ({
       <Timeline
         emptyTitle="No runner jobs yet"
         emptyMessage="Waiting on install runner jobs."
-        events={runnerJobs
-          ?.filter((job) => job?.group !== 'operations')
-          .map((job, i) => {
-            const hrefPath = jobHrefPath(job)
-            const name = jobName(job)
+        events={runnerJobs.map((job, i) => {
+          const hrefPath = jobHrefPath(job)
+          const name = jobName(job)
 
-            return {
-              id: job?.id,
-              status: job?.status,
-              underline: (
-                <>
-                  {name ? (
-                    name?.length >= 12 ? (
-                      <ToolTip tipContent={name} alignment="right">
-                        <Truncate variant="small">{name}</Truncate>
-                      </ToolTip>
-                    ) : (
-                      name
-                    )
+          return {
+            id: job?.id,
+            status: job?.status,
+            underline: (
+              <>
+                {name ? (
+                  name?.length >= 12 ? (
+                    <ToolTip tipContent={name} alignment="right">
+                      <Truncate variant="small">{name}</Truncate>
+                    </ToolTip>
                   ) : (
-                    <span>Unknown</span>
-                  )}{' '}
-                  /
-                  <span className="!inline truncate max-w-[100px]">
-                    {job?.group}
-                  </span>
-                </>
-              ),
-              time: job?.updated_at,
-              href:
-                job?.metadata && hrefPath !== ''
-                  ? `/${orgId}/${hrefPath}`
-                  : null,
-              isMostRecent: i === 0,
-            }
-          })}
+                    name
+                  )
+                ) : (
+                  <span>Unknown</span>
+                )}{' '}
+                /
+                <span className="!inline truncate max-w-[100px]">
+                  {job?.group}
+                </span>
+              </>
+            ),
+            time: job?.updated_at,
+            href: hrefPath !== '' ? `/${orgId}/${hrefPath}` : null,
+            isMostRecent: i === 0,
+          }
+        })}
       />
       <Pagination param="past-jobs" pageData={pageData} />
     </div>
