@@ -1,10 +1,13 @@
-import { Dashboard, Link, Text } from '@/components'
+import { Dashboard, EmptyStateGraphic, Link, Text } from '@/components'
 
 export default function NotFound() {
   return (
     <Dashboard>
       <main className="flex h-full gap-6">
         <div className="flex flex-col gap-6 py-6 md:py-12 lg:py-24 lg:max-w-2xl">
+          <div>
+            <EmptyStateGraphic />
+          </div>
           <Text variant="semi-18" level={1}>
             Nuon data not found
           </Text>
