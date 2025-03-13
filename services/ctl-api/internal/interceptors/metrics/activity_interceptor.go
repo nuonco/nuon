@@ -81,5 +81,5 @@ func (a *actInterceptor) ExecuteActivity(
 		}
 	}
 
-	return resp, nil
+	return resp, err
 }
