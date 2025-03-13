@@ -305,6 +305,20 @@ module "infra-vercel" {
   project_id    = tfe_project.infra.id
 }
 
+
+module "infra-on-call" {
+  source = "./modules/workspace"
+
+  name                            = "infra-on-call"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/on-call"
+  auto_apply                      = true
+
+  variable_sets = []
+  project_id    = tfe_project.infra.id
+}
+
+
 module "infra-vantage" {
   source = "./modules/workspace"
 
