@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	maxSignals int = 10
-	checkExistsInterval = 3 * time.Minute
+	maxSignals          int = 10
+	checkExistsInterval     = 24 * time.Minute
 )
 
 // Loop is the generic implementation of Nuon's Temporal-backed event loop. Start an event
@@ -165,7 +165,7 @@ func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.Event
 	signalCount := 0
 	stop := false
 	restart := false
-	checkExists := func() () {
+	checkExists := func() {
 		exists := true
 		var err error
 		if w.ExistsHook != nil {
@@ -177,7 +177,6 @@ func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.Event
 		}
 		stop = !exists
 	}
-
 
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
