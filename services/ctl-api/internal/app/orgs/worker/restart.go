@@ -1,8 +1,6 @@
 package worker
 
 import (
-	"time"
-
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
@@ -29,7 +27,6 @@ func (w *Workflows) Restart(ctx workflow.Context, sreq signals.RequestSignal) er
 		if err := w.restartEventLoop(ctx, ev.Namespace, ev.ID); err != nil {
 			return errors.Wrap(err, "unable to restart event loop")
 		}
-		workflow.Sleep(ctx, time.Millisecond)
 	}
 
 	return nil

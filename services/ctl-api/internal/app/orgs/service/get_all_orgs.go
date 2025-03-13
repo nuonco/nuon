@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
@@ -42,7 +43,7 @@ func (s *service) getAllOrgs(ctx *gin.Context, typ string) ([]*app.Org, error) {
 	var orgs []*app.Org
 
 	where := app.Org{}
-	if typ != "all" {
+	if !generics.StringOneOf(typ, "", "all") {
 		where.OrgType = app.OrgType(typ)
 	}
 
