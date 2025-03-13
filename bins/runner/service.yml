@@ -32,8 +32,10 @@ local_startup_cmds:
 local_build_cmds:
   - go build -o /tmp/runner
 local_cmds:
+  # you can disable the org runner by adding DISABLE_ORG_RUNNER: true to your ~/.nuonctl-env.yml file
   - /tmp/runner run-local org
-  # - /tmp/runner run-local install
+  # you can disable the org runner by adding DISABLE_INSTALL_RUNNER: true to your ~/.nuonctl-env.yml file
+  - /tmp/runner run-local install
 
 # by default, using `run-earthly` will only run the runner with the most current org, however you can use `exec-earthly
 # installs"` or `exec-earthly <runner-id>` to run a specific runner.
