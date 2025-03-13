@@ -115,7 +115,9 @@ export const TimelineEvent: FC<ITimelineEvent> = ({
               status === 'finished' ||
                 status === 'failed' ||
                 status === 'active' ||
-                status === 'error'
+                status === 'error' ||
+                status === 'not-attempted' ||
+                status === 'timed-out'
             ),
           })}
         />

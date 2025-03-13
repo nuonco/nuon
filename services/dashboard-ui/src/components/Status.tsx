@@ -6,7 +6,7 @@ import React, { type FC, useEffect } from 'react'
 import { ToolTip } from '@/components/ToolTip'
 import { Text } from '@/components/Typography'
 import { revalidateData } from '@/components/actions'
-import { titleCase, SHORT_POLL_DURATION } from '@/utils'
+import { titleCase, POLL_DURATION } from '@/utils'
 
 export type TStatus = 'active' | 'failed' | 'error' | 'waiting'
 
@@ -24,6 +24,7 @@ export interface IStatusBadge extends IStatus {
   descriptionPosition?: 'bottom' | 'top'
   isWithoutBorder?: boolean
   shouldPoll?: boolean
+  pollDuration?: number
 }
 
 export const StatusBadge: FC<IStatusBadge> = ({
@@ -36,6 +37,7 @@ export const StatusBadge: FC<IStatusBadge> = ({
   label,
   status,
   shouldPoll = false,
+  pollDuration = POLL_DURATION,
 }) => {
   const isActive =
     status === 'active' || status === 'ok' || status === 'finished'
@@ -61,16 +63,7 @@ export const StatusBadge: FC<IStatusBadge> = ({
       revalidateData({ path })
     }
     if (shouldPoll) {
-      const pollBuild = setInterval(refreshData, SHORT_POLL_DURATION)
-
-      /* if (
-       *   status === 'active' ||
-       *   status === 'error' ||
-       *   status === 'failed' ||
-       *   status === 'noop'
-       * ) {
-       *   clearInterval(pollBuild)
-       * } */
+      const pollBuild = setInterval(refreshData, pollDuration)
 
       return () => clearInterval(pollBuild)
     }
