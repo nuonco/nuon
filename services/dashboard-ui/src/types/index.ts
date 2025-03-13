@@ -170,3 +170,6 @@ export type TReadme = components['schemas']['service.Readme']
 
 // Waitlist
 export type TWaitlist = components['schemas']['app.Waitlist']
+
+// User / Account
+export type TAccount = components['schemas']['app.Account']
