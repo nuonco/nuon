@@ -21,7 +21,7 @@ schema:
     enabled: false
 
 server:
-  replicaCount: 3
+  replicaCount: 5
   config:
     prometheus:
       framework: opentelemetry
