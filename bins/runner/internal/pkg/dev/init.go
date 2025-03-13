@@ -10,6 +10,11 @@ import (
 )
 
 func (d *devver) Init(ctx context.Context) error {
+	if d.Disabled() {
+		fmt.Println("disabling and returning because of DISABLE_ORG_RUNNER or DISABLE_INSTALL_RUNNER in env")
+		return nil
+	}
+
 	shouldMonitor := true
 	if os.Getenv("RUNNER_ID") != "" {
 		fmt.Println("disabling monitoring and restarting for new runners")
