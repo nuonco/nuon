@@ -71,7 +71,7 @@ export const RunnerHealthChart: FC<IRunnerHealthChart> = async ({ orgId, runnerI
     </div>
   ) : (
     <div className="m-auto flex flex-col items-center max-w-[200px] my-6">
-      <EmptyStateGraphic />
+      <EmptyStateGraphic variant="diagram" />
       <Text className="mt-6" variant="med-14">
         No health check data
       </Text>
