@@ -82,7 +82,11 @@ export const RunnerUpcomingJobs: FC<IRunnerUpcomingJobs> = async ({
               )
             })}
           </div>
-          <Pagination param="past-jobs" pageData={pageData} position="right" />
+          <Pagination
+            param="upcoming-jobs"
+            pageData={pageData}
+            position="right"
+          />
         </div>
       ) : (
         <div className="m-auto flex flex-col items-center max-w-[200px] my-6">
