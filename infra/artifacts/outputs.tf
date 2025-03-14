@@ -69,7 +69,7 @@ output "artifacts" {
 
     "bins/stage-runner" = {
       bucket_prefix   = "stage-runner"
-      ecr             = module.runner.all
+      ecr             = module.stage-runner.all
       use_promotions  = false
       push_latest_tag = true
     }
