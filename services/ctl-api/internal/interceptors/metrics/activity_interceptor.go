@@ -79,6 +79,8 @@ func (a *actInterceptor) ExecuteActivity(
 		if errors.As(err, &vErr) {
 			status = "error_validation"
 		}
+
+		return nil, err
 	}
 
 	return resp, err
