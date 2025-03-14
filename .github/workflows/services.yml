@@ -30,7 +30,7 @@ jobs:
   changes:
     name: 🔍 changes
     runs-on: ubuntu-latest
-    if: ${{ !contains(github.event.issue.labels.*.name, 'promote') }}
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') }}
     outputs:
       services: ${{ steps.filter.outputs.changes }}
     steps:
@@ -51,7 +51,7 @@ jobs:
   tag:
     name: Determine short ref
     runs-on: ubuntu-latest
-    if: ${{ !contains(github.event.issue.labels.*.name, 'promote') }}
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') }}
     outputs:
       git_ref: ${{steps.git_ref.outputs.git_ref}}
     steps:
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - tag
-    if: ${{ !contains(github.event.issue.labels.*.name, 'promote') }}
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') }}
     outputs:
       auto_deploy: ${{ steps.auto_deploy.outputs.label_check == 'success' }}
     steps:
@@ -86,7 +86,7 @@ jobs:
       - changes
       - check_labels
       - tag
-    if: ${{ !contains(github.event.issue.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
     strategy:
       fail-fast: false
       matrix:
