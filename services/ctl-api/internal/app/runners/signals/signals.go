@@ -26,6 +26,7 @@ const (
 	OperationProcessJob    eventloop.SignalType = "process_job"
 	OperationUpdateVersion eventloop.SignalType = "update_version"
 	OperationHealthcheck   eventloop.SignalType = "healthcheck"
+	OperationShutdown      eventloop.SignalType = "shutdown"
 )
 
 type Signal struct {
