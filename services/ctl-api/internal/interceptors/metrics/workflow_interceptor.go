@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/errs"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 )
 
@@ -51,16 +50,6 @@ func (a *wfInterceptor) ExecuteWorkflow(
 
 		a.mw.Incr("temporal_workflow.status", metrics.ToTags(tags))
 		a.mw.Timing("temporal_workflow.latency", time.Since(startTS), metrics.ToTags(tags))
-
-		if rec != nil {
-			// TODO(sdboyer) replace this with something that goes to dd
-			if err, is := rec.(error); is {
-				errs.ReportToSentry(err, &errs.SentryErrOptions{
-					Tags: tags,
-				})
-			}
-			panic(rec)
-		}
 	}()
 
 	resp, err := a.Next.ExecuteWorkflow(ctx, in)
@@ -71,7 +60,9 @@ func (a *wfInterceptor) ExecuteWorkflow(
 		if errors.As(err, &vErr) {
 			status = "error_validation"
 		}
+
+		return nil, err
 	}
 
-	return resp, err
+	return resp, nil
 }
