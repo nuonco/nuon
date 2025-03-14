@@ -101,7 +101,7 @@ jobs:
         service:
           - ctl-api
           - dashboard-ui
-          - workers-canary
+          # - workers-canary
           - workers-executors
           - wiki
     uses: ./.github/workflows/service.yml
