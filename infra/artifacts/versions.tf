@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.3.7"
+  required_version = ">= 1.7.5"
 
   backend "remote" {
     organization = "nuonco"
@@ -11,19 +11,19 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 5.67.0"
+      version = ">= 5.91.0"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = ">= 2.14"
+      version = ">= 2.17"
     }
     tfe = {
       source  = "hashicorp/tfe"
-      version = ">= 0.57.1"
+      version = ">= 0.64.0"
     }
     utils = {
       source  = "cloudposse/utils"
-      version = ">= 1.24.0"
+      version = ">= 1.29.0"
     }
   }
 }

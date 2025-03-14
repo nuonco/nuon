@@ -20,37 +20,37 @@ output "artifacts" {
   value = {
     // e2e
     "services/e2e" = {
-      bucket_prefix  = "e2e"
-      ecr            = module.e2e.all
-      use_promotions = true
+      bucket_prefix   = "e2e"
+      ecr             = module.e2e.all
+      use_promotions  = true
       push_latest_tag = false
     }
 
     // charts
     "charts/demo" = {
-      bucket_prefix  = "helm-demo"
-      ecr            = module.helm_demo.all
-      use_promotions = false
+      bucket_prefix   = "helm-demo"
+      ecr             = module.helm_demo.all
+      use_promotions  = false
       push_latest_tag = false
     }
     "charts/temporal" = {
-      bucket_prefix  = "helm-temporal"
-      ecr            = module.helm_temporal.all
-      use_promotions = false
+      bucket_prefix   = "helm-temporal"
+      ecr             = module.helm_temporal.all
+      use_promotions  = false
       push_latest_tag = false
     }
     "charts/waypoint" = {
-      bucket_prefix  = "helm-waypoint"
-      ecr            = module.helm_waypoint.all
-      use_promotions = false
+      bucket_prefix   = "helm-waypoint"
+      ecr             = module.helm_waypoint.all
+      use_promotions  = false
       push_latest_tag = false
     }
 
     // binaries
     "bins/cli" = {
-      bucket_prefix  = "cli"
-      ecr            = module.cli.all
-      use_promotions = true
+      bucket_prefix   = "cli"
+      ecr             = module.cli.all
+      use_promotions  = true
       push_latest_tag = false
     }
     "bins/nuonctl" = {
@@ -61,23 +61,30 @@ output "artifacts" {
       push_latest_tag = true
     }
     "bins/runner" = {
-      bucket_prefix  = "runner"
-      ecr            = module.runner.all
-      use_promotions = true
+      bucket_prefix   = "runner"
+      ecr             = module.runner.all
+      use_promotions  = true
+      push_latest_tag = true
+    }
+
+    "bins/stage-runner" = {
+      bucket_prefix   = "stage-runner"
+      ecr             = module.runner.all
+      use_promotions  = false
       push_latest_tag = true
     }
 
     // sandboxes
     "sandboxes/aws-eks" = {
-      bucket_prefix  = "sandbox/aws-eks"
-      ecr            = module.sandbox_aws_eks.all
-      use_promotions = true
+      bucket_prefix   = "sandbox/aws-eks"
+      ecr             = module.sandbox_aws_eks.all
+      use_promotions  = true
       push_latest_tag = false
     }
     "sandboxes/empty" = {
-      bucket_prefix  = "sandbox/empty"
-      ecr            = module.sandbox_empty.all
-      use_promotions = true
+      bucket_prefix   = "sandbox/empty"
+      ecr             = module.sandbox_empty.all
+      use_promotions  = true
       push_latest_tag = false
     }
   }

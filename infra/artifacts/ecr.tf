@@ -47,6 +47,24 @@ module "runner" {
   }
 }
 
+module "stage-runner" {
+  source = "../modules/public-ecr"
+
+  name        = "stage-runner"
+  description = "Nuon runner stage"
+  about       = "Nuon runner stage"
+  tags = {
+    artifact      = "stage-runner"
+    artifact_type = "binary"
+    pre_release   = "true"
+  }
+
+  region = local.aws_settings.public_region
+  providers = {
+    aws = aws.public
+  }
+}
+
 module "e2e" {
   source = "../modules/public-ecr"
 
