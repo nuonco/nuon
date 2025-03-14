@@ -28,21 +28,18 @@ defaults:
 
 jobs:
   skip:
+    name: Skip on promote
     runs-on: ubuntu-latest
     outputs:
-      should_skip: ${{ steps.check.outputs.skip }}
+      should_skip: ${{ steps.promote.outputs.label_check == 'success' }}
     steps:
-      - name: Check for promote label
-        uses: docker://agilepathway/pull-request-label-checker:latest
-        id: check
+      - uses: docker://agilepathway/pull-request-label-checker:latest
+        id: auto_deploy
+        if: ${{ github.event_name == 'pull_request' }}
         with:
-          any_of: promote
+          any_of: auto-deploy
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           allow_failure: true
-        continue-on-error: true
-      - name: Set skip output
-        if: ${{ steps.check.outputs.label_check == 'success' }}
-        run: echo "should_skip=true" >> $GITHUB_OUTPUT
 
   changes:
     name: 🔍 changes
@@ -86,6 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - tag
+      - skip
     if: ${{ needs.skip.outputs.should_skip != 'true' }}
     outputs:
       auto_deploy: ${{ steps.auto_deploy.outputs.label_check == 'success' }}
@@ -105,6 +103,7 @@ jobs:
       - changes
       - check_labels
       - tag
+      - skip
     if: ${{ needs.skip.outputs.should_skip != 'true' && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
     strategy:
       fail-fast: false
