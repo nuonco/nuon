@@ -3,8 +3,8 @@ package worker
 import (
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/loop"
 )
@@ -29,6 +29,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		signals.OperationDeprovision:   w.AwaitDeprovision,
 		signals.OperationProcessJob:    w.AwaitProcessJob,
 		signals.OperationUpdateVersion: w.AwaitUpdateVersion,
+		signals.OperationShutdown:      w.AwaitShutdown,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
