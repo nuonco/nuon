@@ -45,5 +45,5 @@ helm install rug2klm0zqhap3lstkffiqancbsr3w . \
 3. The `runner_count` and `instance_type` determines the resource limits on the
    `NodePool`. We set the limits to an amount equivalen to `runner_count` nodes
    plus one node. See the limits section in `./node_pool.tpl` for detail.
-   - `memory` is set as an int in `values.yaml` but treated as `Mi`.
    - `cpu` is simple.
+   - `memory` is set as an int in `values.yaml` but treated as `Mi`.
