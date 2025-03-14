@@ -42,7 +42,7 @@ jobs:
         continue-on-error: true
       - name: Set skip output
         if: ${{ steps.check.outputs.label_check == 'success' }}
-        run: echo "skip=true" >> $GITHUB_OUTPUT
+        run: echo "should_skip=true" >> $GITHUB_OUTPUT
 
   changes:
     name: 🔍 changes
