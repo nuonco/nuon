@@ -12,5 +12,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "002-drop-old-actions-run-index",
 			Fn:   m.Migration002DropOldActionsRunIndex,
 		},
+		{
+			Name: "086-runner-group-settings-backfill-groups",
+			Fn:   m.Migration086RunnerGroupSettingsBackfillGroups,
+		},
 	}
 }
