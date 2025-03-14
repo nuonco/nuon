@@ -42,8 +42,8 @@ export const Button: FC<IButton> = ({
           variant === 'primary' || variant === 'danger',
         'px-3 py-1.5': !hasCustomPadding,
         'cursor-not-allowed text-cool-grey-500 dark:text-cool-grey-600 hover:!bg-transparent':
-          props.disabled,
-        '!text-cool-grey-500 bg-primary-900 hover:!bg-primary-900':
+          props.disabled && variant !== 'primary',
+        'cursor-not-allowed !text-cool-grey-500 !bg-primary-900 hover:!bg-primary-900':
           props.disabled && variant === 'primary',
         [`${className}`]: Boolean(className),
       })}
