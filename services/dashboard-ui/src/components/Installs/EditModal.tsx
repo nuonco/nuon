@@ -3,14 +3,7 @@
 import { useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import {
-  Axe,
-  ArrowURightUp,
-  CloudArrowUp,
-  PencilSimpleLine,
-  Trash,
-  WarningOctagon,
-} from '@phosphor-icons/react'
+import { PencilSimpleLine } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { InstallForm } from '@/components/InstallForm'
 import { Loading } from '@/components/Loading'
@@ -28,7 +21,7 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [inputConfig, setInputConfig] = useState<TAppInputConfig | undefined>()
-  const [error, setError] = useState()
+  const [error, setError] = useState<string>()
   const router = useRouter()
 
   useEffect(() => {
@@ -44,7 +37,7 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
         )
         .catch((err) => {
           setIsLoading(false)
-          setError(err)
+          setError(err?.message || 'Unable to fetch app input configs')
         })
     }
   }, [isOpen])
