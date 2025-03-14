@@ -28,6 +28,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		platform = app.AppRunnerTypeLocal
 	}
 
+	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultInstallRunnerGroupSettingsGroups[:]...)
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   install.ID,
 		OwnerType: "installs",
@@ -53,6 +54,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 			// do not guarantee datadog is running in install accounts.
 			EnableMetrics: false,
 			EnableSentry:  true,
+			Groups:        groups,
 			Metadata: pgtype.Hstore(map[string]*string{
 				"org.id":          generics.ToPtr(install.OrgID),
 				"org.name":        generics.ToPtr(install.Org.Name),
@@ -89,6 +91,7 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 		platform = app.AppRunnerTypeLocal
 	}
 
+	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultOrgRunnerGroupSettingsGroups[:]...)
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   org.ID,
 		OwnerType: "orgs",
@@ -112,6 +115,7 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 			LoggingLevel:      slog.LevelInfo.String(),
 			EnableMetrics:     true,
 			EnableSentry:      true,
+			Groups:            groups,
 			Metadata: pgtype.Hstore(map[string]*string{
 				"org.id":          generics.ToPtr(org.ID),
 				"org.name":        generics.ToPtr(org.Name),
