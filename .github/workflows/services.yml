@@ -27,25 +27,10 @@ defaults:
     shell: bash
 
 jobs:
-  skip:
-    name: Skip on promote
-    runs-on: ubuntu-latest
-    outputs:
-      should_skip: ${{ steps.promote.outputs.label_check == 'success' }}
-    steps:
-      - uses: docker://agilepathway/pull-request-label-checker:latest
-        id: auto_deploy
-        if: ${{ github.event_name == 'pull_request' }}
-        with:
-          any_of: auto-deploy
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          allow_failure: true
-
   changes:
     name: 🔍 changes
     runs-on: ubuntu-latest
-    needs: skip
-    if: ${{ needs.skip.outputs.should_skip != 'true' }}
+    if: ${{ !contains(github.event.issue.labels.*.name, 'promote') }}
     outputs:
       services: ${{ steps.filter.outputs.changes }}
     steps:
@@ -66,8 +51,7 @@ jobs:
   tag:
     name: Determine short ref
     runs-on: ubuntu-latest
-    needs: skip
-    if: ${{ needs.skip.outputs.should_skip != 'true' }}
+    if: ${{ !contains(github.event.issue.labels.*.name, 'promote') }}
     outputs:
       git_ref: ${{steps.git_ref.outputs.git_ref}}
     steps:
@@ -83,8 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - tag
-      - skip
-    if: ${{ needs.skip.outputs.should_skip != 'true' }}
+    if: ${{ !contains(github.event.issue.labels.*.name, 'promote') }}
     outputs:
       auto_deploy: ${{ steps.auto_deploy.outputs.label_check == 'success' }}
     steps:
@@ -103,8 +86,7 @@ jobs:
       - changes
       - check_labels
       - tag
-      - skip
-    if: ${{ needs.skip.outputs.should_skip != 'true' && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
+    if: ${{ !contains(github.event.issue.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
     strategy:
       fail-fast: false
       matrix:
