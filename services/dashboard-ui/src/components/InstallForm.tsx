@@ -5,9 +5,10 @@ import React, { type FC, type FormEvent, useRef, useState } from 'react'
 import { WarningOctagon, CheckCircle, Cube } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Input, CheckboxInput } from '@/components/Input'
+import { Link } from '@/components/Link'
 import { SpinnerSVG, Loading } from '@/components/Loading'
 import { Select } from '@/components/Select'
-import { Text } from '@/components/Typography'
+import { Code, Text } from '@/components/Typography'
 import { getFlagEmoji, AWS_REGIONS, AZURE_REGIONS } from '@/utils'
 import type { TAppInputConfig, TInstall } from '@/types'
 
@@ -18,12 +19,14 @@ interface IInstallForm {
   onSubmit: (formData: FormData) => Promise<TInstall>
   onSuccess: (install: TInstall) => void
   onCancel: () => void
+  cfLink?: string
 }
 
 export const InstallForm: FC<IInstallForm> = ({
   inputConfig,
   install,
   platform,
+  cfLink,
   ...props
 }) => {
   const [error, setError] = useState<string | null>(null)
@@ -138,7 +141,7 @@ export const InstallForm: FC<IInstallForm> = ({
           </Field>
           {platform ? (
             platform === 'aws' ? (
-              <AWSFields />
+              <AWSFields cfLink={cfLink} />
             ) : (
               <AzureFields />
             )
@@ -177,7 +180,7 @@ export const InstallForm: FC<IInstallForm> = ({
   )
 }
 
-const AWSFields: FC = ({}) => {
+const AWSFields: FC<{ cfLink: string }> = ({ cfLink }) => {
   const options = AWS_REGIONS.map((o) => ({
     value: o.value,
     label: o?.iconVariant
@@ -190,6 +193,26 @@ const AWSFields: FC = ({}) => {
       <legend className="text-lg font-semibold mb-6 pr-6">
         Set AWS settings
       </legend>
+
+      <div className="max-w-lg mb-6">
+        <Text variant="med-14">Create IAM policies with CloudFormation</Text>
+        <Text className="!leading-relaxed !inline-block my-3">
+          You can create a 1-click IAM role with the correct policies attached
+          to provision + deprovision your application using the following link.
+          This will create an IAM role granting access to install . Please use
+          the stack output called{' '}
+          <Code
+            className="!py-1 !px-1.5 !bg-black/10 dark:!bg-white/10 leading-none !text-[10px] !inline-block align-middle"
+            variant="inline"
+          >
+            RoleARN
+          </Code>{' '}
+          in the AWS IAM role input below.
+        </Text>
+        <Link className="text-sm" href={cfLink} target="_blank">
+          Create IAM Role
+        </Link>
+      </div>
 
       <Field labelText="Provide a resouce name for AWS IAM role *">
         <Input type="text" name="iam_role_arn" required />
@@ -280,17 +303,19 @@ const InputGroupFields: FC<{
             className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start"
           >
             <div />
-            <CheckboxInput
-              labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0"
-              labelTextClassName="!text-base !font-normal"
-              defaultChecked={
-                installInputs?.[input?.name]
-                  ? Boolean(installInputs?.[input?.name] === 'true')
-                  : Boolean(input?.default === 'true')
-              }
-              labelText={input?.display_name}
-              name={`inputs:${input?.name}`}
-            />
+            <div className="ml-1">
+              <CheckboxInput
+                labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0"
+                labelTextClassName="!text-base !font-normal"
+                defaultChecked={
+                  installInputs?.[input?.name]
+                    ? Boolean(installInputs?.[input?.name] === 'true')
+                    : Boolean(input?.default === 'true')
+                }
+                labelText={input?.display_name}
+                name={`inputs:${input?.name}`}
+              />
+            </div>
           </div>
         ) : (
           <Field
