@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/DataDog/datadog-go/v5/statsd"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -14,6 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
@@ -22,6 +24,12 @@ const (
 	healthCheckWorkflowCronTab string        = "* * * * *"
 	heartBeatTimeout           time.Duration = time.Second * 15
 )
+
+// NOTE(sdboyer): temporary list of non-customer runners in prod that we're restricting auto-restart logic to as part of testing
+var testRunners = []string{
+	"runqyk4e77l4qlvh32763u9ovt", // org runner for Nuon Test V2 org
+	"run2xty256i7ej2bitai717mxx", // install runner for Telluride Industries app within Nuon Test V2 org
+}
 
 func healthCheckWorkflowID(runnerID string) string {
 	return fmt.Sprintf("health-check-%s", runnerID)
@@ -106,7 +114,7 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 		return errors.Wrap(err, "unable to get runner")
 	}
 
-	restarting, err := w.checkRestart(ctx, heartbeat, runner)
+	restarting, err := w.checkRestart(ctx, heartbeat, healthcheck, runner)
 	if err != nil {
 		return errors.Wrap(err, "unable to check recent restart")
 	}
@@ -161,6 +169,7 @@ func (w *Workflows) determineStatusFromHeartBeat(ctx workflow.Context, heartbeat
 func (w *Workflows) checkRestart(
 	ctx workflow.Context,
 	heartbeat *app.RunnerHeartBeat,
+	healthcheck *app.RunnerHealthCheck,
 	runner *app.Runner,
 ) (bool, error) {
 	w.mw.Gauge(ctx, "runner.alivetime", float64(heartbeat.AliveTime.Seconds()), metrics.ToTags(map[string]string{
@@ -168,7 +177,7 @@ func (w *Workflows) checkRestart(
 	})...)
 
 	// TODO(sdboyer) replace with actual value from group settings when actually implementing the call
-	ttl := time.Hour * 8
+	ttl := time.Minute * 20
 	if heartbeat.AliveTime < time.Second*5 {
 		w.mw.Incr(ctx, "runner.restart", metrics.ToTags(map[string]string{
 			"runner_type": string(runner.RunnerGroup.Type),
@@ -176,6 +185,7 @@ func (w *Workflows) checkRestart(
 	} else if heartbeat.AliveTime > ttl {
 		w.mw.Incr(ctx, "runner.ttl_exceeded", metrics.ToTags(map[string]string{
 			"runner_type": string(runner.RunnerGroup.Type),
+			// "ttl":         runner.RunnerGroup.Settings.TTL.String(),
 			"ttl":         ttl.String(),
 			"alive_for":   heartbeat.AliveTime.String(),
 		})...)
@@ -192,7 +202,24 @@ func (w *Workflows) checkRestart(
 			zap.String("alive_for", heartbeat.Version),
 		)
 
-		// TODO(sdboyer) actually dispatch a call in addition to the telemetry
+		w.mw.Event(ctx, &statsd.Event{
+			Title: "runner ttl exceeded, scheduling restart",
+			Text:  fmt.Sprintf("runner %s has been alive for %s, exceeding TTL of %s", runner.ID, heartbeat.AliveTime, ttl),
+			Tags:  metrics.ToTags(map[string]string{
+				"runner_type": string(runner.RunnerGroup.Type),
+				"runner_id":   runner.ID,
+				"ttl":         ttl.String(),
+				"alive_for":   heartbeat.AliveTime.String(),
+			}),
+			AggregationKey: "runner-ttl-restart",
+		})
+
+		if generics.SliceContains(runner.ID, testRunners) {
+			w.evClient.Send(ctx, runner.ID, &signals.Signal{
+				Type:          signals.OperationShutdown,
+				HealthCheckID: healthcheck.ID,
+			})
+		}
 		return true, nil
 	}
 
