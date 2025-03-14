@@ -4,44 +4,194 @@ import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { BookOpen } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
+import { ClickToCopyButton } from '@/components/ClickToCopy'
 import { CodeViewer } from '@/components/Code'
 import { Table } from '@/components/DataTable'
 import { CheckboxInput } from '@/components/Input'
 import { Modal } from '@/components/Modal'
-import { Text } from '@/components/Typography'
+import { ToolTip } from '@/components/ToolTip'
+import { Code, Text } from '@/components/Typography'
 import type { TInstall } from '@/types'
 
 type TPermissionOpetion = {
   name: string
   display_name: string
   descriptions: string
-  perms: Record<string, string>
+  perms: Record<string, unknown>
 }
 
 const PERMISSION_OPTIONS: Array<TPermissionOpetion> = [
   {
-    display_name: 'Account access',
-    descriptions: 'Permissions to interact with cloud provisioning.',
-    name: 'account-access',
-    perms: { something: 'permissions dude' },
+    display_name: 'Network access',
+    descriptions:
+      'Permissions to access, update, and delete the VPC the install is provisioned in.',
+    name: 'network-access',
+    perms: {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::676549690856:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::007754799877:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::814326426574:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::766121324316:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+      ],
+    },
   },
   {
     display_name: 'Sandbox access',
-    descriptions: 'Permission to interact with Sandbox enviornment',
+    descriptions:
+      'Permissions to access, update, and delete the install sandbox resources.',
     name: 'sandbox-access',
-    perms: { some: 'thing' },
+    perms: {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::676549690856:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::007754799877:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::814326426574:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::766121324316:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+      ],
+    },
   },
   {
     display_name: 'Runner access',
-    descriptions: 'Permission to interact with runner.',
+    descriptions:
+      'Permissions to access, update, and delete the install runner resources.',
     name: 'runner-access',
-    perms: { thing: 'stuff' },
+    perms: {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::676549690856:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::007754799877:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::814326426574:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::766121324316:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+      ],
+    },
   },
   {
-    display_name: 'Deprovision install access',
-    descriptions: 'Permissions to deprocision the existing install.',
-    name: 'deprovision-access',
-    perms: { thing: 'perms ' },
+    display_name: 'Component access',
+    descriptions:
+      'Permissions to access, update, and delete the install component resources.',
+    name: 'component-access',
+    perms: {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::676549690856:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::007754799877:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::814326426574:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+        {
+          Sid: '',
+          Effect: 'Allow',
+          Principal: {
+            AWS: 'arn:aws:iam::766121324316:root',
+          },
+          Action: ['sts:AssumeRole'],
+        },
+      ],
+    },
   },
 ]
 
@@ -50,8 +200,19 @@ interface IBreakGlassForm {
 }
 
 export const BreakGlassForm: FC<IBreakGlassForm> = ({ install }) => {
+  const [isOpen, setIsOpen] = useState(false)
+  const [cfLink, setCFLink] = useState(
+    'https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#'
+  )
   const [columnFilters, _] = useState([])
   const [globalFilter, __] = useState('')
+  const [accept, setAccept] = useState(false)
+  const [accessLevels, setAccessLevels] = useState({
+    'network-access': false,
+    'sandbox-access': false,
+    'runner-access': false,
+    'component-access': false,
+  })
   const columns: Array<ColumnDef<TPermissionOpetion>> = useMemo(
     () => [
       {
@@ -60,8 +221,15 @@ export const BreakGlassForm: FC<IBreakGlassForm> = ({ install }) => {
         cell: (props) => (
           <CheckboxInput
             className="w-fit"
+            defaultChecked={accessLevels[props.row.original.name]}
             name={props.getValue<string>()}
             labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-8 w-fit"
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setAccessLevels((state) => ({
+                ...state,
+                [props.row.original.name]: Boolean(e?.target?.checked),
+              }))
+            }}
             labelText={
               <span className="flex flex-col gap2">
                 <Text variant="med-14">
@@ -87,7 +255,52 @@ export const BreakGlassForm: FC<IBreakGlassForm> = ({ install }) => {
 
   return (
     <div>
-      <form>
+      <Modal
+        className="!max-w-2xl"
+        contentClassName="!p-0"
+        heading="CloudFormation stack created"
+        isOpen={isOpen}
+        onClose={() => {
+          setIsOpen(false)
+        }}
+      >
+        <div className="p-6">
+          <div className="border rounded-lg p-3 flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+              <Text variant="med-14">
+                <ToolTip tipContent="Not sure what needs to go here">
+                  CloudFormation Statck
+                </ToolTip>
+              </Text>
+              <ClickToCopyButton
+                className="border rounded-md p-1 text-sm"
+                textToCopy={cfLink}
+              />
+            </div>
+            <Code>{cfLink}</Code>
+          </div>
+        </div>
+        <div className="p-6 border-t flex justify-end">
+          <Button
+            onClick={() => {
+              setIsOpen(false)
+            }}
+            className="text-sm"
+            variant="primary"
+          >
+            Done
+          </Button>
+        </div>
+      </Modal>
+      <form
+        onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
+          e.preventDefault()
+
+          // TODO(nnnat): create cloudformation link
+
+          setIsOpen(true)
+        }}
+      >
         <Table
           columns={columns}
           data={PERMISSION_OPTIONS}
@@ -100,6 +313,9 @@ export const BreakGlassForm: FC<IBreakGlassForm> = ({ install }) => {
           <div className="flex items-start justify-between">
             <CheckboxInput
               name="ack"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setAccept(Boolean(e?.currentTarget?.checked))
+              }}
               labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-8 max-w-[650px]"
               labelText={
                 <span className="flex flex-col gap2">
@@ -117,7 +333,16 @@ export const BreakGlassForm: FC<IBreakGlassForm> = ({ install }) => {
               }
             />
 
-            <Button className="text-sm !font-medium" variant="primary">
+            <Button
+              disabled={
+                !Boolean(
+                  accept &&
+                    Object.values(accessLevels).some((lvl) => lvl === true)
+                )
+              }
+              className="text-sm !font-medium"
+              variant="primary"
+            >
               Generate CloudFormation stack
             </Button>
           </div>
