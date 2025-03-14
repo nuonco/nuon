@@ -7,12 +7,19 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
+)
+
+var (
+	CommonRunnerGroupSettingsGroups         = [...]string{"operations", "sync"}
+	DefaultOrgRunnerGroupSettingsGroups     = [...]string{"build", "sandbox", "runner"}
+	DefaultInstallRunnerGroupSettingsGroups = [...]string{"deploys", "action"}
 )
 
 type RunnerGroupSettings struct {
@@ -41,10 +48,11 @@ type RunnerGroupSettings struct {
 	HeartBeatTimeout           time.Duration `json:"heart_beat_timeout" gorm:"default null;" swaggertype:"primitive,integer"`
 	OTELCollectorConfiguration string        `json:"otel_collector_config" gorm:"default null;not null"`
 
-	EnableSentry  bool   `json:"enable_sentry"`
-	EnableMetrics bool   `json:"enable_metrics"`
-	EnableLogging bool   `json:"enable_logging"`
-	LoggingLevel  string `json:"logging_level"`
+	EnableSentry  bool           `json:"enable_sentry"`
+	EnableMetrics bool           `json:"enable_metrics"`
+	EnableLogging bool           `json:"enable_logging"`
+	LoggingLevel  string         `json:"logging_level"`
+	Groups        pq.StringArray `json:"groups"  gorm:"type:text[];default:'{}'" swaggertype:"array,string"` // the job loop groups the runner should poll for
 
 	// Metadata is used as both log and metric tags/attributes in the runner when emitting data
 	Metadata pgtype.Hstore `json:"" gorm:"type:hstore" swaggertype:"object,string"`
@@ -56,14 +64,15 @@ type RunnerGroupSettings struct {
 
 func (i *RunnerGroupSettings) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
-
 		{
-			Name: views.CustomViewName(db, &RunnerGroupSettings{}, "settings_v1"),
-			SQL:  viewsql.RunnerSettingsV1,
+			Name:          views.CustomViewName(db, &RunnerGroupSettings{}, "settings_v1"),
+			SQL:           viewsql.RunnerSettingsV1,
+			AlwaysReapply: true, // necessary for this view to be recreated
 		},
 		{
-			Name: views.CustomViewName(db, &RunnerGroupSettings{}, "wide_v1"),
-			SQL:  viewsql.RunnerWideV1,
+			Name:          views.CustomViewName(db, &RunnerGroupSettings{}, "wide_v1"),
+			SQL:           viewsql.RunnerWideV1,
+			AlwaysReapply: true, // necessary for this view to be recreated
 		},
 	}
 }
