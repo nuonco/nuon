@@ -4,9 +4,11 @@ import React, { type FC, useEffect } from 'react'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { datadogRum } from '@datadog/browser-rum'
 
-export const InitDatadogRUM: FC<{ env?: "local" | "stage" | "prod" }> = ({ env = "local" }) => {
-  const { user } = useUser() 
-  
+export const InitDatadogRUM: FC<{ env?: 'local' | 'stage' | 'prod' }> = ({
+  env = 'local',
+}) => {
+  const { user } = useUser()
+
   useEffect(() => {
     const initDDLogs = () => {
       datadogRum.init({
@@ -28,17 +30,21 @@ export const InitDatadogRUM: FC<{ env?: "local" | "stage" | "prod" }> = ({ env =
         trackLongTasks: true,
         defaultPrivacyLevel: 'mask-user-input',
       })
-
-      datadogRum.setUser({
-        id: user?.sub,
-        name: user?.name,
-        email: user?.email,
-        org_id: user?.org_id
-      })
     }
 
     initDDLogs()
   }, [])
+
+  useEffect(() => {
+    if (user) {
+      datadogRum.setUser({
+        id: user?.sub,
+        name: user?.name,
+        email: user?.email,
+        org_id: user?.org_id,
+      })
+    }
+  }, [user])
 
   return <></>
 }
