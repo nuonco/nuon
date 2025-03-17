@@ -42,7 +42,7 @@ function parseInstallHistory(
       event.operation === 'deprovision'
     ) {
       const historyEvent: TInstallHistoryEvent = {
-        component_id: payload?.install_component_id as string,
+        component_id: payload?.component_id as string,
         component_name: payload?.component_name as string,
         created_at: event.created_at,
         event_id: event.id,
