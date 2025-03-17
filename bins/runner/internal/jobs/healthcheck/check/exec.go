@@ -15,7 +15,6 @@ import (
 // health check: iterate through all the job loops and check their stats, set a value, and log the response
 // if a job loop is not running, we should restart it
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
