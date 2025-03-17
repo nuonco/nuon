@@ -7,12 +7,14 @@ import {
   DashboardContent,
   ErrorFallback,
   Loading,
+  OrgInviteModal,
   StatusBadge,
   Section,
+  TeamMembersTable,
   Text,
 } from '@/components'
 import { getOrg } from '@/lib'
-import type { TAccount } from '@/types'
+import type { TAccount, TInvite } from '@/types'
 import { API_URL, getFetchOpts } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -35,17 +37,20 @@ export default withPageAuthRequired(async function OrgTeam({ params }) {
         heading={org?.name}
         headingUnderline={org?.id}
         statues={
-          <span className="flex flex-col gap-2">
-            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-              Status
-            </Text>
-            <StatusBadge
-              status={org?.status}
-              description={org?.status_description}
-              descriptionAlignment="right"
-              shouldPoll
-            />
-          </span>
+          <div className="flex items-start gap-8">
+            <span className="flex flex-col gap-2">
+              <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                Status
+              </Text>
+              <StatusBadge
+                status={org?.status}
+                description={org?.status_description}
+                descriptionAlignment="right"
+                shouldPoll
+              />
+            </span>
+            <OrgInviteModal />
+          </div>
         }
       >
         <div className="flex-auto md:grid md:grid-cols-12 divide-x">
@@ -53,7 +58,12 @@ export default withPageAuthRequired(async function OrgTeam({ params }) {
             <Section heading="Members">
               <ErrorBoundary fallbackRender={ErrorFallback}>
                 <Suspense
-                  fallback={<Loading loadingText="Loading org members..." />}
+                  fallback={
+                    <Loading
+                      variant="stack"
+                      loadingText="Loading org members..."
+                    />
+                  }
                 >
                   <OrgMembers orgId={orgId} />
                 </Suspense>
@@ -62,7 +72,18 @@ export default withPageAuthRequired(async function OrgTeam({ params }) {
           </div>
           <div className="divide-y flex flex-col flex-auto col-span-4">
             <Section heading="Invites">
-              <Text variant="reg-12">TKTK</Text>
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={
+                    <Loading
+                      variant="stack"
+                      loadingText="Loading org invites..."
+                    />
+                  }
+                >
+                  <OrgInvites orgId={orgId} />
+                </Suspense>
+              </ErrorBoundary>
             </Section>
           </div>
         </div>
@@ -81,13 +102,35 @@ const OrgMembers: FC<{ orgId: string }> = async ({ orgId }) => {
     .then((res) => res.json() as Promise<Array<TAccount>>)
     .catch(console.error)
 
-  return (
-    <div className="flex flex-col gap-2">
-      {members && members?.length ? (
-        members?.map((member) => <span key={member?.id}>{member?.email}</span>)
-      ) : (
-        <span>No members in this org</span>
-      )}
+  return members ? (
+    <TeamMembersTable members={members} />
+  ) : (
+    <Text>No team members to show</Text>
+  )
+}
+
+const OrgInvites: FC<{ orgId: string }> = async ({ orgId }) => {
+  const invites = await fetch(
+    `${API_URL}/v1/orgs/current/invites`,
+    await getFetchOpts(orgId)
+  )
+    .then((res) => res.json() as Promise<Array<TInvite>>)
+    .catch(console.error)
+
+  return invites && invites.length ? (
+    <div className="flex flex-col divide-y">
+      {invites.map((invite) => (
+        <span className="text-sm py-2 flex items-center gap-2" key={invite.id}>
+          <StatusBadge
+            status={invite.status}
+            isWithoutBorder
+            isStatusTextHidden
+          />{' '}
+          {invite.email}
+        </span>
+      ))}
     </div>
+  ) : (
+    <Text>No invites to show</Text>
   )
 }

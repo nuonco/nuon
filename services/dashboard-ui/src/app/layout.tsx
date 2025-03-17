@@ -27,26 +27,30 @@ export default function RootLayout({
       className="bg-light text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50"
       lang="en"
     >
-      {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
-      process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'stage' ||
-      process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'local-test' ? (
-        <>
-          <InitDatadogLogs />
-          <InitDatadogRUM />
-        </>
-      ) : null}
       <UserProvider>
-        <body
-          className={`${GeistMono.variable} ${GeistSans.variable} font-sans`}
-        >
-          {children}
-          {process.env.SEGMENT_WRITE_KEY && (
-            <Suspense>
-              <InitSegmentAnalytics writeKey={process.env.SEGMENT_WRITE_KEY} />
-              <SegmentAnalyticsIdentify />
-            </Suspense>
-          )}
-        </body>
+        <>
+          {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
+          process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'stage' ||
+          process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'local-test' ? (
+            <>
+              <InitDatadogLogs env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
+              <InitDatadogRUM env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
+            </>
+          ) : null}
+          <body
+            className={`${GeistMono.variable} ${GeistSans.variable} font-sans`}
+          >
+            {children}
+            {process.env.SEGMENT_WRITE_KEY && (
+              <Suspense>
+                <InitSegmentAnalytics
+                  writeKey={process.env.SEGMENT_WRITE_KEY}
+                />
+                <SegmentAnalyticsIdentify />
+              </Suspense>
+            )}
+          </body>
+        </>
       </UserProvider>
     </html>
   )

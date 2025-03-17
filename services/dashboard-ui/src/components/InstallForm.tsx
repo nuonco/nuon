@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import React, { type FC, type FormEvent, useRef, useState } from 'react'
 import { WarningOctagon, CheckCircle, Cube } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
-import { Input, CheckboxInput } from '@/components/Input'
+import { CheckboxInput, Input } from '@/components/Input'
 import { Link } from '@/components/Link'
 import { SpinnerSVG, Loading } from '@/components/Loading'
 import { Select } from '@/components/Select'
@@ -151,7 +151,7 @@ export const InstallForm: FC<IInstallForm> = ({
           ) : null}
         </div>
 
-        <div className="flex gap-3 justify-end border-t w-full p-6 p-6">
+        <div className="flex gap-3 justify-end border-t w-full p-6">
           <Button
             className="text-sm font-medium"
             type="reset"
