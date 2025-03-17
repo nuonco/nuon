@@ -3,10 +3,13 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.476
+
+Refactor runner healthcheck cron to use workflows.
+
 ## v0.19.467
 
 Build all components from UI.
-
 
 ## v0.19.466
 
