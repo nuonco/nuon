@@ -17,6 +17,9 @@ export type TCancelJobType =
   | 'sandbox'
   | 'actions'
   | 'sync'
+  | 'operations'
+  | 'runner'
+  | 'health-checks'
 
 type TCancelJobData = {
   buttonText: string
@@ -61,6 +64,21 @@ const cancelJobOptions: Record<TCancelJobType, TCancelJobData> = {
     buttonText: 'Cancel action',
     confirmHeading: 'Cancel action workflow?',
     confirmMessage: 'Are you sure you want to cancel this action workflow?',
+  },
+  operations: {
+    buttonText: 'Cancel action',
+    confirmHeading: 'Cancel shut down?',
+    confirmMessage: 'Are you sure you want to cancel this shut down job?',
+  },
+  runner: {
+    buttonText: 'Cancel action',
+    confirmHeading: 'Cancel runner job?',
+    confirmMessage: 'Are you sure you want to cancel this runner job?',
+  },
+  'health-checks': {
+    buttonText: 'Cancel action',
+    confirmHeading: 'Cancel health check?',
+    confirmMessage: 'Are you sure you want to cancel this health check job?',
   },
 }
 
