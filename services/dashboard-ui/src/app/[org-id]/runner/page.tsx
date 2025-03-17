@@ -137,11 +137,7 @@ export default withPageAuthRequired(async function OrgRunner({
                     />
                   }
                 >
-                  <RunnerRecentJob
-                    runnerId={runnerId}
-                    orgId={orgId}
-                    groups={['build', 'sandbox']}
-                  />
+                  <RunnerRecentJob runnerId={runnerId} orgId={orgId} />
                 </Suspense>
               </ErrorBoundary>
             </Section>
