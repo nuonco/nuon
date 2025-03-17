@@ -23,11 +23,13 @@ type GetRunnerShutdownJobQueueRequest struct {
 func (a *Activities) GetRunnerShutdownJobQueue(ctx context.Context, req *GetRunnerShutdownJobQueueRequest) ([]*app.RunnerJob, error) {
 	// Get queued, available, and in progress shutdown jobs from the operation gruop
 	var jobs []*app.RunnerJob
-	res := a.db.WithContext(ctx).Where("runner_id = ? AND group = ? AND job_type = ? AND created_at < ? AND created_at > ? AND status IN ?", req.RunnerID, app.RunnerJobGroupOperations, app.RunnerJobTypeShutDown, discardJobDuration, []app.RunnerJobStatus{
-		app.RunnerJobStatusQueued,
-		app.RunnerJobStatusAvailable,
-		app.RunnerJobStatusInProgress,
-	}).Order("created_at desc").Find(&jobs)
+	res := a.db.WithContext(ctx).Where(
+		"runner_id = ? AND group = ? AND job_type = ? AND created_at > ? AND status IN ?",
+		req.RunnerID, string(app.RunnerJobGroupOperations), app.RunnerJobTypeShutDown, discardJobDuration, []app.RunnerJobStatus{
+			app.RunnerJobStatusQueued,
+			app.RunnerJobStatusAvailable,
+			app.RunnerJobStatusInProgress,
+		}).Order("created_at desc").Find(&jobs)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get runner job queue")
 	}
