@@ -23,6 +23,7 @@
         "runners-prod-gh-oidc-provider": "runners-prod-gh-oidc-provider",
         "runners-stage-gh-oidc-provider": "runners-stage-gh-oidc-provider",
         "sandbox-fd-gh-oidc-provider": "sandbox-fd-gh-oidc-provider",
+        "sandbox-ht-gh-oidc-provider": "sandbox-ht-gh-oidc-provider",
         "sandbox-ja-gh-oidc-provider": "sandbox-ja-gh-oidc-provider",
         "sandbox-jm-gh-oidc-provider": "sandbox-jm-gh-oidc-provider",
         "sandbox-nh-gh-oidc-provider": "sandbox-nh-gh-oidc-provider",
@@ -73,7 +74,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-03-12T21:20:20.709Z"
+      "value": "2025-03-17T20:29:02.594Z"
     },
     "canary-gh-oidc-provider": {
       "description": "The Github OIDC provider for the canary account",
@@ -130,6 +131,10 @@
     "sandbox-fd-gh-oidc-provider": {
       "description": "The Github OIDC provider for the sandbox-fd account",
       "value": "${aws_iam_openid_connect_provider.sandbox-fd-github-oidc-provider}"
+    },
+    "sandbox-ht-gh-oidc-provider": {
+      "description": "The Github OIDC provider for the sandbox-ht account",
+      "value": "${aws_iam_openid_connect_provider.sandbox-ht-github-oidc-provider}"
     },
     "sandbox-ja-gh-oidc-provider": {
       "description": "The Github OIDC provider for the sandbox-ja account",
@@ -1957,6 +1962,91 @@
           }
         ],
         "region": "us-west-2"
+      },
+      {
+        "alias": "sandbox-ht",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandbox-htid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-2"
+      },
+      {
+        "alias": "sandbox-ht-us-east-1",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandbox-htid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-1"
+      },
+      {
+        "alias": "sandbox-ht-us-east-2",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandbox-htid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-2"
+      },
+      {
+        "alias": "sandbox-ht-us-west-1",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandbox-htid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-west-1"
+      },
+      {
+        "alias": "sandbox-ht-us-west-2",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandbox-htid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-west-2"
       }
     ]
   },
@@ -2101,6 +2191,16 @@
         },
         "account_alias": "nuon-sandbox-fd",
         "provider": "aws.sandbox-fd"
+      },
+      "sandbox-ht-iam-alias": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-ht-iam-alias",
+            "uniqueId": "sandbox-ht-iam-alias"
+          }
+        },
+        "account_alias": "nuon-sandbox-ht",
+        "provider": "aws.sandbox-ht"
       },
       "sandbox-ja-iam-alias": {
         "//": {
@@ -2406,6 +2506,23 @@
           "sts.amazonaws.com"
         ],
         "provider": "aws.sandbox-fd",
+        "thumbprint_list": [
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
+        ],
+        "url": "https://token.actions.githubusercontent.com"
+      },
+      "sandbox-ht-github-oidc-provider": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-ht-github-oidc-provider",
+            "uniqueId": "sandbox-ht-github-oidc-provider"
+          }
+        },
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
+        "provider": "aws.sandbox-ht",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
           "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
@@ -2756,6 +2873,22 @@
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-fd"
+      },
+      "sandbox-ht-terraform-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-ht-terraform-role",
+            "uniqueId": "sandbox-ht-terraform-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
+        "description": "Terraform role to assume",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "terraform",
+        "path": "/",
+        "provider": "aws.sandbox-ht"
       },
       "sandbox-ja-terraform-role": {
         "//": {
@@ -3291,6 +3424,36 @@
         "aws_service_name": "spot.amazonaws.com",
         "provider": "aws.sandbox-fd"
       },
+      "sandbox-ht-opensearch-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-ht-opensearch-service-linked-role",
+            "uniqueId": "sandbox-ht-opensearch-service-linked-role"
+          }
+        },
+        "aws_service_name": "opensearchservice.amazonaws.com",
+        "provider": "aws.sandbox-ht"
+      },
+      "sandbox-ht-spot-fleet-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-ht-spot-fleet-service-linked-role",
+            "uniqueId": "sandbox-ht-spot-fleet-service-linked-role"
+          }
+        },
+        "aws_service_name": "spotfleet.amazonaws.com",
+        "provider": "aws.sandbox-ht"
+      },
+      "sandbox-ht-spot-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-ht-spot-service-linked-role",
+            "uniqueId": "sandbox-ht-spot-service-linked-role"
+          }
+        },
+        "aws_service_name": "spot.amazonaws.com",
+        "provider": "aws.sandbox-ht"
+      },
       "sandbox-ja-opensearch-service-linked-role": {
         "//": {
           "metadata": {
@@ -3699,6 +3862,20 @@
         "type": "NS",
         "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
       },
+      "sandbox-ht-ns-delegation": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-ht-ns-delegation",
+            "uniqueId": "sandbox-ht-ns-delegation"
+          }
+        },
+        "name": "sandbox-ht.nuon.co",
+        "provider": "aws",
+        "records": "${aws_route53_zone.sandbox-ht-hosted-zone.name_servers}",
+        "ttl": 300,
+        "type": "NS",
+        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
+      },
       "sandbox-ja-ns-delegation": {
         "//": {
           "metadata": {
@@ -3938,6 +4115,16 @@
         },
         "name": "sandbox-fd.nuon.co",
         "provider": "aws.sandbox-fd"
+      },
+      "sandbox-ht-hosted-zone": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-ht-hosted-zone",
+            "uniqueId": "sandbox-ht-hosted-zone"
+          }
+        },
+        "name": "sandbox-ht.nuon.co",
+        "provider": "aws.sandbox-ht"
       },
       "sandbox-ja-hosted-zone": {
         "//": {

@@ -110,6 +110,7 @@ export const desiredOrgStructure: orgStructure = [
       { name: "sandbox-rb" },
       { name: "sandbox-fd" },
       { name: "sandbox-nh" },
+      {name: "sandbox-ht"},
     ],
     disableScp: true,
     name: "engineers",
