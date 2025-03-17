@@ -3,7 +3,7 @@ import { withApiAuthRequired } from '@auth0/nextjs-auth0'
 import { getInstallComponentDeploys } from '@/lib'
 
 export const GET = withApiAuthRequired(async (req: NextRequest) => {
-  const [orgId, _, installId, __, installComponentId] = req.url
+  const [orgId, _, installId, __, componentId] = req.url
     .split('/')
     .slice(4, 9)
   
@@ -12,7 +12,7 @@ export const GET = withApiAuthRequired(async (req: NextRequest) => {
     deploys = await getInstallComponentDeploys({
       orgId,
       installId,
-      installComponentId,
+      componentId,
     })
   } catch (error) {
     console.error(error)

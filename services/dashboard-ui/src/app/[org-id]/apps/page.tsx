@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
@@ -12,6 +13,15 @@ import {
 import { getApps, getOrg } from '@/lib'
 // TODO(nnnat): move segment init script to org dashboard
 import { SegmentAnalyticsSetOrg } from '@/utils'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const orgId = params?.['org-id'] as string
+  const org = await getOrg({ orgId })
+
+  return {
+    title: `${org.name} | Apps`,
+  }
+}
 
 export default withPageAuthRequired(async function Apps({ params }) {
   const orgId = params?.['org-id'] as string

@@ -1,6 +1,7 @@
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
+import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
+import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CaretRight } from '@phosphor-icons/react/dist/ssr'
 import {
   ClickToCopy,
@@ -30,29 +31,43 @@ import {
 } from '@/lib'
 import type { TInstallComponent } from '@/types'
 
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const installId = params?.['install-id'] as string
+  const orgId = params?.['org-id'] as string
+  const componentId = params?.['component-id'] as string
+  const [install, component] = await Promise.all([
+    getInstall({ installId, orgId }),
+    getComponent({ componentId, orgId }),
+  ])
+
+  return {
+    title: `${install.name} | ${component.name}`,
+  }
+}
+
 export default withPageAuthRequired(async function InstallComponent({
   params,
 }) {
-  const installComponentId = params?.['component-id'] as string
+  const componentId = params?.['component-id'] as string
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
 
   const [install, installComponent] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallComponent({
-      installComponentId,
+      componentId,
       installId,
       orgId,
     }),
   ])
 
   const [component, componentConfig, builds] = await Promise.all([
-    getComponent({ componentId: installComponent.component_id, orgId }),
+    getComponent({ componentId, orgId }),
     getComponentConfig({
-      componentId: installComponent?.component_id,
+      componentId,
       orgId,
     }),
-    getComponentBuilds({ componentId: installComponent?.component_id, orgId }),
+    getComponentBuilds({ componentId, orgId }),
   ])
 
   return (
@@ -64,12 +79,12 @@ export default withPageAuthRequired(async function InstallComponent({
           text: install.name,
         },
         {
-          href: `/${orgId}/installs/${install.id}/components/${installComponent.id}`,
+          href: `/${orgId}/installs/${install.id}/components/${componentId}`,
           text: component.name,
         },
       ]}
       heading={component.name}
-      headingUnderline={installComponent.id}
+      headingUnderline={component.id}
       statues={
         <InstallDeployLatestBuildButton
           builds={builds}
@@ -101,7 +116,7 @@ export default withPageAuthRequired(async function InstallComponent({
                 fallback={<Loading loadingText="Loading latest build..." />}
               >
                 <LatestOutputs
-                  componentId={installComponent?.component_id}
+                  componentId={componentId}
                   installId={installId}
                   orgId={orgId}
                 />
@@ -125,9 +140,9 @@ export default withPageAuthRequired(async function InstallComponent({
           <Section heading="Deploy history">
             <InstallComponentDeploys
               component={component}
-              initDeploys={installComponent.install_deploys}
+              initDeploys={installComponent?.install_deploys}
               installId={installId}
-              installComponentId={installComponent.id}
+              installComponentId={componentId}
               orgId={orgId}
               shouldPoll
             />
