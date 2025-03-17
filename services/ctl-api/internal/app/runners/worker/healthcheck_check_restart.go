@@ -51,7 +51,8 @@ func (w *Workflows) HealthcheckCheckRestart(
 	})...)
 
 	// TODO(sdboyer) replace with actual value from group settings when actually implementing the call
-	ttl := time.Hour * 8
+	// TODO(sdboyer) this is artificially low for testing purposes
+	ttl := time.Minute * 10
 	if heartbeat.AliveTime < time.Second*5 {
 		w.mw.Incr(ctx, "runner.restart", metrics.ToTags(map[string]string{
 			"runner_type": string(runner.RunnerGroup.Type),
