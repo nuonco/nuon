@@ -72,11 +72,11 @@ export const DataTable: FC<IDataTable> = ({ headers, initData }) => {
 
 export interface ITable extends React.HTMLAttributes<HTMLTableElement> {
   columns: Array<ColumnDef<any>>
-  columnFilters: Array<ColumnFilter>
+  columnFilters?: Array<ColumnFilter>
   data: Array<Record<string, any>>
   emptyMessage?: string
   emptyTitle?: string
-  globalFilter: string
+  globalFilter?: string
   header?: React.ReactNode
 }
 
