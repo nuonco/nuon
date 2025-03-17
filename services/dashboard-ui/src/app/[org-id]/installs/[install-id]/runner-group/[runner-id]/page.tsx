@@ -183,11 +183,7 @@ export default withPageAuthRequired(async function Runner({
                   />
                 }
               >
-                <RunnerRecentJob
-                  runnerId={runnerId}
-                  orgId={orgId}
-                  groups={['deploy', 'sync', 'actions']}
-                />
+                <RunnerRecentJob runnerId={runnerId} orgId={orgId} />
               </Suspense>
             </ErrorBoundary>
           </Section>

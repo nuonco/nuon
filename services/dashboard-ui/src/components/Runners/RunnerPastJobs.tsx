@@ -14,7 +14,7 @@ interface IRunnerPastJobs {
 }
 
 export const RunnerPastJobs: FC<IRunnerPastJobs> = async ({
-  groups = ['build', 'deploy', 'sync', 'actions', 'operations'],
+  groups = ['actions', 'build', 'deploy', 'operations', 'sandbox', 'sync'],
   offset,
   orgId,
   runnerId,
