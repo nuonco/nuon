@@ -22,6 +22,7 @@ export type TDataInstallComponent = {
 
 type TData = {
   buildStatus: string
+  componentId: string
   componentType: string
   configVersion: number
   installComponentId: string
@@ -36,6 +37,7 @@ function parseInstallComponentsToTableData(
 ): Array<TData> {
   return installComponents.map((comp) => ({
     buildStatus: comp.build?.status || 'noop',
+    componentId: comp.component_id,
     componentType: getComponentConfigType(comp.config),
     configVersion: comp.config?.version,
     installComponentId: comp.id,
@@ -71,7 +73,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         cell: (props) => (
           <div className="flex flex-col gap-2">
             <Link
-              href={`/${orgId}/installs/${installId}/components/${props.row.original.installComponentId}`}
+              href={`/${orgId}/installs/${installId}/components/${props.row.original.componentId}`}
             >
               <Text variant="med-14">{props.getValue<string>()}</Text>
             </Link>
@@ -106,7 +108,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
                   className="bg-gray-500/10 px-2 py-1 rounded-lg border w-fit"
                 >
                   <Link
-                    href={`/${orgId}/installs/${installId}/components/${dep.id}`}
+                    href={`/${orgId}/installs/${installId}/components/${dep.component_id}`}
                   >
                     {dep?.component?.name}
                   </Link>
@@ -133,7 +135,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         enableSorting: false,
         cell: (props) => (
           <Link
-            href={`/${orgId}/installs/${installId}/components/${props.row.original.installComponentId}`}
+            href={`/${orgId}/installs/${installId}/components/${props.row.original.componentId}`}
             variant="ghost"
           >
             <CaretRight />
