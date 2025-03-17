@@ -31,7 +31,7 @@ export default function RootLayout({
         <>
           {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
           process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'stage' ||
-          process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'local-test' ? (
+          process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'local' ? (
             <>
               <InitDatadogLogs env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
               <InitDatadogRUM env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
