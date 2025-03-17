@@ -19,7 +19,7 @@ interface IRunnerUpcomingJobs {
 }
 
 export const RunnerUpcomingJobs: FC<IRunnerUpcomingJobs> = async ({
-  groups = ['build', 'deploy', 'sync', 'actions'],
+  groups = ['actions', 'build', 'deploy', 'operations', 'sandbox', 'sync'],
   offset,
   orgId,
   runnerId,
