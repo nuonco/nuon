@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
@@ -9,7 +10,16 @@ import {
   Loading,
   Section,
 } from '@/components'
-import { getInstalls } from '@/lib'
+import { getInstalls, getOrg } from '@/lib'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const orgId = params?.['org-id'] as string
+  const org = await getOrg({ orgId })
+
+  return {
+    title: `${org.name} | Installs`,
+  }
+}
 
 export default withPageAuthRequired(async function Installs({ params }) {
   const orgId = params?.['org-id'] as string

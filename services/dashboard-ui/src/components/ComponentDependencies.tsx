@@ -49,7 +49,7 @@ export const DependentComponents: FC<IComponentDependencies> = ({
               key={`${dep.id}-${i}`}
               className="bg-gray-500/10 p-2 rounded-lg border w-fit"
             >
-              <Link href={`${path}/${dep.id}`}>{dep.component?.name}</Link>
+              <Link href={`${path}/${dep.component_id}`}>{dep.component?.name}</Link>
             </Text>
           ))}
     </div>

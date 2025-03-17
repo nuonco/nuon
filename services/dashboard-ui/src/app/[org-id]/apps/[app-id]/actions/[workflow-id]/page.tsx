@@ -1,4 +1,5 @@
 import cronstrue from 'cronstrue'
+import type { Metadata } from 'next'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   ActionTriggerType,
@@ -11,6 +12,20 @@ import {
   Text,
 } from '@/components'
 import { getApp, getAppActionWorkflow } from '@/lib'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const appId = params?.['app-id'] as string
+  const orgId = params?.['org-id'] as string
+  const workflowId = params?.['workflow-id'] as string
+  const [app, workflow] = await Promise.all([
+    getApp({ appId, orgId }),
+    getAppActionWorkflow({ orgId, actionWorkflowId: workflowId }),
+  ])
+
+  return {
+    title: `${app.name} | ${workflow.name}`,
+  }
+}
 
 export default withPageAuthRequired(async function AppWorkflow({ params }) {
   const appId = params?.['app-id'] as string

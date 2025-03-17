@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
@@ -21,6 +22,20 @@ import {
 import { InstallManagementDropdown } from '@/components/Installs'
 import { getInstall, getRunner } from '@/lib'
 import { USER_REPROVISION } from '@/utils'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const installId = params?.['install-id'] as string
+  const orgId = params?.['org-id'] as string
+  const runnerId = params?.['runner-id'] as string
+  const [install, runner] = await Promise.all([
+    getInstall({ installId, orgId }),
+    getRunner({ runnerId, orgId }),
+  ])
+
+  return {
+    title: `${install.name} | ${runner.display_name}`,
+  }
+}
 
 export default withPageAuthRequired(async function Runner({
   params,

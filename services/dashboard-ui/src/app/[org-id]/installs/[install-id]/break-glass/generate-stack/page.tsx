@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
@@ -37,6 +38,16 @@ import {
   getRunnerLatestHeartbeat,
 } from '@/lib'
 import { RUNNERS, USER_REPROVISION } from '@/utils'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const installId = params?.['install-id'] as string
+  const orgId = params?.['org-id'] as string
+  const install = await getInstall({ installId, orgId })
+
+  return {
+    title: `${install.name} | Generate break glass stack`,
+  }
+}
 
 export default withPageAuthRequired(async function InstallBreakGlass({
   params,
