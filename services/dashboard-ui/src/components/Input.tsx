@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
+import { Text } from "@/components/Typography"
 
 export interface IRadioInput extends React.HTMLAttributes<HTMLInputElement> {
   checked?: boolean
