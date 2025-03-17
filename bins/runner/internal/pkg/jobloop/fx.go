@@ -19,7 +19,7 @@ func AsJobLoop(f any) any {
 func AsOperationsJobLoop(f any) any {
 	return fx.Annotate(
 		f,
-		fx.ResultTags(`group:"operations"`), // rename later
+		fx.ResultTags(`group:"operations"`),
 		fx.As(new(JobLoop)),
 	)
 }

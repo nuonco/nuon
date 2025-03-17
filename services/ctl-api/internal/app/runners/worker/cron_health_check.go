@@ -2,10 +2,8 @@ package worker
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
-	"github.com/DataDog/datadog-go/v5/statsd"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -23,12 +21,14 @@ import (
 const (
 	healthCheckWorkflowCronTab string        = "* * * * *"
 	heartBeatTimeout           time.Duration = time.Second * 15
+	runnerSideCheckInterval    time.Duration = time.Minute * 5
 )
 
-// NOTE(sdboyer): temporary list of non-customer runners in prod that we're restricting auto-restart logic to as part of testing
-var testRunners = []string{
-	"runqyk4e77l4qlvh32763u9ovt", // org runner for Nuon Test V2 org
-	"run2xty256i7ej2bitai717mxx", // install runner for Telluride Industries app within Nuon Test V2 org
+// NOTE(fd/sdboyer): we don't want to actively shutdown all runners until this logic is validated
+var testOrgIDs = []string{
+	"organf4k63tmhyqqgypvukcyty", // prod: Nuon Test V2
+	"orgtvkz1podyp9lmenx7o64usx", // prod: Nuon Test
+	"orgcz7wndes27hrzcfg5etzohr", // stage
 }
 
 func healthCheckWorkflowID(runnerID string) string {
@@ -50,6 +50,8 @@ func (w *Workflows) startHealthCheckWorkflow(ctx workflow.Context, req HealthChe
 // Run a cron to check the health of a runner
 type HealthCheckRequest struct {
 	RunnerID string `validate:"required" json:"runner_id"`
+	// optional: the runner-side healthcheck can be a noop
+	Noop bool `json:"noop"`
 }
 
 func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) error {
@@ -63,11 +65,17 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 		w.mw.Timing(ctx, "runner.health_check_timing", e2eLatency, metrics.ToTags(tags)...)
 	}()
 
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return errors.Wrap(err, "unable to get workflow logger")
+	}
+
 	currentStatus, err := activities.AwaitGetRunnerStatusByID(ctx, req.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner status")
 	}
 
+	// if we're in a noop status, create a healthcheck and exit
 	noopStatus := generics.SliceContains(currentStatus, []app.RunnerStatus{
 		app.RunnerStatusProvisioning,
 		app.RunnerStatusDeprovisioning,
@@ -99,6 +107,18 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 	newStatus := w.determineStatusFromHeartBeat(ctx, heartbeat)
 	status = string(newStatus)
 
+	if newStatus != currentStatus {
+		w.mw.Incr(ctx, "runner.health_check_change", metrics.ToTags(tags)...)
+		if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+			RunnerID:          req.RunnerID,
+			Status:            newStatus,
+			StatusDescription: fmt.Sprintf("status change %s -> %s in health check", currentStatus, newStatus),
+		}); err != nil {
+			status = "error"
+			return errors.Wrap(err, "unable to update runner status")
+		}
+	}
+
 	healthcheck, err := activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
 		RunnerID: req.RunnerID,
 		Status:   newStatus,
@@ -114,38 +134,86 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 		return errors.Wrap(err, "unable to get runner")
 	}
 
-	restarting, err := w.checkRestart(ctx, heartbeat, healthcheck, runner)
-	if err != nil {
-		return errors.Wrap(err, "unable to check recent restart")
-	}
+	// At this point, we can start executing the individual parts of the Healthcheck as child workflows.
+	// These are all child workflows. they return a response w/ a boolean ShouldRestart
+	// 1. HealthCheckCheckRestart
+	// 2. HealthCheckUpdateNeeded
+	// 3. HealthcheckJob: runner-side healthcheck
 
+	// 1. HealthCheckCheckRestart
+	hcrreq := &HealthcheckCheckRestartRequest{HeartbeatID: heartbeat.ID, RunnerID: runner.ID}
+	hcrres := &HealthcheckCheckRestartResponse{ShouldRestart: false} // default value
+	w.execHealthcheckChildWorkflow(ctx, req.RunnerID, "HealthcheckCheckRestart", hcrreq, hcrres)
+
+	// 2. HealthCheckUpdateNeeded
 	// If we've got a healthy status and a restart is not already planned, then
 	// check to see if the version needs updating.  Only check if healthy, to
 	// avoid exacerbating issues the runner may be having. This should also
 	// prevent subsequent runs of this workflow from re-attempting the same
 	// version check, potentially creating a race condition.
-	if !restarting && newStatus == app.RunnerStatusActive {
-		err = w.checkUpdateNeeded(ctx, heartbeat, healthcheck, runner)
-		if err != nil {
-			status = "error_failed_update_check"
-			return errors.Wrap(err, "failed to check for needed update")
+
+	hcures := &HealthcheckUpdateNeededResponse{} // default value
+	if !hcrres.ShouldRestart && newStatus == app.RunnerStatusActive {
+		hcureq := &HealthcheckUpdateNeededRequest{HeartbeatID: heartbeat.ID, RunnerID: runner.ID}
+		w.execHealthcheckChildWorkflow(ctx, req.RunnerID, "HealthcheckUpdateNeeded", hcureq, hcures)
+	}
+	// the runner statuse has changed: emit a metric
+	if newStatus != currentStatus {
+		w.mw.Incr(ctx, "runner.health_check_change", metrics.ToTags(tags)...)
+		if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+			RunnerID:          req.RunnerID,
+			Status:            newStatus,
+			StatusDescription: fmt.Sprintf("status change %s -> %s in health check", currentStatus, newStatus),
+		}); err != nil {
+			status = "error"
+			return errors.Wrap(err, "unable to update runner status")
 		}
 	}
 
-	// no change as the old status is the same as the new status
-	if newStatus == currentStatus {
-		return nil
-	}
+	// 3. HealthcheckJob: runner-side healthcheck
+	// TODO(fd): determine a cadence - we probably don't want to run this every single time we run the healthcheck
+	hcjres := &HealthcheckJobRunnerResponse{ShouldRestart: false} // default value
+	// TODO(fd): disabled for now until we validate everything works
+	// if startTS.Minute()%5 == 0 {                                  // NOTE(fd): make the right side of the % a configurable var or at least a constant
+	// 	// As a child workflow
+	// 	hcjreq := HealthcheckJobRunnerRequest{HealthCheckID: healthcheck.ID, RunnerID: runner.ID}
+	// 	w.execHealthcheckChildWorkflow(ctx, req.RunnerID, "HealthcheckJobRunner", hcjreq, hcjres)
+	// }
 
-	// the runner changed statuses
-	w.mw.Incr(ctx, "runner.health_check_change", metrics.ToTags(tags)...)
-	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
-		RunnerID:          req.RunnerID,
-		Status:            newStatus,
-		StatusDescription: fmt.Sprintf("status change %s -> %s in health check", currentStatus, newStatus),
-	}); err != nil {
-		status = "error"
-		return errors.Wrap(err, "unable to update runner status")
+	// use the responses to determine if we need to restart the runner
+	if hcures.ShouldUpdate {
+		// send update job
+		l.Info("runner should be updated",
+			zap.Bool("HealthcheckCheckRestart.ShouldRestart", hcrres.ShouldRestart),
+			zap.Bool("HealthcheckUpdateNeeded.ShouldUpdate", hcures.ShouldUpdate),
+			zap.Bool("HealthcheckJob.ShouldRestart", hcjres.ShouldRestart),
+		)
+		// NOTE(fd/sdboyer): not enabled at this time
+		// w.evClient.Send(ctx, runner.ID, &signals.Signal{
+		// 	Type:          signals.OperationUpdateVersion,
+		// 	HealthCheckID: healthcheck.ID,
+		// })
+	} else if hcrres.ShouldRestart {
+		// graceful shutdown
+		l.Info("runner should be restarted",
+			zap.String("strategy", "graceful"),
+			zap.Bool("HealthcheckCheckRestart.ShouldRestart", hcrres.ShouldRestart),
+			zap.Bool("HealthcheckUpdateNeeded.ShouldUpdate", hcures.ShouldUpdate),
+			zap.Bool("HealthcheckJob.ShouldRestart", hcjres.ShouldRestart),
+		)
+		if generics.SliceContains(runner.OrgID, testOrgIDs) {
+			// only shutdown specific subset of runners
+			w.gracefulShutdown(ctx, startTS, l, runner, healthcheck)
+		}
+	} else if hcjres.ShouldRestart {
+		// forceful shutdown
+		l.Info("runner should be restarted",
+			zap.String("strategy", "forceful"),
+			zap.Bool("HealthcheckCheckRestart.ShouldRestart", hcrres.ShouldRestart),
+			zap.Bool("HealthcheckUpdateNeeded.ShouldUpdate", hcures.ShouldUpdate),
+			zap.Bool("HealthcheckJob.ShouldRestart", hcjres.ShouldRestart),
+		)
+		// TODO(fd): implement forceful shutdown w/ AwaitExecuteJob
 	}
 
 	return nil
@@ -164,117 +232,39 @@ func (w *Workflows) determineStatusFromHeartBeat(ctx workflow.Context, heartbeat
 	return app.RunnerStatusActive
 }
 
-// Check if there was a recent restart, and force one if the runner has been running for
-// longer than the configured time.
-func (w *Workflows) checkRestart(
-	ctx workflow.Context,
-	heartbeat *app.RunnerHeartBeat,
-	healthcheck *app.RunnerHealthCheck,
-	runner *app.Runner,
-) (bool, error) {
-	w.mw.Gauge(ctx, "runner.alivetime", float64(heartbeat.AliveTime.Seconds()), metrics.ToTags(map[string]string{
-		"runner_type": string(runner.RunnerGroup.Type),
-	})...)
+func (w *Workflows) gracefulShutdown(ctx workflow.Context, startTS time.Time, l *zap.Logger, runner *app.Runner, healthcheck *app.RunnerHealthCheck) error {
+	// NOTE(fd): this method could be inlined - it's separated for clarity, not re-use
+	// 1. only send out every 5th minute. this is due to the fact it would otherwise be possible to send out shutdown jobs before
+	// the runner got a chance to get up and running trapping a runner in a shutdown loop.
+	// 2. only send out a signal if there isn't currently another shutdown job in the queue. otherwise we'll allow these to pile up
+	// which would lead to a situation where a runner starts up only to process a queue of shutdown jobs preventing it from ever
+	// becoming healthy.
 
-	// TODO(sdboyer) replace with actual value from group settings when actually implementing the call
-	ttl := time.Minute * 20
-	if heartbeat.AliveTime < time.Second*5 {
-		w.mw.Incr(ctx, "runner.restart", metrics.ToTags(map[string]string{
-			"runner_type": string(runner.RunnerGroup.Type),
-		})...)
-	} else if heartbeat.AliveTime > ttl {
-		w.mw.Incr(ctx, "runner.ttl_exceeded", metrics.ToTags(map[string]string{
-			"runner_type": string(runner.RunnerGroup.Type),
-			// "ttl":         runner.RunnerGroup.Settings.TTL.String(),
-			"ttl":         ttl.String(),
-			"alive_for":   heartbeat.AliveTime.String(),
-		})...)
+	shutdownJobs, err := activities.AwaitGetRunnerShutdownJobQueueByRunnerID(ctx, runner.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get runner shutdown job queue")
+	}
+	shutdownJobIDs := []string{}
+	for _, sj := range shutdownJobs {
+		shutdownJobIDs = append(shutdownJobIDs, sj.ID)
+	}
 
-		// TODO(sdboyer) temporary for more granular clarity than the metric gives. Remove once restart is implemented
-		l, err := log.WorkflowLogger(ctx)
-		if err != nil {
-			return false, err
-		}
-		l.Info("runner ttl exceeded, scheduling restart",
-			zap.String("runner_id", runner.ID),
-			zap.String("runner_type", string(runner.RunnerGroup.Type)),
-			zap.String("ttl", runner.RunnerGroup.Settings.ExpectedVersion),
-			zap.String("alive_for", heartbeat.Version),
+	if startTS.Minute()%5 == 0 {
+		l.Debug(
+			"refusing to send shutdown signal - time is not right",
+			zap.Any("shutdown_job_ids", shutdownJobIDs),
 		)
-
-		w.mw.Event(ctx, &statsd.Event{
-			Title: "runner ttl exceeded, scheduling restart",
-			Text:  fmt.Sprintf("runner %s has been alive for %s, exceeding TTL of %s", runner.ID, heartbeat.AliveTime, ttl),
-			Tags:  metrics.ToTags(map[string]string{
-				"runner_type": string(runner.RunnerGroup.Type),
-				"runner_id":   runner.ID,
-				"ttl":         ttl.String(),
-				"alive_for":   heartbeat.AliveTime.String(),
-			}),
-			AggregationKey: "runner-ttl-restart",
+	} else if len(shutdownJobs) > 0 {
+		l.Warn(
+			"refusing to send shutdown signal - shutdown jobs exist in queue",
+			zap.Any("shutdown_job_ids", shutdownJobIDs),
+		)
+	} else {
+		l.Debug("sending shutdown signal")
+		w.evClient.Send(ctx, runner.ID, &signals.Signal{
+			Type:          signals.OperationShutdown,
+			HealthCheckID: healthcheck.ID,
 		})
-
-		if generics.SliceContains(runner.ID, testRunners) {
-			w.evClient.Send(ctx, runner.ID, &signals.Signal{
-				Type:          signals.OperationShutdown,
-				HealthCheckID: healthcheck.ID,
-			})
-		}
-		return true, nil
 	}
-
-	return false, nil
-}
-
-func (w *Workflows) checkUpdateNeeded(
-	ctx workflow.Context,
-	heartbeat *app.RunnerHeartBeat,
-	healthcheck *app.RunnerHealthCheck,
-	runner *app.Runner,
-) error {
-	var needsUpdate bool
-	if runner.RunnerGroup.Settings.ExpectedVersion == "latest" {
-		needsUpdate = heartbeat.Version != w.cfg.Version
-	} else if heartbeat.Version != runner.RunnerGroup.Settings.ExpectedVersion {
-		// NOTE(sdboyer) this branch is unreachable until we have a versioning
-		// strategy other than latest.
-		//
-		// However, a lot of older orgs _do_ have something other than `latest`
-		// set for their expected version, and as a result they're looping here.
-		// So we just never update these, until we have a better strategy.
-		needsUpdate = false
-	}
-
-	// NOTE(jm): if we need an update, we just write a metric
-	w.mw.Incr(ctx, "runner.version_update", metrics.ToTags(map[string]string{
-		"runner_type":          string(runner.RunnerGroup.Type),
-		"needs_version_update": strconv.FormatBool(needsUpdate),
-		"expected_latest":      strconv.FormatBool(runner.RunnerGroup.Settings.ExpectedVersion == "latest"),
-	})...)
-
-	if needsUpdate {
-		l, err := log.WorkflowLogger(ctx)
-		if err != nil {
-			return nil
-		}
-		l.Info("sending signal to update out-of-date runner",
-			zap.String("runner_id", runner.ID),
-			zap.String("runner_type", string(runner.RunnerGroup.Type)),
-			zap.String("expected_version", runner.RunnerGroup.Settings.ExpectedVersion),
-			zap.String("reported_version", heartbeat.Version),
-			zap.String("api_version", w.cfg.Version),
-		)
-
-		//w.evClient.Send(ctx, runnerID, &signals.RequestSignal{
-		//Signal: &signals.Signal{
-		//Type:          signals.OperationUpdateVersion,
-		//HealthCheckID: healthcheck.ID,
-		//},
-		//EventLoopRequest: eventloop.EventLoopRequest{
-		//ID: runnerID,
-		//},
-		//})
-	}
-
 	return nil
 }
