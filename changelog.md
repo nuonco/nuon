@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.479
+
+Correct runner job groups in UI.
+
 ## v0.19.478
 
 Set user for datadog RUM sessions.
