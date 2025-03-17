@@ -8,6 +8,7 @@ env:
   NEXT_PUBLIC_API_URL: 'http://localhost:8081'
   NEXT_PUBLIC_ADMIN_API_URL: 'http://localhost:8082'
   NEXT_PUBLIC_SEGMENT_WRITE_KEY: 'BejR5RWgZINK5Kc28pSn7yf1isc5Zalr'
+  NEXT_PUBLIC_DATADOG_ENV: "local"
   NUON_API_URL: http://localhost:8081
   NUON_WORKFLOWS: true
   NUON_RUNNERS: true

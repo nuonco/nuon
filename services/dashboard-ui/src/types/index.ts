@@ -173,3 +173,4 @@ export type TWaitlist = components['schemas']['app.Waitlist']
 
 // User / Account
 export type TAccount = components['schemas']['app.Account']
+export type TInvite = components['schemas']['app.OrgInvite']

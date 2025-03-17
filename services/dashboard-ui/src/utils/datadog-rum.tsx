@@ -1,15 +1,14 @@
 'use client'
 
-import { datadogRum } from '@datadog/browser-rum'
 import React, { type FC, useEffect } from 'react'
+import { useUser } from '@auth0/nextjs-auth0/client'
+import { datadogRum } from '@datadog/browser-rum'
 
-export const InitDatadogRUM: FC = () => {
+export const InitDatadogRUM: FC<{ env?: "local" | "stage" | "prod" }> = ({ env = "local" }) => {
+  const { user } = useUser() 
+  
   useEffect(() => {
     const initDDLogs = () => {
-      const ddEnv =
-        process?.env?.NEXT_PUBLIC_DATADOG_ENV ||
-        window.location?.host?.split('.')[1]
-
       datadogRum.init({
         applicationId:
           process?.env?.NEXT_PUBLIC_DATADOG_APP_ID ||
@@ -18,7 +17,7 @@ export const InitDatadogRUM: FC = () => {
           process?.env?.NEXT_PUBLIC_DATADOG_CLIENT_TOKEN ||
           'pub6fb6cfe0d2ec271a2456660e54ba5e08',
         site: process?.env?.NEXT_PUBLIC_DATADOG_SITE || 'us5.datadoghq.com',
-        env: ddEnv || 'local',
+        env,
         service: 'dashboard',
 
         // collection settings
@@ -28,6 +27,13 @@ export const InitDatadogRUM: FC = () => {
         trackResources: true,
         trackLongTasks: true,
         defaultPrivacyLevel: 'mask-user-input',
+      })
+
+      datadogRum.setUser({
+        id: user?.sub,
+        name: user?.name,
+        email: user?.email,
+        org_id: user?.org_id
       })
     }
 
