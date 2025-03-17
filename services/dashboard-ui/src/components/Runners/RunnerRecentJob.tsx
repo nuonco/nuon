@@ -10,13 +10,13 @@ import { jobHrefPath, jobName } from './helpers'
 interface IRunnerRecentJob {
   orgId: string
   runnerId: string
-  groups: Array<TRunnerJobGroup>
+  groups?: Array<TRunnerJobGroup>
 }
 
 export const RunnerRecentJob: FC<IRunnerRecentJob> = async ({
   orgId,
   runnerId,
-  groups,
+  groups = ['actions', 'build', 'deploy', 'operations', 'sandbox', 'sync'],
 }) => {
   const { runnerJobs } = await getRunnerJobs({
     orgId,
@@ -35,7 +35,7 @@ export const RunnerRecentJob: FC<IRunnerRecentJob> = async ({
   return runnerJobs?.length ? (
     <div className="flex items-start justify-between">
       <Config>
-        <ConfigContent label="Name" value={job?.metadata ? name : 'Unknown'} />
+        <ConfigContent label="Name" value={name || 'Unknown'} />
 
         <ConfigContent label="Group" value={job?.group} />
 

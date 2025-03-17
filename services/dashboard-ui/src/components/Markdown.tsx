@@ -28,6 +28,7 @@ showdown.extension('targetlink', () => {
 const markdown = new showdown.Converter({
   extensions: ['targetlink'],
   tables: true,
+  tasklists: true,
 })
 
 export const Markdown = ({ content = '' }) => (
