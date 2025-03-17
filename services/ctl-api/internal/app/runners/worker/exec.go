@@ -74,3 +74,27 @@ func (w *Workflows) execChildWorkflow(
 
 	return nil
 }
+
+func (w *Workflows) execHealthcheckChildWorkflow(
+	ctx workflow.Context,
+	runnerID string,
+	workflowName string,
+	req interface{},
+	resp interface{},
+) error {
+	cwo := workflow.ChildWorkflowOptions{
+		TaskQueue:                workflows.APITaskQueue,
+		WorkflowID:               fmt.Sprintf("%s-%s", runnerID, strings.ToLower(workflowName)),
+		WorkflowExecutionTimeout: time.Minute * 2,
+		WorkflowTaskTimeout:      time.Minute * 10,
+		WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	fut := workflow.ExecuteChildWorkflow(ctx, workflowName, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return fmt.Errorf("unable to get workflow response: %w", err)
+	}
+
+	return nil
+}

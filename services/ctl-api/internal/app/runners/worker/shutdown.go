@@ -15,6 +15,11 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
+type ShutdownJobRequest struct {
+	RunnerID      string `validate:"required"`
+	HealthCheckID string `validate:"required"`
+}
+
 // @temporal-gen workflow
 // @execution-timeout 60m
 // @task-timeout 30m
