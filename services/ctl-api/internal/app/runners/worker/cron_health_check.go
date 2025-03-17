@@ -100,6 +100,10 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 		status = "error_fetching_heart_beats"
 		return errors.Wrap(err, "unable to get status from heart beats")
 	}
+	if heartbeat.ID == "" {
+		status = "error_fetching_heart_beats"
+		return errors.Wrap(err, "unable to get anay heart beats")
+	}
 
 	// Ensure the status is created correctly. This will also translate any error that might have
 	// occurred while fetching the most recent heartbeat into an appropriate status, and therefore
