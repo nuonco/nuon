@@ -1,18 +1,22 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID GetInstallers
 // @Summary	get installers for current org
 // @Description.markdown	get_installers.md
+// @Param   offset query int	 false	"offset of results to return"	Default(0)
+// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
+// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
 // @Tags installers
 // @Accept			json
 // @Produce		json
@@ -41,17 +45,23 @@ func (s *service) GetInstallers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installers)
 }
 
-func (s *service) getInstallers(ctx context.Context, orgID string) ([]*app.Installer, error) {
-	var apps []*app.Installer
+func (s *service) getInstallers(ctx *gin.Context, orgID string) ([]*app.Installer, error) {
+	var installers []*app.Installer
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPagination).
 		Where("org_id = ?", orgID).
 		Preload("Apps").
 		Preload("Metadata").
 		Order("created_at desc").
-		Find(&apps)
+		Find(&installers)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get installers: %w", res.Error)
 	}
 
-	return apps, nil
+	installers, err := db.HandlePaginatedResponse(ctx, installers)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+	}
+
+	return installers, nil
 }
