@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
@@ -18,6 +19,16 @@ import {
   getComponentConfig,
   getAppLatestInputConfig,
 } from '@/lib'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const appId = params?.['app-id'] as string
+  const orgId = params?.['org-id'] as string
+  const app = await getApp({ appId, orgId })
+
+  return {
+    title: `${app.name} | Components`,
+  }
+}
 
 export default withPageAuthRequired(async function AppComponents({ params }) {
   const appId = params?.['app-id'] as string

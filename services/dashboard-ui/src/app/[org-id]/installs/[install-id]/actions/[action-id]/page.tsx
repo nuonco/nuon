@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   ActionTriggerButton,
@@ -16,6 +17,20 @@ import {
 } from '@/components'
 import { getInstall, getInstallActionWorkflowRecentRun } from '@/lib'
 import { humandReadableTriggeredBy } from '@/utils'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const actionWorkflowId = params?.['action-id'] as string
+  const installId = params?.['install-id'] as string
+  const orgId = params?.['org-id'] as string
+  const [install, action] = await Promise.all([
+    getInstall({ installId, orgId }),
+    getInstallActionWorkflowRecentRun({ actionWorkflowId, installId, orgId }),
+  ])
+
+  return {
+    title: `${install.name} | ${action.action_workflow?.name}`,
+  }
+}
 
 export default withPageAuthRequired(async function InstallWorkflowRuns({
   params,
