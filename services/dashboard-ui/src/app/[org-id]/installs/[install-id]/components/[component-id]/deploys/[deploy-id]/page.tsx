@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   CalendarBlank,
@@ -33,6 +34,25 @@ import {
 import type { TInstallDeployPlan } from '@/types'
 import { CANCEL_RUNNER_JOBS, DEPLOY_INTERMEDIATE_DATA } from '@/utils'
 
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const deployId = params?.['deploy-id'] as string
+  const installId = params?.['install-id'] as string
+  const orgId = params?.['org-id'] as string
+  const componentId = params?.['component-id'] as string
+  const [deploy, component] = await Promise.all([
+    getInstallDeploy({
+      installDeployId: deployId,
+      installId,
+      orgId,
+    }),
+    getComponent({ componentId, orgId }),
+  ])
+
+  return {
+    title: `${component.name} | ${deploy.install_deploy_type}`,
+  }
+}
+
 export default withPageAuthRequired(async function InstallComponentDeploy({
   params,
 }) {
@@ -65,11 +85,11 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
           text: install.name,
         },
         {
-          href: `/${orgId}/installs/${install.id}/components/${deploy.install_component_id}`,
+          href: `/${orgId}/installs/${install.id}/components/${deploy.component_id}`,
           text: component.name,
         },
         {
-          href: `/${orgId}/installs/${install.id}/components/${deploy.install_component_id}/deploys/${deploy.id}`,
+          href: `/${orgId}/installs/${install.id}/components/${deploy.component_id}/deploys/${deploy.id}`,
           text: deploy.id,
         },
       ]}

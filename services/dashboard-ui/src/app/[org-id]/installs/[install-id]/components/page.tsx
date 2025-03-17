@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
@@ -18,6 +19,16 @@ import {
 } from '@/lib'
 import type { TBuild } from '@/types'
 import { USER_REPROVISION } from '@/utils'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const installId = params?.['install-id'] as string
+  const orgId = params?.['org-id'] as string
+  const install = await getInstall({ installId, orgId })
+
+  return {
+    title: `${install.name} | Components`,
+  }
+}
 
 export default withPageAuthRequired(async function InstallComponents({
   params,
