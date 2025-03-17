@@ -455,7 +455,7 @@ module "shared-stardog" {
 
   collaborators = {
     paulplace = "push",
-    snowell   = "push"
+    scardena   = "push"
   }
 
   providers = {
@@ -476,7 +476,7 @@ module "shared-stardog-installer" {
 
   collaborators = {
     paulplace = "push",
-    snowell   = "push"
+    scardena   = "push"
   }
 
   providers = {
