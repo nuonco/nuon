@@ -1,7 +1,9 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { CaretRight, Heartbeat, Timer } from '@phosphor-icons/react/dist/ssr'
+import { withPageAuthRequired } from '@auth0/nextjs-auth0'
+import { CaretRight } from '@phosphor-icons/react/dist/ssr'
 import {
   Config,
   ConfigContent,
@@ -25,7 +27,16 @@ import {
 } from '@/components'
 import { getOrg } from '@/lib'
 
-export default async function OrgReleases({ params }) {
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const orgId = params?.['org-id'] as string
+  const org = await getOrg({ orgId })
+
+  return {
+    title: `${org.name} | Releases`,
+  }
+}
+
+export default withPageAuthRequired(async function OrgReleases({ params }) {
   const orgId = params?.['org-id'] as string
   const org = await getOrg({ orgId })
 
@@ -91,4 +102,4 @@ export default async function OrgReleases({ params }) {
   } else {
     redirect(`/${orgId}/apps`)
   }
-}
+})

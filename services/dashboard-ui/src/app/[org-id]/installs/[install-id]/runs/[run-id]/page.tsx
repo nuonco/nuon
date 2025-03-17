@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
@@ -18,6 +19,20 @@ import {
 } from '@/components'
 import { getInstall, getInstallSandboxRun } from '@/lib'
 import { CANCEL_RUNNER_JOBS, sentanceCase } from '@/utils'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const installId = params?.['install-id'] as string
+  const orgId = params?.['org-id'] as string
+  const runId = params?.['run-id'] as string
+  const [install, sandboxRun] = await Promise.all([
+    getInstall({ installId, orgId }),
+    getInstallSandboxRun({ installId, installSandboxRunId: runId, orgId }),
+  ])
+
+  return {
+    title: `${install.name} | ${sandboxRun.run_type}`,
+  }
+}
 
 export default withPageAuthRequired(async function SandboxRuns({ params }) {
   const installId = params?.['install-id'] as string
