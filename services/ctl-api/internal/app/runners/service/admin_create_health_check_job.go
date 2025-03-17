@@ -11,7 +11,6 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 )
 
 type AdminCreateHealthCheckJobRequest struct{}
@@ -36,16 +35,12 @@ func (s *service) AdminCreateHealthCheck(ctx *gin.Context) {
 		return
 	}
 
-	job, err := s.adminCreateAvailableJob(ctx, runnerID, app.RunnerJobTypeHealthCheck)
+	// NOTE(fd): don't do this - this is a short term approach to get a steel thread in place
+	_, err := s.adminCreateAvailableJob(ctx, runnerID, app.RunnerJobTypeHealthCheck)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create health-check job: %w", err))
 		return
 	}
-
-	s.evClient.Send(ctx, runnerID, &signals.Signal{
-		Type:  signals.OperationHealthcheck,
-		JobID: job.ID,
-	})
 
 	ctx.JSON(http.StatusCreated, true)
 }
