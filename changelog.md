@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.477
+
+Teams page MVP & updated datadog env in UI.
+
 ## v0.19.476
 
 Refactor runner healthcheck cron to use workflows.
