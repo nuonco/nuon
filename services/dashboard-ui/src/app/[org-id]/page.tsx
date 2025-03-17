@@ -1,5 +1,7 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { ErrorBoundary } from 'react-error-boundary'
+import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CaretRight, Heartbeat, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   Config,
@@ -24,7 +26,16 @@ import {
 } from '@/components'
 import { getOrg } from '@/lib'
 
-export default async function OrgDashboard({ params }) {
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const orgId = params?.['org-id'] as string
+  const org = await getOrg({ orgId })
+
+  return {
+    title: `${org.name} | Dashboard`,
+  }
+}
+
+export default withPageAuthRequired(async function OrgDashboard({ params }) {
   const orgId = params?.['org-id'] as string
   const org = await getOrg({ orgId })
 
@@ -97,4 +108,4 @@ export default async function OrgDashboard({ params }) {
       redirect(`/${orgId}/apps`)
     }
   }
-}
+})

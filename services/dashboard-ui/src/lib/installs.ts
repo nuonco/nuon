@@ -52,11 +52,11 @@ export async function getInstallComponents({
 }
 
 export interface IGetInstallComponent extends IGetInstall {
-  installComponentId: string
+  componentId: string
 }
 
 export async function getInstallComponent({
-  installComponentId,
+  componentId,
   installId,
   orgId,
 }: IGetInstallComponent) {
@@ -66,20 +66,20 @@ export async function getInstallComponent({
       orgId,
       path: `installs/${installId}/components`,
     })
-  ).find((installComponent) => installComponent.id === installComponentId)
+  ).find((installComponent) => installComponent.component_id === componentId)
 }
 
 export interface IGetInstallComponentDeploys extends IGetInstallComponent {}
 
 export async function getInstallComponentDeploys({
-  installComponentId,
+  componentId,
   installId,
   orgId,
 }: IGetInstallComponentDeploys) {
   return queryData<Array<TInstallDeploy>>({
     errorMessage: 'Unable to retrieve deployments for this install component.',
     orgId,
-    path: `installs/${installId}/components/${installComponentId}/deploys`,
+    path: `installs/${installId}/components/${componentId}/deploys`,
   })
 }
 

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
@@ -15,6 +16,16 @@ import {
 import { InstallManagementDropdown } from '@/components/Installs'
 import { getInstall, getInstallActionWorkflowLatestRun } from '@/lib'
 import { USER_REPROVISION } from '@/utils'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const installId = params?.['install-id'] as string
+  const orgId = params?.['org-id'] as string
+  const install = await getInstall({ installId, orgId })
+
+  return {
+    title: `${install.name} | Actions`,
+  }
+}
 
 export default withPageAuthRequired(async function InstallWorkflowRuns({
   params,

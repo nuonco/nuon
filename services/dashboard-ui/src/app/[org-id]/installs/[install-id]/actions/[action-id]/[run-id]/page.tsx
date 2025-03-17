@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import React from 'react'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
@@ -27,6 +28,21 @@ import {
   CANCEL_RUNNER_JOBS,
   humandReadableTriggeredBy,
 } from '@/utils'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const actionWorkflowId = params?.['action-id'] as string
+  const actionWorkflowRunId = params?.['run-id'] as string
+  const installId = params?.['install-id'] as string
+  const orgId = params?.['org-id'] as string
+  const [action, run] = await Promise.all([
+    getAppActionWorkflow({ actionWorkflowId, orgId }),
+    getInstallActionWorkflowRun({ actionWorkflowRunId, installId, orgId }),
+  ])
+
+  return {
+    title: `${action.name} | ${run.trigger_type} run`,
+  }
+}
 
 // hydrate run steps with idx and name
 function hydrateRunSteps(

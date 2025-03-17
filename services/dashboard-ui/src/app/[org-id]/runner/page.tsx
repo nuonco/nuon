@@ -1,7 +1,8 @@
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
+import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   ErrorFallback,
@@ -17,6 +18,15 @@ import {
   Text,
 } from '@/components'
 import { getOrg, getRunner } from '@/lib'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const orgId = params?.['org-id'] as string
+  const org = await getOrg({ orgId })
+
+  return {
+    title: `${org.name} | Build runner`,
+  }
+}
 
 export default withPageAuthRequired(async function OrgRunner({
   params,
