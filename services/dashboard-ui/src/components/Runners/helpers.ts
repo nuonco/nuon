@@ -11,10 +11,10 @@ export function jobHrefPath(job: TRunnerJob): string {
       hrefPath = `installs/${job?.metadata?.install_id}/runs/${job?.metadata?.sandbox_run_id}`
       break
     case 'sync':
-      hrefPath = `installs/${job?.metadata?.install_id}/components/${job?.metadata?.install_component_id}/deploys/${job?.metadata?.deploy_id}`
+      hrefPath = `installs/${job?.metadata?.install_id}/components/${job?.metadata?.component_id}/deploys/${job?.metadata?.deploy_id}`
       break
     case 'deploy':
-      hrefPath = `installs/${job?.metadata?.install_id}/components/${job?.metadata?.install_component_id}/deploys/${job?.metadata?.deploy_id}`
+      hrefPath = `installs/${job?.metadata?.install_id}/components/${job?.metadata?.component_id}/deploys/${job?.metadata?.deploy_id}`
       break
     case 'actions':
       hrefPath = `installs/${job?.metadata?.install_id}/actions/${job?.metadata?.action_workflow_id}/${job?.metadata?.action_workflow_run_id}`
