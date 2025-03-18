@@ -1,6 +1,5 @@
 // @ts-nocheck
 import React, { type FC } from 'react'
-import { Section } from '@/components/Card'
 import { ConfigurationVariables } from '@/components/ComponentConfig'
 import type { TInstall, TInstallDeployPlanIntermediateData } from '@/types'
 
@@ -13,11 +12,7 @@ export const InstallDeployIntermediateData: FC<
   IInstallDeployIntermediateData
 > = ({ data, install }) => {
   return (
-    <Section
-      childrenClassName="flex flex-col gap-8"
-      heading="Rendered intermediate data"
-      className="flex-initial"
-    >
+    <>
       {data?.nuon?.components
       ? Object.keys(data?.nuon?.components).map((key) => (
         <ConfigurationVariables
@@ -93,6 +88,6 @@ export const InstallDeployIntermediateData: FC<
           variables={data?.nuon?.install?.sandbox?.outputs?.vpc}
         />
       ) : null}
-    </Section>
+    </>
   )
 }
