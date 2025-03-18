@@ -1,0 +1,286 @@
+'use client'
+
+import React, { type FC, useEffect, useState } from 'react'
+import { CaretRight, Heartbeat, Timer } from '@phosphor-icons/react'
+import { Button } from '@/components/Button'
+import { Config, ConfigContent } from '@/components/Config'
+import { Expand } from '@/components/Expand'
+import { Grid } from '@/components/Grid'
+import { Link } from '@/components/Link'
+import { Loading } from '@/components/Loading'
+import { Modal } from '@/components/Modal'
+import { Notice } from '@/components/Notice'
+import { useOrg } from '@/components/Orgs'
+import { jobHrefPath, jobName } from '@/components/Runners/helpers'
+import { StatusBadge } from '@/components/Status'
+import { Time, Duration } from '@/components/Time'
+import { Text } from '@/components/Typography'
+import type { TRunner, TRunnerHeartbeat, TRunnerJob, TInstall } from '@/types'
+
+export const AdminRunnerModal: FC = ({}) => {
+  const { org } = useOrg()
+  const [isOpen, setIsOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [installs, setInstalls] = useState<Array<TInstall>>()
+  const [error, setError] = useState<string>()
+
+  useEffect(() => {
+    fetch(`/api/${org.id}/installs`)
+      .then((res) =>
+        res.json().then((ins) => {
+          setInstalls(ins)
+          setIsLoading(false)
+        })
+      )
+      .catch((err) => {
+        console.error(err?.message)
+        setIsLoading(false)
+        setError('Unable to load org installs')
+      })
+  }, [])
+
+  return (
+    <>
+      <Modal
+        heading={`All ${org.name} runners`}
+        isOpen={isOpen}
+        onClose={() => {
+          setIsOpen(false)
+        }}
+      >
+        <div className="flex flex-col divide-y">
+          <div>
+            <Text className="mb-3" variant="med-14">
+              Org Runners
+            </Text>
+            <Grid variant="3-cols">
+              {org?.runner_group?.runners?.map((runner) => (
+                <GridCard key={runner.id}>
+                  <RunnerCard runner={runner} />
+                </GridCard>
+              ))}
+            </Grid>
+          </div>
+
+          <div className="pt-3 mt-6">
+            <Text className="mb-3" variant="med-14">
+              Install Runners
+            </Text>
+            {error ? (
+              <Notice>{error}</Notice>
+            ) : isLoading ? (
+              <Loading loadingText="Loading install runners" />
+            ) : installs && installs.length ? (
+              <Grid variant="3-cols">
+                {installs.map((install) => (
+                  <GridCard key={install.id}>
+                    <Text variant="med-12">{install.name} runner</Text>
+                    <LoadRunnerCard runnerId={install?.runner_id} />
+                  </GridCard>
+                ))}
+              </Grid>
+            ) : (
+              <Text>No installs</Text>
+            )}
+          </div>
+        </div>
+      </Modal>
+      <div className="flex flex-col gap-2">
+        <Text variant="reg-14">Manage all runners in this org</Text>
+        <Button
+          className="text-base"
+          onClick={() => {
+            setIsOpen(true)
+          }}
+        >
+          Manage all runners
+        </Button>
+      </div>
+    </>
+  )
+}
+
+const GridCard: FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <div className="rounded border px-3 py-2 flex flex-col gap-3">
+      {children}
+    </div>
+  )
+}
+
+const RunnerCard: FC<{ runner: TRunner }> = ({ runner }) => {
+  return (
+    <Expand
+      parentClass="border rounded"
+      headerClass="px-3 py-2"
+      id={runner.id}
+      heading={
+        <div className="flex flex-col gap-2">
+          <Text variant="med-12" className="gap-2">
+            <span className="animate-pulse">
+              <StatusBadge
+                status={runner?.status}
+                isStatusTextHidden
+                isWithoutBorder
+              />
+            </span>
+            <span>{runner?.display_name}</span>
+          </Text>
+          <LoadRunnerHeartbeat runnerId={runner.id} />
+        </div>
+      }
+      expandContent={
+        <div className="p-3 flex flex-col gap-3 border-t">
+          <Text variant="med-12">Latest job</Text>
+          <LoadRunnerJob runnerId={runner.id} />
+        </div>
+      }
+    />
+  )
+}
+
+const LoadRunnerCard: FC<{ runnerId: string }> = ({ runnerId }) => {
+  const { org } = useOrg()
+  const [isLoading, setIsLoading] = useState(true)
+  const [runner, setRunner] = useState<TRunner>()
+  const [error, setError] = useState<string>()
+
+  useEffect(() => {
+    fetch(`/api/${org.id}/runner/${runnerId}`)
+      .then((res) =>
+        res.json().then((rnr) => {
+          setRunner(rnr)
+          setIsLoading(false)
+        })
+      )
+      .catch((err) => {
+        console.error(err?.message)
+        setIsLoading(false)
+        setError('Unable to load install runner')
+      })
+  }, [])
+
+  return error ? (
+    <Notice>{error}</Notice>
+  ) : isLoading ? (
+    <Loading loadingText={`Loading ${runnerId} runner...`} />
+  ) : (
+    <RunnerCard runner={runner} />
+  )
+}
+
+const LoadRunnerHeartbeat: FC<{ runnerId: string }> = ({ runnerId }) => {
+  const { org } = useOrg()
+  const [isLoading, setIsLoading] = useState(true)
+  const [heartbeat, setHeartbeat] = useState<TRunnerHeartbeat>()
+  const [error, setError] = useState<string>()
+
+  useEffect(() => {
+    fetch(`/api/${org.id}/runner/${runnerId}/latest-heart-beat`)
+      .then((res) =>
+        res.json().then((rnr) => {
+          setHeartbeat(rnr)
+          setIsLoading(false)
+        })
+      )
+      .catch((err) => {
+        console.error(err?.message)
+        setIsLoading(false)
+        setError('Unable to load install runner')
+      })
+  }, [])
+
+  return error ? (
+    <Notice>{error}</Notice>
+  ) : isLoading ? (
+    <Loading loadingText={`Loading last hearbeat...`} />
+  ) : (
+    <div className="flex items-start gap-4">
+      <span className="flex flex-col gap-2">
+        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+          Version
+        </Text>
+        <Text variant="med-12">{heartbeat?.version}</Text>
+      </span>
+      <span className="flex flex-col gap-2">
+        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+          Alive time
+        </Text>
+        <Text>
+          <Timer size={14} />
+          <Duration nanoseconds={heartbeat?.alive_time} variant="med-12" />
+        </Text>
+      </span>
+      <span className="flex flex-col gap-2">
+        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+          Last heartbeat seen
+        </Text>
+        <Text>
+          <Heartbeat size={14} />
+          <Time
+            time={heartbeat?.created_at}
+            format="relative"
+            variant="med-12"
+          />
+        </Text>
+      </span>
+    </div>
+  )
+}
+
+const LoadRunnerJob: FC<{ runnerId: string }> = ({ runnerId }) => {
+  const { org } = useOrg()
+  const [isLoading, setIsLoading] = useState(true)
+  const [job, setJob] = useState<TRunnerJob>()
+  const [error, setError] = useState<string>()
+
+  useEffect(() => {
+    fetch(`/api/${org.id}/runner/${runnerId}/jobs`)
+      .then((res) =>
+        res.json().then((jbs) => {
+          setJob(jbs?.[0])
+          setIsLoading(false)
+        })
+      )
+      .catch((err) => {
+        console.error(err?.message)
+        setIsLoading(false)
+        setError('Unable to load install runner')
+      })
+  }, [])
+
+  return error ? (
+    <Notice>{error}</Notice>
+  ) : isLoading ? (
+    <Loading loadingText={`Loading latest job...`} />
+  ) : job ? (
+    <div className="flex items-start justify-between">
+      <Config>
+        <ConfigContent label="Name" value={jobName(job) || 'Unknown'} />
+
+        <ConfigContent label="Group" value={job?.group} />
+
+        <ConfigContent
+          label="Status"
+          value={
+            <span className="flex items-center gap-2">
+              <StatusBadge
+                status={job?.status}
+                isWithoutBorder
+                isStatusTextHidden
+              />
+              {job?.status}
+            </span>
+          }
+        />
+      </Config>
+      {jobHrefPath(job) !== '' ? (
+        <Link className="text-sm" href={`/${org.id}/${jobHrefPath(job)}`}>
+          Details <CaretRight />
+        </Link>
+      ) : null}
+    </div>
+  ) : (
+    <Text>No job to show.</Text>
+  )
+}
