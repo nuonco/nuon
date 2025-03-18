@@ -78,7 +78,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
               <Text variant="med-14">{props.getValue<string>()}</Text>
             </Link>
 
-            <ID id={props.row.original.installComponentId} />
+            <ID id={props.row.original.componentId} />
           </div>
         ),
       },
