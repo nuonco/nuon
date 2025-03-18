@@ -15,6 +15,7 @@ import {
   SquaresFour,
   UsersThree,
 } from '@phosphor-icons/react'
+import { useOrg } from '@/components/Orgs'
 import { Link } from './Link'
 import { Text } from './Typography'
 
@@ -25,14 +26,13 @@ export type TLink = {
 }
 
 export const MainNav: FC<{
-  orgId: string
   isSidebarOpen: boolean
-  featureFlags?: Record<string, boolean>
-}> = ({ orgId, isSidebarOpen, featureFlags }) => {
+}> = ({ isSidebarOpen }) => {
+  const { org } = useOrg()
   const path = usePathname()
   const links: Array<TLink> = [
     {
-      href: `/${orgId}`,
+      href: `/${org.id}`,
       text: (
         <>
           <SquaresFour />
@@ -42,7 +42,7 @@ export const MainNav: FC<{
     },
 
     {
-      href: `/${orgId}/apps`,
+      href: `/${org.id}/apps`,
       text: (
         <>
           <AppWindow weight="bold" />
@@ -51,7 +51,7 @@ export const MainNav: FC<{
       ),
     },
     {
-      href: `/${orgId}/installs`,
+      href: `/${org.id}/installs`,
       text: (
         <>
           <Cube weight="bold" />
@@ -60,7 +60,7 @@ export const MainNav: FC<{
       ),
     },
     {
-      href: `/${orgId}/runner`,
+      href: `/${org.id}/runner`,
       text: (
         <>
           <SneakerMove weight="bold" />
@@ -72,10 +72,10 @@ export const MainNav: FC<{
 
   function getMainNavItems(links: Array<TLink>) {
     const l = links
-    if (!featureFlags['ORG_DASHBOARD']) {
+    if (!org.features?.['org-dashboard']) {
       l.shift()
     }
-    if (!featureFlags['ORG_RUNNER']) {
+    if (!org.features?.['org-runner']) {
       l.pop()
     }
 
@@ -84,7 +84,7 @@ export const MainNav: FC<{
 
   const settingsLinks: Array<TLink> = [
     {
-      href: `/${orgId}/team`,
+      href: `/${org.id}/team`,
       text: (
         <>
           <UsersThree weight="bold" />
@@ -100,15 +100,18 @@ export const MainNav: FC<{
       text: (
         <>
           <Books weight="bold" />
-          {isSidebarOpen ? 'Developer docs' : null}
-          <ArrowSquareOut size="14" />
+          {isSidebarOpen ? (
+            <>
+              Developer docs <ArrowSquareOut size="14" />
+            </>
+          ) : null}
         </>
       ),
       isExternal: true,
     },
 
     {
-      href: `/${orgId}/releases`,
+      href: `/${org.id}/releases`,
       text: (
         <>
           <ListDashes weight="bold" />
@@ -151,7 +154,7 @@ export const MainNav: FC<{
         <NavLink key={link.href} link={link} />
       ))}
 
-      {featureFlags['ORG_SETTINGS'] ? (
+      {org?.features?.['org-settings'] ? (
         <div
           className={classNames('flex flex-col gap-2 pt-2 mt-4', {
             'border-t': !isSidebarOpen,
@@ -172,10 +175,12 @@ export const MainNav: FC<{
         </div>
       ) : null}
 
-      {featureFlags['ORG_SUPPORT'] ? (
-        <div className={classNames('flex flex-col gap-2 pt-2 mt-4', {
-          'border-t': !isSidebarOpen,
-        })}>
+      {org?.features?.['org-support'] ? (
+        <div
+          className={classNames('flex flex-col gap-2 pt-2 mt-4', {
+            'border-t': !isSidebarOpen,
+          })}
+        >
           <Text
             className={classNames('text-cool-grey-600 dark:text-white/70', {
               hidden: !isSidebarOpen,
@@ -226,7 +231,7 @@ export const SubNav: FC<{ links: Array<TLink> }> = ({ links }) => {
 
 export const BreadcrumbNav: FC<{ links: Array<TLink> }> = ({ links }) => {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 ml-8 md:ml-0 overflow-x-auto max-w-[230px] md:max-w-full">
       {links.map((link, i) => (
         <span
           key={`${link.href}-${i}`}
