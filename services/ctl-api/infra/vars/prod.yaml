@@ -4,4 +4,4 @@ region: us-west-2
 cluster_name: prod-nuon
 internal_root_domain: nuon.us-west-2.prod.nuon.cloud
 rds:
-  instance_class: "db.t4g.xlarge"
+  instance_class: "db.r6gd.large"

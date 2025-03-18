@@ -22,7 +22,7 @@ rds:
     - name: tcp_keepalives_count
       value: 3
   major_engine_version: "15"
-  instance_class: "db.t4g.large"
+  instance_class: "db.r6gd.large"
   allocated_storage: "100"
   db_name: ctlapi
   port: 5432
