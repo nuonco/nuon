@@ -154,7 +154,12 @@ export const LogsViewer: FC<ILogsViewer> = ({
                             </Text>
 
                             <span className="col-span-2">
-                              {key === 'intermediate-data' ? (
+                              {key === 'intermediate-data' ||
+                              key === 'diagnostic' ||
+                              key === 'change' ||
+                              key === 'changes' ||
+                              key === 'outputs' ||
+                              key === 'hook' ? (
                                 <Code variant="preformated">
                                   <ClickToCopy
                                     className="!items-start justify-between"
