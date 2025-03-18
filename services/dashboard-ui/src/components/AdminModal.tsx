@@ -3,14 +3,16 @@
 import { useParams } from 'next/navigation'
 import React, { type FC, useState } from 'react'
 import { useUser } from '@auth0/nextjs-auth0/client'
-import { Gear} from "@phosphor-icons/react"
-import { AdminOrgActions } from "@/components/AdminOrgActions"
-import { AdminInstallActions } from "@/components/AdminInstallActions"
-import { AdminOrgFeatures } from "@/components/AdminOrgFeatures"
-import { AdminBtn } from "@/components/AdminActionButton"
+import { Gear } from '@phosphor-icons/react'
+import { AdminOrgActions } from '@/components/AdminOrgActions'
+import { AdminInstallActions } from '@/components/AdminInstallActions'
+import { AdminOrgFeatures } from '@/components/AdminOrgFeatures'
+import { AdminRunnerModal } from '@/components/AdminRunnerModal'
+import { AdminBtn } from '@/components/AdminActionButton'
 import { Button } from '@/components/Button'
 import { Grid } from '@/components/Grid'
 import { Modal } from '@/components/Modal'
+import { useOrg } from '@/components/Orgs'
 import { Text } from '@/components/Typography'
 import {
   addSupportUsersToOrg,
@@ -29,7 +31,6 @@ import {
   teardownInstallComponents,
   updateInstallSandbox,
 } from '@/components/admin-actions'
-import type { TOrg } from "@/types"
 
 type TAdminAction = {
   action: () => Promise<any>
@@ -37,9 +38,12 @@ type TAdminAction = {
   text: string
 }
 
-export const AdminModal: FC<{ orgId: string, org: TOrg, isSidebarOpen: boolean }> = ({ isSidebarOpen, org }) => {
+export const AdminModal: FC<{ isSidebarOpen: boolean }> = ({
+  isSidebarOpen,
+}) => {
   const params = useParams()
   const { user } = useUser()
+  const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
 
   const orgActions: Array<TAdminAction> = [
@@ -63,7 +67,7 @@ export const AdminModal: FC<{ orgId: string, org: TOrg, isSidebarOpen: boolean }
       description: 'Restart all of current org children event loops',
       text: 'Restart org children',
     },
-     {
+    {
       action: () => restartOrgRunner(params?.['org-id'] as string),
       description: 'Restart the current org runner',
       text: 'Restart runner',
@@ -135,7 +139,7 @@ export const AdminModal: FC<{ orgId: string, org: TOrg, isSidebarOpen: boolean }
         }}
         variant="ghost"
       >
-        <Gear size={18} /> {isSidebarOpen ? "Admin controls" : null}
+        <Gear size={18} /> {isSidebarOpen ? 'Admin controls' : null}
       </Button>
       <Modal
         heading="Admin controls"
@@ -145,12 +149,13 @@ export const AdminModal: FC<{ orgId: string, org: TOrg, isSidebarOpen: boolean }
         }}
       >
         <div className="flex flex-col gap-8 divide-y">
-          <AdminOrgActions orgId={params?.["org-id"] as string}>
+          <AdminOrgActions orgId={params?.['org-id'] as string}>
             <Grid>
               {orgActions.map((action) => (
                 <AdminAction key={action.text} {...action} />
               ))}
               <AdminOrgFeatures org={org} />
+              <AdminRunnerModal />
             </Grid>
           </AdminOrgActions>
 

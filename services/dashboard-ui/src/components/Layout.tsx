@@ -2,7 +2,12 @@
 
 import classNames from 'classnames'
 import React, { type FC, useState } from 'react'
-import { ArrowLineLeft, ArrowLineRight } from '@phosphor-icons/react/dist/ssr'
+import {
+  ArrowLineLeft,
+  ArrowLineRight,
+  List,
+  X,
+} from '@phosphor-icons/react/dist/ssr'
 import { AdminModal } from '@/components/AdminModal'
 import { Button } from '@/components/Button'
 import { Logo } from '@/components/Logo'
@@ -14,19 +19,11 @@ import type { TOrg } from '@/types'
 
 interface ILayout {
   children: React.ReactElement
-  org: TOrg
   orgs: Array<TOrg>
   versions: TNuonVersions
-  featureFlags?: Record<string, boolean>
 }
 
-export const Layout: FC<ILayout> = ({
-  children,
-  org,
-  orgs,
-  versions,
-  featureFlags,
-}) => {
+export const OldLayout: FC<ILayout> = ({ children, orgs, versions }) => {
   const [isOpen, setIsOpen] = useState(true)
 
   return (
@@ -55,22 +52,18 @@ export const Layout: FC<ILayout> = ({
           </div>
 
           <div className="px-4">
-            <OrgSwitcher initOrg={org} initOrgs={orgs} isSidebarOpen={isOpen} />
+            <OrgSwitcher initOrgs={orgs} isSidebarOpen={isOpen} />
           </div>
         </header>
 
         <div className="dashboard_nav flex-auto flex flex-col justify-between px-4 pb-6 pt-8">
           <div className="flex gap-3">
-            <MainNav
-              orgId={org?.id}
-              isSidebarOpen={isOpen}
-              featureFlags={featureFlags}
-            />
+            <MainNav isSidebarOpen={isOpen} />
           </div>
 
           <div className="flex flex-col gap-2">
             <SignOutButton isSidebarOpen={isOpen} />
-            <AdminModal orgId={org?.id} isSidebarOpen={isOpen} org={org} />
+            <AdminModal isSidebarOpen={isOpen} />
             {isOpen ? (
               <NuonVersions
                 className="justify-center py-2 flex-initial"
@@ -80,7 +73,84 @@ export const Layout: FC<ILayout> = ({
           </div>
         </div>
       </aside>
-      <div className="dashboard_content h-screen flex-auto md:border-l">
+      <div className="dashboard_content h-screen md:flex-auto md:border-l">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+export const Layout: FC<{
+  children: React.ReactNode
+  orgs: Array<TOrg>
+  versions: TNuonVersions
+}> = ({ children, orgs, versions }) => {
+  const [isOpen, setIsOpen] = useState(true)
+
+  return (
+    <div
+      className={classNames('layout', {
+        'layout--open': isOpen,
+      })}
+    >
+      <aside className="layout_aside dashboard_sidebar border-r flex flex-col">
+        <header className="flex flex-col gap-4">
+          <div className="border-b flex items-center justify-between px-4 pt-6 pb-4 h-[75px]">
+            {isOpen ? <Logo /> : null}
+            <Button
+              className={classNames('p-1.5', {
+                'm-auto': !isOpen,
+              })}
+              hasCustomPadding
+              variant="ghost"
+              onClick={() => {
+                setIsOpen(!isOpen)
+              }}
+            >
+              {isOpen ? (
+                <>
+                  <X className="md:hidden" />
+                  <ArrowLineLeft className="hidden md:block" />
+                </>
+              ) : (
+                <ArrowLineRight />
+              )}
+            </Button>
+          </div>
+
+          <div className="px-4">
+            <OrgSwitcher initOrgs={orgs} isSidebarOpen={isOpen} />
+          </div>
+        </header>
+
+        <div className="dashboard_nav flex-auto flex flex-col justify-between px-4 pb-6 pt-8">
+          <div className="flex gap-3">
+            <MainNav isSidebarOpen={isOpen} />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <SignOutButton isSidebarOpen={isOpen} />
+            <AdminModal isSidebarOpen={isOpen} />
+            {isOpen ? (
+              <NuonVersions
+                className="justify-center py-2 flex-initial"
+                {...versions}
+              />
+            ) : null}
+          </div>
+        </div>
+      </aside>
+      <div className="layout_content dashboard_content relative">
+        <Button
+          className={classNames('p-1.5 absolute top-6 left-4 md:hidden', {})}
+          hasCustomPadding
+          variant="ghost"
+          onClick={() => {
+            setIsOpen(!isOpen)
+          }}
+        >
+          {isOpen ? <ArrowLineLeft /> : <List />}
+        </Button>
         {children}
       </div>
     </div>

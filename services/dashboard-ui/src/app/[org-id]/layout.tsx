@@ -30,19 +30,12 @@ export default withPageAuthRequired(
     return (
       <OrgProvider initOrg={org} shouldPoll>
         <Layout
-          org={org}
           orgs={orgs}
           versions={{
             api: apiVersion,
             ui: {
               version: VERSION,
             },
-          }}
-          featureFlags={{
-            ORG_DASHBOARD: org?.features?.['org-dashboard'],
-            ORG_RUNNER: org?.features?.['org-runner'],
-            ORG_SETTINGS: org.features?.['org-settings'],
-            ORG_SUPPORT: org.features?.['org-support'],
           }}
         >
           {children}
