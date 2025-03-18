@@ -34,7 +34,7 @@ export const LogStreamProvider: FC<ILogStreamProvider> = ({
   useEffect(() => {
     if (initLogStream?.id === '') {
       setError({
-        message: 'Log stream not created yet, refresh the page to view logs.',
+        message: 'Log stream not created yet.',
       })
     }
   }, [])
