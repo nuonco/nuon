@@ -173,7 +173,6 @@ export const OrgsNav: FC<IOrgsNav> = ({ orgs }) => {
 }
 
 export interface IOrgSwitcher {
-  initOrg: TOrg
   initOrgs: Array<TOrg>
   isSidebarOpen?: boolean
 }
