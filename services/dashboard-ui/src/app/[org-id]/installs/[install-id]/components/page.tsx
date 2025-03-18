@@ -1,10 +1,14 @@
 import type { Metadata } from 'next'
+import { type FC, Suspense } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
+  ErrorFallback,
   InstallStatuses,
   InstallComponentsTable,
   InstallPageSubNav,
+  Loading,
   NoComponents,
   Text,
   Time,
@@ -17,7 +21,7 @@ import {
   getComponentConfig,
   getInstall,
 } from '@/lib'
-import type { TBuild } from '@/types'
+import type { TBuild, TInstall } from '@/types'
 import { USER_REPROVISION } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -36,38 +40,6 @@ export default withPageAuthRequired(async function InstallComponents({
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
   const install = await getInstall({ orgId, installId })
-
-  const hydratedInstallComponents =
-    install.install_components && install.install_components?.length
-      ? await Promise.all(
-          install.install_components.map(async (comp, _, arr) => {
-            const build = await getComponentBuild({
-              buildId: comp.install_deploys?.[0]?.build_id,
-              orgId,
-            }).catch((err) => console.error(err))
-            const config = await getComponentConfig({
-              componentId: comp.component.id,
-              componentConfigId: (build as TBuild)
-                ?.component_config_connection_id,
-              orgId,
-            })
-            const appComponent = await getComponent({
-              componentId: comp.component_id,
-              orgId,
-            })
-            const deps = arr.filter((c) =>
-              appComponent.dependencies?.some((d) => d === c.component_id)
-            )
-
-            return {
-              ...comp,
-              build,
-              config,
-              deps,
-            }
-          })
-        )
-      : []
 
   return (
     <DashboardContent
@@ -116,18 +88,65 @@ export default withPageAuthRequired(async function InstallComponents({
       }
     >
       <section className="px-6 py-8">
-        {hydratedInstallComponents?.length ? (
-          <InstallComponentsTable
-            installComponents={
-              hydratedInstallComponents as Array<TDataInstallComponent>
+        <ErrorBoundary fallbackRender={ErrorFallback}>
+          <Suspense
+            fallback={
+              <Loading loadingText="Loading components..." variant="page" />
             }
-            installId={installId}
-            orgId={orgId}
-          />
-        ) : (
-          <NoComponents />
-        )}
+          >
+            <LoadInstallComponents install={install} orgId={orgId} />
+          </Suspense>
+        </ErrorBoundary>
       </section>
     </DashboardContent>
   )
 })
+
+const LoadInstallComponents: FC<{ install: TInstall; orgId: string }> = async ({
+  install,
+  orgId,
+}) => {
+  const hydratedInstallComponents =
+    install.install_components && install.install_components?.length
+      ? await Promise.all(
+          install.install_components.map(async (comp, _, arr) => {
+            const build = await getComponentBuild({
+              buildId: comp.install_deploys?.[0]?.build_id,
+              orgId,
+            }).catch((err) => console.error(err))
+            const config = await getComponentConfig({
+              componentId: comp.component.id,
+              componentConfigId: (build as TBuild)
+                ?.component_config_connection_id,
+              orgId,
+            })
+            const appComponent = await getComponent({
+              componentId: comp.component_id,
+              orgId,
+            })
+            const deps = arr.filter((c) =>
+              appComponent.dependencies?.some((d) => d === c.component_id)
+            )
+
+            return {
+              ...comp,
+              build,
+              config,
+              deps,
+            }
+          })
+        )
+      : []
+
+  return hydratedInstallComponents?.length ? (
+    <InstallComponentsTable
+      installComponents={
+        hydratedInstallComponents as Array<TDataInstallComponent>
+      }
+      installId={install.id}
+      orgId={orgId}
+    />
+  ) : (
+    <NoComponents />
+  )
+}
