@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
-	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
@@ -71,27 +70,25 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	installInputs, err := s.getInstallInputs(ctx, installID)
+	latestLatestInstallInputs, err := s.getLatestInstallInputs(ctx, installID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install inputs: %w", err))
+		ctx.Error(fmt.Errorf("unable to get latest install inputs: %w", err))
 		return
 	}
 
-	// if no inputs, exit early
-	if len(installInputs) < 1 {
-		ctx.Error(fmt.Errorf("no inputs found for install: %w", gorm.ErrRecordNotFound))
+	latestAppInputConfig, err := s.getLatestAppInputConfig(ctx, install.AppID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get latest app input config: %w", err))
 		return
 	}
 
-	latestInstallInput := installInputs[0]
-
-	err = s.validateInstallInput(ctx, latestInstallInput.AppInputConfigID, req)
+	err = s.validateInstallInput(ctx, *latestAppInputConfig, req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to validate install input: %w", err))
 		return
 	}
 
-	inputs, err := s.newInstallInputs(ctx, latestInstallInput, req)
+	inputs, err := s.newInstallInputs(ctx, *latestLatestInstallInputs, *latestAppInputConfig, req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
@@ -104,14 +101,35 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, inputs)
 }
 
-func (s *service) validateInstallInput(ctx context.Context, appInputConfigID string, req UpdateInstallInputsRequest) error {
-	appInputs := []*app.AppInput{}
+func (s *service) getLatestInstallInputs(ctx context.Context, installID string) (*app.InstallInputs, error) {
+	installInputs := app.InstallInputs{}
 	res := s.db.WithContext(ctx).
-		Find(&appInputs, "app_input_config_id = ?", appInputConfigID)
+		Where("install_id = ?", installID).
+		Order("created_at DESC").
+		First(&installInputs)
 	if res.Error != nil {
-		return fmt.Errorf("unable to get app inputs: %w", res.Error)
+		return nil, fmt.Errorf("unable to get install inputs: %w", res.Error)
 	}
 
+	return &installInputs, nil
+}
+
+func (s *service) getLatestAppInputConfig(ctx context.Context, appID string) (*app.AppInputConfig, error) {
+	appInputConfig := app.AppInputConfig{}
+	res := s.db.WithContext(ctx).
+		Preload("AppInputs").
+		Where("app_id = ?", appID).
+		Order("created_at DESC").
+		First(&appInputConfig)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get app input config: %w", res.Error)
+	}
+
+	return &appInputConfig, nil
+}
+
+func (s *service) validateInstallInput(ctx context.Context, appInputConfig app.AppInputConfig, req UpdateInstallInputsRequest) error {
+	appInputs := appInputConfig.AppInputs
 	appInputNames := map[string]struct{}{}
 	for _, input := range appInputs {
 		appInputNames[input.Name] = struct{}{}
@@ -126,9 +144,9 @@ func (s *service) validateInstallInput(ctx context.Context, appInputConfigID str
 	return nil
 }
 
-func (s *service) newInstallInputs(ctx context.Context, installInput app.InstallInputs, req UpdateInstallInputsRequest) (*app.InstallInputs, error) {
+func (s *service) newInstallInputs(ctx context.Context, installInputs app.InstallInputs, appInputConfig app.AppInputConfig, req UpdateInstallInputsRequest) (*app.InstallInputs, error) {
 	inputs := map[string]*string{}
-	for k, v := range installInput.Values {
+	for k, v := range installInputs.Values {
 		inputs[k] = v
 	}
 
@@ -136,10 +154,24 @@ func (s *service) newInstallInputs(ctx context.Context, installInput app.Install
 		inputs[k] = v
 	}
 
-	// this update will be tied to the same AppInputConfigID tied to the latest install input
+	// create a lookup for the latest app input config
+	appInputs := appInputConfig.AppInputs
+	appInputNames := map[string]struct{}{}
+	for _, input := range appInputs {
+		appInputNames[input.Name] = struct{}{}
+	}
+
+	// remove inputs not in the latest app input config
+	for k := range inputs {
+		if _, ok := appInputNames[k]; !ok {
+			delete(inputs, k)
+		}
+	}
+
+	// this update will be tied to the latest AppInputConfigID for the app
 	obj := &app.InstallInputs{
-		AppInputConfigID: installInput.AppInputConfigID,
-		InstallID:        installInput.InstallID,
+		AppInputConfigID: appInputConfig.ID,
+		InstallID:        installInputs.InstallID,
 		Values:           pgtype.Hstore(inputs),
 	}
 	res := s.db.WithContext(ctx).Create(&obj)
