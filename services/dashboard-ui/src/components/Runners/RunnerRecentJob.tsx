@@ -24,7 +24,7 @@ export const RunnerRecentJob: FC<IRunnerRecentJob> = async ({
     options: {
       limit: '1',
       groups,
-      statuses: ['finished', 'failed'],
+      statuses: ['finished', 'failed', 'timed-out'],
     },
   })
 
