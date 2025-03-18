@@ -25,8 +25,8 @@ const (
 func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, bool, error) {
 	startTS := workflow.Now(ctx)
 	tags := map[string]string{
-		"status":   "ok",
-		"job_type": string(job.Type),
+		"status":    "ok",
+		"job_type":  string(job.Type),
 		"job_group": string(job.Group),
 	}
 	defer func() {
@@ -50,40 +50,44 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 
 	var jobExecutionFound bool
 	var runnerStatus app.RunnerStatus
-	for runnerStatus != app.RunnerStatusActive {
-		workflow.Sleep(ctx, defaultAvailablePollPeriod)
 
-		now := workflow.Now(ctx)
-		if now.After(overallTimeout) {
-			l.Error("overall job timeout reached")
-			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout waiting for runner to be healthy")
-			tags["status"] = "runner_unhealthy"
-			return false, false, nil
-		}
+	// TODO(jm): move this into a separate function
+	if job.Group != app.RunnerJobGroupOperations {
+		for runnerStatus != app.RunnerStatusActive {
+			workflow.Sleep(ctx, defaultAvailablePollPeriod)
 
-		if now.After(availableTimeout) {
-			l.Error("timeout waiting for job to be picked up")
-			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "timeout waiting for runner to become healthy")
-			tags["status"] = "runner_unhealthy"
-			return true, false, nil
-		}
+			now := workflow.Now(ctx)
+			if now.After(overallTimeout) {
+				l.Error("overall job timeout reached")
+				w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout waiting for runner to be healthy")
+				tags["status"] = "runner_unhealthy"
+				return false, false, nil
+			}
 
-		// if the runner is deemed unhealthy, the job execution is marked as unknown, and the job is marked as
-		// not attempted with the correct status, this is retryable.
-		runnerStatus, err = activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
-		if err != nil {
-			l.Warn("unable to determine runner status", zap.Error(err))
-			return false, false, err
-		}
+			if now.After(availableTimeout) {
+				l.Error("timeout waiting for job to be picked up")
+				w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "timeout waiting for runner to become healthy")
+				tags["status"] = "runner_unhealthy"
+				return true, false, nil
+			}
 
-		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
-		if err != nil {
-			return false, false, nil
-		}
-		if jobStatus == app.RunnerJobStatusCancelled {
-			l.Error("job was cancelled")
-			tags["status"] = "job_cancelled"
-			return false, false, nil
+			// if the runner is deemed unhealthy, the job execution is marked as unknown, and the job is marked as
+			// not attempted with the correct status, this is retryable.
+			runnerStatus, err = activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
+			if err != nil {
+				l.Warn("unable to determine runner status", zap.Error(err))
+				return false, false, err
+			}
+
+			jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
+			if err != nil {
+				return false, false, nil
+			}
+			if jobStatus == app.RunnerJobStatusCancelled {
+				l.Error("job was cancelled")
+				tags["status"] = "job_cancelled"
+				return false, false, nil
+			}
 		}
 	}
 

@@ -15,7 +15,8 @@ func (h *Helpers) getInstallActionWorkflows(ctx context.Context, installID strin
 	var acts []app.InstallActionWorkflow
 	res := h.db.WithContext(ctx).
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
-			return db.Limit(5).Order("install_action_workflow_runs.created_at DESC")
+			return db.Order("install_action_workflow_runs.created_at DESC").
+				Limit(5)
 		}).
 		Preload("Runs.RunnerJob").
 		Preload("ActionWorkflow").

@@ -20,6 +20,7 @@ func (h *Helpers) getInstallSandboxRuns(ctx context.Context, installID string) (
 		Preload("LogStream").
 		Where("install_id = ?", installID).
 		Order("created_at desc").
+		Limit(5).
 		Find(&installSandboxRuns)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install sandbox runs: %w", res.Error)
