@@ -2,11 +2,13 @@ package worker
 
 import (
 	"fmt"
+	"maps"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
@@ -25,10 +27,20 @@ const (
 func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, bool, error) {
 	startTS := workflow.Now(ctx)
 	tags := map[string]string{
-		"status":    "ok",
-		"job_type":  string(job.Type),
-		"job_group": string(job.Group),
+		"status":        "ok",
+		"job_type":      string(job.Type),
+		"job_group":     string(job.Group),
+		"job_operation": string(job.Operation),
 	}
+
+	etags := maps.Clone(tags)
+	etags["job_id"] = job.ID
+	etags["job_operation"] = string(job.Operation)
+	etags["runner_id"] = job.RunnerID
+	etags["org_id"] = string(job.OrgID)
+	etags["available_timeout"] = job.AvailableTimeout.String()
+	etags["overall_timeout"] = job.OverallTimeout.String()
+
 	defer func() {
 		w.mw.Incr(ctx, "runner.job_execution_start", metrics.ToTags(tags)...)
 		e2eLatency := workflow.Now(ctx).Sub(startTS)
@@ -55,12 +67,23 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 	if job.Group != app.RunnerJobGroupOperations {
 		for runnerStatus != app.RunnerStatusActive {
 			workflow.Sleep(ctx, defaultAvailablePollPeriod)
+			// NOTE - first pass through this loop will have garbage data for the runner status
+			etags["runner_status"] = string(runnerStatus)
 
 			now := workflow.Now(ctx)
 			if now.After(overallTimeout) {
 				l.Error("overall job timeout reached")
 				w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout waiting for runner to be healthy")
 				tags["status"] = "runner_unhealthy"
+
+				w.mw.Event(ctx, &statsd.Event{
+					Title:          "Overall job timeout reached waiting for runner to become healthy",
+					Text:           "Overall end-to-end job execution timeout reached while waiting for job to bewcome healthy",
+					Tags:           metrics.ToTags(tags),
+					Priority:       statsd.Normal,
+					AlertType:      statsd.Error,
+					AggregationKey: "runner-job-timeout-waiting-for-healthy-runner",
+				})
 				return false, false, nil
 			}
 
@@ -68,6 +91,15 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 				l.Error("timeout waiting for job to be picked up")
 				w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "timeout waiting for runner to become healthy")
 				tags["status"] = "runner_unhealthy"
+
+				w.mw.Event(ctx, &statsd.Event{
+					Title:          "Available timeout reached waiting for runner to become healthy",
+					Text:           "Job is ready for execution, but runner did not become healthy within the available timeout",
+					Tags:           metrics.ToTags(tags),
+					Priority:       statsd.Normal,
+					AlertType:      statsd.Error,
+					AggregationKey: "runner-job-timeout-waiting-for-healthy-runner",
+				})
 				return true, false, nil
 			}
 
@@ -100,6 +132,16 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 			l.Error("overall job timeout reached")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout")
 			tags["status"] = "overall_timeout"
+
+			etags["status"] = "overall_timeout"
+			w.mw.Event(ctx, &statsd.Event{
+				Title:          "Overall job timeout reached without job starting",
+				Text:           "Overall end-to-end job execution timeout reached without ever having been picked up",
+				Tags:           metrics.ToTags(tags),
+				Priority:       statsd.Normal,
+				AlertType:      statsd.Error,
+				AggregationKey: "runner-job-timeout-awaiting-job-pickup",
+			})
 			return false, false, nil
 		}
 
@@ -107,6 +149,16 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 			l.Error("timeout waiting for job to be picked up")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "timeout waiting for runner to pick up job")
 			tags["status"] = "available_timeout"
+
+			etags["status"] = "available_timeout"
+			w.mw.Event(ctx, &statsd.Event{
+				Title:          "Timeout waiting for runner job to be picked up",
+				Text:           "Job was marked as ready for execution, and runner appears to be in a healthy state, but runner did not pick up the job within the available timeout",
+				Tags:           metrics.ToTags(tags),
+				Priority:       statsd.Normal,
+				AlertType:      statsd.Error,
+				AggregationKey: "runner-job-timeout-awaiting-job-pickup",
+			})
 			return true, false, nil
 		}
 
