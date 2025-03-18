@@ -53,7 +53,8 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string) (*state
 	}
 	is.Actions = h.toActions(actions)
 
-	// NOTE(JM): this is purely for historical and legacy reasons, and will be removed once we migrate.
+	// NOTE(JM): this is purely for historical and legacy reasons, and will be removed once we migrate all users to
+	// the flattened structure
 	is.Install = &state.InstallState{
 		Populated:      true,
 		ID:             install.ID,
@@ -61,7 +62,7 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string) (*state
 		PublicDomain:   is.Domain.PublicDomain,
 		InternalDomain: is.Domain.InternalDomain,
 		Sandbox:        *is.Sandbox,
-		Inputs:         map[string]string{},
+		Inputs:         is.Inputs.Inputs,
 	}
 
 	return is, nil
@@ -79,7 +80,7 @@ func (h *Helpers) getStateInstall(ctx context.Context, installID string) (*app.I
 		Preload("AzureAccount").
 		Preload("AWSAccount").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs_view_v1.created_at DESC")
+			return db.Order("install_inputs_view_v1.created_at DESC").Limit(1)
 		}).
 		First(&install, "id = ?", installID)
 	if res.Error != nil {
