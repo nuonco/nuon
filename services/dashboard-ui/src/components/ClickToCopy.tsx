@@ -83,7 +83,7 @@ export const ClickToCopyButton: FC<IClickToCopyButton> = ({ className, noticeCla
 
   return (
     <span
-      className={classNames('flex items-center gap-2 cursor-pointer relative', {
+      className={classNames('flex items-center gap-2 cursor-pointer relative hover:bg-black/10 dark:hover:bg-white/5 border rounded-md p-1 text-sm', {
         [`${className}`]: Boolean(className),
       })}
       onClick={() => {
