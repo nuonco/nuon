@@ -62,7 +62,9 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string) (*state
 		PublicDomain:   is.Domain.PublicDomain,
 		InternalDomain: is.Domain.InternalDomain,
 		Sandbox:        *is.Sandbox,
-		Inputs:         is.Inputs.Inputs,
+	}
+	if is.Inputs != nil {
+		is.Install.Inputs = is.Inputs.Inputs
 	}
 
 	return is, nil
