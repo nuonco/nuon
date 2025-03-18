@@ -3,10 +3,12 @@ package worker
 import (
 	"errors"
 	"fmt"
+	"maps"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
@@ -20,6 +22,14 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 		"job_type":  string(job.Type),
 		"job_group": string(job.Group),
 	}
+	etags := maps.Clone(tags)
+	etags["job_id"] = job.ID
+	etags["job_operation"] = string(job.Operation)
+	etags["runner_id"] = job.RunnerID
+	etags["org_id"] = string(job.OrgID)
+	etags["available_timeout"] = job.AvailableTimeout.String()
+	etags["overall_timeout"] = job.OverallTimeout.String()
+
 	defer func() {
 		w.mw.Incr(ctx, "runner.job_execution", metrics.ToTags(tags)...)
 		e2eLatency := workflow.Now(ctx).Sub(startTS)
@@ -50,6 +60,16 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout")
 			w.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusTimedOut)
 			tags["status"] = "overall_timeout"
+
+			etags["job_status"] = string(app.RunnerJobStatusTimedOut)
+			w.mw.Event(ctx, &statsd.Event{
+				Title:          "Overall timeout reached while job executing",
+				Text:           "Overall end-to-end job execution timeout reached while waiting for job to bewcome healthy",
+				Tags:           metrics.ToTags(tags),
+				Priority:       statsd.Normal,
+				AlertType:      statsd.Error,
+				AggregationKey: "runner-job-timeout-while-executing",
+			})
 			return false, nil
 		}
 
@@ -60,6 +80,16 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "execution timeout")
 			w.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusTimedOut)
 			tags["status"] = "execution_timeout"
+
+			etags["job_status"] = string(app.RunnerJobStatusTimedOut)
+			w.mw.Event(ctx, &statsd.Event{
+				Title:          "Overall timeout reached while job executing",
+				Text:           "Overall end-to-end job execution timeout reached while waiting for job to bewcome healthy",
+				Tags:           metrics.ToTags(tags),
+				Priority:       statsd.Normal,
+				AlertType:      statsd.Error,
+				AggregationKey: "runner-job-timeout-while-executing",
+			})
 			return true, nil
 		}
 
