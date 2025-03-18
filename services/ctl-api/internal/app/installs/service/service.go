@@ -62,7 +62,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.DELETE("/v1/installs/:install_id", s.DeleteInstall)
 	api.POST("/v1/installs/:install_id/reprovision", s.ReprovisionInstall)
 	api.POST("/v1/installs/:install_id/deprovision", s.DeprovisionInstall)
-  api.POST("/v1/installs/:install_id/forget", s.ForgetInstall)
+	api.POST("/v1/installs/:install_id/forget", s.ForgetInstall)
 
 	// install deploys
 	api.GET("/v1/installs/:install_id/deploys", s.GetInstallDeploys)
@@ -79,6 +79,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	// install sandbox
 	api.GET("/v1/installs/:install_id/sandbox-runs", s.GetInstallSandboxRuns)
+	api.GET("/v1/installs/sandbox-runs/:run_id", s.GetInstallSandboxRun)
 
 	// install inputs
 	api.GET("/v1/installs/:install_id/inputs", s.GetInstallInputs)
