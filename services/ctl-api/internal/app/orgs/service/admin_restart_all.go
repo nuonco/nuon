@@ -21,7 +21,7 @@ type RestartAllOrgRequest struct{}
 // @Accept			json
 // @Produce		json
 // @Success		200	{boolean}	true
-// @Router			/v1/orgs/{org_id}/admin-restart-all [POST]
+// @Router			/v1/orgs/admin-restart-all [POST]
 func (s *service) RestartAllOrgs(ctx *gin.Context) {
 	var req RestartAllOrgRequest
 	if err := ctx.BindJSON(&req); err != nil {
