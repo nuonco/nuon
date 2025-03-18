@@ -177,13 +177,12 @@ export async function getInstallSandboxRun({
   installId,
   orgId,
 }: IGetInstallSandboxRun) {
-  return (
-    await queryData<Array<TSandboxRun>>({
-      errorMessage: 'Unable to retrieve install sandbox run.',
-      orgId,
-      path: `installs/${installId}/sandbox-runs`,
-    })
-  ).find((sandboxRun) => sandboxRun.id === installSandboxRunId)
+  return queryData<TSandboxRun>({
+    errorMessage: 'Unable to retrieve install sandbox run.',
+    orgId,
+    path: `installs/sandbox-runs/${installSandboxRunId}`,
+    abortTimeout: 10000,
+  })
 }
 
 export interface IReprovisionInstall extends IGetInstall {}
