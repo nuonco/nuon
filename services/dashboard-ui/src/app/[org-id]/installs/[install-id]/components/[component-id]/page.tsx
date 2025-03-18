@@ -4,7 +4,7 @@ import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CaretRight } from '@phosphor-icons/react/dist/ssr'
 import {
-  ClickToCopy,
+  ClickToCopyButton,
   ComponentConfiguration,
   CodeViewer,
   DashboardContent,
@@ -22,14 +22,13 @@ import {
 } from '@/components'
 import {
   getComponent,
-  getComponentBuilds,
   getComponentConfig,
   getInstall,
   getInstallComponent,
   getInstallComponentOutputs,
   getLatestComponentBuild,
 } from '@/lib'
-import type { TInstallComponent } from '@/types'
+import type { TComponent, TInstallComponent } from '@/types'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
@@ -52,22 +51,9 @@ export default withPageAuthRequired(async function InstallComponent({
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
 
-  const [install, installComponent] = await Promise.all([
+  const [install, component] = await Promise.all([
     getInstall({ installId, orgId }),
-    getInstallComponent({
-      componentId,
-      installId,
-      orgId,
-    }),
-  ])
-
-  const [component, componentConfig, builds] = await Promise.all([
     getComponent({ componentId, orgId }),
-    getComponentConfig({
-      componentId,
-      orgId,
-    }),
-    getComponentBuilds({ componentId, orgId }),
   ])
 
   return (
@@ -87,7 +73,7 @@ export default withPageAuthRequired(async function InstallComponent({
       headingUnderline={component.id}
       statues={
         <InstallDeployLatestBuildButton
-          builds={builds}
+          componentId={componentId}
           installId={installId}
           orgId={orgId}
         />
@@ -110,12 +96,23 @@ export default withPageAuthRequired(async function InstallComponent({
             heading="Component config"
             childrenClassName="flex flex-col gap-4"
           >
-            <ComponentConfiguration config={componentConfig} />
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Loading
+                    loadingText="Loading component config..."
+                    variant="stack"
+                  />
+                }
+              >
+                <LoadComponentConfig componentId={componentId} orgId={orgId} />
+              </Suspense>
+            </ErrorBoundary>
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
                 fallback={<Loading loadingText="Loading latest build..." />}
               >
-                <LatestOutputs
+                <LoadLatestOutputs
                   componentId={componentId}
                   installId={installId}
                   orgId={orgId}
@@ -138,14 +135,22 @@ export default withPageAuthRequired(async function InstallComponent({
         </div>
         <div className="border-l overflow-auto lg:min-w-[450px] lg:max-w-[450px]">
           <Section heading="Deploy history">
-            <InstallComponentDeploys
-              component={component}
-              initDeploys={installComponent?.install_deploys}
-              installId={installId}
-              installComponentId={componentId}
-              orgId={orgId}
-              shouldPoll
-            />
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Loading
+                    loadingText="Loading deploy history..."
+                    variant="stack"
+                  />
+                }
+              >
+                <LoadDeployHistory
+                  component={component}
+                  installId={installId}
+                  orgId={orgId}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </Section>
         </div>
       </div>
@@ -153,7 +158,32 @@ export default withPageAuthRequired(async function InstallComponent({
   )
 })
 
-const LatestOutputs: FC<{
+const LoadDeployHistory: FC<{
+  component: TComponent
+  installId: string
+  orgId: string
+}> = async ({ component, installId, orgId }) => {
+  const installComponent = await getInstallComponent({
+    componentId: component.id,
+    installId,
+    orgId,
+  }).catch(console.error)
+
+  return installComponent ? (
+    <InstallComponentDeploys
+      component={component}
+      initDeploys={installComponent?.install_deploys}
+      installId={installId}
+      installComponentId={component.id}
+      orgId={orgId}
+      shouldPoll
+    />
+  ) : (
+    <Text>Unable to load deploy history.</Text>
+  )
+}
+
+const LoadLatestOutputs: FC<{
   componentId: string
   installId: string
   orgId: string
@@ -168,9 +198,7 @@ const LatestOutputs: FC<{
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <Text variant="med-12">Outputs</Text>
-        <ClickToCopy className="hover:bg-black/10 rounded-md p-1 text-sm">
-          <span className="hidden">{JSON.stringify(outputs)}</span>
-        </ClickToCopy>
+        <ClickToCopyButton textToCopy={JSON.stringify(outputs)} />
       </div>
       <CodeViewer
         initCodeSource={JSON.stringify(outputs, null, 2)}
@@ -178,6 +206,21 @@ const LatestOutputs: FC<{
       />
     </div>
   ) : null
+}
+
+const LoadComponentConfig: FC<{ componentId: string; orgId: string }> = async ({
+  componentId,
+  orgId,
+}) => {
+  const componentConfig = await getComponentConfig({
+    componentId,
+    orgId,
+  }).catch(console.error)
+  return componentConfig ? (
+    <ComponentConfiguration config={componentConfig} />
+  ) : (
+    <Text>No component config found.</Text>
+  )
 }
 
 const LatestBuild = async ({ component, orgId }) => {

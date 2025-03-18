@@ -44,9 +44,9 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
   const componentId = params?.['component-id'] as string
   const orgId = params?.['org-id'] as string
 
-  const build = await getComponentBuild({ buildId, orgId })
-  const [app, component] = await Promise.all([
+  const [app, build, component] = await Promise.all([
     getApp({ appId, orgId }),
+    getComponentBuild({ buildId, orgId }),
     getComponent({ componentId, orgId }),
   ])
 
