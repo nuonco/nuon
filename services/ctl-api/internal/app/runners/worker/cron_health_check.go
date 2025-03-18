@@ -258,17 +258,20 @@ func (w *Workflows) gracefulShutdown(ctx workflow.Context, startTS time.Time, l 
 			"refusing to send shutdown signal - time is not right",
 			zap.Any("shutdown_job_ids", shutdownJobIDs),
 		)
-	} else if len(shutdownJobs) > 0 { // do not send if there are other/existing shut down jobs
+		return nil
+	}
+	if len(shutdownJobs) > 0 { // do not send if there are other/existing shut down jobs
 		l.Warn(
 			"refusing to send shutdown signal - shutdown jobs exist in queue",
 			zap.Any("shutdown_job_ids", shutdownJobIDs),
 		)
-	} else {
-		l.Debug("sending shutdown signal")
-		w.evClient.Send(ctx, runner.ID, &signals.Signal{
-			Type:          signals.OperationShutdown,
-			HealthCheckID: healthcheck.ID,
-		})
+		return nil
 	}
+
+	l.Debug("sending shutdown signal")
+	w.evClient.Send(ctx, runner.ID, &signals.Signal{
+		Type:          signals.OperationShutdown,
+		HealthCheckID: healthcheck.ID,
+	})
 	return nil
 }
