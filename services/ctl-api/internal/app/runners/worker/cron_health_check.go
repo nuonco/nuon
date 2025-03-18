@@ -253,12 +253,12 @@ func (w *Workflows) gracefulShutdown(ctx workflow.Context, startTS time.Time, l 
 		shutdownJobIDs = append(shutdownJobIDs, sj.ID)
 	}
 
-	if startTS.Minute()%5 == 0 {
+	if startTS.Minute()%3 != 0 { // only send every 3rd minute
 		l.Debug(
 			"refusing to send shutdown signal - time is not right",
 			zap.Any("shutdown_job_ids", shutdownJobIDs),
 		)
-	} else if len(shutdownJobs) > 0 {
+	} else if len(shutdownJobs) > 0 { // do not send if there are other/existing shut down jobs
 		l.Warn(
 			"refusing to send shutdown signal - shutdown jobs exist in queue",
 			zap.Any("shutdown_job_ids", shutdownJobIDs),
