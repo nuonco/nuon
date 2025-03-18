@@ -271,3 +271,66 @@
 .prose :where(table):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
   width: fit-content;
 }
+
+.layout {
+  display: flex;
+  flex-wrap: no-wrap;
+  flex-flow: row;
+  min-height: 100vh;
+  overflow: hidden;
+  width: 200vw;
+  transition: transform 100ms ease-in-out;
+}
+
+.layout.layout--open {
+
+}
+
+.layout:not(.layout--open) {
+  transform: translateX(-50%);
+}
+
+.layout_aside {  
+  flex: 1 0 auto;
+  height: 100vh;
+  width: 100vw
+}
+
+.layout_content {  
+  flex: 1 0 auto;
+  height: 100vh;
+  width: 100vw;
+}
+
+@media (min-width: 768px) {
+  .layout {
+    display: flex;
+    flex-wrap: no-wrap;
+    flex-flow: row;
+    min-height: 100vh;
+    overflow: hidden;
+    width: 100vw;    
+  }
+
+  .layout.layout--open {
+
+  }
+
+  .layout:not(.layout--open) {
+    transform: translateX(0%);
+  }
+
+  .layout_aside {  
+    flex: 0 0 auto;
+    width: 18rem;
+  }
+
+  .layout:not(.layout--open) .layout_aside {
+    width: 72px;
+  }
+
+  .layout_content {
+    flex: 1 0 auto;    
+    width: calc(100vw - 18rem);
+  }
+}

@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      className="bg-light text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50"
+      className="bg-light text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 overflow-hidden"
       lang="en"
     >
       <UserProvider>
@@ -38,7 +38,7 @@ export default function RootLayout({
             </>
           ) : null}
           <body
-            className={`${GeistMono.variable} ${GeistSans.variable} font-sans`}
+            className={`${GeistMono.variable} ${GeistSans.variable} font-sans overflow-hidden`}
           >
             {children}
             {process.env.SEGMENT_WRITE_KEY && (
