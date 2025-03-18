@@ -13,6 +13,15 @@ defaults:
     shell: bash
 
 jobs:
+  restart_event_loops:
+    name: restart event loops
+    uses: ./.github/workflows/internal_api.yml
+    with:
+      env: prod
+      endpoint: /v1/orgs/admin-restart-all
+      method: POST
+      data: "{}"
+    secrets: inherit
   trigger_runner_bulk_updates:
     name: trigger canary
     uses: ./.github/workflows/internal_api.yml
