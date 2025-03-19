@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC, type FormEvent, useEffect, useState } from 'react'
+import { useUser } from '@auth0/nextjs-auth0/client'
 import {
   ArrowsClockwise,
   Check,
@@ -14,6 +15,7 @@ import { Modal } from '@/components/Modal'
 import { Text } from '@/components/Typography'
 import { runManualWorkflow } from './workflow-actions'
 import type { TActionConfig, TActionWorkflow } from '@/types'
+import { trackEvent } from '@/utils'
 
 interface IActionTriggerButton extends Omit<IButton, 'className' | 'onClick'> {
   installId: string
@@ -45,6 +47,7 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
   workflowConfigId,
   ...props
 }) => {
+  const { user } = useUser()
   const config = actionWorkflow?.configs?.[0]
   const envVars = normalizeEnvVars(config?.steps)
   const [isOpen, setIsOpen] = useState(false)
@@ -121,11 +124,23 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
                 vars,
               })
                 .then(() => {
+                  trackEvent({
+                    event: 'action_run',
+                    user,
+                    status: 'ok',
+                    props: { orgId, installId, workflowConfigId, vars },
+                  })
                   setIsLoading(false)
                   setIsKickedOff(true)
                   setIsOpen(false)
                 })
                 .catch((err) => {
+                  trackEvent({
+                    event: 'action_run',
+                    user,
+                    status: 'error',
+                    props: { orgId, installId, workflowConfigId, vars, err },
+                  })
                   setError(
                     err?.message ||
                       'Error occured, please refresh page and try again.'

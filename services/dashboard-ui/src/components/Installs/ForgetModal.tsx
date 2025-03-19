@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useUser } from '@auth0/nextjs-auth0/client'
 import { Check, Trash } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
@@ -10,6 +11,7 @@ import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { forgetInstall } from '@/components/install-actions'
+import { trackEvent } from '@/utils'
 import type { TInstall } from '@/types'
 
 interface IForgetModal {
@@ -18,6 +20,7 @@ interface IForgetModal {
 }
 
 export const ForgetModal: FC<IForgetModal> = ({ install, orgId }) => {
+  const { user } = useUser()
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -78,11 +81,30 @@ export const ForgetModal: FC<IForgetModal> = ({ install, orgId }) => {
                     setIsLoading(true)
                     forgetInstall({ installId: install.id, orgId })
                       .then(() => {
+                        trackEvent({
+                          event: 'install_forget',
+                          user,
+                          status: 'ok',
+                          props: {
+                            orgId,
+                            installId: install?.id,
+                          },
+                        })
                         router.push(`/${orgId}/installs`)
                         setIsLoading(false)
                         setIsKickedOff(true)
                       })
                       .catch((err) => {
+                        trackEvent({
+                          event: 'install_forget',
+                          user,
+                          status: 'error',
+                          props: {
+                            orgId,
+                            installId: install?.id,
+                            err,
+                          },
+                        })
                         setError(
                           err?.message ||
                             'Error occured, please refresh page and try again.'
