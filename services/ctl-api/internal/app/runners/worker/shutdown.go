@@ -42,7 +42,7 @@ func (w *Workflows) Shutdown(ctx workflow.Context, sreq signals.RequestSignal) e
 	}
 
 	runnerJob, err := activities.AwaitCreateShutdownJob(ctx, &activities.CreateShutdownJobRequest{
-		RunnerID:    runner.Org.RunnerGroup.Runners[0].ID,
+		RunnerID:    runner.ID,
 		OwnerID:     sreq.HealthCheckID,
 		LogStreamID: logStream.ID,
 	})
@@ -59,7 +59,7 @@ func (w *Workflows) Shutdown(ctx workflow.Context, sreq signals.RequestSignal) e
 	// We have to send the signal and then return to allow it to be processed.
 	// Waiting for it to complete would deadlock. Not a big deal because
 	// we wouldn't do anything differently even if it failed.
-	w.evClient.Send(ctx, runner.Org.RunnerGroup.Runners[0].ID, &signals.Signal{
+	w.evClient.Send(ctx, runner.ID, &signals.Signal{
 		Type:  signals.OperationProcessJob,
 		JobID: runnerJob.ID,
 	})
