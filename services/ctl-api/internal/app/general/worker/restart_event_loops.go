@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	restartOrgEventLoopsWorkflowCronTab string = "*/1 * * * *"
+	restartOrgEventLoopsWorkflowCronTab string = "0 * * * *"
 	restartOrgEventLoopsWorkflowName    string = "general-restart-org-event-loops"
 )
 
