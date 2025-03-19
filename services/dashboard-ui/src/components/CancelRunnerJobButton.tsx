@@ -2,12 +2,15 @@
 
 import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
+import { useUser } from '@auth0/nextjs-auth0/client'
 import { Check } from '@phosphor-icons/react'
 import { Button, type IButton } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
+import { useOrg } from '@/components/Orgs'
 import { Text } from '@/components/Typography'
 import { cancelRunnerJob } from '@/components/runner-actions'
+import { trackEvent } from '@/utils'
 
 export type TCancelJobType =
   | 'build'
@@ -94,6 +97,8 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
   orgId,
   ...props
 }) => {
+  const { user } = useUser()
+  const { org } = useOrg()
   const cancelJobData = cancelJobOptions[jobType]
   const pathName = usePathname()
   const [cancelError, setCancelError] = useState<string>()
@@ -150,12 +155,32 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
               setIsLoading(true)
               cancelRunnerJob({ orgId, runnerJobId, path: pathName })
                 .then(() => {
+                  trackEvent({
+                    event: 'runner_job_cancel',
+                    status: 'ok',
+                    user,
+                    props: {
+                      jobType,
+                      orgId: org.id,
+                      runnerJobId,
+                    },
+                  })
                   setIsLoading(false)
                   setIsKickedOff(true)
                   setIsConfirmOpen(false)
                   setHasBeenCanceled(true)
                 })
                 .catch((error) => {
+                  trackEvent({
+                    event: 'runner_job_cancel',
+                    status: 'error',
+                    user,
+                    props: {
+                      jobType,
+                      orgId: org.id,
+                      runnerJobId,
+                    },
+                  })
                   console.error(error?.message)
                   setIsLoading(false)
                   setCancelError(

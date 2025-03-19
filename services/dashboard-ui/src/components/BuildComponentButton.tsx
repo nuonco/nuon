@@ -1,12 +1,14 @@
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
+import { useUser } from '@auth0/nextjs-auth0/client'
 import { Check, Hammer, WarningOctagon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Text } from '@/components/Typography'
 import { createComponentBuild } from '@/components/app-actions'
+import { trackEvent } from '@/utils'
 
 export const BuildComponentButton: FC<{
   appId: string
@@ -15,6 +17,7 @@ export const BuildComponentButton: FC<{
   orgId: string
   onComplete?: () => void
 }> = ({ appId, componentId, componentName, orgId, ...props }) => {
+  const { user } = useUser()
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
@@ -67,12 +70,32 @@ export const BuildComponentButton: FC<{
               setIsLoading(true)
               createComponentBuild({ appId, componentId, orgId })
                 .then(() => {
+                  trackEvent({
+                    event: 'component_build',
+                    user,
+                    status: 'ok',
+                    props: {
+                      orgId,
+                      appId,
+                      componentId,
+                    },
+                  })
                   setIsLoading(false)
                   setIsKickedOff(true)
                   setIsConfirmOpen(false)
                   if (props.onComplete) props.onComplete()
                 })
                 .catch((err) => {
+                  trackEvent({
+                    event: 'component_build',
+                    user,
+                    status: 'error',
+                    props: {
+                      orgId,
+                      appId,
+                      componentId,
+                    },
+                  })
                   setError(
                     err?.message ||
                       'Error occured, please refresh page and try again.'
