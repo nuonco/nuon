@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	restartOrgRunnersWorkflowCronTab string = "*/1 * * * *"
+	// restart runners at the 15 minute mark of every fourth hour.
+	restartOrgRunnersWorkflowCronTab string = "15 */4 * * *"
 	restartOrgRunnersWorkflowName    string = "general-restart-org-runners"
 )
 
