@@ -131,6 +131,7 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 		status = "error"
 		return errors.Wrap(err, "unable to create runner health check")
 	}
+	_ = healthcheck // so that code works if we uncommont it later
 
 	runner, err := activities.AwaitGetByRunnerID(ctx, req.RunnerID)
 	if err != nil {
@@ -205,9 +206,10 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 			zap.Bool("HealthcheckUpdateNeeded.ShouldUpdate", hcures.ShouldUpdate),
 			zap.Bool("HealthcheckJob.ShouldRestart", hcjres.ShouldRestart),
 		)
+		// only shutdown specific subset of runners
 		if generics.SliceContains(runner.OrgID, testOrgIDs) {
-			// only shutdown specific subset of runners
-			w.gracefulShutdown(ctx, startTS, l, runner, healthcheck)
+			// TODO(sdboyer) currently disabling all automated shutdowns and relying on a cron-based strategy for restarts instead
+			// w.gracefulShutdown(ctx, startTS, l, runner, healthcheck)
 		}
 	} else if hcjres.ShouldRestart {
 		// forceful shutdown
