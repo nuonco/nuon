@@ -48,6 +48,9 @@ func (s *service) getInstallSandboxRun(ctx *gin.Context, runID string) (*app.Ins
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig.VCSConnection").
 		Preload("RunnerJob").
 		Preload("LogStream").
+		Where(app.InstallSandboxRun{
+			ID: runID,
+		}).
 		First(&installSandboxRun)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install sandbox run: %w", res.Error)
