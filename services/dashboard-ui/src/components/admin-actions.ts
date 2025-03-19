@@ -60,10 +60,10 @@ export async function restartOrg(orgId: string) {
   )
 }
 
-export async function restartOrgChildren(orgId: string) {
+export async function restartOrgRunners(orgId: string) {
   return adminOrgAction(
     orgId,
-    'admin-restart-children',
+    'admin-restart-runners',
     'Failed to restart the org children event loops'
   )
 }
