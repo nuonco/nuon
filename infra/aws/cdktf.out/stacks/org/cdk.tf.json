@@ -27,7 +27,9 @@
         "cross-stack-output-aws_organizations_account.sandbox-jm.id": "cross-stack-output-aws_organizations_accountsandbox-jmid",
         "cross-stack-output-aws_organizations_account.sandbox-nh.id": "cross-stack-output-aws_organizations_accountsandbox-nhid",
         "cross-stack-output-aws_organizations_account.sandbox-rb.id": "cross-stack-output-aws_organizations_accountsandbox-rbid",
+        "cross-stack-output-aws_organizations_account.sandbox-retool.id": "cross-stack-output-aws_organizations_accountsandbox-retoolid",
         "cross-stack-output-aws_organizations_account.sandbox-sb.id": "cross-stack-output-aws_organizations_accountsandbox-sbid",
+        "cross-stack-output-aws_organizations_account.sandbox-stardog.id": "cross-stack-output-aws_organizations_accountsandbox-stardogid",
         "cross-stack-output-aws_organizations_account.stage.id": "cross-stack-output-aws_organizations_accountstageid",
         "cross-stack-output-aws_organizations_account.test.id": "cross-stack-output-aws_organizations_accounttestid",
         "org-last-updated": "org-last-updated"
@@ -147,9 +149,17 @@
       "sensitive": true,
       "value": "${aws_organizations_account.sandbox-rb.id}"
     },
+    "cross-stack-output-aws_organizations_accountsandbox-retoolid": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.sandbox-retool.id}"
+    },
     "cross-stack-output-aws_organizations_accountsandbox-sbid": {
       "sensitive": true,
       "value": "${aws_organizations_account.sandbox-sb.id}"
+    },
+    "cross-stack-output-aws_organizations_accountsandbox-stardogid": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.sandbox-stardog.id}"
     },
     "cross-stack-output-aws_organizations_accountstageid": {
       "sensitive": true,
@@ -161,7 +171,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-03-17T20:29:02.517Z"
+      "value": "2025-03-19T03:53:47.610Z"
     }
   },
   "provider": {
@@ -523,6 +533,24 @@
         "name": "sandbox-rb",
         "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
       },
+      "sandbox-retool": {
+        "//": {
+          "metadata": {
+            "path": "org/sandbox-retool",
+            "uniqueId": "sandbox-retool"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+sandbox-retool@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "sandbox-retool",
+        "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
+      },
       "sandbox-sb": {
         "//": {
           "metadata": {
@@ -539,6 +567,24 @@
           ]
         },
         "name": "sandbox-sb",
+        "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
+      },
+      "sandbox-stardog": {
+        "//": {
+          "metadata": {
+            "path": "org/sandbox-stardog",
+            "uniqueId": "sandbox-stardog"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+sandbox-stardog@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "sandbox-stardog",
         "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
       },
       "stage": {
@@ -891,6 +937,17 @@
         "name": "sandbox-rb-environment-tag-policy",
         "type": "TAG_POLICY"
       },
+      "env_tag_policy_sandbox-retool": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_sandbox-retool",
+            "uniqueId": "env_tag_policy_sandbox-retool"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"sandbox-retool\"]}}}}",
+        "name": "sandbox-retool-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
       "env_tag_policy_sandbox-sb": {
         "//": {
           "metadata": {
@@ -900,6 +957,17 @@
         },
         "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"sandbox-sb\"]}}}}",
         "name": "sandbox-sb-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
+      "env_tag_policy_sandbox-stardog": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_sandbox-stardog",
+            "uniqueId": "env_tag_policy_sandbox-stardog"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"sandbox-stardog\"]}}}}",
+        "name": "sandbox-stardog-environment-tag-policy",
         "type": "TAG_POLICY"
       },
       "env_tag_policy_stage": {
@@ -1126,6 +1194,16 @@
         "policy_id": "${aws_organizations_policy.env_tag_policy_sandbox-rb.id}",
         "target_id": "${aws_organizations_account.sandbox-rb.id}"
       },
+      "env_tag_policy_attach_sandbox-retool": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_sandbox-retool",
+            "uniqueId": "env_tag_policy_attach_sandbox-retool"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_sandbox-retool.id}",
+        "target_id": "${aws_organizations_account.sandbox-retool.id}"
+      },
       "env_tag_policy_attach_sandbox-sb": {
         "//": {
           "metadata": {
@@ -1135,6 +1213,16 @@
         },
         "policy_id": "${aws_organizations_policy.env_tag_policy_sandbox-sb.id}",
         "target_id": "${aws_organizations_account.sandbox-sb.id}"
+      },
+      "env_tag_policy_attach_sandbox-stardog": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_sandbox-stardog",
+            "uniqueId": "env_tag_policy_attach_sandbox-stardog"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_sandbox-stardog.id}",
+        "target_id": "${aws_organizations_account.sandbox-stardog.id}"
       },
       "env_tag_policy_attach_stage": {
         "//": {
