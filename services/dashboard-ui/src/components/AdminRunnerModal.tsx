@@ -1,13 +1,18 @@
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
-import { CaretRight, Heartbeat, Timer } from '@phosphor-icons/react'
+import {
+  ArrowsClockwise,
+  CaretRight,
+  Heartbeat,
+  Timer,
+} from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Config, ConfigContent } from '@/components/Config'
 import { Expand } from '@/components/Expand'
 import { Grid } from '@/components/Grid'
 import { Link } from '@/components/Link'
-import { Loading } from '@/components/Loading'
+import { Loading, SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { useOrg } from '@/components/Orgs'
@@ -15,6 +20,7 @@ import { jobHrefPath, jobName } from '@/components/Runners/helpers'
 import { StatusBadge } from '@/components/Status'
 import { Time, Duration } from '@/components/Time'
 import { Text } from '@/components/Typography'
+import { restartOrgRunners } from '@/components/admin-actions'
 import type { TRunner, TRunnerHeartbeat, TRunnerJob, TInstall } from '@/types'
 
 export const AdminRunnerModal: FC = ({}) => {
@@ -24,7 +30,7 @@ export const AdminRunnerModal: FC = ({}) => {
   const [installs, setInstalls] = useState<Array<TInstall>>()
   const [error, setError] = useState<string>()
 
-  useEffect(() => {
+  const fetchInstalls = () => {
     fetch(`/api/${org.id}/installs`)
       .then((res) =>
         res.json().then((ins) => {
@@ -37,11 +43,22 @@ export const AdminRunnerModal: FC = ({}) => {
         setIsLoading(false)
         setError('Unable to load org installs')
       })
+  }
+
+  useEffect(() => {
+    fetchInstalls()
   }, [])
 
   return (
     <>
       <Modal
+        actions={
+          <RestartRunnersButton
+            onSuccess={() => {
+              fetchInstalls()
+            }}
+          />
+        }
         heading={`All ${org.name} runners`}
         isOpen={isOpen}
         onClose={() => {
@@ -56,7 +73,7 @@ export const AdminRunnerModal: FC = ({}) => {
             <Grid variant="3-cols">
               {org?.runner_group?.runners?.map((runner) => (
                 <GridCard key={runner.id}>
-                  <RunnerCard runner={runner} />
+                  <RunnerCard runner={runner} href={`/${org.id}/runner`} />
                 </GridCard>
               ))}
             </Grid>
@@ -75,7 +92,10 @@ export const AdminRunnerModal: FC = ({}) => {
                 {installs.map((install) => (
                   <GridCard key={install.id}>
                     <Text variant="med-12">{install.name} runner</Text>
-                    <LoadRunnerCard runnerId={install?.runner_id} />
+                    <LoadRunnerCard
+                      runnerId={install?.runner_id}
+                      installId={install.id}
+                    />
                   </GridCard>
                 ))}
               </Grid>
@@ -108,38 +128,47 @@ const GridCard: FC<{ children: React.ReactNode }> = ({ children }) => {
   )
 }
 
-const RunnerCard: FC<{ runner: TRunner }> = ({ runner }) => {
+const RunnerCard: FC<{ runner: TRunner; href: string }> = ({
+  runner,
+  href,
+}) => {
   return (
-    <Expand
-      parentClass="border rounded"
-      headerClass="px-3 py-2"
-      id={runner.id}
-      heading={
-        <div className="flex flex-col gap-2">
-          <Text variant="med-12" className="gap-2">
-            <span className="animate-pulse">
-              <StatusBadge
-                status={runner?.status}
-                isStatusTextHidden
-                isWithoutBorder
-              />
-            </span>
-            <span>{runner?.display_name}</span>
-          </Text>
-          <LoadRunnerHeartbeat runnerId={runner.id} />
-        </div>
-      }
-      expandContent={
-        <div className="p-3 flex flex-col gap-3 border-t">
-          <Text variant="med-12">Latest job</Text>
-          <LoadRunnerJob runnerId={runner.id} />
-        </div>
-      }
-    />
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between w-full">
+        <Text variant="med-12" className="gap-2">
+          <span className="animate-pulse">
+            <StatusBadge
+              status={runner?.status}
+              isStatusTextHidden
+              isWithoutBorder
+            />
+          </span>
+          <span>{runner?.display_name}</span>
+        </Text>
+        <Link className="text-sm" href={href}>
+          Details <CaretRight />
+        </Link>
+      </div>
+      <Expand
+        parentClass="border rounded"
+        headerClass="px-3 py-2"
+        id={runner.id}
+        heading={<LoadRunnerHeartbeat runnerId={runner.id} />}
+        expandContent={
+          <div className="p-3 flex flex-col gap-3 border-t">
+            <Text variant="med-12">Latest job</Text>
+            <LoadRunnerJob runnerId={runner.id} />
+          </div>
+        }
+      />
+    </div>
   )
 }
 
-const LoadRunnerCard: FC<{ runnerId: string }> = ({ runnerId }) => {
+const LoadRunnerCard: FC<{ runnerId: string; installId: string }> = ({
+  runnerId,
+  installId,
+}) => {
   const { org } = useOrg()
   const [isLoading, setIsLoading] = useState(true)
   const [runner, setRunner] = useState<TRunner>()
@@ -165,7 +194,10 @@ const LoadRunnerCard: FC<{ runnerId: string }> = ({ runnerId }) => {
   ) : isLoading ? (
     <Loading loadingText={`Loading ${runnerId} runner...`} />
   ) : (
-    <RunnerCard runner={runner} />
+    <RunnerCard
+      runner={runner}
+      href={`/${org.id}/installs/${installId}/runner-group/${runnerId}`}
+    />
   )
 }
 
@@ -175,7 +207,7 @@ const LoadRunnerHeartbeat: FC<{ runnerId: string }> = ({ runnerId }) => {
   const [heartbeat, setHeartbeat] = useState<TRunnerHeartbeat>()
   const [error, setError] = useState<string>()
 
-  useEffect(() => {
+  const fetchHeartbeat = () => {
     fetch(`/api/${org.id}/runner/${runnerId}/latest-heart-beat`)
       .then((res) =>
         res.json().then((rnr) => {
@@ -188,7 +220,15 @@ const LoadRunnerHeartbeat: FC<{ runnerId: string }> = ({ runnerId }) => {
         setIsLoading(false)
         setError('Unable to load install runner')
       })
+  }
+
+  useEffect(() => {
+    fetchHeartbeat()
   }, [])
+
+  useEffect(() => {
+    fetchHeartbeat()
+  }, [org])
 
   return error ? (
     <Notice>{error}</Notice>
@@ -234,7 +274,7 @@ const LoadRunnerJob: FC<{ runnerId: string }> = ({ runnerId }) => {
   const [job, setJob] = useState<TRunnerJob>()
   const [error, setError] = useState<string>()
 
-  useEffect(() => {
+  const fetchRecentJob = () => {
     fetch(`/api/${org.id}/runner/${runnerId}/jobs`)
       .then((res) =>
         res.json().then((jbs) => {
@@ -247,7 +287,15 @@ const LoadRunnerJob: FC<{ runnerId: string }> = ({ runnerId }) => {
         setIsLoading(false)
         setError('Unable to load install runner')
       })
+  }
+
+  useEffect(() => {
+    fetchRecentJob()
   }, [])
+
+  useEffect(() => {
+    fetchRecentJob()
+  }, [org])
 
   return error ? (
     <Notice>{error}</Notice>
@@ -282,5 +330,51 @@ const LoadRunnerJob: FC<{ runnerId: string }> = ({ runnerId }) => {
     </div>
   ) : (
     <Text>No job to show.</Text>
+  )
+}
+
+const RestartRunnersButton: FC<{ onSuccess: () => void }> = (props) => {
+  const { org } = useOrg()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string>()
+
+  return error ? (
+    <Notice>{error}</Notice>
+  ) : (
+    <Button
+      onClick={() => {
+        setIsLoading(true)
+        restartOrgRunners(org.id)
+          .then((res) => {
+            setIsLoading(false)
+            if (res.status === 201 || res.status === 200) {
+              props.onSuccess()
+            } else {
+              setError(
+                'Unable to restart org runners, refresh page and try again.'
+              )
+            }
+          })
+          .catch((err) => {
+            console.error(err?.message)
+            setIsLoading(false)
+            setError(
+              'Unable to restart org runners, refresh page and try again.'
+            )
+          })
+      }}
+      className="text-base flex items-center gap-2"
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <>
+          <SpinnerSVG /> Restarting runners
+        </>
+      ) : (
+        <>
+          <ArrowsClockwise size="16" /> Restart all runners
+        </>
+      )}
+    </Button>
   )
 }
