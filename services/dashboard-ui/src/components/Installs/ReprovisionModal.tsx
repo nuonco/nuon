@@ -2,6 +2,7 @@
 
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useUser } from '@auth0/nextjs-auth0/client'
 import { Check, ArrowURightUp } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
@@ -9,6 +10,7 @@ import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { reprovisionInstall } from '@/components/install-actions'
+import { trackEvent } from '@/utils'
 
 interface IReprovisionModal {
   installId: string
@@ -19,6 +21,7 @@ export const ReprovisionModal: FC<IReprovisionModal> = ({
   installId,
   orgId,
 }) => {
+  const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
@@ -69,11 +72,23 @@ export const ReprovisionModal: FC<IReprovisionModal> = ({
                     setIsLoading(true)
                     reprovisionInstall({ installId, orgId })
                       .then(() => {
+                        trackEvent({
+                          event: 'install_reprovision',
+                          user,
+                          status: 'ok',
+                          props: { orgId, installId },
+                        })
                         setIsLoading(false)
                         setIsKickedOff(true)
                         setIsOpen(false)
                       })
                       .catch((err) => {
+                        trackEvent({
+                          event: 'install_reprovision',
+                          user,
+                          status: 'error',
+                          props: { orgId, installId, err },
+                        })
                         setError(
                           err?.message ||
                             'Error occured, please refresh page and try again.'
