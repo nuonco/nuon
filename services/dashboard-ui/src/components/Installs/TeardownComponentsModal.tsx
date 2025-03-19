@@ -1,8 +1,8 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useUser } from '@auth0/nextjs-auth0/client'
 import { Axe, Check } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
@@ -10,6 +10,7 @@ import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { teardownAllComponents } from '@/components/install-actions'
+import { trackEvent } from '@/utils'
 
 interface ITeardownComponentsModal {
   installId: string
@@ -20,6 +21,7 @@ export const TeardownComponentsModal: FC<ITeardownComponentsModal> = ({
   installId,
   orgId,
 }) => {
+  const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
@@ -72,11 +74,23 @@ export const TeardownComponentsModal: FC<ITeardownComponentsModal> = ({
                     setIsLoading(true)
                     teardownAllComponents({ installId, orgId })
                       .then(() => {
+                        trackEvent({
+                          event: 'components_teardown',
+                          user,
+                          status: 'ok',
+                          props: { orgId, installId },
+                        })
                         setIsLoading(false)
                         setIsKickedOff(true)
                         setIsOpen(false)
                       })
                       .catch((err) => {
+                        trackEvent({
+                          event: 'components_teardown',
+                          user,
+                          status: 'error',
+                          props: { orgId, installId, err },
+                        })
                         setError(
                           err?.message ||
                             'Error occured, please refresh page and try again.'
