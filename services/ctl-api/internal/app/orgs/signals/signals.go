@@ -17,6 +17,7 @@ const (
 
 	OperationCreated         eventloop.SignalType = "created"
 	OperationRestart         eventloop.SignalType = "restart"
+	OperationRestartRunners  eventloop.SignalType = "restart_runners"
 	OperationRestartChildren eventloop.SignalType = "restart_children"
 
 	OperationProvision        eventloop.SignalType = "provision"
