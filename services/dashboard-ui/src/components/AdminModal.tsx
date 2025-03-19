@@ -24,7 +24,7 @@ import {
   restartInstall,
   restartInstallRunner,
   restartOrg,
-  restartOrgChildren,
+  restartOrgRunners,
   restartOrgRunner,
   shutdownInstallRunnerJob,
   shutdownOrgRunnerJob,
@@ -63,9 +63,9 @@ export const AdminModal: FC<{ isSidebarOpen: boolean }> = ({
       text: 'Restart org',
     },
     {
-      action: () => restartOrgChildren(params?.['org-id'] as string),
-      description: 'Restart all of current org children event loops',
-      text: 'Restart org children',
+      action: () => restartOrgRunners(params?.['org-id'] as string),
+      description: 'Restart all of current org runners',
+      text: 'Restart all runners',
     },
     {
       action: () => restartOrgRunner(params?.['org-id'] as string),
