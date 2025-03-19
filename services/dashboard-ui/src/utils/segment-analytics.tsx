@@ -4,7 +4,7 @@
 import React, { type FC, useEffect } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import Script from 'next/script'
-import { useUser } from '@auth0/nextjs-auth0/client'
+import { useUser, type UserProfile } from '@auth0/nextjs-auth0/client'
 import { AnalyticsBrowser } from '@segment/analytics-next'
 import type { TOrg } from '@/types'
 
@@ -58,4 +58,23 @@ export const InitSegmentAnalytics: FC<{ writeKey: string }> = ({
 
   // eslint-disable-next-line
   return <Script id="load-env">{console.log('analytics initialized')}</Script>
+}
+
+interface ITrackEvent {
+  event: string
+  props?: Record<string, unknown>
+  status: 'ok' | 'error'
+  user: UserProfile
+}
+
+export function trackEvent({ event, user, status, props = {} }: ITrackEvent) {
+  if (window['analytics'] && user) {
+    window['analytics']?.track(event, {
+      userId: user?.sub,
+      userEmail: user?.email,
+      userName: user?.name,
+      status,
+      ...props,
+    })
+  }
 }
