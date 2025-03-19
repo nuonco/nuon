@@ -2,14 +2,16 @@
 
 import classNames from 'classnames'
 import React, { type FC, type FormEvent, useRef, useState } from 'react'
+import { useUser } from '@auth0/nextjs-auth0/client'
 import { WarningOctagon, CheckCircle, Cube } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { CheckboxInput, Input } from '@/components/Input'
 import { Link } from '@/components/Link'
 import { SpinnerSVG, Loading } from '@/components/Loading'
+import { useOrg } from '@/components/Orgs'
 import { Select } from '@/components/Select'
 import { Code, Text } from '@/components/Typography'
-import { getFlagEmoji, AWS_REGIONS, AZURE_REGIONS } from '@/utils'
+import { getFlagEmoji, AWS_REGIONS, AZURE_REGIONS, trackEvent } from '@/utils'
 import type { TAppInputConfig, TInstall } from '@/types'
 
 interface IInstallForm {
@@ -29,6 +31,8 @@ export const InstallForm: FC<IInstallForm> = ({
   cfLink,
   ...props
 }) => {
+  const { user } = useUser()
+  const { org } = useOrg()
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isCreated, setIsCreated] = useState(false)
@@ -86,12 +90,30 @@ export const InstallForm: FC<IInstallForm> = ({
 
           props
             .onSubmit(formData)
-            .then((install) => {
+            .then((ins) => {
+              trackEvent({
+                event: install ? 'install_update' : 'install_create',
+                user,
+                status: 'ok',
+                props: {
+                  orgId: org.id,
+                  installId: ins?.id,
+                },
+              })
               setIsLoading(false)
               setIsCreated(true)
-              props.onSuccess(install)
+              props.onSuccess(ins)
             })
             .catch(() => {
+              trackEvent({
+                event: install ? 'install_update' : 'install_create',
+                user,
+                status: 'error',
+                props: {
+                  orgId: org.id,
+                  installId: install ? install?.id : null,
+                },
+              })
               setIsLoading(false)
               setError(
                 'Unable to create install, refresh the page and try again.'
@@ -181,6 +203,8 @@ export const InstallForm: FC<IInstallForm> = ({
 }
 
 const AWSFields: FC<{ cfLink: string }> = ({ cfLink }) => {
+  const { user } = useUser()
+  const { org } = useOrg()
   const options = AWS_REGIONS.map((o) => ({
     value: o.value,
     label: o?.iconVariant
@@ -209,7 +233,22 @@ const AWSFields: FC<{ cfLink: string }> = ({ cfLink }) => {
           </Code>{' '}
           in the AWS IAM role input below.
         </Text>
-        <Link className="text-sm" href={cfLink} target="_blank">
+        <Link
+          className="text-sm"
+          href={cfLink}
+          target="_blank"
+          onClick={() => {
+            trackEvent({
+              event: 'iam_role_create',
+              user,
+              status: 'ok',
+              props: {
+                orgId: org?.id,
+                cfLink,
+              },
+            })
+          }}
+        >
           Create IAM Role
         </Link>
       </div>
