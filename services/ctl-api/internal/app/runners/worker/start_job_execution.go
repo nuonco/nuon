@@ -79,7 +79,7 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 				w.mw.Event(ctx, &statsd.Event{
 					Title:          "Overall job timeout reached waiting for runner to become healthy",
 					Text:           "Overall end-to-end job execution timeout reached while waiting for job to bewcome healthy",
-					Tags:           metrics.ToTags(tags),
+					Tags:           metrics.ToTags(etags),
 					Priority:       statsd.Normal,
 					AlertType:      statsd.Error,
 					AggregationKey: "runner-job-timeout-waiting-for-healthy-runner",
@@ -95,7 +95,7 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 				w.mw.Event(ctx, &statsd.Event{
 					Title:          "Available timeout reached waiting for runner to become healthy",
 					Text:           "Job is ready for execution, but runner did not become healthy within the available timeout",
-					Tags:           metrics.ToTags(tags),
+					Tags:           metrics.ToTags(etags),
 					Priority:       statsd.Normal,
 					AlertType:      statsd.Error,
 					AggregationKey: "runner-job-timeout-waiting-for-healthy-runner",
@@ -137,7 +137,7 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 			w.mw.Event(ctx, &statsd.Event{
 				Title:          "Overall job timeout reached without job starting",
 				Text:           "Overall end-to-end job execution timeout reached without ever having been picked up",
-				Tags:           metrics.ToTags(tags),
+				Tags:           metrics.ToTags(etags),
 				Priority:       statsd.Normal,
 				AlertType:      statsd.Error,
 				AggregationKey: "runner-job-timeout-awaiting-job-pickup",
@@ -154,7 +154,7 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 			w.mw.Event(ctx, &statsd.Event{
 				Title:          "Timeout waiting for runner job to be picked up",
 				Text:           "Job was marked as ready for execution, and runner appears to be in a healthy state, but runner did not pick up the job within the available timeout",
-				Tags:           metrics.ToTags(tags),
+				Tags:           metrics.ToTags(etags),
 				Priority:       statsd.Normal,
 				AlertType:      statsd.Error,
 				AggregationKey: "runner-job-timeout-awaiting-job-pickup",
