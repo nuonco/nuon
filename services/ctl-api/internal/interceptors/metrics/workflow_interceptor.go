@@ -50,6 +50,10 @@ func (a *wfInterceptor) ExecuteWorkflow(
 
 		a.mw.Incr("temporal_workflow.status", metrics.ToTags(tags))
 		a.mw.Timing("temporal_workflow.latency", time.Since(startTS), metrics.ToTags(tags))
+
+		if rec != nil {
+			panic(rec)
+		}
 	}()
 
 	resp, err := a.Next.ExecuteWorkflow(ctx, in)
