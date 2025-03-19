@@ -13,23 +13,14 @@ defaults:
     shell: bash
 
 jobs:
-  restart_event_loops:
-    name: restart event loops
+  trigger_promotion_callback:
+    name: trigger promotion callback
     uses: ./.github/workflows/internal_api.yml
     with:
       env: prod
-      endpoint: /v1/orgs/admin-restart-all
+      endpoint: /v1/general/promotion
       method: POST
-      data: "{}"
-    secrets: inherit
-  trigger_runner_bulk_updates:
-    name: trigger canary
-    uses: ./.github/workflows/internal_api.yml
-    with:
-      env: prod
-      endpoint: /v1/runners/restart
-      method: POST
-      data: "{}"
+      data: '{"tag": "${{ inputs.tag }}" }'
     secrets: inherit
   sdks:
     name: Update SDKs
