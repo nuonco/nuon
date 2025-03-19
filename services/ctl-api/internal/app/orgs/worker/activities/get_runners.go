@@ -20,7 +20,7 @@ func (a *Activities) GetRunners(ctx context.Context, req GetRunnersRequest) ([]*
 		Where(app.Runner{
 			OrgID: req.ID,
 		}).
-		First(&runners)
+		Find(&runners)
 
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get runner: %w", res.Error)
