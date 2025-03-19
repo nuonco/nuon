@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
+import { useUser } from '@auth0/nextjs-auth0/client'
 import { CloudCheck, CloudArrowUp } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Dropdown } from '@/components/Dropdown'
@@ -12,16 +13,19 @@ import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import { deployComponentBuild } from '@/components/install-actions'
 import type { TBuild } from '@/types'
+import { trackEvent } from '@/utils'
 
 export const InstallDeployLatestBuildButton: FC<{
   componentId: string
   installId: string
   orgId: string
 }> = ({ componentId, installId, orgId }) => {
+  const { user } = useUser()
   const [isDeploymentOpen, setIsDeploymentOpen] = useState(false)
   const [buildId, setBuildId] = useState<string>()
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
+  const [error, setError] = useState<string>()
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -45,7 +49,8 @@ export const InstallDeployLatestBuildButton: FC<{
           setIsDeploymentOpen(false)
         }}
       >
-        <div className="mb-6">
+        <div className="flex flex-col gap-4 mb-6">
+          {error ? <Notice>{error}</Notice> : null}
           <Text variant="reg-14" className="leading-relaxed">
             Are you sure you want to deploy build {buildId}? This will replace
             the current install component with the selected build.
@@ -65,11 +70,29 @@ export const InstallDeployLatestBuildButton: FC<{
             className="text-base flex items-center gap-1"
             onClick={() => {
               setIsLoading(true)
-              deployComponentBuild({ buildId, installId, orgId }).then(() => {
-                setIsLoading(false)
-                setIsKickedOff(true)
-                setIsDeploymentOpen(false)
-              })
+              deployComponentBuild({ buildId, installId, orgId })
+                .then(() => {
+                  trackEvent({
+                    event: 'component_deploy',
+                    user,
+                    status: 'ok',
+                    props: { orgId, installId, componentId, buildId },
+                  })
+                  setIsLoading(false)
+                  setIsKickedOff(true)
+                  setIsDeploymentOpen(false)
+                })
+                .catch((err) => {
+                  trackEvent({
+                    event: 'component_deploy',
+                    user,
+                    status: 'error',
+                    props: { orgId, installId, componentId, buildId, err },
+                  })
+                  console.error(err?.message)
+                  setIsLoading(false)
+                  setError('Unable to create deployment.')
+                })
             }}
             variant="primary"
           >
