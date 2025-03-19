@@ -26,7 +26,7 @@ import (
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
 // @Success		200				{object}	app.InstallComponent
-// @Router			/v1/installs/{install_id}/component/{component_id} [get]
+// @Router			/v1/installs/{install_id}/components/{component_id} [get]
 func (s *service) GetInstallComponent(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	componentID := ctx.Param("component_id")
