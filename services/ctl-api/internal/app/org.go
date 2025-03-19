@@ -71,6 +71,8 @@ type Org struct {
 
 	LogoURL string `json:"logo_url"`
 
+	Priority int `json:"-" temporaljson:"priority"`
+
 	Apps           []App               `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	VCSConnections []VCSConnection     `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	Invites        []OrgInvite         `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;"`

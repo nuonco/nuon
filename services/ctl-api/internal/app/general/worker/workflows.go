@@ -10,6 +10,7 @@ import (
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 
 	"go.uber.org/fx"
@@ -22,12 +23,16 @@ type Workflows struct {
 	protos *protos.Adapter
 	mw     tmetrics.Writer
 	logger *temporalzap.Logger
+	ev     teventloop.Client
 }
 
 func (w Workflows) All() []any {
 	wkflows := []any{
 		w.EventLoop,
 		w.Metrics,
+		w.Promotion,
+		w.RestartOrgRunners,
+		w.RestartOrgEventLoops,
 	}
 	return append(wkflows)
 }
@@ -39,6 +44,7 @@ type WorkflowsParams struct {
 	Cfg           *internal.Config
 	MetricsWriter metrics.Writer
 	Prt           *protos.Adapter
+	EVClient      teventloop.Client
 }
 
 func NewWorkflows(params WorkflowsParams) (*Workflows, error) {
@@ -62,7 +68,7 @@ func NewWorkflows(params WorkflowsParams) (*Workflows, error) {
 		cfg:    params.Cfg,
 		v:      params.V,
 		protos: params.Prt,
-		// NOTE(fd): i added these
+		ev:     params.EVClient,
 		mw:     tmw,
 		logger: tlogger,
 	}, nil
