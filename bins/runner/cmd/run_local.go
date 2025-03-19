@@ -44,5 +44,5 @@ func (c *cli) runLocalRun(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println("running runner like usual")
-	c.runRun(cmd, args)
+	c.runRun(cmd, nil)
 }
