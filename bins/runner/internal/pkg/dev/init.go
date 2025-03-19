@@ -5,20 +5,27 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
+	smithytime "github.com/aws/smithy-go/time"
 	"github.com/pkg/errors"
 )
 
 func (d *devver) Init(ctx context.Context) error {
-	if d.Disabled() {
-		fmt.Println("disabling and returning because of DISABLE_ORG_RUNNER or DISABLE_INSTALL_RUNNER in env")
-		return nil
-	}
-
 	shouldMonitor := true
 	if os.Getenv("RUNNER_ID") != "" {
 		fmt.Println("disabling monitoring and restarting for new runners")
 		shouldMonitor = false
+	}
+
+	disabled := d.Disabled()
+	if disabled {
+		fmt.Println("disabling and returning because of DISABLE_ORG_RUNNER or DISABLE_INSTALL_RUNNER in env")
+		for {
+			if err := smithytime.SleepWithContext(ctx, time.Second*5); err != nil {
+				return err
+			}
+		}
 	}
 
 	type step struct {
