@@ -25,18 +25,27 @@ const (
 	EventLoop         string = "general"
 
 	OperationCreated   eventloop.SignalType = "created"
+	OperationPromotion eventloop.SignalType = "promotion"
 	OperationRestart   eventloop.SignalType = "restart"
-	OperationReconcile eventloop.SignalType = "reconcile"
 )
 
-type RequestSignal struct{}
+type RequestSignal struct {
+	*Signal
+	eventloop.EventLoopRequest
+}
 
-func NewRequestSignal(_ eventloop.EventLoopRequest, signal *Signal) RequestSignal {
-	return RequestSignal{}
+func NewRequestSignal(ev eventloop.EventLoopRequest, signal *Signal) RequestSignal {
+	return RequestSignal{
+		Signal:           signal,
+		EventLoopRequest: ev,
+	}
 }
 
 type Signal struct {
-	Type eventloop.SignalType
+	Type eventloop.SignalType `validate:"required"`
+
+	// Only added when a promotion goes out
+	Tag string `json:"tag"`
 
 	eventloop.BaseSignal
 }
