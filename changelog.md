@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.490
+
+Updating runner restart logic.
+
 ## v0.19.484
 
 Fix module arithmetic for shutdown job in runner healthcheck.
