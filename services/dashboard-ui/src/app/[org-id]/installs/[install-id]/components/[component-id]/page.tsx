@@ -25,6 +25,7 @@ import {
   getComponentConfig,
   getInstall,
   getInstallComponent,
+  getInstallComponentDeploys,
   getInstallComponentOutputs,
   getLatestComponentBuild,
 } from '@/lib'
@@ -163,16 +164,16 @@ const LoadDeployHistory: FC<{
   installId: string
   orgId: string
 }> = async ({ component, installId, orgId }) => {
-  const installComponent = await getInstallComponent({
+  const deploys = await getInstallComponentDeploys({
     componentId: component.id,
     installId,
     orgId,
   }).catch(console.error)
 
-  return installComponent ? (
+  return deploys ? (
     <InstallComponentDeploys
       component={component}
-      initDeploys={installComponent?.install_deploys}
+      initDeploys={deploys}
       installId={installId}
       installComponentId={component.id}
       orgId={orgId}
