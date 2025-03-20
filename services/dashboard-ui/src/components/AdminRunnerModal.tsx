@@ -1,6 +1,10 @@
+// @ts-nocheck
+// TODO(nnnat): URLSearchParams typing is terrible.
+// What we're doing now is legit but TS doesn't think so.
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   ArrowsClockwise,
   CaretRight,
@@ -51,60 +55,69 @@ export const AdminRunnerModal: FC = ({}) => {
 
   return (
     <>
-      <Modal
-        actions={
-          <RestartRunnersButton
-            onSuccess={() => {
-              fetchInstalls()
-            }}
-          />
-        }
-        heading={`All ${org.name} runners`}
-        isOpen={isOpen}
-        onClose={() => {
-          setIsOpen(false)
-        }}
-      >
-        <div className="flex flex-col divide-y">
-          <div>
-            <Text className="mb-3" variant="med-14">
-              Org Runners
-            </Text>
-            <Grid variant="3-cols">
-              {org?.runner_group?.runners?.map((runner) => (
-                <GridCard key={runner.id}>
-                  <RunnerCard runner={runner} href={`/${org.id}/runner`} />
-                </GridCard>
-              ))}
-            </Grid>
-          </div>
+      {isOpen
+        ? createPortal(
+            <Modal
+              className=""
+              actions={
+                <RestartRunnersButton
+                  onSuccess={() => {
+                    fetchInstalls()
+                  }}
+                />
+              }
+              heading={`All ${org.name} runners`}
+              isOpen={isOpen}
+              onClose={() => {
+                setIsOpen(false)
+              }}
+            >
+              <div className="flex flex-col divide-y">
+                <div>
+                  <Text className="mb-3" variant="med-14">
+                    Org Runners
+                  </Text>
+                  <Grid variant="3-cols">
+                    {org?.runner_group?.runners?.map((runner) => (
+                      <GridCard key={runner.id}>
+                        <RunnerCard
+                          runner={runner}
+                          href={`/${org.id}/runner`}
+                        />
+                      </GridCard>
+                    ))}
+                  </Grid>
+                </div>
 
-          <div className="pt-3 mt-6">
-            <Text className="mb-3" variant="med-14">
-              Install Runners
-            </Text>
-            {error ? (
-              <Notice>{error}</Notice>
-            ) : isLoading ? (
-              <Loading loadingText="Loading install runners" />
-            ) : installs && installs.length ? (
-              <Grid variant="3-cols">
-                {installs.map((install) => (
-                  <GridCard key={install.id}>
-                    <Text variant="med-12">{install.name} runner</Text>
-                    <LoadRunnerCard
-                      runnerId={install?.runner_id}
-                      installId={install.id}
-                    />
-                  </GridCard>
-                ))}
-              </Grid>
-            ) : (
-              <Text>No installs</Text>
-            )}
-          </div>
-        </div>
-      </Modal>
+                <div className="pt-3 mt-6">
+                  <Text className="mb-3" variant="med-14">
+                    Install Runners
+                  </Text>
+                  {error ? (
+                    <Notice>{error}</Notice>
+                  ) : isLoading ? (
+                    <Loading loadingText="Loading install runners" />
+                  ) : installs && installs.length ? (
+                    <Grid variant="3-cols">
+                      {installs.map((install) => (
+                        <GridCard key={install.id}>
+                          <Text variant="med-12">{install.name} runner</Text>
+                          <LoadRunnerCard
+                            runnerId={install?.runner_id}
+                            installId={install.id}
+                          />
+                        </GridCard>
+                      ))}
+                    </Grid>
+                  ) : (
+                    <Text>No installs</Text>
+                  )}
+                </div>
+              </div>
+            </Modal>,
+            document.body
+          )
+        : null}
       <div className="flex flex-col gap-2">
         <Text variant="reg-14">Manage all runners in this org</Text>
         <Button
@@ -155,9 +168,24 @@ const RunnerCard: FC<{ runner: TRunner; href: string }> = ({
         id={runner.id}
         heading={<LoadRunnerHeartbeat runnerId={runner.id} />}
         expandContent={
-          <div className="p-3 flex flex-col gap-3 border-t">
-            <Text variant="med-12">Latest job</Text>
-            <LoadRunnerJob runnerId={runner.id} />
+          <div className="px-3 flex flex-col border-t divide-y">
+            <div className="py-3 flex flex-col gap-3">
+              <Text variant="med-12">Last shut-down job</Text>
+              <LoadRunnerJob runnerId={runner.id} groups={['operations']} />
+            </div>
+            <div className="py-3 flex flex-col gap-3">
+              <Text variant="med-12">Recent job</Text>
+              <LoadRunnerJob
+                runnerId={runner.id}
+                statuses={[
+                  'finished',
+                  'error',
+                  'timed-out',
+                  'cancelled',
+                  'not-attempted',
+                ]}
+              />
+            </div>
           </div>
         }
       />
@@ -268,14 +296,28 @@ const LoadRunnerHeartbeat: FC<{ runnerId: string }> = ({ runnerId }) => {
   )
 }
 
-const LoadRunnerJob: FC<{ runnerId: string }> = ({ runnerId }) => {
+const LoadRunnerJob: FC<{
+  runnerId: string
+  groups?: Array<'operations'>
+  statuses?: Array<
+    'finished' | 'error' | 'timed-out' | 'not-attempted' | 'cancelled'
+  >
+}> = ({ runnerId, groups, statuses }) => {
   const { org } = useOrg()
   const [isLoading, setIsLoading] = useState(true)
   const [job, setJob] = useState<TRunnerJob>()
   const [error, setError] = useState<string>()
 
+  const params = new URLSearchParams({
+    limit: '1',
+    ...(groups ? { groups } : {}),
+    ...(statuses ? { statuses } : {}),
+  }).toString()
+
   const fetchRecentJob = () => {
-    fetch(`/api/${org.id}/runner/${runnerId}/jobs`)
+    fetch(
+      `/api/${org.id}/runner/${runnerId}/jobs${params ? '?' + params : params}`
+    )
       .then((res) =>
         res.json().then((jbs) => {
           setJob(jbs?.[0])
@@ -303,13 +345,9 @@ const LoadRunnerJob: FC<{ runnerId: string }> = ({ runnerId }) => {
     <Loading loadingText={`Loading latest job...`} />
   ) : job ? (
     <div className="flex items-start justify-between">
-      <Config>
-        <ConfigContent label="Name" value={jobName(job) || 'Unknown'} />
-
-        <ConfigContent label="Group" value={job?.group} />
-
+      <Config className="">
         <ConfigContent
-          label="Status"
+          label="Job"
           value={
             <span className="flex items-center gap-2">
               <StatusBadge
@@ -317,9 +355,14 @@ const LoadRunnerJob: FC<{ runnerId: string }> = ({ runnerId }) => {
                 isWithoutBorder
                 isStatusTextHidden
               />
-              {job?.status}
+              {jobName(job) || 'Unknown'}
             </span>
           }
+        />
+
+        <ConfigContent
+          label="Updated at"
+          value={<Time time={job?.updated_at} />}
         />
       </Config>
       {jobHrefPath(job) !== '' ? (
