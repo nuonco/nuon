@@ -110,6 +110,7 @@ func (s *service) getComponentBuilds(ctx *gin.Context, cmpID string) ([]app.Comp
 		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
 		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection").
 		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection.Component").
+		Preload("ComponentConfigs.ComponentBuilds.CreatedBy").
 		First(&cmp, "id = ?", cmpID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
