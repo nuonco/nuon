@@ -20,8 +20,9 @@ import {
   getComponent,
   getComponentConfig,
   getInstall,
+  getInstallComponents,
 } from '@/lib'
-import type { TBuild, TInstall } from '@/types'
+import type { TBuild } from '@/types'
 import { USER_REPROVISION } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -94,7 +95,7 @@ export default withPageAuthRequired(async function InstallComponents({
               <Loading loadingText="Loading components..." variant="page" />
             }
           >
-            <LoadInstallComponents install={install} orgId={orgId} />
+            <LoadInstallComponents installId={install?.id} orgId={orgId} />
           </Suspense>
         </ErrorBoundary>
       </section>
@@ -102,14 +103,15 @@ export default withPageAuthRequired(async function InstallComponents({
   )
 })
 
-const LoadInstallComponents: FC<{ install: TInstall; orgId: string }> = async ({
-  install,
+const LoadInstallComponents: FC<{ installId: string; orgId: string }> = async ({
+  installId,
   orgId,
 }) => {
+  const installComponents = await getInstallComponents({ installId, orgId }).catch(console.error)
   const hydratedInstallComponents =
-    install.install_components && install.install_components?.length
+    installComponents && installComponents?.length
       ? await Promise.all(
-          install.install_components.map(async (comp, _, arr) => {
+          installComponents.map(async (comp, _, arr) => {
             const build = await getComponentBuild({
               buildId: comp.install_deploys?.[0]?.build_id,
               orgId,
@@ -143,7 +145,7 @@ const LoadInstallComponents: FC<{ install: TInstall; orgId: string }> = async ({
       installComponents={
         hydratedInstallComponents as Array<TDataInstallComponent>
       }
-      installId={install.id}
+      installId={installId}
       orgId={orgId}
     />
   ) : (
