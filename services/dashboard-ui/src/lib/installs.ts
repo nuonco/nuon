@@ -60,13 +60,11 @@ export async function getInstallComponent({
   installId,
   orgId,
 }: IGetInstallComponent) {
-  return (
-    await queryData<Array<TInstallComponent>>({
-      errorMessage: 'Unable to retrieve the components for this install.',
-      orgId,
-      path: `installs/${installId}/components`,
-    })
-  ).find((installComponent) => installComponent.component_id === componentId)
+  return queryData<TInstallComponent>({
+    errorMessage: 'Unable to retrieve the components for this install.',
+    orgId,
+    path: `installs/${installId}/components/${componentId}`,
+  })
 }
 
 export interface IGetInstallComponentDeploys extends IGetInstallComponent {}

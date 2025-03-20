@@ -5,7 +5,7 @@
 import React, { type FC, useEffect, useState } from 'react'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
-import { Truncate } from '@/components/Typography'
+import { Truncate, Text } from '@/components/Typography'
 import { revalidateInstallData } from '@/components/install-actions'
 import type { TComponent, TInstallDeploy } from '@/types'
 import { SHORT_POLL_DURATION } from '@/utils'
@@ -57,21 +57,28 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
         id: d.id,
         status: d.status,
         underline: (
-          <>
-            <ToolTip tipContent={d.id}>
-              <span className="truncate text-ellipsis w-16">{d.id}</span>
-            </ToolTip>
-            <>
-              /{' '}
-              {component.name.length >= 12 ? (
-                <ToolTip tipContent={component.name} alignment="right">
-                  <Truncate variant="small">{component.name}</Truncate>
-                </ToolTip>
-              ) : (
-                component.name
-              )}
-            </>
-          </>
+          <div>
+            <Text>
+              <ToolTip tipContent={d.id}>
+                <span className="truncate text-ellipsis w-16">{d.id}</span>
+              </ToolTip>
+              <>
+                /{' '}
+                {component.name.length >= 12 ? (
+                  <ToolTip tipContent={component.name} alignment="right">
+                    <Truncate variant="small">{component.name}</Truncate>
+                  </ToolTip>
+                ) : (
+                  component.name
+                )}
+              </>
+            </Text>
+            {d?.created_by ? (
+              <Text className="text-cool-grey-600 dark:text-white/70 !text-[10px]">
+                Deployed by: {d?.created_by?.email}
+              </Text>
+            ) : null}
+          </div>
         ),
         time: d.updated_at,
         href: `/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${d.id}`,
