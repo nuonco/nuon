@@ -54,6 +54,7 @@ func (s *service) getInstallComponentDeploys(ctx *gin.Context, installID, compon
 			Scopes(scopes.WithPagination).
 			Order("install_deploys.created_at DESC").Limit(1000)
 	}).
+		Preload("InstallDeploys.CreatedBy").
 		Preload("InstallDeploys.ComponentBuild").
 		Preload("InstallDeploys.ComponentBuild.VCSConnectionCommit").
 		Where(install).
