@@ -92,6 +92,7 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Scopes(scopes.WithPagination).
+				Preload("CreatedBy").
 				Order("install_action_workflow_runs.created_at DESC").
 				Limit(limit)
 		}).

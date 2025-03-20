@@ -47,23 +47,30 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
         id: b.id,
         status: b.status,
         underline: (
-          <>
-            <ToolTip tipContent={b.id}>
-              <Text className="truncate text-ellipsis w-16" variant="mono-12">
-                {b.id}
+          <div>
+            <Text>
+              <ToolTip tipContent={b.id}>
+                <Text className="truncate text-ellipsis w-16" variant="mono-12">
+                  {b.id}
+                </Text>
+              </ToolTip>
+              <>
+                /{' '}
+                {b.component_name.length >= 12 ? (
+                  <ToolTip tipContent={b.component_name} alignment="right">
+                    <Truncate variant="small">{b.component_name}</Truncate>
+                  </ToolTip>
+                ) : (
+                  b.component_name
+                )}
+              </>
+            </Text>
+            {b?.created_by ? (
+              <Text className="text-cool-grey-600 dark:text-white/70 !text-[10px]">
+                Build by: {b?.created_by?.email}
               </Text>
-            </ToolTip>
-            <>
-              /{' '}
-              {b.component_name.length >= 12 ? (
-                <ToolTip tipContent={b.component_name} alignment="right">
-                  <Truncate variant="small">{b.component_name}</Truncate>
-                </ToolTip>
-              ) : (
-                b.component_name
-              )}
-            </>
-          </>
+            ) : null}
+          </div>
         ),
         time: b.updated_at,
         href: `/${orgId}/apps/${appId}/components/${b.component_id}/builds/${b.id}`,
