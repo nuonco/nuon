@@ -62,7 +62,10 @@ func (s *service) getInstallComponents(ctx *gin.Context, installID string) ([]ap
 		if err != nil {
 			return nil, fmt.Errorf("unable to get latest install deploy: %w", err)
 		}
-		install.InstallComponents[ic].InstallDeploys = []app.InstallDeploy{*latestDeploy}
+
+		if latestDeploy != nil {
+			install.InstallComponents[ic].InstallDeploys = []app.InstallDeploy{*latestDeploy}
+		}
 	}
 
 	cmps, err := db.HandlePaginatedResponse(ctx, install.InstallComponents)
@@ -81,6 +84,10 @@ func (s *service) getLatestInstallDeploy(ctx *gin.Context, installComponentID st
 		Where("install_component_id = ?", installComponentID).
 		Order("created_at DESC").
 		First(&installDeploy)
+	if res.Error == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install deploy: %w", res.Error)
 	}
