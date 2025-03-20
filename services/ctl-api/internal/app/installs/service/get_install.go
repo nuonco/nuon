@@ -90,15 +90,6 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		}).
 		Preload("InstallComponents").
 		Preload("InstallComponents.Component").
-		Preload("InstallComponents.Component.Dependencies").
-		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.
-				Distinct(
-					"install_component_id",
-				).
-				Select("*").
-				Order("install_deploys.created_at DESC")
-		}).
 		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig.PublicGitVCSConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
