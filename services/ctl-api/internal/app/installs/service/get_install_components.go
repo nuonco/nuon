@@ -49,16 +49,20 @@ func (s *service) getInstallComponents(ctx *gin.Context, installID string) ([]ap
 				Scopes(scopes.WithPagination).
 				Order("install_components.created_at DESC")
 		}).
-		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_deploys.created_at DESC")
-		}).
-		Preload("InstallComponents.InstallDeploys.RunnerJobs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("runner_jobs_view_v1.created_at DESC")
-		}).
 		Preload("InstallComponents.Component").
 		First(&install, "id = ?", installID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install components: %w", res.Error)
+	}
+
+	// WARN: we cannot limit on a slice array with a parent that is also a slice
+	// gorm will apply the limit as a single query filtered by the child ids
+	for ic := range install.InstallComponents {
+		latestDeploy, err := s.getLatestInstallDeploy(ctx, install.InstallComponents[ic].ID)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get latest install deploy: %w", err)
+		}
+		install.InstallComponents[ic].InstallDeploys = []app.InstallDeploy{*latestDeploy}
 	}
 
 	cmps, err := db.HandlePaginatedResponse(ctx, install.InstallComponents)
@@ -69,4 +73,17 @@ func (s *service) getInstallComponents(ctx *gin.Context, installID string) ([]ap
 	install.InstallComponents = cmps
 
 	return install.InstallComponents, nil
+}
+
+func (s *service) getLatestInstallDeploy(ctx *gin.Context, installComponentID string) (*app.InstallDeploy, error) {
+	installDeploy := &app.InstallDeploy{}
+	res := s.db.WithContext(ctx).
+		Where("install_component_id = ?", installComponentID).
+		Order("created_at DESC").
+		First(&installDeploy)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get install deploy: %w", res.Error)
+	}
+
+	return installDeploy, nil
 }
