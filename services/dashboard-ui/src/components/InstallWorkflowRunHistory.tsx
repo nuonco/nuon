@@ -2,6 +2,7 @@
 
 import React, { type FC, useEffect } from 'react'
 import { Timeline } from '@/components/Timeline'
+import { Text } from '@/components/Typography'
 import { revalidateInstallWorkflowHistory } from '@/components/workflow-actions'
 import type { TInstallActionWorkflow } from '@/types'
 import { SHORT_POLL_DURATION, humandReadableTriggeredBy } from '@/utils'
@@ -43,12 +44,19 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
         id: run.id,
         status: run.status,
         underline: (
-          <>
-            <span>{action_workflow.name}</span> /
-            <span className="!inline truncate max-w-[100px]">
-              {humandReadableTriggeredBy(run?.triggered_by_type)}
-            </span>
-          </>
+          <div>
+            <Text>
+              <span>{action_workflow.name}</span> /
+              <span className="!inline truncate max-w-[100px]">
+                {humandReadableTriggeredBy(run?.triggered_by_type)}
+              </span>
+            </Text>
+            {run?.created_by ? (
+              <Text className="text-cool-grey-600 dark:text-white/70 !text-[10px]">
+                Run by: {run?.created_by?.email}
+              </Text>
+            ) : null}
+          </div>
         ),
         time: run.updated_at,
         href: `/${orgId}/installs/${installId}/actions/${action_workflow?.id}/${run.id}`,
