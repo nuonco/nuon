@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom'
 import {
   ArrowsClockwise,
   CaretRight,
+  Check,
   Heartbeat,
   StopCircle,
   Timer,
@@ -434,8 +435,12 @@ const RestartRunnersButton: FC<{ onSuccess: () => void }> = (props) => {
   )
 }
 
-const GracefulShutdownButton: FC<{ runnerId: string }> = ({}) => {
+const GracefulShutdownButton: FC<{ runnerId: string }> = ({
+  runnerId,
+  ...props
+}) => {
   const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState<string>()
 
   return error ? (
@@ -448,7 +453,8 @@ const GracefulShutdownButton: FC<{ runnerId: string }> = ({}) => {
           .then((res) => {
             setIsLoading(false)
             if (res.status === 201 || res.status === 200) {
-              props.onSuccess()
+              setIsSuccess(true)
+              if (props?.onSuccess) props?.onSuccess()
             } else {
               setError(
                 'Unable to kick off graceful shutdown, refresh page and try again.'
@@ -463,7 +469,7 @@ const GracefulShutdownButton: FC<{ runnerId: string }> = ({}) => {
             )
           })
       }}
-      className="text-sm flex items-center gap-2 flex-auto"
+      className="text-sm flex items-center gap-2 flex-auto justify-center"
       disabled={isLoading}
       variant="caution"
     >
@@ -473,15 +479,20 @@ const GracefulShutdownButton: FC<{ runnerId: string }> = ({}) => {
         </>
       ) : (
         <>
-          <StopCircle size="16" /> Graceful shutdown
+          {isSuccess ? <Check size="16" /> : <StopCircle size="16" />} Graceful
+          shutdown
         </>
       )}
     </Button>
   )
 }
 
-const ForceShutdownButton: FC<{ runnerId: string }> = ({}) => {
+const ForceShutdownButton: FC<{ runnerId: string }> = ({
+  runnerId,
+  ...props
+}) => {
   const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState<string>()
 
   return error ? (
@@ -494,7 +505,8 @@ const ForceShutdownButton: FC<{ runnerId: string }> = ({}) => {
           .then((res) => {
             setIsLoading(false)
             if (res.status === 201 || res.status === 200) {
-              props.onSuccess()
+              setIsSuccess(true)
+              if (props?.onSuccess) props?.onSuccess()
             } else {
               setError(
                 'Unable to kick off forced shutdown, refresh page and try again.'
@@ -509,7 +521,7 @@ const ForceShutdownButton: FC<{ runnerId: string }> = ({}) => {
             )
           })
       }}
-      className="text-sm flex items-center gap-2 flex-auto !px-3"
+      className="text-sm flex items-center gap-2 flex-auto !px-3 justify-center"
       disabled={isLoading}
       variant="danger"
     >
@@ -519,7 +531,8 @@ const ForceShutdownButton: FC<{ runnerId: string }> = ({}) => {
         </>
       ) : (
         <>
-          <WarningOctagon size="16" /> Force shutdown
+          {isSuccess ? <Check size="16" /> : <WarningOctagon size="16" />} Force
+          shutdown
         </>
       )}
     </Button>
