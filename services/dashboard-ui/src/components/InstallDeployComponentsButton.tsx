@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { CloudCheck, CloudArrowUp } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
@@ -21,7 +22,7 @@ export const InstallDeployLatestBuildButton: FC<{
   orgId: string
 }> = ({ componentId, installId, orgId }) => {
   const { user } = useUser()
-  const [isDeploymentOpen, setIsDeploymentOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
   const [buildId, setBuildId] = useState<string>()
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
@@ -41,72 +42,83 @@ export const InstallDeployLatestBuildButton: FC<{
 
   return (
     <>
-      <Modal
-        className="max-w-lg"
-        heading={`Deploy build ${buildId}?`}
-        isOpen={isDeploymentOpen}
-        onClose={() => {
-          setIsDeploymentOpen(false)
-        }}
-      >
-        <div className="flex flex-col gap-4 mb-6">
-          {error ? <Notice>{error}</Notice> : null}
-          <Text variant="reg-14" className="leading-relaxed">
-            Are you sure you want to deploy build {buildId}? This will replace
-            the current install component with the selected build.
-          </Text>
-        </div>
-        <div className="flex gap-3 justify-end">
-          <Button
-            onClick={() => {
-              setIsDeploymentOpen(false)
-            }}
-            className="text-base"
-          >
-            Cancel
-          </Button>
-          <Button
-            disabled={!buildId}
-            className="text-base flex items-center gap-1"
-            onClick={() => {
-              setIsLoading(true)
-              deployComponentBuild({ buildId, installId, orgId })
-                .then(() => {
-                  trackEvent({
-                    event: 'component_deploy',
-                    user,
-                    status: 'ok',
-                    props: { orgId, installId, componentId, buildId },
-                  })
-                  setIsLoading(false)
-                  setIsKickedOff(true)
-                  setIsDeploymentOpen(false)
-                })
-                .catch((err) => {
-                  trackEvent({
-                    event: 'component_deploy',
-                    user,
-                    status: 'error',
-                    props: { orgId, installId, componentId, buildId, err },
-                  })
-                  console.error(err?.message)
-                  setIsLoading(false)
-                  setError('Unable to create deployment.')
-                })
-            }}
-            variant="primary"
-          >
-            {isKickedOff ? (
-              <CloudCheck size="18" />
-            ) : isLoading ? (
-              <SpinnerSVG />
-            ) : (
-              <CloudArrowUp size="18" />
-            )}{' '}
-            Deploy build
-          </Button>
-        </div>
-      </Modal>
+      {isOpen
+        ? createPortal(
+            <Modal
+              className="max-w-lg"
+              heading={`Deploy build ${buildId}?`}
+              isOpen={isOpen}
+              onClose={() => {
+                setIsOpen(false)
+              }}
+            >
+              <div className="flex flex-col gap-4 mb-6">
+                {error ? <Notice>{error}</Notice> : null}
+                <Text variant="reg-14" className="leading-relaxed">
+                  Are you sure you want to deploy build {buildId}? This will
+                  replace the current install component with the selected build.
+                </Text>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  onClick={() => {
+                    setIsOpen(false)
+                  }}
+                  className="text-base"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  disabled={!buildId}
+                  className="text-base flex items-center gap-1"
+                  onClick={() => {
+                    setIsLoading(true)
+                    deployComponentBuild({ buildId, installId, orgId })
+                      .then(() => {
+                        trackEvent({
+                          event: 'component_deploy',
+                          user,
+                          status: 'ok',
+                          props: { orgId, installId, componentId, buildId },
+                        })
+                        setIsLoading(false)
+                        setIsKickedOff(true)
+                        setIsOpen(false)
+                      })
+                      .catch((err) => {
+                        trackEvent({
+                          event: 'component_deploy',
+                          user,
+                          status: 'error',
+                          props: {
+                            orgId,
+                            installId,
+                            componentId,
+                            buildId,
+                            err,
+                          },
+                        })
+                        console.error(err?.message)
+                        setIsLoading(false)
+                        setError('Unable to create deployment.')
+                      })
+                  }}
+                  variant="primary"
+                >
+                  {isKickedOff ? (
+                    <CloudCheck size="18" />
+                  ) : isLoading ? (
+                    <SpinnerSVG />
+                  ) : (
+                    <CloudArrowUp size="18" />
+                  )}{' '}
+                  Deploy build
+                </Button>
+              </div>
+            </Modal>,
+            document.body
+          )
+        : null}
       <Dropdown
         alignment="right"
         className="text-sm !font-medium !p-2 h-[32px]"
@@ -126,7 +138,7 @@ export const InstallDeployLatestBuildButton: FC<{
             disabled={!buildId}
             className="w-full !rounded-t-none !text-sm flex items-center justify-center gap-2 pl-4"
             onClick={() => {
-              setIsDeploymentOpen(true)
+              setIsOpen(true)
             }}
             variant="ghost"
           >

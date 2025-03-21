@@ -2,6 +2,7 @@
 
 import classNames from 'classnames'
 import React, { type FC, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { DateTime } from 'luxon'
 import { ArrowsOutSimple } from '@phosphor-icons/react'
 import { type ColumnDef } from '@tanstack/react-table'
@@ -91,17 +92,27 @@ export const LogsModal: FC<ILogsModal> = ({ heading, logs }) => {
 
   return (
     <>
-      <Modal
-        actions={<LogsControls showLogExpand showLogFilter />}
-        hasFixedHeight
-        heading={heading}
-        isOpen={isOpen}
-        onClose={() => {
-          setIsOpen(false)
-        }}
-      >
-        <LogsViewer data={logs} columns={columns} enableLogFilter showLogAttr />
-      </Modal>
+      {isOpen
+        ? createPortal(
+            <Modal
+              actions={<LogsControls showLogExpand showLogFilter />}
+              hasFixedHeight
+              heading={heading}
+              isOpen={isOpen}
+              onClose={() => {
+                setIsOpen(false)
+              }}
+            >
+              <LogsViewer
+                data={logs}
+                columns={columns}
+                enableLogFilter
+                showLogAttr
+              />
+            </Modal>,
+            document.body
+          )
+        : null}
       <Button
         className="flex items-center gap-2 text-sm !font-medium"
         onClick={() => {

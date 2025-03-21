@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ArrowsOutSimple, Check, Minus } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Expand } from '@/components/Expand'
@@ -93,22 +94,27 @@ export const AppInputConfigModal: FC<IAppInputConfig & { appName: string }> = ({
   appName,
   inputConfig,
 }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
   return (
     <>
-      <Modal
-        heading={`${appName} inputs`}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-        }}
-      >
-        <AppInputConfig inputConfig={inputConfig} isNotTruncated />
-      </Modal>
+      {isOpen
+        ? createPortal(
+            <Modal
+              heading={`${appName} inputs`}
+              isOpen={isOpen}
+              onClose={() => {
+                setIsOpen(false)
+              }}
+            >
+              <AppInputConfig inputConfig={inputConfig} isNotTruncated />
+            </Modal>,
+            document.body
+          )
+        : null}
       <Button
         className="text-sm !font-medium flex items-center gap-2 !p-1"
         onClick={() => {
-          setIsModalOpen(true)
+          setIsOpen(true)
         }}
         title="Expand install inputs"
         variant="ghost"
