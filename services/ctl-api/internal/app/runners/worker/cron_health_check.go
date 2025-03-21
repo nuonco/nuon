@@ -272,7 +272,7 @@ func (w *Workflows) gracefulShutdown(ctx workflow.Context, startTS time.Time, l 
 
 	l.Debug("sending shutdown signal")
 	w.evClient.Send(ctx, runner.ID, &signals.Signal{
-		Type:          signals.OperationShutdown,
+		Type:          signals.OperationGracefulShutdown,
 		HealthCheckID: healthcheck.ID,
 	})
 	return nil
