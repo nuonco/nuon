@@ -10,6 +10,7 @@ async function adminAction(
   errMessage = 'Admin action failed'
 ) {
   const { user } = await getSession()
+  
   try {
     const result = await fetch(`${ADMIN_API_URL}/v1/${domain}/${path}`, {
       method: 'POST',
@@ -18,7 +19,7 @@ async function adminAction(
         'Content-Type': 'application/json',
         'X-Nuon-Admin-Email': user?.email,
       },
-    }).then((r) => r.json())
+    }).then((r) => r.json())    
     return { status: 201, result }
   } catch (error) {
     throw new Error(errMessage)
@@ -80,7 +81,7 @@ export async function updateOrgFeature(
         acc[feat] = data.hasOwnProperty(feat)
         return acc
       }, {})
-  const { user } = await getSession()
+  const { user } = await getSession()  
 
   try {
     const result = await fetch(
