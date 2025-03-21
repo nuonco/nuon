@@ -1,1 +1,0 @@
-Shut down a runner.
