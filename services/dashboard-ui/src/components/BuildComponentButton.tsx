@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { Check, Hammer, WarningOctagon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
@@ -18,7 +19,7 @@ export const BuildComponentButton: FC<{
   onComplete?: () => void
 }> = ({ appId, componentId, componentName, orgId, ...props }) => {
   const { user } = useUser()
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [error, setError] = useState()
@@ -37,89 +38,94 @@ export const BuildComponentButton: FC<{
 
   return (
     <>
-      <Modal
-        className="max-w-lg"
-        isOpen={isConfirmOpen}
-        heading={`Build ${componentName} component?`}
-        onClose={() => {
-          setIsConfirmOpen(false)
-        }}
-      >
-        <div className="mb-6">
-          {error ? (
-            <span className="flex items-center gap-3  w-full p-2 border rounded-md border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600 text-base font-medium">
-              <WarningOctagon size="20" /> {error}
-            </span>
-          ) : null}
-          <Text variant="reg-14" className="leading-relaxed">
-            Are you sure you want to build {componentName}?
-          </Text>
-        </div>
-        <div className="flex gap-3 justify-end">
-          <Button
-            onClick={() => {
-              setIsConfirmOpen(false)
-            }}
-            className="text-base"
-          >
-            Cancel
-          </Button>
-          <Button
-            className="text-sm flex items-center gap-1"
-            onClick={() => {
-              setIsLoading(true)
-              createComponentBuild({ appId, componentId, orgId })
-                .then(() => {
-                  trackEvent({
-                    event: 'component_build',
-                    user,
-                    status: 'ok',
-                    props: {
-                      orgId,
-                      appId,
-                      componentId,
-                    },
-                  })
-                  setIsLoading(false)
-                  setIsKickedOff(true)
-                  setIsConfirmOpen(false)
-                  if (props.onComplete) props.onComplete()
-                })
-                .catch((err) => {
-                  trackEvent({
-                    event: 'component_build',
-                    user,
-                    status: 'error',
-                    props: {
-                      orgId,
-                      appId,
-                      componentId,
-                    },
-                  })
-                  setError(
-                    err?.message ||
-                      'Error occured, please refresh page and try again.'
-                  )
-                  setIsLoading(false)
-                })
-            }}
-            variant="primary"
-          >
-            {isKickedOff ? (
-              <Check size="18" />
-            ) : isLoading ? (
-              <SpinnerSVG />
-            ) : (
-              <Hammer size="18" />
-            )}{' '}
-            Build component
-          </Button>
-        </div>
-      </Modal>
+      {isOpen
+        ? createPortal(
+            <Modal
+              className="max-w-lg"
+              isOpen={isOpen}
+              heading={`Build ${componentName} component?`}
+              onClose={() => {
+                setIsOpen(false)
+              }}
+            >
+              <div className="mb-6">
+                {error ? (
+                  <span className="flex items-center gap-3  w-full p-2 border rounded-md border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600 text-base font-medium">
+                    <WarningOctagon size="20" /> {error}
+                  </span>
+                ) : null}
+                <Text variant="reg-14" className="leading-relaxed">
+                  Are you sure you want to build {componentName}?
+                </Text>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  onClick={() => {
+                    setIsOpen(false)
+                  }}
+                  className="text-base"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="text-sm flex items-center gap-1"
+                  onClick={() => {
+                    setIsLoading(true)
+                    createComponentBuild({ appId, componentId, orgId })
+                      .then(() => {
+                        trackEvent({
+                          event: 'component_build',
+                          user,
+                          status: 'ok',
+                          props: {
+                            orgId,
+                            appId,
+                            componentId,
+                          },
+                        })
+                        setIsLoading(false)
+                        setIsKickedOff(true)
+                        setIsOpen(false)
+                        if (props.onComplete) props.onComplete()
+                      })
+                      .catch((err) => {
+                        trackEvent({
+                          event: 'component_build',
+                          user,
+                          status: 'error',
+                          props: {
+                            orgId,
+                            appId,
+                            componentId,
+                          },
+                        })
+                        setError(
+                          err?.message ||
+                            'Error occured, please refresh page and try again.'
+                        )
+                        setIsLoading(false)
+                      })
+                  }}
+                  variant="primary"
+                >
+                  {isKickedOff ? (
+                    <Check size="18" />
+                  ) : isLoading ? (
+                    <SpinnerSVG />
+                  ) : (
+                    <Hammer size="18" />
+                  )}{' '}
+                  Build component
+                </Button>
+              </div>
+            </Modal>,
+            document.body
+          )
+        : null}
       <Button
         className="text-sm flex items-center gap-1"
         onClick={() => {
-          setIsConfirmOpen(true)
+          setIsOpen(true)
         }}
       >
         Build component
