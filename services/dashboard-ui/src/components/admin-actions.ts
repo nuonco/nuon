@@ -226,3 +226,19 @@ export async function shutdownOrgRunnerJob(orgId: string) {
     'Failed to kick off org runner shutdown job'
   )
 }
+
+export async function gracefulRunnerShutdown(runnerId: string) {
+  return adminAction(
+    'runners',
+    `${runnerId}/graceful-shutdown`,
+    'Failed to kickoff graceful shutdown'
+  )
+}
+
+export async function forceRunnerShutdown(runnerId: string) {
+  return adminAction(
+    'runners',
+    `${runnerId}/force-shutdown`,
+    'Failed to kickoff forced shutdown'
+  )
+}

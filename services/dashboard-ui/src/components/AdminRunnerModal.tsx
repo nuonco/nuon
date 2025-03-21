@@ -9,7 +9,9 @@ import {
   ArrowsClockwise,
   CaretRight,
   Heartbeat,
+  StopCircle,
   Timer,
+  WarningOctagon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Config, ConfigContent } from '@/components/Config'
@@ -24,7 +26,11 @@ import { jobHrefPath, jobName } from '@/components/Runners/helpers'
 import { StatusBadge } from '@/components/Status'
 import { Time, Duration } from '@/components/Time'
 import { Text } from '@/components/Typography'
-import { restartOrgRunners } from '@/components/admin-actions'
+import {
+  restartOrgRunners,
+  gracefulRunnerShutdown,
+  forceRunnerShutdown,
+} from '@/components/admin-actions'
 import type { TRunner, TRunnerHeartbeat, TRunnerJob, TInstall } from '@/types'
 
 export const AdminRunnerModal: FC = ({}) => {
@@ -189,6 +195,10 @@ const RunnerCard: FC<{ runner: TRunner; href: string }> = ({
           </div>
         }
       />
+      <div className="flex gap-4 w-full">
+        <GracefulShutdownButton runnerId={runner.id} />
+        <ForceShutdownButton runnerId={runner.id} />
+      </div>
     </div>
   )
 }
@@ -262,7 +272,7 @@ const LoadRunnerHeartbeat: FC<{ runnerId: string }> = ({ runnerId }) => {
     <Notice>{error}</Notice>
   ) : isLoading ? (
     <Loading loadingText={`Loading last hearbeat...`} />
-  ) : (
+  ) : heartbeat?.version ? (
     <div className="flex items-start gap-4">
       <span className="flex flex-col gap-2">
         <Text className="text-cool-grey-600 dark:text-cool-grey-500">
@@ -293,6 +303,8 @@ const LoadRunnerHeartbeat: FC<{ runnerId: string }> = ({ runnerId }) => {
         </Text>
       </span>
     </div>
+  ) : (
+    <Text>No heartbeat yet</Text>
   )
 }
 
@@ -416,6 +428,98 @@ const RestartRunnersButton: FC<{ onSuccess: () => void }> = (props) => {
       ) : (
         <>
           <ArrowsClockwise size="16" /> Restart all runners
+        </>
+      )}
+    </Button>
+  )
+}
+
+const GracefulShutdownButton: FC<{ runnerId: string }> = ({}) => {
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string>()
+
+  return error ? (
+    <Notice>{error}</Notice>
+  ) : (
+    <Button
+      onClick={() => {
+        setIsLoading(true)
+        gracefulRunnerShutdown(runnerId)
+          .then((res) => {
+            setIsLoading(false)
+            if (res.status === 201 || res.status === 200) {
+              props.onSuccess()
+            } else {
+              setError(
+                'Unable to kick off graceful shutdown, refresh page and try again.'
+              )
+            }
+          })
+          .catch((err) => {
+            console.error(err?.message)
+            setIsLoading(false)
+            setError(
+              'Unable to kick off graceful shutdown, refresh page and try again.'
+            )
+          })
+      }}
+      className="text-sm flex items-center gap-2 flex-auto"
+      disabled={isLoading}
+      variant="caution"
+    >
+      {isLoading ? (
+        <>
+          <SpinnerSVG /> Shutting down
+        </>
+      ) : (
+        <>
+          <StopCircle size="16" /> Graceful shutdown
+        </>
+      )}
+    </Button>
+  )
+}
+
+const ForceShutdownButton: FC<{ runnerId: string }> = ({}) => {
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string>()
+
+  return error ? (
+    <Notice>{error}</Notice>
+  ) : (
+    <Button
+      onClick={() => {
+        setIsLoading(true)
+        forceRunnerShutdown(runnerId)
+          .then((res) => {
+            setIsLoading(false)
+            if (res.status === 201 || res.status === 200) {
+              props.onSuccess()
+            } else {
+              setError(
+                'Unable to kick off forced shutdown, refresh page and try again.'
+              )
+            }
+          })
+          .catch((err) => {
+            console.error(err?.message)
+            setIsLoading(false)
+            setError(
+              'Unable to kick off forced shutdown, refresh page and try again.'
+            )
+          })
+      }}
+      className="text-sm flex items-center gap-2 flex-auto !px-3"
+      disabled={isLoading}
+      variant="danger"
+    >
+      {isLoading ? (
+        <>
+          <SpinnerSVG /> Shutting down
+        </>
+      ) : (
+        <>
+          <WarningOctagon size="16" /> Force shutdown
         </>
       )}
     </Button>
