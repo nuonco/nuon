@@ -2,6 +2,7 @@
 'use client'
 
 import React, { type FC, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { FaDocker, FaGitAlt, FaGithub } from 'react-icons/fa'
 import { GoQuestion } from 'react-icons/go'
 import {
@@ -332,24 +333,29 @@ export const ConfigurationVariables: FC<{
 }> = ({ heading = 'Variables', variables }) => {
   const variableKeys = Object.keys(variables)
   const isEmpty = variableKeys.length === 0
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
     !isEmpty && (
       <>
-        <Modal
-          heading={heading}
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false)
-          }}
-        >
-          <ConfigVariables
-            keys={variableKeys}
-            variables={variables}
-            isNotTruncated
-          />
-        </Modal>
+        {isOpen
+          ? createPortal(
+              <Modal
+                heading={heading}
+                isOpen={isOpen}
+                onClose={() => {
+                  setIsOpen(false)
+                }}
+              >
+                <ConfigVariables
+                  keys={variableKeys}
+                  variables={variables}
+                  isNotTruncated
+                />
+              </Modal>,
+              document.body
+            )
+          : null}
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <Text className="text-sm !font-medium leading-normal">
@@ -358,7 +364,7 @@ export const ConfigurationVariables: FC<{
             <Button
               className="text-sm !font-medium flex items-center gap-2 !p-1"
               onClick={() => {
-                setIsModalOpen(true)
+                setIsOpen(true)
               }}
               title={`Expand ${heading}`}
               variant="ghost"
