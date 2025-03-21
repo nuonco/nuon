@@ -4,8 +4,9 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-runner-go/models"
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"go.uber.org/zap"
+
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 )
 
 func (h *handler) finishJob(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
@@ -14,6 +15,15 @@ func (h *handler) finishJob(ctx context.Context, job *models.AppRunnerJob, jobEx
 	})
 	if err != nil {
 		return err
+	}
+
+	shutdownType, ok := job.Metadata["shutdown_type"]
+	if ok && shutdownType == "force" {
+		if _, err := h.apiClient.UpdateJob(ctx, job.ID, &models.ServiceUpdateRunnerJobRequest{
+			Status: models.AppRunnerJobStatusFinished,
+		}); err != nil {
+			return err
+		}
 	}
 
 	return nil
