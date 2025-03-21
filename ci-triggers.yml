@@ -16,11 +16,6 @@ services: |
   wiki:
     - services/wiki/**
     - wiki/**
-  workers-canary:
-    - go.mod
-    - go.sum
-    - services/workers-canary/**
-    - services/e2e/nuon/**
   workers-executors:
     - go.mod
     - go.sum
