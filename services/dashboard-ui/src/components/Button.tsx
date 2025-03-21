@@ -30,23 +30,28 @@ export const Button: FC<IButton> = ({
 }) => {
   return (
     <button
-      className={classNames('rounded-md border focus:outline outline-1 outline-primary-500 dark:outline-primary-400', {
-        [`${defaultStyles} border`]: variant === 'default',
-        'bg-primary-600 hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900':
-          variant === 'primary',
-        [`${defaultStyles} border-transparent`]: variant === 'ghost',
-        [`${defaultStyles} border-red-800 text-red-800 dark:border-red-500 dark:text-red-500`]:
-          variant === 'caution',
-        'bg-red-700 hover:bg-red-600': variant === 'danger',
-        'text-gray-50 px-5 border-transparent font-medium':
-          variant === 'primary' || variant === 'danger',
-        'px-3 py-1.5': !hasCustomPadding,
-        'cursor-not-allowed text-cool-grey-500 dark:text-cool-grey-600 hover:!bg-transparent':
-          props.disabled && variant !== 'primary',
-        'cursor-not-allowed !text-cool-grey-500 !bg-primary-900 hover:!bg-primary-900':
-          props.disabled && variant === 'primary',
-        [`${className}`]: Boolean(className),
-      })}
+      className={classNames(
+        'rounded-md border focus:outline outline-1 outline-primary-500 dark:outline-primary-400',
+        {
+          [`${defaultStyles} border`]: variant === 'default',
+          'bg-primary-600 hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900':
+            variant === 'primary',
+          [`${defaultStyles} border-transparent`]: variant === 'ghost',
+          [`${defaultStyles} border-red-800 text-red-800 dark:border-red-500 dark:text-red-500`]:
+            variant === 'caution',
+          'bg-red-700 hover:bg-red-600': variant === 'danger',
+          'text-gray-50 px-5 border-transparent font-medium':
+            variant === 'primary' || variant === 'danger',
+          'px-3 py-1.5': !hasCustomPadding,
+          'cursor-not-allowed text-cool-grey-500 dark:text-cool-grey-600 hover:!bg-transparent':
+            props.disabled && variant !== 'primary',
+          'cursor-not-allowed !text-cool-grey-500 !bg-primary-900 hover:!bg-primary-900':
+            props.disabled && variant === 'primary',
+          'cursor-not-allowed !text-cool-grey-500 !bg-red-900 hover:!bg-red-900':
+            props.disabled && variant === 'danger',
+          [`${className}`]: Boolean(className),
+        }
+      )}
       {...props}
     >
       {children}

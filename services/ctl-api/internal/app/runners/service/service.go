@@ -77,7 +77,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/runners/:runner_id/jobs/queue", s.AdminGetRunnerJobsQueue)
 
 	// trigger specific jobs
-	api.POST("/v1/runners/:runner_id/shutdown-job", s.AdminCreateShutDown)
+	api.POST("/v1/runners/:runner_id/graceful-shutdown", s.AdminGracefulShutDown)
+	api.POST("/v1/runners/:runner_id/force-shutdown", s.AdminForceShutDown)
 	api.POST("/v1/runners/:runner_id/noop-job", s.AdminCreateNoopJob)
 	api.POST("/v1/runners/:runner_id/health-check-job", s.AdminCreateHealthCheck)
 
@@ -106,6 +107,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/metrics", s.OtelWriteMetrics)
 
 	api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJob)
+	api.PATCH("/v1/runner-jobs/:runner_job_id", s.UpdateRunnerJob)
 	api.GET("/v1/runner-jobs/:runner_job_id/plan", s.GetRunnerJobPlan)
 	api.POST("/v1/runner-jobs/:runner_job_id/executions", s.CreateRunnerJobExecution)
 	api.GET("/v1/runner-jobs/:runner_job_id/executions", s.GetRunnerJobExecutions)

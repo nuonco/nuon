@@ -118,11 +118,11 @@ export const AdminModal: FC<{ isSidebarOpen: boolean }> = ({
       description: 'Update install sandbox to the current app sandbox version',
       text: 'Update sandbox',
     },
-    {
-      action: () => restartInstallRunner(params?.['install-id'] as string),
-      description: 'Restart the current install runner',
-      text: 'Restart runner',
-    },
+    /* {
+     *   action: () => restartInstallRunner(params?.['install-id'] as string),
+     *   description: 'Restart the current install runner',
+     *   text: 'Restart runner',
+     * }, */
     {
       action: () => shutdownInstallRunnerJob(params?.['install-id'] as string),
       description: 'Shutdown the current install runner job',
