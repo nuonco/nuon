@@ -30,7 +30,7 @@ func (w *Workflows) RestartRunners(ctx workflow.Context, sreq signals.RequestSig
 
 func (w *Workflows) restartRunner(ctx workflow.Context, runnerID string) error {
 	w.ev.Send(ctx, runnerID, &runnersignals.Signal{
-		Type: runnersignals.OperationShutdown,
+		Type: runnersignals.OperationGracefulShutdown,
 	})
 	return nil
 }
