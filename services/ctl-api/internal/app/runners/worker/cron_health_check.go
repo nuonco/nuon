@@ -80,6 +80,7 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 		}
 
 		etags["org_id"] = runner.OrgID
+		etags["org_name"] = runner.Org.Name
 		etags["runner_group_id"] = runner.RunnerGroupID
 		etags["org_priority"] = strconv.Itoa(runner.Org.Priority)
 		tags["high_priority_org"] = fmt.Sprint(runner.Org.Priority > 0) // hardcoded to zero-value default for now
@@ -121,11 +122,9 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 		// occurred while fetching the most recent heartbeat into an appropriate status, and therefore
 		// should be done before any other checks.
 		newStatus := w.determineStatusFromHeartBeat(ctx, heartbeat)
-		if newStatus == app.RunnerStatusError {
-			return errors.New("no recent heartbeats for runner")
-		}
 		status = string(newStatus)
 
+		// runner status has changed, emit a metric
 		if newStatus != currentStatus {
 			w.mw.Incr(ctx, "runner.health_check_change", metrics.ToTags(tags)...)
 			if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
@@ -138,7 +137,7 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 			}
 		}
 
-		healthcheck, err := activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
+		_, err = activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
 			RunnerID: req.RunnerID,
 			Status:   newStatus,
 		})
@@ -146,7 +145,11 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 			status = "error"
 			return errors.Wrap(err, "unable to create runner health check")
 		}
-		_ = healthcheck // so that code works if we uncommont it later
+
+		// All following operations depend on the runner already being in a healthy state. If it's not, bail out now.
+		if newStatus == app.RunnerStatusError {
+			return errors.New("no recent heartbeats for runner")
+		}
 
 		// At this point, we can start executing the individual parts of the Healthcheck as child workflows.
 		// These are all child workflows. they return a response w/ a boolean ShouldRestart
@@ -170,18 +173,6 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 		if !hcrres.ShouldRestart && newStatus == app.RunnerStatusActive {
 			hcureq := &HealthcheckUpdateNeededRequest{HeartbeatID: heartbeat.ID, RunnerID: runner.ID}
 			w.execHealthcheckChildWorkflow(ctx, req.RunnerID, "HealthcheckUpdateNeeded", hcureq, hcures)
-		}
-		// the runner statuse has changed: emit a metric
-		if newStatus != currentStatus {
-			w.mw.Incr(ctx, "runner.health_check_change", metrics.ToTags(tags)...)
-			if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
-				RunnerID:          req.RunnerID,
-				Status:            newStatus,
-				StatusDescription: fmt.Sprintf("status change %s -> %s in health check", currentStatus, newStatus),
-			}); err != nil {
-				status = "error"
-				return errors.Wrap(err, "unable to update runner status")
-			}
 		}
 
 		// 3. HealthcheckJob: runner-side healthcheck
@@ -230,6 +221,7 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 			)
 			// TODO(fd): implement forceful shutdown w/ AwaitExecuteJob
 		}
+
 		return nil
 	}
 	err := do()
