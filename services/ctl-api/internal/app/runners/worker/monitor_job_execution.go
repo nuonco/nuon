@@ -62,10 +62,12 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			tags["status"] = "overall_timeout"
 
 			etags["job_status"] = string(app.RunnerJobStatusTimedOut)
+			maps.Copy(etags, tags)
 			w.mw.Event(ctx, &statsd.Event{
 				Title:          "Overall timeout reached while job executing",
 				Text:           "Overall end-to-end job execution timeout reached while waiting for job to bewcome healthy",
-				Tags:           metrics.ToTags(tags),
+				Tags:           metrics.ToTags(etags),
+				SourceTypeName: "nuon-jobsys",
 				Priority:       statsd.Normal,
 				AlertType:      statsd.Error,
 				AggregationKey: "runner-job-timeout-while-executing",
@@ -82,10 +84,12 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			tags["status"] = "execution_timeout"
 
 			etags["job_status"] = string(app.RunnerJobStatusTimedOut)
+			maps.Copy(etags, tags)
 			w.mw.Event(ctx, &statsd.Event{
 				Title:          "Overall timeout reached while job executing",
 				Text:           "Overall end-to-end job execution timeout reached while waiting for job to bewcome healthy",
-				Tags:           metrics.ToTags(tags),
+				Tags:           metrics.ToTags(etags),
+				SourceTypeName: "nuon-jobsys",
 				Priority:       statsd.Normal,
 				AlertType:      statsd.Error,
 				AggregationKey: "runner-job-timeout-while-executing",
@@ -111,6 +115,17 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			)
 			w.updateStatus(ctx, job.RunnerID, app.RunnerStatusError, "runner restarted while job was in flight")
 			w.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusCancelled)
+
+			maps.Copy(etags, tags)
+			w.mw.Event(ctx, &statsd.Event{
+				Title:          "Runner restarted while job in flight",
+				Text:           "A runner was marked unhealthy during the job execution. The job will NOT be resumed if/when the runner recovers",
+				Tags:           metrics.ToTags(etags),
+				SourceTypeName: "nuon-jobsys",
+				Priority:       statsd.Normal,
+				AlertType:      statsd.Error,
+				AggregationKey: "runner-job-dropped",
+			})
 		}
 
 		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
@@ -132,6 +147,17 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusUnknown, "runner became unhealthy during job")
 			w.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusUnknown)
 			tags["status"] = "runner_unhealthy"
+
+			maps.Copy(etags, tags)
+			w.mw.Event(ctx, &statsd.Event{
+				Title:          "Runner marked unhealthy during job",
+				Text:           "A runner was marked unhealthy during the job execution. The job will NOT be resumed if/when the runner recovers",
+				Tags:           metrics.ToTags(etags),
+				SourceTypeName: "nuon-jobsys",
+				Priority:       statsd.Normal,
+				AlertType:      statsd.Error,
+				AggregationKey: "runner-job-dropped",
+			})
 			return true, nil
 		}
 
