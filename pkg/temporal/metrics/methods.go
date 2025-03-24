@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
@@ -38,6 +39,13 @@ func (w *writer) Timing(ctx workflow.Context, name string, dur time.Duration, ta
 
 func (w *writer) Event(ctx workflow.Context, e *statsd.Event) {
 	workflow.SideEffect(ctx, func(workflow.Context) interface{} {
+		info := workflow.GetInfo(ctx)
+		if info != nil {
+			e.Tags = append(e.Tags,
+				fmt.Sprintf("workflow_id:%s", info.WorkflowExecution.ID),
+				fmt.Sprintf("workflow_run_id:%s", info.WorkflowExecution.RunID),
+			)
+		}
 		w.MetricsWriter.Event(e)
 		return true
 	})
