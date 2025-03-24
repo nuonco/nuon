@@ -1,0 +1,26 @@
+---
+title: 'Deploy'
+description: ""
+icon: 'code'
+---
+
+## Deploy
+
+Beyond just deploying all the components, you should think about the user experience of installing your app.
+This is where the rubber meets the road on providing a "SaaS-like" experience.
+It should be clear to your customer what is going on at each step of the installation process, and when the installation is complete and their install is ready to use.
+
+### Key Questions
+
+- Will installation be self-serve by the customer or handled by an internal team? This will define what runbooks you need.
+- Will there be manual steps needed after installation? If you can't automate every step, you can still document them in runbooks, and provide actions to execute scripts.
+- How will your customer know when the app is ready to use? You can use actions to implement a readiness check.
+- How will your customer know where to go to access the app? You can render component outputs in a runbook to provide a URL.
+
+### Checklist
+
+- runbooks
+  - customer installation instructions for self-serve installation
+  - vendor installation instructions for managed installation
+- actions
+  - readiness check
