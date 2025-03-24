@@ -1,0 +1,50 @@
+---
+title: 'Considerations'
+description: ""
+icon: 'code'
+---
+
+## The Sandbox
+
+## Updates
+
+Once your customer has their install, you will need to update it. Ensuring clarity around changes to a customer's install is key to building and maintaining trust.
+
+You can use our CLI from your CI system to automate creating new versions of your app, and releasing them to customers.
+
+### Key Questions
+
+- How often will you need to update customer installs?
+- How often does each customer want their install updated? Will there be a a lot of variation between customers?
+- Can the app be updated in a fully-automated fashion? Will there ever be manual steps required?
+- Will my customers need to take any action as part of an update?
+
+### Checklist
+
+- CI
+  - flow for creating a new version of your app
+  - flow for creating a new release
+- actions
+  - database migrations
+  - scripts to handle updating other types of stateful resources
+
+## Deleting
+
+If you do need to uninstall your app from a customer's account, make sure the process can be executed smoothly.
+You want to avoid leaving resources lingering after deletion is complete.
+Your primary tool here will probably be Actions.
+
+### Key Questions
+
+- Are any resources troublesome to manage with infra-as-code? Databases, for example, are commonly challenging to manage using infra-as-code tools.
+- What resources may be created dynamically after installation? Kubernetes operators are a typical culprit here, often creating resources outside of kubernetes that are not managed by your own infra-as-code.
+- Are all resources created tagged? If so, even if they are created outside of your infra-as-code, you can find and deletem them using an action.
+- What race conditions may happen while deleting resources? Are component dependencies enough to handle these? Again, you can implement work-arounds here using actions.
+
+### Checklist
+
+- runbooks
+  - customer uninstallation guide
+  - vendor uninstallation guide
+- actions
+  - cleanup lingering resources based on tags

@@ -1,0 +1,59 @@
+---
+title: 'Package'
+description: ""
+icon: 'code'
+---
+
+You package an app for Nuon by creating an app config. This is where you will define what environment the app needs, what components it consists of, and how it will be configured during deployment.
+
+## Inputs
+
+Inputs are how your app be configured during deployment. These will predictably include basic app preferences. With BYOC, however, the customer may also want to configure things that impact cost and security. For example:
+
+- Integrate with their own auth provider, such as Auth0.
+- Configure what VPC to deploy in for security reasons.
+- Configure what size VM instance to use, to manage cost.
+
+To keep things managable, we recommend grouping inputs by domain. For example: App Inputs, VPC Configuration, Hosting and Auto-Scaling Options.
+
+### Checklist
+
+- App preferences
+- Custom DNS configuration
+- Auth provider / SSO integration
+- Networking and hosting options
+- Inputs are grouped in a logical way
+
+## Sandbox
+
+You define your app's environment using a sandbox.
+The most important consideration here is whether your app will run in it's own, isolated network, or be deployed into a customer-provided network.
+If the latter, you will need to provide inputs to configure what network to deploy in, and other options that will depend on the cloud platform your deploying to.
+
+### Checklist
+
+- Pin the sandbox version you want to use, or point to a custom sandbox in your own repo
+- Configure the network to meet security requirements
+  - Private subnets
+  - Public subnets (if needed)
+  - Database subnets (if needed)
+  - WAF (if needed)
+- Configure auto-scaling and clustering
+- Configure security groups
+
+## Components
+
+Components are how you model your app's architecture in Nuon.
+Think about what the dependencies are between the resources in your architecture.
+You can define these in your config to ensure they are deployed in the right order and integrate correctly once deployed.
+
+You will typically need to manage DNS with your components, to host your application at a private or public URL. Customers often want to see apps hosted at a subdomain under a domain they own, which will require integrating with a DNS zone that they manage.
+
+Databases may require special attentions. They often require migrations to be run, which you can implement separately with actions. Because they are stateful, they also tend not be troublesome to manage using infra-as-code tools. You should consider the operational needs of the databases you are using, and implement actions to handle these.
+
+### Checklist
+
+- All the components in your architecture have been defined
+- Dependencies are configured between components using outputs and variables
+- Components deploy in the correct order, and there are no race conditions that can trip up deployment partway through
+- Database migrations and other stateful operations are implemented as actions
