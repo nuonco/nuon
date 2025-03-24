@@ -8,7 +8,7 @@ export function jobHrefPath(job: TRunnerJob): string {
       hrefPath = `apps/${job?.metadata?.app_id}/components/${job?.metadata?.component_id}/builds/${job?.metadata?.component_build_id}`
       break
     case 'sandbox':
-      hrefPath = `installs/${job?.metadata?.install_id}/runs/${job?.metadata?.sandbox_run_id}`
+      hrefPath = `installs/${job?.metadata?.install_id}/sandbox/${job?.metadata?.sandbox_run_id}`
       break
     case 'sync':
       hrefPath = `installs/${job?.metadata?.install_id}/components/${job?.metadata?.component_id}/deploys/${job?.metadata?.deploy_id}`

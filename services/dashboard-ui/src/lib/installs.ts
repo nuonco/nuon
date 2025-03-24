@@ -395,3 +395,16 @@ export async function forgetInstall({ installId, orgId }: IForgetInstall) {
     path: `installs/${installId}/forget`,
   })
 }
+
+export interface IGetInstallSandboxRuns extends IGetInstall {}
+
+export async function getInstallSandboxRuns({
+  installId,
+  orgId,
+}: IGetInstallSandboxRuns) {
+  return queryData<Array<TSandboxRun>>({
+    errorMessage: 'Unable to get install sandbox runs',
+    orgId,
+    path: `installs/${installId}/sandbox-runs`,
+  })
+}

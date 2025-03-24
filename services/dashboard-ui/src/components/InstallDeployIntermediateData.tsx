@@ -5,7 +5,7 @@ import type { TInstall, TInstallDeployPlanIntermediateData } from '@/types'
 
 interface IInstallDeployIntermediateData {
   data: TInstallDeployPlanIntermediateData
-  install: TInstall
+  install?: TInstall
 }
 
 export const InstallDeployIntermediateData: FC<
