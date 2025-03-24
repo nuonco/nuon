@@ -33,7 +33,8 @@ export const EventStatus: FC<{ status?: string }> = ({
       status === 'in-progress' ||
       status === 'building' ||
       status === 'queued' ||
-      status === 'planning' ||
+    status === 'planning' ||
+          status === 'provisioning' ||
       status === 'syncing' ||
       status === 'deploying' ||
       status === 'available',
