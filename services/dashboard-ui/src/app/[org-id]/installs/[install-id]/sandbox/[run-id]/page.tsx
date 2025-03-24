@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { type FC, Suspense } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
@@ -9,6 +11,9 @@ import {
   CodeViewer,
   DashboardContent,
   Duration,
+  ErrorFallback,
+  InstallDeployIntermediateData,
+  Loading,
   LogStreamProvider,
   OperationLogsSection,
   SandboxRunStatus,
@@ -17,7 +22,7 @@ import {
   Time,
   ToolTip,
 } from '@/components'
-import { getInstall, getInstallSandboxRun } from '@/lib'
+import { getInstall, getInstallSandboxRun, getRunnerJobPlan } from '@/lib'
 import { CANCEL_RUNNER_JOBS, sentanceCase } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -54,6 +59,10 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
         {
           href: `/${orgId}/installs/${install.id}/history`,
           text: install.name,
+        },
+        {
+          href: `/${orgId}/installs/${install.id}/sandbox`,
+          text: 'Sandbox',
         },
         {
           href: `/${orgId}/installs/${install.id}/runs/${sandboxRun.id}`,
@@ -139,7 +148,7 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
           </Section>
 
           {sandboxRun?.runner_job?.outputs ? (
-            <Section heading="Sandbox outputs">
+            <Section className="flex-initial" heading="Sandbox outputs">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <Text variant="med-12">Outputs</Text>
@@ -160,8 +169,42 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
               </div>
             </Section>
           ) : null}
+
+          {/* <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+              fallback={
+              <Section>
+              <Loading
+              loadingText="Loading intermediate data..."
+              variant="stack"
+              />
+              </Section>
+              }
+              >
+              <LoadSandboxRunPlan
+              install={install}
+              orgId={orgId}
+              runnerJobId={sandboxRun?.runner_job?.id}
+              />
+              </Suspense>
+              </ErrorBoundary> */}
         </div>
       </div>
     </DashboardContent>
   )
 })
+
+const LoadSandboxRunPlan = async ({ install, orgId, runnerJobId }) => {
+  const plan = await getRunnerJobPlan({ orgId, runnerJobId }).catch(
+    console.error
+  )
+  return plan ? (
+    <Section heading="Sandbox indermediate data">
+      {JSON.stringify(plan)}
+      <InstallDeployIntermediateData
+        install={install}
+        data={plan?.waypointPlan?.variables?.intermediaData}
+      />
+    </Section>
+  ) : null
+}
