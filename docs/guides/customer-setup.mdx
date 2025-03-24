@@ -1,0 +1,30 @@
+---
+title: 'Customer Setup'
+description: ""
+icon: 'code'
+---
+
+## Best Practices for Customer Accounts
+
+### Security in a Shared-Responsibility Context
+
+BYOC requires a shared-responsibility approach to security. Your customer is responsible for the security of their own account and the environment the app is running in. You are respnsible for the security of the application, and any data it processes and stores. Ensure you are mindful of how any sensitive data or credentials are handled.
+
+### Networking
+
+Shared ownership can make deploying and manages network components challenging. Try to think ahead of time about
+
+- Where the app will be hosted by your customer. What domains and subdomains will be used? Who will provide them and configure them during installation?
+- What subnets will be needed? Should certain resources be isolated?
+
+### Isolated vs Customer-Managed Networks
+
+We recommend deploying your app into it's own, dedicated network if possible. In many cases, though, this will not be possible, and the customer will bring their own network for you to deploy in. This raises the bar for ensuring your app is secure, well-understood, and permissions are minimally scoped.
+
+### Cost
+
+One of the benefits of BYOC is that you will not need to host the app for you user. But that does not mean you don't need to care about how much it costs to host, as your customer will now be on the hook for this.
+
+## Permissions
+
+## Updates
