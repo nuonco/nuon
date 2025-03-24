@@ -27,6 +27,7 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 	etags["job_operation"] = string(job.Operation)
 	etags["runner_id"] = job.RunnerID
 	etags["org_id"] = string(job.OrgID)
+	etags["org_name"] = job.Org.Name
 	etags["available_timeout"] = job.AvailableTimeout.String()
 	etags["overall_timeout"] = job.OverallTimeout.String()
 
