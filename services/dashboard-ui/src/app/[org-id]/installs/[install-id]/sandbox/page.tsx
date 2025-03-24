@@ -1,0 +1,216 @@
+import type { Metadata } from 'next'
+import { type FC, Suspense } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
+import { withPageAuthRequired } from '@auth0/nextjs-auth0'
+import { CaretRight } from '@phosphor-icons/react/dist/ssr'
+import {
+  AppSandboxConfig,
+  AppSandboxVariables,
+  ClickToCopyButton,
+  CodeViewer,
+  DashboardContent,
+  ErrorFallback,
+  InstallCloudPlatform,
+  InstallStatuses,
+  InstallPageSubNav,
+  InstallManagementDropdown,
+  Link,
+  Loading,
+  SandboxHistory,
+  Section,
+  Text,
+  Time,
+} from '@/components'
+import {
+  getInstall,
+  getInstallSandboxRuns,
+  getInstallSandboxRun,
+  getRunnerJob,
+} from '@/lib'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const installId = params?.['install-id'] as string
+  const orgId = params?.['org-id'] as string
+  const install = await getInstall({ installId, orgId })
+
+  return {
+    title: `${install.name} | Sandbox`,
+  }
+}
+
+export default withPageAuthRequired(async function InstallComponent({
+  params,
+}) {
+  const installId = params?.['install-id'] as string
+  const orgId = params?.['org-id'] as string
+  const install = await getInstall({ installId, orgId })
+
+  return (
+    <DashboardContent
+      breadcrumb={[
+        { href: `/${orgId}/installs`, text: 'Installs' },
+        {
+          href: `/${orgId}/installs/${install.id}/components`,
+          text: install.name,
+        },
+        {
+          href: `/${orgId}/installs/${install.id}/sandbox`,
+          text: 'Sandbox',
+        },
+      ]}
+      heading={install.name}
+      headingUnderline={install.id}
+      statues={
+        <div className="flex items-start gap-8">
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Created
+            </Text>
+            <Time variant="reg-12" time={install?.created_at} />
+          </span>
+
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Updated
+            </Text>
+            <Time variant="reg-12" time={install?.updated_at} />
+          </span>
+          <InstallStatuses initInstall={install} shouldPoll />
+
+          <InstallManagementDropdown
+            orgId={orgId}
+            hasInstallComponents={Boolean(install?.install_components?.length)}
+            install={install}
+          />
+        </div>
+      }
+      meta={
+        <InstallPageSubNav
+          installId={installId}
+          orgId={orgId}
+          runnerId={install?.runner_id}
+        />
+      }
+    >
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-y  md:divide-x">
+        <div className="md:col-span-8 divide-y flex-auto flex flex-col">
+          <Section
+            actions={
+              <Text>
+                <Link href={`/${orgId}/apps/${install.app_id}`}>
+                  Details
+                  <CaretRight />
+                </Link>
+              </Text>
+            }
+            className="flex-initial"
+            heading="Sandbox config"
+            childrenClassName="flex flex-col gap-4"
+          >
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Loading
+                    loadingText="Loading sandbox config..."
+                    variant="stack"
+                  />
+                }
+              >
+                <AppSandboxConfig sandboxConfig={install?.app_sandbox_config} />
+                <AppSandboxVariables
+                  variables={install?.app_sandbox_config?.variables}
+                />
+              </Suspense>
+            </ErrorBoundary>
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Loading
+                    variant="stack"
+                    loadingText="Loading latest sandbox outputs..."
+                  />
+                }
+              >
+                <LoadLatestOutputs
+                  installId={installId}
+                  orgId={orgId}
+                  installSandboxRunId={install?.install_sandbox_runs?.at(0)?.id}
+                />
+              </Suspense>
+            </ErrorBoundary>
+          </Section>
+          <Section heading="Cloud platform">
+            <InstallCloudPlatform install={install} />
+          </Section>
+        </div>
+
+        <div className="divide-y flex flex-col md:col-span-4">
+          <Section heading="Sandbox history">
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Loading
+                    loadingText="Loading sandbox history..."
+                    variant="stack"
+                  />
+                }
+              >
+                <LoadSandboxHistory installId={installId} orgId={orgId} />
+              </Suspense>
+            </ErrorBoundary>
+          </Section>
+        </div>
+      </div>
+    </DashboardContent>
+  )
+})
+
+const LoadSandboxHistory: FC<{
+  installId: string
+  orgId: string
+}> = async ({ installId, orgId }) => {
+  const sandboxRuns = await getInstallSandboxRuns({
+    installId,
+    orgId,
+  }).catch(console.error)
+
+  return sandboxRuns ? (
+    <SandboxHistory
+      installId={installId}
+      orgId={orgId}
+      initSandboxRuns={sandboxRuns}
+      shouldPoll
+    />
+  ) : (
+    <Text>Unable to load sandbox history.</Text>
+  )
+}
+
+const LoadLatestOutputs: FC<{
+  installSandboxRunId: string
+  installId: string
+  orgId: string
+}> = async ({ installId, orgId, installSandboxRunId }) => {
+  const sandboxRun = await getInstallSandboxRun({
+    installId,
+    orgId,
+    installSandboxRunId,
+  })
+  const runnerJob = await getRunnerJob({
+    orgId,
+    runnerJobId: sandboxRun?.runner_job?.id,
+  }).catch(console.error)
+
+  return runnerJob ? (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <Text variant="med-12">Outputs</Text>
+        <ClickToCopyButton textToCopy={JSON.stringify(runnerJob.outputs)} />
+      </div>
+      <CodeViewer
+        initCodeSource={JSON.stringify(runnerJob.outputs, null, 2)}
+        language="json"
+      />
+    </div>
+  ) : null
+}

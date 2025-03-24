@@ -2,6 +2,7 @@
 // TODO(nnnat): URLSearchParams typing is terrible.
 // What we're doing now is legit but TS doesn't think so.
 import type {
+  TInstallDeployPlan,
   TRunner,
   TRunnerJob,
   TLogStream,
@@ -153,5 +154,21 @@ export async function getRunnerLatestHeartbeat({
     errorMessage: 'Unable to retrieve latest runner heartbeat.',
     orgId,
     path: `runners/${runnerId}/latest-heart-beat`,
+  })
+}
+
+export interface IGetRunnerJobPlan {
+  orgId: string
+  runnerJobId: string
+}
+
+export async function getRunnerJobPlan({
+  orgId,
+  runnerJobId,
+}: IGetRunnerJobPlan) {
+  return queryData<any>({
+    errorMessage: 'Unable to retrieve runner job plant',
+    orgId,
+    path: `runner-jobs/${runnerJobId}/plan`,
   })
 }
