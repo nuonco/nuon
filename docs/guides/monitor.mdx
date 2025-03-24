@@ -1,0 +1,19 @@
+---
+title: 'Monitor'
+description: ""
+icon: 'code'
+---
+
+You will want to be aware of the status of each customer's install. Make sure you have all the required monitoring in place so you will have the visibility you need.
+
+## Key Questions
+
+- What are the key metrics you need to watch to ensure your app is working?
+
+## Checklist
+
+- healthcheck actions running on a cron trigger
+  - monitor availability of HTTP and other API endpoints
+  - monitor service health endpoints
+  - on k8s, monitor pod readiness and liveness probes
+  - monitor memory, CPU, disk, and other system-level metrics of services, databases, etc
