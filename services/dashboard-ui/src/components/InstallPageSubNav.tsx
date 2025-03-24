@@ -18,12 +18,12 @@ export const InstallPageSubNav: FC<IInstallPageSubNav> = ({
       links={[
         { href: `/${orgId}/installs/${installId}`, text: 'Overview' },
         {
-          href: `/${orgId}/installs/${installId}/history`,
-          text: 'History',
-        },
-        {
           href: `/${orgId}/installs/${installId}/components`,
           text: 'Components',
+        },
+        {
+          href: `/${orgId}/installs/${installId}/sandbox`,
+          text: 'Sandbox',
         },
         RUNNERS && runnerId?.length
           ? {
@@ -37,6 +37,10 @@ export const InstallPageSubNav: FC<IInstallPageSubNav> = ({
               text: 'Actions',
             }
           : undefined,
+        {
+          href: `/${orgId}/installs/${installId}/history`,
+          text: 'History',
+        },
       ]}
     />
   )
