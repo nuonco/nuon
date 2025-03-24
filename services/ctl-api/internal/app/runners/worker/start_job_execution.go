@@ -98,8 +98,8 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 					Text:           "Job is ready for execution, but runner did not become healthy within the available timeout",
 					Tags:           metrics.ToTags(etags),
 					SourceTypeName: "nuon-jobsys",
-					Priority:       statsd.Normal,
-					AlertType:      statsd.Error,
+					Priority:       statsd.Low,
+					AlertType:      statsd.Warning, // This will be retried, so just a warn, not an error
 					AggregationKey: "runner-job-timeout-waiting-for-healthy-runner",
 				})
 				return true, false, nil
