@@ -24,7 +24,6 @@ import {
   getComponent,
   getComponentConfig,
   getInstall,
-  getInstallComponent,
   getInstallComponentDeploys,
   getInstallComponentOutputs,
   getLatestComponentBuild,

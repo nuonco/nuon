@@ -135,7 +135,7 @@ export const InstallHistory: FC<IInstallHistory> = ({
           ((e?.operation === 'provision' ||
             e?.operation === 'reprovision' ||
             e?.operation === 'deprovision') &&
-            `/${e.org_id}/installs/${e.install_id}/runs/${e.payload_id}`) ||
+            `/${e.org_id}/installs/${e.install_id}/sandbox/${e.payload_id}`) ||
           null,
       }))}
     />
