@@ -32,23 +32,23 @@ func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Vali
 	return nil
 }
 
-// @ID CreateTerraformModuleComponentConfig
-// @Summary	create a terraform component config
-// @Description.markdown	create_terraform_component_config.md
-// @Param			req				body	CreateTerraformModuleComponentConfigRequest	true	"Input"
-// @Param			component_id	path	string										true	"component ID"
-// @Tags			components
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.TerraformModuleComponentConfig
-// @Router			/v1/components/{component_id}/configs/terraform-module [POST]
+//	@ID						CreateTerraformModuleComponentConfig
+//	@Summary				create a terraform component config
+//	@Description.markdown	create_terraform_component_config.md
+//	@Param					req				body	CreateTerraformModuleComponentConfigRequest	true	"Input"
+//	@Param					component_id	path	string										true	"component ID"
+//	@Tags					components
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.TerraformModuleComponentConfig
+//	@Router					/v1/components/{component_id}/configs/terraform-module [POST]
 func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 

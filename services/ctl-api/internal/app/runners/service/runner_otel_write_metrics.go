@@ -14,23 +14,23 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
 )
 
-// @ID RunnerOtelWriteMetrics
-// @Summary	runner write metrics
-// @Description.markdown runner_otel_write_metrics.md
-// @Param			runner_id	path	string	true	"runner ID"
-// @Param			req				body	interface{} true	"Input"
-// @Tags runners/runner
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	string
-// @Router			/v1/runners/{runner_id}/metrics [POST]
+//	@ID						RunnerOtelWriteMetrics
+//	@Summary				runner write metrics
+//	@Description.markdown	runner_otel_write_metrics.md
+//	@Param					runner_id	path	string		true	"runner ID"
+//	@Param					req			body	interface{}	true	"Input"
+//	@Tags					runners/runner
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	string
+//	@Router					/v1/runners/{runner_id}/metrics [POST]
 func (s *service) OtelWriteMetrics(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 

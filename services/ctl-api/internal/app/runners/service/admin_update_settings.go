@@ -19,17 +19,17 @@ type AdminUpdateRunnerSettingsRequest struct {
 	AWSIAMRoleARN         string `json:"aws_iam_role_arn"`
 }
 
-// @ID AdminUpdateRunnerSettings
-// @Summary	update a runner's settings
-// @Description.markdown update_runner_settings.md
-// @Param		runner_id	path	string						true	"runner ID"
-// @Param		req				body	AdminUpdateRunnerSettingsRequest	true	"Input"
-// @Tags runners/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200	{object} app.RunnerGroupSettings
-// @Router		/v1/runners/{runner_id}/settings [PATCH]
+//	@ID						AdminUpdateRunnerSettings
+//	@Summary				update a runner's settings
+//	@Description.markdown	update_runner_settings.md
+//	@Param					runner_id	path	string								true	"runner ID"
+//	@Param					req			body	AdminUpdateRunnerSettingsRequest	true	"Input"
+//	@Tags					runners/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{object}	app.RunnerGroupSettings
+//	@Router					/v1/runners/{runner_id}/settings [PATCH]
 func (s *service) AdminUpdateRunnerSettings(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 

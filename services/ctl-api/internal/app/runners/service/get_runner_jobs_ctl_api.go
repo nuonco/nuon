@@ -14,29 +14,29 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// @ID GetRunnerJobs
-// @Summary	get runner jobs
-// @Description.markdown	get_runner_jobs.md
-// @Param   group query string false	"job group"
-// @Param   groups query string false	"job groups"
-// @Param   status query string false	"job status"
-// @Param   statuses query string false	"job statuses"
-// @Param			runner_id	path	string	true	"runner ID"
-// @Param   offset query int	 false	"offset of jobs to return"	Default(0)
-// @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
-// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
-// @Tags    runners
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{array}	app.RunnerJob
-// @Router			/v1/runners/{runner_id}/jobs [get]
+//	@ID						GetRunnerJobs
+//	@Summary				get runner jobs
+//	@Description.markdown	get_runner_jobs.md
+//	@Param					group						query	string	false	"job group"
+//	@Param					groups						query	string	false	"job groups"
+//	@Param					status						query	string	false	"job status"
+//	@Param					statuses					query	string	false	"job statuses"
+//	@Param					runner_id					path	string	true	"runner ID"
+//	@Param					offset						query	int		false	"offset of jobs to return"	Default(0)
+//	@Param					limit						query	int		false	"limit of jobs to return"	Default(10)
+//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+//	@Tags					runners
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{array}		app.RunnerJob
+//	@Router					/v1/runners/{runner_id}/jobs [get]
 func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 

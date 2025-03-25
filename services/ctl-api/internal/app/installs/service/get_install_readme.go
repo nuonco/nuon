@@ -20,23 +20,23 @@ type Readme struct {
 	Rendered string `json:"readme"`
 }
 
-// @ID GetInstallReadme
-// @Summary	get install readme rendered with
-// @Description.markdown	get_install_readme.md
-// @Param			install_id	path	string	true	"install ID"
-// @Tags			installs
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object} Readme
-// @Success		206				{object} Readme
-// @Router			/v1/installs/{install_id}/readme [get]
+//	@ID						GetInstallReadme
+//	@Summary				get install readme rendered with
+//	@Description.markdown	get_install_readme.md
+//	@Param					install_id	path	string	true	"install ID"
+//	@Tags					installs
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	Readme
+//	@Success				206	{object}	Readme
+//	@Router					/v1/installs/{install_id}/readme [get]
 func (s *service) GetInstallReadme(ctx *gin.Context) {
 	// get install state
 	installID := ctx.Param("install_id")

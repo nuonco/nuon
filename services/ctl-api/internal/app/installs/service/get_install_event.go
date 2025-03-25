@@ -9,23 +9,23 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @ID GetInstallEvent
-// @Summary	get an install event
-// @Description.markdown	get_install_event.md
-// @Param			install_id	path	string	true	"install ID"
-// @Param			event_id	path	string	true	"event ID"
-// @Tags			installs
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	app.InstallEvent
-// @Router			/v1/installs/{install_id}/events/{event_id} [get]
+//	@ID						GetInstallEvent
+//	@Summary				get an install event
+//	@Description.markdown	get_install_event.md
+//	@Param					install_id	path	string	true	"install ID"
+//	@Param					event_id	path	string	true	"event ID"
+//	@Tags					installs
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	app.InstallEvent
+//	@Router					/v1/installs/{install_id}/events/{event_id} [get]
 func (s *service) GetInstallEvent(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	eventID := ctx.Param("event_id")

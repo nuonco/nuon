@@ -19,23 +19,23 @@ type CreateRunnerHeartBeatRequest struct {
 	Version string `json:"version"`
 }
 
-// @ID CreateRunnerHeartBeat
-// @Summary	create a runner heart beat
-// @Description.markdown        create_runner_heart_beat.md
-// @Param			req				body	CreateRunnerHeartBeatRequest	true	"Input"
-// @Param			runner_id	path	string	true	"runner job ID"
-// @Tags runners/runner
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.RunnerHeartBeat
-// @Router			/v1/runners/{runner_id}/heart-beats [POST]
+//	@ID						CreateRunnerHeartBeat
+//	@Summary				create a runner heart beat
+//	@Description.markdown	create_runner_heart_beat.md
+//	@Param					req			body	CreateRunnerHeartBeatRequest	true	"Input"
+//	@Param					runner_id	path	string							true	"runner job ID"
+//	@Tags					runners/runner
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.RunnerHeartBeat
+//	@Router					/v1/runners/{runner_id}/heart-beats [POST]
 func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 

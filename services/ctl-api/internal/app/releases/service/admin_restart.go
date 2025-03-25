@@ -11,16 +11,16 @@ import (
 
 type RestartReleaseReleaseRequest struct{}
 
-// @ID AdminRestartRelease
-// @Summary	restart an releases event loop
-// @Description	restart_release.md
-// @Param			release_id	path	string							true	"release ID"
-// @Param			req			body	RestartReleaseReleaseRequest	true	"Input"
-// @Tags			releases/admin
-// @Accept			json
-// @Produce		json
-// @Success		200	{boolean}	true
-// @Router			/v1/releases/{release_id}/admin-restart [POST]
+//	@ID				AdminRestartRelease
+//	@Summary		restart an releases event loop
+//	@Description	restart_release.md
+//	@Param			release_id	path	string							true	"release ID"
+//	@Param			req			body	RestartReleaseReleaseRequest	true	"Input"
+//	@Tags			releases/admin
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{boolean}	true
+//	@Router			/v1/releases/{release_id}/admin-restart [POST]
 func (s *service) RestartRelease(ctx *gin.Context) {
 	releaseID := ctx.Param("release_id")
 

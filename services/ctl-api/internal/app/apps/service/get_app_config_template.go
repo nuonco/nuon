@@ -45,23 +45,23 @@ type AppConfigTemplate struct {
 	Content  string
 }
 
-// @ID GetAppConfigTemplate
-// @Summary	get an app config template
-// @Description.markdown	get_app_config_template.md
-// @Tags			apps
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Param	app_id	path	string				true	"app ID"
-// @Param  type query AppConfigTemplateType true "app template type"
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	AppConfigTemplate
-// @Router			/v1/apps/{app_id}/template-config [get]
+//	@ID						GetAppConfigTemplate
+//	@Summary				get an app config template
+//	@Description.markdown	get_app_config_template.md
+//	@Tags					apps
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Param					app_id	path		string					true	"app ID"
+//	@Param					type	query		AppConfigTemplateType	true	"app template type"
+//	@Failure				400		{object}	stderr.ErrResponse
+//	@Failure				401		{object}	stderr.ErrResponse
+//	@Failure				403		{object}	stderr.ErrResponse
+//	@Failure				404		{object}	stderr.ErrResponse
+//	@Failure				500		{object}	stderr.ErrResponse
+//	@Success				201		{object}	AppConfigTemplate
+//	@Router					/v1/apps/{app_id}/template-config [get]
 func (s *service) GetAppConfigTemplate(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

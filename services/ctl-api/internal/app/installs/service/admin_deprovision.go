@@ -10,17 +10,17 @@ import (
 
 type AdminDeprovisionInstallRequest struct{}
 
-// @ID AdminDeprovisionInstall
-// @Summary	deprovision an install, but keep it in the database
-// @Description.markdown deprovision_install.md
-// @Tags			installs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req			body	AdminDeprovisionInstallRequest	true	"Input"
-// @Param	install_id	path	string	true	"install ID"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/installs/{install_id}/admin-deprovision [POST]
+//	@ID						AdminDeprovisionInstall
+//	@Summary				deprovision an install, but keep it in the database
+//	@Description.markdown	deprovision_install.md
+//	@Tags					installs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req			body	AdminDeprovisionInstallRequest	true	"Input"
+//	@Param					install_id	path	string							true	"install ID"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/installs/{install_id}/admin-deprovision [POST]
 func (s *service) AdminDeprovisionInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	install, err := s.getInstall(ctx, installID)

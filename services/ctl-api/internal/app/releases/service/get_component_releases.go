@@ -10,26 +10,26 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// @ID GetComponentReleases
-// @BasePath	/v1/components
-// @Summary	get all releases for a component
-// @Description.markdown	get_component_releases.md
-// @Param			component_id	path	string	true	"component ID"
-// @Param   offset query int	 false	"offset of results to return"	Default(0)
-// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
-// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
-// @Tags			releases
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{array}		app.ComponentRelease
-// @Router			/v1/components/{component_id}/releases [GET]
+//	@ID						GetComponentReleases
+//	@BasePath				/v1/components
+//	@Summary				get all releases for a component
+//	@Description.markdown	get_component_releases.md
+//	@Param					component_id				path	string	true	"component ID"
+//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
+//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
+//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+//	@Tags					releases
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{array}		app.ComponentRelease
+//	@Router					/v1/components/{component_id}/releases [GET]
 func (s *service) GetComponentReleases(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 

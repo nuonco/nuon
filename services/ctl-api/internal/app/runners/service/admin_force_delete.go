@@ -11,17 +11,17 @@ import (
 
 type AdminForceDeleteRunnerRequest struct{}
 
-// @ID AdminForceDeleteRunner
-// @Summary	force delete a runner
-// @Description.markdown force_delete_runner.md
-// @Tags runners/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req			body	AdminForceDeleteRunnerRequest	true	"Input"
-// @Param	runner_id	path	string	true	"runner ID to force delete"
-// @Produce		json
-// @Success		200	{string}	ok
-// @Router			/v1/runners/{runner_id}/force-delete [POST]
+//	@ID						AdminForceDeleteRunner
+//	@Summary				force delete a runner
+//	@Description.markdown	force_delete_runner.md
+//	@Tags					runners/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req			body	AdminForceDeleteRunnerRequest	true	"Input"
+//	@Param					runner_id	path	string							true	"runner ID to force delete"
+//	@Produce				json
+//	@Success				200	{string}	ok
+//	@Router					/v1/runners/{runner_id}/force-delete [POST]
 func (s *service) AdminForceDeleteRunner(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 	runner, err := s.getRunner(ctx, runnerID)

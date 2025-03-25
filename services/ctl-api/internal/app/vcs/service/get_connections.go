@@ -11,24 +11,24 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// @ID GetOrgVCSConnections
-// @Summary	get vcs connection for an org
-// @Description.markdown	get_org_vcs_connections.md
-// @Param   offset query int	 false	"offset of results to return"	Default(0)
-// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
-// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
-// @Tags			vcs
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{array}		app.VCSConnection
-// @Router			/v1/vcs/connections [get]
+//	@ID						GetOrgVCSConnections
+//	@Summary				get vcs connection for an org
+//	@Description.markdown	get_org_vcs_connections.md
+//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
+//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
+//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+//	@Tags					vcs
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{array}		app.VCSConnection
+//	@Router					/v1/vcs/connections [get]
 func (s *service) GetConnections(ctx *gin.Context) {
 	currentOrg, err := cctx.OrgFromContext(ctx)
 	if err != nil {

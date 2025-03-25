@@ -11,17 +11,17 @@ import (
 
 type RestartRunnerRequest struct{}
 
-// @ID AdminRestartRunner
-// @Summary	restart a runner event loop
-// @Description.markdown restart_runner.md
-// @Param			runner_id	path	string					true	"runner ID"
-// @Param			req			body	RestartRunnerRequest	true	"Input"
-// @Tags runners/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200	{boolean}	true
-// @Router			/v1/runners/{runner_id}/restart [POST]
+//	@ID						AdminRestartRunner
+//	@Summary				restart a runner event loop
+//	@Description.markdown	restart_runner.md
+//	@Param					runner_id	path	string					true	"runner ID"
+//	@Param					req			body	RestartRunnerRequest	true	"Input"
+//	@Tags					runners/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{boolean}	true
+//	@Router					/v1/runners/{runner_id}/restart [POST]
 func (s *service) RestartRunner(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
