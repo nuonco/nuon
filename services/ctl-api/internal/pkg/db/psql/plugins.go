@@ -13,7 +13,7 @@ func (d *database) registerPlugins(db *gorm.DB) error {
 	db.Use(metrics.NewMetricsPlugin(d.MetricsWriter, "psql"))
 	db.Use(afterquery.NewAfterQueryPlugin())
 	db.Use(views.NewViewsPlugin(AllModels()))
-	db.Use(pagination.NewPaginationPlugin())
+	db.Use(pagination.NewOffsetPaginationPlugin())
 
 	return nil
 }

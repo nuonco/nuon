@@ -13,26 +13,26 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-//	@ID						GetRunnerRecentHealthChecks
-//	@Summary				get recent health checks
-//	@Description.markdown	get_runner_recent_health_checks.md
-//	@Param					runner_id					path	string	true	"runner ID"
-//	@Param					window						query	string	false	"window of health checks to return"	Default(1h)
-//	@Param					offset						query	int		false	"offset of results to return"		Default(0)
-//	@Param					limit						query	int		false	"limit of results to return"		Default(10)
-//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
-//	@Tags					runners
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{array}		app.RunnerHealthCheck
-//	@Router					/v1/runners/{runner_id}/recent-health-checks [get]
+// @ID						GetRunnerRecentHealthChecks
+// @Summary				get recent health checks
+// @Description.markdown	get_runner_recent_health_checks.md
+// @Param					runner_id					path	string	true	"runner ID"
+// @Param					window						query	string	false	"window of health checks to return"	Default(1h)
+// @Param					offset						query	int		false	"offset of results to return"		Default(0)
+// @Param					limit						query	int		false	"limit of results to return"		Default(10)
+// @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+// @Tags					runners
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{array}		app.RunnerHealthCheck
+// @Router					/v1/runners/{runner_id}/recent-health-checks [get]
 func (s *service) GetRunnerRecentHealthChecks(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
@@ -65,7 +65,7 @@ func (s *service) getRunnerRecentHealthChecks(ctx *gin.Context, runnerID string,
 	res := s.chDB.WithContext(ctx).
 		Scopes(
 			scopes.WithOverrideTable("runner_health_checks_view_v1"),
-			scopes.WithPagination,
+			scopes.WithOffsetPagination,
 		).
 		Where(app.RunnerHealthCheck{
 			RunnerID: runnerID,

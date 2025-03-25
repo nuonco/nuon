@@ -17,26 +17,26 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-//	@ID						GetInstallActionWorkflowRecentRuns
-//	@Summary				get recent runs for an action workflow by install id
-//	@Description.markdown	get_install_action_workflow_recent_runs.md
-//	@Param					install_id					path	string	true	"install ID"
-//	@Param					action_workflow_id			path	string	true	"action workflow ID"
-//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
-//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
-//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
-//	@Tags					actions
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{object}	app.InstallActionWorkflow
-//	@Router					/v1/installs/{install_id}/action-workflows/{action_workflow_id}/recent-runs [get]
+// @ID						GetInstallActionWorkflowRecentRuns
+// @Summary				get recent runs for an action workflow by install id
+// @Description.markdown	get_install_action_workflow_recent_runs.md
+// @Param					install_id					path	string	true	"install ID"
+// @Param					action_workflow_id			path	string	true	"action workflow ID"
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+// @Tags					actions
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.InstallActionWorkflow
+// @Router					/v1/installs/{install_id}/action-workflows/{action_workflow_id}/recent-runs [get]
 func (s *service) GetInstallActionWorkflowRecentRuns(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
@@ -91,7 +91,7 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 		Preload("ActionWorkflow.Configs.Steps.ConnectedGithubVCSConfig").
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
 			return db.
-				Scopes(scopes.WithPagination).
+				Scopes(scopes.WithOffsetPagination).
 				Preload("CreatedBy").
 				Order("install_action_workflow_runs.created_at DESC").
 				Limit(limit)
