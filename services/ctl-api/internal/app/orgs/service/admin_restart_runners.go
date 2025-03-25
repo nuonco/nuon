@@ -11,17 +11,17 @@ import (
 
 type RestartOrgRunnersRequest struct{}
 
-// @ID AdminRestartOrgRunners
-// @Summary	restart all runners in an org
-// @Description.markdown restart_org_runners.md
-// @Param			org_id	path	string				true	"org ID"
-// @Param			req		body	RestartOrgRunnersRequest	true	"Input"
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200	{boolean}	true
-// @Router			/v1/orgs/{org_id}/admin-restart-runners [POST]
+//	@ID						AdminRestartOrgRunners
+//	@Summary				restart all runners in an org
+//	@Description.markdown	restart_org_runners.md
+//	@Param					org_id	path	string						true	"org ID"
+//	@Param					req		body	RestartOrgRunnersRequest	true	"Input"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{boolean}	true
+//	@Router					/v1/orgs/{org_id}/admin-restart-runners [POST]
 func (s *service) AdminRestartRunners(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 

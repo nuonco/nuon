@@ -14,16 +14,16 @@ type AdminUpdateInstallRunnerRequest struct {
 	ContainerImageTag string `json:"container_image_tag"`
 }
 
-// @ID AdminUpdateInstallRunner
-// @Description.markdown update_install_runner.md
-// @Param			install_id	path	string	true	"install ID for your current install"
-// @Tags			installs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req	body	AdminUpdateInstallRunnerRequest	true	"Input"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/installs/{install_id}/admin-update-runner [PATCH]
+//	@ID						AdminUpdateInstallRunner
+//	@Description.markdown	update_install_runner.md
+//	@Param					install_id	path	string	true	"install ID for your current install"
+//	@Tags					installs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req	body	AdminUpdateInstallRunnerRequest	true	"Input"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/installs/{install_id}/admin-update-runner [PATCH]
 func (s *service) AdminUpdateInstallRunner(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

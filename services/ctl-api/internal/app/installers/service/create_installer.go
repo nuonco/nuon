@@ -41,22 +41,22 @@ func (c *CreateInstallerRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID CreateInstaller
-// @Summary	create an installer
-// @Description.markdown	create_installer.md
-// @Tags installers
-// @Accept			json
-// @Param			req	body	CreateInstallerRequest	true	"Input"
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.Installer
-// @Router			/v1/installers [POST]
+//	@ID						CreateInstaller
+//	@Summary				create an installer
+//	@Description.markdown	create_installer.md
+//	@Tags					installers
+//	@Accept					json
+//	@Param					req	body	CreateInstallerRequest	true	"Input"
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.Installer
+//	@Router					/v1/installers [POST]
 func (s *service) CreateInstaller(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

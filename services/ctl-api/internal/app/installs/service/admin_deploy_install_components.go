@@ -11,17 +11,17 @@ import (
 
 type AdminDeployInstallComponentsRequest struct{}
 
-// @ID AdminDeployInstallComponents
-// @Summary	deploy all components on an install
-// @Description.markdown deploy_install_components.md
-// @Param			install_id	path	string					true	"install ID"
-// @Param			req			body	AdminDeployInstallComponentsRequest	true	"Input"
-// @Tags			installs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200	{boolean}	true
-// @Router			/v1/installs/{install_id}/admin-deploy-components [POST]
+//	@ID						AdminDeployInstallComponents
+//	@Summary				deploy all components on an install
+//	@Description.markdown	deploy_install_components.md
+//	@Param					install_id	path	string								true	"install ID"
+//	@Param					req			body	AdminDeployInstallComponentsRequest	true	"Input"
+//	@Tags					installs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{boolean}	true
+//	@Router					/v1/installs/{install_id}/admin-deploy-components [POST]
 func (s *service) AdminDeployInstallComponents(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

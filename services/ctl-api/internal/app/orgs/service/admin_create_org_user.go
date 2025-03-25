@@ -14,18 +14,18 @@ type AdminCreateOrgUserRequest struct {
 	Email string `json:"email"`
 }
 
-// @ID AdminAddOrgUser
-// @BasePath	/v1/orgs
-// @Summary	Add a user to an org
-// @Description.markdown create_org_user.md
-// @Param			org_id	path	string	true	"org ID to add user too"
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Param			req	body	AdminCreateOrgUserRequest	true	"Input"
-// @Accept			json
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/orgs/{org_id}/admin-add-user [POST]
+//	@ID						AdminAddOrgUser
+//	@BasePath				/v1/orgs
+//	@Summary				Add a user to an org
+//	@Description.markdown	create_org_user.md
+//	@Param					org_id	path	string	true	"org ID to add user too"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Param					req	body	AdminCreateOrgUserRequest	true	"Input"
+//	@Accept					json
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/orgs/{org_id}/admin-add-user [POST]
 func (s *service) CreateOrgUser(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 

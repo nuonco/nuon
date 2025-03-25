@@ -15,17 +15,17 @@ type OrgAddLogoRequest struct {
 	LogoURL string `validate:"required"`
 }
 
-// @ID AdminAddOrgLogo
-// @Summary add a custom logo for an org
-// @Description.markdown admin_add_org_logo.md
-// @Param			org_id	path	string	true	"org ID or name to update"
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req	body	OrgAddLogoRequest	true	"Input"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/orgs/{org_id}/admin-add-logo [POST]
+//	@ID						AdminAddOrgLogo
+//	@Summary				add a custom logo for an org
+//	@Description.markdown	admin_add_org_logo.md
+//	@Param					org_id	path	string	true	"org ID or name to update"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req	body	OrgAddLogoRequest	true	"Input"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/orgs/{org_id}/admin-add-logo [POST]
 func (s *service) AdminAddLogo(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 

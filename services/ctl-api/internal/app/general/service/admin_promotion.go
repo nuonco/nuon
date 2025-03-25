@@ -13,16 +13,16 @@ type AdminPromotionRequest struct {
 	Tag string `json:"tag"`
 }
 
-// @ID AdminPromotion
-// @Summary	promotion callback.
-// @Description.markdown promotion.md
-// @Param			req	body	AdminPromotionRequest	true	"Input"
-// @Tags general/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		201	{string} ok
-// @Router			/v1/general/promotion [POST]
+//	@ID						AdminPromotion
+//	@Summary				promotion callback.
+//	@Description.markdown	promotion.md
+//	@Param					req	body	AdminPromotionRequest	true	"Input"
+//	@Tags					general/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/general/promotion [POST]
 func (s *service) AdminPromotion(ctx *gin.Context) {
 	var req AdminPromotionRequest
 	if err := ctx.BindJSON(&req); err != nil {

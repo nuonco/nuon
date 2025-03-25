@@ -10,22 +10,22 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @ID GetInstallRunnerGroup
-// @Summary	Get an install's runner group
-// @Description.markdown	get_install_runner_group.md
-// @Tags  installs
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Param			install_id	path	string	true	"install ID"
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	app.RunnerGroup
-// @Router			/v1/installs/{install_id}/runner-group [GET]
+//	@ID						GetInstallRunnerGroup
+//	@Summary				Get an install's runner group
+//	@Description.markdown	get_install_runner_group.md
+//	@Tags					installs
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Param					install_id	path		string	true	"install ID"
+//	@Failure				400			{object}	stderr.ErrResponse
+//	@Failure				401			{object}	stderr.ErrResponse
+//	@Failure				403			{object}	stderr.ErrResponse
+//	@Failure				404			{object}	stderr.ErrResponse
+//	@Failure				500			{object}	stderr.ErrResponse
+//	@Success				200			{object}	app.RunnerGroup
+//	@Router					/v1/installs/{install_id}/runner-group [GET]
 func (s *service) GetInstallRunnerGroup(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

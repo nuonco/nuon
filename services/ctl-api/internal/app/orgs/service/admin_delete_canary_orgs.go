@@ -15,16 +15,16 @@ type AdminDeleteCanaryOrgsRequest struct {
 	Force bool `json:"force"`
 }
 
-// @ID AdminDeleteCanaryOrgs
-// @Summary delete canary orgs
-// @Description.markdown delete_org.md
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req	body	AdminDeleteCanaryOrgsRequest	true	"Input"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/orgs/admin-delete-canarys [POST]
+//	@ID						AdminDeleteCanaryOrgs
+//	@Summary				delete canary orgs
+//	@Description.markdown	delete_org.md
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req	body	AdminDeleteCanaryOrgsRequest	true	"Input"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/orgs/admin-delete-canarys [POST]
 func (s *service) AdminDeleteCanaryOrgs(ctx *gin.Context) {
 	orgs, err := s.getCanaryOrgs(ctx)
 	if err != nil {

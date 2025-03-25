@@ -30,23 +30,23 @@ func (c *CreateAppSandboxConfigRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID CreateAppSandboxConfig
-// @Summary	create an app sandbox config
-// @Description.markdown	create_app_sandbox_config.md
-// @Tags			apps
-// @Accept			json
-// @Param			req	body	CreateAppSandboxConfigRequest	true	"Input"
-// @Produce		json
-// @Param			app_id	path	string				true	"app ID"
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.AppSandboxConfig
-// @Router			/v1/apps/{app_id}/sandbox-config [post]
+//	@ID						CreateAppSandboxConfig
+//	@Summary				create an app sandbox config
+//	@Description.markdown	create_app_sandbox_config.md
+//	@Tags					apps
+//	@Accept					json
+//	@Param					req	body	CreateAppSandboxConfigRequest	true	"Input"
+//	@Produce				json
+//	@Param					app_id	path	string	true	"app ID"
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.AppSandboxConfig
+//	@Router					/v1/apps/{app_id}/sandbox-config [post]
 func (s *service) CreateAppSandboxConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
