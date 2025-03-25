@@ -13,27 +13,27 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-//	@ID						GetRunnerJobs
-//	@Summary				get runner jobs
-//	@Description.markdown	get_runner_jobs.md
-//	@Param					runner_id					path	string	true	"runner ID"
-//	@Param					group						query	string	false	"job group"						Default(any)
-//	@Param					status						query	string	false	"job status"					Default(available)
-//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
-//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
-//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
-//	@Tags					runners/runner
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{array}		app.RunnerJob
-//	@Router					/v1/runners/{runner_id}/jobs [get]
+// @ID						GetRunnerJobs
+// @Summary				get runner jobs
+// @Description.markdown	get_runner_jobs.md
+// @Param					runner_id					path	string	true	"runner ID"
+// @Param					group						query	string	false	"job group"						Default(any)
+// @Param					status						query	string	false	"job status"					Default(available)
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+// @Tags					runners/runner
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{array}		app.RunnerJob
+// @Router					/v1/runners/{runner_id}/jobs [get]
 func (s *service) GetRunnerJobs(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
@@ -78,7 +78,7 @@ func (s *service) getRunnerJobs(ctx *gin.Context, runnerID string, status app.Ru
 	res := s.db.WithContext(ctx).
 		Scopes(
 			scopes.WithDisableViews,
-			scopes.WithPagination,
+			scopes.WithOffsetPagination,
 		).
 		Limit(limit).
 		Where(where).

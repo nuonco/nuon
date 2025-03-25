@@ -28,7 +28,7 @@ type middleware struct {
 }
 
 func (m middleware) Name() string {
-	return "pagination"
+	return "offset_pagination"
 }
 
 func (m middleware) Handler() gin.HandlerFunc {
@@ -70,7 +70,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			Limit:  limit,
 		}
 
-		cctx.SetPaginationGinCtx(ctx, paginationQuery)
+		cctx.SetOffPaginationGinCtx(ctx, paginationQuery)
 		ctx.Next()
 	}
 }

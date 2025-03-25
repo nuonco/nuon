@@ -14,24 +14,24 @@ import (
 	"gorm.io/gorm"
 )
 
-//	@ID						GetOrgInvites
-//	@Summary				Return org invites
-//	@Description.markdown	get_org_invites.md
-//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
-//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
-//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
-//	@Tags					orgs
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{array}		app.OrgInvite
-//	@Router					/v1/orgs/current/invites [GET]
+// @ID						GetOrgInvites
+// @Summary				Return org invites
+// @Description.markdown	get_org_invites.md
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+// @Tags					orgs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{array}		app.OrgInvite
+// @Router					/v1/orgs/current/invites [GET]
 func (s *service) GetOrgInvites(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
@@ -65,7 +65,7 @@ func (s *service) getOrgInvites(ctx *gin.Context, orgID string, limit int) ([]ap
 	res := s.db.WithContext(ctx).
 		Preload("Invites", func(db *gorm.DB) *gorm.DB {
 			return db.
-				Scopes(scopes.WithPagination).
+				Scopes(scopes.WithOffsetPagination).
 				Order("org_invites.created_at DESC").Limit(limit)
 		}).
 		First(&org, "id = ?", orgID)
