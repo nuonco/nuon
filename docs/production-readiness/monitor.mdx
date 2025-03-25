@@ -4,16 +4,44 @@ description: ""
 icon: 'code'
 ---
 
-You will want to be aware of the status of each customer's install. Make sure you have all the required monitoring in place so you will have the visibility you need.
+Since you will not have direct access to the customer's environment, you will need to ensure you have robust monitoring in place to maintain visibility into your app's health.
 
-## Key Questions
+## Application Design
 
-- What are the key metrics you need to watch to ensure your app is working?
+Before you can implement monitoring, ensure your app is designed to be monitored.
+While this is outside the scope of Nuon, following the best practices for your chosen architecture will allow you to get the most out of this platform.
 
-## Checklist
+### Service Endpoints
 
-- healthcheck actions running on a cron trigger
-  - monitor availability of HTTP and other API endpoints
-  - monitor service health endpoints
-  - on k8s, monitor pod readiness and liveness probes
-  - monitor memory, CPU, disk, and other system-level metrics of services, databases, etc
+Services should have readiness, liveness, and/or healthcheck endpoints you can use to determine their status.
+
+In addition to monitoring for health, readiness checks can be useful to determine when your app is ready to start using.
+You may want to use this in a customer-facing runbook to tell your customer when their install is ready to use.
+
+A healthcheck endpoint typically reports on the status of a service and it's dependencies.
+If the service is unhealthy, a description is usually included to explain the cause.
+This will allow you to not only monitor it's status, but get actionable information you can use to resolve issues.
+
+### Instrumentation
+
+You should instrument your code throughout your application to record metrics and important events.
+The more robust your Instrumentation, the easier it is to inspect the health of your application.
+
+## Health Checks
+
+Once your application is set up for monitoring, you can use actions to watch healtcheck endpoints and metrics.
+
+A healthcheck is simply an action that runs on a cron and returns a zero or non-zero status code, failing or succeeding based on your custom logic. A few common use-cases for these are:
+
+- Making requests to an HTTP endpoint to determine availability
+- Checking readiness and liveness probes on a kubernetes service
+- Watching memory, CPU, disk, and other system-level metrics on a database
+
+## Third-Party Agents
+
+If your customer allows it, you can use a third-party agent to send metrics to an established monitoring tool.
+This typically involves allowing egress from the customer network, and storing data from their environment in your own multi-tenant environment.
+Many customers will accept this for metrics, but not for logs.
+
+This is convenient, but does open the door to accidentally storing sensitive data.
+If you intend to take this path, make sure you can gaurantee you will not put sensitive data in metrics dimensions.
