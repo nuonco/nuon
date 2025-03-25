@@ -19,23 +19,23 @@ func (c *DeprovisionInstallRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID DeprovisionInstall
-// @Summary	deprovision an install
-// @Description.markdown	deprovision_install.md
-// @Param			install_id	path	string					true	"install ID"
-// @Param			req		body	DeprovisionInstallRequest	true	"Input"
-// @Tags			installs
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201	{string}	ok
-// @Router			/v1/installs/{install_id}/deprovision [post]
+//	@ID						DeprovisionInstall
+//	@Summary				deprovision an install
+//	@Description.markdown	deprovision_install.md
+//	@Param					install_id	path	string						true	"install ID"
+//	@Param					req			body	DeprovisionInstallRequest	true	"Input"
+//	@Tags					installs
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{string}	ok
+//	@Router					/v1/installs/{install_id}/deprovision [post]
 func (s *service) DeprovisionInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

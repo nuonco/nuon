@@ -14,26 +14,26 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// @ID GetComponentBuilds
-// @Summary	get builds for components
-// @Description.markdown	get_component_builds.md
-// @Param  component_id query string false	"component id to filter by"
-// @Param  app_id query string false	"app id to filter by"
-// @Param   offset query int	 false	"offset of results to return"	Default(0)
-// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
-// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
-// @Tags			components
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{array}		app.ComponentBuild
-// @Router			/v1/builds [GET]
+//	@ID						GetComponentBuilds
+//	@Summary				get builds for components
+//	@Description.markdown	get_component_builds.md
+//	@Param					component_id				query	string	false	"component id to filter by"
+//	@Param					app_id						query	string	false	"app id to filter by"
+//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
+//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
+//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+//	@Tags					components
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{array}		app.ComponentBuild
+//	@Router					/v1/builds [GET]
 func (s *service) GetComponentBuilds(ctx *gin.Context) {
 	cmpID := ctx.Query("component_id")
 	appID := ctx.Query("app_id")

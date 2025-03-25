@@ -9,16 +9,16 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @ID AdminGetLogStream
-// @Summary	get a log stream
-// @Description.markdown admin_get_log_stream.md
-// @Param			log_stream_id	path	string	true	"log stream or owner ID"
-// @Tags runners/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200				{object}	app.LogStream
-// @Router			/v1/log-streams/{log_stream_id} [GET]
+//	@ID						AdminGetLogStream
+//	@Summary				get a log stream
+//	@Description.markdown	admin_get_log_stream.md
+//	@Param					log_stream_id	path	string	true	"log stream or owner ID"
+//	@Tags					runners/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{object}	app.LogStream
+//	@Router					/v1/log-streams/{log_stream_id} [GET]
 func (s *service) AdminGetLogStream(ctx *gin.Context) {
 	logStreamID := ctx.Param("log_stream_id")
 

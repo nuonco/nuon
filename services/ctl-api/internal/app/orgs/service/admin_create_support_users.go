@@ -33,17 +33,17 @@ var defaultSupportUsers = [][2]string{
 	{"google-oauth2|113727848816762717712", "harsh@nuon.co"},
 }
 
-// @ID AdminCreateSupportUsers
-// @BasePath	/v1/orgs
-// @Summary	Add nuon users as support members
-// @Description.markdown create_org_support_users.md
-// @Param			org_id	path	string	true	"org ID for your current org"
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/orgs/{org_id}/admin-support-users [POST]
+//	@ID						AdminCreateSupportUsers
+//	@BasePath				/v1/orgs
+//	@Summary				Add nuon users as support members
+//	@Description.markdown	create_org_support_users.md
+//	@Param					org_id	path	string	true	"org ID for your current org"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/orgs/{org_id}/admin-support-users [POST]
 func (s *service) CreateSupportUsers(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 

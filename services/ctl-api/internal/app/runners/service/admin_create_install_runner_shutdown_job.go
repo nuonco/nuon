@@ -14,17 +14,17 @@ import (
 
 type AdminCreateInstallRunnerShutDownJobRequest struct{}
 
-// @ID AdminCreateInstallRunnerShutDownJob
-// @Summary	shut down a runners by install ID
-// @Description.markdown shut_down_runner_by_install_id.md
-// @Param			install_id	path	string						true	"install ID"
-// @Param			req				body	AdminCreateInstallRunnerShutDownJobRequest	true	"Input"
-// @Tags runners/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		201	{boolean}	true
-// @Router			/v1/installs/{install_id}/runners/shutdown-job [POST]
+//	@ID						AdminCreateInstallRunnerShutDownJob
+//	@Summary				shut down a runners by install ID
+//	@Description.markdown	shut_down_runner_by_install_id.md
+//	@Param					install_id	path	string										true	"install ID"
+//	@Param					req			body	AdminCreateInstallRunnerShutDownJobRequest	true	"Input"
+//	@Tags					runners/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				201	{boolean}	true
+//	@Router					/v1/installs/{install_id}/runners/shutdown-job [POST]
 func (s *service) AdminCreateInstallRunnerqShutDownJob(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

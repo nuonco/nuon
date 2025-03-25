@@ -11,21 +11,21 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// @ID AdminGetAllRunners
-// @BasePath	/v1/runners
-// @Summary	Return all runners
-// @Schemes
-// @Description	return all orgs
-// @Param   type query string false "type of runner to return"	     Default(org)
-// @Param   offset query int	 false	"offset of results to return"	Default(0)
-// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
-// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
-// @Tags runners/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200	{array}	app.Runner
-// @Router			/v1/runners [GET]
+//	@ID			AdminGetAllRunners
+//	@BasePath	/v1/runners
+//	@Summary	Return all runners
+//	@Schemes
+//	@Description	return all orgs
+//	@Param			type						query	string	false	"type of runner to return"		Default(org)
+//	@Param			offset						query	int		false	"offset of results to return"	Default(0)
+//	@Param			limit						query	int		false	"limit of results to return"	Default(10)
+//	@Param			x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+//	@Tags			runners/admin
+//	@Security		AdminEmail
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.Runner
+//	@Router			/v1/runners [GET]
 func (s *service) AdminGetAllRunners(ctx *gin.Context) {
 	runnerTyp := ctx.DefaultQuery("type", "org")
 

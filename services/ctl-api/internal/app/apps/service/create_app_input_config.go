@@ -57,22 +57,22 @@ func (c *CreateAppInputConfigRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID CreateAppInputConfig
-// @Description.markdown	create_app_input_config.md
-// @Tags			apps
-// @Accept			json
-// @Param			req	body	CreateAppInputConfigRequest	true	"Input"
-// @Produce		json
-// @Param			app_id	path	string				true	"app ID"
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.AppInputConfig
-// @Router			/v1/apps/{app_id}/input-config [post]
+//	@ID						CreateAppInputConfig
+//	@Description.markdown	create_app_input_config.md
+//	@Tags					apps
+//	@Accept					json
+//	@Param					req	body	CreateAppInputConfigRequest	true	"Input"
+//	@Produce				json
+//	@Param					app_id	path	string	true	"app ID"
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.AppInputConfig
+//	@Router					/v1/apps/{app_id}/input-config [post]
 func (s *service) CreateAppInputsConfig(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

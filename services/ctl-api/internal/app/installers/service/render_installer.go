@@ -18,20 +18,20 @@ type RenderedInstaller struct {
 	Metadata    app.InstallerMetadata `json:"metadata"`
 }
 
-// @ID RenderInstaller
-// @Summary	render an installer
-// @Description.markdown	render_installer.md
-// @Tags installers
-// @Accept			json
-// @Produce		json
-// @Param			installer_id	path		string	true	"installer ID"
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	RenderedInstaller
-// @Router			/v1/installer/{installer_id}/render [GET]
+//	@ID						RenderInstaller
+//	@Summary				render an installer
+//	@Description.markdown	render_installer.md
+//	@Tags					installers
+//	@Accept					json
+//	@Produce				json
+//	@Param					installer_id	path		string	true	"installer ID"
+//	@Failure				400				{object}	stderr.ErrResponse
+//	@Failure				401				{object}	stderr.ErrResponse
+//	@Failure				403				{object}	stderr.ErrResponse
+//	@Failure				404				{object}	stderr.ErrResponse
+//	@Failure				500				{object}	stderr.ErrResponse
+//	@Success				200				{object}	RenderedInstaller
+//	@Router					/v1/installer/{installer_id}/render [GET]
 func (s *service) RenderAppInstaller(ctx *gin.Context) {
 	installerID := ctx.Param("installer_id")
 

@@ -16,24 +16,24 @@ type CreateRunnerJobExecutionOutputsRequest struct {
 	Outputs map[string]interface{} `json:"outputs"`
 }
 
-// @ID CreateRunnerJobExecutionOutputs
-// @Summary	create a runner job execution outputs
-// @Description.markdown        create_runner_job_execution_outputs.md
-// @Param			req			body	CreateRunnerJobExecutionOutputsRequest	true "Input"
-// @Param			runner_job_id	path	string	true	"runner job ID"
-// @Param			runner_job_execution_id	path	string	true	"runner job execution ID"
-// @Tags runners/runner
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.RunnerJobExecutionOutputs
-// @Router			/v1/runner-jobs/{runner_job_id}/executions/{runner_job_execution_id}/outputs [POST]
+//	@ID						CreateRunnerJobExecutionOutputs
+//	@Summary				create a runner job execution outputs
+//	@Description.markdown	create_runner_job_execution_outputs.md
+//	@Param					req						body	CreateRunnerJobExecutionOutputsRequest	true	"Input"
+//	@Param					runner_job_id			path	string									true	"runner job ID"
+//	@Param					runner_job_execution_id	path	string									true	"runner job execution ID"
+//	@Tags					runners/runner
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.RunnerJobExecutionOutputs
+//	@Router					/v1/runner-jobs/{runner_job_id}/executions/{runner_job_execution_id}/outputs [POST]
 func (s *service) CreateRunnerJobExecutionOutputs(ctx *gin.Context) {
 	runnerJobExecutionID := ctx.Param("runner_job_execution_id")
 	runnerJobID := ctx.Param("runner_job_id")

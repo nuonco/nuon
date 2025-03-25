@@ -12,22 +12,22 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
-// @ID DeleteActionWorkflow
-// @Summary	delete an app
-// @Description.markdown	delete_action_workflow.md
-// @Param			action_workflow_id path	string	true	"action workflow ID"
-// @Tags			actions
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{boolean}	true
-// @Router			/v1/action-workflows/{action_workflow_id} [DELETE]
+//	@ID						DeleteActionWorkflow
+//	@Summary				delete an app
+//	@Description.markdown	delete_action_workflow.md
+//	@Param					action_workflow_id	path	string	true	"action workflow ID"
+//	@Tags					actions
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{boolean}	true
+//	@Router					/v1/action-workflows/{action_workflow_id} [DELETE]
 func (s *service) DeleteActionWorkflow(ctx *gin.Context) {
 	awID := ctx.Param("action_workflow_id")
 	org, err := cctx.OrgFromContext(ctx)

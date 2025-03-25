@@ -16,17 +16,17 @@ import (
 
 type AdminCreateNoopJobRequest struct{}
 
-// @ID AdminNoopRunner
-// @Summary	trigger a noop runner job
-// @Description.markdown create_noop_runner_job.md
-// @Param			runner_id	path	string						true	"runner ID"
-// @Param			req				body	AdminCreateNoopJobRequest	true	"Input"
-// @Tags runners/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		201	{boolean}	true
-// @Router			/v1/runners/{runner_id}/noop-job [POST]
+//	@ID						AdminNoopRunner
+//	@Summary				trigger a noop runner job
+//	@Description.markdown	create_noop_runner_job.md
+//	@Param					runner_id	path	string						true	"runner ID"
+//	@Param					req			body	AdminCreateNoopJobRequest	true	"Input"
+//	@Tags					runners/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				201	{boolean}	true
+//	@Router					/v1/runners/{runner_id}/noop-job [POST]
 func (s *service) AdminCreateNoopJob(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 

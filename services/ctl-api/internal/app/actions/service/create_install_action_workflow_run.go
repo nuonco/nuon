@@ -27,23 +27,23 @@ func (c *CreateInstallActionWorkflowRunRequest) Validate(v *validator.Validate) 
 	return nil
 }
 
-// @ID CreateInstallActionWorkflowRun
-// @Summary	create an action workflow run for an install
-// @Description.markdown	create_install_action_workflow_run.md
-// @Tags			actions
-// @Accept			json
-// @Param			install_id	path	string	true	"install ID"
-// @Param			req	body CreateInstallActionWorkflowRunRequest true	"Input"
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}  app.InstallActionWorkflowRun
-// @Router		/v1/installs/{install_id}/action-workflows/runs [post]
+//	@ID						CreateInstallActionWorkflowRun
+//	@Summary				create an action workflow run for an install
+//	@Description.markdown	create_install_action_workflow_run.md
+//	@Tags					actions
+//	@Accept					json
+//	@Param					install_id	path	string									true	"install ID"
+//	@Param					req			body	CreateInstallActionWorkflowRunRequest	true	"Input"
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.InstallActionWorkflowRun
+//	@Router					/v1/installs/{install_id}/action-workflows/runs [post]
 func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

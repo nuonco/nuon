@@ -12,23 +12,23 @@ import (
 
 type CancelRunnerJobRequest struct{}
 
-// @ID CancelRunnerJob
-// @Summary	cancel runner job
-// @Description.markdown	cancel_runner_job.md
-// @Param			req				body	CancelRunnerJobRequest	true	"Input"
-// @Param			runner_job_id	path	string	true	"runner job ID"
-// @Tags runners
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		202				{object}	app.RunnerJob
-// @Router			/v1/runner-jobs/{runner_job_id}/cancel [POST]
+//	@ID						CancelRunnerJob
+//	@Summary				cancel runner job
+//	@Description.markdown	cancel_runner_job.md
+//	@Param					req				body	CancelRunnerJobRequest	true	"Input"
+//	@Param					runner_job_id	path	string					true	"runner job ID"
+//	@Tags					runners
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				202	{object}	app.RunnerJob
+//	@Router					/v1/runner-jobs/{runner_job_id}/cancel [POST]
 func (s *service) CancelRunnerJob(ctx *gin.Context) {
 	runnerJobID := ctx.Param("runner_job_id")
 

@@ -19,23 +19,23 @@ func (c *ReprovisionInstallRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID ReprovisionInstall
-// @Summary	reprovision an install
-// @Description.markdown	reprovision_install.md
-// @Param			install_id	path	string					true	"install ID"
-// @Param			req		body	ReprovisionInstallRequest	true	"Input"
-// @Tags			installs
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201	{string}	ok
-// @Router			/v1/installs/{install_id}/reprovision [post]
+//	@ID						ReprovisionInstall
+//	@Summary				reprovision an install
+//	@Description.markdown	reprovision_install.md
+//	@Param					install_id	path	string						true	"install ID"
+//	@Param					req			body	ReprovisionInstallRequest	true	"Input"
+//	@Tags					installs
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{string}	ok
+//	@Router					/v1/installs/{install_id}/reprovision [post]
 func (s *service) ReprovisionInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
