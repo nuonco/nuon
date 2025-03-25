@@ -55,6 +55,17 @@
         "tab": "Guides",
         "groups": [
           {
+            "group": "Production-Readiness Checklist",
+            "pages": [
+              "production-readiness/introduction",
+              "production-readiness/package",
+              "production-readiness/monitor",
+              "production-readiness/deploy",
+              "production-readiness/debug",
+              "production-readiness/break-glass"
+            ]
+          },
+          {
             "group": "Configuration",
             "pages": [
               "guides/vcs",
