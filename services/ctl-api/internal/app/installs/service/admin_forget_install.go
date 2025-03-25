@@ -14,20 +14,20 @@ import (
 
 type AdminForgetInstallRequest struct{}
 
-// @ID AdminForgetInstall
-// @Summary	forget an install
-// @Description.markdown forget_install.md
-// @Param		install_id	path	string						true	"install ID"
-// @Param			req			body	AdminForgetInstallRequest	true	"Input"
-// @Tags			installs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Failure		400	{object}	stderr.ErrResponse
-// @Failure		404	{object}	stderr.ErrResponse
-// @Failure		500	{object}	stderr.ErrResponse
-// @Success		200	{boolean}	true
-// @Router			/v1/installs/{install_id}/admin-forget [POST]
+//	@ID						AdminForgetInstall
+//	@Summary				forget an install
+//	@Description.markdown	forget_install.md
+//	@Param					install_id	path	string						true	"install ID"
+//	@Param					req			body	AdminForgetInstallRequest	true	"Input"
+//	@Tags					installs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{boolean}	true
+//	@Router					/v1/installs/{install_id}/admin-forget [POST]
 func (s *service) AdminForgetInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

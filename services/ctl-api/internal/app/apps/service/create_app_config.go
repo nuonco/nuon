@@ -25,22 +25,22 @@ func (c *CreateAppConfigRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID CreateAppConfig
-// @Description.markdown	create_app_config.md
-// @Tags			apps
-// @Accept			json
-// @Param			req	body	CreateAppConfigRequest	true	"Input"
-// @Produce		json
-// @Param			app_id	path	string				true	"app ID"
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.AppConfig
-// @Router			/v1/apps/{app_id}/config [post]
+//	@ID						CreateAppConfig
+//	@Description.markdown	create_app_config.md
+//	@Tags					apps
+//	@Accept					json
+//	@Param					req	body	CreateAppConfigRequest	true	"Input"
+//	@Produce				json
+//	@Param					app_id	path	string	true	"app ID"
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.AppConfig
+//	@Router					/v1/apps/{app_id}/config [post]
 func (s *service) CreateAppConfig(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

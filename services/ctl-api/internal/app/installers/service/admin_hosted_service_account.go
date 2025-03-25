@@ -23,15 +23,15 @@ type CreateHostedInstallerServiceAccountRequest struct {
 	Name string `json:"name"`
 }
 
-// @ID CreateHostedInstallerServiceAccount
-// @Summary	create a service account for hosted installers
-// @Description.markdown create_hosted_installer_service_account.md
-// @Param			req	body	CreateHostedInstallerServiceAccountRequest	true	"Input"
-// @Tags			installers/admin
-// @Accept			json
-// @Produce		json
-// @Success		201	{array}	app.Account
-// @Router			/v1/installers/hosted-installer-service-account [POST]
+//	@ID						CreateHostedInstallerServiceAccount
+//	@Summary				create a service account for hosted installers
+//	@Description.markdown	create_hosted_installer_service_account.md
+//	@Param					req	body	CreateHostedInstallerServiceAccountRequest	true	"Input"
+//	@Tags					installers/admin
+//	@Accept					json
+//	@Produce				json
+//	@Success				201	{array}	app.Account
+//	@Router					/v1/installers/hosted-installer-service-account [POST]
 func (s *service) CreateHostedInstallerServiceAccount(ctx *gin.Context) {
 	var req CreateHostedInstallerServiceAccountRequest
 	if err := ctx.BindJSON(&req); err != nil {

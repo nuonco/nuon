@@ -20,17 +20,17 @@ type AdminAddAWSDelegationRequest struct {
 	SecretAccessKey string `json:"secret_access_key"`
 }
 
-// @ID AdminAddAWSDelegationConfig
-// @Summary	add a delegation config to an app
-// @Description.markdown admin_add_aws_delegation.md
-// @Tags			apps/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req		body	AdminAddAWSDelegationRequest	true	"Input"
-// @Param			app_id	path	string					true	"app id"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/apps/{app_id}/admin-aws-delegation [POST]
+//	@ID						AdminAddAWSDelegationConfig
+//	@Summary				add a delegation config to an app
+//	@Description.markdown	admin_add_aws_delegation.md
+//	@Tags					apps/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req		body	AdminAddAWSDelegationRequest	true	"Input"
+//	@Param					app_id	path	string							true	"app id"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/apps/{app_id}/admin-aws-delegation [POST]
 func (s *service) AdminAddAWSDelegationConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

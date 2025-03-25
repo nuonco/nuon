@@ -14,17 +14,17 @@ type AdminDeleteOrgRequest struct {
 	Force bool `json:"force"`
 }
 
-// @ID AdminDeleteOrg
-// @Summary delete an org and everything in it
-// @Description.markdown delete_org.md
-// @Param			org_id	path	string	true	"org ID for your current org"
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req	body	AdminDeleteOrgRequest	true	"Input"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/orgs/{org_id}/admin-delete [POST]
+//	@ID						AdminDeleteOrg
+//	@Summary				delete an org and everything in it
+//	@Description.markdown	delete_org.md
+//	@Param					org_id	path	string	true	"org ID for your current org"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req	body	AdminDeleteOrgRequest	true	"Input"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/orgs/{org_id}/admin-delete [POST]
 func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 

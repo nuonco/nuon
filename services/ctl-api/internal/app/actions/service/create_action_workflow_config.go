@@ -69,23 +69,23 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 	return nil
 }
 
-// @ID CreateActionWorkflowConfig
-// @Summary	create action workflow config
-// @Description.markdown	create_action_workflow_config.md
-// @Param			action_workflow_id	path	string	true	"action workflow ID"
-// @Tags			actions
-// @Accept			json
-// @Param			req	body CreateActionWorkflowConfigRequest true	"Input"
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.ActionWorkflowConfig
-// @Router			/v1/action-workflows/{action_workflow_id}/configs [post]
+//	@ID						CreateActionWorkflowConfig
+//	@Summary				create action workflow config
+//	@Description.markdown	create_action_workflow_config.md
+//	@Param					action_workflow_id	path	string	true	"action workflow ID"
+//	@Tags					actions
+//	@Accept					json
+//	@Param					req	body	CreateActionWorkflowConfigRequest	true	"Input"
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.ActionWorkflowConfig
+//	@Router					/v1/action-workflows/{action_workflow_id}/configs [post]
 func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

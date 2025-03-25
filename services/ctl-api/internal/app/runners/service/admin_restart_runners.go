@@ -20,16 +20,16 @@ type AdminRestartRunnersResponse struct {
 	RunnerID string `json:"runner_id"`
 }
 
-// @ID AdminRestartRunners
-// @Summary	Restarts all non sandbox org and install runners
-// @Description.markdown restart_runners.md
-// @Param		req				body	AdminRestartRunnersRequest	true "Input"
-// @Tags runners/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200	{array} AdminRestartRunnersResponse
-// @Router		/v1/runners/restart [POST]
+//	@ID						AdminRestartRunners
+//	@Summary				Restarts all non sandbox org and install runners
+//	@Description.markdown	restart_runners.md
+//	@Param					req	body	AdminRestartRunnersRequest	true	"Input"
+//	@Tags					runners/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{array}	AdminRestartRunnersResponse
+//	@Router					/v1/runners/restart [POST]
 func (s *service) AdminRestartRunners(ctx *gin.Context) {
 	var req AdminRestartRunnersRequest
 	if err := ctx.BindJSON(&req); err != nil {

@@ -15,17 +15,17 @@ type DebugModeRequest struct {
 	DebugMode bool `json:"debug"`
 }
 
-// @ID AdminDebugOrg
-// @Summary control debug mode an org
-// @Description.markdown debug_mode_org.md
-// @Param			org_id	path	string	true	"org ID for your current org"
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req	body	DebugModeRequest	true	"Input"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/orgs/{org_id}/admin-debug-mode [POST]
+//	@ID						AdminDebugOrg
+//	@Summary				control debug mode an org
+//	@Description.markdown	debug_mode_org.md
+//	@Param					org_id	path	string	true	"org ID for your current org"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req	body	DebugModeRequest	true	"Input"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/orgs/{org_id}/admin-debug-mode [POST]
 func (s *service) AdminDebugModeOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 

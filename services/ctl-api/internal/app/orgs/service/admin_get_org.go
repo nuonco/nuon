@@ -10,16 +10,16 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @ID AdminGetOrg
-// @Summary get an org by name
-// @Description.markdown admin_get_org.md
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param   name query string false	"org name or id"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/orgs/admin-get [GET]
+//	@ID						AdminGetOrg
+//	@Summary				get an org by name
+//	@Description.markdown	admin_get_org.md
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					name	query	string	false	"org name or id"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/orgs/admin-get [GET]
 func (s *service) AdminGetOrg(ctx *gin.Context) {
 	nameOrID := ctx.DefaultQuery("name", "")
 

@@ -11,17 +11,17 @@ import (
 
 type RestartAllOrgRequest struct{}
 
-// @ID AdminRestartAll
-// @Summary	restart all orgs
-// @Description.markdown restart_all_orgs.md
-// @Param			req		body	RestartOrgRequest	true	"Input"
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Id AdminRestartAll
-// @Accept			json
-// @Produce		json
-// @Success		200	{boolean}	true
-// @Router			/v1/orgs/admin-restart-all [POST]
+//	@ID						AdminRestartAll
+//	@Summary				restart all orgs
+//	@Description.markdown	restart_all_orgs.md
+//	@Param					req	body	RestartOrgRequest	true	"Input"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Id						AdminRestartAll
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{boolean}	true
+//	@Router					/v1/orgs/admin-restart-all [POST]
 func (s *service) RestartAllOrgs(ctx *gin.Context) {
 	var req RestartAllOrgRequest
 	if err := ctx.BindJSON(&req); err != nil {
