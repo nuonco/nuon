@@ -10,16 +10,16 @@ import (
 
 type AdminReprovisionInstallRunnerRequest struct{}
 
-// @ID AdminReprovisionInstallRunner
-// @Description.markdown reprovision_install_runner.md
-// @Param			install_id	path	string	true	"install ID for your current install"
-// @Tags			installs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req	body	ReprovisionInstallRequest	true	"Input"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/installs/{install_id}/admin-reprovision-runner [POST]
+//	@ID						AdminReprovisionInstallRunner
+//	@Description.markdown	reprovision_install_runner.md
+//	@Param					install_id	path	string	true	"install ID for your current install"
+//	@Tags					installs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req	body	ReprovisionInstallRequest	true	"Input"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/installs/{install_id}/admin-reprovision-runner [POST]
 func (s *service) AdminReprovisionInstallRunner(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

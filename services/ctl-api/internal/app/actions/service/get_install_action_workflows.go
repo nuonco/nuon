@@ -13,25 +13,25 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// @ID GetInstallActionWorkflows
-// @Summary	get an installs action workflows
-// @Description.markdown	get_install_action_workflows.md
-// @Param			install_id	path	string	true	"install ID"
-// @Param   offset query int	 false	"offset of results to return"	Default(0)
-// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
-// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
-// @Tags			installs
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{array}		app.InstallActionWorkflow
-// @Router			/v1/installs/{install_id}/action-workflows [GET]
+//	@ID						GetInstallActionWorkflows
+//	@Summary				get an installs action workflows
+//	@Description.markdown	get_install_action_workflows.md
+//	@Param					install_id					path	string	true	"install ID"
+//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
+//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
+//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+//	@Tags					installs
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{array}		app.InstallActionWorkflow
+//	@Router					/v1/installs/{install_id}/action-workflows [GET]
 func (s *service) GetInstallActionWorkflows(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	installActionWorkflows, err := s.getInstallActionWorkflows(ctx, installID)

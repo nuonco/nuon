@@ -14,16 +14,16 @@ type AdminUpdateOrgsFeaturesRequest struct {
 	Features map[string]bool `json:"features" validate:"required"`
 }
 
-// @ID AdminUpdateOrgsFeatures
-// @Summary get available org features
-// @Description.markdown admin_update_orgs_features.md
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req	body AdminUpdateOrgsFeaturesRequest	true	"Input"
-// @Produce		json
-// @Success		200 {string}	ok
-// @Router			/v1/orgs/admin-features  [PATCH]
+//	@ID						AdminUpdateOrgsFeatures
+//	@Summary				get available org features
+//	@Description.markdown	admin_update_orgs_features.md
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req	body	AdminUpdateOrgsFeaturesRequest	true	"Input"
+//	@Produce				json
+//	@Success				200	{string}	ok
+//	@Router					/v1/orgs/admin-features  [PATCH]
 func (s *service) AdminUpdateOrgsFeatures(ctx *gin.Context) {
 	var req AdminUpdateOrgsFeaturesRequest
 	if err := ctx.BindJSON(&req); err != nil {

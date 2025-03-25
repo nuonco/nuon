@@ -22,16 +22,16 @@ func (c *AdminDeleteAccountRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID AdminCreateAdminDeleteAccount
-// @Summary	delete an account.
-// @Description.markdown admin_delete_account.md
-// @Param			req	body	AdminDeleteAccountRequest	true	"Input"
-// @Tags orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		201	{string} ok
-// @Router			/v1/general/admin-delete-account [POST]
+//	@ID						AdminCreateAdminDeleteAccount
+//	@Summary				delete an account.
+//	@Description.markdown	admin_delete_account.md
+//	@Param					req	body	AdminDeleteAccountRequest	true	"Input"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/general/admin-delete-account [POST]
 func (s *service) AdminDeleteAccount(ctx *gin.Context) {
 	var req AdminDeleteAccountRequest
 	if err := ctx.BindJSON(&req); err != nil {

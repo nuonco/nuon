@@ -15,17 +15,17 @@ import (
 
 type AdminDeleteAppRequest struct{}
 
-// @ID AdminDeleteApp
-// @Summary	delete an app
-// @Description.markdown delete_app.md
-// @Tags			apps/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req		body	AdminDeleteAppRequest	true	"Input"
-// @Param			app_id	path	string					true	"app id"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/apps/{app_id}/admin-delete [POST]
+//	@ID						AdminDeleteApp
+//	@Summary				delete an app
+//	@Description.markdown	delete_app.md
+//	@Tags					apps/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req		body	AdminDeleteAppRequest	true	"Input"
+//	@Param					app_id	path	string					true	"app id"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/apps/{app_id}/admin-delete [POST]
 func (s *service) AdminDeleteApp(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

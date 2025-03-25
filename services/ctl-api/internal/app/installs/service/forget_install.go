@@ -12,21 +12,21 @@ import (
 
 type ForgetInstallRequest struct{}
 
-// @ID ForgetInstall
-// @Summary	forget an install
-// @Description.markdown forget_install.md
-// @Param		install_id	path	string						true	"install ID"
-// @Param		req			body	ForgetInstallRequest	true	"Input"
-// @Tags		installs
-// @Security APIKey
-// @Security OrgID
-// @Accept			json
-// @Produce		json
-// @Failure		400	{object}	stderr.ErrResponse
-// @Failure		404	{object}	stderr.ErrResponse
-// @Failure		500	{object}	stderr.ErrResponse
-// @Success		200	{boolean}	true
-// @Router			/v1/installs/{install_id}/forget [POST]
+//	@ID						ForgetInstall
+//	@Summary				forget an install
+//	@Description.markdown	forget_install.md
+//	@Param					install_id	path	string					true	"install ID"
+//	@Param					req			body	ForgetInstallRequest	true	"Input"
+//	@Tags					installs
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Accept					json
+//	@Produce				json
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{boolean}	true
+//	@Router					/v1/installs/{install_id}/forget [POST]
 func (s *service) ForgetInstall(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

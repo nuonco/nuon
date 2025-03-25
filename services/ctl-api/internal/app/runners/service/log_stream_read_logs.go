@@ -21,23 +21,23 @@ const (
 	nestedAttributeRegex string = `^(?:[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)?)$` // https://regex101.com/r/179bxx/1
 )
 
-// @ID LogStreamReadLogs
-// @Summary	read a log stream's logs
-// @Description.markdown log_stream_read_logs.md
-// @Param			log_stream_id	path	string	true	"log stream ID"
-// @Param			X-Nuon-API-Offset	header	string	true	"log stream offset"
-// @Tags runners
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	[]app.OtelLogRecord
-// @Router			/v1/log-streams/{log_stream_id}/logs [GET]
+//	@ID						LogStreamReadLogs
+//	@Summary				read a log stream's logs
+//	@Description.markdown	log_stream_read_logs.md
+//	@Param					log_stream_id		path	string	true	"log stream ID"
+//	@Param					X-Nuon-API-Offset	header	string	true	"log stream offset"
+//	@Tags					runners
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	[]app.OtelLogRecord
+//	@Router					/v1/log-streams/{log_stream_id}/logs [GET]
 func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	// get the otel logs in order of their timstamp (desc)
 	// returns pagination details in the header

@@ -12,17 +12,17 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// @ID GetAllInstallers
-// @Summary	get all installers for all orgs
-// @Description.markdown	get_all_installers.md
-// @Tags			installers/admin
-// @Accept			json
-// @Param   offset query int	 false	"offset of results to return"	Default(0)
-// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
-// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
-// @Produce		json
-// @Success		200	{array}	app.Installer
-// @Router			/v1/installers [get]
+//	@ID						GetAllInstallers
+//	@Summary				get all installers for all orgs
+//	@Description.markdown	get_all_installers.md
+//	@Tags					installers/admin
+//	@Accept					json
+//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
+//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
+//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+//	@Produce				json
+//	@Success				200	{array}	app.Installer
+//	@Router					/v1/installers [get]
 func (s *service) GetAllInstallers(ctx *gin.Context) {
 	// TODO: remove limit when pagination is enabled
 	limitStr := ctx.DefaultQuery("limit", "60")

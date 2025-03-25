@@ -10,22 +10,22 @@ import (
 	"gorm.io/gorm"
 )
 
-// @ID DeleteInstaller
-// @Summary	delete an installer
-// @Description.markdown	delete_installer.md
-// @Param			installer_id	path	string	true	"installer ID"
-// @Tags installers
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{boolean}	true
-// @Router			/v1/installers/{installer_id} [DELETE]
+//	@ID						DeleteInstaller
+//	@Summary				delete an installer
+//	@Description.markdown	delete_installer.md
+//	@Param					installer_id	path	string	true	"installer ID"
+//	@Tags					installers
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{boolean}	true
+//	@Router					/v1/installers/{installer_id} [DELETE]
 func (s *service) DeleteInstaller(ctx *gin.Context) {
 	installerID := ctx.Param("installer_id")
 

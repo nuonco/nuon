@@ -10,23 +10,23 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @ID GetAppComponent
-// @Summary	get a components for a specific app
-// @Description.markdown	get_app_component.md
-// @Param			app_id	path	string	true	"app ID"
-// @Param			component_name_or_id	path	string	true	"name or ID"
-// @Tags			components
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}		app.Component
-// @Router			/v1/apps/{app_id}/component/{component_name_or_id} [GET]
+//	@ID						GetAppComponent
+//	@Summary				get a components for a specific app
+//	@Description.markdown	get_app_component.md
+//	@Param					app_id					path	string	true	"app ID"
+//	@Param					component_name_or_id	path	string	true	"name or ID"
+//	@Tags					components
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	app.Component
+//	@Router					/v1/apps/{app_id}/component/{component_name_or_id} [GET]
 func (s *service) GetAppComponent(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	idOrName := ctx.Param("component_name_or_id")

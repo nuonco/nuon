@@ -31,16 +31,16 @@ type StaticTokenResponse struct {
 	APIToken string `json:"api_token"`
 }
 
-// @ID AdminCreateStaticToken
-// @Summary	create a static token for a user.
-// @Description.markdown create_static_token.md
-// @Param			req	body	StaticTokenRequest	true	"Input"
-// @Tags orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		201	{object} StaticTokenResponse
-// @Router			/v1/general/admin-static-token [POST]
+//	@ID						AdminCreateStaticToken
+//	@Summary				create a static token for a user.
+//	@Description.markdown	create_static_token.md
+//	@Param					req	body	StaticTokenRequest	true	"Input"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				201	{object}	StaticTokenResponse
+//	@Router					/v1/general/admin-static-token [POST]
 func (s *service) AdminCreateStaticToken(ctx *gin.Context) {
 	var req StaticTokenRequest
 	if err := ctx.BindJSON(&req); err != nil {

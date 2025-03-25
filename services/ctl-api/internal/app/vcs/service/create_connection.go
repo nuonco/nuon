@@ -23,22 +23,22 @@ func (c *CreateConnectionRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID CreateVCSConnection
-// @Summary	create a vcs connection for Github
-// @Description.markdown	create_vcs_connection.md
-// @Param			req	body	CreateConnectionRequest	true	"Input"
-// @Tags			vcs
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.VCSConnection
-// @Router			/v1/vcs/connections [post]
+//	@ID						CreateVCSConnection
+//	@Summary				create a vcs connection for Github
+//	@Description.markdown	create_vcs_connection.md
+//	@Param					req	body	CreateConnectionRequest	true	"Input"
+//	@Tags					vcs
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.VCSConnection
+//	@Router					/v1/vcs/connections [post]
 func (s *service) CreateConnection(ctx *gin.Context) {
 	currentOrg, err := cctx.OrgFromContext(ctx)
 	if err != nil {

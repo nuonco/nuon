@@ -8,22 +8,22 @@ import (
 	"gorm.io/gorm"
 )
 
-// @ID GetCurrentInstallInputs
-// @Summary	get an installs current inputs
-// @Description.markdown	get_install_inputs.md
-// @Tags			installs
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Param			install_id		path		string	true	"install ID"
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	app.InstallInputs
-// @Router			/v1/installs/{install_id}/inputs/current [GET]
+//	@ID						GetCurrentInstallInputs
+//	@Summary				get an installs current inputs
+//	@Description.markdown	get_install_inputs.md
+//	@Tags					installs
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Param					install_id	path		string	true	"install ID"
+//	@Failure				400			{object}	stderr.ErrResponse
+//	@Failure				401			{object}	stderr.ErrResponse
+//	@Failure				403			{object}	stderr.ErrResponse
+//	@Failure				404			{object}	stderr.ErrResponse
+//	@Failure				500			{object}	stderr.ErrResponse
+//	@Success				200			{object}	app.InstallInputs
+//	@Router					/v1/installs/{install_id}/inputs/current [GET]
 func (s *service) GetInstallCurrentInputs(ctx *gin.Context) {
 	// return a complex type with the configuration "metadata" for each input value
 	appID := ctx.Param("install_id")

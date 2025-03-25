@@ -11,22 +11,22 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @ID GetActionWorkflowConfig
-// @Summary	get an app action workflow config
-// @Description.markdown	get_action_workflow_config.md
-// @Param			action_workflow_config_id	path	string	true	"action workflow config ID"
-// @Tags			actions,actions/runner
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	app.ActionWorkflowConfig
-// @Router			/v1/action-workflows/configs/{action_workflow_config_id} [get]
+//	@ID						GetActionWorkflowConfig
+//	@Summary				get an app action workflow config
+//	@Description.markdown	get_action_workflow_config.md
+//	@Param					action_workflow_config_id	path	string	true	"action workflow config ID"
+//	@Tags					actions,actions/runner
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	app.ActionWorkflowConfig
+//	@Router					/v1/action-workflows/configs/{action_workflow_config_id} [get]
 func (s *service) GetActionWorkflowConfig(ctx *gin.Context) {
 	awcID := ctx.Param("action_workflow_config_id")
 	awc, err := s.findActionWorkflowConfig(ctx, awcID)

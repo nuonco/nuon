@@ -11,16 +11,16 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @ID AdminGetRunnerJob
-// @Summary	get a runner job
-// @Description.markdown admin_get_runner_job.md
-// @Param			runner_job_id	path	string					true	"runner ID"
-// @Tags runners/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200				{object}	app.RunnerJob
-// @Router			/v1/runner-jobs/{runner_job_id} [GET]
+//	@ID						AdminGetRunnerJob
+//	@Summary				get a runner job
+//	@Description.markdown	admin_get_runner_job.md
+//	@Param					runner_job_id	path	string	true	"runner ID"
+//	@Tags					runners/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{object}	app.RunnerJob
+//	@Router					/v1/runner-jobs/{runner_job_id} [GET]
 func (s *service) AdminGetRunnerJob(ctx *gin.Context) {
 	runnerJobID := ctx.Param("runner_job_id")
 

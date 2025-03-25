@@ -40,23 +40,23 @@ func (c *UpdateInstallerRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID UpdateInstaller
-// @Summary	update an installer
-// @Description.markdown	update_installer.md
-// @Tags installers
-// @Accept			json
-// @Param			req	body	UpdateInstallerRequest	true	"Input"
-// @Produce		json
-// @Param			installer_id	path		string	true	"installer ID"
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.Installer
-// @Router			/v1/installers/{installer_id} [PATCH]
+//	@ID						UpdateInstaller
+//	@Summary				update an installer
+//	@Description.markdown	update_installer.md
+//	@Tags					installers
+//	@Accept					json
+//	@Param					req	body	UpdateInstallerRequest	true	"Input"
+//	@Produce				json
+//	@Param					installer_id	path	string	true	"installer ID"
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.Installer
+//	@Router					/v1/installers/{installer_id} [PATCH]
 func (s *service) UpdateInstaller(ctx *gin.Context) {
 	installerID := ctx.Param("installer_id")
 
