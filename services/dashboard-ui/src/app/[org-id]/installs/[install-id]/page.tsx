@@ -118,17 +118,17 @@ export default withPageAuthRequired(async function Install({ params }) {
         </Section>
 
         <div className="divide-y flex flex-col col-span-4">
-          {RUNNERS ? (
-            <Section className="flex-initial" heading="Runner">
+          {/* {RUNNERS ? (
+              <Section className="flex-initial" heading="Runner">
               <ErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={<Loading loadingText="Loading install runner..." />}
-                >
-                  <LoadRunnerGroup installId={installId} orgId={orgId} />
-                </Suspense>
+              <Suspense
+              fallback={<Loading loadingText="Loading install runner..." />}
+              >
+              <LoadRunnerGroup installId={installId} orgId={orgId} />
+              </Suspense>
               </ErrorBoundary>
-            </Section>
-          ) : null}
+              </Section>
+              ) : null} */}
 
           <Section className="flex-initial">
             <ErrorBoundary fallbackRender={ErrorFallback}>
@@ -140,18 +140,18 @@ export default withPageAuthRequired(async function Install({ params }) {
             </ErrorBoundary>
           </Section>
 
-          <Section className="flex-initial" heading="Active sandbox">
-            <div className="flex flex-col gap-8">
+          {/* <Section className="flex-initial" heading="Active sandbox">
+              <div className="flex flex-col gap-8">
               <AppSandboxConfig sandboxConfig={install?.app_sandbox_config} />
               <AppSandboxVariables
-                variables={install?.app_sandbox_config?.variables}
+              variables={install?.app_sandbox_config?.variables}
               />
-            </div>
-          </Section>
+              </div>
+              </Section>
 
-          <Section heading="Cloud platform">
-            <InstallCloudPlatform install={install} />
-          </Section>
+              <Section heading="Cloud platform">
+              <InstallCloudPlatform install={install} />
+              </Section> */}
         </div>
       </div>
     </DashboardContent>
