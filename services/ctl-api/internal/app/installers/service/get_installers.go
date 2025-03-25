@@ -60,7 +60,7 @@ func (s *service) getInstallers(ctx *gin.Context, orgID string) ([]*app.Installe
 
 	installers, err := db.HandlePaginatedResponse(ctx, installers)
 	if err != nil {
-		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+		return nil, fmt.Errorf("unable to get installers: %w", err)
 	}
 
 	return installers, nil

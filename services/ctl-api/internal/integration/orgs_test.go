@@ -134,7 +134,7 @@ func (s *orgsIntegrationTestSuite) TestGetOrgs() {
 	defer s.deleteOrg(seedOrg.ID)
 
 	s.T().Run("success", func(t *testing.T) {
-		orgs, err := s.apiClient.GetOrgs(s.ctx)
+		orgs, _, err := s.apiClient.GetOrgs(s.ctx, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, orgs)
 
@@ -172,7 +172,10 @@ func (s *orgsIntegrationTestSuite) TestCreateOrgInvite() {
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 
-		invites, err := s.apiClient.GetOrgInvites(s.ctx, generics.ToPtr(int64(100)))
+		invites, _, err := s.apiClient.GetOrgInvites(s.ctx, &models.GetOrgInvitesQuery{
+			Limit:  100,
+			Offset: 0,
+		})
 		require.NoError(t, err)
 		require.Len(t, invites, 1)
 	})

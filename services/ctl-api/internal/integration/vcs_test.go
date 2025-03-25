@@ -97,7 +97,7 @@ func (s *vcsIntegrationTestSuite) TestGetConnections() {
 
 	s.T().Run("success", func(t *testing.T) {
 		// add a vcs connection to the org
-		vcs, err := s.apiClient.GetVCSConnections(s.ctx)
+		vcs, _, err := s.apiClient.GetVCSConnections(s.ctx, nil)
 		require.Nil(t, err)
 		require.NotNil(t, vcs)
 	})
@@ -126,7 +126,7 @@ func (s *vcsIntegrationTestSuite) TestGetAllConnectedRepos() {
 			return
 		}
 
-		repos, err := s.apiClient.GetAllVCSConnectedRepos(s.ctx)
+		repos, _, err := s.apiClient.GetAllVCSConnectedRepos(s.ctx, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, repos)
 
