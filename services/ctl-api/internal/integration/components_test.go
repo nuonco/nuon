@@ -92,7 +92,7 @@ func (s *componentsSuite) TestCreateComponent() {
 		require.NoError(t, err)
 		require.NotNil(t, comp)
 
-		installComps, err := s.apiClient.GetInstallComponents(s.ctx, install.ID)
+		installComps, _, err := s.apiClient.GetInstallComponents(s.ctx, install.ID, nil)
 		require.Nil(t, err)
 		require.NotEmpty(t, installComps)
 	})
@@ -145,7 +145,7 @@ func (s *componentsSuite) TestGetAllComponents() {
 	comp := s.createComponent(s.appID)
 
 	s.T().Run("success with a single app", func(t *testing.T) {
-		comps, err := s.apiClient.GetAllComponents(s.ctx)
+		comps, _, err := s.apiClient.GetAllComponents(s.ctx, nil)
 		require.Nil(t, err)
 		require.Len(t, comps, 1)
 		require.Equal(t, comp.ID, comps[0].ID)
@@ -160,7 +160,7 @@ func (s *componentsSuite) TestGetAllComponents() {
 
 		comp2 := s.createComponent(s.appID)
 
-		comps, err := s.apiClient.GetAllComponents(s.ctx)
+		comps, _, err := s.apiClient.GetAllComponents(s.ctx, nil)
 		require.Nil(t, err)
 		require.Len(t, comps, 2)
 		require.Equal(t, comp2.ID, comps[0].ID)
@@ -194,7 +194,7 @@ func (s *componentsSuite) TestGetAppComponents() {
 	comp := s.createComponent(s.appID)
 
 	s.T().Run("success", func(t *testing.T) {
-		comps, err := s.apiClient.GetAppComponents(s.ctx, s.appID)
+		comps, _, err := s.apiClient.GetAppComponents(s.ctx, s.appID, nil)
 		require.Nil(t, err)
 		require.Len(t, comps, 1)
 		require.Equal(t, comp.ID, comps[0].ID)

@@ -33,7 +33,7 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Short:   "List releases",
 		Long:    "List releases of a component",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := releases.New(c.apiClient)
+			svc := releases.New(c.apiClient, c.cfg)
 			return svc.List(cmd.Context(), appID, compID, PrintJSON)
 		}),
 	}
@@ -48,7 +48,7 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Short: "Get release",
 		Long:  "Get an app release by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := releases.New(c.apiClient)
+			svc := releases.New(c.apiClient, c.cfg)
 			return svc.Get(cmd.Context(), releaseID, PrintJSON)
 		}),
 	}
@@ -61,7 +61,7 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Short: "Get release steps",
 		Long:  "Get the steps for a release by release ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := releases.New(c.apiClient)
+			svc := releases.New(c.apiClient, c.cfg)
 			return svc.Steps(cmd.Context(), releaseID, PrintJSON)
 		}),
 	}
@@ -74,7 +74,7 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Short: "Create release",
 		Long:  "Create a release of an app component",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := releases.New(c.apiClient)
+			svc := releases.New(c.apiClient, c.cfg)
 			return svc.Create(cmd.Context(),
 				appID,
 				compID,

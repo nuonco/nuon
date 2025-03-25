@@ -32,12 +32,13 @@ type Config struct {
 	Debug            bool   `mapstructure:"debug"`
 
 	// internal configuration, not designed to be used by users
-	GitHubAppName   string        `mapstructure:"github_app_name"`
-	Env             string        `mapstructure:"-"`
-	CleanupTimeout  time.Duration `mapstructure:"-"`
-	SegmentWriteKey string        `mapstructure:"-"`
-	SentryDSN       string        `mapstructure:"-"`
-	UserID					string        `mapstructure:"-"`
+	GitHubAppName    string        `mapstructure:"github_app_name"`
+	Env              string        `mapstructure:"-"`
+	CleanupTimeout   time.Duration `mapstructure:"-"`
+	SegmentWriteKey  string        `mapstructure:"-"`
+	SentryDSN        string        `mapstructure:"-"`
+	UserID           string        `mapstructure:"-"`
+	PaginationEnabled bool   `mapstructure:"pagination_enabled"`
 }
 
 // newConfig creates a new config instance.
@@ -48,6 +49,7 @@ func NewConfig(customFilepath string) (*Config, error) {
 		GitHubAppName:  defaultGitHubAppName,
 		Debug:          Debug(),
 		CleanupTimeout: defaultCleanupTimeout,
+		PaginationEnabled: false,
 	}
 
 	// Read values from config file.
@@ -75,6 +77,9 @@ func NewConfig(customFilepath string) (*Config, error) {
 	}
 	if cfg.GetBool("disable_telemetry") {
 		cfg.DisableTelemetry = cfg.GetBool("disable_telemetry")
+	}
+	if cfg.GetBool("pagination_enabled") {
+		cfg.PaginationEnabled = cfg.GetBool("pagination_enabled")
 	}
 
 	cfg.Env = cfg.envFromAPIURL(cfg.APIURL)

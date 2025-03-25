@@ -69,7 +69,7 @@ func (s *installComponentsTestSuite) SetupTest() {
 
 func (s *installComponentsTestSuite) TestGetInstallComponents() {
 	s.T().Run("get install components", func(t *testing.T) {
-		installComponents, err := s.apiClient.GetInstallComponents(s.ctx, s.installID)
+		installComponents, _, err := s.apiClient.GetInstallComponents(s.ctx, s.installID, nil)
 		require.NoError(t, err)
 		require.Len(t, installComponents, 1)
 		require.Equal(t, s.compID, installComponents[0].ComponentID)
@@ -78,14 +78,14 @@ func (s *installComponentsTestSuite) TestGetInstallComponents() {
 	s.T().Run("returns components based on created order desc", func(t *testing.T) {
 		comp := s.createComponent(s.appID)
 
-		installComponents, err := s.apiClient.GetInstallComponents(s.ctx, s.installID)
+		installComponents, _, err := s.apiClient.GetInstallComponents(s.ctx, s.installID, nil)
 		require.NoError(t, err)
 		require.Len(t, installComponents, 2)
 		require.Equal(t, comp.ID, installComponents[0].ComponentID)
 	})
 
 	s.T().Run("get install components invalid install", func(t *testing.T) {
-		installComponents, err := s.apiClient.GetInstallComponents(s.ctx, generics.GetFakeObj[string]())
+		installComponents, _, err := s.apiClient.GetInstallComponents(s.ctx, generics.GetFakeObj[string](), nil)
 		require.Error(t, err)
 		require.Empty(t, installComponents)
 	})
@@ -93,7 +93,7 @@ func (s *installComponentsTestSuite) TestGetInstallComponents() {
 
 func (s *installComponentsTestSuite) TestGetInstallComponentDeploys() {
 	s.T().Run("successfully returns when no deploys", func(t *testing.T) {
-		installDeploys, err := s.apiClient.GetInstallComponentDeploys(s.ctx, s.installID, s.compID)
+		installDeploys, _, err := s.apiClient.GetInstallComponentDeploys(s.ctx, s.installID, s.compID, nil)
 		require.NoError(t, err)
 		require.Empty(t, installDeploys)
 	})
@@ -106,7 +106,7 @@ func (s *installComponentsTestSuite) TestGetInstallComponentDeploys() {
 		require.NoError(s.T(), err)
 		require.NotNil(s.T(), deploy)
 
-		installDeploys, err := s.apiClient.GetInstallComponentDeploys(s.ctx, s.installID, s.compID)
+		installDeploys, _, err := s.apiClient.GetInstallComponentDeploys(s.ctx, s.installID, s.compID, nil)
 		require.NoError(t, err)
 		require.Len(t, installDeploys, 1)
 		require.Equal(t, installDeploys[0].ID, deploy.ID)
@@ -120,20 +120,20 @@ func (s *installComponentsTestSuite) TestGetInstallComponentDeploys() {
 		require.NoError(s.T(), err)
 		require.NotNil(s.T(), deploy)
 
-		installDeploys, err := s.apiClient.GetInstallComponentDeploys(s.ctx, s.installID, s.compID)
+		installDeploys, _, err := s.apiClient.GetInstallComponentDeploys(s.ctx, s.installID, s.compID, nil)
 		require.NoError(t, err, "HELLO WORLD")
 		require.Len(t, installDeploys, 2)
 		require.Equal(t, installDeploys[0].ID, deploy.ID)
 	})
 
 	s.T().Run("errors on invalid install", func(t *testing.T) {
-		installComponents, err := s.apiClient.GetInstallComponentDeploys(s.ctx, generics.GetFakeObj[string](), s.compID)
+		installComponents, _, err := s.apiClient.GetInstallComponentDeploys(s.ctx, generics.GetFakeObj[string](), s.compID, nil)
 		require.Error(t, err)
 		require.Empty(t, installComponents)
 	})
 
 	s.T().Run("errors on invalid component", func(t *testing.T) {
-		installComponents, err := s.apiClient.GetInstallComponentDeploys(s.ctx, s.installID, generics.GetFakeObj[string]())
+		installComponents, _, err := s.apiClient.GetInstallComponentDeploys(s.ctx, s.installID, generics.GetFakeObj[string](), nil)
 		require.Error(t, err)
 		require.Empty(t, installComponents)
 	})
