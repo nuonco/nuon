@@ -5,30 +5,30 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewPaginationPlugin() *paginationPlugin {
-	return &paginationPlugin{}
+func NewOffsetPaginationPlugin() *offsetPaginationPlugin {
+	return &offsetPaginationPlugin{}
 }
 
-type paginationPlugin struct {
+type offsetPaginationPlugin struct {
 	models []interface{}
 }
 
-func (m *paginationPlugin) Name() string {
+func (m *offsetPaginationPlugin) Name() string {
 	return "pagination-plugin"
 }
 
-func (m *paginationPlugin) Initialize(db *gorm.DB) error {
+func (m *offsetPaginationPlugin) Initialize(db *gorm.DB) error {
 	db.Callback().Query().Before("gorm:query").Register("enable_pagination_on_query", m.enablePagination)
 	return nil
 }
 
-func (m *paginationPlugin) enablePagination(tx *gorm.DB) {
-	enablePagination, ok := tx.Get(PaginationEnabledKey)
+func (m *offsetPaginationPlugin) enablePagination(tx *gorm.DB) {
+	enablePagination, ok := tx.Get(OffsetPaginationEnabledKey)
 	if !(ok && enablePagination.(bool)) {
 		return
 	}
 
-	ctxPagination := cctx.PaginationFromContext(tx.Statement.Context)
+	ctxPagination := cctx.OffsetPaginationFromContext(tx.Statement.Context)
 
 	if ctxPagination != nil {
 		tx.Limit(ctxPagination.Limit + 1)

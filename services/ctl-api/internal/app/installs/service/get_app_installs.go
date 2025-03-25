@@ -12,26 +12,26 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-//	@ID						GetAppInstalls
-//	@Summary				get all installs for an app
-//	@Description.markdown	get_app_installs.md
-//	@Param					app_id						path	string	true	"app ID"
-//	@Param					q							query	string	false	"search query"
-//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
-//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
-//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
-//	@Tags					installs
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{array}		app.Install
-//	@Router					/v1/apps/{app_id}/installs [GET]
+// @ID						GetAppInstalls
+// @Summary				get all installs for an app
+// @Description.markdown	get_app_installs.md
+// @Param					app_id						path	string	true	"app ID"
+// @Param					q							query	string	false	"search query"
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{array}		app.Install
+// @Router					/v1/apps/{app_id}/installs [GET]
 func (s *service) GetAppInstalls(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	q := ctx.Query("q")
@@ -48,7 +48,7 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 func (s *service) getAppInstalls(ctx *gin.Context, appID string, q string) ([]app.Install, error) {
 	currentApp := &app.App{}
 	tx := s.db.WithContext(ctx).
-		Scopes(scopes.WithPagination)
+		Scopes(scopes.WithOffsetPagination)
 
 	if q != "" {
 		tx = tx.Preload("Installs", "name ILIKE ?", "%"+q+"%")
