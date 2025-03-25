@@ -85,13 +85,13 @@ func (s *appSecretSuite) TestDeleteAppSecret() {
 
 func (s *appSecretSuite) TestGetAppSecretConfigs() {
 	s.T().Run("success when empty", func(t *testing.T) {
-		cfgs, err := s.apiClient.GetAppSecrets(s.ctx, s.appID)
+		cfgs, _, err := s.apiClient.GetAppSecrets(s.ctx, s.appID, nil)
 		require.NoError(t, err)
 		require.Empty(t, cfgs)
 	})
 
 	s.T().Run("error on invalid app id", func(t *testing.T) {
-		cfgs, err := s.apiClient.GetAppSecrets(s.ctx, generics.GetFakeObj[string]())
+		cfgs, _, err := s.apiClient.GetAppSecrets(s.ctx, generics.GetFakeObj[string](), nil)
 		require.Error(t, err)
 		require.Empty(t, cfgs)
 		require.True(t, nuon.IsNotFound(err))
@@ -110,7 +110,7 @@ func (s *appSecretSuite) TestGetAppSecretConfigs() {
 		secret2, err := s.apiClient.CreateAppSecret(s.ctx, s.appID, req)
 		require.NoError(t, err)
 
-		secrets, err := s.apiClient.GetAppSecrets(s.ctx, s.appID)
+		secrets, _, err := s.apiClient.GetAppSecrets(s.ctx, s.appID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, secrets)
 
