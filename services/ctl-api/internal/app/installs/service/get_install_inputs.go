@@ -12,25 +12,25 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-//	@ID						GetInstallInputs
-//	@Summary				get an installs inputs
-//	@Description.markdown	get_install_inputs.md
-//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
-//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
-//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
-//	@Tags					installs
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Param					install_id	path		string	true	"install ID"
-//	@Failure				400			{object}	stderr.ErrResponse
-//	@Failure				401			{object}	stderr.ErrResponse
-//	@Failure				403			{object}	stderr.ErrResponse
-//	@Failure				404			{object}	stderr.ErrResponse
-//	@Failure				500			{object}	stderr.ErrResponse
-//	@Success				200			{array}		app.InstallInputs
-//	@Router					/v1/installs/{install_id}/inputs [GET]
+// @ID						GetInstallInputs
+// @Summary				get an installs inputs
+// @Description.markdown	get_install_inputs.md
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Param					install_id	path		string	true	"install ID"
+// @Failure				400			{object}	stderr.ErrResponse
+// @Failure				401			{object}	stderr.ErrResponse
+// @Failure				403			{object}	stderr.ErrResponse
+// @Failure				404			{object}	stderr.ErrResponse
+// @Failure				500			{object}	stderr.ErrResponse
+// @Success				200			{array}		app.InstallInputs
+// @Router					/v1/installs/{install_id}/inputs [GET]
 func (s *service) GetInstallInputs(ctx *gin.Context) {
 	appID := ctx.Param("install_id")
 
@@ -48,7 +48,7 @@ func (s *service) getInstallInputs(ctx *gin.Context, installID string) ([]app.In
 	res := s.db.WithContext(ctx).
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
 			return db.
-				Scopes(scopes.WithPagination).
+				Scopes(scopes.WithOffsetPagination).
 				Order("install_inputs_view_v1.created_at DESC")
 		}).
 		First(&install, "id = ?", installID)

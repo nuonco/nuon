@@ -10,18 +10,18 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-//	@ID						GetAllComponents
-//	@Summary				get all components for all orgs
-//	@Description.markdown	get_all_components.md
-//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
-//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
-//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
-//	@Tags					components/admin
-//	@Security				AdminEmail
-//	@Accept					json
-//	@Produce				json
-//	@Success				200	{array}	app.Component
-//	@Router					/v1/components [get]
+// @ID						GetAllComponents
+// @Summary				get all components for all orgs
+// @Description.markdown	get_all_components.md
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+// @Tags					components/admin
+// @Security				AdminEmail
+// @Accept					json
+// @Produce				json
+// @Success				200	{array}	app.Component
+// @Router					/v1/components [get]
 func (s *service) GetAllComponents(ctx *gin.Context) {
 	components, err := s.getAllComponents(ctx)
 	if err != nil {
@@ -34,7 +34,7 @@ func (s *service) GetAllComponents(ctx *gin.Context) {
 func (s *service) getAllComponents(ctx *gin.Context) ([]*app.Component, error) {
 	var components []*app.Component
 	res := s.db.WithContext(ctx).
-		Scopes(scopes.WithPagination).
+		Scopes(scopes.WithOffsetPagination).
 		Order("created_at desc").
 		Preload("Dependencies").
 		Find(&components)

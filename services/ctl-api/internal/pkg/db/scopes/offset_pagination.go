@@ -7,6 +7,6 @@ import (
 )
 
 // EnablePagination is a scope that enables pagination for the query.
-func WithPagination(db *gorm.DB) *gorm.DB {
-	return db.Set(pagination.PaginationEnabledKey, true)
+func WithOffsetPagination(db *gorm.DB) *gorm.DB {
+	return db.Set(pagination.OffsetPaginationEnabledKey, true)
 }
