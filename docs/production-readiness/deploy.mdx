@@ -4,23 +4,37 @@ description: ""
 icon: 'code'
 ---
 
-## Deploy
+Deploying your app to a customer's account involves more than simply creating all the components.
+You should consider what the installation experience will be for your customers, and how to make it as simple and clear as possible.
 
-Beyond just deploying all the components, you should think about the user experience of installing your app.
-This is where the rubber meets the road on providing a "SaaS-like" experience.
-It should be clear to your customer what is going on at each step of the installation process, and when the installation is complete and their install is ready to use.
+## Managed vs Self-Serve
 
-### Key Questions
+There two approaches you can take to deploying your app into a customer's cloud account.
 
-- Will installation be self-serve by the customer or handled by an internal team? This will define what runbooks you need.
-- Will there be manual steps needed after installation? If you can't automate every step, you can still document them in runbooks, and provide actions to execute scripts.
-- How will your customer know when the app is ready to use? You can use actions to implement a readiness check.
-- How will your customer know where to go to access the app? You can render component outputs in a runbook to provide a URL.
+- Managed: The customer gives you access to their environment, and you manage the installation and setup.
+- Self-Serve: The customer installs and sets up the app themselves.
 
-### Checklist
+For Managed installs, you can simply use the Dashboard to create an install.
+It will allow you to deploy the runner, fill out the inputs you have configured, and monitor the initial deployment.
 
-- runbooks
-  - customer installation instructions for self-serve installation
-  - vendor installation instructions for managed installation
-- actions
-  - readiness check
+For self-serve installs, we recommend integrating with our API to provide a custom, fully-branded installation flow.
+
+<Note>
+We are working on adding customer mode to the Dashboard.
+This new feature will allow you to whitelabel the dashboard UI, and grant access to the install management features to your customers.
+This will allow you to provide a self-serve experience without building custom UI.
+</Note>
+
+## Outputs, Healthchecks, and Runbooks
+
+Make sure your components provide the outputs you need to determine what URL a web UI or API is hosted at.
+You can also use healthcheck actions to watch liveness endpoints, to know when the app is ready to use.
+
+Beyond the basic install creation UI, you can also use a runbook to provide information specific to your app during deployment.
+Component and action outputs are available in runbook templates as variables, so you can use these to show your customer when the app is ready to use, and where to access it.
+
+## Manual Steps
+
+Ideally, your app can be deployed in a fully automated fashion.
+If this is not the case, and there are manual steps required after the initial deployment, you can use actions to run those.
+If a customer needs to be able to run these themselves, we recommend providing instructions in a runbook for them to follow.
