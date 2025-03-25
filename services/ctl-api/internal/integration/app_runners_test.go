@@ -157,7 +157,7 @@ func (s *appRunnersSuite) TestGetAppRunnerConfigs() {
 		require.NoError(t, err)
 		require.NotNil(t, cfg1)
 
-		cfgs, err := s.apiClient.GetAppRunnerConfigs(s.ctx, s.appID)
+		cfgs, _, err := s.apiClient.GetAppRunnerConfigs(s.ctx, s.appID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, cfgs)
 	})
@@ -174,7 +174,7 @@ func (s *appRunnersSuite) TestGetAppRunnerConfigs() {
 		require.NoError(t, err)
 		require.NotNil(t, cfg2)
 
-		cfgs, err := s.apiClient.GetAppRunnerConfigs(s.ctx, s.appID)
+		cfgs, _, err := s.apiClient.GetAppRunnerConfigs(s.ctx, s.appID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, cfgs)
 		require.Equal(t, cfgs[0].ID, cfg2.ID)
