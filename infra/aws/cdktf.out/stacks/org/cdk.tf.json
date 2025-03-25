@@ -8,7 +8,6 @@
     },
     "outputs": {
       "org": {
-        "cross-stack-output-aws_organizations_account.canary.id": "cross-stack-output-aws_organizations_accountcanaryid",
         "cross-stack-output-aws_organizations_account.demo-govcloud.id": "cross-stack-output-aws_organizations_accountdemo-govcloudid",
         "cross-stack-output-aws_organizations_account.demo.id": "cross-stack-output-aws_organizations_accountdemoid",
         "cross-stack-output-aws_organizations_account.govcloud-prod.id": "cross-stack-output-aws_organizations_accountgovcloud-prodid",
@@ -73,10 +72,6 @@
     }
   },
   "output": {
-    "cross-stack-output-aws_organizations_accountcanaryid": {
-      "sensitive": true,
-      "value": "${aws_organizations_account.canary.id}"
-    },
     "cross-stack-output-aws_organizations_accountdemo-govcloudid": {
       "sensitive": true,
       "value": "${aws_organizations_account.demo-govcloud.id}"
@@ -171,7 +166,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-03-19T03:53:47.610Z"
+      "value": "2025-03-25T23:31:26.859Z"
     }
   },
   "provider": {
@@ -191,24 +186,6 @@
   },
   "resource": {
     "aws_organizations_account": {
-      "canary": {
-        "//": {
-          "metadata": {
-            "path": "org/canary",
-            "uniqueId": "canary"
-          }
-        },
-        "close_on_deletion": true,
-        "email": "aws-accounts+canary@powertools.dev",
-        "iam_user_access_to_billing": "ALLOW",
-        "lifecycle": {
-          "ignore_changes": [
-            "iam_user_access_to_billing"
-          ]
-        },
-        "name": "canary",
-        "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
-      },
       "demo": {
         "//": {
           "metadata": {
@@ -728,17 +705,6 @@
         "name": "org-environment-tag-policy",
         "type": "TAG_POLICY"
       },
-      "env_tag_policy_canary": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_canary",
-            "uniqueId": "env_tag_policy_canary"
-          }
-        },
-        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"canary\"]}}}}",
-        "name": "canary-environment-tag-policy",
-        "type": "TAG_POLICY"
-      },
       "env_tag_policy_demo": {
         "//": {
           "metadata": {
@@ -1003,16 +969,6 @@
         },
         "policy_id": "${aws_organizations_policy.ai_opt_out_policy.id}",
         "target_id": "${aws_organizations_organization.org.roots[0].id}"
-      },
-      "env_tag_policy_attach_canary": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_attach_canary",
-            "uniqueId": "env_tag_policy_attach_canary"
-          }
-        },
-        "policy_id": "${aws_organizations_policy.env_tag_policy_canary.id}",
-        "target_id": "${aws_organizations_account.canary.id}"
       },
       "env_tag_policy_attach_demo": {
         "//": {

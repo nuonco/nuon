@@ -61,7 +61,6 @@ export const desiredOrgStructure: orgStructure = [
       { name: "demo" },
       { name: "demo-govcloud" },
       { name: "public" },
-      { name: "canary" },
       { name: "test" },
     ],
     disableScp: true,
