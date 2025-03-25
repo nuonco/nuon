@@ -1,22 +1,28 @@
 ---
 title: 'Debug'
-description: "Configuring your app to meet best practices."
+description: ""
 icon: 'code'
 ---
 
-## Debug
+Being able to quickly debug issues will be critical to providing a SaaS-like experience to your customers.
+It pays to think ahead about what kind of issues your app might have, and how to inspect the state of your app and it's components.
 
-When incidents happen, you will want to respond in a timely manner, and ensure your customer remains confident you are prepared to handle issues for them.
+## Actions
 
-### Key Questions
+You can use actions to run commands inside an install to inspect it's state.
 
-- What are the main issues you foresee having with your app in a customer's account? You should have actions to run common mitigations for these.
-- How can you ensure no data is lost in the event you need to tear down and re-deploy components?
+### Reading Logs
 
-### Checklist
+Customers typically will not want application logs leaving their environment, so we recommend reading them when needed via actions.
+You should define actions up front for reading logs from the components of your app that provide them.
+This will be especially useful for debugging issues with services like kubernetes pods, but can also be used to inspect platform-specific things like Cloudwatch logs.
 
-- runbooks
-  - vendor maintenance runbook
-  - break glass runbook
-- actions
-  - mitigations for common, known issues
+### Healthchecks
+
+In addition to running healthchecks on a cron, we recommend also having a manual trigger.
+You may want to run certain healthchecks while debugging to check on the status of components.
+
+## Runbooks
+
+You should have a runbook for how to debug your app.
+It can outline common issues, and link to any actions you have defined.
