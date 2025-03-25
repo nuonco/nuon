@@ -24,7 +24,7 @@ export const SandboxHistory: FC<ISandboxHistory> = ({
 
   useEffect(() => {
     const fetchSandboxRuns = () => {
-      fetch(`/api/${orgId}/installs/${installId}/runs`)
+      fetch(`/api/${orgId}/installs/${installId}/sandbox-runs`)
         .then((res) => res.json().then((r) => setSandboxRuns(r)))
         .catch(console.error)
     }
