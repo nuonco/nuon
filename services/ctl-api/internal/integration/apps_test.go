@@ -216,7 +216,7 @@ func (s *appsTestSuite) TestGetApps() {
 	require.NotNil(s.T(), app)
 
 	s.T().Run("success", func(t *testing.T) {
-		apps, err := s.apiClient.GetApps(s.ctx)
+		apps, _, err := s.apiClient.GetApps(s.ctx, nil)
 		require.Nil(t, err)
 		require.Len(t, apps, 1)
 		require.Equal(t, app.ID, apps[0].ID)

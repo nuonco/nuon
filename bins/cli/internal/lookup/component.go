@@ -23,18 +23,13 @@ func ComponentID(ctx context.Context, apiClient nuon.Client, appID string, compI
 	}
 
 	appID = app.ID
-	appComps, err := apiClient.GetAppComponents(ctx, appID)
-	if err != nil {
-		return "", fmt.Errorf("unable to fetch app: %w", err)
-	}
+	appComp, err := apiClient.GetAppComponent(ctx, appID, compIDOrName)
 
-	for _, comp := range appComps {
-		if comp.ID == compIDOrName || comp.Name == compIDOrName {
-			return comp.ID, nil
+	if err != nil {
+		return "", &ui.CLIUserError{
+			Msg: fmt.Sprintf("component id or name is not valid: %s", compIDOrName),
 		}
 	}
 
-	return "", &ui.CLIUserError{
-		Msg: fmt.Sprintf("component id or name is not valid: %s", compIDOrName),
-	}
+	return appComp.ID, nil
 }
