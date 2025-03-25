@@ -11,15 +11,15 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @ID AdminGetInstall
-// @Summary	get an install
-// @Description.markdown get_install.md
-// @Param			install_id	path	string					true	"install ID"
-// @Tags			installs/admin
-// @Accept			json
-// @Produce		json
-// @Success		200	{boolean}	true
-// @Router			/v1/installs/{install_id}/admin-get [GET]
+//	@ID						AdminGetInstall
+//	@Summary				get an install
+//	@Description.markdown	get_install.md
+//	@Param					install_id	path	string	true	"install ID"
+//	@Tags					installs/admin
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{boolean}	true
+//	@Router					/v1/installs/{install_id}/admin-get [GET]
 func (s *service) AdminGetInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

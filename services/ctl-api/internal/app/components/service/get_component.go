@@ -11,22 +11,22 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
-// @ID GetComponent
-// @Summary	get a component
-// @Description.markdown	get_component.md
-// @Param			component_id	path	string	true	"component ID"
-// @Tags			components
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	app.Component
-// @Router			/v1/components/{component_id} [get]
+//	@ID						GetComponent
+//	@Summary				get a component
+//	@Description.markdown	get_component.md
+//	@Param					component_id	path	string	true	"component ID"
+//	@Tags					components
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	app.Component
+//	@Router					/v1/components/{component_id} [get]
 func (s *service) GetComponent(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

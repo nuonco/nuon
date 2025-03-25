@@ -20,17 +20,17 @@ import (
 
 type AdminMigrateOrg struct{}
 
-// @ID AdminMigrateOrg
-// @Summary migrate an org
-// @Description.markdown admin_migrate_org.md
-// @Param			org_id	path	string	true	"org ID or name to update"
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req	body	AdminMigrateOrg true	"Input"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/orgs/{org_id}/admin-migrate [POST]
+//	@ID						AdminMigrateOrg
+//	@Summary				migrate an org
+//	@Description.markdown	admin_migrate_org.md
+//	@Param					org_id	path	string	true	"org ID or name to update"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req	body	AdminMigrateOrg	true	"Input"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/orgs/{org_id}/admin-migrate [POST]
 func (s *service) AdminMigrateOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 

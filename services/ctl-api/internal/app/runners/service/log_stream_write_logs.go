@@ -17,23 +17,23 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 )
 
-// @ID LogStreamWriteLogs
-// @Summary	log stream write logs
-// @Description.markdown log_stream_write_logs.md
-// @Param			log_stream_id	path	string	true	"log stream ID"
-// @Param			req				body	otel.OTLPLogExportRequest true	"Input"
-// @Tags runners/runner
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	string
-// @Router			/v1/log-streams/{log_stream_id}/logs [POST]
+//	@ID						LogStreamWriteLogs
+//	@Summary				log stream write logs
+//	@Description.markdown	log_stream_write_logs.md
+//	@Param					log_stream_id	path	string						true	"log stream ID"
+//	@Param					req				body	otel.OTLPLogExportRequest	true	"Input"
+//	@Tags					runners/runner
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	string
+//	@Router					/v1/log-streams/{log_stream_id}/logs [POST]
 func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 	logStreamID := ctx.Param("log_stream_id")
 

@@ -15,17 +15,17 @@ type SetSlackWebhookURLRequest struct {
 	Name string `validate:"required"`
 }
 
-// @ID AdminSetInternalSlackWebhookURLOrg
-// @Summary set an internal slack webhook url for an org
-// @Description.markdown admin_set_org_slack_webhook_url.md
-// @Param			org_id	path	string	true	"org ID for org"
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req	body	SetSlackWebhookURLRequest	true	"Input"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/orgs/{org_id}/admin-internal-slack-webhook-url [POST]
+//	@ID						AdminSetInternalSlackWebhookURLOrg
+//	@Summary				set an internal slack webhook url for an org
+//	@Description.markdown	admin_set_org_slack_webhook_url.md
+//	@Param					org_id	path	string	true	"org ID for org"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req	body	SetSlackWebhookURLRequest	true	"Input"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/orgs/{org_id}/admin-internal-slack-webhook-url [POST]
 func (s *service) AdminSetInternalSlackWebhookURLOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 

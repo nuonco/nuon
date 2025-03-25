@@ -10,16 +10,16 @@ import (
 
 type AdminDeprovisionInstallRunnerRequest struct{}
 
-// @ID AdminDeprovisionInstallRunner
-// @Description.markdown deprovision_install_runner.md
-// @Param			install_id	path	string	true	"install ID for your current install"
-// @Tags			installs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req	body	DeprovisionInstallRequest	true	"Input"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/installs/{install_id}/admin-deprovision-runner [POST]
+//	@ID						AdminDeprovisionInstallRunner
+//	@Description.markdown	deprovision_install_runner.md
+//	@Param					install_id	path	string	true	"install ID for your current install"
+//	@Tags					installs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req	body	DeprovisionInstallRequest	true	"Input"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/installs/{install_id}/admin-deprovision-runner [POST]
 func (s *service) AdminDeprovisionInstallRunner(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

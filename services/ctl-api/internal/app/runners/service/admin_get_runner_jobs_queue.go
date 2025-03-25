@@ -10,20 +10,20 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @ID AdminGetRunnerJobsQueue
-// @Summary	get runner jobs queue
-// @Description.markdown admin_get_runner_jobs_queue.md
-// @Tags runners/admin
-// @Param	runner_id	path	string	true	"runner ID jobs to fetch"
-// @Accept			json
-// @Produce		json
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{array}	app.RunnerJob
-// @Router			/v1/runners/{runner_id}/jobs/queue [get]
+//	@ID						AdminGetRunnerJobsQueue
+//	@Summary				get runner jobs queue
+//	@Description.markdown	admin_get_runner_jobs_queue.md
+//	@Tags					runners/admin
+//	@Param					runner_id	path	string	true	"runner ID jobs to fetch"
+//	@Accept					json
+//	@Produce				json
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{array}		app.RunnerJob
+//	@Router					/v1/runners/{runner_id}/jobs/queue [get]
 func (s *service) AdminGetRunnerJobsQueue(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 

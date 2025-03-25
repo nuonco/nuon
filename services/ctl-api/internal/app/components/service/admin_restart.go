@@ -13,16 +13,16 @@ import (
 
 type RestartComponentRequest struct{}
 
-// @ID AdminRestartComponent
-// @Summary	restart an components event loop
-// @Description.markdown restart_component.md
-// @Param			component_id	path	string					true	"component ID"
-// @Param			req				body	RestartComponentRequest	true	"Input"
-// @Tags			components/admin
-// @Accept			json
-// @Produce		json
-// @Success		200	{boolean}	true
-// @Router			/v1/components/{component_id}/admin-restart [POST]
+//	@ID						AdminRestartComponent
+//	@Summary				restart an components event loop
+//	@Description.markdown	restart_component.md
+//	@Param					component_id	path	string					true	"component ID"
+//	@Param					req				body	RestartComponentRequest	true	"Input"
+//	@Tags					components/admin
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{boolean}	true
+//	@Router					/v1/components/{component_id}/admin-restart [POST]
 func (s *service) RestartComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 

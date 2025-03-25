@@ -23,22 +23,22 @@ func (c *UpdateOrgRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID UpdateOrg
-// @Summary	Update current org
-// @Description.markdown	update_org.md
-// @Param			req	body	UpdateOrgRequest	true	"Input"
-// @Tags			orgs
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	app.Org
-// @Router			/v1/orgs/current [PATCH]
+//	@ID						UpdateOrg
+//	@Summary				Update current org
+//	@Description.markdown	update_org.md
+//	@Param					req	body	UpdateOrgRequest	true	"Input"
+//	@Tags					orgs
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	app.Org
+//	@Router					/v1/orgs/current [PATCH]
 func (s *service) UpdateOrg(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

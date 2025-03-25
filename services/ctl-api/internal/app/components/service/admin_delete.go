@@ -10,17 +10,17 @@ import (
 
 type AdminDeleteComponentRequest struct{}
 
-// @ID AdminDeleteComponent
-// @Summary	delete a component
-// @Description.markdown delete_component.md
-// @Param			component_id	path	string						true	"component ID"
-// @Param			req				body	AdminDeleteComponentRequest	true	"Input"
-// @Tags			components/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200	{boolean}	true
-// @Router			/v1/components/{component_id}/admin-delete [POST]
+//	@ID						AdminDeleteComponent
+//	@Summary				delete a component
+//	@Description.markdown	delete_component.md
+//	@Param					component_id	path	string						true	"component ID"
+//	@Param					req				body	AdminDeleteComponentRequest	true	"Input"
+//	@Tags					components/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{boolean}	true
+//	@Router					/v1/components/{component_id}/admin-delete [POST]
 func (s *service) AdminDeleteComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 

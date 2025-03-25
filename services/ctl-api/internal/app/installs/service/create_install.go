@@ -22,23 +22,23 @@ func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID CreateInstall
-// @Summary	create an app install
-// @Description.markdown	create_install.md
-// @Param			app_id	path	string					true	"app ID"
-// @Param			req		body	CreateInstallRequest	true	"Input"
-// @Tags			installs
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.Install
-// @Router			/v1/apps/{app_id}/installs [post]
+//	@ID						CreateInstall
+//	@Summary				create an app install
+//	@Description.markdown	create_install.md
+//	@Param					app_id	path	string					true	"app ID"
+//	@Param					req		body	CreateInstallRequest	true	"Input"
+//	@Tags					installs
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.Install
+//	@Router					/v1/apps/{app_id}/installs [post]
 func (s *service) CreateInstall(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

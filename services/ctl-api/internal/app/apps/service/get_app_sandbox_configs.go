@@ -12,25 +12,25 @@ import (
 	"gorm.io/gorm"
 )
 
-// @ID GetAppSandboxConfigs
-// @Summary	get app sandbox configs
-// @Description.markdown	get_app_sandbox_configs.md
-// @Param			app_id	path	string	true	"app ID"
-// @Param   offset query int	 false	"offset of jobs to return"	Default(0)
-// @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
-// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
-// @Tags			apps
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	[]app.AppSandboxConfig
-// @Router			/v1/apps/{app_id}/sandbox-configs [get]
+//	@ID						GetAppSandboxConfigs
+//	@Summary				get app sandbox configs
+//	@Description.markdown	get_app_sandbox_configs.md
+//	@Param					app_id						path	string	true	"app ID"
+//	@Param					offset						query	int		false	"offset of jobs to return"	Default(0)
+//	@Param					limit						query	int		false	"limit of jobs to return"	Default(10)
+//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+//	@Tags					apps
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	[]app.AppSandboxConfig
+//	@Router					/v1/apps/{app_id}/sandbox-configs [get]
 func (s *service) GetAppSandboxConfigs(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

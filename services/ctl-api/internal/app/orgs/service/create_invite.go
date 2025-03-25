@@ -19,22 +19,22 @@ type CreateOrgInviteRequest struct {
 	Email string `json:"email" validate:"required"`
 }
 
-// @ID CreateOrgInvite
-// @Summary	Invite a user to the current org
-// @Description.markdown create_org_invite.md
-// @Param			req	body	CreateOrgInviteRequest	true	"Input"
-// @Tags			orgs
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.OrgInvite
-// @Router			/v1/orgs/current/invites [POST]
+//	@ID						CreateOrgInvite
+//	@Summary				Invite a user to the current org
+//	@Description.markdown	create_org_invite.md
+//	@Param					req	body	CreateOrgInviteRequest	true	"Input"
+//	@Tags					orgs
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.OrgInvite
+//	@Router					/v1/orgs/current/invites [POST]
 func (s *service) CreateOrgInvite(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

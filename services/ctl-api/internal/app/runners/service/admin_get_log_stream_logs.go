@@ -10,16 +10,16 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
-// @ID AdminGetLogStreamLogs
-// @Summary	get a log stream's logs
-// @Description.markdown admin_get_log_stream_logs.md
-// @Param			log_stream_id	path	string	true	"log stream or owner ID"
-// @Tags runners/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200				{object}	[]app.OtelLogRecord
-// @Router			/v1/log-streams/{log_stream_id}/logs [GET]
+//	@ID						AdminGetLogStreamLogs
+//	@Summary				get a log stream's logs
+//	@Description.markdown	admin_get_log_stream_logs.md
+//	@Param					log_stream_id	path	string	true	"log stream or owner ID"
+//	@Tags					runners/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{object}	[]app.OtelLogRecord
+//	@Router					/v1/log-streams/{log_stream_id}/logs [GET]
 func (s *service) AdminGetLogStreamLogs(ctx *gin.Context) {
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {

@@ -11,25 +11,25 @@ import (
 	"gorm.io/gorm"
 )
 
-// @ID GetReleaseSteps
-// @Summary	get a release
-// @Description.markdown	get_release.md
-// @Param			release_id	path	string	true	"release ID"
-// @Param   offset query int	 false	"offset of results to return"	Default(0)
-// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
-// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
-// @Tags			releases
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{array}		app.ComponentReleaseStep
-// @Router			/v1/releases/{release_id}/steps [get]
+//	@ID						GetReleaseSteps
+//	@Summary				get a release
+//	@Description.markdown	get_release.md
+//	@Param					release_id					path	string	true	"release ID"
+//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
+//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
+//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+//	@Tags					releases
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{array}		app.ComponentReleaseStep
+//	@Router					/v1/releases/{release_id}/steps [get]
 func (s *service) GetReleaseSteps(ctx *gin.Context) {
 	releaseID := ctx.Param("release_id")
 	steps, err := s.getReleaseSteps(ctx, releaseID)
