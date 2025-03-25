@@ -197,7 +197,7 @@ func (s *componentConfigsSuite) TestComponentConfigs() {
 		require.NotNil(t, cfg)
 
 		// assert that latest is this id
-		cfgs, err := s.apiClient.GetComponentConfigs(s.ctx, s.compID)
+		cfgs, _,err := s.apiClient.GetComponentConfigs(s.ctx, s.compID, nil)
 		require.NoError(t, err)
 		require.Len(t, cfgs, 1)
 		require.Equal(t, cfgs[0].ID, cfg.ComponentConfigConnectionID)
@@ -218,7 +218,7 @@ func (s *componentConfigsSuite) TestComponentConfigs() {
 		require.NotNil(t, cfg)
 
 		// assert that latest is this id
-		cfgs, err := s.apiClient.GetComponentConfigs(s.ctx, s.compID)
+		cfgs, _,err := s.apiClient.GetComponentConfigs(s.ctx, s.compID, nil)
 		require.Nil(t, err)
 		require.Len(t, cfgs, 2)
 		require.Equal(t, cfgs[0].ID, cfg.ComponentConfigConnectionID)

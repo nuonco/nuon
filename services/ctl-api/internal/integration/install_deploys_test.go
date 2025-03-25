@@ -67,7 +67,7 @@ func (s *installDeploysIntegrationTestSuite) SetupTest() {
 
 func (s *installDeploysIntegrationTestSuite) TestEnsureInstallComponent() {
 	s.T().Run("should automatically have an install component to deploy too", func(t *testing.T) {
-		installComps, err := s.apiClient.GetInstallComponents(s.ctx, s.installID)
+		installComps, _, err := s.apiClient.GetInstallComponents(s.ctx, s.installID, nil)
 		require.NoError(t, err)
 		require.Len(t, installComps, 1)
 		require.Equal(t, s.compID, installComps[0].Component.ID)
@@ -139,7 +139,7 @@ func (s *installDeploysIntegrationTestSuite) TestGetInstallDeploys() {
 	require.NotNil(s.T(), seedDeploy)
 
 	s.T().Run("successfully fetches deploys", func(t *testing.T) {
-		deploys, err := s.apiClient.GetInstallDeploys(s.ctx, s.installID)
+		deploys, _, err := s.apiClient.GetInstallDeploys(s.ctx, s.installID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, deploys)
 		require.Equal(t, deploys[0].ID, seedDeploy.ID)
@@ -148,7 +148,7 @@ func (s *installDeploysIntegrationTestSuite) TestGetInstallDeploys() {
 	s.T().Run("successfully fetches with multiple components", func(t *testing.T) {
 		s.createComponent(s.appID)
 
-		deploys, err := s.apiClient.GetInstallDeploys(s.ctx, s.installID)
+		deploys, _, err := s.apiClient.GetInstallDeploys(s.ctx, s.installID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, deploys)
 		require.Equal(t, deploys[0].ID, seedDeploy.ID)
@@ -159,7 +159,7 @@ func (s *installDeploysIntegrationTestSuite) TestGetInstallDeploys() {
 		require.NoError(s.T(), err)
 		require.NotNil(s.T(), secondDeploy)
 
-		deploys, err := s.apiClient.GetInstallDeploys(s.ctx, s.installID)
+		deploys, _, err := s.apiClient.GetInstallDeploys(s.ctx, s.installID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, deploys)
 		require.Equal(t, deploys[0].ID, secondDeploy.ID)

@@ -180,7 +180,7 @@ func (s *appSandboxesSuite) TestGetAppSandboxLatestConfig() {
 
 func (s *appSandboxesSuite) TestGetAppSandboxConfigs() {
 	s.T().Run("success", func(t *testing.T) {
-		cfgs, err := s.apiClient.GetAppSandboxConfigs(s.ctx, s.appID)
+		cfgs, _, err := s.apiClient.GetAppSandboxConfigs(s.ctx, s.appID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, cfgs)
 	})
