@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/nuonco/nuon-go/models"
+	helpers "github.com/powertoolsdev/mono/bins/cli/internal"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
@@ -16,7 +18,7 @@ func (s *Service) SandboxRuns(ctx context.Context, installID string, asJSON bool
 
 	view := ui.NewGetView()
 
-	runs, err := s.api.GetInstallSandboxRuns(ctx, installID)
+	runs, err := s.listSandboxRuns(ctx, installID)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -63,4 +65,32 @@ func (s *Service) SandboxRuns(ctx context.Context, installID string, asJSON bool
 	}
 	view.Render(data)
 	return nil
+}
+
+func (s *Service) listSandboxRuns(ctx context.Context, appID string) ([]*models.AppInstallSandboxRun, error) {
+	if !s.cfg.PaginationEnabled {
+		runs, _, err := s.api.GetInstallSandboxRuns(ctx, appID, &models.GetInstallSandboxRunsQuery{
+			Offset:            0,
+			Limit:             10,
+			PaginationEnabled: s.cfg.PaginationEnabled,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return runs, nil
+	}
+
+	fetchFn := func(ctx context.Context, offset, limit int) ([]*models.AppInstallSandboxRun, bool, error) {
+		runs, hasMore, err := s.api.GetInstallSandboxRuns(ctx, appID, &models.GetInstallSandboxRunsQuery{
+			Offset:            offset,
+			Limit:             limit,
+			PaginationEnabled: s.cfg.PaginationEnabled,
+		})
+		if err != nil {
+			return nil, false, err
+		}
+		return runs, hasMore, nil
+	}
+
+	return helpers.BatchFetch(ctx, 10, 50, fetchFn)
 }

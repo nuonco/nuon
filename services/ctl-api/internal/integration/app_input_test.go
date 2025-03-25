@@ -91,13 +91,13 @@ func (s *appInputSuite) TestGetAppLatestInputConfig() {
 
 func (s *appInputSuite) TestGetAppInputConfigs() {
 	s.T().Run("success when empty", func(t *testing.T) {
-		cfgs, err := s.apiClient.GetAppInputConfigs(s.ctx, s.appID)
+		cfgs, _, err := s.apiClient.GetAppInputConfigs(s.ctx, s.appID, nil)
 		require.NoError(t, err)
 		require.Empty(t, cfgs)
 	})
 
 	s.T().Run("error on invalid app id", func(t *testing.T) {
-		cfgs, err := s.apiClient.GetAppInputConfigs(s.ctx, generics.GetFakeObj[string]())
+		cfgs, _, err := s.apiClient.GetAppInputConfigs(s.ctx, generics.GetFakeObj[string](), nil)
 		require.Error(t, err)
 		require.Empty(t, cfgs)
 		require.True(t, nuon.IsNotFound(err))
@@ -112,7 +112,7 @@ func (s *appInputSuite) TestGetAppInputConfigs() {
 		cfg2, err := s.apiClient.CreateAppInputConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
 
-		cfgs, err := s.apiClient.GetAppInputConfigs(s.ctx, s.appID)
+		cfgs, _, err := s.apiClient.GetAppInputConfigs(s.ctx, s.appID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, cfgs)
 

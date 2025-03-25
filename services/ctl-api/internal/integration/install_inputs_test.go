@@ -89,14 +89,14 @@ func (s *installInputsSuite) TestCreateInstallInputs() {
 
 func (s *installInputsSuite) TestGetInstallInputs() {
 	s.T().Run("success", func(t *testing.T) {
-		inputs, err := s.apiClient.GetInstallInputs(s.ctx, s.installID)
+		inputs, _, err := s.apiClient.GetInstallInputs(s.ctx, s.installID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, inputs)
 		require.NotEmpty(t, inputs[0].RedactedValues)
 	})
 
 	s.T().Run("invalid install", func(t *testing.T) {
-		inputs, err := s.apiClient.GetInstallInputs(s.ctx, generics.GetFakeObj[string]())
+		inputs, _, err := s.apiClient.GetInstallInputs(s.ctx, generics.GetFakeObj[string](), nil)
 		require.Error(t, err)
 		require.Nil(t, inputs)
 		require.True(t, nuon.IsNotFound(err))
@@ -110,7 +110,7 @@ func (s *installInputsSuite) TestGetInstallInputs() {
 		require.NoError(t, err)
 		require.NotNil(t, inputs)
 
-		allInputs, err := s.apiClient.GetInstallInputs(s.ctx, s.installID)
+		allInputs, _, err := s.apiClient.GetInstallInputs(s.ctx, s.installID, nil)
 		require.NoError(t, err)
 		require.Len(t, allInputs, 2)
 		require.Equal(t, inputs.ID, allInputs[0].ID)

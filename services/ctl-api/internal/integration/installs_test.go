@@ -73,7 +73,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 
 		install := s.createInstall(s.appID)
 
-		installComps, err := s.apiClient.GetInstallComponents(s.ctx, install.ID)
+		installComps, _, err := s.apiClient.GetInstallComponents(s.ctx, install.ID, nil)
 		require.NoError(t, err)
 		require.Len(t, installComps, 1)
 		require.Equal(t, installComps[0].ComponentID, comp.ID)
@@ -254,13 +254,13 @@ func (s *installsIntegrationTestSuite) TestGetAppInstalls() {
 		secondApp := s.createApp()
 		s.createInstall(secondApp.ID)
 
-		installs, err := s.apiClient.GetAppInstalls(s.ctx, s.appID)
+		installs, _, err := s.apiClient.GetAppInstalls(s.ctx, s.appID, nil)
 		require.Nil(t, err)
 		require.Len(t, installs, 1)
 		require.Equal(t, installs[0].ID, origInstall.ID)
 	})
 	s.T().Run("errors when app not found", func(t *testing.T) {
-		installs, err := s.apiClient.GetAppInstalls(s.ctx, generics.GetFakeObj[string]())
+		installs, _, err := s.apiClient.GetAppInstalls(s.ctx, generics.GetFakeObj[string](), nil)
 		require.NotNil(t, err)
 		require.Empty(t, installs)
 	})
@@ -273,7 +273,7 @@ func (s *installsIntegrationTestSuite) TestGetAllInstalls() {
 	secondAppInstall := s.createInstall(secondApp.ID)
 
 	s.T().Run("success", func(t *testing.T) {
-		installs, err := s.apiClient.GetAllInstalls(s.ctx)
+		installs, _, err := s.apiClient.GetAllInstalls(s.ctx, nil)
 		require.Nil(t, err)
 		require.Len(t, installs, 2)
 		require.Equal(t, installs[0].ID, secondAppInstall.ID)

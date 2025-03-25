@@ -11,7 +11,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		id       string
 		name     string
 		sandbox  bool
-		limit    int64
+		limit    int
 		email    string
 		noSelect bool
 	)
@@ -174,7 +174,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 			return svc.ListInvites(cmd.Context(), limit, PrintJSON)
 		}),
 	}
-	listInvitesCmd.Flags().Int64VarP(&limit, "limit", "l", 5, "Maximum invites to return")
+	listInvitesCmd.Flags().IntVarP(&limit, "limit", "l", 5, "Maximum invites to return")
 	orgsCmd.AddCommand(listInvitesCmd)
 
 	return orgsCmd
