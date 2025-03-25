@@ -12,21 +12,21 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-//	@ID			AdminGetAllOrgs
-//	@BasePath	/v1/orgs
-//	@Summary	Return all orgs
-//	@Schemes
-//	@Description	return all orgs
-//	@Param			type						query	string	false	"type of orgs to return"		Default(real)
-//	@Param			offset						query	int		false	"offset of results to return"	Default(0)
-//	@Param			limit						query	int		false	"limit of results to return"	Default(10)
-//	@Param			x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
-//	@Tags			orgs/admin
-//	@Security		AdminEmail
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{array}	app.Org
-//	@Router			/v1/orgs [GET]
+// @ID			AdminGetAllOrgs
+// @BasePath	/v1/orgs
+// @Summary	Return all orgs
+// @Schemes
+// @Description	return all orgs
+// @Param			type						query	string	false	"type of orgs to return"		Default(real)
+// @Param			offset						query	int		false	"offset of results to return"	Default(0)
+// @Param			limit						query	int		false	"limit of results to return"	Default(10)
+// @Param			x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+// @Tags			orgs/admin
+// @Security		AdminEmail
+// @Accept			json
+// @Produce		json
+// @Success		200	{array}	app.Org
+// @Router			/v1/orgs [GET]
 func (s *service) GetAllOrgs(ctx *gin.Context) {
 	orgTyp := ctx.DefaultQuery("type", "real")
 
@@ -48,7 +48,7 @@ func (s *service) getAllOrgs(ctx *gin.Context, typ string) ([]*app.Org, error) {
 	}
 
 	res := s.db.WithContext(ctx).
-		Scopes(scopes.WithPagination).
+		Scopes(scopes.WithOffsetPagination).
 		Joins("JOIN accounts ON accounts.id=orgs.created_by_id").
 		Where(where).
 		Order("orgs.created_at desc").

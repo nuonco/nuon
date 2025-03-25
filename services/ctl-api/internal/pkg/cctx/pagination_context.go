@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	paginationCtxKey string = "pagination"
+	offPaginationCtxKey string = "offset_pagination"
 )
 
-func PaginationFromContext(ctx context.Context) *pagination.PaginationQuery {
-	p := ctx.Value(paginationCtxKey)
+func OffsetPaginationFromContext(ctx context.Context) *pagination.PaginationQuery {
+	p := ctx.Value(offPaginationCtxKey)
 	if p == nil {
 		return nil
 	}
@@ -20,6 +20,6 @@ func PaginationFromContext(ctx context.Context) *pagination.PaginationQuery {
 	return p.(*pagination.PaginationQuery)
 }
 
-func SetPaginationGinCtx(ctx *gin.Context, pagination pagination.PaginationQuery) {
-	ctx.Set(paginationCtxKey, &pagination)
+func SetOffPaginationGinCtx(ctx *gin.Context, pagination pagination.PaginationQuery) {
+	ctx.Set(offPaginationCtxKey, &pagination)
 }

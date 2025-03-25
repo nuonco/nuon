@@ -13,24 +13,24 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-//	@ID						GetOrgInstalls
-//	@Summary				get all installs for an org
-//	@Description.markdown	get_org_installs.md
-//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
-//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
-//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
-//	@Tags					installs
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{array}		app.Install
-//	@Router					/v1/installs [GET]
+// @ID						GetOrgInstalls
+// @Summary				get all installs for an org
+// @Description.markdown	get_org_installs.md
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{array}		app.Install
+// @Router					/v1/installs [GET]
 func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
@@ -50,7 +50,7 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 func (s *service) getOrgInstalls(ctx *gin.Context, orgID string) ([]app.Install, error) {
 	var installs []app.Install
 	res := s.db.WithContext(ctx).
-		Scopes(scopes.WithPagination).
+		Scopes(scopes.WithOffsetPagination).
 		Preload("AppSandboxConfig").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
