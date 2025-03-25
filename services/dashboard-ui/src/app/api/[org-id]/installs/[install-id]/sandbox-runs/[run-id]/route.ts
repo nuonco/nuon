@@ -1,28 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getInstallComponentDeploys } from '@/lib'
+import { getInstallSandboxRun } from '@/lib'
 import { TRouteRes } from '@/app/api/[org-id]/types'
 
 export const GET = withApiAuthRequired(
   async (
     req: NextRequest,
-    { params }: TRouteRes<'org-id' | 'install-id' | 'component-id'>
+    { params }: TRouteRes<'org-id' | 'install-id' | 'run-id'>
   ) => {
     const orgId = params?.['org-id']
     const installId = params?.['install-id']
-    const componentId = params?.['component-id']
+    const installSandboxRunId = params?.['run-id']
 
-    let deploys = []
+    let run = {}
     try {
-      deploys = await getInstallComponentDeploys({
+      run = await getInstallSandboxRun({
         orgId,
         installId,
-        componentId,
+        installSandboxRunId,
       })
     } catch (error) {
       console.error(error)
     }
 
-    return NextResponse.json(deploys)
+    return NextResponse.json(run)
   }
 )

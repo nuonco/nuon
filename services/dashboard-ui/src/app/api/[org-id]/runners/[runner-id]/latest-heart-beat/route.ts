@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getComponentBuilds } from '@/lib'
+import { getRunnerLatestHeartbeat } from '@/lib'
 import { TRouteRes } from '@/app/api/[org-id]/types'
 
 export const GET = withApiAuthRequired(
-  async (
-    req: NextRequest,
-    { params }: TRouteRes<'org-id' | 'component-id'>
-  ) => {
+  async (req: NextRequest, { params }: TRouteRes<'org-id' | 'runner-id'>) => {
     const orgId = params?.['org-id']
-    const componentId = params?.['component-id']
+    const runnerId = params?.['runner-id']
 
-    let builds = []
+    let heartbeat = {}
     try {
-      builds = await getComponentBuilds({ orgId, componentId })
+      heartbeat = await getRunnerLatestHeartbeat({ orgId, runnerId })
     } catch (error) {
       console.error(error)
     }
 
-    return NextResponse.json(builds)
+    return NextResponse.json(heartbeat)
   }
 )
