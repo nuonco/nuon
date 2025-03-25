@@ -26,14 +26,14 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 		if appID != "" {
 			appID, err := lookup.AppID(ctx, s.api, appID)
 			if err != nil {
-				installs, err = s.api.GetAllInstalls(ctx)
+				installs, err = s.listInstalls(ctx)
 
 			} else {
-				installs, err = s.api.GetAppInstalls(ctx, appID)
+				installs, err = s.listAppInstalls(ctx, appID)
 			}
 
 		} else {
-			installs, err = s.api.GetAllInstalls(ctx)
+			installs, err = s.listInstalls(ctx)
 		}
 		if err != nil {
 			return view.Error(err)

@@ -143,7 +143,7 @@ func (s *releasesTestSuite) TestGetAppReleases() {
 	require.NotEmpty(s.T(), release)
 
 	s.T().Run("successfully returns from one component", func(t *testing.T) {
-		releases, err := s.apiClient.GetAppReleases(s.ctx, s.appID)
+		releases, _, err := s.apiClient.GetAppReleases(s.ctx, s.appID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, releases)
 
@@ -161,7 +161,7 @@ func (s *releasesTestSuite) TestGetAppReleases() {
 		require.NoError(t, err)
 		require.NotEmpty(t, release)
 
-		releases, err := s.apiClient.GetAppReleases(s.ctx, s.appID)
+		releases, _, err := s.apiClient.GetAppReleases(s.ctx, s.appID, nil)
 		require.NoError(s.T(), err)
 		require.NotEmpty(t, releases)
 		require.Len(t, releases, 2)
@@ -183,7 +183,7 @@ func (s *releasesTestSuite) TestGetComponentReleases() {
 	require.NotEmpty(s.T(), release)
 
 	s.T().Run("successfully returns from component", func(t *testing.T) {
-		releases, err := s.apiClient.GetComponentReleases(s.ctx, s.compID)
+		releases, _, err := s.apiClient.GetComponentReleases(s.ctx, s.compID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, releases)
 
@@ -201,7 +201,7 @@ func (s *releasesTestSuite) TestGetComponentReleases() {
 		require.NoError(t, err)
 		require.NotEmpty(t, release)
 
-		releases, err := s.apiClient.GetComponentReleases(s.ctx, s.compID)
+		releases, _, err := s.apiClient.GetComponentReleases(s.ctx, s.compID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, releases)
 		require.Len(t, releases, 2)
@@ -248,13 +248,13 @@ func (s *releasesTestSuite) TestGetComponentReleaseSteps() {
 	require.NotEmpty(s.T(), release)
 
 	s.T().Run("successfully gets steps by release id", func(t *testing.T) {
-		steps, err := s.apiClient.GetReleaseSteps(s.ctx, release.ID)
+		steps, _, err := s.apiClient.GetReleaseSteps(s.ctx, release.ID, nil)
 		require.NoError(t, err)
 		require.Len(t, steps, 1)
 	})
 
 	s.T().Run("fails when id is invalid", func(t *testing.T) {
-		fetched, err := s.apiClient.GetReleaseSteps(s.ctx, generics.GetFakeObj[string]())
+		fetched, _, err := s.apiClient.GetReleaseSteps(s.ctx, generics.GetFakeObj[string](), nil)
 		require.Error(t, err)
 		require.Empty(t, fetched)
 	})
@@ -270,7 +270,7 @@ func (s *releasesTestSuite) TestGetComponentReleaseSteps() {
 		require.NoError(t, err)
 		require.NotEmpty(t, release)
 
-		fetched, err := s.apiClient.GetReleaseSteps(s.ctx, release.ID)
+		fetched, _, err := s.apiClient.GetReleaseSteps(s.ctx, release.ID, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, fetched)
 

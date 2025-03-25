@@ -15,7 +15,11 @@ func (s *Service) ConnectGithub(ctx context.Context) error {
 	var connection = "started"
 	view := ui.NewGetView()
 
-	ogVcs, err := s.api.GetVCSConnections(ctx)
+	ogVcs, _, err := s.api.GetVCSConnections(ctx, &models.GetVCSConnectionsQuery{
+		Offset:            0,
+		Limit:             50,
+		PaginationEnabled: s.cfg.PaginationEnabled,
+	})
 	if err != nil {
 		view.Error(err)
 		connection = "failed"
@@ -31,7 +35,12 @@ func (s *Service) ConnectGithub(ctx context.Context) error {
 			browser.OpenURL("https://github.com/apps/" + s.cfg.GitHubAppName + "/installations/new?state=" + s.cfg.OrgID)
 		}
 
-		vcs, err := s.api.GetVCSConnections(ctx)
+		vcs, _, err := s.api.GetVCSConnections(ctx, &models.GetVCSConnectionsQuery{
+			Offset:            0,
+			Limit:             50,
+			PaginationEnabled: s.cfg.PaginationEnabled,
+		})
+
 		if err != nil {
 			view.Error(err)
 			connection = "failed"

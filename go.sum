@@ -1839,10 +1839,8 @@ github.com/nuonco/clickhouse-go/v2 v2.28.1 h1:BiRzWD5Dcs/n5LTUO+NbrDUXc6+i6Ncl0X
 github.com/nuonco/clickhouse-go/v2 v2.28.1/go.mod h1:z+/ndg1+oWVgVhxMh+OzVEZQOi/SmoY/gSEId5zj47I=
 github.com/nuonco/gin-swagger v1.6.2 h1:MafFLwTzIoCSmjo9dTu7KMI4XY/RSQSd/GKpyIh9/do=
 github.com/nuonco/gin-swagger v1.6.2/go.mod h1:uTjtvuQS7lK4f8KLmB376B/kb8ypjwV2/zAk6RKV0/k=
-github.com/nuonco/nuon-go v0.47.1 h1:tkw2vJVRKNjvN1GZqQRIp+eDG6B8VYP9kGsism2PfVE=
-github.com/nuonco/nuon-go v0.47.1/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
-github.com/nuonco/nuon-runner-go v0.9.0 h1:GSKHxKuAv6OueqSqB8EfT5XDiz4+lGPPAyslgeK7YjE=
-github.com/nuonco/nuon-runner-go v0.9.0/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
+github.com/nuonco/nuon-go v0.48.0 h1:MLT35yIri1mr2bt2pPgw5/xRBtfKHQhYruqLgpCmmQg=
+github.com/nuonco/nuon-go v0.48.0/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
 github.com/nuonco/nuon-runner-go v0.10.0 h1:iJ37y1TYt8M50acSJn/rjhG5c4ZE2w/zFFFNTxCJ+f4=
 github.com/nuonco/nuon-runner-go v0.10.0/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
 github.com/nuonco/sandboxes v1.34.0 h1:3ZH4qZw6tQkef7BVaKxUYjEfzghVBn+me5pWTE7Q4fc=
