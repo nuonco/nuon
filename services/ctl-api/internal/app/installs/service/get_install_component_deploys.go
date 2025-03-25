@@ -11,26 +11,26 @@ import (
 	"gorm.io/gorm"
 )
 
-//	@ID						GetInstallComponentDeploys
-//	@Summary				get an install components deploys
-//	@Description.markdown	get_install_component_deploys.md
-//	@Param					install_id					path	string	true	"install ID"
-//	@Param					component_id				path	string	true	"component ID"
-//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
-//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
-//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
-//	@Tags					installs
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{array}		app.InstallDeploy
-//	@Router					/v1/installs/{install_id}/components/{component_id}/deploys [GET]
+// @ID						GetInstallComponentDeploys
+// @Summary				get an install components deploys
+// @Description.markdown	get_install_component_deploys.md
+// @Param					install_id					path	string	true	"install ID"
+// @Param					component_id				path	string	true	"component ID"
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{array}		app.InstallDeploy
+// @Router					/v1/installs/{install_id}/components/{component_id}/deploys [GET]
 func (s *service) GetInstallComponentDeploys(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	componentID := ctx.Param("component_id")
@@ -51,7 +51,7 @@ func (s *service) getInstallComponentDeploys(ctx *gin.Context, installID, compon
 	}
 	res := s.db.WithContext(ctx).Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
 		return db.
-			Scopes(scopes.WithPagination).
+			Scopes(scopes.WithOffsetPagination).
 			Order("install_deploys.created_at DESC").Limit(1000)
 	}).
 		Preload("InstallDeploys.CreatedBy").

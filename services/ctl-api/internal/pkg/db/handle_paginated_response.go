@@ -15,14 +15,14 @@ const (
 )
 
 func HandlePaginatedResponse[T any](ctx *gin.Context, models []T) ([]T, error) {
-	pagination := cctx.PaginationFromContext(ctx)
+	pagination := cctx.OffsetPaginationFromContext(ctx)
 
 	if pagination == nil {
 		return models, nil
 	}
 
 	if len(models) > pagination.Limit {
-		models = models[:len(models) - 1]
+		models = models[:len(models)-1]
 		ctx.Header(nextHeader, "true")
 	} else {
 		ctx.Header(nextHeader, "false")
