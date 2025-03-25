@@ -10,18 +10,18 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-//	@ID						GetAllReleases
-//	@Summary				get all releases for all orgs
-//	@Description.markdown	get all releases for all orgs
-//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
-//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
-//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
-//	@Tags					releases/admin
-//	@Security				AdminEmail
-//	@Accept					json
-//	@Produce				json
-//	@Success				200	{array}	app.ComponentRelease
-//	@Router					/v1/releases [get]
+// @ID						GetAllReleases
+// @Summary				get all releases for all orgs
+// @Description.markdown	get all releases for all orgs
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+// @Tags					releases/admin
+// @Security				AdminEmail
+// @Accept					json
+// @Produce				json
+// @Success				200	{array}	app.ComponentRelease
+// @Router					/v1/releases [get]
 func (s *service) GetAllReleases(ctx *gin.Context) {
 	releases, err := s.getAllReleases(ctx)
 	if err != nil {
@@ -34,7 +34,7 @@ func (s *service) GetAllReleases(ctx *gin.Context) {
 func (s *service) getAllReleases(ctx *gin.Context) ([]*app.ComponentRelease, error) {
 	var releases []*app.ComponentRelease
 	res := s.db.WithContext(ctx).
-		Scopes(scopes.WithPagination).
+		Scopes(scopes.WithOffsetPagination).
 		Find(&releases)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all releases: %w", res.Error)
