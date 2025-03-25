@@ -15,17 +15,17 @@ import (
 
 type AdminCreateHealthCheckJobRequest struct{}
 
-// @ID AdminHealthCheckRunner
-// @Summary	health check a runner
-// @Description.markdown health_check_runner.md
-// @Param			runner_id	path	string						true	"runner ID"
-// @Param			req				body	AdminCreateHealthCheckJobRequest	true	"Input"
-// @Tags runners/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		201	{boolean}	true
-// @Router			/v1/runners/{runner_id}/health-check-job [POST]
+//	@ID						AdminHealthCheckRunner
+//	@Summary				health check a runner
+//	@Description.markdown	health_check_runner.md
+//	@Param					runner_id	path	string								true	"runner ID"
+//	@Param					req			body	AdminCreateHealthCheckJobRequest	true	"Input"
+//	@Tags					runners/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				201	{boolean}	true
+//	@Router					/v1/runners/{runner_id}/health-check-job [POST]
 func (s *service) AdminCreateHealthCheck(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 

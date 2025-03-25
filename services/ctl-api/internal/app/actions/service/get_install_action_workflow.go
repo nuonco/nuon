@@ -11,23 +11,23 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @ID GetInstallActionWorkflow
-// @Summary	get an install action workflow
-// @Description.markdown	get_install_action_workflow.md
-// @Param			install_id		path	string	true	"install ID"
-// @Param			action_workflow_id	path	string	true	"workflow ID"
-// @Tags			installs
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	app.InstallActionWorkflow
-// @Router			/v1/installs/{install_id}/action-workflows/{action_workflow_id} [get]
+//	@ID						GetInstallActionWorkflow
+//	@Summary				get an install action workflow
+//	@Description.markdown	get_install_action_workflow.md
+//	@Param					install_id			path	string	true	"install ID"
+//	@Param					action_workflow_id	path	string	true	"workflow ID"
+//	@Tags					installs
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	app.InstallActionWorkflow
+//	@Router					/v1/installs/{install_id}/action-workflows/{action_workflow_id} [get]
 func (s *service) GetInstallActionWorkflow(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	actionWorkflowID := ctx.Param("action_workflow_id")

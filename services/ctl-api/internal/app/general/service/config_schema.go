@@ -11,21 +11,21 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
-// @ID GetConfigSchema
-// @Summary	Get jsonschema for config file
-// @Description.markdown	config_schema.md
-// @Tags			general
-// @Accept			json
-// @Param   source query string false	"return a schema for a source file"
-// @Param   flat query string false	"return a flat schema for the full app"
-// @Produce		json
-// @Failure		400	{object}	stderr.ErrResponse
-// @Failure		401	{object}	stderr.ErrResponse
-// @Failure		403	{object}	stderr.ErrResponse
-// @Failure		404	{object}	stderr.ErrResponse
-// @Failure		500	{object}	stderr.ErrResponse
-// @Success		200	{object} interface{}
-// @Router			/v1/general/config-schema [GET]
+//	@ID						GetConfigSchema
+//	@Summary				Get jsonschema for config file
+//	@Description.markdown	config_schema.md
+//	@Tags					general
+//	@Accept					json
+//	@Param					source	query	string	false	"return a schema for a source file"
+//	@Param					flat	query	string	false	"return a flat schema for the full app"
+//	@Produce				json
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	interface{}
+//	@Router					/v1/general/config-schema [GET]
 func (s *service) GetConfigSchema(ctx *gin.Context) {
 	src := ctx.DefaultQuery("source", "")
 	flat := ctx.DefaultQuery("flat", "")

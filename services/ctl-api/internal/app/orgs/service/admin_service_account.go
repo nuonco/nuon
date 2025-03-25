@@ -15,17 +15,17 @@ import (
 
 type AdminCreateServiceAccountRequest struct{}
 
-// @ID AdminCreateServiceAccount
-// @Summary	create a service account for an org
-// @Description.markdown create_org_service_account.md
-// @Param			req	body	AdminCreateServiceAccountRequest true	"Input"
-// @Param			org_id	path	string	true	"org ID or name"
-// @Security AdminEmail
-// @Tags orgs/admin
-// @Accept			json
-// @Produce		json
-// @Success		201	{object} app.Account
-// @Router			/v1/orgs/{org_id}/admin-service-account [POST]
+//	@ID						AdminCreateServiceAccount
+//	@Summary				create a service account for an org
+//	@Description.markdown	create_org_service_account.md
+//	@Param					req		body	AdminCreateServiceAccountRequest	true	"Input"
+//	@Param					org_id	path	string								true	"org ID or name"
+//	@Security				AdminEmail
+//	@Tags					orgs/admin
+//	@Accept					json
+//	@Produce				json
+//	@Success				201	{object}	app.Account
+//	@Router					/v1/orgs/{org_id}/admin-service-account [POST]
 func (s *service) AdminCreateServiceAccount(ctx *gin.Context) {
 	var req AdminCreateServiceAccountRequest
 	if err := ctx.BindJSON(&req); err != nil {

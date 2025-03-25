@@ -14,23 +14,23 @@ type CreateRunnerHealthCheckRequest struct {
 	//
 }
 
-// @ID CreateRunnerHealthCheck
-// @Summary	create a runner health check
-// @Description.markdown        create_runner_health_check.md
-// @Param			req				body	CreateRunnerHealthCheckRequest	true	"Input"
-// @Param			runner_id	path	string	true	"runner ID"
-// @Tags runners/runner
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.RunnerHealthCheck
-// @Router			/v1/runners/{runner_id}/health-checks [POST]
+//	@ID						CreateRunnerHealthCheck
+//	@Summary				create a runner health check
+//	@Description.markdown	create_runner_health_check.md
+//	@Param					req			body	CreateRunnerHealthCheckRequest	true	"Input"
+//	@Param					runner_id	path	string							true	"runner ID"
+//	@Tags					runners/runner
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.RunnerHealthCheck
+//	@Router					/v1/runners/{runner_id}/health-checks [POST]
 func (s *service) CreateRunnerHealthCheck(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 

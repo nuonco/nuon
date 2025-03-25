@@ -13,17 +13,17 @@ import (
 
 type RestartActionWorkflowRequest struct{}
 
-// @ID AdminRestartActionWorkflow
-// @Summary	restart an action workflow event loop
-// @Description.markdown restart_action_workflow.md
-// @Param		action_workflow_id path string	true	"action ID"
-// @Param			req			body	RestartActionWorkflowRequest	true	"Input"
-// @Tags actions/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200	{boolean}	true
-// @Router			/v1/action-workflows/{action_workflow_id}/admin-restart [POST]
+//	@ID						AdminRestartActionWorkflow
+//	@Summary				restart an action workflow event loop
+//	@Description.markdown	restart_action_workflow.md
+//	@Param					action_workflow_id	path	string							true	"action ID"
+//	@Param					req					body	RestartActionWorkflowRequest	true	"Input"
+//	@Tags					actions/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{boolean}	true
+//	@Router					/v1/action-workflows/{action_workflow_id}/admin-restart [POST]
 func (s *service) RestartAction(ctx *gin.Context) {
 	actionWorkflowID := ctx.Param("action_workflow_id")
 

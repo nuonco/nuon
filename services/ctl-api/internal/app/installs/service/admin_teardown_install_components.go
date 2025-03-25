@@ -11,17 +11,17 @@ import (
 
 type AdminTeardownInstallComponentsRequest struct{}
 
-// @ID AdminTeardownInstallComponents
-// @Summary	teardown all components on an install
-// @Description.markdown teardown_install_components.md
-// @Param			install_id	path	string					true	"install ID"
-// @Param			req			body	TeardownInstallComponentsRequest	true	"Input"
-// @Tags			installs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200	{boolean}	true
-// @Router			/v1/installs/{install_id}/admin-teardown-components [POST]
+//	@ID						AdminTeardownInstallComponents
+//	@Summary				teardown all components on an install
+//	@Description.markdown	teardown_install_components.md
+//	@Param					install_id	path	string								true	"install ID"
+//	@Param					req			body	TeardownInstallComponentsRequest	true	"Input"
+//	@Tags					installs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{boolean}	true
+//	@Router					/v1/installs/{install_id}/admin-teardown-components [POST]
 func (s *service) AdminTeardownInstallComponents(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

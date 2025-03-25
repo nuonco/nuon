@@ -14,17 +14,17 @@ type RenameOrgRequest struct {
 	Name string `validate:"required"`
 }
 
-// @ID AdminRenameOrg
-// @Summary rename an org
-// @Description.markdown rename_org.md
-// @Param			org_id	path	string	true	"org ID for your current org"
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req	body	RenameOrgRequest	true	"Input"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/orgs/{org_id}/admin-rename [POST]
+//	@ID						AdminRenameOrg
+//	@Summary				rename an org
+//	@Description.markdown	rename_org.md
+//	@Param					org_id	path	string	true	"org ID for your current org"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req	body	RenameOrgRequest	true	"Input"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/orgs/{org_id}/admin-rename [POST]
 func (s *service) AdminRenameOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 

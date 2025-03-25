@@ -34,17 +34,17 @@ func (a AdminAddPriorityRequest) getPriority() int {
 	return 0
 }
 
-// @ID AdminAddPriority
-// @Summary set priority on an org
-// @Description.markdown add_org_priority.md
-// @Param			org_id	path	string	true	"org ID for your current org"
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req	body	AdminAddPriorityRequest	true	"Input"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/orgs/{org_id}/admin-add-priority [POST]
+//	@ID						AdminAddPriority
+//	@Summary				set priority on an org
+//	@Description.markdown	add_org_priority.md
+//	@Param					org_id	path	string	true	"org ID for your current org"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req	body	AdminAddPriorityRequest	true	"Input"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/orgs/{org_id}/admin-add-priority [POST]
 func (s *service) AdminAddPriority(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 

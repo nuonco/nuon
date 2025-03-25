@@ -27,15 +27,15 @@ type CreateSeedUserResponse struct {
 	Email           string `json:"email"`
 }
 
-// @ID CreateSeedUser
-// @Summary	create a temp user for running integration test
-// @Description.markdown create_integration_user.md
-// @Param			req	body	CreateSeedUserRequest	true	"Input"
-// @Tags			general/admin
-// @Accept			json
-// @Produce		json
-// @Success		201	{object} CreateSeedUserResponse
-// @Router			/v1/general/integration-user [post]
+//	@ID						CreateSeedUser
+//	@Summary				create a temp user for running integration test
+//	@Description.markdown	create_integration_user.md
+//	@Param					req	body	CreateSeedUserRequest	true	"Input"
+//	@Tags					general/admin
+//	@Accept					json
+//	@Produce				json
+//	@Success				201	{object}	CreateSeedUserResponse
+//	@Router					/v1/general/integration-user [post]
 func (s *service) CreateSeedUser(ctx *gin.Context) {
 	token, err := s.createSeedUser(ctx)
 	if err != nil {

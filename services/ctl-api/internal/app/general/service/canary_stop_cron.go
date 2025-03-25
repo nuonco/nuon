@@ -12,15 +12,15 @@ type StopCanaryCronRequest struct {
 	SandboxMode bool `json:"sandbox_mode"`
 }
 
-// @ID StopCanaryCron
-// @Summary	stop canary cron
-// @Description	stop_canary_cron.md
-// @Param			req	body	StopCanaryCronRequest	true	"Input"
-// @Tags			general/admin
-// @Accept			json
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/general/stop-canary-cron [post]
+//	@ID				StopCanaryCron
+//	@Summary		stop canary cron
+//	@Description	stop_canary_cron.md
+//	@Param			req	body	StopCanaryCronRequest	true	"Input"
+//	@Tags			general/admin
+//	@Accept			json
+//	@Produce		json
+//	@Success		201	{string}	ok
+//	@Router			/v1/general/stop-canary-cron [post]
 func (c *service) StopCanaryCron(ctx *gin.Context) {
 	var req StopCanaryCronRequest
 	if err := ctx.BindJSON(&req); err != nil {

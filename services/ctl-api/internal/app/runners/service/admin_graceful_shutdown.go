@@ -11,17 +11,17 @@ import (
 
 type AdminGracefulShutdownRequest struct{}
 
-// @ID AdminGracefulShutDownRunner
-// @Summary	shut down a runner
-// @Description.markdown graceful_shutdown_runner.md
-// @Param			runner_id	path	string						true	"runner ID"
-// @Param			req				body	AdminGracefulShutdownRequest	true	"Input"
-// @Tags runners/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		201	{boolean}	true
-// @Router			/v1/runners/{runner_id}/graceful-shutdown [POST]
+//	@ID						AdminGracefulShutDownRunner
+//	@Summary				shut down a runner
+//	@Description.markdown	graceful_shutdown_runner.md
+//	@Param					runner_id	path	string							true	"runner ID"
+//	@Param					req			body	AdminGracefulShutdownRequest	true	"Input"
+//	@Tags					runners/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				201	{boolean}	true
+//	@Router					/v1/runners/{runner_id}/graceful-shutdown [POST]
 func (s *service) AdminGracefulShutDown(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 

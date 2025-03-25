@@ -21,16 +21,16 @@ type AdminBulkUpdateRunnersResponse struct {
 	RunnerGroupID string `json:"runner_group_id"`
 }
 
-// @ID AdminBulkUpdateRunners
-// @Summary	Admin Bulk Update Runners
-// @Description.markdown admin_bulk_update_runners.md
-// @Param		req				body	AdminBulkUpdateRunnersRequest	true	"Input"
-// @Tags runners/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200	{array} AdminBulkUpdateRunnersResponse
-// @Router		/v1/runners/bulk-update [PATCH]
+//	@ID						AdminBulkUpdateRunners
+//	@Summary				Admin Bulk Update Runners
+//	@Description.markdown	admin_bulk_update_runners.md
+//	@Param					req	body	AdminBulkUpdateRunnersRequest	true	"Input"
+//	@Tags					runners/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{array}	AdminBulkUpdateRunnersResponse
+//	@Router					/v1/runners/bulk-update [PATCH]
 func (s *service) AdminBulkUpdateRunners(ctx *gin.Context) {
 	var req AdminBulkUpdateRunnersRequest
 	if err := ctx.BindJSON(&req); err != nil {
