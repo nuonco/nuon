@@ -30,21 +30,21 @@ func (m PublishMetricInput) write(mw metrics.Writer) {
 	}
 }
 
-// @ID PublishMetrics
-// @Summary	Publish a metric from different Nuon clients for telemetry purposes.
-// @Description.markdown	publish_metrics.md
-// @Tags			general/runner
-// @Param			req	body	[]PublishMetricInput	true	"Input"
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{string}	ok
-// @Router			/v1/general/metrics [post]
+//	@ID						PublishMetrics
+//	@Summary				Publish a metric from different Nuon clients for telemetry purposes.
+//	@Description.markdown	publish_metrics.md
+//	@Tags					general/runner
+//	@Param					req	body	[]PublishMetricInput	true	"Input"
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{string}	ok
+//	@Router					/v1/general/metrics [post]
 func (s *service) PublishMetrics(ctx *gin.Context) {
 	var req []PublishMetricInput
 	if err := ctx.BindJSON(&req); err != nil {

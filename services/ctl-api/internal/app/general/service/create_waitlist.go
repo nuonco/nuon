@@ -23,16 +23,16 @@ func (c *WaitlistRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID CreateWaitlist
-// @Summary	Allow user to be added to an org waitlist.
-// @Description.markdown create_waitlist.md
-// @Param			req	body	WaitlistRequest	true	"Input"
-// @Tags			general
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Success		200	{object} app.Waitlist
-// @Router			/v1/general/waitlist [POST]
+//	@ID						CreateWaitlist
+//	@Summary				Allow user to be added to an org waitlist.
+//	@Description.markdown	create_waitlist.md
+//	@Param					req	body	WaitlistRequest	true	"Input"
+//	@Tags					general
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Success				200	{object}	app.Waitlist
+//	@Router					/v1/general/waitlist [POST]
 func (s *service) CreateWaitlist(ctx *gin.Context) {
 	var req WaitlistRequest
 	if err := ctx.BindJSON(&req); err != nil {

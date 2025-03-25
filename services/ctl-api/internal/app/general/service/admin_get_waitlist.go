@@ -18,15 +18,15 @@ type WaitlistResponse struct {
 	CreatedAt      time.Time `json:"created_at"`
 }
 
-// @ID AdminGetWaitlist
-// @Summary get waitlist
-// @Description.markdown admin_get_waitlist.md
-// @Tags general/admin
-// @Security AdminEmail
-// @Accept			json
-// @Produce		json
-// @Success		200	{array}	WaitlistResponse
-// @Router			/v1/general/waitlist [GET]
+//	@ID						AdminGetWaitlist
+//	@Summary				get waitlist
+//	@Description.markdown	admin_get_waitlist.md
+//	@Tags					general/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{array}	WaitlistResponse
+//	@Router					/v1/general/waitlist [GET]
 func (s *service) AdminGetWaitlist(ctx *gin.Context) {
 	waitlist, err := s.adminGetWaitlist(ctx)
 	if err != nil {

@@ -12,25 +12,25 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// @ID GetInstallActionWorkflowRuns
-// @Summary	get action workflow runs by install id
-// @Description.markdown	get_install_action_workflow_runs.md
-// @Param			install_id	path	string	true	"install ID"
-// @Param   offset query int	 false	"offset of results to return"	Default(0)
-// @Param   limit  query int	 false	"limit of results to return"	     Default(10)
-// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
-// @Tags			actions
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{array}	app.InstallActionWorkflowRun
-// @Router			/v1/installs/{install_id}/action-workflows/runs [get]
+//	@ID						GetInstallActionWorkflowRuns
+//	@Summary				get action workflow runs by install id
+//	@Description.markdown	get_install_action_workflow_runs.md
+//	@Param					install_id					path	string	true	"install ID"
+//	@Param					offset						query	int		false	"offset of results to return"	Default(0)
+//	@Param					limit						query	int		false	"limit of results to return"	Default(10)
+//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+//	@Tags					actions
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{array}		app.InstallActionWorkflowRun
+//	@Router					/v1/installs/{install_id}/action-workflows/runs [get]
 func (s *service) GetInstallActionWorkflowRuns(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

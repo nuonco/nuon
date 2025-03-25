@@ -25,23 +25,23 @@ func (c *UpdateInstallInputsRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID UpdateInstallInputs
-// @Summary	Updates install input config for app
-// @Description.markdown	update_install_inputs.md
-// @Tags			installs
-// @Accept			json
-// @Param			req	body	UpdateInstallInputsRequest	true	"Input"
-// @Produce		json
-// @Param			install_id		path		string	true	"install ID"
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	app.InstallInputs
-// @Router			/v1/installs/{install_id}/inputs [patch]
+//	@ID						UpdateInstallInputs
+//	@Summary				Updates install input config for app
+//	@Description.markdown	update_install_inputs.md
+//	@Tags					installs
+//	@Accept					json
+//	@Param					req	body	UpdateInstallInputsRequest	true	"Input"
+//	@Produce				json
+//	@Param					install_id	path	string	true	"install ID"
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	app.InstallInputs
+//	@Router					/v1/installs/{install_id}/inputs [patch]
 func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

@@ -13,17 +13,17 @@ type AdminDeprovisionOrgRequest struct {
 	Force bool `json:"force"`
 }
 
-// @ID AdminDeprovisionOrg
-// @Summary deprovision an org, but keep it in the database
-// @Description.markdown deprovision_org.md
-// @Param			org_id	path	string	true	"org ID for your current org"
-// @Tags			orgs/admin
-// @Security AdminEmail
-// @Accept			json
-// @Param			req	body	AdminDeprovisionOrgRequest	true	"Input"
-// @Produce		json
-// @Success		201	{string}	ok
-// @Router			/v1/orgs/{org_id}/admin-deprovision [POST]
+//	@ID						AdminDeprovisionOrg
+//	@Summary				deprovision an org, but keep it in the database
+//	@Description.markdown	deprovision_org.md
+//	@Param					org_id	path	string	true	"org ID for your current org"
+//	@Tags					orgs/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Param					req	body	AdminDeprovisionOrgRequest	true	"Input"
+//	@Produce				json
+//	@Success				201	{string}	ok
+//	@Router					/v1/orgs/{org_id}/admin-deprovision [POST]
 func (s *service) AdminDeprovisionOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 	org, err := s.adminGetOrg(ctx, orgID)

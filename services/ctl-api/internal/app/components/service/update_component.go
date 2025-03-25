@@ -24,23 +24,23 @@ func (c *UpdateComponentRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID UpdateComponent
-// @Summary	update a component
-// @Description.markdown	update_component.md
-// @Param			component_id	path	string					true	"component ID"
-// @Param			req				body	UpdateComponentRequest	true	"Input"
-// @Tags			components
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	app.Component
-// @Router			/v1/components/{component_id} [PATCH]
+//	@ID						UpdateComponent
+//	@Summary				update a component
+//	@Description.markdown	update_component.md
+//	@Param					component_id	path	string					true	"component ID"
+//	@Param					req				body	UpdateComponentRequest	true	"Input"
+//	@Tags					components
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	app.Component
+//	@Router					/v1/components/{component_id} [PATCH]
 func (s *service) UpdateComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 	var req UpdateComponentRequest

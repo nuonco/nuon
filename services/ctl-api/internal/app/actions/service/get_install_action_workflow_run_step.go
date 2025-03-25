@@ -9,24 +9,24 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @ID GetInstallActionWorkflowRunStep
-// @Summary	get action workflow run step by install id and step id
-// @Description.markdown	get_install_action_workflow_run_step.md
-// @Param			install_id	path	string	true	"install ID"
-// @Param			workflow_run_id	path	string	true	"workflow run ID"
-// @Param			step_id	path	string	true	"step ID"
-// @Tags			actions
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	app.InstallActionWorkflowRunStep
-// @Router			/v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id} [get]
+//	@ID						GetInstallActionWorkflowRunStep
+//	@Summary				get action workflow run step by install id and step id
+//	@Description.markdown	get_install_action_workflow_run_step.md
+//	@Param					install_id		path	string	true	"install ID"
+//	@Param					workflow_run_id	path	string	true	"workflow run ID"
+//	@Param					step_id			path	string	true	"step ID"
+//	@Tags					actions
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	app.InstallActionWorkflowRunStep
+//	@Router					/v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id} [get]
 func (s *service) GetInstallActionWorkflowRunStep(ctx *gin.Context) {
 	workflowRunID := ctx.Param("workflow_run_id")
 	stepID := ctx.Param("step_id")

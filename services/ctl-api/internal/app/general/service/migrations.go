@@ -10,14 +10,14 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-// @ID GetMigrations
-// @Summary	get all migrations
-// @Description.markdown get_migrations.md
-// @Tags			general/admin
-// @Accept			json
-// @Produce		json
-// @Success		200 {array} migrations.MigrationModel
-// @Router			/v1/general/migrations [get]
+//	@ID						GetMigrations
+//	@Summary				get all migrations
+//	@Description.markdown	get_migrations.md
+//	@Tags					general/admin
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{array}	migrations.MigrationModel
+//	@Router					/v1/general/migrations [get]
 func (s *service) GetMigrations(ctx *gin.Context) {
 	migrations, err := s.getMigrations(ctx)
 	if err != nil {

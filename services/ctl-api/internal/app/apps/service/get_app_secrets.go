@@ -11,25 +11,25 @@ import (
 	"gorm.io/gorm"
 )
 
-// @ID GetAppSecrets
-// @Summary	get app secrets
-// @Description.markdown	get_app_secrets.md
-// @Param			app_id	path	string	true	"app ID"
-// @Param   offset query int	 false	"offset of jobs to return"	Default(0)
-// @Param   limit  query int	 false	"limit of jobs to return"	     Default(10)
-// @Param   x-nuon-pagination-enabled header bool false "Enable pagination"
-// @Tags			apps
-// @Accept			json
-// @Produce		json
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{array}	app.AppSecret
-// @Router			/v1/apps/{app_id}/secrets [get]
+//	@ID						GetAppSecrets
+//	@Summary				get app secrets
+//	@Description.markdown	get_app_secrets.md
+//	@Param					app_id						path	string	true	"app ID"
+//	@Param					offset						query	int		false	"offset of jobs to return"	Default(0)
+//	@Param					limit						query	int		false	"limit of jobs to return"	Default(10)
+//	@Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
+//	@Tags					apps
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{array}		app.AppSecret
+//	@Router					/v1/apps/{app_id}/secrets [get]
 func (s *service) GetAppSecrets(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

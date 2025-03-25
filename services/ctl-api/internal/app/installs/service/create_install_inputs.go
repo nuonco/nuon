@@ -26,23 +26,23 @@ func (c *CreateInstallInputsRequest) Validate(v *validator.Validate) error {
 
 // DEPRECATED we should use the new UpdateInstallInputs
 
-// @ID CreateInstallInputs
-// @Summary	create install inputs
-// @Description.markdown	create_install_inputs.md
-// @Tags			installs
-// @Accept			json
-// @Param			req	body	CreateInstallInputsRequest	true	"Input"
-// @Produce		json
-// @Param			install_id		path		string	true	"install ID"
-// @Security APIKey
-// @Security OrgID
-// @Failure		400				{object}	stderr.ErrResponse
-// @Failure		401				{object}	stderr.ErrResponse
-// @Failure		403				{object}	stderr.ErrResponse
-// @Failure		404				{object}	stderr.ErrResponse
-// @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.InstallInputs
-// @Router			/v1/installs/{install_id}/inputs [post]
+//	@ID						CreateInstallInputs
+//	@Summary				create install inputs
+//	@Description.markdown	create_install_inputs.md
+//	@Tags					installs
+//	@Accept					json
+//	@Param					req	body	CreateInstallInputsRequest	true	"Input"
+//	@Produce				json
+//	@Param					install_id	path	string	true	"install ID"
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				201	{object}	app.InstallInputs
+//	@Router					/v1/installs/{install_id}/inputs [post]
 func (s *service) CreateInstallInputs(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
