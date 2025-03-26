@@ -62,7 +62,8 @@
               "production-readiness/monitor",
               "production-readiness/deploy",
               "production-readiness/debug",
-              "production-readiness/break-glass"
+              "production-readiness/break-glass",
+              "production-readiness/customer-setup"
             ]
           },
           {
