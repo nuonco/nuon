@@ -76,7 +76,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-03-26T23:10:36.507Z"
+      "value": "2025-03-26T23:27:46.046Z"
     },
     "demo-gh-oidc-provider": {
       "description": "The Github OIDC provider for the demo account",
@@ -2481,7 +2481,9 @@
             "uniqueId": "demo-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.demo",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2496,7 +2498,9 @@
             "uniqueId": "demo-govcloud-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.demo-govcloud",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2511,7 +2515,9 @@
             "uniqueId": "govcloud-prod-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.govcloud-prod",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2526,7 +2532,9 @@
             "uniqueId": "govcloud-stage-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.govcloud-stage",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2541,7 +2549,9 @@
             "uniqueId": "infra-shared-prod-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.infra-shared-prod",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2556,7 +2566,9 @@
             "uniqueId": "infra-shared-stage-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.infra-shared-stage",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2571,7 +2583,9 @@
             "uniqueId": "infra-tests-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.infra-tests",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2586,7 +2600,9 @@
             "uniqueId": "orgs-prod-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.orgs-prod",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2601,7 +2617,9 @@
             "uniqueId": "orgs-stage-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.orgs-stage",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2616,7 +2634,9 @@
             "uniqueId": "prod-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.prod",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2631,7 +2651,9 @@
             "uniqueId": "public-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.public",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2646,7 +2668,9 @@
             "uniqueId": "runners-prod-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.runners-prod",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2661,7 +2685,9 @@
             "uniqueId": "runners-stage-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.runners-stage",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2676,7 +2702,9 @@
             "uniqueId": "sandbox-fd-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.sandbox-fd",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2691,7 +2719,9 @@
             "uniqueId": "sandbox-ht-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.sandbox-ht",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2706,7 +2736,9 @@
             "uniqueId": "sandbox-ja-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.sandbox-ja",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2721,7 +2753,9 @@
             "uniqueId": "sandbox-jm-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.sandbox-jm",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2736,7 +2770,9 @@
             "uniqueId": "sandbox-nh-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.sandbox-nh",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2751,7 +2787,9 @@
             "uniqueId": "sandbox-rb-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.sandbox-rb",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2766,7 +2804,9 @@
             "uniqueId": "sandbox-retool-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.sandbox-retool",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2781,7 +2821,9 @@
             "uniqueId": "sandbox-sb-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.sandbox-sb",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2796,7 +2838,9 @@
             "uniqueId": "sandbox-stardog-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.sandbox-stardog",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2811,7 +2855,9 @@
             "uniqueId": "stage-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.stage",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2826,7 +2872,9 @@
             "uniqueId": "test-github-oidc-provider"
           }
         },
-        "client_id_list": ["sts.amazonaws.com"],
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
         "provider": "aws.test",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
@@ -2845,7 +2893,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.demo-govcloud"
@@ -2859,7 +2909,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.demo"
@@ -2873,7 +2925,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.govcloud-prod"
@@ -2887,7 +2941,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.govcloud-stage"
@@ -2901,7 +2957,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.infra-shared-prod"
@@ -2915,7 +2973,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.infra-shared-stage"
@@ -2929,7 +2989,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.infra-tests"
@@ -2943,7 +3005,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.orgs-prod"
@@ -2957,7 +3021,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.orgs-stage"
@@ -2971,7 +3037,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.prod"
@@ -2985,7 +3053,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.public"
@@ -2999,7 +3069,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.runners-prod"
@@ -3013,7 +3085,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.runners-stage"
@@ -3027,7 +3101,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-fd"
@@ -3041,7 +3117,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-ht"
@@ -3055,7 +3133,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-ja"
@@ -3069,7 +3149,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-jm"
@@ -3083,7 +3165,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-nh"
@@ -3097,7 +3181,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-rb"
@@ -3111,7 +3197,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-retool"
@@ -3125,7 +3213,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-sb"
@@ -3139,7 +3229,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-stardog"
@@ -3153,7 +3245,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.stage"
@@ -3167,7 +3261,9 @@
         },
         "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
         "description": "Terraform role to assume",
-        "managed_policy_arns": ["arn:aws:iam::aws:policy/AdministratorAccess"],
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
         "name": "terraform",
         "path": "/",
         "provider": "aws.test"
