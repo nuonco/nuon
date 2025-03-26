@@ -4,8 +4,8 @@ import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ArrowsOutSimple } from '@phosphor-icons/react/dist/ssr'
 import { Button } from '@/components/Button'
+import { ConfigVariables } from "@/components/ComponentConfig"
 import { Modal } from '@/components/Modal'
-import { Text } from '@/components/Typography'
 import type { TInstallInputs } from '@/types'
 
 export interface IInstallInputs {
@@ -13,58 +13,20 @@ export interface IInstallInputs {
 }
 
 export const InstallInputs: FC<IInstallInputs> = ({ currentInputs }) => {
-  return (
-    <div className="divide-y">
-      <div className="grid grid-cols-3 gap-4 pb-3">
-        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-          Name
-        </Text>
-        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-          Value
-        </Text>
-      </div>
+  const variables = currentInputs?.redacted_values || {};
+  const variableKeys = Object.keys(variables)
+  const isEmpty = variableKeys.length === 0
 
-      <div>
-        {currentInputs ? (
-          <div className="divide-y" key={currentInputs.id}>
-            {currentInputs?.redacted_values
-              ? Object.keys(currentInputs.redacted_values).map((key, i) => (
-                  <div
-                    key={`${key}-${i}`}
-                    className="grid grid-cols-3 gap-4 py-3"
-                  >
-                    <Text className="font-mono text-sm break-all !inline truncate max-w-[200px]">
-                      {key}
-                    </Text>
-                    <Text className="col-span-2 break-all text-sm !inline truncate max-w-[200px]">
-                      {currentInputs.redacted_values[key]}
-                    </Text>
-                  </div>
-                ))
-              : currentInputs?.values &&
-                Object.keys(currentInputs.values).map((key, i) => (
-                  <div
-                    key={`${key}-${i}`}
-                    className="grid grid-cols-3 gap-4 py-3"
-                  >
-                    <Text className="font-mono text-sm !inline truncate max-w-[200px]">
-                      {key}
-                    </Text>
-                    <Text className="col-span-2 break-all text-sm !inline truncate max-w-[200px]">
-                      {currentInputs.values[key]}
-                    </Text>
-                  </div>
-                ))}
-          </div>
-        ) : null}
-      </div>
-    </div>
-  )
+  return !isEmpty && <ConfigVariables variables={variables} keys={variableKeys} />
 }
 
 export const InstallInputsModal: FC<IInstallInputs> = ({ currentInputs }) => {
+  const variables = currentInputs?.redacted_values || {};
+  const variableKeys = Object.keys(variables)
+  const isEmpty = variableKeys.length === 0
   const [isOpen, setIsOpen] = useState(false)
-  return (
+  
+  return !isEmpty && (
     <>
       {isOpen
         ? createPortal(
@@ -75,7 +37,7 @@ export const InstallInputsModal: FC<IInstallInputs> = ({ currentInputs }) => {
                 setIsOpen(false)
               }}
             >
-              <InstallInputs currentInputs={currentInputs} />
+              <ConfigVariables variables={variables} keys={variableKeys} />
             </Modal>,
             document.body
           )

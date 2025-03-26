@@ -361,6 +361,7 @@ export const ConfigurationVariables: FC<{
             <Text className="text-sm !font-medium leading-normal">
               {heading}
             </Text>
+
             <Button
               className="text-sm !font-medium flex items-center gap-2 !p-1"
               onClick={() => {
@@ -381,7 +382,7 @@ export const ConfigurationVariables: FC<{
 }
 
 // TODO(nnnat): refactor this mess
-const ConfigVariables: FC<{
+export const ConfigVariables: FC<{
   keys: Array<string>
   variables: Record<string, string | string[]>
   isNotTruncated?: boolean

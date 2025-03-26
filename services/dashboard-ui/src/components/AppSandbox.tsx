@@ -1,6 +1,7 @@
 import React, { type FC } from 'react'
 import { FaGitAlt, FaGithub } from 'react-icons/fa'
 import { Config, ConfigContent } from '@/components/Config'
+import { ConfigurationVariables } from '@/components/ComponentConfig'
 import { Link } from '@/components/Link'
 import { ToolTip } from '@/components/ToolTip'
 import { Text, Truncate } from '@/components/Typography'
@@ -72,56 +73,59 @@ export const AppSandboxConfig: FC<IAppSandboxConfig> = ({ sandboxConfig }) => {
 }
 
 export interface IAppSandboxVariables {
+  heading?: string
   variables: TAppSandboxConfig['variables']
 }
 
 export const AppSandboxVariables: FC<IAppSandboxVariables> = ({
+  heading = 'Sandbox variables',
   variables,
 }) => {
-  const variableKeys = Object.keys(variables || {})
-  const isEmpty = variableKeys.length === 0
+  return <ConfigurationVariables heading={heading} variables={variables} />
+  /* const variableKeys = Object.keys(variables || {})
+   * const isEmpty = variableKeys.length === 0
 
-  return isEmpty ? null : (
-    <div className="flex flex-col gap-4">
-      <div className="">
-        <Text className="text-sm !font-medium leading-normal">Variables</Text>
-      </div>
+   * return isEmpty ? null : (
+   *   <div className="flex flex-col gap-4">
+   *     <div className="">
+   *       <Text className="text-sm !font-medium leading-normal">Variables</Text>
+   *     </div>
 
-      <div className="divide-y">
-        <div className="grid grid-cols-3 gap-4 pb-3">
-          <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-            Name
-          </Text>
-          <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-            Value
-          </Text>
-        </div>
+   *     <div className="divide-y">
+   *       <div className="grid grid-cols-3 gap-4 pb-3">
+   *         <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+   *           Name
+   *         </Text>
+   *         <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
+   *           Value
+   *         </Text>
+   *       </div>
 
-        {variableKeys.map((key, i) => (
-          <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-3">
-            <Text className="font-mono text-sm break-all">
-              {key.length >= 15 ? (
-                <ToolTip tipContent={key} alignment="right">
-                  <Truncate variant="small">{key}</Truncate>
-                </ToolTip>
-              ) : (
-                key
-              )}
-            </Text>
-            <Text className="text-sm font-mono break-all col-span-2">
-              {variables[key].length >= 20 ? (
-                <ToolTip tipContent={variables[key]} alignment="right">
-                  <Truncate variant="large">{variables[key]}</Truncate>
-                </ToolTip>
-              ) : (
-                variables[key]
-              )}
-            </Text>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+   *       {variableKeys.map((key, i) => (
+   *         <div key={`${key}-${i}`} className="grid grid-cols-3 gap-4 py-3">
+   *           <Text className="font-mono text-sm break-all">
+   *             {key.length >= 15 ? (
+   *               <ToolTip tipContent={key} alignment="right">
+   *                 <Truncate variant="small">{key}</Truncate>
+   *               </ToolTip>
+   *             ) : (
+   *               key
+   *             )}
+   *           </Text>
+   *           <Text className="text-sm font-mono break-all col-span-2">
+   *             {variables[key].length >= 20 ? (
+   *               <ToolTip tipContent={variables[key]} alignment="right">
+   *                 <Truncate variant="large">{variables[key]}</Truncate>
+   *               </ToolTip>
+   *             ) : (
+   *               variables[key]
+   *             )}
+   *           </Text>
+   *         </div>
+   *       ))}
+   *     </div>
+   *   </div>
+   * ) */
 }
 
 export const AppSandboxRepoDirLink: FC<{
