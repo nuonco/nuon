@@ -73,6 +73,11 @@ linters:
     - whitespace
 
 issues:
+  exclude-dirs:
+    - ".*/generated/.*"
+    - "infra/"
+    - ".*/node_modules/.*"
+    - "exp/"
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
     - path: _test\.go
@@ -80,10 +85,5 @@ issues:
         - gomnd
         - funlen # some fuctions are just...big tables...
 run:
-  skip-dirs:
-    - ".*/generated/.*"
-    - "infra/"
-    - ".*/node_modules/.*"
-    - "exp/"
   timeout: 5m
   go: "1.19"
