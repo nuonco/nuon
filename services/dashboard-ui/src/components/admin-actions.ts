@@ -243,3 +243,13 @@ export async function forceRunnerShutdown(runnerId: string) {
     'Failed to kickoff forced shutdown'
   )
 }
+
+export async function gracefulInstallRunnerShutdown(installId: string) {
+  const runner = await getInstallRunner(installId)
+  return gracefulRunnerShutdown(runner.id)
+}
+
+export async function forceInstallRunnerShutdown(installId: string) {
+  const runner = await getInstallRunner(installId)
+  return forceRunnerShutdown(runner.id)
+}
