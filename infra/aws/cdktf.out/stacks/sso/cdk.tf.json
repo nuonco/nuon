@@ -850,7 +850,7 @@
     "required_providers": {
       "aws": {
         "source": "aws",
-        "version": "5.92.0"
+        "version": "5.60.0"
       }
     }
   }
