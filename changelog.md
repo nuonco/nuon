@@ -3,9 +3,9 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
-## v0.19.490
+## ## v0.19.494
 
-Updating runner restart logic.
+Promoting changes post stability issues to ensure that we are auto-restarting runners and more.
 
 ## v0.19.484
 
