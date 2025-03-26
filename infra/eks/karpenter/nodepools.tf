@@ -97,7 +97,7 @@ resource "kubectl_manifest" "additional_nodepools" {
           nodeClassRef = {
             group = "karpenter.k8s.aws"
             kind  = "EC2NodeClass"
-            name  = "default"
+            name  = each.value.name
           }
           requirements = [
             {
