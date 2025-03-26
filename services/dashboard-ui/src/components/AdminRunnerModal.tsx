@@ -214,7 +214,7 @@ const LoadRunnerCard: FC<{ runnerId: string; installId: string }> = ({
   const [error, setError] = useState<string>()
 
   useEffect(() => {
-    fetch(`/api/${org.id}/runner/${runnerId}`)
+    fetch(`/api/${org.id}/runners/${runnerId}`)
       .then((res) =>
         res.json().then((rnr) => {
           setRunner(rnr)
@@ -224,7 +224,7 @@ const LoadRunnerCard: FC<{ runnerId: string; installId: string }> = ({
       .catch((err) => {
         console.error(err?.message)
         setIsLoading(false)
-        setError('Unable to load install runner')
+        setError('Unable to load runner')
       })
   }, [])
 
@@ -247,7 +247,7 @@ const LoadRunnerHeartbeat: FC<{ runnerId: string }> = ({ runnerId }) => {
   const [error, setError] = useState<string>()
 
   const fetchHeartbeat = () => {
-    fetch(`/api/${org.id}/runner/${runnerId}/latest-heart-beat`)
+    fetch(`/api/${org.id}/runners/${runnerId}/latest-heart-beat`)
       .then((res) =>
         res.json().then((rnr) => {
           setHeartbeat(rnr)
@@ -329,7 +329,7 @@ const LoadRunnerJob: FC<{
 
   const fetchRecentJob = () => {
     fetch(
-      `/api/${org.id}/runner/${runnerId}/jobs${params ? '?' + params : params}`
+      `/api/${org.id}/runners/${runnerId}/jobs${params ? '?' + params : params}`
     )
       .then((res) =>
         res.json().then((jbs) => {
