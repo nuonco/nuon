@@ -4,27 +4,34 @@ description: ""
 icon: 'code'
 ---
 
-## Best Practices for Customer Accounts
+Your customer owns the account that your app will be deployed to.
+You may not always have much say over how this is configured and managed, but there are some best practices here as well.
+In this section of the guide we will cover these, and how to work within the constraints you may be faced with.
 
-### Security in a Shared-Responsibility Context
+## The Shared-Responsibility Model
 
-BYOC requires a shared-responsibility approach to security. Your customer is responsible for the security of their own account and the environment the app is running in. You are respnsible for the security of the application, and any data it processes and stores. Ensure you are mindful of how any sensitive data or credentials are handled.
+When defining where your app is installed, the permissions it needs, what customer systems it needs to integrate with, etc. your are effectively defining a contract with your customer.
+These set the expectations they have for how your app will behave in their account.
+In order to build and maintain trust, you do not want them to be surprised by something your app does in their account.
 
-### Networking
+It's worth asking a few questions about your app, before going into production.
 
-Shared ownership can make deploying and manages network components challenging. Try to think ahead of time about
+- Will your app be deployed into an isolated or customer-managed network?
+- What permissions will your app require?
+- What security requirements will your customer have?
+- Will these requirements vary across customers?
+- Are there things your customer will want to configure to manage costs?
 
-- Where the app will be hosted by your customer. What domains and subdomains will be used? Who will provide them and configure them during installation?
-- What subnets will be needed? Should certain resources be isolated?
+Thinking ahead about these will help clarify the boundary between what you are responsible for, and what your customer is responsible for.
 
-### Isolated vs Customer-Managed Networks
+## Customer-Managed Networks
 
-We recommend deploying your app into it's own, dedicated network if possible. In many cases, though, this will not be possible, and the customer will bring their own network for you to deploy in. This raises the bar for ensuring your app is secure, well-understood, and permissions are minimally scoped.
+As we've mentioned before, we recommend deploying your app into it's own, isolated network.
+This tends to keep permissions simpler, reduce the blast radius of any production issues, and make it easy to monitor and control data going in and out of the app.
 
-### Cost
+But isolation may not work for all apps, and some customers will require you deploy into a network that they manage.
+In these cases, there are a few things you can do to contain your app within a network you do not manage.
 
-One of the benefits of BYOC is that you will not need to host the app for you user. But that does not mean you don't need to care about how much it costs to host, as your customer will now be on the hook for this.
-
-## Permissions
-
-## Updates
+- Place your app resouces in their own subnets to control egress and ingress
+- Place your resrouces in security groups to control their access to other parts of the network
+- Apply permissions boundaries to the IAM roles your resources use to limit the actions they can take
