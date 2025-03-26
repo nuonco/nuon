@@ -14,7 +14,11 @@
         "cross-stack-output-aws_organizations_account.govcloud-stage.id": "cross-stack-output-aws_organizations_accountgovcloud-stageid",
         "cross-stack-output-aws_organizations_account.infra-shared-prod.id": "cross-stack-output-aws_organizations_accountinfra-shared-prodid",
         "cross-stack-output-aws_organizations_account.infra-shared-stage.id": "cross-stack-output-aws_organizations_accountinfra-shared-stageid",
-        "cross-stack-output-aws_organizations_account.infra-tests.id": "cross-stack-output-aws_organizations_accountinfra-testsid",
+        "cross-stack-output-aws_organizations_account.infra-tests-000.id": "cross-stack-output-aws_organizations_accountinfra-tests-000id",
+        "cross-stack-output-aws_organizations_account.infra-tests-001.id": "cross-stack-output-aws_organizations_accountinfra-tests-001id",
+        "cross-stack-output-aws_organizations_account.infra-tests-002.id": "cross-stack-output-aws_organizations_accountinfra-tests-002id",
+        "cross-stack-output-aws_organizations_account.infra-tests-003.id": "cross-stack-output-aws_organizations_accountinfra-tests-003id",
+        "cross-stack-output-aws_organizations_account.infra-tests-004.id": "cross-stack-output-aws_organizations_accountinfra-tests-004id",
         "cross-stack-output-aws_organizations_account.orgs-prod.id": "cross-stack-output-aws_organizations_accountorgs-prodid",
         "cross-stack-output-aws_organizations_account.orgs-stage.id": "cross-stack-output-aws_organizations_accountorgs-stageid",
         "cross-stack-output-aws_organizations_account.prod.id": "cross-stack-output-aws_organizations_accountprodid",
@@ -97,9 +101,25 @@
       "sensitive": true,
       "value": "${aws_organizations_account.infra-shared-stage.id}"
     },
-    "cross-stack-output-aws_organizations_accountinfra-testsid": {
+    "cross-stack-output-aws_organizations_accountinfra-tests-000id": {
       "sensitive": true,
-      "value": "${aws_organizations_account.infra-tests.id}"
+      "value": "${aws_organizations_account.infra-tests-000.id}"
+    },
+    "cross-stack-output-aws_organizations_accountinfra-tests-001id": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.infra-tests-001.id}"
+    },
+    "cross-stack-output-aws_organizations_accountinfra-tests-002id": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.infra-tests-002.id}"
+    },
+    "cross-stack-output-aws_organizations_accountinfra-tests-003id": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.infra-tests-003.id}"
+    },
+    "cross-stack-output-aws_organizations_accountinfra-tests-004id": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.infra-tests-004.id}"
     },
     "cross-stack-output-aws_organizations_accountorgs-prodid": {
       "sensitive": true,
@@ -171,7 +191,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-03-26T23:27:45.925Z"
+      "value": "2025-03-26T23:37:01.978Z"
     }
   },
   "provider": {
@@ -299,22 +319,94 @@
         "name": "infra-shared-stage",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
       },
-      "infra-tests": {
+      "infra-tests-000": {
         "//": {
           "metadata": {
-            "path": "org/infra-tests",
-            "uniqueId": "infra-tests"
+            "path": "org/infra-tests-000",
+            "uniqueId": "infra-tests-000"
           }
         },
         "close_on_deletion": true,
-        "email": "aws-accounts+infra-tests@powertools.dev",
+        "email": "aws-accounts+infra-tests-000@powertools.dev",
         "iam_user_access_to_billing": "ALLOW",
         "lifecycle": {
           "ignore_changes": [
             "iam_user_access_to_billing"
           ]
         },
-        "name": "infra-tests",
+        "name": "infra-tests-000",
+        "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
+      },
+      "infra-tests-001": {
+        "//": {
+          "metadata": {
+            "path": "org/infra-tests-001",
+            "uniqueId": "infra-tests-001"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+infra-tests-001@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "infra-tests-001",
+        "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
+      },
+      "infra-tests-002": {
+        "//": {
+          "metadata": {
+            "path": "org/infra-tests-002",
+            "uniqueId": "infra-tests-002"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+infra-tests-002@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "infra-tests-002",
+        "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
+      },
+      "infra-tests-003": {
+        "//": {
+          "metadata": {
+            "path": "org/infra-tests-003",
+            "uniqueId": "infra-tests-003"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+infra-tests-003@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "infra-tests-003",
+        "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
+      },
+      "infra-tests-004": {
+        "//": {
+          "metadata": {
+            "path": "org/infra-tests-004",
+            "uniqueId": "infra-tests-004"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+infra-tests-004@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "infra-tests-004",
         "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
       },
       "orgs-prod": {
@@ -794,15 +886,59 @@
         "name": "infra-shared-stage-environment-tag-policy",
         "type": "TAG_POLICY"
       },
-      "env_tag_policy_infra-tests": {
+      "env_tag_policy_infra-tests-000": {
         "//": {
           "metadata": {
-            "path": "org/env_tag_policy_infra-tests",
-            "uniqueId": "env_tag_policy_infra-tests"
+            "path": "org/env_tag_policy_infra-tests-000",
+            "uniqueId": "env_tag_policy_infra-tests-000"
           }
         },
-        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"infra-tests\"]}}}}",
-        "name": "infra-tests-environment-tag-policy",
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"infra-tests-000\"]}}}}",
+        "name": "infra-tests-000-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
+      "env_tag_policy_infra-tests-001": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_infra-tests-001",
+            "uniqueId": "env_tag_policy_infra-tests-001"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"infra-tests-001\"]}}}}",
+        "name": "infra-tests-001-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
+      "env_tag_policy_infra-tests-002": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_infra-tests-002",
+            "uniqueId": "env_tag_policy_infra-tests-002"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"infra-tests-002\"]}}}}",
+        "name": "infra-tests-002-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
+      "env_tag_policy_infra-tests-003": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_infra-tests-003",
+            "uniqueId": "env_tag_policy_infra-tests-003"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"infra-tests-003\"]}}}}",
+        "name": "infra-tests-003-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
+      "env_tag_policy_infra-tests-004": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_infra-tests-004",
+            "uniqueId": "env_tag_policy_infra-tests-004"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"infra-tests-004\"]}}}}",
+        "name": "infra-tests-004-environment-tag-policy",
         "type": "TAG_POLICY"
       },
       "env_tag_policy_orgs-prod": {
@@ -1064,15 +1200,55 @@
         "policy_id": "${aws_organizations_policy.env_tag_policy_infra-shared-stage.id}",
         "target_id": "${aws_organizations_account.infra-shared-stage.id}"
       },
-      "env_tag_policy_attach_infra-tests": {
+      "env_tag_policy_attach_infra-tests-000": {
         "//": {
           "metadata": {
-            "path": "org/env_tag_policy_attach_infra-tests",
-            "uniqueId": "env_tag_policy_attach_infra-tests"
+            "path": "org/env_tag_policy_attach_infra-tests-000",
+            "uniqueId": "env_tag_policy_attach_infra-tests-000"
           }
         },
-        "policy_id": "${aws_organizations_policy.env_tag_policy_infra-tests.id}",
-        "target_id": "${aws_organizations_account.infra-tests.id}"
+        "policy_id": "${aws_organizations_policy.env_tag_policy_infra-tests-000.id}",
+        "target_id": "${aws_organizations_account.infra-tests-000.id}"
+      },
+      "env_tag_policy_attach_infra-tests-001": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_infra-tests-001",
+            "uniqueId": "env_tag_policy_attach_infra-tests-001"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_infra-tests-001.id}",
+        "target_id": "${aws_organizations_account.infra-tests-001.id}"
+      },
+      "env_tag_policy_attach_infra-tests-002": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_infra-tests-002",
+            "uniqueId": "env_tag_policy_attach_infra-tests-002"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_infra-tests-002.id}",
+        "target_id": "${aws_organizations_account.infra-tests-002.id}"
+      },
+      "env_tag_policy_attach_infra-tests-003": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_infra-tests-003",
+            "uniqueId": "env_tag_policy_attach_infra-tests-003"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_infra-tests-003.id}",
+        "target_id": "${aws_organizations_account.infra-tests-003.id}"
+      },
+      "env_tag_policy_attach_infra-tests-004": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_infra-tests-004",
+            "uniqueId": "env_tag_policy_attach_infra-tests-004"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_infra-tests-004.id}",
+        "target_id": "${aws_organizations_account.infra-tests-004.id}"
       },
       "env_tag_policy_attach_orgs-prod": {
         "//": {
