@@ -195,3 +195,47 @@ module "workers-executors-stage" {
   trigger_workspaces              = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
 }
 
+
+module "workers-infra-tests-stage" {
+  source = "./modules/workspace"
+
+  name       = "workers-infra-tests-stage"
+  repo       = "powertoolsdev/mono"
+  auto_apply = true
+  dir        = "services/workers-infra-tests/infra"
+  vars = {
+    env               = "stage"
+    github_install_id = "41323514"
+  }
+  variable_sets = [
+    "aws-environment-credentials",
+    "slack-webhooks",
+    "api-stage",
+  ]
+  project_id                      = tfe_project.services.id
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
+  trigger_workspaces              = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
+}
+
+module "workers-infra-tests-prod" {
+  source = "./modules/workspace"
+
+  name       = "workers-infra-tests-prod"
+  repo       = "powertoolsdev/mono"
+  auto_apply = true
+  dir        = "services/workers-infra-tests/infra"
+  vars = {
+    env               = "prod"
+    github_install_id = "41959553"
+  }
+  variable_sets = [
+    "aws-environment-credentials",
+    "slack-webhooks",
+    "api-prod",
+  ]
+  project_id                      = tfe_project.services.id
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
+  trigger_workspaces              = [module.infra-eks-prod-nuon.workspace_id, module.infra-orgs-prod.workspace_id]
+}
