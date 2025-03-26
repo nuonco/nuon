@@ -30,6 +30,8 @@ import {
   shutdownOrgRunnerJob,
   teardownInstallComponents,
   updateInstallSandbox,
+  gracefulInstallRunnerShutdown,
+  forceInstallRunnerShutdown,
 } from '@/components/admin-actions'
 
 type TAdminAction = {
@@ -127,6 +129,16 @@ export const AdminModal: FC<{ isSidebarOpen: boolean }> = ({
       action: () => shutdownInstallRunnerJob(params?.['install-id'] as string),
       description: 'Shutdown the current install runner job',
       text: 'Shutdown runner job',
+    },
+    {
+      action: () => gracefulInstallRunnerShutdown(params?.['install-id'] as string),
+      description: 'Graceful shutdown of current instal runner',
+      text: 'Graceful install runner shitdown',
+    },
+    {
+      action: () => forceInstallRunnerShutdown(params?.['install-id'] as string),
+      description: 'Forceful shutdown of current install runner',
+      text: 'Force install runner shutdown',
     },
   ]
 
