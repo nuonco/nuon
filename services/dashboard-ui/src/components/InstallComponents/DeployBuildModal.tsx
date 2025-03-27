@@ -1,29 +1,29 @@
 'use client'
 
+import { useParams } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { CloudCheck, CloudArrowUp } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
-import { Dropdown } from '@/components/Dropdown'
 import { RadioInput } from '@/components/Input'
 import { SpinnerSVG, Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
-import { useOrg } from '@/components/Orgs'
+import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import { deployComponentBuild } from '@/components/install-actions'
 import type { TBuild } from '@/types'
 import { trackEvent } from '@/utils'
 
-export const InstallDeployLatestBuildButton: FC<{
-  componentId: string
-  installId: string
-  orgId: string
-}> = ({ componentId, installId, orgId }) => {
+export const InstallDeployBuildModal: FC<{}> = ({}) => {
+  const params =
+    useParams<Record<'org-id' | 'install-id' | 'component-id', string>>()
+  const orgId = params['org-id']
+  const installId = params['install-id']
+  const componentId = params['component-id']
   const { user } = useUser()
-  const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
   const [buildId, setBuildId] = useState<string>()
   const [isLoading, setIsLoading] = useState(false)
@@ -42,13 +42,13 @@ export const InstallDeployLatestBuildButton: FC<{
     }
   }, [isKickedOff])
 
-  return org?.features?.['install-delete-components'] ? null : (
+  return (
     <>
       {isOpen
         ? createPortal(
             <Modal
               className="max-w-lg"
-              heading={`Deploy build ${buildId}?`}
+              heading={`Deploy build?`}
               isOpen={isOpen}
               onClose={() => {
                 setIsOpen(false)
@@ -57,9 +57,14 @@ export const InstallDeployLatestBuildButton: FC<{
               <div className="flex flex-col gap-4 mb-6">
                 {error ? <Notice>{error}</Notice> : null}
                 <Text variant="reg-14" className="leading-relaxed">
-                  Are you sure you want to deploy build {buildId}? This will
-                  replace the current install component with the selected build.
+                  Select a build to deploy from the list below.
                 </Text>
+
+                <BuildOptions
+                  componentId={componentId}
+                  orgId={orgId}
+                  setBuildId={setBuildId}
+                />
               </div>
               <div className="flex gap-3 justify-end">
                 <Button
@@ -121,33 +126,16 @@ export const InstallDeployLatestBuildButton: FC<{
             document.body
           )
         : null}
-      <Dropdown
-        alignment="right"
-        className="text-sm !font-medium !p-2 h-[32px]"
-        id="deploy-build"
-        text="Deploy build"
-        isDownIcon
-        wrapperClassName="z-20"
+
+      <Button
+        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full"
+        onClick={() => {
+          setIsOpen(true)
+        }}
+        variant="ghost"
       >
-        <div className="min-w-[180px] rounded-md overflow-hidden">
-          <BuildOptions
-            componentId={componentId}
-            orgId={orgId}
-            setBuildId={setBuildId}
-          />
-          <hr />
-          <Button
-            disabled={!buildId}
-            className="w-full !rounded-t-none !text-sm flex items-center justify-center gap-2 pl-4"
-            onClick={() => {
-              setIsOpen(true)
-            }}
-            variant="ghost"
-          >
-            Confirm deploy
-          </Button>
-        </div>
-      </Dropdown>
+        Deploy component build
+      </Button>
     </>
   )
 }
@@ -179,9 +167,12 @@ const BuildOptions: FC<{
   }, [])
 
   return (
-    <div className="w-full max-h-[250px] overflow-y-auto">
-      <Text className="px-3 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
-        Recent builds
+    <div className="w-full max-h-[450px] overflow-y-auto border rounded-md">
+      <Text
+        className="px-3 py-2 text-cool-grey-600 dark:text-cool-grey-400 border-b"
+        variant="med-14"
+      >
+        Active builds
       </Text>
       {error ? (
         <div className="p-3">
@@ -194,6 +185,7 @@ const BuildOptions: FC<{
       ) : builds && builds?.length ? (
         builds.map((build) => (
           <RadioInput
+            className="!items-start"
             key={build?.id}
             name="build-id"
             value={build?.id}
@@ -201,13 +193,32 @@ const BuildOptions: FC<{
               props.setBuildId(e.target?.value)
             }}
             labelText={
-              <span>
-                <Text variant="med-12">{build?.id}</Text>
-                <Time
-                  className="!font-normal"
-                  variant="reg-12"
-                  time={build.created_at}
-                />
+              <span className="flex flex-col gap-0">
+                <span className="flex gap-4">
+                  <Text variant="med-12">
+                    <StatusBadge
+                      status={build?.status}
+                      isWithoutBorder
+                      isStatusTextHidden
+                    />
+                    {build?.id}
+                  </Text>
+                  <Time
+                    className="!font-normal"
+                    variant="reg-12"
+                    time={build.created_at}
+                  />
+                </span>
+                {build?.vcs_connection_commit ? (
+                  <span>
+                    <Text className="!font-normal">
+                      <span className="truncate max-w-[50px]">
+                        {build?.vcs_connection_commit?.sha}
+                      </span>
+                      <span>{build?.vcs_connection_commit?.message}</span>
+                    </Text>
+                  </span>
+                ) : null}
               </span>
             }
           />
