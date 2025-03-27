@@ -169,7 +169,6 @@ export const DashboardContent: FC<{
   children: React.ReactElement
   heading?: React.ReactElement | string
   headingUnderline?: React.ReactElement | string
-  headingMeta?: React.ReactElement | string
   statues?: React.ReactElement | null
   meta?: React.ReactElement | null
 }> = ({
@@ -177,7 +176,6 @@ export const DashboardContent: FC<{
   children,
   heading,
   headingUnderline,
-  headingMeta,
   statues = null,
   meta = null,
 }) => {
@@ -209,17 +207,8 @@ export const DashboardContent: FC<{
                 <Text level={1} role="heading" variant="semi-18">
                   {heading}
                 </Text>
-                <span>
-                  <ID id={headingUnderline} />
-                  {headingMeta ? (
-                    <Text
-                      className="text-blue-800 dark:text-blue-600"
-                      variant="reg-12"
-                    >
-                      {headingMeta}
-                    </Text>
-                  ) : null}
-                </span>
+
+                <ID id={headingUnderline} />
               </hgroup>
 
               {statues}
