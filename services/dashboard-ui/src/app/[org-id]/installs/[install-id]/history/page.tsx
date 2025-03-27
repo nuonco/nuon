@@ -8,10 +8,12 @@ import {
   InstallPageSubNav,
   InstallStatuses,
   Section,
+  Text,
   Time,
 } from '@/components'
 import { InstallManagementDropdown } from '@/components/Installs'
 import { getInstall, getInstallEvents } from '@/lib'
+import { USER_REPROVISION } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
@@ -39,20 +41,31 @@ export default withPageAuthRequired(async function Install({ params }) {
       ]}
       heading={install.name}
       headingUnderline={install.id}
-      headingMeta={
-        <>
-          Last updated <Time time={install?.updated_at} format="relative" />
-        </>
-      }
       statues={
         <div className="flex items-start gap-8">
-          <InstallStatuses initInstall={install} shouldPoll />
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Created
+            </Text>
+            <Time variant="reg-12" time={install?.created_at} />
+          </span>
 
-          <InstallManagementDropdown
-            orgId={orgId}
-            hasInstallComponents={Boolean(install?.install_components?.length)}
-            install={install}
-          />
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Updated
+            </Text>
+            <Time variant="reg-12" time={install?.updated_at} />
+          </span>
+          <InstallStatuses initInstall={install} shouldPoll />
+          {USER_REPROVISION ? (
+            <InstallManagementDropdown
+              orgId={orgId}
+              hasInstallComponents={Boolean(
+                install?.install_components?.length
+              )}
+              install={install}
+            />
+          ) : null}
         </div>
       }
       meta={
