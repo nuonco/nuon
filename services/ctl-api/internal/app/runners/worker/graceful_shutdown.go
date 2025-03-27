@@ -87,7 +87,6 @@ func (w *Workflows) createRunnerJob(ctx workflow.Context, runnerID string, metad
 		Metadata:    metadata,
 	})
 	if err != nil {
-		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to create shutdown job")
 		return nil, errors.Wrap(err, "unable to create job")
 	}
 
