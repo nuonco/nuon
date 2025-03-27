@@ -26,6 +26,7 @@ const (
 	OperationProcessJob       eventloop.SignalType = "process_job"
 	OperationUpdateVersion    eventloop.SignalType = "update_version"
 	OperationHealthcheck      eventloop.SignalType = "healthcheck"
+	OperationOfflineCheck     eventloop.SignalType = "offline_check"
 	OperationGracefulShutdown eventloop.SignalType = "graceful_shutdown"
 	OperationForceShutdown    eventloop.SignalType = "force_shutdown"
 )
