@@ -17,7 +17,10 @@ export const InstallPageSubNav: FC<IInstallPageSubNav> = ({
     <SubNav
       links={[
         { href: `/${orgId}/installs/${installId}`, text: 'Overview' },
-
+        {
+          href: `/${orgId}/installs/${installId}/components`,
+          text: 'Components',
+        },
         {
           href: `/${orgId}/installs/${installId}/sandbox`,
           text: 'Sandbox',
@@ -28,10 +31,6 @@ export const InstallPageSubNav: FC<IInstallPageSubNav> = ({
               text: 'Runner',
             }
           : undefined,
-        {
-          href: `/${orgId}/installs/${installId}/components`,
-          text: 'Components',
-        },
         WORKFLOWS
           ? {
               href: `/${orgId}/installs/${installId}/actions`,
