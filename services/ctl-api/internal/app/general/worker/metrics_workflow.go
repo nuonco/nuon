@@ -37,6 +37,8 @@ func (w *Workflows) Metrics(ctx workflow.Context) error {
 		return err
 	}
 
+	l.Info("deadman.snitch", zap.String("status", "running"))
+
 	methods := map[string]func(workflow.Context) error{
 		"psql_tables": func(ctx workflow.Context) error {
 			return w.writePSQLTableMetrics(ctx)
