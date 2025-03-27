@@ -62,8 +62,6 @@ export const desiredOrgStructure: orgStructure = [
       { name: 'demo-govcloud' },
       { name: 'public' },
       { name: 'test' },
-      { name: 'infra-test' }, // this was a mistake - delete this later
-      { name: 'infra-tests' }, // this is what i needed - delete it later too
     ],
     disableScp: true,
     name: 'nuon-testing',
