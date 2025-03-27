@@ -31,6 +31,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		signals.OperationUpdateVersion:    w.AwaitUpdateVersion,
 		signals.OperationGracefulShutdown: w.AwaitGracefulShutdown,
 		signals.OperationForceShutdown:    w.AwaitForceShutdown,
+		signals.OperationOfflineCheck:     w.AwaitOfflineCheck,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
