@@ -20,7 +20,6 @@ import {
   Text,
   Time,
 } from '@/components'
-import { InstallComponentManagementDropdown } from '@/components/InstallComponents/ManagementDropdown'
 import {
   getComponent,
   getComponentConfig,
@@ -73,18 +72,15 @@ export default withPageAuthRequired(async function InstallComponent({
       heading={component.name}
       headingUnderline={component.id}
       statues={
-        <div className="flex gap-8">
-          <InstallDeployLatestBuildButton
-            componentId={componentId}
-            installId={installId}
-            orgId={orgId}
-          />
-          <InstallComponentManagementDropdown component={component} />
-        </div>
+        <InstallDeployLatestBuildButton
+          componentId={componentId}
+          installId={installId}
+          orgId={orgId}
+        />
       }
     >
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
-        <div className="divide-y flex-auto flex flex-col md:col-span-8">
+      <div className="flex flex-col lg:flex-row flex-auto">
+        <div className="divide-y flex-auto  flex flex-col overlfow-auto">
           <Section
             actions={
               <Text>
@@ -137,7 +133,7 @@ export default withPageAuthRequired(async function InstallComponent({
             </Section>
           )}
         </div>
-        <div className="divide-y flex flex-col md:col-span-4">
+        <div className="border-l overflow-auto lg:min-w-[450px] lg:max-w-[450px]">
           <Section heading="Deploy history">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense

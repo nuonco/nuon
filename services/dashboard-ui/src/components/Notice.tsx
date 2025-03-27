@@ -24,7 +24,7 @@ export const Notice: FC<INotice> = ({ children, variant = 'error' }) => {
       )}
     >
       <span>{Icon}</span>
-      <span className="leading-normal text-sm font-mono">{children}</span>
+      <span className="leading-normal text-sm font-medium">{children}</span>
     </div>
   )
 }

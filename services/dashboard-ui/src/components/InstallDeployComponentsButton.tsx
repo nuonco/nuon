@@ -10,7 +10,6 @@ import { RadioInput } from '@/components/Input'
 import { SpinnerSVG, Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
-import { useOrg } from '@/components/Orgs'
 import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import { deployComponentBuild } from '@/components/install-actions'
@@ -23,7 +22,6 @@ export const InstallDeployLatestBuildButton: FC<{
   orgId: string
 }> = ({ componentId, installId, orgId }) => {
   const { user } = useUser()
-  const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
   const [buildId, setBuildId] = useState<string>()
   const [isLoading, setIsLoading] = useState(false)
@@ -42,7 +40,7 @@ export const InstallDeployLatestBuildButton: FC<{
     }
   }, [isKickedOff])
 
-  return org?.features?.['install-delete-components'] ? null : (
+  return (
     <>
       {isOpen
         ? createPortal(
