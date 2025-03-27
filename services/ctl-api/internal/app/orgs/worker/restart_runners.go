@@ -19,8 +19,8 @@ func (w *Workflows) RestartRunners(ctx workflow.Context, sreq signals.RequestSig
 		return errors.Wrap(err, "unable to get runners")
 	}
 
-	for _, ev := range runners {
-		if err := w.restartRunner(ctx, ev.ID); err != nil {
+	for _, runner := range runners {
+		if err := w.restartRunner(ctx, runner.ID); err != nil {
 			return errors.Wrap(err, "unable to restart runner")
 		}
 	}
