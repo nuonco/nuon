@@ -2,6 +2,7 @@ package worker
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -84,14 +85,14 @@ func (w *Workflows) checkOffline(ctx workflow.Context, runnerID string) error {
 		Status: app.RunnerStatusActive,
 	})
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, gorm.ErrRecordNotFound) || strings.Contains(err.Error(), "not found") {
 			if minTS.After(runner.CreatedAt) {
 				l.Error("runner is offline because no successful health check was ever found")
 				isOffline = true
 			}
+		} else {
+			return errors.Wrap(err, "unable to get health checks")
 		}
-
-		return errors.Wrap(err, "unable to get health checks")
 	} else {
 		if minTS.After(healthCheck.CreatedAt) {
 			l.Error("runner is offline because most recent health check was too long ago")
