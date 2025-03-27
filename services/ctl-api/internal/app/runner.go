@@ -19,7 +19,9 @@ const (
 	RunnerStatusDeprovisioning RunnerStatus = "deprovisioning"
 	RunnerStatusDeprovisioned  RunnerStatus = "deprovisioned"
 	RunnerStatusReprovisioning RunnerStatus = "reprovisioning"
-	RunnerStatusUnknown        RunnerStatus = "unknown"
+	RunnerStatusOffline        RunnerStatus = "offline"
+
+	RunnerStatusUnknown RunnerStatus = "unknown"
 )
 
 func (r RunnerStatus) String() string {
