@@ -25,24 +25,24 @@ func (c *TeardownInstallComponentRequest) Validate(v *validator.Validate) error 
 	return nil
 }
 
-//	@ID						TeardownInstallComponent
-//	@Summary				teardown an install component
-//	@Description.markdown	teardown_install_component.md
-//	@Param					install_id		path	string							true	"install ID"
-//	@Param					component_id	path	string							true	"component ID"
-//	@Param					req				body	TeardownInstallComponentRequest	true	"Input"
-//	@Tags					installs
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.InstallDeploy
-//	@Router					/v1/installs/{install_id}/components/{component_id}/teardown [post]
+// @ID						TeardownInstallComponent
+// @Summary				teardown an install component
+// @Description.markdown	teardown_install_component.md
+// @Param					install_id		path	string							true	"install ID"
+// @Param					component_id	path	string							true	"component ID"
+// @Param					req				body	TeardownInstallComponentRequest	true	"Input"
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.InstallDeploy
+// @Router					/v1/installs/{install_id}/components/{component_id}/teardown [post]
 func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	componentID := ctx.Param("component_id")
