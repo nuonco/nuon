@@ -110,7 +110,7 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 		}
 
 		// if the runner is restarted, we want to add a buffer before canceling any jobs in flight
-		maxAliveTime := job.Execution.CreatedAt.Add(time.Minute)
+		maxAliveTime := jobExecution.CreatedAt.Add(time.Minute)
 		if hb.StartedAt.After(maxAliveTime) {
 			l.Error(
 				"runner restarted while job was in flight. job will be cancelled.",
