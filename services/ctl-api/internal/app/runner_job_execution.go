@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type RunnerJobExecutionStatus string
@@ -68,8 +70,8 @@ type RunnerJobExecution struct {
 
 	Status RunnerJobExecutionStatus `json:"status" gorm:"not null;default null;index:idx_runner_job_execution_status,type:hash"`
 
-	Result  *RunnerJobExecutionResult `json:"result" gorm:"constraint:OnDelete:CASCADE;"`
-	Outputs *RunnerJobExecutionOutputs         `json:"outputs" gorm:"constraint:OnDelete:CASCADE;"`
+	Result  *RunnerJobExecutionResult  `json:"result" gorm:"constraint:OnDelete:CASCADE;"`
+	Outputs *RunnerJobExecutionOutputs `json:"outputs" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (r *RunnerJobExecution) BeforeCreate(tx *gorm.DB) error {
@@ -86,4 +88,22 @@ func (r *RunnerJobExecution) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (i *RunnerJobExecution) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &RunnerJobExecution{}, "runner_job_execution_partitions"),
+			Columns: []string{
+				"runner_job_id",
+				"created_at",
+			},
+		},
+		{
+			Name: indexes.Name(db, &RunnerJobExecution{}, "runner_jobs"),
+			Columns: []string{
+				"runner_job_id",
+			},
+		},
+	}
 }
