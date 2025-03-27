@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"time"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -108,13 +109,14 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			return false, errors.New("no heart beats found")
 		}
 
-		if hb.StartedAt.After(jobExecution.CreatedAt) {
+		// if the runner is restarted, we want to add a buffer before canceling any jobs in flight
+		maxAliveTime := job.Execution.CreatedAt.Add(time.Minute)
+		if hb.StartedAt.After(maxAliveTime) {
 			l.Error(
 				"runner restarted while job was in flight. job will be cancelled.",
 				zap.Time("runner.started_at", hb.StartedAt),
 				zap.Time("job_execution.created_at", jobExecution.CreatedAt),
 			)
-			w.updateStatus(ctx, job.RunnerID, app.RunnerStatusError, "runner restarted while job was in flight")
 			w.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusCancelled)
 
 			maps.Copy(etags, tags)
