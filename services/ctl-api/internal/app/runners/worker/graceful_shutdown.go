@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
@@ -17,6 +18,29 @@ import (
 // @execution-timeout 60m
 // @task-timeout 30m
 func (w *Workflows) GracefulShutdown(ctx workflow.Context, sreq signals.RequestSignal) error {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+
+	status, err := activities.AwaitGetRunnerStatusByID(ctx, sreq.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get runner status")
+	}
+
+	if generics.SliceContains(status, []app.RunnerStatus{
+		app.RunnerStatusDeprovisioned,
+		app.RunnerStatusDeprovisioning,
+		app.RunnerStatusReprovisioning,
+		app.RunnerStatusProvisioning,
+		app.RunnerStatusOffline,
+	}) {
+		l.Debug("not shutting down runner due to status",
+			zap.Any("status", status),
+		)
+		return nil
+	}
+
 	runnerJob, err := w.createRunnerJob(ctx, sreq.ID, map[string]string{
 		"shutdown_type": "graceful",
 	})
