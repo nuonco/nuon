@@ -1,13 +1,12 @@
 'use client'
 
-import React, { type FC, useEffect, useMemo, useState } from 'react'
+import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight } from '@phosphor-icons/react'
 import {
   StaticComponentConfigType,
   getComponentConfigType,
 } from '@/components/ComponentConfig'
-import { InstallComponentsManagementDropdown } from '@/components/Installs'
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
 import { DataTableSearch, Table } from '@/components/DataTable'
@@ -60,15 +59,11 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
   installId,
   orgId,
 }) => {
-  const [data, updateData] = useState(
+  const [data, _] = useState(
     parseInstallComponentsToTableData(installComponents)
   )
   const [columnFilters, __] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
-
-  useEffect(() => {
-    updateData(parseInstallComponentsToTableData(installComponents))
-  }, [installComponents])
 
   const columns: Array<ColumnDef<TData>> = useMemo(
     () => [
@@ -99,14 +94,11 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
       {
         header: 'Deployment',
         accessorKey: 'deployStatus',
-        cell: (props) => (
-          <StatusBadge status={props.getValue<string>()} shouldPoll />
-        ),
+        cell: (props) => <StatusBadge status={props.getValue<string>()} />,
       },
       {
         header: 'Dependencies',
         accessorKey: 'dependencies',
-        enableSorting: false,
         cell: (props) => (
           <div className="flex flex-wrap items-center gap-4">
             {props.getValue<number>() ? (
@@ -161,13 +153,12 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
   return (
     <Table
       header={
-        <div className="w-full flex items-start justify-between">
+        <>
           <DataTableSearch
             handleOnChange={handleGlobleFilter}
             value={globalFilter}
           />
-          <InstallComponentsManagementDropdown />
-        </div>
+        </>
       }
       data={data}
       columns={columns}

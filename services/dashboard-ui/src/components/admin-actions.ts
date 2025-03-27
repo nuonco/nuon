@@ -253,13 +253,3 @@ export async function forceInstallRunnerShutdown(installId: string) {
   const runner = await getInstallRunner(installId)
   return forceRunnerShutdown(runner.id)
 }
-
-export async function gracefulOrgRunnerShutdown(orgId: string) {
-  const runner = await getOrgRunner(orgId)
-  return gracefulRunnerShutdown(runner.id)
-}
-
-export async function forceOrgRunnerShutdown(orgId: string) {
-  const runner = await getOrgRunner(orgId)
-  return forceRunnerShutdown(runner.id)
-}
