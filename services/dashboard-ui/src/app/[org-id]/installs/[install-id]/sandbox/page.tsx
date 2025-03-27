@@ -60,13 +60,21 @@ export default withPageAuthRequired(async function InstallComponent({
       ]}
       heading={install.name}
       headingUnderline={install.id}
-      headingMeta={
-        <>
-          Last updated <Time time={install?.updated_at} format="relative" />
-        </>
-      }
       statues={
         <div className="flex items-start gap-8">
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Created
+            </Text>
+            <Time variant="reg-12" time={install?.created_at} />
+          </span>
+
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Updated
+            </Text>
+            <Time variant="reg-12" time={install?.updated_at} />
+          </span>
           <InstallStatuses initInstall={install} shouldPoll />
 
           <InstallManagementDropdown

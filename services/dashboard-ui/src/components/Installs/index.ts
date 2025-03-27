@@ -8,7 +8,6 @@ install page common
 
 // install management dropdown
 export * from "./ManagementDropdown"
-export * from "./ManageComponentsDropdown"
 // edit install modal
 // reprovision install modal
 // deploy components modal
