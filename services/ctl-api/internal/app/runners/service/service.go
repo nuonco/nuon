@@ -70,6 +70,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/delete", s.AdminDeleteRunner)
 	api.POST("/v1/runners/:runner_id/force-delete", s.AdminForceDeleteRunner)
 	api.POST("/v1/runners/:runner_id/restart", s.RestartRunner)
+	api.POST("/v1/runners/:runner_id/offline-check", s.AdminOfflineCheck)
 	api.POST("/v1/runners/:runner_id/service-account-token", s.AdminCreateRunnerServiceAccountToken)
 	api.GET("/v1/runners/:runner_id/service-account", s.AdminGetRunnerServiceAccount)
 	api.POST("/v1/runners/restart", s.AdminRestartRunners)
