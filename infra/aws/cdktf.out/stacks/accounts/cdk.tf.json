@@ -16,6 +16,7 @@
         "infra-shared-prod-gh-oidc-provider": "infra-shared-prod-gh-oidc-provider",
         "infra-shared-stage-gh-oidc-provider": "infra-shared-stage-gh-oidc-provider",
         "infra-test-gh-oidc-provider": "infra-test-gh-oidc-provider",
+        "infra-tests-gh-oidc-provider": "infra-tests-gh-oidc-provider",
         "orgs-prod-gh-oidc-provider": "orgs-prod-gh-oidc-provider",
         "orgs-stage-gh-oidc-provider": "orgs-stage-gh-oidc-provider",
         "prod-gh-oidc-provider": "prod-gh-oidc-provider",
@@ -76,7 +77,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-03-27T02:48:36.053Z"
+      "value": "2025-03-27T02:59:10.150Z"
     },
     "demo-gh-oidc-provider": {
       "description": "The Github OIDC provider for the demo account",
@@ -105,6 +106,10 @@
     "infra-test-gh-oidc-provider": {
       "description": "The Github OIDC provider for the infra-test account",
       "value": "${aws_iam_openid_connect_provider.infra-test-github-oidc-provider}"
+    },
+    "infra-tests-gh-oidc-provider": {
+      "description": "The Github OIDC provider for the infra-tests account",
+      "value": "${aws_iam_openid_connect_provider.infra-tests-github-oidc-provider}"
     },
     "orgs-prod-gh-oidc-provider": {
       "description": "The Github OIDC provider for the orgs-prod account",
@@ -601,6 +606,91 @@
         "assume_role": [
           {
             "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-testid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-west-2"
+      },
+      {
+        "alias": "infra-tests",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-testsid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-2"
+      },
+      {
+        "alias": "infra-tests-us-east-1",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-testsid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-1"
+      },
+      {
+        "alias": "infra-tests-us-east-2",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-testsid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-2"
+      },
+      {
+        "alias": "infra-tests-us-west-1",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-testsid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-west-1"
+      },
+      {
+        "alias": "infra-tests-us-west-2",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-testsid}:role/OrganizationAccountAccessRole"
           }
         ],
         "default_tags": [
@@ -2302,6 +2392,16 @@
         "account_alias": "nuon-infra-test",
         "provider": "aws.infra-test"
       },
+      "infra-tests-iam-alias": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-tests-iam-alias",
+            "uniqueId": "infra-tests-iam-alias"
+          }
+        },
+        "account_alias": "nuon-infra-tests",
+        "provider": "aws.infra-tests"
+      },
       "orgs-prod-iam-alias": {
         "//": {
           "metadata": {
@@ -2587,6 +2687,23 @@
           "sts.amazonaws.com"
         ],
         "provider": "aws.infra-test",
+        "thumbprint_list": [
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
+        ],
+        "url": "https://token.actions.githubusercontent.com"
+      },
+      "infra-tests-github-oidc-provider": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-tests-github-oidc-provider",
+            "uniqueId": "infra-tests-github-oidc-provider"
+          }
+        },
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
+        "provider": "aws.infra-tests",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
           "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
@@ -2995,6 +3112,22 @@
         "name": "terraform",
         "path": "/",
         "provider": "aws.infra-test"
+      },
+      "infra-tests-terraform-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-tests-terraform-role",
+            "uniqueId": "infra-tests-terraform-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
+        "description": "Terraform role to assume",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "terraform",
+        "path": "/",
+        "provider": "aws.infra-tests"
       },
       "orgs-prod-terraform-role": {
         "//": {
@@ -3479,6 +3612,36 @@
         },
         "aws_service_name": "spot.amazonaws.com",
         "provider": "aws.infra-test"
+      },
+      "infra-tests-opensearch-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-tests-opensearch-service-linked-role",
+            "uniqueId": "infra-tests-opensearch-service-linked-role"
+          }
+        },
+        "aws_service_name": "opensearchservice.amazonaws.com",
+        "provider": "aws.infra-tests"
+      },
+      "infra-tests-spot-fleet-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-tests-spot-fleet-service-linked-role",
+            "uniqueId": "infra-tests-spot-fleet-service-linked-role"
+          }
+        },
+        "aws_service_name": "spotfleet.amazonaws.com",
+        "provider": "aws.infra-tests"
+      },
+      "infra-tests-spot-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-tests-spot-service-linked-role",
+            "uniqueId": "infra-tests-spot-service-linked-role"
+          }
+        },
+        "aws_service_name": "spot.amazonaws.com",
+        "provider": "aws.infra-tests"
       },
       "orgs-prod-opensearch-service-linked-role": {
         "//": {
@@ -4090,6 +4253,20 @@
         "type": "NS",
         "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
       },
+      "infra-tests-ns-delegation": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-tests-ns-delegation",
+            "uniqueId": "infra-tests-ns-delegation"
+          }
+        },
+        "name": "infra-tests.nuon.co",
+        "provider": "aws",
+        "records": "${aws_route53_zone.infra-tests-hosted-zone.name_servers}",
+        "ttl": 300,
+        "type": "NS",
+        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
+      },
       "orgs-prod-ns-delegation": {
         "//": {
           "metadata": {
@@ -4399,6 +4576,16 @@
         },
         "name": "infra-test.nuon.co",
         "provider": "aws.infra-test"
+      },
+      "infra-tests-hosted-zone": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-tests-hosted-zone",
+            "uniqueId": "infra-tests-hosted-zone"
+          }
+        },
+        "name": "infra-tests.nuon.co",
+        "provider": "aws.infra-tests"
       },
       "orgs-prod-hosted-zone": {
         "//": {
