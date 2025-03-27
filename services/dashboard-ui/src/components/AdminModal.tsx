@@ -22,7 +22,6 @@ import {
   reprovisionOrg,
   restartApp,
   restartInstall,
-  restartInstallRunner,
   restartOrg,
   restartOrgRunners,
   restartOrgRunner,
@@ -32,6 +31,8 @@ import {
   updateInstallSandbox,
   gracefulInstallRunnerShutdown,
   forceInstallRunnerShutdown,
+  gracefulOrgRunnerShutdown,
+  forceOrgRunnerShutdown,
 } from '@/components/admin-actions'
 
 type TAdminAction = {
@@ -75,9 +76,14 @@ export const AdminModal: FC<{ isSidebarOpen: boolean }> = ({
       text: 'Restart runner',
     },
     {
-      action: () => shutdownOrgRunnerJob(params?.['org-id'] as string),
-      description: 'Shutdown the current org runner job',
-      text: 'Shutdown runner job',
+      action: () => gracefulOrgRunnerShutdown(params?.['org-id'] as string),
+      description: 'Graceful shutdown of current org runner',
+      text: 'Graceful org shutdown runner',
+    },
+    {
+      action: () => forceOrgRunnerShutdown(params?.['org-id'] as string),
+      description: 'Forceful shutdown of current org runner',
+      text: 'Force org shutdown runner',
     },
   ]
 
