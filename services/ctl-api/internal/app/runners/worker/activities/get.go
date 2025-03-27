@@ -19,8 +19,6 @@ func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.Runner, erro
 		return nil, fmt.Errorf("unable to get runner: %w", err)
 	}
 
-	// TODO(jm): remove this once we implement the health check
-	runner.Status = app.RunnerStatusActive
 	return runner, nil
 }
 
