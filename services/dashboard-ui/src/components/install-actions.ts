@@ -43,7 +43,7 @@ export async function deployComponents({
       installId,
       orgId,
     })
-    revalidatePath(`/${orgId}/installs/${installId}/components`)
+    revalidatePath(`/${orgId}/installs/${installId}`)
   } catch (error) {
     console.error(error)
     throw new Error(error.message)
@@ -163,48 +163,4 @@ interface IForgetInstall {
 
 export async function forgetInstall(params: IForgetInstall) {
   return forget(params)
-}
-
-interface IDeleteComponents {
-  installId: string
-  orgId: string
-  force?: boolean
-}
-
-export async function deleteComponents({
-  installId,
-  orgId,
-  force = false,
-}: IDeleteComponents) {
-  // @ts-ignore
-  const params = new URLSearchParams({ force })
-  return mutateData({
-    errorMessage: 'Unable to delete components',
-    orgId,
-    method: 'DELETE',
-    path: `installs/${installId}/components?${params.toString()}`,
-  })
-}
-
-interface IDeleteComponent {
-  componentId: string
-  installId: string
-  orgId: string
-  force?: boolean
-}
-
-export async function deleteComponent({
-  componentId,
-  installId,
-  orgId,
-  force = false,
-}: IDeleteComponent) {
-  // @ts-ignore
-  const params = new URLSearchParams({ force })
-  return mutateData({
-    errorMessage: 'Unable to delete component',
-    orgId,
-    method: 'DELETE',
-    path: `installs/${installId}/components/${componentId}?${params.toString()}`,
-  })
 }
