@@ -33,7 +33,9 @@ linters-settings:
         ignored-numbers: 0,1,2,3
         ignored-functions: strings.SplitN
   govet:
-    check-shadowing: true
+    # https://golangci-lint.run/usage/linters/#govet
+    enable:
+      - shadow
   lll:
     line-length: 140
   misspell:
