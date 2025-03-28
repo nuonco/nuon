@@ -48,16 +48,18 @@ export const InstallDeployBuildModal: FC<{}> = ({}) => {
         ? createPortal(
             <Modal
               className="max-w-lg"
+              contentClassName="!p-0"
               heading={`Deploy build?`}
               isOpen={isOpen}
               onClose={() => {
                 setIsOpen(false)
               }}
             >
-              <div className="flex flex-col gap-4 mb-6">
+              <div className="flex flex-col mb-6">
                 {error ? <Notice>{error}</Notice> : null}
-                <Text variant="reg-14" className="leading-relaxed">
-                  Select a build to deploy from the list below.
+                <Text variant="reg-14" className="px-6 pt-6 pb-4">
+                  Select an active build from the list below and deploy to your
+                  install.
                 </Text>
 
                 <BuildOptions
@@ -66,7 +68,7 @@ export const InstallDeployBuildModal: FC<{}> = ({}) => {
                   setBuildId={setBuildId}
                 />
               </div>
-              <div className="flex gap-3 justify-end">
+              <div className="flex gap-3 justify-end border-t p-6">
                 <Button
                   onClick={() => {
                     setIsOpen(false)
@@ -167,64 +169,44 @@ const BuildOptions: FC<{
   }, [])
 
   return (
-    <div className="w-full max-h-[450px] overflow-y-auto border rounded-md">
-      <Text
-        className="px-3 py-2 text-cool-grey-600 dark:text-cool-grey-400 border-b"
-        variant="med-14"
-      >
-        Active builds
-      </Text>
+    <div className="w-full max-h-[450px] overflow-y-auto">
       {error ? (
-        <div className="p-3">
+        <div className="p-6">
           <Notice>{error}</Notice>
         </div>
       ) : isLoading ? (
-        <div className="p-3 text-sm">
+        <div className="p-6 text-sm">
           <Loading loadingText="Loading builds..." />
         </div>
       ) : builds && builds?.length ? (
         builds.map((build) => (
           <RadioInput
-            className="!items-start"
+            className="mt-0.5"
             key={build?.id}
             name="build-id"
             value={build?.id}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               props.setBuildId(e.target?.value)
             }}
+            labelClassName="!px-6 !items-start"
             labelText={
               <span className="flex flex-col gap-0">
                 <span className="flex gap-4">
-                  <Text variant="med-12">
-                    <StatusBadge
-                      status={build?.status}
-                      isWithoutBorder
-                      isStatusTextHidden
-                    />
-                    {build?.id}
-                  </Text>
-                  <Time
-                    className="!font-normal"
-                    variant="reg-12"
-                    time={build.created_at}
-                  />
+                  <Text variant="med-12">Build ID: {build?.id}</Text>
                 </span>
-                {build?.vcs_connection_commit ? (
-                  <span>
-                    <Text className="!font-normal">
-                      <span className="truncate max-w-[50px]">
-                        {build?.vcs_connection_commit?.sha}
-                      </span>
-                      <span>{build?.vcs_connection_commit?.message}</span>
-                    </Text>
-                  </span>
-                ) : null}
+
+                <span>
+                  <Text className="!font-normal text-cool-grey-600 dark:text-white/70">
+                    {build?.created_by?.email} created on{' '}
+                    <Time time={build?.updated_at} format="long" />
+                  </Text>
+                </span>
               </span>
             }
           />
         ))
       ) : (
-        <Text className="text-sm px-3 pb-2">No active builds found</Text>
+        <Text className="text-sm px-6 pb-2">No active builds found</Text>
       )}
     </div>
   )
