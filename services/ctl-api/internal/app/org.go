@@ -45,6 +45,7 @@ const (
 	OrgFeatureOrgSupport              OrgFeature = "org-support"
 	OrgFeatureInstallBreakGlass       OrgFeature = "install-break-glass"
 	OrgFeatureInstallDeleteComponents OrgFeature = "install-delete-components"
+	OrgFeatureInstallDelete           OrgFeature = "install-delete"
 )
 
 type Org struct {
@@ -169,5 +170,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureOrgSupport,
 		OrgFeatureInstallBreakGlass,
 		OrgFeatureInstallDeleteComponents,
+		OrgFeatureInstallDelete,
 	}
 }
