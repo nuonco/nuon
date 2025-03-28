@@ -5,23 +5,35 @@ import { Time } from '@/components/Time'
 import { ToolTip } from '@/components/ToolTip'
 import { Text } from '@/components/Typography'
 import type { TRunnerHealthCheck } from '@/types'
-import { getRunnerHealthChecks } from "@/lib"
+import { getRunnerHealthChecks } from '@/lib'
 
 interface IRunnerHealthChart {
-  orgId: string;
-  runnerId: string;
+  orgId: string
+  runnerId: string
 }
 
-export const RunnerHealthChart: FC<IRunnerHealthChart> = async ({ orgId, runnerId  }) => {
+export const RunnerHealthChart: FC<IRunnerHealthChart> = async ({
+  orgId,
+  runnerId,
+}) => {
   const healthchecks = await getRunnerHealthChecks({ orgId, runnerId })
-  
-  return healthchecks?.length ? (
+  const checkLength = healthchecks?.length
+  const checkFirstThrid = Math.ceil(checkLength / 3)
+  const checkSecondThrid = Math.ceil((checkLength * 2) / 3)
+
+  return checkLength ? (
     <div className="flex flex-col gap-6 w-full">
       <div className="flex items-center gap-0.5">
         {healthchecks.map((healthcheck, i) => (
           <ToolTip
             key={healthcheck?.id}
-            alignment={i <= 9 ? 'left' : i >= 49 ? 'right' : 'center'}
+            alignment={
+              i < checkFirstThrid
+                ? 'left'
+                : i > checkSecondThrid
+                  ? 'right'
+                  : 'center'
+            }
             parentClassName="flex-auto heartbeat-item-parent"
             tipContent={
               healthcheck?.status_code === 0 ? (
