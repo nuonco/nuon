@@ -5,7 +5,7 @@ export const API_URL =
 export const ADMIN_API_URL =
   process?.env?.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:8082'
 export const POLL_DURATION =
-  (process?.env?.NEXT_PUBLIC_POLL_DURATION as unknown as number) || 10000
+  (process?.env?.NEXT_PUBLIC_POLL_DURATION as unknown as number) || 12000
 export const SHORT_POLL_DURATION =
   (process?.env?.NEXT_PUBLIC_SHORT_POLL_DURATION as unknown as number) || 5000
 export const LOG_POLL_DURATION =
