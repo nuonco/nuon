@@ -8,6 +8,8 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 // AccountRole is a many2many table used by gorm under the hood
@@ -36,4 +38,15 @@ func (c *AccountRole) BeforeSave(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (a *AccountRole) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AccountRole{}, "account_id"),
+			Columns: []string{
+				"account_id",
+			},
+		},
+	}
 }
