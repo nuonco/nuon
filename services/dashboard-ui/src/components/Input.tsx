@@ -1,21 +1,29 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { Text } from "@/components/Typography"
 
 export interface IRadioInput extends React.HTMLAttributes<HTMLInputElement> {
   checked?: boolean
   name: string
+  labelClassName?: string
   labelText: React.ReactNode
   value: string
 }
 
 export const RadioInput: FC<IRadioInput> = ({
   className,
+  labelClassName,
   labelText,
   ...props
 }) => {
   return (
-    <label className="flex gap-3 items-center w-full px-4 py-2 cursor-pointer hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10">
+    <label
+      className={classNames(
+        'flex gap-3 items-center w-full px-4 py-2 cursor-pointer hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10',
+        {
+          [`${labelClassName}`]: Boolean(labelClassName),
+        }
+      )}
+    >
       <input
         className={classNames('accent-primary-600 w-auto h-[14px]', {
           [`${className}`]: Boolean(className),
