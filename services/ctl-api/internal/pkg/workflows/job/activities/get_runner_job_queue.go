@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 const (
@@ -32,6 +33,7 @@ func (a *Activities) PkgWorkflowsJobGetRunnerJobQueue(ctx context.Context, req *
 	minJobCreatedAt := job.CreatedAt.Add(-discardJobDuration)
 	var jobs []*app.RunnerJob
 	res := a.db.WithContext(ctx).
+		Scopes(scopes.WithDisableViews).
 		Where("runner_id = ? AND created_at < ? AND created_at > ? AND status IN ?", job.RunnerID, job.CreatedAt, minJobCreatedAt, []app.RunnerJobStatus{
 			app.RunnerJobStatusQueued,
 			app.RunnerJobStatusAvailable,
