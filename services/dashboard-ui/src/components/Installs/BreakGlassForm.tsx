@@ -269,7 +269,7 @@ export const BreakGlassForm: FC<IBreakGlassForm> = ({ install }) => {
             <div className="flex justify-between items-center">
               <Text variant="med-14">
                 <ToolTip tipContent="Not sure what needs to go here">
-                  CloudFormation Statck
+                  CloudFormation Stack
                 </ToolTip>
               </Text>
               <ClickToCopyButton
