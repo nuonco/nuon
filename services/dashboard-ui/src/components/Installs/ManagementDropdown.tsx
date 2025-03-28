@@ -3,6 +3,7 @@
 import React, { type FC } from 'react'
 import { GearFine } from '@phosphor-icons/react/dist/ssr'
 import { BreakGlassLink } from './BreakGlassLink'
+import { DeleteInstallModal } from './DeleteModal'
 import { EditModal } from './EditModal'
 import { ForgetModal } from './ForgetModal'
 import { ReprovisionModal } from './ReprovisionModal'
@@ -56,7 +57,11 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
             Remove
           </Text>
 
-          <ForgetModal install={install} orgId={orgId} />
+          {org?.features?.['install-delete'] ? (
+            <DeleteInstallModal install={install} />
+          ) : (
+            <ForgetModal install={install} orgId={orgId} />
+          )}
         </>
       </div>
     </Dropdown>

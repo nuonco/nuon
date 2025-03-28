@@ -208,3 +208,24 @@ export async function deleteComponent({
     path: `installs/${installId}/components/${componentId}?${params.toString()}`,
   })
 }
+
+interface IDeleteInstall {
+  installId: string
+  orgId: string
+  force?: boolean
+}
+
+export async function deleteInstall({
+  installId,
+  orgId,
+  force = false,
+}: IDeleteInstall) {
+  // @ts-ignore
+  const params = new URLSearchParams({ force })
+  return mutateData({
+    errorMessage: 'Unable to delete install',
+    orgId,
+    method: 'DELETE',
+    path: `installs/${installId}?${params.toString()}`,
+  })
+}
