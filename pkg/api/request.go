@@ -12,39 +12,18 @@ import (
 )
 
 func (c *client) execGetRequest(ctx context.Context, endpoint string) ([]byte, error) {
-	httpClient := http.Client{
-		Timeout: c.Timeout,
-	}
-
-	url := c.APIURL + endpoint
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	req.Header.Add("X-Nuon-Admin-Email", c.AdminEmail)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create request: %w", err)
-	}
-
-	res, err := httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get response: %w", err)
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid response status: %d", res.StatusCode)
-	}
-
-	if res.Body != nil {
-		defer res.Body.Close()
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read body: %w", err)
-	}
-
-	return body, nil
+	return c.execRequest(ctx, http.MethodGet, endpoint, nil)
 }
 
 func (c *client) execPostRequest(ctx context.Context, endpoint string, data interface{}) ([]byte, error) {
+	return c.execRequest(ctx, http.MethodPost, endpoint, data)
+}
+
+func (c *client) execPatchRequest(ctx context.Context, endpoint string, data interface{}) ([]byte, error) {
+	return c.execRequest(ctx, http.MethodPatch, endpoint, data)
+}
+
+func (c *client) execRequest(ctx context.Context, method string, endpoint string, data interface{}) ([]byte, error) {
 	httpClient := http.Client{
 		Timeout: c.Timeout,
 	}
@@ -55,7 +34,7 @@ func (c *client) execPostRequest(ctx context.Context, endpoint string, data inte
 	}
 
 	url := c.APIURL + endpoint
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(dataByts))
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(dataByts))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create request: %w", err)
 	}
@@ -68,7 +47,6 @@ func (c *client) execPostRequest(ctx context.Context, endpoint string, data inte
 	if !generics.SliceContains(res.StatusCode, []int{http.StatusCreated, http.StatusOK, http.StatusAccepted}) {
 		return nil, fmt.Errorf("invalid response status: %d", res.StatusCode)
 	}
-
 	if res.Body != nil {
 		defer res.Body.Close()
 	}
