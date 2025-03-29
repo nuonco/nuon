@@ -2,6 +2,7 @@ package worker
 
 import (
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
@@ -35,6 +36,8 @@ func (w *Workflows) RestartOrgRunners(ctx workflow.Context) error {
 	if err != nil {
 		return err
 	}
+
+	l.Info("general workflow execution", zap.String("type", "restart-org-runners"))
 
 	l.Debug("restarting org runners")
 	orgs, err := activities.AwaitGetOrgs(ctx, activities.GetOrgsRequest{})
