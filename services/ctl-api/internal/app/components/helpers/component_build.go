@@ -29,7 +29,7 @@ func (s *Helpers) CreateComponentBuild(ctx context.Context, cmpID string, useLat
 			var err error
 			vcsCommit, err = s.GetComponentCommit(ctx, cmpID)
 			if err != nil {
-				return nil, fmt.Errorf("unable to get latest commit for connection: %w", err)
+				return nil, err
 			}
 
 			gitRef = generics.ToPtr(vcsCommit.SHA)
