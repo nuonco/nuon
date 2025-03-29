@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
+
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
@@ -147,8 +148,8 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 		runnerStatus, err := activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
 		if runnerStatus != app.RunnerStatusActive {
 			l.Error("runner marked unhealthy during job")
-			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusUnknown, "runner became unhealthy during job")
-			w.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusUnknown)
+			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "runner became unhealthy during job")
+			w.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusFailed)
 			tags["status"] = "runner_unhealthy"
 
 			maps.Copy(etags, tags)
