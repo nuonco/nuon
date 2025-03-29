@@ -168,3 +168,4 @@ func (c *client) OrgInstalls(ctx context.Context, orgId string) ([]Install, erro
 
 	return response, nil
 }
+
