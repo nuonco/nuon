@@ -37,6 +37,8 @@ func (w *Workflows) Metrics(ctx workflow.Context) error {
 		return err
 	}
 
+	l.Info("general workflow execution", zap.String("type", "metrics-cron"))
+
 	w.mw.Gauge(ctx, "deadman.snitch", 1.0, metrics.ToTags(map[string]string{"snitchfor": "general-eloop-metrics"})...)
 
 	methods := map[string]func(workflow.Context) error{
