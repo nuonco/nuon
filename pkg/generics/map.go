@@ -6,6 +6,17 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+func SliceToMap[T comparable, V any](vals []T) map[T]V {
+	obj := make(map[T]V, 0)
+
+	for _, v := range vals {
+		var val V
+		obj[v] = val
+	}
+
+	return obj
+}
+
 func MapValuesToSlice(inp map[string]string) []string {
 	vals := make([]string, 0)
 	for _, v := range inp {
