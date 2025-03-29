@@ -22,14 +22,17 @@ func (s *Helpers) GetComponentCommit(ctx context.Context, cmpID string) (*app.VC
 	// find the latest commit for this connection
 	commit, err := s.vcsHelpers.GetVCSConfigLatestCommit(ctx, cmp.LatestConfig.ConnectedGithubVCSConfig)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get the latest commit: %w", err)
+		return nil, err
 	}
+
 	vcsCommit := app.VCSConnectionCommit{
 		SHA:             *commit.SHA,
 		Message:         *commit.Commit.Message,
 		VCSConnectionID: cmp.LatestConfig.ConnectedGithubVCSConfig.VCSConnectionID,
-		AuthorName:      generics.FromPtrStr(commit.Author.Name),
-		AuthorEmail:     generics.FromPtrStr(commit.Author.Email),
+	}
+	if commit.Commit != nil && commit.Commit.Author != nil {
+		vcsCommit.AuthorName = generics.FromPtrStr(commit.Commit.Author.Name)
+		vcsCommit.AuthorEmail = generics.FromPtrStr(commit.Commit.Author.Email)
 	}
 
 	res := s.db.WithContext(ctx).Create(&vcsCommit)
