@@ -23,7 +23,10 @@ func (l *logCore) Sync() error {
 }
 
 func (o *logCore) Check(ent zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
-	return nil
+	if o.Enabled(ent.Level) {
+		return ce.AddCore(ent, o)
+	}
+	return ce
 }
 
 // we let the underlying logger decide if the log should be passed on
@@ -39,6 +42,7 @@ func (o *logCore) With(fields []zapcore.Field) zapcore.Core {
 
 func (o *logCore) Write(ent zapcore.Entry, fields []zapcore.Field) error {
 	fn := o.convertLevel(ent.Level)
+
 	str := ent.Message
 	kvs := make([]interface{}, 0)
 	for _, f := range fields {
