@@ -91,6 +91,18 @@ func (w *workspace) clone(ctx context.Context) error {
 		return nil
 	}
 
+	// third, attempt to check out as a tag
+	w.L.Info("checking out as a tag")
+	tagRefName := plumbing.NewTagReferenceName(w.Src.Ref)
+	coOpts = &git.CheckoutOptions{
+		Branch: tagRefName,
+		Force:  true,
+	}
+	err = wtree.Checkout(coOpts)
+	if err == nil {
+		return nil
+	}
+
 	return CloneErr{
 		Url: w.Src.Url,
 		Ref: w.Src.Ref,
