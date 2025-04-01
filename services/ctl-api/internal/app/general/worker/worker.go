@@ -44,6 +44,7 @@ func New(params WorkerParams) (*Worker, error) {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
 	}
 
+	worker.SetStickyWorkflowCacheSize(params.Cfg.TemporalStickyWorkflowCacheSize)
 	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
 		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
 		Interceptors:                       params.Interceptors,
