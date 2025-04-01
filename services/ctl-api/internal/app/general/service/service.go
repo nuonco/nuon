@@ -62,6 +62,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	// (re)start EventLoopReconcile
 	api.POST("/v1/general/restart-event-loop", s.RestartGeneralEventLoop)
 	api.POST("/v1/general/promotion", s.AdminPromotion)
+	api.POST("/v1/general/terminate-event-loops", s.AdminTerminateEventLoops)
 
 	api.GET("/v1/general/waitlist", s.AdminGetWaitlist)
 
