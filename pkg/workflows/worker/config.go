@@ -32,6 +32,7 @@ type Config struct {
 	TemporalMaxConcurrentActivities int    `config:"temporal_max_concurrent_activities" validate:"required" faker:"oneof: 10,20"`
 
 	// observability configuration
-	HostIP   string `config:"host_ip" validate:"required"`
-	LogLevel string `config:"log_level"`
+	HostIP    string `config:"host_ip" validate:"required"`
+	LogLevel  string `config:"log_level"`
+	PprofPort string `config:"pprof_port"`
 }
