@@ -10,9 +10,10 @@ import (
 
 func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
 	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationCreated:   w.created,
-		signals.OperationRestart:   w.restart,
-		signals.OperationPromotion: w.AwaitPromotion,
+		signals.OperationCreated:             w.created,
+		signals.OperationRestart:             w.restart,
+		signals.OperationPromotion:           w.AwaitPromotion,
+		signals.OperationTerminateEventLoops: w.AwaitTerminateEventLoops,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{

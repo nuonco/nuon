@@ -24,9 +24,10 @@ const (
 	TemporalNamespace string = "general"
 	EventLoop         string = "general"
 
-	OperationCreated   eventloop.SignalType = "created"
-	OperationPromotion eventloop.SignalType = "promotion"
-	OperationRestart   eventloop.SignalType = "restart"
+	OperationCreated             eventloop.SignalType = "created"
+	OperationPromotion           eventloop.SignalType = "promotion"
+	OperationRestart             eventloop.SignalType = "restart"
+	OperationTerminateEventLoops eventloop.SignalType = "terminate_event_loops"
 )
 
 type RequestSignal struct {
