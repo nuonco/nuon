@@ -311,6 +311,25 @@ module "nuon-demo-installer" {
   }
 }
 
+module "kitchen-sink-installer" {
+  source = "./modules/repository"
+
+  name                     = "kitchen-sink-installer"
+  description              = "Kitchen Sink installer fork."
+  required_checks          = []
+  owning_team_id           = github_team.nuon.id
+  is_public                = true
+  enable_branch_protection = false
+  is_fork                  = true
+
+  collaborators = {
+  }
+
+  providers = {
+    github = github.nuon
+  }
+}
+
 module "nuon-examples" {
   source = "./modules/repository"
 
