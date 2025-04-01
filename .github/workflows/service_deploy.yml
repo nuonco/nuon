@@ -47,6 +47,7 @@ jobs:
       TF_WORKSPACE: ${{ inputs.env }}
       TF_OUT: ${{ github.workspace }}/tf-out.json
     environment: ${{ inputs.env }}
+    timeout-minutes: 10
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4

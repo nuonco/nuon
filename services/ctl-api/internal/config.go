@@ -82,7 +82,8 @@ type Config struct {
 	ClickhouseDBDialTimeout  time.Duration `config:"clickhouse_db_dial_timeout" validate:"required"`
 
 	// temporal configuration
-	TemporalHost string `config:"temporal_host"  validate:"required"`
+	TemporalHost                    string `config:"temporal_host"  validate:"required"`
+	TemporalStickyWorkflowCacheSize int    `config:"temporal_sticky_workflow_cache_size"`
 
 	// github configuration
 	GithubAppID            string `config:"github_app_id" validate:"required"`

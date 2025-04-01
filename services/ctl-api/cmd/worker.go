@@ -137,7 +137,8 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 
 	providers = append(providers,
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
-		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {})),
+		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {
+		})),
 	)
 	fx.New(providers...).Run()
 }
