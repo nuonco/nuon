@@ -58,12 +58,17 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 
 	ui.PrintSuccess("successfully synced " + cfgFile)
 
-	s.notifyOrphanedComponents(ctx, syncer.OrphanedComponents())
-	s.notifyOrphanedActions(ctx, syncer.OrphanedActions())
+	s.notifyOrphanedComponents(syncer.OrphanedComponents())
+	s.notifyOrphanedActions(syncer.OrphanedActions())
 
-	cmpBuildsScheduled := syncer.GetBuildsScheduled()
-	if len(cmpBuildsScheduled) == 0 {
+	cmpsScheduled := syncer.GetComponentsScheduled()
+	if len(cmpsScheduled) == 0 {
 		return nil
+	}
+
+	cmpByID := make(map[string]sync.ComponentState)
+	for _, cmp := range cmpsScheduled {
+		cmpByID[cmp.ID] = cmp
 	}
 
 	pollTimeout, cancel := context.WithTimeout(ctx, defaultSyncTimeout)
@@ -72,9 +77,9 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	multi := pterm.DefaultMultiPrinter
 
 	spinnersByComponentID := make(map[string]*pterm.SpinnerPrinter)
-	for _, cmpID := range cmpBuildsScheduled {
-		spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("building component " + cmpID)
-		spinnersByComponentID[cmpID] = spinner
+	for _, cmp := range cmpsScheduled {
+		spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start(fmt.Sprintf("building component %s %s", cmp.ID, cmp.Name))
+		spinnersByComponentID[cmp.ID] = spinner
 	}
 
 	multi.Start()
@@ -89,7 +94,8 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 			err = fmt.Errorf("timeout waiting for components to build")
 			ui.PrintError(err)
 			for cmpID, spinner := range spinnersByComponentID {
-				spinner.Fail("timeout waiting for component " + cmpID + " to build")
+				cmp, _ := cmpByID[cmpID]
+				spinner.Fail(fmt.Sprintf("timeout waiting for component %s %s to build", cmp.ID, cmp.Name))
 			}
 			multi.Stop()
 			return err
@@ -97,10 +103,11 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 		}
 
 		for cmpID := range spinnersByComponentID {
-			cmpBuild, err := s.api.GetComponentLatestBuild(ctx, cmpID)
+			cmp, _ := cmpByID[cmpID]
+			cmpBuild, err := s.api.GetComponentLatestBuild(ctx, cmp.ID)
 			if err != nil {
 				if nuon.IsServerError(err) {
-					spinnersByComponentID[cmpID].Fail("error building component " + cmpID)
+					spinnersByComponentID[cmpID].Fail(fmt.Sprintf("error building component %s %s", cmp.ID, cmp.Name))
 					delete(spinnersByComponentID, cmpID)
 					continue
 				}
@@ -115,13 +122,13 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 				}
 			}
 			if cmpBuild.Status == componentBuildStatusError {
-				spinnersByComponentID[cmpID].Fail("error building component " + cmpID)
+				spinnersByComponentID[cmpID].Fail(fmt.Sprintf("error building component %s %s", cmp.ID, cmp.Name))
 				delete(spinnersByComponentID, cmpID)
 				continue
 			}
 
 			if cmpBuild.Status == componentBuildStatusActive {
-				spinnersByComponentID[cmpID].Success("finished building component " + cmpID)
+				spinnersByComponentID[cmpID].Success(fmt.Sprintf("finished building component %s %s", cmp.ID, cmp.Name))
 				delete(spinnersByComponentID, cmpID)
 				continue
 			}
@@ -136,7 +143,7 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	}
 }
 
-func (s *Service) notifyOrphanedComponents(ctx context.Context, cmps map[string]string) {
+func (s *Service) notifyOrphanedComponents(cmps map[string]string) {
 	if len(cmps) == 0 {
 		return
 	}
@@ -150,7 +157,7 @@ func (s *Service) notifyOrphanedComponents(ctx context.Context, cmps map[string]
 	ui.PrintLn(msg)
 }
 
-func (s *Service) notifyOrphanedActions(ctx context.Context, actions map[string]string) {
+func (s *Service) notifyOrphanedActions(actions map[string]string) {
 	if len(actions) == 0 {
 		return
 	}
