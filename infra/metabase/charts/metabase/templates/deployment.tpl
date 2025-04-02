@@ -25,17 +25,22 @@ spec:
         - name: {{ include "common.fullname" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           ports:
-            - name: http-internal
+            - name: http
               containerPort: {{ .Values.api.port }}
               protocol: TCP
           readinessProbe:
             httpGet:
               path: {{ .Values.api.readiness_probe}}
-              port: http-internal
+              port: http
+            failureThreshold: 10
+            periodSeconds: 10
+            timeoutSeconds: 1
           livenessProbe:
             httpGet:
               path: {{ .Values.api.liveness_probe}}
-              port: http-internal
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 1
           resources:
             limits:
               cpu: {{ .Values.api.resources.limits.cpu }}

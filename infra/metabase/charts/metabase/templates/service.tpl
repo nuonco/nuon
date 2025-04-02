@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "common.fullname" . }}-admin
+  name: {{ include "common.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "common.apiLabels" . | nindent 4 }}
@@ -23,8 +23,8 @@ spec:
   internalTrafficPolicy: Local
   selector:
     {{- include "common.apiSelectorLabels" . | nindent 4 }}
-    app.nuon.co/name: {{ include "common.fullname" . }}-admin
+    app.nuon.co/name: {{ include "common.fullname" . }}
   ports:
     - name: http
       port: 80
-      targetPort: http-internal
+      targetPort: http
