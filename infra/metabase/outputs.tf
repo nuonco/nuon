@@ -45,8 +45,8 @@ output "db_instance_username" {
 }
 
 output "db_instance_domain" {
-  description = "The ID of the Directory Service Active Directory domain the instance is joined to"
-  value       = module.primary.db_instance_domain
+  description = "The domain to access db with"
+  value       = aws_route53_record.primary.name
 }
 
 output "db_instance_domain_iam_role_name" {

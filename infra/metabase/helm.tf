@@ -21,7 +21,7 @@ resource "helm_release" "metabase" {
     yamlencode(
       {
         env = {
-          "MB_DB_HOST" = module.primary.db_instance_address,
+          "MB_DB_HOST" = aws_route53_record.primary.name,
         },
         },
       ),
