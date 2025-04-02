@@ -1,17 +1,11 @@
 ---
 envSecrets:
-  - name: "CTL_API_DB_PASSWORD"
-    valueFrom:
-      name: metabase-ctl-api-db-password
-      key: password
-
   - name: "MB_DB_PASS"
     valueFrom:
       name: metabase-db-password
       key: password
 
 env:
-  MB_PREMIUM_EMBEDDING_TOKEN: 75cfd414d9899392c5a92d5f7b26e64e93883a0f9036a70895fab5539e903397
   MB_ADMIN_EMAIL: team@nuon.co
 
   MB_DB_PORT: !!string 5432

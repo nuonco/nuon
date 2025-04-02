@@ -33,13 +33,13 @@ spec:
               path: {{ .Values.api.readiness_probe}}
               port: http
             failureThreshold: 10
-            periodSeconds: 10
+            periodSeconds: 60
             timeoutSeconds: 1
           livenessProbe:
             httpGet:
               path: {{ .Values.api.liveness_probe}}
               port: http
-            periodSeconds: 10
+            periodSeconds: 60
             timeoutSeconds: 1
           resources:
             limits:
