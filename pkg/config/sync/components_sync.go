@@ -122,7 +122,7 @@ func (s *sync) syncComponent(ctx context.Context, resource string, comp *config.
 		return "", err
 	}
 
-	s.state.Components = append(s.state.Components, componentState{
+	s.state.Components = append(s.state.Components, ComponentState{
 		Name:     apiComp.Name,
 		Type:     comp.Type.APIType(),
 		ID:       apiComp.ID,
