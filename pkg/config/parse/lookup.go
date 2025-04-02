@@ -24,6 +24,9 @@ func FilenameFromAppName(appName string) string {
 }
 
 func AppNameFromFilename(file string) (string, error) {
+	if strings.HasPrefix(file, "./") {
+		file = strings.TrimPrefix(file, "./")
+	}
 	pieces := strings.SplitN(file, ".", 3)
 	if len(pieces) != 3 {
 		return "", ErrInvalidFilename
@@ -32,6 +35,7 @@ func AppNameFromFilename(file string) (string, error) {
 
 	return appID, nil
 }
+
 
 func FindConfigFiles(rootDir string) ([]File, error) {
 	cfgFiles := make([]File, 0)
