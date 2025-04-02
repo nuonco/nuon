@@ -1,0 +1,8 @@
+---
+environment: stage
+
+env:
+  DASHBOARD_URL: https://app.stage.nuon.co
+
+api:
+  domain: metabase.nuon.us-west-2.prod.nuon.cloud

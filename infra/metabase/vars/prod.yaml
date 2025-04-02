@@ -1,0 +1,4 @@
+---
+pool: nuon
+rds:
+  db_name: metabase
