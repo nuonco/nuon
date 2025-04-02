@@ -1,10 +1,14 @@
 package cmd
 
 import (
+	stdlog "log"
+	"net/http"
+
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
+	"github.com/powertoolsdev/mono/pkg/profiles"
 	actionsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/service"
 	appsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/service"
 	componentsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/service"
@@ -48,6 +52,15 @@ func (c *cli) registerAPI() error {
 }
 
 func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
+	mux := profiles.SetupPprofMux()
+
+	go func() {
+		stdlog.Printf("starting pprof server on port %s \n", pprofPort)
+		if err := http.ListenAndServe(":"+pprofPort, mux); err != nil {
+			stdlog.Printf("unable to start pprof server: %v \n", err)
+		}
+	}()
+
 	providers := make([]fx.Option, 0)
 	providers = append(providers, c.providers()...)
 	providers = append(providers,
