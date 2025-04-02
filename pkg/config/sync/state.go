@@ -13,7 +13,7 @@ const (
 	defaultStateVersion string = "v1"
 )
 
-type componentState struct {
+type ComponentState struct {
 	Name     string                  `json:"name"`
 	ID       string                  `json:"id"`
 	ConfigID string                  `json:"config_id"`
@@ -35,11 +35,11 @@ type state struct {
 	RunnerConfigID  string           `json:"runner_config_id"`
 	SandboxConfigID string           `json:"sandbox_config_id"`
 	InputConfigID   string           `json:"input_config_id"`
-	Components      []componentState `json:"components"`
+	Components      []ComponentState `json:"components"`
 	Actions         []actionState    `json:"actions"`
 }
 
-func (s *sync) getComponentStateById(id string) *componentState {
+func (s *sync) getComponentStateById(id string) *ComponentState {
 	for _, comp := range s.prevState.Components {
 		if comp.ID == id {
 			return &comp
@@ -118,7 +118,7 @@ func (s *sync) reconcileStates() {
 	}
 }
 
-func (s *sync) getPrevComponentStateByName(name string) *componentState {
+func (s *sync) getPrevComponentStateByName(name string) *ComponentState {
 	for _, comp := range s.prevState.Components {
 		if comp.Name == name {
 			return &comp
@@ -128,7 +128,7 @@ func (s *sync) getPrevComponentStateByName(name string) *componentState {
 	return nil
 }
 
-func (s *sync) getComponentStateByName(name string) *componentState {
+func (s *sync) getComponentStateByName(name string) *ComponentState {
 	for _, comp := range s.state.Components {
 		if comp.Name == name {
 			return &comp
