@@ -1,2 +1,4 @@
-# infra-datadog
-terraform module for managing our datadog setup.
+# infra-metabase
+
+Please refer to the wiki page on metabase.
+

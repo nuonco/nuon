@@ -18,11 +18,11 @@ api:
 
   resources:
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 1500m
+      memory: 1.5Gi
     requests:
-      cpu: 250m
-      memory: 256Mi
+      cpu: 1000m
+      memory: 1Gi
 
   port: 3000
   domain: MUST_BE_SET 
