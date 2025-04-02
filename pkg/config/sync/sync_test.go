@@ -173,7 +173,7 @@ func TestSync(t *testing.T) {
 		expectSyncInstaller           bool
 		expectGetComponentLatestBuild bool
 		expectSyncComponents          bool
-		expectCmpBuildScheduled       []string
+		expectCmpBuildScheduled       []ComponentState
 		expectedFinish                bool
 	}{
 		{
@@ -186,7 +186,7 @@ func TestSync(t *testing.T) {
 			},
 			expectedLatestConfig:    nil,
 			expectedLatestConfigErr: nil,
-			expectCmpBuildScheduled: []string{},
+			expectCmpBuildScheduled: []ComponentState{},
 			expectedFinish:          false,
 		},
 		{
@@ -200,7 +200,7 @@ func TestSync(t *testing.T) {
 			expectedLatestConfig:    getTestAppConfig(),
 			expectedLatestConfigErr: nil,
 			expectSyncInputs:        true,
-			expectCmpBuildScheduled: []string{},
+			expectCmpBuildScheduled: []ComponentState{},
 			expectedFinish:          true,
 		},
 		{
@@ -215,8 +215,12 @@ func TestSync(t *testing.T) {
 			expectSyncRunner:              true,
 			expectSyncInstaller:           true,
 			expectGetComponentLatestBuild: true,
-			expectCmpBuildScheduled:       []string{"idterraform1", "idhelm2", "iddocker3"},
-			expectedFinish:                true,
+			expectCmpBuildScheduled: []ComponentState{
+				{ID: "idterraform1"},
+				{ID: "idhelm2"},
+				{ID: "iddocker3"},
+			},
+			expectedFinish: true,
 		},
 		{
 			name:                          "syncs with updated component",
@@ -231,10 +235,15 @@ func TestSync(t *testing.T) {
 			expectSyncRunner:              true,
 			expectSyncInstaller:           true,
 			expectGetComponentLatestBuild: true,
-			expectCmpBuildScheduled:       []string{"idterraform1", "idhelm2", "iddocker3"},
-			expectedFinish:                true,
+			expectCmpBuildScheduled: []ComponentState{
+				{ID: "idterraform1"},
+				{ID: "idhelm2"},
+				{ID: "iddocker3"},
+			},
+			expectedFinish: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
@@ -245,7 +254,11 @@ func TestSync(t *testing.T) {
 				syncer := New(mockApiClient, tt.appID, tt.cfg)
 				err := syncer.Sync(ctx)
 				require.Equal(t, tt.err, err)
-				require.Equal(t, tt.expectCmpBuildScheduled, syncer.GetBuildsScheduled())
+				cmpBuildScheduled := syncer.GetComponentsScheduled()
+				require.Equal(t, len(tt.expectCmpBuildScheduled), len(cmpBuildScheduled))
+				for idx, cmp := range tt.expectCmpBuildScheduled {
+					require.Contains(t, cmp.ID, cmpBuildScheduled[idx].ID)
+				}
 			}()
 
 			if tt.cfg == nil {

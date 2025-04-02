@@ -83,8 +83,19 @@ func (s *sync) GetComponentStateIds() []string {
 	return ids
 }
 
-func (s *sync) GetBuildsScheduled() []string {
-	return s.cmpBuildsScheduled
+func (s *sync) GetComponentsScheduled() []ComponentState {
+	states := make([]ComponentState, 0)
+	if s.state.Components == nil {
+		return states
+	}
+	for _, comp := range s.state.Components {
+		for _, cmpID := range s.cmpBuildsScheduled {
+			if cmpID == comp.ID {
+				states = append(states, comp)
+			}
+		}
+	}
+	return states
 }
 
 func New(apiClient nuon.Client, appID string, cfg *config.AppConfig) *sync {
