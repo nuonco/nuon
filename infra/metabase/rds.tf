@@ -69,8 +69,6 @@ module "primary" {
 
   iam_database_authentication_enabled = true
   apply_immediately                   = true
-
-
 }
 
 resource "aws_route53_record" "primary" {

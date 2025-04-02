@@ -1,8 +1,0 @@
----
-environment: prod
-
-env:
-  DASHBOARD_URL: https://app.nuon.co
-
-api:
-  domain: metabase.nuon.us-west-2.prod.nuon.cloud

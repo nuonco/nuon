@@ -1,1 +1,28 @@
 ---
+envSecrets:
+  - name: "CTL_API_DB_PASSWORD"
+    valueFrom:
+      name: metabase-ctl-api-db-password
+      key: password
+
+  - name: "MB_DB_PASS"
+    valueFrom:
+      name: metabase-db-password
+      key: password
+
+env:
+  MB_PREMIUM_EMBEDDING_TOKEN: 75cfd414d9899392c5a92d5f7b26e64e93883a0f9036a70895fab5539e903397
+  MB_ADMIN_EMAIL: team@nuon.co
+
+  MB_DB_PORT: !!string 5432
+  MB_DB_TYPE: postgres
+  MB_DB_DBNAME: metabase
+  MB_DB_USER: metabase
+
+  # connect to clickhouse
+  CLICKHOUSE_DB_PORT: !!string 9000
+  CLICKHOUSE_DB_USE_TLS: "false"
+  CLICKHOUSE_DB_HOST: clickhouse.clickhouse.svc.cluster.local
+  CLICKHOUSE_DB_USER: teamnuon
+  CLICKHOUSE_DB_PASSWORD: teamnuon
+  CLICKHOUSE_DB_NAME: "ctl_api"

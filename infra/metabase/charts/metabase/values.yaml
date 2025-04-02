@@ -1,23 +1,6 @@
 ---
 env:
-  DB_HOST: $TFO_DB_INSTANCE_HOST
-  DB_NAME: $TFO_DB_INSTANCE_NAME
-  DB_USER: $TFO_DB_INSTANCE_USERNAME
-  DB_USE_SSL: "true"
-  DB_SSL_MODE: verify-full
-  DB_USE_ZAP: "true"
-  DB_USE_IAM: "true"
-  DB_MIGRATIONS_PATH: /migrations
-
-  # connect to clickhouse
-  CLICKHOUSE_DB_PORT: !!string 9000
-  CLICKHOUSE_DB_USE_TLS: "false"
-  CLICKHOUSE_DB_HOST: clickhouse.clickhouse.svc.cluster.local
-  CLICKHOUSE_DB_USER: teamnuon
-  CLICKHOUSE_DB_PASSWORD: teamnuon
-  CLICKHOUSE_DB_NAME: "ctl_api"
-
-  # connect to rds
+  KEY: VALUE
 
 envSecrets:
   - name: "LOOPS_API_KEY"
@@ -26,7 +9,7 @@ envSecrets:
       key: loops_api_key
 
 image:
-  repository: "metabase/metabase"
+  repository: "metabase/metabase-enterprise"
   tag: "latest"
 
 api:
@@ -48,3 +31,6 @@ api:
     maxReplicas: 10
     targetCPUUtilizationPercentage: 50
     targetMemoryUtilizationPercentage: 50
+
+serviceAccount:
+  name: metabase

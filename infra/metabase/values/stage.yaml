@@ -1,1 +1,8 @@
 ---
+environment: stage
+
+env:
+  ENVIRONMENT: stage
+
+api:
+  domain: metabase.nuon.us-west-2.prod.nuon.cloud

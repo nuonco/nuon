@@ -13,6 +13,11 @@ output "db_instance_availability_zone" {
   value       = module.primary.db_instance_availability_zone
 }
 
+output "db_master_secret_arn" {
+  description = "The arn of the master password secret"
+  value       = module.primary.db_instance_master_user_secret_arn
+}
+
 output "db_instance_endpoint" {
   description = "The connection endpoint"
   value       = module.primary.db_instance_endpoint
@@ -36,12 +41,6 @@ output "db_instance_name" {
 output "db_instance_username" {
   description = "The master username for the database"
   value       = module.primary.db_instance_username
-  sensitive   = true
-}
-
-output "db_instance_password" {
-  description = "The master master for the database"
-  value       = local.db_password
   sensitive   = true
 }
 
