@@ -1,0 +1,20 @@
+object_storage:
+  bucket:
+    type: FILESYSTEM
+    config:
+      directory: "/var/lib/parca"
+
+scrape_configs:
+  - job_name: "pprof"
+    scrape_interval: "10s"
+    scrape_timeout: "30s"
+    scheme: "http"
+    static_configs:
+      - targets:
+          - "host.docker.internal:6060"  # Change this to your application's profiling endpoint
+          - "host.docker.internal:6061"
+          - "host.docker.internal:6062"
+          - "host.docker.internal:6063"
+          - "host.docker.internal:6064"
+          - "host.docker.internal:6065"
+          - "host.docker.internal:6066"
