@@ -99,6 +99,13 @@ func (a *App) EventLoops() []bulk.EventLoop {
 		})
 	}
 
+	for _, acw := range a.ActionWorkflows {
+		evs = append(evs, bulk.EventLoop{
+			Namespace: "actions",
+			ID:        acw.ID,
+		})
+	}
+
 	for _, inst := range a.Installs {
 		evs = append(evs, inst.EventLoops()...)
 	}
