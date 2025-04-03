@@ -28,9 +28,9 @@ api:
   domain: MUST_BE_SET 
   autoscaling:
     minReplicas: 2
-    maxReplicas: 10
-    targetCPUUtilizationPercentage: 50
-    targetMemoryUtilizationPercentage: 50
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 90
+    targetMemoryUtilizationPercentage: 90
 
 serviceAccount:
   name: metabase
