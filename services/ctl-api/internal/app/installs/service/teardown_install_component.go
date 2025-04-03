@@ -30,7 +30,7 @@ func (c *TeardownInstallComponentRequest) Validate(v *validator.Validate) error 
 // @Description.markdown	teardown_install_component.md
 // @Param					install_id		path	string							true	"install ID"
 // @Param					component_id	path	string							true	"component ID"
-// @Param					req				body	TeardownInstallComponentRequest	true	"Input"
+// @Param					req				body	TeardownInstallComponentRequest	false	"Input"
 // @Tags					installs
 // @Accept					json
 // @Produce				json
