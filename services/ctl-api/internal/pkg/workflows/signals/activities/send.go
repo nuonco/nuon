@@ -3,6 +3,7 @@ package activities
 import (
 	"context"
 
+	actionssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
 	appssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 	componentssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
 	generalsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/signals"
@@ -56,6 +57,12 @@ func (a *Activities) PkgSignalsSendReleasesSignal(ctx context.Context, req *Send
 
 // @temporal-gen activity
 func (a *Activities) PkgSignalsSendGeneralSignal(ctx context.Context, req *SendSignalRequest[*generalsignals.Signal]) error {
+	a.evClient.Send(ctx, req.ID, req.Signal)
+	return nil
+}
+
+// @temporal-gen activity
+func (a *Activities) PkgSignalsSendActionsSignal(ctx context.Context, req *SendSignalRequest[*actionssignals.Signal]) error {
 	a.evClient.Send(ctx, req.ID, req.Signal)
 	return nil
 }
