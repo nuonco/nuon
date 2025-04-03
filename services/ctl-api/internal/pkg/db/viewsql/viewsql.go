@@ -16,6 +16,9 @@ var ComponentConfigConnectionsV1 string
 //go:embed install_action_workflow_latest_runs_view_v1.sql
 var InstallActionWorkflowLatestRunsViewV1 string
 
+//go:embed install_deploys_latest_view_v1.sql
+var InstallDeploysLatestViewV1 string
+
 //go:embed install_inputs_view_v1.sql
 var InstallInputsViewV1 string
 

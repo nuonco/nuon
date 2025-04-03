@@ -1,14 +1,10 @@
 package cmd
 
 import (
-	"log"
-	"net/http"
-
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/pkg/profiles"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	actionsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker"
 	actionsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/activities"
@@ -37,7 +33,7 @@ import (
 	signalsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/signals/activities"
 )
 
-var namespace, pprofPort string
+var namespace string
 
 func (c *cli) registerWorker() error {
 	cmd := &cobra.Command{
@@ -48,20 +44,10 @@ func (c *cli) registerWorker() error {
 	rootCmd.AddCommand(cmd)
 	helpText := "namespace defines the namespace whose workers to run. e.g. all, general, orgs, apps, components, installs, releases."
 	rootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "all", helpText)
-	rootCmd.PersistentFlags().StringVarP(&pprofPort, "pprof_port", "", "6060", "--pprof_port=6060")
 	return nil
 }
 
 func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
-	mux := profiles.SetupPprofMux()
-
-	go func() {
-		log.Printf("starting pprof server on port %s in %s \n", pprofPort, namespace)
-		if err := http.ListenAndServe(":"+pprofPort, mux); err != nil {
-			log.Printf("unable to start pprof server: %v \n", err)
-		}
-	}()
-
 	providers := []fx.Option{
 		fx.Provide(interceptors.AsInterceptor(metricsinterceptor.New)),
 		fx.Provide(interceptors.AsInterceptor(validateinterceptor.New)),
