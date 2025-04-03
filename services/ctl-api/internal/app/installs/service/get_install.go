@@ -12,22 +12,22 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
-//	@ID						GetInstall
-//	@Summary				get an install
-//	@Description.markdown	get_install.md
-//	@Param					install_id	path	string	true	"install ID"
-//	@Tags					installs
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{object}	app.Install
-//	@Router					/v1/installs/{install_id} [get]
+// @ID						GetInstall
+// @Summary				get an install
+// @Description.markdown	get_install.md
+// @Param					install_id	path	string	true	"install ID"
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.Install
+// @Router					/v1/installs/{install_id} [get]
 func (s *service) GetInstall(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
