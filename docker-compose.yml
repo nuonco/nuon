@@ -163,6 +163,16 @@ services:
         - 5005:5000
       networks:
         - default
+   
+  parca:
+    image: ghcr.io/parca-dev/parca:v0.23.1
+    container_name: parca
+    restart: unless-stopped
+    command: ["/parca", "--config-path=/etc/parca/parca.yaml"]
+    ports:
+      - "7070:7070"
+    volumes:
+      - ./parca.yaml:/etc/parca/parca.yaml:ro
 
 volumes:
   postgres:
