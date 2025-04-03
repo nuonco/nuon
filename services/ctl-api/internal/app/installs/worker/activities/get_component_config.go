@@ -79,7 +79,7 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetComponentCon
 		Order("install_component_id").
 		Order("install_deploys.created_at desc").
 		Joins("JOIN install_components ON install_components.id=install_component_id").
-		Where("status = 'active'").
+		Where("install_deploys.status = 'active'").
 		Not("install_components.component_id = ?", dep.InstallComponent.ComponentID).
 		Find(&deploys, "install_id = ?", dep.InstallComponent.InstallID)
 	if res.Error != nil {

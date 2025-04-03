@@ -38,6 +38,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		signals.OperationForgotten:          w.AwaitForget,
 		signals.OperationDeployComponents:   w.AwaitDeployComponents,
 		signals.OperationTeardownComponents: w.AwaitTeardownComponents,
+		signals.OperationDeleteComponents:   w.AwaitTeardownComponents,
 		signals.OperationDeploy:             w.AwaitDeploy,
 		signals.OperationActionWorkflowRun:  w.AwaitActionWorkflowRun,
 		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
