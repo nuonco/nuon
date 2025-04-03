@@ -9,6 +9,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 
+	actionssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
 	appssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 	componentssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
 	generalsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/signals"
@@ -26,6 +27,11 @@ const (
 func (e *evClient) Send(ctx workflow.Context, id string, signal eventloop.Signal) {
 	var err error
 	switch signal.Namespace() {
+	case actionssignals.TemporalNamespace:
+		signalsactivities.AwaitPkgSignalsSendActionsSignal(ctx, &signalsactivities.SendSignalRequest[*actionssignals.Signal]{
+			ID:     id,
+			Signal: signal.(*actionssignals.Signal),
+		})
 	case appssignals.TemporalNamespace:
 		signalsactivities.AwaitPkgSignalsSendAppsSignal(ctx, &signalsactivities.SendSignalRequest[*appssignals.Signal]{
 			ID:     id,
