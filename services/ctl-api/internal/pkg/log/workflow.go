@@ -1,6 +1,10 @@
 package log
 
 import (
+	"context"
+	"runtime"
+	"time"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -29,6 +33,15 @@ func WorkflowLogger(ctx workflow.Context, attrs ...map[string]string) (*zap.Logg
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create logger")
 	}
+
+	runtime.SetFinalizer(l, func(_ any) {
+		cleanupCtx := context.Background()
+		cleanupCtx, cancel := context.WithTimeout(cleanupCtx, time.Second)
+		defer cancel()
+
+		lp.ForceFlush(cleanupCtx)
+		lp.Shutdown(cleanupCtx)
+	})
 
 	return l, nil
 }
