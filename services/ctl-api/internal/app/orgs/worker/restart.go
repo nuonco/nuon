@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	actionssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
 	appssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 	componentssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
 	installssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
@@ -54,6 +55,10 @@ func (w *Workflows) restartEventLoop(ctx workflow.Context, namespace, id string)
 	case "installs":
 		w.ev.Send(ctx, id, &installssignals.Signal{
 			Type: installssignals.OperationRestart,
+		})
+	case "actions":
+		w.ev.Send(ctx, id, &actionssignals.Signal{
+			Type: actionssignals.OperationRestart,
 		})
 	default:
 		return errors.New("unhandled namespace " + namespace)
