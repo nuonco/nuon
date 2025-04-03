@@ -164,9 +164,11 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 		TriggeredByID:   installDeploy.ID,
 		TriggeredByType: "install_deploys",
 		RunEnvVars: generics.ToPtrStringMap(map[string]string{
-			"TRIGGER":     string(app.ActionWorkflowTriggerTypePreDeploy),
-			"DEPLOY_TYPE": string(installDeploy.Type),
-			"DEPLOY_ID":   installDeploy.ID,
+			"TRIGGER":        string(app.ActionWorkflowTriggerTypePreDeploy),
+			"DEPLOY_TYPE":    string(installDeploy.Type),
+			"DEPLOY_ID":      installDeploy.ID,
+			"COMPONENT_ID":   installDeploy.InstallComponent.ID,
+			"COMPONENT_NAME": installDeploy.InstallComponent.Component.Name,
 		}),
 	}); err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "lifecycle hooks failed")
@@ -190,9 +192,11 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 		TriggeredByID:   installDeploy.ID,
 		TriggeredByType: "install_deploys",
 		RunEnvVars: generics.ToPtrStringMap(map[string]string{
-			"TRIGGER":     string(app.ActionWorkflowTriggerTypePostDeploy),
-			"DEPLOY_TYPE": string(installDeploy.Type),
-			"DEPLOY_ID":   installDeploy.ID,
+			"TRIGGER":        string(app.ActionWorkflowTriggerTypePostDeploy),
+			"DEPLOY_TYPE":    string(installDeploy.Type),
+			"DEPLOY_ID":      installDeploy.ID,
+			"COMPONENT_ID":   installDeploy.InstallComponent.ID,
+			"COMPONENT_NAME": installDeploy.InstallComponent.Component.Name,
 		}),
 	}); err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "lifecycle hooks failed")
