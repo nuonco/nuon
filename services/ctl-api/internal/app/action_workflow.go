@@ -55,7 +55,7 @@ func (a *ActionWorkflow) BeforeCreate(tx *gorm.DB) error {
 
 func (a *ActionWorkflow) BeforeDelete(tx *gorm.DB) error {
 	if a.ID == "" {
-		return fmt.Errorf("ID must be set")
+		return nil
 	}
 
 	configs := []ActionWorkflowConfig{}
