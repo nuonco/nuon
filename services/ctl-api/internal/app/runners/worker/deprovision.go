@@ -26,7 +26,7 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 
 	op, err := activities.AwaitCreateOperationRequest(ctx, activities.CreateOperationRequest{
 		RunnerID:      sreq.ID,
-		OperationType: app.RunnerOperationTypeProvision,
+		OperationType: app.RunnerOperationTypeDeprovision,
 	})
 	if err != nil {
 		w.updateStatus(ctx, sreq.ID, app.RunnerStatusError, "unable to create operation")

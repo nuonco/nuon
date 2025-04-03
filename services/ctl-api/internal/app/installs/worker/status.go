@@ -29,9 +29,37 @@ func (w *Workflows) updateDeployStatus(ctx workflow.Context, deployID string, st
 		DeployID:          deployID,
 		Status:            status,
 		StatusDescription: statusDescription,
+		SkipStatusSync:    false,
 	}); err != nil {
 		l.Error("unable to update deploy status",
 			zap.String("deploy-id", deployID),
+			zap.Error(err))
+	}
+}
+
+func (w *Workflows) updateDeployStatusWithoutStatusSync(ctx workflow.Context, deployID string, status app.InstallDeployStatus, statusDescription string) {
+	l := workflow.GetLogger(ctx)
+	if err := activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
+		DeployID:          deployID,
+		Status:            status,
+		StatusDescription: statusDescription,
+		SkipStatusSync:    true,
+	}); err != nil {
+		l.Error("unable to update deploy status",
+			zap.String("deploy-id", deployID),
+			zap.Error(err))
+	}
+}
+
+func (w *Workflows) updateInstallComponentStatus(ctx workflow.Context, installComponentID string, status app.InstallComponentStatus, statusDescription string) {
+	l := workflow.GetLogger(ctx)
+	if err := activities.AwaitUpdateInstallComponentStatus(ctx, activities.UpdateInstallComponentStatusRequest{
+		InstallComponentID: installComponentID,
+		Status:             status,
+		StatusDescription:  statusDescription,
+	}); err != nil {
+		l.Error("unable to update indtall component status",
+			zap.String("InstallComponentID", installComponentID),
 			zap.Error(err))
 	}
 }
