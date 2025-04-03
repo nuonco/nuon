@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 // @ID						DeleteInstallComponents
@@ -21,15 +22,20 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{bool} 		true
+// @Success				200	{boolean} 		true
 // @Router					/v1/installs/{install_id}/components [delete]
 func (s *service) DeleteInstallComponents(ctx *gin.Context) {
-	//installID := ctx.Param("install_id")
-	//componentID := ctx.Param("component_id")
+	installID := ctx.Param("install_id")
 
-	// s.evClient.Send(ctx, installID, &signals.Signal{
-	// 	Type:     signals.OperationDeploy,
-	// 	DeployID: deploy.ID,
-	// })
+	_, err := s.getInstall(ctx, installID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	s.evClient.Send(ctx, installID, &signals.Signal{
+		Type: signals.OperationDeleteComponents,
+	})
+
 	ctx.JSON(http.StatusOK, true)
 }

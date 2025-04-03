@@ -119,6 +119,12 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 			ComponentRootID: installDeploy.ComponentID,
 			InstallID:       installID,
 		})
+
+		// check deps skip if force delete
+		if sreq.ForceDelete {
+			return nil
+		}
+
 		if err != nil {
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
 			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
@@ -199,15 +205,33 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 			"COMPONENT_NAME": installDeploy.InstallComponent.Component.Name,
 		}),
 	}); err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "lifecycle hooks failed")
-		return errors.Wrap(err, "lifecycle hooks failed")
+		return w.errorResponse(ctx, sreq, deployID, installDeploy.InstallComponentID, "lifecycle hooks failed", err)
 	}
 
-	finalStatus := app.InstallDeployStatusActive
+	finalDeployStatus := app.InstallDeployStatusActive
+	finalComponentStatus := app.InstallComponentStatusActive
+	finalMessage := "deploy job finished"
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
-		finalStatus = app.InstallDeployStatusInactive
+		finalDeployStatus = app.InstallDeployStatusInactive
+		finalComponentStatus = app.InstallComponentStatusDeleted
 	}
-	w.updateDeployStatus(ctx, deployID, finalStatus, "deploy job finished")
+	if sreq.ForceDelete {
+		w.updateDeployStatusWithoutStatusSync(ctx, deployID, finalDeployStatus, finalMessage)
+		w.updateInstallComponentStatus(ctx, installDeploy.InstallComponentID, finalComponentStatus, finalMessage)
+	} else {
+		w.updateDeployStatus(ctx, deployID, finalDeployStatus, finalMessage)
+	}
 
 	return nil
+}
+
+func (w *Workflows) errorResponse(ctx workflow.Context, sreq signals.RequestSignal, deployID, installDeployId, message string, err error) error {
+	if sreq.ForceDelete {
+		w.updateDeployStatusWithoutStatusSync(ctx, deployID, app.InstallDeployStatusInactive, message)
+		w.updateInstallComponentStatus(ctx, installDeployId, app.InstallComponentStatusDeleteFailed, message)
+		return nil
+	}
+
+	w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, message)
+	return errors.Wrap(err, message)
 }
