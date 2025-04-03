@@ -36,9 +36,10 @@ func (w *Workflows) shouldTeardownInstallComponent(ctx workflow.Context, install
 		return false, nil
 	}
 
-	//if installComponent.InstallDeploys[0].Status != string(StatusActive) {
-	//return false, nil
-	//}
+	lastInstallDeploy := installComponent.InstallDeploys[0]
+	if lastInstallDeploy.Status == app.InstallDeployStatusInactive {
+		return false, nil
+	}
 
 	return true, nil
 }

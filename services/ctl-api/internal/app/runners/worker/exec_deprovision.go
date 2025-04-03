@@ -17,6 +17,11 @@ import (
 )
 
 func (w *Workflows) executeDeprovisionOrgRunner(ctx workflow.Context, runnerID string, sandboxMode bool) error {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+
 	runner, err := activities.AwaitGet(ctx, activities.GetRequest{
 		RunnerID: runnerID,
 	})
@@ -26,6 +31,7 @@ func (w *Workflows) executeDeprovisionOrgRunner(ctx workflow.Context, runnerID s
 	}
 
 	if runner.RunnerGroup.Platform == app.AppRunnerTypeLocal {
+		l.Info("skipping local runner")
 		return nil
 	}
 	if runner.Org.OrgType == app.OrgTypeIntegration {
@@ -69,7 +75,7 @@ func (w *Workflows) executeDeprovisionInstallRunner(ctx workflow.Context, runner
 		return nil
 	}
 
-	if !runner.Status.IsHealthy() {
+	if runner.Status != app.RunnerStatusDeprovisioning && !runner.Status.IsHealthy() {
 		l.Warn("runner was not successfully provisioned, so skipping and letting the sandbox deprovision remove it")
 		return nil
 	}

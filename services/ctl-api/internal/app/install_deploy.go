@@ -48,6 +48,7 @@ const (
 	InstallDeployStatusExecuting InstallDeployStatus = "executing"
 	InstallDeployStatusUnknown   InstallDeployStatus = "unknown"
 	InstallDeployStatusPending   InstallDeployStatus = "pending"
+	InstallDeployStatusQueued    InstallDeployStatus = "queued"
 )
 
 type InstallDeploy struct {
