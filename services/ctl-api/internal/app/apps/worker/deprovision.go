@@ -29,7 +29,8 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, appID string
 				continue
 			}
 
-			if install.InstallSandboxRuns[0].Status != app.SandboxRunStatusAccessError {
+			if install.InstallSandboxRuns[0].Status != app.SandboxRunStatusAccessError &&
+				install.InstallSandboxRuns[0].Status != app.SandboxRunStatusDeprovisioned {
 				installCnt += 1
 			}
 		}
