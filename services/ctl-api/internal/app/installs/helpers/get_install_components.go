@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // getInstallComponents reads components deployed to an install from the DB.
@@ -17,10 +18,10 @@ func (h *Helpers) getInstallComponents(ctx context.Context, installID string) ([
 			return db.Order("install_components.created_at DESC")
 		}).
 		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_deploys.created_at DESC").Limit(1)
+			return db.Scopes(scopes.WithOverrideTable("install_deploys_latest_view_v1"))
 		}).
 		Preload("InstallComponents.InstallDeploys.RunnerJobs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("runner_jobs_view_v1.created_at DESC").Limit(1)
+			return db.Order("runner_jobs_view_v1.created_at DESC")
 		}).
 		Preload("InstallComponents.Component").
 		First(&install, "id = ?", installID)
