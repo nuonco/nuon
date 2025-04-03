@@ -19,20 +19,21 @@ COPY --from=builder /go/bin/temporal /
 EXPOSE 7233
 EXPOSE 8233
 
-ENTRYPOINT [ \
+ENTRYPOINT [   \
   "/temporal", \
-  "server", \
+  "server",    \
   "start-dev", \
-  "--ip", \
-  "0.0.0.0", \
-  "-n", "general",    \
-  "-n", "actions",   \
-  "-n", "installs",   \
-  "-n", "orgs",       \
-  "-n", "apps",       \
-  "-n", "components", \
-  "-n", "releases",   \
-  "-n", "runners",   \
+  "--ip",      \
+  "0.0.0.0",   \
+  "-n", "general",     \
+  "-n", "actions",     \
+  "-n", "installs",    \
+  "-n", "orgs",        \
+  "-n", "apps",        \
+  "-n", "components",  \
+  "-n", "releases",    \
+  "-n", "runners",     \
   "-n", "canary",      \
+  "-n", "infra-tests", \
   "--db-filename", "/tmp/nuon-dev-temporal.db" \
 ]
