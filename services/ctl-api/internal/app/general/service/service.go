@@ -48,6 +48,9 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/stop-canary-cron", s.StopCanaryCron)
 	api.POST("/v1/general/canary-user", s.CreateCanaryUser)
 
+	// manage infra tests
+	api.POST("/v1/general/provision-infra-tests", s.ProvisionInfraTest)
+
 	// create users for testing/seeding
 	api.POST("/v1/general/integration-user", s.CreateIntegrationUser)
 	api.POST("/v1/general/seed-user", s.CreateSeedUser)
