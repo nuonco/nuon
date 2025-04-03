@@ -29,6 +29,7 @@ func Test_writer_Incr(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Incr(key, []string{"key:value"}, float64(1)).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
@@ -41,6 +42,7 @@ func Test_writer_Incr(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Incr(key, []string{"key:value"}, float64(1)).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
@@ -52,6 +54,7 @@ func Test_writer_Incr(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Incr(key, []string{"key:value"}, float64(1)).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
@@ -65,6 +68,7 @@ func Test_writer_Incr(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Incr(key, []string{"pkey:pvalue", "ckey:cvalue"}, float64(1)).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
@@ -118,6 +122,7 @@ func Test_writer_Decr(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Decr(key, []string{"key:value"}, float64(1)).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
@@ -129,6 +134,7 @@ func Test_writer_Decr(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Decr(key, []string{"key:value"}, float64(1)).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
@@ -142,6 +148,7 @@ func Test_writer_Decr(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Decr(key, []string{"pkey:pvalue", "ckey:cvalue"}, float64(1)).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
@@ -196,6 +203,7 @@ func Test_writer_Count(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Count(key, value, []string{"key:value"}, defaultRate).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
@@ -207,6 +215,7 @@ func Test_writer_Count(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Count(key, value, []string{"key:value"}, defaultRate).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
@@ -220,6 +229,7 @@ func Test_writer_Count(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Count(key, value, []string{"pkey:pvalue", "ckey:cvalue"}, defaultRate).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
@@ -274,6 +284,7 @@ func Test_writer_Timing(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Timing(key, value, []string{"key:value"}, defaultRate).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
@@ -285,6 +296,7 @@ func Test_writer_Timing(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Timing(key, value, []string{"key:value"}, defaultRate).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
@@ -298,6 +310,7 @@ func Test_writer_Timing(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Timing(key, value, []string{"pkey:pvalue", "ckey:cvalue"}, defaultRate).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
@@ -350,6 +363,7 @@ func Test_writer_Event(t *testing.T) {
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Event(ev).Return(nil)
+				client.EXPECT().Close()
 				return client
 			},
 		},
