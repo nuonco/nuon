@@ -50,6 +50,10 @@ func NewCanaryID() string {
 	return shortid.NewNanoID("can")
 }
 
+func NewInfraTestID() string {
+	return shortid.NewNanoID("its")
+}
+
 func NewConfigID() string {
 	return shortid.NewNanoID("cfg")
 }
