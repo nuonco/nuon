@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.507
+
+Promoting a fix to memory leaking in the workers.
+
 ## v0.19.499
 Re promoting
 
