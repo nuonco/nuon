@@ -8,10 +8,9 @@ RUN mkdir -p /go/bin && \
 ARG TARGETPLATFORM
 ARG TARGETARCH
 RUN echo "building for ${TARGETPLATFORM}_${TARGETARCH}" && \
-  curl -L "https://github.com/temporalio/cli/releases/download/v0.10.5/temporal_cli_0.10.5_linux_${TARGETARCH}.tar.gz" | \
+  curl -L "https://github.com/temporalio/cli/releases/download/v1.2.0/temporal_cli_1.2.0_linux_${TARGETARCH}.tar.gz" | \
   tar -xz -C /go/bin && \
   ls /go/bin
-
 
 FROM gcr.io/distroless/base-debian11
 
