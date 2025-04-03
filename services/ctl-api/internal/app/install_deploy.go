@@ -8,6 +8,9 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type InstallDeployType string
@@ -106,5 +109,13 @@ func (c *InstallDeploy) AfterQuery(tx *gorm.DB) error {
 
 func (c *InstallDeploy) IsTornDown() bool {
 	return (generics.SliceContains(c.Status, []InstallDeployStatus{InstallDeployStatusActive, InstallDeployStatusInactive})) && c.Type == InstallDeployTypeTeardown
+}
 
+func (i *InstallDeploy) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name: views.CustomViewName(db, &InstallDeploy{}, "latest_view_v1"),
+			SQL:  viewsql.InstallDeploysLatestViewV1,
+		},
+	}
 }
