@@ -1,4 +1,5 @@
 ---
 pool: nuon
+image_tag: "1.26.2"
 rds:
   db_name: temporal

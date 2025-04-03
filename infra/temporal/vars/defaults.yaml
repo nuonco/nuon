@@ -1,4 +1,5 @@
 ---
+image_tag: "1.22.6"
 root_domain: nuon.cloud
 region: us-west-2
 rds:
