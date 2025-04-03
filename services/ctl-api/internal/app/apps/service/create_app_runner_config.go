@@ -23,23 +23,23 @@ func (c *CreateAppRunnerConfigRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						CreateAppRunnerConfig
-//	@Summary				create an app runner config
-//	@Description.markdown	create_app_runner_config.md
-//	@Tags					apps
-//	@Accept					json
-//	@Param					req	body	CreateAppRunnerConfigRequest	true	"Input"
-//	@Produce				json
-//	@Param					app_id	path	string	true	"app ID"
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.AppRunnerConfig
-//	@Router					/v1/apps/{app_id}/runner-config [post]
+// @ID						CreateAppRunnerConfig
+// @Summary				create an app runner config
+// @Description.markdown	create_app_runner_config.md
+// @Tags					apps
+// @Accept					json
+// @Param					req	body	CreateAppRunnerConfigRequest	true	"Input"
+// @Produce				json
+// @Param					app_id	path	string	true	"app ID"
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.AppRunnerConfig
+// @Router					/v1/apps/{app_id}/runner-config [post]
 func (s *service) CreateAppRunnerConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

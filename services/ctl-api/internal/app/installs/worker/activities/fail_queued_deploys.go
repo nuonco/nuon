@@ -52,5 +52,21 @@ func (a *Activities) FailQueuedDeploys(ctx context.Context, req FailQueuedDeploy
 		return fmt.Errorf("unable to update install deploys: %w", res.Error)
 	}
 
+	for _, installDeploy := range installDeploys {
+		installComponent := app.InstallComponent{
+			ID: installDeploy.InstallComponentID,
+		}
+
+		res := a.db.WithContext(ctx).
+			Model(&installComponent).
+			Updates(app.InstallComponent{
+				Status:            "error",
+				StatusDescription: "deploy was queued while the install was being deleted",
+			})
+		if res.Error != nil {
+			return fmt.Errorf("unable to update install component: %w", res.Error)
+		}
+	}
+
 	return nil
 }

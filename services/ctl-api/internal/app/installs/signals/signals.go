@@ -27,9 +27,13 @@ const (
 	OperationForgotten                  eventloop.SignalType = "forgotten"
 	OperationPollDependencies           eventloop.SignalType = "poll_dependencies"
 	OperationDeployComponents           eventloop.SignalType = "deploy_components"
-	OperationTeardownComponents         eventloop.SignalType = "teardown_components"
+	OperationDeleteComponents           eventloop.SignalType = "delete_components"
 	OperationActionWorkflowRun          eventloop.SignalType = "action_workflow_run"
 	OperationSyncActionWorkflowTriggers eventloop.SignalType = "sync_action_workflow_triggers"
+
+	// DEPRECATED
+	// Replaced with OperationDeleteaComponents
+	OperationTeardownComponents eventloop.SignalType = "teardown_components"
 )
 
 type Signal struct {
@@ -37,6 +41,7 @@ type Signal struct {
 
 	DeployID            string `validate:"required_if=Operation deploy" json:"deploy_id"`
 	ActionWorkflowRunID string `validate:"required_if=Operation action_workflow_run" json:"action_workflow_run_id"`
+	ForceDelete         bool   `json:"force_delete"`
 
 	eventloop.BaseSignal
 }
