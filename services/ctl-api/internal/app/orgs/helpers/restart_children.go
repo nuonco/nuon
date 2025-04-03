@@ -25,6 +25,11 @@ func (h *Helpers) GetEventLoops(ctx context.Context, orgID string) ([]bulk.Event
 
 		// components
 		Preload("Apps.Components").
+
+		// action workflows
+		Preload("Apps.ActionWorkflows").
+
+		// get org
 		First(&org, "id = ?", orgID); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get org")
 	}
