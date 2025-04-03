@@ -15,6 +15,7 @@ const (
 )
 
 func (w *writer) handleErr(err error) {
+	defer w.client.Close()
 	if err == nil {
 		return
 	}
@@ -130,7 +131,7 @@ func (w *writer) Timing(name string, value time.Duration, tags []string) {
 func (w *writer) Event(ev *statsd.Event) {
 	if w.Disable {
 		allTags := w.tagsToZapFields(ev.Tags)
-		w.Log.Debug(fmt.Sprintf("event.%s (agg key: %s): %s", ev.Title, ev.AggregationKey, ev.Text, ), allTags...)
+		w.Log.Debug(fmt.Sprintf("event.%s (agg key: %s): %s", ev.Title, ev.AggregationKey, ev.Text), allTags...)
 		return
 	}
 
