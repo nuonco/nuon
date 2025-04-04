@@ -26,6 +26,11 @@ func (p *planner) createPlan(ctx workflow.Context, runID string) (*plantypes.Act
 		return nil, errors.Wrap(err, "unable to get run")
 	}
 
+	envVars, err := p.getEnvVars(ctx, run)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get env vars")
+	}
+
 	plan := &plantypes.ActionWorkflowRunPlan{
 		InstallID: run.InstallID,
 		ID:        runID,
@@ -33,7 +38,8 @@ func (p *planner) createPlan(ctx workflow.Context, runID string) (*plantypes.Act
 			"action.name": run.ActionWorkflowConfig.ActionWorkflow.Name,
 			"action.id":   run.ActionWorkflowConfig.ActionWorkflow.ID,
 		},
-		Steps: make([]*plantypes.ActionWorkflowRunStepPlan, 0),
+		Steps:   make([]*plantypes.ActionWorkflowRunStepPlan, 0),
+		EnvVars: envVars,
 	}
 
 	for idx, stepCfg := range run.Steps {
