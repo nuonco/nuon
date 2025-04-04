@@ -16,19 +16,20 @@ const (
 )
 
 const (
-	OperationCreated          eventloop.SignalType = "created"
-	OperationRestart          eventloop.SignalType = "restart"
-	OperationProvision        eventloop.SignalType = "provision"
-	OperationDeprovision      eventloop.SignalType = "deprovision"
-	OperationReprovision      eventloop.SignalType = "reprovision"
-	OperationDelete           eventloop.SignalType = "delete"
-	OperationForceDelete      eventloop.SignalType = "force_delete"
-	OperationProcessJob       eventloop.SignalType = "process_job"
-	OperationUpdateVersion    eventloop.SignalType = "update_version"
-	OperationHealthcheck      eventloop.SignalType = "healthcheck"
-	OperationOfflineCheck     eventloop.SignalType = "offline_check"
-	OperationGracefulShutdown eventloop.SignalType = "graceful_shutdown"
-	OperationForceShutdown    eventloop.SignalType = "force_shutdown"
+	OperationCreated           eventloop.SignalType = "created"
+	OperationRestart           eventloop.SignalType = "restart"
+	OperationProvision         eventloop.SignalType = "provision"
+	OperationDeprovision       eventloop.SignalType = "deprovision"
+	OperationReprovision       eventloop.SignalType = "reprovision"
+	OperationDelete            eventloop.SignalType = "delete"
+	OperationForceDelete       eventloop.SignalType = "force_delete"
+	OperationProcessJob        eventloop.SignalType = "process_job"
+	OperationUpdateVersion     eventloop.SignalType = "update_version"
+	OperationHealthcheck       eventloop.SignalType = "healthcheck"
+	OperationOfflineCheck      eventloop.SignalType = "offline_check"
+	OperationGracefulShutdown  eventloop.SignalType = "graceful_shutdown"
+	OperationForceShutdown     eventloop.SignalType = "force_shutdown"
+	OperationFlushOrphanedJobs eventloop.SignalType = "flush_orphaned_jobs"
 )
 
 type Signal struct {
