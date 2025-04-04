@@ -32,6 +32,7 @@ func (w Workflows) All() []any {
 		w.Metrics,
 		w.Promotion,
 		w.TerminateEventLoops,
+		w.Seed,
 		w.RestartOrgRunners,
 		w.RestartOrgEventLoops,
 	}

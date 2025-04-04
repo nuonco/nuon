@@ -32,6 +32,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		sigs.OperationInviteAccepted:   w.AwaitInviteAccepted,
 		sigs.OperationForceDelete:      w.AwaitForceDelete,
 		sigs.OperationDelete:           w.AwaitDelete,
+		sigs.OperationForceSandboxMode: w.AwaitForceSandboxMode,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
