@@ -23,11 +23,14 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 		return nil, errors.Wrap(err, "unable to get chart")
 	}
 
-	l.Info("loading chart values")
+	l.Info("found default chart values", zap.Any("values", chart.Values))
+
+	l.Info("loading provided values")
 	values, err := helm.ChartValues(h.state.cfg.Values, h.state.cfg.HelmSet)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}
+	l.Info("rendered values", zap.Any("values", values))
 
 	client := action.NewInstall(actionCfg)
 	client.ClientOnly = false
