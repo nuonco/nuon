@@ -6,7 +6,8 @@ type ActionWorkflowRunPlan struct {
 
 	Attrs map[string]string `json:"attrs"`
 
-	Steps []*ActionWorkflowRunStepPlan `json:"steps"`
+	Steps   []*ActionWorkflowRunStepPlan `json:"steps"`
+	EnvVars map[string]string            `json:"env_vars"`
 }
 
 type ActionWorkflowRunStepPlan struct {
