@@ -80,7 +80,6 @@ jobs:
     name: ☁️  deploy prod
     needs:
       - release
-      - deploy-stage
     uses: ./.github/workflows/service_deploy.yml
     secrets: inherit
     with:
