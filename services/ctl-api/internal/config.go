@@ -38,6 +38,7 @@ func init() {
 	// runner defaults
 	config.RegisterDefault("runner_container_image_url", "public.ecr.aws/p7e3r5y0/runner")
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
+	config.RegisterDefault("public_api_url", "http://localhost:8081")
 
 	// max request sizes to prevent too large of requests
 	config.RegisterDefault("max_request_size", 1024*50)
@@ -127,6 +128,7 @@ type Config struct {
 	RunnerContainerImageTag string `config:"runner_container_image_tag" validate:"required"`
 	RunnerAPIURL            string `config:"runner_api_url" validate:"required"`
 	UseLocalRunners         bool   `config:"use_local_runners"`
+	PublicAPIURL            string `config:"public_api_url" validate:"required"`
 
 	// analytics configuration
 	SegmentWriteKey  string `config:"segment_write_key" validate:"required"`
