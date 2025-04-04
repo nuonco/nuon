@@ -28,6 +28,7 @@ const (
 	OperationPromotion           eventloop.SignalType = "promotion"
 	OperationRestart             eventloop.SignalType = "restart"
 	OperationTerminateEventLoops eventloop.SignalType = "terminate_event_loops"
+	OperationSeed                eventloop.SignalType = "seed"
 )
 
 type RequestSignal struct {

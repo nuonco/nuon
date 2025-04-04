@@ -14,6 +14,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		signals.OperationRestart:             w.restart,
 		signals.OperationPromotion:           w.AwaitPromotion,
 		signals.OperationTerminateEventLoops: w.AwaitTerminateEventLoops,
+		signals.OperationSeed:                w.AwaitSeed,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
