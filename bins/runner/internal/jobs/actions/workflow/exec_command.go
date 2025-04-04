@@ -21,6 +21,10 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 	if err != nil {
 		return errors.Wrap(err, "unable to get execution env")
 	}
+
+	for k, v := range h.state.plan.EnvVars {
+		l.Debug(fmt.Sprintf("setting built-in env-var %s", k), zap.String("value", v))
+	}
 	for k, v := range builtInEnv {
 		l.Debug(fmt.Sprintf("setting default env-var %s", k), zap.String("value", v))
 	}
@@ -43,12 +47,12 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 	cwd := h.state.workspace.AbsPath(dirName)
 
 	cmdP, err := command.New(h.v,
-		command.WithEnv(builtInEnv),
 		command.WithCwd(cwd),
 		command.WithCmd(cmd),
 		command.WithArgs(args[0:]),
 		command.WithCmd(cmd),
 		command.WithInheritedEnv(),
+		command.WithEnv(h.state.plan.EnvVars),
 		command.WithEnv(builtInEnv),
 		command.WithEnv(h.state.run.RunEnvVars),
 		command.WithEnv(envVars),
