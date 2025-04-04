@@ -17,7 +17,7 @@ type UpdateAppRequest struct {
 	Name            string `json:"name"`
 	Description     string `json:"description"`
 	DisplayName     string `json:"display_name"`
-	SlackWebhookURL string `json:"slack_webhook_url"`
+	SlackWebhookURL *string `json:"slack_webhook_url"`
 }
 
 func (c *UpdateAppRequest) Validate(v *validator.Validate) error {
@@ -85,16 +85,19 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 		return nil, fmt.Errorf("app not found %s %w", appID, gorm.ErrRecordNotFound)
 	}
 
-	res = s.db.WithContext(ctx).
-		Model(&app.NotificationsConfig{}).
-		Where(&app.NotificationsConfig{
-			OwnerID: currentApp.ID,
-		}).
-		Updates(app.NotificationsConfig{
-			SlackWebhookURL: req.SlackWebhookURL,
-		})
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to sync app notifications config: %w", res.Error)
+	if req.SlackWebhookURL != nil {
+		res = s.db.WithContext(ctx).
+      Select("slack_webhook_url").
+			Model(&app.NotificationsConfig{}).
+			Where(&app.NotificationsConfig{
+				OwnerID: currentApp.ID,
+			}).
+			Updates(app.NotificationsConfig{
+				SlackWebhookURL: *req.SlackWebhookURL,
+			})
+		if res.Error != nil {
+			return nil, fmt.Errorf("unable to sync app notifications config: %w", res.Error)
+		}
 	}
 
 	return &currentApp, nil
