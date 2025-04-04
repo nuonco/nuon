@@ -557,3 +557,6 @@ Promoting support for runner restarts on promotion success
 ## v0.4.6
 
 Promoting big fix for runner restart on promotion successh
+
+## v0.4.7
+Promoting delete install component changes, and other infra changes.
