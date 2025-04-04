@@ -69,6 +69,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 	api.GET("/v1/general/waitlist", s.AdminGetWaitlist)
 
+	api.POST("/v1/general/seed", s.Seed)
+
 	return nil
 }
 
