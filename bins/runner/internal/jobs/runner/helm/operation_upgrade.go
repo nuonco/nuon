@@ -31,7 +31,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	if err != nil {
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}
-	l.Info("parsed values", zap.Any("values", values))
+	l.Info("rendered values", zap.Any("values", values))
 
 	// We have a previous release, upgrade.
 	client := action.NewUpgrade(actionCfg)
