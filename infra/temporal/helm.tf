@@ -72,7 +72,7 @@ resource "helm_release" "temporal" {
         admintools = {
           image = {
             repository = "431927561584.dkr.ecr.us-west-2.amazonaws.com/mirror/temporalio/admin-tools"
-            tag        = "1.26.2"
+            tag        = local.temporal.image_tag
           }
           topologySpreadConstraints = [
             {
