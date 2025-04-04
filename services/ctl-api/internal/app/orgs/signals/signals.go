@@ -28,6 +28,10 @@ const (
 	OperationReprovision      eventloop.SignalType = "reprovision"
 	OperationInviteCreated    eventloop.SignalType = "invite_created"
 	OperationInviteAccepted   eventloop.SignalType = "invite_accepted"
+
+	// This signal is only used for stage, when seeding from prod, to ensure an org is set as sandbox mode.
+	OperationForceSandboxMode eventloop.SignalType = "force_sandbox_mode"
+	OperationStageSeed        eventloop.SignalType = "stage_seed"
 )
 
 type Signal struct {
