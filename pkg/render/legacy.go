@@ -3,7 +3,7 @@ package render
 import (
 	"bytes"
 	"fmt"
-	"text/template"
+	"html/template"
 
 	"google.golang.org/protobuf/types/known/structpb"
 )
