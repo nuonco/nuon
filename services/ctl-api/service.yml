@@ -39,6 +39,7 @@ env:
   DASHBOARD_URL: http://localhost:4000
   TEMPORAL_MAX_CONCURRENT_ACTIVITIES: 100
   TEMPORAL_STICKY_WORKFLOW_CACHE_SIZE: 10
+  PUBLIC_API_URL: http://localhost:8081
 
   # The following fields control local behavior and can be changed by adding a ~/.nuonctl-env.yml file:
   #
