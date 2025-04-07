@@ -268,7 +268,12 @@
   transform: scaleY(115%);
 }
 
-.prose :where(table):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+.readme-table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.readme-table table {
   width: fit-content;
 }
 
