@@ -11,21 +11,21 @@ import (
 	tclient "go.temporal.io/sdk/client"
 )
 
-type ProvisionInfraTestRequest struct {
+type InfraTestsRequests struct {
 	SandboxName string `json:"sandbox_name"`
 }
 
 // @ID						ProvisionInfraTest
 // @Summary					provision an infra test
-// @Description.markdown	provision_infra_test.md
-// @Param					req	body	ProvisionInfraTestRequest	true	"Input"
+// @Description.markdown	infra_test.md
+// @Param					req	body	InfraTestsRequests	true	"Input"
 // @Tags					general/admin
 // @Accept					json
 // @Produce					json
 // @Success					201	{string}	ok
-// @Router					/v1/general/provision-canary [post]
-func (c *service) ProvisionInfraTest(ctx *gin.Context) {
-	var req ProvisionInfraTestRequest
+// @Router					/v1/general/infra-tests [post]
+func (c *service) InfraTests(ctx *gin.Context) {
+	var req InfraTestsRequests
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
