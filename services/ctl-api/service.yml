@@ -62,6 +62,8 @@ env:
   DISABLE_NOTIFICATIONS: true
   DB_LOG_QUERIES: false
   FORCE_DEBUG_MODE: true
+  ENABLE_PROFILING: false
+  PROFILING_PORT: 6060
   #LOG_LEVEL: "DEBUG"
 
 env_secrets:
