@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
+	"github.com/powertoolsdev/mono/pkg/profiles"
 	actionsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/service"
 	appsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/service"
 	componentsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/service"
@@ -50,6 +51,8 @@ func (c *cli) registerAPI() error {
 func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 	providers := make([]fx.Option, 0)
 	providers = append(providers, c.providers()...)
+	profilerOptions := profiles.LoadOptionsFromEnv()
+	providers = append(providers, profiles.Module(profilerOptions))
 	providers = append(providers,
 		// add middlewares
 		fx.Provide(middlewares.AsMiddleware(stderr.New)),
