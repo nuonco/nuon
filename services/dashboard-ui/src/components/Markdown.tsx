@@ -11,6 +11,16 @@ showdown.extension('targetlink', () => {
   ]
 })
 
+showdown.extension('wrapTables', () => [
+  {
+    type: 'output',
+    filter: (text) =>
+      text.replace(
+        /(<table[^>]*>[\s\S]*?<\/table>)/g,
+        '<div class="readme-table">$1</div>'
+      ),
+  },
+])
 
 // TODO(nnnat): unsure if we need variable highlighting
 // load extension to highlight variables
@@ -26,7 +36,7 @@ showdown.extension('targetlink', () => {
 
 // instantiate converter
 const markdown = new showdown.Converter({
-  extensions: ['targetlink'],
+  extensions: ['targetlink', 'wrapTables'],
   tables: true,
   tasklists: true,
 })

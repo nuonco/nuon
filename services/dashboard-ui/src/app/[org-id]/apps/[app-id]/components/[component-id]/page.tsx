@@ -148,7 +148,7 @@ const LoadComponentConfig: FC<{ componentId: string; orgId: string }> = async ({
   orgId,
 }) => {
   const componentConfig = await getComponentConfig({ componentId, orgId })
-  return <ComponentConfiguration config={componentConfig} />
+  return <ComponentConfiguration config={componentConfig} isNotTruncated />
 }
 
 const LoadComponentDependencies: FC<{
