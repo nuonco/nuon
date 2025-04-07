@@ -1,3 +1,6 @@
+import YAML from 'yaml'
+import * as hcl from 'hcl2-json-parser'
+
 import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
@@ -13,6 +16,7 @@ import {
   ClickToCopyButton,
   CodeViewer,
   ComponentConfiguration,
+  ConfigurationVariables,
   DashboardContent,
   DeployStatus,
   Duration,
@@ -85,7 +89,7 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
       breadcrumb={[
         { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${orgId}/installs/${install.id}`,
+          href: `/${orgId}/installs/${install.id}/components`,
           text: install.name,
         },
         {
@@ -250,8 +254,16 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
                   componentId={deploy.component_id}
                   orgId={orgId}
                 />
+                <ErrorBoundary fallbackRender={ErrorFallback}>
+                  <LoadHelmValues
+                    componentId={deploy.component_id}
+                    deployId={deploy.id}
+                    install={install}
+                    orgId={orgId}
+                  />
+                </ErrorBoundary>
               </Suspense>
-            </ErrorBoundary>            
+            </ErrorBoundary>
           </Section>
 
           {DEPLOY_INTERMEDIATE_DATA ? (
@@ -349,23 +361,81 @@ const LoadIntermediateData: FC<{
     orgId,
   }).catch(console.error)
 
-  return deployPlan &&
-    (deployPlan as TInstallDeployPlan)?.actual?.waypoint_plan?.variables
-      ?.intermediate_data?.nuon ? (
-    <Section
-      childrenClassName="flex flex-col gap-8"
-      heading="Rendered intermediate data"
-      className="flex-initial"
-    >
-      <InstallDeployIntermediateData
-        install={install}
-        data={
-          (deployPlan as TInstallDeployPlan)?.actual?.waypoint_plan?.variables
-            ?.intermediate_data
-        }
-      />
-    </Section>
+  return deployPlan ? (
+    <>
+      {(deployPlan as TInstallDeployPlan)?.actual?.waypoint_plan?.variables
+        ?.intermediate_data?.nuon ? (
+        <Section
+          childrenClassName="flex flex-col gap-8"
+          heading="Rendered intermediate data"
+          className="flex-initial"
+        >
+          <InstallDeployIntermediateData
+            install={install}
+            data={
+              (deployPlan as TInstallDeployPlan)?.actual?.waypoint_plan
+                ?.variables?.intermediate_data
+            }
+          />
+        </Section>
+      ) : null}
+    </>
   ) : null
+}
+
+// load helm values
+const LoadHelmValues: FC<{
+  componentId: string
+  deployId: string
+  install: TInstall
+  orgId: string
+}> = async ({ componentId, deployId, install, orgId }) => {
+  const deployPlan = await getInstallDeployPlan({
+    deployId,
+    installId: install.id,
+    orgId,
+  }).catch(console.error)
+
+  if (!deployPlan) return null
+
+  const hclConfig = await hcl.parseToObject(
+    deployPlan?.actual?.waypoint_plan?.waypoint_job?.hcl_config
+  )
+
+  const helmValueString = hclConfig?.app?.[componentId]
+    ?.at(0)
+    ?.deploy?.at(0)
+    ?.use?.helm?.at(0)
+    ?.values?.toString()
+
+  return hclConfig?.app?.[componentId]?.at(0)?.deploy?.at(0)?.use?.helm &&
+    helmValueString ? (
+    <RenderHelmValues valuesString={helmValueString} />
+  ) : null
+}
+
+const RenderHelmValues: FC<{ valuesString: string }> = ({ valuesString }) => {
+  function flattenValues(obj, parent = '', res = {}) {
+    for (let key in obj) {
+      let propName = parent ? parent + '.' + key : key
+      if (
+        typeof obj[key] === 'object' &&
+        obj[key] !== null &&
+        !Array.isArray(obj[key])
+      ) {
+        flattenValues(obj[key], propName, res)
+      } else {
+        res[propName] = obj[key]?.toString()
+      }
+    }
+    return res
+  }
+
+  const helmValues = flattenValues(YAML.parse(valuesString))
+
+  return (
+    <ConfigurationVariables heading="Rendered values" variables={helmValues} />
+  )
 }
 
 // load latest output
