@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
+	"github.com/powertoolsdev/mono/pkg/profiles"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	actionsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker"
 	actionsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/activities"
@@ -53,6 +54,9 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		fx.Provide(interceptors.AsInterceptor(validateinterceptor.New)),
 	}
 	providers = append(providers, c.providers()...)
+
+	profilerOptions := profiles.LoadOptionsFromEnv()
+	providers = append(providers, profiles.Module(profilerOptions))
 
 	// shared activities and workflows
 	providers = append(
