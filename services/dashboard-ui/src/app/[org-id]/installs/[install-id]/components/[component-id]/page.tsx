@@ -114,7 +114,7 @@ export default withPageAuthRequired(async function InstallComponent({
             </ErrorBoundary>
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
-                fallback={<Loading loadingText="Loading latest build..." />}
+                fallback={<Loading loadingText="Loading latest outputs..." />}
               >
                 <LoadLatestOutputs
                   componentId={componentId}
@@ -221,7 +221,7 @@ const LoadComponentConfig: FC<{ componentId: string; orgId: string }> = async ({
     orgId,
   }).catch(console.error)
   return componentConfig ? (
-    <ComponentConfiguration config={componentConfig} />
+    <ComponentConfiguration config={componentConfig} isNotTruncated />
   ) : (
     <Text>No component config found.</Text>
   )

@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client'
 
+import classNames from 'classnames'
 import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { FaDocker, FaGitAlt, FaGithub } from 'react-icons/fa'
@@ -92,10 +93,12 @@ export const StaticComponentConfigType: FC<{
 
 export interface IComponentConfiguration {
   config: TComponentConfig
+  isNotTruncated?: boolean
 }
 
 export const ComponentConfiguration: FC<IComponentConfiguration> = ({
   config,
+  isNotTruncated = false,
 }) => {
   return (
     <div className="flex flex-col gap-8">
@@ -113,12 +116,14 @@ export const ComponentConfiguration: FC<IComponentConfiguration> = ({
           {Object.keys(config.terraform_module?.variables).length !== 0 && (
             <ConfigurationVariables
               variables={config?.terraform_module?.variables}
+              isNotTruncated={isNotTruncated}
             />
           )}
           {Object.keys(config.terraform_module?.env_vars).length !== 0 && (
             <ConfigurationVariables
               heading="Enviornment variables"
               variables={config?.terraform_module?.env_vars}
+              isNotTruncated={isNotTruncated}
             />
           )}
         </>
@@ -131,6 +136,7 @@ export const ComponentConfiguration: FC<IComponentConfiguration> = ({
               <ConfigurationVariables
                 heading="Enviornnment variables"
                 variables={config?.docker_build?.env_vars}
+                isNotTruncated={isNotTruncated}
               />
             )}
           {/* TODO(nnnnat): handle build args? */}
@@ -144,6 +150,7 @@ export const ComponentConfiguration: FC<IComponentConfiguration> = ({
               <ConfigurationVariables
                 heading="Enviornnment variables"
                 variables={config?.job?.env_vars}
+                isNotTruncated={isNotTruncated}
               />
             )}
           {/* TODO(nnnnat): handle args? */}
@@ -157,6 +164,7 @@ export const ComponentConfiguration: FC<IComponentConfiguration> = ({
               <ConfigurationVariables
                 heading="Config values"
                 variables={config?.helm?.values}
+                isNotTruncated={isNotTruncated}
               />
             )}
           {config?.helm?.values_files?.length ? (
@@ -329,8 +337,9 @@ export const ConfigurationVCS: FC<{ vcs: IConfigurationVCS }> = ({ vcs }) => {
 
 export const ConfigurationVariables: FC<{
   heading?: string
+  isNotTruncated?: boolean
   variables: Record<string, string>
-}> = ({ heading = 'Variables', variables }) => {
+}> = ({ heading = 'Variables', isNotTruncated = false, variables }) => {
   const variableKeys = Object.keys(variables)
   const isEmpty = variableKeys.length === 0
   const [isOpen, setIsOpen] = useState(false)
@@ -374,7 +383,11 @@ export const ConfigurationVariables: FC<{
             </Button>
           </div>
 
-          <ConfigVariables keys={variableKeys} variables={variables} />
+          <ConfigVariables
+            keys={variableKeys}
+            variables={variables}
+            isNotTruncated={isNotTruncated}
+          />
         </div>
       </>
     )
@@ -388,22 +401,21 @@ export const ConfigVariables: FC<{
   isNotTruncated?: boolean
 }> = ({ keys, variables, isNotTruncated = false }) => {
   return (
-    <div className="divide-y">
-      <div className="grid grid-cols-3 gap-4 pb-3">
-        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-          Name
-        </Text>
-        <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500">
-          Value
-        </Text>
-      </div>
+    <div className="grid grid-cols-kv">
+      <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500 pb-3 pr-4 border-b">
+        Name
+      </Text>
+      <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500 pb-3 pl-4 border-b">
+        Value
+      </Text>
 
       {keys.map((key, i) => (
-        <div
-          key={`${key}-${i}`}
-          className="grid grid-cols-3 gap-4 py-3 items-start"
-        >
-          <Text className="font-mono text-sm break-all">
+        <React.Fragment key={`${key}-${i}`}>
+          <Text
+            className={classNames('font-mono py-3 pr-4 content-baseline', {
+              'border-b': i + 1 !== keys?.length,
+            })}
+          >
             {key.length >= 15 && !isNotTruncated ? (
               <ToolTip tipContent={key} alignment="left">
                 <Truncate variant="small">{key}</Truncate>
@@ -412,7 +424,11 @@ export const ConfigVariables: FC<{
               key
             )}
           </Text>
-          <Text className="text-sm font-mono break-all col-span-2">
+          <Text
+            className={classNames('font-mono py-3 pl-4 break-all', {
+              'border-b': i + 1 !== keys?.length,
+            })}
+          >
             {variables[key]?.length >= 24 && !isNotTruncated ? (
               <ToolTip tipContent={variables[key]} alignment="right">
                 <Truncate variant="large">
@@ -445,7 +461,7 @@ export const ConfigVariables: FC<{
               </div>
             )}
           </Text>
-        </div>
+        </React.Fragment>
       ))}
     </div>
   )

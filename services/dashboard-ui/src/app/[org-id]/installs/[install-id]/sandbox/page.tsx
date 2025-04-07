@@ -111,6 +111,7 @@ export default withPageAuthRequired(async function InstallComponent({
                 <AppSandboxConfig sandboxConfig={install?.app_sandbox_config} />
                 <AppSandboxVariables
                   variables={install?.app_sandbox_config?.variables}
+                  isNotTruncated
                 />
               </Suspense>
             </ErrorBoundary>
