@@ -274,6 +274,7 @@ monitors:
               "notify_no_data": false,
               "silenced": {}
           },
+          "tags": ["foundation"],
           "priority": 1,
           "restricted_roles": null
       }
@@ -304,34 +305,6 @@ monitors:
               "silenced": {}
           },
           "priority": 1,
-          "restricted_roles": null
-      }
-  install_failed_to_provision:
-    enabled: true
-    json: >
-      {
-          "name": "${aws_account} - Install failed to provision",
-          "type": "event-v2 alert",
-          "query": "events(\"\\\"install failed to provision\\\" env:${aws_account}\").rollup(\"count\").last(\"5m\") > 1",
-          "message": "@slack-alerts-${env}-product",
-          "tags": [
-              "service:ctl-api",
-              "terraform:true",
-              "env:${aws_account}"
-          ],
-          "options": {
-              "groupby_simple_monitor" : false,
-              "new_host_delay": 300,
-              "thresholds": {
-                  "critical": 1
-              },
-              "enable_logs_sample": false,
-              "notify_audit": false,
-              "on_missing_data": "default",
-              "include_tags": false,
-              "silenced": {}
-          },
-          "priority": 4,
           "restricted_roles": null
       }
   database_running_low_on_free_space:
@@ -394,6 +367,7 @@ monitors:
               "new_group_delay": 0,
               "silenced": {}
           },
+          "tags": ["foundation"],
           "priority": 1,
           "restricted_roles": null
       }
@@ -429,6 +403,7 @@ monitors:
               "new_group_delay": 0,
               "silenced": {}
           },
+          "tags": ["foundation"],
           "priority": 1,
           "restricted_roles": null
       }

@@ -50,6 +50,7 @@ monitors:
               "env:${aws_account}"
           ],
           "options": {
+              "groupby_simple_monitor" : false,
               "thresholds": {
                   "critical": 0
               },
@@ -75,6 +76,7 @@ synthetics:
     locations: ["aws:us-east-1", "aws:us-west-2"]
     tags:
       [
+        "foundation",
         "service:ctl-api",
         "instance:public",
         "terraform:true",
