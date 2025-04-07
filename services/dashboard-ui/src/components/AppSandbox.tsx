@@ -74,14 +74,22 @@ export const AppSandboxConfig: FC<IAppSandboxConfig> = ({ sandboxConfig }) => {
 
 export interface IAppSandboxVariables {
   heading?: string
+  isNotTruncated?: boolean
   variables: TAppSandboxConfig['variables']
 }
 
 export const AppSandboxVariables: FC<IAppSandboxVariables> = ({
   heading = 'Sandbox variables',
+  isNotTruncated = false,
   variables,
 }) => {
-  return <ConfigurationVariables heading={heading} variables={variables} />
+  return (
+    <ConfigurationVariables
+      heading={heading}
+      variables={variables}
+      isNotTruncated={isNotTruncated}
+    />
+  )
   /* const variableKeys = Object.keys(variables || {})
    * const isEmpty = variableKeys.length === 0
 

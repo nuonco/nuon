@@ -10,6 +10,8 @@ import {
 import {
   CancelRunnerJobButton,
   ClickToCopy,
+  ClickToCopyButton,
+  CodeViewer,
   ComponentConfiguration,
   DashboardContent,
   DeployStatus,
@@ -32,6 +34,7 @@ import {
   getComponent,
   getComponentConfig,
   getInstall,
+  getInstallComponentOutputs,
   getInstallDeploy,
   getInstallDeployPlan,
 } from '@/lib'
@@ -231,6 +234,7 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
               </Text>
             }
             heading="Component config"
+            childrenClassName="flex flex-col gap-4"
           >
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
@@ -247,7 +251,7 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
                   orgId={orgId}
                 />
               </Suspense>
-            </ErrorBoundary>
+            </ErrorBoundary>            
           </Section>
 
           {DEPLOY_INTERMEDIATE_DATA ? (
@@ -361,5 +365,31 @@ const LoadIntermediateData: FC<{
         }
       />
     </Section>
+  ) : null
+}
+
+// load latest output
+const LoadLatestOutputs: FC<{
+  componentId: string
+  installId: string
+  orgId: string
+}> = async ({ componentId, installId, orgId }) => {
+  const outputs = await getInstallComponentOutputs({
+    componentId,
+    installId,
+    orgId,
+  }).catch(console.error)
+
+  return outputs ? (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <Text variant="med-12">Outputs</Text>
+        <ClickToCopyButton textToCopy={JSON.stringify(outputs)} />
+      </div>
+      <CodeViewer
+        initCodeSource={JSON.stringify(outputs, null, 2)}
+        language="json"
+      />
+    </div>
   ) : null
 }
