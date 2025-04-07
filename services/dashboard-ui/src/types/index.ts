@@ -114,6 +114,9 @@ export type TInstallDeployPlanIntermediateData = {
 export type TInstallDeployPlan = {
   actual: {
     waypoint_plan: {
+      waypoint_job: {
+        hcl_config: string,
+      },      
       variables: {
         intermediate_data: TInstallDeployPlanIntermediateData
       }
