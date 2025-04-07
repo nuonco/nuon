@@ -8,6 +8,7 @@ locals {
     frontend_url  = "temporal-frontend.${local.zone}"
     web_url       = "temporal-ui.${local.zone}"
   }
+  environment = local.tags.environment
 }
 
 resource "helm_release" "temporal" {
@@ -30,15 +31,16 @@ resource "helm_release" "temporal" {
           }
           topologySpreadConstraints = [
             {
-              maxSkew           = 1
+              maxSkew           = 2
               topologyKey       = "kubernetes.io/hostname"
               whenUnsatisfiable = "DoNotSchedule"
-              labelSelector = {
-                matchLabels = {
-                  "app.kubernetes.io/name" : "temporal"
-                  "app.kubernetes.io/component" : "worker"
-                }
-              }
+              labelSelector = merge(
+                {
+                  "app.kubernetes.io/name"       = "temporal"
+                  "app.kubernetes.io/component" = "worker"
+                },
+                local.tags.environment == "stage" ? { "pool.nuon.co" = "temporal" } : {}
+              )
             }
           ]
           config = {
@@ -76,15 +78,16 @@ resource "helm_release" "temporal" {
           }
           topologySpreadConstraints = [
             {
-              maxSkew           = 1
+              maxSkew           = 2
               topologyKey       = "kubernetes.io/hostname"
               whenUnsatisfiable = "DoNotSchedule"
-              labelSelector = {
-                matchLabels = {
-                  "app.kubernetes.io/name" : "temporal"
-                  "app.kubernetes.io/component" : "admintools"
-                }
-              }
+              labelSelector = merge(
+                {
+                  "app.kubernetes.io/name"       = "temporal"
+                  "app.kubernetes.io/component" = "admintools"
+                },
+                local.tags.environment == "stage" ? { "pool.nuon.co" = "temporal" } : {}
+              )
             }
           ]
         }
@@ -102,60 +105,64 @@ resource "helm_release" "temporal" {
           }
           topologySpreadConstraints = [
             {
-              maxSkew           = 1
+              maxSkew           = 2
               topologyKey       = "kubernetes.io/hostname"
               whenUnsatisfiable = "DoNotSchedule"
-              labelSelector = {
-                matchLabels = {
-                  "app.kubernetes.io/name" : "temporal"
-                  "app.kubernetes.io/component" : "web"
-                }
-              }
+              labelSelector = merge(
+                {
+                  "app.kubernetes.io/name"       = "temporal"
+                  "app.kubernetes.io/component" = "web"
+                },
+                local.tags.environment == "stage" ? { "pool.nuon.co" = "temporal" } : {}
+              )
             }
           ]
         }
         matching = {
           topologySpreadConstraints = [
             {
-              maxSkew           = 1
+              maxSkew           = 2
               topologyKey       = "kubernetes.io/hostname"
               whenUnsatisfiable = "DoNotSchedule"
-              labelSelector = {
-                matchLabels = {
-                  "app.kubernetes.io/name" : "temporal"
-                  "app.kubernetes.io/component" : "matching"
-                }
-              }
+              labelSelector = merge(
+                {
+                  "app.kubernetes.io/name"       = "temporal"
+                  "app.kubernetes.io/component" = "matching"
+                },
+                local.tags.environment == "stage" ? { "pool.nuon.co" = "temporal" } : {}
+              )
             }
           ]
         }
         history = {
           topologySpreadConstraints = [
             {
-              maxSkew           = 1
+              maxSkew           = 2
               topologyKey       = "kubernetes.io/hostname"
               whenUnsatisfiable = "DoNotSchedule"
-              labelSelector = {
-                matchLabels = {
-                  "app.kubernetes.io/name" : "temporal"
-                  "app.kubernetes.io/component" : "history"
-                }
-              }
+              labelSelector = merge(
+                {
+                  "app.kubernetes.io/name"       = "temporal"
+                  "app.kubernetes.io/component" = "history"
+                },
+                local.tags.environment == "stage" ? { "pool.nuon.co" = "temporal" } : {}
+              )
             }
           ]
         }
         frontend = {
           topologySpreadConstraints = [
             {
-              maxSkew           = 1
+              maxSkew           = 2
               topologyKey       = "kubernetes.io/hostname"
               whenUnsatisfiable = "DoNotSchedule"
-              labelSelector = {
-                matchLabels = {
-                  "app.kubernetes.io/name" : "temporal"
-                  "app.kubernetes.io/component" : "frontend"
-                }
-              }
+              labelSelector = merge(
+                {
+                  "app.kubernetes.io/name"       = "temporal"
+                  "app.kubernetes.io/component" = "frontend"
+                },
+                local.tags.environment == "stage" ? { "pool.nuon.co" = "temporal" } : {}
+              )
             }
           ]
         }
