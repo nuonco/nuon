@@ -412,9 +412,12 @@ export const ConfigVariables: FC<{
       {keys.map((key, i) => (
         <React.Fragment key={`${key}-${i}`}>
           <Text
-            className={classNames('font-mono py-3 pr-4 content-baseline', {
-              'border-b': i + 1 !== keys?.length,
-            })}
+            className={classNames(
+              'font-mono py-3 pr-4 content-baseline break-all',
+              {
+                'border-b': i + 1 !== keys?.length,
+              }
+            )}
           >
             {key.length >= 15 && !isNotTruncated ? (
               <ToolTip tipContent={key} alignment="left">
@@ -425,9 +428,12 @@ export const ConfigVariables: FC<{
             )}
           </Text>
           <Text
-            className={classNames('font-mono py-3 pl-4 break-all', {
-              'border-b': i + 1 !== keys?.length,
-            })}
+            className={classNames(
+              'font-mono py-3 pl-4 content-baseline break-all',
+              {
+                'border-b': i + 1 !== keys?.length,
+              }
+            )}
           >
             {variables[key]?.length >= 24 && !isNotTruncated ? (
               <ToolTip tipContent={variables[key]} alignment="right">
