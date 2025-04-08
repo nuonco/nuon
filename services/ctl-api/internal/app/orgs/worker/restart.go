@@ -17,7 +17,7 @@ import (
 
 // @temporal-gen workflow
 // @execution-timeout 30m
-// @task-timeout 10s
+// @task-timeout 1m
 func (w *Workflows) Restart(ctx workflow.Context, sreq signals.RequestSignal) error {
 	evs, err := activities.AwaitGetEventLoopsByOrgID(ctx, sreq.ID)
 	if err != nil {
