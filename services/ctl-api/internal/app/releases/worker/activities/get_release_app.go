@@ -16,8 +16,8 @@ type GetReleaseAppRequest struct {
 func (a *Activities) GetReleaseApp(ctx context.Context, req *GetReleaseAppRequest) (*app.App, error) {
 	app := &app.App{}
 	res := a.db.WithContext(ctx).
-		Joins("JOIN installs_view_v3 ON installs_view_v3.app_id = apps.id").
-		Joins("JOIN component_release_steps ON installs_view_v3.id = ANY (component_release_steps.requested_install_ids)").
+		Joins("JOIN installs_view_v4 ON installs_view_v4.app_id = apps.id").
+		Joins("JOIN component_release_steps ON installs_view_v4.id = ANY (component_release_steps.requested_install_ids)").
 		Where("component_release_steps.release_id = ?", req.ReleaseID).
 		First(app)
 	if res.Error != nil {

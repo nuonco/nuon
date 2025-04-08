@@ -106,7 +106,7 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 		return nil
 	}
 
-	if installDeploy.Type == app.InstallDeployTypeTeardown {
+	if installDeploy.Type == app.InstallDeployTypeTeardown && !sreq.ForceDelete {
 		if !w.isTeardownable(install) {
 			l.Error("component is not in a status to be torn down")
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "install is not in a delete_queued, deprovisioning or active state to tear down components")
@@ -119,12 +119,6 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 			ComponentRootID: installDeploy.ComponentID,
 			InstallID:       installID,
 		})
-
-		// check deps skip if force delete
-		if sreq.ForceDelete {
-			return nil
-		}
-
 		if err != nil {
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
 			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
@@ -136,7 +130,9 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("compoent is depended on by orher components IDs: [%s]", strings.Join(invertedDepIds, ", ")))
 			return fmt.Errorf("other components depends on this component depIDs: %s", strings.Join(invertedDepIds, ", "))
 		}
-	} else {
+	}
+
+	if installDeploy.Type != app.InstallDeployTypeTeardown {
 		if !w.isDeployable(install) {
 			l.Error("install is not currently deployable, due to its status")
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "install is not active and can not be deployed too")
@@ -163,49 +159,53 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 		}
 	}
 
-	// run predeploy hooks
-	if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
-		InstallID:       install.ID,
-		TriggerType:     app.ActionWorkflowTriggerTypePreDeploy,
-		TriggeredByID:   installDeploy.ID,
-		TriggeredByType: "install_deploys",
-		RunEnvVars: generics.ToPtrStringMap(map[string]string{
-			"TRIGGER":        string(app.ActionWorkflowTriggerTypePreDeploy),
-			"DEPLOY_TYPE":    string(installDeploy.Type),
-			"DEPLOY_ID":      installDeploy.ID,
-			"COMPONENT_ID":   installDeploy.InstallComponent.ID,
-			"COMPONENT_NAME": installDeploy.InstallComponent.Component.Name,
-		}),
-	}); err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "lifecycle hooks failed")
-		return errors.Wrap(err, "lifecycle hooks failed")
+	// skip lifecycle hooks if the deploy is a teardown
+	if installDeploy.Type != app.InstallDeployTypeTeardown {
+		if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
+			InstallID:       install.ID,
+			TriggerType:     app.ActionWorkflowTriggerTypePreDeploy,
+			TriggeredByID:   installDeploy.ID,
+			TriggeredByType: "install_deploys",
+			RunEnvVars: generics.ToPtrStringMap(map[string]string{
+				"TRIGGER":        string(app.ActionWorkflowTriggerTypePreDeploy),
+				"DEPLOY_TYPE":    string(installDeploy.Type),
+				"DEPLOY_ID":      installDeploy.ID,
+				"COMPONENT_ID":   installDeploy.InstallComponent.ID,
+				"COMPONENT_NAME": installDeploy.InstallComponent.Component.Name,
+			}),
+		}); err != nil {
+			return errors.Wrap(err, "lifecycle pre hooks failed")
+		}
 	}
 
 	if err := w.execSync(ctx, install, installDeploy, sandboxMode); err != nil {
-		return errors.Wrap(err, "error syncing")
+		return w.errorResponse(ctx, sreq, deployID, installDeploy.InstallComponentID, "error syncing", err)
 	}
 
 	if err := w.execDeploy(ctx, install, installDeploy, sandboxMode); err != nil {
-		return errors.Wrap(err, "error deploying")
+		return w.errorResponse(ctx, sreq, deployID, installDeploy.InstallComponentID, "error deploying", err)
 	}
 
 	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFinished)
 
-	// run hooks after the deploy
-	if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
-		InstallID:       install.ID,
-		TriggerType:     app.ActionWorkflowTriggerTypePostDeploy,
-		TriggeredByID:   installDeploy.ID,
-		TriggeredByType: "install_deploys",
-		RunEnvVars: generics.ToPtrStringMap(map[string]string{
-			"TRIGGER":        string(app.ActionWorkflowTriggerTypePostDeploy),
-			"DEPLOY_TYPE":    string(installDeploy.Type),
-			"DEPLOY_ID":      installDeploy.ID,
-			"COMPONENT_ID":   installDeploy.InstallComponent.ID,
-			"COMPONENT_NAME": installDeploy.InstallComponent.Component.Name,
-		}),
-	}); err != nil {
-		return w.errorResponse(ctx, sreq, deployID, installDeploy.InstallComponentID, "lifecycle hooks failed", err)
+	// skip lifecycle hooks if the deploy is a teardown
+	if installDeploy.Type != app.InstallDeployTypeTeardown {
+		// run hooks after the deploy
+		if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
+			InstallID:       install.ID,
+			TriggerType:     app.ActionWorkflowTriggerTypePostDeploy,
+			TriggeredByID:   installDeploy.ID,
+			TriggeredByType: "install_deploys",
+			RunEnvVars: generics.ToPtrStringMap(map[string]string{
+				"TRIGGER":        string(app.ActionWorkflowTriggerTypePostDeploy),
+				"DEPLOY_TYPE":    string(installDeploy.Type),
+				"DEPLOY_ID":      installDeploy.ID,
+				"COMPONENT_ID":   installDeploy.InstallComponent.ID,
+				"COMPONENT_NAME": installDeploy.InstallComponent.Component.Name,
+			}),
+		}); err != nil {
+			return errors.Wrap(err, "lifecycle post hooks failed")
+		}
 	}
 
 	finalDeployStatus := app.InstallDeployStatusActive
@@ -218,6 +218,12 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 	if sreq.ForceDelete {
 		w.updateDeployStatusWithoutStatusSync(ctx, deployID, finalDeployStatus, finalMessage)
 		w.updateInstallComponentStatus(ctx, installDeploy.InstallComponentID, finalComponentStatus, finalMessage)
+		if err := activities.AwaitDeleteInstallComponent(ctx, activities.DeleteInstallComponentRequest{
+			InstallComponentID: installDeploy.InstallComponentID,
+		}); err != nil {
+			return errors.Wrap(err, "unable to delete install component")
+		}
+
 	} else {
 		w.updateDeployStatus(ctx, deployID, finalDeployStatus, finalMessage)
 	}
@@ -225,10 +231,15 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 	return nil
 }
 
-func (w *Workflows) errorResponse(ctx workflow.Context, sreq signals.RequestSignal, deployID, installDeployId, message string, err error) error {
+func (w *Workflows) errorResponse(ctx workflow.Context, sreq signals.RequestSignal, deployID, installComponentID, message string, err error) error {
 	if sreq.ForceDelete {
 		w.updateDeployStatusWithoutStatusSync(ctx, deployID, app.InstallDeployStatusInactive, message)
-		w.updateInstallComponentStatus(ctx, installDeployId, app.InstallComponentStatusDeleteFailed, message)
+		w.updateInstallComponentStatus(ctx, installComponentID, app.InstallComponentStatusDeleteFailed, message)
+		if err := activities.AwaitDeleteInstallComponent(ctx, activities.DeleteInstallComponentRequest{
+			InstallComponentID: installComponentID,
+		}); err != nil {
+			return errors.Wrap(err, "unable to delete install component")
+		}
 		return nil
 	}
 

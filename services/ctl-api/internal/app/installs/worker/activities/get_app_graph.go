@@ -8,8 +8,7 @@ import (
 )
 
 type GetAppGraphRequest struct {
-	AppID    string `json:"app_id"`
-	Inverted bool   `json:"inverted"`
+	AppID string `json:"app_id"`
 }
 
 // @temporal-gen activity

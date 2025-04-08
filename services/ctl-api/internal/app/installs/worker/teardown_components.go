@@ -81,7 +81,10 @@ func (w *Workflows) TeardownComponents(ctx workflow.Context, sreq signals.Reques
 		return nil
 	}
 
-	componentIDs, err := activities.AwaitGetAppGraphByAppID(ctx, install.AppID)
+	componentIDs, err := activities.AwaitGetAppInstallGraph(ctx, activities.GetAppInstallGraphRequest{
+		AppID:     install.AppID,
+		InstallID: install.ID,
+	})
 	if err != nil {
 		return fmt.Errorf("unable to get app graph: %w", err)
 	}
