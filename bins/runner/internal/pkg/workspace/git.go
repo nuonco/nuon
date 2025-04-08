@@ -2,13 +2,13 @@ package workspace
 
 import (
 	"context"
-	"errors"
+	// "errors"
 	"fmt"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
-	errs "github.com/pkg/errors"
+	// errs "github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/pkg/zapwriter"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -67,16 +67,18 @@ func (w *workspace) clone(ctx context.Context) error {
 	}
 
 	refSpecStr := fmt.Sprintf("refs/heads/%s:refs/heads/%s", w.Src.Ref, w.Src.Ref)
-	if err = remote.Fetch(&git.FetchOptions{
+	err = remote.Fetch(&git.FetchOptions{
 		RefSpecs: []config.RefSpec{config.RefSpec(refSpecStr)},
-	}); err != nil {
-		if !errors.Is(err, git.NoErrAlreadyUpToDate) {
-			return CloneErr{
-				Url: w.Src.Url,
-				Ref: w.Src.Ref,
-				Err: errs.Wrap(err, "error fetching origin"),
-			}
-		}
+	})
+	if err == nil {
+		return nil
+		// if !errors.Is(err, git.NoErrAlreadyUpToDate) {
+		// 	return CloneErr{
+		// 		Url: w.Src.Url,
+		// 		Ref: w.Src.Ref,
+		// 		Err: errs.Wrap(err, "error fetching origin"),
+		// 	}
+		// }
 	}
 
 	// second, attempt to check out as a branch
