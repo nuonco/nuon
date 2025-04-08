@@ -67,13 +67,20 @@ resource "helm_release" "temporal" {
                   matchLabels = merge(
                     {
                       "app.kubernetes.io/name"       = "temporal"
-                      "app.kubernetes.io/component" = "history"
+                      "app.kubernetes.io/component" = "frontend"
                     },
-                    local.tags.environment == "stage" ? { "pool.nuon.co" = "temporal" } : {}
                   )
               }
               }
             ]
+            tolerations = local.tags.environment == "stage" ? [
+              {
+                key      = "pool.nuon.co"
+                operator = "Equal"
+                value    = "temporal"
+                effect   = "NoSchedule"
+              }
+            ] : []
           }
 
           worker = {
@@ -86,13 +93,20 @@ resource "helm_release" "temporal" {
                   matchLabels = merge(
                     {
                       "app.kubernetes.io/name"       = "temporal"
-                      "app.kubernetes.io/component" = "history"
+                      "app.kubernetes.io/component" = "worker"
                     },
-                    local.tags.environment == "stage" ? { "pool.nuon.co" = "temporal" } : {}
                   )
               }
               }
             ]
+           tolerations = local.tags.environment == "stage" ? [
+              {
+                key      = "pool.nuon.co"
+                operator = "Equal"
+                value    = "temporal"
+                effect   = "NoSchedule"
+              }
+            ] : []
           }
 
           matching = {
@@ -105,13 +119,20 @@ resource "helm_release" "temporal" {
                   matchLabels = merge(
                     {
                       "app.kubernetes.io/name"       = "temporal"
-                      "app.kubernetes.io/component" = "history"
+                      "app.kubernetes.io/component" = "matching"
                     },
-                    local.tags.environment == "stage" ? { "pool.nuon.co" = "temporal" } : {}
                   )
               }
               }
             ]
+            tolerations = local.tags.environment == "stage" ? [
+              {
+                key      = "pool.nuon.co"
+                operator = "Equal"
+                value    = "temporal"
+                effect   = "NoSchedule"
+              }
+            ] : []
           }
 
           history = {
@@ -131,6 +152,14 @@ resource "helm_release" "temporal" {
               }
               }
             ]
+            tolerations = local.tags.environment == "stage" ? [
+              {
+                key      = "pool.nuon.co"
+                operator = "Equal"
+                value    = "temporal"
+                effect   = "NoSchedule"
+              }
+            ] : []
           }
         }
 
@@ -148,13 +177,20 @@ resource "helm_release" "temporal" {
                   matchLabels = merge(
                     {
                       "app.kubernetes.io/name"       = "temporal"
-                      "app.kubernetes.io/component" = "history"
+                      "app.kubernetes.io/component" = "admintools"
                     },
-                    local.tags.environment == "stage" ? { "pool.nuon.co" = "temporal" } : {}
                   )
               }
             }
           ]
+          tolerations = local.tags.environment == "stage" ? [
+              {
+                key      = "pool.nuon.co"
+                operator = "Equal"
+                value    = "temporal"
+                effect   = "NoSchedule"
+              }
+          ] : []
         }
 
         web = {
@@ -177,13 +213,20 @@ resource "helm_release" "temporal" {
                   matchLabels = merge(
                     {
                       "app.kubernetes.io/name"       = "temporal"
-                      "app.kubernetes.io/component" = "history"
+                      "app.kubernetes.io/component" = "web"
                     },
-                    local.tags.environment == "stage" ? { "pool.nuon.co" = "temporal" } : {}
                   )
               }
             }
           ]
+          tolerations = local.tags.environment == "stage" ? [
+              {
+                key      = "pool.nuon.co"
+                operator = "Equal"
+                value    = "temporal"
+                effect   = "NoSchedule"
+              }
+          ] : []
         }
       }
     )
