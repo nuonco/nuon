@@ -31,7 +31,11 @@ func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestS
 		return nil
 	}
 
-	componentIDs, err := activities.AwaitGetAppGraphByAppID(ctx, install.AppID)
+	componentIDs, err := activities.AwaitGetAppInstallGraph(ctx, activities.GetAppInstallGraphRequest{
+		AppID:     install.AppID,
+		InstallID: install.ID,
+	})
+
 	if err != nil {
 		w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get app graph: %w", err)
@@ -50,6 +54,7 @@ func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestS
 			ComponentID: componentID,
 			BuildID:     componentBuild.ID,
 		})
+
 		if err != nil {
 			w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 			return fmt.Errorf("unable to create install deploy: %w", err)
