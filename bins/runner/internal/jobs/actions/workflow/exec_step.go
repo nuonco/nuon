@@ -25,7 +25,7 @@ func (h *handler) updateStepStatus(ctx context.Context, stepID string, startTS t
 	return nil
 }
 
-func (h *handler) executeWorkflowStep(ctx context.Context, step *models.AppInstallActionWorkflowRunStep, cfg *models.AppActionWorkflowStepConfig, stepPlan *plantypes.ActionWorkflowRunStepPlan) error {
+func (h *handler) executeWorkflowStep(ctx, execCtx context.Context, step *models.AppInstallActionWorkflowRunStep, cfg *models.AppActionWorkflowStepConfig, stepPlan *plantypes.ActionWorkflowRunStepPlan) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
@@ -41,13 +41,18 @@ func (h *handler) executeWorkflowStep(ctx context.Context, step *models.AppInsta
 		return errors.Wrap(err, "unable to update status")
 	}
 
-	if err := h.createExecEnv(ctx, l, stepPlan.GitSource); err != nil {
+	if err := h.createExecEnv(execCtx, l, stepPlan.GitSource); err != nil {
 		h.updateStepStatus(ctx, step.ID, startTS, models.AppInstallActionWorkflowRunStepStatusError)
 		return errors.Wrap(err, "unable to create exec env")
 	}
 
-	if err := h.execCommand(ctx, l, cfg, stepPlan.GitSource, stepPlan.InterpolatedEnvVars); err != nil {
-		h.updateStepStatus(ctx, step.ID, startTS, models.AppInstallActionWorkflowRunStepStatusError)
+	if err := h.execCommand(execCtx, l, cfg, stepPlan.GitSource, stepPlan.InterpolatedEnvVars); err != nil {
+		status := models.AppInstallActionWorkflowRunStepStatusError
+		if errors.Is(err, context.DeadlineExceeded) {
+			status = models.AppInstallActionWorkflowRunStepStatusTimedDashOut
+		}
+
+		h.updateStepStatus(ctx, step.ID, startTS, status)
 		return errors.Wrap(err, "unable to execute command")
 	}
 
