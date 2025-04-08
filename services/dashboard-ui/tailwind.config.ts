@@ -172,7 +172,7 @@ const config: Config = {
       },
       gridTemplateColumns: {
         auto: 'repeat(auto-fill, minmax(18rem, 1fr))',
-        kv: 'min-content auto',
+        kv: 'fit-content(30rem) auto',
       },
       width: {
         inherit: 'inherit',
