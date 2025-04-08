@@ -176,14 +176,12 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
 
                       <Text className="flex items-center ml-7" variant="reg-12">
                         {sentanceCase(step.status)}{' '}
-                        {step?.execution_duration > 1000 ? (
+                        {step?.execution_duration > 1000000 ? (
                           <>
                             in{' '}
                             <Duration nanoseconds={step?.execution_duration} />
                           </>
-                        ) : (
-                          'did not attempt'
-                        )}
+                        ) : null}
                       </Text>
                     </span>
                   )
