@@ -3,6 +3,7 @@ package activities
 import (
 	"context"
 	"fmt"
+	"go.temporal.io/sdk/temporal"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -16,7 +17,10 @@ type FetchUntornDependenciesRequest struct {
 func (a *Activities) FetchUntornDependencies(ctx context.Context, req FetchUntornDependenciesRequest) ([]string, error) {
 	install, err := a.getInstall(ctx, req.InstallID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get install: %w", err)
+		return nil, temporal.NewNonRetryableApplicationError(
+			"unable to get install",
+			"unable to get install",
+			err)
 	}
 
 	depIds := make([]string, 0)
@@ -33,7 +37,7 @@ func (a *Activities) FetchUntornDependencies(ctx context.Context, req FetchUntor
 
 		installCmpDeploy, err := a.getLatestDeploy(ctx, req.InstallID, dep.ID)
 		if err != nil {
-			return depIds, fmt.Errorf("er")
+			return depIds, fmt.Errorf("error getting latest deploy: %w", err)
 		}
 
 		if installCmpDeploy == nil {

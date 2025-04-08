@@ -64,7 +64,7 @@ func (s *service) getAllInstalls(ctx *gin.Context, limitVal int, orgTyp string) 
 		}).
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
-		Joins("JOIN apps ON apps.id=installs_view_v3.app_id").
+		Joins("JOIN apps ON apps.id=installs_view_v4.app_id").
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Where("org_type = ?", orgTyp).
 		Order("created_at desc").
