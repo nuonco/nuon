@@ -7,8 +7,8 @@ import { LogsPreview } from './LogsPreview'
 import { LogsViewerProvider } from './logs-viewer-context'
 import { useLogs } from './logs-context'
 import { Section } from '@/components/Card'
-import { ErrorFallback } from '@/components/ErrorFallback'
 import { Loading } from '@/components/Loading'
+import { Notice } from "@/components/Notice"
 
 export interface IOperationLogsSection {
   actions?: React.ReactNode
@@ -20,7 +20,7 @@ export const OperationLogsSection: FC<IOperationLogsSection> = ({
   heading,
 }) => {
   const { error, isLoading, logs } = useLogs()
-
+  
   return (
     <LogsViewerProvider>
       <Section
@@ -40,9 +40,9 @@ export const OperationLogsSection: FC<IOperationLogsSection> = ({
         }
       >
         {error ? (
-          <div>
-            <ErrorFallback error={error} resetErrorBoundary={() => {}} />
-          </div>
+          <Notice variant={error?.message === "Log stream not created yet." ? "warn" : "error" }>
+            {error?.message || "Unable to load log stream."}
+          </Notice>
         ) : !logs?.length && isLoading ? (
           <div className="mt-12">
             <Loading loadingText="Loading logs..." variant="stack" />
