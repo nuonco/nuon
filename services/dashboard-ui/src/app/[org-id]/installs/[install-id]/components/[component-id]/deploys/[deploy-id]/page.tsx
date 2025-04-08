@@ -418,12 +418,18 @@ const RenderHelmValues: FC<{ valuesString: string }> = ({ valuesString }) => {
   function flattenValues(obj, parent = '', res = {}) {
     for (let key in obj) {
       let propName = parent ? parent + '.' + key : key
-      if (
-        typeof obj[key] === 'object' &&
-        obj[key] !== null &&
-        !Array.isArray(obj[key])
-      ) {
-        flattenValues(obj[key], propName, res)
+      if (typeof obj[key] === 'object' && obj[key] !== null) {
+        if (Array.isArray(obj[key])) {
+          obj[key].forEach((item, index) => {
+            if (typeof item === 'object' && item !== null) {
+              flattenValues(item, `${propName}[${index}]`, res)
+            } else {
+              res[`${propName}[${index}]`] = item
+            }
+          })
+        } else {
+          flattenValues(obj[key], propName, res)
+        }
       } else {
         res[propName] = obj[key]?.toString()
       }
