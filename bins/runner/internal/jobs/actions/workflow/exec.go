@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -17,12 +18,15 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
+	execCtx, cancel := context.WithTimeout(ctx, time.Duration(h.state.workflowCfg.Timeout))
+	defer cancel()
+
 	for idx, step := range h.state.run.Steps {
 		stepCfg := h.state.workflowCfg.Steps[idx]
 		stepPlan := h.state.plan.Steps[idx]
 
 		l.Info(fmt.Sprintf("executing step %s (%d of %d)", stepCfg.Name, idx+1, len(h.state.run.Steps)))
-		err := h.executeWorkflowStep(ctx, step, stepCfg, stepPlan)
+		err := h.executeWorkflowStep(ctx, execCtx, step, stepCfg, stepPlan)
 		if err == nil {
 			continue
 		}
