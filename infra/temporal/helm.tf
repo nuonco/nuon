@@ -166,7 +166,7 @@ resource "helm_release" "temporal" {
           }
           image = {
             repository = "431927561584.dkr.ecr.us-west-2.amazonaws.com/mirror/temporalio/ui"
-            tag        = "2.16.2"
+            tag        = "2.34.0"
           }
           topologySpreadConstraints = [
             {
