@@ -72,7 +72,6 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 
 	installDeploy := app.InstallDeploy{
 		InstallComponentID:     installCmp.ID,
-		CreatedByID:            install.CreatedByID,
 		OrgID:                  install.OrgID,
 		Status:                 "queued",
 		StatusDescription:      "waiting to be deployed to install",
