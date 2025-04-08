@@ -3,8 +3,12 @@
 workflow.ChildWorkflowOptions{
     TaskQueue:                {{ if ne .TaskQueue "" }}{{ .TaskQueue }}{{ else }}"api"{{ end }},
     WorkflowID:               {{ if ne .IDCallback "" }}{{ .IDCallback }}(req){{else}}eventloop.SignalHandlerWorkflowID(req.Signal, req.EventLoopRequest){{ end }},
-    WorkflowExecutionTimeout: {{ if ne .ExecutionTimeout 0 }}{{ DurationLit .ExecutionTimeout }}{{ else }}5 * time.Second{{ end }},
-    WorkflowTaskTimeout:      {{ if ne .TaskTimeout 0 }}{{ DurationLit .TaskTimeout }}{{ else }}5 * time.Second{{ end }},
+    {{- if ne .ExecutionTimeout 0 }}
+    WorkflowExecutionTimeout: {{ DurationLit .ExecutionTimeout }},
+    {{- end }}
+    {{- if ne .TaskTimeout 0 }}
+    WorkflowTaskTimeout:      {{ DurationLit .TaskTimeout }},
+    {{- end }}
     WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
     WaitForCancellation:      {{ if .WaitForCancellation }}true{{ else }}false{{ end }},
 }{{end}}
