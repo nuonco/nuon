@@ -34,6 +34,9 @@ func (a *Activities) getLatestDeploy(ctx context.Context, installID, componentID
 			ComponentID: componentID,
 		}).
 		First(&installCmp)
+	if res.Error != nil && res.Error == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
