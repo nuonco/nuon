@@ -62,7 +62,11 @@ export const LogStreamProvider: FC<ILogStreamProvider> = ({
         logStream,
       }}
     >
-      <LogsProvider logStream={logStream} shouldPoll={logStream?.open}>
+      <LogsProvider
+        logStream={logStream}
+        shouldPoll={logStream?.open}
+        logStreamError={error}
+      >
         {children}
       </LogsProvider>
     </LogStreamContext.Provider>
