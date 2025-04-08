@@ -92,6 +92,7 @@ func (w *Workflows) isNoopHealthCheck(ctx workflow.Context, runnerID string) (bo
 	}
 
 	isNoop := generics.SliceContains(runner.Status, []app.RunnerStatus{
+		app.RunnerStatusPending,
 		app.RunnerStatusProvisioning,
 		app.RunnerStatusDeprovisioning,
 		app.RunnerStatusReprovisioning,
