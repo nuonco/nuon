@@ -15,6 +15,7 @@ const (
 	InstallActionWorkflowRunStepStatusFinished   InstallActionWorkflowRunStepStatus = "finished"
 	InstallActionWorkflowRunStepStatusPending    InstallActionWorkflowRunStepStatus = "pending"
 	InstallActionWorkflowRunStepStatusInProgress InstallActionWorkflowRunStepStatus = "in-progress"
+	InstallActionWorkflowRunStepStatusTimedOut   InstallActionWorkflowRunStepStatus = "timed-out"
 	InstallActionWorkflowRunStepStatusError      InstallActionWorkflowRunStepStatus = "error"
 )
 
