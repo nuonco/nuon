@@ -73,6 +73,9 @@ resource "helm_release" "temporal" {
               }
               }
             ]
+            nodeSelector = local.tags.environment == "stage" ? {
+              "pool.nuon.co" = "temporal"
+            } : {}
             tolerations = local.tags.environment == "stage" ? [
               {
                 key      = "pool.nuon.co"
@@ -99,6 +102,9 @@ resource "helm_release" "temporal" {
               }
               }
             ]
+            nodeSelector = local.tags.environment == "stage" ? {
+                  "pool.nuon.co" = "temporal"
+            } : {}
            tolerations = local.tags.environment == "stage" ? [
               {
                 key      = "pool.nuon.co"
@@ -125,6 +131,9 @@ resource "helm_release" "temporal" {
               }
               }
             ]
+            nodeSelector = local.tags.environment == "stage" ? {
+                "pool.nuon.co" = "temporal"
+              } : {}
             tolerations = local.tags.environment == "stage" ? [
               {
                 key      = "pool.nuon.co"
@@ -152,6 +161,9 @@ resource "helm_release" "temporal" {
               }
               }
             ]
+            nodeSelector = local.tags.environment == "stage" ? {
+              "pool.nuon.co" = "temporal"
+            } : {}
             tolerations = local.tags.environment == "stage" ? [
               {
                 key      = "pool.nuon.co"
@@ -183,6 +195,9 @@ resource "helm_release" "temporal" {
               }
             }
           ]
+          nodeSelector = local.tags.environment == "stage" ? {
+            "pool.nuon.co" = "temporal"
+          } : {}
           tolerations = local.tags.environment == "stage" ? [
               {
                 key      = "pool.nuon.co"
@@ -204,6 +219,9 @@ resource "helm_release" "temporal" {
             repository = "431927561584.dkr.ecr.us-west-2.amazonaws.com/mirror/temporalio/ui"
             tag        = "2.34.0"
           }
+          nodeSelector = local.tags.environment == "stage" ? {
+            "pool.nuon.co" = "temporal"
+          } : {}
           topologySpreadConstraints = [
             {
               maxSkew           = 2
@@ -219,6 +237,9 @@ resource "helm_release" "temporal" {
               }
             }
           ]
+          nodeSelector = local.tags.environment == "stage" ? {
+            "pool.nuon.co" = "temporal"
+          } : {}
           tolerations = local.tags.environment == "stage" ? [
               {
                 key      = "pool.nuon.co"
