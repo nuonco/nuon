@@ -28,19 +28,21 @@ const LogsContext = createContext<ILogsContext>({
 interface ILogsProvider {
   children: React.ReactNode
   logStream?: TLogStream
+  logStreamError?: TLogError
   shouldPoll?: boolean
 }
 
 export const LogsProvider: FC<ILogsProvider> = ({
   children,
   logStream,
+  logStreamError,
   shouldPoll = false,
 }) => {
   const [isLoading, setIsLoading] = useState(true)
   const [isPolling, setIsPolling] = useState(logStream.open && shouldPoll)
   const [nextPage, setNextPage] = useState('0')
   const [logs, updateLogs] = useState([])
-  const [error, setError] = useState()
+  const [error, setError] = useState<TLogError>(logStreamError)
 
   const fetchLogs = () => {
     setIsLoading(true)
@@ -68,6 +70,12 @@ export const LogsProvider: FC<ILogsProvider> = ({
         setIsLoading(false)
       })
   }
+
+  useEffect(() => {
+    if (logStreamError?.message) {
+      setError(logStreamError)
+    }
+  }, [logStreamError])
 
   useEffect(() => {
     if (!logStream?.open) {
