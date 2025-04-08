@@ -22,7 +22,7 @@ func (a *Activities) getActionWorkflowInstalls(ctx context.Context, actionWorkfl
 	installs := []app.Install{}
 
 	res := a.db.WithContext(ctx).
-		Joins("JOIN apps ON apps.id=installs_view_v3.app_id").
+		Joins("JOIN apps ON apps.id=installs_view_v4.app_id").
 		Joins("JOIN action_workflows ON action_workflows.app_id=apps.id").
 		Where("action_workflows.id = ?", actionWorkflowID).
 		Find(&installs)

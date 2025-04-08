@@ -7,6 +7,9 @@ import (
 //go:embed installs_view_v3.sql
 var InstallsViewV3 string
 
+//go:embed installs_view_v4.sql
+var InstallsViewV4 string
+
 //go:embed app_configs_view_v2.sql
 var AppConfigViewV2 string
 
