@@ -22,6 +22,7 @@ ec2nodeclasses:
  - ctl-api-api
  - ctl-api-worker
  - public
+ - temporal
 
 additional_nodepools:
   - name: public
@@ -47,3 +48,24 @@ additional_nodepools:
           duration: "20h"
           reasons:
           - "Underutilized"
+
+  - name: temporal
+    instance_types:
+      - t3a.large
+    limits:
+      cpu: 50
+      memory: "100Gi"
+    expireAfter: "2160h"
+    disruption:
+      consolidationPolicy: "WhenEmptyOrUnderutilized"
+      consolidateAfter: "1m"
+      budgets:
+        - nodes: "1"
+          schedule: "0 10 * * 1,2,3,4,5" 
+          duration: "23h"
+          reasons:
+          - "Underutilized"
+        - nodes: "1" 
+          reasons:
+          - "Empty"
+          - "Drifted"
