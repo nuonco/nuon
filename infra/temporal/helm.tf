@@ -64,26 +64,24 @@ resource "helm_release" "temporal" {
                 topologyKey       = "kubernetes.io/hostname"
                 whenUnsatisfiable = "DoNotSchedule"
                 labelSelector = {
-                  matchLabels = merge(
-                    {
+                  matchLabels = {
                       "app.kubernetes.io/name"       = "temporal"
                       "app.kubernetes.io/component" = "frontend"
                     },
-                  )
               }
               }
             ]
-            nodeSelector = local.tags.environment == "stage" ? {
+            nodeSelector =  {
               "pool.nuon.co" = "temporal"
-            } : {}
-            tolerations = local.tags.environment == "stage" ? [
+            }
+            tolerations =[
               {
                 key      = "pool.nuon.co"
                 operator = "Equal"
                 value    = "temporal"
                 effect   = "NoSchedule"
               }
-            ] : []
+            ] 
           }
 
           worker = {
@@ -93,26 +91,24 @@ resource "helm_release" "temporal" {
                 topologyKey       = "kubernetes.io/hostname"
                 whenUnsatisfiable = "DoNotSchedule"
                 labelSelector = {
-                  matchLabels = merge(
-                    {
+                  matchLabels ={
                       "app.kubernetes.io/name"       = "temporal"
                       "app.kubernetes.io/component" = "worker"
                     },
-                  )
               }
               }
             ]
-            nodeSelector = local.tags.environment == "stage" ? {
+            nodeSelector =  {
                   "pool.nuon.co" = "temporal"
-            } : {}
-           tolerations = local.tags.environment == "stage" ? [
+            } 
+           tolerations = [
               {
                 key      = "pool.nuon.co"
                 operator = "Equal"
                 value    = "temporal"
                 effect   = "NoSchedule"
               }
-            ] : []
+            ] 
           }
 
           matching = {
@@ -122,26 +118,24 @@ resource "helm_release" "temporal" {
                 topologyKey       = "kubernetes.io/hostname"
                 whenUnsatisfiable = "DoNotSchedule"
                 labelSelector = {
-                  matchLabels = merge(
-                    {
+                  matchLabels = {
                       "app.kubernetes.io/name"       = "temporal"
                       "app.kubernetes.io/component" = "matching"
                     },
-                  )
               }
               }
             ]
-            nodeSelector = local.tags.environment == "stage" ? {
+            nodeSelector =  {
                 "pool.nuon.co" = "temporal"
-              } : {}
-            tolerations = local.tags.environment == "stage" ? [
+              } 
+            tolerations =  [
               {
                 key      = "pool.nuon.co"
                 operator = "Equal"
                 value    = "temporal"
                 effect   = "NoSchedule"
               }
-            ] : []
+            ]
           }
 
           history = {
@@ -151,27 +145,24 @@ resource "helm_release" "temporal" {
                 topologyKey       = "kubernetes.io/hostname"
                 whenUnsatisfiable = "DoNotSchedule"
                 labelSelector = {
-                  matchLabels = merge(
-                    {
+                  matchLabels = {
                       "app.kubernetes.io/name"       = "temporal"
                       "app.kubernetes.io/component" = "history"
-                    },
-                    local.tags.environment == "stage" ? { "pool.nuon.co" = "temporal" } : {}
-                  )
+                    }
               }
               }
             ]
-            nodeSelector = local.tags.environment == "stage" ? {
+            nodeSelector = {
               "pool.nuon.co" = "temporal"
-            } : {}
-            tolerations = local.tags.environment == "stage" ? [
+            } 
+            tolerations =  [
               {
                 key      = "pool.nuon.co"
                 operator = "Equal"
                 value    = "temporal"
                 effect   = "NoSchedule"
               }
-            ] : []
+            ] 
           }
         }
 
@@ -186,26 +177,24 @@ resource "helm_release" "temporal" {
               topologyKey       = "kubernetes.io/hostname"
               whenUnsatisfiable = "DoNotSchedule"
               labelSelector = {
-                  matchLabels = merge(
-                    {
+                  matchLabels = {
                       "app.kubernetes.io/name"       = "temporal"
                       "app.kubernetes.io/component" = "admintools"
                     },
-                  )
               }
             }
           ]
-          nodeSelector = local.tags.environment == "stage" ? {
+          nodeSelector =  {
             "pool.nuon.co" = "temporal"
-          } : {}
-          tolerations = local.tags.environment == "stage" ? [
+          } 
+          tolerations = [
               {
                 key      = "pool.nuon.co"
                 operator = "Equal"
                 value    = "temporal"
                 effect   = "NoSchedule"
               }
-          ] : []
+          ] 
         }
 
         web = {
@@ -219,35 +208,30 @@ resource "helm_release" "temporal" {
             repository = "431927561584.dkr.ecr.us-west-2.amazonaws.com/mirror/temporalio/ui"
             tag        = "2.34.0"
           }
-          nodeSelector = local.tags.environment == "stage" ? {
-            "pool.nuon.co" = "temporal"
-          } : {}
           topologySpreadConstraints = [
             {
               maxSkew           = 2
               topologyKey       = "kubernetes.io/hostname"
               whenUnsatisfiable = "DoNotSchedule"
               labelSelector = {
-                  matchLabels = merge(
-                    {
+                  matchLabels ={
                       "app.kubernetes.io/name"       = "temporal"
                       "app.kubernetes.io/component" = "web"
                     },
-                  )
               }
             }
           ]
-          nodeSelector = local.tags.environment == "stage" ? {
+          nodeSelector = {
             "pool.nuon.co" = "temporal"
-          } : {}
-          tolerations = local.tags.environment == "stage" ? [
+          }
+          tolerations = [
               {
                 key      = "pool.nuon.co"
                 operator = "Equal"
                 value    = "temporal"
                 effect   = "NoSchedule"
               }
-          ] : []
+          ] 
         }
       }
     )
