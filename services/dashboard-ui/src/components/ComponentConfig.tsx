@@ -94,11 +94,13 @@ export const StaticComponentConfigType: FC<{
 export interface IComponentConfiguration {
   config: TComponentConfig
   isNotTruncated?: boolean
+  hideHelmValuesFile?: boolean
 }
 
 export const ComponentConfiguration: FC<IComponentConfiguration> = ({
   config,
   isNotTruncated = false,
+  hideHelmValuesFile = false,
 }) => {
   return (
     <div className="flex flex-col gap-8">
@@ -167,9 +169,9 @@ export const ComponentConfiguration: FC<IComponentConfiguration> = ({
                 isNotTruncated={isNotTruncated}
               />
             )}
-          {config?.helm?.values_files?.length ? (
+          {config?.helm?.values_files?.length && !hideHelmValuesFile ? (
             <div className="flex flex-col gap-4">
-              <Text variant="med-12">Values files</Text>
+              <Text variant="med-12">Values file</Text>
               <CodeViewer
                 initCodeSource={config?.helm?.values_files}
                 language="yaml"
