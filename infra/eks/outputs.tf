@@ -219,6 +219,11 @@ output "twingate_service_accounts" {
       token = nonsensitive(twingate_service_account_key.github_actions.token)
       id    = twingate_service_account_key.github_actions.service_account_id
     }
+
+    office = {
+      token = nonsensitive(twingate_service_account_key.office.token)
+      id    = twingate_service_account_key.office.service_account_id
+    }
   }
 }
 

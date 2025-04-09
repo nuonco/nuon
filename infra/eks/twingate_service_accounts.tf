@@ -19,3 +19,16 @@ resource "twingate_service_account_key" "github_actions" {
     replace_triggered_by = [time_static.key_rotation]
   }
 }
+
+resource "twingate_service_account" "office" {
+  name = "office-${local.workspace_trimmed}"
+}
+
+resource "twingate_service_account_key" "office" {
+  name               = "office-${local.workspace_trimmed}"
+  service_account_id = twingate_service_account.office.id
+
+  lifecycle {
+    replace_triggered_by = [time_static.key_rotation]
+  }
+}
