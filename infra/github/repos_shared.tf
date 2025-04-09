@@ -455,7 +455,7 @@ module "shared-stardog" {
 
   collaborators = {
     paulplace = "push",
-    scardena   = "push"
+    scardena  = "push"
   }
 
   providers = {
@@ -476,7 +476,7 @@ module "shared-stardog-installer" {
 
   collaborators = {
     paulplace = "push",
-    scardena   = "push"
+    scardena  = "push"
   }
 
   providers = {
@@ -569,6 +569,24 @@ module "shared-datadog" {
 
   name                     = "datadog"
   description              = "Nuon configuration for Datadog."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
+module "shared-freeplayai" {
+  source = "./modules/repository"
+
+  name                     = "freeplayai"
+  description              = "Nuon configuration for freeplay.ai."
   required_checks          = []
   owning_team_id           = github_team.nuonco-shared.id
   is_private               = true
