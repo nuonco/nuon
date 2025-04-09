@@ -342,8 +342,9 @@ const LoadComponentConfig: FC<{
     componentConfigId: build.component_config_connection_id,
     orgId,
   }).catch(console.error)
+
   return componentConfig ? (
-    <ComponentConfiguration config={componentConfig} />
+    <ComponentConfiguration config={componentConfig} hideHelmValuesFile />
   ) : (
     <Text>No component config found.</Text>
   )
@@ -410,7 +411,13 @@ const LoadHelmValues: FC<{
 
   return hclConfig?.app?.[componentId]?.at(0)?.deploy?.at(0)?.use?.helm &&
     helmValueString ? (
-    <RenderHelmValues valuesString={helmValueString} />
+    <>
+      <div className="flex flex-col gap-4">
+        <Text variant="med-12">Values file</Text>
+        <CodeViewer initCodeSource={helmValueString} language="yaml" />
+      </div>
+      <RenderHelmValues valuesString={helmValueString} />
+    </>
   ) : null
 }
 
