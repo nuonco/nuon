@@ -1,6 +1,6 @@
 ---
 title: 'CLI'
-description: "Install the Nuon CLI."
+description: 'Install the Nuon CLI.'
 ---
 
 The CLI is your primary interface to the Nuon platform.
@@ -21,7 +21,8 @@ After installation, you may need to refresh your shell session.
 source ~/.bashrc # or ~/.zshrc, etc.
 ```
 
-You can also enable autocomplete for you shell. Run `nuon completion` to see what shells we support.
+You can also enable autocomplete for you shell. Run `nuon completion` to see
+what shells we support.
 
 ```sh
 source <(nuon completion <your-shell>)
@@ -31,15 +32,16 @@ source <(nuon completion <your-shell>)
 
 If you are not using Homebrew, you can dowload the binaries for MacOS or Linux:
 
-* `darwin_amd64`
-* `darmin_arm64`
-* `linux_arm`
-* `linux_arm64`
-* `linux_386`
-* `linux_amd64`
+- `darwin_amd64`
+- `darmin_arm64`
+- `linux_arm`
+- `linux_arm64`
+- `linux_386`
+- `linux_amd64`
 
-Binaries are published to https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli, and versioned by release. To download a
-binary, first look up the current API version, and then download the current binary for your platform.
+Binaries are published to https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli,
+and versioned by release. To download a binary, first look up the current API
+version, and then download the current binary for your platform.
 
 To look up the current API version:
 
@@ -47,12 +49,14 @@ To look up the current API version:
 curl https://api.nuon.co/version
 ```
 
-To download the binaries for a specific version, substitute the version and platform into the following URL: `https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/$VERSION/nuon_${PLATFORM}`
+To download the binaries for a specific version, substitute the version and
+platform into the following URL:
+`https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/$VERSION/nuon_${PLATFORM}`
 
-An example of downloading version `0.19.19` of the CLI for `darwin_arm64`:
+An example of downloading version `0.19.421` of the CLI for `darwin_arm64`:
 
 ```sh
-wget -o nuon https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.19/nuon_darwin_arm64
+wget -o nuon https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.421/nuon_darwin_arm64
 ```
 
 Once the binary has been downloaded remember to make it executable.
@@ -63,12 +67,14 @@ chmod +x nuon
 
 ### Updates
 
-We release new version of the CLI frequently, so we recommend updating it weekly.
+We release new version of the CLI frequently, so we recommend updating it
+weekly.
 
 ### Debug Mode
 
-In the case that something goes wrong, you can set the environment variable `NUON_DEBUG` to print verbose logs. These
-can be helpful to share with us, while debugging any issues.
+In the case that something goes wrong, you can set the environment variable
+`NUON_DEBUG` to print verbose logs. These can be helpful to share with us, while
+debugging any issues.
 
 ```sh
 NUON_DEBUG=true nuon apps list
