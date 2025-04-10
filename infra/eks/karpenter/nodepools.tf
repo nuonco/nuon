@@ -1,5 +1,13 @@
 # uses locals from karpenter.tf
 
+locals {
+  default_zones = [
+    "us-west-2a",
+    "us-west-2b",
+    "us-west-2c",
+  ]
+}
+
 # https://karpenter.sh/v1.0/concepts/nodepools/
 resource "kubectl_manifest" "karpenter_nodepool_default" {
   yaml_body = yamlencode({
@@ -37,11 +45,7 @@ resource "kubectl_manifest" "karpenter_nodepool_default" {
             {
               key      = "topology.kubernetes.io/zone"
               operator = "In"
-              values = [
-                "us-west-2a",
-                "us-west-2b",
-                "us-west-2c",
-              ]
+              values   = local.default_zones
             },
           ]
         }
@@ -80,6 +84,9 @@ resource "kubectl_manifest" "additional_nodepools" {
     kind       = "NodePool"
     metadata = {
       name = each.value.name
+      labels = lookup(each.value, "labels", {
+            "pool.nuon.co" : each.value.name
+      })
     }
     spec = {
       limits = {
@@ -88,16 +95,16 @@ resource "kubectl_manifest" "additional_nodepools" {
       }
       template = {
         metadata = {
-          labels = {
+          labels = lookup(each.value, "labels", {
             "pool.nuon.co" : each.value.name
-          }
+          })
         }
         spec = {
           expireAfter = each.value.expireAfter
           nodeClassRef = {
             group = "karpenter.k8s.aws"
             kind  = "EC2NodeClass"
-            name  = each.value.name
+            name  = lookup(each.value, "nodeclass" , each.value.name)
           }
           requirements = [
             {
@@ -115,20 +122,16 @@ resource "kubectl_manifest" "additional_nodepools" {
             {
               key      = "topology.kubernetes.io/zone"
               operator = "In"
-              values = [
-                "us-west-2a",
-                "us-west-2b",
-                "us-west-2c",
-              ]
+              values   = lookup(each.value, "zones", local.default_zones)
             },
           ]
-          taints = [
+          taints = lookup(each.value, "taints", [
             {
               key    = "pool.nuon.co"
               value  = each.value.name
               effect = "NoSchedule"
             }
-          ]
+          ])
         }
       }
       # https://karpenter.sh/v1.0/concepts/disruption/
