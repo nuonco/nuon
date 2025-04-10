@@ -22,7 +22,7 @@ import (
 
 const (
 	maxSignals          int = 10
-	checkExistsInterval     = 24 * time.Minute
+	checkExistsInterval     = 24 * time.Hour * 7
 )
 
 // Loop is the generic implementation of Nuon's Temporal-backed event loop. Start an event
