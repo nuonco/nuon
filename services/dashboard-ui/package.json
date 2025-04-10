@@ -54,7 +54,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "@vitejs/plugin-react": "^4.2.1",
+    "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.0.1",
     "cors": "^2.8.5",
     "eslint": "^8",
@@ -69,9 +69,9 @@
     "postcss": "^8",
     "prettier": "^3.2.5",
     "tailwindcss": "^3.3.0",
-    "tsx": "^4.19.2",
+    "tsx": "^4.19.3",
     "typescript": "^5",
     "vite-tsconfig-paths": "^4.3.2",
-    "vitest": "^2.1.5"
+    "vitest": "^3.1.1"
   }
 }
