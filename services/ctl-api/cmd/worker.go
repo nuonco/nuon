@@ -34,7 +34,7 @@ import (
 	signalsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/signals/activities"
 )
 
-var namespace string
+var namespace, mode string
 
 func (c *cli) registerWorker() error {
 	cmd := &cobra.Command{
@@ -45,7 +45,16 @@ func (c *cli) registerWorker() error {
 	rootCmd.AddCommand(cmd)
 	helpText := "namespace defines the namespace whose workers to run. e.g. all, general, orgs, apps, components, installs, releases."
 	rootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "all", helpText)
+	rootCmd.PersistentFlags().StringVarP(&mode, "mode", "m", "all", "mode of the worker. Options: all, activities, workflows")
+
 	return nil
+}
+
+func provideWorkerMode() worker.Mode {
+	if mode != "all" && mode != "activities" && mode != "workflows" {
+		mode = "all"
+	}
+	return worker.Mode(mode)
 }
 
 func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
@@ -74,8 +83,24 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers,
 			fx.Provide(generalactivities.New),
 			fx.Provide(generalworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(generalworker.New)),
 		)
+
+		switch provideWorkerMode() {
+		case worker.ModeAll, worker.Mode(""):
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(generalworker.NewActivityWorker)),
+				fx.Provide(worker.AsWorker(generalworker.NewWorkflowWorker)),
+			)
+		case worker.ModeActivities:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(generalworker.NewActivityWorker)),
+			)
+		case worker.ModeWorkflows:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(generalworker.NewWorkflowWorker)),
+			)
+		}
+
 	}
 
 	// orgs worker
@@ -83,8 +108,25 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers,
 			fx.Provide(orgsactivities.New),
 			fx.Provide(orgsworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(orgsworker.New)),
 		)
+
+		switch provideWorkerMode() {
+		case worker.ModeAll, worker.Mode(""):
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(orgsworker.NewActivityWorker)),
+				fx.Provide(worker.AsWorker(orgsworker.NewWorkflowWorker)),
+			)
+		case worker.ModeActivities:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(orgsworker.NewActivityWorker)),
+			)
+
+		case worker.ModeWorkflows:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(orgsworker.NewWorkflowWorker)),
+			)
+		}
+
 	}
 
 	// apps worker
@@ -92,16 +134,48 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers,
 			fx.Provide(appsactivities.New),
 			fx.Provide(appsworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(appsworker.New)))
+		)
+
+		switch provideWorkerMode() {
+		case worker.ModeAll, worker.Mode(""):
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(appsworker.NewActivityWorker)),
+				fx.Provide(worker.AsWorker(appsworker.NewWorkflowWorker)),
+			)
+		case worker.ModeActivities:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(appsworker.NewActivityWorker)),
+			)
+		case worker.ModeWorkflows:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(appsworker.NewWorkflowWorker)),
+			)
+		}
+
 	}
 
-	// components worker
 	if namespace == "all" || namespace == "components" {
 		providers = append(providers,
 			fx.Provide(componentsactivities.New),
 			fx.Provide(componentsworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(componentsworker.New)),
 		)
+
+		switch provideWorkerMode() {
+		case worker.ModeAll, worker.Mode(""):
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(componentsworker.NewActivityWorker)),
+				fx.Provide(worker.AsWorker(componentsworker.NewWorkflowWorker)),
+			)
+		case worker.ModeActivities:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(componentsworker.NewActivityWorker)),
+			)
+		case worker.ModeWorkflows:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(componentsworker.NewWorkflowWorker)),
+			)
+		}
+
 	}
 
 	// installs worker
@@ -109,34 +183,98 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers,
 			fx.Provide(installsactivities.New),
 			fx.Provide(installsworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(installsworker.New)),
 		)
+
+		switch provideWorkerMode() {
+		case worker.ModeAll, worker.Mode(""):
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(installsworker.NewActivityWorker)),
+				fx.Provide(worker.AsWorker(installsworker.NewWorkflowWorker)),
+			)
+		case worker.ModeActivities:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(installsworker.NewActivityWorker)),
+			)
+
+		case worker.ModeWorkflows:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(installsworker.NewWorkflowWorker)),
+			)
+		}
+
 	}
 
 	if namespace == "all" || namespace == "releases" {
 		providers = append(providers,
 			fx.Provide(releasesactivities.New),
 			fx.Provide(releasesworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(releasesworker.New)),
 		)
+
+		switch provideWorkerMode() {
+		case worker.ModeAll, worker.Mode(""):
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(releasesworker.NewActivityWorker)),
+				fx.Provide(worker.AsWorker(releasesworker.NewWorkflowWorker)),
+			)
+
+		case worker.ModeActivities:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(releasesworker.NewActivityWorker)),
+			)
+
+		case worker.ModeWorkflows:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(releasesworker.NewWorkflowWorker)),
+			)
+		}
+
 	}
 
 	if namespace == "all" || namespace == "runners" {
 		providers = append(providers,
-			// runners worker
 			fx.Provide(runnersactivities.New),
 			fx.Provide(runnersworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(runnersworker.New)),
 		)
+		switch provideWorkerMode() {
+		case worker.ModeAll, worker.Mode(""):
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(runnersworker.NewActivityWorker)),
+				fx.Provide(worker.AsWorker(runnersworker.NewWorkflowWorker)),
+			)
+		case worker.ModeActivities:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(runnersworker.NewActivityWorker)),
+			)
+		case worker.ModeWorkflows:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(runnersworker.NewWorkflowWorker)),
+			)
+		}
+
 	}
 
 	if namespace == "all" || namespace == "actions" {
 		providers = append(providers,
-			// actions worker
 			fx.Provide(actionsactivities.New),
 			fx.Provide(actionsworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(actionsworker.New)),
 		)
+
+		switch provideWorkerMode() {
+		case worker.ModeAll, worker.Mode(""):
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(actionsworker.NewActivityWorker)),
+				fx.Provide(worker.AsWorker(actionsworker.NewWorkflowWorker)),
+			)
+		case worker.ModeActivities:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(actionsworker.NewActivityWorker)),
+			)
+		case worker.ModeWorkflows:
+			providers = append(providers,
+				fx.Provide(worker.AsWorker(actionsworker.NewWorkflowWorker)),
+			)
+		}
+
 	}
 
 	providers = append(providers,
