@@ -24,6 +24,9 @@ var allCmd = &cobra.Command{
 //nolint:gochecknoinits
 func init() {
 	rootCmd.AddCommand(allCmd)
+	flags := allCmd.Flags()
+	flags.String("mode", "all", "mode of the worker. Options: all, activities, workflows")
+
 }
 
 func runAll(cmd *cobra.Command, _ []string) {
@@ -35,6 +38,12 @@ func runAll(cmd *cobra.Command, _ []string) {
 	if err := cfg.Validate(); err != nil {
 		log.Fatalf("unable to validate config: %v", err)
 	}
+
+	if cfg.Mode == "" {
+		cfg.Mode = "all"
+	}
+
+	log.Println("Worker started in modeTemporal: " + cfg.Mode)
 
 	v := validator.New()
 	tmetricsWriter, err := tmetrics.New(v, tmetrics.WithTags(map[string]string{
@@ -73,6 +82,7 @@ func runAll(cmd *cobra.Command, _ []string) {
 		worker.WithActivity(acts),
 		worker.WithActivity(sharedActs),
 		worker.WithMetricsWriter(tmetricsWriter.MetricsWriter),
+		worker.WithMode(cfg.Mode),
 	)
 	if err != nil {
 		log.Fatalf("unable to initialize worker: %s", err.Error())
