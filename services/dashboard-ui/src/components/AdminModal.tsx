@@ -41,13 +41,14 @@ type TAdminAction = {
   text: string
 }
 
-export const AdminModal: FC<{ isSidebarOpen: boolean }> = ({
+export const AdminModal: FC<{ isSidebarOpen: boolean, isModalOpen?: string }> = ({
   isSidebarOpen,
+  isModalOpen
 }) => {
   const params = useParams()
   const { user } = useUser()
   const { org } = useOrg()
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(Boolean(isModalOpen))
 
   const orgActions: Array<TAdminAction> = [
     {
