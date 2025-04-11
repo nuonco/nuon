@@ -1,6 +1,7 @@
 'use client'
 
 import classNames from 'classnames'
+import { useSearchParams } from 'next/navigation'
 import React, { type FC, useState } from 'react'
 import {
   ArrowLineLeft,
@@ -86,6 +87,7 @@ export const Layout: FC<{
   versions: TNuonVersions
 }> = ({ children, orgs, versions }) => {
   const [isOpen, setIsOpen] = useState(true)
+  const searchParams = useSearchParams()
 
   return (
     <div
@@ -130,7 +132,10 @@ export const Layout: FC<{
 
           <div className="flex flex-col gap-2">
             <SignOutButton isSidebarOpen={isOpen} />
-            <AdminModal isSidebarOpen={isOpen} />
+            <AdminModal
+              isSidebarOpen={isOpen}
+              isModalOpen={searchParams?.get('admin')}
+            />
             {isOpen ? (
               <NuonVersions
                 className="justify-center py-2 flex-initial"
