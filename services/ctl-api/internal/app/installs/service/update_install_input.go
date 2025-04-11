@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -93,10 +92,6 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
 	}
-
-	s.evClient.Send(ctx, installID, &signals.Signal{
-		Type: signals.OperationDeployComponents,
-	})
 
 	ctx.JSON(http.StatusOK, inputs)
 }
