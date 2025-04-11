@@ -10,6 +10,18 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 )
 
+// Mode defines what does worker the run
+type Mode string
+
+const (
+	// ModeAll runs both workflows and activities
+	ModeAll Mode = "all"
+	// ModeWorkflows runs only workflows
+	ModeWorkflows Mode = "workflows"
+	// ModeActivities runs only activities
+	ModeActivities Mode = "activities"
+)
+
 type worker struct {
 	v  *validator.Validate `validate:"required"`
 	mw metrics.Writer
@@ -20,6 +32,7 @@ type worker struct {
 	Activities  []interface{} `validate:"required,gt=0"`
 	Namespace   string        `validate:"required"`
 	propagators []workflow.ContextPropagator
+	Mode        Mode
 }
 
 type Worker interface {
@@ -102,6 +115,13 @@ func WithMetricsWriter(mw metrics.Writer) workerOption {
 	}
 }
 
+func WithMode(mode string) workerOption {
+	return func(w *worker) error {
+		w.Mode = Mode(mode)
+		return nil
+	}
+}
+
 func (w *worker) Run(interruptCh <-chan interface{}) error {
 	client, closeFn, err := w.getClient()
 	if err != nil {
@@ -113,7 +133,16 @@ func (w *worker) Run(interruptCh <-chan interface{}) error {
 	if err != nil {
 		return fmt.Errorf("unable to get worker: %w", err)
 	}
-	w.registerWorker(wkr)
+
+	switch w.Mode {
+	case ModeAll:
+		w.registerActivitiesOnWorker(wkr)
+		w.registerWorkflowsOnWorker(wkr)
+	case ModeWorkflows:
+		w.registerWorkflowsOnWorker(wkr)
+	case ModeActivities:
+		w.registerActivitiesOnWorker(wkr)
+	}
 
 	if err := wkr.Run(interruptCh); err != nil {
 		return fmt.Errorf("error running worker: %w", err)
