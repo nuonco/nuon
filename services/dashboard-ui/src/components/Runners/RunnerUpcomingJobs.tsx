@@ -90,7 +90,7 @@ export const RunnerUpcomingJobs: FC<IRunnerUpcomingJobs> = async ({
         </div>
       ) : (
         <div className="m-auto flex flex-col items-center max-w-[200px] my-6">
-          <EmptyStateGraphic variant="table" />
+          <EmptyStateGraphic variant="table" isSmall />
           <Text className="mt-3 mb-1" variant="med-12">
             No jobs in queue yet!
           </Text>
