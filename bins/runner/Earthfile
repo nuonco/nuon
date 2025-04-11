@@ -70,6 +70,10 @@ kaniko:
     SAVE ARTIFACT /kaniko
     SAVE ARTIFACT /etc/nsswitch.conf nsswitch.conf
 
+nuon-cli:
+    RUN curl https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.519/nuon_linux_amd64 -o /nuon && chmod +x /nuon
+    SAVE ARTIFACT /nuon
+
 oci-artifacts:
     FROM ../../images/go-base+alpine-base
 
@@ -105,6 +109,9 @@ oci-artifacts:
     COPY +kaniko/kaniko/* /kaniko/
     COPY +kaniko/kaniko/.docker /kaniko/.docker
     COPY +kaniko/nsswitch.conf /etc/nsswitch.conf
+
+    # copy the nuon cli
+    COPY +nuon-cli/nuon /usr/bin/nuon
 
     # copy nuon specific artifacts into the final binary
     COPY +build/runner /bin/runner
