@@ -5,7 +5,7 @@ import React, { type FC, type FormEvent, useRef, useState } from 'react'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { WarningOctagon, CheckCircle, Cube } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
-import { CheckboxInput, Input } from '@/components/Input'
+import { CheckboxInput, Input, RadioInput } from '@/components/Input'
 import { Link } from '@/components/Link'
 import { SpinnerSVG, Loading } from '@/components/Loading'
 import { useOrg } from '@/components/Orgs'
@@ -173,6 +173,8 @@ export const InstallForm: FC<IInstallForm> = ({
           ) : null}
         </div>
 
+        {install ? <UpdateInstallOptions /> : null}
+
         <div className="flex gap-3 justify-end border-t w-full p-6">
           <Button
             className="text-sm font-medium"
@@ -328,7 +330,7 @@ const InputGroupFields: FC<{
 
   return (
     <fieldset className="flex flex-col gap-6 border-t">
-      <legend className="flex flex-col gap-0  mb-6 pr-6">
+      <legend className="flex flex-col gap-0 mb-6 pr-6">
         <span className="text-lg font-semibold">
           {groupInputs?.display_name}
         </span>
@@ -372,6 +374,38 @@ const InputGroupFields: FC<{
         )
       )}
     </fieldset>
+  )
+}
+
+const UpdateInstallOptions: FC = () => {
+  return (
+    <div className="flex flex-col gap-0 px-6 max-w-3xl">
+      <fieldset className="flex flex-col gap-4 border-t">
+        <legend className="flex flex-col gap-0 mb-4 pr-6">
+          <span className="text-lg font-semibold">Update install resouces</span>
+          <span className="text-sm font-normal">
+            Reprovision sandbox and redeploy components after updating install
+            settings
+          </span>
+        </legend>
+
+        <div className="flex gap-6 justify-start">
+          <RadioInput
+            name="form-control:update"
+            labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-0 !w-fit"
+            labelText="Skip updating resources"
+            defaultChecked
+            value="skip"
+          />
+          <RadioInput
+            name="form-control:update"
+            labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-0 !w-fit"
+            labelText="Update all resources"
+            value="update"
+          />
+        </div>
+      </fieldset>
+    </div>
   )
 }
 
