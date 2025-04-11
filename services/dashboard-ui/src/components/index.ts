@@ -27,6 +27,7 @@ export * from './Dashboard'
 export * from './DataTable'
 export * from './DeployStatus'
 export * from './Dropdown'
+export * from "./Empty"
 export * from './EmptyStateGraphic'
 export * from './ErrorFallback'
 export * from './Expand'

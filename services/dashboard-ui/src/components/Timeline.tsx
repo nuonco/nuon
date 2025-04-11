@@ -142,32 +142,17 @@ export const TimelineEvent: FC<ITimelineEvent> = ({
 
 export interface ITimeline {
   events: Array<ITimelineEvent>
-  emptyMessage?: string
-  emptyTitle?: string
+  emptyContent: React.ReactNode
 }
 
-export const Timeline: FC<ITimeline> = ({
-  events,
-  emptyMessage = 'No events to show',
-  emptyTitle = 'Nothing to show',
-}) => {
+export const Timeline: FC<ITimeline> = ({ events, emptyContent }) => {
   return (
     <div className="flex flex-col gap-2 timeline">
-      {events?.length ? (
-        events.map((event, i) => (
-          <TimelineEvent key={event.id} {...event} isMostRecent={i === 0} />
-        ))
-      ) : (
-        <div className="m-auto flex flex-col items-center max-w-[200px] my-6">
-          <EmptyStateGraphic variant="history" />
-          <Text className="mt-6" variant="med-14">
-            {emptyTitle}
-          </Text>
-          <Text variant="reg-12" className="text-center">
-            {emptyMessage}
-          </Text>
-        </div>
-      )}
+      {events?.length
+        ? events.map((event, i) => (
+            <TimelineEvent key={event.id} {...event} isMostRecent={i === 0} />
+          ))
+        : emptyContent}
     </div>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC, useEffect } from 'react'
+import { Empty } from '@/components/Empty'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
 import { Text, Truncate } from '@/components/Typography'
@@ -41,8 +42,14 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
 
   return (
     <Timeline
-      emptyTitle="No component buids yet"
-      emptyMessage={`Waiting on components builds.`}
+      emptyContent={
+        <Empty
+          emptyTitle="No builds yet"
+          emptyMessage="Waiting on component builds."
+          variant="history"
+          isSmall
+        />
+      }
       events={builds.map((b, i) => ({
         id: b.id,
         status: b.status,
