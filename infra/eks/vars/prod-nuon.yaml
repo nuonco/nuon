@@ -69,3 +69,87 @@ additional_nodepools:
           reasons:
           - "Empty"
           - "Drifted"
+
+  - name: clickhouse-keeper
+    instance_types:
+      - t3a.medium
+    labels:
+      clickhouse-keeper: "true"
+    limits:
+      cpu: 8
+      memory: "32Gi"
+    expireAfter: "2160h"
+    disruption:
+      budgets:
+        - nodes: "0"
+      consolidationPolicy: "WhenEmptyOrUnderutilized"
+      consolidateAfter: "15m"
+    taints:
+      - effect: NoSchedule
+        key: installation
+        value: clickhouse-keeper
+        
+  - name: clickhouse-installation
+    instance_types:
+      - t3a.large
+    labels:
+      clickhouse-installation: "true"
+    limits:
+      cpu: 14
+      memory: "1000Gi"
+    expireAfter: "2160h"
+    disruption:
+      budgets:
+        - nodes: "0"
+      consolidationPolicy: "WhenEmpty"
+      consolidateAfter: "15m"
+    taints:
+      - effect: NoSchedule
+        key: installation
+        value: clickhouse-installation
+
+  - name: ctl-api-worker
+    instance_types:
+      - t3a.xlarge
+    labels:
+      ctl-api-worker: "true"
+    limits:
+      cpu: 1000
+      memory: "500Gi"
+    expireAfter: "48h"
+    disruption:
+      budgets:
+        - nodes: "1"
+          reasons:
+          - "Empty"
+          - "Drifted"
+      consolidationPolicy: "WhenEmptyOrUnderutilized"
+      consolidateAfter: "30s"
+    taints:
+      - effect: NoSchedule
+        key: deployment
+        value: ctl-api-worker
+    zones:
+      - us-west-2a  
+
+  - name: workers-executors
+    nodeclass: default
+    instance_types:
+      - t3a.medium
+    labels:
+      workers-executors: "true"
+    taints:
+      - effect: NoSchedule
+        key: deployment
+        value: workers-executors
+    limits:
+      cpu: 1k
+      memory: 200Gi
+    expireAfter: 64963s
+    disruption:
+      budgets:
+        - nodes: 10%
+      consolidationPolicy: "WhenEmpty"
+      consolidateAfter: 30s
+    zones:
+      - us-west-2b
