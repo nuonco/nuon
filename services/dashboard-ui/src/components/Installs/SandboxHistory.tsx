@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
+import { Empty } from '@/components/Empty'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
 import { Text, Truncate } from '@/components/Typography'
@@ -37,8 +38,14 @@ export const SandboxHistory: FC<ISandboxHistory> = ({
 
   return (
     <Timeline
-      emptyTitle="No sandbox runs yet"
-      emptyMessage={`Waiting on sandbox runs.`}
+      emptyContent={
+        <Empty
+          emptyTitle="No runs yet"
+          emptyMessage="Waiting on sandbox runs."
+          variant="history"
+          isSmall
+        />
+      }
       events={sandboxRuns.map((run, i) => ({
         id: run.id,
         status: run.status,
