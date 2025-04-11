@@ -40,6 +40,7 @@ export default function RootLayout({
           <body
             className={`${GeistMono.variable} ${GeistSans.variable} font-sans overflow-hidden`}
           >
+            <EnvScript env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
             {children}
             {process.env.SEGMENT_WRITE_KEY && (
               <Suspense>
@@ -53,5 +54,15 @@ export default function RootLayout({
         </>
       </UserProvider>
     </html>
+  )
+}
+
+const EnvScript = ({ env }) => {
+  return (
+    <div
+      dangerouslySetInnerHTML={{
+        __html: `<script id="client-env">window.env = "${env}"</script>`,
+      }}
+    />
   )
 }

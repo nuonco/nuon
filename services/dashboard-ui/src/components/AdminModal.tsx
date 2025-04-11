@@ -8,6 +8,7 @@ import { AdminOrgActions } from '@/components/AdminOrgActions'
 import { AdminInstallActions } from '@/components/AdminInstallActions'
 import { AdminOrgFeatures } from '@/components/AdminOrgFeatures'
 import { AdminRunnerModal } from '@/components/AdminRunnerModal'
+import { AdminTemporalLink } from "@/components/AdminTemporalLink"
 import { AdminBtn } from '@/components/AdminActionButton'
 import { Button } from '@/components/Button'
 import { Grid } from '@/components/Grid'
@@ -26,7 +27,6 @@ import {
   restartOrgRunners,
   restartOrgRunner,
   shutdownInstallRunnerJob,
-  shutdownOrgRunnerJob,
   teardownInstallComponents,
   updateInstallSandbox,
   gracefulInstallRunnerShutdown,
@@ -180,6 +180,7 @@ export const AdminModal: FC<{ isSidebarOpen: boolean }> = ({
           {params?.['app-id'] ? (
             <div className="flex flex-col gap-4 pt-4">
               <Text variant="semi-18">App admin controls</Text>
+              <AdminTemporalLink namespace="apps" id={params?.['app-id'] as string} />
               <Grid>
                 {appActions.map((action) => (
                   <AdminAction key={action.text} {...action} />
