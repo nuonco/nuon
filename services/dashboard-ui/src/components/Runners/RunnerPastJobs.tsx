@@ -1,4 +1,5 @@
 import React, { type FC } from 'react'
+import { Empty } from '@/components/Empty'
 import { Pagination } from '@/components/Pagination'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
@@ -32,8 +33,13 @@ export const RunnerPastJobs: FC<IRunnerPastJobs> = async ({
   return (
     <div className="flex flex-col gap-6">
       <Timeline
-        emptyTitle="No runner jobs yet"
-        emptyMessage="Waiting on install runner jobs."
+        emptyContent={
+          <Empty
+            emptyMessage="Waiting on runner to pick up jobs."
+            emptyTitle="No runner jobs yet"
+            variant="history"
+          />
+        }
         events={runnerJobs.map((job, i) => {
           const hrefPath = jobHrefPath(job)
           const name = jobName(job)
