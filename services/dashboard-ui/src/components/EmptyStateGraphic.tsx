@@ -4,11 +4,13 @@ import Image from 'next/image'
 
 interface IEmptyStateGraphic {
   isDarkModeOnly?: boolean
+  isSmall?: boolean
   variant?: "404" | "actions" | "diagram" | "history" | "search" | "table"
 }
 
 export const EmptyStateGraphic: FC<IEmptyStateGraphic> = ({
   isDarkModeOnly = false,
+  isSmall = false,
   variant = "404",
 }) => {
   return (
@@ -18,7 +20,7 @@ export const EmptyStateGraphic: FC<IEmptyStateGraphic> = ({
           hidden: isDarkModeOnly,
           'dark:hidden': !isDarkModeOnly,
         })}
-        src={`/empty-state/${variant}-light.svg`}
+        src={`/empty-state/${variant}-light${isSmall ? "-small" : ""}.svg`}
         alt=""
         height={90}
         width={150}
@@ -28,7 +30,7 @@ export const EmptyStateGraphic: FC<IEmptyStateGraphic> = ({
           block: isDarkModeOnly,
           hidden: !isDarkModeOnly,
         })}
-        src={`/empty-state/${variant}-dark.svg`}
+        src={`/empty-state/${variant}-dark${isSmall ? "-small" : ""}.svg`}
         alt=""
         height={90}
         width={150}

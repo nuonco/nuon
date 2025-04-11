@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC, useEffect } from 'react'
+import { Empty } from '@/components/Empty'
 import { Timeline } from '@/components/Timeline'
 import { Text } from '@/components/Typography'
 import { revalidateInstallWorkflowHistory } from '@/components/workflow-actions'
@@ -38,8 +39,13 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
 
   return (
     <Timeline
-      emptyTitle="No workflow runs yet"
-      emptyMessage={`Waiting on ${actionsWithRecentRuns?.action_workflow?.name} workflow to run.`}
+      emptyContent={
+        <Empty
+          emptyTitle="No workflow runs yet"
+          emptyMessage={`Waiting on ${actionsWithRecentRuns?.action_workflow?.name} workflow to run.`}
+          variant="history"
+        />
+      }
       events={runs?.map((run, i) => ({
         id: run.id,
         status: run.status,
