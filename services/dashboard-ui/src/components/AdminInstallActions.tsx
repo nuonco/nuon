@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
+import { AdminTemporalLink } from '@/components/AdminTemporalLink'
 import { ClickToCopy } from '@/components/ClickToCopy'
 import { Text } from '@/components/Typography'
 import { getInstallRunner } from '@/components/admin-actions'
@@ -21,10 +22,17 @@ export const AdminInstallActions: FC<{
   return (
     <div className="flex flex-col gap-4 pt-4">
       <Text variant="semi-18">Install admin controls</Text>
-      <Text variant="mono-14">
-        Runner ID:{' '}
-        {runner ? <ClickToCopy>{runner?.id}</ClickToCopy> : 'Loading runner...'}
-      </Text>
+      <div className="flex gap-8">
+        <Text variant="mono-14">
+          Runner ID:{' '}
+          {runner ? (
+            <ClickToCopy>{runner?.id}</ClickToCopy>
+          ) : (
+            'Loading runner...'
+          )}
+        </Text>
+        <AdminTemporalLink namespace="installs" id={installId} />
+      </div>
       {children}
     </div>
   )
