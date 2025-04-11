@@ -9,7 +9,8 @@ import {
   updateInstall as patchInstall,
   forgetInstall as forget,
 } from '@/lib'
-import { API_URL, mutateData } from '@/utils'
+import { mutateData } from '@/utils'
+import type { TInstall } from '@/types'
 
 interface IReprovisionInstall {
   installId: string
@@ -147,13 +148,31 @@ export async function updateInstall({
     }
   }
 
-  return patchInstall({
-    data: {
-      name: formData.name as string,
-    },
-    installId,
-    orgId,
-  })
+  let install: TInstall
+  try {
+    install = await patchInstall({
+      data: {
+        name: formData.name as string,
+      },
+      installId,
+      orgId,
+    }).then((ins) => {
+      if (formData?.['form-control:update'] === 'update') {
+        reprovisionInstallSandbox({ orgId, installId })
+          .then(() => {
+            deployAllComponents({ orgId, installId }).catch(console.error)
+          })
+          .catch(console.error)
+      }
+
+      return ins
+    })
+  } catch (error) {
+    console.error(error?.message)
+    throw new Error('unable to patch install')
+  }
+
+  return install
 }
 
 interface IForgetInstall {
