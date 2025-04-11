@@ -13,11 +13,10 @@ export const GET = withApiAuthRequired(
     const inputsId = params?.['input-id']
 
     return fetch(
-      `${API_URL}/v1/apps/${appId}/input-configs`,
+      `${API_URL}/v1/apps/${appId}/input-configs/${inputsId}`,
       await getFetchOpts(orgId, 10000)
     ).then((res) => {
-      return res.json().then((inputs) => {
-        const input = inputs?.find((inp) => inp?.id === inputsId)
+      return res.json().then((input) => {
         return NextResponse.json(input, {
           status: 200,
         })
