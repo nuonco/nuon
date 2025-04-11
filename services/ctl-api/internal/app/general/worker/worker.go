@@ -38,7 +38,23 @@ type WorkerParams struct {
 	SharedWorkflows *workflows.Workflows
 }
 
-func New(params WorkerParams) (*Worker, error) {
+func registerActivities(wkr worker.Worker, acts *activities.Activities, sharedActs *workflows.Activities) {
+	wkr.RegisterActivity(acts)
+	for _, act := range sharedActs.AllActivities() {
+		wkr.RegisterActivity(act)
+	}
+}
+
+func registerWorkflows(wkr worker.Worker, wkflows *Workflows, sharedWorkflows *workflows.Workflows) {
+	for _, wkflow := range wkflows.All() {
+		wkr.RegisterWorkflow(wkflow)
+	}
+	for _, wkflow := range sharedWorkflows.AllWorkflows() {
+		wkr.RegisterWorkflow(wkflow)
+	}
+}
+
+func NewActivityWorker(params WorkerParams) (*Worker, error) {
 	client, err := params.Tclient.GetNamespaceClient(defaultNamespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
@@ -51,23 +67,41 @@ func New(params WorkerParams) (*Worker, error) {
 		WorkflowPanicPolicy:                worker.FailWorkflow,
 	})
 
-	// register activities
-	wkr.RegisterActivity(params.Acts)
-	for _, acts := range params.SharedActs.AllActivities() {
-		wkr.RegisterActivity(acts)
-	}
-
-	// register workflows
-	for _, wkflow := range params.Wkflows.All() {
-		wkr.RegisterWorkflow(wkflow)
-	}
-	for _, wkflow := range params.SharedWorkflows.AllWorkflows() {
-		wkr.RegisterWorkflow(wkflow)
-	}
+	registerActivities(wkr, params.Acts, params.SharedActs)
 
 	params.LC.Append(fx.Hook{
 		OnStart: func(context.Context) error {
-			params.L.Info("starting general worker")
+			params.L.Info("starting general activity worker")
+			go func() {
+				wkr.Run(worker.InterruptCh())
+			}()
+			return nil
+		},
+		OnStop: func(_ context.Context) error {
+			return nil
+		},
+	})
+
+	return &Worker{wkr}, nil
+}
+
+func NewWorkflowWorker(params WorkerParams) (*Worker, error) {
+	client, err := params.Tclient.GetNamespaceClient(defaultNamespace)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get namespace client: %w", err)
+	}
+
+	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
+		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
+		Interceptors:                       params.Interceptors,
+		WorkflowPanicPolicy:                worker.FailWorkflow,
+	})
+
+	registerWorkflows(wkr, params.Wkflows, params.SharedWorkflows)
+
+	params.LC.Append(fx.Hook{
+		OnStart: func(context.Context) error {
+			params.L.Info("starting general workflow worker")
 			go func() {
 				wkr.Run(worker.InterruptCh())
 			}()
