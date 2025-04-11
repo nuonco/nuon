@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
+import { Empty } from '@/components/Empty'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
 // import { revalidateInstallData } from "@/components/install-actions"
@@ -108,8 +109,13 @@ export const InstallHistory: FC<IInstallHistory> = ({
 
   return (
     <Timeline
-      emptyTitle="No install history yet"
-      emptyMessage="Waiting for install provision and deployments start."
+      emptyContent={
+        <Empty
+          emptyTitle="No install history yet"
+          emptyMessage="Waiting for install provision and deployments start."
+          variant="history"
+        />
+      }
       events={events.map((e) => ({
         id: e.payload_id,
         status: e.operation_status,
