@@ -2,7 +2,8 @@
 
 'use client'
 
-import React, { type FC, useEffect, useState } from 'react'
+import React, { type FC, useEffect } from 'react'
+import { Empty } from '@/components/Empty'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
 import { Truncate, Text } from '@/components/Typography'
@@ -51,8 +52,14 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
 
   return (
     <Timeline
-      emptyMessage={`Waiting for ${component?.name} to deploy.`}
-      emptyTitle="No deployments yet"
+      emptyContent={
+        <Empty
+          emptyMessage="Waiting on component deployments."
+          emptyTitle="No deployments yet"
+          variant="history"
+          isSmall
+        />
+      }
       events={deploys.map((d, i) => ({
         id: d.id,
         status: d.status,
