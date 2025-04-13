@@ -57,8 +57,6 @@ type Config struct {
 	AzureAKSTenantID       string `config:"azure_aks_tenant_id" validate:"required"`
 	AzureAKSClientID       string `config:"azure_aks_client_id" validate:"required"`
 	AzureAKSClientSecret   string `config:"azure_aks_client_secret" validate:"required"`
-
-	Mode string `config:"mode" validate:"required"`
 }
 
 func (c Config) Validate() error {

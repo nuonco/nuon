@@ -14,13 +14,11 @@ func (w *worker) getWorker(c client.Client) (tworker.Worker, error) {
 	}), nil
 }
 
-func (w *worker) registerWorkflowsOnWorker(wkr tworker.Worker) {
+func (w *worker) registerWorker(wkr tworker.Worker) {
 	for _, wkflow := range w.Workflows {
 		wkr.RegisterWorkflow(wkflow)
 	}
-}
 
-func (w *worker) registerActivitiesOnWorker(wkr tworker.Worker) {
 	for _, act := range w.Activities {
 		wkr.RegisterActivity(act)
 	}
