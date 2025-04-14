@@ -43,3 +43,17 @@ provider "aws" {
     tags = local.tags
   }
 }
+
+provider "aws" {
+  alias  = "public"
+  region = "us-east-1"
+
+
+  assume_role {
+    role_arn = "arn:aws:iam::${local.accounts.public}:role/terraform"
+  }
+
+  default_tags {
+    tags = local.tags
+  }
+}
