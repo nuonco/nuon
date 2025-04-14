@@ -1,4 +1,5 @@
 ---
+install_templates_bucket_name: nuon-install-templates
 use_root_domain: true
 region: us-west-2
 cluster_name: prod-nuon
