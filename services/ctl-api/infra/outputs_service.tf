@@ -21,3 +21,7 @@ output "runner_domain" {
 output "runner_certificate_arn" {
   value = module.runner-cert.acm_certificate_arn
 }
+
+output "install_templates_bucket" {
+  value = local.bucket_name
+}
