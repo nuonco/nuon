@@ -99,7 +99,12 @@ func zerostr(rt types.Type) string {
 	// TODO(sdboyer) move checking over to the parser to error earlier if we have these return types
 	switch x := rt.(type) {
 	case *types.Named:
-		panic("unwrap from the named type before calling this")
+		switch x.Underlying().(type) {
+		case *types.Struct:
+			return fmt.Sprintf("%s{}", x.Obj().Name())
+		default:
+			return zerostr(x.Underlying())
+		}
 	case *types.Basic:
 		if x.Info()&types.IsNumeric != 0 {
 			return "0"
@@ -115,9 +120,6 @@ func zerostr(rt types.Type) string {
 		return "nil"
 	case *types.Struct:
 		return "struct{}{}"
-	}
-	if x, ok := rt.(*types.Named); ok {
-		return x.Obj().Name()
 	}
 	panic(fmt.Errorf("unhandled zero value generation for type: %s", rt.String()))
 }
