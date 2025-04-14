@@ -53,8 +53,7 @@ type tvars_workflowfn struct {
 }
 
 // WorkflowJenny is a jenny that generates a function that calls a provided base function as a Temporal workflow, and await the result.
-type WorkflowJenny struct {
-}
+type WorkflowJenny struct{}
 
 func (j WorkflowJenny) JennyName() string {
 	return "WorkflowJenny"
@@ -118,17 +117,16 @@ func (j WorkflowJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 				// Non-pointer return types need to be zero-initialized, the syntax for which
 				// varies by type
 				rt := bf.Package.TypesInfo.Types[respt].Type
-				if rtn, ok := rt.(*types.Named); ok {
-					switch rtn.Underlying().(type) {
-					case *types.Struct:
-						tvars.Zero = fmt.Sprintf("%s{}", rtn.Obj().Name())
-					default:
-						tvars.Zero = zerostr(rtn.Underlying())
+				tvars.Zero = zerostr(rt)
+
+				// If the return type is a struct imported from a different package, we have to qualify it
+				if x, ok := rt.(*types.Named); ok && x.Obj().Pkg().Path() != bf.Package.PkgPath {
+					if _, is := x.Underlying().(*types.Struct); is {
+						tvars.Zero = fmt.Sprintf("%s.%s", x.Obj().Pkg().Name(), tvars.Zero)
 					}
-				} else {
-					tvars.Zero = zerostr(rt)
 				}
 			}
+
 			err := tmpls.Lookup("workflow_two_return.tmpl").Execute(&buf, tvars)
 			if err != nil {
 				return nil, fmt.Errorf("error executing template for fn %s: %w", bfn.Fn.Name.String(), err)
