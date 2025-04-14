@@ -45,36 +45,36 @@ data "aws_iam_policy_document" "s3_bucket_policy" {
   }
 
   // allow a few select public paths in the artifacts bucket
-  #statement {
-    #effect = "Allow"
-    #actions = [
-      #"s3:GetObject",
-    #]
-    #resources = formatlist("arn:aws:s3:::${local.bucket_name}/%s", local.public_prefixes)
-    #principals {
-      #type        = "*"
-      #identifiers = ["*", ]
-    #}
-  #}
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+    ]
+    resources = formatlist("arn:aws:s3:::${local.bucket_name}/%s", local.public_prefixes)
+    principals {
+      type        = "*"
+      identifiers = ["*", ]
+    }
+  }
 
-  #statement {
-    #effect = "Allow"
-    #actions = [
-      #"s3:ListBucket",
-    #]
-    #resources = [
-      #"arn:aws:s3:::${local.bucket_name}",
-    #]
-    #principals {
-      #type        = "*"
-      #identifiers = ["*", ]
-    #}
-    #condition {
-      #test     = "StringLike"
-      #variable = "s3:prefix"
-      #values   = local.public_prefixes
-    #}
-  #}
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:ListBucket",
+    ]
+    resources = [
+      "arn:aws:s3:::${local.bucket_name}",
+    ]
+    principals {
+      type        = "*"
+      identifiers = ["*", ]
+    }
+    condition {
+      test     = "StringLike"
+      variable = "s3:prefix"
+      values   = local.public_prefixes
+    }
+  }
 }
 
 module "bucket" {
