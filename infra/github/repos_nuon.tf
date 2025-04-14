@@ -459,3 +459,17 @@ module "content" {
     github = github.nuon
   }
 }
+
+module "aws-cloudformation-templates" {
+  source           = "./modules/repository"
+  name             = "aws-cloudformation-templates"
+  description      = "Public templates that can be used within Nuon CloudFormation stacks."
+  required_checks  = []
+  is_public        = false
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
