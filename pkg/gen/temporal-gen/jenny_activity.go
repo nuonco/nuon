@@ -144,15 +144,13 @@ func (w ActivityJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 				// Non-pointer return types need to be zero-initialized, the syntax for which
 				// varies by type
 				rt := bf.Package.TypesInfo.Types[respt].Type
-				if rtn, ok := rt.(*types.Named); ok {
-					switch rtn.Underlying().(type) {
-					case *types.Struct:
-						wv.Zero = fmt.Sprintf("%s{}", rtn.Obj().Name())
-					default:
-						wv.Zero = zerostr(rtn.Underlying())
+				wv.Zero = zerostr(rt)
+
+				// If the return type is a struct imported from a different package, we have to qualify it
+				if x, ok := rt.(*types.Named); ok && x.Obj().Pkg().Path() != bf.Package.PkgPath {
+					if _, is := x.Underlying().(*types.Struct); is {
+						wv.Zero = fmt.Sprintf("%s.%s", x.Obj().Pkg().Name(), wv.Zero)
 					}
-				} else {
-					wv.Zero = zerostr(rt)
 				}
 			}
 			err := tmpls.Lookup("activity_two_return.tmpl").Execute(&buf, wv)
