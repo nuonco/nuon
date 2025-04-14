@@ -50,7 +50,7 @@ provider "aws" {
 
 
   assume_role {
-    role_arn = "arn:aws:iam::public:role/terraform"
+    role_arn = "arn:aws:iam::${local.accounts.public.id}:role/terraform"
   }
 
   default_tags {
