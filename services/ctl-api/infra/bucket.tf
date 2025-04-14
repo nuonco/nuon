@@ -1,7 +1,7 @@
 locals {
   org_id     = data.aws_organizations_organization.orgs.id
   account_id = local.accounts["public"]
-  bucket_name = local.vars.install_template_bucket_name
+  bucket_name = local.vars.install_templates_bucket_name
   public_prefixes = [
     "templates/*",
   ]
