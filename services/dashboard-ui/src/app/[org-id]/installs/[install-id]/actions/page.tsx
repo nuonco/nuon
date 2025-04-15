@@ -9,8 +9,8 @@ import {
   DashboardContent,
   ErrorFallback,
   Loading,
-  Section,
-  Text,
+  NoActions,
+  Section,  
   Time,
 } from '@/components'
 import { InstallManagementDropdown } from '@/components/Installs'
@@ -65,7 +65,7 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
         />
       }
     >
-      <Section heading="All workflows">
+      <Section childrenClassName="flex flex-auto">
         <ErrorBoundary fallbackRender={ErrorFallback}>
           <Suspense
             fallback={
@@ -96,6 +96,6 @@ const LoadInstallActions: FC<{ installId: string; orgId: string }> = async ({
       orgId={orgId}
     />
   ) : (
-    <Text variant="reg-14">No actions configured on this app.</Text>
+    <NoActions />
   )
 }
