@@ -42,8 +42,9 @@ type ActionWorkflowStepConfig struct {
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`
 	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-"`
 
-	EnvVars pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
-	Command string        `json:"command" gorm:"notnull;default:''"`
+	EnvVars        pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
+	Command        string        `json:"command"`
+	InlineContents string        `json:"inline_contents"`
 }
 
 func (a *ActionWorkflowStepConfig) BeforeCreate(tx *gorm.DB) error {

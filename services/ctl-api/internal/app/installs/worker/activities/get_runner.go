@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"go.temporal.io/sdk/temporal"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type GetRunnerRequest struct {
@@ -19,6 +20,8 @@ type GetRunnerRequest struct {
 func (a *Activities) GetRunner(ctx context.Context, req GetRunnerRequest) (*app.Runner, error) {
 	runner := app.Runner{}
 	res := a.db.WithContext(ctx).
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Settings").
 		First(&runner, "id = ?", req.ID)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {

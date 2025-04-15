@@ -7,10 +7,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-type TeardownInstallComponentsRequest struct{}
+type TeardownInstallComponentsRequest struct {
+	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
+}
 
 func (c *TeardownInstallComponentsRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
@@ -19,25 +22,31 @@ func (c *TeardownInstallComponentsRequest) Validate(v *validator.Validate) error
 	return nil
 }
 
-//	@ID						TeardownInstallComponents
-//	@Summary				teardown an install's components
-//	@Description.markdown	teardown_install_components.md
-//	@Param					install_id	path	string								true	"install ID"
-//	@Param					req			body	TeardownInstallComponentsRequest	true	"Input"
-//	@Tags					installs
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{string}	ok
-//	@Router					/v1/installs/{install_id}/components/teardown-all [post]
+// @ID						TeardownInstallComponents
+// @Summary				teardown an install's components
+// @Description.markdown	teardown_install_components.md
+// @Param					install_id	path	string								true	"install ID"
+// @Param					req			body	TeardownInstallComponentsRequest	true	"Input"
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{string}	ok
+// @Router					/v1/installs/{install_id}/components/teardown-all [post]
 func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
+
+	var req TeardownInstallComponentsRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
 
 	_, err := s.getInstall(ctx, installID)
 	if err != nil {
@@ -45,8 +54,33 @@ func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 		return
 	}
 
+	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureIndependentRunner)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	if !enabled {
+		s.evClient.Send(ctx, installID, &signals.Signal{
+			Type: signals.OperationTeardownComponents,
+		})
+
+		ctx.JSON(http.StatusCreated, "ok")
+		return
+	}
+
+	workflow, err := s.helpers.CreateInstallWorkflow(ctx,
+		installID,
+		app.InstallWorkflowTypeTeardownComponents,
+		map[string]string{},
+		req.ErrorBehavior)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	s.evClient.Send(ctx, installID, &signals.Signal{
-		Type: signals.OperationTeardownComponents,
+		Type:              signals.OperationExecuteWorkflow,
+		InstallWorkflowID: workflow.ID,
 	})
 	ctx.JSON(http.StatusCreated, "ok")
 }

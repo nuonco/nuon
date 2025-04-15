@@ -147,6 +147,22 @@ func (c *cli) appsCmd() *cobra.Command {
 	syncCmd.Flags().BoolVarP(&all, "all", "", false, "sync all config files found")
 	appsCmd.AddCommand(syncCmd)
 
+	syncDirCmd := &cobra.Command{
+		Use:               "sync-dir",
+		Short:             "Sync nuon app directory",
+		PersistentPreRunE: c.persistentPreRunE,
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			var dirName string
+			if len(args) > 0 {
+				dirName = args[0]
+			}
+
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.SyncDir(cmd.Context(), dirName)
+		}),
+	}
+	appsCmd.AddCommand(syncDirCmd)
+
 	validateCmd := &cobra.Command{
 		Use:               "validate",
 		Short:             "Validate a toml config file",
@@ -193,8 +209,6 @@ func (c *cli) appsCmd() *cobra.Command {
 	createCmd.Flags().StringVarP(&template, "template", "", "aws-ecs", "app config template type")
 	createCmd.Flags().BoolVarP(&noTemplate, "no-template", "", false, "do not write a template config file")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "do not automatically set the new app as the current app")
-
-
 
 	appsCmd.AddCommand(createCmd)
 

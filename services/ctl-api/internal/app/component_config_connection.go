@@ -32,6 +32,8 @@ type ComponentConfigConnection struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
+	AppConfigID string `json:"app_config_id"`
+
 	ComponentID string    `json:"component_id" gorm:"notnull"`
 	Component   Component `json:"-" temporaljson:"component"`
 
@@ -61,11 +63,11 @@ func (c *ComponentConfigConnection) ViewVersion() string {
 	return "v1"
 }
 
-func (c* ComponentConfigConnection) Views(db *gorm.DB) []migrations.View {
+func (c *ComponentConfigConnection) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
 			Name: views.DefaultViewName(db, &ComponentConfigConnection{}, 1),
-			SQL: viewsql.ComponentConfigConnectionsV1,
+			SQL:  viewsql.ComponentConfigConnectionsV1,
 		},
 	}
 }

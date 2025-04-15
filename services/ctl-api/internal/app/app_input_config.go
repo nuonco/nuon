@@ -19,9 +19,10 @@ type AppInputConfig struct {
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
-	OrgID string `json:"org_id" gorm:"notnull;default null"`
-	Org   Org    `faker:"-" json:"-"`
-	AppID string `json:"app_id"`
+	OrgID       string `json:"org_id" gorm:"notnull;default null"`
+	Org         Org    `faker:"-" json:"-"`
+	AppID       string `json:"app_id"`
+	AppConfigID string `json:"app_config_id"`
 
 	AppInputs      []AppInput      `json:"inputs" gorm:"constraint:OnDelete:CASCADE;"`
 	AppInputGroups []AppInputGroup `json:"input_groups" gorm:"constraint:OnDelete:CASCADE;"`

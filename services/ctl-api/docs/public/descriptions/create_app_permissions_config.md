@@ -1,0 +1,1 @@
+Create app permissions config.

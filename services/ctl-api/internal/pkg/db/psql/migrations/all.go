@@ -16,5 +16,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "086-runner-group-settings-backfill-groups",
 			Fn:   m.Migration086RunnerGroupSettingsBackfillGroups,
 		},
+		{
+			Name: "04",
+			SQL:  `ALTER TABLE action_workflow_step_configs ALTER COLUMN command DROP NOT NULL;`,
+		},
 	}
 }
