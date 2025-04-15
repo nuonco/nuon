@@ -25,3 +25,7 @@ output "runner_certificate_arn" {
 output "install_templates_bucket" {
   value = local.bucket_name
 }
+
+output "install_templates_bucket_base_url" {
+  value = "https://${module.bucket.s3_bucket_bucket_regional_domain_name}/"
+}
