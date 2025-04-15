@@ -52,7 +52,7 @@ export default withPageAuthRequired(async function AppWorkflows({ params }) {
       }
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
-      <Section>
+      <Section childrenClassName="flex flex-auto">
         <ErrorBoundary fallbackRender={ErrorFallback}>
           <Suspense
             fallback={
