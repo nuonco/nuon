@@ -8,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	actionshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/helpers"
+	comphelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
@@ -16,12 +17,13 @@ import (
 type Params struct {
 	fx.In
 
-	V          *validator.Validate
-	DB         *gorm.DB `name:"psql"`
-	Cfg        *internal.Config
-	VcsHelpers *vcshelpers.Helpers
-	Helpers    *actionshelpers.Helpers
-	EvClient   eventloop.Client
+	V           *validator.Validate
+	DB          *gorm.DB `name:"psql"`
+	Cfg         *internal.Config
+	VcsHelpers  *vcshelpers.Helpers
+	CompHelpers *comphelpers.Helpers
+	Helpers     *actionshelpers.Helpers
+	EvClient    eventloop.Client
 }
 
 type service struct {
@@ -30,6 +32,7 @@ type service struct {
 	cfg            *internal.Config
 	vcsHelpers     *vcshelpers.Helpers
 	actionsHelpers *actionshelpers.Helpers
+	compHelpers    *comphelpers.Helpers
 	evClient       eventloop.Client
 }
 
@@ -89,6 +92,7 @@ func New(params Params) *service {
 		db:             params.DB,
 		vcsHelpers:     params.VcsHelpers,
 		actionsHelpers: params.Helpers,
+		compHelpers:    params.CompHelpers,
 		evClient:       params.EvClient,
 	}
 }

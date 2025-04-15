@@ -1,0 +1,13 @@
+package activities
+
+import "context"
+
+type UploadAWSCloudFormationStackVersionTemplateRequest struct {
+  BucketKey string `validate:"required"`
+  Template  []byte `validate:"required"`
+}
+
+// @temporal-gen activity
+func (a *Activities) UploadAWSCloudFormationStackVersionTemplate(ctx context.Context, req *UploadAWSCloudFormationStackVersionTemplateRequest) error {
+  return nil
+}

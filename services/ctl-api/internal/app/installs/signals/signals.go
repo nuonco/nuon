@@ -15,33 +15,72 @@ import (
 const (
 	TemporalNamespace string = "installs"
 
-	OperationCreated                    eventloop.SignalType = "created"
-	OperationProvision                  eventloop.SignalType = "provision"
-	OperationDeprovision                eventloop.SignalType = "deprovision"
-	OperationDelete                     eventloop.SignalType = "delete"
-	OperationReprovision                eventloop.SignalType = "reprovision"
-	OperationReprovisionRunner          eventloop.SignalType = "reprovision_runner"
-	OperationDeprovisionRunner          eventloop.SignalType = "deprovision_runner"
-	OperationRestart                    eventloop.SignalType = "restart"
-	OperationDeploy                     eventloop.SignalType = "deploy"
-	OperationForgotten                  eventloop.SignalType = "forgotten"
-	OperationPollDependencies           eventloop.SignalType = "poll_dependencies"
-	OperationDeployComponents           eventloop.SignalType = "deploy_components"
-	OperationDeleteComponents           eventloop.SignalType = "delete_components"
-	OperationActionWorkflowRun          eventloop.SignalType = "action_workflow_run"
-	OperationSyncActionWorkflowTriggers eventloop.SignalType = "sync_action_workflow_triggers"
+	OperationForgotten                          eventloop.SignalType = "forgotten"
+	OperationRestart                            eventloop.SignalType = "restart"
+	OperationSyncActionWorkflowTriggers         eventloop.SignalType = "sync_action_workflow_triggers"
+	OperationActionWorkflowRun                  eventloop.SignalType = "action_workflow_run"
+	OperationPollDependencies                   eventloop.SignalType = "poll_dependencies"
+	OperationCreated                            eventloop.SignalType = "created"
+	OperationGenerateCloudFormationStackVersion eventloop.SignalType = "generate_cloud_formation_stack_version"
+	OperationAwaitCloudFormationStackVersionRun eventloop.SignalType = "await_cloud_formation_stack_version_run"
+	OperationAwaitRunnerHealthy                 eventloop.SignalType = "await_runner_healthy"
+	OperationProvisionSandbox                   eventloop.SignalType = "provision_sandbox"
+	OperationDeprovisionSandbox                 eventloop.SignalType = "deprovision_sandbox"
+	OperationReprovisionSandbox                 eventloop.SignalType = "reprovision_sandbox"
+	OperationTriggerInstallActionWorkflow       eventloop.SignalType = "trigger_install_action_workflow"
+	OperationDeployComponent                    eventloop.SignalType = "deploy_component"
+	OperationTeardownComponent                  eventloop.SignalType = "teardown_component"
 
-	// DEPRECATED
-	// Replaced with OperationDeleteaComponents
+	// the following will be sent to a different namespace
+	OperationExecuteWorkflow eventloop.SignalType = "execute_workflow"
+
+	// the following signals will be deprecated with workflows
+	OperationDeploy             eventloop.SignalType = "deploy"
+	OperationDeployComponents   eventloop.SignalType = "deploy_components"
+	OperationDeleteComponents   eventloop.SignalType = "delete_components"
 	OperationTeardownComponents eventloop.SignalType = "teardown_components"
+	OperationProvision          eventloop.SignalType = "provision"
+	OperationDeprovision        eventloop.SignalType = "deprovision"
+	OperationDelete             eventloop.SignalType = "delete"
+	OperationReprovision        eventloop.SignalType = "reprovision"
+	OperationReprovisionRunner  eventloop.SignalType = "reprovision_runner"
+	OperationDeprovisionRunner  eventloop.SignalType = "deprovision_runner"
 )
 
+type InstallActionWorkflowTriggerSubSignal struct {
+	InstallActionWorkflowID string                        `json:"install_action_workflow_id"`
+	TriggerType             app.ActionWorkflowTriggerType `json:"trigger_type"`
+	TriggeredByID           string                        `json:"triggered_by_id"`
+	TriggeredByType         string                        `json:"triggered_by_type"`
+	RunEnvVars              map[string]string             `json:"run_env_vars"`
+}
+
+type DeployComponentSubSignal struct {
+	DeployID    string
+	ComponentID string
+}
+
+type TeardownComponentSubSignal struct {
+	ComponentID      string
+	LatestBuild      bool
+	ComponentBuildID string
+}
+
 type Signal struct {
-	Type eventloop.SignalType
+        Type eventloop.SignalType `json:"type"`
 
 	DeployID            string `validate:"required_if=Operation deploy" json:"deploy_id"`
 	ActionWorkflowRunID string `validate:"required_if=Operation action_workflow_run" json:"action_workflow_run_id"`
 	ForceDelete         bool   `json:"force_delete"`
+	InstallWorkflowID   string `validate:"required_if=Operation execute_workflow"`
+
+	// used for triggering an action workflow
+	InstallActionWorkflowTrigger InstallActionWorkflowTriggerSubSignal `json:"install_action_workflow_trigger"`
+	TeardownComponentSubSignal   TeardownComponentSubSignal            `json:"teardown_component_sub_signal"`
+	DeployComponentSubSignal     DeployComponentSubSignal              `json:"deploy_component_sub_signal"`
+
+	// used for executing an install workflow
+	InstallWorkflowStepID string `json:"install_workflow_step_id"`
 
 	eventloop.BaseSignal
 }

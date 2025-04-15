@@ -35,9 +35,18 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 		l.Debug(fmt.Sprintf("setting env-var %s", k), zap.String("value", v))
 	}
 
-	cmd, args, err := h.parseCommand(ctx, l, cfg, src)
-	if err != nil {
-		return errors.Wrap(err, "unable to parse command")
+	var cmd string
+	var args []string
+	if cfg.InlineContents == "" {
+		cmd, args, err = h.parseCommand(ctx, l, cfg, src)
+		if err != nil {
+			return errors.Wrap(err, "unable to parse command")
+		}
+	} else {
+		cmd, err = h.prepareInlineContentsCommand(ctx, l, cfg)
+		if err != nil {
+			return errors.Wrap(err, "unable to create inline command")
+		}
 	}
 
 	lOut := zapwriter.New(l, zapcore.InfoLevel, "")

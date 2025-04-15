@@ -37,23 +37,36 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 				return s.syncAppInstaller(ctx, "installer")
 			},
 		},
-	}
-
-	for _, action := range s.cfg.Actions {
-		obj := action
-
-		resourceName := fmt.Sprintf("action-%s", obj.Name)
-		steps = append(steps, syncStep{
-			Resource: resourceName,
+		{
+			Resource: "app-permissions",
 			Method: func(ctx context.Context) error {
-				_, _, err := s.syncAction(ctx, resourceName, obj)
-				if err != nil {
-					return err
-				}
-
-				return nil
+				return s.syncAppPermissions(ctx, "permissions")
 			},
-		})
+		},
+		{
+			Resource: "app-policies",
+			Method: func(ctx context.Context) error {
+				return s.syncAppPolicies(ctx, "policies")
+			},
+		},
+		{
+			Resource: "app-secrets",
+			Method: func(ctx context.Context) error {
+				return s.syncAppSecrets(ctx, "secrets")
+			},
+		},
+		{
+			Resource: "app-break-glass",
+			Method: func(ctx context.Context) error {
+				return s.syncAppBreakGlass(ctx, "break-glass")
+			},
+		},
+		{
+			Resource: "app-cloudformation-stack",
+			Method: func(ctx context.Context) error {
+				return s.syncAppCloudFormationStack(ctx, "cloudformation-stack")
+			},
+		},
 	}
 
 	// warn: our deps are meant to be a graph but we are treating it as a linked list
@@ -74,6 +87,23 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 				}
 
 				deps = []string{compID}
+				return nil
+			},
+		})
+	}
+
+	for _, action := range s.cfg.Actions {
+		obj := action
+
+		resourceName := fmt.Sprintf("action-%s", obj.Name)
+		steps = append(steps, syncStep{
+			Resource: resourceName,
+			Method: func(ctx context.Context) error {
+				_, _, err := s.syncAction(ctx, resourceName, obj)
+				if err != nil {
+					return err
+				}
+
 				return nil
 			},
 		})

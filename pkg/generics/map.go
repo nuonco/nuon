@@ -6,6 +6,16 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+func SliceToMapDefault[T comparable, V any](vals []T, deflt V) map[T]V {
+	obj := make(map[T]V, 0)
+
+	for _, v := range vals {
+		obj[v] = deflt
+	}
+
+	return obj
+}
+
 func SliceToMap[T comparable, V any](vals []T) map[T]V {
 	obj := make(map[T]V, 0)
 
@@ -94,6 +104,16 @@ func ToStringMap(inp map[string]interface{}) map[string]string {
 		}
 
 		out[k] = fmt.Sprintf("%v", v)
+	}
+
+	return out
+}
+
+func MapToKeys[T comparable, V any](in map[T]V) []T {
+	out := make([]T, 0, len(in))
+
+	for k := range in {
+		out = append(out, k)
 	}
 
 	return out

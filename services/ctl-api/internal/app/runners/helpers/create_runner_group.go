@@ -52,9 +52,10 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 			LoggingLevel:      slog.LevelInfo.String(),
 			// NOTE(jm): until we add support for writing metrics via our API, this must be disabled as we
 			// do not guarantee datadog is running in install accounts.
-			EnableMetrics: false,
-			EnableSentry:  true,
-			Groups:        groups,
+			EnableMetrics:   false,
+			EnableSentry:    true,
+			Groups:          groups,
+			AWSInstanceType: "t3a.medium",
 			Metadata: pgtype.Hstore(map[string]*string{
 				"org.id":          generics.ToPtr(install.OrgID),
 				"org.name":        generics.ToPtr(install.Org.Name),
