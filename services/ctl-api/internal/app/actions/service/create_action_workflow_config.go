@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
@@ -24,15 +25,18 @@ type CreateActionWorkflowConfigRequest struct {
 }
 
 type CreateActionWorkflowConfigTriggerRequest struct {
-	Type         app.ActionWorkflowTriggerType `json:"type" validate:"required"`
-	CronSchedule string                        `json:"cron_schedule,omitempty" validate:"cron_schedule"`
+	Type          app.ActionWorkflowTriggerType `json:"type" validate:"required"`
+	CronSchedule  string                        `json:"cron_schedule,omitempty" validate:"cron_schedule"`
+	ComponentName string                        `json:"component_name"`
 }
 
 type CreateActionWorkflowConfigStepRequest struct {
 	basicVCSConfigRequest
 	Name    string             `json:"name" validate:"required"`
 	EnvVars map[string]*string `json:"env_vars"`
-	Command string             `json:"command" validate:"required"`
+
+	Command        string `json:"command"`
+	InlineContents string `json:"inline_contents"`
 }
 
 const (
@@ -52,13 +56,13 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 		}
 	}
 
+	// verify crons
 	cronCount := 0
 	for _, trigger := range c.Triggers {
 		if trigger.Type == app.ActionWorkflowTriggerTypeCron {
 			cronCount += 1
 		}
 	}
-
 	if cronCount > 1 {
 		return stderr.ErrUser{
 			Err:         errors.New("more than one cron trigger defined"),
@@ -66,26 +70,38 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 		}
 	}
 
+	// verify component is set for component dependency
+	for _, trigger := range c.Triggers {
+		if trigger.Type == app.ActionWorkflowTriggerTypePostDeployComponent || trigger.Type == app.ActionWorkflowTriggerTypePreDeployComponent {
+			if trigger.ComponentName == "" {
+				return stderr.ErrUser{
+					Err:         errors.New(fmt.Sprintf("component_name must be set on %s trigger", trigger.Type)),
+					Description: fmt.Sprintf("component_name must be set on %s trigger", trigger.Type),
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
-//	@ID						CreateActionWorkflowConfig
-//	@Summary				create action workflow config
-//	@Description.markdown	create_action_workflow_config.md
-//	@Param					action_workflow_id	path	string	true	"action workflow ID"
-//	@Tags					actions
-//	@Accept					json
-//	@Param					req	body	CreateActionWorkflowConfigRequest	true	"Input"
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.ActionWorkflowConfig
-//	@Router					/v1/action-workflows/{action_workflow_id}/configs [post]
+// @ID						CreateActionWorkflowConfig
+// @Summary				create action workflow config
+// @Description.markdown	create_action_workflow_config.md
+// @Param					action_workflow_id	path	string	true	"action workflow ID"
+// @Tags					actions
+// @Accept					json
+// @Param					req	body	CreateActionWorkflowConfigRequest	true	"Input"
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.ActionWorkflowConfig
+// @Router					/v1/action-workflows/{action_workflow_id}/configs [post]
 func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
@@ -163,6 +179,19 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 
 func (s *service) createActionWorkflowTriggers(ctx context.Context, orgId, appID, appConfigID, awcID string, triggers []CreateActionWorkflowConfigTriggerRequest) error {
 	for _, trigger := range triggers {
+		var componentID string
+		if trigger.ComponentName != "" {
+			comp, err := s.compHelpers.GetComponentByName(ctx, appID, trigger.ComponentName)
+			if err != nil {
+				return stderr.ErrUser{
+					Err:         err,
+					Description: "unable to find component " + trigger.ComponentName,
+				}
+			}
+
+			componentID = comp.ID
+		}
+
 		newTrigger := app.ActionWorkflowTriggerConfig{
 			OrgID:                  orgId,
 			AppID:                  appID,
@@ -170,6 +199,7 @@ func (s *service) createActionWorkflowTriggers(ctx context.Context, orgId, appID
 			ActionWorkflowConfigID: awcID,
 			Type:                   trigger.Type,
 			CronSchedule:           trigger.CronSchedule,
+			ComponentID:            generics.NewNullString(componentID),
 		}
 
 		res := s.db.WithContext(ctx).

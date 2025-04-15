@@ -19,6 +19,8 @@ type CreateJobComponentConfigRequest struct {
 	Cmd      []string           `json:"cmd"`
 	EnvVars  map[string]*string `json:"env_vars"`
 	Args     []string           `json:"args"`
+
+	AppConfigID string `json:"app_config_id"`
 }
 
 func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -28,23 +30,23 @@ func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error 
 	return nil
 }
 
-//	@ID						CreateJobComponentConfig
-//	@Summary				create a job component config
-//	@Description.markdown	create_job_component_config.md
-//	@Param					req				body	CreateJobComponentConfigRequest	true	"Input"
-//	@Param					component_id	path	string							true	"component ID"
-//	@Tags					components
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.JobComponentConfig
-//	@Router					/v1/components/{component_id}/configs/job [POST]
+// @ID						CreateJobComponentConfig
+// @Summary				create a job component config
+// @Description.markdown	create_job_component_config.md
+// @Param					req				body	CreateJobComponentConfigRequest	true	"Input"
+// @Param					component_id	path	string							true	"component ID"
+// @Tags					components
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.JobComponentConfig
+// @Router					/v1/components/{component_id}/configs/job [POST]
 func (s *service) CreateJobComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 
@@ -88,6 +90,7 @@ func (s *service) createJobComponentConfig(ctx context.Context, cmpID string, re
 	componentConfigConnection := app.ComponentConfigConnection{
 		JobComponentConfig: &cfg,
 		ComponentID:        parentCmp.ID,
+		AppConfigID:        req.AppConfigID,
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create job component config connection: %w", res.Error)

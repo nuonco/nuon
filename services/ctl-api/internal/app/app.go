@@ -37,15 +37,16 @@ type App struct {
 
 	NotificationsConfig NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty"`
 
-	Components        []Component        `faker:"components" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
-	Installs          []Install          `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
-	ActionWorkflows   []ActionWorkflow   `json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
-	AppInputConfigs   []AppInputConfig   `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-	AppSandboxConfigs []AppSandboxConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-	AppRunnerConfigs  []AppRunnerConfig  `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-	AppConfigs        []AppConfig        `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-	AppSecrets        []AppSecret        `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-	InstallerApps     []InstallerApp     `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	Components                    []Component                    `faker:"components" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	Installs                      []Install                      `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	ActionWorkflows               []ActionWorkflow               `json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	AppInputConfigs               []AppInputConfig               `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	AppSandboxConfigs             []AppSandboxConfig             `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	AppRunnerConfigs              []AppRunnerConfig              `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	CloudFormationStackConfigs []AppCloudFormationStackConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	AppConfigs                    []AppConfig                    `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	AppSecrets                    []AppSecret                    `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallerApps                 []InstallerApp                 `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
 	Status            AppStatus `json:"status" swaggertype:"string"`
 	StatusDescription string    `json:"status_description"`

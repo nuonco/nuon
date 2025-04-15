@@ -8,6 +8,20 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
+func (w *Workflows) updateStatus(ctx workflow.Context, runID string, status app.InstallActionWorkflowRunStatus, statusDescription string) {
+	l := workflow.GetLogger(ctx)
+
+	if err := activities.AwaitUpdateInstallWorkflowRunStatus(ctx, activities.UpdateInstallWorkflowRunStatusRequest{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	}); err != nil {
+		l.Error("unable to update run status",
+			zap.String("run-id", runID),
+			zap.Error(err))
+	}
+}
+
 // TODO(sdboyer) refactor this to return an error; processing should abort if status updates fail
 func (w *Workflows) updateRunStatus(ctx workflow.Context, runID string, status app.SandboxRunStatus, statusDescription string) {
 	l := workflow.GetLogger(ctx)

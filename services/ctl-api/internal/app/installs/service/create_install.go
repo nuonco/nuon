@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
@@ -22,23 +23,23 @@ func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						CreateInstall
-//	@Summary				create an app install
-//	@Description.markdown	create_install.md
-//	@Param					app_id	path	string					true	"app ID"
-//	@Param					req		body	CreateInstallRequest	true	"Input"
-//	@Tags					installs
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.Install
-//	@Router					/v1/apps/{app_id}/installs [post]
+// @ID						CreateInstall
+// @Summary				create an app install
+// @Description.markdown	create_install.md
+// @Param					app_id	path	string					true	"app ID"
+// @Param					req		body	CreateInstallRequest	true	"Input"
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.Install
+// @Router					/v1/apps/{app_id}/installs [post]
 func (s *service) CreateInstall(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
@@ -58,6 +59,10 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		return
 	}
 
+	// NOTE(jm): eventually, we may want to move these into the workflow itself, but for now they are really system
+	// details so we're not including them in the user facing workflows.
+	//
+	// Maybe at some point they would be added with a `UserFacing: false` boolean on the step itself.
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
 		Type: signals.OperationCreated,
 	})
@@ -65,13 +70,43 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		Type: signals.OperationPollDependencies,
 	})
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationProvision,
-	})
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationDeployComponents,
-	})
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
 		Type: signals.OperationSyncActionWorkflowTriggers,
 	})
+
+	// TODO(jm): remove this once the legacy install flow is deprecated
+	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureIndependentRunner)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	if !enabled {
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationProvision,
+		})
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationDeployComponents,
+		})
+
+		ctx.JSON(http.StatusCreated, install)
+		return
+	}
+
+	workflow, err := s.helpers.CreateInstallWorkflow(ctx,
+		install.ID,
+		app.InstallWorkflowTypeProvision,
+		map[string]string{},
+		app.StepErrorBehaviorAbort,
+	)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type:              signals.OperationExecuteWorkflow,
+		InstallWorkflowID: workflow.ID,
+	})
+
+	// TODO(jm): these will be deprecated after the workflow tooling is created
 	ctx.JSON(http.StatusCreated, install)
 }

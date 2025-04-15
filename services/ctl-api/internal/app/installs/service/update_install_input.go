@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -24,23 +27,23 @@ func (c *UpdateInstallInputsRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						UpdateInstallInputs
-//	@Summary				Updates install input config for app
-//	@Description.markdown	update_install_inputs.md
-//	@Tags					installs
-//	@Accept					json
-//	@Param					req	body	UpdateInstallInputsRequest	true	"Input"
-//	@Produce				json
-//	@Param					install_id	path	string	true	"install ID"
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{object}	app.InstallInputs
-//	@Router					/v1/installs/{install_id}/inputs [patch]
+// @ID						UpdateInstallInputs
+// @Summary				Updates install input config for app
+// @Description.markdown	update_install_inputs.md
+// @Tags					installs
+// @Accept					json
+// @Param					req	body	UpdateInstallInputsRequest	true	"Input"
+// @Produce				json
+// @Param					install_id	path	string	true	"install ID"
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.InstallInputs
+// @Router					/v1/installs/{install_id}/inputs [patch]
 func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
@@ -92,6 +95,32 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
 	}
+
+	// TODO(jm): remove this once the legacy install flow is deprecated
+	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureIndependentRunner)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	if !enabled {
+		ctx.JSON(http.StatusOK, inputs)
+		return
+	}
+
+	workflow, err := s.helpers.CreateInstallWorkflow(ctx, install.ID, app.InstallWorkflowTypeInputUpdate, map[string]string{
+		// NOTE(jm): this metadata field is not really designed to be used for anything serious, outside of
+		// rendering things in the UI and other such things, which is why we are just using a string slice here,
+		// maybe that will change at some point, but this metadata should not be abused.
+		"inputs": strings.Join(generics.MapToKeys(req.Inputs), ","),
+	}, app.StepErrorBehaviorAbort)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type:              signals.OperationExecuteWorkflow,
+		InstallWorkflowID: workflow.ID,
+	})
 
 	ctx.JSON(http.StatusOK, inputs)
 }

@@ -13,7 +13,9 @@ type ActionWorkflowRunPlan struct {
 type ActionWorkflowRunStepPlan struct {
 	ID string `json:"run_id"`
 
-	Attrs               map[string]string `json:"attrs"`
-	InterpolatedEnvVars map[string]string `json:"interpolated_env_vars"`
-	GitSource           *GitSource        `json:"git_source"`
+	Attrs                      map[string]string `json:"attrs"`
+	InterpolatedEnvVars        map[string]string `json:"interpolated_env_vars"`
+	GitSource                  *GitSource        `json:"git_source"`
+	InterpolatedInlineContents string            `json:"interpolated_inline_contents"`
+	InterpolatedCommand        string            `json:"interpolated_command"`
 }

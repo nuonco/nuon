@@ -16,6 +16,10 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 )
 
+const (
+	DefaultAWSInstanceType = "t3a.medium"
+)
+
 var (
 	CommonRunnerGroupSettingsGroups         = [...]string{"operations", "sync"}
 	DefaultOrgRunnerGroupSettingsGroups     = [...]string{"build", "sandbox", "runner"}
@@ -60,6 +64,11 @@ type RunnerGroupSettings struct {
 	// specific configuration for cloud specific runners, such as AWS or Azure
 	AWSIAMRoleARN         string `json:"aws_iam_role_arn"`
 	K8sServiceAccountName string `json:"k8s_service_account_name"`
+
+	// new fields for the runner-v2
+	AWSInstanceType            string        `json:"aws_instance_type"`
+	AWSCloudformationStackType string        `json:"aws_cloudformation_stack_type"`
+	AWSTags                    pgtype.Hstore `json:"aws_tags" gorm:"type:hstore" swaggertype:"object,string"`
 }
 
 func (i *RunnerGroupSettings) Views(db *gorm.DB) []migrations.View {

@@ -10,8 +10,9 @@ func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {
 	// zero out the inputs if they are nil
 	if s.cfg.Inputs == nil {
 		return &models.ServiceCreateAppInputConfigRequest{
-			Groups: make(map[string]models.ServiceAppGroupRequest, 0),
-			Inputs: make(map[string]models.ServiceAppInputRequest, 0),
+			AppConfigID: s.appConfigID,
+			Groups:      make(map[string]models.ServiceAppGroupRequest, 0),
+			Inputs:      make(map[string]models.ServiceAppInputRequest, 0),
 		}
 	}
 
@@ -32,7 +33,7 @@ func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {
 	for _, input := range s.cfg.Inputs.Inputs {
 		input := input
 		inputs[input.Name] = models.ServiceAppInputRequest{
-			Default:	input.Default,
+			Default:     input.Default,
 			Description: &input.Description,
 			DisplayName: &input.DisplayName,
 			Group:       &input.Group,
@@ -42,8 +43,9 @@ func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {
 	}
 
 	return &models.ServiceCreateAppInputConfigRequest{
-		Groups: groups,
-		Inputs: inputs,
+		AppConfigID: s.appConfigID,
+		Groups:      groups,
+		Inputs:      inputs,
 	}
 }
 

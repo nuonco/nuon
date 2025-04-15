@@ -22,10 +22,18 @@ const (
 	AppConfigStatusOutdated AppConfigStatus = "outdated"
 )
 
-type AppConfigFmt string
+type AppConfigType string
 
 const (
-	AppConfigFmtToml AppConfigFmt = "toml"
+	AppConfigTypeToml   AppConfigType = "toml"
+	AppConfigTypeManual AppConfigType = "manual"
+)
+
+type AppConfigVersion string
+
+const (
+	AppConfigVersionDefault AppConfigVersion = ""
+	AppConfigVersionV2      AppConfigVersion = "v2"
 )
 
 type AppConfig struct {
@@ -38,13 +46,29 @@ type AppConfig struct {
 
 	OrgID string `json:"org_id" gorm:"notnull;default null"`
 	Org   Org    `faker:"-" json:"-"`
+
 	AppID string `json:"app_id"`
 
 	Status            AppConfigStatus `json:"status"`
 	StatusDescription string          `json:"status_description" gorm:"notnull;default null"`
 
-	State  string `json:"state"`
-	Readme string `json:"readme"`
+	State    string `json:"state"`
+	Readme   string `json:"readme"`
+	Checksum string `json:"checksum"`
+
+	// Lookups on the app config
+	PermissionsConfig          AppPermissionsConfig         `json:"permissions,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	BreakGlassConfig           AppBreakGlassConfig          `json:"break_glass,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	PoliciesConfig             AppPoliciesConfig            `json:"policies,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	SecretsConfig              AppSecretsConfig             `json:"secrets,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	SandboxConfig              AppSandboxConfig             `json:"sandbox,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	InputConfig                AppInputConfig               `json:"input,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	RunnerConfig               AppRunnerConfig              `json:"runner,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	CloudFormationStackConfig  AppCloudFormationStackConfig `json:"cloudformation_stack,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	ComponentConfigConnections []ComponentConfigConnection  `json:"component_config_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+
+	// individual pointers
+	InstallAWSCloudFormationStackVersion []InstallAWSCloudFormationStackVersion `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
 	// fields that are filled in via after query or views
 	Version int `json:"version" gorm:"->;-:migration"`

@@ -31,7 +31,7 @@ func RenderWithWarnings(inputVal string, data map[string]interface{}) (string, [
 
 	var err error
 	if len(warnings) < 1 {
-		inputVal, err = renderFinal(inputVal, data)
+		inputVal, err = RenderV2(inputVal, data)
 		if err != nil {
 			return inputVal, []error{errors.Wrap(err, "unable to render template")}, nil
 		}
@@ -40,7 +40,7 @@ func RenderWithWarnings(inputVal string, data map[string]interface{}) (string, [
 	return inputVal, warnings, nil
 }
 
-func renderFinal(inputVal string, data map[string]interface{}) (string, error) {
+func RenderV2(inputVal string, data map[string]interface{}) (string, error) {
 	funcMap := template.FuncMap{
 		"now": time.Now,
 	}

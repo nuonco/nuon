@@ -14,6 +14,7 @@ func (s *sync) start(ctx context.Context) error {
 		return err
 	}
 
+	s.appConfigID = cfg.ID
 	s.state.CfgID = cfg.ID
 	return nil
 }

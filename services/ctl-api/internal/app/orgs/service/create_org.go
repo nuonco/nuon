@@ -29,21 +29,21 @@ func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						CreateOrg
-//	@Summary				create a new org
-//	@Description.markdown	create_org.md
-//	@Security				APIKey
-//	@Param					req	body	CreateOrgRequest	true	"Input"
-//	@Tags					orgs
-//	@Accept					json
-//	@Produce				json
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.Org
-//	@Router					/v1/orgs [POST]
+// @ID						CreateOrg
+// @Summary				create a new org
+// @Description.markdown	create_org.md
+// @Security				APIKey
+// @Param					req	body	CreateOrgRequest	true	"Input"
+// @Tags					orgs
+// @Accept					json
+// @Produce				json
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.Org
+// @Router					/v1/orgs [POST]
 func (s *service) CreateOrg(ctx *gin.Context) {
 	acct, err := cctx.AccountFromGinContext(ctx)
 	if err != nil {
@@ -117,6 +117,10 @@ func (s *service) createOrg(ctx context.Context, acct *app.Account, req *CreateO
 	if s.cfg.ForceSandboxMode {
 		org.SandboxMode = true
 	}
+	if s.cfg.ForceDebugMode {
+		org.DebugMode = true
+	}
+
 	if err := s.db.WithContext(ctx).Create(&org).Error; err != nil {
 		return nil, fmt.Errorf("unable to create org: %w", err)
 	}

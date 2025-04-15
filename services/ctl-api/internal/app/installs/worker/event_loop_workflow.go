@@ -25,8 +25,8 @@ func (w *Workflows) handleSyncActionWorkflowTriggers(ctx workflow.Context, sreq 
 	return nil
 }
 
-func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
-	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
+func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
+	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
 		signals.OperationCreated:            w.AwaitCreated,
 		signals.OperationPollDependencies:   w.AwaitPollDependencies,
 		signals.OperationProvision:          w.AwaitProvision,
@@ -41,14 +41,19 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		signals.OperationDeleteComponents:   w.AwaitTeardownComponents,
 		signals.OperationDeploy:             w.AwaitDeploy,
 		signals.OperationActionWorkflowRun:  w.AwaitActionWorkflowRun,
+		signals.OperationExecuteWorkflow:    w.AwaitExecuteWorkflow,
 		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
 			w.AwaitRestarted(ctx, req)
 			w.handleSyncActionWorkflowTriggers(ctx, req)
 			return nil
 		},
-		signals.OperationSyncActionWorkflowTriggers: w.handleSyncActionWorkflowTriggers,
+		signals.OperationSyncActionWorkflowTriggers:         w.handleSyncActionWorkflowTriggers,
+		signals.OperationGenerateCloudFormationStackVersion: w.AwaitGenerateCloudFormationStackVersion,
 	}
+}
 
+func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
+	handlers := w.getHandlers()
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
 		Cfg:              w.cfg,
 		V:                w.v,

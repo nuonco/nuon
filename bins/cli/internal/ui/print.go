@@ -90,7 +90,7 @@ func PrintError(err error) error {
 		return parseErr
 	}
 
-	pterm.Error.Println(defaultUnknownErrorMessage)
+	pterm.Error.Println(err.Error())
 	return err
 }
 

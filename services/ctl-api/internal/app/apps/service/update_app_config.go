@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -26,23 +27,23 @@ func (c *UpdateAppConfigRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						UpdateAppConfig
-//	@Description.markdown	update_app_config.md
-//	@Tags					apps
-//	@Accept					json
-//	@Param					req	body	UpdateAppConfigRequest	true	"Input"
-//	@Produce				json
-//	@Param					app_id			path	string	true	"app ID"
-//	@Param					app_config_id	path	string	true	"app config ID"
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.AppConfig
-//	@Router					/v1/apps/{app_id}/config/{app_config_id} [PATCH]
+// @ID						UpdateAppConfig
+// @Description.markdown	update_app_config.md
+// @Tags					apps
+// @Accept					json
+// @Param					req	body	UpdateAppConfigRequest	true	"Input"
+// @Produce				json
+// @Param					app_id			path	string	true	"app ID"
+// @Param					app_config_id	path	string	true	"app config ID"
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.AppConfig
+// @Router					/v1/apps/{app_id}/config/{app_config_id} [PATCH]
 func (s *service) UpdateAppConfig(ctx *gin.Context) {
 	appConfigID := ctx.Param("app_config_id")
 
@@ -66,8 +67,11 @@ func (s *service) UpdateAppConfig(ctx *gin.Context) {
 }
 
 func (s *service) updateAppConfig(ctx context.Context, appConfigID string, req *UpdateAppConfigRequest) (*app.AppConfig, error) {
-	cfg := app.AppConfig{
-		ID: appConfigID,
+	var cfg app.AppConfig
+	if err := s.db.WithContext(ctx).
+		Where("id = ?", appConfigID).
+		First(&cfg).Error; err != nil {
+		return nil, fmt.Errorf("unable to find app config: %w", err)
 	}
 
 	res := s.db.WithContext(ctx).
@@ -82,6 +86,20 @@ func (s *service) updateAppConfig(ctx context.Context, appConfigID string, req *
 	}
 	if res.RowsAffected < 1 {
 		return nil, fmt.Errorf("app config not found %s %w", appConfigID, gorm.ErrRecordNotFound)
+	}
+
+	// TODO(jm): eventually, this will not be the case, but for now we update all users to the latest config
+	if req.Status == app.AppConfigStatusActive {
+		if res := s.db.WithContext(ctx).
+			Model(&app.Install{}).
+			Where(app.Install{
+				AppID: cfg.AppID,
+			}).
+			Updates(app.Install{
+				AppConfigID: appConfigID,
+			}); res.Error != nil {
+			return nil, errors.Wrap(res.Error, "unable to update installations with new config")
+		}
 	}
 
 	return &cfg, nil

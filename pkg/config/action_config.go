@@ -5,11 +5,14 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
+
 	"github.com/powertoolsdev/mono/pkg/config/source"
 )
 
 type ActionConfig struct {
-	Source   string                 `mapstructure:"source,omitempty"`
+	// Deprecated
+	Source string `mapstructure:"source,omitempty"`
+
 	Name     string                 `mapstructure:"name" jsonschema:"required"`
 	Timeout  string                 `mapstructure:"timeout,omitempty"`
 	Triggers []*ActionTriggerConfig `mapstructure:"triggers" jsonschema:"required"`
@@ -17,16 +20,20 @@ type ActionConfig struct {
 }
 
 type ActionTriggerConfig struct {
-	Type         string `mapstructure:"type" jsonschema:"required"`
-	CronSchedule string `mapstructure:"cron_schedule,omitempty"`
+	Type string `mapstructure:"type" jsonschema:"required"`
+
+	CronSchedule  string `mapstructure:"cron_schedule,omitempty"`
+	ComponentName string `mapstructure:"component_name,omitempty"`
 }
 
 type ActionStepConfig struct {
 	Name          string               `mapstructure:"name" jsonschema:"required"`
 	EnvVarMap     map[string]string    `mapstructure:"env_vars,omitempty"`
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"  jsonschema:"oneof_required=connected_repo"`
-	Command       string               `mapstructure:"command"`
+	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"`
+
+	Command        string `mapstructure:"command" features:"get,template"`
+	InlineContents string `mapstructure:"inline_contents" features:"get,template"`
 }
 
 func (a *ActionConfig) parse() error {
