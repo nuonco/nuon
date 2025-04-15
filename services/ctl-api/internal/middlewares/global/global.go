@@ -4,21 +4,23 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // globalEndpointList is a list of endpoints that are not scoped to an org,
 // but still need to be authenticated.
 var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
-	{"POST", "/v1/orgs"}:                          {},
-	{"GET", "/v1/orgs"}:                           {},
-	{"POST", "/v1/general/metrics"}:               {},
-	{"GET", "/v1/general/current-user"}:           {},
-	{"GET", "/v1/sandboxes"}:                      {},
-	{"GET", "/v1/sandboxes/:sandbox_id"}:          {},
-	{"GET", "/v1/sandboxes/:sandbox_id/releases"}: {},
-	{"POST", "/v1/general/waitlist"}:              {},
+	{"POST", "/v1/orgs"}:                                           {},
+	{"GET", "/v1/orgs"}:                                            {},
+	{"POST", "/v1/general/metrics"}:                                {},
+	{"GET", "/v1/general/current-user"}:                            {},
+	{"GET", "/v1/sandboxes"}:                                       {},
+	{"GET", "/v1/sandboxes/:sandbox_id"}:                           {},
+	{"GET", "/v1/sandboxes/:sandbox_id/releases"}:                  {},
+	{"POST", "/v1/general/waitlist"}:                               {},
+	{"POST", "/v1/installs/:install_id/phone-home/:phone_home_id"}: {},
 }
 
 type middleware struct {

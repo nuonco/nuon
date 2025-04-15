@@ -1,0 +1,108 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
+	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
+)
+
+type InstallPhoneHomeRequest struct {
+	PhoneHomeType string `json:"phone_home_type" validate:"required"`
+
+	MaintenanceRole string `json:"maintenance_iam_role_arn" validate:"required"`
+	ProvisionRole   string `json:"provision_iam_role_arn" validate:"required"`
+	DeprovisionRole string `json:"deprovision_iam_role_arn" validate:"required"`
+	AccountID       string `json:"account_id" validate:"required"`
+	VPCID           string `json:"vpc_id" validate:"required"`
+}
+
+func (i *InstallPhoneHomeRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(i); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
+}
+
+// @ID PhoneHome
+// @Summary				phone home for an install
+// @Description.markdown phone_home.md
+// @Param					install_id	path	string		true	"install ID"
+// @Param					phone_home_id	path	string		true	"phone home ID"
+// @Param					req		body	InstallPhoneHomeRequest	true	"Input"
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{string}	ok
+// @Router					/v1/installs/{install_id}/phone-home/{phone_home_id} [post]
+func (s *service) InstallPhoneHome(ctx *gin.Context) {
+	installID := ctx.Param("install_id")
+	phoneHomeID := ctx.Param("phone_home_id")
+
+	var req InstallPhoneHomeRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(err)
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
+	if err := s.updateInstallPhoneHome(ctx, installID, phoneHomeID, &req); err != nil {
+		ctx.Error(errors.Wrap(err, "unable to update install phone home"))
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, "ok")
+}
+
+func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHomeID string, req *InstallPhoneHomeRequest) error {
+	var stack app.InstallAWSCloudFormationStackVersion
+	if res := s.db.WithContext(ctx).
+		Where(app.InstallAWSCloudFormationStackVersion{
+			InstallID:   installID,
+			PhoneHomeID: phoneHomeID,
+		}).
+		First(&stack); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to find cloudformation stack")
+	}
+
+	// now make updates
+	updatedStack := app.InstallAWSCloudFormationStackVersion{
+		ID: stack.ID,
+	}
+	res := s.db.WithContext(ctx).
+		Model(&updatedStack).
+		Updates(app.InstallAWSCloudFormationStackVersion{
+			PhoneHomeData: generics.ToHstore(map[string]string{
+				"maintenance_role": req.MaintenanceRole,
+				"provision_role":   req.ProvisionRole,
+				"deprovision_role": req.DeprovisionRole,
+				"vpc_id":           req.VPCID,
+				"account_id":       req.AccountID,
+			}),
+		})
+	if res.Error != nil {
+		return errors.Wrap(res.Error, "unable to update stack version")
+	}
+	if res.RowsAffected != 1 {
+		return errors.Wrap(gorm.ErrRecordNotFound, "cloudformation stack not found")
+	}
+
+	return nil
+}

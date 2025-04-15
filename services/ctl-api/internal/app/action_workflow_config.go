@@ -75,3 +75,13 @@ func (a *ActionWorkflowConfig) WorkflowConfigCanTriggerManually() bool {
 
 	return false
 }
+
+func (a *ActionWorkflowConfig) HasComponentTrigger(typ ActionWorkflowTriggerType, componentID string) bool {
+	for _, trigger := range a.Triggers {
+		if trigger.Type == typ && trigger.ComponentID.ValueString() == componentID {
+			return true
+		}
+	}
+
+	return false
+}

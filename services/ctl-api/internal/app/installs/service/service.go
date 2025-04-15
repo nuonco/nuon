@@ -13,6 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
@@ -30,6 +31,7 @@ type Params struct {
 	ComponentHelpers *componenthelpers.Helpers
 	Helpers          *helpers.Helpers
 	AppsHelpers      *appshelpers.Helpers
+	FeaturesClient   *features.Features
 	EvClient         eventloop.Client
 }
 
@@ -43,6 +45,7 @@ type service struct {
 	componentHelpers *componenthelpers.Helpers
 	helpers          *helpers.Helpers
 	appsHelpers      *appshelpers.Helpers
+	featuresClient   *features.Features
 	evClient         eventloop.Client
 }
 
@@ -103,8 +106,17 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/installs/:install_id/events", s.GetInstallEvents)
 	api.GET("/v1/installs/:install_id/events/:event_id", s.GetInstallEvent)
 
+	// install workflows
+	api.GET("/v1/installs/:install_id/workflows", s.GetInstallWorkflows)
+	api.GET("/v1/install-workflows/:install_workflow_id", s.GetInstallWorkflow)
+	api.GET("/v1/install-workflows/:install_workflow_id/steps", s.GetInstallWorkflowSteps)
+	api.GET("/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id", s.GetInstallWorkflowStep)
+
 	// install runner group
 	api.GET("/v1/installs/:install_id/runner-group", s.GetInstallRunnerGroup)
+
+	// phone home
+	api.POST("/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome)
 
 	return nil
 }
@@ -117,18 +129,18 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/installs/:install_id/admin-get", s.AdminGetInstall)
 	api.GET("/v1/installs/:install_id/admin-get-runner-group", s.AdminGetInstallRunnerGroup)
 	api.GET("/v1/installs/:install_id/admin-get-runner", s.AdminGetInstallRunner)
+	api.POST("/v1/orgs/:org_id/admin-forget-installs", s.ForgetOrgInstalls)
+	api.PATCH("/v1/installs/:install_id/admin-update-runner", s.AdminUpdateInstallRunner)
+	api.GET("/v1/orgs/:org_id/admin-get-installs", s.AdminGetOrgInstalls)
+
+	// NOTE(JM): the following endpoints should be removed after workflows/independent runners are rolled out
 	api.POST("/v1/installs/:install_id/admin-reprovision", s.ReprovisionInstall)
 	api.POST("/v1/installs/:install_id/admin-reprovision-runner", s.AdminReprovisionInstallRunner)
 	api.POST("/v1/installs/:install_id/admin-deprovision-runner", s.AdminDeprovisionInstallRunner)
-	api.POST("/v1/installs/:install_id/admin-deprovision", s.AdminDeprovisionInstall)
 	api.POST("/v1/installs/:install_id/admin-delete", s.AdminDeleteInstall)
 	api.POST("/v1/installs/:install_id/admin-forget", s.AdminForgetInstall)
 	api.POST("/v1/installs/:install_id/admin-update-sandbox", s.AdminUpdateSandbox)
 	api.POST("/v1/installs/:install_id/admin-teardown-components", s.AdminTeardownInstallComponents)
-	api.POST("/v1/installs/:install_id/admin-deploy-components", s.AdminDeployInstallComponents)
-	api.POST("/v1/orgs/:org_id/admin-forget-installs", s.ForgetOrgInstalls)
-	api.PATCH("/v1/installs/:install_id/admin-update-runner", s.AdminUpdateInstallRunner)
-	api.GET("/v1/orgs/:org_id/admin-get-installs", s.AdminGetOrgInstalls)
 	return nil
 }
 
@@ -148,5 +160,6 @@ func New(params Params) *service {
 		helpers:          params.Helpers,
 		evClient:         params.EvClient,
 		appsHelpers:      params.AppsHelpers,
+		featuresClient:   params.FeaturesClient,
 	}
 }

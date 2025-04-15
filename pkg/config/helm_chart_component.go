@@ -13,7 +13,7 @@ type HelmValue struct {
 
 type HelmValuesFile struct {
 	Source   string `toml:"source" mapstructure:"source,omitempty"`
-	Contents string `toml:"contents" mapstructure:"contents,omitempty"`
+	Contents string `toml:"contents" mapstructure:"contents,omitempty" features:"get,template"`
 }
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.

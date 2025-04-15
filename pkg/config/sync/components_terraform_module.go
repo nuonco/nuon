@@ -14,6 +14,7 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 	obj := comp.TerraformModule
 
 	configRequest := &models.ServiceCreateTerraformModuleComponentConfigRequest{
+		AppConfigID:              s.appConfigID,
 		ConnectedGithubVcsConfig: nil,
 		PublicGitVcsConfig:       nil,
 		Variables:                map[string]string{},

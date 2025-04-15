@@ -172,6 +172,7 @@ func (s *Service) notifyOrphanedActions(actions map[string]string) {
 	return
 }
 
+
 func (s *Service) Sync(ctx context.Context, all bool, file string) error {
 	var (
 		cfgFiles []parse.File

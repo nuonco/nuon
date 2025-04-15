@@ -163,11 +163,11 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 	if installDeploy.Type != app.InstallDeployTypeTeardown {
 		if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
 			InstallID:       install.ID,
-			TriggerType:     app.ActionWorkflowTriggerTypePreDeploy,
+			TriggerType:     app.ActionWorkflowTriggerTypePreDeployAll,
 			TriggeredByID:   installDeploy.ID,
 			TriggeredByType: "install_deploys",
 			RunEnvVars: generics.ToPtrStringMap(map[string]string{
-				"TRIGGER":        string(app.ActionWorkflowTriggerTypePreDeploy),
+				"TRIGGER":        string(app.ActionWorkflowTriggerTypePreDeployAll),
 				"DEPLOY_TYPE":    string(installDeploy.Type),
 				"DEPLOY_ID":      installDeploy.ID,
 				"COMPONENT_ID":   installDeploy.InstallComponent.ID,
@@ -193,11 +193,11 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 		// run hooks after the deploy
 		if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
 			InstallID:       install.ID,
-			TriggerType:     app.ActionWorkflowTriggerTypePostDeploy,
+			TriggerType:     app.ActionWorkflowTriggerTypePostDeployAll,
 			TriggeredByID:   installDeploy.ID,
 			TriggeredByType: "install_deploys",
 			RunEnvVars: generics.ToPtrStringMap(map[string]string{
-				"TRIGGER":        string(app.ActionWorkflowTriggerTypePostDeploy),
+				"TRIGGER":        string(app.ActionWorkflowTriggerTypePostDeployAll),
 				"DEPLOY_TYPE":    string(installDeploy.Type),
 				"DEPLOY_ID":      installDeploy.ID,
 				"COMPONENT_ID":   installDeploy.InstallComponent.ID,
