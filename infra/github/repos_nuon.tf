@@ -473,3 +473,17 @@ module "aws-cloudformation-templates" {
     github = github.nuon
   }
 }
+
+module "runner" {
+  source           = "./modules/repository"
+  name             = "runner"
+  description      = "Public components and supporting tools for the Nuon runner."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
