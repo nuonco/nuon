@@ -41,6 +41,9 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		Preload("AppInputConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_input_configs.created_at DESC").Limit(1)
 		}).
+		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_configs_view_v2.created_at DESC").Limit(1)
+		}).
 		First(&parentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
@@ -60,6 +63,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		Name:               req.Name,
 		AppSandboxConfigID: parentApp.AppSandboxConfigs[0].ID,
 		AppRunnerConfigID:  parentApp.AppRunnerConfigs[0].ID,
+		AppConfigID:        parentApp.AppConfigs[0].ID,
 	}
 	if req.AWSAccount != nil {
 		install.AWSAccount = &app.AWSAccount{
@@ -83,6 +87,9 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 				AppInputConfigID: parentApp.AppInputConfigs[0].ID,
 			},
 		}
+	}
+	if parentApp.AppRunnerConfigs[0].Type == "aws" {
+		install.InstallAWSCloudFormationStack = &app.InstallAWSCloudFormationStack{}
 	}
 
 	res = s.db.WithContext(ctx).Create(&install)

@@ -8,7 +8,8 @@ import (
 
 func (s sync) syncAppRunner(ctx context.Context, resource string) error {
 	cfg, err := s.apiClient.CreateAppRunnerConfig(ctx, s.appID, &models.ServiceCreateAppRunnerConfigRequest{
-		EnvVars: s.cfg.Runner.EnvVarMap,
+		AppConfigID: s.appConfigID,
+		EnvVars:     s.cfg.Runner.EnvVarMap,
 		// Type:    models.AppAppRunnerType(s.cfg.Runner.RunnerType),
 		Type: models.NewAppAppRunnerType(models.AppAppRunnerType(s.cfg.Runner.RunnerType)),
 	})

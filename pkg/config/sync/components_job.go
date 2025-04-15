@@ -22,11 +22,12 @@ func (s *sync) createJobComponentConfig(ctx context.Context, resource, compID st
 	}
 
 	configRequest := &models.ServiceCreateJobComponentConfigRequest{
-		Args:     containerImage.Args,
-		Cmd:      containerImage.Cmd,
-		EnvVars:  envVars,
-		ImageURL: generics.ToPtr(containerImage.ImageURL),
-		Tag:      generics.ToPtr(containerImage.Tag),
+		AppConfigID: s.appConfigID,
+		Args:        containerImage.Args,
+		Cmd:         containerImage.Cmd,
+		EnvVars:     envVars,
+		ImageURL:    generics.ToPtr(containerImage.ImageURL),
+		Tag:         generics.ToPtr(containerImage.Tag),
 	}
 
 	requestChecksum, err := s.getChecksum(configRequest)

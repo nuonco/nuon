@@ -32,6 +32,16 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		}
 
 		err := c.Errors[0]
+		// Check if this is a binding error
+		if err.Type == gin.ErrorTypeBind {
+			m.l.Error("response already set, this usually means the endpoint is using ctx.BindJSON instead of ctx.ShouldBindJSON")
+			c.JSON(http.StatusBadRequest, ErrResponse{
+				Error:       "invalid request format",
+				UserError:   true,
+				Description: err.Error(),
+			})
+			return
+		}
 
 		// define common error handlers here
 		var uErr ErrUser
@@ -136,6 +146,17 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		if errors.As(err, &vErr) {
 			c.JSON(http.StatusBadRequest, ErrResponse{
 				Error:       fmt.Sprintf("invalid input for %s", vErr[0].Field()),
+				UserError:   true,
+				Description: fmt.Sprintf("invalid request input: %s", err),
+			})
+			return
+		}
+
+		// bad or unparseable request
+		var ivReqErr ErrInvalidRequest
+		if errors.As(err, &ivReqErr) {
+			c.JSON(http.StatusBadRequest, ErrResponse{
+				Error:       fmt.Sprintf("invalid request"),
 				UserError:   true,
 				Description: fmt.Sprintf("invalid request input: %s", err),
 			})
