@@ -36,6 +36,14 @@ func AppNameFromFilename(file string) (string, error) {
 	return appID, nil
 }
 
+func AppNameFromDirName(dir string) (string, error) {
+	path, err := filepath.Abs(dir)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Base(path), nil
+}
 
 func FindConfigFiles(rootDir string) ([]File, error) {
 	cfgFiles := make([]File, 0)

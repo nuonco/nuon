@@ -26,10 +26,10 @@ import (
 //	@Router					/v1/installs/{install_id}/inputs/current [GET]
 func (s *service) GetInstallCurrentInputs(ctx *gin.Context) {
 	// return a complex type with the configuration "metadata" for each input value
-	appID := ctx.Param("install_id")
+	installID := ctx.Param("install_id")
 
 	// load install inputs
-	installInputs, err := s.getInstallInputs(ctx, appID)
+	installInputs, err := s.getInstallInputs(ctx, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install inputs: %w", err))
 		return

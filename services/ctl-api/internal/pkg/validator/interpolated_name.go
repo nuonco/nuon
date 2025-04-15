@@ -6,9 +6,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-var (
-	interpolatedNameRegex *regexp.Regexp = regexp.MustCompile("^[a-z0-9_]*$")
-)
+var interpolatedNameRegex *regexp.Regexp = regexp.MustCompile("^[a-z0-9_]*$")
 
 type interpolatedNameString struct {
 	Val string `validate:"interpolated_name"`

@@ -3,15 +3,19 @@ package activities
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/dominikbraun/graph"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type GetAppInstallGraphRequest struct {
 	AppID     string `json:"app_id"`
 	InstallID string `json:"install_id"`
+
+	Reverse bool `json:"reverse"`
 }
 
 // @temporal-gen activity
@@ -33,7 +37,6 @@ func (a *Activities) GetAppInstallGraph(ctx context.Context, req GetAppInstallGr
 
 	// remove install components that no longer exist but retain
 	// the order of the componentIDs
-
 	sanitizedCompIDs := make([]string, 0)
 
 	for _, componentID := range componentIDs {
@@ -57,6 +60,10 @@ func (a *Activities) GetAppInstallGraph(ctx context.Context, req GetAppInstallGr
 		}
 
 		sanitizedCompIDs = append(sanitizedCompIDs, componentID)
+	}
+
+	if req.Reverse {
+		slices.Reverse(sanitizedCompIDs)
 	}
 
 	return sanitizedCompIDs, nil

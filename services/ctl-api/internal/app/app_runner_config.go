@@ -20,6 +20,9 @@ const (
 	AppRunnerTypeAzureAKS AppRunnerType = "azure-aks"
 	AppRunnerTypeAzureACS AppRunnerType = "azure-acs"
 	AppRunnerTypeLocal    AppRunnerType = "local"
+
+	// the aws independent runner
+	AppRunnerTypeAWS AppRunnerType = "aws"
 )
 
 func (a AppRunnerType) JobType() RunnerJobType {
@@ -28,7 +31,7 @@ func (a AppRunnerType) JobType() RunnerJobType {
 		return RunnerJobTypeRunnerTerraform
 	case AppRunnerTypeAWSEKS, AppRunnerTypeAzureAKS:
 		return RunnerJobTypeRunnerHelm
-	case AppRunnerTypeLocal:
+	case AppRunnerTypeLocal, AppRunnerTypeAWS:
 		return RunnerJobTypeRunnerLocal
 	default:
 	}
@@ -44,9 +47,10 @@ type AppRunnerConfig struct {
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
-	OrgID string `json:"org_id" gorm:"notnull;default null"`
-	Org   Org    `faker:"-" json:"-"`
-	AppID string `json:"app_id"`
+	OrgID       string `json:"org_id" gorm:"notnull;default null"`
+	Org         Org    `faker:"-" json:"-"`
+	AppID       string `json:"app_id"`
+	AppConfigID string `json:"app_config_id"`
 
 	EnvVars pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
 	Type    AppRunnerType `json:"app_runner_type" gorm:"not null;default null;"`
@@ -84,7 +88,7 @@ func (a *AppRunnerConfig) BeforeCreate(tx *gorm.DB) error {
 
 func (a *AppRunnerConfig) AfterQuery(tx *gorm.DB) error {
 	switch a.Type {
-	case AppRunnerTypeAWSECS, AppRunnerTypeAWSEKS:
+	case AppRunnerTypeAWSECS, AppRunnerTypeAWSEKS, AppRunnerTypeAWS:
 		a.CloudPlatform = CloudPlatformAWS
 	case AppRunnerTypeAzureAKS, AppRunnerTypeAzureACS:
 		a.CloudPlatform = CloudPlatformAzure

@@ -1,6 +1,8 @@
 package generics
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func DeleteSliceKey(obj interface{}, key string) {
 	objs, ok := obj.([]interface{})
@@ -77,4 +79,22 @@ func SliceToGroups[T any](vals []T, grpSize int) [][]T {
 		grps = append(grps, vals[i:end])
 	}
 	return grps
+}
+
+func SliceAfterValue[T comparable](vals []T, val T) []T {
+	after := make([]T, 0, len(vals))
+	found := false
+
+	for _, v := range vals {
+		if v == val {
+			found = true
+			continue
+		}
+
+		if found {
+			after = append(after, v)
+		}
+	}
+
+	return after
 }

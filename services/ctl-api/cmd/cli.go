@@ -15,11 +15,13 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/analytics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/propagator"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cloudformation"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/ch"
 	dblog "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/psql"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/github"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/loops"
@@ -56,9 +58,11 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(eventloop.New),
 		fx.Provide(teventloop.New),
 		fx.Provide(authz.New),
+		fx.Provide(features.New),
 		fx.Provide(account.New),
 		fx.Provide(analytics.New),
 		fx.Provide(analytics.NewTemporal),
+		fx.Provide( cloudformation.NewTemplates),
 
 		// add helpers for each domain
 		fx.Provide(vcshelpers.New),

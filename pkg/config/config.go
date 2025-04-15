@@ -17,7 +17,7 @@ type AppConfig struct {
 	// Slack webhook url to receive notifications
 	SlackWebhookURL string `mapstructure:"slack_webhook_url"`
 	// Readme for the app
-	Readme string `mapstructure:"readme,omitempty"`
+	Readme string `mapstructure:"readme,omitempty" features:"get,template"`
 	// Input configuration
 	Inputs *AppInputConfig `mapstructure:"inputs,omitempty"`
 	// Sandbox configuration
@@ -25,7 +25,17 @@ type AppConfig struct {
 	// Runner configuration
 	Runner *AppRunnerConfig `mapstructure:"runner" jsonschema:"required"`
 	// Installer configuration
-	Installer *InstallerConfig `mapstructure:"installer"`
+	Installer *InstallerConfig `mapstructure:"installer,omitempty"`
+	// Permissions config
+	Permissions *PermissionsConfig `mapstructure:"permissions,omitempty"`
+	// Policies config
+	Policies *PoliciesConfig `mapstructure:"policies,omitempty"`
+	// Secrets config
+	Secrets *SecretsConfig `mapstructure:"secrets,omitempty"`
+	// Break-glass config
+	BreakGlass *BreakGlass `mapstructure:"break_glass,omitempty"`
+	// CloudFormationStack config
+	CloudFormationStack *CloudformationStackConfig `mapstructure:"cloudformation_stack,omitempty"`
 
 	// NOTE: in order to prevent users having to declare multiple arrays of _different_ component types:
 	// eg: [[terraform_module_components]]

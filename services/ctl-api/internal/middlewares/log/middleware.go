@@ -48,6 +48,16 @@ func (m middleware) Handler() gin.HandlerFunc {
 				m.l.Debug("no account object on request")
 			}
 
+			if c.Request.Body != nil && m.cfg.LogRequestBody {
+				body, err := c.GetRawData()
+				if err == nil || len(body) > 0 {
+					fields = append(fields, zap.String("request_body", string(body)))
+				} else {
+					m.l.Error("no request body to write")
+				}
+
+			}
+
 			return fields
 		},
 		Skipper: func(c *gin.Context) bool {

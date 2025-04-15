@@ -8,6 +8,13 @@ import (
 )
 
 func (s *Helpers) validateApp(parentApp *app.App) error {
+	if len(parentApp.AppConfigs) < 1 {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("app does not have any configs"),
+			Description: "please make create at least one app config first",
+		}
+	}
+
 	// validate the app is correctly configured and healthy
 	if len(parentApp.AppSandboxConfigs) < 1 {
 		return stderr.ErrUser{
@@ -21,6 +28,7 @@ func (s *Helpers) validateApp(parentApp *app.App) error {
 			Description: "please make create at least one app runner config first",
 		}
 	}
+
 	if parentApp.Status == "error" {
 		return stderr.ErrUser{
 			Err:         fmt.Errorf("app is in an error state"),

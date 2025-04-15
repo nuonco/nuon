@@ -52,3 +52,15 @@ type ErrSystem struct {
 func (e ErrSystem) Error() string {
 	return e.Err.Error()
 }
+
+type ErrInvalidRequest struct {
+	Err error
+}
+
+func (e ErrInvalidRequest) Error() string {
+	return e.Err.Error()
+}
+
+func (e ErrInvalidRequest) Unwrap() error {
+	return e.Err
+}

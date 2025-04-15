@@ -51,22 +51,38 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/apps/:app_id/config", s.CreateAppConfig)
 	api.GET("/v1/apps/:app_id/configs", s.GetAppConfigs)
 	api.GET("/v1/apps/:app_id/config/:app_config_id", s.GetAppConfig)
-	api.GET("/v1/apps/:app_id/latest-config", s.GetAppLatestConfig)
 	api.PATCH("/v1/apps/:app_id/config/:app_config_id", s.UpdateAppConfig)
 
 	// app sandbox management
 	api.POST("/v1/apps/:app_id/sandbox-config", s.CreateAppSandboxConfig)
-	api.GET("/v1/apps/:app_id/sandbox-latest-config", s.GetAppSandboxLatestConfig)
 	api.GET("/v1/apps/:app_id/sandbox-configs", s.GetAppSandboxConfigs)
 
+	// app secrets management
+	api.POST("/v1/apps/:app_id/secrets-configs", s.CreateAppSecretsConfig)
+	api.GET("/v1/apps/:app_id/secrets-configs", s.GetAppSecretsConfig)
+
+	// app cloudformation stack configs
+	api.POST("/v1/apps/:app_id/cloudformation-stack-configs", s.CreateAppCloudFormationStackConfig)
+	api.GET("/v1/apps/:app_id/cloudformation-stack-configs/:config_id", s.GetAppSecretsConfig)
+
+	// app policies management
+	api.POST("/v1/apps/:app_id/policies-configs", s.CreateAppPoliciesConfig)
+	api.GET("/v1/apps/:app_id/policies-configs/:app_policies_config_id", s.GetAppPoliciesConfig)
+
+	// app break glass
+	api.POST("/v1/apps/:app_id/break-glass-configs", s.CreateAppBreakGlasssConfig)
+	api.GET("/v1/apps/:app_id/break-glass-configs/:app_break_glass_config_id", s.GetAppBreakGlassConfig)
+
+	// app permissions
+	api.POST("/v1/apps/:app_id/permissions-configs", s.CreateAppPermissionsConfig)
+	api.GET("/v1/apps/:app_id/permissions-configs/:app_permissions_config_id", s.GetAppPermissionsConfig)
+
 	// app runner management
-	api.POST("/v1/apps/:app_id/runner-config", s.CreateAppRunnerConfig)
-	api.GET("/v1/apps/:app_id/runner-latest-config", s.GetAppRunnerLatestConfig)
+	api.POST("/v1/apps/:app_id/runner-configs", s.CreateAppRunnerConfig)
 	api.GET("/v1/apps/:app_id/runner-configs", s.GetAppRunnerConfigs)
 
 	// app input management
 	api.POST("/v1/apps/:app_id/input-config", s.CreateAppInputsConfig)
-	api.GET("/v1/apps/:app_id/input-latest-config", s.GetAppInputLatestConfig)
 	api.GET("/v1/apps/:app_id/input-configs", s.GetAppInputConfigs)
 	api.GET("/v1/apps/:app_id/input-configs/:input_config_id", s.GetAppInputConfig)
 
@@ -74,6 +90,16 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/apps/:app_id/secret", s.CreateAppSecret)
 	api.GET("/v1/apps/:app_id/secrets", s.GetAppSecrets)
 	api.DELETE("/v1/apps/:app_id/secret/:secret_id", s.DeleteAppSecret)
+
+	// TODO deprecate
+	api.GET("/v1/apps/:app_id/latest-break-glass-config", s.GetLatestAppBreakGlassConfig)
+	api.GET("/v1/apps/:app_id/runner-latest-config", s.GetAppRunnerLatestConfig)
+	api.GET("/v1/apps/:app_id/input-latest-config", s.GetAppInputLatestConfig)
+	api.GET("/v1/apps/:app_id/latest-policies-config", s.GetLatestAppPoliciesConfig)
+	api.GET("/v1/apps/:app_id/latest-config", s.GetAppLatestConfig)
+	api.GET("/v1/apps/:app_id/sandbox-latest-config", s.GetAppSandboxLatestConfig)
+	api.GET("/v1/apps/:app_id/latest-secrets-config", s.GetLatestAppSecretsConfig)
+	api.GET("/v1/apps/:app_id/latest-permissions-config", s.GetLatestAppPermissionsConfig)
 
 	return nil
 }
