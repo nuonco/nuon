@@ -74,6 +74,7 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
                   }}
                   onSuccess={(install) => {
                     router.push(`/${orgId}/installs/${install.id}/history`)
+                    setIsOpen(false)
                   }}
                   onCancel={() => {
                     setIsOpen(false)
