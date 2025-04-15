@@ -12,7 +12,9 @@ import (
 
 type ParseConfig struct {
 	Filename string
-	Bytes    []byte
+	Dirname  string
+
+	Bytes []byte
 
 	BackendType config.BackendType
 	V           *validator.Validate

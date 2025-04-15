@@ -10,6 +10,10 @@ func NewAppID() string {
 	return shortid.NewNanoID("app")
 }
 
+func NewAppCfgID() string {
+	return shortid.NewNanoID("apc")
+}
+
 func NewAccountID() string {
 	return shortid.NewNanoID("acc")
 }
@@ -36,6 +40,10 @@ func NewArtifactID() string {
 
 func NewAWSAccountID() string {
 	return shortid.NewNanoID("aws")
+}
+
+func NewAWSCloudFormationStackID() string {
+	return shortid.NewNanoID("acq")
 }
 
 func NewAzureAccountID() string {
@@ -124,6 +132,14 @@ func NewSandboxRunID() string {
 
 func NewInstallID() string {
 	return shortid.NewNanoID("inl")
+}
+
+func NewInstallWorkflowID() string {
+	return shortid.NewNanoID("inw")
+}
+
+func NewInstallWorkflowStepID() string {
+	return shortid.NewNanoID("iws")
 }
 
 func NewInstanceID() string {

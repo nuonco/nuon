@@ -41,6 +41,15 @@ func AllModels() []interface{} {
 		&app.AppInputGroup{},
 		&app.AppInputConfig{},
 		&app.AppSecret{},
+		&app.AppSecretsConfig{},
+		&app.AppSecretConfig{},
+		&app.AppPoliciesConfig{},
+		&app.AppPolicyConfig{},
+		&app.AppPermissionsConfig{},
+		&app.AppAWSIAMRoleConfig{},
+		&app.AppAWSIAMPolicyConfig{},
+		&app.AppBreakGlassConfig{},
+		&app.AppCloudFormationStackConfig{},
 
 		// installs
 		&app.AWSAccount{},
@@ -50,6 +59,11 @@ func AllModels() []interface{} {
 		&app.InstallInputs{},
 		&app.InstallSandboxRun{},
 		&app.InstallIntermediateData{},
+
+		// install stacks
+		&app.InstallAWSCloudFormationStack{},
+		&app.InstallAWSCloudFormationStackVersion{},
+		&app.InstallAWSCloudFormationStackRun{},
 
 		// component configuration
 		&app.Component{},
@@ -87,7 +101,7 @@ func AllModels() []interface{} {
 		&app.RunnerJobExecutionOutputs{},
 		&app.RunnerJobExecutionResult{},
 
-		// diagnostics
+		// actions
 		&app.ActionWorkflow{},
 		&app.ActionWorkflowConfig{},
 		&app.ActionWorkflowStepConfig{},
@@ -96,6 +110,13 @@ func AllModels() []interface{} {
 		&app.InstallActionWorkflowRun{},
 		&app.InstallActionWorkflowManualTrigger{},
 		&app.InstallActionWorkflowRunStep{},
+
+		// install workflows
+		&app.InstallWorkflow{},
+		&app.InstallWorkflowStep{},
+		&app.InstallWorkflowStepApproval{},
+		&app.InstallWorkflowStepApprovalResponse{},
+		&app.InstallWorkflowStepPolicyValidation{},
 
 		// internal
 		&migrations.MigrationModel{},

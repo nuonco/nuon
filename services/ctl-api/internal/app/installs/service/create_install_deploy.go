@@ -25,23 +25,23 @@ func (c *CreateInstallDeployRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						CreateInstallDeploy
-//	@Summary				deploy a build to an install
-//	@Description.markdown	create_install_deploy.md
-//	@Param					install_id	path	string						true	"install ID"
-//	@Param					req			body	CreateInstallDeployRequest	true	"Input"
-//	@Tags					installs
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.InstallDeploy
-//	@Router					/v1/installs/{install_id}/deploys [post]
+// @ID						CreateInstallDeploy
+// @Summary				deploy a build to an install
+// @Description.markdown	create_install_deploy.md
+// @Param					install_id	path	string						true	"install ID"
+// @Param					req			body	CreateInstallDeployRequest	true	"Input"
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.InstallDeploy
+// @Router					/v1/installs/{install_id}/deploys [post]
 func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
@@ -57,10 +57,37 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 		return
 	}
 
+	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureIndependentRunner)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	if !enabled {
+		s.evClient.Send(ctx, installID, &signals.Signal{
+			Type:     signals.OperationDeploy,
+			DeployID: deploy.ID,
+		})
+		ctx.JSON(http.StatusOK, deploy)
+		return
+	}
+
+	workflow, err := s.helpers.CreateInstallWorkflow(ctx,
+		installID,
+		app.InstallWorkflowTypeManualDeploy,
+		map[string]string{
+			"install_deploy_id": deploy.ID,
+		},
+		app.StepErrorBehaviorAbort,
+	)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	s.evClient.Send(ctx, installID, &signals.Signal{
-		Type:     signals.OperationDeploy,
-		DeployID: deploy.ID,
+		Type:              signals.OperationExecuteWorkflow,
+		InstallWorkflowID: workflow.ID,
 	})
+
 	ctx.JSON(http.StatusCreated, deploy)
 }
 

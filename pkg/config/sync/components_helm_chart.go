@@ -15,6 +15,7 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 	obj := comp.HelmChart
 
 	configRequest := &models.ServiceCreateHelmComponentConfigRequest{
+		AppConfigID:              s.appConfigID,
 		ChartName:                generics.ToPtr(obj.ChartName),
 		ConnectedGithubVcsConfig: nil,
 		PublicGitVcsConfig:       nil,

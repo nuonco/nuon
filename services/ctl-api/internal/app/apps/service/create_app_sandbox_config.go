@@ -21,6 +21,8 @@ type CreateAppSandboxConfigRequest struct {
 	SandboxInputs    map[string]*string `json:"sandbox_inputs" validate:"required"`
 
 	AWSDelegationIAMRoleARN string `json:"aws_delegation_iam_role_arn"`
+
+	AppConfigID string `json:"app_config_id"`
 }
 
 func (c *CreateAppSandboxConfigRequest) Validate(v *validator.Validate) error {
@@ -30,23 +32,23 @@ func (c *CreateAppSandboxConfigRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						CreateAppSandboxConfig
-//	@Summary				create an app sandbox config
-//	@Description.markdown	create_app_sandbox_config.md
-//	@Tags					apps
-//	@Accept					json
-//	@Param					req	body	CreateAppSandboxConfigRequest	true	"Input"
-//	@Produce				json
-//	@Param					app_id	path	string	true	"app ID"
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.AppSandboxConfig
-//	@Router					/v1/apps/{app_id}/sandbox-config [post]
+// @ID						CreateAppSandboxConfig
+// @Summary				create an app sandbox config
+// @Description.markdown	create_app_sandbox_config.md
+// @Tags					apps
+// @Accept					json
+// @Param					req	body	CreateAppSandboxConfigRequest	true	"Input"
+// @Produce				json
+// @Param					app_id	path	string	true	"app ID"
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.AppSandboxConfig
+// @Router					/v1/apps/{app_id}/sandbox-config [post]
 func (s *service) CreateAppSandboxConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
@@ -100,6 +102,7 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 
 	appSandboxConfig := app.AppSandboxConfig{
 		AppID:                    appID,
+		AppConfigID:              req.AppConfigID,
 		PublicGitVCSConfig:       publicGitConfig,
 		ConnectedGithubVCSConfig: githubVCSConfig,
 		Variables:                pgtype.Hstore(req.SandboxInputs),

@@ -8,12 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type CreateAppRunnerConfigRequest struct {
 	Type    app.AppRunnerType  `json:"type" validate:"required"`
 	EnvVars map[string]*string `json:"env_vars"`
+
+	AppConfigID string `json:"app_config_id"`
 }
 
 func (c *CreateAppRunnerConfigRequest) Validate(v *validator.Validate) error {
@@ -39,7 +42,7 @@ func (c *CreateAppRunnerConfigRequest) Validate(v *validator.Validate) error {
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.AppRunnerConfig
-// @Router					/v1/apps/{app_id}/runner-config [post]
+// @Router					/v1/apps/{app_id}/runner-configs [post]
 func (s *service) CreateAppRunnerConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
@@ -64,9 +67,10 @@ func (s *service) CreateAppRunnerConfig(ctx *gin.Context) {
 
 func (s *service) createAppRunnerConfig(ctx context.Context, appID string, req *CreateAppRunnerConfigRequest) (*app.AppRunnerConfig, error) {
 	appRunnerConfig := app.AppRunnerConfig{
-		AppID:   appID,
-		EnvVars: pgtype.Hstore(req.EnvVars),
-		Type:    req.Type,
+		AppConfigID: req.AppConfigID,
+		AppID:       appID,
+		EnvVars:     pgtype.Hstore(req.EnvVars),
+		Type:        req.Type,
 	}
 	res := s.db.WithContext(ctx).
 		Create(&appRunnerConfig)
