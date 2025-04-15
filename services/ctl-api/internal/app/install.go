@@ -32,6 +32,9 @@ type Install struct {
 	App   App    `swaggerignore:"true" json:"app"`
 	AppID string `json:"app_id" gorm:"notnull;index:idx_app_install_name,unique"`
 
+	AppConfigID string    `json:"app_config_id"`
+	AppConfig   AppConfig `json:"-"`
+
 	AppSandboxConfigID string           `json:"-" swaggerignore:"true"`
 	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config"`
 
@@ -45,8 +48,9 @@ type Install struct {
 	InstallEvents           []InstallEvent            `json:"install_events" gorm:"constraint:OnDelete:CASCADE;"`
 	InstallIntermediateData []InstallIntermediateData `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
-	AWSAccount   *AWSAccount   `json:"aws_account" gorm:"constraint:OnDelete:CASCADE;"`
-	AzureAccount *AzureAccount `json:"azure_account" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallAWSCloudFormationStack *InstallAWSCloudFormationStack `json:"install_aws_cloudformation_stack" gorm:"constraint:OnDelete:CASCADE;"`
+	AWSAccount                       *AWSAccount                    `json:"aws_account" gorm:"constraint:OnDelete:CASCADE;"`
+	AzureAccount                     *AzureAccount                  `json:"azure_account" gorm:"constraint:OnDelete:CASCADE;"`
 
 	RunnerGroup RunnerGroup `json:"-" temporaljson:"runner_group" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;"`
 

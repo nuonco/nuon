@@ -84,6 +84,7 @@ func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, insta
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		w.writeDeployEvent(ctx, installDeploy.ID, signals.OperationDeploy, app.OperationStatusFailed)
+		l.Error("unable to create plan", zap.Error(err))
 		return fmt.Errorf("unable to convert plan to json: %w", err)
 	}
 

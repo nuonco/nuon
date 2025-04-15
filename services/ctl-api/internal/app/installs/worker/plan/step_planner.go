@@ -40,7 +40,7 @@ func (p *planner) createStepPlan(ctx workflow.Context, step app.InstallActionWor
 	plan.GitSource = gitSource
 
 	// step 2 - interpolate all variables in the set
-	l.Debug("fetching install intermediate data")
+	l.Debug("fetching install state")
 	state, err := activities.AwaitGetInstallStateByInstallID(ctx, installID)
 	if err != nil {
 		l.Error("unable to get install state", zap.Error(err))
@@ -61,6 +61,27 @@ func (p *planner) createStepPlan(ctx workflow.Context, step app.InstallActionWor
 		}
 
 		plan.InterpolatedEnvVars[k] = renderedVal
+	}
+
+	if step.Step.InlineContents != "" {
+		l.Debug("rendering inline contents")
+		renderedVal, err := render.Render(step.Step.InlineContents, stateMap)
+		if err != nil {
+			return nil, err
+		}
+
+		l.Debug("successfully rendered inline contents", zap.String("rendered", renderedVal))
+		step.Step.InlineContents = renderedVal
+	}
+	if step.Step.Command != "" {
+		l.Debug("rendering command")
+		renderedVal, err := render.Render(step.Step.Command, stateMap)
+		if err != nil {
+			return nil, err
+		}
+
+		l.Debug("successfully rendered command", zap.String("rendered", renderedVal))
+		step.Step.Command = renderedVal
 	}
 
 	return plan, nil

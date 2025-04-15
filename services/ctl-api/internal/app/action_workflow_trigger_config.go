@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -22,8 +23,18 @@ const (
 	ActionWorkflowTriggerTypePreSandboxRun  ActionWorkflowTriggerType = "pre-sandbox-run"
 	ActionWorkflowTriggerTypePostSandboxRun ActionWorkflowTriggerType = "post-sandbox-run"
 
-	ActionWorkflowTriggerTypePreDeploy  ActionWorkflowTriggerType = "pre-deploy"
-	ActionWorkflowTriggerTypePostDeploy ActionWorkflowTriggerType = "post-deploy"
+	// triggers that run on a specific component deploy
+	ActionWorkflowTriggerTypePreDeployComponent  ActionWorkflowTriggerType = "pre-component-deploy"
+	ActionWorkflowTriggerTypePostDeployComponent ActionWorkflowTriggerType = "post-component-deploy"
+
+	// triggers that are run on delete
+	ActionWorkflowTriggerTypePreTeardownComponent  ActionWorkflowTriggerType = "pre-component-delete"
+	ActionWorkflowTriggerTypePostTeardownComponent ActionWorkflowTriggerType = "post-component-delete"
+
+	// NOTE(jm): the following triggers are going to be deprecated
+	// triggers that run on _every_ component deploy
+	ActionWorkflowTriggerTypePreDeployAll  ActionWorkflowTriggerType = "pre-deploy"
+	ActionWorkflowTriggerTypePostDeployAll ActionWorkflowTriggerType = "post-deploy"
 )
 
 type ActionWorkflowTriggerConfig struct {
@@ -48,10 +59,12 @@ type ActionWorkflowTriggerConfig struct {
 	ActionWorkflowConfigID string               `json:"action_workflow_config_id" gorm:"index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique"`
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"-"`
 
+	Type ActionWorkflowTriggerType `json:"type" swaggertype:"string" gorm:"default null;not null;index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique"`
+
 	// individual fields for different types
 
-	Type         ActionWorkflowTriggerType `json:"type" swaggertype:"string" gorm:"default null;not null;index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique"`
-	CronSchedule string                    `json:"cron_schedule,omitempty"`
+	CronSchedule string              `json:"cron_schedule,omitempty"`
+	ComponentID  generics.NullString `json:"component_id" swaggertype:"string"`
 }
 
 func (a *ActionWorkflowTriggerConfig) BeforeCreate(tx *gorm.DB) error {

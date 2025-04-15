@@ -11,6 +11,7 @@ import (
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/plan"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cloudformation"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
@@ -24,6 +25,7 @@ type Params struct {
 	MW        metrics.Writer
 	EVClient  teventloop.Client
 	Analytics temporalanalytics.Writer
+	Templates *cloudformation.Templates
 }
 
 type Workflows struct {
@@ -33,6 +35,7 @@ type Workflows struct {
 	mw        tmetrics.Writer
 	evClient  teventloop.Client
 	analytics temporalanalytics.Writer
+	templates *cloudformation.Templates
 }
 
 func (w *Workflows) All() []any {
@@ -64,5 +67,6 @@ func NewWorkflows(params Params) (*Workflows, error) {
 		evClient:  params.EVClient,
 		mw:        tmw,
 		analytics: params.Analytics,
+		templates: params.Templates,
 	}, nil
 }

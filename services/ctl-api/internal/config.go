@@ -130,6 +130,10 @@ type Config struct {
 	UseLocalRunners         bool   `config:"use_local_runners"`
 	PublicAPIURL            string `config:"public_api_url" validate:"required"`
 
+	// cloudformation phone home
+	AWSCloudFormationStackTemplateBucket  string `config:"aws_cloudformation_stack_template_bucket"`
+	AWSCloudFormationStackTemplateBaseURL string `config:"aws_cloudformation_stack_template_base_url"`
+
 	// analytics configuration
 	SegmentWriteKey  string `config:"segment_write_key" validate:"required"`
 	DisableAnalytics bool   `config:"disable_analytics"`
@@ -139,6 +143,7 @@ type Config struct {
 
 	// Force debug mode for everything
 	ForceDebugMode bool `config:"force_debug_mode"`
+	LogRequestBody bool `config:"log_request_body"`
 }
 
 func NewConfig() (*Config, error) {
