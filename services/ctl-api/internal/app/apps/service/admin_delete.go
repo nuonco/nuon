@@ -40,7 +40,7 @@ func (s *service) AdminDeleteApp(ctx *gin.Context) {
 			Type: installsignals.OperationDelete,
 		})
 		s.evClient.Send(ctx, install.ID, &installsignals.Signal{
-			Type: installsignals.OperationForgotten,
+			Type: installsignals.OperationForget,
 		})
 	}
 

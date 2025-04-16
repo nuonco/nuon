@@ -24,19 +24,9 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 		return err
 	}
 
-	if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
-		InstallID:       install.ID,
-		TriggerType:     app.ActionWorkflowTriggerTypePreSandboxRun,
-		TriggeredByID:   installRun.ID,
-		TriggeredByType: "install_sandbox_runs",
-		RunEnvVars: generics.ToPtrStringMap(map[string]string{
-			"TRIGGER":          string(app.ActionWorkflowTriggerTypePreSandboxRun),
-			"SANDBOX_RUN_TYPE": string(installRun.RunType),
-			"SANDBOX_RUN_ID":   installRun.ID,
-		}),
-	}); err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "lifecycle hooks failed")
-		return errors.Wrap(err, "lifecycle hooks failed")
+	enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureIndependentRunner))
+	if err != nil {
+		return err
 	}
 
 	// create the job
@@ -55,29 +45,6 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create runner job")
 		return fmt.Errorf("unable to create runner job: %w", err)
-	}
-
-	// check permissions
-	var checkResp executors.CheckPermissionsResponse
-	checkReq := &executors.CheckPermissionsRequest{
-		AWSSettings:   w.protos.ToAWSSettings(install),
-		AzureSettings: w.protos.ToAzureSettings(install),
-		Metadata: executors.Metadata{
-			OrgID:     install.OrgID,
-			AppID:     install.AppID,
-			InstallID: install.ID,
-		},
-	}
-
-	if !sandboxMode {
-		if err := w.execChildWorkflow(ctx, install.ID, executors.CheckPermissionsWorkflowName, sandboxMode, checkReq, &checkResp); err != nil {
-			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusAccessError, "unable to validate credentials before install "+err.Error())
-			return fmt.Errorf("unable to validate credentials before install: %w", err)
-		}
-	} else {
-		l.Info("skipping check permissions",
-			zap.Any("install_id", install.ID),
-			zap.String("org_id", install.OrgID))
 	}
 
 	// create the sandbox plan request
@@ -125,32 +92,21 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 		return errors.Wrap(err, "unable to save install intermediate data")
 	}
 
+	runnerID := install.Org.RunnerGroup.Runners[0].ID
+	if enabled {
+		runnerID = install.RunnerID
+	}
+
 	// queue job
 	l.Info("queued job and waiting on it to be picked up by runner event loop")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID:   install.Org.RunnerGroup.Runners[0].ID,
 		JobID:      runnerJob.ID,
+		RunnerID:   runnerID,
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job failed")
 		return fmt.Errorf("unable to execute job: %w", err)
-	}
-
-	// execute actions
-	if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
-		InstallID:       install.ID,
-		TriggerType:     app.ActionWorkflowTriggerTypePostSandboxRun,
-		TriggeredByID:   installRun.ID,
-		TriggeredByType: "install_sandbox_runs",
-		RunEnvVars: generics.ToPtrStringMap(map[string]string{
-			"TRIGGER":          string(app.ActionWorkflowTriggerTypePostSandboxRun),
-			"SANDBOX_RUN_TYPE": string(installRun.RunType),
-			"SANDBOX_RUN_ID":   installRun.ID,
-		}),
-	}); err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "lifecycle hooks failed")
-		return errors.Wrap(err, "lifecycle hooks failed")
 	}
 
 	l.Info("configuring DNS for nuon.run domain if enabled")

@@ -89,7 +89,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 	if parentApp.AppRunnerConfigs[0].Type == "aws" {
-		install.InstallAWSCloudFormationStack = &app.InstallAWSCloudFormationStack{}
+		install.InstallStack = &app.InstallStack{}
 	}
 
 	res = s.db.WithContext(ctx).Create(&install)

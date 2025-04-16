@@ -52,10 +52,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 				body, err := c.GetRawData()
 				if err == nil || len(body) > 0 {
 					fields = append(fields, zap.String("request_body", string(body)))
-				} else {
-					m.l.Error("no request body to write")
 				}
-
 			}
 
 			return fields

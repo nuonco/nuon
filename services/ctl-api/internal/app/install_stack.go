@@ -9,14 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
-type InstallCloudFormationStackVersionStatus string
-
-const (
-	InstallCloudFormationStackVersionVersionStatusGenerating InstallCloudFormationStackVersionStatus = "generating"
-	InstallCloudFormationStackVersionVersionStatusError      InstallCloudFormationStackVersionStatus = "error"
-)
-
-type InstallAWSCloudFormationStack struct {
+type InstallStack struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedBy   Account               `json:"-"`
@@ -29,10 +22,10 @@ type InstallAWSCloudFormationStack struct {
 
 	InstallID string `json:"install_id" gorm:"notnull;default null"`
 
-	Versions []InstallAWSCloudFormationStackVersion `json:"versions" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallStackVersions []InstallStackVersion `json:"versions" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
-func (a *InstallAWSCloudFormationStack) BeforeCreate(tx *gorm.DB) error {
+func (a *InstallStack) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
 		a.ID = domains.NewAppCfgID()
 	}

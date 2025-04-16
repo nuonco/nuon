@@ -49,7 +49,7 @@ func (s *service) ForgetInstall(ctx *gin.Context) {
 	}
 
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationForgotten,
+		Type: signals.OperationForget,
 	})
 	ctx.JSON(http.StatusOK, true)
 }
