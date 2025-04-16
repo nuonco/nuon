@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
+	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
@@ -72,9 +73,9 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 }
 
 func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHomeID string, req *InstallPhoneHomeRequest) error {
-	var stack app.InstallAWSCloudFormationStackVersion
+	var stack app.InstallStackVersion
 	if res := s.db.WithContext(ctx).
-		Where(app.InstallAWSCloudFormationStackVersion{
+		Where(app.InstallStackVersion{
 			InstallID:   installID,
 			PhoneHomeID: phoneHomeID,
 		}).
@@ -82,20 +83,24 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 		return errors.Wrap(res.Error, "unable to find cloudformation stack")
 	}
 
+	data, err := pkggenerics.ToMapstructureWithJSONTag(req)
+	if err != nil {
+		return errors.Wrap(err, "unable to convert to mapstructure")
+	}
+
 	// now make updates
-	updatedStack := app.InstallAWSCloudFormationStackVersion{
+	updatedStack := app.InstallStackVersion{
 		ID: stack.ID,
 	}
 	res := s.db.WithContext(ctx).
 		Model(&updatedStack).
-		Updates(app.InstallAWSCloudFormationStackVersion{
-			PhoneHomeData: generics.ToHstore(map[string]string{
-				"maintenance_role": req.MaintenanceRole,
-				"provision_role":   req.ProvisionRole,
-				"deprovision_role": req.DeprovisionRole,
-				"vpc_id":           req.VPCID,
-				"account_id":       req.AccountID,
-			}),
+		Updates(app.InstallStackVersion{
+			Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
+			Runs: []app.InstallStackVersionRun{
+				{
+					Data: generics.ToHstore(pkggenerics.ToStringMap(data)),
+				},
+			},
 		})
 	if res.Error != nil {
 		return errors.Wrap(res.Error, "unable to update stack version")

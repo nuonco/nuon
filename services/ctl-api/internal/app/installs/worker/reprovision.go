@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
@@ -36,6 +37,20 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create sandbox run")
 		return fmt.Errorf("unable to create install: %w", err)
+	}
+
+	enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureIndependentRunner))
+	if err != nil {
+		return err
+	}
+	if enabled {
+		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+			StepID:         sreq.WorkflowStepID,
+			StepTargetID:   installRun.ID,
+			StepTargetType: plugins.TableName(w.db, installRun),
+		}); err != nil {
+			return errors.Wrap(err, "unable to update install action workflow")
+		}
 	}
 
 	defer func() {

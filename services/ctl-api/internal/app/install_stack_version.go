@@ -9,7 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
-type AppCloudFormationStackConfig struct {
+type InstallStackVersion struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedBy   Account               `json:"-"`
@@ -20,18 +20,30 @@ type AppCloudFormationStackConfig struct {
 	OrgID string `json:"org_id" gorm:"notnull;default null"`
 	Org   Org    `faker:"-" json:"-"`
 
-	AppID       string `json:"app_id"`
+	InstallID      string `json:"install_id" gorm:"notnull;default null"`
+	InstallStackID string `json:"install_stack_id"`
+
 	AppConfigID string `json:"app_config_id"`
 
-	Name                    string `json:"name" features:"template"`
-	Description             string `json:"description" features:"template"`
-	RunnerNestedTemplateURL string `json:"runner_nested_template_url"`
-	VPCNestedTemplateURL    string `json:"vpc_nested_template_url"`
+	Status CompositeStatus `json:"composite_status" gorm:"type:jsonb"`
+
+	Runs []InstallStackVersionRun `json:"runs"`
+
+	Contents     []byte `json:"contents" gorm:"type:jsonb" swaggertype:"string"`
+	Checksum     string `json:"checksum"`
+	TemplateURL  string `json:"template_url"`
+	PhoneHomeID  string `json:"phone_home_id"`
+	PhoneHomeURL string `json:"phone_home_url"`
+
+	// aws configuration parameters
+	AWSBucketName string `json:"aws_bucket_name"`
+	AWSBucketKey  string `json:"aws_bucket_key"`
+	QuickLinkURL  string `json:"quick_link_url"`
 }
 
-func (a *AppCloudFormationStackConfig) BeforeCreate(tx *gorm.DB) error {
+func (a *InstallStackVersion) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
-		a.ID = domains.NewAppID()
+		a.ID = domains.NewAppCfgID()
 	}
 	if a.CreatedByID == "" {
 		a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
@@ -39,5 +51,6 @@ func (a *AppCloudFormationStackConfig) BeforeCreate(tx *gorm.DB) error {
 	if a.OrgID == "" {
 		a.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
+
 	return nil
 }

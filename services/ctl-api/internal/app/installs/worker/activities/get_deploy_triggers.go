@@ -9,7 +9,7 @@ import (
 )
 
 type GetInstallActionWorkflowsByTriggerTypeRequest struct {
-	ComponentID string                        `validate:"required"`
+	ComponentID string
 	InstallID   string                        `validate:"required"`
 	TriggerType app.ActionWorkflowTriggerType `validate:"required"`
 }
@@ -29,9 +29,16 @@ func (a *Activities) GetInstallActionWorkflowsByTriggerType(ctx context.Context,
 			return nil, errors.Wrap(err, "unable to get action workflow config")
 		}
 
-		if cfg.HasComponentTrigger(req.TriggerType, req.ComponentID) {
-			wkflows = append(wkflows, workflow)
+		if req.ComponentID == "" {
+			if cfg.HasTrigger(req.TriggerType) {
+				wkflows = append(wkflows, workflow)
+			}
+		} else {
+			if cfg.HasComponentTrigger(req.TriggerType, req.ComponentID) {
+				wkflows = append(wkflows, workflow)
+			}
 		}
+
 	}
 
 	return wkflows, nil

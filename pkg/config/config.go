@@ -34,8 +34,8 @@ type AppConfig struct {
 	Secrets *SecretsConfig `mapstructure:"secrets,omitempty"`
 	// Break-glass config
 	BreakGlass *BreakGlass `mapstructure:"break_glass,omitempty"`
-	// CloudFormationStack config
-	CloudFormationStack *CloudformationStackConfig `mapstructure:"cloudformation_stack,omitempty"`
+	// Stack config
+	Stack *StackConfig `mapstructure:"stack,omitempty"`
 
 	// NOTE: in order to prevent users having to declare multiple arrays of _different_ component types:
 	// eg: [[terraform_module_components]]

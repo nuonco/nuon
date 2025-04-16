@@ -9,20 +9,20 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-type SaveAWSCloudFormationStackVersionTemplateRequest struct {
+type SaveInstallStackVersionTemplateRequest struct {
 	ID       string `validate:"required"`
 	Template []byte `validate:"required"`
 	Checksum string `validate:"required"`
 }
 
 // @temporal-gen activity
-func (a *Activities) SaveAWSCloudFormationStackVersionTemplate(ctx context.Context, req *SaveAWSCloudFormationStackVersionTemplateRequest) error {
-	obj := &app.InstallAWSCloudFormationStackVersion{
+func (a *Activities) SaveInstallStackVersionTemplate(ctx context.Context, req *SaveInstallStackVersionTemplateRequest) error {
+	obj := &app.InstallStackVersion{
 		ID: req.ID,
 	}
 
 	res := a.db.WithContext(ctx).
-		Model(&obj).Updates(app.InstallAWSCloudFormationStackVersion{
+		Model(&obj).Updates(app.InstallStackVersion{
 		Contents: req.Template,
 	})
 

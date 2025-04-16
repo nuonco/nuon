@@ -33,6 +33,7 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 		w.updateStatus(ctx, sreq.ID, app.RunnerStatusError, "unable to create operation")
 		return errors.Wrap(err, "unable to create operation")
 	}
+
 	// if no log stream exists, create one
 	_, err = cctx.GetLogStreamWorkflow(ctx)
 	if err != nil {

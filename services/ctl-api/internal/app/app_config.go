@@ -64,11 +64,11 @@ type AppConfig struct {
 	SandboxConfig              AppSandboxConfig             `json:"sandbox,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	InputConfig                AppInputConfig               `json:"input,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	RunnerConfig               AppRunnerConfig              `json:"runner,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	CloudFormationStackConfig  AppCloudFormationStackConfig `json:"cloudformation_stack,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	CloudFormationStackConfig  AppStackConfig `json:"cloudformation_stack,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	ComponentConfigConnections []ComponentConfigConnection  `json:"component_config_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 
 	// individual pointers
-	InstallAWSCloudFormationStackVersion []InstallAWSCloudFormationStackVersion `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallAWSCloudFormationStackVersion []InstallStackVersion `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
 	// fields that are filled in via after query or views
 	Version int `json:"version" gorm:"->;-:migration"`
