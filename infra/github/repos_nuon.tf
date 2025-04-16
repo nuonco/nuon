@@ -418,34 +418,6 @@ module "nuon-policies" {
   }
 }
 
-module "aws-lambda-runner-phone-home" {
-  source           = "./modules/repository"
-  name             = "aws-lambda-runner-phone-home"
-  description      = "Lambda function for runner cloudformation installers to phone home."
-  required_checks  = []
-  is_public        = true
-  owning_team_id   = github_team.nuon.id
-  owning_team_name = "nuonco/${github_team.nuon.name}"
-
-  providers = {
-    github = github.nuon
-  }
-}
-
-module "aws-runner-init" {
-  source           = "./modules/repository"
-  name             = "aws-runner-init"
-  description      = "Instance init script (UserData) for runner cloudformation installers."
-  required_checks  = []
-  is_public        = true
-  owning_team_id   = github_team.nuon.id
-  owning_team_name = "nuonco/${github_team.nuon.name}"
-
-  providers = {
-    github = github.nuon
-  }
-}
-
 module "content" {
   source           = "./modules/repository"
   name             = "content"
