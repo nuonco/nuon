@@ -33,7 +33,7 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *TemplateInput) *cloudformation.
 func (a *Templates) getRunnerPhoneHomeLambda(inp *TemplateInput, t tagBuilder) *lambda.Function {
 	// This is going to be moved into a cloudformation stack template and split out, with parameters for the body
 	// Grab the latest version of the phone-home script
-	resp, err := http.Get("https://raw.githubusercontent.com/nuonco/aws-lambda-runner-phone-home/refs/heads/main/phonehome.py")
+	resp, err := http.Get("https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/phonehome.py")
 	if err != nil {
 		panic(errors.Wrap(err, "failed to fetch phone-home script"))
 	}
