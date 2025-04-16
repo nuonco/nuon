@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/workflow"
 )
 
 // generic statuses
@@ -22,11 +23,11 @@ const (
 
 // type specific statuses
 const (
-	InstallCloudFormationStackVersionStatusGenerating   Status = "generating"
-	InstallCloudFormationStackVersionStatusPendingUser  Status = "pending-user"
-	InstallCloudFormationStackVersionStatusProvisioning Status = "provisioning"
-	InstallCloudFormationStackVersionStatusActive       Status = "active"
-	InstallCloudFormationStackVersionStatusOutdated     Status = "outdated"
+	InstallStackVersionStatusGenerating   Status = "generating"
+	InstallStackVersionStatusPendingUser  Status = "pending-user"
+	InstallStackVersionStatusProvisioning Status = "provisioning"
+	InstallStackVersionStatusActive       Status = "active"
+	InstallStackVersionStatusOutdated     Status = "outdated"
 )
 
 const (
@@ -52,6 +53,22 @@ func NewCompositeStatus(ctx context.Context, status Status) CompositeStatus {
 		CreatedAtTS: time.Now().Unix(),
 		Status:      status,
 		Metadata:    make(map[string]any, 0),
+	}
+}
+
+func NewCompositeTemporalStatus(ctx workflow.Context, status Status, vals ...map[string]any) CompositeStatus {
+	metadata := make(map[string]any, 0)
+	for _, val := range vals {
+		for k, v := range val {
+			metadata[k] = v
+		}
+	}
+
+	return CompositeStatus{
+		CreatedByID: createdByIDFromTemporalContext(ctx),
+		CreatedAtTS: time.Now().Unix(),
+		Status:      status,
+		Metadata:    metadata,
 	}
 }
 

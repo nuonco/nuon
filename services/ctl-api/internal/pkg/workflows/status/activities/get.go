@@ -39,19 +39,8 @@ func (a *Activities) PkgStatusGetInstallWorkflowStepStatus(ctx context.Context, 
 
 // @temporal-gen activity
 // @by-id ID
-func (a *Activities) PkgStatusGetInstallCloudFormationStackVersionStatus(ctx context.Context, req GetStatusRequest) (*app.CompositeStatus, error) {
-	var obj app.InstallAWSCloudFormationStackVersion
-	if err := a.getStatus(ctx, &obj, req.ID); err != nil {
-		return nil, nil
-	}
-
-	return &obj.Status, nil
-}
-
-// @temporal-gen activity
-// @by-id ID
-func (a *Activities) PkgStatusGetInstallCloudFormationStackRunStatus(ctx context.Context, req GetStatusRequest) (*app.CompositeStatus, error) {
-	var obj app.InstallAWSCloudFormationStackRun
+func (a *Activities) PkgStatusGetInstallStackVersionStatus(ctx context.Context, req GetStatusRequest) (*app.CompositeStatus, error) {
+	var obj app.InstallStackVersion
 	if err := a.getStatus(ctx, &obj, req.ID); err != nil {
 		return nil, nil
 	}

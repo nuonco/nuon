@@ -37,7 +37,7 @@ func (w *Workflows) CronActionWorkflow(ctx workflow.Context, req *CronActionWork
 		return errors.Wrap(err, "unable to create action workflow config")
 	}
 
-	if err := w.actionWorkflowRun(ctx, installActionWorkflow.InstallID, actionWorkflowRun.ID); err != nil {
+	if err := w.executeActionWorkflowRun(ctx, installActionWorkflow.InstallID, actionWorkflowRun.ID); err != nil {
 		return errors.Wrap(err, "unable to create action workflow run")
 	}
 

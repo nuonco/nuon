@@ -63,31 +63,13 @@ func (a *Activities) PkgStatusUpdateInstallWorkflowStepStatus(ctx context.Contex
 }
 
 // @temporal-gen activity
-func (a *Activities) PkgStatusUpdateInstallCloudFormationStackVersionStatus(ctx context.Context, req UpdateStatusRequest) error {
-	obj := app.InstallAWSCloudFormationStackVersion{
+func (a *Activities) PkgStatusUpdateInstallStackVersionStatus(ctx context.Context, req UpdateStatusRequest) error {
+	obj := app.InstallStackVersion{
 		ID: req.ID,
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var obj app.InstallAWSCloudFormationStackVersion
-		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
-			return app.CompositeStatus{}, err
-		}
-
-		return obj.Status, nil
-	}
-
-	return a.updateStatus(ctx, &obj, req.Status, getter)
-}
-
-// @temporal-gen activity
-func (a *Activities) PkgStatusUpdateInstallCloudFormationStackRunStatus(ctx context.Context, req UpdateStatusRequest) error {
-	obj := app.InstallAWSCloudFormationStackRun{
-		ID: req.ID,
-	}
-
-	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var obj app.InstallAWSCloudFormationStackRun
+		var obj app.InstallStackVersion
 		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}

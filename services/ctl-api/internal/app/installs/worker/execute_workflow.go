@@ -2,11 +2,13 @@ package worker
 
 import (
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -19,6 +21,15 @@ func (w *Workflows) ExecuteWorkflow(ctx workflow.Context, sreq signals.RequestSi
 	if err != nil {
 		return nil
 	}
+
+	if err := activities.AwaitUpdateWorkflowStartedAtByID(ctx, sreq.InstallWorkflowID); err != nil {
+		return err
+	}
+	defer func() {
+		if err := activities.AwaitUpdateWorkflowFinishedAtByID(ctx, sreq.InstallWorkflowID); err != nil {
+			l.Error("unable to update finished at", zap.Error(err))
+		}
+	}()
 
 	l.Debug("generating steps for workflow")
 	if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStatus(ctx, statusactivities.UpdateStatusRequest{

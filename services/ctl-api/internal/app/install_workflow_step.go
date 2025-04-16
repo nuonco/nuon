@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -47,9 +48,14 @@ type InstallWorkflowStep struct {
 	StepTargetID   string `json:"step_target_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26"`
 	StepTargetType string `json:"step_target_type" gorm:"type:text;"`
 
+	StartedAt  time.Time `json:"started_at"  gorm:"default:null"`
+	FinishedAt time.Time `json:"finished_at" gorm:"default:null"`
+
 	// the step approval is built into each step at the runner level.
 	Approval         *InstallWorkflowStepApproval         `json:"approval"`
 	PolicyValidation *InstallWorkflowStepPolicyValidation `json:"policy_validation"`
+
+	ExecutionTime time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer"`
 }
 
 func (a *InstallWorkflowStep) BeforeCreate(tx *gorm.DB) error {
@@ -64,5 +70,10 @@ func (a *InstallWorkflowStep) BeforeCreate(tx *gorm.DB) error {
 	if a.OrgID == "" {
 		a.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
+	return nil
+}
+
+func (r *InstallWorkflowStep) AfterQuery(tx *gorm.DB) error {
+	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
 	return nil
 }
