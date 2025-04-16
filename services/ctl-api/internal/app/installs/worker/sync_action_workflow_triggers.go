@@ -65,10 +65,20 @@ func (w *Workflows) startActionWorkflowCronTrigger(ctx workflow.Context, sreq si
 		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
 	}
 
-	dctx := workflow.WithChildOptions(ctx, cwo)
-	workflow.ExecuteChildWorkflow(dctx, w.CronActionWorkflow, &CronActionWorkflowRequest{
-		ID: iw.ID,
+	req := signals.NewRequestSignal(sreq.EventLoopRequest, &signals.Signal{
+		Type: signals.OperationExecuteActionWorkflow,
+		InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
+			InstallActionWorkflowID: iw.ID,
+			TriggerType:             app.ActionWorkflowTriggerTypeCron,
+			TriggeredByID:           "cron",
+			RunEnvVars: map[string]string{
+				"TRIGGER_TYPE": "cron",
+			},
+		},
 	})
+
+	dctx := workflow.WithChildOptions(ctx, cwo)
+	workflow.ExecuteChildWorkflow(dctx, w.AwaitExecuteActionWorkflow, req)
 
 	return nil
 }
