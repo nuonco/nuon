@@ -3,6 +3,7 @@ package worker
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -73,8 +74,17 @@ func (w *Workflows) getSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) 
 
 func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
 	steps := make([]*app.InstallWorkflowStep, 0)
-	step, err := w.installSignalStep(wkflow.InstallID, "generate cloudformation stack", &signals.Signal{
-		Type: signals.OperationGenerateCloudFormationStackVersion,
+
+	step, err := w.installSignalStep(wkflow.InstallID, "provision runner", &signals.Signal{
+		Type: signals.OperationProvisionRunner,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	step, err = w.installSignalStep(wkflow.InstallID, "generate cloudformation stack", &signals.Signal{
+		Type: signals.OperationGenerateInstallStackVersion,
 	})
 	if err != nil {
 		return nil, err
@@ -82,7 +92,7 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 	steps = append(steps, step)
 
 	step, err = w.installSignalStep(wkflow.InstallID, "await cloudformation stack", &signals.Signal{
-		Type: signals.OperationAwaitCloudFormationStackVersionRun,
+		Type: signals.OperationAwaitInstallStackVersionRun,
 	})
 	if err != nil {
 		return nil, err
@@ -97,6 +107,12 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 	}
 	steps = append(steps, step)
 
+	lifecycleSteps, err := w.getSandboxLifecycleActionsSteps(ctx, wkflow.ID, wkflow.InstallID, app.ActionWorkflowTriggerTypePreSandboxRun)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
+
 	step, err = w.installSignalStep(wkflow.InstallID, "provision sandbox", &signals.Signal{
 		Type: signals.OperationProvisionSandbox,
 	})
@@ -104,6 +120,12 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 		return nil, err
 	}
 	steps = append(steps, step)
+
+	lifecycleSteps, err = w.getSandboxLifecycleActionsSteps(ctx, wkflow.ID, wkflow.InstallID, app.ActionWorkflowTriggerTypePostSandboxRun)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 
 	deploySteps, err := w.deployAllComponents(ctx, wkflow)
 	if err != nil {
@@ -116,8 +138,17 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 
 func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
 	steps := make([]*app.InstallWorkflowStep, 0)
-	step, err := w.installSignalStep(wkflow.InstallID, "generate cloudformation stack", &signals.Signal{
-		Type: signals.OperationGenerateCloudFormationStackVersion,
+
+	step, err := w.installSignalStep(wkflow.InstallID, "reprovision runner", &signals.Signal{
+		Type: signals.OperationReprovisionRunner,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	step, err = w.installSignalStep(wkflow.InstallID, "generate cloudformation stack", &signals.Signal{
+		Type: signals.OperationGenerateInstallStackVersion,
 	})
 	if err != nil {
 		return nil, err
@@ -125,7 +156,7 @@ func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkf
 	steps = append(steps, step)
 
 	step, err = w.installSignalStep(wkflow.InstallID, "await cloudformation stack", &signals.Signal{
-		Type: signals.OperationAwaitCloudFormationStackVersionRun,
+		Type: signals.OperationAwaitInstallStackVersionRun,
 	})
 	if err != nil {
 		return nil, err
@@ -140,6 +171,12 @@ func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkf
 	}
 	steps = append(steps, step)
 
+	lifecycleSteps, err := w.getSandboxLifecycleActionsSteps(ctx, wkflow.ID, wkflow.InstallID, app.ActionWorkflowTriggerTypePreSandboxRun)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
+
 	step, err = w.installSignalStep(wkflow.InstallID, "reprovision sandbox", &signals.Signal{
 		Type: signals.OperationReprovisionSandbox,
 	})
@@ -147,6 +184,12 @@ func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkf
 		return nil, err
 	}
 	steps = append(steps, step)
+
+	lifecycleSteps, err = w.getSandboxLifecycleActionsSteps(ctx, wkflow.ID, wkflow.InstallID, app.ActionWorkflowTriggerTypePostSandboxRun)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 
 	deploySteps, err := w.deployAllComponents(ctx, wkflow)
 	if err != nil {
@@ -176,13 +219,22 @@ func (w *Workflows) getInstallWorkflowDeleteSteps(ctx workflow.Context, wkflow *
 
 func (w *Workflows) getInstallWorkflowDeprovisionSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
 	steps := make([]*app.InstallWorkflowStep, 0)
+
+	step, err := w.installSignalStep(wkflow.InstallID, "await runner healthy", &signals.Signal{
+		Type: signals.OperationAwaitRunnerHealthy,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
 	deploySteps, err := w.getComponentTeardownSteps(ctx, wkflow)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, deploySteps...)
 
-	step, err := w.installSignalStep(wkflow.InstallID, "deprovision sandbox", &signals.Signal{
+	step, err = w.installSignalStep(wkflow.InstallID, "deprovision sandbox", &signals.Signal{
 		Type: signals.OperationDeprovisionSandbox,
 	})
 	if err != nil {
@@ -193,7 +245,7 @@ func (w *Workflows) getInstallWorkflowDeprovisionSteps(ctx workflow.Context, wkf
 	return steps, nil
 }
 
-func (w *Workflows) getComponentTriggerSteps(ctx workflow.Context, installWorkflowID, componentID, installID string, triggerTyp app.ActionWorkflowTriggerType) ([]*app.InstallWorkflowStep, error) {
+func (w *Workflows) getComponentLifecycleActionsSteps(ctx workflow.Context, installWorkflowID, componentID, installID string, triggerTyp app.ActionWorkflowTriggerType) ([]*app.InstallWorkflowStep, error) {
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, componentID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component")
@@ -210,7 +262,7 @@ func (w *Workflows) getComponentTriggerSteps(ctx workflow.Context, installWorkfl
 	}
 	for _, trigger := range triggers {
 		sig := &signals.Signal{
-			Type: signals.OperationTriggerInstallActionWorkflow,
+			Type: signals.OperationExecuteActionWorkflow,
 			InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
 				InstallActionWorkflowID: trigger.ID,
 				TriggerType:             triggerTyp,
@@ -242,18 +294,21 @@ func (w *Workflows) getComponentDeploySteps(ctx workflow.Context, wkflow *app.In
 			return nil, errors.Wrap(err, "unable to get component")
 		}
 
-		preDeploySteps, err := w.getComponentTriggerSteps(ctx, wkflow.ID, compID, wkflow.InstallID, app.ActionWorkflowTriggerTypePreDeployComponent)
+		preDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, wkflow.ID, compID, wkflow.InstallID, app.ActionWorkflowTriggerTypePreDeployComponent)
 		if err != nil {
 			return nil, err
 		}
 		steps = append(steps, preDeploySteps...)
 
 		deployStep, err := w.installSignalStep(wkflow.InstallID, "deploy "+comp.Name, &signals.Signal{
-			Type: signals.OperationDeployComponent,
+			Type: signals.OperationExecuteDeployComponent,
+			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
+				ComponentID: compID,
+			},
 		})
 		steps = append(steps, deployStep)
 
-		postDeploySteps, err := w.getComponentTriggerSteps(ctx, wkflow.ID, compID, wkflow.InstallID, app.ActionWorkflowTriggerTypePostDeployComponent)
+		postDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, wkflow.ID, compID, wkflow.InstallID, app.ActionWorkflowTriggerTypePostDeployComponent)
 		if err != nil {
 			return nil, err
 		}
@@ -265,10 +320,20 @@ func (w *Workflows) getComponentDeploySteps(ctx workflow.Context, wkflow *app.In
 
 func (w *Workflows) getManualDeploySteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
 	steps := make([]*app.InstallWorkflowStep, 0)
+	step, err := w.installSignalStep(wkflow.InstallID, "await runner healthy", &signals.Signal{
+		Type: signals.OperationAwaitRunnerHealthy,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
 	installDeployID, ok := wkflow.Metadata["install_deploy_id"]
 	if !ok {
 		return nil, errors.New("install deploy is not set on the install workflow for a manual deploy")
 	}
+
+	deployDependents, _ := wkflow.Metadata["deploy_dependents"]
 
 	installDeploy, err := activities.AwaitGetDeployByDeployID(ctx, generics.FromPtrStr(installDeployID))
 	if err != nil {
@@ -285,22 +350,22 @@ func (w *Workflows) getManualDeploySteps(ctx workflow.Context, wkflow *app.Insta
 		return nil, errors.Wrap(err, "unable to get component")
 	}
 
-	preDeploySteps, err := w.getComponentTriggerSteps(ctx, wkflow.ID, installDeploy.ComponentID, wkflow.InstallID, app.ActionWorkflowTriggerTypePreDeployComponent)
+	preDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, wkflow.ID, installDeploy.ComponentID, wkflow.InstallID, app.ActionWorkflowTriggerTypePreDeployComponent)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, preDeploySteps...)
 
 	deployStep, err := w.installSignalStep(wkflow.InstallID, "deploy "+comp.Name, &signals.Signal{
-		Type: signals.OperationDeployComponent,
-		DeployComponentSubSignal: signals.DeployComponentSubSignal{
+		Type: signals.OperationExecuteDeployComponent,
+		ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 			DeployID:    generics.FromPtrStr(installDeployID),
 			ComponentID: comp.ID,
 		},
 	})
 	steps = append(steps, deployStep)
 
-	postDeploySteps, err := w.getComponentTriggerSteps(ctx, wkflow.ID, installDeploy.ComponentID, wkflow.InstallID, app.ActionWorkflowTriggerTypePostDeployComponent)
+	postDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, wkflow.ID, installDeploy.ComponentID, wkflow.InstallID, app.ActionWorkflowTriggerTypePostDeployComponent)
 	if err != nil {
 		return nil, err
 	}
@@ -314,12 +379,16 @@ func (w *Workflows) getManualDeploySteps(ctx workflow.Context, wkflow *app.Insta
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install graph")
 	}
+
 	dependencyCompIDs := generics.SliceAfterValue(componentIDs, comp.ID)
 	dependencyDeploySteps, err := w.getComponentDeploySteps(ctx, wkflow, dependencyCompIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component deploy steps")
 	}
-	steps = append(steps, dependencyDeploySteps...)
+
+	if generics.FromPtrStr(deployDependents) == strconv.FormatBool(true) {
+		steps = append(steps, dependencyDeploySteps...)
+	}
 
 	return nil, nil
 }
@@ -346,18 +415,21 @@ func (w *Workflows) getComponentTeardownSteps(ctx workflow.Context, wkflow *app.
 			return nil, errors.Wrap(err, "unable to get component")
 		}
 
-		preDeploySteps, err := w.getComponentTriggerSteps(ctx, wkflow.ID, compID, wkflow.InstallID, app.ActionWorkflowTriggerTypePreTeardownComponent)
+		preDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, wkflow.ID, compID, wkflow.InstallID, app.ActionWorkflowTriggerTypePreTeardownComponent)
 		if err != nil {
 			return nil, err
 		}
 		steps = append(steps, preDeploySteps...)
 
-		deployStep, err := w.installSignalStep(wkflow.InstallID, "deploy "+comp.Name, &signals.Signal{
-			Type: signals.OperationDeployComponent,
+		deployStep, err := w.installSignalStep(wkflow.InstallID, "teardown "+comp.Name, &signals.Signal{
+			Type: signals.OperationExecuteTeardownComponent,
+			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
+				ComponentID: compID,
+			},
 		})
 		steps = append(steps, deployStep)
 
-		postDeploySteps, err := w.getComponentTriggerSteps(ctx, wkflow.ID, compID, wkflow.InstallID, app.ActionWorkflowTriggerTypePostTeardownComponent)
+		postDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, wkflow.ID, compID, wkflow.InstallID, app.ActionWorkflowTriggerTypePostTeardownComponent)
 		if err != nil {
 			return nil, err
 		}
@@ -380,7 +452,7 @@ func (w *Workflows) installSignalStep(installID, name string, signal *signals.Si
 			Namespace:   "installs",
 			Type:        string(signal.Type),
 			EventLoopID: installID,
-			SignalJSON: byts,
+			SignalJSON:  byts,
 		},
 	}, nil
 }
@@ -418,5 +490,80 @@ func (w *Workflows) deployAllComponents(ctx workflow.Context, wkflow *app.Instal
 		return nil, errors.Wrap(err, "unable to get install graph")
 	}
 
-	return w.getComponentDeploySteps(ctx, wkflow, componentIDs)
+	steps := make([]*app.InstallWorkflowStep, 0)
+	step, err := w.installSignalStep(wkflow.InstallID, "await runner healthy", &signals.Signal{
+		Type: signals.OperationAwaitRunnerHealthy,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	deploySteps, err := w.getComponentDeploySteps(ctx, wkflow, componentIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	steps = append(steps, deploySteps...)
+	return steps, nil
+}
+
+func (w *Workflows) getSandboxLifecycleActionsSteps(ctx workflow.Context, installWorkflowID, installID string, triggerTyp app.ActionWorkflowTriggerType) ([]*app.InstallWorkflowStep, error) {
+	steps := make([]*app.InstallWorkflowStep, 0)
+	triggers, err := activities.AwaitGetInstallActionWorkflowsByTriggerType(ctx, activities.GetInstallActionWorkflowsByTriggerTypeRequest{
+		InstallID:   installID,
+		TriggerType: triggerTyp,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get components")
+	}
+
+	workflow, err := activities.AwaitGetInstallWorkflowByID(ctx, installWorkflowID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install workflow")
+	}
+
+	for _, trigger := range triggers {
+		sig := &signals.Signal{
+			Type: signals.OperationExecuteActionWorkflow,
+			InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
+				InstallActionWorkflowID: trigger.ID,
+				TriggerType:             triggerTyp,
+				TriggeredByID:           installWorkflowID,
+				RunEnvVars: map[string]string{
+					"TRIGGER_TYPE":          string(triggerTyp),
+					"INSTALL_WORKFLOW_TYPE": string(workflow.Type),
+					"INSTALL_WORKFLOW_ID":   workflow.ID,
+				},
+			},
+		}
+		name := fmt.Sprintf("%s action workflow run", triggerTyp)
+		step, err := w.installSignalStep(installID, name, sig)
+		if err != nil {
+			return nil, err
+		}
+
+		steps = append(steps, step)
+	}
+
+	return steps, nil
+}
+
+func (w *Workflows) teardownAllComponents(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
+	steps := make([]*app.InstallWorkflowStep, 0)
+	step, err := w.installSignalStep(wkflow.InstallID, "await runner healthy", &signals.Signal{
+		Type: signals.OperationAwaitRunnerHealthy,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	deploySteps, err := w.getComponentTeardownSteps(ctx, wkflow)
+	if err != nil {
+		return nil, err
+	}
+
+	steps = append(steps, deploySteps...)
+	return steps, nil
 }

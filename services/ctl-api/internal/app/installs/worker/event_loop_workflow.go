@@ -27,28 +27,38 @@ func (w *Workflows) handleSyncActionWorkflowTriggers(ctx workflow.Context, sreq 
 
 func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationCreated:            w.AwaitCreated,
-		signals.OperationPollDependencies:   w.AwaitPollDependencies,
-		signals.OperationProvision:          w.AwaitProvision,
-		signals.OperationReprovisionRunner:  w.AwaitReprovisionRunner,
-		signals.OperationReprovision:        w.AwaitReprovision,
-		signals.OperationDelete:             w.AwaitDelete,
-		signals.OperationDeprovision:        w.AwaitDeprovision,
-		signals.OperationDeprovisionRunner:  w.AwaitDeprovisionRunner,
-		signals.OperationForgotten:          w.AwaitForget,
-		signals.OperationDeployComponents:   w.AwaitDeployComponents,
-		signals.OperationTeardownComponents: w.AwaitTeardownComponents,
-		signals.OperationDeleteComponents:   w.AwaitTeardownComponents,
-		signals.OperationDeploy:             w.AwaitDeploy,
-		signals.OperationActionWorkflowRun:  w.AwaitActionWorkflowRun,
-		signals.OperationExecuteWorkflow:    w.AwaitExecuteWorkflow,
+		signals.OperationCreated:                  w.AwaitCreated,
+		signals.OperationPollDependencies:         w.AwaitPollDependencies,
+		signals.OperationForget:                   w.AwaitForget,
+		signals.OperationReprovisionRunner:        w.AwaitReprovisionRunner,
+		signals.OperationProvisionRunner:          w.AwaitProvisionRunner,
+		signals.OperationDeprovisionSandbox:       w.AwaitReprovision,
+		signals.OperationReprovisionSandbox:       w.AwaitReprovision,
+		signals.OperationProvisionSandbox:         w.AwaitProvision,
+		signals.OperationExecuteWorkflow:          w.AwaitExecuteWorkflow,
+		signals.OperationExecuteActionWorkflow:    w.AwaitExecuteActionWorkflow,
+		signals.OperationExecuteDeployComponent:   w.AwaitExecuteDeployComponent,
+		signals.OperationExecuteTeardownComponent: w.AwaitExecuteTeardownComponent,
 		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
 			w.AwaitRestarted(ctx, req)
 			w.handleSyncActionWorkflowTriggers(ctx, req)
 			return nil
 		},
-		signals.OperationSyncActionWorkflowTriggers:         w.handleSyncActionWorkflowTriggers,
-		signals.OperationGenerateCloudFormationStackVersion: w.AwaitGenerateCloudFormationStackVersion,
+		signals.OperationSyncActionWorkflowTriggers:  w.handleSyncActionWorkflowTriggers,
+		signals.OperationGenerateInstallStackVersion: w.AwaitGenerateInstallStackVersion,
+		signals.OperationAwaitInstallStackVersionRun: w.AwaitInstallStackVersionRun,
+		signals.OperationAwaitRunnerHealthy:          w.AwaitRunnerHealthy,
+
+		// deprecated
+		signals.OperationDeploy:             w.AwaitDeploy,
+		signals.OperationDeployComponents:   w.AwaitDeployComponents,
+		signals.OperationTeardownComponents: w.AwaitTeardownComponents,
+		signals.OperationDeleteComponents:   w.AwaitTeardownComponents,
+		signals.OperationDeprovisionRunner:  w.AwaitDeprovisionRunner,
+		signals.OperationDelete:             w.AwaitDelete,
+		signals.OperationProvision:          w.AwaitProvision,
+		signals.OperationReprovision:        w.AwaitReprovision,
+		signals.OperationDeprovision:        w.AwaitDeprovision,
 	}
 }
 

@@ -1,9 +1,11 @@
 package generics
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 )
 
 func SliceToMapDefault[T comparable, V any](vals []T, deflt V) map[T]V {
@@ -74,6 +76,20 @@ func SubMap[K comparable, T any](newVals, oldVals map[K]T) map[K]T {
 // DiffMaps returns two additions, the additions that need to be added, and the ones that need to be deleted
 func DiffMaps[K comparable, T any](newVals, oldVals map[K]T) (map[K]T, map[K]T) {
 	return SubMap(newVals, oldVals), SubMap(oldVals, newVals)
+}
+
+func ToMapstructureWithJSONTag(inp interface{}) (map[string]interface{}, error) {
+	byts, err := json.Marshal(inp)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to convert state to json")
+	}
+
+	var obj map[string]interface{}
+	if err := json.Unmarshal(byts, &obj); err != nil {
+		return nil, errors.Wrap(err, "unable to convert to map[string]interface{}")
+	}
+
+	return obj, nil
 }
 
 func ToMapstructure(inp interface{}) (map[string]interface{}, error) {

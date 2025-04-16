@@ -6,10 +6,12 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
-type InstallAWSCloudFormationStackRun struct {
+type InstallStackVersionRun struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedBy   Account               `json:"-"`
@@ -20,12 +22,13 @@ type InstallAWSCloudFormationStackRun struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
-	OpType RunnerOperationType `json:"operation_type"`
+	InstallStackVersionID string              `json:"install_stack_version_id" gorm:"notnull" swaggerignore:"true"`
+	InstallStackVersion   InstallStackVersion `json:"-"`
 
-	Status CompositeStatus `json:"status" gorm:"type:jsonb"`
+	Data pgtype.Hstore `json:"data" gorm:"type:hstore" swaggertype:"object,string"`
 }
 
-func (i *InstallAWSCloudFormationStackRun) BeforeCreate(tx *gorm.DB) error {
+func (i *InstallStackVersionRun) BeforeCreate(tx *gorm.DB) error {
 	if i.ID == "" {
 		i.ID = domains.NewRunnerOperationID()
 	}
