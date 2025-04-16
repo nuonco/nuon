@@ -85,3 +85,13 @@ func (a *ActionWorkflowConfig) HasComponentTrigger(typ ActionWorkflowTriggerType
 
 	return false
 }
+
+func (a *ActionWorkflowConfig) HasTrigger(typ ActionWorkflowTriggerType) bool {
+	for _, trigger := range a.Triggers {
+		if trigger.Type == typ {
+			return true
+		}
+	}
+
+	return false
+}

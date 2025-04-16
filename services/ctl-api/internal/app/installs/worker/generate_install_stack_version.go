@@ -16,13 +16,13 @@ import (
 // @temporal-gen workflow
 // @execution-timeout 1m
 // @task-timeout 30s
-func (w *Workflows) GenerateCloudFormationStackVersion(ctx workflow.Context, sreq signals.RequestSignal) error {
+func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signals.RequestSignal) error {
 	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
 	}
 
-	stack, err := activities.AwaitGetAWSCloudFormationStackByInstallID(ctx, sreq.ID)
+	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, sreq.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get stack")
 	}
@@ -63,12 +63,12 @@ func (w *Workflows) GenerateCloudFormationStackVersion(ctx workflow.Context, sre
 	}
 
 	// need to generate a token
-	stackVersion, err := activities.AwaitCreateCloudFormationStackVersion(ctx, &activities.CreateCloudFormationStackVersionRequest{
-		InstallID:                       sreq.ID,
-		InstallAWSCloudFormationStackID: stack.ID,
-		AppConfigID:                     cfg.ID,
-		StackName:                       cfg.CloudFormationStackConfig.Name,
-		Region:                          install.AWSAccount.Region,
+	stackVersion, err := activities.AwaitCreateInstallStackVersion(ctx, &activities.CreateInstallStackVersionRequest{
+		InstallID:      sreq.ID,
+		InstallStackID: stack.ID,
+		AppConfigID:    cfg.ID,
+		StackName:      cfg.CloudFormationStackConfig.Name,
+		Region:         install.AWSAccount.Region,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create cloudformation stack version")
@@ -107,7 +107,7 @@ func (w *Workflows) GenerateCloudFormationStackVersion(ctx workflow.Context, sre
 		return errors.Wrap(err, "unable to upload cloudformation stack")
 	}
 
-	if err := activities.AwaitSaveAWSCloudFormationStackVersionTemplate(ctx, &activities.SaveAWSCloudFormationStackVersionTemplateRequest{
+	if err := activities.AwaitSaveInstallStackVersionTemplate(ctx, &activities.SaveInstallStackVersionTemplateRequest{
 		ID:       stackVersion.ID,
 		Template: tmplByts,
 		Checksum: checksum,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -15,7 +16,8 @@ import (
 )
 
 type CreateInstallDeployRequest struct {
-	BuildID string `json:"build_id"`
+	BuildID          string `json:"build_id"`
+	DeployDependents bool   `json:"deploy_dependents"`
 }
 
 func (c *CreateInstallDeployRequest) Validate(v *validator.Validate) error {
@@ -76,6 +78,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 		app.InstallWorkflowTypeManualDeploy,
 		map[string]string{
 			"install_deploy_id": deploy.ID,
+			"deploy_dependents": strconv.FormatBool(req.DeployDependents),
 		},
 		app.StepErrorBehaviorAbort,
 	)

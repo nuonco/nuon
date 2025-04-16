@@ -14,7 +14,7 @@ import (
 
 type TemplateInput struct {
 	Install                    *app.Install                              `validate:"required"`
-	CloudFormationStackVersion *app.InstallAWSCloudFormationStackVersion `validate:"required"`
+	CloudFormationStackVersion *app.InstallStackVersion `validate:"required"`
 	InstallState               *state.State                              `validate:"required"`
 	AppCfg                     *app.AppConfig                            `validate:"required"`
 

@@ -56,7 +56,7 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 
 	for _, install := range installs {
 		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationForgotten,
+			Type: signals.OperationForget,
 		})
 
 		err = s.forgetInstall(ctx, install.ID)
@@ -66,7 +66,7 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 		}
 
 		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationForgotten,
+			Type: signals.OperationForget,
 		})
 	}
 
