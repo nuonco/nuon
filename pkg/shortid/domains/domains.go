@@ -42,7 +42,7 @@ func NewAWSAccountID() string {
 	return shortid.NewNanoID("aws")
 }
 
-func NewAWSCloudFormationStackID() string {
+func NewInstallStackID() string {
 	return shortid.NewNanoID("acq")
 }
 

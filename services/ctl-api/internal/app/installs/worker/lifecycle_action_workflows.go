@@ -93,7 +93,7 @@ func (w *Workflows) lifecycleActionWorkflow(ctx workflow.Context,
 		return errors.Wrap(err, "unable to create action workflow config")
 	}
 
-	if err := w.actionWorkflowRun(ctx, installID, actionWorkflowRun.ID); err != nil {
+	if err := w.executeActionWorkflowRun(ctx, installID, actionWorkflowRun.ID); err != nil {
 		return errors.Wrap(err, "unable to create action workflow run")
 	}
 

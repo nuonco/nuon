@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
+	"gorm.io/gorm"
 
 	temporalanalytics "github.com/powertoolsdev/mono/pkg/analytics/temporal"
 	"github.com/powertoolsdev/mono/pkg/metrics"
@@ -20,6 +21,7 @@ type Params struct {
 	fx.In
 
 	Cfg       *internal.Config
+	DB        *gorm.DB `name:"psql"`
 	V         *validator.Validate
 	Protos    *protos.Adapter
 	MW        metrics.Writer
@@ -36,6 +38,7 @@ type Workflows struct {
 	evClient  teventloop.Client
 	analytics temporalanalytics.Writer
 	templates *cloudformation.Templates
+	db        *gorm.DB
 }
 
 func (w *Workflows) All() []any {
@@ -68,5 +71,6 @@ func NewWorkflows(params Params) (*Workflows, error) {
 		mw:        tmw,
 		analytics: params.Analytics,
 		templates: params.Templates,
+		db:        params.DB,
 	}, nil
 }

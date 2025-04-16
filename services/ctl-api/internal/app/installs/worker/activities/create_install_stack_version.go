@@ -11,30 +11,30 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-type CreateCloudFormationStackVersionRequest struct {
-	InstallID                       string `validate:"required"`
-	InstallAWSCloudFormationStackID string `validate:"required"`
-	AppConfigID                     string `validate:"required"`
-	Region                          string `validate:"required"`
-	StackName                       string `validate:"required"`
+type CreateInstallStackVersionRequest struct {
+	InstallID      string `validate:"required"`
+	InstallStackID string `validate:"required"`
+	AppConfigID    string `validate:"required"`
+	Region         string `validate:"required"`
+	StackName      string `validate:"required"`
 }
 
 // @temporal-gen activity
-func (a *Activities) CreateCloudFormationStackVersion(ctx context.Context, req *CreateCloudFormationStackVersionRequest) (*app.InstallAWSCloudFormationStackVersion, error) {
+func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateInstallStackVersionRequest) (*app.InstallStackVersion, error) {
 	phoneHomeID := domains.NewAWSAccountID()
-	id := domains.NewAWSCloudFormationStackID()
+	id := domains.NewInstallStackID()
 	bucketKey := fmt.Sprintf("templates/%s/%s.json", req.InstallID, id)
 	templateURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/"), bucketKey)
 	quickLinkURL := fmt.Sprintf("https://%s.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/quickcreate?templateUrl=%s&stackName=%s",
 		req.Region, req.Region, templateURL, req.StackName,
 	)
 
-	obj := app.InstallAWSCloudFormationStackVersion{
-		ID:                              id,
-		AppConfigID:                     req.AppConfigID,
-		InstallID:                       req.InstallID,
-		InstallAWSCloudFormationStackID: req.InstallAWSCloudFormationStackID,
-		PhoneHomeID:                     phoneHomeID,
+	obj := app.InstallStackVersion{
+		ID:             id,
+		AppConfigID:    req.AppConfigID,
+		InstallID:      req.InstallID,
+		InstallStackID: req.InstallStackID,
+		PhoneHomeID:    phoneHomeID,
 		PhoneHomeURL: fmt.Sprintf(
 			"%s/v1/installs/%s/phone-home/%s",
 			a.cfg.PublicAPIURL,

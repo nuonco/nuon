@@ -11,9 +11,10 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-type CreateAppCloudFormationStackConfigRequest struct {
-	Description string `json:"description" validate:"required"`
-	Name        string `json:"name" validate:"required"`
+type CreateAppStackConfigRequest struct {
+	Type        app.StackType `json:"type" validate:"required"`
+	Description string        `json:"description" validate:"required"`
+	Name        string        `json:"name" validate:"required"`
 
 	RunnerNestedTemplateURL string `json:"runner_nested_template_url"`
 	VPCNestedTemplateURL    string `json:"vpc_nested_template_url"`
@@ -21,19 +22,19 @@ type CreateAppCloudFormationStackConfigRequest struct {
 	AppConfigID string `json:"app_config_id" validate:"required"`
 }
 
-func (c *CreateAppCloudFormationStackConfigRequest) Validate(v *validator.Validate) error {
+func (c *CreateAppStackConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
 	return nil
 }
 
-// @ID						CreateAppCloudFormationStackConfig
-// @Summary				create an app cloudformation stack config
-// @Description.markdown	create_app_cloudformation_stack_config.md
+// @ID						CreateAppStackConfig
+// @Summary				create an app stack config
+// @Description.markdown	create_app_stack_config.md
 // @Tags					apps
 // @Accept					json
-// @Param					req	body	CreateAppCloudFormationStackConfigRequest	true	"Input"
+// @Param					req	body	CreateAppStackConfigRequest	true	"Input"
 // @Produce				json
 // @Param					app_id	path	string	true	"app ID"
 // @Security				APIKey
@@ -43,12 +44,12 @@ func (c *CreateAppCloudFormationStackConfigRequest) Validate(v *validator.Valida
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{object}	app.AppCloudFormationStackConfig
-// @Router					/v1/apps/{app_id}/cloudformation-stack-configs [post]
-func (s *service) CreateAppCloudFormationStackConfig(ctx *gin.Context) {
+// @Success				201	{object}	app.AppStackConfig
+// @Router					/v1/apps/{app_id}/stack-configs [post]
+func (s *service) CreateAppStackConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
-	var req CreateAppCloudFormationStackConfigRequest
+	var req CreateAppStackConfigRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
@@ -58,7 +59,7 @@ func (s *service) CreateAppCloudFormationStackConfig(ctx *gin.Context) {
 		return
 	}
 
-	runnerConfig, err := s.createAppCloudFormationStackConfig(ctx, appID, &req)
+	runnerConfig, err := s.createAppStackConfig(ctx, appID, &req)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -67,8 +68,9 @@ func (s *service) CreateAppCloudFormationStackConfig(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, runnerConfig)
 }
 
-func (s *service) createAppCloudFormationStackConfig(ctx context.Context, appID string, req *CreateAppCloudFormationStackConfigRequest) (*app.AppCloudFormationStackConfig, error) {
-	appCloudFormationStackConfig := app.AppCloudFormationStackConfig{
+func (s *service) createAppStackConfig(ctx context.Context, appID string, req *CreateAppStackConfigRequest) (*app.AppStackConfig, error) {
+	appCloudFormationStackConfig := app.AppStackConfig{
+		Type:                    req.Type,
 		AppConfigID:             req.AppConfigID,
 		AppID:                   appID,
 		Name:                    req.Name,

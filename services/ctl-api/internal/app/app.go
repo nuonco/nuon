@@ -43,7 +43,7 @@ type App struct {
 	AppInputConfigs               []AppInputConfig               `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 	AppSandboxConfigs             []AppSandboxConfig             `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 	AppRunnerConfigs              []AppRunnerConfig              `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-	CloudFormationStackConfigs []AppCloudFormationStackConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	CloudFormationStackConfigs []AppStackConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 	AppConfigs                    []AppConfig                    `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 	AppSecrets                    []AppSecret                    `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 	InstallerApps                 []InstallerApp                 `json:"-" gorm:"constraint:OnDelete:CASCADE;"`

@@ -15,44 +15,45 @@ import (
 const (
 	TemporalNamespace string = "installs"
 
-	OperationForgotten                          eventloop.SignalType = "forgotten"
-	OperationRestart                            eventloop.SignalType = "restart"
-	OperationSyncActionWorkflowTriggers         eventloop.SignalType = "sync_action_workflow_triggers"
-	OperationActionWorkflowRun                  eventloop.SignalType = "action_workflow_run"
-	OperationPollDependencies                   eventloop.SignalType = "poll_dependencies"
-	OperationCreated                            eventloop.SignalType = "created"
-	OperationGenerateCloudFormationStackVersion eventloop.SignalType = "generate_cloud_formation_stack_version"
-	OperationAwaitCloudFormationStackVersionRun eventloop.SignalType = "await_cloud_formation_stack_version_run"
-	OperationAwaitRunnerHealthy                 eventloop.SignalType = "await_runner_healthy"
-	OperationProvisionSandbox                   eventloop.SignalType = "provision_sandbox"
-	OperationDeprovisionSandbox                 eventloop.SignalType = "deprovision_sandbox"
-	OperationReprovisionSandbox                 eventloop.SignalType = "reprovision_sandbox"
-	OperationTriggerInstallActionWorkflow       eventloop.SignalType = "trigger_install_action_workflow"
-	OperationDeployComponent                    eventloop.SignalType = "deploy_component"
-	OperationTeardownComponent                  eventloop.SignalType = "teardown_component"
+	OperationForget                      eventloop.SignalType = "forgotten"
+	OperationRestart                     eventloop.SignalType = "restart"
+	OperationSyncActionWorkflowTriggers  eventloop.SignalType = "sync-action-workflow-triggers"
+	OperationActionWorkflowRun           eventloop.SignalType = "action-workflow-run"
+	OperationPollDependencies            eventloop.SignalType = "poll-dependencies"
+	OperationCreated                     eventloop.SignalType = "created"
+	OperationGenerateInstallStackVersion eventloop.SignalType = "generate-install-stack-version"
+	OperationProvisionRunner             eventloop.SignalType = "provision-runner"
+	OperationAwaitInstallStackVersionRun eventloop.SignalType = "await-install-stack-version-run"
+	OperationAwaitRunnerHealthy          eventloop.SignalType = "await-runner-healthy"
+	OperationProvisionSandbox            eventloop.SignalType = "provision-sandbox"
+	OperationDeprovisionSandbox          eventloop.SignalType = "deprovision-sandbox"
+	OperationReprovisionSandbox          eventloop.SignalType = "reprovision-sandbox"
+	OperationExecuteActionWorkflow       eventloop.SignalType = "trigger-install-action-workflow"
+	OperationExecuteDeployComponent      eventloop.SignalType = "execute-deploy-component"
+	OperationExecuteTeardownComponent    eventloop.SignalType = "execute-teardown-component"
 
 	// the following will be sent to a different namespace
-	OperationExecuteWorkflow eventloop.SignalType = "execute_workflow"
+	OperationExecuteWorkflow eventloop.SignalType = "execute-workflow"
 
 	// the following signals will be deprecated with workflows
 	OperationDeploy             eventloop.SignalType = "deploy"
-	OperationDeployComponents   eventloop.SignalType = "deploy_components"
-	OperationDeleteComponents   eventloop.SignalType = "delete_components"
-	OperationTeardownComponents eventloop.SignalType = "teardown_components"
+	OperationDeployComponents   eventloop.SignalType = "deploy-components"
+	OperationDeleteComponents   eventloop.SignalType = "delete-components"
+	OperationTeardownComponents eventloop.SignalType = "teardown-components"
 	OperationProvision          eventloop.SignalType = "provision"
 	OperationDeprovision        eventloop.SignalType = "deprovision"
 	OperationDelete             eventloop.SignalType = "delete"
 	OperationReprovision        eventloop.SignalType = "reprovision"
-	OperationReprovisionRunner  eventloop.SignalType = "reprovision_runner"
-	OperationDeprovisionRunner  eventloop.SignalType = "deprovision_runner"
+	OperationReprovisionRunner  eventloop.SignalType = "reprovision-runner"
+	OperationDeprovisionRunner  eventloop.SignalType = "deprovision-runner"
 )
 
 type InstallActionWorkflowTriggerSubSignal struct {
-	InstallActionWorkflowID string                        `json:"install_action_workflow_id"`
-	TriggerType             app.ActionWorkflowTriggerType `json:"trigger_type"`
-	TriggeredByID           string                        `json:"triggered_by_id"`
-	TriggeredByType         string                        `json:"triggered_by_type"`
-	RunEnvVars              map[string]string             `json:"run_env_vars"`
+	InstallActionWorkflowID string                        `json:"install-action-workflow-id"`
+	TriggerType             app.ActionWorkflowTriggerType `json:"trigger-type"`
+	TriggeredByID           string                        `json:"triggered-by-id"`
+	TriggeredByType         string                        `json:"triggered-by-type"`
+	RunEnvVars              map[string]string             `json:"run-env-vars"`
 }
 
 type DeployComponentSubSignal struct {
@@ -61,13 +62,11 @@ type DeployComponentSubSignal struct {
 }
 
 type TeardownComponentSubSignal struct {
-	ComponentID      string
-	LatestBuild      bool
-	ComponentBuildID string
+	ComponentID string
 }
 
 type Signal struct {
-        Type eventloop.SignalType `json:"type"`
+	Type eventloop.SignalType `json:"type"`
 
 	DeployID            string `validate:"required_if=Operation deploy" json:"deploy_id"`
 	ActionWorkflowRunID string `validate:"required_if=Operation action_workflow_run" json:"action_workflow_run_id"`
@@ -75,12 +74,15 @@ type Signal struct {
 	InstallWorkflowID   string `validate:"required_if=Operation execute_workflow"`
 
 	// used for triggering an action workflow
-	InstallActionWorkflowTrigger InstallActionWorkflowTriggerSubSignal `json:"install_action_workflow_trigger"`
-	TeardownComponentSubSignal   TeardownComponentSubSignal            `json:"teardown_component_sub_signal"`
-	DeployComponentSubSignal     DeployComponentSubSignal              `json:"deploy_component_sub_signal"`
+	InstallActionWorkflowTrigger      InstallActionWorkflowTriggerSubSignal `json:"install_action_workflow_trigger"`
+	ExecuteDeployComponentSubSignal   DeployComponentSubSignal              `json:"deploy_component_sub_signal"`
+	ExecuteTeardownComponentSubSignal TeardownComponentSubSignal            `json:"teardown_component_sub_signal"`
 
 	// used for executing an install workflow
-	InstallWorkflowStepID string `json:"install_workflow_step_id"`
+	WorkflowStepID string `json:"install_workflow_step_id"`
+
+	// used for awaiting the run
+	InstallCloudFormationStackVersionID string `json:"install_cloud_formation_stack_version_id"`
 
 	eventloop.BaseSignal
 }

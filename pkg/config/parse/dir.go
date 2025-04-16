@@ -18,11 +18,11 @@ type ConfigDir struct {
 	Secrets    *config.SecretsConfig   `name:"secrets,nonempty"`
 	Inputs     *config.AppInputConfig  `name:"inputs,nonempty"`
 
-	CloudFormationStack *config.CloudformationStackConfig `name:"cloudformation_stack,nonempty"`
-	Sandbox             *config.AppSandboxConfig          `name:"sandbox,required,nonempty"`
-	Runner              *config.AppRunnerConfig           `name:"runner,required,nonempty"`
-	Metadata            *config.MetadataConfig            `name:"metadata,required,nonempty"`
-	Permissions         *config.PermissionsConfig         `name:"permissions,required,nonempty"`
+	Stack       *config.StackConfig       `name:"stack,nonempty"`
+	Sandbox     *config.AppSandboxConfig  `name:"sandbox,required,nonempty"`
+	Runner      *config.AppRunnerConfig   `name:"runner,required,nonempty"`
+	Metadata    *config.MetadataConfig    `name:"metadata,required,nonempty"`
+	Permissions *config.PermissionsConfig `name:"permissions,required,nonempty"`
 }
 
 func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
@@ -37,7 +37,7 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 		Sandbox:             c.Sandbox,
 		Runner:              c.Runner,
 		Permissions:         c.Permissions,
-		CloudFormationStack: c.CloudFormationStack,
+		Stack: c.Stack,
 
 		// Metadata
 		Version:         c.Metadata.Version,

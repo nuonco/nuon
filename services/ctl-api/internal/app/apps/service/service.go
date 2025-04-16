@@ -61,9 +61,9 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/apps/:app_id/secrets-configs", s.CreateAppSecretsConfig)
 	api.GET("/v1/apps/:app_id/secrets-configs", s.GetAppSecretsConfig)
 
-	// app cloudformation stack configs
-	api.POST("/v1/apps/:app_id/cloudformation-stack-configs", s.CreateAppCloudFormationStackConfig)
-	api.GET("/v1/apps/:app_id/cloudformation-stack-configs/:config_id", s.GetAppSecretsConfig)
+	// app stack configs
+	api.POST("/v1/apps/:app_id/stack-configs", s.CreateAppStackConfig)
+	api.GET("/v1/apps/:app_id/stack-configs/:config_id", s.GetAppSecretsConfig)
 
 	// app policies management
 	api.POST("/v1/apps/:app_id/policies-configs", s.CreateAppPoliciesConfig)
