@@ -12,10 +12,91 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 )
+
+// @temporal-gen workflow
+// @execution-timeout 60m
+// @task-timeout 30m
+func (w *Workflows) ExecuteDeployComponent(ctx workflow.Context, sreq signals.RequestSignal) error {
+	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
+	if err != nil {
+		w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "unable to get install from database")
+		w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusFailed)
+		return fmt.Errorf("unable to get install: %w", err)
+	}
+
+	var installDeploy *app.InstallDeploy
+	if sreq.ExecuteDeployComponentSubSignal.DeployID != "" {
+		installDeploy, err = activities.AwaitGetDeployByDeployID(ctx, sreq.ExecuteDeployComponentSubSignal.DeployID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get deploy")
+		}
+	} else {
+		componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, sreq.ExecuteDeployComponentSubSignal.ComponentID)
+		if err != nil {
+			return fmt.Errorf("unable to get component build: %w", err)
+		}
+
+		installDeploy, err = activities.AwaitCreateInstallDeploy(ctx, activities.CreateInstallDeployRequest{
+			InstallID:   install.ID,
+			ComponentID: sreq.ExecuteDeployComponentSubSignal.ComponentID,
+			BuildID:     componentBuild.ID,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to create install deploy: %w", err)
+		}
+		sreq.DeployID = installDeploy.ID
+	}
+
+	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+		StepID:         sreq.WorkflowStepID,
+		StepTargetID:   installDeploy.ID,
+		StepTargetType: plugins.TableName(w.db, installDeploy),
+	}); err != nil {
+		return errors.Wrap(err, "unable to update install workflow")
+	}
+
+	defer func() {
+		if pan := recover(); pan != nil {
+			w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "internal error")
+			w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusFailed)
+			panic(pan)
+		}
+	}()
+
+	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
+		DeployID: sreq.DeployID,
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to create log stream")
+	}
+	defer func() {
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+	}()
+
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("performing deploy")
+	err = w.doDeploy(ctx, sreq, install)
+	if err != nil {
+		w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusFailed)
+		w.sendNotification(ctx, notifications.NotificationsTypeDeployFailed, install.AppID, map[string]string{
+			"install_name": install.Name,
+			"app_name":     install.App.Name,
+			"created_by":   install.CreatedBy.Email,
+		})
+	}
+	return err
+}
 
 func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, sandboxMode bool) error {
 	l, err := log.WorkflowLogger(ctx)

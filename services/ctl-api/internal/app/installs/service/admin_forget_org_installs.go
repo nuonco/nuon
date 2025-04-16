@@ -42,7 +42,7 @@ func (s *service) ForgetOrgInstalls(ctx *gin.Context) {
 		}
 
 		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationForgotten,
+			Type: signals.OperationForget,
 		})
 	}
 

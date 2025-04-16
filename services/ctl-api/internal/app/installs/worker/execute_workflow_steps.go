@@ -42,7 +42,7 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 			return err
 		}
 
-		sreq.Signal.InstallWorkflowStepID = step.ID
+		sreq.Signal.WorkflowStepID = step.ID
 		if err := w.AwaitExecuteWorkflowStep(ctx, sreq); err != nil {
 			if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: sreq.InstallWorkflowID,
