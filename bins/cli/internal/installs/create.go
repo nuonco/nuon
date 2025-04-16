@@ -46,9 +46,6 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, i
 		return nil
 	}
 
-	view := ui.NewCreateView("install", asJSON)
-	view.Start()
-	view.Update("creating install")
 	install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
 		Name: &name,
 		AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
@@ -58,13 +55,15 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, i
 		Inputs: inputsMap,
 	})
 	if err != nil {
-		return view.Fail(err)
+		return ui.PrintError(fmt.Errorf("error creating install: %w", err))
 	}
 
 	cfg, err := s.api.GetCLIConfig(ctx)
 	if err != nil {
 		return ui.PrintError(fmt.Errorf("couldn't get cli config: %w", err))
 	}
+
+	ui.PrintLn(fmt.Sprintf("install ID: %s", install.ID))
 
 	url := fmt.Sprintf("%s/%s/installs/%s", cfg.DashboardURL, s.cfg.OrgID, install.ID)
 	browser.OpenURL(url)
