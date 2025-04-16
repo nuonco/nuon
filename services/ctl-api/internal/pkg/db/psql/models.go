@@ -49,7 +49,7 @@ func AllModels() []interface{} {
 		&app.AppAWSIAMRoleConfig{},
 		&app.AppAWSIAMPolicyConfig{},
 		&app.AppBreakGlassConfig{},
-		&app.AppCloudFormationStackConfig{},
+		&app.AppStackConfig{},
 
 		// installs
 		&app.AWSAccount{},
@@ -61,9 +61,9 @@ func AllModels() []interface{} {
 		&app.InstallIntermediateData{},
 
 		// install stacks
-		&app.InstallAWSCloudFormationStack{},
-		&app.InstallAWSCloudFormationStackVersion{},
-		&app.InstallAWSCloudFormationStackRun{},
+		&app.InstallStack{},
+		&app.InstallStackVersion{},
+		&app.InstallStackVersionRun{},
 
 		// component configuration
 		&app.Component{},

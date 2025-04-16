@@ -5,8 +5,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
 	enumspb "go.temporal.io/api/enums/v1"
+
+	"github.com/powertoolsdev/mono/pkg/metrics"
 )
 
 func (a *evClient) Send(ctx context.Context, id string, signal Signal) {

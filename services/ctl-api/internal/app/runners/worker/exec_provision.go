@@ -67,11 +67,14 @@ func (w *Workflows) executeProvisionInstallRunner(ctx workflow.Context, runnerID
 	}
 
 	if runner.RunnerGroup.Platform == app.AppRunnerTypeLocal {
+		w.updateStatus(ctx, runnerID, app.RunnerStatusActive, "local install")
 		return nil
 	}
 	if runner.RunnerGroup.Platform == app.AppRunnerTypeAWS {
+		w.updateStatus(ctx, runnerID, app.RunnerStatusActive, "aws install")
 		return nil
 	}
+
 	if runner.Org.OrgType == app.OrgTypeIntegration {
 		return nil
 	}

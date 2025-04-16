@@ -14,6 +14,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
@@ -32,6 +33,7 @@ type Params struct {
 	AcctClient        *account.Client
 	AuthzClient       *authz.Client
 	Cfg               *internal.Config
+	Features          *features.Features
 }
 
 type Activities struct {
@@ -47,6 +49,7 @@ type Activities struct {
 	acctClient        *account.Client
 	authzClient       *authz.Client
 	vcsHelpers        *vcshelpers.Helpers
+	features          *features.Features
 }
 
 func New(params Params) *Activities {
@@ -63,5 +66,6 @@ func New(params Params) *Activities {
 		authzClient:       params.AuthzClient,
 		vcsHelpers:        params.VCSHelpers,
 		componentsHelpers: params.ComponentsHelpers,
+		features:          params.Features,
 	}
 }

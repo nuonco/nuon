@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -24,6 +25,50 @@ const (
 	InstallWorkflowTypeTeardownComponents InstallWorkflowType = "teardown_components"
 	InstallWorkflowTypeReprovision        InstallWorkflowType = "reprovision"
 )
+
+func (i InstallWorkflowType) PastTenseName() string {
+	switch i {
+	case InstallWorkflowTypeProvision:
+		return "Provisioned install"
+	case InstallWorkflowTypeReprovision:
+		return "Reprovisioned install"
+	case InstallWorkflowTypeDeprovision:
+		return "Deprovisioned install"
+	case InstallWorkflowTypeManualDeploy:
+		return "Deployed to install"
+	case InstallWorkflowTypeInputUpdate:
+		return "Updated Input"
+	case InstallWorkflowTypeTeardownComponents:
+		return "Tore down all components"
+	case InstallWorkflowTypeDeployComponents:
+		return "Deployed all components"
+	default:
+	}
+
+	return ""
+}
+
+func (i InstallWorkflowType) Name() string {
+	switch i {
+	case InstallWorkflowTypeProvision:
+		return "Provisioning install"
+	case InstallWorkflowTypeReprovision:
+		return "Reprovisioning install"
+	case InstallWorkflowTypeDeprovision:
+		return "Deprovisioning install"
+	case InstallWorkflowTypeManualDeploy:
+		return "Deploying to install"
+	case InstallWorkflowTypeInputUpdate:
+		return "Input Update"
+	case InstallWorkflowTypeTeardownComponents:
+		return "Tearing down all components"
+	case InstallWorkflowTypeDeployComponents:
+		return "Deploying all components"
+	default:
+	}
+
+	return ""
+}
 
 func (i InstallWorkflowType) Description() string {
 	switch i {
@@ -80,8 +125,14 @@ type InstallWorkflow struct {
 	Status            CompositeStatus     `json:"status"`
 	StepErrorBehavior StepErrorBehavior   `json:"step_error_behavior"`
 
+	StartedAt  time.Time `json:"started_at"  gorm:"default:null"`
+	FinishedAt time.Time `json:"finished_at" gorm:"default:null"`
+
 	// steps represent each piece of the workflow
 	Steps []InstallWorkflowStep `json:"steps" gorm:"constraint:OnDelete:CASCADE;"`
+	Name  string                `json:"name" gorm:"-"`
+
+	ExecutionTime time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer"`
 }
 
 func (i *InstallWorkflow) BeforeCreate(tx *gorm.DB) error {
@@ -91,6 +142,18 @@ func (i *InstallWorkflow) BeforeCreate(tx *gorm.DB) error {
 
 	i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	i.OrgID = orgIDFromContext(tx.Statement.Context)
+
+	return nil
+}
+
+func (r *InstallWorkflow) AfterQuery(tx *gorm.DB) error {
+	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
+
+	name := r.Type.Name()
+	if !r.FinishedAt.IsZero() {
+		name = r.Type.PastTenseName()
+	}
+	r.Name = name
 
 	return nil
 }
