@@ -82,5 +82,7 @@ func (s *service) DeprovisionInstall(ctx *gin.Context) {
 		InstallWorkflowID: workflow.ID,
 	})
 
+	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
+
 	ctx.JSON(http.StatusCreated, "ok")
 }
