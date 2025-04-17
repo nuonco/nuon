@@ -26,6 +26,7 @@
     border-color: var(--border-color-light);
   }
 
+  .history-event:before,
   .timeline-event:before {
     border-left: 1px solid var(--border-color-light);
   }
@@ -61,6 +62,7 @@
     border-color: var(--border-color-dark);
   }
 
+  .history-event:before,
   .timeline-event:before {
     border-left: 1px solid var(--border-color-dark);
   }
@@ -128,6 +130,23 @@
 }
 
 .timeline-event:last-of-type:before {
+  display: none;
+}
+
+.history-event {
+  position: relative;
+}
+
+.history-event:before {
+  content: '';
+  height: calc(100% - 1.51rem);
+  left: 1.26rem;
+  position: absolute;
+  width: 1px;
+  top: 2.4rem;
+}
+
+.history-event:last-of-type:before {
   display: none;
 }
 

@@ -7,11 +7,13 @@ import {
   InstallHistory,
   InstallPageSubNav,
   InstallStatuses,
+  InstallWorkflowHistory,
   Section,
+  Text,
   Time,
 } from '@/components'
 import { InstallManagementDropdown } from '@/components/Installs'
-import { getInstall, getInstallEvents } from '@/lib'
+import { getInstall, getInstallEvents, getInstallWorkflows } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
@@ -64,7 +66,7 @@ export default withPageAuthRequired(async function Install({ params }) {
       }
     >
       <div className="flex flex-col lg:flex-row flex-auto">
-        <Section heading="History" className="overflow-auto">
+        <Section heading="Install history" className="overflow-auto">
           <Suspense
             fallback={
               <Loading
@@ -73,13 +75,29 @@ export default withPageAuthRequired(async function Install({ params }) {
               />
             }
           >
-            <LoadInstallHistory installId={installId} orgId={orgId} />
+            <LoadInstallWorkflows installId={installId} orgId={orgId} />
           </Suspense>
         </Section>
       </div>
     </DashboardContent>
   )
 })
+
+const LoadInstallWorkflows: FC<{ installId: string; orgId: string }> = async ({
+  installId,
+  orgId,
+}) => {
+  const installWorkflows = await getInstallWorkflows({
+    installId,
+    orgId,
+  }).catch(console.error)
+
+  return installWorkflows ? (
+    <InstallWorkflowHistory installWorkflows={installWorkflows} shouldPoll />
+  ) : (
+    <Text>No install history yet.</Text>
+  )
+}
 
 const LoadInstallHistory: FC<{ installId: string; orgId: string }> = async ({
   installId,
