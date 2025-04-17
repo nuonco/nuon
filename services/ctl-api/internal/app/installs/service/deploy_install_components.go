@@ -83,5 +83,7 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 		InstallWorkflowID: workflow.ID,
 	})
 
+	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
+
 	ctx.JSON(http.StatusCreated, "ok")
 }
