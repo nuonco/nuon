@@ -13,7 +13,7 @@ const (
 	orgCtxKey string = "org"
 )
 
-func OrgFromContext(ctx context.Context) (*app.Org, error) {
+func OrgFromContext(ctx ValueContext) (*app.Org, error) {
 	org := ctx.Value(orgCtxKey)
 	if org == nil {
 		return nil, fmt.Errorf("org was not set on middleware context")

@@ -34,12 +34,12 @@ func (s *propagator) Inject(ctx context.Context, writer workflow.HeaderWriter) e
 
 // InjectFromWorkflow injects values from context into headers for propagation
 func (s *propagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.HeaderWriter) error {
-	acctID, err := cctx.AccountIDFromWorkflowContext(ctx)
+	acctID, err := cctx.AccountIDFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	orgID, err := cctx.OrgIDFromWorkflowContext(ctx)
+	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
 		return err
 	}
