@@ -38,11 +38,13 @@ export const SpinnerSVG: FC<{ variant?: 'default' | 'large' }> = ({
 
 export interface ILoading {
   loadingText?: string
+  textClassName?: string
   variant?: 'default' | 'page' | 'stack'
 }
 
 export const Loading: FC<ILoading> = ({
   loadingText = 'Getting things ready...',
+  textClassName = "",
   variant = 'default',
 }) => {
   return (
@@ -62,7 +64,7 @@ export const Loading: FC<ILoading> = ({
             variant === 'page' || variant === 'stack' ? 'large' : 'default'
           }
         />
-        <Text variant="reg-14">{loadingText}</Text>
+        <Text className={textClassName} variant="reg-14">{loadingText}</Text>
       </span>
     </div>
   )

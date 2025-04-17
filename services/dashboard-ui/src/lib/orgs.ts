@@ -1,5 +1,5 @@
 import type { TOrg, TVCSConnection } from '@/types'
-import { mutateData, queryData } from '@/utils'
+import { mutateData, queryData, nueQueryData } from '@/utils'
 
 export async function getOrgs() {
   return queryData<Array<TOrg>>({
@@ -36,5 +36,12 @@ export async function postOrg(data: { name: string }) {
     errorMessage:
       'Unable to create your organization, refresh the page and try again.',
     path: 'orgs',
+  })
+}
+
+export async function nueGetOrg({ orgId }: IGetOrg) {
+  return nueQueryData<TOrg>({
+    orgId,
+    path: 'orgs/current',
   })
 }

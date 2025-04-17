@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { type ColumnDef } from '@tanstack/react-table'
 import { BookOpen } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
@@ -255,43 +256,48 @@ export const BreakGlassForm: FC<IBreakGlassForm> = ({ install }) => {
 
   return (
     <div>
-      <Modal
-        className="!max-w-2xl"
-        contentClassName="!p-0"
-        heading="CloudFormation stack created"
-        isOpen={isOpen}
-        onClose={() => {
-          setIsOpen(false)
-        }}
-      >
-        <div className="p-6">
-          <div className="border rounded-lg p-3 flex flex-col gap-3">
-            <div className="flex justify-between items-center">
-              <Text variant="med-14">
-                <ToolTip tipContent="Not sure what needs to go here">
-                  CloudFormation Stack
-                </ToolTip>
-              </Text>
-              <ClickToCopyButton
-                className="border rounded-md p-1 text-sm"
-                textToCopy={cfLink}
-              />
-            </div>
-            <Code>{cfLink}</Code>
-          </div>
-        </div>
-        <div className="p-6 border-t flex justify-end">
-          <Button
-            onClick={() => {
-              setIsOpen(false)
-            }}
-            className="text-sm"
-            variant="primary"
-          >
-            Done
-          </Button>
-        </div>
-      </Modal>
+      {isOpen
+        ? createPortal(
+            <Modal
+              className="!max-w-2xl"
+              contentClassName="!p-0"
+              heading="CloudFormation stack created"
+              isOpen={isOpen}
+              onClose={() => {
+                setIsOpen(false)
+              }}
+            >
+              <div className="p-6">
+                <div className="border rounded-lg p-3 flex flex-col gap-3">
+                  <div className="flex justify-between items-center">
+                    <Text variant="med-14">
+                      <ToolTip tipContent="Not sure what needs to go here">
+                        CloudFormation Stack
+                      </ToolTip>
+                    </Text>
+                    <ClickToCopyButton
+                      className="border rounded-md p-1 text-sm"
+                      textToCopy={cfLink}
+                    />
+                  </div>
+                  <Code>{cfLink}</Code>
+                </div>
+              </div>
+              <div className="p-6 border-t flex justify-end">
+                <Button
+                  onClick={() => {
+                    setIsOpen(false)
+                  }}
+                  className="text-sm"
+                  variant="primary"
+                >
+                  Done
+                </Button>
+              </div>
+            </Modal>,
+            document.body
+          )
+        : null}
       <form
         onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
           e.preventDefault()
@@ -360,24 +366,29 @@ const PermissionModal: FC<TPermissionOpetion> = ({
   const [isOpen, setIsOpen] = useState(false)
   return (
     <>
-      <Modal
-        className="!max-w-4xl"
-        heading={
-          <span className="flex flex-col gap-1">
-            <Text variant="med-14">{display_name}</Text>
-            <Text className="!font-normal">{descriptions}</Text>
-          </span>
-        }
-        isOpen={isOpen}
-        onClose={() => {
-          setIsOpen(false)
-        }}
-      >
-        <CodeViewer
-          initCodeSource={JSON.stringify(perms, null, 2)}
-          language="json"
-        />
-      </Modal>
+      {isOpen
+        ? createPortal(
+            <Modal
+              className="!max-w-4xl"
+              heading={
+                <span className="flex flex-col gap-1">
+                  <Text variant="med-14">{display_name}</Text>
+                  <Text className="!font-normal">{descriptions}</Text>
+                </span>
+              }
+              isOpen={isOpen}
+              onClose={() => {
+                setIsOpen(false)
+              }}
+            >
+              <CodeViewer
+                initCodeSource={JSON.stringify(perms, null, 2)}
+                language="json"
+              />
+            </Modal>,
+            document.body
+          )
+        : null}
       <Button
         className="text-sm !font-medium flex items-center gap-3"
         onClick={() => {
