@@ -2,6 +2,7 @@ name: 'Stale Pull Requests and Issues'
 on:
   schedule:
     - cron: '50 * * * *'
+  workflow_dispatch:
 
 jobs:
   stale:
@@ -14,7 +15,10 @@ jobs:
           close-pr-message: 'This PR was closed because it has been stalled for 5 days with no activity.'
           days-before-stale: 2
           days-before-close: 5
-          #labels-to-remove-when-stale: auto-deploy,auto-update
+
           stale-pr-label: stale
+          close-pr-label: closed-by-stale-action
           stale-issue-label: stale
           exempt-pr-labels: keep-open
+          operations-per-run: 100
+          debug-only: true # Temporarily enable this to see what's happening
