@@ -54,9 +54,9 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       heading={installWorkflow?.name}
       headingUnderline={installWorkflow.id}
     >
-      <div className="grid grid-cols-1 md:grid-cols-12">
+      <div className="grid grid-cols-1 md:grid-cols-12 divide-x flex-auto">
         <div className="flex flex-col lg:flex-row flex-auto col-span-8">
-          <Section heading="Install workflow" className="overflow-auto">
+          <Section heading="Install update steps" className="overflow-auto">
             <Suspense
               fallback={
                 <Loading
