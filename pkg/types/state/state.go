@@ -30,15 +30,16 @@ type State struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 
-	Org        *OrgState        `json:"org"`
-	App        *AppState        `json:"app"`
-	Sandbox    *SandboxState    `json:"sandbox"`
-	Inputs     *InputsState     `json:"inputs"`
-	Actions    *ActionsState    `json:"actions"`
-	Runner     *RunnerState     `json:"runner"`
-	Components *ComponentsState `json:"components"`
-	Domain     *DomainState     `json:"domain"`
-	Cloud      *CloudAccount    `json:"cloud_account"`
+	Org          *OrgState          `json:"org"`
+	App          *AppState          `json:"app"`
+	Sandbox      *SandboxState      `json:"sandbox"`
+	Inputs       *InputsState       `json:"inputs"`
+	Actions      *ActionsState      `json:"actions"`
+	Runner       *RunnerState       `json:"runner"`
+	Components   *ComponentsState   `json:"components"`
+	Domain       *DomainState       `json:"domain"`
+	Cloud        *CloudAccount      `json:"cloud_account"`
+	InstallStack *InstallStackState `json:"install_stack"`
 
 	// NOTE: for backwards compatibility, these are remaining in place.
 	Install *InstallState `json:"install"`

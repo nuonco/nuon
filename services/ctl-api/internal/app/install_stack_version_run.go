@@ -33,5 +33,13 @@ func (i *InstallStackVersionRun) BeforeCreate(tx *gorm.DB) error {
 		i.ID = domains.NewInstallStackVersionRunID()
 	}
 
+	if i.CreatedByID == "" {
+		i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
+
+	if i.OrgID == "" {
+		i.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+
 	return nil
 }

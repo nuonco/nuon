@@ -24,6 +24,7 @@ const (
 	OperationGenerateInstallStackVersion eventloop.SignalType = "generate-install-stack-version"
 	OperationProvisionRunner             eventloop.SignalType = "provision-runner"
 	OperationAwaitInstallStackVersionRun eventloop.SignalType = "await-install-stack-version-run"
+	OperationUpdateInstallStackOutputs   eventloop.SignalType = "update-install-stack-outputs"
 	OperationAwaitRunnerHealthy          eventloop.SignalType = "await-runner-healthy"
 	OperationProvisionSandbox            eventloop.SignalType = "provision-sandbox"
 	OperationDeprovisionSandbox          eventloop.SignalType = "deprovision-sandbox"
@@ -79,7 +80,8 @@ type Signal struct {
 	ExecuteTeardownComponentSubSignal TeardownComponentSubSignal            `json:"teardown_component_sub_signal"`
 
 	// used for executing an install workflow
-	WorkflowStepID string `json:"install_workflow_step_id"`
+	WorkflowStepID   string `json:"install_workflow_step_id"`
+	WorkflowStepName string `json:"install_workflow_step_name"`
 
 	// used for awaiting the run
 	InstallCloudFormationStackVersionID string `json:"install_cloud_formation_stack_version_id"`
