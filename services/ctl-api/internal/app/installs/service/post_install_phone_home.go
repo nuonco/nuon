@@ -2,11 +2,9 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
@@ -15,22 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
-type InstallPhoneHomeRequest struct {
-	PhoneHomeType string `json:"phone_home_type" validate:"required"`
-
-	MaintenanceRole string `json:"maintenance_iam_role_arn" validate:"required"`
-	ProvisionRole   string `json:"provision_iam_role_arn" validate:"required"`
-	DeprovisionRole string `json:"deprovision_iam_role_arn" validate:"required"`
-	AccountID       string `json:"account_id" validate:"required"`
-	VPCID           string `json:"vpc_id" validate:"required"`
-}
-
-func (i *InstallPhoneHomeRequest) Validate(v *validator.Validate) error {
-	if err := v.Struct(i); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
-	}
-	return nil
-}
+type InstallPhoneHomeRequest map[string]any
 
 // @ID PhoneHome
 // @Summary				phone home for an install
@@ -59,10 +42,6 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	if err := req.Validate(s.v); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
-		return
-	}
 
 	if err := s.updateInstallPhoneHome(ctx, installID, phoneHomeID, &req); err != nil {
 		ctx.Error(errors.Wrap(err, "unable to update install phone home"))
@@ -73,13 +52,13 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 }
 
 func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHomeID string, req *InstallPhoneHomeRequest) error {
-	var stack app.InstallStackVersion
+	var stackVersion app.InstallStackVersion
 	if res := s.db.WithContext(ctx).
 		Where(app.InstallStackVersion{
 			InstallID:   installID,
 			PhoneHomeID: phoneHomeID,
 		}).
-		First(&stack); res.Error != nil {
+		First(&stackVersion); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to find cloudformation stack")
 	}
 
@@ -90,7 +69,7 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 
 	// now make updates
 	updatedStack := app.InstallStackVersion{
-		ID: stack.ID,
+		ID: stackVersion.ID,
 	}
 	res := s.db.WithContext(ctx).
 		Model(&updatedStack).
@@ -107,6 +86,17 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 	}
 	if res.RowsAffected != 1 {
 		return errors.Wrap(gorm.ErrRecordNotFound, "cloudformation stack not found")
+	}
+
+	run := app.InstallStackVersionRun{
+		OrgID:                 stackVersion.OrgID,
+		CreatedByID:           stackVersion.CreatedByID,
+		InstallStackVersionID: stackVersion.ID,
+		Data:                  generics.ToHstore(pkggenerics.ToStringMap(data)),
+	}
+	if res = s.db.WithContext(ctx).
+		Create(&run); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to create install stack version run")
 	}
 
 	return nil

@@ -12,9 +12,10 @@ import (
 type RunnerOperationType string
 
 const (
-	RunnerOperationTypeProvision   RunnerOperationType = "provision"
-	RunnerOperationTypeReprovision RunnerOperationType = "reprovision"
-	RunnerOperationTypeDeprovision RunnerOperationType = "deprovision"
+	RunnerOperationTypeProvision               RunnerOperationType = "provision"
+	RunnerOperationTypeProvisionServiceAccount RunnerOperationType = "provision_service_account"
+	RunnerOperationTypeReprovision             RunnerOperationType = "reprovision"
+	RunnerOperationTypeDeprovision             RunnerOperationType = "deprovision"
 )
 
 type RunnerOperationStatus string

@@ -20,6 +20,8 @@ func (a *Templates) getVPCNestedStack(inp *TemplateInput, t tagBuilder) *nestedc
 			"PrivateSubnet2CIDR": cloudformation.Ref("PrivateSubnet2CIDR"),
 			"PrivateSubnet3CIDR": cloudformation.Ref("PrivateSubnet3CIDR"),
 
+			"RunnerSubnetCIDR": cloudformation.Ref("RunnerSubnetCIDR"),
+
 			"ClusterName":   inp.Install.ID,
 			"NuonInstallID": inp.Install.ID,
 			"NuonAppID":     inp.Install.AppID,
@@ -37,41 +39,48 @@ func (a *Templates) getVPCNestedStackParams() map[string]cloudformation.Paramete
 	return map[string]cloudformation.Parameter{
 		"VpcCIDR": {
 			Type:        "String",
-			Default:     "10.0.0.0/16",
+			Default:     "10.128.0.0/16",
 			Description: generics.ToPtr("CIDR block for the VPC"),
 		},
 
 		// private subnet cidrs
 		"PrivateSubnet1CIDR": {
 			Type:        "String",
-			Default:     "10.0.0.0/19",
+			Default:     "10.128.130.0/24",
 			Description: generics.ToPtr("CIDR block for private subnet 1"),
 		},
 		"PrivateSubnet2CIDR": {
 			Type:        "String",
-			Default:     "10.0.32.0/19",
+			Default:     "10.128.132.0/24",
 			Description: generics.ToPtr("CIDR block for private subnet 2"),
 		},
 		"PrivateSubnet3CIDR": {
 			Type:        "String",
-			Default:     "10.0.64.0/19",
+			Default:     "10.128.134.0/24",
 			Description: generics.ToPtr("CIDR block for private subnet 3"),
+		},
+
+		// runner subnet cidr
+		"RunnerSubnetCIDR": {
+			Type:        "String",
+			Default:     "10.128.128.0/24",
+			Description: generics.ToPtr("CIDR block for the Runner Subnet"),
 		},
 
 		// public subnet cidr
 		"PublicSubnet1CIDR": {
 			Type:        "String",
-			Default:     "10.0.96.0/19",
+			Default:     "10.128.0.0/26",
 			Description: generics.ToPtr("CIDR block for public subnet 1"),
 		},
 		"PublicSubnet2CIDR": {
 			Type:        "String",
-			Default:     "10.0.128.0/19",
+			Default:     "10.128.0.64/26",
 			Description: generics.ToPtr("CIDR block for public subnet 2"),
 		},
 		"PublicSubnet3CIDR": {
 			Type:        "String",
-			Default:     "10.0.160.0/19",
+			Default:     "10.128.0.128/26",
 			Description: generics.ToPtr("CIDR block for public subnet 3"),
 		},
 	}

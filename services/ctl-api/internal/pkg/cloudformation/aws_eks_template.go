@@ -26,6 +26,7 @@ func (t *Templates) getAWSEKSTemplate(inp *TemplateInput) (*cloudformation.Templ
 	tmpl.Resources["PhoneHomeProps"] = t.getRunnerPhoneHomeProps(inp)
 	tmpl.Resources["RunnerPhoneHome"] = t.getRunnerPhoneHomeLambda(inp, tb)
 	tmpl.Resources["RunnerPhoneHomeRole"] = t.getRunnerPhoneHomeLambdaRole(inp, tb)
+
 	tmpl.Resources["RunnerLaunchTemplate"] = t.getRunnerLaunchTemplatea(inp, tb)
 	tmpl.Resources["RunnerSecurityGroup"] = t.getRunnerSecurityGroup(inp, tb)
 	tmpl.Resources["RunnerASG"] = t.getRunnerASG(inp, tb)

@@ -61,7 +61,7 @@ func (w *Workflows) isDeprovisionable(ctx workflow.Context, install *app.Install
 // @temporal-gen workflow
 // @execution-timeout 60m
 // @execution-timeout 30m
-func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal) error {
+func (w *Workflows) DeprovisionSandbox(ctx workflow.Context, sreq signals.RequestSignal) error {
 	installID := sreq.ID
 	sandboxMode := sreq.SandboxMode
 

@@ -64,6 +64,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.PATCH("/v1/installs/:install_id", s.UpdateInstall)
 	api.DELETE("/v1/installs/:install_id", s.DeleteInstall)
 	api.POST("/v1/installs/:install_id/reprovision", s.ReprovisionInstall)
+	api.POST("/v1/installs/:install_id/reprovision-sandbox", s.ReprovisionInstallSandbox)
 	api.POST("/v1/installs/:install_id/deprovision", s.DeprovisionInstall)
 	api.POST("/v1/installs/:install_id/forget", s.ForgetInstall)
 
