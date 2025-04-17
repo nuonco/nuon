@@ -33,6 +33,10 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		signals.OperationForceShutdown:     w.AwaitForceShutdown,
 		signals.OperationOfflineCheck:      w.AwaitOfflineCheck,
 		signals.OperationFlushOrphanedJobs: w.AwaitFlushOrphanedJobs,
+
+		// independent runner
+		signals.OperationProvisionServiceAccount: w.AwaitProvisionServiceAccount,
+		signals.OperationInstallStackVersionRun:  w.AwaitInstallStackVersionRun,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
