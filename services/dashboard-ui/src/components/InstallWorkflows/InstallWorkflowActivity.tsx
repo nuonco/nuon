@@ -3,10 +3,9 @@
 import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect } from 'react'
 import { revalidateData } from '@/components/actions'
-import { Loading } from '@/components/Loading'
-import { Text, Code } from '@/components/Typography'
-import type { TInstallWorkflow, TInstallWorkflowStep } from '@/types'
-import { sentanceCase, POLL_DURATION } from '@/utils'
+import { Text } from '@/components/Typography'
+import type { TInstallWorkflow } from '@/types'
+import { POLL_DURATION } from '@/utils'
 import { YAStatus } from './InstallWorkflowHistory'
 
 interface IInstallWorkflowActivity {
@@ -55,9 +54,9 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
 
       <div className="">
         <span className="flex gap-2">
-          <YAStatus status={installWorkflow?.status?.history?.at(-1).status} />
+          <YAStatus status={installWorkflow?.status?.status} />
           <Text variant="reg-12">
-            {installWorkflow?.status?.history?.at(-1)?.status_human_description}
+            {installWorkflow?.status?.status_human_description}
           </Text>
         </span>
       </div>
