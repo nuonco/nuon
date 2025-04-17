@@ -1,7 +1,6 @@
 package cctx
 
 import (
-	"context"
 	"fmt"
 )
 
@@ -21,7 +20,7 @@ type MetricContext struct {
 	DBQueryCount int
 }
 
-func MetricsContextFromGinContext(ctx context.Context) (*MetricContext, error) {
+func MetricsContextFromGinContext(ctx ValueContext) (*MetricContext, error) {
 	metrics := ctx.Value(MetricsKey)
 	if metrics == nil {
 		return nil, ErrMetricContextNotFound
