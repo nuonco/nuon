@@ -12,6 +12,7 @@ import {
 } from '@phosphor-icons/react/dist/ssr'
 import { revalidateData } from '@/components/actions'
 import { Link } from '@/components/Link'
+import { SpinnerSVG } from '@/components/Loading'
 import { useOrg } from '@/components/Orgs'
 import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
@@ -126,7 +127,8 @@ export const YAStatus: FC<{ status: TInstallWorkflow['status']['status'] }> = ({
   const isSuccess = status === 'active' || status === 'success'
   const isError = status === 'error'
   const isProhibit = status === 'outdated'
-  const isPending = !isSuccess && !isError && !isProhibit
+  const isInProgress = status === 'in-progress'
+  const isPending = !isSuccess && !isError && !isProhibit && !isInProgress
 
   const StatusIcon = isSuccess ? (
     <CheckCircle size="18" weight="bold" />
@@ -134,6 +136,8 @@ export const YAStatus: FC<{ status: TInstallWorkflow['status']['status'] }> = ({
     <XCircle size="18" weight="bold" />
   ) : isProhibit ? (
     <Prohibit size="18" weight="bold" />
+  ) : isInProgress ? (
+    <SpinnerSVG />
   ) : (
     <ClockCountdown size="18" weight="bold" />
   )
@@ -150,6 +154,8 @@ export const YAStatus: FC<{ status: TInstallWorkflow['status']['status'] }> = ({
           'bg-orange-600/15 dark:bg-orange-500/15 text-orange-800 dark:text-orange-500':
             isProhibit,
           'bg-blue-600/15 dark:bg-blue-500/15 text-blue-800 dark:text-blue-500':
+            isInProgress,
+          'bg-cool-grey-600/15 dark:bg-cool-grey-500/15 text-cool-grey-800 dark:text-cool-grey-500':
             isPending,
         }
       )}
