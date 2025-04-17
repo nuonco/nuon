@@ -14,6 +14,8 @@ import (
 // @execution-timeout 60m
 // @task-timeout 30m
 func (w *Workflows) ProvisionRunner(ctx workflow.Context, sreq signals.RequestSignal) error {
+	// NOTE(jm): this is only used because we do not have a good way to send a signal to another namespace via a
+	// step
 	installID := sreq.ID
 
 	install, err := activities.AwaitGet(ctx, activities.GetRequest{
@@ -24,11 +26,8 @@ func (w *Workflows) ProvisionRunner(ctx workflow.Context, sreq signals.RequestSi
 	}
 
 	w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
-		Type: runnersignals.OperationProvision,
+		Type: runnersignals.OperationProvisionServiceAccount,
 	})
-	if err := w.pollRunner(ctx, install.RunnerID); err != nil {
-		return err
-	}
 
 	return nil
 }

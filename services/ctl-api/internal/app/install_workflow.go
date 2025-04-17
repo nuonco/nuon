@@ -23,7 +23,10 @@ const (
 	InstallWorkflowTypeInputUpdate        InstallWorkflowType = "input_update"
 	InstallWorkflowTypeDeployComponents   InstallWorkflowType = "deploy_components"
 	InstallWorkflowTypeTeardownComponents InstallWorkflowType = "teardown_components"
-	InstallWorkflowTypeReprovision        InstallWorkflowType = "reprovision"
+	InstallWorkflowTypeReprovisionSandbox InstallWorkflowType = "reprovision_sandbox"
+
+	// reprovision everything
+	InstallWorkflowTypeReprovision InstallWorkflowType = "reprovision"
 )
 
 func (i InstallWorkflowType) PastTenseName() string {
@@ -32,6 +35,8 @@ func (i InstallWorkflowType) PastTenseName() string {
 		return "Provisioned install"
 	case InstallWorkflowTypeReprovision:
 		return "Reprovisioned install"
+	case InstallWorkflowTypeReprovisionSandbox:
+		return "Reprovisioned sandbox"
 	case InstallWorkflowTypeDeprovision:
 		return "Deprovisioned install"
 	case InstallWorkflowTypeManualDeploy:
@@ -64,6 +69,8 @@ func (i InstallWorkflowType) Name() string {
 		return "Tearing down all components"
 	case InstallWorkflowTypeDeployComponents:
 		return "Deploying all components"
+	case InstallWorkflowTypeReprovisionSandbox:
+		return "Reprovisioning sandbox"
 	default:
 	}
 
@@ -76,6 +83,8 @@ func (i InstallWorkflowType) Description() string {
 		return "Creates a runner stack, waits for it to be applied and then provisions the sandbox and deploys all components."
 	case InstallWorkflowTypeReprovision:
 		return "Creates a new runner stack, waits for it to be applied and then reprovisions the sandbox and deploys all components."
+	case InstallWorkflowTypeReprovisionSandbox:
+		return "Reprovisions the sandbox and redeploys everything on top of it."
 	case InstallWorkflowTypeDeprovision:
 		return "Deprovisions all components, deprovisions the sandbox and then waits for the cloudformation stack to be deleted."
 	case InstallWorkflowTypeManualDeploy:

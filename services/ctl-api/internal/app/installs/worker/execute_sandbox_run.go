@@ -30,9 +30,14 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 	}
 
 	// create the job
+	targetRunnerID := install.Org.RunnerGroup.Runners[0].ID
+	if enabled {
+		targetRunnerID = install.RunnerID
+	}
+
 	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
 		InstallID: install.ID,
-		RunnerID:  install.Org.RunnerGroup.Runners[0].ID,
+		RunnerID:  targetRunnerID,
 		OwnerType: "install_sandbox_runs",
 		OwnerID:   installRun.ID,
 		Op:        op,
@@ -92,16 +97,11 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 		return errors.Wrap(err, "unable to save install intermediate data")
 	}
 
-	runnerID := install.Org.RunnerGroup.Runners[0].ID
-	if enabled {
-		runnerID = install.RunnerID
-	}
-
 	// queue job
 	l.Info("queued job and waiting on it to be picked up by runner event loop")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		JobID:      runnerJob.ID,
-		RunnerID:   runnerID,
+		RunnerID:   targetRunnerID,
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {

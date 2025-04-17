@@ -65,6 +65,8 @@ func (w *Workflows) getSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) 
 		return w.getInstallWorkflowProvisionSteps(ctx, wkflow)
 	case app.InstallWorkflowTypeReprovision:
 		return w.getInstallWorkflowReprovisionSteps(ctx, wkflow)
+	case app.InstallWorkflowTypeReprovisionSandbox:
+		return w.getInstallWorkflowReprovisionSandboxSteps(ctx, wkflow)
 	case app.InstallWorkflowTypeDeprovision:
 		return w.getInstallWorkflowDeprovisionSteps(ctx, wkflow)
 	}
@@ -565,5 +567,45 @@ func (w *Workflows) teardownAllComponents(ctx workflow.Context, wkflow *app.Inst
 	}
 
 	steps = append(steps, deploySteps...)
+	return steps, nil
+}
+
+func (w *Workflows) getInstallWorkflowReprovisionSandboxSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
+	steps := make([]*app.InstallWorkflowStep, 0)
+
+	step, err := w.installSignalStep(wkflow.InstallID, "await runner health", &signals.Signal{
+		Type: signals.OperationAwaitRunnerHealthy,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	lifecycleSteps, err := w.getSandboxLifecycleActionsSteps(ctx, wkflow.ID, wkflow.InstallID, app.ActionWorkflowTriggerTypePreSandboxRun)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
+
+	step, err = w.installSignalStep(wkflow.InstallID, "reprovision sandbox", &signals.Signal{
+		Type: signals.OperationReprovisionSandbox,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	lifecycleSteps, err = w.getSandboxLifecycleActionsSteps(ctx, wkflow.ID, wkflow.InstallID, app.ActionWorkflowTriggerTypePostSandboxRun)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
+
+	deploySteps, err := w.deployAllComponents(ctx, wkflow)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, deploySteps...)
+
 	return steps, nil
 }
