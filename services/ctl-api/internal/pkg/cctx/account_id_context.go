@@ -12,32 +12,13 @@ const (
 	accountIDCtxKey string = "account_id"
 )
 
-func AccountIDFromWorkflowContext(ctx workflow.Context) (string, error) {
+func AccountIDFromContext(ctx ValueContext) (string, error) {
 	acctID := ctx.Value(accountIDCtxKey)
 	if acctID == nil {
 		return "", fmt.Errorf("account was not set on middleware context")
 	}
 
 	return acctID.(string), nil
-}
-
-func AccountIDFromContext(ctx context.Context) (string, error) {
-	acctID := ctx.Value(accountIDCtxKey)
-	if acctID == nil {
-		return "", fmt.Errorf("account was not set on middleware context")
-	}
-
-	return acctID.(string), nil
-}
-
-func AccountIDFromGinContext(ctx *gin.Context) string {
-	val := ctx.Value(accountIDCtxKey)
-	valStr, ok := val.(string)
-	if !ok {
-		return ""
-	}
-
-	return valStr
 }
 
 func SetAccountIDWorkflowContext(ctx workflow.Context, acctID string) workflow.Context {

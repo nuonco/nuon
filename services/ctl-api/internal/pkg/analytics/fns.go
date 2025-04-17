@@ -47,7 +47,7 @@ func userIDFn(ctx context.Context) (string, error) {
 }
 
 func temporalUserIDFn(ctx workflow.Context) (string, error) {
-	acctID, err := cctx.AccountIDFromWorkflowContext(ctx)
+	acctID, err := cctx.AccountIDFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "no account id found")
 	}

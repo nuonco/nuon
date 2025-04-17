@@ -10,7 +10,7 @@ const (
 	runnerIDCtxKey string = "runner_id"
 )
 
-func RunnerIDFromContext(ctx context.Context) (string, error) {
+func RunnerIDFromContext(ctx ValueContext) (string, error) {
 	runner, err := RunnerFromContext(ctx)
 	if err != nil {
 		return "", err
