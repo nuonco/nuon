@@ -107,7 +107,7 @@ const LoadInstallWorkflow: FC<{
   }).catch(console.error)
 
   return installWorkflow ? (
-    <InstallWorkflowSteps installWorkflow={installWorkflow} />
+    <InstallWorkflowSteps installWorkflow={installWorkflow} orgId={orgId} />
   ) : (
     <Empty
       emptyTitle="No install history"
