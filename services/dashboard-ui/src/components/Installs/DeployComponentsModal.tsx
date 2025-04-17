@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
@@ -21,6 +22,7 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
   installId,
   orgId,
 }) => {
+  const router = useRouter()
   const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -72,7 +74,7 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
                   onClick={() => {
                     setIsLoading(true)
                     deployComponents({ installId, orgId })
-                      .then(() => {
+                      .then((workflowId) => {
                         trackEvent({
                           event: 'components_deploy',
                           status: 'ok',
@@ -84,6 +86,11 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
                         })
                         setIsLoading(false)
                         setIsKickedOff(true)
+
+                        router.push(
+                          `/${orgId}/installs/${installId}/history/${workflowId}`
+                        )
+
                         setIsOpen(false)
                       })
                       .catch((err) => {
