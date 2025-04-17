@@ -12,14 +12,15 @@ import (
 type RunnerStatus string
 
 const (
-	RunnerStatusError          RunnerStatus = "error"
-	RunnerStatusActive         RunnerStatus = "active"
-	RunnerStatusPending        RunnerStatus = "pending"
-	RunnerStatusProvisioning   RunnerStatus = "provisioning"
-	RunnerStatusDeprovisioning RunnerStatus = "deprovisioning"
-	RunnerStatusDeprovisioned  RunnerStatus = "deprovisioned"
-	RunnerStatusReprovisioning RunnerStatus = "reprovisioning"
-	RunnerStatusOffline        RunnerStatus = "offline"
+	RunnerStatusError                   RunnerStatus = "error"
+	RunnerStatusActive                  RunnerStatus = "active"
+	RunnerStatusPending                 RunnerStatus = "pending"
+	RunnerStatusProvisioning            RunnerStatus = "provisioning"
+	RunnerStatusDeprovisioning          RunnerStatus = "deprovisioning"
+	RunnerStatusDeprovisioned           RunnerStatus = "deprovisioned"
+	RunnerStatusReprovisioning          RunnerStatus = "reprovisioning"
+	RunnerStatusOffline                 RunnerStatus = "offline"
+	RunnerStatusAwaitingInstallStackRun RunnerStatus = "awaiting-install-stack-run"
 
 	RunnerStatusUnknown RunnerStatus = "unknown"
 )

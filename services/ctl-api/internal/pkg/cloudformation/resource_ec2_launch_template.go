@@ -17,9 +17,7 @@ func (a *Templates) getRunnerLaunchTemplateData(inp *TemplateInput, t tagBuilder
 			{
 				AssociatePublicIpAddress: ptr(true),
 				DeviceIndex:              ptr(0),
-				// SubnetId:
-				// cloudformation.RefPtr("vpc.Outputs.RunnerSubnet"),
-				SubnetId: cloudformation.SelectPtr("0", cloudformation.Split(",", cloudformation.GetAtt("VPC", "Outputs.PublicSubnets"))),
+				SubnetId:                 cloudformation.GetAttPtr("VPC", "Outputs.RunnerSubnet"),
 				Groups: []string{
 					cloudformation.Ref("RunnerSecurityGroup"),
 				},
@@ -50,7 +48,7 @@ func (a *Templates) getRunnerLaunchTemplateData(inp *TemplateInput, t tagBuilder
 		},
 		// in the beginning, there was a curlbash
 		UserData: cloudformation.Base64Ptr(`#!/bin/bash
-curl https://raw.githubusercontent.com/nuonco/aws-runner-init/refs/heads/main/init.sh | bash
+curl https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh | bash
 `),
 	}
 }
