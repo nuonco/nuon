@@ -30,7 +30,7 @@ type InstallStackVersionRun struct {
 
 func (i *InstallStackVersionRun) BeforeCreate(tx *gorm.DB) error {
 	if i.ID == "" {
-		i.ID = domains.NewInstallStackID()
+		i.ID = domains.NewInstallStackVersionRunID()
 	}
 
 	return nil
