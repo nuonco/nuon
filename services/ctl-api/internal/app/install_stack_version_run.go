@@ -30,14 +30,7 @@ type InstallStackVersionRun struct {
 
 func (i *InstallStackVersionRun) BeforeCreate(tx *gorm.DB) error {
 	if i.ID == "" {
-		i.ID = domains.NewRunnerOperationID()
-	}
-
-	if i.CreatedByID == "" {
-		i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
-	}
-	if i.OrgID == "" {
-		i.OrgID = orgIDFromContext(tx.Statement.Context)
+		i.ID = domains.NewInstallStackID()
 	}
 
 	return nil

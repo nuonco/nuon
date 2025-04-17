@@ -32,9 +32,9 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 		signals.OperationForget:                   w.AwaitForget,
 		signals.OperationReprovisionRunner:        w.AwaitReprovisionRunner,
 		signals.OperationProvisionRunner:          w.AwaitProvisionRunner,
-		signals.OperationDeprovisionSandbox:       w.AwaitReprovision,
-		signals.OperationReprovisionSandbox:       w.AwaitReprovision,
-		signals.OperationProvisionSandbox:         w.AwaitProvision,
+		signals.OperationDeprovisionSandbox:       w.AwaitDeprovisionSandbox,
+		signals.OperationReprovisionSandbox:       w.AwaitReprovisionSandbox,
+		signals.OperationProvisionSandbox:         w.AwaitProvisionSandbox,
 		signals.OperationExecuteWorkflow:          w.AwaitExecuteWorkflow,
 		signals.OperationExecuteActionWorkflow:    w.AwaitExecuteActionWorkflow,
 		signals.OperationExecuteDeployComponent:   w.AwaitExecuteDeployComponent,
@@ -56,9 +56,9 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 		signals.OperationDeleteComponents:   w.AwaitTeardownComponents,
 		signals.OperationDeprovisionRunner:  w.AwaitDeprovisionRunner,
 		signals.OperationDelete:             w.AwaitDelete,
-		signals.OperationProvision:          w.AwaitProvision,
-		signals.OperationReprovision:        w.AwaitReprovision,
-		signals.OperationDeprovision:        w.AwaitDeprovision,
+		signals.OperationProvision:          w.AwaitProvisionSandbox,
+		signals.OperationReprovision:        w.AwaitReprovisionSandbox,
+		signals.OperationDeprovision:        w.AwaitDeprovisionSandbox,
 	}
 }
 
