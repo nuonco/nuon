@@ -1,7 +1,7 @@
 name: 'Close stale issues and PRs'
 on:
   schedule:
-    - cron: '45 1 * * *'
+    - cron: '45 * * * *'
 
 jobs:
   stale:
@@ -9,10 +9,9 @@ jobs:
     steps:
       - uses: actions/stale@v9
         with:
-          ignore-updates: true
-          stale-issue-message: 'This issue is stale because it has been open 4 days with no activity.'
+          stale-issue-message: 'This issue is stale because it has been open 2 days.'
           stale-pr-message: 'This PR was marked as stale, and will be closed after 3 more days. Add the #keep-open label to prevent this from being closed.'
-          close-pr-message: 'This PR was closed because it has been stalled for 7 days with no activity.'
+          close-pr-message: 'This PR was closed because it has been stalled for 5 days with no activity.'
           days-before-stale: 2
           days-before-close: 5
           labels-to-remove-when-stale: auto-deploy,auto-update
