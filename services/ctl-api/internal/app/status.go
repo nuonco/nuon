@@ -15,10 +15,11 @@ type Status string
 
 // define standard statuses
 const (
-	StatusError      Status = "error"
-	StatusPending    Status = "pending"
-	StatusInProgress Status = "in-progress"
-	StatusSuccess    Status = "success"
+	StatusError        Status = "error"
+	StatusPending      Status = "pending"
+	StatusInProgress   Status = "in-progress"
+	StatusSuccess      Status = "success"
+	StatusNotAttempted Status = "not-attempted"
 )
 
 // type specific statuses
