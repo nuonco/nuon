@@ -7,9 +7,10 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/types/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
 // GetInstallState reads the current state of the install from the DB, and returns it in a structure that can be used for variable interpolation.
@@ -53,6 +54,14 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string) (*state
 	}
 	is.Actions = h.toActions(actions)
 
+	stack, err := h.getInstallStack(ctx, installID)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.Wrap(err, "unable to get install stack")
+		}
+	}
+	is.InstallStack = h.toInstallStackState(stack)
+
 	// NOTE(JM): this is purely for historical and legacy reasons, and will be removed once we migrate all users to
 	// the flattened structure
 	is.Install = &state.InstallState{
@@ -95,6 +104,26 @@ func (h *Helpers) getStateInstall(ctx context.Context, installID string) (*app.I
 	return &install, nil
 }
 
+func (h *Helpers) toInstallStackState(stack *app.InstallStack) *state.InstallStackState {
+	if stack == nil || len(stack.InstallStackVersions) < 1 {
+		return nil
+	}
+
+	is := state.NewInstallStackState()
+	is.Populated = true
+
+	version := stack.InstallStackVersions[0]
+	is.QuickLinkURL = version.QuickLinkURL
+	is.TemplateURL = version.TemplateURL
+	is.TemplateJSON = string(version.Contents)
+	is.Checksum = version.Checksum
+	is.Status = string(version.Status.Status)
+
+	is.Outputs = generics.ToStringMap(stack.InstallStackOutputs.Data)
+
+	return is
+}
+
 func (h *Helpers) toInputState(inputs *app.InstallInputs) *state.InputsState {
 	if inputs == nil || len(inputs.Values) < 1 {
 		return nil
@@ -102,7 +131,7 @@ func (h *Helpers) toInputState(inputs *app.InstallInputs) *state.InputsState {
 
 	is := state.NewInputsState()
 	for key, val := range inputs.ValuesRedacted {
-		is.Inputs[key] = generics.FromPtrStr(val)
+		is.Inputs[key] = pkggenerics.FromPtrStr(val)
 	}
 
 	return is

@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
 type CreateInstallParams struct {
@@ -89,7 +90,11 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 	if parentApp.AppRunnerConfigs[0].Type == "aws" {
-		install.InstallStack = &app.InstallStack{}
+		install.InstallStack = &app.InstallStack{
+			InstallStackOutputs: app.InstallStackOutputs{
+				Data: generics.ToHstore(map[string]string{}),
+			},
+		}
 	}
 
 	res = s.db.WithContext(ctx).Create(&install)
