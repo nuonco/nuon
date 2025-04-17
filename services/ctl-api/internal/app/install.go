@@ -86,8 +86,9 @@ func (i *Install) ViewVersion() string {
 func (i *Install) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name: views.DefaultViewName(db, &Install{}, 4),
-			SQL:  viewsql.InstallsViewV4,
+			Name:          views.DefaultViewName(db, &Install{}, 4),
+			SQL:           viewsql.InstallsViewV4,
+			AlwaysReapply: true,
 		},
 		{
 			Name: views.CustomViewName(db, &Install{}, "migration_test"),
