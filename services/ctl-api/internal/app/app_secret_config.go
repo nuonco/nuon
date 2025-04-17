@@ -30,15 +30,15 @@ type AppSecretConfig struct {
 	AppSecretsConfig   AppSecretsConfig `json:"-" faker:"-"`
 	AppSecretsConfigID string           `json:"app_secrets_config_id"`
 
-	Name        string `json:"name"`
-	DisplayName string `json:"display_name"`
-	Description string `json:"description"`
+	Name        string `json:"name" features:"template"`
+	DisplayName string `json:"display_name" features:"template"`
+	Description string `json:"description" features:"template"`
 
 	Required bool `json:"required"`
 
 	// for syncing into kubernetes
-	KubernetesSecretNamespace string `json:"kubernetes_secret_namespace"`
-	KubernetesSecretName      string `json:"kubernetes_secret_name"`
+	KubernetesSecretNamespace string `json:"kubernetes_secret_namespace" features:"template"`
+	KubernetesSecretName      string `json:"kubernetes_secret_name" features:"template"`
 
 	CloudFormationStackName string `json:"cloudformation_stack_name" gorm:"-"`
 	CloudFormationParamName string `json:"cloudformation_param_name" gorm:"-"`

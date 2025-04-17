@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/poll"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -23,6 +24,11 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 	version, err := activities.AwaitGetInstallStackVersionByInstallID(ctx, sreq.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install version")
+	}
+
+	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get install")
 	}
 
 	l, err := log.WorkflowLogger(ctx)
@@ -38,6 +44,23 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 	if orgTyp == app.OrgTypeSandbox {
 		l.Info("sandbox mode org")
 		workflow.Sleep(ctx, time.Second*5)
+		run, err := activities.AwaitCreateSandboxInstallStackVersionRun(ctx, &activities.CreateSandboxInstallStackVersionRunRequest{
+			StackVersionID: version.ID,
+			Data: map[string]string{
+				"url":                      "url",
+				"maintenance_iam_role_arn": "maintenance_iam_role_arn",
+				"provision_iam_role_arn":   "provision_iam_role_arn",
+				"deprovision_iam_role_arn": "deprovision_iam_role_arn",
+				"reprovision_iam_role_arn": "reprovision_iam_role_arn",
+			},
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to create sandbox version run")
+		}
+		w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
+			InstallStackVersionRunID: run.ID,
+		})
+
 		return nil
 	}
 
@@ -46,7 +69,7 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 		MaxTS:           workflow.Now(ctx).Add(time.Hour * 24),
 		InitialInterval: time.Second * 15,
 		MaxInterval:     time.Minute * 15,
-		BackoffFactor:   2,
+		BackoffFactor:   1.15,
 		Fn: func(ctx workflow.Context) error {
 			run, err = activities.AwaitGetInstallStackVersionRunByVersionID(ctx, version.ID)
 			return err
@@ -61,6 +84,10 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 
 		return errors.Wrap(err, "unable to get install stack run in time")
 	}
+
+	w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
+		InstallStackVersionRunID: run.ID,
+	})
 
 	// successfully got a run
 	l.Debug("successfully got run", zap.Any("data", run.Data))
