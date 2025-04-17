@@ -24,7 +24,7 @@ func (BaseSignal) WorkflowID(id string) string {
 	return "event-loop-" + id
 }
 
-func (b *BaseSignal) PropagateContext(ctx context.Context) error {
+func (b *BaseSignal) PropagateContext(ctx cctx.ValueContext) error {
 	payload, err := propagator.FetchPayload(ctx)
 	if err != nil {
 		return err

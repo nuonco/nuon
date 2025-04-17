@@ -1,8 +1,6 @@
 package propagator
 
 import (
-	"context"
-
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
@@ -13,7 +11,7 @@ type Payload struct {
 	LogStream *app.LogStream `json:"log_stream"`
 }
 
-func FetchPayload(ctx context.Context) (*Payload, error) {
+func FetchPayload(ctx cctx.ValueContext) (*Payload, error) {
 	acctID, _ := cctx.AccountIDFromContext(ctx)
 	orgID, _ := cctx.OrgIDFromContext(ctx)
 	logStream, _ := cctx.GetLogStreamContext(ctx)

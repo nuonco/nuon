@@ -1,7 +1,6 @@
 package cctx
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +14,7 @@ const (
 
 var ErrConfigContextNotFound error = fmt.Errorf("config context not found")
 
-func ConfigFromContext(ctx context.Context) (*internal.Config, error) {
+func ConfigFromContext(ctx ValueContext) (*internal.Config, error) {
 	cfg := ctx.Value(cfgCtxKey)
 	if cfg == nil {
 		return nil, ErrConfigContextNotFound
