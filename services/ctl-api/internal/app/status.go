@@ -24,7 +24,7 @@ const (
 // type specific statuses
 const (
 	InstallStackVersionStatusGenerating   Status = "generating"
-	InstallStackVersionStatusPendingUser  Status = "pending-user"
+	InstallStackVersionStatusPendingUser  Status = "awaiting-user-run"
 	InstallStackVersionStatusProvisioning Status = "provisioning"
 	InstallStackVersionStatusActive       Status = "active"
 	InstallStackVersionStatusOutdated     Status = "outdated"

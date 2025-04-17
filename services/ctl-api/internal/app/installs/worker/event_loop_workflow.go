@@ -47,6 +47,7 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 		signals.OperationSyncActionWorkflowTriggers:  w.handleSyncActionWorkflowTriggers,
 		signals.OperationGenerateInstallStackVersion: w.AwaitGenerateInstallStackVersion,
 		signals.OperationAwaitInstallStackVersionRun: w.AwaitInstallStackVersionRun,
+		signals.OperationUpdateInstallStackOutputs:   w.AwaitUpdateInstallStackOutputs,
 		signals.OperationAwaitRunnerHealthy:          w.AwaitRunnerHealthy,
 
 		// deprecated
