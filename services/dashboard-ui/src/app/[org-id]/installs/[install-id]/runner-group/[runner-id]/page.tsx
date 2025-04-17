@@ -101,7 +101,7 @@ export default withPageAuthRequired(async function Runner({
               </span>
             }
           >
-            <div className="flex gap-6 items-start justify-start">
+            <div className="flex gap-6 items-start justify-start lg:gap-12 xl:gap-24 flex-wrap">
               <span className="flex flex-col gap-2">
                 <Text className="text-cool-grey-600 dark:text-cool-grey-500">
                   Status
