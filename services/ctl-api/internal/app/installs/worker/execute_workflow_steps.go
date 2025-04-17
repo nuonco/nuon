@@ -30,12 +30,12 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 		return err
 	}
 
-	for _, step := range steps {
+	for idx, step := range steps {
 		if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: sreq.InstallWorkflowID,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusInProgress,
-				StatusHumanDescription: "executing step " + strconv.Itoa(step.Idx),
+				StatusHumanDescription: "executing step " + strconv.Itoa(step.Idx+1),
 				Metadata:               map[string]any{},
 			},
 		}); err != nil {
@@ -59,7 +59,16 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 				return err
 			}
 
+			// cancel all steps
 			if wkflow.StepErrorBehavior == app.StepErrorBehaviorAbort {
+				for _, cancelStep := range steps[idx+1:] {
+					statusactivities.AwaitPkgStatusUpdateInstallWorkflowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+						ID: cancelStep.ID,
+						Status: app.NewCompositeTemporalStatus(ctx, app.StatusPending, map[string]any{
+							"reason": "previous step failed and workflow was configured with abort-on-error.",
+						}),
+					})
+				}
 				return err
 			}
 		}
