@@ -119,6 +119,10 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// phone home
 	api.POST("/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome)
 
+	// install stacks
+	api.GET("/v1/installs/:install_id/stack", s.GetInstallStackByInstallID)
+	api.GET("/v1/installs/stacks/:stack_id", s.GetInstallStackByStackID)
+
 	return nil
 }
 
