@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import {
   deployComponents as deployAllComponents,
-  reprovisionInstall as reprovisionInstallSandbox,
+  reprovisionInstall as reprovision,
+  reprovisionSandbox as reprovisionSBox,
   deployComponentBuild as deployComponentByBuildId,
   teardownInstallComponents,
   updateInstall as patchInstall,
@@ -22,7 +23,20 @@ export async function reprovisionInstall({
   orgId,
 }: IReprovisionInstall) {
   try {
-    await reprovisionInstallSandbox({ installId, orgId })
+    await reprovision({ installId, orgId })
+    revalidatePath(`/${orgId}/installs/${installId}`)
+  } catch (error) {
+    console.error(error)
+    throw new Error(error.message)
+  }
+}
+
+export async function reprovisionSandbox({
+  installId,
+  orgId,
+}: IReprovisionInstall) {
+  try {
+    await reprovisionSBox({ installId, orgId })
     revalidatePath(`/${orgId}/installs/${installId}`)
   } catch (error) {
     console.error(error)
@@ -158,7 +172,7 @@ export async function updateInstall({
       orgId,
     }).then((ins) => {
       if (formData?.['form-control:update'] === 'update') {
-        reprovisionInstallSandbox({ orgId, installId })
+        reprovision({ orgId, installId })
           .then(() => {
             deployAllComponents({ orgId, installId }).catch(console.error)
           })

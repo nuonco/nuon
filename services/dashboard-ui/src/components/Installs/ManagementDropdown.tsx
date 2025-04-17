@@ -7,6 +7,7 @@ import { DeleteInstallModal } from './DeleteModal'
 import { EditModal } from './EditModal'
 import { ForgetModal } from './ForgetModal'
 import { ReprovisionModal } from './ReprovisionModal'
+import { ReprovisionSandboxModal } from './ReprovisionSandboxModal'
 import { Dropdown } from '@/components/Dropdown'
 import { useOrg } from '@/components/Orgs'
 import { Text } from '@/components/Typography'
@@ -50,6 +51,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
           Controls
         </Text>
         <ReprovisionModal installId={install.id} orgId={orgId} />
+        <ReprovisionSandboxModal installId={install.id} orgId={orgId} />
 
         <>
           <hr className="my-2" />
