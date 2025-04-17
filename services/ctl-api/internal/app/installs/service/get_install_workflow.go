@@ -27,7 +27,7 @@ import (
 // @Success				200	{object}		app.InstallWorkflow
 // @Router					/v1/install-workflows/{install_workflow_id} [GET]
 func (s *service) GetInstallWorkflow(ctx *gin.Context) {
-	workflowID := ctx.Param("workflow_id")
+	workflowID := ctx.Param("install_workflow_id")
 
 	installWorkflow, err := s.getInstallWorkflow(ctx, workflowID)
 	if err != nil {
@@ -44,9 +44,7 @@ func (s *service) getInstallWorkflow(ctx *gin.Context, workflowID string) (*app.
 		Preload("Steps", func(db *gorm.DB) *gorm.DB {
 			return db.Order("idx ASC")
 		}).
-		Where(app.InstallWorkflow{
-			ID: workflowID,
-		}).
+		Where("id = ?", workflowID).
 		First(&installWorkflow)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get workflow")
