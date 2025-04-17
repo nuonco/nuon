@@ -62,6 +62,7 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 			return errors.Wrap(err, "unable to create sandbox version run")
 		}
 		w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
+			Type:                     runnersignals.OperationInstallStackVersionRun,
 			InstallStackVersionRunID: run.ID,
 		})
 
@@ -97,6 +98,7 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 	}
 
 	w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
+		Type:                     runnersignals.OperationInstallStackVersionRun,
 		InstallStackVersionRunID: run.ID,
 	})
 
