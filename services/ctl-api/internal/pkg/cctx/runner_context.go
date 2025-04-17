@@ -13,7 +13,7 @@ const (
 	runnerCtxKey string = "runner"
 )
 
-func RunnerFromContext(ctx context.Context) (*app.Runner, error) {
+func RunnerFromContext(ctx ValueContext) (*app.Runner, error) {
 	runner := ctx.Value(runnerCtxKey)
 	if runner == nil {
 		return nil, fmt.Errorf("runner was not set on middleware context")
