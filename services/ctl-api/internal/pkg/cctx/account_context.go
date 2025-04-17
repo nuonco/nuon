@@ -13,7 +13,7 @@ const (
 	accountCtxKey string = "account"
 )
 
-func AccountFromContext(ctx context.Context) (*app.Account, error) {
+func AccountFromContext(ctx ValueContext) (*app.Account, error) {
 	acct := ctx.Value(accountCtxKey)
 	if acct == nil {
 		return nil, fmt.Errorf("org was not set on middleware context")

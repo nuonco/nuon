@@ -12,7 +12,7 @@ const (
 	orgIDCtxKey string = "org_id"
 )
 
-func OrgIDFromContext(ctx context.Context) (string, error) {
+func OrgIDFromContext(ctx ValueContext) (string, error) {
 	orgID := ctx.Value(orgIDCtxKey)
 	if orgID == nil {
 		return "", fmt.Errorf("org was not set on middleware context")
@@ -31,13 +31,4 @@ func SetOrgIDContext(ctx context.Context, orgID string) context.Context {
 
 func SetOrgIDWorkflowContext(ctx workflow.Context, orgID string) workflow.Context {
 	return workflow.WithValue(ctx, orgIDCtxKey, orgID)
-}
-
-func OrgIDFromWorkflowContext(ctx workflow.Context) (string, error) {
-	orgID := ctx.Value(orgIDCtxKey)
-	if orgID == nil {
-		return "", fmt.Errorf("org was not set on middleware context")
-	}
-
-	return orgID.(string), nil
 }

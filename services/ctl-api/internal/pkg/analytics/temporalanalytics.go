@@ -11,7 +11,7 @@ func NewTemporal(params Params) (temporalanalytics.Writer, error) {
 		temporalanalytics.WithDisable(params.Cfg.DisableAnalytics),
 		temporalanalytics.WithSegmentKey(params.Cfg.SegmentWriteKey),
 		temporalanalytics.WithLogger(params.L),
-		temporalanalytics.WithUserIDFn( temporalUserIDFn),
+		temporalanalytics.WithUserIDFn(temporalUserIDFn),
 		temporalanalytics.WithProperties(map[string]interface{}{
 			"platform": "ctl-api",
 			"env":      params.Cfg.Env,
