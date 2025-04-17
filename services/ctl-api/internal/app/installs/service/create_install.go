@@ -107,6 +107,8 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		InstallWorkflowID: workflow.ID,
 	})
 
+	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
+
 	// TODO(jm): these will be deprecated after the workflow tooling is created
 	ctx.JSON(http.StatusCreated, install)
 }
