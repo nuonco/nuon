@@ -53,12 +53,15 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
       </span>
 
       <div className="">
-        <span className="flex gap-2">
-          <YAStatus status={installWorkflow?.status?.status} />
-          <Text variant="reg-12">
-            {installWorkflow?.status?.status_human_description}
-          </Text>
-        </span>
+        {installWorkflow?.status ? (
+          <span className="flex gap-2">
+            <YAStatus status={installWorkflow?.status?.status} />
+            <Text variant="reg-12">
+              {installWorkflow?.status?.status_human_description ||
+                'Waiting on workflow to run.'}
+            </Text>
+          </span>
+        ) : null}
       </div>
     </div>
   )
