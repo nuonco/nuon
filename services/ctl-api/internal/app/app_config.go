@@ -57,15 +57,15 @@ type AppConfig struct {
 	Checksum string `json:"checksum"`
 
 	// Lookups on the app config
-	PermissionsConfig          AppPermissionsConfig         `json:"permissions,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	BreakGlassConfig           AppBreakGlassConfig          `json:"break_glass,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	PoliciesConfig             AppPoliciesConfig            `json:"policies,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	SecretsConfig              AppSecretsConfig             `json:"secrets,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	SandboxConfig              AppSandboxConfig             `json:"sandbox,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	InputConfig                AppInputConfig               `json:"input,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	RunnerConfig               AppRunnerConfig              `json:"runner,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	CloudFormationStackConfig  AppStackConfig `json:"cloudformation_stack,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	ComponentConfigConnections []ComponentConfigConnection  `json:"component_config_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	PermissionsConfig          AppPermissionsConfig        `json:"permissions,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	BreakGlassConfig           AppBreakGlassConfig         `json:"break_glass,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	PoliciesConfig             AppPoliciesConfig           `json:"policies,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	SecretsConfig              AppSecretsConfig            `json:"secrets,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	SandboxConfig              AppSandboxConfig            `json:"sandbox,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	InputConfig                AppInputConfig              `json:"input,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	RunnerConfig               AppRunnerConfig             `json:"runner,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	CloudFormationStackConfig  AppStackConfig              `json:"cloudformation_stack,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	ComponentConfigConnections []ComponentConfigConnection `json:"component_config_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 
 	// individual pointers
 	InstallAWSCloudFormationStackVersion []InstallStackVersion `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
@@ -85,8 +85,9 @@ func (a AppConfig) ViewVersion() string {
 func (i *AppConfig) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name: views.DefaultViewName(db, &AppConfig{}, 2),
-			SQL:  viewsql.AppConfigViewV2,
+			Name:          views.DefaultViewName(db, &AppConfig{}, 2),
+			SQL:           viewsql.AppConfigViewV2,
+			AlwaysReapply: true,
 		},
 	}
 }
