@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cloudformation"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -73,6 +74,14 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create cloudformation stack version")
+	}
+
+	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+		StepID:         sreq.WorkflowStepID,
+		StepTargetID:   stackVersion.ID,
+		StepTargetType: plugins.TableName(w.db, stackVersion),
+	}); err != nil {
+		return errors.Wrap(err, "unable to update stack version")
 	}
 
 	token, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)

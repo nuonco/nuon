@@ -77,7 +77,7 @@ func (w *Workflows) getSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) 
 func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
 	steps := make([]*app.InstallWorkflowStep, 0)
 
-	step, err := w.installSignalStep(wkflow.InstallID, "provision runner", &signals.Signal{
+	step, err := w.installSignalStep(ctx, wkflow.InstallID, "provision runner", &signals.Signal{
 		Type: signals.OperationProvisionRunner,
 	})
 	if err != nil {
@@ -85,7 +85,7 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "generate install stack", &signals.Signal{
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "generate install stack", &signals.Signal{
 		Type: signals.OperationGenerateInstallStackVersion,
 	})
 	if err != nil {
@@ -93,7 +93,7 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "await install stack", &signals.Signal{
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "await install stack", &signals.Signal{
 		Type: signals.OperationAwaitInstallStackVersionRun,
 	})
 	if err != nil {
@@ -101,7 +101,7 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "update install stack outputs", &signals.Signal{
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "update install stack outputs", &signals.Signal{
 		Type: signals.OperationUpdateInstallStackOutputs,
 	})
 	if err != nil {
@@ -109,7 +109,7 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "await runner health", &signals.Signal{
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "await runner health", &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	})
 	if err != nil {
@@ -123,7 +123,7 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "provision sandbox", &signals.Signal{
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "provision sandbox", &signals.Signal{
 		Type: signals.OperationProvisionSandbox,
 	})
 	if err != nil {
@@ -149,7 +149,7 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
 	steps := make([]*app.InstallWorkflowStep, 0)
 
-	step, err := w.installSignalStep(wkflow.InstallID, "reprovision runner", &signals.Signal{
+	step, err := w.installSignalStep(ctx, wkflow.InstallID, "reprovision runner", &signals.Signal{
 		Type: signals.OperationReprovisionRunner,
 	})
 	if err != nil {
@@ -157,7 +157,7 @@ func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkf
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "generate install stack", &signals.Signal{
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "generate install stack", &signals.Signal{
 		Type: signals.OperationGenerateInstallStackVersion,
 	})
 	if err != nil {
@@ -165,7 +165,7 @@ func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkf
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "await install stack", &signals.Signal{
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "await install stack", &signals.Signal{
 		Type: signals.OperationAwaitInstallStackVersionRun,
 	})
 	if err != nil {
@@ -173,7 +173,7 @@ func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkf
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "update install stack outputs", &signals.Signal{
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "update install stack outputs", &signals.Signal{
 		Type: signals.OperationUpdateInstallStackOutputs,
 	})
 	if err != nil {
@@ -181,7 +181,7 @@ func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkf
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "await runner health", &signals.Signal{
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "await runner health", &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	})
 	if err != nil {
@@ -195,7 +195,7 @@ func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkf
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "reprovision sandbox", &signals.Signal{
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "reprovision sandbox", &signals.Signal{
 		Type: signals.OperationReprovisionSandbox,
 	})
 	if err != nil {
@@ -224,7 +224,7 @@ func (w *Workflows) getInstallWorkflowDeleteSteps(ctx workflow.Context, wkflow *
 		return nil, errors.Wrap(err, "unable to get workflow deprovision steps")
 	}
 
-	step, err := w.installSignalStep(wkflow.InstallID, "delete install", &signals.Signal{
+	step, err := w.installSignalStep(ctx, wkflow.InstallID, "delete install", &signals.Signal{
 		Type: signals.OperationDelete,
 	})
 	if err != nil {
@@ -238,7 +238,7 @@ func (w *Workflows) getInstallWorkflowDeleteSteps(ctx workflow.Context, wkflow *
 func (w *Workflows) getInstallWorkflowDeprovisionSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
 	steps := make([]*app.InstallWorkflowStep, 0)
 
-	step, err := w.installSignalStep(wkflow.InstallID, "await runner healthy", &signals.Signal{
+	step, err := w.installSignalStep(ctx, wkflow.InstallID, "await runner healthy", &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	})
 	if err != nil {
@@ -252,7 +252,7 @@ func (w *Workflows) getInstallWorkflowDeprovisionSteps(ctx workflow.Context, wkf
 	}
 	steps = append(steps, deploySteps...)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "deprovision sandbox", &signals.Signal{
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "deprovision sandbox", &signals.Signal{
 		Type: signals.OperationDeprovisionSandbox,
 	})
 	if err != nil {
@@ -293,7 +293,7 @@ func (w *Workflows) getComponentLifecycleActionsSteps(ctx workflow.Context, inst
 			},
 		}
 		name := fmt.Sprintf("%s %s action workflow run", comp.Name, triggerTyp)
-		step, err := w.installSignalStep(installID, name, sig)
+		step, err := w.installSignalStep(ctx, installID, name, sig)
 		if err != nil {
 			return nil, err
 		}
@@ -318,7 +318,7 @@ func (w *Workflows) getComponentDeploySteps(ctx workflow.Context, wkflow *app.In
 		}
 		steps = append(steps, preDeploySteps...)
 
-		deployStep, err := w.installSignalStep(wkflow.InstallID, "deploy "+comp.Name, &signals.Signal{
+		deployStep, err := w.installSignalStep(ctx, wkflow.InstallID, "deploy "+comp.Name, &signals.Signal{
 			Type: signals.OperationExecuteDeployComponent,
 			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 				ComponentID: compID,
@@ -338,7 +338,7 @@ func (w *Workflows) getComponentDeploySteps(ctx workflow.Context, wkflow *app.In
 
 func (w *Workflows) getManualDeploySteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
 	steps := make([]*app.InstallWorkflowStep, 0)
-	step, err := w.installSignalStep(wkflow.InstallID, "await runner healthy", &signals.Signal{
+	step, err := w.installSignalStep(ctx, wkflow.InstallID, "await runner healthy", &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	})
 	if err != nil {
@@ -374,7 +374,7 @@ func (w *Workflows) getManualDeploySteps(ctx workflow.Context, wkflow *app.Insta
 	}
 	steps = append(steps, preDeploySteps...)
 
-	deployStep, err := w.installSignalStep(wkflow.InstallID, "deploy "+comp.Name, &signals.Signal{
+	deployStep, err := w.installSignalStep(ctx, wkflow.InstallID, "deploy "+comp.Name, &signals.Signal{
 		Type: signals.OperationExecuteDeployComponent,
 		ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 			DeployID:    generics.FromPtrStr(installDeployID),
@@ -439,7 +439,7 @@ func (w *Workflows) getComponentTeardownSteps(ctx workflow.Context, wkflow *app.
 		}
 		steps = append(steps, preDeploySteps...)
 
-		deployStep, err := w.installSignalStep(wkflow.InstallID, "teardown "+comp.Name, &signals.Signal{
+		deployStep, err := w.installSignalStep(ctx, wkflow.InstallID, "teardown "+comp.Name, &signals.Signal{
 			Type: signals.OperationExecuteTeardownComponent,
 			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 				ComponentID: compID,
@@ -457,7 +457,7 @@ func (w *Workflows) getComponentTeardownSteps(ctx workflow.Context, wkflow *app.
 	return steps, nil
 }
 
-func (w *Workflows) installSignalStep(installID, name string, signal *signals.Signal) (*app.InstallWorkflowStep, error) {
+func (w *Workflows) installSignalStep(ctx workflow.Context, installID, name string, signal *signals.Signal) (*app.InstallWorkflowStep, error) {
 	byts, err := json.Marshal(signal)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create signal json")
@@ -466,6 +466,7 @@ func (w *Workflows) installSignalStep(installID, name string, signal *signals.Si
 	return &app.InstallWorkflowStep{
 		Name:      name,
 		InstallID: installID,
+		Status:    app.NewCompositeTemporalStatus(ctx, app.StatusPending),
 		Signal: app.Signal{
 			Namespace:   "installs",
 			Type:        string(signal.Type),
@@ -509,7 +510,7 @@ func (w *Workflows) deployAllComponents(ctx workflow.Context, wkflow *app.Instal
 	}
 
 	steps := make([]*app.InstallWorkflowStep, 0)
-	step, err := w.installSignalStep(wkflow.InstallID, "await runner healthy", &signals.Signal{
+	step, err := w.installSignalStep(ctx, wkflow.InstallID, "await runner healthy", &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	})
 	if err != nil {
@@ -556,7 +557,7 @@ func (w *Workflows) getSandboxLifecycleActionsSteps(ctx workflow.Context, instal
 			},
 		}
 		name := fmt.Sprintf("%s action workflow run", triggerTyp)
-		step, err := w.installSignalStep(installID, name, sig)
+		step, err := w.installSignalStep(ctx, installID, name, sig)
 		if err != nil {
 			return nil, err
 		}
@@ -569,7 +570,7 @@ func (w *Workflows) getSandboxLifecycleActionsSteps(ctx workflow.Context, instal
 
 func (w *Workflows) teardownAllComponents(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
 	steps := make([]*app.InstallWorkflowStep, 0)
-	step, err := w.installSignalStep(wkflow.InstallID, "await runner healthy", &signals.Signal{
+	step, err := w.installSignalStep(ctx, wkflow.InstallID, "await runner healthy", &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	})
 	if err != nil {
@@ -589,7 +590,7 @@ func (w *Workflows) teardownAllComponents(ctx workflow.Context, wkflow *app.Inst
 func (w *Workflows) getInstallWorkflowReprovisionSandboxSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
 	steps := make([]*app.InstallWorkflowStep, 0)
 
-	step, err := w.installSignalStep(wkflow.InstallID, "await runner health", &signals.Signal{
+	step, err := w.installSignalStep(ctx, wkflow.InstallID, "await runner health", &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	})
 	if err != nil {
@@ -603,7 +604,7 @@ func (w *Workflows) getInstallWorkflowReprovisionSandboxSteps(ctx workflow.Conte
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "reprovision sandbox", &signals.Signal{
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "reprovision sandbox", &signals.Signal{
 		Type: signals.OperationReprovisionSandbox,
 	})
 	if err != nil {
