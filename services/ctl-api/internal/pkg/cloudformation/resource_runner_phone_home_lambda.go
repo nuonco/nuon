@@ -17,11 +17,17 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *TemplateInput) *cloudformation.
 
 		// fields for the phone-home endpoint
 		"phone_home_type":          "aws",
-		"maintenance_iam_role_arn": "maintenance-role",
-		"provision_iam_role_arn":   "provision-role",
-		"deprovision_iam_role_arn": "deprovision-role",
-		"account_id":               "account-id",
-		"vpc_id":                   "vpc-id",
+		"maintenance_iam_role_arn": cloudformation.GetAttPtr("RunnerMaintenance", "Arn"),
+		"provision_iam_role_arn":   cloudformation.GetAttPtr("RunnerProvision", "Arn"),
+		"deprovision_iam_role_arn": cloudformation.GetAttPtr("RunnerDeprovision", "Arn"),
+		// from the nested VPC Cloudformation Template (we want its outputs)
+		"vpc_id":          cloudformation.GetAtt("VPC", "Outputs.VPC"),
+		"runner_subnet":   cloudformation.GetAtt("VPC", "Outputs.RunnerSubnet"),
+		"public_subnets":  cloudformation.GetAtt("VPC", "Outputs.PublicSubnets"),
+		"private_subnets": cloudformation.GetAtt("VPC", "Outputs.PrivateSubnets"),
+		// pseudo params
+		"account_id": cloudformation.RefPtr("AWS::AccountId"),
+		"region":     cloudformation.RefPtr("AWS::Region"),
 	}
 
 	return &cloudformation.CustomResource{

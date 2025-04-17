@@ -23,7 +23,7 @@ const (
 var (
 	CommonRunnerGroupSettingsGroups         = [...]string{"operations", "sync"}
 	DefaultOrgRunnerGroupSettingsGroups     = [...]string{"build", "sandbox", "runner"}
-	DefaultInstallRunnerGroupSettingsGroups = [...]string{"deploys", "action"}
+	DefaultInstallRunnerGroupSettingsGroups = [...]string{"deploys", "action", "sandbox"}
 )
 
 type RunnerGroupSettings struct {

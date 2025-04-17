@@ -18,9 +18,6 @@ const (
 const (
 	OperationCreated           eventloop.SignalType = "created"
 	OperationRestart           eventloop.SignalType = "restart"
-	OperationProvision         eventloop.SignalType = "provision"
-	OperationDeprovision       eventloop.SignalType = "deprovision"
-	OperationReprovision       eventloop.SignalType = "reprovision"
 	OperationDelete            eventloop.SignalType = "delete"
 	OperationForceDelete       eventloop.SignalType = "force_delete"
 	OperationProcessJob        eventloop.SignalType = "process_job"
@@ -30,6 +27,15 @@ const (
 	OperationGracefulShutdown  eventloop.SignalType = "graceful_shutdown"
 	OperationForceShutdown     eventloop.SignalType = "force_shutdown"
 	OperationFlushOrphanedJobs eventloop.SignalType = "flush_orphaned_jobs"
+
+	// used for v2 provisioning
+	OperationProvisionServiceAccount eventloop.SignalType = "provision_service_account"
+	OperationInstallStackVersionRun  eventloop.SignalType = "install_stack_version_run"
+
+	// used for internal provisioning
+	OperationProvision   eventloop.SignalType = "provision"
+	OperationDeprovision eventloop.SignalType = "deprovision"
+	OperationReprovision eventloop.SignalType = "reprovision"
 )
 
 type Signal struct {
@@ -37,8 +43,9 @@ type Signal struct {
 
 	eventloop.BaseSignal
 
-	JobID         string `validate:"required_if=Type job_queued"`
-	HealthCheckID string `validate:"required_if=Type update_version"`
+	JobID                    string `validate:"required_if=Type job_queued"`
+	HealthCheckID            string `validate:"required_if=Type update_version"`
+	InstallStackVersionRunID string `validate:"required_if=Type install_stack_version_run"`
 }
 
 type RequestSignal struct {

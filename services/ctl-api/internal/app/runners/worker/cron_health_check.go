@@ -98,6 +98,7 @@ func (w *Workflows) isNoopHealthCheck(ctx workflow.Context, runnerID string) (bo
 		app.RunnerStatusReprovisioning,
 		app.RunnerStatusDeprovisioned,
 		app.RunnerStatusOffline,
+		app.RunnerStatusAwaitingInstallStackRun,
 	})
 	return isNoop, nil
 }

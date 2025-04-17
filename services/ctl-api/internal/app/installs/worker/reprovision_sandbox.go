@@ -19,7 +19,7 @@ import (
 // @temporal-gen workflow
 // @execution-timeout 60m
 // @task-timeout 30m
-func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal) error {
+func (w *Workflows) ReprovisionSandbox(ctx workflow.Context, sreq signals.RequestSignal) error {
 	installID := sreq.ID
 	sandboxMode := sreq.SandboxMode
 
