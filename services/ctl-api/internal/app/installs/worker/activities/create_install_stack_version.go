@@ -45,6 +45,7 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 		AWSBucketKey:  bucketKey,
 		TemplateURL:   templateURL,
 		QuickLinkURL:  quickLinkURL,
+		Status:        app.NewCompositeStatus(ctx, app.InstallStackVersionStatusGenerating),
 	}
 
 	if res := a.db.WithContext(ctx).Create(&obj); res.Error != nil {

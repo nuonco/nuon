@@ -62,6 +62,7 @@ func AllModels() []interface{} {
 
 		// install stacks
 		&app.InstallStack{},
+		&app.InstallStackOutputs{},
 		&app.InstallStackVersion{},
 		&app.InstallStackVersionRun{},
 

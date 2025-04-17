@@ -22,6 +22,7 @@ type InstallStack struct {
 
 	InstallID string `json:"install_id" gorm:"notnull;default null"`
 
+	InstallStackOutputs  InstallStackOutputs   `json:"install_stack_outputs"`
 	InstallStackVersions []InstallStackVersion `json:"versions" gorm:"constraint:OnDelete:CASCADE;"`
 }
 

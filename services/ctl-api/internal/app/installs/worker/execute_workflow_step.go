@@ -62,6 +62,7 @@ func (w *Workflows) ExecuteWorkflowStep(ctx workflow.Context, sreq signals.Reque
 	}
 
 	sig.WorkflowStepID = step.ID
+	sig.WorkflowStepName = step.Name
 
 	handlers := w.getHandlers()
 	handler, ok := handlers[sig.Type]

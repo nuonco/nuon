@@ -85,7 +85,7 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "generate cloudformation stack", &signals.Signal{
+	step, err = w.installSignalStep(wkflow.InstallID, "generate install stack", &signals.Signal{
 		Type: signals.OperationGenerateInstallStackVersion,
 	})
 	if err != nil {
@@ -93,8 +93,16 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "await cloudformation stack", &signals.Signal{
+	step, err = w.installSignalStep(wkflow.InstallID, "await install stack", &signals.Signal{
 		Type: signals.OperationAwaitInstallStackVersionRun,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	step, err = w.installSignalStep(wkflow.InstallID, "update install stack outputs", &signals.Signal{
+		Type: signals.OperationUpdateInstallStackOutputs,
 	})
 	if err != nil {
 		return nil, err
@@ -149,7 +157,7 @@ func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkf
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "generate cloudformation stack", &signals.Signal{
+	step, err = w.installSignalStep(wkflow.InstallID, "generate install stack", &signals.Signal{
 		Type: signals.OperationGenerateInstallStackVersion,
 	})
 	if err != nil {
@@ -157,8 +165,16 @@ func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkf
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(wkflow.InstallID, "await cloudformation stack", &signals.Signal{
+	step, err = w.installSignalStep(wkflow.InstallID, "await install stack", &signals.Signal{
 		Type: signals.OperationAwaitInstallStackVersionRun,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	step, err = w.installSignalStep(wkflow.InstallID, "update install stack outputs", &signals.Signal{
+		Type: signals.OperationUpdateInstallStackOutputs,
 	})
 	if err != nil {
 		return nil, err
