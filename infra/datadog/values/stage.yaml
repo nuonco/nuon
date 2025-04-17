@@ -1,5 +1,2 @@
 ---
-datadog:
-  prometheusScrape:
-    enabled: true
-    serviceEndpoints: true
+

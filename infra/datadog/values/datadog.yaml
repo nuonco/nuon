@@ -23,6 +23,9 @@ datadog:
   dogstatsd:
     useHostPort: true
     port: 8125
+  prometheusScrape:
+    enabled: true
+    serviceEndpoints: true
 agents:
   tolerations:
     # this toleration affects nodes limited to a specific deployment
