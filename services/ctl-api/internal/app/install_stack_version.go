@@ -43,7 +43,7 @@ type InstallStackVersion struct {
 
 func (a *InstallStackVersion) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
-		a.ID = domains.NewAppCfgID()
+		a.ID = domains.NewInstallStackVersionID()
 	}
 	if a.CreatedByID == "" {
 		a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
