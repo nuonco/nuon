@@ -6,6 +6,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
+const (
+	HeaderInstallWorkflowID = "X-Nuon-Install-Workflow-ID"
+)
+
 // createdByIDFromTemporalContext
 func createdByIDFromTemporalContext(ctx workflow.Context) string {
 	val := ctx.Value("account_id")
