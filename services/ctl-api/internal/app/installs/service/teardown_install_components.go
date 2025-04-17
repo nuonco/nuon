@@ -82,5 +82,8 @@ func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 		Type:              signals.OperationExecuteWorkflow,
 		InstallWorkflowID: workflow.ID,
 	})
+
+	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
+
 	ctx.JSON(http.StatusCreated, "ok")
 }
