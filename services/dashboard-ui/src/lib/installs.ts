@@ -8,6 +8,8 @@ import type {
   TInstallDeployPlan,
   TInstallEvent,
   TInstallInputs,
+  TInstallWorkflow,
+  TInstallWorkflowStep,
   TReadme,
   TRunnerGroup,
   TSandboxRun,
@@ -190,9 +192,22 @@ export async function reprovisionInstall({
   orgId,
 }: IReprovisionInstall) {
   return mutateData({
+    data: { "error_behavior": "string" },
     errorMessage: 'Unable to reprovision install.',
     orgId,
     path: `installs/${installId}/reprovision`,
+  })
+}
+
+export async function reprovisionSandbox({
+  installId,
+  orgId,
+}: IReprovisionInstall) {
+  return mutateData({
+    data: { "error_behavior": "string" },
+    errorMessage: 'Unable to reprovision sandbox.',
+    orgId,
+    path: `installs/${installId}/reprovision-sandbox`,
   })
 }
 
@@ -253,6 +268,7 @@ export async function deployComponents({
   orgId,
 }: IDeployComponents) {
   return mutateData({
+    data: { "error_behavior": "string" },
     errorMessage: 'Unable to deploy components to install.',
     orgId,
     path: `installs/${installId}/components/deploy-all`,
@@ -408,3 +424,33 @@ export async function getInstallSandboxRuns({
     path: `installs/${installId}/sandbox-runs`,
   })
 }
+
+export interface IGetInstallWorkflows extends IGetInstall {}
+
+export async function getInstallWorkflows({
+  installId,
+  orgId,
+}: IGetInstallWorkflows) {
+  return queryData<Array<TInstallWorkflow>>({
+    errorMessage: "Unable to get install workflows.",
+    path: `installs/${installId}/workflows`,
+    orgId,
+  })
+}
+
+export interface IGetInstallWorkflow {
+  installWorkflowId: string;
+  orgId: string;
+}
+
+export async function getInstallWorkflow({
+  installWorkflowId,
+  orgId,
+}: IGetInstallWorkflow) {
+  return queryData<TInstallWorkflow>({
+    errorMessage: "Unable to get install workflow.",
+    path: `install-workflows/${installWorkflowId}`,
+    orgId,
+  })
+}
+
