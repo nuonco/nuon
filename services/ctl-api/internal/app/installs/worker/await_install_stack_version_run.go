@@ -40,10 +40,10 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 	if err != nil {
 		return err
 	}
-
 	if orgTyp == app.OrgTypeSandbox {
 		l.Info("sandbox mode org")
 		workflow.Sleep(ctx, time.Second*5)
+
 		run, err := activities.AwaitCreateSandboxInstallStackVersionRun(ctx, &activities.CreateSandboxInstallStackVersionRunRequest{
 			StackVersionID: version.ID,
 			Data: map[string]string{
@@ -52,6 +52,10 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 				"provision_iam_role_arn":   "provision_iam_role_arn",
 				"deprovision_iam_role_arn": "deprovision_iam_role_arn",
 				"reprovision_iam_role_arn": "reprovision_iam_role_arn",
+				"vpc_id":                   "vpc-id",
+				"public_subnets":           "a,b,c",
+				"private_subnets":          "a,b,c",
+				"runner_subnet":            "a",
 			},
 		})
 		if err != nil {
@@ -60,6 +64,13 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 		w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
 			InstallStackVersionRunID: run.ID,
 		})
+
+		if err := statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID:     version.ID,
+			Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusActive),
+		}); err != nil {
+			return errors.Wrap(err, "unable to update status")
+		}
 
 		return nil
 	}
@@ -91,5 +102,12 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 
 	// successfully got a run
 	l.Debug("successfully got run", zap.Any("data", run.Data))
+	if err := statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID:     version.ID,
+		Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusActive),
+	}); err != nil {
+		return errors.Wrap(err, "unable to update status")
+	}
+
 	return nil
 }
