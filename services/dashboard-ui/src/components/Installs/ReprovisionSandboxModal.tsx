@@ -2,6 +2,7 @@
 
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useRouter } from 'next/navigation'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { Check, StackSimple } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
@@ -21,6 +22,7 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
   installId,
   orgId,
 }) => {
+  const router = useRouter()
   const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -71,7 +73,7 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
                   onClick={() => {
                     setIsLoading(true)
                     reprovisionSandbox({ installId, orgId })
-                      .then(() => {
+                      .then((workflowId) => {
                         trackEvent({
                           event: 'install_sandbox_reprovision',
                           user,
@@ -80,6 +82,11 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
                         })
                         setIsLoading(false)
                         setIsKickedOff(true)
+
+                        router.push(
+                          `/${orgId}/installs/${installId}/history/${workflowId}`
+                        )
+
                         setIsOpen(false)
                       })
                       .catch((err) => {

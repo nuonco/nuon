@@ -10,7 +10,7 @@ import {
   updateInstall as patchInstall,
   forgetInstall as forget,
 } from '@/lib'
-import { mutateData } from '@/utils'
+import { API_URL, mutateData, getFetchOpts } from '@/utils'
 import type { TInstall } from '@/types'
 
 interface IReprovisionInstall {
@@ -35,13 +35,15 @@ export async function reprovisionSandbox({
   installId,
   orgId,
 }: IReprovisionInstall) {
-  try {
-    await reprovisionSBox({ installId, orgId })
-    revalidatePath(`/${orgId}/installs/${installId}`)
-  } catch (error) {
-    console.error(error)
-    throw new Error(error.message)
-  }
+  const res = fetch(`${API_URL}/v1/installs/${installId}/reprovision-sandbox`, {
+    ...(await getFetchOpts(orgId)),
+    body: JSON.stringify({ error_behavior: 'string' }),
+    method: 'POST',
+  }).catch((err) => {
+    throw new Error(err)
+  })
+
+  return (await res).headers.get('x-nuon-install-workflow-id')
 }
 
 interface IDeployComponents {
@@ -63,6 +65,16 @@ export async function deployComponents({
     console.error(error)
     throw new Error(error.message)
   }
+
+  // const res = fetch(`${API_URL}/v1/installs/${installId}/deploy-all`, {
+  //   ...(await getFetchOpts(orgId)),
+  //   body: JSON.stringify({ error_behavior: 'string' }),
+  //   method: 'POST',
+  // }).catch((err) => {
+  //   throw new Error(err)
+  // })
+
+  // return (await res).headers.get('x-nuon-install-workflow-id')
 }
 
 interface IDeployComponentBuild {
