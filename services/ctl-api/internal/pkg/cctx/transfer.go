@@ -8,8 +8,8 @@ import (
 
 // Copy all known context fields from a workflow context, into a regular context
 func ContextFromWorkflowContext(ctx context.Context, wCtx workflow.Context) context.Context {
-	acctID, _ := AccountIDFromWorkflowContext(wCtx)
-	orgID, _ := OrgIDFromWorkflowContext(wCtx)
+	acctID, _ := AccountIDFromContext(wCtx)
+	orgID, _ := OrgIDFromContext(wCtx)
 	ls, _ := GetLogStreamWorkflow(wCtx)
 
 	ctx = SetAccountIDContext(ctx, acctID)
@@ -20,7 +20,7 @@ func ContextFromWorkflowContext(ctx context.Context, wCtx workflow.Context) cont
 }
 
 // Copy all known context fields from a workflow context, into a workflow context
-func WorkflowContextFromContext(wCtx workflow.Context, ctx context.Context) workflow.Context {
+func WorkflowContextFromContext(wCtx workflow.Context, ctx ValueContext) workflow.Context {
 	acctID, _ := AccountIDFromContext(ctx)
 	orgID, _ := OrgIDFromContext(ctx)
 	ls, _ := GetLogStreamContext(ctx)
@@ -29,5 +29,5 @@ func WorkflowContextFromContext(wCtx workflow.Context, ctx context.Context) work
 	wCtx = SetOrgIDWorkflowContext(wCtx, orgID)
 	wCtx = SetLogStreamWorkflowContext(wCtx, ls)
 
-	return nil
+	return wCtx
 }

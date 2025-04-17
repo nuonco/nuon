@@ -10,6 +10,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type SignalType string
@@ -23,7 +24,7 @@ type Signal interface {
 
 	// for managing context
 	GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error)
-	PropagateContext(ctx context.Context) error
+	PropagateContext(ctx cctx.ValueContext) error
 	GetWorkflowContext(ctx workflow.Context) workflow.Context
 	GetContext(ctx context.Context) context.Context
 
