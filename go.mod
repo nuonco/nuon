@@ -70,7 +70,7 @@ require (
 	github.com/google/go-github/v56 v56.0.0
 	github.com/google/uuid v1.6.0
 	github.com/grafana/codejen v0.0.3
-	github.com/hashicorp/go-getter v1.6.1
+	github.com/hashicorp/go-getter v1.7.5
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-tfe v1.36.0
 	github.com/hashicorp/go-version v1.7.0
