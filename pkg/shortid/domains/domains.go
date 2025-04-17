@@ -43,7 +43,15 @@ func NewAWSAccountID() string {
 }
 
 func NewInstallStackID() string {
-	return shortid.NewNanoID("acq")
+	return shortid.NewNanoID("ist")
+}
+
+func NewInstallStackVersionID() string {
+	return shortid.NewNanoID("isv")
+}
+
+func NewInstallStackVersionRunID() string {
+	return shortid.NewNanoID("isr")
 }
 
 func NewAzureAccountID() string {
