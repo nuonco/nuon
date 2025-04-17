@@ -45,18 +45,18 @@ export const InstallStatuses: FC<IInstallStatus> = ({
         'gap-6 items-center': !isCompact,
         '': isCompact,
       })}
-    >
-      <StatusBadge
-        label="Sandbox"
-        status={install.sandbox_status}
-        description={install?.sandbox_status_description}
-        descriptionAlignment="right"
-        descriptionPosition="bottom"
-      />
+    >      
       <StatusBadge
         label="Runner"
         status={install.runner_status}
         description={install?.runner_status_description}
+        descriptionAlignment="right"
+        descriptionPosition="bottom"
+      />
+      <StatusBadge
+        label="Sandbox"
+        status={install.sandbox_status}
+        description={install?.sandbox_status_description}
         descriptionAlignment="right"
         descriptionPosition="bottom"
       />
