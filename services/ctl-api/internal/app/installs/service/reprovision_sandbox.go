@@ -79,5 +79,7 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 		InstallWorkflowID: workflow.ID,
 	})
 
+	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
+
 	ctx.JSON(http.StatusCreated, "ok")
 }
