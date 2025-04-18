@@ -73,9 +73,14 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
                     })
                   }}
                   onSuccess={(workflowId) => {
-                    router.push(
-                      `/${orgId}/installs/${install.id}/history/${workflowId}`
-                    )
+                    if (workflowId) {
+                      router.push(
+                        `/${orgId}/installs/${install.id}/history/${workflowId}`
+                      )
+                    } else {
+                      router.push(`/${orgId}/installs/${install.id}/history`)
+                    }
+
                     setIsOpen(false)
                   }}
                   onCancel={() => {
