@@ -100,7 +100,7 @@ export const Table: FC<ITable> = ({
   })
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 w-full">
       {header && (
         <div className="flex items-center justify-between w-full">{header}</div>
       )}
