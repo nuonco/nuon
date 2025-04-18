@@ -26,9 +26,17 @@ export async function reprovisionInstall({
     ...(await getFetchOpts(orgId)),
     body: JSON.stringify({ error_behavior: 'continue' }),
     method: 'POST',
-  }).catch((err) => {
-    throw new Error(err)
   })
+    .then((r) => {
+      if (!r.ok) {
+        throw new Error('Unable to kick off install reprovision')
+      } else {
+        return r
+      }
+    })
+    .catch((err) => {
+      throw new Error(err)
+    })
 
   return (await res).headers.get('x-nuon-install-workflow-id')
 }
@@ -41,9 +49,17 @@ export async function reprovisionSandbox({
     ...(await getFetchOpts(orgId)),
     body: JSON.stringify({ error_behavior: 'continue' }),
     method: 'POST',
-  }).catch((err) => {
-    throw new Error(err)
   })
+    .then((r) => {
+      if (!r.ok) {
+        throw new Error('Unable to kick off sandbox reprovision')
+      } else {
+        return r
+      }
+    })
+    .catch((err) => {
+      throw new Error(err)
+    })
 
   return (await res).headers.get('x-nuon-install-workflow-id')
 }
@@ -64,9 +80,17 @@ export async function deployComponents({
       body: JSON.stringify({ error_behavior: 'continue' }),
       method: 'POST',
     }
-  ).catch((err) => {
-    throw new Error(err)
-  })
+  )
+    .then((r) => {
+      if (!r.ok) {
+        throw new Error('Unable to kick off components deployment')
+      } else {
+        return r
+      }
+    })
+    .catch((err) => {
+      throw new Error(err)
+    })
 
   return (await res).headers.get('x-nuon-install-workflow-id')
 }
@@ -116,27 +140,24 @@ export async function teardownAllComponents({
   installId,
   orgId,
 }: ITeardownAllComponents) {
-  // try {
-  //   await teardownInstallComponents({
-  //     installId,
-  //     orgId,
-  //   })
-  //   revalidatePath(`/${orgId}/installs/${installId}`)
-  // } catch (error) {
-  //   console.error(error)
-  //   throw new Error(error.message)
-  // }
-
   const res = fetch(
-    `${API_URL}/v1/installs/${installId}/components/tear down-all`,
+    `${API_URL}/v1/installs/${installId}/components/teardown-all`,
     {
       ...(await getFetchOpts(orgId)),
       body: JSON.stringify({ error_behavior: 'continue' }),
       method: 'POST',
     }
-  ).catch((err) => {
-    throw new Error(err)
-  })
+  )
+    .then((r) => {
+      if (!r.ok) {
+        throw new Error('Unable to kick off component delete')
+      } else {
+        return r
+      }
+    })
+    .catch((err) => {
+      throw new Error(err)
+    })
 
   return (await res).headers.get('x-nuon-install-workflow-id')
 }
@@ -168,53 +189,24 @@ export async function updateInstall({
   }, {})
 
   if (Object.keys(inputs)?.length > 0) {
-    // try {
-    //   await mutateData({
-    //     errorMessage: 'Unable to update install inputs',
-    //     data: { inputs },
-    //     method: 'PATCH',
-    //     orgId,
-    //     path: `installs/${installId}/inputs`,
-    //   })
-    // } catch (error) {
-    //   console.error(error?.message)
-    // }
     const res = fetch(`${API_URL}/v1/installs/${installId}/inputs`, {
       ...(await getFetchOpts(orgId)),
       body: JSON.stringify({ inputs }),
       method: 'PATCH',
-    }).catch((err) => {
-      throw new Error(err)
     })
+      .then((r) => {
+        if (!r.ok) {
+          throw new Error('Unable to update inputs')
+        } else {
+          return r
+        }
+      })
+      .catch((err) => {
+        throw new Error(err)
+      })
 
     return (await res).headers.get('x-nuon-install-workflow-id')
   }
-
-  // let install: TInstall
-  // try {
-  //   install = await patchInstall({
-  //     data: {
-  //       name: formData.name as string,
-  //     },
-  //     installId,
-  //     orgId,
-  //   }).then((ins) => {
-  //     if (formData?.['form-control:update'] === 'update') {
-  //       reprovision({ orgId, installId })
-  //         .then(() => {
-  //           deployAllComponents({ orgId, installId }).catch(console.error)
-  //         })
-  //         .catch(console.error)
-  //     }
-
-  //     return ins
-  //   })
-  // } catch (error) {
-  //   console.error(error?.message)
-  //   throw new Error('unable to patch install')
-  // }
-
-  // return install
 }
 
 interface IForgetInstall {
