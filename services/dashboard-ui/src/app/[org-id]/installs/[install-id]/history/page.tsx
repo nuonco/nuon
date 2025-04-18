@@ -13,7 +13,12 @@ import {
   Time,
 } from '@/components'
 import { InstallManagementDropdown } from '@/components/Installs'
-import { getInstall, getInstallEvents, getInstallWorkflows } from '@/lib'
+import {
+  getInstall,
+  getInstallEvents,
+  getInstallWorkflows,
+  getOrg,
+} from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
@@ -28,7 +33,10 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 export default withPageAuthRequired(async function Install({ params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const install = await getInstall({ installId, orgId })
+  const [install, org] = await Promise.all([
+    getInstall({ installId, orgId }),
+    getOrg({ orgId }),
+  ])
 
   return (
     <DashboardContent
@@ -75,7 +83,11 @@ export default withPageAuthRequired(async function Install({ params }) {
               />
             }
           >
-            <LoadInstallWorkflows installId={installId} orgId={orgId} />
+            {org?.features?.['install-independent-runner'] ? (
+              <LoadInstallWorkflows installId={installId} orgId={orgId} />
+            ) : (
+              <LoadInstallHistory installId={installId} orgId={orgId} />
+            )}
           </Suspense>
         </Section>
       </div>
