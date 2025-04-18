@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
@@ -22,6 +23,7 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
   installId,
   orgId,
 }) => {
+  const router = useRouter()
   const { user } = useUser()
   const [confirm, setConfirm] = useState<string>()
   const [force, setForceDelete] = useState(false)
@@ -125,7 +127,7 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
                   onClick={() => {
                     setIsLoading(true)
                     deleteComponents({ installId, orgId, force })
-                      .then(() => {
+                      .then((workflowId) => {
                         trackEvent({
                           event: 'components_delete',
                           user,
@@ -135,6 +137,11 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
                         setForceDelete(false)
                         setIsLoading(false)
                         setIsKickedOff(true)
+
+                        router.push(
+                          `/${orgId}/installs/${installId}/history/${workflowId}`
+                        )
+
                         setIsOpen(false)
                       })
                       .catch((err) => {

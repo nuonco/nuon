@@ -20,7 +20,6 @@ function buildDetailsHref(
       break
 
     case 'install_deploys':
-      href = `${basePath}/sandbox/${step?.step_target_id}`
       break
 
     case 'install_sandbox_runs':

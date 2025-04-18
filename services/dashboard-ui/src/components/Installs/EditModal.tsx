@@ -72,8 +72,10 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
                       formData,
                     })
                   }}
-                  onSuccess={(install) => {
-                    router.push(`/${orgId}/installs/${install.id}/history`)
+                  onSuccess={(workflowId) => {
+                    router.push(
+                      `/${orgId}/installs/${install.id}/history/${workflowId}`
+                    )
                     setIsOpen(false)
                   }}
                   onCancel={() => {
@@ -95,7 +97,7 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
         }}
       >
         <PencilSimpleLine size="16" />
-        Edit install
+        Edit inputs
       </Button>
     </>
   )

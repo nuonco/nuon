@@ -5,7 +5,7 @@ import React, { type FC, useEffect } from 'react'
 import { revalidateData } from '@/components/actions'
 import { Text } from '@/components/Typography'
 import type { TInstallWorkflow } from '@/types'
-import { POLL_DURATION } from '@/utils'
+import { SHORT_POLL_DURATION } from '@/utils'
 import { YAStatus } from './InstallWorkflowHistory'
 
 interface IInstallWorkflowActivity {
@@ -17,7 +17,7 @@ interface IInstallWorkflowActivity {
 export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
   installWorkflow,
   shouldPoll = false,
-  pollDuration = POLL_DURATION,
+  pollDuration = SHORT_POLL_DURATION,
 }) => {
   const path = usePathname()
 
@@ -27,6 +27,14 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
     }
     if (shouldPoll) {
       const pollBuild = setInterval(refreshData, pollDuration)
+
+      /* if (
+       *   installWorkflow?.status?.status === 'active' ||
+       *   installWorkflow?.status?.status === 'error' ||
+       *   installWorkflow?.status?.status === 'success'
+       * ) {
+       *   clearInterval(pollBuild)
+       * } */
 
       return () => clearInterval(pollBuild)
     }
