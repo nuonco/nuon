@@ -18,8 +18,8 @@ interface IInstallForm {
   platform?: string | 'aws' | 'azure'
   inputConfig?: TAppInputConfig
   install?: TInstall
-  onSubmit: (formData: FormData) => Promise<TInstall>
-  onSuccess: (install: TInstall) => void
+  onSubmit: (formData: FormData) => Promise<TInstall | string>
+  onSuccess: (install: TInstall | string) => void
   onCancel: () => void
   cfLink?: string
 }
@@ -97,7 +97,7 @@ export const InstallForm: FC<IInstallForm> = ({
                 status: 'ok',
                 props: {
                   orgId: org.id,
-                  installId: ins?.id,
+                  installId: install ? install?.id : (ins as TInstall)?.id,
                 },
               })
               setIsLoading(false)
@@ -153,14 +153,16 @@ export const InstallForm: FC<IInstallForm> = ({
             blur: isLoading || isCreated,
           })}
         >
-          <Field labelText="Install name">
-            <Input
-              type="text"
-              name="name"
-              defaultValue={install?.name}
-              required
-            />
-          </Field>
+          {install ? null : (
+            <Field labelText="Install name">
+              <Input
+                type="text"
+                name="name"
+                defaultValue={install?.name}
+                required
+              />
+            </Field>
+          )}
           {platform ? (
             platform === 'aws' ? (
               <AWSFields cfLink={cfLink} />
@@ -172,8 +174,6 @@ export const InstallForm: FC<IInstallForm> = ({
             <InputConfigs inputConfig={inputConfig} install={install} />
           ) : null}
         </div>
-
-        {install ? <UpdateInstallOptions /> : null}
 
         <div className="flex gap-3 justify-end border-t w-full p-6">
           <Button

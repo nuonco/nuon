@@ -39,7 +39,7 @@ function parseInstallComponentsToTableData(
   return installComponents.map((comp) => ({
     buildStatus: comp.build?.status || 'noop',
     componentId: comp.component_id,
-    componentType: getComponentConfigType(comp.config),
+    componentType: comp?.config ?  getComponentConfigType(comp?.config) : undefined,
     configVersion: comp.config?.version,
     installComponentId: comp.id,
     deployStatus: comp.install_deploys?.[0]?.status || 'noop',
@@ -90,11 +90,11 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
       {
         header: 'Type',
         accessorKey: 'componentType',
-        cell: (props) => (
+        cell: (props) => props.getValue<string>() ? (
           <Text className="gap-4">
             <StaticComponentConfigType configType={props.getValue<string>()} />
           </Text>
-        ),
+        ) : "-", 
       },
       {
         header: 'Deployment',
