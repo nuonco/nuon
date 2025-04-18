@@ -136,6 +136,7 @@ type InstallWorkflow struct {
 
 	StartedAt  time.Time `json:"started_at"  gorm:"default:null"`
 	FinishedAt time.Time `json:"finished_at" gorm:"default:null"`
+	Finished   bool      `json:"finished"`
 
 	// steps represent each piece of the workflow
 	Steps []InstallWorkflowStep `json:"steps" gorm:"constraint:OnDelete:CASCADE;"`
@@ -157,6 +158,7 @@ func (i *InstallWorkflow) BeforeCreate(tx *gorm.DB) error {
 
 func (r *InstallWorkflow) AfterQuery(tx *gorm.DB) error {
 	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
+	r.Finished = r.FinishedAt.IsZero()
 
 	name := r.Type.Name()
 	if !r.FinishedAt.IsZero() {
