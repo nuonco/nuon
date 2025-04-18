@@ -138,9 +138,13 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
                         setIsLoading(false)
                         setIsKickedOff(true)
 
-                        router.push(
-                          `/${orgId}/installs/${installId}/history/${workflowId}`
-                        )
+                        if (workflowId) {
+                          router.push(
+                            `/${orgId}/installs/${installId}/history/${workflowId}`
+                          )
+                        } else {
+                          router.push(`/${orgId}/installs/${installId}/history`)
+                        }
 
                         setIsOpen(false)
                       })

@@ -83,9 +83,13 @@ export const ReprovisionModal: FC<IReprovisionModal> = ({
                         setIsLoading(false)
                         setIsKickedOff(true)
 
-                        router.push(
-                          `/${orgId}/installs/${installId}/history/${workflowId}`
-                        )
+                        if (workflowId) {
+                          router.push(
+                            `/${orgId}/installs/${installId}/history/${workflowId}`
+                          )
+                        } else {
+                          router.push(`/${orgId}/installs/${installId}/history`)
+                        }
 
                         setIsOpen(false)
                       })
