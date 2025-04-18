@@ -28,11 +28,7 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
     if (shouldPoll) {
       const pollBuild = setInterval(refreshData, pollDuration)
 
-      /* if (
-       *   installWorkflow?.status?.status === 'active' ||
-       *   installWorkflow?.status?.status === 'error' ||
-       *   installWorkflow?.status?.status === 'success'
-       * ) {
+      /* if (installWorkflow?.finished) {
        *   clearInterval(pollBuild)
        * } */
 
