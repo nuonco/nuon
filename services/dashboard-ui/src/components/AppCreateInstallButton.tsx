@@ -12,7 +12,7 @@ import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { createAppInstall } from './app-actions'
-import type { TAppInputConfig, TAppSandboxConfig } from '@/types'
+import type { TAppInputConfig, TAppSandboxConfig, TInstall } from '@/types'
 
 interface IAppCreateInstallButton {
   appId: string
@@ -90,7 +90,9 @@ export const AppCreateInstallButton: FC<IAppCreateInstallButton> = ({
                     })
                   }}
                   onSuccess={(install) => {
-                    router.push(`/${orgId}/installs/${install.id}/history`)
+                    router.push(
+                      `/${orgId}/installs/${(install as TInstall)?.id}/history`
+                    )
                   }}
                   onCancel={() => {
                     setIsOpen(false)
