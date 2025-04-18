@@ -22,17 +22,9 @@ export async function reprovisionInstall({
   installId,
   orgId,
 }: IReprovisionInstall) {
-  // try {
-  //   await reprovision({ installId, orgId })
-  //   revalidatePath(`/${orgId}/installs/${installId}`)
-  // } catch (error) {
-  //   console.error(error)
-  //   throw new Error(error.message)
-  // }
-
   const res = fetch(`${API_URL}/v1/installs/${installId}/reprovision`, {
     ...(await getFetchOpts(orgId)),
-    body: JSON.stringify({ error_behavior: 'string' }),
+    body: JSON.stringify({ error_behavior: 'continue' }),
     method: 'POST',
   }).catch((err) => {
     throw new Error(err)
@@ -47,7 +39,7 @@ export async function reprovisionSandbox({
 }: IReprovisionInstall) {
   const res = fetch(`${API_URL}/v1/installs/${installId}/reprovision-sandbox`, {
     ...(await getFetchOpts(orgId)),
-    body: JSON.stringify({ error_behavior: 'string' }),
+    body: JSON.stringify({ error_behavior: 'continue' }),
     method: 'POST',
   }).catch((err) => {
     throw new Error(err)
@@ -69,7 +61,7 @@ export async function deployComponents({
     `${API_URL}/v1/installs/${installId}/components/deploy-all`,
     {
       ...(await getFetchOpts(orgId)),
-      body: JSON.stringify({ error_behavior: 'string' }),
+      body: JSON.stringify({ error_behavior: 'continue' }),
       method: 'POST',
     }
   ).catch((err) => {
@@ -139,7 +131,7 @@ export async function teardownAllComponents({
     `${API_URL}/v1/installs/${installId}/components/tear down-all`,
     {
       ...(await getFetchOpts(orgId)),
-      body: JSON.stringify({ error_behavior: 'string' }),
+      body: JSON.stringify({ error_behavior: 'continue' }),
       method: 'POST',
     }
   ).catch((err) => {
