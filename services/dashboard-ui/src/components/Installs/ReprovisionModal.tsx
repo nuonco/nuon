@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
@@ -21,6 +22,7 @@ export const ReprovisionModal: FC<IReprovisionModal> = ({
   installId,
   orgId,
 }) => {
+  const router = useRouter()
   const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -71,7 +73,7 @@ export const ReprovisionModal: FC<IReprovisionModal> = ({
                   onClick={() => {
                     setIsLoading(true)
                     reprovisionInstall({ installId, orgId })
-                      .then(() => {
+                      .then((workflowId) => {
                         trackEvent({
                           event: 'install_reprovision',
                           user,
@@ -80,6 +82,11 @@ export const ReprovisionModal: FC<IReprovisionModal> = ({
                         })
                         setIsLoading(false)
                         setIsKickedOff(true)
+
+                        router.push(
+                          `/${orgId}/installs/${installId}/history/${workflowId}`
+                        )
+
                         setIsOpen(false)
                       })
                       .catch((err) => {

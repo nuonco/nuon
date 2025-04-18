@@ -22,13 +22,23 @@ export async function reprovisionInstall({
   installId,
   orgId,
 }: IReprovisionInstall) {
-  try {
-    await reprovision({ installId, orgId })
-    revalidatePath(`/${orgId}/installs/${installId}`)
-  } catch (error) {
-    console.error(error)
-    throw new Error(error.message)
-  }
+  // try {
+  //   await reprovision({ installId, orgId })
+  //   revalidatePath(`/${orgId}/installs/${installId}`)
+  // } catch (error) {
+  //   console.error(error)
+  //   throw new Error(error.message)
+  // }
+
+  const res = fetch(`${API_URL}/v1/installs/${installId}/reprovision`, {
+    ...(await getFetchOpts(orgId)),
+    body: JSON.stringify({ error_behavior: 'string' }),
+    method: 'POST',
+  }).catch((err) => {
+    throw new Error(err)
+  })
+
+  return (await res).headers.get('x-nuon-install-workflow-id')
 }
 
 export async function reprovisionSandbox({
@@ -55,26 +65,18 @@ export async function deployComponents({
   installId,
   orgId,
 }: IDeployComponents) {
-  try {
-    await deployAllComponents({
-      installId,
-      orgId,
-    })
-    revalidatePath(`/${orgId}/installs/${installId}/components`)
-  } catch (error) {
-    console.error(error)
-    throw new Error(error.message)
-  }
+  const res = fetch(
+    `${API_URL}/v1/installs/${installId}/components/deploy-all`,
+    {
+      ...(await getFetchOpts(orgId)),
+      body: JSON.stringify({ error_behavior: 'string' }),
+      method: 'POST',
+    }
+  ).catch((err) => {
+    throw new Error(err)
+  })
 
-  // const res = fetch(`${API_URL}/v1/installs/${installId}/deploy-all`, {
-  //   ...(await getFetchOpts(orgId)),
-  //   body: JSON.stringify({ error_behavior: 'string' }),
-  //   method: 'POST',
-  // }).catch((err) => {
-  //   throw new Error(err)
-  // })
-
-  // return (await res).headers.get('x-nuon-install-workflow-id')
+  return (await res).headers.get('x-nuon-install-workflow-id')
 }
 
 interface IDeployComponentBuild {
@@ -122,16 +124,29 @@ export async function teardownAllComponents({
   installId,
   orgId,
 }: ITeardownAllComponents) {
-  try {
-    await teardownInstallComponents({
-      installId,
-      orgId,
-    })
-    revalidatePath(`/${orgId}/installs/${installId}`)
-  } catch (error) {
-    console.error(error)
-    throw new Error(error.message)
-  }
+  // try {
+  //   await teardownInstallComponents({
+  //     installId,
+  //     orgId,
+  //   })
+  //   revalidatePath(`/${orgId}/installs/${installId}`)
+  // } catch (error) {
+  //   console.error(error)
+  //   throw new Error(error.message)
+  // }
+
+  const res = fetch(
+    `${API_URL}/v1/installs/${installId}/components/tear down-all`,
+    {
+      ...(await getFetchOpts(orgId)),
+      body: JSON.stringify({ error_behavior: 'string' }),
+      method: 'POST',
+    }
+  ).catch((err) => {
+    throw new Error(err)
+  })
+
+  return (await res).headers.get('x-nuon-install-workflow-id')
 }
 
 interface IUpdateInstall {
@@ -161,44 +176,53 @@ export async function updateInstall({
   }, {})
 
   if (Object.keys(inputs)?.length > 0) {
-    try {
-      await mutateData({
-        errorMessage: 'Unable to update install inputs',
-        data: { inputs },
-        method: 'PATCH',
-        orgId,
-        path: `installs/${installId}/inputs`,
-      })
-    } catch (error) {
-      console.error(error?.message)
-    }
-  }
-
-  let install: TInstall
-  try {
-    install = await patchInstall({
-      data: {
-        name: formData.name as string,
-      },
-      installId,
-      orgId,
-    }).then((ins) => {
-      if (formData?.['form-control:update'] === 'update') {
-        reprovision({ orgId, installId })
-          .then(() => {
-            deployAllComponents({ orgId, installId }).catch(console.error)
-          })
-          .catch(console.error)
-      }
-
-      return ins
+    // try {
+    //   await mutateData({
+    //     errorMessage: 'Unable to update install inputs',
+    //     data: { inputs },
+    //     method: 'PATCH',
+    //     orgId,
+    //     path: `installs/${installId}/inputs`,
+    //   })
+    // } catch (error) {
+    //   console.error(error?.message)
+    // }
+    const res = fetch(`${API_URL}/v1/installs/${installId}/inputs`, {
+      ...(await getFetchOpts(orgId)),
+      body: JSON.stringify({ inputs }),
+      method: 'PATCH',
+    }).catch((err) => {
+      throw new Error(err)
     })
-  } catch (error) {
-    console.error(error?.message)
-    throw new Error('unable to patch install')
+
+    return (await res).headers.get('x-nuon-install-workflow-id')
   }
 
-  return install
+  // let install: TInstall
+  // try {
+  //   install = await patchInstall({
+  //     data: {
+  //       name: formData.name as string,
+  //     },
+  //     installId,
+  //     orgId,
+  //   }).then((ins) => {
+  //     if (formData?.['form-control:update'] === 'update') {
+  //       reprovision({ orgId, installId })
+  //         .then(() => {
+  //           deployAllComponents({ orgId, installId }).catch(console.error)
+  //         })
+  //         .catch(console.error)
+  //     }
+
+  //     return ins
+  //   })
+  // } catch (error) {
+  //   console.error(error?.message)
+  //   throw new Error('unable to patch install')
+  // }
+
+  // return install
 }
 
 interface IForgetInstall {
