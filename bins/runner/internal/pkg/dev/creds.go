@@ -34,18 +34,16 @@ func (d *devver) initCreds(ctx context.Context) error {
 		return nil
 	}
 
-	if settings.AwsIamRoleArn == "" {
-		fmt.Println("no aws iam role arn on settings group, assuming this is an install runner")
-		if err := d.initInstallCreds(ctx); err != nil {
-			return errors.Wrap(err, "unable to init install creds")
-		}
+	if settings.LocalAwsIamRoleArn == "" {
+		fmt.Println("runner group has no local IAM role set, ignoring")
 		return nil
 	}
 
-	fmt.Println("fetching credentials for " + settings.AwsIamRoleArn)
+	fmt.Println("fetching credentials for " + settings.LocalAwsIamRoleArn)
+
 	fn := func(ctx context.Context) error {
 		assumer, err := awsassumerole.New(d.v,
-			awsassumerole.WithRoleARN(settings.AwsIamRoleArn),
+			awsassumerole.WithRoleARN(settings.LocalAwsIamRoleArn),
 			awsassumerole.WithRoleSessionName("nuon-ctl"),
 		)
 		if err != nil {
@@ -73,77 +71,5 @@ func (d *devver) initCreds(ctx context.Context) error {
 	}
 
 	fmt.Println("successfully set credentials in environment")
-	return nil
-}
-
-func (d *devver) initInstallCreds(ctx context.Context) error {
-	// need to grab the install id for this
-	runner, err := d.apiClient.GetRunner(ctx, d.runnerID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get runner")
-	}
-
-	runnerGroup, err := d.apiClient.GetRunnerGroup(ctx, runner.RunnerGroupID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get runner group")
-	}
-
-	installID := runnerGroup.OwnerID
-	fmt.Println("fetching credentials for install runner ", installID)
-	install, err := d.apiClient.GetInstall(ctx, installID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get install")
-	}
-
-	if install.AWSAccount == nil {
-		fmt.Println("no aws account found on install, can not assume locally")
-		return nil
-	}
-
-	roleName := fmt.Sprintf("nuon/odr-%s", installID)
-	runnerRoleARN := awsassumerole.ExpandRoleName(install.AWSAccount.IAMRoleARN, roleName)
-	fmt.Println("assuming install runner IAM role", runnerRoleARN)
-	permissionsJSON := fmt.Sprintf(`{
-		"Effect": "Allow",
-		"Action": "sts:AssumeRole",
-		"Principal": {
-			"AWS": "%s"
-		}
-	}`, os.Getenv("NUONCTL_IAM_ROLE_ARN"))
-	fmt.Println("\nNOTE: for this to work, the runner role must manually give trust permissions to our support role. Please add the following JSON to", runnerRoleARN, "\n", permissionsJSON)
-
-	// NOTE(fd): this principal should be the nuon/odr-<install.id> role
-	runnerEKSAccessJSON := fmt.Sprintf(`Add the following statement to the trust policy for the installRole: %s
-	{
-		"Effect": "Allow",
-		"Action": "sts:AssumeRole",
-		"Principal": {
-			"AWS": "%s"
-		}
-	}`, install.AWSAccount.IAMRoleARN, runnerRoleARN)
-	fmt.Println("\nNOTE: for helm deploys to work, the install role must manually give trust permissions to the runner role, until runners can access the cluster.\n\n", runnerEKSAccessJSON)
-
-	assumer, err := awsassumerole.New(d.v,
-		awsassumerole.WithRoleARN(runnerRoleARN),
-		awsassumerole.WithRoleSessionName("nuon-ctl"),
-	)
-	if err != nil {
-		return errors.Wrap(err, "unable to get role assumer")
-	}
-
-	cfg, err := assumer.LoadConfigWithAssumedRole(ctx)
-	if err != nil {
-		return errors.Wrap(err, "unable to assume role")
-	}
-
-	creds, err := cfg.Credentials.Retrieve(ctx)
-	if err != nil {
-		return errors.Wrap(err, "unable to fetch credentials")
-	}
-
-	os.Setenv("AWS_ACCESS_KEY_ID", creds.AccessKeyID)
-	os.Setenv("AWS_SECRET_ACCESS_KEY", creds.SecretAccessKey)
-	os.Setenv("AWS_SESSION_TOKEN", creds.SessionToken)
-
 	return nil
 }

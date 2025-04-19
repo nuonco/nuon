@@ -39,6 +39,7 @@ func (d *devver) monitorRunners() error {
 				return errors.Wrap(err, "no service account created yet")
 			}
 
+			d.runnerID = runners[0].ID
 			return nil
 		}
 
