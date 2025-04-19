@@ -37,6 +37,12 @@ func (c *client) GetRunnerServiceAccountToken(ctx context.Context, runnerID stri
 type RunnerGroup struct {
 	Type    string `json:"type"`
 	OwnerID string `json:"owner_id"`
+
+	Settings *RunnerGroupSettings `json:"settings"`
+}
+
+type RunnerGroupSettings struct {
+	LocalAWSIAMRoleARN string
 }
 
 type Runner struct {
