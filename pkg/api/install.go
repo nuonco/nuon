@@ -17,8 +17,7 @@ type Install struct {
 }
 
 type AWSSettings struct {
-	Region     string `json:"region"`
-	IAMRoleARN string `json:"iam_role_arn"`
+	Region string `json:"region"`
 }
 
 type AzureAccount struct{}

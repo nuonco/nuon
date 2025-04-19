@@ -2,7 +2,6 @@ package get
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -75,7 +74,6 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 			return errors.Wrap(err, "unable to parse field "+fieldType.Name)
 		}
 
-		fmt.Println("enabled", getEnabled, fieldType.Name)
 		if !getEnabled {
 			continue
 		}

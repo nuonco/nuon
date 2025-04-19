@@ -48,6 +48,7 @@ func (d *devver) Init(ctx context.Context) error {
 		return nil
 	}
 	go func() {
+		fmt.Println("monitoring for new runners")
 		if err := d.monitorRunners(); err != nil {
 			log.Fatalf("unable to monitor runners")
 		}

@@ -36,6 +36,7 @@ type InstallStackOutputs struct {
 	ProvisionIAMRoleARN   string           `json:"provision_iam_role_arn" gorm:"-"`
 	DeprovisionIAMRoleARN string           `json:"deprovision_iam_role_arn" gorm:"-"`
 	MaintenanceIAMRoleARN string           `json:"maintenance_iam_role_arn" gorm:"-"`
+	RunnerIAMRoleARN      string           `json:"runner_iam_role_arn" gorm:"-"`
 }
 
 type AWSStackOutputs struct {
@@ -46,6 +47,7 @@ type AWSStackOutputs struct {
 	ProvisionIAMRoleARN   string   `json:"provision_iam_role_arn" mapstructure:"provision_iam_role_arn"`
 	DeprovisionIAMRoleARN string   `json:"deprovision_iam_role_arn" mapstructure:"deprovision_iam_role_arn"`
 	MaintenanceIAMRoleARN string   `json:"maintenance_iam_role_arn" mapstructure:"maintenance_iam_role_arn"`
+	RunnerIAMRoleARN      string   `json:"runner_iam_role_arn" mapstructure:"runner_iam_role_arn"`
 }
 
 func (a *InstallStackOutputs) BeforeCreate(tx *gorm.DB) error {
