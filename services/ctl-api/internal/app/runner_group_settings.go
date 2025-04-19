@@ -61,14 +61,17 @@ type RunnerGroupSettings struct {
 	// Metadata is used as both log and metric tags/attributes in the runner when emitting data
 	Metadata pgtype.Hstore `json:"" gorm:"type:hstore" swaggertype:"object,string"`
 
-	// specific configuration for cloud specific runners, such as AWS or Azure
-	AWSIAMRoleARN         string `json:"aws_iam_role_arn"`
-	K8sServiceAccountName string `json:"k8s_service_account_name"`
+	// org runner specifics
+	OrgAWSIAMRoleARN         string `json:"org_aws_iam_role_arn"`
+	OrgK8sServiceAccountName string `json:"org_k8s_service_account_name"`
 
-	// new fields for the runner-v2
+	// aws runner specifics runner-v2
 	AWSInstanceType            string        `json:"aws_instance_type"`
 	AWSCloudformationStackType string        `json:"aws_cloudformation_stack_type"`
 	AWSTags                    pgtype.Hstore `json:"aws_tags" gorm:"type:hstore" swaggertype:"object,string"`
+	LocalAWSIAMRoleARN         string        `json:"local_aws_iam_role_arn"`
+
+	// azure runner specifics
 }
 
 func (i *RunnerGroupSettings) Views(db *gorm.DB) []migrations.View {

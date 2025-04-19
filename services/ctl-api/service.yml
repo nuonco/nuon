@@ -60,6 +60,8 @@ env:
   SANDBOX_MODE_ENABLE_RUNNERS: true
   # this forces all runners to be run locally, even when outside sandbox mode
   USE_LOCAL_RUNNERS: true
+  RUNNER_DEFAULT_SUPPORT_IAM_ROLE_ARN: "arn:aws:iam::766121324316:role/nuon-internal-support-stage"
+  RUNNER_ENABLE_SUPPORT: true
 
   DISABLE_ANALYTICS: true
   DISABLE_METRICS: true

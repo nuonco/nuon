@@ -36,6 +36,9 @@ func (d *devver) initRunner(ctx context.Context) error {
 			return errors.Wrap(err, "unable to get service account")
 		}
 
+		// need to wait for the runner to have a local aws iam role to run with locally.
+		// this role must be assumable by the support role
+
 		d.runnerID = runners[0].ID
 		return nil
 	}
