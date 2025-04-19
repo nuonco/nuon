@@ -39,8 +39,8 @@ func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, ap
 		RunnerID:                 runnerID,
 		APIURL:                   runner.RunnerGroup.Settings.RunnerAPIURL,
 		APIToken:                 apiToken,
-		RunnerIAMRole:            runner.RunnerGroup.Settings.AWSIAMRoleARN,
-		RunnerServiceAccountName: runner.RunnerGroup.Settings.K8sServiceAccountName,
+		RunnerIAMRole:            runner.RunnerGroup.Settings.OrgAWSIAMRoleARN,
+		RunnerServiceAccountName: runner.RunnerGroup.Settings.OrgK8sServiceAccountName,
 		Image: executors.ProvisionRunnerRequestImage{
 			URL: runner.RunnerGroup.Settings.ContainerImageURL,
 			Tag: runner.RunnerGroup.Settings.ContainerImageTag,

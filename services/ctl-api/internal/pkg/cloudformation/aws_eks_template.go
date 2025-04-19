@@ -31,7 +31,6 @@ func (t *Templates) getAWSEKSTemplate(inp *TemplateInput) (*cloudformation.Templ
 	tmpl.Resources["RunnerSecurityGroup"] = t.getRunnerSecurityGroup(inp, tb)
 	tmpl.Resources["RunnerASG"] = t.getRunnerASG(inp, tb)
 	tmpl.Resources["RunnerInstanceProfile"] = t.getRunnerInstanceProfile(inp, tb)
-
 	tmpl.Resources["RunnerInstanceRole"] = t.getRunnerInstanceRole(inp, tb)
 
 	// build roles
