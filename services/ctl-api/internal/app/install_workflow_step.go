@@ -50,6 +50,7 @@ type InstallWorkflowStep struct {
 
 	StartedAt  time.Time `json:"started_at"  gorm:"default:null"`
 	FinishedAt time.Time `json:"finished_at" gorm:"default:null"`
+  Finished   bool      `json:"finished" gorm:"-"`
 
 	// the step approval is built into each step at the runner level.
 	Approval         *InstallWorkflowStepApproval         `json:"approval"`
@@ -75,5 +76,6 @@ func (a *InstallWorkflowStep) BeforeCreate(tx *gorm.DB) error {
 
 func (r *InstallWorkflowStep) AfterQuery(tx *gorm.DB) error {
 	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
+	r.Finished = !r.FinishedAt.IsZero()
 	return nil
 }

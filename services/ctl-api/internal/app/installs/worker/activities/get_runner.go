@@ -18,11 +18,15 @@ type GetRunnerRequest struct {
 // @temporal-gen activity
 // @by-id ID
 func (a *Activities) GetRunner(ctx context.Context, req GetRunnerRequest) (*app.Runner, error) {
+	return a.getRunner(ctx, req.ID)
+}
+
+func (a *Activities) getRunner(ctx context.Context, runnerID string) (*app.Runner, error) {
 	runner := app.Runner{}
 	res := a.db.WithContext(ctx).
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Settings").
-		First(&runner, "id = ?", req.ID)
+		First(&runner, "id = ?", runnerID)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return nil, temporal.NewNonRetryableApplicationError("not found", "not found", res.Error, "")

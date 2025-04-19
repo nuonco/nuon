@@ -65,7 +65,6 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 				"runner.type":     generics.ToPtr(string(app.RunnerGroupTypeInstall)),
 				"runner.platform": generics.ToPtr(string(platform)),
 				"env":             generics.ToPtr(string(h.cfg.Env)),
-
 				// NOTE(jm): we also set the runner group at create time
 			}),
 		},
@@ -129,8 +128,9 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 
 			// NOTE(jm): this is mainly a legacy relic, where instead of actually tracking infra resources in our API, via a
 			// catalog, we actually pass around templates for IAM role ARNs
-			AWSIAMRoleARN:         fmt.Sprintf(h.tfOutputs.OrgsIAMRoleNameTemplateOutputs.Runner, org.ID),
-			K8sServiceAccountName: fmt.Sprintf("runner-%s", org.ID),
+			OrgAWSIAMRoleARN:         fmt.Sprintf(h.tfOutputs.OrgsIAMRoleNameTemplateOutputs.Runner, org.ID),
+			LocalAWSIAMRoleARN:       fmt.Sprintf(h.tfOutputs.OrgsIAMRoleNameTemplateOutputs.Runner, org.ID),
+			OrgK8sServiceAccountName: fmt.Sprintf("runner-%s", org.ID),
 		},
 	}
 	res := h.db.WithContext(ctx).Create(&runnerGroup)
