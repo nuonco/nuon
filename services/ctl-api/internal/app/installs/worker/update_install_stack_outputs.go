@@ -72,5 +72,13 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		return errors.Wrap(err, "unable to update install stack outputs")
 	}
 
+	// update the runner settings group
+	if err := activities.AwaitUpdateRunnerGroupSettings(ctx, &activities.UpdateRunnerGroupSettings{
+		RunnerID:           install.RunnerID,
+		LocalAWSIAMRoleARN: outputs.RunnerIAMRoleARN,
+	}); err != nil {
+		return errors.Wrap(err, "unable to update runner group settings")
+	}
+
 	return nil
 }

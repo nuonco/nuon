@@ -133,6 +133,8 @@ type Config struct {
 	// cloudformation phone home
 	AWSCloudFormationStackTemplateBucket  string `config:"aws_cloudformation_stack_template_bucket"`
 	AWSCloudFormationStackTemplateBaseURL string `config:"aws_cloudformation_stack_template_base_url"`
+	RunnerEnableSupport                   bool   `config:"runner_enable_support"`
+	RunnerDefaultSupportIAMRole           string `config:"runner_default_support_iam_role_arn" validate:"required"`
 
 	// analytics configuration
 	SegmentWriteKey  string `config:"segment_write_key" validate:"required"`
