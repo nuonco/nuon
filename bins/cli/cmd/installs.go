@@ -20,6 +20,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		inputs        []string
 		noSelect      bool
 		force         bool
+		deployDeps    bool
 	)
 
 	installsCmds := &cobra.Command{
@@ -125,13 +126,14 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "Create an install deploy by install ID and build ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.CreateDeploy(cmd.Context(), id, deployID, PrintJSON)
+			return svc.CreateDeploy(cmd.Context(), id, deployID, deployDeps, PrintJSON)
 		}),
 	}
 	createDeployCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	createDeployCmd.MarkFlagRequired("install-id")
 	createDeployCmd.Flags().StringVarP(&deployID, "build-id", "b", "", "The build ID for the deploy you want to create")
 	createDeployCmd.MarkFlagRequired("build-id")
+	createDeployCmd.Flags().BoolVar((&deployDeps), "dependents", false, "Deploy dependents")
 	installsCmds.AddCommand(createDeployCmd)
 
 	deployLogsCmd := &cobra.Command{
