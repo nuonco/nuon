@@ -13,7 +13,8 @@ import (
 )
 
 type BaseSignal struct {
-	CtxPayload *propagator.Payload `json:"ctx_payload"`
+	CtxPayload   *propagator.Payload `json:"ctx_payload"`
+	SignalListeners []SignalListener    `json:"signal_listeners"`
 }
 
 func (BaseSignal) WorkflowName() string {
@@ -60,6 +61,10 @@ func (b *BaseSignal) GetContext(ctx context.Context) context.Context {
 	}
 
 	return ctx
+}
+
+func (b *BaseSignal) Listeners() []SignalListener {
+	return b.SignalListeners
 }
 
 func (BaseSignal) GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error) {
