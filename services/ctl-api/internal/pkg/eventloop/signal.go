@@ -22,6 +22,9 @@ type Signal interface {
 	Name() string
 	SignalType() SignalType
 
+	// for managing intra-workflow communication
+	Listeners() []SignalListener
+
 	// for managing context
 	GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error)
 	PropagateContext(ctx cctx.ValueContext) error
