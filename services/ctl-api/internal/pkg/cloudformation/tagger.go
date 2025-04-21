@@ -17,6 +17,7 @@ func (t tagBuilder) apply(existing []tags.Tag, name string) []tags.Tag {
 		existingMap[tag.Key] = tag.Value
 	}
 
+	existingMap["install.nuon.co/id"] = t.installID
 	existingMap["nuon_install_id"] = t.installID
 	if _, has := existingMap[name]; !has {
 		if name != "" {

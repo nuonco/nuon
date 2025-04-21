@@ -32,6 +32,12 @@ func (t *Templates) getAWSEKSTemplate(inp *TemplateInput) (*cloudformation.Templ
 	tmpl.Resources["RunnerASG"] = t.getRunnerASG(inp, tb)
 	tmpl.Resources["RunnerInstanceProfile"] = t.getRunnerInstanceProfile(inp, tb)
 	tmpl.Resources["RunnerInstanceRole"] = t.getRunnerInstanceRole(inp, tb)
+	tmpl.Resources["RunnerInstanceRoleCloudWatchLogPolicy"] = t.getRunnerInstanceRoleCloudWatchLogPolicy(inp, tb)
+
+	// CloudWatch: logs
+	tmpl.Resources["RunnerCloudWatchLogGroup"] = t.getRunnerCloudWatchLogGroup(inp, tb)
+	tmpl.Resources["RunnerCloudWatchLogStream"] = t.getRunnerCloudWatchLogStream(inp, tb)
+	tmpl.Resources["RunnerCloudWatchLogPolicy"] = t.getRunnerCloudWatchLogPolicy(inp, tb)
 
 	// build roles
 	paramlabels := map[string]any{}
