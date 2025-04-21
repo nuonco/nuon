@@ -9,14 +9,15 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) CreateDeploy(ctx context.Context, installID, buildID string, asJSON bool) error {
+func (s *Service) CreateDeploy(ctx context.Context, installID, buildID string, deployDeps, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
 
 	req := &models.ServiceCreateInstallDeployRequest{
-		BuildID: buildID,
+		BuildID:          buildID,
+		DeployDependents: deployDeps,
 	}
 
 	aid, err := s.api.CreateInstallDeploy(ctx, installID, req)
