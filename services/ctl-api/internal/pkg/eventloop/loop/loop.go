@@ -111,6 +111,46 @@ func (w *Loop[SignalType, ReqSig]) handleSignal(ctx workflow.Context, wkflowReq 
 	w.MW.Timing(ctx, "event_loop.signal_duration", dur, metrics.ToTags(tags)...)
 	w.MW.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
 
+	var listenErrs []error
+	for _, listener := range signal.Listeners() {
+		l.Debug("notifying signal listener",
+			zap.String("listener-workflow-id", listener.WorkflowID),
+			zap.String("listener-namespace", listener.Namespace),
+			zap.String("signal", op),
+		)
+
+		lctx := workflow.WithWorkflowNamespace(ctx, listener.Namespace)
+		lerr := workflow.SignalExternalWorkflow(
+			lctx,
+			listener.WorkflowID,
+			"",
+			listener.SignalName,
+			eventloop.SignalDoneMessage{
+				// CompletedSignal: signal,
+				Error:  err,
+				Result: nil,
+			},
+		).Get(lctx, nil) // TODO(sdboyer) double check that this future just waits for the signal to be created, not processed
+		if lerr != nil {
+			l.Error("error notifying signal listener",
+				zap.Error(lerr),
+				zap.String("listener-workflow-id", listener.WorkflowID),
+				zap.String("listener-namespace", listener.Namespace),
+				zap.String("signal", op),
+			)
+			listenErrs = append(listenErrs, lerr)
+
+			w.MW.Incr(ctx, "event_loop.signal.notify_errors", metrics.ToTags(tags)...)
+		}
+	}
+
+	ldur := workflow.Now(ctx).Sub(startTS) - dur
+	w.MW.Timing(ctx, "event_loop.signal.notify_duration", ldur, metrics.ToTags(tags)...)
+
+	if len(listenErrs) > 0 {
+		return errors.Wrap(errors.Join(listenErrs...), "error notifying signal listeners")
+	}
+
 	return nil
 }
 
