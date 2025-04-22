@@ -40,12 +40,12 @@ const (
 
 type Signal struct {
 	Type eventloop.SignalType `validate:"required"`
-
 	eventloop.BaseSignal
 
 	JobID                    string `validate:"required_if=Type job_queued"`
 	HealthCheckID            string `validate:"required_if=Type update_version"`
 	InstallStackVersionRunID string `validate:"required_if=Type install_stack_version_run"`
+	ForceDelete              bool
 }
 
 type RequestSignal struct {

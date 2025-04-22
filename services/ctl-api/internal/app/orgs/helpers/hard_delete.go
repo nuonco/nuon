@@ -46,6 +46,7 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		&app.ComponentDependency{},
 		&app.Component{},
 		&app.InstallSandboxRun{},
+		&app.InstallSandbox{},
 		&app.InstallInputs{},
 		&app.InstallEvent{},
 		&app.Install{},

@@ -131,7 +131,8 @@ func (w *Workflows) TeardownComponents(ctx workflow.Context, sreq signals.Reques
 	}
 
 	w.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationDeprovision,
+		Type:        signals.OperationDeprovision,
+		ForceDelete: sreq.ForceDelete,
 	})
 
 	return nil
