@@ -14,7 +14,6 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 	obj := comp.DockerBuild
 
 	configRequest := &models.ServiceCreateDockerBuildComponentConfigRequest{
-		AppConfigID: s.appConfigID,
 		// DEPRECATED: BuildArgs is not used and was required for Waypoint
 		BuildArgs:  []string{},
 		Dockerfile: generics.ToPtr(obj.Dockerfile),
@@ -63,6 +62,9 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 			return prevComponentState.ConfigID, requestChecksum, nil
 		}
 	}
+
+	// NOTE: we don't want to make a checksum with the app config id since that can change
+	configRequest.AppConfigID = s.appConfigID
 
 	cfg, err := s.apiClient.CreateDockerBuildComponentConfig(ctx, compID, configRequest)
 	if err != nil {
