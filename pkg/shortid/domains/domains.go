@@ -78,6 +78,10 @@ func NewInstallComponentID() string {
 	return shortid.NewNanoID("inc")
 }
 
+func NewInstallSandboxID() string {
+	return shortid.NewNanoID("isb")
+}
+
 func NewComponentID() string {
 	return shortid.NewNanoID("cmp")
 }
