@@ -22,12 +22,12 @@ const (
 	AppConfigStatusOutdated AppConfigStatus = "outdated"
 )
 
-type AppConfigType string
+// type AppConfigType string
 
-const (
-	AppConfigTypeToml   AppConfigType = "toml"
-	AppConfigTypeManual AppConfigType = "manual"
-)
+// const (
+// 	AppConfigTypeToml   AppConfigType = "toml"
+// 	AppConfigTypeManual AppConfigType = "manual"
+// )
 
 type AppConfigVersion string
 
