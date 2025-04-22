@@ -51,6 +51,12 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		// we extract the token from query params if it was not provided in the header
+		qtoken := ctx.Query("token")
+		if token == "" && qtoken != "" {
+			token = qtoken
+		}
+
 		if token == "" {
 			ctx.Error(stderr.ErrAuthentication{
 				Err:         fmt.Errorf("auth token was empty"),
