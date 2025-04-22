@@ -119,6 +119,21 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.POST("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/result", s.CreateRunnerJobExecutionResult)
 	api.POST("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/outputs", s.CreateRunnerJobExecutionOutputs)
 
+	// Terraform backend
+	tfBackendPath := "/v1/terraform-backend"
+	api.GET(tfBackendPath, s.GetTerraformCurrentStateData)
+	api.POST(tfBackendPath, s.UpdateTerraformState)
+	api.DELETE(tfBackendPath, s.DeleteTerraformState)
+	api.Handle("LOCK", tfBackendPath, s.LockTerraformState)
+	api.Handle("UNLOCK", tfBackendPath, s.UnlockTerraformState)
+
+	// terraform workpaces
+	tfWorkspacePath := "/v1/terraform-workspaces"
+	api.GET(tfWorkspacePath, s.GetTerraformWorkpaces)
+	api.GET(tfWorkspacePath+"/:workspace_id", s.GetTerraformWorkpace)
+	api.POST(tfWorkspacePath, s.CreateTerraformWorkpace)
+	api.DELETE(tfWorkspacePath+"/:workspace_id", s.DeleteTerraformWorkpace)
+
 	// TODO(jm): these will be moved to the otel namespace
 	api.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
 
