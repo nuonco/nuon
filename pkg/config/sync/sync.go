@@ -12,8 +12,8 @@ import (
 type sync struct {
 	cfg *config.AppConfig
 
-	apiClient     nuon.Client
-	appID         string
+	apiClient   nuon.Client
+	appID       string
 	appConfigID string
 
 	state     *state
