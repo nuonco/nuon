@@ -89,6 +89,20 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		return fmt.Errorf("unable to create install deploy: %w", res.Error)
 	}
 
+	// create terraform workspace
+	workspace := app.TerraformWorkspace{
+		OrgID:     install.OrgID,
+		OwnerID:   install.ID,
+		OwnerType: app.TerraformWorkspaceOwnerInstallComponent,
+	}
+
+	res = a.db.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&workspace)
+	if res.Error != nil {
+		return fmt.Errorf("unable to create terraform workspace: %w", res.Error)
+	}
+
 	a.evClient.Send(ctx, install.ID, &signals.Signal{
 		Type:     signals.OperationDeploy,
 		DeployID: installDeploy.ID,
