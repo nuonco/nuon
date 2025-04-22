@@ -24,7 +24,7 @@ export async function reprovisionInstall({
 }: IReprovisionInstall) {
   const res = fetch(`${API_URL}/v1/installs/${installId}/reprovision`, {
     ...(await getFetchOpts(orgId)),
-    body: JSON.stringify({ error_behavior: 'continue' }),
+    body: JSON.stringify({ error_behavior: 'abort' }),
     method: 'POST',
   })
     .then((r) => {
@@ -47,7 +47,7 @@ export async function reprovisionSandbox({
 }: IReprovisionInstall) {
   const res = fetch(`${API_URL}/v1/installs/${installId}/reprovision-sandbox`, {
     ...(await getFetchOpts(orgId)),
-    body: JSON.stringify({ error_behavior: 'continue' }),
+    body: JSON.stringify({ error_behavior: 'abort' }),
     method: 'POST',
   })
     .then((r) => {
@@ -77,7 +77,7 @@ export async function deployComponents({
     `${API_URL}/v1/installs/${installId}/components/deploy-all`,
     {
       ...(await getFetchOpts(orgId)),
-      body: JSON.stringify({ error_behavior: 'continue' }),
+      body: JSON.stringify({ error_behavior: 'abort' }),
       method: 'POST',
     }
   )
@@ -144,7 +144,7 @@ export async function teardownAllComponents({
     `${API_URL}/v1/installs/${installId}/components/teardown-all`,
     {
       ...(await getFetchOpts(orgId)),
-      body: JSON.stringify({ error_behavior: 'continue' }),
+      body: JSON.stringify({ error_behavior: 'abort' }),
       method: 'POST',
     }
   )
