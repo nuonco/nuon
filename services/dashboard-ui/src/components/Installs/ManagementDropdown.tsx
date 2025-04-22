@@ -24,6 +24,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
   orgId,
 }) => {
   const { org } = useOrg()
+
   return (
     <Dropdown
       className="text-sm !font-medium !p-2 h-[32px]"
@@ -43,7 +44,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
           Settings
         </Text>
 
-        <EditModal install={install} orgId={orgId} />
+        {Object.keys(install?.install_inputs?.at(0)?.values)?.length ? <EditModal install={install} orgId={orgId} /> : null}
         <BreakGlassLink installId={install.id} />
 
         <hr className="my-2" />
