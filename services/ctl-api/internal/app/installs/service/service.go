@@ -82,6 +82,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/installs/:install_id/state", s.GetInstallState)
 
 	// install sandbox
+	api.DELETE("/v1/installs/:install_id/sandbox", s.DeleteInstallSandbox)
 	api.GET("/v1/installs/:install_id/sandbox-runs", s.GetInstallSandboxRuns)
 	api.GET("/v1/installs/sandbox-runs/:run_id", s.GetInstallSandboxRun)
 
@@ -146,6 +147,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/admin-forget", s.AdminForgetInstall)
 	api.POST("/v1/installs/:install_id/admin-update-sandbox", s.AdminUpdateSandbox)
 	api.POST("/v1/installs/:install_id/admin-teardown-components", s.AdminTeardownInstallComponents)
+	api.POST("/v1/installs/admin-backfill-install-sandboxes", s.AdminaBackfillInstallSandboxes)
+	api.POST("/v1/installs/admin-backfill-install-components", s.AdminaBackfillInstallComponents)
 	return nil
 }
 

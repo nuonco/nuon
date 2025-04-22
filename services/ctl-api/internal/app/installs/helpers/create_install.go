@@ -109,6 +109,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to ensure install components: %w", err)
 	}
 
+	if err := s.EnsureInstallSandbox(ctx, appID, []string{install.ID}); err != nil {
+		return nil, fmt.Errorf("unable to ensure install components: %w", err)
+	}
+
 	loadedInstall, err := s.getInstall(ctx, install.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load all install resources: %w", err)

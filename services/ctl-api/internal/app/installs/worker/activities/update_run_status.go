@@ -13,6 +13,7 @@ type UpdateRunStatusRequest struct {
 	RunID             string               `validate:"required"`
 	Status            app.SandboxRunStatus `validate:"required"`
 	StatusDescription string               `validate:"required"`
+	SkipStatusSync    bool
 }
 
 // @temporal-gen activity
@@ -29,6 +30,36 @@ func (a *Activities) UpdateRunStatus(ctx context.Context, req UpdateRunStatusReq
 	}
 	if res.RowsAffected < 1 {
 		return fmt.Errorf("no run found: %s %w", req.RunID, gorm.ErrRecordNotFound)
+	}
+
+	// update InstallSandbox
+	if !req.SkipStatusSync {
+		run := app.InstallSandboxRun{}
+		res = a.db.WithContext(ctx).
+			Where("id = ?", req.RunID).
+			First(&run)
+		if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
+			return fmt.Errorf("unable to get install deploy: %w", res.Error)
+		}
+
+		if res.Error == gorm.ErrRecordNotFound {
+			return nil
+		}
+
+		if run.InstallSandboxID != nil {
+			return nil
+		}
+
+		installSandbox := app.InstallSandbox{
+			ID: *run.InstallSandboxID,
+		}
+		res = a.db.WithContext(ctx).Model(&installSandbox).Updates(app.InstallSandbox{
+			Status:            app.SandboxRunStatusToInstallSandboxStatus(req.Status),
+			StatusDescription: req.StatusDescription,
+		})
+		if res.Error != nil {
+			return fmt.Errorf("unable to update install sandbox: %w", res.Error)
+		}
 	}
 	return nil
 }
