@@ -48,5 +48,28 @@ func (h *Helpers) EnsureInstallComponents(ctx context.Context, appID string, ins
 		return fmt.Errorf("unable to create install components: %w", res.Error)
 	}
 
+	res = h.db.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(h.TFWorkspacesFromICs(installCmps))
+	if res.Error != nil {
+		return fmt.Errorf("unable to create terraform workspaces: %w", res.Error)
+	}
+
 	return nil
+}
+
+func (h *Helpers) TFWorkSpaceFromIC(ic app.InstallComponent) app.TerraformWorkspace {
+	return app.TerraformWorkspace{
+		OrgID:     ic.OrgID,
+		OwnerID:   ic.InstallID,
+		OwnerType: app.TerraformWorkspaceOwnerInstallComponent,
+	}
+}
+
+func (h *Helpers) TFWorkspacesFromICs(ics []app.InstallComponent) []app.TerraformWorkspace {
+	workspaces := make([]app.TerraformWorkspace, 0)
+	for _, ic := range ics {
+		workspaces = append(workspaces, h.TFWorkSpaceFromIC(ic))
+	}
+	return workspaces
 }
