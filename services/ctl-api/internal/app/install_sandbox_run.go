@@ -51,6 +51,10 @@ type InstallSandboxRun struct {
 	InstallID string  `json:"install_id" gorm:"not null;default null"`
 	Install   Install `swaggerignore:"true" json:"-"`
 
+	// TODO: once we run a backfill we can make this non pointer
+	InstallSandboxID *string         `json:"install_sandbox_id" gorm:"default null"`
+	InstallSandbox   *InstallSandbox `swaggerignore:"true" json:"-"`
+
 	RunType           SandboxRunType   `json:"run_type"`
 	Status            SandboxRunStatus `json:"status" gorm:"notnull" swaggertype:"string"`
 	StatusDescription string           `json:"status_description" gorm:"notnull"`
