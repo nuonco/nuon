@@ -22,12 +22,11 @@ func (s *sync) createJobComponentConfig(ctx context.Context, resource, compID st
 	}
 
 	configRequest := &models.ServiceCreateJobComponentConfigRequest{
-		AppConfigID: s.appConfigID,
-		Args:        containerImage.Args,
-		Cmd:         containerImage.Cmd,
-		EnvVars:     envVars,
-		ImageURL:    generics.ToPtr(containerImage.ImageURL),
-		Tag:         generics.ToPtr(containerImage.Tag),
+		Args:     containerImage.Args,
+		Cmd:      containerImage.Cmd,
+		EnvVars:  envVars,
+		ImageURL: generics.ToPtr(containerImage.ImageURL),
+		Tag:      generics.ToPtr(containerImage.Tag),
 	}
 
 	requestChecksum, err := s.getChecksum(configRequest)
@@ -51,6 +50,9 @@ func (s *sync) createJobComponentConfig(ctx context.Context, resource, compID st
 			return prevComponentState.ConfigID, requestChecksum, nil
 		}
 	}
+
+	// NOTE: we don't want to make a checksum with the app config id since that can change
+	configRequest.AppConfigID = s.appConfigID
 
 	cfg, err := s.apiClient.CreateJobComponentConfig(ctx, compID, configRequest)
 	if err != nil {
