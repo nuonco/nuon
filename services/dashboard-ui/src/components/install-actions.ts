@@ -16,15 +16,19 @@ import type { TInstall } from '@/types'
 interface IReprovisionInstall {
   installId: string
   orgId: string
+  continueOnError?: boolean
 }
 
 export async function reprovisionInstall({
+  continueOnError = false,
   installId,
   orgId,
 }: IReprovisionInstall) {
   const res = fetch(`${API_URL}/v1/installs/${installId}/reprovision`, {
     ...(await getFetchOpts(orgId)),
-    body: JSON.stringify({ error_behavior: 'abort' }),
+    body: JSON.stringify({
+      error_behavior: continueOnError ? 'continue' : 'abort',
+    }),
     method: 'POST',
   })
     .then((r) => {
@@ -42,12 +46,15 @@ export async function reprovisionInstall({
 }
 
 export async function reprovisionSandbox({
+  continueOnError = false,
   installId,
   orgId,
 }: IReprovisionInstall) {
   const res = fetch(`${API_URL}/v1/installs/${installId}/reprovision-sandbox`, {
     ...(await getFetchOpts(orgId)),
-    body: JSON.stringify({ error_behavior: 'abort' }),
+    body: JSON.stringify({
+      error_behavior: continueOnError ? 'continue' : 'abort',
+    }),
     method: 'POST',
   })
     .then((r) => {
@@ -65,11 +72,13 @@ export async function reprovisionSandbox({
 }
 
 interface IDeployComponents {
+  continueOnError?: boolean
   installId: string
   orgId: string
 }
 
 export async function deployComponents({
+  continueOnError = false,
   installId,
   orgId,
 }: IDeployComponents) {
@@ -77,7 +86,10 @@ export async function deployComponents({
     `${API_URL}/v1/installs/${installId}/components/deploy-all`,
     {
       ...(await getFetchOpts(orgId)),
-      body: JSON.stringify({ error_behavior: 'abort' }),
+
+      body: JSON.stringify({
+        error_behavior: continueOnError ? 'continue' : 'abort',
+      }),
       method: 'POST',
     }
   )
@@ -132,11 +144,13 @@ export async function revalidateInstallData({
 }
 
 interface ITeardownAllComponents {
+  continueOnError?: boolean
   installId: string
   orgId: string
 }
 
 export async function teardownAllComponents({
+  continueOnError = false,
   installId,
   orgId,
 }: ITeardownAllComponents) {
@@ -144,7 +158,9 @@ export async function teardownAllComponents({
     `${API_URL}/v1/installs/${installId}/components/teardown-all`,
     {
       ...(await getFetchOpts(orgId)),
-      body: JSON.stringify({ error_behavior: 'abort' }),
+      body: JSON.stringify({
+        error_behavior: continueOnError ? 'continue' : 'abort',
+      }),
       method: 'POST',
     }
   )
