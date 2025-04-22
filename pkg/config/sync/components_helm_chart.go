@@ -15,7 +15,6 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 	obj := comp.HelmChart
 
 	configRequest := &models.ServiceCreateHelmComponentConfigRequest{
-		AppConfigID:              s.appConfigID,
 		ChartName:                generics.ToPtr(obj.ChartName),
 		ConnectedGithubVcsConfig: nil,
 		PublicGitVcsConfig:       nil,
@@ -70,6 +69,8 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 		}
 	}
 
+	// NOTE: we don't want to make a checksum with the app config id since that can change
+	configRequest.AppConfigID = s.appConfigID
 	cfg, err := s.apiClient.CreateHelmComponentConfig(ctx, compID, configRequest)
 	if err != nil {
 		return "", "", err
