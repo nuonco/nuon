@@ -14,7 +14,6 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 	obj := comp.TerraformModule
 
 	configRequest := &models.ServiceCreateTerraformModuleComponentConfigRequest{
-		AppConfigID:              s.appConfigID,
 		ConnectedGithubVcsConfig: nil,
 		PublicGitVcsConfig:       nil,
 		Variables:                map[string]string{},
@@ -72,6 +71,9 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 			return prevComponentState.ConfigID, requestChecksum, nil
 		}
 	}
+
+	// NOTE: we don't want to make a checksum with the app config id since that can change
+	configRequest.AppConfigID = s.appConfigID
 
 	cfg, err := s.apiClient.CreateTerraformModuleComponentConfig(ctx, compID, configRequest)
 	if err != nil {
