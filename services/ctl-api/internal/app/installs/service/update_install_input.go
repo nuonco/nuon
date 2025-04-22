@@ -205,5 +205,12 @@ func (s *service) newInstallInputs(ctx context.Context, installInputs app.Instal
 		return nil, fmt.Errorf("unable to create install inputs: %w", res.Error)
 	}
 
-	return obj, nil
+	latestInstallInputs, err := s.getLatestInstallInputs(ctx, installInputs.InstallID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get latest install inputs: %w", err)
+	}
+
+	latestInstallInputs.Values = nil
+
+	return latestInstallInputs, nil
 }
