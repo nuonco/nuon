@@ -30,8 +30,37 @@ func (w *Workflows) updateRunStatus(ctx workflow.Context, runID string, status a
 		RunID:             runID,
 		Status:            status,
 		StatusDescription: statusDescription,
+		SkipStatusSync:    false,
 	}); err != nil {
 		l.Error("unable to update run status",
+			zap.String("run-id", runID),
+			zap.Error(err))
+	}
+}
+
+func (w *Workflows) updateRunStatusWithoutStatusSync(ctx workflow.Context, runID string, status app.SandboxRunStatus, statusDescription string) {
+	l := workflow.GetLogger(ctx)
+
+	if err := activities.AwaitUpdateRunStatus(ctx, activities.UpdateRunStatusRequest{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: statusDescription,
+		SkipStatusSync:    true,
+	}); err != nil {
+		l.Error("unable to update run status",
+			zap.String("run-id", runID),
+			zap.Error(err))
+	}
+}
+
+func (w *Workflows) updateInstallSandboxStatus(ctx workflow.Context, runID string, status app.InstallSandboxStatus, statusDescription string) {
+	l := workflow.GetLogger(ctx)
+	if err := activities.AwaitUpdateInstallSandboxStatus(ctx, activities.UpdateInstallSandboxStatusRequest{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	}); err != nil {
+		l.Error("unable to update install sandbox status",
 			zap.String("run-id", runID),
 			zap.Error(err))
 	}
