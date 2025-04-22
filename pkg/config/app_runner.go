@@ -15,6 +15,8 @@ type AppRunnerConfig struct {
 
 	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty"`
 
+	HelmDriver string `mapstructure:"helm_driver,omitempty"`
+
 	// Deprecated
 	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var"`
 }
