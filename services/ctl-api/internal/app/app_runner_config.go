@@ -39,6 +39,15 @@ func (a AppRunnerType) JobType() RunnerJobType {
 	return RunnerJobTypeUnknown
 }
 
+type AppRunnerConfigHelmDriverType string
+
+const (
+	AppRunnerHelmDriverSecret    AppRunnerConfigHelmDriverType = "secret"
+	AppRunnerHelmDriverConfigMap AppRunnerConfigHelmDriverType = "configmap"
+	AppRunnerHelmDriverEmpty     AppRunnerConfigHelmDriverType = ""
+	// ↑ Necessary for records created before this addition
+)
+
 type AppRunnerConfig struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
@@ -54,6 +63,9 @@ type AppRunnerConfig struct {
 
 	EnvVars pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
 	Type    AppRunnerType `json:"app_runner_type" gorm:"not null;default null;"`
+
+	HelmDriver AppRunnerConfigHelmDriverType `json:"helm_driver" gorm:"default null" swaggertype:"string"`
+	// ↑ for the runner helm client: only relevant for k8s sandboxes
 
 	// fields set via after query
 
