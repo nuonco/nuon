@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm/clause"
 )
 
 type CreateSandboxRunRequest struct {
@@ -45,6 +46,20 @@ func (a *Activities) CreateSandboxRun(ctx context.Context, req CreateSandboxRunR
 	res := a.db.WithContext(ctx).Create(&run)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install sandbox run: %w", res.Error)
+	}
+
+	// create terraform workspace
+	workspace := app.TerraformWorkspace{
+		OrgID:     install.OrgID,
+		OwnerID:   run.ID,
+		OwnerType: app.TerraformWorkspaceOwnerInstallSandboxRun,
+	}
+
+	res = a.db.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&workspace)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create terraform workspace: %w", res.Error)
 	}
 
 	return &run, nil
