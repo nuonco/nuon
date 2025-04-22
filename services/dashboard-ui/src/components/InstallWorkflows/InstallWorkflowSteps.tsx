@@ -49,7 +49,6 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
           return (
             <Expand
               key={step?.id}
-              isOpen={step?.status?.status === 'in-progress'}
               heading={
                 <InstallWorkflowStepTitle
                   executionTime={step?.execution_time}
@@ -70,9 +69,6 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
                       View details
                     </Link>
                   ) : null}
-                  <Code variant="preformated">
-                    {JSON.stringify(step, null, 2)}
-                  </Code>
                 </div>
               }
             />
