@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { CloudArrowUp, CloudCheck } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
+import { CheckboxInput } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
@@ -24,6 +25,7 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
 }) => {
   const router = useRouter()
   const { user } = useUser()
+  const [force, setForce] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
@@ -59,6 +61,25 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
                   Are you sure you want to deploy components? This will deploy
                   all components to this install.
                 </Text>
+                <div className="flex items-start">
+                  <CheckboxInput
+                    name="ack"
+                    defaultChecked={force}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setForce(Boolean(e?.currentTarget?.checked))
+                    }}
+                    className="mt-1.5"
+                    labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px] !items-start"
+                    labelText={
+                      <span className="flex flex-col gap2">
+                        <Text variant="med-14">Continue on error</Text>
+                        <Text className="!font-normal" variant="reg-12">
+                          Continue running workflow steps if one fails.
+                        </Text>
+                      </span>
+                    }
+                  />
+                </div>
               </div>
               <div className="flex gap-3 justify-end">
                 <Button
@@ -73,7 +94,11 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
                     setIsLoading(true)
-                    deployComponents({ installId, orgId })
+                    deployComponents({
+                      installId,
+                      orgId,
+                      continueOnError: force,
+                    })
                       .then((workflowId) => {
                         trackEvent({
                           event: 'components_deploy',
