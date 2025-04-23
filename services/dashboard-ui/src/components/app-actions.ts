@@ -72,29 +72,29 @@ export async function createAppInstall({
     name: formData.name as string,
   }
 
-  if (platform === 'aws') {
-    data = {
-      aws_account: {
-        iam_role_arn: formData?.iam_role_arn as string,
-        region: formData?.region as string,
-      },
-      ...data,
-    }
-  }
+  // if (platform === 'aws') {
+  //   data = {
+  //     aws_account: {
+  //       iam_role_arn: formData?.iam_role_arn as string,
+  //       region: formData?.region as string,
+  //     },
+  //     ...data,
+  //   }
+  // }
 
-  if (platform === 'azure') {
-    data = {
-      azure_account: {
-        location: formData?.location as string,
-        service_principal_app_id: formData?.service_principal_app_id as string,
-        service_principal_password:
-          formData?.service_principal_password as string,
-        subscription_id: formData?.subscription_id as string,
-        subscription_tenant_id: formData?.subscription_tenant_id as string,
-      },
-      ...data,
-    }
-  }
+  // if (platform === 'azure') {
+  //   data = {
+  //     azure_account: {
+  //       location: formData?.location as string,
+  //       service_principal_app_id: formData?.service_principal_app_id as string,
+  //       service_principal_password:
+  //         formData?.service_principal_password as string,
+  //       subscription_id: formData?.subscription_id as string,
+  //       subscription_tenant_id: formData?.subscription_tenant_id as string,
+  //     },
+  //     ...data,
+  //   }
+  // }
 
   return createInstall({
     appId,
