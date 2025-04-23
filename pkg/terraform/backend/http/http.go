@@ -5,6 +5,13 @@ import (
 	"github.com/powertoolsdev/mono/pkg/terraform/backend"
 )
 
+type NuonWorkspaceConfig struct {
+	// APIEndpoint is the endpoint to use for the API. Ex: http://localhost:8083/
+	APIEndpoint string
+	WorkspaceID string
+	Token       string
+}
+
 type HTTPBackendConfig struct {
 	Address       string `json:"address"`
 	LockAddress   string `json:"lock_address"`
@@ -16,7 +23,7 @@ type HTTPBackendConfig struct {
 type http struct {
 	v *validator.Validate
 
-	Config *HTTPBackendConfig `validate:"required"`
+	Config *NuonWorkspaceConfig `validate:"required"`
 }
 
 var _ backend.Backend = (*http)(nil)
@@ -41,7 +48,7 @@ func New(v *validator.Validate, opts ...httpOption) (*http, error) {
 	return auth, nil
 }
 
-func WithHTTPConfig(cfg *HTTPBackendConfig) httpOption {
+func WithNuonTerraformWorkspaceConfig(cfg *NuonWorkspaceConfig) httpOption {
 	return func(s *http) error {
 		s.Config = cfg
 		return nil

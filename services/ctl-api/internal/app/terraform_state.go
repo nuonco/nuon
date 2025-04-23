@@ -29,7 +29,6 @@ type TerraformState struct {
 	Org   Org    `json:"-"`
 
 	Data *TerraformStateData `json:"data"`
-	Lock *TerraformLock      `json:"lock"`
 
 	TerraformWorkspaceID string
 	TerraformWorkspace   TerraformWorkspace `gorm:"-"`
