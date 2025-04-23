@@ -599,3 +599,21 @@ module "shared-freeplayai" {
     github = github.nuonco-shared
   }
 }
+
+module "shared-neubirdai" {
+  source = "./modules/repository"
+
+  name                     = "neubirdai"
+  description              = "Nuon configuration for neubird.ai."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
