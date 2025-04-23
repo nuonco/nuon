@@ -37,12 +37,21 @@ func (s *service) UpdateTerraformState(ctx *gin.Context) {
 		return
 	}
 
-	lockID := ctx.Query("ID")
-	if lockID == "" {
-		ctx.Error(stderr.ErrInvalidRequest{
-			Err: errors.New("lock_id was not set"),
-		})
-		return
+	reqLockID := ctx.Query("ID")
+	if reqLockID != "" {
+		currLock, err := s.helpers.GetWorkspaceLock(ctx, reqLockID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get lock: %w", err))
+			return
+		}
+
+		if currLock != nil && currLock.ID != reqLockID {
+			ctx.Error(stderr.ErrInvalidRequest{
+				Err: fmt.Errorf("lock ID does not match current lock: %s", reqLockID),
+			})
+			return
+
+		}
 	}
 
 	var data app.TerraformStateData
@@ -59,11 +68,10 @@ func (s *service) UpdateTerraformState(ctx *gin.Context) {
 
 	if currentState == nil {
 		currentState = &app.TerraformState{}
-		currentState.Lock.ID = lockID
 	}
 	currentState.Data = &data
 
-	_, err = s.helpers.InsertTerraformState(ctx, workspaceID, currentState.Lock, &data)
+	_, err = s.helpers.InsertTerraformState(ctx, workspaceID, &data)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update terraform state: %w", err))
 		return

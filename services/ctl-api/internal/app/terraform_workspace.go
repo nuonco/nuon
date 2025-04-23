@@ -21,10 +21,11 @@ type TerraformWorkspace struct {
 	OrgID string `json:"org_id"`
 	Org   Org    `json:"-"`
 
-	OwnerID   string `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26"`
-	OwnerType string `json:"owner_type" gorm:"type:text;"`
+	OwnerID   string `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26;uniqueIndex:idx_owner"`
+	OwnerType string `json:"owner_type" gorm:"type:text;uniqueIndex:idx_owner"`
 
-	States []TerraformState `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	States      []TerraformState              `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	LockHistory []TerraformWorkspaceLockState `faker:"-" json:"-" swaggerignore:"true" gorm:"foreignKey:WorkspaceID;references:ID;constraint:OnDelete:CASCADE;"`
 }
 
 func (r *TerraformWorkspace) BeforeCreate(tx *gorm.DB) (err error) {
