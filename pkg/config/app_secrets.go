@@ -7,7 +7,7 @@ import (
 )
 
 type SecretsConfig struct {
-	Secrets []*AppSecret `mapstructure:"secret" jsonschema:"required"`
+	Secrets []*AppSecret `mapstructure:"secret,omitempty"`
 }
 
 func (a SecretsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

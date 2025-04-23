@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
 
@@ -36,7 +37,8 @@ type Workspace interface {
 type workspace struct {
 	v *validator.Validate
 
-	Src *planv1.GitSource
+	Src   *planv1.GitSource
+	SrcV2 *plantypes.GitSource
 
 	TmpRootDir string `validate:"required"`
 	ID         string `validate:"required"`
@@ -71,6 +73,16 @@ type workspaceOption func(*workspace)
 func WithGitSource(src *planv1.GitSource) workspaceOption {
 	return func(obj *workspace) {
 		obj.Src = src
+	}
+}
+
+func WithNewGitSource(src *plantypes.GitSource) workspaceOption {
+	return func(obj *workspace) {
+		obj.Src = &planv1.GitSource{
+			Url:  src.URL,
+			Ref:  src.Ref,
+			Path: src.Path,
+		}
 	}
 }
 

@@ -55,7 +55,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	if err := render.RenderStruct(&cfg.SecretsConfig, stateData); err != nil {
 		return errors.Wrap(err, "unable to render secrets config")
 	}
-	if err := render.RenderStruct(&cfg.CloudFormationStackConfig, stateData); err != nil {
+	if err := render.RenderStruct(&cfg.StackConfig, stateData); err != nil {
 		return errors.Wrap(err, "unable to render cloudformation stack config")
 	}
 
@@ -69,7 +69,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		InstallID:      sreq.ID,
 		InstallStackID: stack.ID,
 		AppConfigID:    cfg.ID,
-		StackName:      cfg.CloudFormationStackConfig.Name,
+		StackName:      cfg.StackConfig.Name,
 		Region:         install.AWSAccount.Region,
 	})
 	if err != nil {

@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
@@ -8,13 +9,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	logv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/log/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -52,33 +51,24 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
-	// create the sandbox plan request
-	planReq, err := w.protos.ToInstallPlanRequest(install, installRun.ID)
+	enabled, err = activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureIndependentRunner))
+	if err != nil {
+		return errors.Wrap(err, "unable to check runner feature")
+	}
+
+	runPlan, err := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
+		RunID:      installRun.ID,
+		InstallID:  install.ID,
+		WorkflowID: fmt.Sprintf("%s-create-api-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	})
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install plan request")
-		return fmt.Errorf("unable to get install plan request: %w", err)
-	}
-	planReq.LogConfiguration = &logv1.LogConfiguration{
-		RunnerId: install.Org.RunnerGroup.Runners[0].ID,
-		// RunnerApiToken: token.Token,
-		RunnerApiUrl: w.cfg.RunnerAPIURL,
-		RunnerJobId:  runnerJob.ID,
-		Attrs:        logv1.NewAttrs(generics.ToStringMap(install.Org.RunnerGroup.Settings.Metadata)),
+		return errors.Wrap(err, "unable to create plan")
 	}
 
-	// create the sandbox plan
-	planWorkflowID := fmt.Sprintf("%s-plan", installRun.ID)
-	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, planWorkflowID, planReq)
+	planJSON, err := json.Marshal(runPlan)
 	if err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install plan")
-		return fmt.Errorf("unable to create install plan: %w", err)
-	}
-
-	// store the plan in the db
-	planJSON, err := protos.ToJSON(planResp.Plan)
-	if err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to convert plan to json")
-		return fmt.Errorf("unable to convert plan to json: %w", err)
+		return errors.Wrap(err, "unable to create json")
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
@@ -87,14 +77,6 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 	}); err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
 		return fmt.Errorf("unable to get install: %w", err)
-	}
-
-	if err := activities.AwaitSaveIntermediateData(ctx, &activities.SaveIntermediateDataRequest{
-		InstallID:   install.ID,
-		RunnerJobID: runnerJob.ID,
-		PlanJSON:    string(planJSON),
-	}); err != nil {
-		return errors.Wrap(err, "unable to save install intermediate data")
 	}
 
 	// queue job

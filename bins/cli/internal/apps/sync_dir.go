@@ -16,6 +16,8 @@ import (
 )
 
 func (s *Service) SyncDir(ctx context.Context, dir string) error {
+	ui.PrintLn("syncing directory from " + dir)
+
 	appName, err := parse.AppNameFromDirName(dir)
 	if err != nil {
 		err = errs.WithUserFacing(err, "error parsing app name from file")

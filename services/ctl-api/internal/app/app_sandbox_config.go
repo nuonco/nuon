@@ -41,8 +41,9 @@ type AppSandboxConfig struct {
 
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`
+	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-"`
 
-	Variables pgtype.Hstore `json:"variables" gorm:"type:hstore" swaggertype:"object,string"`
+	Variables pgtype.Hstore `json:"variables" gorm:"type:hstore" swaggertype:"object,string" features:"template"`
 
 	TerraformVersion   string              `json:"terraform_version" gorm:"notnull"`
 	InstallSandboxRuns []InstallSandboxRun `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
@@ -78,12 +79,12 @@ func (c *AppSandboxConfig) Indexes(db *gorm.DB) []migrations.Index {
 
 // NOTE: currently, only public repo vcs configs are supported when rendering policies and artifacts
 func (c *AppSandboxConfig) AfterQuery(tx *gorm.DB) error {
-	c.CloudPlatform = CloudPlatformUnknown
 	vcsCfg := c.PublicGitVCSConfig
 	if vcsCfg == nil {
 		return nil
 	}
 
+	// the below is all legacy
 	if strings.HasPrefix(vcsCfg.Directory, "aws") {
 		c.CloudPlatform = CloudPlatformAWS
 	}
@@ -95,6 +96,15 @@ func (c *AppSandboxConfig) AfterQuery(tx *gorm.DB) error {
 	c.Artifacts.ProvisionPolicy = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "provision.json")
 	c.Artifacts.TrustPolicy = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "trust.json")
 	c.Artifacts.CloudformationStackTemplate = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "cloudformation-template.yaml")
+
+	// set the vcs connection type correctly
+	if c.ConnectedGithubVCSConfig != nil {
+		c.VCSConnectionType = VCSConnectionTypeConnectedRepo
+	} else if c.PublicGitVCSConfig != nil {
+		c.VCSConnectionType = VCSConnectionTypePublicRepo
+	} else {
+		c.VCSConnectionType = VCSConnectionTypeNone
+	}
 
 	return nil
 }

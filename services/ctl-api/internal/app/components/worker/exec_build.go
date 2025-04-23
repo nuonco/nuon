@@ -5,11 +5,9 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	logv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/log/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 )
@@ -29,11 +27,6 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component config")
 		return fmt.Errorf("unable to get build component config: %w", err)
-	}
-
-	token, err := activities.AwaitCreateJobLogTokenByRunnerID(ctx, comp.Org.RunnerGroup.Runners[0].ID)
-	if err != nil {
-		return fmt.Errorf("unable to create job log token: %w", err)
 	}
 
 	// create the sandbox plan request
@@ -68,13 +61,6 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 
 	buildPlanWorkflowID := fmt.Sprintf("%s-build-plan-%s", compID, buildID)
 	planReq := w.protos.ToBuildPlanRequest(build, buildCfg)
-	planReq.LogConfiguration = &logv1.LogConfiguration{
-		RunnerId:       comp.Org.RunnerGroup.Runners[0].ID,
-		RunnerApiToken: token.Token,
-		RunnerApiUrl:   w.cfg.RunnerAPIURL,
-		RunnerJobId:    runnerJob.ID,
-		Attrs:          logv1.NewAttrs(generics.ToStringMap(comp.Org.RunnerGroup.Settings.Metadata)),
-	}
 
 	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, buildPlanWorkflowID, planReq)
 	if err != nil {

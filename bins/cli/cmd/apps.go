@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"os"
+
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
@@ -155,6 +158,12 @@ func (c *cli) appsCmd() *cobra.Command {
 			var dirName string
 			if len(args) > 0 {
 				dirName = args[0]
+			} else {
+				var err error
+				dirName, err = os.Getwd()
+				if err != nil {
+					return errors.Wrap(err, "unable to get directory name")
+				}
 			}
 
 			svc := apps.New(c.v, c.apiClient, c.cfg)

@@ -26,7 +26,7 @@ func (w *Workflows) AwaitRunnerHealthy(ctx workflow.Context, sreq signals.Reques
 		MaxTS:           workflow.Now(ctx).Add(time.Hour),
 		InitialInterval: time.Second * 15,
 		MaxInterval:     time.Minute * 1,
-		BackoffFactor:   2,
+		BackoffFactor:   1.1,
 		Fn: func(ctx workflow.Context) error {
 			runner, err := activities.AwaitGetRunnerByID(ctx, install.RunnerID)
 			if err != nil {

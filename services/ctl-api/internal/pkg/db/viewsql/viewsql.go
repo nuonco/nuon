@@ -42,3 +42,6 @@ var PSQLTableSizesV1 string
 
 //go:embed ch_table_sizes_v1.sql
 var CHTableSizesV1 string
+
+//go:embed terraform_states_view_v1.sql
+var TerraformStatesViewV1 string
