@@ -238,6 +238,10 @@ func NewTerraformWorkspaceID() string {
 	return shortid.NewNanoID("tfw")
 }
 
+func NewTerraformWorkspaceLockID() string {
+	return shortid.NewNanoID("tfl")
+}
+
 func NewTerraformWorkspaceStateID() string {
 	return shortid.NewNanoID("tfs")
 }
