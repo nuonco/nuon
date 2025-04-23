@@ -3,6 +3,7 @@ package dir
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"strings"
@@ -51,6 +52,19 @@ func (d *dir) Unpack(ctx context.Context, cb archive.Callback) error {
 
 	if err := symwalk.Walk(d.Path, fn); err != nil {
 		return fmt.Errorf("unable to walk root directory: %w", err)
+	}
+
+	if d.AddBackendFile {
+		str := fmt.Sprintf(`terraform { 
+		                backend "%s" {
+		                }
+		        }
+		`, d.AddBackendType)
+
+		rc := io.NopCloser(strings.NewReader(str))
+		if err := cb(ctx, "backend_config.tf", rc); err != nil {
+			return fmt.Errorf("unable to add backend config file: %w", err)
+		}
 	}
 	return nil
 }

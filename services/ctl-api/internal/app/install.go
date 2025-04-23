@@ -47,6 +47,7 @@ type Install struct {
 	InstallInputs           []InstallInputs           `json:"install_inputs" gorm:"constraint:OnDelete:CASCADE;"`
 	InstallEvents           []InstallEvent            `json:"install_events" gorm:"constraint:OnDelete:CASCADE;"`
 	InstallIntermediateData []InstallIntermediateData `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallSandbox          InstallSandbox            `json:"-"  gorm:"constraint:OnDelete:CASCADE;"`
 
 	InstallStack *InstallStack `json:"install_stack" gorm:"constraint:OnDelete:CASCADE;"`
 	AWSAccount   *AWSAccount   `json:"aws_account" gorm:"constraint:OnDelete:CASCADE;"`

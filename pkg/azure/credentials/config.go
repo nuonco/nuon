@@ -11,3 +11,11 @@ type Config struct {
 	ServicePrincipal *ServicePrincipalCredentials `cty:"service_principal,block" hcl:"service_principal,block" mapstructure:"service_principal,omitempty"`
 	UseDefault       bool                         `cty:"use_default,optional" hcl:"use_default,optional" mapstructure:"use_default,omitempty"`
 }
+
+func (c Config) String() string {
+	if c.UseDefault {
+		return "default credentials"
+	}
+
+	return "service principal"
+}

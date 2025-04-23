@@ -129,7 +129,7 @@ type CreatePlanResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m CreatePlanResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -304,35 +304,6 @@ func (m *CreatePlanRequest) validate(all bool) error {
 		}
 	}
 
-	if all {
-		switch v := interface{}(m.GetLogConfiguration()).(type) {
-		case interface{ ValidateAll() error }:
-			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, CreatePlanRequestValidationError{
-					field:  "LogConfiguration",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		case interface{ Validate() error }:
-			if err := v.Validate(); err != nil {
-				errors = append(errors, CreatePlanRequestValidationError{
-					field:  "LogConfiguration",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		}
-	} else if v, ok := interface{}(m.GetLogConfiguration()).(interface{ Validate() error }); ok {
-		if err := v.Validate(); err != nil {
-			return CreatePlanRequestValidationError{
-				field:  "LogConfiguration",
-				reason: "embedded message failed validation",
-				cause:  err,
-			}
-		}
-	}
-
 	if len(errors) > 0 {
 		return CreatePlanRequestMultiError(errors)
 	}
@@ -347,7 +318,7 @@ type CreatePlanRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m CreatePlanRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
