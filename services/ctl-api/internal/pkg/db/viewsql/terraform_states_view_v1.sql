@@ -5,7 +5,7 @@ WITH terraform_states_partitioned AS (
         ROW_NUMBER() OVER (
             PARTITION BY ts.terraform_workspace_id
             ORDER BY
-                ts.created_at DESC
+                ts.created_at ASC
         ) AS revision
     FROM
         terraform_states ts
