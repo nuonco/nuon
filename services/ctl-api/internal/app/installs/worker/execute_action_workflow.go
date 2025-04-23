@@ -95,7 +95,7 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 
 	l.Info("creating plan for executing action run")
 	runPlan, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
-		RunID: actionWorkflowRunID,
+		ActionWorkflowRunID: actionWorkflowRunID,
 	})
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")

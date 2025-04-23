@@ -39,7 +39,7 @@ const (
 type AppConfig struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account               `json:"-"`
+	CreatedBy   Account               `json:"-" temporaljson:"-"`
 	CreatedAt   time.Time             `json:"created_at"`
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
@@ -57,6 +57,7 @@ type AppConfig struct {
 	Checksum string `json:"checksum"`
 
 	// Lookups on the app config
+
 	PermissionsConfig          AppPermissionsConfig        `json:"permissions,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	BreakGlassConfig           AppBreakGlassConfig         `json:"break_glass,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	PoliciesConfig             AppPoliciesConfig           `json:"policies,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
@@ -64,7 +65,7 @@ type AppConfig struct {
 	SandboxConfig              AppSandboxConfig            `json:"sandbox,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	InputConfig                AppInputConfig              `json:"input,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	RunnerConfig               AppRunnerConfig             `json:"runner,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	CloudFormationStackConfig  AppStackConfig              `json:"cloudformation_stack,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	StackConfig                AppStackConfig              `json:"stack,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	ComponentConfigConnections []ComponentConfigConnection `json:"component_config_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 
 	// individual pointers

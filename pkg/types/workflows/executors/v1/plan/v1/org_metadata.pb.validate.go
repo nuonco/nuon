@@ -190,7 +190,7 @@ type OrgMetadataMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OrgMetadataMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -340,7 +340,7 @@ type OrgBucketsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OrgBucketsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -506,7 +506,7 @@ type OrgIAMRoleArnsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OrgIAMRoleArnsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

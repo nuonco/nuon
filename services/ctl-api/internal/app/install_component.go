@@ -47,7 +47,8 @@ type InstallComponent struct {
 	ComponentID string    `json:"component_id" gorm:"index:install_component_group,unique;notnull"`
 	Component   Component `faker:"-" json:"component"`
 
-	InstallDeploys []InstallDeploy `faker:"-" gorm:"constraint:OnDelete:CASCADE;" json:"install_deploys"`
+	InstallDeploys     []InstallDeploy    `faker:"-" gorm:"constraint:OnDelete:CASCADE;" json:"install_deploys"`
+	TerraformWorkspace TerraformWorkspace `json:"terraform_workspace" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;"`
 
 	Status            InstallComponentStatus `json:"status" gorm:"default:''" swaggertype:"string"`
 	StatusDescription string                 `json:"status_description" gorm:"default:''"`

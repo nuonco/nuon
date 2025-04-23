@@ -8,5 +8,9 @@ func WorkflowIDCallback(req *CreateActionRunPlanRequest) string {
 		return req.WorkflowID
 	}
 
-	return fmt.Sprintf("create-plan-%s", req.RunID)
+	return fmt.Sprintf("create-plan-%s", req.ActionWorkflowRunID)
+}
+
+func SandboxRunWorkflowIDCallback(req *CreateSandboxRunPlanRequest) string {
+	return req.WorkflowID
 }

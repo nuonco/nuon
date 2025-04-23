@@ -131,7 +131,6 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	tfWorkspacePath := "/v1/terraform-workspaces"
 	api.GET(tfWorkspacePath, s.GetTerraformWorkpaces)
 	api.GET(tfWorkspacePath+"/:workspace_id", s.GetTerraformWorkpace)
-	api.POST(tfWorkspacePath, s.CreateTerraformWorkpace)
 	api.DELETE(tfWorkspacePath+"/:workspace_id", s.DeleteTerraformWorkpace)
 
 	// TODO(jm): these will be moved to the otel namespace
