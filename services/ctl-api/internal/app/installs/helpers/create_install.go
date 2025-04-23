@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
@@ -65,7 +66,14 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		AppSandboxConfigID: parentApp.AppSandboxConfigs[0].ID,
 		AppRunnerConfigID:  parentApp.AppRunnerConfigs[0].ID,
 		AppConfigID:        parentApp.AppConfigs[0].ID,
+		InstallSandbox: app.InstallSandbox{
+			Status: app.InstallSandboxStatusQueued,
+			TerraformWorkspace: app.TerraformWorkspace{
+				ID: domains.NewTerraformWorkspaceID(),
+			},
+		},
 	}
+
 	if req.AWSAccount != nil {
 		install.AWSAccount = &app.AWSAccount{
 			Region:     req.AWSAccount.Region,
@@ -109,9 +117,9 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to ensure install components: %w", err)
 	}
 
-	if err := s.EnsureInstallSandbox(ctx, appID, []string{install.ID}); err != nil {
-		return nil, fmt.Errorf("unable to ensure install components: %w", err)
-	}
+	//if err := s.EnsureInstallSandbox(ctx, appID, []string{install.ID}); err != nil {
+	//return nil, fmt.Errorf("unable to ensure install components: %w", err)
+	//}
 
 	loadedInstall, err := s.getInstall(ctx, install.ID)
 	if err != nil {

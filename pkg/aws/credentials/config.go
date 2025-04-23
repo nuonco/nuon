@@ -37,6 +37,22 @@ type Config struct {
 	Region  string `cty:"region,optional" hcl:"region,optional" mapstructure:"region,omitempty" json:"region" temporaljson:"region"`
 }
 
+func (c Config) String() string {
+	if c.Static != nil {
+		return "static credentials"
+	}
+
+	if c.UseDefault {
+		return "default credentials from environment"
+	}
+
+	if c.AssumeRole != nil {
+		return fmt.Sprintf("from assuming %s", c.AssumeRole.RoleARN)
+	}
+
+	return ""
+}
+
 //func (c Config) MarshalJSON() ([]byte, error) {
 //var output map[string]interface{}
 //if err := mapstructure.Decode(c, &output); err != nil {

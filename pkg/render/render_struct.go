@@ -21,9 +21,8 @@ func walkFields(obj any, data map[string]any) error {
 		val = val.Elem()
 	}
 
-	// We only process struct types
-	if val.Kind() != reflect.Struct {
-		return nil
+	if val.Kind() == reflect.Map {
+		return RenderMap(obj, data)
 	}
 
 	typ := val.Type()
@@ -33,6 +32,11 @@ func walkFields(obj any, data map[string]any) error {
 
 		if !fieldType.IsExported() {
 			continue
+		}
+
+		enabled, err := features.HasTemplateFeature(fieldType)
+		if err != nil {
+			return errors.Wrap(err, "unable to check if feature is enabled")
 		}
 
 		// if the record is nested, recurse
@@ -49,9 +53,22 @@ func walkFields(obj any, data map[string]any) error {
 			if err := walkFields(field.Addr().Interface(), data); err != nil {
 				return err
 			}
+		case reflect.Map:
+			// For maps, iterate through all values
+			if !field.CanSet() {
+				return errors.New("map field is not settable")
+			}
+			if !enabled {
+				continue
+			}
+
+			if err := RenderMap(field.Interface(), data); err != nil {
+				return errors.Wrap(err, "unable to render map")
+			}
 		case reflect.Slice:
 			// Handle slices of structs
 			elemKind := field.Type().Elem().Kind()
+
 			if elemKind == reflect.Struct {
 				for i := 0; i < field.Len(); i++ {
 					elem := field.Index(i)
@@ -70,24 +87,26 @@ func walkFields(obj any, data map[string]any) error {
 						return err
 					}
 				}
+			} else if elemKind == reflect.Uint8 {
+				byteValue := field.Bytes()
+
+				val, err := renderByteField(byteValue, data)
+				if err != nil {
+					return errors.Wrap(err, "unable to fetch field value")
+				}
+
+				if !field.CanSet() {
+					return errors.New("field is not settable: " + fieldType.Name)
+				}
+
+				field.SetBytes(val)
 			}
-		}
+		case reflect.String:
+			if !enabled {
+				continue
+			}
 
-		// check if get-enabled exists
-		getEnabled, err := features.HasTemplateFeature(fieldType)
-		if err != nil {
-			return errors.Wrap(err, "unable to parse field "+fieldType.Name)
-		}
-
-		if !getEnabled {
-			continue
-		}
-
-		// now, check if it is a string or byte slice field
-		if field.Kind() == reflect.String {
-			strValue := field.String()
-
-			val, err := renderStrField(strValue, data)
+			val, err := renderStrField(field.String(), data)
 			if err != nil {
 				return errors.Wrap(err, "unable to fetch field value")
 			}
@@ -103,21 +122,12 @@ func walkFields(obj any, data map[string]any) error {
 			} else {
 				field.SetString(val)
 			}
-		} else if field.Kind() == reflect.Slice && field.Type().Elem().Kind() == reflect.Uint8 {
-			byteValue := field.Bytes()
-
-			val, err := renderByteField(byteValue, data)
-			if err != nil {
-				return errors.Wrap(err, "unable to fetch field value")
+		default:
+			if !enabled {
+				continue
 			}
 
-			if !field.CanSet() {
-				return errors.New("field is not settable: " + fieldType.Name)
-			}
-
-			field.SetBytes(val)
-		} else {
-			return errors.New("get feature enabled on a non-string/non-byte field " + fieldType.Name)
+			return errors.New("invalid type to render features on")
 		}
 	}
 

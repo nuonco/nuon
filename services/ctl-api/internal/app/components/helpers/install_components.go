@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm/clause"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 func (h *Helpers) EnsureInstallComponents(ctx context.Context, appID string, installIDs []string) error {
@@ -27,7 +28,7 @@ func (h *Helpers) EnsureInstallComponents(ctx context.Context, appID string, ins
 	}
 
 	// create an install component for all known installs
-	var installCmps = make([]app.InstallComponent, 0)
+	installCmps := make([]app.InstallComponent, 0)
 	for _, installID := range installIDs {
 		for _, component := range parentApp.Components {
 			installCmps = append(installCmps, app.InstallComponent{
@@ -62,7 +63,7 @@ func (h *Helpers) TFWorkSpaceFromIC(ic app.InstallComponent) app.TerraformWorksp
 	return app.TerraformWorkspace{
 		OrgID:     ic.OrgID,
 		OwnerID:   ic.InstallID,
-		OwnerType: app.TerraformWorkspaceOwnerInstallComponent,
+		OwnerType: "install_components",
 	}
 }
 

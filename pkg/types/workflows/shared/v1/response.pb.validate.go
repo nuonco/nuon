@@ -166,7 +166,7 @@ type FinishActivityRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m FinishActivityRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -268,7 +268,7 @@ type FinishActivityResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m FinishActivityResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -400,7 +400,7 @@ type ResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -709,7 +709,7 @@ type ResponseRefMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ResponseRefMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

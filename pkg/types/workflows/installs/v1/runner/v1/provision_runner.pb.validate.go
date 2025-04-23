@@ -291,7 +291,7 @@ type ProvisionRunnerRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ProvisionRunnerRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -393,7 +393,7 @@ type ProvisionRunnerResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ProvisionRunnerResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
