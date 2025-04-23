@@ -114,7 +114,7 @@ type SyncRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SyncRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -213,7 +213,7 @@ type SyncResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SyncResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

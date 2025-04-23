@@ -115,6 +115,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	api.GET("/v1/apps/:app_id/config/:app_config_id", s.GetRunnerAppConfig)
 	return nil
 }
 

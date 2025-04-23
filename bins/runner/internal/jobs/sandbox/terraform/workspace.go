@@ -1,12 +1,12 @@
 package terraform
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/pkg/errors"
+
 	dirarchive "github.com/powertoolsdev/mono/pkg/terraform/archive/dir"
-	s3backend "github.com/powertoolsdev/mono/pkg/terraform/backend/s3"
+	httpbackend "github.com/powertoolsdev/mono/pkg/terraform/backend/http"
 	remotebinary "github.com/powertoolsdev/mono/pkg/terraform/binary/remote"
 	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
 	"github.com/powertoolsdev/mono/pkg/terraform/hooks/noop"
@@ -18,66 +18,71 @@ import (
 
 // getWorkspace returns a valid workspace for working with this plugin
 func (h *handler) getWorkspace() (workspace.Workspace, error) {
-	cfg := h.state.cfg
+	plan := h.state.plan
+	sandboxCfg := h.state.sandboxCfg
 
 	archDir := h.state.workspace.Source().AbsPath()
-	if cfg.DirArchive != nil {
-		archDir = cfg.DirArchive.Path
+	if plan.LocalArchive != nil {
+		archDir = plan.LocalArchive.Path
 	}
 
 	arch, err := dirarchive.New(h.v,
 		dirarchive.WithPath(archDir),
 		dirarchive.WithIgnoreDotTerraformDir(),
 		dirarchive.WithIgnoreTerraformStateFile(),
+		dirarchive.WithAddBackendFile("http"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create local archive: %w", err)
 	}
 
-	back, err := s3backend.New(h.v, s3backend.WithCredentials(&cfg.Backend.Auth), s3backend.WithBucketConfig(&s3backend.BucketConfig{
-		Name: cfg.Backend.Bucket, Key: cfg.Backend.StateKey,
-		Region: cfg.Backend.Region,
+	back, err := httpbackend.New(h.v, httpbackend.WithHTTPConfig(&httpbackend.HTTPBackendConfig{
+		Address: fmt.Sprintf("%s/v1/terraform-backend?token=%s&workspace_id=%s",
+			h.cfg.RunnerAPIURL,
+			h.cfg.RunnerAPIToken,
+			h.state.plan.TerraformBackend.WorkspaceID),
+		LockAddress: fmt.Sprintf("%s/v1/terraform-backend?token=%s&workspace_id=%s",
+			h.cfg.RunnerAPIURL,
+			h.cfg.RunnerAPIToken,
+			h.state.plan.TerraformBackend.WorkspaceID),
+		UnlockAddress: fmt.Sprintf("%s/v1/terraform-backend?token=%s&workspace_id=%s",
+			h.cfg.RunnerAPIURL,
+			h.cfg.RunnerAPIToken,
+			h.state.plan.TerraformBackend.WorkspaceID),
+		LockMethod:   "LOCK",
+		UnlockMethod: "UNLOCK",
 	}))
 	if err != nil {
-		return nil, fmt.Errorf("unable to create backend: %w", err)
+		return nil, errors.Wrap(err, "unable to get http backend")
 	}
 
 	bin, err := remotebinary.New(h.v,
-		remotebinary.WithVersion(cfg.TerraformVersion))
+		remotebinary.WithVersion(sandboxCfg.TerraformVersion))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create binary: %w", err)
 	}
 
-	cfgVars := generics.ToIntMap(cfg.Variables)
-	if cfg.VariablesJSON != "" {
-		var jsonVars map[string]interface{}
-		if err := json.Unmarshal([]byte(cfg.VariablesJSON), &cfgVars); err != nil {
-			return nil, fmt.Errorf("unable to parse json vars: %w", err)
-		}
-		cfgVars = generics.MergeMap(cfgVars, jsonVars)
-	}
-
 	vars, err := staticvars.New(h.v,
-		staticvars.WithFileVars(cfgVars),
-		staticvars.WithEnvVars(cfg.EnvVars))
+		staticvars.WithFileVars(plan.Vars),
+		staticvars.WithEnvVars(plan.EnvVars))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create variable set: %w", err)
 	}
 
 	authVars, err := authvars.New(h.v,
-		authvars.WithAWSAuth(&cfg.RunAuth),
+		authvars.WithAWSAuth(plan.AWSAuth),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create auth vars: %w", err)
 	}
 
 	var hooks hooks.Hooks
-	if cfg.Hooks == nil {
+	if plan.Hooks == nil {
 		hooks = noop.New()
 	} else {
 		hooks, err = shell.New(h.v,
-			shell.WithRunAuth(&cfg.Hooks.RunAuth),
-			shell.WithEnvVars(cfg.Hooks.EnvVars),
+			shell.WithRunAuth(&plan.Hooks.RunAuth),
+			shell.WithEnvVars(plan.Hooks.EnvVars),
 		)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get hooks: %w", err)

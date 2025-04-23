@@ -113,7 +113,7 @@ type LogConfigurationMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogConfigurationMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -217,7 +217,7 @@ type LogRecordAttrMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogRecordAttrMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

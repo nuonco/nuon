@@ -35,7 +35,7 @@ type AppPolicyConfig struct {
 	AppPoliciesConfig   AppPoliciesConfig `json:"-"`
 
 	Type     AppPolicyType `json:"type"`
-	Contents string        `json:"contents"`
+	Contents string        `json:"contents" features:"template"`
 }
 
 func (a *AppPolicyConfig) BeforeCreate(tx *gorm.DB) error {

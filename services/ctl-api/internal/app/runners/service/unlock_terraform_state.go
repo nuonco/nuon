@@ -1,42 +1,41 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 func (s *service) UnlockTerraformState(ctx *gin.Context) {
-	sid, err := s.GetStateID(ctx)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get state ID: %w", err))
+	workspaceID := ctx.Query("workspace_id")
+	if workspaceID == "" {
+		ctx.Error(stderr.ErrInvalidRequest{
+			Err: errors.New("workspace_id was not set"),
+		})
 		return
 	}
+
 	var lock app.TerraformLock
-	if err := json.NewDecoder(ctx.Request.Body).Decode(&lock); err != nil {
-		ctx.Error(fmt.Errorf("unable to decode lock: %w", err))
+	if err := ctx.BindJSON(&lock); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
 
-	currentState, err := s.validateTerraformStateLock(ctx, sid, lock.ID)
+	state, err := s.helpers.GetTerraformState(ctx, workspaceID)
 	if err != nil {
-		ctx.Error(err)
+		ctx.Error(fmt.Errorf("unable to get terraform state"))
 		return
 	}
 
-	if currentState == nil || string(currentState.Lock) == "" {
-		ctx.JSON(http.StatusOK, "")
+	if _, err := s.helpers.InsertTerraformState(ctx, workspaceID, nil, state.Data); err != nil {
+		ctx.Error(errors.Wrap(err, "unable to insert state"))
 		return
 	}
 
-	currentState.Lock = nil
-	err = s.helpers.InsertTerraformState(ctx, sid, currentState)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to update terraform state: %w", err))
-		return
-	}
 	ctx.JSON(http.StatusOK, "")
 }

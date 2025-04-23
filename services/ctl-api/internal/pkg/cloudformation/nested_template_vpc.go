@@ -28,7 +28,7 @@ func (a *Templates) getVPCNestedStack(inp *TemplateInput, t tagBuilder) *nestedc
 			"NuonOrgID":     inp.Install.OrgID,
 		},
 		TemplateURL: cloudformation.Join("", []interface{}{
-			inp.AppCfg.CloudFormationStackConfig.VPCNestedTemplateURL,
+			inp.AppCfg.StackConfig.VPCNestedTemplateURL,
 		}),
 		Tags: t.apply(nil, "vpc"),
 	}

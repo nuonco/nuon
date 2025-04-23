@@ -112,7 +112,7 @@ type AWSSettingsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AWSSettingsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -254,7 +254,7 @@ type AWSRoleDelegationMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AWSRoleDelegationMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -375,7 +375,7 @@ type AzureSettingsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AzureSettingsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

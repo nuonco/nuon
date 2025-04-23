@@ -43,11 +43,12 @@ type InstallSandbox struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
-	InstallID string  `json:"install_id" gorm:"notnull"`
-	Install   Install `faker:"-" json:"-"`
+	InstallID string `json:"install_id" gorm:"notnull"`
 
 	Status            InstallSandboxStatus `json:"status" gorm:"not null;default null" swaggertype:"string"`
 	StatusDescription string               `json:"status_description" gorm:"not null;default null"`
+
+	TerraformWorkspace TerraformWorkspace `json:"terraform_workspace" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;"`
 
 	InstallSandboxRuns []InstallSandboxRun `json:"install_sandbox_runs,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 }

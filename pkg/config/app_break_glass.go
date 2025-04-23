@@ -7,7 +7,7 @@ import (
 )
 
 type BreakGlass struct {
-	Roles []*AppAWSIAMRole `mapstructure:"role" jsonschema:"required"`
+	Roles []*AppAWSIAMRole `mapstructure:"role"`
 }
 
 func (a BreakGlass) JSONSchemaExtend(schema *jsonschema.Schema) {
