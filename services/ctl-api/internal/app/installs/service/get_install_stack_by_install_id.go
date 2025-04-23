@@ -58,6 +58,7 @@ func (s *service) getInstallStack(ctx *gin.Context, installID, orgID string) (*a
 		Preload("InstallStack.InstallStackVersions.Runs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_stack_version_runs.created_at DESC").Limit(10)
 		}).
+		Preload("InstallStack.InstallStackOutputs").
 		Where("id = ? and org_id = ?", installID, orgID).
 		First(&install, "id = ?", installID)
 	if res.Error != nil {
