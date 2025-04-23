@@ -69,6 +69,8 @@ func (w *Workflows) getSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) 
 		return w.getInstallWorkflowReprovisionSandboxSteps(ctx, wkflow)
 	case app.InstallWorkflowTypeDeprovision:
 		return w.getInstallWorkflowDeprovisionSteps(ctx, wkflow)
+	case app.InstallWorkflowTypeDeprovisionSandbox:
+		return w.getInstallWorkflowDeprovisionSandboxSteps(ctx, wkflow)
 	}
 
 	return nil, nil
@@ -251,6 +253,28 @@ func (w *Workflows) getInstallWorkflowDeprovisionSteps(ctx workflow.Context, wkf
 		return nil, err
 	}
 	steps = append(steps, deploySteps...)
+
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "deprovision sandbox", &signals.Signal{
+		Type: signals.OperationDeprovisionSandbox,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	return steps, nil
+}
+
+func (w *Workflows) getInstallWorkflowDeprovisionSandboxSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
+	steps := make([]*app.InstallWorkflowStep, 0)
+
+	step, err := w.installSignalStep(ctx, wkflow.InstallID, "await runner healthy", &signals.Signal{
+		Type: signals.OperationAwaitRunnerHealthy,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
 
 	step, err = w.installSignalStep(ctx, wkflow.InstallID, "deprovision sandbox", &signals.Signal{
 		Type: signals.OperationDeprovisionSandbox,
