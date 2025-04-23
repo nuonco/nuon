@@ -15,8 +15,9 @@ import (
 type InstallWorkflowType string
 
 const (
-	InstallWorkflowTypeProvision   InstallWorkflowType = "provision"
-	InstallWorkflowTypeDeprovision InstallWorkflowType = "deprovision"
+	InstallWorkflowTypeProvision          InstallWorkflowType = "provision"
+	InstallWorkflowTypeDeprovision        InstallWorkflowType = "deprovision"
+	InstallWorkflowTypeDeprovisionSandbox InstallWorkflowType = "deprovision_sandbox"
 
 	// day-2 triggers
 	InstallWorkflowTypeManualDeploy       InstallWorkflowType = "manual_deploy"
