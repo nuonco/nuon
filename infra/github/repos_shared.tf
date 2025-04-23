@@ -43,83 +43,6 @@ module "shared-parededb-installer" {
   }
 }
 
-module "shared-carbon-installer" {
-  source = "./modules/repository"
-
-  name                     = "carbon-installer"
-  description              = "Installer for carbon."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-  is_fork                  = true
-
-  collaborators = {}
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
-module "shared-athena" {
-  source = "./modules/repository"
-
-  name                     = "athena"
-  description              = "Nuon configuration for athena."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-
-  collaborators = {
-    "bgeils"        = "push"
-    "wilkie-athena" = "push"
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
-module "shared-athena-installer" {
-  source = "./modules/repository"
-
-  name                     = "athena-installer"
-  description              = "Installer for Athena."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-  is_fork                  = true
-
-  collaborators = {
-    "bgeils" = "push"
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
-module "shared-turntable" {
-  source = "./modules/repository"
-
-  name                     = "turntable"
-  description              = "Nuon configuration for turntable."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-
-  collaborators = {
-    "turntable-justin" = "push"
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
 module "shared-warpstream" {
   source = "./modules/repository"
 
@@ -180,25 +103,6 @@ module "shared-okteto" {
   }
 }
 
-module "shared-meroxa" {
-  source = "./modules/repository"
-
-  name                     = "meroxa"
-  description              = "Nuon configuration + demo for Meroxa."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-
-  collaborators = {
-    simonl2002 = "push"
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
 module "shared-weaviate-installer" {
   source = "./modules/repository"
 
@@ -242,25 +146,6 @@ module "shared-weaviate" {
   }
 }
 
-module "shared-flipt" {
-  source = "./modules/repository"
-
-  name                     = "flipt"
-  description              = "Nuon configuration + demo for Flipt."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-
-  collaborators = {
-    georgemac  = "push"
-    markphelps = "push"
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
 
 module "shared-honeyhive" {
   source = "./modules/repository"
@@ -275,28 +160,6 @@ module "shared-honeyhive" {
   collaborators = {
     "michael-hhai" = "push"
     "codehruv"     = "push"
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
-module "shared-electric-sql" {
-  source = "./modules/repository"
-
-  name                     = "electric-sql"
-  description              = "Nuon configuration + demo for Electric SQL."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-
-  collaborators = {
-    thruflo   = "push"
-    samwillis = "push"
-    alco      = "push"
-    balegas   = "push"
   }
 
   providers = {
