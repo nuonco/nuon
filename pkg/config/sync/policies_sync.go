@@ -9,7 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func (s sync) policyToRequest(policy *config.AppPolicy) *models.ServiceAppPolicyConfig {
+func (s sync) policyToRequest(policy config.AppPolicy) *models.ServiceAppPolicyConfig {
 	return &models.ServiceAppPolicyConfig{
 		Contents: generics.ToPtr(policy.Contents),
 		Type:     generics.ToPtr(policy.Type),

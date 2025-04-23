@@ -2,35 +2,50 @@ package terraform
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"time"
 
 	"github.com/nuonco/nuon-runner-go/models"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/plan"
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 )
 
 func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	h.state = &handlerState{}
-
-	plan, err := plan.FetchPlan(ctx, h.apiClient, job)
-	if err != nil {
-		return fmt.Errorf("unable to fetch plan: %w", err)
-	}
-
-	h.state.plan = plan
-	h.state.jobID = job.ID
-	h.state.jobExecutionID = jobExecution.ID
-
-	h.state.timeout = time.Duration(job.ExecutionTimeout)
-
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
 	}
-	l.Info("setting sandbox operation timeout", zap.String("duration", h.state.timeout.String()))
 
+	h.state = &handlerState{}
+
+	l.Info("fetching sandbox job plan")
+	planJSON, err := h.apiClient.GetJobPlanJSON(ctx, job.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get job plan")
+	}
+
+	// parse the plan
+	var plan plantypes.SandboxRunPlan
+	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
+		return errors.Wrap(err, "unable to parse sandbox workflow run plan")
+	}
+	h.state.plan = &plan
+
+	h.state.jobID = job.ID
+	h.state.jobExecutionID = jobExecution.ID
+	h.state.timeout = time.Duration(job.ExecutionTimeout)
+
+	l.Info("fetching app config")
+	appCfg, err := h.apiClient.GetAppConfig(ctx, plan.AppID, plan.AppConfigID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get app config")
+	}
+	h.state.appCfg = appCfg
+	h.state.sandboxCfg = appCfg.Sandbox
+
+	l.Info("setting sandbox operation timeout", zap.String("duration", h.state.timeout.String()))
 	return nil
 }

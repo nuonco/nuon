@@ -158,7 +158,7 @@ type TerraformModuleMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m TerraformModuleMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -287,7 +287,7 @@ type S3TerraformModuleMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m S3TerraformModuleMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -391,7 +391,7 @@ type LocalTerraformModuleMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LocalTerraformModuleMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

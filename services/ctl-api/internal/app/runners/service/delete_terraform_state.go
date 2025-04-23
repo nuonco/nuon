@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,23 +22,5 @@ import (
 // @Success				200	{object}	string
 // @Router					/v1/terraform-backend [delete]
 func (s *service) DeleteTerraformState(ctx *gin.Context) {
-	sid, err := s.GetStateID(ctx)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get state ID: %w", err))
-		return
-	}
-	lockID := ctx.Query("ID")
-	currentState, err := s.validateTerraformStateLock(ctx, sid, lockID)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	currentState.Data = nil
-	err = s.helpers.InsertTerraformState(ctx, sid, currentState)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to update terraform state: %w", err))
-		return
-	}
 	ctx.JSON(http.StatusOK, "")
 }

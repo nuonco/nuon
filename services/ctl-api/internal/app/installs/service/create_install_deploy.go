@@ -154,19 +154,5 @@ func (s *service) createInstallDeploy(ctx context.Context, installID string, req
 		return nil, fmt.Errorf("unable to create install deploy: %w", res.Error)
 	}
 
-	// create terraform workspace
-	workspace := app.TerraformWorkspace{
-		OrgID:     install.OrgID,
-		OwnerID:   install.ID,
-		OwnerType: app.TerraformWorkspaceOwnerInstallComponent,
-	}
-
-	res = s.db.WithContext(ctx).
-		Clauses(clause.OnConflict{DoNothing: true}).
-		Create(&workspace)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create terraform workspace: %w", res.Error)
-	}
-
 	return &deploy, nil
 }
