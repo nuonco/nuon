@@ -341,5 +341,18 @@ func (c *cli) installsCmd() *cobra.Command {
 	updateInputCmd.MarkFlagRequired("inputs")
 	installsCmds.AddCommand(updateInputCmd)
 
+	deprovisionInstallSandboxCmd := &cobra.Command{
+		Use:   "deprovision-sandbox",
+		Short: "Deprovision install sandbox",
+		Long:  "Deprovision an install sandbox",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.DeprovisionSandbox(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	deprovisionInstallSandboxCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	deprovisionInstallSandboxCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(deprovisionInstallSandboxCmd)
+
 	return installsCmds
 }
