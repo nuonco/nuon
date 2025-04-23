@@ -36,21 +36,10 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 		return nil, fmt.Errorf("unable to create local archive: %w", err)
 	}
 
-	back, err := httpbackend.New(h.v, httpbackend.WithHTTPConfig(&httpbackend.HTTPBackendConfig{
-		Address: fmt.Sprintf("%s/v1/terraform-backend?token=%s&workspace_id=%s",
-			h.cfg.RunnerAPIURL,
-			h.cfg.RunnerAPIToken,
-			h.state.plan.TerraformBackend.WorkspaceID),
-		LockAddress: fmt.Sprintf("%s/v1/terraform-backend?token=%s&workspace_id=%s",
-			h.cfg.RunnerAPIURL,
-			h.cfg.RunnerAPIToken,
-			h.state.plan.TerraformBackend.WorkspaceID),
-		UnlockAddress: fmt.Sprintf("%s/v1/terraform-backend?token=%s&workspace_id=%s",
-			h.cfg.RunnerAPIURL,
-			h.cfg.RunnerAPIToken,
-			h.state.plan.TerraformBackend.WorkspaceID),
-		LockMethod:   "LOCK",
-		UnlockMethod: "UNLOCK",
+	back, err := httpbackend.New(h.v, httpbackend.WithNuonTerraformWorkspaceConfig(&httpbackend.NuonWorkspaceConfig{
+		APIEndpoint: h.cfg.RunnerAPIURL,
+		WorkspaceID: h.state.plan.TerraformBackend.WorkspaceID,
+		Token:       h.cfg.RunnerAPIToken,
 	}))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get http backend")

@@ -104,6 +104,7 @@ func AllModels() []interface{} {
 		&app.RunnerJobExecutionResult{},
 		&app.TerraformState{},
 		&app.TerraformWorkspace{},
+		&app.TerraformWorkspaceLockState{},
 
 		// actions
 		&app.ActionWorkflow{},
