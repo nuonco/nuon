@@ -18,8 +18,8 @@ func PreloadAppBreakGlassConfig(db *gorm.DB) *gorm.DB {
 }
 
 // cloudformation stack config
-func PreloadAppConfigCloudFormationStackConfig(db *gorm.DB) *gorm.DB {
-	return db.Preload("CloudFormationStackConfig")
+func PreloadAppConfigStackConfig(db *gorm.DB) *gorm.DB {
+	return db.Preload("StackConfig")
 }
 
 // permissions config

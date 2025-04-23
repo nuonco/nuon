@@ -32,7 +32,7 @@ func (p *planner) createStepPlan(ctx workflow.Context, step app.InstallActionWor
 
 	// step 1 - fetch token for repo
 	l.Debug("creating git source for config")
-	gitSource, err := activities.AwaitGetGitSourceByStepID(ctx, step.Step.ID)
+	gitSource, err := activities.AwaitGetActionWorkflowStepGitSourceByStepID(ctx, step.Step.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get git source")
 	}

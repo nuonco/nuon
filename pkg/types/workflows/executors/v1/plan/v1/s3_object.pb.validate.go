@@ -123,7 +123,7 @@ type S3ObjectMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m S3ObjectMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -234,7 +234,7 @@ type AssumeRoleDetailsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AssumeRoleDetailsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

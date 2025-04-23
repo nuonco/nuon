@@ -25,7 +25,7 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string) (*ap
 			PreloadAppConfigRunnerConfig,
 			PreloadAppConfigSandboxConfig,
 			PreloadAppConfigInputConfig,
-			PreloadAppConfigCloudFormationStackConfig,
+			PreloadAppConfigStackConfig,
 
 			// components
 			PreloadAppConfigComponentConfigConnections,

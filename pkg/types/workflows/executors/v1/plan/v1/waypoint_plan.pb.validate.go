@@ -389,7 +389,7 @@ type WaypointPlanMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m WaypointPlanMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -575,7 +575,7 @@ type OutputsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OutputsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

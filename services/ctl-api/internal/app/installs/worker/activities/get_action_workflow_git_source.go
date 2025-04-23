@@ -9,13 +9,13 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-type GetGitSourceRequest struct {
+type GetActionWorkflowGitSourceRequest struct {
 	StepID string `validate:"required"`
 }
 
 // @temporal-gen activity
 // @by-id StepID
-func (a *Activities) GetGitSource(ctx context.Context, req GetGitSourceRequest) (*plantypes.GitSource, error) {
+func (a *Activities) GetActionWorkflowStepGitSource(ctx context.Context, req GetActionWorkflowGitSourceRequest) (*plantypes.GitSource, error) {
 	cfg, err := a.getActionWorkflowStepConfig(ctx, req.StepID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get workflow step config")
