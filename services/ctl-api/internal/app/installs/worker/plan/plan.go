@@ -7,7 +7,7 @@ import (
 )
 
 type CreateActionRunPlanRequest struct {
-	RunID string
+	ActionWorkflowRunID string `validate:"required"`
 
 	WorkflowID string
 }
@@ -19,5 +19,5 @@ type CreateActionRunPlanRequest struct {
 // @id-callback WorkflowIDCallback
 func CreateActionWorkflowRunPlan(ctx workflow.Context, req *CreateActionRunPlanRequest) (*plantypes.ActionWorkflowRunPlan, error) {
 	p := planner{}
-	return p.createPlan(ctx, req.RunID)
+	return p.createActionWorkflowRunPlan(ctx, req.ActionWorkflowRunID)
 }

@@ -21,6 +21,7 @@ func (a *Activities) GetInstallStack(ctx context.Context, req GetInstallStackReq
 		Where(app.InstallStack{
 			InstallID: req.InstallID,
 		}).
+		Preload("InstallStackOutputs").
 		First(&stack); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get install stack")
 	}

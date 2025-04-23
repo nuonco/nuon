@@ -18,6 +18,9 @@ type dir struct {
 	IgnoreTerraformLockFile  bool
 	IgnoreTerraformStateFile bool
 	IgnoreDotTerraformDir    bool
+
+	AddBackendFile bool
+	AddBackendType string
 }
 
 type dirOption func(*dir) error
@@ -73,6 +76,15 @@ func WithIgnoreDotTerraformDir() dirOption {
 func WithIgnoreTerraformStateFile() dirOption {
 	return func(d *dir) error {
 		d.IgnoreTerraformStateFile = true
+		return nil
+	}
+}
+
+// WithAddBackendFile
+func WithAddBackendFile(typ string) dirOption {
+	return func(d *dir) error {
+		d.AddBackendFile = true
+		d.AddBackendType = typ
 		return nil
 	}
 }

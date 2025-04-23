@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-runner-go/models"
+
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/workspace"
 )
@@ -17,7 +18,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 	l.Info("initializing workspace")
 	wkspace, err := workspace.New(h.v,
 		workspace.WithLogger(l),
-		workspace.WithGitSource(h.state.plan.GetWaypointPlan().GetGitSource()),
+		workspace.WithNewGitSource(h.state.plan.GitSource),
 		workspace.WithWorkspaceID(jobExecution.ID),
 	)
 	if err != nil {

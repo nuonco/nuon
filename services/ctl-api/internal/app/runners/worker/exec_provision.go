@@ -7,13 +7,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	logv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/log/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
@@ -86,13 +84,6 @@ func (w *Workflows) executeProvisionInstallRunner(ctx workflow.Context, runnerID
 		return fmt.Errorf("unable to get runner install: %w", err)
 	}
 
-	token, err := activities.AwaitCreateToken(ctx, activities.CreateTokenRequest{
-		RunnerID: runnerID,
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to create token")
-	}
-
 	logStream, err := cctx.GetLogStreamWorkflow(ctx)
 	if err != nil {
 		return errors.Wrap(err, "no log stream found")
@@ -118,13 +109,6 @@ func (w *Workflows) executeProvisionInstallRunner(ctx workflow.Context, runnerID
 	if err != nil {
 		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to create runner plan request")
 		return fmt.Errorf("unable to create runner plan: %w", err)
-	}
-	planReq.LogConfiguration = &logv1.LogConfiguration{
-		RunnerId:       install.RunnerGroup.Runners[0].ID,
-		RunnerApiToken: token.Token,
-		RunnerApiUrl:   w.cfg.RunnerAPIURL,
-		// RunnerJobId:    logStreamID,
-		Attrs: logv1.NewAttrs(generics.ToStringMap(runner.RunnerGroup.Settings.Metadata)),
 	}
 
 	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, planWorkflowID, planReq)

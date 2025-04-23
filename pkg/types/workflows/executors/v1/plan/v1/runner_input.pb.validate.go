@@ -74,7 +74,7 @@ type RunnerImageMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m RunnerImageMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -207,7 +207,7 @@ type RunnerSettingsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m RunnerSettingsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -472,7 +472,7 @@ type RunnerInputMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m RunnerInputMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

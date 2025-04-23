@@ -234,6 +234,14 @@ func NewRunnerJobID() string {
 	return shortid.NewNanoID("job")
 }
 
+func NewTerraformWorkspaceID() string {
+	return shortid.NewNanoID("tfw")
+}
+
+func NewTerraformWorkspaceStateID() string {
+	return shortid.NewNanoID("tfs")
+}
+
 func NewRunnerGroupID() string {
 	return shortid.NewNanoID("rgr")
 }

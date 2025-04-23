@@ -289,7 +289,7 @@ type DeprovisionRunnerRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m DeprovisionRunnerRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -391,7 +391,7 @@ type DeprovisionRunnerResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m DeprovisionRunnerResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

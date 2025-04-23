@@ -95,7 +95,7 @@ type SendNotificationRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SendNotificationRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -197,7 +197,7 @@ type SendNotificationResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SendNotificationResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
