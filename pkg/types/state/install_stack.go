@@ -15,5 +15,5 @@ type InstallStackState struct {
 	Checksum     string `json:"checksum"`
 	Status       string `json:"status"`
 
-	Outputs map[string]string `json:"string"`
+	Outputs map[string]string `json:"outputs"`
 }
