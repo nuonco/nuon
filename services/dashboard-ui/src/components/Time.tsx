@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
 import { DateTime, Duration as LuxonDuration, type DurationUnits } from 'luxon'
 import React, { type FC } from 'react'
-import { Minus } from "@phosphor-icons/react/dist/ssr"
+import { Minus } from '@phosphor-icons/react/dist/ssr'
 import { Text, type IText } from '@/components/Typography'
 
 export interface ITime extends Omit<IText, 'role'> {
@@ -59,8 +59,12 @@ export const Duration: FC<IDuration> = ({
 }) => {
   let duration: LuxonDuration
   if (nanoseconds !== undefined) {
-    if (nanoseconds === 0) {      
-      return <Text {...props}><Minus /></Text>
+    if (nanoseconds === 0) {
+      return (
+        <Text {...props}>
+          <Minus />
+        </Text>
+      )
     }
     duration = LuxonDuration.fromMillis(Math.round(nanoseconds / 1000000))
   } else {
@@ -73,7 +77,7 @@ export const Duration: FC<IDuration> = ({
     <Text {...props} role="time">
       {format === 'timer'
         ? duration.toFormat('T-hh:mm:ss:SS')
-        : duration.rescale().toHuman({
+        : duration.rescale().set({ milliseconds: 0 }).rescale().toHuman({
             listStyle,
             unitDisplay,
           })}
