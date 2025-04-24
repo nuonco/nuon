@@ -38,6 +38,7 @@ func (s *service) AdminaBackfillInstallComponents(ctx *gin.Context) {
 	for _, ic := range ics {
 		deploys := []app.InstallDeploy{}
 		res = s.db.WithContext(ctx).
+			Unscoped().
 			Where("install_component_id = ?", ic.ID).
 			Order("created_at desc").
 			Limit(1).
@@ -49,16 +50,22 @@ func (s *service) AdminaBackfillInstallComponents(ctx *gin.Context) {
 		}
 
 		status := app.InstallComponentStatusUnknown
+		statusDescription := ""
 		if len(deploys) > 0 {
 			status = app.DeployStatusToComponentStatus(deploys[0].Status)
+			statusDescription = deploys[0].StatusDescription
 		}
 
 		res = s.db.WithContext(ctx).
 			Unscoped().
 			Model(&app.InstallComponent{}).
 			Where("id = ?", ic.ID).
-			UpdateColumn("status", status).
-			UpdateColumn("status_description", deploys[0].StatusDescription)
+			UpdateColumns(
+				map[string]any{
+					"status":             status,
+					"status_description": statusDescription,
+				},
+			)
 
 		if res.Error != nil {
 			ctx.Error(errors.Wrap(res.Error, "unable to create install component"))
