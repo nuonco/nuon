@@ -9,8 +9,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-func (s *Helpers) GetTerraformState(ctx context.Context, workspaceID string) (*app.TerraformState, error) {
-	tfState := &app.TerraformState{}
+func (s *Helpers) GetTerraformState(ctx context.Context, workspaceID string) (*app.TerraformWorkspaceState, error) {
+	tfState := &app.TerraformWorkspaceState{}
 
 	res := s.db.WithContext(ctx).
 		Order("revision DESC").
@@ -22,8 +22,8 @@ func (s *Helpers) GetTerraformState(ctx context.Context, workspaceID string) (*a
 	return tfState, nil
 }
 
-func (s *Helpers) InsertTerraformState(ctx context.Context, workspaceID string, data *app.TerraformStateData) (*app.TerraformState, error) {
-	tfState := app.TerraformState{
+func (s *Helpers) InsertTerraformState(ctx context.Context, workspaceID string, data *app.TerraformStateData) (*app.TerraformWorkspaceState, error) {
+	tfState := app.TerraformWorkspaceState{
 		TerraformWorkspaceID: workspaceID,
 		Data:                 data,
 	}
@@ -34,4 +34,16 @@ func (s *Helpers) InsertTerraformState(ctx context.Context, workspaceID string, 
 	}
 
 	return &tfState, nil
+}
+
+func (s *Helpers) GetTerraformStateByID(ctx context.Context, workspaceID, id string) (*app.TerraformWorkspaceState, error) {
+	tfState := &app.TerraformWorkspaceState{}
+	res := s.db.WithContext(ctx).
+		Where("terraform_workspace_id = ? AND id = ?", workspaceID, id).
+		First(tfState)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get terraform state: %w", res.Error)
+	}
+
+	return tfState, nil
 }
