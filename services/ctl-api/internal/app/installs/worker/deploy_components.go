@@ -17,8 +17,6 @@ import (
 func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestSignal) error {
 	installID := sreq.ID
 
-	w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusStarted)
-
 	l := workflow.GetLogger(ctx)
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
@@ -27,7 +25,6 @@ func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestS
 
 	if !w.isDeployable(install) {
 		// automatically skipping
-		w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 		return nil
 	}
 
@@ -35,9 +32,7 @@ func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestS
 		AppID:     install.AppID,
 		InstallID: install.ID,
 	})
-
 	if err != nil {
-		w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get app graph: %w", err)
 	}
 
@@ -45,7 +40,6 @@ func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestS
 	for _, componentID := range componentIDs {
 		componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, componentID)
 		if err != nil {
-			w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 			return fmt.Errorf("unable to get component build: %w", err)
 		}
 
@@ -54,9 +48,7 @@ func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestS
 			ComponentID: componentID,
 			BuildID:     componentBuild.ID,
 		})
-
 		if err != nil {
-			w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 			return fmt.Errorf("unable to create install deploy: %w", err)
 		}
 
@@ -71,7 +63,6 @@ func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestS
 
 		if depDeployErrored {
 			w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusNoop, "error with depenedent component")
-			w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusNoop)
 			continue
 		}
 		if err := w.AwaitDeploy(ctx, sreq); err != nil {
@@ -81,6 +72,5 @@ func (w *Workflows) DeployComponents(ctx workflow.Context, sreq signals.RequestS
 	}
 
 	// TODO(sdboyer): is this status unreachable if deployComponents is called with async?
-	w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFinished)
 	return nil
 }

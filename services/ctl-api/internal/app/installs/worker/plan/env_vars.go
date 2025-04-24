@@ -8,7 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func (p *planner) getEnvVars(ctx workflow.Context, run *app.InstallActionWorkflowRun) (map[string]string, error) {
+func (p *Planner) getEnvVars(ctx workflow.Context, run *app.InstallActionWorkflowRun) (map[string]string, error) {
 	token, err := activities.AwaitCreateActionWorkflowRunTokenByRunnerID(ctx, run.Install.RunnerID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get action workflow run token")

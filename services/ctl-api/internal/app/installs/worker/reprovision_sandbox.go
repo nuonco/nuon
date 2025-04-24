@@ -56,7 +56,6 @@ func (w *Workflows) ReprovisionSandbox(ctx workflow.Context, sreq signals.Reques
 	defer func() {
 		if pan := recover(); pan != nil {
 			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
-			w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
 			panic(pan)
 		}
 	}()
@@ -77,12 +76,10 @@ func (w *Workflows) ReprovisionSandbox(ctx workflow.Context, sreq signals.Reques
 	}
 
 	l.Info("executing sandbox and runner provision")
-	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusStarted)
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
 
 	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode)
 	if err != nil {
-		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, err.Error())
 		return err
 	}
@@ -93,13 +90,11 @@ func (w *Workflows) ReprovisionSandbox(ctx workflow.Context, sreq signals.Reques
 
 	l.Info("polling runner until active")
 	if err := w.pollRunner(ctx, install.RunnerGroup.Runners[0].ID); err != nil {
-		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, err.Error())
 		return err
 	}
 
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "install resources provisioned")
-	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFinished)
 	l.Info("reprovision was successful")
 
 	return nil
