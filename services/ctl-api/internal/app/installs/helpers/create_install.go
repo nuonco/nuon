@@ -16,7 +16,7 @@ type CreateInstallParams struct {
 
 	AWSAccount *struct {
 		Region     string `json:"region"`
-		IAMRoleARN string `json:"iam_role_arn" validate:"required"`
+		IAMRoleARN string `json:"iam_role_arn"`
 	} `json:"aws_account"`
 
 	AzureAccount *struct {
