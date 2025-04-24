@@ -17,9 +17,10 @@ import (
 )
 
 type TerraformWorkspaceState struct {
-	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account `json:"-"`
+	ID          string `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
+	CreatedByID string `json:"created_by_id" gorm:"not null;default:null"`
+
+	CreatedBy Account `json:"-"`
 
 	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
@@ -27,6 +28,8 @@ type TerraformWorkspaceState struct {
 
 	OrgID string `json:"org_id"`
 	Org   Org    `json:"-"`
+
+	Contents []byte `json:"contents" gorm:"type:bytea"`
 
 	Data *TerraformStateData `json:"data"`
 
@@ -77,6 +80,9 @@ type TerraformStateData struct {
 	Outputs          map[string]any           `json:"outputs,omitempty"`
 	Resources        []TerraformStateResource `json:"resources,omitempty"`
 	CheckResults     any                      `json:"check_results,omitempty"`
+
+	// base 64 encoded version of the contents for compatibility
+	Contents string `json:"contents"`
 }
 
 type TerraformStateResource struct {

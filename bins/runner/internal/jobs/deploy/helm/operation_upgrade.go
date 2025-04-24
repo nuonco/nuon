@@ -18,7 +18,7 @@ import (
 
 func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (*release.Release, error) {
 	l.Info("fetching previous release")
-	prevRel, err := helm.GetRelease(actionCfg, h.state.cfg.Name)
+	prevRel, err := helm.GetRelease(actionCfg, h.state.plan.HelmDeployPlan.Name)
 	if prevRel == nil {
 		l.Warn("unable to fetch previous release, so assuming it failed and was not installed", zap.Error(err))
 		l.Info("attempting install instead of upgrade")
@@ -33,7 +33,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 
 	l.Info("found default chart values", zap.Any("values", chart.Values))
 	l.Info("loading provided values")
-	values, err := helm.ChartValues(h.state.cfg.Values, h.state.cfg.HelmSet)
+	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}
@@ -44,12 +44,12 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.DisableHooks = false
 	client.Wait = true
 	client.WaitForJobs = false
-	client.Devel = h.state.cfg.Devel
+	client.Devel = true
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
-	client.Namespace = h.state.cfg.Namespace
+	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
 	client.Atomic = false
-	client.SkipCRDs = h.state.cfg.SkipCRDs
+	client.SkipCRDs = false
 	client.SubNotes = true
 	client.DisableOpenAPIValidation = false
 	client.Description = ""
@@ -77,12 +77,12 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.DisableHooks = false
 	client.Wait = true
 	client.WaitForJobs = false
-	client.Devel = h.state.cfg.Devel
+	client.Devel = true
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
-	client.Namespace = h.state.cfg.Namespace
+	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
 	client.Atomic = false
-	client.SkipCRDs = h.state.cfg.SkipCRDs
+	client.SkipCRDs = false
 	client.SubNotes = true
 	client.DisableOpenAPIValidation = false
 	client.Description = ""

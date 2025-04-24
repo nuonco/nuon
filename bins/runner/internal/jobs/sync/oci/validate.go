@@ -2,22 +2,15 @@ package containerimage
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon-runner-go/models"
-
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/plan"
+	"github.com/pkg/errors"
 )
 
 func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	cfg, err := plan.ParseConfig[WaypointConfig](h.state.plan)
-	if err != nil {
-		return fmt.Errorf("unable to parse plan: %w", err)
+	if err := h.v.Struct(h.state.plan); err != nil {
+		return errors.Wrap(err, "invalid job config")
 	}
-
-	h.state.cfg = &cfg.App.Build.Use
-	h.state.regCfg = &cfg.App.Build.Registry.Use
-	h.state.resultTag = job.OwnerID
 
 	return nil
 }

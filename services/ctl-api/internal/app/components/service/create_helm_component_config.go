@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
 )
@@ -20,6 +21,7 @@ type CreateHelmComponentConfigRequest struct {
 	Values      map[string]*string `json:"values,omitempty" validate:"required"`
 	ValuesFiles []string           `json:"values_files,omitempty"`
 	ChartName   string             `json:"chart_name,omitempty" validate:"required,dns_rfc1035_label,min=5,max=62"`
+	Namespace   string             `json:"namespace,omitempty"`
 
 	AppConfigID string `json:"app_config_id"`
 }
@@ -100,6 +102,7 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		Values:                   pgtype.Hstore(req.Values),
 		ValuesFiles:              pq.StringArray(req.ValuesFiles),
 		ChartName:                req.ChartName,
+		Namespace:                generics.NewNullString(req.Namespace),
 	}
 	componentConfigConnection := app.ComponentConfigConnection{
 		HelmComponentConfig: &cfg,
