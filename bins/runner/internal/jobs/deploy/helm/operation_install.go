@@ -26,7 +26,7 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	l.Info("found default chart values", zap.Any("values", chart.Values))
 
 	l.Info("loading provided values")
-	values, err := helm.ChartValues(h.state.cfg.Values, h.state.cfg.HelmSet)
+	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}
@@ -38,21 +38,21 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.DisableHooks = false
 	client.Wait = true
 	client.WaitForJobs = false
-	client.Devel = h.state.cfg.Devel
+	client.Devel = true
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
-	client.Namespace = h.state.cfg.Namespace
-	client.ReleaseName = h.state.cfg.Name
+	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
+	client.ReleaseName = h.state.plan.HelmDeployPlan.Name
 	client.GenerateName = false
 	client.NameTemplate = ""
 	client.OutputDir = ""
 	client.Atomic = false
-	client.SkipCRDs = h.state.cfg.SkipCRDs
+	client.SkipCRDs = false
 	client.SubNotes = true
 	client.DisableOpenAPIValidation = false
 	client.Replace = false
 	client.Description = ""
-	client.CreateNamespace = h.state.cfg.CreateNamespace
+	client.CreateNamespace = h.state.plan.HelmDeployPlan.CreateNamespace
 
 	l.Info("calculating helm diff")
 	rel, err := client.RunWithContext(ctx, chart, values)

@@ -10,6 +10,7 @@ import (
 
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"github.com/powertoolsdev/mono/pkg/helm"
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 )
 
 func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration) (*release.Release, error) {
@@ -27,7 +28,15 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	l.Info("found default chart values", zap.Any("values", c.Values))
 
 	l.Info("loading provided values")
-	values, err := helm.ChartValues(h.state.cfg.Values, h.state.cfg.HelmSet)
+	vals := make([]plantypes.HelmValue, 0)
+	for _, val := range h.state.cfg.HelmSet {
+		vals = append(vals, plantypes.HelmValue{
+			Name:  val.Name,
+			Value: val.Value,
+		})
+	}
+
+	values, err := helm.ChartValues(h.state.cfg.Values, vals)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}

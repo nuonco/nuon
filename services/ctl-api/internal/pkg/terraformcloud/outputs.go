@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/go-tfe"
 	"github.com/mitchellh/mapstructure"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 )
 
