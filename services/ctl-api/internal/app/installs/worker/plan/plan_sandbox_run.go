@@ -76,10 +76,11 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
-	l.Info("rendering policies")
-	if err := render.RenderStruct(&appCfg.PoliciesConfig, stateData); err != nil {
-		return nil, errors.Wrap(err, "unable to render policies")
-	}
+	//l.Info("rendering policies")
+	// NOTE(jm): some policies have `{{}}` values
+	//if err := render.RenderStruct(&appCfg.PoliciesConfig, stateData); err != nil {
+	//return nil, errors.Wrap(err, "unable to render policies")
+	//}
 
 	policies, err := p.getPolicies(&appCfg.PoliciesConfig)
 	if err != nil {
