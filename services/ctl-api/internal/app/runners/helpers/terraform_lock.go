@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Helpers) GetWorkspaceLock(ctx context.Context, workspaceID string) (*app.TerraformLock, error) {
-	tfs := &app.TerraformWorkspaceLockState{}
+	tfs := &app.TerraformWorkspaceLock{}
 
 	res := s.db.WithContext(ctx).
 		First(tfs, "workspace_id = ?", workspaceID)
@@ -23,8 +23,8 @@ func (s *Helpers) GetWorkspaceLock(ctx context.Context, workspaceID string) (*ap
 	return tfs.Lock, nil
 }
 
-func (s *Helpers) LockWorkspace(ctx context.Context, workspaceID string, lock *app.TerraformLock) (*app.TerraformWorkspaceLockState, error) {
-	tfs := &app.TerraformWorkspaceLockState{
+func (s *Helpers) LockWorkspace(ctx context.Context, workspaceID string, lock *app.TerraformLock) (*app.TerraformWorkspaceLock, error) {
+	tfs := &app.TerraformWorkspaceLock{
 		WorkspaceID: workspaceID,
 		Lock:        lock,
 	}
@@ -39,7 +39,7 @@ func (s *Helpers) LockWorkspace(ctx context.Context, workspaceID string, lock *a
 func (s *Helpers) UnlockWorkspace(ctx context.Context, workspaceID string) error {
 	res := s.db.WithContext(ctx).
 		Where("workspace_id = ?", workspaceID).
-		Delete(&app.TerraformWorkspaceLockState{})
+		Delete(&app.TerraformWorkspaceLock{})
 	if res.Error != nil {
 		return res.Error
 	}
