@@ -26,12 +26,15 @@ type HelmChartComponentConfig struct {
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"  jsonschema:"oneof_required=connected_repo"`
 
+	Namespace string `mapstructure:"namespace" features:"template"`
+
 	// deprecated
 	Values []HelmValue `mapstructure:"value,omitempty"`
 }
 
 func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "name", "release name")
+	addDescription(schema, "namespace", "namespace to deploy into. Defaults to {{.nuon.install.id}} and supports templating.")
 	addDescription(schema, "dependencies", "additional component dependencies")
 	addDescription(schema, "chart_name", "chart name")
 	addDescription(schema, "value", "array of helm values (not recommended)")

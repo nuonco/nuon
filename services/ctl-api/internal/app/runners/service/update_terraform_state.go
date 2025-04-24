@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -54,24 +55,26 @@ func (s *service) UpdateTerraformState(ctx *gin.Context) {
 		}
 	}
 
+	// Get the raw body first
+	contents, err := ctx.GetRawData()
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to read request body: %w", err))
+		return
+	}
 	var data app.TerraformStateData
-	if err := ctx.BindJSON(&data); err != nil {
+
+	if err := json.Unmarshal(contents, &data); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
 
-	currentState, err := s.helpers.GetTerraformState(ctx, workspaceID)
+	_, err = s.helpers.GetTerraformState(ctx, workspaceID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		ctx.Error(err)
 		return
 	}
 
-	if currentState == nil {
-		currentState = &app.TerraformWorkspaceState{}
-	}
-	currentState.Data = &data
-
-	_, err = s.helpers.InsertTerraformState(ctx, workspaceID, &data)
+	_, err = s.helpers.InsertTerraformState(ctx, workspaceID, contents, &data)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update terraform state: %w", err))
 		return

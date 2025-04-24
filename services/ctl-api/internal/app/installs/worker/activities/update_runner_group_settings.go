@@ -10,12 +10,13 @@ import (
 )
 
 type UpdateRunnerGroupSettings struct {
-	RunnerID                   string `json:"runner_id"`
+	RunnerID           string `json:"runner_id"`
 	LocalAWSIAMRoleARN string `json:"runner_iam_role_arn"`
 }
 
 // @temporal-gen activity
 func (a *Activities) UpdateRunnerGroupSettings(ctx context.Context, req *UpdateRunnerGroupSettings) error {
+	return nil
 	runner, err := a.getRunner(ctx, req.RunnerID)
 	if err != nil {
 		return err

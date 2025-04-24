@@ -14,3 +14,11 @@ func WorkflowIDCallback(req *CreateActionRunPlanRequest) string {
 func SandboxRunWorkflowIDCallback(req *CreateSandboxRunPlanRequest) string {
 	return req.WorkflowID
 }
+
+func CreateSyncWorkflowIDCallback(req *CreateSyncPlanRequest) string {
+	return req.WorkflowID
+}
+
+func CreateDeployPlanIDCallback(req *CreateDeployPlanRequest) string {
+	return req.WorkflowID
+}

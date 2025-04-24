@@ -37,18 +37,14 @@ func (w *Workflows) isTeardownable(install *app.Install) bool {
 // @execution-timeout 60m
 // @task-timeout 30m
 func (w *Workflows) Deploy(ctx workflow.Context, sreq signals.RequestSignal) error {
-	w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusStarted)
-
 	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
 	if err != nil {
 		w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "unable to get install from database")
-		w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 	defer func() {
 		if pan := recover(); pan != nil {
 			w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "internal error")
-			w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusFailed)
 			panic(pan)
 		}
 	}()
@@ -72,7 +68,6 @@ func (w *Workflows) Deploy(ctx workflow.Context, sreq signals.RequestSignal) err
 	l.Info("performing deploy")
 	err = w.doDeploy(ctx, sreq, install)
 	if err != nil {
-		w.writeDeployEvent(ctx, sreq.DeployID, signals.OperationDeploy, app.OperationStatusFailed)
 		w.sendNotification(ctx, notifications.NotificationsTypeDeployFailed, install.AppID, map[string]string{
 			"install_name": install.Name,
 			"app_name":     install.App.Name,
@@ -95,14 +90,12 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 	installDeploy, err := activities.AwaitGetDeployByDeployID(ctx, deployID)
 	if err != nil {
 		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to get install deploy from database")
-		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install deploy: %w", err)
 	}
 
 	err = w.pollForDeployableBuild(ctx, deployID, installDeploy.ComponentBuild)
 	if err != nil {
 		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusNoop, "build is not deployable")
-		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusNoop)
 		return nil
 	}
 
@@ -110,7 +103,6 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 		if !w.isTeardownable(install) {
 			l.Error("component is not in a status to be torn down")
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "install is not in a delete_queued, deprovisioning or active state to tear down components")
-			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusNoop)
 			return nil
 		}
 
@@ -121,7 +113,6 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 		})
 		if err != nil {
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
-			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 			return fmt.Errorf("unable to fetch active inverted dependencies: %w", err)
 		}
 
@@ -136,7 +127,6 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 		if !w.isDeployable(install) {
 			l.Error("install is not currently deployable, due to its status")
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "install is not active and can not be deployed too")
-			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusNoop)
 			return nil
 		}
 
@@ -146,7 +136,6 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 		})
 		if err != nil {
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
-			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 			return fmt.Errorf("unable to check dependencies: %w", err)
 		}
 
@@ -154,7 +143,6 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 			// TODO(jm): ask robisso why we aren't using the stuff in `deploy_dependencies.go`
 			l.Error("dependent component was not active: " + inactiveDepIDs[0])
 			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("dependent component: [%s]  not active", strings.Join(inactiveDepIDs, ", ")))
-			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 			return fmt.Errorf("dependent component: [%s]  not active", strings.Join(inactiveDepIDs, ", "))
 		}
 	}
@@ -185,8 +173,6 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 	if err := w.execDeploy(ctx, install, installDeploy, sandboxMode); err != nil {
 		return w.errorResponse(ctx, sreq, deployID, installDeploy.InstallComponentID, "error deploying", err)
 	}
-
-	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFinished)
 
 	// skip lifecycle hooks if the deploy is a teardown
 	if installDeploy.Type != app.InstallDeployTypeTeardown {

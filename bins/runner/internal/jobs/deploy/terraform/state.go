@@ -3,26 +3,24 @@ package terraform
 import (
 	"time"
 
+	"github.com/nuonco/nuon-runner-go/models"
+
 	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 	terraformworkspace "github.com/powertoolsdev/mono/pkg/terraform/workspace"
-	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
 
 const (
 	defaultFileType string = "file/terraform"
 )
 
-type (
-	Build          configs.NoRegistryBuild[configs.DockerRefBuild]
-	Deploy         configs.Deploy[configs.TerraformDeploy]
-	WaypointConfig configs.Apps[Build, Deploy]
-)
-
 type handlerState struct {
 	// set during the fetch/validate phase
-	plan    *planv1.Plan
-	cfg     *configs.TerraformDeploy
+	plan         *plantypes.DeployPlan
+	appCfg       *models.AppAppConfig
+	terraformCfg *models.AppTerraformModuleComponentConfig
+
 	srcCfg  *configs.OCIRegistryRepository
 	srcTag  string
 	timeout time.Duration
