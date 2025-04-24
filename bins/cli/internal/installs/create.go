@@ -18,7 +18,7 @@ const (
 	statusAccessError = "access_error"
 )
 
-func (s *Service) Create(ctx context.Context, appID, name, region, arn string, inputs []string, asJSON, noSelect bool) error {
+func (s *Service) Create(ctx context.Context, appID, name, region string, inputs []string, asJSON, noSelect bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -31,11 +31,12 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, i
 	}
 
 	if asJSON {
+		empty := ""
 		install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
 			Name: &name,
 			AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
 				Region:     region,
-				IamRoleArn: &arn,
+				IamRoleArn: &empty,
 			},
 			Inputs: inputsMap,
 		})
@@ -49,8 +50,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, i
 	install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
 		Name: &name,
 		AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
-			Region:     region,
-			IamRoleArn: &arn,
+			Region: region,
 		},
 		Inputs: inputsMap,
 	})
