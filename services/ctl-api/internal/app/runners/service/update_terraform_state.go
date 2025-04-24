@@ -26,7 +26,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{object}	app.TerraformState
+// @Success				200	{object}	app.TerraformWorkspaceState
 // @Router					/v1/terraform-backend [post]
 func (s *service) UpdateTerraformState(ctx *gin.Context) {
 	workspaceID := ctx.Query("workspace_id")
@@ -67,7 +67,7 @@ func (s *service) UpdateTerraformState(ctx *gin.Context) {
 	}
 
 	if currentState == nil {
-		currentState = &app.TerraformState{}
+		currentState = &app.TerraformWorkspaceState{}
 	}
 	currentState.Data = &data
 
