@@ -5,7 +5,7 @@
   "scripts": {
     "predev": "npm run generate-api-types",
     "dev": "next dev -p 4000 --turbo",
-    "build": "next build",
+    "build": "cross-env NODE_ENV=production next build",
     "prebuild": "npm run generate-api-types",
     "generate-api-types": "openapi-typescript ${NUON_API_URL:=https://api.nuon.co}/oapi/v3 -o ./src/types/nuon-oapi-v3.d.ts",
     "generate-api-mocks": "msw-auto-mock ${NUON_API_URL:=https://api.nuon.co}/oapi/v3 -o ./test/mock-api-handlers.js -m 5 --node --base-url $NUON_API_URL",
@@ -57,6 +57,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.0.1",
     "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
     "eslint": "^8",
     "eslint-config-next": "14.1.3",
     "eslint-plugin-import": "^2.31.0",
