@@ -2,6 +2,7 @@ import React, { type FC } from 'react'
 import { Empty } from '@/components/Empty'
 import { Expand } from '@/components/Expand'
 import { Link } from '@/components/Link'
+import { Notice } from '@/components/Notice'
 import { Duration } from '@/components/Time'
 import { Text, Code } from '@/components/Typography'
 import type { TInstallWorkflow, TInstallWorkflowStep } from '@/types'
@@ -64,6 +65,16 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
               parentClass="border rounded-md overflow-hidden"
               expandContent={
                 <div className="p-3 border-t">
+                  {step?.status?.metadata?.reason ? (
+                    <Notice variant="warn">
+                      {sentanceCase(step?.status?.metadata?.reason as string)}
+                    </Notice>
+                  ) : null}
+                  {step?.status?.metadata?.err_message ? (
+                    <Notice variant="error" className="!items-start">
+                      {step?.status?.metadata?.err_message as string}
+                    </Notice>
+                  ) : null}
                   {href ? (
                     <Link className="text-sm" href={href}>
                       View details
