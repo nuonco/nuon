@@ -20,6 +20,7 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 		PublicGitVcsConfig:       nil,
 		Values:                   map[string]string{},
 		ValuesFiles:              make([]string, 0),
+		Namespace:                obj.Namespace,
 	}
 	if obj.PublicRepo != nil {
 		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{

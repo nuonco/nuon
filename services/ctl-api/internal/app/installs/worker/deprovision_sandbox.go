@@ -94,7 +94,6 @@ func (w *Workflows) DeprovisionSandbox(ctx workflow.Context, sreq signals.Reques
 	defer func() {
 		if pan := recover(); pan != nil {
 			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
-			w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
 			panic(pan)
 		}
 	}()
@@ -122,20 +121,17 @@ func (w *Workflows) DeprovisionSandbox(ctx workflow.Context, sreq signals.Reques
 			l.Error("unable to determine if install is deprovisionable", attributes...)
 
 			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to determine if install is deprovisionable")
-			w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
 			return fmt.Errorf("unable to determine if install is deprovisionable: %w", err)
 		}
 
 		if !isDeprovisionable {
 			l.Error("install is not deprovisionable, this will be a NOOP", attributes...)
 			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "install is not deprovisionable")
-			w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusNoop)
 			return nil
 		}
 	}
 
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioning, "deprovisioning")
-	w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusStarted)
 
 	// deprovision the runner
 	if !enabled {
@@ -154,12 +150,10 @@ func (w *Workflows) DeprovisionSandbox(ctx workflow.Context, sreq signals.Reques
 	l.Info("executing deprovision")
 	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeDestroy, sandboxMode)
 	if err != nil {
-		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
 		return err
 	}
 
 	l.Info("deprovision was successful")
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioned, "successfully deprovisioned")
-	w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFinished)
 	return nil
 }

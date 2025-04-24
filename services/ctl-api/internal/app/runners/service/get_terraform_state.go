@@ -37,5 +37,5 @@ func (s *service) GetTerraformCurrentStateData(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, state.Data)
+	ctx.String(http.StatusOK, string(state.Contents))
 }

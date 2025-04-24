@@ -3,26 +3,24 @@ package helm
 import (
 	"time"
 
+	"github.com/nuonco/nuon-runner-go/models"
+
 	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
 	"github.com/powertoolsdev/mono/pkg/kube"
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
-	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
 
 const (
 	defaultFileType string = "file/helm"
 )
 
-type (
-	Build          configs.Build[configs.NoopBuild, configs.Registry[configs.NoopRegistry]]
-	Deploy         configs.Deploy[configs.HelmRepoDeploy]
-	WaypointConfig configs.Apps[Build, Deploy]
-)
-
 type handlerState struct {
 	// set during the fetch/validate phase
-	plan    *planv1.Plan
-	cfg     *configs.HelmRepoDeploy
+	plan    *plantypes.DeployPlan
+	appCfg  *models.AppAppConfig
+	helmCfg *models.AppHelmComponentConfig
+
 	srcCfg  *configs.OCIRegistryRepository
 	srcTag  string
 	timeout time.Duration
@@ -32,6 +30,6 @@ type handlerState struct {
 	chartPath      string
 	jobExecutionID string
 	jobID          string
-	clusterInfo *kube.ClusterInfo
+	clusterInfo    *kube.ClusterInfo
 	outputs        map[string]interface{}
 }

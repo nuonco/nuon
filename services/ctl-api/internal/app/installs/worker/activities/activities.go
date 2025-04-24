@@ -16,6 +16,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 )
 
 type Params struct {
@@ -34,38 +35,43 @@ type Params struct {
 	AuthzClient       *authz.Client
 	Cfg               *internal.Config
 	Features          *features.Features
+
+	// NOTE(jm): this is only used as a stop gap until we improve how our repositorys are managed
+	LegacyTFCloudOutputs *terraformcloud.OrgsOutputs
 }
 
 type Activities struct {
-	v                 *validator.Validate
-	db                *gorm.DB
-	cfg               *internal.Config
-	components        *protos.Adapter
-	appsHelpers       *appshelpers.Helpers
-	componentsHelpers *componentshelpers.Helpers
-	runnersHelpers    *runnershelpers.Helpers
-	helpers           *helpers.Helpers
-	evClient          eventloop.Client
-	acctClient        *account.Client
-	authzClient       *authz.Client
-	vcsHelpers        *vcshelpers.Helpers
-	features          *features.Features
+	v                    *validator.Validate
+	db                   *gorm.DB
+	cfg                  *internal.Config
+	components           *protos.Adapter
+	appsHelpers          *appshelpers.Helpers
+	componentsHelpers    *componentshelpers.Helpers
+	runnersHelpers       *runnershelpers.Helpers
+	helpers              *helpers.Helpers
+	evClient             eventloop.Client
+	acctClient           *account.Client
+	authzClient          *authz.Client
+	vcsHelpers           *vcshelpers.Helpers
+	features             *features.Features
+	legacyTFCloudOutputs *terraformcloud.OrgsOutputs
 }
 
 func New(params Params) *Activities {
 	return &Activities{
-		db:                params.DB,
-		v:                 params.V,
-		cfg:               params.Cfg,
-		components:        params.Components,
-		appsHelpers:       params.AppsHelpers,
-		runnersHelpers:    params.RunnersHelpers,
-		helpers:           params.Helpers,
-		evClient:          params.EvClient,
-		acctClient:        params.AcctClient,
-		authzClient:       params.AuthzClient,
-		vcsHelpers:        params.VCSHelpers,
-		componentsHelpers: params.ComponentsHelpers,
-		features:          params.Features,
+		db:                   params.DB,
+		v:                    params.V,
+		cfg:                  params.Cfg,
+		components:           params.Components,
+		appsHelpers:          params.AppsHelpers,
+		runnersHelpers:       params.RunnersHelpers,
+		helpers:              params.Helpers,
+		evClient:             params.EvClient,
+		acctClient:           params.AcctClient,
+		authzClient:          params.AuthzClient,
+		vcsHelpers:           params.VCSHelpers,
+		componentsHelpers:    params.ComponentsHelpers,
+		features:             params.Features,
+		legacyTFCloudOutputs: params.LegacyTFCloudOutputs,
 	}
 }

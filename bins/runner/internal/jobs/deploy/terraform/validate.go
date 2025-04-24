@@ -9,7 +9,6 @@ import (
 
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/plan"
 )
 
 func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
@@ -19,16 +18,10 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 	}
 
 	l.Info("parsing job plan to ensure correct")
-	cfg, err := plan.ParseConfig[WaypointConfig](h.state.plan)
-	if err != nil {
-		return fmt.Errorf("unable to parse plan: %w", err)
-	}
+	h.state.srcCfg = h.state.plan.Src
+	h.state.srcTag = h.state.plan.SrcTag
 
-	h.state.cfg = &cfg.App.Deploy.Use
-	h.state.srcCfg = cfg.App.Deploy.Use.ArtifactRepo
-	h.state.srcTag = cfg.App.Deploy.Use.ArtifactTag
-
-	l.Info("artifact repo", zap.Any("repo", cfg.App.Deploy.Use.ArtifactRepo))
+	l.Info("artifact repo", zap.Any("repo", h.state.srcCfg.Repository))
 	arch := ociarchive.New()
 	if err := arch.Initialize(ctx); err != nil {
 		return fmt.Errorf("unable to initialize archive: %w", err)
