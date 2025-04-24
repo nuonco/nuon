@@ -10,7 +10,6 @@ func (c *cli) installsCmd() *cobra.Command {
 	var (
 		id            string
 		name          string
-		arn           string
 		region        string
 		appID         string
 		deployID      string
@@ -62,15 +61,13 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "Create a new install of your app",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Create(cmd.Context(), appID, name, region, arn, inputs, PrintJSON, noSelect)
+			return svc.Create(cmd.Context(), appID, name, region, inputs, PrintJSON, noSelect)
 		}),
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
 	createCmd.MarkFlagRequired("app-id")
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "The name you want to give this install")
 	createCmd.MarkFlagRequired("name")
-	createCmd.Flags().StringVarP(&arn, "role", "o", "", "The ARN of the IAM role to use to provision this install")
-	createCmd.MarkFlagRequired("role")
 	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in")
 	createCmd.MarkFlagRequired("region")
 	createCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
