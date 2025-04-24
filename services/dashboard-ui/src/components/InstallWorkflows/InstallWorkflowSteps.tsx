@@ -64,7 +64,7 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
               id={step?.id}
               parentClass="border rounded-md overflow-hidden"
               expandContent={
-                <div className="p-3 border-t">
+                <div className="p-3 border-t flex flex-col gap-4">
                   {step?.status?.metadata?.reason ? (
                     <Notice variant="warn">
                       {sentanceCase(step?.status?.metadata?.reason as string)}
@@ -80,6 +80,14 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
                       View details
                     </Link>
                   ) : null}
+                  <div>
+                    <Text variant="med-12" className="mb-2">
+                      Step JSON
+                    </Text>
+                    <Code variant="preformated">
+                      {JSON.stringify(step, null, 2)}
+                    </Code>
+                  </div>
                 </div>
               }
             />
