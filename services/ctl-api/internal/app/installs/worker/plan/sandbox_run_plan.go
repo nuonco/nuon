@@ -19,6 +19,6 @@ type CreateSandboxRunPlanRequest struct {
 // @task-queue "api"
 // @id-callback SandboxRunWorkflowIDCallback
 func CreateSandboxRunPlan(ctx workflow.Context, req *CreateSandboxRunPlanRequest) (*plantypes.SandboxRunPlan, error) {
-	p := planner{}
+	p := Planner{}
 	return p.createSandboxRunPlan(ctx, req)
 }

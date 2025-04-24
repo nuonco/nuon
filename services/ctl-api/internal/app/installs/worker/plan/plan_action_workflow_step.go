@@ -15,7 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
-func (p *planner) createStepPlan(ctx workflow.Context, step app.InstallActionWorkflowRunStep, installID string) (*plantypes.ActionWorkflowRunStepPlan, error) {
+func (p *Planner) createStepPlan(ctx workflow.Context, step app.InstallActionWorkflowRunStep, installID string) (*plantypes.ActionWorkflowRunStepPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err

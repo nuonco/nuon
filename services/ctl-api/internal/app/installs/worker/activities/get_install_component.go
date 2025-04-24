@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type GetInstallComponentRequest struct {
@@ -27,6 +28,7 @@ func (a *Activities) getInstallComponent(ctx context.Context, installID, compone
 	res := a.db.WithContext(ctx).
 		Preload("Component").
 		Preload("Component.Dependencies").
+		Preload("TerraformWorkspace").
 		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_deploys.created_at DESC")
 		}).

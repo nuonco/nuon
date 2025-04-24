@@ -18,6 +18,6 @@ type CreateActionRunPlanRequest struct {
 // @task-queue "api"
 // @id-callback WorkflowIDCallback
 func CreateActionWorkflowRunPlan(ctx workflow.Context, req *CreateActionRunPlanRequest) (*plantypes.ActionWorkflowRunPlan, error) {
-	p := planner{}
+	p := Planner{}
 	return p.createActionWorkflowRunPlan(ctx, req.ActionWorkflowRunID)
 }

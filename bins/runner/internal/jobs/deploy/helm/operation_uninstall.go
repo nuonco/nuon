@@ -12,7 +12,7 @@ import (
 
 func (h *handler) uninstall(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration) error {
 	l.Info("fetching previous release")
-	prevRel, err := helm.GetRelease(actionCfg, h.state.cfg.Name)
+	prevRel, err := helm.GetRelease(actionCfg, h.state.plan.HelmDeployPlan.Name)
 	if err != nil {
 		l.Warn("unable to fetch previous release, so assuming it was not installed properly", zap.Error(err))
 		return nil

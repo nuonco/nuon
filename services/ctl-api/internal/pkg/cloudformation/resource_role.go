@@ -47,20 +47,34 @@ func (a *Templates) getRolesResources(inp *TemplateInput, t tagBuilder) map[stri
 			managedPolicyARNs = append(managedPolicyARNs, fmt.Sprintf("arn:aws:iam::aws:policy/%s", policy.ManagedPolicyName))
 		}
 
+		trustPolicies := make([]map[string]any, 0)
+
+		trustPolicies = append(trustPolicies, map[string]any{
+			"Effect": "Allow",
+			"Principal": map[string]any{
+				"AWS": cloudformation.GetAttPtr("RunnerInstanceRole", "Arn"),
+			},
+			"Action": "sts:AssumeRole",
+		})
+
+		if a.cfg.RunnerEnableSupport {
+			trustPolicies = append(trustPolicies, map[string]any{
+				"Effect": "Allow",
+				"Principal": map[string]any{
+					"AWS": []string{
+						a.cfg.RunnerDefaultSupportIAMRole,
+					},
+				},
+				"Action": "sts:AssumeRole",
+			})
+		}
+
 		rsrcs[role.CloudFormationStackName] = &iam.Role{
 			AWSCloudFormationCondition: a.roleConditionName(role),
 			RoleName:                   generics.ToPtr(role.Name),
 			ManagedPolicyArns:          managedPolicyARNs,
 			AssumeRolePolicyDocument: map[string]any{
-				"Statement": []map[string]any{
-					{
-						"Effect": "Allow",
-						"Principal": map[string]any{
-							"AWS": cloudformation.GetAttPtr("RunnerInstanceRole", "Arn"),
-						},
-						"Action": "sts:AssumeRole",
-					},
-				},
+				"Statement": trustPolicies,
 			},
 			Tags: t.apply(nil, fmt.Sprintf("%s-role", role.Type)),
 		}
