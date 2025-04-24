@@ -5,7 +5,7 @@ import React, { type FC, useEffect } from 'react'
 import { revalidateData } from '@/components/actions'
 import { Text } from '@/components/Typography'
 import type { TInstallWorkflow } from '@/types'
-import { SHORT_POLL_DURATION } from '@/utils'
+import { SHORT_POLL_DURATION, sentanceCase } from '@/utils'
 import { YAStatus } from './InstallWorkflowHistory'
 
 interface IInstallWorkflowActivity {
@@ -28,9 +28,9 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
     if (shouldPoll) {
       const pollBuild = setInterval(refreshData, pollDuration)
 
-      /* if (installWorkflow?.finished) {
-       *   clearInterval(pollBuild)
-       * } */
+      if (installWorkflow?.finished) {
+        clearInterval(pollBuild)
+      }
 
       return () => clearInterval(pollBuild)
     }
@@ -49,7 +49,8 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
             installWorkflow?.steps?.filter(
               (s) =>
                 s?.status?.status === 'success' ||
-                s?.status?.status === 'active'
+                s?.status?.status === 'active' ||
+                s?.status?.status === 'error'
             ).length
           }{' '}
           of {installWorkflow?.steps?.length} steps completed
@@ -61,10 +62,18 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
           <span className="flex gap-2">
             <YAStatus status={installWorkflow?.status?.status} />
             <Text variant="reg-12">
-              {installWorkflow?.status?.status_human_description ||
-                'Waiting on workflow to run.'}
+              {sentanceCase(
+                installWorkflow?.status?.status_human_description
+              ) || 'Waiting on workflow to run.'}
             </Text>
           </span>
+        ) : null}
+        {installWorkflow?.status?.status === 'error' ? (
+          <Text className="ml-9 text-red-800 dark:text-red-500 text-[12px]">
+            {sentanceCase(
+              installWorkflow?.status?.history?.at(-1)?.status_human_description
+            )}
+          </Text>
         ) : null}
       </div>
     </div>
