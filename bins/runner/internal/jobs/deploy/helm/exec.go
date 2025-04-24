@@ -48,7 +48,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	l.Info("Checking for previous Helm release...", zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()})
-	prevRel, err := helm.GetRelease(actionCfg, h.state.cfg.Name)
+	prevRel, err := helm.GetRelease(actionCfg, h.state.plan.HelmDeployPlan.Name)
 	if err != nil {
 		return fmt.Errorf("unable to get previous helm release: %w", err)
 	}

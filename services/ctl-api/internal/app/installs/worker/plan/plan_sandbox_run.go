@@ -16,7 +16,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
-func (p *planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxRunPlanRequest) (*plantypes.SandboxRunPlan, error) {
+func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxRunPlanRequest) (*plantypes.SandboxRunPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
@@ -29,12 +29,12 @@ func (p *planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
+		return nil, errors.Wrap(err, "unable to get install stack")
 	}
 
 	run, err := activities.AwaitGetSandboxRunByRunID(ctx, req.RunID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
+		return nil, errors.Wrap(err, "unable to get install run")
 	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
@@ -139,7 +139,7 @@ func (p *planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	}, nil
 }
 
-func (p *planner) getPolicies(cfg *app.AppPoliciesConfig) (map[string]string, error) {
+func (p *Planner) getPolicies(cfg *app.AppPoliciesConfig) (map[string]string, error) {
 	obj := make(map[string]string, 0)
 
 	for idx, policy := range cfg.Policies {
@@ -158,7 +158,7 @@ func (p *planner) getPolicies(cfg *app.AppPoliciesConfig) (map[string]string, er
 	return obj, nil
 }
 
-func (p *planner) getSandboxRunEnvVars(appCfg *app.AppConfig) map[string]string {
+func (p *Planner) getSandboxRunEnvVars(appCfg *app.AppConfig) map[string]string {
 	if appCfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
 		return map[string]string{}
 	}
@@ -168,7 +168,7 @@ func (p *planner) getSandboxRunEnvVars(appCfg *app.AppConfig) map[string]string 
 	}
 }
 
-func (p *planner) getSandboxRunTerraformVars(appCfg *app.AppConfig) (map[string]any, error) {
+func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig) (map[string]any, error) {
 	if appCfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
 		return map[string]any{}, nil
 	}

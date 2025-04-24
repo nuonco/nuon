@@ -54,12 +54,10 @@ func (w *Workflows) ProvisionSandbox(ctx workflow.Context, sreq signals.RequestS
 	defer func() {
 		if pan := recover(); pan != nil {
 			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
-			w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusFailed)
 			panic(pan)
 		}
 	}()
 
-	w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusStarted)
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
 
 	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
@@ -80,7 +78,6 @@ func (w *Workflows) ProvisionSandbox(ctx workflow.Context, sreq signals.RequestS
 	l.Info("executing provision run")
 	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode)
 	if err != nil {
-		w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusFailed)
 		return err
 	}
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "install resources provisioned")
@@ -92,13 +89,11 @@ func (w *Workflows) ProvisionSandbox(ctx workflow.Context, sreq signals.RequestS
 			Type: runnersignals.OperationProvision,
 		})
 		if err := w.pollRunner(ctx, install.RunnerGroup.Runners[0].ID); err != nil {
-			w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusFailed)
 			return err
 		}
 
 	}
 
-	w.writeRunEvent(ctx, installRun.ID, signals.OperationProvision, app.OperationStatusFinished)
 	l.Info("provision was successful")
 	return nil
 }

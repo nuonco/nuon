@@ -9,6 +9,7 @@ import (
 	"helm.sh/helm/v3/pkg/release"
 
 	"github.com/powertoolsdev/mono/pkg/helm"
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 )
 
 func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration) (*release.Release, error) {
@@ -27,11 +28,14 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	l.Info("found default chart values", zap.Any("values", c.Values))
 
 	l.Info("loading provided values")
-	values, err := helm.ChartValues(h.state.cfg.Values, h.state.cfg.HelmSet)
-	if err != nil {
-		return nil, fmt.Errorf("unable to load helm values: %w", err)
+	vals := make([]plantypes.HelmValue, 0)
+	for _, val := range h.state.cfg.HelmSet {
+		vals = append(vals, plantypes.HelmValue{
+			Name:  val.Name,
+			Value: val.Value,
+		})
 	}
-	l.Info("rendered values", zap.Any("values", values))
+	values, err := helm.ChartValues(h.state.cfg.Values, vals)
 
 	// We have a previous release, upgrade.
 	client := action.NewUpgrade(actionCfg)
