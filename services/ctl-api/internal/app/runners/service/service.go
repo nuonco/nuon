@@ -54,6 +54,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	api.GET("/v1/runners/terraform-workspace/:workspace_id/states", s.GetTerraformWorkspaceStates)
 	api.GET("/v1/runners/terraform-workspace/:workspace_id/states/:state_id", s.GetTerraformWorkspaceStateByID)
+	api.GET("/v1/runners/terraform-workspace/:workspace_id/states/:state_id/resources", s.GetTerraformWorkspaceStateResources)
 
 	api.GET("/v1/log-streams/:log_stream_id/logs", s.LogStreamReadLogs)
 	api.GET("/v1/log-streams/:log_stream_id", s.GetLogStream)
