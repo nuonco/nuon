@@ -3,11 +3,16 @@ import React, { type FC } from 'react'
 import { Warning, WarningOctagon } from '@phosphor-icons/react/dist/ssr'
 
 interface INotice {
+  className?: string
   children: React.ReactNode
   variant?: 'error' | 'warn' | 'info' | 'success'
 }
 
-export const Notice: FC<INotice> = ({ children, variant = 'error' }) => {
+export const Notice: FC<INotice> = ({
+  className,
+  children,
+  variant = 'error',
+}) => {
   const Icon =
     variant === 'warn' ? <Warning size="20" /> : <WarningOctagon size="18" />
 
@@ -20,6 +25,7 @@ export const Notice: FC<INotice> = ({ children, variant = 'error' }) => {
             variant === 'error',
           'border-orange-400 bg-orange-300/20 text-orange-800 dark:border-orange-600 dark:bg-orange-600/5 dark:text-orange-600':
             variant === 'warn',
+          [`${className}`]: Boolean(className),
         }
       )}
     >
