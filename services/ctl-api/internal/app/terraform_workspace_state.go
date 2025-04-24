@@ -16,7 +16,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 )
 
-type TerraformState struct {
+type TerraformWorkspaceState struct {
 	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedBy   Account `json:"-"`
@@ -36,7 +36,7 @@ type TerraformState struct {
 	Revision int `json:"revision" gorm:"->;-:migration"`
 }
 
-func (t *TerraformState) BeforeCreate(tx *gorm.DB) (err error) {
+func (t *TerraformWorkspaceState) BeforeCreate(tx *gorm.DB) (err error) {
 	if t.ID == "" {
 		t.ID = domains.NewTerraformWorkspaceStateID()
 	}
@@ -51,19 +51,19 @@ func (t *TerraformState) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-func (i *TerraformState) UseView() bool {
+func (i *TerraformWorkspaceState) UseView() bool {
 	return true
 }
 
-func (i *TerraformState) ViewVersion() string {
+func (i *TerraformWorkspaceState) ViewVersion() string {
 	return "v1"
 }
 
-func (i *TerraformState) Views(db *gorm.DB) []migrations.View {
+func (i *TerraformWorkspaceState) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name:          views.DefaultViewName(db, &TerraformState{}, 1),
-			SQL:           viewsql.TerraformStatesViewV1,
+			Name:          views.DefaultViewName(db, &TerraformWorkspaceState{}, 1),
+			SQL:           viewsql.TerraformWorkspaceStatesViewV1,
 			AlwaysReapply: true,
 		},
 	}
