@@ -44,7 +44,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
           Settings
         </Text>
 
-        {Object.keys(install?.install_inputs?.at(0)?.values || {})?.length ? (
+        {install?.install_inputs?.length ? (
           <EditModal install={install} orgId={orgId} />
         ) : null}
         <BreakGlassLink installId={install.id} />
