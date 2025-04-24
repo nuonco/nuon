@@ -139,8 +139,8 @@ export const AdminModal: FC<{ isSidebarOpen: boolean, isModalOpen?: string }> = 
     },
     {
       action: () => gracefulInstallRunnerShutdown(params?.['install-id'] as string),
-      description: 'Graceful shutdown of current instal runner',
-      text: 'Graceful install runner shitdown',
+      description: 'Graceful shutdown of current install runner',
+      text: 'Graceful install runner shutdown',
     },
     {
       action: () => forceInstallRunnerShutdown(params?.['install-id'] as string),
