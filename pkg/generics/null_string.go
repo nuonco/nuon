@@ -18,6 +18,14 @@ func (s NullString) ValueString() string {
 	return s.String
 }
 
+func (s NullString) ValueOrDefault(def string) string {
+	if s.Empty() {
+		return def
+	}
+
+	return s.ValueString()
+}
+
 func (s NullString) UnmarshalJSON(data []byte) error {
 	s.String = strings.Trim(string(data), `"`)
 	s.Valid = true

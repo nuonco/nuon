@@ -4,12 +4,13 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/strvals"
+
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 )
 
-func ChartValues(values []string, helmSet []configs.HelmSet) (map[string]interface{}, error) {
+func ChartValues(values []string, helmSet []plantypes.HelmValue) (map[string]interface{}, error) {
 	// Next get all our set configs
 	base := map[string]interface{}{}
 
