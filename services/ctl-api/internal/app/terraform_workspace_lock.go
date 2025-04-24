@@ -8,7 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
-type TerraformWorkspaceLockState struct {
+type TerraformWorkspaceLock struct {
 	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedBy   Account `json:"-"`
@@ -23,7 +23,7 @@ type TerraformWorkspaceLockState struct {
 	Lock *TerraformLock `json:"lock"`
 }
 
-func (r *TerraformWorkspaceLockState) BeforeCreate(tx *gorm.DB) (err error) {
+func (r *TerraformWorkspaceLock) BeforeCreate(tx *gorm.DB) (err error) {
 	if r.ID == "" {
 		r.ID = domains.NewTerraformWorkspaceLockID()
 	}

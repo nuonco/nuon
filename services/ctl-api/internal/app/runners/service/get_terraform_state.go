@@ -21,7 +21,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{object}	app.TerraformState
+// @Success				200	{object}	app.TerraformWorkspaceState
 // @Router					/v1/terraform-backend [get]
 func (s *service) GetTerraformCurrentStateData(ctx *gin.Context) {
 	workspaceID := ctx.Query("workspace_id")
