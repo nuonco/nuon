@@ -84,16 +84,16 @@ describe('getInstallComponent should handle response status codes from GET insta
   const orgId = 'test-id'
   const installId = 'test-id'
   const componentId = 'test-id'
- 
+
   test('200 status', async () => {
     const spec = await getInstallComponent({
       componentId,
       installId,
       orgId,
     })
-   
-   expect(spec).toHaveProperty('id')
-   expect(spec).toHaveProperty('status')
+
+    expect(spec).toHaveProperty('id')
+    expect(spec).toHaveProperty('status')
   })
 
   test.each(badResponseCodes)('%s status', async () => {
