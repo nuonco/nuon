@@ -574,3 +574,7 @@ Promoting big fix for runner restart on promotion successh
 ## v0.4.7
 
 Promoting delete install component changes, and other infra changes.
+
+## v0.4.8
+
+Promoting retool v2 db noop.
