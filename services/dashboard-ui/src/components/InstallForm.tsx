@@ -162,7 +162,7 @@ export const InstallForm: FC<IInstallForm> = ({
               />
             </Field>
           )}
-          {false ? (
+          {platform ? (
             platform === 'aws' ? (
               <AWSFields cfLink={cfLink} />
             ) : (
@@ -219,44 +219,44 @@ const AWSFields: FC<{ cfLink: string }> = ({ cfLink }) => {
         Set AWS settings
       </legend>
 
-      <div className="max-w-lg mb-6">
-        <Text variant="med-14">Create IAM policies with CloudFormation</Text>
-        <Text className="!leading-relaxed !inline-block my-3">
+      {/* <div className="max-w-lg mb-6">
+          <Text variant="med-14">Create IAM policies with CloudFormation</Text>
+          <Text className="!leading-relaxed !inline-block my-3">
           You can create a 1-click IAM role with the correct policies attached
           to provision + deprovision your application using the following link.
           This will create an IAM role granting access to install . Please use
           the stack output called{' '}
           <Code
-            className="!py-1 !px-1.5 !bg-black/10 dark:!bg-white/10 leading-none !text-[10px] !inline-block align-middle"
-            variant="inline"
+          className="!py-1 !px-1.5 !bg-black/10 dark:!bg-white/10 leading-none !text-[10px] !inline-block align-middle"
+          variant="inline"
           >
-            RoleARN
+          RoleARN
           </Code>{' '}
           in the AWS IAM role input below.
-        </Text>
-        <Link
+          </Text>
+          <Link
           className="text-sm"
           href={cfLink}
           target="_blank"
           onClick={() => {
-            trackEvent({
-              event: 'iam_role_create',
-              user,
-              status: 'ok',
-              props: {
-                orgId: org?.id,
-                cfLink,
-              },
-            })
+          trackEvent({
+          event: 'iam_role_create',
+          user,
+          status: 'ok',
+          props: {
+          orgId: org?.id,
+          cfLink,
+          },
+          })
           }}
-        >
+          >
           Create IAM Role
-        </Link>
-      </div>
+          </Link>
+          </div>
 
-      <Field labelText="Provide a resouce name for AWS IAM role *">
-        <Input type="text" name="iam_role_arn" required />
-      </Field>
+          <Field labelText="Provide a resouce name for AWS IAM role *">
+          <Input type="text" name="iam_role_arn" required />
+          </Field> */}
 
       <Field labelText="Select AWS region *">
         <Select name="region" options={options} required />
