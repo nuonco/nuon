@@ -1,11 +1,16 @@
-resource "pagerduty_user" "casey"{
-  name = "Casey" 
-  email = "casey+nuon@nuon.co"
+import {
+  to = pagerduty_user.casey
+  id = "PYBJK0N"
 }
 
-resource "pagerduty_user" "fred"{
-  name = "Fred" 
-  email = "fred+nuon@nuon.co" 
+resource "pagerduty_user" "casey" {
+  name  = "Casey"
+  email = "casey@nuon.co"
+}
+
+resource "pagerduty_user" "fred" {
+  name  = "Fred"
+  email = "fred+nuon@nuon.co"
 }
 
 
@@ -48,3 +53,4 @@ resource "pagerduty_user" "tim" {
   name  = "tim"
   email = "tim+nuon@nuon.co"
 }
+
