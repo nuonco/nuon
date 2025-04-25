@@ -1,53 +1,94 @@
-import {
-  to = pagerduty_user.casey
-  id = "PYBJK0N"
-}
-
 resource "pagerduty_user" "casey" {
   name  = "Casey"
   email = "casey@nuon.co"
   role  = "admin"
 }
 
-data "pagerduty_user" "casey" {
-  email = "casey@nuon.co"
+import {
+  to = pagerduty_user.fred
+  id = "PCMD3EC"
 }
 
-data "pagerduty_user" "fred" {
+resource "pagerduty_user" "fred" {
+  name  = "Fred"
   email = "fred@nuon.co"
+  role  = "admin"
 }
 
+import {
+  to = pagerduty_user.harsh
+  id = "PDYFXKD"
+}
 
-data "pagerduty_user" "harsh" {
+resource "pagerduty_user" "harsh" {
+  name  = "Harsh"
   email = "harsh@nuon.co"
+  role  = "admin"
 }
 
+import {
+  to = pagerduty_user.jon
+  id = "PZI8VCV"
+}
 
-data "pagerduty_user" "jon" {
+resource "pagerduty_user" "jon" {
+  name  = "Jon"
   email = "jon@nuon.co"
+  role  = "admin"
 }
 
+import {
+  to = pagerduty_user.jordan
+  id = "PB88HGZ"
+}
 
-data "pagerduty_user" "jordan" {
+resource "pagerduty_user" "jordan" {
+  name  = "Jordan Acosta"
   email = "jordan@nuon.co"
+  role  = "owner"
 }
 
-data "pagerduty_user" "nat" {
+import {
+  to = pagerduty_user.nat
+  id = "PZQS32P"
+}
+
+resource "pagerduty_user" "nat" {
+  name  = "Nat"
   email = "nat@nuon.co"
+  role  = "admin"
 }
 
+import {
+  to = pagerduty_user.rob
+  id = "P4LR5YY"
+}
 
-data "pagerduty_user" "rob" {
+resource "pagerduty_user" "rob" {
+  name  = "Rob"
   email = "rob@nuon.co"
+  role  = "admin"
 }
 
+import {
+  to = pagerduty_user.sam
+  id = "P49IMWW"
+}
 
-data "pagerduty_user" "sam" {
+resource "pagerduty_user" "sam" {
+  name  = "Sam"
   email = "sam@nuon.co"
+  role  = "admin"
+}
+
+import {
+  to = pagerduty_user.tim
+  id = "P1L5Z29"
 }
 
 
-data "pagerduty_user" "tim" {
+resource "pagerduty_user" "tim" {
+  name  = "Tim"
   email = "tim@nuon.co"
+  role  = "admin"
 }
-

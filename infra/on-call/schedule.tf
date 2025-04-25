@@ -11,11 +11,11 @@ resource "pagerduty_schedule" "schedule" {
     rotation_virtual_start       = "2025-03-11T12:30:00-07:00"
     start                        = "2025-03-11T12:57:03-07:00"
     users = [
-      data.pagerduty_user.fred.id,
-      data.pagerduty_user.harsh.id,
-      data.pagerduty_user.nat.id,
-      data.pagerduty_user.rob.id,
-      data.pagerduty_user.sam.id,
+      pagerduty_user.fred.id,
+      pagerduty_user.harsh.id,
+      pagerduty_user.nat.id,
+      pagerduty_user.rob.id,
+      pagerduty_user.sam.id,
     ]
   }
 }
