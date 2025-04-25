@@ -13,7 +13,6 @@ resource "pagerduty_schedule" "schedule" {
     users = [
       data.pagerduty_user.fred.id,
       data.pagerduty_user.harsh.id,
-      data.pagerduty_user.jon.id,
       data.pagerduty_user.nat.id,
       data.pagerduty_user.rob.id,
       data.pagerduty_user.sam.id,

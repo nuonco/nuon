@@ -2,11 +2,11 @@ resource "pagerduty_service_dependency" "controlplane-deps" {
   dependency {
     dependent_service {
       id   = pagerduty_business_service.controlplane.id
-      type = pagerduty_business_service.controlplane.type
+      type = "business_service"
     }
     supporting_service {
       id   = pagerduty_service.ctl-api.id
-      type = pagerduty_service.ctl-api.type
+      type = "service"
     }
   }
 }
@@ -15,11 +15,11 @@ resource "pagerduty_service_dependency" "dashboard-deps" {
   dependency {
     dependent_service {
       id   = pagerduty_business_service.vendor-dashboard.id
-      type = pagerduty_business_service.vendor-dashboard.type
+      type = "business_service"
     }
     supporting_service {
       id   = pagerduty_service.dashboard-ui.id
-      type = pagerduty_service.dashboard-ui.type
+      type = "service"
     }
   }
 }
@@ -28,11 +28,11 @@ resource "pagerduty_service_dependency" "installer-deps" {
   dependency {
     dependent_service {
       id   = pagerduty_business_service.installers.id
-      type = pagerduty_business_service.installers.type
+      type = "business_service"
     }
     supporting_service {
       id   = pagerduty_service.installer.id
-      type = pagerduty_service.installer.type
+      type = "service"
     }
   }
 }
@@ -41,11 +41,11 @@ resource "pagerduty_service_dependency" "runner-deps" {
   dependency {
     dependent_service {
       id   = pagerduty_business_service.runners.id
-      type = pagerduty_business_service.runners.type
+      type = "business_service"
     }
     supporting_service {
       id   = pagerduty_service.runner.id
-      type = pagerduty_service.runner.type
+      type = "service"
     }
   }
 }
@@ -55,11 +55,11 @@ resource "pagerduty_service_dependency" "website-deps" {
   dependency {
     dependent_service {
       id   = pagerduty_business_service.website.id
-      type = pagerduty_business_service.website.type
+      type = "business_service"
     }
     supporting_service {
       id   = pagerduty_service.website.id
-      type = pagerduty_service.website.type
+      type = "service"
     }
   }
 }
@@ -69,11 +69,11 @@ resource "pagerduty_service_dependency" "dashboard-ctl-api" {
   dependency {
     dependent_service {
       id   = pagerduty_service.dashboard-ui.id
-      type = pagerduty_service.dashboard-ui.type
+      type = "service"
     }
     supporting_service {
       id   = pagerduty_service.ctl-api.id
-      type = pagerduty_service.ctl-api.type
+      type = "service"
     }
 
   }

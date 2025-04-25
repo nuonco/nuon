@@ -1,3 +1,14 @@
+import {
+  to = pagerduty_user.casey
+  id = "PYBJK0N"
+}
+
+resource "pagerduty_user" "casey" {
+  name  = "Casey"
+  email = "casey@nuon.co"
+  role  = "admin"
+}
+
 data "pagerduty_user" "casey" {
   email = "casey@nuon.co"
 }
