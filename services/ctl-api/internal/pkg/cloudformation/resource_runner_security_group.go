@@ -12,7 +12,7 @@ func (a *Templates) getRunnerSecurityGroup(inp *TemplateInput, t tagBuilder) *ec
 	// needs to be added to the eks node sg additional rules. this is a VIP tag. w/out it the
 	// runner won't be allowed to apply heml/kubectl to the cluster.
 	tags := []tags.Tag{
-		{Key: "networking.nuon.co/domain", Value: "runner"},
+		{Key: "network.nuon.co/domain", Value: "runner"},
 	}
 	return &ec2.SecurityGroup{
 		GroupDescription: "Egress security group for the runner - allow all outbound traffic",
