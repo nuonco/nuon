@@ -29,7 +29,7 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
-  const [error, setError] = useState()
+  const [error, setError] = useState<string>()
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -126,8 +126,7 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
                           props: { orgId, installId, err },
                         })
                         setError(
-                          err?.message ||
-                            'Error occured, please refresh page and try again.'
+                          'Error occured, please refresh page and try again.'
                         )
                         setIsLoading(false)
                       })
