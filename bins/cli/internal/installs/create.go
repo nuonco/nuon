@@ -31,12 +31,11 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 	}
 
 	if asJSON {
-		empty := ""
 		install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
 			Name: &name,
 			AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
 				Region:     region,
-				IamRoleArn: &empty,
+				IamRoleArn: "",
 			},
 			Inputs: inputsMap,
 		})
