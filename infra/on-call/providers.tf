@@ -1,4 +1,14 @@
 terraform {
+  required_version = ">= 1.3.7"
+
+  backend "remote" {
+    organization = "nuonco"
+
+    workspaces {
+      name = "infra-on-call"
+    }
+  }
+
   required_providers {
     pagerduty = {
       source  = "pagerduty/pagerduty"
