@@ -1,56 +1,42 @@
-import {
-  to = pagerduty_user.casey
-  id = "PYBJK0N"
-}
-
-resource "pagerduty_user" "casey" {
-  name  = "Casey"
+data "pagerduty_user" "casey" {
   email = "casey@nuon.co"
 }
 
-resource "pagerduty_user" "fred" {
-  name  = "Fred"
-  email = "fred+nuon@nuon.co"
+data "pagerduty_user" "fred" {
+  email = "fred@nuon.co"
 }
 
 
-resource "pagerduty_user" "harsh" {
-  name  = "Harsh"
-  email = "harsh+nuon@nuon.co"
+data "pagerduty_user" "harsh" {
+  email = "harsh@nuon.co"
 }
 
 
-resource "pagerduty_user" "jon" {
-  name  = "jon"
-  email = "jon+nuon@nuon.co"
+data "pagerduty_user" "jon" {
+  email = "jon@nuon.co"
 }
 
 
-resource "pagerduty_user" "jordan" {
-  name  = "jordan"
-  email = "jordan+nuon@nuon.co"
+data "pagerduty_user" "jordan" {
+  email = "jordan@nuon.co"
 }
 
-resource "pagerduty_user" "nat" {
-  name  = "nat"
-  email = "nat+nuon@nuon.co"
-}
-
-
-resource "pagerduty_user" "rob" {
-  name  = "rob"
-  email = "rob+nuon@nuon.co"
+data "pagerduty_user" "nat" {
+  email = "nat@nuon.co"
 }
 
 
-resource "pagerduty_user" "sam" {
-  name  = "sam"
-  email = "sam+nuon@nuon.co"
+data "pagerduty_user" "rob" {
+  email = "rob@nuon.co"
 }
 
 
-resource "pagerduty_user" "tim" {
-  name  = "tim"
-  email = "tim+nuon@nuon.co"
+data "pagerduty_user" "sam" {
+  email = "sam@nuon.co"
+}
+
+
+data "pagerduty_user" "tim" {
+  email = "tim@nuon.co"
 }
 

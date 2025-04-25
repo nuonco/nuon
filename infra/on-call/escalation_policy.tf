@@ -14,7 +14,7 @@ resource "pagerduty_escalation_policy" "support" {
     }
 
     target {
-      id   = pagerduty_user.jon.id
+      id   = data.pagerduty_user.jon.id
       type = "user_reference"
     }
 
