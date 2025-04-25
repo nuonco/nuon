@@ -16,7 +16,7 @@ monitors:
           "name": "${aws_account} - Database Running Low on Free Space",
           "type": "query alert",
           "query": "avg(last_1h):avg:aws.rds.free_storage_space{environment:${aws_account}} by {dbname} < 21474836480",
-          "message": "@slack-alerts-${env}-infra \n{{dbname.name}} is running low on free space.",
+          "message": "@pagerduty-Datadog @slack-alerts-${env}-infra \n{{dbname.name}} is running low on free space.",
           "tags": [
               "terraform:true",
               "env:${aws_account}"
@@ -192,7 +192,7 @@ installer_synthetics:
     type: "api"
     subtype: "http"
     status: "live"
-    message: "@slack-alerts-${env}-product"
+    message: "@slack-alerts-${env}-product @pagerduty-Datadog"
     locations: ["aws:us-east-1", "aws:us-west-2"]
     tags: ["service:installers", "terraform:true", "env:${env}"]
     request_definition:
