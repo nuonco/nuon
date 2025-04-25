@@ -351,5 +351,18 @@ func (c *cli) installsCmd() *cobra.Command {
 	deprovisionInstallSandboxCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(deprovisionInstallSandboxCmd)
 
+	workflowsCmd := &cobra.Command{
+		Use:   "workflows",
+		Short: "View workflows",
+		Long:  "View workflows by install ID",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.Workflows(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	workflowsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
+	workflowsCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(workflowsCmd)
+
 	return installsCmds
 }
