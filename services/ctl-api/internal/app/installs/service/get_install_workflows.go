@@ -29,7 +29,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{array}		app.InstallSandboxRun
+// @Success				200	{array}		app.InstallWorkflow
 // @Router					/v1/installs/{install_id}/workflows [GET]
 func (s *service) GetInstallWorkflows(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
