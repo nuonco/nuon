@@ -72,20 +72,20 @@ const AWSAccount: FC<Pick<TInstall, 'aws_account'>> = ({ aws_account }) => {
         </Text>
       </span>
 
-      <span className="flex flex-col gap-2">
-        <Text className="text-sm tracking-wide text-cool-grey-600 dark:text-cool-grey-500">
+      {/* <span className="flex flex-col gap-2">
+          <Text className="text-sm tracking-wide text-cool-grey-600 dark:text-cool-grey-500">
           IAM role ARN
-        </Text>
+          </Text>
 
-        <Code className="w-fit">
+          <Code className="w-fit">
           <ClickToCopy
-            className="!items-start"
-            noticeClassName="-top-[5px] right-5"
+          className="!items-start"
+          noticeClassName="-top-[5px] right-5"
           >
-            {aws_account.iam_role_arn}
+          {aws_account.iam_role_arn}
           </ClickToCopy>
-        </Code>
-      </span>
+          </Code>
+          </span> */}
     </>
   )
 }
