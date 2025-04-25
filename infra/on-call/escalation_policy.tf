@@ -23,5 +23,18 @@ resource "pagerduty_escalation_policy" "support" {
       type = "schedule_reference"
     }
   }
+
+  rule {
+    escalation_delay_in_minutes = 5
+
+    escalation_rule_assignment_strategy {
+      type = "assign_to_everyone"
+    }
+
+    target {
+      id   = pagerduty_user.jordan.id
+      type = "user_reference"
+    }
+  }
 }
 
