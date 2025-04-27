@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -17,8 +18,11 @@ import (
 type CreateAppSandboxConfigRequest struct {
 	basicVCSConfigRequest
 
-	TerraformVersion string             `json:"terraform_version" validate:"required"`
-	SandboxInputs    map[string]*string `json:"sandbox_inputs" validate:"required"`
+	TerraformVersion string `json:"terraform_version" validate:"required"`
+
+	VariablesFiles []string           `json:"variables_files,omitempty"`
+	Variables      map[string]*string `json:"variables" validate:"required"`
+	EnvVars        map[string]*string `json:"env_vars" validate:"required"`
 
 	AWSDelegationIAMRoleARN string `json:"aws_delegation_iam_role_arn"`
 
@@ -105,7 +109,9 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		AppConfigID:              req.AppConfigID,
 		PublicGitVCSConfig:       publicGitConfig,
 		ConnectedGithubVCSConfig: githubVCSConfig,
-		Variables:                pgtype.Hstore(req.SandboxInputs),
+		Variables:                pgtype.Hstore(req.Variables),
+		EnvVars:                  pgtype.Hstore(req.EnvVars),
+		VariablesFiles:           pq.StringArray(req.VariablesFiles),
 		TerraformVersion:         req.TerraformVersion,
 	}
 	// if the previous config has a delegation setup, use it to update the new one

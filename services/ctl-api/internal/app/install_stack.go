@@ -28,7 +28,7 @@ type InstallStack struct {
 
 func (a *InstallStack) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
-		a.ID = domains.NewAppCfgID()
+		a.ID = domains.NewInstallStackID()
 	}
 	if a.CreatedByID == "" {
 		a.CreatedByID = createdByIDFromContext(tx.Statement.Context)

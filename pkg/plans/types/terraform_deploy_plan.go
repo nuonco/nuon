@@ -7,8 +7,9 @@ import (
 )
 
 type TerraformDeployPlan struct {
-	Vars    map[string]any    `json:"vars"`
-	EnvVars map[string]string `json:"env_vars"`
+	Vars      map[string]any    `json:"vars"`
+	EnvVars   map[string]string `json:"env_vars"`
+	VarsFiles []string          `json:"vars_files"`
 
 	TerraformBackend *TerraformBackend        `json:"terraform_backend"`
 	AzureAuth        *azurecredentials.Config `json:"azure_auth"`

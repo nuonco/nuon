@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"strings"
 	"time"
 
 	"github.com/Masterminds/sprig/v3"
@@ -41,6 +42,12 @@ func RenderWithWarnings(inputVal string, data map[string]interface{}) (string, [
 }
 
 func RenderV2(inputVal string, data map[string]interface{}) (string, error) {
+	data = EnsurePrefix(data)
+
+	if !strings.Contains(inputVal, ".nuon") {
+		return inputVal, nil
+	}
+
 	funcMap := template.FuncMap{
 		"now": time.Now,
 	}
@@ -48,7 +55,7 @@ func RenderV2(inputVal string, data map[string]interface{}) (string, error) {
 	temp, err := template.New("input").
 		Funcs(funcMap).
 		Funcs(sprig.FuncMap()).
-		Option("missingkey=zero").
+		Option("missingkey=error").
 		Parse(inputVal)
 	if err != nil {
 		return inputVal, err
@@ -63,7 +70,9 @@ func RenderV2(inputVal string, data map[string]interface{}) (string, error) {
 }
 
 func RenderVar(v Var, data map[string]interface{}) (string, error) {
-	temp, err := template.New("input").Option("missingkey=error").Parse(v.Template)
+	temp, err := template.New("input").
+		Option("missingkey=error").
+		Parse(v.Template)
 	if err != nil {
 		return "", RenderErr{
 			Template: v.Template,

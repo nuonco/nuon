@@ -20,8 +20,12 @@ func (v *varsValidator) getTemplate(ctx context.Context) (map[string]interface{}
 	compOut := v.getComponents()
 	obj.Components = compOut
 
+	// install stack
+	stackOut := v.getInstallStack()
+	obj.InstallStack = stackOut
+
 	// add the vcs config into the fake data
-	if v.ignoreSandboxOutputs {
+	if !v.ignoreSandboxOutputs {
 		out, err := v.getSandboxOutputs(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get template sandbox outputs")
