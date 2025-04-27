@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/pkg/terraform/variables"
 )
 
@@ -15,6 +16,7 @@ type vars struct {
 
 	EnvVars  map[string]string
 	FileVars map[string]interface{}
+	Files    []string
 }
 
 type varsOption func(*vars) error
@@ -46,6 +48,13 @@ func WithEnvVars(envVars map[string]string) varsOption {
 func WithFileVars(fileVars map[string]interface{}) varsOption {
 	return func(v *vars) error {
 		v.FileVars = fileVars
+		return nil
+	}
+}
+
+func WithFiles(files []string) varsOption {
+	return func(v *vars) error {
+		v.Files = files
 		return nil
 	}
 }

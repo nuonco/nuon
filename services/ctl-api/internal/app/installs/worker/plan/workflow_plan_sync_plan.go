@@ -15,15 +15,16 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		return nil, errors.Wrap(err, "unable to get install deploy")
 	}
 
-	srcCfg, err := p.getInstallRegistryRepositoryConfig(ctx, req.InstallID, req.InstallDeployID)
+	srcCfg, err := p.getOrgRegistryRepositoryConfig(ctx, req.InstallID, req.InstallDeployID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get org registry repository")
 	}
 
-	dstCfg, err := p.getOrgRegistryRepositoryConfig(ctx, req.InstallID, req.InstallDeployID)
+	dstCfg, err := p.getInstallRegistryRepositoryConfig(ctx, req.InstallID, req.InstallDeployID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get org registry repository")
+		return nil, errors.Wrap(err, "unable to get install registry repository")
 	}
+
 
 	return &plantypes.SyncOCIPlan{
 		Src:    srcCfg,

@@ -28,19 +28,23 @@ func (s *sync) syncAppSandbox(ctx context.Context, resource string) error {
 }
 
 func (s *sync) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigRequest {
-	sandboxInputs := make(map[string]string)
-	for _, v := range s.cfg.Sandbox.Vars {
-		sandboxInputs[v.Name] = v.Value
-	}
-	for k, v := range s.cfg.Sandbox.VarMap {
-		sandboxInputs[k] = v
-	}
-
 	req := &models.ServiceCreateAppSandboxConfigRequest{
 		AppConfigID:             s.appConfigID,
-		SandboxInputs:           sandboxInputs,
 		TerraformVersion:        &s.cfg.Sandbox.TerraformVersion,
 		AwsDelegationIamRoleArn: s.cfg.Sandbox.AWSDelegationIAMRoleARN,
+		Variables:               map[string]string{},
+		EnvVars:                 map[string]string{},
+		VariablesFiles:          make([]string, 0),
+	}
+
+	for k, v := range s.cfg.Sandbox.VarsMap {
+		req.Variables[k] = v
+	}
+	for k, v := range s.cfg.Sandbox.EnvVarMap {
+		req.EnvVars[k] = v
+	}
+	for _, v := range s.cfg.Sandbox.VariablesFiles {
+		req.VariablesFiles = append(req.VariablesFiles, v.Contents)
 	}
 
 	if s.cfg.Sandbox.ConnectedRepo != nil {

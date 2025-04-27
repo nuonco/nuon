@@ -12,15 +12,9 @@ import (
 	"github.com/powertoolsdev/mono/pkg/render"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
 func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.TerraformDeployPlan, error) {
-	l, err := log.WorkflowLogger(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
@@ -41,7 +35,6 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 		return nil, errors.Wrap(err, "unable to get install component")
 	}
 
-
 	state, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
 		InstallID: install.ID,
 	})
@@ -50,26 +43,34 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 		return nil, errors.Wrap(err, "unable to get state")
 	}
 
-	cfg := installDeploy.ComponentBuild.ComponentConfigConnection.TerraformModuleComponentConfig
+	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get component build")
+	}
+
+	cfg := compBuild.ComponentConfigConnection.TerraformModuleComponentConfig
+
+	if err := render.RenderStruct(cfg, stateData); err != nil {
+		return nil, errors.Wrap(err, "unable to render config")
+	}
+
 	envVars := generics.ToStringMap(cfg.EnvVars)
 	vars := generics.ToStringMapAny(cfg.Variables)
 
-	l.Info("rendering environment variables")
 	if err := render.RenderMap(&envVars, stateData); err != nil {
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
-	l.Info("rendering terraform variables")
 	if err := render.RenderMap(&vars, stateData); err != nil {
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
 	roleARN := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
 	return &plantypes.TerraformDeployPlan{
-
-		Vars:    vars,
-		EnvVars: envVars,
-		State:   state,
+		Vars:      vars,
+		EnvVars:   envVars,
+		VarsFiles: cfg.VariablesFiles,
+		State:     state,
 
 		TerraformBackend: &plantypes.TerraformBackend{
 			WorkspaceID: installComp.TerraformWorkspace.ID,

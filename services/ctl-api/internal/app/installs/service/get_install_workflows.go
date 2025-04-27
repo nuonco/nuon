@@ -13,7 +13,7 @@ import (
 )
 
 // @ID						GetInstallWorkflows
-// @Summary				get an install workflows
+// @Summary				get a install workflows
 // @Description.markdown	get_install_workflows.md
 // @Param					install_id					path	string	true	"install ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
@@ -52,7 +52,7 @@ func (s *service) getInstallWorkflows(ctx *gin.Context, installID string) ([]app
 		Order("created_at desc").
 		Find(&installWorkflows)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install sandbox runs: %w", res.Error)
+		return nil, fmt.Errorf("unable to get install workflows runs: %w", res.Error)
 	}
 
 	installWorkflows, err := db.HandlePaginatedResponse(ctx, installWorkflows)
