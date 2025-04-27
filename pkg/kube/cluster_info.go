@@ -16,13 +16,13 @@ import (
 
 type ClusterInfo struct {
 	// ID is the ID of the EKS cluster
-	ID string `json:"id" hcl:"id"`
+	ID string `json:"id" hcl:"id" features:"template"`
 	// Endpoint is the URL of the k8s api server
-	Endpoint string `json:"endpoint" hcl:"endpoint"`
+	Endpoint string `json:"endpoint" hcl:"endpoint" features:"template"`
 	// CAData is the base64 encoded public certificate
-	CAData string `json:"ca_data" hcl:"ca_data"`
+	CAData string `json:"ca_data" hcl:"ca_data" features:"template"`
 
-	EnvVars map[string]string `json:"env_vars" hcl:"env_vars"`
+	EnvVars map[string]string `json:"env_vars" hcl:"env_vars" features:"template"`
 
 	// KubeConfig will override the kube config, and be parsed instead of generating a new one
 	KubeConfig string `json:"kube_config" faker:"-" hcl:"kube_config"`

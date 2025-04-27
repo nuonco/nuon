@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/powertoolsdev/mono/pkg/terraform/variables"
 )
 
 func (v *auth) Init(context.Context) error {
@@ -24,6 +25,6 @@ func (v *auth) GetEnv(ctx context.Context) (map[string]string, error) {
 	return envVars, nil
 }
 
-func (v *auth) GetFile(context.Context) ([]byte, error) {
-	return []byte{}, nil
+func (v *auth) GetFiles(context.Context) ([]variables.VarFile, error) {
+	return nil, nil
 }

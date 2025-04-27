@@ -1,11 +1,16 @@
 package config
 
+type TerraformVariablesFile struct {
+	Contents string `toml:"contents" mapstructure:"contents,omitempty" features:"get,template"`
+}
+
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type TerraformModuleComponentConfig struct {
 	TerraformVersion string `mapstructure:"terraform_version" jsonschema:"required"`
 
-	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty"`
-	VarsMap   map[string]string `mapstructure:"vars,omitempty" jsonschema:"required"`
+	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty"`
+	VarsMap        map[string]string        `mapstructure:"vars,omitempty" jsonschema:"required"`
+	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty"`
 
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`

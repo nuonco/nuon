@@ -80,5 +80,14 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		return errors.Wrap(err, "unable to update runner group settings")
 	}
 
+	// NOTE(jm): this is probably not the _best_ place to do this validation, but for now it works
+	// make sure the region matches the outputs
+	if install.AWSAccount == nil {
+		return nil
+	}
+	if install.AWSAccount.Region != outputs.Region {
+		return errors.Wrap(err, "install stack was run for a different region than the install was configured for")
+	}
+
 	return nil
 }

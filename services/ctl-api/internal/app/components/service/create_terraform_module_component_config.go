@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
@@ -16,10 +17,11 @@ import (
 type CreateTerraformModuleComponentConfigRequest struct {
 	basicVCSConfigRequest
 
-	Version     string             `json:"version"`
-	Variables   map[string]*string `json:"variables" validate:"required"`
-	EnvVars     map[string]*string `json:"env_vars" validate:"required"`
-	AppConfigID string             `json:"app_config_id"`
+	Version        string             `json:"version"`
+	Variables      map[string]*string `json:"variables" validate:"required"`
+	VariablesFiles []string           `json:"variables_files,omitempty"`
+	EnvVars        map[string]*string `json:"env_vars" validate:"required"`
+	AppConfigID    string             `json:"app_config_id"`
 }
 
 func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -98,6 +100,7 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
 		Variables:                pgtype.Hstore(req.Variables),
 		EnvVars:                  pgtype.Hstore(req.EnvVars),
+		VariablesFiles:           pq.StringArray(req.VariablesFiles),
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{

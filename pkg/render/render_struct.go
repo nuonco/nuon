@@ -62,8 +62,15 @@ func walkFields(obj any, data map[string]any) error {
 				continue
 			}
 
-			if err := RenderMap(field.Interface(), data); err != nil {
-				return errors.Wrap(err, "unable to render map")
+      // Pass a pointer to the map if it's not already a pointer
+			if field.Kind() == reflect.Map {
+				if err := RenderMap(field.Addr().Interface(), data); err != nil {
+					return errors.Wrap(err, "unable to render map")
+				}
+			} else {
+				if err := RenderMap(field.Interface(), data); err != nil {
+					return errors.Wrap(err, "unable to render map")
+				}
 			}
 		case reflect.Slice:
 			// Handle slices of structs
@@ -86,6 +93,24 @@ func walkFields(obj any, data map[string]any) error {
 					if err := walkFields(elem.Interface(), data); err != nil {
 						return err
 					}
+				}
+			} else if elemKind == reflect.String {
+				if !enabled {
+					continue
+				}
+
+				for i := 0; i < field.Len(); i++ {
+					elem := field.Index(i)
+					val, err := renderStrField(elem.String(), data)
+					if err != nil {
+						return errors.Wrap(err, "unable to render string in slice")
+					}
+
+					if !elem.CanSet() {
+						return errors.New("string element in slice is not settable")
+					}
+
+					elem.SetString(val)
 				}
 			} else if elemKind == reflect.Uint8 {
 				byteValue := field.Bytes()

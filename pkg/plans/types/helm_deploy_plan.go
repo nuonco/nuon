@@ -2,7 +2,6 @@ package plantypes
 
 import (
 	"github.com/powertoolsdev/mono/pkg/kube"
-	"github.com/powertoolsdev/mono/pkg/types/state"
 )
 
 type HelmValue struct {
@@ -12,8 +11,6 @@ type HelmValue struct {
 }
 
 type HelmDeployPlan struct {
-	State *state.State `json:"state"`
-
 	ClusterInfo *kube.ClusterInfo `json:"cluster_info,block"`
 
 	// NOTE(jm): these fields should probably just come from the app config, however we keep them around for
@@ -21,6 +18,7 @@ type HelmDeployPlan struct {
 	Name            string `json:"name,attr"`
 	Namespace       string `json:"namespace"`
 	CreateNamespace bool   `json:"create_namespace"`
+	StorageDriver   string `json:"storage_driver"`
 
 	ValuesFiles []string    `json:"values_files"`
 	Values      []HelmValue `json:"values"`

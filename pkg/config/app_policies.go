@@ -7,7 +7,7 @@ import (
 )
 
 type PoliciesConfig struct {
-	Policies []AppPolicy `mapstructure:"policy"`
+	Policies []AppPolicy `mapstructure:"policy,omitempty"`
 }
 
 func (a PoliciesConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
