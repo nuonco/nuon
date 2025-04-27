@@ -42,10 +42,14 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		return nil, errors.Wrap(err, "unable to get state")
 	}
 
+	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get component build")
+	}
+
 	// parse out various config fields
-	cfg := installDeploy.ComponentBuild.ComponentConfigConnection.HelmComponentConfig
+	cfg := compBuild.ComponentConfigConnection.HelmComponentConfig
 	if err := render.RenderStruct(cfg, stateData); err != nil {
-		l.Error("unable to render helm config", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to render config")
 	}
 
@@ -54,6 +58,16 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 	if err != nil {
 		l.Error("unable to render namespace "+namespace, zap.Error(err))
 		return nil, errors.Wrap(err, "unable to render namespace")
+	}
+
+	// NOTE(jm): the current temporal payload issue prevents this from being serialized correctly:
+	driver := cfg.StorageDriver.ValueOrDefault("secrets")
+	driver = "configmap"
+	l.Error("debug ", zap.Any("val", cfg.StorageDriver))
+	renderedDriver, err := render.RenderV2(driver, stateData)
+	if err != nil {
+		l.Error("unable to render driver "+driver, zap.Error(err))
+		return nil, errors.Wrap(err, "unable to render driver")
 	}
 
 	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
@@ -74,6 +88,7 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		Name:            cfg.ChartName,
 		Namespace:       renderedNamespace,
 		CreateNamespace: true,
+		StorageDriver:   renderedDriver,
 
 		ValuesFiles: valuesFiles,
 		Values:      values,

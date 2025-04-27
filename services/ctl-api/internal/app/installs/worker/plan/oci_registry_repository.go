@@ -44,7 +44,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, insta
 
 	registryURL, err := render.RenderV2("{{.nuon.sandbox.outputs.ecr.registry_url}}", stateData)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to render repository url")
+		return nil, errors.Wrap(err, "unable to render registry url")
 	}
 
 	return &configs.OCIRegistryRepository{
@@ -85,11 +85,8 @@ func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID
 	}
 
 	appRepoName := fmt.Sprintf("%s/%s", install.OrgID, install.AppID)
-	appRepoURI := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s", accessInfo.RegistryID,
-		accessInfo.Region, appRepoName)
-
 	return &configs.OCIRegistryRepository{
-		Repository:   appRepoURI,
+		Repository:   appRepoName,
 		Region:       stackOutputs.AWSStackOutputs.Region,
 		RegistryType: configs.OCIRegistryTypePrivateOCI,
 		OCIAuth: &configs.OCIRegistryAuth{

@@ -32,6 +32,8 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 		signals.OperationForget:                   w.AwaitForget,
 		signals.OperationReprovisionRunner:        w.AwaitReprovisionRunner,
 		signals.OperationProvisionRunner:          w.AwaitProvisionRunner,
+		signals.OperationProvisionDNS:             w.AwaitProvisionDNS,
+		signals.OperationDeprovisionDNS:           w.AwaitDeprovisionDNS,
 		signals.OperationDeprovisionSandbox:       w.AwaitDeprovisionSandbox,
 		signals.OperationReprovisionSandbox:       w.AwaitReprovisionSandbox,
 		signals.OperationProvisionSandbox:         w.AwaitProvisionSandbox,

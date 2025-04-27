@@ -53,7 +53,9 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 
 	vars, err := staticvars.New(h.v,
 		staticvars.WithFileVars(plan.Vars),
-		staticvars.WithEnvVars(plan.EnvVars))
+		staticvars.WithEnvVars(plan.EnvVars),
+		staticvars.WithFiles(plan.VarsFiles),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create variable set: %w", err)
 	}

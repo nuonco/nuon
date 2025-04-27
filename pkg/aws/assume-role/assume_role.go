@@ -131,6 +131,14 @@ func WithRoleSessionName(s string) assumerOptions {
 	}
 }
 
+// WithRoleSessionDuration specifies the duration for the session
+func WithRoleSessionDuration(s time.Duration) assumerOptions {
+	return func(a *assumer) error {
+		a.RoleSessionDuration = s
+		return nil
+	}
+}
+
 // WithTwoStepConfig specifies a two-step role to assume, before assuming the final role
 func WithTwoStepConfig(s *TwoStepConfig) assumerOptions {
 	return func(a *assumer) error {

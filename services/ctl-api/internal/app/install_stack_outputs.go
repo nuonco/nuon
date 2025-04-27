@@ -34,6 +34,7 @@ type InstallStackOutputs struct {
 }
 
 type AWSStackOutputs struct {
+	AccountID             string   `json:"account_id" mapstructure:"account_id"`
 	Region                string   `json:"region" mapstructure:"region"`
 	VPCID                 string   `json:"vpc_id" mapstructure:"vpc_id"`
 	RunnerSubnet          string   `json:"runner_subnet" mapstructure:"runner_subnet"`
