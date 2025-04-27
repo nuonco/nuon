@@ -2,7 +2,6 @@ package get
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -159,6 +158,7 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 		"http",
 		"./",
 		"git",
+		"file",
 	}
 	isGettable := false
 	for _, prefix := range prefixes {
@@ -203,14 +203,13 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 		Mode: getter.ClientModeFile,
 	}
 
-	fmt.Println(tmpFP, pwd, inputVal)
 	if err := client.Get(); err != nil {
-		return "", errors.Wrap(err, "failed to download file")
+		return "", errors.Wrap(err, "failed to fetch file")
 	}
 
 	content, err := os.ReadFile(tmpFP)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read downloaded file")
+		return "", errors.Wrap(err, "failed to read file")
 	}
 
 	return string(content), nil

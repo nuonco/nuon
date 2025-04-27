@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/pkg/terraform/archive"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend"
 	"github.com/powertoolsdev/mono/pkg/terraform/binary"
@@ -36,6 +37,7 @@ type workspace struct {
 	root       string
 	execPath   string
 	envVars    map[string]string
+	varsPaths  []string
 }
 
 type workspaceOption func(*workspace) error
@@ -45,6 +47,7 @@ func New(v *validator.Validate, opts ...workspaceOption) (*workspace, error) {
 		v:          v,
 		tmpDirRoot: os.TempDir(),
 		Variables:  make([]variables.Variables, 0),
+		varsPaths:  make([]string, 0),
 	}
 
 	for idx, opt := range opts {

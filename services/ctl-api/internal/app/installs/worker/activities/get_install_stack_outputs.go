@@ -11,7 +11,10 @@ import (
 func (a *Activities) GetInstallStackOutputs(ctx context.Context, installStackID string) (*app.InstallStackOutputs, error) {
 	outputs := app.InstallStackOutputs{}
 	res := a.db.WithContext(ctx).
-		First(&outputs, "id = ?", installStackID)
+		Where(app.InstallStackOutputs{
+			InstallStackID: installStackID,
+		}).
+		First(&outputs)
 	if res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error)
 	}

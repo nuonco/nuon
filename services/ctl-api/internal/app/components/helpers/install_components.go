@@ -62,7 +62,7 @@ func (h *Helpers) EnsureInstallComponents(ctx context.Context, appID string, ins
 func (h *Helpers) TFWorkSpaceFromIC(ic app.InstallComponent) app.TerraformWorkspace {
 	return app.TerraformWorkspace{
 		OrgID:     ic.OrgID,
-		OwnerID:   ic.InstallID,
+		OwnerID:   ic.ID,
 		OwnerType: "install_components",
 	}
 }
