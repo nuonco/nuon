@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
@@ -27,9 +28,10 @@ type TerraformModuleComponentConfig struct {
 	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 
 	// terraform configuration values
-	Version   string        `json:"version" gorm:"default:v1.7.5;notnull"`
-	Variables pgtype.Hstore `json:"variables" gorm:"type:hstore" swaggertype:"object,string"`
-	EnvVars   pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
+	Version        string         `json:"version" gorm:"default:v1.7.5;notnull"`
+	Variables      pgtype.Hstore  `json:"variables" gorm:"type:hstore" swaggertype:"object,string" features:"template"`
+	EnvVars        pgtype.Hstore  `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string" features:"template"`
+	VariablesFiles pq.StringArray `gorm:"type:text[]" json:"variables_files" swaggertype:"array,string" features:"template"`
 
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`

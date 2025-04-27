@@ -6,6 +6,8 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
@@ -15,13 +17,18 @@ func (w *Workflows) isBuildDeployable(bld *app.ComponentBuild) bool {
 	return bld.Status == app.ComponentBuildStatusActive
 }
 
-func (w *Workflows) pollForDeployableBuild(ctx workflow.Context, installDeployId string, bld app.ComponentBuild) error {
+func (w *Workflows) pollForDeployableBuild(ctx workflow.Context, installDeployId, componentBuildID string) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
 	}
 
-	if w.isBuildDeployable(&bld) {
+	bld, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, componentBuildID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get component build")
+	}
+
+	if w.isBuildDeployable(bld) {
 		l.Info("build is deployable")
 		return nil
 	}

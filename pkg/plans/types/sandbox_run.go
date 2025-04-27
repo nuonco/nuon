@@ -34,6 +34,7 @@ type SandboxRunPlan struct {
 
 	Vars             map[string]any           `json:"vars"`
 	EnvVars          map[string]string        `json:"env_vars"`
+	VarsFiles        []string                 `json:"vars_files"`
 	GitSource        *GitSource               `json:"git_source"`
 	LocalArchive     *TerraformLocalArchive   `json:"local_archive"`
 	TerraformBackend *TerraformBackend        `json:"terraform_backend"`

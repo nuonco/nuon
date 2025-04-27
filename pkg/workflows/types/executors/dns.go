@@ -3,7 +3,9 @@ package executors
 import "go.temporal.io/sdk/workflow"
 
 type ProvisionDNSDelegationRequest struct {
-	Metadata *Metadata `json:"metadata"`
+	WorkflowID  string   `json:"workflow_id"`
+	Domain      string   `json:"domain"`
+	Nameservers []string `json:"nameservers"`
 }
 
 func (d ProvisionDNSDelegationRequest) Validate() error {
@@ -13,7 +15,7 @@ func (d ProvisionDNSDelegationRequest) Validate() error {
 type ProvisionDNSDelegationResponse struct{}
 
 func ProvisionDNSIDCallback(req *ProvisionDNSDelegationRequest) string {
-	return "provision-dns-" + req.Metadata.InstallID
+	return req.WorkflowID
 }
 
 // @temporal-gen workflow
@@ -27,15 +29,14 @@ func ProvisionDNSDelegation(workflow.Context, *ProvisionDNSDelegationRequest) (*
 }
 
 type DeprovisionDNSDelegationRequest struct {
-	InstallID string
-	OrgID     string
-	AppID     string
+	WorkflowID string `json:"workflow_id"`
+	Domain     string `json:"domain"`
 }
 
 type DeprovisionDNSDelegationResponse struct{}
 
 func DeprovisionDNSIDCallback(req *DeprovisionDNSDelegationRequest) string {
-	return "deprovision-dns-" + req.InstallID
+	return req.WorkflowID
 }
 
 // @temporal-gen workflow

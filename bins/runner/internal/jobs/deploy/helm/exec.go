@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon-runner-go/models"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"helm.sh/helm/v3/pkg/action"
@@ -42,6 +43,14 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unable to initialize helm actions: %w", err)
 	}
 	actionCfg.Log = helm.Logger(l)
+
+	// set the release storage backend dynamically
+	releaseStore, err := h.getHelmReleaseStore(ctx, kubeCfg)
+        if err != nil {
+                return errors.Wrap(err, "unable to get release store")
+        }
+
+	actionCfg.Releases = releaseStore
 
 	if job.Operation == models.AppRunnerJobOperationTypeDestroy {
 		return h.execUninstall(ctx, l, actionCfg, job, jobExecution)

@@ -10,7 +10,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
@@ -70,26 +69,17 @@ func (w *Workflows) ReprovisionSandbox(ctx workflow.Context, sreq signals.Reques
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 	}()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
+
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
 	}
 
-	l.Info("executing sandbox and runner provision")
+	l.Info("executing sandbox")
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
 
 	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeCreate, sandboxMode)
 	if err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, err.Error())
-		return err
-	}
-
-	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-		Type: runnersignals.OperationReprovision,
-	})
-
-	l.Info("polling runner until active")
-	if err := w.pollRunner(ctx, install.RunnerGroup.Runners[0].ID); err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, err.Error())
 		return err
 	}

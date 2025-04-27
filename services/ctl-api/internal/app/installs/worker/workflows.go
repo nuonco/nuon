@@ -47,6 +47,8 @@ func (w *Workflows) All() []any {
 		w.ActionWorkflowTriggers,
 		plan.CreateActionWorkflowRunPlan,
 		plan.CreateSandboxRunPlan,
+		plan.CreateDeployPlan,
+		plan.CreateSyncPlan,
 	}
 
 	return append(wkflows, w.ListWorkflowFns()...)

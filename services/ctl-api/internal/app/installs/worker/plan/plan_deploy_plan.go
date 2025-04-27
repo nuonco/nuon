@@ -16,7 +16,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		return nil, err
 	}
 
-	deploy, err := activities.AwaitGetDeployByDeployID(ctx, req.InstallID)
+	deploy, err := activities.AwaitGetDeployByDeployID(ctx, req.InstallDeployID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install deploy")
 	}
@@ -41,9 +41,9 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		return nil, errors.Wrap(err, "unable to get install deploy")
 	}
 
-	appCfg, err := activities.AwaitGetAppConfigByID(ctx, installDeploy.ComponentBuild.ComponentConfigConnection.AppConfigID)
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, build.ComponentConfigConnection.AppConfigID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
+		return nil, errors.Wrap(err, "unable to get app config")
 	}
 
 	plan := &plantypes.DeployPlan{

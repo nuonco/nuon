@@ -40,7 +40,6 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	}
 	h.state.appCfg = appCfg
 
-	l.Info("fetching terraform config")
 	for _, cfg := range appCfg.ComponentConfigConnections {
 		if cfg.ComponentID != plan.ComponentID {
 			continue

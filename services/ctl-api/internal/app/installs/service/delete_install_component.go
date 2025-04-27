@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
@@ -65,7 +66,7 @@ func (s *service) queueDeleteInstallDeploy(ctx *gin.Context, installID, componen
 
 	teardownDeploy := app.InstallDeploy{
 		Status:             app.InstallDeployStatusQueued,
-		StatusDescription:  "waiting to be deployed to install",
+		StatusDescription:  "waiting to be tear down install component",
 		ComponentBuildID:   installDeploy.ComponentBuildID,
 		InstallComponentID: installDeploy.InstallComponentID,
 		Type:               app.InstallDeployTypeTeardown,

@@ -25,9 +25,11 @@ type mockNotFoundError struct {
 func (e mockNotFoundError) IsCode(code int) bool {
 	return code == 404
 }
+
 func (e mockNotFoundError) IsServerError() bool {
 	return false
 }
+
 func (e mockNotFoundError) GetPayload() *models.StderrErrResponse {
 	return nil
 }
@@ -45,10 +47,7 @@ func getTestCfg(options cfgOptions) *config.AppConfig {
 				Directory: "aws-ecs-byovpc",
 				Branch:    "main",
 			},
-			PublicRepo: nil,
-			VarMap: map[string]string{
-				"vpc_id": "{{.nuon.install.inputs.vpc_id}}",
-			},
+			PublicRepo:              nil,
 			AWSDelegationIAMRoleARN: "arn:aws:iam::xxxxxxxxxxxx:role/nuon-aws-ecs-install-access",
 		},
 		Inputs: &config.AppInputConfig{

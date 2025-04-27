@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
 	"github.com/pkg/errors"
@@ -13,6 +14,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/render"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
@@ -34,12 +36,12 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 	run, err := activities.AwaitGetSandboxRunByRunID(ctx, req.RunID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install run")
+		return nil, errors.Wrap(err, "unable to get install sandbox run")
 	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
+		return nil, errors.Wrap(err, "unable to get app config")
 	}
 
 	l.Info("configuring environment variables to execute terraform run as")
@@ -53,7 +55,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get vars")
 	}
-
 	for k, v := range appCfg.SandboxConfig.Variables {
 		vars[k] = v
 	}
@@ -71,16 +72,22 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
-	l.Info("rendering terraform variables")
-	if err := render.RenderMap(&vars, stateData); err != nil {
-		return nil, errors.Wrap(err, "unable to render environment variables")
+	if err := render.RenderStruct(&appCfg.SandboxConfig, stateData); err != nil {
+		return nil, errors.Wrap(err, "unable to render config")
 	}
 
-	//l.Info("rendering policies")
+	l.Info("rendering terraform variables")
+	if err := render.RenderMap(&vars, stateData); err != nil {
+		return nil, errors.Wrap(err, "unable to render variables")
+	}
+
+	l.Info("outputs vars", zap.Any("vars", vars))
+
+	// l.Info("rendering policies")
 	// NOTE(jm): some policies have `{{}}` values
-	//if err := render.RenderStruct(&appCfg.PoliciesConfig, stateData); err != nil {
-	//return nil, errors.Wrap(err, "unable to render policies")
-	//}
+	if err := render.RenderStruct(&appCfg.PoliciesConfig, stateData); err != nil {
+		return nil, errors.Wrap(err, "unable to render policies")
+	}
 
 	policies, err := p.getPolicies(&appCfg.PoliciesConfig)
 	if err != nil {
@@ -95,7 +102,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 	roleARN := stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN
 	if run.RunType == app.SandboxRunTypeReprovision {
-		roleARN = stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
+		roleARN = stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN
 	}
 	if run.RunType == app.SandboxRunTypeDeprovision {
 		roleARN = stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
@@ -108,6 +115,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 		Vars:      vars,
 		EnvVars:   envVars,
+		VarsFiles: appCfg.SandboxConfig.VariablesFiles,
 		GitSource: gitSource,
 		State:     state,
 		Policies:  policies,
@@ -160,21 +168,32 @@ func (p *Planner) getPolicies(cfg *app.AppPoliciesConfig) (map[string]string, er
 }
 
 func (p *Planner) getSandboxRunEnvVars(appCfg *app.AppConfig) map[string]string {
-	if appCfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
-		return map[string]string{}
+	envVars := make(map[string]string, 0)
+	for k, v := range generics.ToStringMap(appCfg.SandboxConfig.EnvVars) {
+		envVars[k] = v
 	}
 
-	return map[string]string{
-		"AWS_REGION": "{{.nuon.install_stack.outputs.region}}",
+	if appCfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
+		return envVars
 	}
+
+	envVars["AWS_REGION"] = "{{.nuon.install_stack.outputs.region}}"
+
+	return envVars
 }
 
 func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig) (map[string]any, error) {
-	if appCfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
-		return map[string]any{}, nil
+	vars := make(map[string]any, 0)
+
+	for k, v := range generics.ToStringMap(appCfg.SandboxConfig.Variables) {
+		vars[k] = v
 	}
 
-	vars := map[string]any{
+	if appCfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
+		return vars, nil
+	}
+
+	builtin := map[string]any{
 		"vpc_id":                   "{{.nuon.install_stack.outputs.vpc_id}}",
 		"nuon_id":                  "{{.nuon.install.id}}",
 		"region":                   "{{.nuon.install_stack.outputs.region}}",
@@ -186,6 +205,10 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig) (map[string]
 		"tags": map[string]string{
 			"NUON_INSTALL_ID": "{{.nuon.install.id}}",
 		},
+	}
+
+	for k, v := range builtin {
+		vars[k] = v
 	}
 
 	return vars, nil

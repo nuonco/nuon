@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -22,6 +23,7 @@ func (a *Activities) FlushOrphanedJobs(ctx context.Context, req FlushOrphanedJob
 		Where("created_at < ?", req.Threshold).
 		Where("status in (?)", []app.RunnerJobStatus{
 			app.RunnerJobStatusQueued,
+			app.RunnerJobStatusInProgress,
 		}).
 		Updates(app.RunnerJob{
 			Status: app.RunnerJobStatusCancelled,
