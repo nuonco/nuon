@@ -84,7 +84,7 @@ func (w *Workflows) doTeardown(ctx workflow.Context, sreq signals.RequestSignal,
 		return fmt.Errorf("unable to get install deploy: %w", err)
 	}
 
-	err = w.pollForDeployableBuild(ctx, deployID, installDeploy.ComponentBuild)
+	err = w.pollForDeployableBuild(ctx, deployID, installDeploy.ComponentBuildID)
 	if err != nil {
 		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusNoop, "build is not deployable")
 		return nil

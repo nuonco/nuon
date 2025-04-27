@@ -11,7 +11,7 @@ import (
 
 func ValidateVars(ctx context.Context, cfg *config.AppConfig) error {
 	if err := vars.ValidateVars(ctx, vars.ValidateVarsParams{
-		Vars:                 config.TerraformVariables(cfg.Sandbox.Vars),
+		Vars:                 generics.MapValuesToSlice(cfg.Sandbox.VarsMap),
 		Cfg:                  cfg,
 		IgnoreSandboxOutputs: true,
 	}); err != nil {
@@ -22,12 +22,12 @@ func ValidateVars(ctx context.Context, cfg *config.AppConfig) error {
 		}
 	}
 	if err := vars.ValidateVars(ctx, vars.ValidateVarsParams{
-		Vars:                 generics.MapValuesToSlice(cfg.Sandbox.VarMap),
+		Vars:                 generics.MapValuesToSlice(cfg.Sandbox.EnvVarMap),
 		Cfg:                  cfg,
 		IgnoreSandboxOutputs: true,
 	}); err != nil {
 		return config.ErrConfig{
-			Description: "unable to validate component vars",
+			Description: "unable to validate sandbox vars",
 			Warning:     true,
 			Err:         err,
 		}

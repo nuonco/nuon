@@ -133,6 +133,14 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 	}
 	steps = append(steps, step)
 
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "provision sandbox dns if enabled", &signals.Signal{
+		Type: signals.OperationProvisionDNS,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
 	lifecycleSteps, err = w.getSandboxLifecycleActionsSteps(ctx, wkflow.ID, wkflow.InstallID, app.ActionWorkflowTriggerTypePostSandboxRun)
 	if err != nil {
 		return nil, err
@@ -199,6 +207,14 @@ func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkf
 
 	step, err = w.installSignalStep(ctx, wkflow.InstallID, "reprovision sandbox", &signals.Signal{
 		Type: signals.OperationReprovisionSandbox,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "reprovision sandbox dns if enabled", &signals.Signal{
+		Type: signals.OperationProvisionDNS,
 	})
 	if err != nil {
 		return nil, err
@@ -432,7 +448,7 @@ func (w *Workflows) getManualDeploySteps(ctx workflow.Context, wkflow *app.Insta
 		steps = append(steps, dependencyDeploySteps...)
 	}
 
-	return nil, nil
+	return steps, nil
 }
 
 func (w *Workflows) getComponentTeardownSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
@@ -620,7 +636,7 @@ func (w *Workflows) getInstallWorkflowReprovisionSandboxSteps(ctx workflow.Conte
 	if err != nil {
 		return nil, err
 	}
-	steps = append(steps, step)
+	// steps = append(steps, step)
 
 	lifecycleSteps, err := w.getSandboxLifecycleActionsSteps(ctx, wkflow.ID, wkflow.InstallID, app.ActionWorkflowTriggerTypePreSandboxRun)
 	if err != nil {
@@ -630,6 +646,14 @@ func (w *Workflows) getInstallWorkflowReprovisionSandboxSteps(ctx workflow.Conte
 
 	step, err = w.installSignalStep(ctx, wkflow.InstallID, "reprovision sandbox", &signals.Signal{
 		Type: signals.OperationReprovisionSandbox,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "reprovision sandbox dns if enabled", &signals.Signal{
+		Type: signals.OperationProvisionDNS,
 	})
 	if err != nil {
 		return nil, err

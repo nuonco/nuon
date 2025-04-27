@@ -18,10 +18,11 @@ import (
 type CreateHelmComponentConfigRequest struct {
 	basicVCSConfigRequest
 
-	Values      map[string]*string `json:"values,omitempty" validate:"required"`
-	ValuesFiles []string           `json:"values_files,omitempty"`
-	ChartName   string             `json:"chart_name,omitempty" validate:"required,dns_rfc1035_label,min=5,max=62"`
-	Namespace   string             `json:"namespace,omitempty"`
+	Values        map[string]*string `json:"values,omitempty" validate:"required"`
+	ValuesFiles   []string           `json:"values_files,omitempty"`
+	ChartName     string             `json:"chart_name,omitempty" validate:"required,dns_rfc1035_label,min=5,max=62"`
+	Namespace     string             `json:"namespace,omitempty"`
+	StorageDriver string             `json:"storage_driver,omitempty"`
 
 	AppConfigID string `json:"app_config_id"`
 }
@@ -103,6 +104,7 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		ValuesFiles:              pq.StringArray(req.ValuesFiles),
 		ChartName:                req.ChartName,
 		Namespace:                generics.NewNullString(req.Namespace),
+		StorageDriver:            generics.NewNullString(req.StorageDriver),
 	}
 	componentConfigConnection := app.ComponentConfigConnection{
 		HelmComponentConfig: &cfg,

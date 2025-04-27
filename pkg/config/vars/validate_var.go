@@ -1,13 +1,13 @@
 package vars
 
 import (
-	"bytes"
 	"fmt"
 	"regexp"
 	"strings"
-	"text/template"
 
 	"github.com/pkg/errors"
+	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/render"
 )
 
 func (v *varsValidator) validateVar(inputVar string, tmplData map[string]interface{}) error {
@@ -46,25 +46,19 @@ func (v *varsValidator) validateVar(inputVar string, tmplData map[string]interfa
 			newPieces = append(newPieces, matchPiece)
 		}
 
-		newTmpl := fmt.Sprintf("{{.%s}}", strings.Join(newPieces, "."))
+		newTmpl := fmt.Sprintf("{{.%s}}", strings.TrimSpace(strings.Join(newPieces, ".")))
 
-		temp, err := template.New("input").Option("missingkey=zero").Parse(newTmpl)
+		rendered, err := render.RenderV2(newTmpl, tmplData)
 		if err != nil {
-			return errors.Wrap(err, "unable to create template")
+			return errors.Wrap(err, "unable to render "+newTmpl)
 		}
 
-		buf := new(bytes.Buffer)
-		if err := temp.Execute(buf, tmplData); err != nil {
-			return errors.Wrap(err, "unable to execute template")
-		}
-
-		outputVal := buf.String()
-		if outputVal == "" {
-			return fmt.Errorf("checked value was empty: %s (original) %s", newTmpl, inputVar)
-		}
-
-		if outputVal == "" || outputVal == "<no value>" {
-			return fmt.Errorf("invalid reference. Not found in intermediate data.")
+		if rendered == "" {
+			return config.ErrConfig{
+				Warning:     true,
+				Description: fmt.Sprintf("rendered variable %s was empty", newTmpl),
+				Err:         fmt.Errorf("rendered variable %s was empty", newTmpl),
+			}
 		}
 	}
 

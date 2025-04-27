@@ -65,10 +65,16 @@ func (w *workspace) apply(ctx context.Context, client Terraform, log hclog.Logge
 		return nil, fmt.Errorf("unable to get writer: %w", err)
 	}
 
+	opts := []tfexec.ApplyOption{
+		tfexec.Refresh(true),
+	}
+	for _, fp := range w.varsPaths {
+		opts = append(opts, tfexec.VarFile(fp))
+	}
+
 	if err := client.ApplyJSON(ctx,
 		writer,
-		tfexec.Refresh(true),
-		tfexec.VarFile(w.varsFilepath()),
+		opts...,
 	); err != nil {
 		return nil, fmt.Errorf("error running apply: %w", err)
 	}
@@ -111,10 +117,17 @@ func (w *workspace) destroy(ctx context.Context, client Terraform, log hclog.Log
 	if err != nil {
 		return nil, fmt.Errorf("unable to get writer: %w", err)
 	}
+
+	opts := []tfexec.DestroyOption{
+		tfexec.Refresh(true),
+	}
+	for _, fp := range w.varsPaths {
+		opts = append(opts, tfexec.VarFile(fp))
+	}
+
 	if err := client.DestroyJSON(ctx,
 		writer,
-		tfexec.Refresh(true),
-		tfexec.VarFile(w.varsFilepath()),
+		opts...,
 	); err != nil {
 		return nil, fmt.Errorf("error running destroy: %w", err)
 	}
@@ -141,10 +154,17 @@ func (w *workspace) plan(ctx context.Context, client Terraform, log hclog.Logger
 	if err != nil {
 		return nil, fmt.Errorf("unable to get writer: %w", err)
 	}
+
+	opts := []tfexec.PlanOption{
+		tfexec.Refresh(true),
+	}
+	for _, fp := range w.varsPaths {
+		opts = append(opts, tfexec.VarFile(fp))
+	}
+
 	if _, err := client.PlanJSON(ctx,
 		writer,
-		tfexec.Refresh(true),
-		tfexec.VarFile(w.varsFilepath()),
+		opts...,
 	); err != nil {
 		return nil, fmt.Errorf("unable to plan: %w", err)
 	}
@@ -172,9 +192,14 @@ func (w *workspace) refresh(ctx context.Context, client Terraform, log hclog.Log
 		return nil, fmt.Errorf("unable to get writer: %w", err)
 	}
 
+	opts := []tfexec.RefreshCmdOption{}
+	for _, fp := range w.varsPaths {
+		opts = append(opts, tfexec.VarFile(fp))
+	}
+
 	if err := client.RefreshJSON(ctx,
 		writer,
-		tfexec.VarFile(w.varsFilepath()),
+		opts...,
 	); err != nil {
 		return nil, fmt.Errorf("unable to execute refresh: %w", err)
 	}

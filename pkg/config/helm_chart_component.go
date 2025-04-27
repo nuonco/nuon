@@ -12,7 +12,7 @@ type HelmValue struct {
 }
 
 type HelmValuesFile struct {
-	Source   string `toml:"source" mapstructure:"source,omitempty"`
+	Source   string `toml:"source" mapstructure:"source,omitempty" features:"get,template"`
 	Contents string `toml:"contents" mapstructure:"contents,omitempty" features:"get,template"`
 }
 
@@ -24,9 +24,10 @@ type HelmChartComponentConfig struct {
 	ValuesFiles []HelmValuesFile  `mapstructure:"values_file,omitempty"`
 
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"  jsonschema:"oneof_required=connected_repo"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
 
-	Namespace string `mapstructure:"namespace" features:"template"`
+	Namespace     string `mapstructure:"namespace" features:"template"`
+	StorageDriver string `mapstructure:"storage_driver" features:"template"`
 
 	// deprecated
 	Values []HelmValue `mapstructure:"value,omitempty"`
@@ -34,6 +35,7 @@ type HelmChartComponentConfig struct {
 
 func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "name", "release name")
+	addDescription(schema, "storage_driver", "which helm storage driver to use (defaults to secrets)")
 	addDescription(schema, "namespace", "namespace to deploy into. Defaults to {{.nuon.install.id}} and supports templating.")
 	addDescription(schema, "dependencies", "additional component dependencies")
 	addDescription(schema, "chart_name", "chart name")

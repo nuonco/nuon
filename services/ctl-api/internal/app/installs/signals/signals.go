@@ -27,6 +27,8 @@ const (
 	OperationUpdateInstallStackOutputs   eventloop.SignalType = "update-install-stack-outputs"
 	OperationAwaitRunnerHealthy          eventloop.SignalType = "await-runner-healthy"
 	OperationProvisionSandbox            eventloop.SignalType = "provision-sandbox"
+	OperationProvisionDNS                eventloop.SignalType = "provision-dns"
+	OperationDeprovisionDNS              eventloop.SignalType = "deprovision-dns"
 	OperationDeprovisionSandbox          eventloop.SignalType = "deprovision-sandbox"
 	OperationReprovisionSandbox          eventloop.SignalType = "reprovision-sandbox"
 	OperationExecuteActionWorkflow       eventloop.SignalType = "trigger-install-action-workflow"
