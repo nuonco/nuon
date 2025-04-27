@@ -16,7 +16,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -36,6 +35,8 @@ func (w *Workflows) ExecuteDeployComponent(ctx workflow.Context, sreq signals.Re
 		if err != nil {
 			return errors.Wrap(err, "unable to get deploy")
 		}
+
+		sreq.DeployID = installDeploy.ID
 	} else {
 		componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, sreq.ExecuteDeployComponentSubSignal.ComponentID)
 		if err != nil {
@@ -51,6 +52,12 @@ func (w *Workflows) ExecuteDeployComponent(ctx workflow.Context, sreq signals.Re
 			return fmt.Errorf("unable to create install deploy: %w", err)
 		}
 		sreq.DeployID = installDeploy.ID
+	}
+
+	err = w.pollForDeployableBuild(ctx, installDeploy.ID, installDeploy.ComponentBuildID)
+	if err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusNoop, "build is not deployable")
+		return nil
 	}
 
 	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
@@ -84,16 +91,20 @@ func (w *Workflows) ExecuteDeployComponent(ctx workflow.Context, sreq signals.Re
 		return err
 	}
 
-	l.Info("performing deploy")
-	err = w.doDeploy(ctx, sreq, install)
-	if err != nil {
-		w.sendNotification(ctx, notifications.NotificationsTypeDeployFailed, install.AppID, map[string]string{
-			"install_name": install.Name,
-			"app_name":     install.App.Name,
-			"created_by":   install.CreatedBy.Email,
-		})
+	l.Info("syncing")
+	if err := w.execSync(ctx, install, installDeploy, sreq.SandboxMode); err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to sync")
+		return errors.Wrap(err, "unable to execute sync")
 	}
-	return err
+
+	l.Info("deploying")
+	if err := w.execDeploy(ctx, install, installDeploy, sreq.SandboxMode); err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to deploy")
+		return errors.Wrap(err, "unable to execute deploy")
+	}
+
+	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")
+	return nil
 }
 
 func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, sandboxMode bool) error {
@@ -156,14 +167,6 @@ func (w *Workflows) execDeploy(ctx workflow.Context, install *app.Install, insta
 	}); err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)
-	}
-
-	if err := activities.AwaitSaveIntermediateData(ctx, &activities.SaveIntermediateDataRequest{
-		InstallID:   install.ID,
-		RunnerJobID: runnerJob.ID,
-		PlanJSON:    string(planJSON),
-	}); err != nil {
-		return errors.Wrap(err, "unable to save install intermediate data")
 	}
 
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "executing deploy")

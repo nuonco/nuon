@@ -61,7 +61,12 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 		return app.RunnerJobStatus(""), err
 	}
 
-	return app.RunnerJobStatusUnknown, nil
+	job, err := activities.AwaitPkgWorkflowsJobGetJobByID(ctx, req.JobID)
+	if err != nil {
+		return app.RunnerJobStatus(""), errors.Wrap(err, "unable to get job")
+	}
+
+	return job.Status, nil
 }
 
 func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string) error {

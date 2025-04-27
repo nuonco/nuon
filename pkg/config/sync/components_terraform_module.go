@@ -18,6 +18,7 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 		PublicGitVcsConfig:       nil,
 		Variables:                map[string]string{},
 		EnvVars:                  map[string]string{},
+		VariablesFiles:           make([]string, 0),
 		Version:                  obj.TerraformVersion,
 	}
 	for _, val := range obj.Variables {
@@ -32,6 +33,9 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 	}
 	for k, v := range obj.EnvVarMap {
 		configRequest.EnvVars[k] = v
+	}
+	for _, v := range obj.VariablesFiles {
+		configRequest.VariablesFiles = append(configRequest.VariablesFiles, v.Contents)
 	}
 
 	if obj.PublicRepo != nil {

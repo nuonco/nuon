@@ -17,6 +17,9 @@ type UpdateRunnerGroupSettings struct {
 // @temporal-gen activity
 func (a *Activities) UpdateRunnerGroupSettings(ctx context.Context, req *UpdateRunnerGroupSettings) error {
 	return nil
+
+	// NOTE(jm): we no longer need this, because we were previously updating the stack to run the runner locally
+	// with the runner instance role.
 	runner, err := a.getRunner(ctx, req.RunnerID)
 	if err != nil {
 		return err

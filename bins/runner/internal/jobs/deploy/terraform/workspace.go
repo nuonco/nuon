@@ -18,6 +18,9 @@ import (
 func (p *handler) GetWorkspace() (workspace.Workspace, error) {
 	arch, err := dirarchive.New(p.v,
 		dirarchive.WithPath(p.state.arch.BasePath()),
+		dirarchive.WithAddBackendFile("http"),
+		dirarchive.WithIgnoreTerraformStateFile(),
+		dirarchive.WithIgnoreDotTerraformDir(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create local archive: %w", err)
@@ -40,6 +43,7 @@ func (p *handler) GetWorkspace() (workspace.Workspace, error) {
 
 	vars, err := staticvars.New(p.v,
 		staticvars.WithFileVars(p.state.plan.TerraformDeployPlan.Vars),
+		staticvars.WithFiles(p.state.plan.TerraformDeployPlan.VarsFiles),
 		staticvars.WithEnvVars(p.state.plan.TerraformDeployPlan.EnvVars))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create variable set: %w", err)

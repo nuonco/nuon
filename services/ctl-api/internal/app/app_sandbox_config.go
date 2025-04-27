@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
@@ -44,6 +45,8 @@ type AppSandboxConfig struct {
 	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-"`
 
 	Variables pgtype.Hstore `json:"variables" gorm:"type:hstore" swaggertype:"object,string" features:"template"`
+	EnvVars   pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
+	VariablesFiles pq.StringArray `gorm:"type:text[]" json:"variables_files" swaggertype:"array,string" features:"template"`
 
 	TerraformVersion   string              `json:"terraform_version" gorm:"notnull"`
 	InstallSandboxRuns []InstallSandboxRun `json:"-" gorm:"constraint:OnDelete:CASCADE;"`

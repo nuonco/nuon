@@ -34,6 +34,8 @@ type HelmComponentConfig struct {
 	ValuesFiles pq.StringArray      `gorm:"type:text[]" json:"values_files" swaggertype:"array,string" features:"template"`
 	Namespace   generics.NullString `json:"namespace" swaggertype:"string" features:"template"`
 
+	StorageDriver generics.NullString `json:"storage_driver" swaggertype:"string" features:"template"`
+
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`
 }

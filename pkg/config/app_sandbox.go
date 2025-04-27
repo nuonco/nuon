@@ -15,24 +15,17 @@ type AppSandboxConfig struct {
 	ConnectedRepo    *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
 	PublicRepo       *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
 
-	VarMap map[string]string `mapstructure:"vars,omitempty"`
+	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty"`
+	VarsMap        map[string]string        `mapstructure:"vars,omitempty" jsonschema:"required"`
+	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty"`
 
 	AWSDelegationIAMRoleARN string `mapstructure:"aws_delegation_iam_role_arn,omitempty"`
-
-	// Deprecated
-	Vars []TerraformVariable `mapstructure:"var,omitempty" toml:"var"`
 }
 
 func (a *AppSandboxConfig) parse() error {
 	if a == nil {
 		return ErrConfig{
 			Description: "an app sandbox config is required",
-		}
-	}
-
-	if len(a.Vars) > 0 {
-		return ErrConfig{
-			Description: "the var array is deprecated, please use vars instead",
 		}
 	}
 

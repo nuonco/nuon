@@ -1,11 +1,12 @@
 package worker
 
 import (
-	"errors"
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
+
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
@@ -45,9 +46,14 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 		return fmt.Errorf("unable to update runner job: %w", err)
 	}
 
-	// do not execute any jobs in the  HealthChecks group
-	if runnerJob.Group == app.RunnerJobGroupOperations && runnerJob.Type == app.RunnerJobTypeHealthCheck {
-		l.Info("processing job from group:operations type:health-check")
+	// clear any old jobs behind this that were orphaned, or not attempted for whatever reason. This is usually due
+	// to an internal error where something was dropped by temporal. Ideally this would _never_ happen, but it's
+	// worth the extra step just in case.
+	if err := activities.AwaitFlushOrphanedJobs(ctx, activities.FlushOrphanedJobsRequest{
+		RunnerID:  sreq.ID,
+		Threshold: runnerJob.CreatedAt,
+	}); err != nil {
+		return errors.Wrap(err, "unable to flush orphaned jobs")
 	}
 
 	activities.AwaitUpdateJobStartedAt(ctx, activities.UpdateJobStartedAtRequest{JobID: sreq.JobID, StartedAt: workflow.Now(ctx)})

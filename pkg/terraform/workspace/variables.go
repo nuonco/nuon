@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 )
 
 const (
-	defaultVariablesFilename string = "variables.json"
+	defaultVariablesFilenameTmpl string = "variables-%d.json"
 )
 
 // getEnvironment returns the current environment as a map
@@ -50,16 +49,20 @@ func (w *workspace) LoadVariables(ctx context.Context) error {
 		}
 		w.envVars = w.mergeMaps(w.envVars, varEnvVars)
 
-		byts, err := vars.GetFile(ctx)
+		files, err := vars.GetFiles(ctx)
 		if err != nil {
 			return fmt.Errorf("unable to get file variables: %w", err)
 		}
-		if len(byts) < 1 {
-			continue
-		}
+		for _, file := range files {
+			if len(file.Contents) < 1 {
+				continue
+			}
 
-		if err := w.writeFile(defaultVariablesFilename, byts, defaultFilePermissions); err != nil {
-			return fmt.Errorf("unable to write file: %w", err)
+			if err := w.writeFile(file.Filename, file.Contents, defaultFilePermissions); err != nil {
+				return fmt.Errorf("unable to write file: %w", err)
+			}
+
+			w.varsPaths = append(w.varsPaths, file.Filename)
 		}
 	}
 
@@ -70,8 +73,4 @@ func (w *workspace) LoadVariables(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func (w *workspace) varsFilepath() string {
-	return filepath.Join(w.root, defaultVariablesFilename)
 }
