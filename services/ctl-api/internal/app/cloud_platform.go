@@ -15,10 +15,10 @@ func (a AWSRegionType) String() string {
 }
 
 type CloudPlatformRegion struct {
-	Name        string `json:"name"`
-	Value       string `json:"value"`
-	DisplayName string `json:"display_name"`
-	Icon        string `json:"icon"`
+	Name        string `json:"name" temporaljson:"name,omitzero,omitempty"`
+	Value       string `json:"value" temporaljson:"value,omitzero,omitempty"`
+	DisplayName string `json:"display_name" temporaljson:"display_name,omitzero,omitempty"`
+	Icon        string `json:"icon" temporaljson:"icon,omitzero,omitempty"`
 }
 
 type CloudPlatform string

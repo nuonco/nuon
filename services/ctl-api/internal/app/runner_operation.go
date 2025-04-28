@@ -28,25 +28,25 @@ const (
 )
 
 type RunnerOperation struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
-	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt   soft_delete.DeletedAt `json:"-"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// job details
-	LogStream LogStream `json:"log_stream" gorm:"polymorphic:Owner;"`
+	LogStream LogStream `json:"log_stream" gorm:"polymorphic:Owner;" temporaljson:"log_stream,omitzero,omitempty"`
 
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
-	Org   Org    `json:"-" faker:"-"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	RunnerID string `json:"runner_id"`
-	Runner   Runner `json:"-" faker:"-"`
+	RunnerID string `json:"runner_id" temporaljson:"runner_id,omitzero,omitempty"`
+	Runner   Runner `json:"-" faker:"-" temporaljson:"runner,omitzero,omitempty"`
 
-	OpType            RunnerOperationType   `json:"operation_type"`
-	Status            RunnerOperationStatus `json:"status" gorm:"notnull" swaggertype:"string"`
-	StatusDescription string                `json:"status_description" gorm:"notnull"`
+	OpType            RunnerOperationType   `json:"operation_type" temporaljson:"op_type,omitzero,omitempty"`
+	Status            RunnerOperationStatus `json:"status" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string                `json:"status_description" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 }
 
 func (i *RunnerOperation) BeforeCreate(tx *gorm.DB) error {

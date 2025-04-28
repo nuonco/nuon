@@ -30,28 +30,28 @@ const (
 )
 
 type InstallComponent struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string                `json:"created_by_id" gorm:"default:null"`
-	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
-	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id" gorm:"default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
-	Org   Org    `json:"-" faker:"-"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	InstallID string  `json:"install_id" gorm:"index:install_component_group,unique;notnull"`
-	Install   Install `faker:"-" json:"-"`
+	InstallID string  `json:"install_id" gorm:"index:install_component_group,unique;notnull" temporaljson:"install_id,omitzero,omitempty"`
+	Install   Install `faker:"-" json:"-" temporaljson:"install,omitzero,omitempty"`
 
-	ComponentID string    `json:"component_id" gorm:"index:install_component_group,unique;notnull"`
-	Component   Component `faker:"-" json:"component"`
+	ComponentID string    `json:"component_id" gorm:"index:install_component_group,unique;notnull" temporaljson:"component_id,omitzero,omitempty"`
+	Component   Component `faker:"-" json:"component" temporaljson:"component,omitzero,omitempty"`
 
-	InstallDeploys     []InstallDeploy    `faker:"-" gorm:"constraint:OnDelete:CASCADE;" json:"install_deploys"`
-	TerraformWorkspace TerraformWorkspace `json:"terraform_workspace" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;"`
+	InstallDeploys     []InstallDeploy    `faker:"-" gorm:"constraint:OnDelete:CASCADE;" json:"install_deploys" temporaljson:"install_deploys,omitzero,omitempty"`
+	TerraformWorkspace TerraformWorkspace `json:"terraform_workspace" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"terraform_workspace,omitzero,omitempty"`
 
-	Status            InstallComponentStatus `json:"status" gorm:"default:''" swaggertype:"string"`
-	StatusDescription string                 `json:"status_description" gorm:"default:''"`
+	Status            InstallComponentStatus `json:"status" gorm:"default:''" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string                 `json:"status_description" gorm:"default:''" temporaljson:"status_description,omitzero,omitempty"`
 }
 
 func (c *InstallComponent) BeforeCreate(tx *gorm.DB) error {

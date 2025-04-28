@@ -63,30 +63,30 @@ func (r RunnerStatus) IsHealthy() bool {
 }
 
 type Runner struct {
-	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account `json:"-"`
+	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 
-	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
-	Org   Org    `json:"-"`
+	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
-	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_name,unique"`
+	CreatedAt time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_name,unique" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	Status            RunnerStatus `json:"status" gorm:"not null;default null" swaggertype:"string"`
-	StatusDescription string       `json:"status_description" gorm:"not null;default null"`
+	Status            RunnerStatus `json:"status" gorm:"not null;default null" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string       `json:"status_description" gorm:"not null;default null" temporaljson:"status_description,omitzero,omitempty"`
 
-	RunnerGroupID string      `json:"runner_group_id" gorm:"index:idx_runner_name,unique"`
-	RunnerGroup   RunnerGroup `json:"-"`
+	RunnerGroupID string      `json:"runner_group_id" gorm:"index:idx_runner_name,unique" temporaljson:"runner_group_id,omitzero,omitempty"`
+	RunnerGroup   RunnerGroup `json:"-" temporaljson:"runner_group,omitzero,omitempty"`
 
-	Name        string `json:"name" gorm:"index:idx_runner_name,unique"`
-	DisplayName string `json:"display_name" gorm:"not null;default null"`
+	Name        string `json:"name" gorm:"index:idx_runner_name,unique" temporaljson:"name,omitzero,omitempty"`
+	DisplayName string `json:"display_name" gorm:"not null;default null" temporaljson:"display_name,omitzero,omitempty"`
 
-	Jobs       []RunnerJob       `json:"jobs" gorm:"constraint:OnDelete:CASCADE;"`
-	Operations []RunnerOperation `json:"operations" gorm:"constraint:OnDelete:CASCADE;"`
+	Jobs       []RunnerJob       `json:"jobs" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"jobs,omitzero,omitempty"`
+	Operations []RunnerOperation `json:"operations" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"operations,omitzero,omitempty"`
 
-	RunnerJob *RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;"`
+	RunnerJob *RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
 }
 
 func (r *Runner) BeforeCreate(tx *gorm.DB) error {

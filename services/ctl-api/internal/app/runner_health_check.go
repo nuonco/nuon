@@ -14,24 +14,24 @@ import (
 
 // clickhouse table
 type RunnerHealthCheck struct {
-	ID          string `gorm:"primary_key" json:"id"`
-	CreatedByID string `json:"created_by_id"`
+	ID          string `gorm:"primary_key" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string `json:"created_by_id" temporaljson:"created_by_id,omitzero,omitempty"`
 
-	CreatedAt time.Time             `json:"created_at" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1)"`
-	UpdatedAt time.Time             `json:"updated_at" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1)"`
-	DeletedAt soft_delete.DeletedAt `json:"-"`
+	CreatedAt time.Time             `json:"created_at" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1)" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt time.Time             `json:"updated_at" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1)" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	RunnerID     string       `json:"runner_id" gorm:"codec:ZSTD(1)"`
-	RunnerJob    RunnerJob    `json:"runner_job" gorm:"polymorphic:Owner;"`
-	RunnerStatus RunnerStatus `json:"status" gorm:"codec:ZSTD(1)"`
+	RunnerID     string       `json:"runner_id" gorm:"codec:ZSTD(1)" temporaljson:"runner_id,omitzero,omitempty"`
+	RunnerJob    RunnerJob    `json:"runner_job" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
+	RunnerStatus RunnerStatus `json:"status" gorm:"codec:ZSTD(1)" temporaljson:"runner_status,omitzero,omitempty"`
 
 	// loaded from view
 
-	MinuteBucket time.Time `json:"minute_bucket" gorm:"->;-:migration;type:DateTime64(9);codec:Delta(8),ZSTD(1)"`
+	MinuteBucket time.Time `json:"minute_bucket" gorm:"->;-:migration;type:DateTime64(9);codec:Delta(8),ZSTD(1)" temporaljson:"minute_bucket,omitzero,omitempty"`
 
 	// after queries
 
-	RunnerStatusCode int `json:"status_code" gorm:"-"`
+	RunnerStatusCode int `json:"status_code" gorm:"-" temporaljson:"runner_status_code,omitzero,omitempty"`
 }
 
 func (r *RunnerHealthCheck) BeforeCreate(tx *gorm.DB) error {
