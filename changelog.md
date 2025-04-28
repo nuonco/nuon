@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.528
+
+Pushing new runner versions, fixes to plans, and many different improvements.
+
 ## v0.19.522
 
 Pushing promotion.
