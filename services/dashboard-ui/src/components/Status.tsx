@@ -54,7 +54,10 @@ export const StatusBadge: FC<IStatusBadge> = ({
     status === 'inactive' ||
     status === 'pending' ||
     status === 'offline' ||
-    status === 'cancelled'
+    status === 'cancelled' ||
+    status === 'Not deployed' ||
+    status === 'No build'
+
   const statusText = isLabelStatusText ? label : status
 
   const path = usePathname()
