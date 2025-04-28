@@ -116,34 +116,34 @@ const (
 //
 // We start with this to make it easier to iterate on them, for now.
 type InstallWorkflow struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
-	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_app_install_name,unique" json:"-"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_app_install_name,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
-	Org   Org    `json:"-" faker:"-"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Install   Install `swaggerignore:"true" json:"-"`
-	InstallID string  `json:"install_id" gorm:"notnull;default null"`
+	Install   Install `swaggerignore:"true" json:"-" temporaljson:"install,omitzero,omitempty"`
+	InstallID string  `json:"install_id" gorm:"notnull;default null" temporaljson:"install_id,omitzero,omitempty"`
 
-	Type              InstallWorkflowType `json:"type" gorm:"not null;default null"`
-	Metadata          pgtype.Hstore       `json:"metadata" gorm:"type:hstore" swaggertype:"object,string"`
-	Status            CompositeStatus     `json:"status"`
-	StepErrorBehavior StepErrorBehavior   `json:"step_error_behavior"`
+	Type              InstallWorkflowType `json:"type" gorm:"not null;default null" temporaljson:"type,omitzero,omitempty"`
+	Metadata          pgtype.Hstore       `json:"metadata" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
+	Status            CompositeStatus     `json:"status" temporaljson:"status,omitzero,omitempty"`
+	StepErrorBehavior StepErrorBehavior   `json:"step_error_behavior" temporaljson:"step_error_behavior,omitzero,omitempty"`
 
-	StartedAt  time.Time `json:"started_at"  gorm:"default:null"`
-	FinishedAt time.Time `json:"finished_at" gorm:"default:null"`
-	Finished   bool      `json:"finished" gorm:"-"`
+	StartedAt  time.Time `json:"started_at" gorm:"default:null" temporaljson:"started_at,omitzero,omitempty"`
+	FinishedAt time.Time `json:"finished_at" gorm:"default:null" temporaljson:"finished_at,omitzero,omitempty"`
+	Finished   bool      `json:"finished" gorm:"-" temporaljson:"finished,omitzero,omitempty"`
 
 	// steps represent each piece of the workflow
-	Steps []InstallWorkflowStep `json:"steps" gorm:"constraint:OnDelete:CASCADE;"`
-	Name  string                `json:"name" gorm:"-"`
+	Steps []InstallWorkflowStep `json:"steps" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"steps,omitzero,omitempty"`
+	Name  string                `json:"name" gorm:"-" temporaljson:"name,omitzero,omitempty"`
 
-	ExecutionTime time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer"`
+	ExecutionTime time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
 }
 
 func (i *InstallWorkflow) BeforeCreate(tx *gorm.DB) error {

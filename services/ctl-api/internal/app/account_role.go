@@ -14,20 +14,20 @@ import (
 
 // AccountRole is a many2many table used by gorm under the hood
 type AccountRole struct {
-	ID string `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
+	ID string `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
 
-	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
-	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_account_role:unique"`
+	CreatedAt time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_account_role:unique" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID generics.NullString `json:"org_id" swaggerignore:"true"`
-	Org   *Org                `json:"-" faker:"-"`
+	OrgID generics.NullString `json:"org_id" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	Org   *Org                `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	RoleID string `gorm:"primary_key;index:idx_account_role:unique"`
-	Role   Role
+	RoleID string `gorm:"primary_key;index:idx_account_role:unique" temporaljson:"role_id,omitzero,omitempty"`
+	Role   Role   `temporaljson:"role,omitzero,omitempty"`
 
-	AccountID string `gorm:"primary_key;index:idx_account_role:unique"`
-	Account   Account
+	AccountID string  `gorm:"primary_key;index:idx_account_role:unique" temporaljson:"account_id,omitzero,omitempty"`
+	Account   Account `temporaljson:"account,omitzero,omitempty"`
 }
 
 func (c *AccountRole) BeforeSave(tx *gorm.DB) error {

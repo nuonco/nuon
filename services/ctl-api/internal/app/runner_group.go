@@ -18,24 +18,24 @@ const (
 )
 
 type RunnerGroup struct {
-	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account `json:"-"`
+	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 
-	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
-	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt soft_delete.DeletedAt `gorm:"index:idx_runner_group_owner" json:"-"`
+	CreatedAt time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `gorm:"index:idx_runner_group_owner" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id" gorm:"default null;not null"`
+	OrgID string `json:"org_id" gorm:"default null;not null" temporaljson:"org_id,omitzero,omitempty"`
 
 	// parent can org, install or in the future, builtin runner group
-	OwnerID   string `json:"owner_id" gorm:"index:idx_runner_group_owner;notnull;default null"`
-	OwnerType string `json:"owner_type" gorm:"notnull;default null"`
+	OwnerID   string `json:"owner_id" gorm:"index:idx_runner_group_owner;notnull;default null" temporaljson:"owner_id,omitzero,omitempty"`
+	OwnerType string `json:"owner_type" gorm:"notnull;default null" temporaljson:"owner_type,omitzero,omitempty"`
 
-	Runners  []Runner            `json:"runners" gorm:"constraint:OnDelete:CASCADE;"`
-	Settings RunnerGroupSettings `json:"settings" gorm:"constraint:OnDelete:CASCADE;"`
-	Type     RunnerGroupType     `json:"type" gorm:"notnull;defaultnull"`
-	Platform AppRunnerType       `json:"platform" gorm:"notnull;defaultnull"`
+	Runners  []Runner            `json:"runners" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"runners,omitzero,omitempty"`
+	Settings RunnerGroupSettings `json:"settings" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"settings,omitzero,omitempty"`
+	Type     RunnerGroupType     `json:"type" gorm:"notnull;defaultnull" temporaljson:"type,omitzero,omitempty"`
+	Platform AppRunnerType       `json:"platform" gorm:"notnull;defaultnull" temporaljson:"platform,omitzero,omitempty"`
 }
 
 func (r *RunnerGroup) BeforeCreate(tx *gorm.DB) error {
