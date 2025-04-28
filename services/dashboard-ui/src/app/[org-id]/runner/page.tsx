@@ -88,11 +88,7 @@ export default withPageAuthRequired(async function OrgRunner({
                       </span>
                     }
                   >
-                    <RunnerHeartbeat
-                      runnerId={runnerId}
-                      orgId={orgId}
-                      runnerType="build"
-                    />
+                    <RunnerHeartbeat runnerId={runnerId} orgId={orgId} />
                   </Suspense>
                 </ErrorBoundary>
               </div>
