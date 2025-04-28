@@ -2,6 +2,7 @@ package worker
 
 import (
 	"fmt"
+	"time"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -51,7 +52,7 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 	// worth the extra step just in case.
 	if err := activities.AwaitFlushOrphanedJobs(ctx, activities.FlushOrphanedJobsRequest{
 		RunnerID:  sreq.ID,
-		Threshold: runnerJob.CreatedAt,
+		Threshold: runnerJob.CreatedAt.Add(-time.Minute * 5),
 	}); err != nil {
 		return errors.Wrap(err, "unable to flush orphaned jobs")
 	}
