@@ -133,6 +133,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	tfWorkspacePath := "/v1/terraform-workspaces"
 	api.GET(tfWorkspacePath, s.GetTerraformWorkpaces)
 	api.GET(tfWorkspacePath+"/:workspace_id", s.GetTerraformWorkpace)
+	api.POST(tfWorkspacePath, s.CreateTerraformWorkspace)
 	api.DELETE(tfWorkspacePath+"/:workspace_id", s.DeleteTerraformWorkpace)
 	api.POST(tfWorkspacePath+"/:workspace_id/lock", s.LockTerraformWorkspace)
 	api.POST(tfWorkspacePath+"/:workspace_id/unlock", s.UnlockTerraformWorkspace)
