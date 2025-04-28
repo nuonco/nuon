@@ -16,7 +16,7 @@ type AppSandboxConfig struct {
 	PublicRepo       *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
 
 	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty"`
-	VarsMap        map[string]string        `mapstructure:"vars,omitempty" jsonschema:"required"`
+	VarsMap        map[string]string        `mapstructure:"vars,omitempty"`
 	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty"`
 
 	AWSDelegationIAMRoleARN string `mapstructure:"aws_delegation_iam_role_arn,omitempty"`
