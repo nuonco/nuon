@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { Check } from '@phosphor-icons/react'
 import { Button, type IButton } from '@/components/Button'
@@ -121,84 +122,89 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
 
   return (
     <>
-      <Modal
-        className="max-w-lg"
-        isOpen={isConfirmOpen}
-        heading={cancelJobData.confirmHeading}
-        onClose={() => {
-          setIsConfirmOpen(false)
-        }}
-      >
-        <div className="mb-6">
-          {cancelError ? (
-            <span className="flex w-full p-2 border rounded-md border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600 text-base font-medium mb-6">
-              {cancelError}
-            </span>
-          ) : null}
-          <Text variant="reg-14" className="leading-relaxed">
-            {cancelJobData.confirmMessage}
-          </Text>
-        </div>
-        <div className="flex gap-3 justify-end">
-          <Button
-            onClick={() => {
-              setIsConfirmOpen(false)
-            }}
-            className="text-base"
-          >
-            Cancel
-          </Button>
-          <Button
-            disabled={Boolean(cancelError)}
-            className="text-sm flex items-center gap-1"
-            onClick={() => {
-              setIsLoading(true)
-              cancelRunnerJob({ orgId, runnerJobId, path: pathName })
-                .then(() => {
-                  trackEvent({
-                    event: 'runner_job_cancel',
-                    status: 'ok',
-                    user,
-                    props: {
-                      jobType,
-                      orgId: org.id,
-                      runnerJobId,
-                    },
-                  })
-                  setIsLoading(false)
-                  setIsKickedOff(true)
-                  setIsConfirmOpen(false)
-                  setHasBeenCanceled(true)
-                })
-                .catch((error) => {
-                  trackEvent({
-                    event: 'runner_job_cancel',
-                    status: 'error',
-                    user,
-                    props: {
-                      jobType,
-                      orgId: org.id,
-                      runnerJobId,
-                    },
-                  })
-                  console.error(error?.message)
-                  setIsLoading(false)
-                  setCancelError(
-                    'Error occured, please refresh page and try again.'
-                  )
-                })
-            }}
-            variant="danger"
-          >
-            {isKickedOff ? (
-              <Check size="16" />
-            ) : isLoading ? (
-              <SpinnerSVG />
-            ) : null}{' '}
-            Cancel
-          </Button>
-        </div>
-      </Modal>
+      {isConfirmOpen
+        ? createPortal(
+            <Modal
+              className="max-w-lg"
+              isOpen={isConfirmOpen}
+              heading={cancelJobData.confirmHeading}
+              onClose={() => {
+                setIsConfirmOpen(false)
+              }}
+            >
+              <div className="mb-6">
+                {cancelError ? (
+                  <span className="flex w-full p-2 border rounded-md border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600 text-base font-medium mb-6">
+                    {cancelError}
+                  </span>
+                ) : null}
+                <Text variant="reg-14" className="leading-relaxed">
+                  {cancelJobData.confirmMessage}
+                </Text>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  onClick={() => {
+                    setIsConfirmOpen(false)
+                  }}
+                  className="text-base"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  disabled={Boolean(cancelError)}
+                  className="text-sm flex items-center gap-1"
+                  onClick={() => {
+                    setIsLoading(true)
+                    cancelRunnerJob({ orgId, runnerJobId, path: pathName })
+                      .then(() => {
+                        trackEvent({
+                          event: 'runner_job_cancel',
+                          status: 'ok',
+                          user,
+                          props: {
+                            jobType,
+                            orgId: org.id,
+                            runnerJobId,
+                          },
+                        })
+                        setIsLoading(false)
+                        setIsKickedOff(true)
+                        setIsConfirmOpen(false)
+                        setHasBeenCanceled(true)
+                      })
+                      .catch((error) => {
+                        trackEvent({
+                          event: 'runner_job_cancel',
+                          status: 'error',
+                          user,
+                          props: {
+                            jobType,
+                            orgId: org.id,
+                            runnerJobId,
+                          },
+                        })
+                        console.error(error?.message)
+                        setIsLoading(false)
+                        setCancelError(
+                          'Error occured, please refresh page and try again.'
+                        )
+                      })
+                  }}
+                  variant="danger"
+                >
+                  {isKickedOff ? (
+                    <Check size="16" />
+                  ) : isLoading ? (
+                    <SpinnerSVG />
+                  ) : null}{' '}
+                  Cancel
+                </Button>
+              </div>
+            </Modal>,
+            document.body
+          )
+        : null}
       <Button
         disabled={hasBeenCanceled}
         className="text-sm flex items-center gap-1 text-red-800 dark:text-red-500"
