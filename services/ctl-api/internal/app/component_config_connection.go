@@ -21,38 +21,38 @@ const (
 )
 
 type ComponentConfigConnection struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
-	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
-	Org   Org    `json:"-" faker:"-"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	AppConfigID string `json:"app_config_id"`
+	AppConfigID string `json:"app_config_id" temporaljson:"app_config_id,omitzero,omitempty"`
 
-	ComponentID string    `json:"component_id" gorm:"notnull"`
-	Component   Component `json:"-" temporaljson:"component"`
+	ComponentID string    `json:"component_id" gorm:"notnull" temporaljson:"component_id,omitzero,omitempty"`
+	Component   Component `json:"-" temporaljson:"component,omitzero,omitempty"`
 
-	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_builds,omitzero,omitempty"`
 
-	TerraformModuleComponentConfig *TerraformModuleComponentConfig `json:"terraform_module,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	HelmComponentConfig            *HelmComponentConfig            `json:"helm,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	ExternalImageComponentConfig   *ExternalImageComponentConfig   `json:"external_image,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	DockerBuildComponentConfig     *DockerBuildComponentConfig     `json:"docker_build,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	JobComponentConfig             *JobComponentConfig             `json:"job,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	TerraformModuleComponentConfig *TerraformModuleComponentConfig `json:"terraform_module,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"terraform_module_component_config,omitzero,omitempty"`
+	HelmComponentConfig            *HelmComponentConfig            `json:"helm,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"helm_component_config,omitzero,omitempty"`
+	ExternalImageComponentConfig   *ExternalImageComponentConfig   `json:"external_image,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"external_image_component_config,omitzero,omitempty"`
+	DockerBuildComponentConfig     *DockerBuildComponentConfig     `json:"docker_build,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"docker_build_component_config,omitzero,omitempty"`
+	JobComponentConfig             *JobComponentConfig             `json:"job,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"job_component_config,omitzero,omitempty"`
 
 	// loaded via after query
-	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-"`
-	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"-" json:"-"`
-	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"-" json:"-"`
+	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-" temporaljson:"vcs_connection_type,omitzero,omitempty"`
+	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"-" json:"-" temporaljson:"public_git_vcs_config,omitzero,omitempty"`
+	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"-" json:"-" temporaljson:"connected_github_vcs_config,omitzero,omitempty"`
 
-	Type ComponentType `gorm:"-" json:"type"`
+	Type ComponentType `gorm:"-" json:"type" temporaljson:"type,omitzero,omitempty"`
 
-	Version int `json:"version" gorm:"->;-:migration"`
+	Version int `json:"version" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
 }
 
 func (c *ComponentConfigConnection) UseView() bool {

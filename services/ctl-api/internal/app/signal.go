@@ -8,11 +8,11 @@ import (
 )
 
 type Signal struct {
-	EventLoopID string `json:"event_loop_id"`
+	EventLoopID string `json:"event_loop_id" temporaljson:"event_loop_id,omitzero,omitempty"`
 
-	Namespace  string `json:"namespace"`
-	Type       string `json:"type"`
-	SignalJSON []byte `json:"json"`
+	Namespace  string `json:"namespace" temporaljson:"namespace,omitzero,omitempty"`
+	Type       string `json:"type" temporaljson:"type,omitzero,omitempty"`
+	SignalJSON []byte `json:"json" temporaljson:"signal_json,omitzero,omitempty"`
 }
 
 func (s *Signal) Scan(v interface{}) (err error) {

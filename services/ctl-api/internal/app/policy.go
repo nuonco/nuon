@@ -25,23 +25,23 @@ const (
 )
 
 type Policy struct {
-	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string                `json:"created_by_id" gorm:"notnull"`
-	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at"`
-	UpdatedAt   time.Time             `json:"updated_at"`
-	DeletedAt   soft_delete.DeletedAt `json:"-"`
+	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id" gorm:"notnull" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	RoleID string `json:"role_id" gorm:"notnull;default null"`
-	Role   Role   `swaggerignore:"true" json:"role"`
+	RoleID string `json:"role_id" gorm:"notnull;default null" temporaljson:"role_id,omitzero,omitempty"`
+	Role   Role   `swaggerignore:"true" json:"role" temporaljson:"role,omitzero,omitempty"`
 
-	OrgID generics.NullString `json:"org_id" swaggerignore:"true"`
-	Org   *Org                `json:"-" faker:"-"`
+	OrgID generics.NullString `json:"org_id" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	Org   *Org                `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Name PolicyName `json:"name"`
+	Name PolicyName `json:"name" temporaljson:"name,omitzero,omitempty"`
 
 	// Permissions are used to track granular permissions for each domain
-	Permissions pgtype.Hstore `json:"permissions" gorm:"type:hstore" swaggertype:"object,string"`
+	Permissions pgtype.Hstore `json:"permissions" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"permissions,omitzero,omitempty"`
 }
 
 func (a *Policy) BeforeCreate(tx *gorm.DB) error {
