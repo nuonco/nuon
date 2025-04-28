@@ -5,21 +5,16 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   ErrorFallback,
-  ID,
+  InstallManagementDropdown,
   InstallStatuses,
   InstallPageSubNav,
   Loading,
   RunnerHealthChart,
   RunnerHeartbeat,
   RunnerPastJobs,
-  RunnerRecentJob,
-  RunnerUpcomingJobs,
-  StatusBadge,
   Section,
-  Text,
   Time,
 } from '@/components'
-import { InstallManagementDropdown } from '@/components/Installs'
 import { getInstall, getRunner, getAppLatestRunnerConfig } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -43,14 +38,7 @@ export default withPageAuthRequired(async function Runner({
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
   const runnerId = params?.['runner-id'] as string
-  const [install, runner] = await Promise.all([
-    getInstall({ installId, orgId }),
-    getRunner({
-      orgId,
-      runnerId,
-    }),
-  ])
-
+  const install = await getInstall({ installId, orgId })
   const appRunnerConfig = await getAppLatestRunnerConfig({
     orgId,
     appId: install.app_id,
@@ -132,7 +120,7 @@ export default withPageAuthRequired(async function Runner({
             </ErrorBoundary>
           </Section>
           <Section className="flex-initial">
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-1">
               <ErrorBoundary fallbackRender={ErrorFallback}>
                 <Suspense
                   fallback={
