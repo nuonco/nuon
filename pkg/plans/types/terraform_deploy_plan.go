@@ -7,7 +7,7 @@ import (
 )
 
 type TerraformDeployPlan struct {
-	Vars      map[string]any    `json:"vars"`
+	Vars      map[string]any    `json:"vars" faker:"-"`
 	EnvVars   map[string]string `json:"env_vars"`
 	VarsFiles []string          `json:"vars_files"`
 
@@ -18,5 +18,5 @@ type TerraformDeployPlan struct {
 
 	Policies map[string]string `json:"policies"`
 
-	State *state.State `json:"state"`
+	State *state.State `json:"state" faker:"-"`
 }

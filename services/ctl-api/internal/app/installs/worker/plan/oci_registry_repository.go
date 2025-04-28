@@ -9,9 +9,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 	"github.com/powertoolsdev/mono/pkg/render"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
 func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, installID, deployID string) (*configs.OCIRegistryRepository, error) {
@@ -64,6 +66,11 @@ func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, insta
 }
 
 func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID, deployID string) (*configs.OCIRegistryRepository, error) {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get logger")
+	}
+
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install stack by install id")
@@ -79,9 +86,15 @@ func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID
 		return nil, errors.Wrap(err, "unable to get install stack outputs")
 	}
 
-	accessInfo, err := activities.AwaitGetOrgECRAccessInfo(ctx, install.OrgID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get access info")
+	var accessInfo *activities.OrgECRAccessInfo
+	if install.Org.SandboxMode {
+		l.Info("sandbox-mode enabled, creating fake access info")
+		accessInfo = generics.GetFakeObj[*activities.OrgECRAccessInfo]()
+	} else {
+		accessInfo, err = activities.AwaitGetOrgECRAccessInfo(ctx, install.OrgID)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get access info")
+		}
 	}
 
 	appRepoName := fmt.Sprintf("%s/%s", install.OrgID, install.AppID)
