@@ -22,6 +22,7 @@ import {
   Duration,
   ErrorFallback,
   InstallDeployIntermediateData,
+  InstallComponentManagementDropdown,
   Link,
   Loading,
   LogStreamProvider,
@@ -175,6 +176,9 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
               </ToolTip>
             </Text>
           </span>
+          {component ? (
+            <InstallComponentManagementDropdown component={component} />
+          ) : null}
           {CANCEL_RUNNER_JOBS &&
           deploy?.status !== 'active' &&
           deploy?.status !== 'error' &&
