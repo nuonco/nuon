@@ -60,10 +60,7 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		return nil, errors.Wrap(err, "unable to render namespace")
 	}
 
-	// NOTE(jm): the current temporal payload issue prevents this from being serialized correctly:
 	driver := cfg.StorageDriver.ValueOrDefault("secrets")
-	driver = "configmap"
-	l.Error("debug ", zap.Any("val", cfg.StorageDriver))
 	renderedDriver, err := render.RenderV2(driver, stateData)
 	if err != nil {
 		l.Error("unable to render driver "+driver, zap.Error(err))

@@ -47,12 +47,14 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 		run, err := activities.AwaitCreateSandboxInstallStackVersionRun(ctx, &activities.CreateSandboxInstallStackVersionRunRequest{
 			StackVersionID: version.ID,
 			Data: map[string]string{
+				"region":                   install.AWSAccount.Region,
 				"url":                      "url",
 				"maintenance_iam_role_arn": "maintenance_iam_role_arn",
 				"provision_iam_role_arn":   "provision_iam_role_arn",
 				"deprovision_iam_role_arn": "deprovision_iam_role_arn",
 				"reprovision_iam_role_arn": "reprovision_iam_role_arn",
 				"vpc_id":                   "vpc-id",
+				"account_id":               "account_id",
 				"public_subnets":           "a,b,c",
 				"private_subnets":          "a,b,c",
 				"runner_subnet":            "a",

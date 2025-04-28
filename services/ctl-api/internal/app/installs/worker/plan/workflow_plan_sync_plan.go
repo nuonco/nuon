@@ -25,7 +25,6 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		return nil, errors.Wrap(err, "unable to get install registry repository")
 	}
 
-
 	return &plantypes.SyncOCIPlan{
 		Src:    srcCfg,
 		SrcTag: deploy.ComponentBuildID,
