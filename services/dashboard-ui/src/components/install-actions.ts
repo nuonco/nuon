@@ -111,24 +111,39 @@ interface IDeployComponentBuild {
   buildId: string
   installId: string
   orgId: string
+  continueOnError?: boolean
+  deployDeps?: boolean
 }
 
 export async function deployComponentBuild({
   buildId,
+  continueOnError = false,
+  deployDeps = false,
   installId,
   orgId,
 }: IDeployComponentBuild) {
-  try {
-    await deployComponentByBuildId({
-      buildId,
-      installId,
-      orgId,
+  const res = fetch(`${API_URL}/v1/installs/${installId}/deploys`, {
+    ...(await getFetchOpts(orgId)),
+    body: JSON.stringify({
+      // TODO(nnnnat): assuming we will want to enable this soon
+      //error_behavior: continueOnError ? 'continue' : 'abort',
+      build_id: buildId,
+      deploy_dependents: deployDeps,
+    }),
+    method: 'POST',
+  })
+    .then((r) => {
+      if (!r.ok) {
+        throw new Error('Unable to kick off build deploy')
+      } else {
+        return r
+      }
     })
-    revalidatePath(`/${orgId}/installs/${installId}`)
-  } catch (error) {
-    console.error(error)
-    throw new Error(error.message)
-  }
+    .catch((err) => {
+      throw new Error(err)
+    })
+
+  return (await res).headers.get('x-nuon-install-workflow-id')
 }
 
 interface IRevalidateInstallData {
@@ -235,27 +250,46 @@ export async function forgetInstall(params: IForgetInstall) {
 }
 
 interface IDeleteComponents {
+  continueOnError?: boolean
   installId: string
   orgId: string
   force?: boolean
 }
 
 export async function deleteComponents({
+  continueOnError = false,
   installId,
   orgId,
   force = false,
 }: IDeleteComponents) {
   // @ts-ignore
   const params = new URLSearchParams({ force })
-  return mutateData({
-    errorMessage: 'Unable to delete components',
-    orgId,
-    method: 'DELETE',
-    path: `installs/${installId}/components?${params.toString()}`,
-  })
+  const res = fetch(
+    `${API_URL}/v1/installs/${installId}/components?${params.toString()}`,
+    {
+      ...(await getFetchOpts(orgId)),
+      body: JSON.stringify({
+        // error_behavior: continueOnError ? 'continue' : 'abort',
+      }),
+      method: 'DELETE',
+    }
+  )
+    .then((r) => {
+      if (!r.ok) {
+        throw new Error('Unable to kick off components delete')
+      } else {
+        return r
+      }
+    })
+    .catch((err) => {
+      throw new Error(err)
+    })
+
+  return (await res).headers.get('x-nuon-install-workflow-id')
 }
 
 interface IDeleteComponent {
+  continueOnError?: boolean
   componentId: string
   installId: string
   orgId: string
@@ -263,6 +297,7 @@ interface IDeleteComponent {
 }
 
 export async function deleteComponent({
+  continueOnError = false,
   componentId,
   installId,
   orgId,
@@ -270,12 +305,35 @@ export async function deleteComponent({
 }: IDeleteComponent) {
   // @ts-ignore
   const params = new URLSearchParams({ force })
-  return mutateData({
-    errorMessage: 'Unable to delete component',
-    orgId,
-    method: 'DELETE',
-    path: `installs/${installId}/components/${componentId}?${params.toString()}`,
-  })
+  // return mutateData({
+  //   errorMessage: 'Unable to delete component',
+  //   orgId,
+  //   method: 'DELETE',
+  //   path: `installs/${installId}/components/${componentId}?${params.toString()}`,
+  // })
+
+  const res = fetch(
+    `${API_URL}/v1/installs/${installId}/components/${componentId}?${params.toString()}`,
+    {
+      ...(await getFetchOpts(orgId)),
+      body: JSON.stringify({
+        // error_behavior: continueOnError ? 'continue' : 'abort',
+      }),
+      method: 'DELETE',
+    }
+  )
+    .then((r) => {
+      if (!r.ok) {
+        throw new Error('Unable to kick off component delete')
+      } else {
+        return r
+      }
+    })
+    .catch((err) => {
+      throw new Error(err)
+    })
+
+  return (await res).headers.get('x-nuon-install-workflow-id')
 }
 
 interface IDeleteInstall {

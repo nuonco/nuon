@@ -58,9 +58,10 @@ export type TQueryError = {
 }
 
 export type TQuery<T> = {
-  status: Response['status']
   data: T | null
   error: null | TQueryError
+  headers: Response['headers']
+  status: Response['status']
 }
 
 interface INueQueryData {
@@ -85,12 +86,12 @@ export async function nueQueryData<T>({
         .json()
         .then((data) =>
           r.ok
-            ? { data, error: null, status: r.status }
-            : { data: null, error: data, status: r.status }
+            ? { data, error: null, status: r.status, headers: r.headers }
+            : { data: null, error: data, status: r.status, headers: r.headers }
         )
     )
     .catch((error) => {
       console.error(error)
-      return { data: null, error, status: 500 }
+      return { data: null, error, status: 500, headers: new Headers() }
     })
 }
