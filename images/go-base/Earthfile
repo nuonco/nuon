@@ -1,6 +1,6 @@
 VERSION --use-cache-command 0.6
 
-FROM golang:1.23
+FROM golang:1.24
 
 CACHE /go-cache
 CACHE /go-mod-cache
@@ -27,7 +27,7 @@ build-base:
       jq
 
 alpine-base:
-  FROM golang:1.23-alpine
+  FROM golang:1.24-alpine
 
   ENV CGO_ENABLED=0
 
