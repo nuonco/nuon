@@ -1,16 +1,15 @@
 'use client'
 
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { CloudCheck, CloudArrowUp } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
-import { RadioInput } from '@/components/Input'
+import { CheckboxInput, RadioInput } from '@/components/Input'
 import { SpinnerSVG, Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
-import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import { deployComponentBuild } from '@/components/install-actions'
@@ -23,9 +22,11 @@ export const InstallDeployBuildModal: FC<{}> = ({}) => {
   const orgId = params['org-id']
   const installId = params['install-id']
   const componentId = params['component-id']
+  const router = useRouter()
   const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
   const [buildId, setBuildId] = useState<string>()
+  const [deployDeps, setDeployDeps] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [error, setError] = useState<string>()
@@ -47,7 +48,7 @@ export const InstallDeployBuildModal: FC<{}> = ({}) => {
       {isOpen
         ? createPortal(
             <Modal
-              className="max-w-lg"
+              className="!max-w-2xl"
               contentClassName="!p-0"
               heading={`Deploy build?`}
               isOpen={isOpen}
@@ -56,7 +57,11 @@ export const InstallDeployBuildModal: FC<{}> = ({}) => {
               }}
             >
               <div className="flex flex-col mb-6">
-                {error ? <Notice>{error}</Notice> : null}
+                {error ? (
+                  <div className="px-6 pt-6">
+                    <Notice>{error}</Notice>
+                  </div>
+                ) : null}
                 <Text variant="reg-14" className="px-6 pt-6 pb-4">
                   Select an active build from the list below and deploy to your
                   install.
@@ -68,61 +73,99 @@ export const InstallDeployBuildModal: FC<{}> = ({}) => {
                   setBuildId={setBuildId}
                 />
               </div>
-              <div className="flex gap-3 justify-end border-t p-6">
-                <Button
-                  onClick={() => {
-                    setIsOpen(false)
-                  }}
-                  className="text-base"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  disabled={!buildId}
-                  className="text-base flex items-center gap-1"
-                  onClick={() => {
-                    setIsLoading(true)
-                    deployComponentBuild({ buildId, installId, orgId })
-                      .then(() => {
-                        trackEvent({
-                          event: 'component_deploy',
-                          user,
-                          status: 'ok',
-                          props: { orgId, installId, componentId, buildId },
-                        })
-                        setIsLoading(false)
-                        setIsKickedOff(true)
-                        setIsOpen(false)
+
+              <div className="flex gap-3 justify-between border-t p-6 flex-wrap">
+                <div className="flex items-start px-6">
+                  <CheckboxInput
+                    name="ack"
+                    defaultChecked={deployDeps}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setDeployDeps(Boolean(e?.currentTarget?.checked))
+                    }}
+                    className="mt-1.5"
+                    labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[250px] !items-start"
+                    labelText={
+                      <span className="flex flex-col gap-1">
+                        <Text variant="med-12">Deploy dependencies</Text>
+                        <Text className="!font-normal" variant="reg-12">
+                          Deploy all dependencies as well as the selected build.
+                        </Text>
+                      </span>
+                    }
+                  />
+                </div>
+                <div className="flex gap-3 items-center">
+                  <Button
+                    onClick={() => {
+                      setIsOpen(false)
+                    }}
+                    className="text-base"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    disabled={!buildId}
+                    className="text-base flex items-center gap-1"
+                    onClick={() => {
+                      setIsLoading(true)
+                      deployComponentBuild({
+                        buildId,
+                        installId,
+                        orgId,
+                        deployDeps,
                       })
-                      .catch((err) => {
-                        trackEvent({
-                          event: 'component_deploy',
-                          user,
-                          status: 'error',
-                          props: {
-                            orgId,
-                            installId,
-                            componentId,
-                            buildId,
-                            err,
-                          },
+                        .then((workflowId) => {
+                          trackEvent({
+                            event: 'component_deploy',
+                            user,
+                            status: 'ok',
+                            props: { orgId, installId, componentId, buildId },
+                          })
+                          setIsLoading(false)
+                          setIsKickedOff(true)
+
+                          if (workflowId) {
+                            router.push(
+                              `/${orgId}/installs/${installId}/history/${workflowId}`
+                            )
+                          } else {
+                            router.push(
+                              `/${orgId}/installs/${installId}/history`
+                            )
+                          }
+
+                          setIsOpen(false)
                         })
-                        console.error(err?.message)
-                        setIsLoading(false)
-                        setError('Unable to create deployment.')
-                      })
-                  }}
-                  variant="primary"
-                >
-                  {isKickedOff ? (
-                    <CloudCheck size="18" />
-                  ) : isLoading ? (
-                    <SpinnerSVG />
-                  ) : (
-                    <CloudArrowUp size="18" />
-                  )}{' '}
-                  Deploy build
-                </Button>
+                        .catch((err) => {
+                          trackEvent({
+                            event: 'component_deploy',
+                            user,
+                            status: 'error',
+                            props: {
+                              orgId,
+                              installId,
+                              componentId,
+                              buildId,
+                              err,
+                            },
+                          })
+                          console.error(err?.message)
+                          setIsLoading(false)
+                          setError('Unable to create deployment.')
+                        })
+                    }}
+                    variant="primary"
+                  >
+                    {isKickedOff ? (
+                      <CloudCheck size="18" />
+                    ) : isLoading ? (
+                      <SpinnerSVG />
+                    ) : (
+                      <CloudArrowUp size="18" />
+                    )}{' '}
+                    Deploy build
+                  </Button>
+                </div>
               </div>
             </Modal>,
             document.body

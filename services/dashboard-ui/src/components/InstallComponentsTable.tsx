@@ -37,12 +37,12 @@ function parseInstallComponentsToTableData(
   installComponents: Array<TDataInstallComponent>
 ): Array<TData> {
   return installComponents.map((comp) => ({
-    buildStatus: comp.build?.status || 'noop',
+    buildStatus: comp.build?.status || 'No build',
     componentId: comp.component_id,
     componentType: comp?.config ?  getComponentConfigType(comp?.config) : undefined,
     configVersion: comp.config?.version,
     installComponentId: comp.id,
-    deployStatus: comp.install_deploys?.[0]?.status || 'noop',
+    deployStatus: comp.install_deploys?.[0]?.status || 'Not deployed',
     dependencies: comp.deps?.length || 0,
     deps: comp.deps,
     name: comp.component?.name,
