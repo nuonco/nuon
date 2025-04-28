@@ -32,7 +32,7 @@ type SandboxRunPlan struct {
 	AppID       string `json:"app_id"`
 	AppConfigID string `json:"app_config_id"`
 
-	Vars             map[string]any           `json:"vars"`
+	Vars             map[string]any           `json:"vars" faker:"-"`
 	EnvVars          map[string]string        `json:"env_vars"`
 	VarsFiles        []string                 `json:"vars_files"`
 	GitSource        *GitSource               `json:"git_source"`
