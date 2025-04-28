@@ -5,17 +5,22 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   ErrorFallback,
-  InstallManagementDropdown,
+  ID,
   InstallStatuses,
   InstallPageSubNav,
   Loading,
   RunnerHealthChart,
   RunnerHeartbeat,
   RunnerPastJobs,
+  RunnerRecentJob,
+  RunnerUpcomingJobs,
+  StatusBadge,
   Section,
+  Text,
   Time,
 } from '@/components'
-import { getInstall, getRunner, getAppLatestRunnerConfig } from '@/lib'
+import { InstallManagementDropdown } from '@/components/Installs'
+import { getInstall, getRunner } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
@@ -38,11 +43,13 @@ export default withPageAuthRequired(async function Runner({
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
   const runnerId = params?.['runner-id'] as string
-  const install = await getInstall({ installId, orgId })
-  const appRunnerConfig = await getAppLatestRunnerConfig({
-    orgId,
-    appId: install.app_id,
-  })
+  const [install, runner] = await Promise.all([
+    getInstall({ installId, orgId }),
+    getRunner({
+      orgId,
+      runnerId,
+    }),
+  ])
 
   return (
     <DashboardContent
@@ -54,7 +61,7 @@ export default withPageAuthRequired(async function Runner({
         },
         {
           href: `/${orgId}/installs/${install.id}/runner-group/${runnerId}`,
-          text: 'Runner',
+          text: runner?.display_name,
         },
       ]}
       heading={install.name}
@@ -84,8 +91,57 @@ export default withPageAuthRequired(async function Runner({
       }
     >
       <div className="flex-auto md:grid md:grid-cols-12 divide-x">
-        <div className="divide-y flex flex-col flex-auto col-span-7">
-          <Section heading="Jobs">
+        <div className="divide-y flex flex-col flex-auto col-span-8">
+          <Section
+            className="flex-initial"
+            heading={
+              <span>
+                <Text variant="med-14">{runner?.display_name} </Text>
+                <ID id={runner?.id} />
+              </span>
+            }
+          >
+            <div className="flex gap-6 items-start justify-start lg:gap-12 xl:gap-24 flex-wrap">
+              <span className="flex flex-col gap-2">
+                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                  Status
+                </Text>
+                <StatusBadge
+                  status={runner?.status}
+                  description={runner?.status_description}
+                  descriptionAlignment="left"
+                  shouldPoll
+                  pollDuration={15000}
+                />
+              </span>
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={
+                    <span className="flex self-end">
+                      <Loading loadingText="Loading runner heartbeat..." />
+                    </span>
+                  }
+                >
+                  <RunnerHeartbeat runnerId={runnerId} orgId={orgId} />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+          </Section>
+          <Section className="flex-initial" heading="Health status">
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Loading
+                    variant="stack"
+                    loadingText="Loading runner health status..."
+                  />
+                }
+              >
+                <RunnerHealthChart runnerId={runnerId} orgId={orgId} />
+              </Suspense>
+            </ErrorBoundary>
+          </Section>
+          <Section heading="Job run history">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
                 fallback={
@@ -104,39 +160,38 @@ export default withPageAuthRequired(async function Runner({
             </ErrorBoundary>
           </Section>
         </div>
-        <div className="divide-y flex-auto flex flex-col col-span-5">
-          <Section className="flex-initial" heading="Status">
+        <div className="divide-y flex-auto flex flex-col col-span-4">
+          <Section className="flex-initial" heading="Recent job">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
                 fallback={
                   <Loading
                     variant="stack"
-                    loadingText="Loading runner health status..."
+                    loadingText="Loading recent job..."
                   />
                 }
               >
-                <RunnerHealthChart runnerId={runnerId} orgId={orgId} />
+                <RunnerRecentJob runnerId={runnerId} orgId={orgId} />
               </Suspense>
             </ErrorBoundary>
           </Section>
-          <Section className="flex-initial">
-            <div className="grid gap-6 lg:grid-cols-1">
-              <ErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <span className="flex self-end">
-                      <Loading loadingText="Loading runner heartbeat..." />
-                    </span>
-                  }
-                >
-                  <RunnerHeartbeat
-                    runnerId={runnerId}
-                    orgId={orgId}
-                    runnerType={appRunnerConfig.app_runner_type}
+          <Section className="flex-initial" heading="Upcoming jobs ">
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Loading
+                    variant="stack"
+                    loadingText="Loading upcoming jobs..."
                   />
-                </Suspense>
-              </ErrorBoundary>
-            </div>
+                }
+              >
+                <RunnerUpcomingJobs
+                  runnerId={runnerId}
+                  orgId={orgId}
+                  offset={(searchParams['upcoming-jobs'] as string) || '0'}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </Section>
         </div>
       </div>
