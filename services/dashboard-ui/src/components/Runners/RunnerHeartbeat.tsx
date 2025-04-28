@@ -3,18 +3,15 @@ import { Heartbeat, Timer } from '@phosphor-icons/react/dist/ssr'
 import { Duration, Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import { getRunnerLatestHeartbeat } from '@/lib'
-import type { TAppRunnerConfig } from '@/types'
 
 interface IRunnerHeartbeat {
   orgId: string
   runnerId: string
-  runnerType: TAppRunnerConfig['app_runner_type'] | 'build'
 }
 
 export const RunnerHeartbeat: FC<IRunnerHeartbeat> = async ({
   orgId,
   runnerId,
-  runnerType,
 }) => {
   const runnerHeartbeat = await getRunnerLatestHeartbeat({
     orgId,
@@ -23,9 +20,24 @@ export const RunnerHeartbeat: FC<IRunnerHeartbeat> = async ({
 
   return runnerHeartbeat ? (
     <>
-      <div>
+      <span className="flex flex-col gap-2">
         <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-          Last heartbeat
+          Version
+        </Text>
+        <Text variant="med-12">{runnerHeartbeat?.version}</Text>
+      </span>
+      <span className="flex flex-col gap-2">
+        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+          Alive time
+        </Text>
+        <Text>
+          <Timer size={14} />
+          <Duration nanoseconds={runnerHeartbeat.alive_time} variant="med-12" />
+        </Text>
+      </span>
+      <span className="flex flex-col gap-2">
+        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+          Last heartbeat seen
         </Text>
         <Text>
           <Heartbeat size={14} />
@@ -35,28 +47,9 @@ export const RunnerHeartbeat: FC<IRunnerHeartbeat> = async ({
             variant="med-12"
           />
         </Text>
-      </div>
-      <div>
-        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-          Alive time
-        </Text>
-        <Text>
-          <Timer size={14} />
-          <Duration nanoseconds={runnerHeartbeat.alive_time} variant="med-12" />
-        </Text>
-      </div>
-      <div>
-        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-          Version
-        </Text>
-        <Text variant="med-12">{runnerHeartbeat?.version}</Text>
-      </div>
-      <div>
-        <Text className="text-cool-grey-600 dark:text-cool-grey-500">Type</Text>
-        <Text>{runnerType}</Text>
-      </div>
+      </span>
     </>
   ) : (
-    <Text>No runner heartbeat found</Text>
+    <Text className="self-end">No runner heartbeat found</Text>
   )
 }
