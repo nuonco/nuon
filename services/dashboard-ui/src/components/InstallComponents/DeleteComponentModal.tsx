@@ -136,7 +136,7 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                       orgId,
                       force,
                     })
-                      .then(() => {
+                      .then((workflowId) => {
                         trackEvent({
                           event: 'component_delete',
                           user,
@@ -150,9 +150,15 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                         setForceDelete(false)
                         setIsLoading(false)
                         setIsKickedOff(true)
-                        router.push(
-                          `/${orgId}/installs/${installId}/components`
-                        )
+
+                        if (workflowId) {
+                          router.push(
+                            `/${orgId}/installs/${installId}/history/${workflowId}`
+                          )
+                        } else {
+                          router.push(`/${orgId}/installs/${installId}/history`)
+                        }
+
                         setIsOpen(false)
                       })
                       .catch((err) => {
