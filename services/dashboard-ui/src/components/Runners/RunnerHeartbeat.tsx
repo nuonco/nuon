@@ -3,11 +3,12 @@ import { Heartbeat, Timer } from '@phosphor-icons/react/dist/ssr'
 import { Duration, Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import { getRunnerLatestHeartbeat } from '@/lib'
+import type { TAppRunnerConfig } from '@/types'
 
 interface IRunnerHeartbeat {
   orgId: string
   runnerId: string
-  runnerType: string
+  runnerType: TAppRunnerConfig['app_runner_type'] | 'build'
 }
 
 export const RunnerHeartbeat: FC<IRunnerHeartbeat> = async ({
