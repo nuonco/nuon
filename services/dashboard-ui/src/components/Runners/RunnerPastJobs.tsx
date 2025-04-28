@@ -4,7 +4,11 @@ import { Pagination } from '@/components/Pagination'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
 import { Truncate } from '@/components/Typography'
-import { getRunnerJobs, type TRunnerJobGroup } from '@/lib'
+import {
+  getRunnerJobs,
+  type TRunnerJobGroup,
+  type TRunnerJobStatus,
+} from '@/lib'
 import { jobHrefPath, jobName } from './helpers'
 
 interface IRunnerPastJobs {
@@ -12,10 +16,22 @@ interface IRunnerPastJobs {
   runnerId: string
   offset: string
   groups?: Array<TRunnerJobGroup>
+  statuses?: Array<TRunnerJobStatus>
 }
 
 export const RunnerPastJobs: FC<IRunnerPastJobs> = async ({
   groups = ['actions', 'build', 'deploy', 'operations', 'sandbox', 'sync'],
+  statuses = [
+    'queued',
+    'available',
+    'in-progress',
+    'finished',
+    'failed',
+    'timed-out',
+    'not-attempted',
+    'cancelled',
+    'unknown',
+  ],
   offset,
   orgId,
   runnerId,
@@ -25,6 +41,7 @@ export const RunnerPastJobs: FC<IRunnerPastJobs> = async ({
     runnerId,
     options: {
       groups,
+      statuses,
       limit: '10',
       offset,
     },
@@ -48,23 +65,9 @@ export const RunnerPastJobs: FC<IRunnerPastJobs> = async ({
             id: job?.id,
             status: job?.status,
             underline: (
-              <>
-                {name ? (
-                  name?.length >= 12 ? (
-                    <ToolTip tipContent={name} alignment="right">
-                      <Truncate variant="small">{name}</Truncate>
-                    </ToolTip>
-                  ) : (
-                    name
-                  )
-                ) : (
-                  <span>Unknown</span>
-                )}{' '}
-                /
-                <span className="!inline truncate max-w-[100px]">
-                  {job?.group}
-                </span>
-              </>
+              <span>
+                {name} {job?.group}
+              </span>
             ),
             time: job?.updated_at,
             href: hrefPath !== '' ? `/${orgId}/${hrefPath}` : null,
