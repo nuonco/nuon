@@ -10,6 +10,10 @@ import { Link } from '@/components/Link'
 import { ID, Text } from '@/components/Typography'
 import type { TApp } from '@/types'
 
+function buildSandboxDirPath(repo: string, dir: string): string {
+  return dir === '/' || dir === '.' ? repo : `${repo}/${dir}`
+}
+
 type TData = {
   appId: string
   name: string
@@ -27,7 +31,9 @@ function parseAppsToTableData(apps: Array<TApp>): Array<TData> {
     const repo =
       app.sandbox_config?.connected_github_vcs_config ||
       app.sandbox_config?.public_git_vcs_config
-    const sandbox_repo = repo ? `${repo?.repo}/${repo?.directory}` : null
+    const sandbox_repo = repo
+      ? buildSandboxDirPath(repo?.repo, repo?.directory)
+      : null
 
     return {
       appId: app.id,
