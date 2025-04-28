@@ -20,25 +20,25 @@ const (
 )
 
 type InstallEvent struct {
-	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string                `json:"created_by_id" gorm:"notnull"`
-	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at"`
-	UpdatedAt   time.Time             `json:"updated_at"`
-	DeletedAt   soft_delete.DeletedAt `json:"-"`
+	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id" gorm:"notnull" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	InstallID string  `json:"install_id"`
-	Install   Install `swaggerignore:"-" json:"-"`
+	InstallID string  `json:"install_id" temporaljson:"install_id,omitzero,omitempty"`
+	Install   Install `swaggerignore:"-" json:"-" temporaljson:"install,omitzero,omitempty"`
 
-	OrgID string `json:"org_id"`
-	Org   Org    `faker:"-" json:"-" swaggerignore:"-"`
+	OrgID string `json:"org_id" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `faker:"-" json:"-" swaggerignore:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Operation       string          `json:"operation"`
-	OperationStatus OperationStatus `json:"operation_status"`
+	Operation       string          `json:"operation" temporaljson:"operation,omitzero,omitempty"`
+	OperationStatus OperationStatus `json:"operation_status" temporaljson:"operation_status,omitzero,omitempty"`
 
-	Payload []byte `json:"payload" gorm:"type:jsonb" swaggertype:"object,string"`
+	Payload []byte `json:"payload" gorm:"type:jsonb" swaggertype:"object,string" temporaljson:"payload,omitzero,omitempty"`
 
-	OperationName string `gorm:"-" json:"operation_name"`
+	OperationName string `gorm:"-" json:"operation_name" temporaljson:"operation_name,omitzero,omitempty"`
 }
 
 func (a *InstallEvent) BeforeCreate(tx *gorm.DB) error {
