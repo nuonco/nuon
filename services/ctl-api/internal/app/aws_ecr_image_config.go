@@ -10,24 +10,24 @@ import (
 )
 
 type AWSECRImageConfig struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
-	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
-	Org   Org    `faker:"-" json:"-"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	// connection to parent model
-	ComponentConfigID   string `json:"component_config_id" gorm:"notnull"`
-	ComponentConfigType string `json:"component_config_type" gorm:"notnull"`
+	ComponentConfigID   string `json:"component_config_id" gorm:"notnull" temporaljson:"component_config_id,omitzero,omitempty"`
+	ComponentConfigType string `json:"component_config_type" gorm:"notnull" temporaljson:"component_config_type,omitzero,omitempty"`
 
 	// actual configuration
-	IAMRoleARN string `json:"iam_role_arn" gorm:"notnull"`
-	AWSRegion  string `json:"aws_region" gorm:"notnull"`
+	IAMRoleARN string `json:"iam_role_arn" gorm:"notnull" temporaljson:"iam_role_arn,omitzero,omitempty"`
+	AWSRegion  string `json:"aws_region" gorm:"notnull" temporaljson:"aws_region,omitzero,omitempty"`
 }
 
 func (c *AWSECRImageConfig) BeforeCreate(tx *gorm.DB) error {

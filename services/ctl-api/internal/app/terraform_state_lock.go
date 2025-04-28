@@ -9,13 +9,13 @@ import (
 
 // Lock a lock on state
 type TerraformLock struct {
-	Created   string
-	Path      string
-	ID        string
-	Operation string
-	Info      string
-	Who       string
-	Version   any
+	Created   string `temporaljson:"created,omitzero,omitempty"`
+	Path      string `temporaljson:"path,omitzero,omitempty"`
+	ID        string `temporaljson:"id,omitzero,omitempty"`
+	Operation string `temporaljson:"operation,omitzero,omitempty"`
+	Info      string `temporaljson:"info,omitzero,omitempty"`
+	Who       string `temporaljson:"who,omitzero,omitempty"`
+	Version   any    `temporaljson:"version,omitzero,omitempty"`
 }
 
 func (c *TerraformLock) Scan(v interface{}) (err error) {

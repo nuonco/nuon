@@ -74,14 +74,14 @@ func NewCompositeTemporalStatus(ctx workflow.Context, status Status, vals ...map
 }
 
 type CompositeStatus struct {
-	CreatedByID string `json:"created_by_id,omitempty"`
-	CreatedAtTS int64  `json:"created_at_ts,omitempty"`
+	CreatedByID string `json:"created_by_id,omitempty" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedAtTS int64  `json:"created_at_ts,omitempty" temporaljson:"created_at_ts,omitzero,omitempty"`
 
-	Status                 Status         `json:"status,omitempty"`
-	StatusHumanDescription string         `json:"status_human_description,omitempty"`
-	Metadata               map[string]any `json:"metadata,omitempty"`
+	Status                 Status         `json:"status,omitempty" temporaljson:"status,omitzero,omitempty"`
+	StatusHumanDescription string         `json:"status_human_description,omitempty" temporaljson:"status_human_description,omitzero,omitempty"`
+	Metadata               map[string]any `json:"metadata,omitempty" temporaljson:"metadata,omitzero,omitempty"`
 
-	History []CompositeStatus `json:"history,omitempty"`
+	History []CompositeStatus `json:"history,omitempty" temporaljson:"history,omitzero,omitempty"`
 }
 
 // Scan implements the database/sql.Scanner interface.
