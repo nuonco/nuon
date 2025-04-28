@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
@@ -23,7 +22,7 @@ func (s *propagator) Inject(ctx context.Context, writer workflow.HeaderWriter) e
 		return errors.Wrap(err, "unable to fetch payload from context")
 	}
 
-	payload, err := converter.GetDefaultDataConverter().ToPayload(pl)
+	payload, err := s.dataConverter.ToPayload(pl)
 	if err != nil {
 		return errors.Wrap(err, "unable to convert payload")
 	}
@@ -46,7 +45,7 @@ func (s *propagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.He
 
 	logStream, _ := cctx.GetLogStreamWorkflow(ctx)
 
-	payload, err := converter.GetDefaultDataConverter().ToPayload(Payload{
+	payload, err := s.dataConverter.ToPayload(Payload{
 		OrgID:     orgID,
 		AccountID: acctID,
 		LogStream: logStream,
@@ -65,7 +64,7 @@ func (s *propagator) getPayload(reader workflow.HeaderReader) (*Payload, error) 
 	}
 
 	var payload Payload
-	if err := converter.GetDefaultDataConverter().FromPayload(value, &payload); err != nil {
+	if err := s.dataConverter.FromPayload(value, &payload); err != nil {
 		return nil, errors.Wrap(err, "unable to convert payload")
 	}
 

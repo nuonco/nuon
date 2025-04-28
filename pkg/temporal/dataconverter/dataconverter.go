@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	defaultTemporalJSONTag string = "temporal"
+	defaultTemporalJSONTag string = "temporaljson"
 )
 
 // temporalJSONConverter converts to/from JSON.

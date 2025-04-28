@@ -49,27 +49,27 @@ const (
 )
 
 type AppRunnerConfig struct {
-	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at"`
-	UpdatedAt   time.Time             `json:"updated_at"`
-	DeletedAt   soft_delete.DeletedAt `json:"-"`
+	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID       string `json:"org_id" gorm:"notnull;default null"`
-	Org         Org    `faker:"-" json:"-"`
-	AppID       string `json:"app_id"`
-	AppConfigID string `json:"app_config_id"`
+	OrgID       string `json:"org_id" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
+	Org         Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
+	AppID       string `json:"app_id" temporaljson:"app_id,omitzero,omitempty"`
+	AppConfigID string `json:"app_config_id" temporaljson:"app_config_id,omitzero,omitempty"`
 
-	EnvVars pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
-	Type    AppRunnerType `json:"app_runner_type" gorm:"not null;default null;"`
+	EnvVars pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"env_vars,omitzero,omitempty"`
+	Type    AppRunnerType `json:"app_runner_type" gorm:"not null;default null;" temporaljson:"type,omitzero,omitempty"`
 
-	HelmDriver AppRunnerConfigHelmDriverType `json:"helm_driver" gorm:"default null" swaggertype:"string"`
+	HelmDriver AppRunnerConfigHelmDriverType `json:"helm_driver" gorm:"default null" swaggertype:"string" temporaljson:"helm_driver,omitzero,omitempty"`
 	// ↑ for the runner helm client: only relevant for k8s sandboxes
 
 	// fields set via after query
 
-	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-"`
+	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-" temporaljson:"cloud_platform,omitzero,omitempty"`
 }
 
 func (a *AppRunnerConfig) Indexes(db *gorm.DB) []migrations.Index {

@@ -23,22 +23,22 @@ const (
 )
 
 type Account struct {
-	ID        string                `gorm:"primarykey" json:"id"`
-	CreatedAt time.Time             `json:"created_at"`
-	UpdatedAt time.Time             `json:"updated_at"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_email_subject,unique"`
+	ID        string                `gorm:"primarykey" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedAt time.Time             `json:"created_at" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt time.Time             `json:"updated_at" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_email_subject,unique" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	Email       string      `json:"email" gorm:"index:idx_email_subject,unique,not null;default null"`
-	Subject     string      `json:"subject" gorm:"index:idx_email_subject,unique,not null;"`
-	AccountType AccountType `json:"account_type"`
+	Email       string      `json:"email" gorm:"index:idx_email_subject,unique,not null;default null" temporaljson:"email,omitzero,omitempty"`
+	Subject     string      `json:"subject" gorm:"index:idx_email_subject,unique,not null;" temporaljson:"subject,omitzero,omitempty"`
+	AccountType AccountType `json:"account_type" temporaljson:"account_type,omitzero,omitempty"`
 
-	Roles  []Role  `gorm:"many2many:account_roles;constraint:OnDelete:CASCADE;" json:"roles"`
-	Tokens []Token `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	Roles  []Role  `gorm:"many2many:account_roles;constraint:OnDelete:CASCADE;" json:"roles" temporaljson:"roles,omitzero,omitempty"`
+	Tokens []Token `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"tokens,omitzero,omitempty"`
 
 	// ReadOnly Fields
-	OrgIDs         []string        `json:"org_ids" gorm:"-"`
-	Orgs           []*Org          `json:"-" gorm:"-"`
-	AllPermissions permissions.Set `json:"permissions" gorm:"-"`
+	OrgIDs         []string        `json:"org_ids" gorm:"-" temporaljson:"org_i_ds,omitzero,omitempty"`
+	Orgs           []*Org          `json:"-" gorm:"-" temporaljson:"orgs,omitzero,omitempty"`
+	AllPermissions permissions.Set `json:"permissions" gorm:"-" temporaljson:"all_permissions,omitzero,omitempty"`
 }
 
 func (a *Account) BeforeCreate(tx *gorm.DB) error {
