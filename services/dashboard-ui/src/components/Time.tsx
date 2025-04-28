@@ -1,7 +1,7 @@
 'use client'
 
 import { DateTime, Duration as LuxonDuration, type DurationUnits } from 'luxon'
-import React, { type FC, useState, useEffect } from 'react'
+import React, { type FC } from 'react'
 import { Minus } from '@phosphor-icons/react/dist/ssr'
 import { Text, type IText } from '@/components/Typography'
 
@@ -11,19 +11,7 @@ export interface ITime extends Omit<IText, 'role'> {
 }
 
 export const Time: FC<ITime> = ({ format, time, ...props }) => {
-  const [datetime, setDateTime] = useState(
-    time ? DateTime.fromISO(time) : DateTime.now()
-  )
-
-  useEffect(() => {
-    if (format === 'relative') {
-      const intervalId = setInterval(() => {
-        setDateTime(time ? DateTime.fromISO(time) : DateTime.now())
-      }, 1000)
-
-      return () => clearInterval(intervalId)
-    }
-  }, [format])
+  const datetime = time ? DateTime.fromISO(time) : DateTime.now()
 
   return (
     <Text {...props} role="time">
