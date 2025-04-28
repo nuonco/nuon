@@ -96,7 +96,7 @@ export default withPageAuthRequired(async function Runner({
       }
     >
       <div className="flex-auto md:grid md:grid-cols-12 divide-x">
-        <div className="divide-y flex flex-col flex-auto col-span-8">
+        <div className="divide-y flex flex-col flex-auto col-span-7">
           <Section heading="Jobs">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
@@ -116,7 +116,7 @@ export default withPageAuthRequired(async function Runner({
             </ErrorBoundary>
           </Section>
         </div>
-        <div className="divide-y flex-auto flex flex-col col-span-4">
+        <div className="divide-y flex-auto flex flex-col col-span-5">
           <Section className="flex-initial" heading="Status">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
