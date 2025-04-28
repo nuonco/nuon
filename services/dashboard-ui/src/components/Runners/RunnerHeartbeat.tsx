@@ -7,11 +7,13 @@ import { getRunnerLatestHeartbeat } from '@/lib'
 interface IRunnerHeartbeat {
   orgId: string
   runnerId: string
+  runnerType: string
 }
 
 export const RunnerHeartbeat: FC<IRunnerHeartbeat> = async ({
   orgId,
   runnerId,
+  runnerType,
 }) => {
   const runnerHeartbeat = await getRunnerLatestHeartbeat({
     orgId,
@@ -20,24 +22,9 @@ export const RunnerHeartbeat: FC<IRunnerHeartbeat> = async ({
 
   return runnerHeartbeat ? (
     <>
-      <span className="flex flex-col gap-2">
+      <div>
         <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-          Version
-        </Text>
-        <Text variant="med-12">{runnerHeartbeat?.version}</Text>
-      </span>
-      <span className="flex flex-col gap-2">
-        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-          Alive time
-        </Text>
-        <Text>
-          <Timer size={14} />
-          <Duration nanoseconds={runnerHeartbeat.alive_time} variant="med-12" />
-        </Text>
-      </span>
-      <span className="flex flex-col gap-2">
-        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-          Last heartbeat seen
+          Last heartbeat
         </Text>
         <Text>
           <Heartbeat size={14} />
@@ -47,9 +34,28 @@ export const RunnerHeartbeat: FC<IRunnerHeartbeat> = async ({
             variant="med-12"
           />
         </Text>
-      </span>
+      </div>
+      <div>
+        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+          Alive time
+        </Text>
+        <Text>
+          <Timer size={14} />
+          <Duration nanoseconds={runnerHeartbeat.alive_time} variant="med-12" />
+        </Text>
+      </div>
+      <div>
+        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+          Version
+        </Text>
+        <Text variant="med-12">{runnerHeartbeat?.version}</Text>
+      </div>
+      <div>
+        <Text className="text-cool-grey-600 dark:text-cool-grey-500">Type</Text>
+        <Text>{runnerType}</Text>
+      </div>
     </>
   ) : (
-    <Text className="self-end">No runner heartbeat found</Text>
+    <Text>No runner heartbeat found</Text>
   )
 }
