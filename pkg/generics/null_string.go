@@ -26,7 +26,7 @@ func (s NullString) ValueOrDefault(def string) string {
 	return s.ValueString()
 }
 
-func (s NullString) UnmarshalJSON(data []byte) error {
+func (s *NullString) UnmarshalJSON(data []byte) error {
 	s.String = strings.Trim(string(data), `"`)
 	s.Valid = true
 	return nil
