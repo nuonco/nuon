@@ -27,49 +27,49 @@ var (
 )
 
 type RunnerGroupSettings struct {
-	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account `json:"-"`
+	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 
-	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
-	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_group_settings,unique"`
+	CreatedAt time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_group_settings,unique" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
+	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
 
-	RunnerGroupID string `json:"runner_group_id" gorm:"index:idx_runner_group_settings,unique"`
+	RunnerGroupID string `json:"runner_group_id" gorm:"index:idx_runner_group_settings,unique" temporaljson:"runner_group_id,omitzero,omitempty"`
 
 	// configuration for deploying the runner
-	ContainerImageURL string `json:"container_image_url"  gorm:"default null;not null"`
-	ContainerImageTag string `json:"container_image_tag"  gorm:"default null;not null"`
-	ExpectedVersion   string `json:"-" temporaljson:"expected_version" gorm:"-"`
-	RunnerAPIURL      string `json:"runner_api_url" gorm:"default null;not null"`
+	ContainerImageURL string `json:"container_image_url" gorm:"default null;not null" temporaljson:"container_image_url,omitzero,omitempty"`
+	ContainerImageTag string `json:"container_image_tag" gorm:"default null;not null" temporaljson:"container_image_tag,omitzero,omitempty"`
+	ExpectedVersion   string `json:"-" gorm:"-" temporaljson:"expected_version,omitzero,omitempty"`
+	RunnerAPIURL      string `json:"runner_api_url" gorm:"default null;not null" temporaljson:"runner_apiurl,omitzero,omitempty"`
 
 	// configuration for managing the runner server side
-	SandboxMode bool `json:"sandbox_mode"`
+	SandboxMode bool `json:"sandbox_mode" temporaljson:"sandbox_mode,omitzero,omitempty"`
 
 	// Various settings for the runner to handle internally
-	HeartBeatTimeout           time.Duration `json:"heart_beat_timeout" gorm:"default null;" swaggertype:"primitive,integer"`
-	OTELCollectorConfiguration string        `json:"otel_collector_config" gorm:"default null;not null"`
+	HeartBeatTimeout           time.Duration `json:"heart_beat_timeout" gorm:"default null;" swaggertype:"primitive,integer" temporaljson:"heart_beat_timeout,omitzero,omitempty"`
+	OTELCollectorConfiguration string        `json:"otel_collector_config" gorm:"default null;not null" temporaljson:"otel_collector_configuration,omitzero,omitempty"`
 
-	EnableSentry  bool           `json:"enable_sentry"`
-	EnableMetrics bool           `json:"enable_metrics"`
-	EnableLogging bool           `json:"enable_logging"`
-	LoggingLevel  string         `json:"logging_level"`
-	Groups        pq.StringArray `json:"groups"  gorm:"type:text[];default:'{}'" swaggertype:"array,string"` // the job loop groups the runner should poll for
+	EnableSentry  bool           `json:"enable_sentry" temporaljson:"enable_sentry,omitzero,omitempty"`
+	EnableMetrics bool           `json:"enable_metrics" temporaljson:"enable_metrics,omitzero,omitempty"`
+	EnableLogging bool           `json:"enable_logging" temporaljson:"enable_logging,omitzero,omitempty"`
+	LoggingLevel  string         `json:"logging_level" temporaljson:"logging_level,omitzero,omitempty"`
+	Groups        pq.StringArray `json:"groups" gorm:"type:text[];default:'{}'" swaggertype:"array,string" temporaljson:"groups,omitzero,omitempty"` // the job loop groups the runner should poll for
 
 	// Metadata is used as both log and metric tags/attributes in the runner when emitting data
-	Metadata pgtype.Hstore `json:"" gorm:"type:hstore" swaggertype:"object,string"`
+	Metadata pgtype.Hstore `json:"" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
 
 	// org runner specifics
-	OrgAWSIAMRoleARN         string `json:"org_aws_iam_role_arn"`
-	OrgK8sServiceAccountName string `json:"org_k8s_service_account_name"`
+	OrgAWSIAMRoleARN         string `json:"org_aws_iam_role_arn" temporaljson:"org_awsiam_role_arn,omitzero,omitempty"`
+	OrgK8sServiceAccountName string `json:"org_k8s_service_account_name" temporaljson:"org_k_8_s_service_account_name,omitzero,omitempty"`
 
 	// aws runner specifics runner-v2
-	AWSInstanceType            string        `json:"aws_instance_type"`
-	AWSCloudformationStackType string        `json:"aws_cloudformation_stack_type"`
-	AWSTags                    pgtype.Hstore `json:"aws_tags" gorm:"type:hstore" swaggertype:"object,string"`
-	LocalAWSIAMRoleARN         string        `json:"local_aws_iam_role_arn"`
+	AWSInstanceType            string        `json:"aws_instance_type" temporaljson:"aws_instance_type,omitzero,omitempty"`
+	AWSCloudformationStackType string        `json:"aws_cloudformation_stack_type" temporaljson:"aws_cloudformation_stack_type,omitzero,omitempty"`
+	AWSTags                    pgtype.Hstore `json:"aws_tags" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"aws_tags,omitzero,omitempty"`
+	LocalAWSIAMRoleARN         string        `json:"local_aws_iam_role_arn" temporaljson:"local_awsiam_role_arn,omitzero,omitempty"`
 
 	// azure runner specifics
 }

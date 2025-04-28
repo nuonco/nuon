@@ -17,63 +17,63 @@ import (
 )
 
 type Install struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
-	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_app_install_name,unique" json:"-"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_app_install_name,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
-	Org   Org    `json:"-" faker:"-"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Name  string `json:"name" gorm:"notnull;index:idx_app_install_name,unique"`
-	App   App    `swaggerignore:"true" json:"app"`
-	AppID string `json:"app_id" gorm:"notnull;index:idx_app_install_name,unique"`
+	Name  string `json:"name" gorm:"notnull;index:idx_app_install_name,unique" temporaljson:"name,omitzero,omitempty"`
+	App   App    `swaggerignore:"true" json:"app" temporaljson:"app,omitzero,omitempty"`
+	AppID string `json:"app_id" gorm:"notnull;index:idx_app_install_name,unique" temporaljson:"app_id,omitzero,omitempty"`
 
-	AppConfigID string    `json:"app_config_id"`
-	AppConfig   AppConfig `json:"-"`
+	AppConfigID string    `json:"app_config_id" temporaljson:"app_config_id,omitzero,omitempty"`
+	AppConfig   AppConfig `json:"-" temporaljson:"app_config,omitzero,omitempty"`
 
-	AppSandboxConfigID string           `json:"-" swaggerignore:"true"`
-	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config"`
+	AppSandboxConfigID string           `json:"-" swaggerignore:"true" temporaljson:"app_sandbox_config_id,omitzero,omitempty"`
+	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config" temporaljson:"app_sandbox_config,omitzero,omitempty"`
 
-	AppRunnerConfigID string          `json:"-" swaggerignore:"true"`
-	AppRunnerConfig   AppRunnerConfig `json:"app_runner_config"`
+	AppRunnerConfigID string          `json:"-" swaggerignore:"true" temporaljson:"app_runner_config_id,omitzero,omitempty"`
+	AppRunnerConfig   AppRunnerConfig `json:"app_runner_config" temporaljson:"app_runner_config,omitzero,omitempty"`
 
-	InstallComponents       []InstallComponent        `json:"install_components,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	InstallActionWorkflows  []InstallActionWorkflow   `json:"install_action_workflows,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	InstallSandboxRuns      []InstallSandboxRun       `json:"install_sandbox_runs,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	InstallInputs           []InstallInputs           `json:"install_inputs" gorm:"constraint:OnDelete:CASCADE;"`
-	InstallEvents           []InstallEvent            `json:"install_events" gorm:"constraint:OnDelete:CASCADE;"`
-	InstallIntermediateData []InstallIntermediateData `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-	InstallSandbox          InstallSandbox            `json:"-"  gorm:"constraint:OnDelete:CASCADE;"`
+	InstallComponents       []InstallComponent        `json:"install_components,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_components,omitzero,omitempty"`
+	InstallActionWorkflows  []InstallActionWorkflow   `json:"install_action_workflows,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_action_workflows,omitzero,omitempty"`
+	InstallSandboxRuns      []InstallSandboxRun       `json:"install_sandbox_runs,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox_runs,omitzero,omitempty"`
+	InstallInputs           []InstallInputs           `json:"install_inputs" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_inputs,omitzero,omitempty"`
+	InstallEvents           []InstallEvent            `json:"install_events" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_events,omitzero,omitempty"`
+	InstallIntermediateData []InstallIntermediateData `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_intermediate_data,omitzero,omitempty"`
+	InstallSandbox          InstallSandbox            `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox,omitzero,omitempty"`
 
-	InstallStack *InstallStack `json:"install_stack" gorm:"constraint:OnDelete:CASCADE;"`
-	AWSAccount   *AWSAccount   `json:"aws_account" gorm:"constraint:OnDelete:CASCADE;"`
-	AzureAccount *AzureAccount `json:"azure_account" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallStack *InstallStack `json:"install_stack" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_stack,omitzero,omitempty"`
+	AWSAccount   *AWSAccount   `json:"aws_account" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"aws_account,omitzero,omitempty"`
+	AzureAccount *AzureAccount `json:"azure_account" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"azure_account,omitzero,omitempty"`
 
-	RunnerGroup RunnerGroup `json:"-" temporaljson:"runner_group" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;"`
+	RunnerGroup RunnerGroup `json:"-" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"runner_group,omitzero,omitempty"`
 
 	// generated view current view
 
-	InstallNumber            int              `json:"install_number" gorm:"->;-:migration"`
-	SandboxStatus            SandboxRunStatus `json:"sandbox_status" gorm:"->;-:migration" swaggertype:"string"`
-	SandboxStatusDescription string           `json:"sandbox_status_description" gorm:"-" swaggertype:"string"`
-	ComponentStatuses        pgtype.Hstore    `json:"component_statuses" gorm:"type:hstore;->;-:migration" swaggertype:"object,string"`
+	InstallNumber            int              `json:"install_number" gorm:"->;-:migration" temporaljson:"install_number,omitzero,omitempty"`
+	SandboxStatus            SandboxRunStatus `json:"sandbox_status" gorm:"->;-:migration" swaggertype:"string" temporaljson:"sandbox_status,omitzero,omitempty"`
+	SandboxStatusDescription string           `json:"sandbox_status_description" gorm:"-" swaggertype:"string" temporaljson:"sandbox_status_description,omitzero,omitempty"`
+	ComponentStatuses        pgtype.Hstore    `json:"component_statuses" gorm:"type:hstore;->;-:migration" swaggertype:"object,string" temporaljson:"component_statuses,omitzero,omitempty"`
 
 	// after queries
 
-	CurrentInstallInputs                *InstallInputs      `json:"-" gorm:"-"`
-	CompositeComponentStatus            InstallDeployStatus `json:"composite_component_status" gorm:"-" swaggertype:"string"`
-	CompositeComponentStatusDescription string              `json:"composite_component_status_description" gorm:"-" swaggertype:"string"`
-	RunnerStatus                        RunnerStatus        `json:"runner_status" gorm:"-" swaggertype:"string"`
-	RunnerStatusDescription             string              `json:"runner_status_description" gorm:"-" swaggertype:"string"`
-	RunnerID                            string              `json:"runner_id" gorm:"-"`
+	CurrentInstallInputs                *InstallInputs      `json:"-" gorm:"-" temporaljson:"current_install_inputs,omitzero,omitempty"`
+	CompositeComponentStatus            InstallDeployStatus `json:"composite_component_status" gorm:"-" swaggertype:"string" temporaljson:"composite_component_status,omitzero,omitempty"`
+	CompositeComponentStatusDescription string              `json:"composite_component_status_description" gorm:"-" swaggertype:"string" temporaljson:"composite_component_status_description,omitzero,omitempty"`
+	RunnerStatus                        RunnerStatus        `json:"runner_status" gorm:"-" swaggertype:"string" temporaljson:"runner_status,omitzero,omitempty"`
+	RunnerStatusDescription             string              `json:"runner_status_description" gorm:"-" swaggertype:"string" temporaljson:"runner_status_description,omitzero,omitempty"`
+	RunnerID                            string              `json:"runner_id" gorm:"-" temporaljson:"runner_id,omitzero,omitempty"`
 
 	// TODO(jm): deprecate these fields once the terraform provider has been updated
-	Status            string `json:"status" gorm:"-"`
-	StatusDescription string `json:"status_description" gorm:"-"`
+	Status            string `json:"status" gorm:"-" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string `json:"status_description" gorm:"-" temporaljson:"status_description,omitzero,omitempty"`
 }
 
 func (i *Install) UseView() bool {

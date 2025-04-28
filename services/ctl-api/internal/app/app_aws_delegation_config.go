@@ -10,25 +10,25 @@ import (
 )
 
 type AppAWSDelegationConfig struct {
-	ID          string                `gorm:"primarykey" json:"id"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at"`
-	UpdatedAt   time.Time             `json:"updated_at"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_aws_delegation_config,unique"`
+	ID          string                `gorm:"primarykey" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_aws_delegation_config,unique" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id" gorm:"notnull;default null"`
-	Org   Org    `faker:"-" json:"-"`
+	OrgID string `json:"org_id" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	IAMRoleARN string `json:"iam_role_arn"`
+	IAMRoleARN string `json:"iam_role_arn" temporaljson:"iam_role_arn,omitzero,omitempty"`
 
-	AppSandboxConfigID string `json:"app_sandbox_config_id" gorm:"index:idx_aws_delegation_config,unique"`
+	AppSandboxConfigID string `json:"app_sandbox_config_id" gorm:"index:idx_aws_delegation_config,unique" temporaljson:"app_sandbox_config_id,omitzero,omitempty"`
 
 	// static credentials for long lived cross account access.
 	// NOTE: this is not recommended for long-term usage, just to be used for short term access before gov-cloud
 	// support is fully spun up.
-	AccessKeyID     string `temporaljson:"access_key_id" json:"-"`
-	SecretAccessKey string `temporaljson:"secret_access_key" json:"-"`
+	AccessKeyID     string `json:"-" temporaljson:"access_key_id,omitzero,omitempty"`
+	SecretAccessKey string `json:"-" temporaljson:"secret_access_key,omitzero,omitempty"`
 }
 
 func (a *AppAWSDelegationConfig) BeforeCreate(tx *gorm.DB) error {

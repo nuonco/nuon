@@ -14,35 +14,35 @@ import (
 )
 
 type InstallerMetadata struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at"`
-	UpdatedAt   time.Time             `json:"updated_at"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	InstallerID string `json:"installer_id" gorm:"notnull"`
+	InstallerID string `json:"installer_id" gorm:"notnull" temporaljson:"installer_id,omitzero,omitempty"`
 
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
-	Org   Org    `json:"-" faker:"-"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Name        string `json:"name" gorm:"notnull"`
-	Description string `json:"description" gorm:"notnull"`
+	Name        string `json:"name" gorm:"notnull" temporaljson:"name,omitzero,omitempty"`
+	Description string `json:"description" gorm:"notnull" temporaljson:"description,omitzero,omitempty"`
 
-	PostInstallMarkdown generics.NullString `json:"post_install_markdown" swaggertype:"string"`
-	FooterMarkdown      generics.NullString `json:"footer_markdown" swaggertype:"string"`
-	CopyrightMarkdown   generics.NullString `json:"copyright_markdown" swaggertype:"string"`
-	DemoURL             generics.NullString `json:"demo_url" swaggertype:"string"`
-	OgImageURL          generics.NullString `json:"og_image_url" swaggertype:"string"`
+	PostInstallMarkdown generics.NullString `json:"post_install_markdown" swaggertype:"string" temporaljson:"post_install_markdown,omitzero,omitempty"`
+	FooterMarkdown      generics.NullString `json:"footer_markdown" swaggertype:"string" temporaljson:"footer_markdown,omitzero,omitempty"`
+	CopyrightMarkdown   generics.NullString `json:"copyright_markdown" swaggertype:"string" temporaljson:"copyright_markdown,omitzero,omitempty"`
+	DemoURL             generics.NullString `json:"demo_url" swaggertype:"string" temporaljson:"demo_url,omitzero,omitempty"`
+	OgImageURL          generics.NullString `json:"og_image_url" swaggertype:"string" temporaljson:"og_image_url,omitzero,omitempty"`
 
-	DocumentationURL string `json:"documentation_url" gorm:"notnull"`
-	LogoURL          string `json:"logo_url" gorm:"notnull"`
-	GithubURL        string `json:"github_url" gorm:"notnull"`
-	CommunityURL     string `json:"community_url" gorm:"notnull"`
-	HomepageURL      string `json:"homepage_url" gorm:"notnull"`
-	FaviconURL       string `json:"favicon_url"`
+	DocumentationURL string `json:"documentation_url" gorm:"notnull" temporaljson:"documentation_url,omitzero,omitempty"`
+	LogoURL          string `json:"logo_url" gorm:"notnull" temporaljson:"logo_url,omitzero,omitempty"`
+	GithubURL        string `json:"github_url" gorm:"notnull" temporaljson:"github_url,omitzero,omitempty"`
+	CommunityURL     string `json:"community_url" gorm:"notnull" temporaljson:"community_url,omitzero,omitempty"`
+	HomepageURL      string `json:"homepage_url" gorm:"notnull" temporaljson:"homepage_url,omitzero,omitempty"`
+	FaviconURL       string `json:"favicon_url" temporaljson:"favicon_url,omitzero,omitempty"`
 
-	FormattedDemoURL string `json:"formatted_demo_url" gorm:"-"`
+	FormattedDemoURL string `json:"formatted_demo_url" gorm:"-" temporaljson:"formatted_demo_url,omitzero,omitempty"`
 }
 
 func (a *InstallerMetadata) AfterQuery(tx *gorm.DB) error {
