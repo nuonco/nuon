@@ -21,18 +21,18 @@ const (
 )
 
 type AppSandboxConfig struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account               `json:"-"`
-	CreatedAt   time.Time             `json:"created_at"`
-	UpdatedAt   time.Time             `json:"updated_at"`
-	DeletedAt   soft_delete.DeletedAt `json:"-"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id" gorm:"notnull;default null"`
-	Org   Org    `faker:"-" json:"-"`
+	OrgID string `json:"org_id" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	AppID       string `json:"app_id" gorm:"not null;default null"`
-	AppConfigID string `json:"app_config_id"`
+	AppID       string `json:"app_id" gorm:"not null;default null" temporaljson:"app_id,omitzero,omitempty"`
+	AppConfigID string `json:"app_config_id" temporaljson:"app_config_id,omitzero,omitempty"`
 
 	// NOTE(jm): you can use one of a few different methods of creating an app sandbox, either a built in one, that
 	// Nuon manages, or one of the public git vcs configs.
@@ -40,31 +40,31 @@ type AppSandboxConfig struct {
 	// Either a public git repo or private repo using a connected repo source can be used. For now, these fields are
 	// not being respected down stream, but will in the future.
 
-	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
-	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`
-	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-"`
+	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty" temporaljson:"public_git_vcs_config,omitzero,omitempty"`
+	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty" temporaljson:"connected_github_vcs_config,omitzero,omitempty"`
+	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-" temporaljson:"vcs_connection_type,omitzero,omitempty"`
 
-	Variables pgtype.Hstore `json:"variables" gorm:"type:hstore" swaggertype:"object,string" features:"template"`
-	EnvVars   pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
-	VariablesFiles pq.StringArray `gorm:"type:text[]" json:"variables_files" swaggertype:"array,string" features:"template"`
+	Variables      pgtype.Hstore  `json:"variables" gorm:"type:hstore" swaggertype:"object,string" features:"template" temporaljson:"variables,omitzero,omitempty"`
+	EnvVars        pgtype.Hstore  `json:"env_vars" temporalsjson:"env_vars" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"env_vars,omitzero,omitempty"`
+	VariablesFiles pq.StringArray `gorm:"type:text[]" json:"variables_files" swaggertype:"array,string" features:"template" temporaljson:"variables_files,omitzero,omitempty"`
 
-	TerraformVersion   string              `json:"terraform_version" gorm:"notnull"`
-	InstallSandboxRuns []InstallSandboxRun `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	TerraformVersion   string              `json:"terraform_version" gorm:"notnull" temporaljson:"terraform_version,omitzero,omitempty"`
+	InstallSandboxRuns []InstallSandboxRun `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox_runs,omitzero,omitempty"`
 
 	// Links are dynamically loaded using an after query
 	Artifacts struct {
-		DeprovisionPolicy           string `json:"deprovision_policy" gorm:"-"`
-		ProvisionPolicy             string `json:"provision_policy" gorm:"-"`
-		TrustPolicy                 string `json:"trust_policy" gorm:"-"`
-		CloudformationStackTemplate string `json:"cloudformation_stack_template" gorm:"-"`
-	} `json:"artifacts" gorm:"-"`
+		DeprovisionPolicy           string `json:"deprovision_policy" gorm:"-" temporaljson:"deprovision_policy,omitzero,omitempty"`
+		ProvisionPolicy             string `json:"provision_policy" gorm:"-" temporaljson:"provision_policy,omitzero,omitempty"`
+		TrustPolicy                 string `json:"trust_policy" gorm:"-" temporaljson:"trust_policy,omitzero,omitempty"`
+		CloudformationStackTemplate string `json:"cloudformation_stack_template" gorm:"-" temporaljson:"cloudformation_stack_template,omitzero,omitempty"`
+	} `json:"artifacts" gorm:"-" temporaljson:"artifacts,omitzero,omitempty"`
 
 	// cloud specific fields
-	AWSDelegationConfig *AppAWSDelegationConfig `json:"aws_delegation_config"`
-	AWSRegionType       generics.NullString     `json:"aws_region_type" swaggertype:"string"`
+	AWSDelegationConfig *AppAWSDelegationConfig `json:"aws_delegation_config" temporaljson:"aws_delegation_config,omitzero,omitempty"`
+	AWSRegionType       generics.NullString     `json:"aws_region_type" swaggertype:"string" temporaljson:"aws_region_type,omitzero,omitempty"`
 
 	// fields set via after query
-	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-" swaggertype:"string"`
+	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-" swaggertype:"string" temporaljson:"cloud_platform,omitzero,omitempty"`
 }
 
 func (c *AppSandboxConfig) Indexes(db *gorm.DB) []migrations.Index {

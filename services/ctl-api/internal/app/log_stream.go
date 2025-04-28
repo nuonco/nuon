@@ -13,33 +13,33 @@ import (
 )
 
 type LogStream struct {
-	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   Account `json:"-"`
+	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 
-	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
-	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
-	DeletedAt soft_delete.DeletedAt `json:"-"`
+	CreatedAt time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id"`
-	Org   Org    `json:"-"`
+	OrgID string `json:"org_id" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	OwnerID   string `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26"`
-	OwnerType string `json:"owner_type" gorm:"type:text;"`
+	OwnerID   string `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
+	OwnerType string `json:"owner_type" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
-	Open bool `json:"open"`
+	Open bool `json:"open" temporaljson:"open,omitzero,omitempty"`
 
-	Attrs pgtype.Hstore `json:"attrs" gorm:"type:hstore" swaggertype:"object,string"`
+	Attrs pgtype.Hstore `json:"attrs" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"attrs,omitzero,omitempty"`
 
-	ParentLogStreamID generics.NullString `json:"-" swaggerignore:"true"`
-	ParentLogStream   *LogStream          `json:"-" faker:"-"`
+	ParentLogStreamID generics.NullString `json:"-" swaggerignore:"true" temporaljson:"parent_log_stream_id,omitzero,omitempty"`
+	ParentLogStream   *LogStream          `json:"-" faker:"-" temporaljson:"parent_log_stream,omitzero,omitempty"`
 
-	RunnerJobs []RunnerJob `json:"-"`
+	RunnerJobs []RunnerJob `json:"-" temporaljson:"runner_jobs,omitzero,omitempty"`
 
 	// fields not stored in the DB
 
-	WriteToken   string `json:"write_token" temporaljson:"write_token" gorm:"-"`
-	RunnerAPIURL string `json:"runner_api_url" temporaljson:"runner_api_url" gorm:"-"`
+	WriteToken   string `json:"write_token" gorm:"-" temporaljson:"write_token,omitzero,omitempty"`
+	RunnerAPIURL string `json:"runner_api_url" gorm:"-" temporaljson:"runner_apiurl,omitzero,omitempty"`
 }
 
 func (r *LogStream) BeforeCreate(tx *gorm.DB) error {
