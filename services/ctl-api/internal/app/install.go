@@ -14,6 +14,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/bulk"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/links"
 )
 
 type Install struct {
@@ -71,6 +72,8 @@ type Install struct {
 	RunnerStatusDescription             string              `json:"runner_status_description" gorm:"-" swaggertype:"string" temporaljson:"runner_status_description,omitzero,omitempty"`
 	RunnerID                            string              `json:"runner_id" gorm:"-" temporaljson:"runner_id,omitzero,omitempty"`
 
+	Links map[string]any `json:"links,omitempty" temporaljson:"-" gorm:"-"`
+
 	// TODO(jm): deprecate these fields once the terraform provider has been updated
 	Status            string `json:"status" gorm:"-" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string `json:"status_description" gorm:"-" temporaljson:"status_description,omitzero,omitempty"`
@@ -122,6 +125,11 @@ func (i *Install) BeforeCreate(tx *gorm.DB) error {
 // We want to report the status of the sandbox, the runner, and the components,
 // and then roll that up into a high-level status for the install overall.
 func (i *Install) AfterQuery(tx *gorm.DB) error {
+	cfg := configFromContext(tx.Statement.Context)
+	if cfg != nil {
+		i.Links = links.InstallLinks(cfg, i.ID)
+	}
+
 	// get the runner status
 	i.RunnerStatus = RunnerStatusDeprovisioned
 	if len(i.RunnerGroup.Runners) > 0 {

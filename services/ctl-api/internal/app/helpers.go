@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 )
 
 const (
@@ -60,6 +62,16 @@ func logstreamIDFromContext(ctx context.Context) string {
 func installWorkflowFromContext(ctx context.Context) *InstallWorkflowContext {
 	val := ctx.Value("install_workflow")
 	valObj, ok := val.(*InstallWorkflowContext)
+	if !ok {
+		return nil
+	}
+
+	return valObj
+}
+
+func configFromContext(ctx context.Context) *internal.Config {
+	val := ctx.Value("config")
+	valObj, ok := val.(*internal.Config)
 	if !ok {
 		return nil
 	}

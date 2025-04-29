@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/links"
 )
 
 type ComponentStatus string
@@ -113,12 +114,19 @@ type Component struct {
 
 	// after query loaded items
 
+	Links map[string]any `json:"links,omitempty" temporaljson:"-" gorm:"-"`
+
 	Type            ComponentType              `gorm:"-" json:"type" temporaljson:"type,omitzero,omitempty"`
 	LatestConfig    *ComponentConfigConnection `gorm:"-" json:"-" temporaljson:"latest_config,omitzero,omitempty"`
 	ResolvedVarName string                     `json:"resolved_var_name" gorm:"-" temporaljson:"resolved_var_name,omitzero,omitempty"`
 }
 
 func (c *Component) AfterQuery(tx *gorm.DB) error {
+	cfg := configFromContext(tx.Statement.Context)
+	if cfg != nil {
+		c.Links = links.ComponentLinks(cfg, c.ID)
+	}
+
 	c.ResolvedVarName = generics.First(c.VarName, c.Name)
 
 	// set dependency ids

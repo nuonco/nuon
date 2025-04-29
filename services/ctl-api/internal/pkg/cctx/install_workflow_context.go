@@ -18,9 +18,9 @@ func SetInstallWorkflowContext(ctx context.Context, wf *app.InstallWorkflowConte
 }
 
 func GetInstallWorkflowContext(ctx ValueContext) (*app.InstallWorkflowContext, error) {
-	wf := ctx.Value(logStreamCtxKey)
+	wf := ctx.Value(workflowCtxKey)
 	if wf == nil {
-		return nil, fmt.Errorf("log stream not set on context")
+		return nil, fmt.Errorf("workflow not set on context")
 	}
 
 	return wf.(*app.InstallWorkflowContext), nil
@@ -42,7 +42,7 @@ func GetInstallWorkflowIDWorkflow(ctx ValueContext) (string, error) {
 func GetInstallWorkflowWorkflow(ctx ValueContext) (*app.InstallWorkflowContext, error) {
 	val := ctx.Value(workflowCtxKey)
 	if val == nil {
-		return nil, fmt.Errorf("no log stream found")
+		return nil, fmt.Errorf("workflow context not found")
 	}
 
 	return val.(*app.InstallWorkflowContext), nil
