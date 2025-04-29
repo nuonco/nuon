@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/bulk"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/links"
 )
 
 type AppStatus string
@@ -56,6 +57,8 @@ type App struct {
 	AppSandboxConfig AppSandboxConfig `json:"sandbox_config" gorm:"-" temporaljson:"app_sandbox_config,omitzero,omitempty"`
 	AppRunnerConfig  AppRunnerConfig  `json:"runner_config" gorm:"-" temporaljson:"app_runner_config,omitzero,omitempty"`
 
+	Links map[string]any `json:"links,omitempty" temporaljson:"-" gorm:"-"`
+
 	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-" swaggertype:"string" temporaljson:"cloud_platform,omitzero,omitempty"`
 }
 
@@ -71,6 +74,11 @@ func (a *App) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (a *App) AfterQuery(tx *gorm.DB) error {
+	cfg := configFromContext(tx.Statement.Context)
+	if cfg != nil {
+		a.Links = links.AppLinks(cfg, a.ID)
+	}
+
 	a.CloudPlatform = CloudPlatformUnknown
 	if len(a.AppRunnerConfigs) > 0 {
 		a.AppRunnerConfig = a.AppRunnerConfigs[0]
