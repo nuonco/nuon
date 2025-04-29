@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -62,6 +63,15 @@ func (s *Service) SyncDir(ctx context.Context, dir string) error {
 	ui.PrintSuccess("successfully synced " + dir)
 	s.notifyOrphanedComponents(syncer.OrphanedComponents())
 	s.notifyOrphanedActions(syncer.OrphanedActions())
+
+	cmpsScheduled := syncer.GetComponentsScheduled()
+	if len(cmpsScheduled) == 0 {
+		return nil
+	}
+
+	if err := s.pollComponentBuilds(ctx, cmpsScheduled); err != nil {
+		return errors.Wrap(err, "unable to poll builds")
+	}
 
 	return nil
 }
