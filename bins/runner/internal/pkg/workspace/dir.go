@@ -61,6 +61,19 @@ func (w *workspace) IsDir(path string) bool {
 	return stat.IsDir()
 }
 
+func (w *workspace) RmDir(path string) error {
+	fp := w.AbsPath(path)
+	if !w.IsDir(path) {
+		return nil
+	}
+
+	if err := os.RemoveAll(fp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (w *workspace) IsExecutable(path string) bool {
 	fp := w.AbsPath(path)
 	stat, err := os.Stat(fp)
