@@ -50,7 +50,7 @@ func (s *service) getInstallComponents(ctx *gin.Context, installID string) ([]ap
 				Order("install_components.created_at DESC")
 		}).
 		Preload("InstallComponents.Component").
-		Preload("TerraformWorkspace").
+		Preload("InstallComponents.TerraformWorkspace").
 		First(&install, "id = ?", installID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install components: %w", res.Error)
