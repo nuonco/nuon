@@ -21,4 +21,5 @@ jobs:
           stale-issue-label: stale
           exempt-pr-labels: keep-open
           operations-per-run: 100
-          debug-only: true # Temporarily enable this to see what's happening
+          ignore-updates: true
+          debug-only:  false# Temporarily enable this to see what's happening
