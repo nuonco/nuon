@@ -64,6 +64,9 @@ type InstallActionWorkflowRun struct {
 
 	RunEnvVars pgtype.Hstore `json:"run_env_vars" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"run_env_vars,omitzero,omitempty"`
 
+	InstallWorkflowID *string          `json:"install_workflow_id" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
+	InstallWorkflow   *InstallWorkflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
+
 	// after query
 
 	ExecutionTime time.Duration          `json:"execution_time" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
@@ -103,6 +106,13 @@ func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {
 	if i.OrgID == "" {
 		i.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
+	if i.InstallWorkflowID == nil {
+		workflow := installWorkflowFromContext(tx.Statement.Context)
+		if workflow != nil {
+			i.InstallWorkflowID = &workflow.ID
+		}
+	}
+
 	return nil
 }
 
