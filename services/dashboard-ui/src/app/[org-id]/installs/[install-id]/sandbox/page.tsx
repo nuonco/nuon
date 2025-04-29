@@ -76,13 +76,7 @@ export default withPageAuthRequired(async function InstallComponent({
           />
         </div>
       }
-      meta={
-        <InstallPageSubNav
-          installId={installId}
-          orgId={orgId}
-          runnerId={install?.runner_id}
-        />
-      }
+      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-y  md:divide-x">
         <div className="md:col-span-8 divide-y flex-auto flex flex-col">

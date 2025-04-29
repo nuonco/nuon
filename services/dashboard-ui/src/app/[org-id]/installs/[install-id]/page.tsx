@@ -3,22 +3,14 @@ import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
-  AppSandboxConfig,
-  AppSandboxVariables,
-  Config,
-  ConfigContent,
   DashboardContent,
-  Duration,
   ErrorFallback,
-  ID,
-  InstallCloudPlatform,
   InstallInputs,
   InstallInputsModal,
   InstallPageSubNav,
   InstallStatuses,
   Loading,
   Notice,
-  StatusBadge,
   Section,
   SectionHeader,
   Text,
@@ -26,13 +18,7 @@ import {
   Markdown,
 } from '@/components'
 import { InstallManagementDropdown } from '@/components/Installs'
-import {
-  getInstall,
-  getInstallCurrentInputs,
-  getInstallReadme,
-  getInstallRunnerGroup,
-  getRunnerLatestHeartbeat,
-} from '@/lib'
+import { getInstall, getInstallCurrentInputs, getInstallReadme } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
@@ -76,13 +62,7 @@ export default withPageAuthRequired(async function Install({ params }) {
           />
         </div>
       }
-      meta={
-        <InstallPageSubNav
-          installId={installId}
-          orgId={orgId}
-          runnerId={install?.runner_id}
-        />
-      }
+      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <Section
@@ -106,18 +86,6 @@ export default withPageAuthRequired(async function Install({ params }) {
         </Section>
 
         <div className="divide-y flex flex-col col-span-4">
-          {/* {RUNNERS ? (
-              <Section className="flex-initial" heading="Runner">
-              <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-              fallback={<Loading loadingText="Loading install runner..." />}
-              >
-              <LoadRunnerGroup installId={installId} orgId={orgId} />
-              </Suspense>
-              </ErrorBoundary>
-              </Section>
-              ) : null} */}
-
           <Section className="flex-initial">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
@@ -127,19 +95,6 @@ export default withPageAuthRequired(async function Install({ params }) {
               </Suspense>
             </ErrorBoundary>
           </Section>
-
-          {/* <Section className="flex-initial" heading="Active sandbox">
-              <div className="flex flex-col gap-8">
-              <AppSandboxConfig sandboxConfig={install?.app_sandbox_config} />
-              <AppSandboxVariables
-              variables={install?.app_sandbox_config?.variables}
-              />
-              </div>
-              </Section>
-
-              <Section heading="Cloud platform">
-              <InstallCloudPlatform install={install} />
-              </Section> */}
         </div>
       </div>
     </DashboardContent>
@@ -193,73 +148,5 @@ const LoadInstallCurrentInputs: FC<{
         <Text>No inputs configured.</Text>
       )}
     </>
-  )
-}
-
-const LoadRunnerGroup: FC<{ installId: string; orgId: string }> = async ({
-  installId,
-  orgId,
-}) => {
-  const runnerGroup = await getInstallRunnerGroup({ installId, orgId })
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="divide-y">
-        {runnerGroup.runners?.length ? (
-          runnerGroup.runners?.map((runner) => (
-            <div key={runner?.id} className="flex flex-col gap-2">
-              <span>
-                <Text className="gap-3" variant="med-14">
-                  <StatusBadge
-                    status={runner?.status}
-                    isStatusTextHidden
-                    isWithoutBorder
-                  />
-                  <span>{runner?.display_name}</span>
-                </Text>
-                <ID id={runner?.id} />
-              </span>
-
-              <ErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <Loading loadingText="Loading runner heartbeat..." />
-                  }
-                >
-                  <LoadRunnerHeartBeat runnerId={runner?.id} orgId={orgId} />
-                </Suspense>
-              </ErrorBoundary>
-            </div>
-          ))
-        ) : (
-          <Text>No runner found</Text>
-        )}
-      </div>
-    </div>
-  )
-}
-
-const LoadRunnerHeartBeat: FC<{ orgId: string; runnerId: string }> = async ({
-  orgId,
-  runnerId,
-}) => {
-  const heartbeat = await getRunnerLatestHeartbeat({ runnerId, orgId }).catch(
-    console.error
-  )
-
-  return heartbeat ? (
-    <Config>
-      <ConfigContent label="Version" value={heartbeat?.version} />
-      <ConfigContent
-        label="Alive time"
-        value={<Duration nanoseconds={heartbeat?.alive_time} />}
-      />
-      <ConfigContent
-        label="Last seen"
-        value={<Time time={heartbeat?.created_at} format="relative" />}
-      />
-    </Config>
-  ) : (
-    <Text>Runner not online.</Text>
   )
 }
