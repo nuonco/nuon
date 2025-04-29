@@ -5,13 +5,9 @@ import {
   DashboardContent,
   Empty,
   Loading,
-  InstallPageSubNav,
-  InstallStatuses,
   InstallWorkflowActivity,
   InstallWorkflowSteps,
-  InstallManagementDropdown,
   Section,
-  Time,
 } from '@/components'
 import { getInstall, getInstallWorkflow } from '@/lib'
 

@@ -65,13 +65,7 @@ export default withPageAuthRequired(async function Install({ params }) {
           />
         </div>
       }
-      meta={
-        <InstallPageSubNav
-          installId={installId}
-          orgId={orgId}
-          runnerId={install?.runner_id}
-        />
-      }
+      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <div className="flex flex-col lg:flex-row flex-auto">
         <Section heading="Install history" className="overflow-auto">

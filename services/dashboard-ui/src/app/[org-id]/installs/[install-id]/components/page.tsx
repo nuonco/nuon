@@ -67,13 +67,7 @@ export default withPageAuthRequired(async function InstallComponents({
           />
         </div>
       }
-      meta={
-        <InstallPageSubNav
-          installId={installId}
-          orgId={orgId}
-          runnerId={install?.runner_id}
-        />
-      }
+      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <section className="px-6 py-8">
         <ErrorBoundary fallbackRender={ErrorFallback}>
