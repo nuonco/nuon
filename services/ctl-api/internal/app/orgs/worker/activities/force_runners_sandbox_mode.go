@@ -30,9 +30,9 @@ func (a *Activities) forceRunnersSandboxMode(ctx context.Context, orgID string) 
 			OrgID: orgID,
 		}).
 		Updates(map[string]any{
-			"sandbox_mode":             true,
-			"aws_iam_role_arn":         "",
-			"k8s_service_account_name": "",
+			"sandbox_mode":                 true,
+			"org_aws_iam_role_arn":         "",
+			"org_k8s_service_account_name": "",
 		})
 	if res.Error != nil {
 		return errors.Wrap(res.Error, "unable to force sandbox mode for runner group settings")
