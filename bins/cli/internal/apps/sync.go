@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon-go"
-	"github.com/pterm/pterm"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -61,86 +59,7 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	s.notifyOrphanedComponents(syncer.OrphanedComponents())
 	s.notifyOrphanedActions(syncer.OrphanedActions())
 
-	cmpsScheduled := syncer.GetComponentsScheduled()
-	if len(cmpsScheduled) == 0 {
-		return nil
-	}
-
-	cmpByID := make(map[string]sync.ComponentState)
-	for _, cmp := range cmpsScheduled {
-		cmpByID[cmp.ID] = cmp
-	}
-
-	pollTimeout, cancel := context.WithTimeout(ctx, defaultSyncTimeout)
-	defer cancel()
-
-	multi := pterm.DefaultMultiPrinter
-
-	spinnersByComponentID := make(map[string]*pterm.SpinnerPrinter)
-	for _, cmp := range cmpsScheduled {
-		spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start(fmt.Sprintf("building component %s %s", cmp.ID, cmp.Name))
-		spinnersByComponentID[cmp.ID] = spinner
-	}
-
-	multi.Start()
-
-	// NOTE: on updates, components are already active and new component_builds records wait to be created.
-	// So we need to wait for the new component_builds to be created before we start to poll.
-	time.Sleep(time.Second * 5)
-
-	for {
-		select {
-		case <-pollTimeout.Done():
-			err = fmt.Errorf("timeout waiting for components to build")
-			ui.PrintError(err)
-			for cmpID, spinner := range spinnersByComponentID {
-				cmp, _ := cmpByID[cmpID]
-				spinner.Fail(fmt.Sprintf("timeout waiting for component %s %s to build", cmp.ID, cmp.Name))
-			}
-			multi.Stop()
-			return err
-		default:
-		}
-
-		for cmpID := range spinnersByComponentID {
-			cmp, _ := cmpByID[cmpID]
-			cmpBuild, err := s.api.GetComponentLatestBuild(ctx, cmp.ID)
-			if err != nil {
-				if nuon.IsServerError(err) {
-					spinnersByComponentID[cmpID].Fail(fmt.Sprintf("error building component %s %s", cmp.ID, cmp.Name))
-					delete(spinnersByComponentID, cmpID)
-					continue
-				}
-				// in case we didn't wait long enough for an initial build record, ignore and loop again
-				if nuon.IsNotFound(err) {
-					continue
-				}
-				// TODO: avoid panic if we error on network issues. We should introduce a retryer at the sdk level.
-				// for now, this loop is inherently retrying.
-				if cmpBuild == nil {
-					continue
-				}
-			}
-			if cmpBuild.Status == componentBuildStatusError {
-				spinnersByComponentID[cmpID].Fail(fmt.Sprintf("error building component %s %s", cmp.ID, cmp.Name))
-				delete(spinnersByComponentID, cmpID)
-				continue
-			}
-
-			if cmpBuild.Status == componentBuildStatusActive {
-				spinnersByComponentID[cmpID].Success(fmt.Sprintf("finished building component %s %s", cmp.ID, cmp.Name))
-				delete(spinnersByComponentID, cmpID)
-				continue
-			}
-		}
-
-		if len(spinnersByComponentID) == 0 {
-			multi.Stop()
-			return nil
-		}
-
-		time.Sleep(defaultSyncSleep)
-	}
+	return nil
 }
 
 func (s *Service) notifyOrphanedComponents(cmps map[string]string) {
@@ -171,7 +90,6 @@ func (s *Service) notifyOrphanedActions(actions map[string]string) {
 	ui.PrintLn(msg)
 	return
 }
-
 
 func (s *Service) Sync(ctx context.Context, all bool, file string) error {
 	var (
