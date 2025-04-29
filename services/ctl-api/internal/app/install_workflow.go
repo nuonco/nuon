@@ -144,6 +144,10 @@ type InstallWorkflow struct {
 	Name  string                `json:"name" gorm:"-" temporaljson:"name,omitzero,omitempty"`
 
 	ExecutionTime time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
+
+	InstallSandboxRuns        []InstallSandboxRun        `json:"install_sandbox_runs" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox_runs,omitzero,omitempty"`
+	InstallDeploys            []InstallDeploy            `json:"install_deploys" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_deploys,omitzero,omitempty"`
+	InstallActionWorkflowRuns []InstallActionWorkflowRun `json:"install_action_workflow_runs" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_action_runs,omitzero,omitempty"`
 }
 
 func (i *InstallWorkflow) BeforeCreate(tx *gorm.DB) error {
