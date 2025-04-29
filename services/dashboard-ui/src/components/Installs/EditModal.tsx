@@ -27,7 +27,7 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
   useEffect(() => {
     if (isOpen) {
       fetch(
-        `/api/${orgId}/apps/${install?.app_id}/input-configs/${install?.install_inputs?.at(0)?.app_input_config_id}`
+        `/api/${orgId}/apps/${install?.app_id}/input-configs/latest`
       )
         .then((res) =>
           res.json().then((inputs) => {
@@ -79,9 +79,7 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
                       )
                     } else {
                       router.push(`/${orgId}/installs/${install.id}/history`)
-                    }
-
-                    setIsOpen(false)
+                    }                    
                   }}
                   onCancel={() => {
                     setIsOpen(false)
