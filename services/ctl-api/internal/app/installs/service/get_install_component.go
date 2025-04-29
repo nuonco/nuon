@@ -48,6 +48,7 @@ func (s *service) getInstallComponent(ctx context.Context, installID, componentI
 			return db.
 				Order("install_deploys.created_at DESC").Limit(1)
 		}).
+		Preload("TerraformWorkspace").
 		Where(&app.InstallComponent{
 			InstallID:   installID,
 			ComponentID: componentID,

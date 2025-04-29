@@ -24,6 +24,7 @@ func (h *Helpers) getInstallComponents(ctx context.Context, installID string) ([
 			return db.Order("runner_jobs_view_v1.created_at DESC")
 		}).
 		Preload("InstallComponents.Component").
+		Preload("InstallComponents.TerraformWorkspace").
 		First(&install, "id = ?", installID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install components: %w", res.Error)
