@@ -30,8 +30,9 @@ const (
 	OperationInviteAccepted   eventloop.SignalType = "invite_accepted"
 
 	// This signal is only used for stage, when seeding from prod, to ensure an org is set as sandbox mode.
-	OperationForceSandboxMode eventloop.SignalType = "force_sandbox_mode"
-	OperationStageSeed        eventloop.SignalType = "stage_seed"
+	OperationForceSandboxMode   eventloop.SignalType = "force_sandbox_mode"
+	OperationStageSeed          eventloop.SignalType = "stage_seed"
+	OperationEnableFeatureFlags eventloop.SignalType = "enable_feature_flags"
 )
 
 type Signal struct {
