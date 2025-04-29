@@ -54,14 +54,15 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
     <DashboardContent
       breadcrumb={[
         { href: `/${orgId}/apps`, text: 'Apps' },
-        { href: `/${orgId}/apps/${app.id}/components`, text: app.name },
+        { href: `/${orgId}/apps/${app.id}`, text: app.name },
+        { href: `/${orgId}/apps/${app.id}/components`, text: 'Components' },
         {
           href: `/${orgId}/apps/${app.id}/components/${build.component_id}`,
           text: component.name,
         },
         {
           href: `/${orgId}/apps/${app.id}/components/${build.component_id}/builds/${build.id}`,
-          text: build.id,
+          text: "Build",
         },
       ]}
       heading={`${component.name} build`}

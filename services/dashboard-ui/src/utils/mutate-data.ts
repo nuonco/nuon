@@ -1,5 +1,6 @@
 import { API_URL } from '@/utils/configs'
 import { getFetchOpts } from '@/utils/get-fetch-opts'
+import type { TQuery } from '@/utils'
 
 export interface IMutateData {
   data?: Record<string, unknown>
@@ -29,4 +30,44 @@ export async function mutateData<T>({
   }
 
   return res.json()
+}
+
+export interface INueMutateData {
+  abortTimeout?: number
+  body?: Record<string, unknown>
+  method?: 'POST' | 'PATCH' | 'DELETE'
+  orgId?: string
+  path: string
+  pathVersion?: 'v1'
+}
+
+export async function nueMutateData<T>({
+  abortTimeout = 10000,
+  body,
+  method = 'POST',
+  orgId,
+  path,
+  pathVersion = 'v1',
+}: INueMutateData): Promise<TQuery<T>> {
+  return fetch(`${API_URL}/${pathVersion}/${path}`, {
+    ...(await getFetchOpts(orgId, {}, abortTimeout)),
+    body: body ? JSON.stringify(body) : undefined,
+    method,
+  })
+    .then((r) =>
+      r.json().then((data) =>
+        r.ok
+          ? {
+              data,
+              error: null,
+              status: r.status,
+              headers: r.headers,
+            }
+          : { data: null, error: data, status: r.status, headers: r.headers }
+      )
+    )
+    .catch((error) => {
+      console.error(error)
+      return { data: null, error, status: 500, headers: new Headers() }
+    })
 }
