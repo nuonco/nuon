@@ -39,6 +39,7 @@ func init() {
 	config.RegisterDefault("runner_container_image_url", "public.ecr.aws/p7e3r5y0/runner")
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
 	config.RegisterDefault("public_api_url", "http://localhost:8081")
+	config.RegisterDefault("temporal_url", "https://app.nuon.co")
 
 	// max request sizes to prevent too large of requests
 	config.RegisterDefault("max_request_size", 1024*50)
@@ -104,7 +105,11 @@ type Config struct {
 	Auth0Audience  string `config:"auth0_audience" validate:"required"`
 	Auth0ClientID  string `config:"auth0_client_id" validate:"required"`
 
-	DashboardURL string `config:"dashboard_url" validate:"required"`
+	// links
+	AppURL        string `config:"app_url" validate:"required"`
+	RunnerAPIURL  string `config:"runner_api_url" validate:"required"`
+	PublicAPIURL  string `config:"public_api_url" validate:"required"`
+	TemporalUIURL string `config:"temporal_ui_url" validate:"required"`
 
 	// flags for controlling the background workers
 	ForceSandboxMode         bool          `config:"force_sandbox_mode"`
@@ -126,9 +131,7 @@ type Config struct {
 	// configuration for runners
 	RunnerContainerImageURL string `config:"runner_container_image_url" validate:"required"`
 	RunnerContainerImageTag string `config:"runner_container_image_tag" validate:"required"`
-	RunnerAPIURL            string `config:"runner_api_url" validate:"required"`
 	UseLocalRunners         bool   `config:"use_local_runners"`
-	PublicAPIURL            string `config:"public_api_url" validate:"required"`
 
 	// cloudformation phone home
 	AWSCloudFormationStackTemplateBucket  string `config:"aws_cloudformation_stack_template_bucket"`

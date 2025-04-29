@@ -8,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/links"
 )
 
 type InstallWorkflowStep struct {
@@ -57,6 +58,8 @@ type InstallWorkflowStep struct {
 	PolicyValidation *InstallWorkflowStepPolicyValidation `json:"policy_validation" temporaljson:"policy_validation,omitzero,omitempty"`
 
 	ExecutionTime time.Duration `json:"execution_time" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
+
+	Links map[string]any `json:"links,omitempty" temporaljson:"-" gorm:"-"`
 }
 
 func (a *InstallWorkflowStep) BeforeCreate(tx *gorm.DB) error {
@@ -75,6 +78,11 @@ func (a *InstallWorkflowStep) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (r *InstallWorkflowStep) AfterQuery(tx *gorm.DB) error {
+	cfg := configFromContext(tx.Statement.Context)
+	if cfg != nil {
+		r.Links = links.InstallWorkflowStepLinks(cfg, r.ID)
+	}
+
 	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
 	r.Finished = !r.FinishedAt.IsZero()
 	return nil
