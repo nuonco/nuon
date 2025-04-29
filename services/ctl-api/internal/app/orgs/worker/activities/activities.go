@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/helpers"
 	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
 )
 
 type Params struct {
@@ -18,6 +19,7 @@ type Params struct {
 	RunnersHelpers *runnershelpers.Helpers
 	Helpers        *helpers.Helpers
 	EVClient       eventloop.Client
+	Features       *features.Features
 }
 
 type Activities struct {
@@ -25,6 +27,7 @@ type Activities struct {
 	evClient       eventloop.Client
 	runnersHelpers *runnershelpers.Helpers
 	helpers        *helpers.Helpers
+	features       *features.Features
 }
 
 func New(params Params) (*Activities, error) {
@@ -33,5 +36,6 @@ func New(params Params) (*Activities, error) {
 		evClient:       params.EVClient,
 		runnersHelpers: params.RunnersHelpers,
 		helpers:        params.Helpers,
+		features:       params.Features,
 	}, nil
 }

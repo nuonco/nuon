@@ -42,6 +42,9 @@ func (w *Workflows) seedOrg(ctx workflow.Context, orgID string) error {
 		Type: orgssignals.OperationStageSeed,
 	})
 	w.ev.Send(ctx, orgID, &orgssignals.Signal{
+		Type: orgssignals.OperationEnableFeatureFlags,
+	})
+	w.ev.Send(ctx, orgID, &orgssignals.Signal{
 		Type: orgssignals.OperationRestart,
 	})
 	return nil
