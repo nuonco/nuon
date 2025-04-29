@@ -10,7 +10,7 @@ import {
   ErrorFallback,
   Loading,
   NoActions,
-  Section,  
+  Section,
   Time,
 } from '@/components'
 import { InstallManagementDropdown } from '@/components/Installs'
@@ -57,13 +57,7 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
           />
         </div>
       }
-      meta={
-        <InstallPageSubNav
-          installId={installId}
-          orgId={orgId}
-          runnerId={install?.runner_id}
-        />
-      }
+      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <Section childrenClassName="flex flex-auto">
         <ErrorBoundary fallbackRender={ErrorFallback}>
