@@ -10,6 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/links"
 )
 
 type InstallWorkflowType string
@@ -148,6 +149,8 @@ type InstallWorkflow struct {
 	InstallSandboxRuns        []InstallSandboxRun        `json:"install_sandbox_runs" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox_runs,omitzero,omitempty"`
 	InstallDeploys            []InstallDeploy            `json:"install_deploys" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_deploys,omitzero,omitempty"`
 	InstallActionWorkflowRuns []InstallActionWorkflowRun `json:"install_action_workflow_runs" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_action_runs,omitzero,omitempty"`
+
+	Links map[string]any `json:"links,omitempty" temporaljson:"-" gorm:"-"`
 }
 
 func (i *InstallWorkflow) BeforeCreate(tx *gorm.DB) error {
@@ -162,6 +165,11 @@ func (i *InstallWorkflow) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (r *InstallWorkflow) AfterQuery(tx *gorm.DB) error {
+	cfg := configFromContext(tx.Statement.Context)
+	if cfg != nil {
+		r.Links = links.InstallWorkflowStepLinks(cfg, r.ID)
+	}
+
 	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
 	r.Finished = !r.FinishedAt.IsZero()
 
