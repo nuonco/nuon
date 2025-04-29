@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
+import { CalendarBlank, CaretLeft, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
@@ -10,6 +10,7 @@ import {
   DashboardContent,
   Duration,
   InstallDeployIntermediateData,
+  Link,
   LogStreamProvider,
   OperationLogsSection,
   SandboxRunStatus,
@@ -67,6 +68,16 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
       ]}
       heading={`${install.name} ${sandboxRun.run_type}`}
       headingUnderline={sandboxRun.id}
+      headingMeta={
+        sandboxRun?.install_workflow_id ? (
+          <Link
+            href={`/${orgId}/installs/${installId}/history/${sandboxRun?.install_workflow_id}`}
+          >
+            <CaretLeft />
+            View workflow
+          </Link>
+        ) : null
+      }
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
           <Text>
