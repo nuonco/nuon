@@ -16,6 +16,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
 )
 
 type Params struct {
@@ -32,6 +33,7 @@ type Params struct {
 	AcctClient      *account.Client
 	AnalyticsClient analytics.Writer
 	Helpers         *helpers.Helpers
+	Features        *features.Features
 }
 
 type service struct {
@@ -46,6 +48,7 @@ type service struct {
 	acctClient      *account.Client
 	analyticsClient analytics.Writer
 	helpers         *helpers.Helpers
+	features        *features.Features
 }
 
 var _ api.Service = (*service)(nil)
@@ -127,5 +130,6 @@ func New(params Params) *service {
 		analyticsClient: params.AnalyticsClient,
 		acctClient:      params.AcctClient,
 		helpers:         params.Helpers,
+		features:        params.Features,
 	}
 }
