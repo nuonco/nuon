@@ -55,6 +55,9 @@ type InstallSandboxRun struct {
 	InstallSandboxID *string         `json:"install_sandbox_id" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
 	InstallSandbox   *InstallSandbox `swaggerignore:"true" json:"-" temporaljson:"install_sandbox,omitzero,omitempty"`
 
+	InstallWorkflowID *string          `json:"install_workflow_id" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
+	InstallWorkflow   *InstallWorkflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
+
 	RunType           SandboxRunType   `json:"run_type" temporaljson:"run_type,omitzero,omitempty"`
 	Status            SandboxRunStatus `json:"status" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string           `json:"status_description" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
@@ -74,6 +77,13 @@ func (i *InstallSandboxRun) BeforeCreate(tx *gorm.DB) error {
 
 	if i.OrgID == "" {
 		i.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+
+	if i.InstallWorkflowID == nil {
+		workflow := installWorkflowFromContext(tx.Statement.Context)
+		if workflow != nil {
+			i.InstallWorkflowID = &workflow.ID
+		}
 	}
 
 	return nil
