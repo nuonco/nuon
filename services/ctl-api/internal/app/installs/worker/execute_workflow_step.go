@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -61,6 +62,10 @@ func (w *Workflows) ExecuteWorkflowStep(ctx workflow.Context, sreq signals.Reque
 		return w.handleStepErr(ctx, sreq.WorkflowStepID, err)
 	}
 
+	ctx = cctx.SetInstallWorkflowWorkflowContext(ctx, &app.InstallWorkflowContext{
+		ID:             step.InstallWorkflowID,
+		WorkflowStepID: &step.ID,
+	})
 	sig.WorkflowStepID = step.ID
 	sig.WorkflowStepName = step.Name
 
