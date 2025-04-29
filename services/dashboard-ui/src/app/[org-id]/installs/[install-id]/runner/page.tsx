@@ -25,14 +25,10 @@ import { getInstall, getRunner } from '@/lib'
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
-  const runnerId = params?.['runner-id'] as string
-  const [install, runner] = await Promise.all([
-    getInstall({ installId, orgId }),
-    getRunner({ runnerId, orgId }),
-  ])
+  const install = await getInstall({ installId, orgId })
 
   return {
-    title: `${install.name} | ${runner.display_name}`,
+    title: `${install.name} | Runner`,
   }
 }
 
@@ -42,14 +38,11 @@ export default withPageAuthRequired(async function Runner({
 }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const runnerId = params?.['runner-id'] as string
-  const [install, runner] = await Promise.all([
-    getInstall({ installId, orgId }),
-    getRunner({
-      orgId,
-      runnerId,
-    }),
-  ])
+  const install = await getInstall({ installId, orgId })
+  const runner = await getRunner({
+    orgId,
+    runnerId: install.runner_id
+  })
 
   return (
     <DashboardContent
@@ -60,8 +53,8 @@ export default withPageAuthRequired(async function Runner({
           text: install.name,
         },
         {
-          href: `/${orgId}/installs/${install.id}/runner-group/${runnerId}`,
-          text: runner?.display_name,
+          href: `/${orgId}/installs/${install.id}/runner`,
+          text: "Runner",
         },
       ]}
       heading={install.name}
@@ -86,7 +79,6 @@ export default withPageAuthRequired(async function Runner({
         <InstallPageSubNav
           installId={installId}
           orgId={orgId}
-          runnerId={runnerId}
         />
       }
     >
@@ -122,7 +114,7 @@ export default withPageAuthRequired(async function Runner({
                     </span>
                   }
                 >
-                  <RunnerHeartbeat runnerId={runnerId} orgId={orgId} />
+                  <RunnerHeartbeat runnerId={runner.id} orgId={orgId} />
                 </Suspense>
               </ErrorBoundary>
             </div>
@@ -137,7 +129,7 @@ export default withPageAuthRequired(async function Runner({
                   />
                 }
               >
-                <RunnerHealthChart runnerId={runnerId} orgId={orgId} />
+                <RunnerHealthChart runnerId={runner.id} orgId={orgId} />
               </Suspense>
             </ErrorBoundary>
           </Section>
@@ -152,7 +144,7 @@ export default withPageAuthRequired(async function Runner({
                 }
               >
                 <RunnerPastJobs
-                  runnerId={runnerId}
+                  runnerId={runner.id}
                   orgId={orgId}
                   offset={(searchParams['past-jobs'] as string) || '0'}
                 />
@@ -171,7 +163,7 @@ export default withPageAuthRequired(async function Runner({
                   />
                 }
               >
-                <RunnerRecentJob runnerId={runnerId} orgId={orgId} />
+                <RunnerRecentJob runnerId={runner.id} orgId={orgId} />
               </Suspense>
             </ErrorBoundary>
           </Section>
@@ -186,7 +178,7 @@ export default withPageAuthRequired(async function Runner({
                 }
               >
                 <RunnerUpcomingJobs
-                  runnerId={runnerId}
+                  runnerId={runner.id}
                   orgId={orgId}
                   offset={(searchParams['upcoming-jobs'] as string) || '0'}
                 />
