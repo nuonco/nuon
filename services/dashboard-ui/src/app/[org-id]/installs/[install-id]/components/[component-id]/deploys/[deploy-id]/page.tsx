@@ -7,6 +7,7 @@ import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   CalendarBlank,
+  CaretLeft,
   CaretRight,
   Timer,
 } from '@phosphor-icons/react/dist/ssr'
@@ -104,6 +105,16 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
       ]}
       heading={`${component.name} ${deploy.install_deploy_type}`}
       headingUnderline={deploy.id}
+      headingMeta={
+        deploy?.install_workflow_id ? (
+          <Link
+            href={`/${orgId}/installs/${installId}/history/${deploy?.install_workflow_id}`}
+          >
+            <CaretLeft />
+            View workflow
+          </Link>
+        ) : null
+      }
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
           <Text>
