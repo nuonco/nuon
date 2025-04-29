@@ -191,8 +191,8 @@ export const Text: FC<IText> = ({
   )
 }
 
-export const ID: FC<{ id: React.ReactElement | string }> = ({ id }) => (
-  <Text variant="mono-12">
+export const ID: FC<{ id: React.ReactElement | string, className?: string }> = ({ className, id }) => (
+  <Text variant="mono-12" className={className}>
     <ClickToCopy>{id}</ClickToCopy>
   </Text>
 )
