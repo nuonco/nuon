@@ -1,11 +1,9 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import {
-  createComponentBuild as createBuild,
-  createInstall,
-  type ICreateInstallData,
-} from '@/lib'
+import { createInstall, type ICreateInstallData } from '@/lib'
+import type { TBuild, TComponent } from '@/types'
+import { nueMutateData } from '@/utils'
 
 interface IRevalidateAppData {
   appId: string
@@ -17,26 +15,19 @@ export async function revalidateAppData({ appId, orgId }: IRevalidateAppData) {
 }
 
 interface ICreateComponentBuild {
-  appId: string
   componentId: string
   orgId: string
 }
 
 export async function createComponentBuild({
-  appId,
   componentId,
   orgId,
 }: ICreateComponentBuild) {
-  try {
-    await createBuild({
-      componentId,
-      orgId,
-    })
-    revalidatePath(`/${orgId}/apps/${appId}/components/${componentId}`)
-  } catch (error) {
-    console.error(error)
-    throw new Error(error.message)
-  }
+  return nueMutateData<TBuild>({
+    path: `components/${componentId}/builds`,
+    orgId,
+    body: { use_latest: true },
+  })
 }
 
 interface ICreateAppInstall {
@@ -76,7 +67,7 @@ export async function createAppInstall({
     data = {
       aws_account: {
         // iam_role_arn: formData?.iam_role_arn as string,
-        iam_role_arn: "old-field",
+        iam_role_arn: 'old-field',
         region: formData?.region as string,
       },
       ...data,
@@ -106,22 +97,36 @@ export async function createAppInstall({
 
 interface IBuildComponents {
   appId: string
-  componentIds: Array<string>
+  components: Array<TComponent>
   orgId: string
 }
 
 export async function buildComponents({
   appId,
-  componentIds,
+  components,
   orgId,
 }: IBuildComponents) {
   return Promise.all(
-    componentIds.map(
-      async (cId) => await createBuild({ componentId: cId, orgId })
+    components.map(
+      async ({ id, name }) =>
+        await nueMutateData<TBuild>({
+          path: `components/${id}/builds`,
+          orgId,
+          body: { use_latest: true },
+        }).then((res) =>
+          res?.error
+            ? {
+                ...res,
+                error: {
+                  ...res?.error,
+                  meta: { name, id },
+                },
+              }
+            : res
+        )
     )
-  ).then((builds) => {
-    revalidatePath(`/${orgId}/apps/${appId}`)
-    return builds
+  ).then((res) => {
+    revalidatePath(`/${orgId}/apps/${appId}/components`)
+    return res
   })
 }
-
