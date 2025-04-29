@@ -87,6 +87,9 @@ type InstallDeploy struct {
 	ComponentID            string `json:"component_id" gorm:"-" temporaljson:"component_id,omitzero,omitempty"`
 	ComponentName          string `json:"component_name" gorm:"-" temporaljson:"component_name,omitzero,omitempty"`
 	ComponentConfigVersion int    `gorm:"-" json:"component_config_version" temporaljson:"component_config_version,omitzero,omitempty"`
+
+	InstallWorkflowID *string          `json:"install_workflow_id" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
+	InstallWorkflow   *InstallWorkflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
 }
 
 func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {
@@ -97,6 +100,13 @@ func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {
 	if c.OrgID == "" {
 		c.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
+	if c.InstallWorkflowID == nil {
+		workflow := installWorkflowFromContext(tx.Statement.Context)
+		if workflow != nil {
+			c.InstallWorkflowID = &workflow.ID
+		}
+	}
+
 	return nil
 }
 
