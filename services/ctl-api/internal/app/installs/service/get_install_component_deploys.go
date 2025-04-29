@@ -57,6 +57,7 @@ func (s *service) getInstallComponentDeploys(ctx *gin.Context, installID, compon
 		Preload("InstallDeploys.CreatedBy").
 		Preload("InstallDeploys.ComponentBuild").
 		Preload("InstallDeploys.ComponentBuild.VCSConnectionCommit").
+		Preload("TerraformWorkspace").
 		Where(install).
 		First(&install)
 	if res.Error != nil {
