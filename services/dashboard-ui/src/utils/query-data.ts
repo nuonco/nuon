@@ -55,6 +55,7 @@ export type TQueryError = {
   description: string
   error: string
   user_error: boolean
+  meta?: any
 }
 
 export type TQuery<T> = {

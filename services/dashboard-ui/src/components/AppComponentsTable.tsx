@@ -156,11 +156,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
             handleOnChange={handleGlobleFilter}
             value={globalFilter}
           />
-          <BuildAllComponentsButton
-            appId={appId}
-            components={components}
-            orgId={orgId}
-          />
+          <BuildAllComponentsButton components={components} />
         </div>
       }
       data={data}
