@@ -31,6 +31,7 @@ type Workspace interface {
 	AbsPath(string) string
 	IsFile(string) bool
 	IsDir(string) bool
+	RmDir(string) error
 	IsExecutable(string) bool
 }
 
