@@ -2,9 +2,12 @@
 pool: nuon
 rds:
   db_name: temporal
-  instance_class: "db.t4g.xlarge"
+  instance_class: "db.m5.2xlarge"
   allocated_storage: "300"
   allocated_storage_alarm_threshold: "50"
   multi_az: true
   skip_final_snapshot: false
   deletion_protection: true
+
+history:
+  replicaCount: 7

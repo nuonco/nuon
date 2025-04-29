@@ -22,6 +22,9 @@ schema:
 
 server:
   replicaCount: 5
+  dynamicConfig:
+     limit.historySize.error: 
+      - value: 209715200
   config:
     prometheus:
       framework: opentelemetry
