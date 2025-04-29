@@ -26,8 +26,11 @@ func (h *handler) createExecEnv(ctx context.Context, l *zap.Logger, src *plantyp
 
 	dirName := git.Dir(src)
 	if h.state.workspace.IsDir(dirName) {
-		l.Warn(dirName + " already exists, so not recloning it")
-		return nil
+		l.Warn(dirName + " already exists, so removing it")
+
+		if err := h.state.workspace.RmDir(dirName); err != nil {
+			return errors.Wrap(err, "unable to cleanup old dir")
+		}
 	}
 
 	dirPath := h.state.workspace.AbsPath(dirName)
