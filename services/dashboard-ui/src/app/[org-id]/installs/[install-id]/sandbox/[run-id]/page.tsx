@@ -1,6 +1,4 @@
 import type { Metadata } from 'next'
-import { type FC, Suspense } from 'react'
-import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
@@ -11,9 +9,7 @@ import {
   CodeViewer,
   DashboardContent,
   Duration,
-  ErrorFallback,
   InstallDeployIntermediateData,
-  Loading,
   LogStreamProvider,
   OperationLogsSection,
   SandboxRunStatus,
