@@ -1,28 +1,35 @@
 'use client'
 
+import { useRouter, useParams } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
-import { Check, Hammer, WarningOctagon } from '@phosphor-icons/react'
+import { Check, Hammer } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
+import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { createComponentBuild } from '@/components/app-actions'
 import { trackEvent } from '@/utils'
 
 export const BuildComponentButton: FC<{
-  appId: string
-  componentId: string
   componentName: string
-  orgId: string
-  onComplete?: () => void
-}> = ({ appId, componentId, componentName, orgId, ...props }) => {
+}> = ({ componentName }) => {
   const { user } = useUser()
+  const router = useRouter()
+  const params = useParams<{
+    'org-id': string
+    'app-id': string
+    'component-id': string
+  }>()
+  const appId = params?.['app-id']
+  const orgId = params?.['org-id']
+  const componentId = params?.['component-id']
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
-  const [error, setError] = useState()
+  const [error, setError] = useState<string>()
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -45,15 +52,12 @@ export const BuildComponentButton: FC<{
               isOpen={isOpen}
               heading={`Build ${componentName} component?`}
               onClose={() => {
+                setError(undefined)
                 setIsOpen(false)
               }}
             >
-              <div className="mb-6">
-                {error ? (
-                  <span className="flex items-center gap-3  w-full p-2 border rounded-md border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600 text-base font-medium">
-                    <WarningOctagon size="20" /> {error}
-                  </span>
-                ) : null}
+              <div className="flex flex-col gap-3 mb-6">
+                {error ? <Notice>{error}</Notice> : null}
                 <Text variant="reg-14" className="leading-relaxed">
                   Are you sure you want to build {componentName}?
                 </Text>
@@ -71,8 +75,24 @@ export const BuildComponentButton: FC<{
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
                     setIsLoading(true)
-                    createComponentBuild({ appId, componentId, orgId })
-                      .then(() => {
+                    createComponentBuild({ componentId, orgId }).then((r) => {
+                      if (r?.error) {
+                        trackEvent({
+                          event: 'component_build',
+                          user,
+                          status: 'error',
+                          props: {
+                            orgId,
+                            appId,
+                            componentId,
+                          },
+                        })
+                        setError(
+                          r?.error?.error ||
+                            'Error occured, please refresh page and try again.'
+                        )
+                        setIsLoading(false)
+                      } else {
                         trackEvent({
                           event: 'component_build',
                           user,
@@ -85,26 +105,12 @@ export const BuildComponentButton: FC<{
                         })
                         setIsLoading(false)
                         setIsKickedOff(true)
-                        setIsOpen(false)
-                        if (props.onComplete) props.onComplete()
-                      })
-                      .catch((err) => {
-                        trackEvent({
-                          event: 'component_build',
-                          user,
-                          status: 'error',
-                          props: {
-                            orgId,
-                            appId,
-                            componentId,
-                          },
-                        })
-                        setError(
-                          err?.message ||
-                            'Error occured, please refresh page and try again.'
+
+                        router.push(
+                          `/${orgId}/apps/${appId}/components/${componentId}/builds/${r?.data?.id}`
                         )
-                        setIsLoading(false)
-                      })
+                      }
+                    })
                   }}
                   variant="primary"
                 >
