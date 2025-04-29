@@ -43,6 +43,7 @@ export default withPageAuthRequired(async function AppComponents({ params }) {
       breadcrumb={[
         { href: `/${orgId}/apps`, text: 'Apps' },
         { href: `/${orgId}/apps/${app.id}`, text: app.name },
+        { href: `/${orgId}/apps/${app.id}/components`, text: "Components" },
       ]}
       heading={app.name}
       headingUnderline={app.id}

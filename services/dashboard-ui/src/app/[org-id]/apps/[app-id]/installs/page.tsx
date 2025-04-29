@@ -38,6 +38,7 @@ export default withPageAuthRequired(async function AppInstalls({ params }) {
       breadcrumb={[
         { href: `/${orgId}/apps`, text: 'Apps' },
         { href: `/${orgId}/apps/${app.id}`, text: app.name },
+        { href: `/${orgId}/apps/${app.id}/installs`, text: 'Installs' },
       ]}
       heading={app.name}
       headingUnderline={app.id}

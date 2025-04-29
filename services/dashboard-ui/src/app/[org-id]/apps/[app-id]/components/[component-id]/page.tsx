@@ -49,7 +49,8 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
     <DashboardContent
       breadcrumb={[
         { href: `/${orgId}/apps`, text: 'Apps' },
-        { href: `/${orgId}/apps/${app.id}/components`, text: app.name },
+        { href: `/${orgId}/apps/${app.id}`, text: app.name },
+        { href: `/${orgId}/apps/${app.id}/components`, text: 'Components' },
         {
           href: `/${orgId}/apps/${app.id}/components/${component.id}`,
           text: component.name,
@@ -57,14 +58,7 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
       ]}
       heading={component.name}
       headingUnderline={component.id}
-      statues={
-        <BuildComponentButton
-          appId={appId}
-          componentId={componentId}
-          componentName={component?.name}
-          orgId={orgId}
-        />
-      }
+      statues={<BuildComponentButton componentName={component?.name} />}
     >
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="divide-y flex flex-col md:col-span-8">
