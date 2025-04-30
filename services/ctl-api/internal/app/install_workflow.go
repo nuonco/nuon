@@ -24,6 +24,7 @@ const (
 	InstallWorkflowTypeManualDeploy       InstallWorkflowType = "manual_deploy"
 	InstallWorkflowTypeInputUpdate        InstallWorkflowType = "input_update"
 	InstallWorkflowTypeDeployComponents   InstallWorkflowType = "deploy_components"
+	InstallWorkflowTypeTeardownComponent  InstallWorkflowType = "teardown_component"
 	InstallWorkflowTypeTeardownComponents InstallWorkflowType = "teardown_components"
 	InstallWorkflowTypeReprovisionSandbox InstallWorkflowType = "reprovision_sandbox"
 	InstallWorkflowTypeActionWorkflowRun  InstallWorkflowType = "action_workflow_run"
