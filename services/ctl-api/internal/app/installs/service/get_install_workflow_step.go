@@ -24,7 +24,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{array}		app.InstallSandboxRun
+// @Success				200	{array}		app.InstallWorkflowStep
 // @Router /v1/install-workflows/{install_workflow_id}/steps/{install_workflow_step_id} [GET]
 func (s *service) GetInstallWorkflowStep(ctx *gin.Context) {
 	workflowID := ctx.Param("workflow_id")
