@@ -54,7 +54,7 @@ const (
 type InstallDeploy struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
-	CreatedBy   Account               `json:"created_by" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedBy   Account               `json:"created_by,omitzero" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
@@ -64,8 +64,9 @@ type InstallDeploy struct {
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	// runner details
-	RunnerJobs []RunnerJob `json:"runner_jobs" gorm:"polymorphic:Owner;" temporaljson:"runner_jobs,omitzero,omitempty"`
-	LogStream  LogStream   `json:"log_stream" gorm:"polymorphic:Owner;" temporaljson:"log_stream,omitzero,omitempty"`
+	RunnerJobs  []RunnerJob `json:"runner_jobs" gorm:"polymorphic:Owner;" temporaljson:"runner_jobs,omitzero,omitempty"`
+	OCIArtifact OCIArtifact `json:"oci_artifact,omitzero,omitempty" gorm:"polymorphic:Owner;" temporaljson:"oci_artifact,omitempty"`
+	LogStream   LogStream   `json:"log_stream" gorm:"polymorphic:Owner;" temporaljson:"log_stream,omitzero,omitempty"`
 
 	ActionWorkflowRuns []InstallActionWorkflowRun `json:"action_workflow_runs" gorm:"polymorphic:TriggeredBy;" temporaljson:"action_workflow_runs,omitzero,omitempty"`
 
@@ -90,6 +91,8 @@ type InstallDeploy struct {
 
 	InstallWorkflowID *string          `json:"install_workflow_id" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
 	InstallWorkflow   *InstallWorkflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
+
+	Outputs map[string]any `json:"outputs" gorm:"-" temporaljson:"outputs,omitzero,omitempty"`
 }
 
 func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {
@@ -115,6 +118,13 @@ func (c *InstallDeploy) AfterQuery(tx *gorm.DB) error {
 	c.ComponentID = c.InstallComponent.ComponentID
 	c.ComponentName = c.InstallComponent.Component.Name
 	c.ComponentConfigVersion = c.ComponentBuild.ComponentConfigVersion
+
+	outputs := make(map[string]any, 0)
+	for _, rj := range c.RunnerJobs {
+		outputs = generics.MergeMaps(outputs, rj.ParsedOutputs)
+	}
+	c.Outputs = outputs
+
 	return nil
 }
 
@@ -125,8 +135,9 @@ func (c *InstallDeploy) IsTornDown() bool {
 func (i *InstallDeploy) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name: views.CustomViewName(db, &InstallDeploy{}, "latest_view_v1"),
-			SQL:  viewsql.InstallDeploysLatestViewV1,
+			Name:          views.CustomViewName(db, &InstallDeploy{}, "latest_view_v1"),
+			SQL:           viewsql.InstallDeploysLatestViewV1,
+			AlwaysReapply: true,
 		},
 	}
 }
