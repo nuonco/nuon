@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"strings"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -69,15 +70,26 @@ func (w *Workflows) ExecuteWorkflow(ctx workflow.Context, sreq signals.RequestSi
 
 	l.Debug("executing steps for workflow")
 	if err := w.AwaitExecuteWorkflowSteps(ctx, sreq); err != nil {
-		if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: sreq.InstallWorkflowID,
-			Status: app.CompositeStatus{
+		var status app.CompositeStatus
+		switch {
+		case strings.Contains(err.Error(), "workflow cancellation was requested"):
+			// string sniffing. yuck.
+			status = app.CompositeStatus{
+				Status:                 app.StatusCancelled,
+				StatusHumanDescription: "workflow was cancelled",
+			}
+		default:
+			status = app.CompositeStatus{
 				Status:                 app.StatusError,
 				StatusHumanDescription: "error while executing steps",
 				Metadata: map[string]any{
 					"error_message": err.Error(),
 				},
-			},
+			}
+		}
+		if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: sreq.InstallWorkflowID,
+			Status: status,
 		}); err != nil {
 			return err
 		}
