@@ -1,4 +1,4 @@
-import type { TOrg, TVCSConnection } from '@/types'
+import type { TOrg, TVCSConnection, TRunnerGroup } from '@/types'
 import { mutateData, queryData, nueQueryData } from '@/utils'
 
 export async function getOrgs() {
@@ -43,5 +43,15 @@ export async function nueGetOrg({ orgId }: IGetOrg) {
   return nueQueryData<TOrg>({
     orgId,
     path: 'orgs/current',
+  })
+}
+
+export interface IGetOrgRunnerGroup extends IGetOrg {}
+
+export async function getOrgRunnerGroup({ orgId }: IGetOrgRunnerGroup) {
+  return queryData<TRunnerGroup>({
+    errorMessage: 'Unable to retrieve install runner group.',
+    orgId,
+    path: `orgs/current/runner-group`,
   })
 }

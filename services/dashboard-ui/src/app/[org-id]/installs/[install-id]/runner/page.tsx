@@ -1,18 +1,15 @@
-import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   ErrorFallback,
-  ID,
   InstallStatuses,
   InstallPageSubNav,
   Loading,
+  RunnerMeta,
   RunnerHealthChart,
-  RunnerHeartbeat,
   RunnerPastJobs,
-  RunnerRecentJob,
   RunnerUpcomingJobs,
   StatusBadge,
   Section,
@@ -21,16 +18,6 @@ import {
 } from '@/components'
 import { InstallManagementDropdown } from '@/components/Installs'
 import { getInstall, getRunner } from '@/lib'
-
-export async function generateMetadata({ params }): Promise<Metadata> {
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
-  const install = await getInstall({ installId, orgId })
-
-  return {
-    title: `${install.name} | Runner`,
-  }
-}
 
 export default withPageAuthRequired(async function Runner({
   params,
@@ -41,7 +28,7 @@ export default withPageAuthRequired(async function Runner({
   const install = await getInstall({ installId, orgId })
   const runner = await getRunner({
     orgId,
-    runnerId: install.runner_id
+    runnerId: install.runner_id,
   })
 
   return (
@@ -54,7 +41,7 @@ export default withPageAuthRequired(async function Runner({
         },
         {
           href: `/${orgId}/installs/${install.id}/runner`,
-          text: "Runner",
+          text: 'Runner',
         },
       ]}
       heading={install.name}
@@ -75,51 +62,11 @@ export default withPageAuthRequired(async function Runner({
           />
         </div>
       }
-      meta={
-        <InstallPageSubNav
-          installId={installId}
-          orgId={orgId}
-        />
-      }
+      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <div className="flex-auto md:grid md:grid-cols-12 divide-x">
         <div className="divide-y flex flex-col flex-auto col-span-8">
-          <Section
-            className="flex-initial"
-            heading={
-              <span>
-                <Text variant="med-14">{runner?.display_name} </Text>
-                <ID id={runner?.id} />
-              </span>
-            }
-          >
-            <div className="flex gap-6 items-start justify-start lg:gap-12 xl:gap-24 flex-wrap">
-              <span className="flex flex-col gap-2">
-                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                  Status
-                </Text>
-                <StatusBadge
-                  status={runner?.status}
-                  description={runner?.status_description}
-                  descriptionAlignment="left"
-                  shouldPoll
-                  pollDuration={15000}
-                />
-              </span>
-              <ErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <span className="flex self-end">
-                      <Loading loadingText="Loading runner heartbeat..." />
-                    </span>
-                  }
-                >
-                  <RunnerHeartbeat runnerId={runner.id} orgId={orgId} />
-                </Suspense>
-              </ErrorBoundary>
-            </div>
-          </Section>
-          <Section className="flex-initial" heading="Health status">
+          <Section className="flex-initial" heading="Health">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
                 fallback={
@@ -133,7 +80,27 @@ export default withPageAuthRequired(async function Runner({
               </Suspense>
             </ErrorBoundary>
           </Section>
-          <Section heading="Job run history">
+          <Section className="flex-initial">
+            <div className="flex gap-6 items-start justify-start lg:gap-12 xl:gap-24 flex-wrap">
+              <span className="flex flex-col gap-2">
+                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                  Status
+                </Text>
+                <StatusBadge
+                  status={runner?.status}
+                  description={runner?.status_description}
+                  descriptionAlignment="left"
+                  shouldPoll
+                />
+              </span>
+              <RunnerMeta
+                orgId={orgId}
+                installId={installId}
+                runnerId={runner.id}
+              />
+            </div>
+          </Section>
+          <Section heading="Completed jobs">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
                 fallback={
@@ -153,21 +120,7 @@ export default withPageAuthRequired(async function Runner({
           </Section>
         </div>
         <div className="divide-y flex-auto flex flex-col col-span-4">
-          <Section className="flex-initial" heading="Recent job">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading
-                    variant="stack"
-                    loadingText="Loading recent job..."
-                  />
-                }
-              >
-                <RunnerRecentJob runnerId={runner.id} orgId={orgId} />
-              </Suspense>
-            </ErrorBoundary>
-          </Section>
-          <Section className="flex-initial" heading="Upcoming jobs ">
+          <Section heading="Upcoming jobs ">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
                 fallback={
