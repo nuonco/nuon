@@ -17,7 +17,7 @@ import { useOrg } from '@/components/Orgs'
 import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import type { TInstallWorkflow } from '@/types'
-import { POLL_DURATION } from '@/utils'
+import { POLL_DURATION, removeSnakeCase, sentanceCase } from '@/utils'
 
 function formatToRelativeDay(isoDate: string) {
   const inputDate = DateTime.fromISO(isoDate).startOf('day')
@@ -101,7 +101,8 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                   <YAStatus status={iw.status.status} />
                   <span>
                     <Text variant="med-12">
-                      {iw?.name} {iw?.status?.status}
+                      {sentanceCase(removeSnakeCase(iw?.type))}{' '}
+                      {iw?.status?.status}
                     </Text>
                     <Text variant="mono-12">{iw?.install_id}</Text>
                   </span>
