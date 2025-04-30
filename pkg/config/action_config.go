@@ -32,7 +32,7 @@ type ActionStepConfig struct {
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty"`
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"`
 
-	Command        string `mapstructure:"command" features:"get,template"`
+	Command        string `mapstructure:"command" features:"template"`
 	InlineContents string `mapstructure:"inline_contents" features:"get,template"`
 }
 
