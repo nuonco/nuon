@@ -20,6 +20,7 @@ const (
 	StatusInProgress   Status = "in-progress"
 	StatusSuccess      Status = "success"
 	StatusNotAttempted Status = "not-attempted"
+	StatusCancelled    Status = "cancelled"
 )
 
 // type specific statuses
