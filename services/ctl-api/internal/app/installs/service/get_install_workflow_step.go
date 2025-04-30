@@ -27,8 +27,8 @@ import (
 // @Success				200	{array}		app.InstallWorkflowStep
 // @Router /v1/install-workflows/{install_workflow_id}/steps/{install_workflow_step_id} [GET]
 func (s *service) GetInstallWorkflowStep(ctx *gin.Context) {
-	workflowID := ctx.Param("workflow_id")
-	stepID := ctx.Param("step_id")
+	workflowID := ctx.Param("install_workflow_id")
+	stepID := ctx.Param("install_workflow_step_id")
 
 	installWorkflow, err := s.getInstallWorkflowStep(ctx, workflowID, stepID)
 	if err != nil {
@@ -42,9 +42,7 @@ func (s *service) GetInstallWorkflowStep(ctx *gin.Context) {
 func (s *service) getInstallWorkflowStep(ctx *gin.Context, workflowID, stepID string) (*app.InstallWorkflowStep, error) {
 	var installWorkflowStep app.InstallWorkflowStep
 	res := s.db.WithContext(ctx).
-		Where(app.InstallWorkflowStep{
-			ID: workflowID,
-		}).
+		Where("id = ? AND install_workflow_id = ?", stepID, workflowID).
 		Preload("Approval").
 		Preload("PolicyValidation").
 		First(&installWorkflowStep)
