@@ -51,7 +51,7 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       heading={installWorkflow?.name}
       headingUnderline={installWorkflow.id}
       statues={
-        !installWorkflow?.finished ? (
+        !installWorkflow?.finished && installWorkflow?.steps?.length > 0 ? (
           <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
         ) : null
       }
