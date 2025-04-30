@@ -10,14 +10,13 @@ import {
   Loading,
   StatusBadge,
   RunnerHealthChart,
-  RunnerHeartbeat,
+  RunnerMeta,
   RunnerPastJobs,
-  RunnerRecentJob,
   RunnerUpcomingJobs,
   Section,
   Text,
 } from '@/components'
-import { getOrg, getRunner } from '@/lib'
+import { getRunner, getOrg } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const orgId = params?.['org-id'] as string
@@ -35,7 +34,12 @@ export default withPageAuthRequired(async function OrgRunner({
   const orgId = params?.['org-id'] as string
   const org = await getOrg({ orgId })
   const runnerId = org?.runner_group?.runners?.at(0)?.id
-  const runner = await getRunner({ orgId, runnerId })
+  const [runner] = await Promise.all([
+    getRunner({
+      orgId,
+      runnerId,
+    }),
+  ])
 
   if (org?.features?.['org-runner']) {
     return (
@@ -59,41 +63,7 @@ export default withPageAuthRequired(async function OrgRunner({
       >
         <div className="flex-auto md:grid md:grid-cols-12 divide-x">
           <div className="divide-y flex flex-col flex-auto col-span-8">
-            <Section
-              heading={
-                <span>
-                  <Text variant="med-14">{runner?.display_name} </Text>
-                  <ID id={runner?.id} />
-                </span>
-              }
-              className="flex-initial"
-            >
-              <div className="flex gap-6 items-start justify-start lg:gap-12 xl:gap-24 flex-wrap">
-                <span className="flex flex-col gap-2">
-                  <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                    Status
-                  </Text>
-                  <StatusBadge
-                    status={runner?.status}
-                    description={runner?.status_description}
-                    descriptionAlignment="left"
-                    shouldPoll
-                  />
-                </span>
-                <ErrorBoundary fallbackRender={ErrorFallback}>
-                  <Suspense
-                    fallback={
-                      <span className="flex self-end">
-                        <Loading loadingText="Loading runner heartbeat..." />
-                      </span>
-                    }
-                  >
-                    <RunnerHeartbeat runnerId={runnerId} orgId={orgId} />
-                  </Suspense>
-                </ErrorBoundary>
-              </div>
-            </Section>
-            <Section className="flex-initial" heading="Health status">
+            <Section className="flex-initial" heading="Health">
               <ErrorBoundary fallbackRender={ErrorFallback}>
                 <Suspense
                   fallback={
@@ -107,7 +77,23 @@ export default withPageAuthRequired(async function OrgRunner({
                 </Suspense>
               </ErrorBoundary>
             </Section>
-            <Section heading="Job run history">
+            <Section className="flex-initial">
+              <div className="flex gap-6 items-start justify-start lg:gap-12 xl:gap-24 flex-wrap">
+                <span className="flex flex-col gap-2">
+                  <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                    Status
+                  </Text>
+                  <StatusBadge
+                    status={runner?.status}
+                    description={runner?.status_description}
+                    descriptionAlignment="left"
+                    shouldPoll
+                  />
+                </span>
+                <RunnerMeta orgId={orgId} runnerId={runnerId} />
+              </div>
+            </Section>
+            <Section heading="Completed jobs">
               <ErrorBoundary fallbackRender={ErrorFallback}>
                 <Suspense
                   fallback={
@@ -127,20 +113,6 @@ export default withPageAuthRequired(async function OrgRunner({
             </Section>
           </div>
           <div className="divide-y flex flex-col flex-auto col-span-4">
-            <Section className="flex-initial" heading="Recent job">
-              <ErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <Loading
-                      variant="stack"
-                      loadingText="Loading recent job..."
-                    />
-                  }
-                >
-                  <RunnerRecentJob runnerId={runnerId} orgId={orgId} />
-                </Suspense>
-              </ErrorBoundary>
-            </Section>
             <Section className="flex-initial" heading="Upcoming jobs ">
               <ErrorBoundary fallbackRender={ErrorFallback}>
                 <Suspense
