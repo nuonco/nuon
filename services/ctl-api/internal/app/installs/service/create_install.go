@@ -59,7 +59,7 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		return
 	}
 
-	// NOTE(jm): eventually, we may want to move these into the workflow itself, but for now they are really system
+	// NOTE(jm): eventually, we  may want to move these into the workflow itself, but for now they are really system
 	// details so we're not including them in the user facing workflows.
 	//
 	// Maybe at some point they would be added with a `UserFacing: false` boolean on the step itself.

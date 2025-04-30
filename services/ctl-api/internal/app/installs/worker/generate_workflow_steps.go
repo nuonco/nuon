@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -60,6 +61,8 @@ func (w *Workflows) getSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) 
 		return w.getComponentTeardownSteps(ctx, wkflow)
 	case app.InstallWorkflowTypeInputUpdate:
 		return w.getUpdateInputSteps(ctx, wkflow)
+	case app.InstallWorkflowTypeActionWorkflowRun:
+		return w.getInstallWorkflowActionWorkflowRunSteps(ctx, wkflow)
 		// overall lifecycle
 	case app.InstallWorkflowTypeProvision:
 		return w.getInstallWorkflowProvisionSteps(ctx, wkflow)
@@ -318,6 +321,7 @@ func (w *Workflows) getComponentLifecycleActionsSteps(ctx workflow.Context, inst
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get components")
 	}
+
 	for _, trigger := range triggers {
 		sig := &signals.Signal{
 			Type: signals.OperationExecuteActionWorkflow,
@@ -341,6 +345,54 @@ func (w *Workflows) getComponentLifecycleActionsSteps(ctx workflow.Context, inst
 		steps = append(steps, step)
 	}
 
+	return steps, nil
+}
+
+func (w *Workflows) getInstallWorkflowActionWorkflowRunSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
+	triggers, err := activities.AwaitGetInstallActionWorkflowsByTriggerType(ctx, activities.GetInstallActionWorkflowsByTriggerTypeRequest{
+		ComponentID: "",
+		InstallID:   wkflow.InstallID,
+		TriggerType: app.ActionWorkflowTriggerTypeManual,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get triggers")
+	}
+
+	if len(triggers) == 0 {
+		return nil, errors.New("no action workflow triggers found")
+	}
+
+	steps := make([]*app.InstallWorkflowStep, 0)
+	manualTrigger := triggers[0]
+	prefix := "RUNENV_"
+	runEnvVars := map[string]string{}
+
+	for key, value := range wkflow.Metadata {
+		if strings.HasPrefix(key, prefix) {
+			// Remove the prefix and add to result map
+			newKey := key[len(prefix):]
+			runEnvVars[newKey] = *value
+		}
+	}
+
+	runEnvVars["TRIGGER_TYPE"] = string(app.ActionWorkflowTriggerTypeManual)
+
+	sig := &signals.Signal{
+		Type: signals.OperationExecuteActionWorkflow,
+		InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
+			InstallActionWorkflowID: manualTrigger.ID,
+			TriggerType:             app.ActionWorkflowTriggerTypeManual,
+			TriggeredByID:           manualTrigger.ActionWorkflowID,
+			RunEnvVars:              runEnvVars,
+		},
+	}
+	name := fmt.Sprintf("%s action workflow run", string(app.ActionWorkflowTriggerTypeManual))
+	step, err := w.installSignalStep(ctx, wkflow.InstallID, name, sig)
+	if err != nil {
+		return nil, err
+	}
+
+	steps = append(steps, step)
 	return steps, nil
 }
 
