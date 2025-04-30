@@ -35,8 +35,7 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 		return err
 	}
 
-	for idx, istep := range steps {
-		step := istep
+	for idx, step := range steps {
 		var cancel, steperr error
 		sreq.Signal.WorkflowStepID = step.ID
 
@@ -97,9 +96,17 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 		if cancel != nil || steperr != nil {
 			var reason string
 			if cancel != nil {
+				reason = "workflow cancellation was requested"
+				steperr = errors.New(reason)
+
 				// Necessary in order to act after a cancellation
 				ctx, _ = workflow.NewDisconnectedContext(ctx)
-				reason = "workflow was cancelled"
+				statusactivities.AwaitPkgStatusUpdateInstallWorkflowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+					ID: step.ID,
+					Status: app.NewCompositeTemporalStatus(ctx, app.StatusCancelled, map[string]any{
+						"reason": reason,
+					}),
+				})
 			} else {
 				reason = "previous step failed"
 				l.Error("error executing step", zap.String("step", step.ID), zap.Error(err))
