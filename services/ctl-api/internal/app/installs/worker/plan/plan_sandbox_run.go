@@ -69,23 +69,40 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 	l.Info("rendering environment variables")
 	if err := render.RenderMap(&envVars, stateData); err != nil {
+		l.Error("error rendering environment vars",
+			zap.Any("env-vars", envVars),
+			zap.Error(err),
+			zap.Any("state", stateData),
+		)
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
 	if err := render.RenderStruct(&appCfg.SandboxConfig, stateData); err != nil {
+		l.Error("error rendering config",
+			zap.Error(err),
+			zap.Any("state", stateData),
+		)
 		return nil, errors.Wrap(err, "unable to render config")
 	}
 
 	l.Info("rendering terraform variables")
 	if err := render.RenderMap(&vars, stateData); err != nil {
+		l.Error("error rendering terraform variables",
+			zap.Any("vars", vars),
+			zap.Error(err),
+			zap.Any("state", stateData),
+		)
 		return nil, errors.Wrap(err, "unable to render variables")
 	}
 
 	l.Info("outputs vars", zap.Any("vars", vars))
 
-	// l.Info("rendering policies")
-	// NOTE(jm): some policies have `{{}}` values
 	if err := render.RenderStruct(&appCfg.PoliciesConfig, stateData); err != nil {
+		l.Error("error rendering policies",
+			zap.Any("policies", appCfg.PoliciesConfig),
+			zap.Error(err),
+			zap.Any("state", stateData),
+		)
 		return nil, errors.Wrap(err, "unable to render policies")
 	}
 

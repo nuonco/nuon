@@ -1,8 +1,6 @@
 package plan
 
 import (
-	"fmt"
-
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -55,8 +53,9 @@ func (p *Planner) createStepPlan(ctx workflow.Context, step app.InstallActionWor
 	for k, v := range step.Step.EnvVars {
 		renderedVal, err := render.Render(*v, stateMap)
 		if err != nil {
-			l.Error(fmt.Sprintf("error rendering %s from intermediate data", *v),
-				zap.Any("intermediate-data", stateMap))
+			l.Error("error rendering env-var",
+				zap.String("env-var", *v),
+				zap.Error(err))
 			return nil, err
 		}
 
@@ -67,6 +66,11 @@ func (p *Planner) createStepPlan(ctx workflow.Context, step app.InstallActionWor
 		l.Debug("rendering inline contents")
 		renderedVal, err := render.Render(step.Step.InlineContents, stateMap)
 		if err != nil {
+			l.Error("error rendering inline contents",
+				zap.String("input", step.Step.InlineContents),
+				zap.Any("state", stateMap),
+				zap.Error(err),
+			)
 			return nil, err
 		}
 
@@ -77,6 +81,11 @@ func (p *Planner) createStepPlan(ctx workflow.Context, step app.InstallActionWor
 		l.Debug("rendering command")
 		renderedVal, err := render.Render(step.Step.Command, stateMap)
 		if err != nil {
+			l.Error("error rendering command",
+				zap.String("command", step.Step.Command),
+				zap.Any("state", stateMap),
+				zap.Error(err),
+			)
 			return nil, err
 		}
 

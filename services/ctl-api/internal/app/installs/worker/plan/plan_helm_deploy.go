@@ -50,20 +50,29 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 	// parse out various config fields
 	cfg := compBuild.ComponentConfigConnection.HelmComponentConfig
 	if err := render.RenderStruct(cfg, stateData); err != nil {
+		l.Error("error rendering helm config",
+			zap.Error(err),
+			zap.Any("state", stateData),
+		)
 		return nil, errors.Wrap(err, "unable to render config")
 	}
 
 	namespace := cfg.Namespace.ValueOrDefault("{{.nuon.install.id}}")
 	renderedNamespace, err := render.RenderV2(namespace, stateData)
 	if err != nil {
-		l.Error("unable to render namespace "+namespace, zap.Error(err))
+		l.Error("error rendering namespace",
+			zap.String("namespace", namespace),
+			zap.Error(err))
 		return nil, errors.Wrap(err, "unable to render namespace")
 	}
 
 	driver := cfg.StorageDriver.ValueOrDefault("secrets")
 	renderedDriver, err := render.RenderV2(driver, stateData)
 	if err != nil {
-		l.Error("unable to render driver "+driver, zap.Error(err))
+		l.Error("error rendering driver",
+			zap.String("driver", driver),
+			zap.Error(err))
+
 		return nil, errors.Wrap(err, "unable to render driver")
 	}
 

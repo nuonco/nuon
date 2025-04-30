@@ -91,7 +91,7 @@ func (w *Workflows) ExecuteDeployComponent(ctx workflow.Context, sreq signals.Re
 		return err
 	}
 
-	l.Info("syncing")
+	l.Info("syncing oci artifact")
 	if err := w.execSync(ctx, install, installDeploy, sreq.SandboxMode); err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to sync")
 		return errors.Wrap(err, "unable to execute sync")
