@@ -57,8 +57,10 @@ func (w *Workflows) getSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) 
 		return w.getManualDeploySteps(ctx, wkflow)
 	case app.InstallWorkflowTypeDeployComponents:
 		return w.deployAllComponents(ctx, wkflow)
-	case app.InstallWorkflowTypeTeardownComponents:
+	case app.InstallWorkflowTypeTeardownComponent:
 		return w.getComponentTeardownSteps(ctx, wkflow)
+	case app.InstallWorkflowTypeTeardownComponents:
+		return w.getComponentsTeardownSteps(ctx, wkflow)
 	case app.InstallWorkflowTypeInputUpdate:
 		return w.getUpdateInputSteps(ctx, wkflow)
 	case app.InstallWorkflowTypeActionWorkflowRun:
@@ -267,7 +269,7 @@ func (w *Workflows) getInstallWorkflowDeprovisionSteps(ctx workflow.Context, wkf
 	}
 	steps = append(steps, step)
 
-	deploySteps, err := w.getComponentTeardownSteps(ctx, wkflow)
+	deploySteps, err := w.getComponentsTeardownSteps(ctx, wkflow)
 	if err != nil {
 		return nil, err
 	}
@@ -509,6 +511,48 @@ func (w *Workflows) getComponentTeardownSteps(ctx workflow.Context, wkflow *app.
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
+	componentID, ok := wkflow.Metadata["component_id"]
+	if !ok {
+		return nil, errors.New("component id is not set on the install workflow for a manual deploy")
+	}
+
+	steps := make([]*app.InstallWorkflowStep, 0)
+
+	comp, err := activities.AwaitGetComponentByComponentID(ctx, generics.FromPtrStr(componentID))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get component")
+	}
+
+	preDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, wkflow.ID, generics.FromPtrStr(componentID), wkflow.InstallID, app.ActionWorkflowTriggerTypePreTeardownComponent)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, preDeploySteps...)
+
+	deployStep, err := w.installSignalStep(ctx, install.ID, "teardown "+comp.Name, &signals.Signal{
+		Type: signals.OperationExecuteTeardownComponent,
+		ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
+			ComponentID: generics.FromPtrStr(componentID),
+		},
+	})
+	steps = append(steps, deployStep)
+
+	postDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, wkflow.ID, generics.FromPtrStr(componentID), wkflow.InstallID, app.ActionWorkflowTriggerTypePostTeardownComponent)
+	if err != nil {
+		return nil, err
+	}
+
+	steps = append(steps, postDeploySteps...)
+
+	return steps, nil
+}
+
+func (w *Workflows) getComponentsTeardownSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
+	install, err := activities.AwaitGetByInstallID(ctx, wkflow.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
 	componentIDs, err := activities.AwaitGetAppInstallGraph(ctx, activities.GetAppInstallGraphRequest{
 		AppID:     install.AppID,
 		InstallID: install.ID,
@@ -533,7 +577,7 @@ func (w *Workflows) getComponentTeardownSteps(ctx workflow.Context, wkflow *app.
 
 		deployStep, err := w.installSignalStep(ctx, wkflow.InstallID, "teardown "+comp.Name, &signals.Signal{
 			Type: signals.OperationExecuteTeardownComponent,
-			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
+			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: compID,
 			},
 		})
@@ -670,7 +714,7 @@ func (w *Workflows) teardownAllComponents(ctx workflow.Context, wkflow *app.Inst
 	}
 	steps = append(steps, step)
 
-	deploySteps, err := w.getComponentTeardownSteps(ctx, wkflow)
+	deploySteps, err := w.getComponentsTeardownSteps(ctx, wkflow)
 	if err != nil {
 		return nil, err
 	}
