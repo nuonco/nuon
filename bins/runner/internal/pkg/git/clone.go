@@ -32,6 +32,10 @@ func (w *workspace) clone(ctx context.Context, rootDir string, src *plantypes.Gi
 		Progress: pWriter,
 	})
 	if err != nil {
+		l.Error("error cloning repository",
+			zap.String("url", src.URL),
+			zap.Error(err),
+		)
 		return CloneErr{
 			Url: src.URL,
 			Ref: src.Ref,
@@ -42,6 +46,10 @@ func (w *workspace) clone(ctx context.Context, rootDir string, src *plantypes.Gi
 	l.Info("fetching working tree")
 	wtree, err := repo.Worktree()
 	if err != nil {
+		l.Error("error fetching working tree",
+			zap.String("url", src.URL),
+			zap.Error(err),
+		)
 		return CloneErr{
 			Url: src.URL,
 			Ref: src.Ref,
@@ -60,9 +68,13 @@ func (w *workspace) clone(ctx context.Context, rootDir string, src *plantypes.Gi
 		return nil
 	}
 
-	l.Info("fetching remote branch")
+	l.Info("fetching remote origin")
 	remote, err := repo.Remote("origin")
 	if err != nil {
+		l.Error("error fetching remote origin",
+			zap.String("url", src.URL),
+			zap.Error(err),
+		)
 		return CloneErr{
 			Url: src.URL,
 			Ref: src.Ref,
@@ -75,10 +87,15 @@ func (w *workspace) clone(ctx context.Context, rootDir string, src *plantypes.Gi
 		RefSpecs: []config.RefSpec{config.RefSpec(refSpecStr)},
 	}); err != nil {
 		if !errors.Is(err, git.NoErrAlreadyUpToDate) {
+			l.Error("Unable to fetch reference",
+				zap.String("ref", src.Ref),
+				zap.String("url", src.URL),
+				zap.Error(err),
+			)
 			return CloneErr{
 				Url: src.URL,
 				Ref: src.Ref,
-				Err: errs.Wrap(err, "error fetching origin"),
+				Err: errs.Wrap(err, "error fetching reference"),
 			}
 		}
 	}
@@ -95,6 +112,11 @@ func (w *workspace) clone(ctx context.Context, rootDir string, src *plantypes.Gi
 		return nil
 	}
 
+	l.Error("Unable to fetch reference as branch, tag or commit",
+		zap.String("ref", src.Ref),
+		zap.String("url", src.URL),
+		zap.Error(err),
+	)
 	return CloneErr{
 		Url: src.URL,
 		Ref: src.Ref,
