@@ -10,6 +10,8 @@ export const initialsFromString = (s = '') => {
   ).toUpperCase()
 }
 
+export const removeSnakeCase = (str?: string) => str ? str?.replace(/_/g, ' ') : "unknown"
+
 export function getFlagEmoji(countryCode = 'us') {
   const codePoints = countryCode
     .toUpperCase()

@@ -6,6 +6,7 @@ import {
   Empty,
   Loading,
   InstallWorkflowActivity,
+  InstallWorkflowCancelModal,
   InstallWorkflowSteps,
   Section,
 } from '@/components'
@@ -49,6 +50,11 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       ]}
       heading={installWorkflow?.name}
       headingUnderline={installWorkflow.id}
+      statues={
+        !installWorkflow?.finished ? (
+          <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
+        ) : null
+      }
     >
       <div className="grid grid-cols-1 md:grid-cols-12 divide-x flex-auto">
         <div className="flex flex-col lg:flex-row flex-auto col-span-8">
