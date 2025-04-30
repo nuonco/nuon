@@ -251,11 +251,12 @@ func (h *Helpers) toComponent(installComp app.InstallComponent) *state.Component
 	st.InstallComponentID = installComp.ID
 
 	installDeploys := installComp.InstallDeploys
-	if len(installDeploys) > 0 && len(installDeploys[0].RunnerJobs) > 0 {
-		st.Status = string(installDeploys[0].Status)
-		st.BuildID = string(installDeploys[0].ComponentBuildID)
-		st.Outputs = installDeploys[0].RunnerJobs[0].ParsedOutputs
+	if len(installDeploys) < 1 {
+		return st
 	}
+	st.Status = string(installDeploys[0].Status)
+	st.BuildID = string(installDeploys[0].ComponentBuildID)
+	st.Outputs = installDeploys[0].Outputs
 
 	return st
 }

@@ -7,11 +7,15 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
+
+	"github.com/powertoolsdev/mono/pkg/types/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 )
@@ -94,6 +98,26 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 		return fmt.Errorf("unable to poll job: %w", err)
 	}
 	l.Info("sync image job was successfully completed")
+
+	// parse outputs
+	job, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get runner job")
+	}
+
+	var ociArtOutputs state.OCIArtifactOutputs
+	if err := mapstructure.Decode(job.ParsedOutputs["image"], &ociArtOutputs); err != nil {
+		l.Error("error parsing oci artifact outputs", zap.Error(err))
+		return errors.Wrap(err, "unable to parse oci artifact outputs")
+	}
+
+	if _, err := activities.AwaitCreateOCIArtifact(ctx, activities.CreateOCIArtifactRequest{
+		OwnerID:   installDeploy.ID,
+		OwnerType: plugins.TableName(w.db, installDeploy),
+		Outputs:   ociArtOutputs,
+	}); err != nil {
+		return errors.Wrap(err, "unable to create oci artifact")
+	}
 
 	return nil
 }
