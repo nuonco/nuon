@@ -128,7 +128,8 @@ export const YAStatus: FC<{ status: TInstallWorkflow['status']['status'] }> = ({
   const isError = status === 'error'
   const isProhibit = status === 'outdated'
   const isInProgress = status === 'in-progress'
-  const isCanceled = status === 'not-attempted'
+  const isCanceled = status === 'cancelled'
+  const isNotAttempted = status === 'not-attempted'
   const isPending = !isSuccess && !isError && !isProhibit && !isInProgress
 
   const StatusIcon = isSuccess ? (
@@ -140,6 +141,8 @@ export const YAStatus: FC<{ status: TInstallWorkflow['status']['status'] }> = ({
   ) : isInProgress ? (
     <SpinnerSVG />
   ) : isCanceled ? (
+    <XCircle size="18" weight="bold" />
+  ) : isNotAttempted ? (
     <Prohibit size="18" weight="bold" />
   ) : (
     <ClockCountdown size="18" weight="bold" />
