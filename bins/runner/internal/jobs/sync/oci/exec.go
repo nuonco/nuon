@@ -22,6 +22,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		h.writeErrorResult(ctx, "copy image", err)
 		return err
 	}
+	h.state.descriptor = res
 
 	resultReq := registry.ToAPIResult(res)
 	if _, err := h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, resultReq); err != nil {

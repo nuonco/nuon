@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
@@ -17,6 +18,11 @@ import (
 )
 
 func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, installID, deployID string) (*configs.OCIRegistryRepository, error) {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get logger")
+	}
+
 	installStack, err := activities.AwaitGetInstallStackByInstallID(ctx, installID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install stack")
@@ -41,11 +47,21 @@ func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, insta
 	// good way of "cataloging" resources.
 	repositoryStr, err := render.RenderV2("{{.nuon.sandbox.outputs.ecr.repository_url}}", stateData)
 	if err != nil {
+		l.Error("error rendering repository",
+			zap.Any("repository", repositoryStr),
+			zap.Error(err),
+			zap.Any("state", stateData),
+		)
 		return nil, errors.Wrap(err, "unable to render repository url")
 	}
 
 	registryURL, err := render.RenderV2("{{.nuon.sandbox.outputs.ecr.registry_url}}", stateData)
 	if err != nil {
+		l.Error("error rendering registy url",
+			zap.Any("registry-url", registryURL),
+			zap.Error(err),
+			zap.Any("state", stateData),
+		)
 		return nil, errors.Wrap(err, "unable to render registry url")
 	}
 
