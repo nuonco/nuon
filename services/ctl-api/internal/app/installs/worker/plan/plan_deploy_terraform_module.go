@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
@@ -12,9 +13,15 @@ import (
 	"github.com/powertoolsdev/mono/pkg/render"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
 func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.TerraformDeployPlan, error) {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get logger")
+	}
+
 	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
@@ -51,6 +58,10 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 	cfg := compBuild.ComponentConfigConnection.TerraformModuleComponentConfig
 
 	if err := render.RenderStruct(cfg, stateData); err != nil {
+		l.Error("error rendering terraform config",
+			zap.Error(err),
+			zap.Any("state", stateData),
+		)
 		return nil, errors.Wrap(err, "unable to render config")
 	}
 
@@ -58,10 +69,20 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 	vars := generics.ToStringMapAny(cfg.Variables)
 
 	if err := render.RenderMap(&envVars, stateData); err != nil {
+		l.Error("error rendering env-vars",
+			zap.Any("env-vars", envVars),
+			zap.Error(err),
+			zap.Any("state", stateData),
+		)
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
 	if err := render.RenderMap(&vars, stateData); err != nil {
+		l.Error("error rendering vars",
+			zap.Any("vars", vars),
+			zap.Error(err),
+			zap.Any("state", stateData),
+		)
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 

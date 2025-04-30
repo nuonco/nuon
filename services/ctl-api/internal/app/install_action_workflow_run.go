@@ -76,8 +76,9 @@ type InstallActionWorkflowRun struct {
 func (i *InstallActionWorkflowRun) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name: views.CustomViewName(db, &InstallActionWorkflowRun{}, "latest_view_v1"),
-			SQL:  viewsql.InstallActionWorkflowLatestRunsViewV1,
+			Name:          views.CustomViewName(db, &InstallActionWorkflowRun{}, "latest_view_v1"),
+			SQL:           viewsql.InstallActionWorkflowLatestRunsViewV1,
+			AlwaysReapply: true,
 		},
 	}
 }
