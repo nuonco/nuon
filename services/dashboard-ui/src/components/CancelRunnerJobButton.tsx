@@ -198,7 +198,7 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
                   ) : isLoading ? (
                     <SpinnerSVG />
                   ) : null}{' '}
-                  Cancel
+                  {cancelJobData?.buttonText}
                 </Button>
               </div>
             </Modal>,
@@ -213,7 +213,7 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
         }}
         {...props}
       >
-        Cancel
+        {cancelJobData?.buttonText}
       </Button>
     </>
   )
