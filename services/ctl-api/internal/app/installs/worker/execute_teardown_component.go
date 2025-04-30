@@ -25,8 +25,12 @@ func (w *Workflows) ExecuteTeardownComponent(ctx workflow.Context, sreq signals.
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
+	if sreq.ExecuteTeardownComponentSubSignal.ComponentID == "" {
+		return fmt.Errorf("component ID is required")
+	}
+
 	var installDeploy *app.InstallDeploy
-	componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, sreq.ExecuteDeployComponentSubSignal.ComponentID)
+	componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, sreq.ExecuteTeardownComponentSubSignal.ComponentID)
 	if err != nil {
 		return fmt.Errorf("unable to get component build: %w", err)
 	}
