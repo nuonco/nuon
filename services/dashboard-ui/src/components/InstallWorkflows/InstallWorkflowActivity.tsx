@@ -50,7 +50,8 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
               (s) =>
                 s?.status?.status === 'success' ||
                 s?.status?.status === 'active' ||
-                s?.status?.status === 'error'
+                s?.status?.status === 'error' ||
+                s?.status?.status === 'cancelled'
             ).length
           }{' '}
           of {installWorkflow?.steps?.length} steps completed
