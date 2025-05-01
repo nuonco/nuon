@@ -12,7 +12,7 @@ import (
 // @ID						GetTerraformWorkspace
 // @Summary				get  terraform workspace
 // @Description.markdown	get_terraform_workspace.md
-// @Tags					runners/runner
+// @Tags					runners,runners/runner
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
