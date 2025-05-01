@@ -27,7 +27,7 @@ type CreateTerraformWorkspaceRequest struct {
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.TerraformWorkspace
-// @Router 				/v1/terraform-workspaces [post]
+// @Router 				/v1/terraform-workspace [post]
 func (s *service) CreateTerraformWorkspace(ctx *gin.Context) {
 	var req CreateTerraformWorkspaceRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
