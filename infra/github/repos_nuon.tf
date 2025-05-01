@@ -459,3 +459,17 @@ module "runner" {
     github = github.nuon
   }
 }
+
+module "byoc" {
+  source           = "./modules/repository"
+  name             = "byoc"
+  description      = "Nuon, but make it BYOC."
+  required_checks  = []
+  is_public        = false
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
