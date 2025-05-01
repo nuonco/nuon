@@ -3,6 +3,9 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.531
+Adding endpoint to create terrraform workspace.
+
 ## v0.19.530
 
 Reverting Install Runner UI refactor. Releasing sandbox links on app table and deploy cancel button.
