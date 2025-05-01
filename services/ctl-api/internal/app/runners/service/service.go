@@ -52,6 +52,13 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/runners/:runner_id/recent-health-checks", s.GetRunnerRecentHealthChecks)
 	api.GET("/v1/runners/:runner_id/latest-heart-beat", s.GetRunnerLatestHeartBeat)
 
+	tfWorkspacePath := "/v1/terraform-workspaces"
+	api.GET(tfWorkspacePath, s.GetTerraformWorkpaces)
+	api.GET(tfWorkspacePath+"/:workspace_id", s.GetTerraformWorkpace)
+	api.DELETE(tfWorkspacePath+"/:workspace_id", s.DeleteTerraformWorkpace)
+	api.POST(tfWorkspacePath+"/:workspace_id/lock", s.LockTerraformWorkspace)
+	api.POST(tfWorkspacePath+"/:workspace_id/unlock", s.UnlockTerraformWorkspace)
+
 	api.POST("/v1/terraform-workspace", s.CreateTerraformWorkspace)
 	api.GET("/v1/runners/terraform-workspace/:workspace_id/states", s.GetTerraformWorkspaceStates)
 	api.GET("/v1/runners/terraform-workspace/:workspace_id/states/:state_id", s.GetTerraformWorkspaceStateByID)
