@@ -16,7 +16,7 @@ import (
 // @ID						UpdateTerraformState
 // @Summary				update terraform state
 // @Description.markdown	update_terraform_state.md
-// @Tags					runners/runner
+// @Tags					runners,runners/runner
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
