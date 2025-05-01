@@ -465,7 +465,7 @@ module "byoc" {
   name             = "byoc"
   description      = "Nuon, but make it BYOC."
   required_checks  = []
-  is_public        = false
+  is_public        = true
   owning_team_id   = github_team.nuon.id
   owning_team_name = "nuonco/${github_team.nuon.name}"
 
