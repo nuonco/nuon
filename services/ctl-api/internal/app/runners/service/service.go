@@ -52,6 +52,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/runners/:runner_id/recent-health-checks", s.GetRunnerRecentHealthChecks)
 	api.GET("/v1/runners/:runner_id/latest-heart-beat", s.GetRunnerLatestHeartBeat)
 
+	api.POST("/v1/terraform-workspace", s.CreateTerraformWorkspace)
 	api.GET("/v1/runners/terraform-workspace/:workspace_id/states", s.GetTerraformWorkspaceStates)
 	api.GET("/v1/runners/terraform-workspace/:workspace_id/states/:state_id", s.GetTerraformWorkspaceStateByID)
 	api.GET("/v1/runners/terraform-workspace/:workspace_id/states/:state_id/resources", s.GetTerraformWorkspaceStateResources)
@@ -64,8 +65,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/runners", s.AdminGetAllRunners)
-
-	api.POST("/v1/terraform-workspace", s.CreateTerraformWorkspace)
 
 	// runner management methods
 	api.GET("/v1/runners/:runner_id", s.AdminGetRunner)
