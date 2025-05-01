@@ -14,6 +14,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 func GenerateWorkflowStepsWorkflowID(req signals.RequestSignal) string {
@@ -43,6 +44,7 @@ func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, sreq signals.Req
 			Name:              step.Name,
 			Signal:            step.Signal,
 			Idx:               idx,
+			ExecutionType:     step.ExecutionType,
 		}); err != nil {
 			return errors.Wrap(err, "unable to create steps")
 		}
@@ -599,10 +601,32 @@ func (w *Workflows) installSignalStep(ctx workflow.Context, installID, name stri
 		return nil, errors.Wrap(err, "unable to create signal json")
 	}
 
+	executionTyp := app.InstallWorkflowStepExecutionTypeSystem
+	// user signals
+	userSignals := []eventloop.SignalType{
+		signals.OperationAwaitInstallStackVersionRun,
+	}
+	if generics.SliceContains(signal.Type, userSignals) {
+		executionTyp = app.InstallWorkflowStepExecutionTypeUser
+	}
+
+	// await approval signals
+	approvalSignals := []eventloop.SignalType{
+		signals.OperationProvisionSandbox,
+		signals.OperationDeprovisionSandbox,
+		signals.OperationReprovisionSandbox,
+		signals.OperationExecuteDeployComponent,
+		signals.OperationExecuteTeardownComponent,
+	}
+	if generics.SliceContains(signal.Type, approvalSignals) {
+		executionTyp = app.InstallWorkflowStepExecutionTypeApproval
+	}
+
 	return &app.InstallWorkflowStep{
-		Name:      name,
-		InstallID: installID,
-		Status:    app.NewCompositeTemporalStatus(ctx, app.StatusPending),
+		Name:          name,
+		ExecutionType: executionTyp,
+		InstallID:     installID,
+		Status:        app.NewCompositeTemporalStatus(ctx, app.StatusPending),
 		Signal: app.Signal{
 			Namespace:   "installs",
 			Type:        string(signal.Type),
@@ -732,7 +756,7 @@ func (w *Workflows) getInstallWorkflowReprovisionSandboxSteps(ctx workflow.Conte
 	if err != nil {
 		return nil, err
 	}
-	// steps = append(steps, step)
+	steps = append(steps, step)
 
 	lifecycleSteps, err := w.getSandboxLifecycleActionsSteps(ctx, wkflow.ID, wkflow.InstallID, app.ActionWorkflowTriggerTypePreSandboxRun)
 	if err != nil {

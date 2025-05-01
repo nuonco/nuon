@@ -11,6 +11,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 const (
@@ -38,7 +39,7 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 			Method:   c.Request.Method,
 			Context:  m.context,
 		}
-		c.Set(cctx.MetricsKey, ctxObj)
+		c.Set(keys.MetricsKey, ctxObj)
 
 		c.Next()
 

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -39,6 +40,8 @@ type Account struct {
 	OrgIDs         []string        `json:"org_ids" gorm:"-" temporaljson:"org_i_ds,omitzero,omitempty"`
 	Orgs           []*Org          `json:"-" gorm:"-" temporaljson:"orgs,omitzero,omitempty"`
 	AllPermissions permissions.Set `json:"permissions" gorm:"-" temporaljson:"all_permissions,omitzero,omitempty"`
+
+	IsEmployee bool `json:"-"`
 }
 
 func (a *Account) BeforeCreate(tx *gorm.DB) error {
@@ -50,6 +53,8 @@ func (a *Account) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (a *Account) AfterQuery(tx *gorm.DB) error {
+	a.IsEmployee = a.AccountType == AccountTypeAuth0 && strings.HasSuffix(a.Email, "@nuon.co")
+
 	a.OrgIDs = make([]string, 0)
 	a.AllPermissions = permissions.NewSet()
 

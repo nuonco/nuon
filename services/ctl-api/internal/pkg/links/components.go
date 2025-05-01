@@ -1,48 +1,26 @@
 package links
 
 import (
-	"net/url"
+	"context"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func ComponentLinks(cfg *internal.Config, componentID string) map[string]any {
+func ComponentLinks(ctx context.Context, componentID string) map[string]any {
+	links := map[string]any{
+		"ui":  buildUILink(ctx, "v1", "components", componentID),
+		"api": buildAPILink(ctx, "v1", "components", componentID),
+	}
+	if isEmployeeFromContext(ctx) {
+		links = generics.MergeMap(links, AppEmployeeLinks(ctx, componentID))
+	}
+
+	return links
+}
+
+func ComponentEmployeeLinks(ctx context.Context, componentID string) map[string]any {
 	return map[string]any{
-		"ui":               ComponentUILink(cfg, componentID),
-		"api":              ComponentAPILink(cfg, componentID),
-		"temporal_ui_link": ComponentAPILink(cfg, componentID),
+		"event_loop_ui": eventLoopLink(ctx, "components", componentID),
+		"admin_restart": buildAdminAPILink(ctx, "v1", "components", componentID, "admin-restart"),
 	}
-}
-
-func ComponentUILink(cfg *internal.Config, componentID string) string {
-	link, err := url.JoinPath(cfg.AppURL, "components", componentID)
-	if err != nil {
-		return handleErr(cfg, err)
-	}
-
-	return link
-}
-
-func ComponentTemporalUILink(cfg *internal.Config, componentID string) string {
-	link, err := url.JoinPath(cfg.TemporalUIURL,
-		"namespaces",
-		"components",
-		"workflows",
-		"event-loop-"+componentID)
-	if err != nil {
-		return handleErr(cfg, err)
-	}
-
-	return link
-}
-
-func ComponentAPILink(cfg *internal.Config, componentID string) string {
-	link, err := url.JoinPath(cfg.PublicAPIURL,
-		"v1",
-		"components", componentID)
-	if err != nil {
-		return handleErr(cfg, err)
-	}
-
-	return link
 }

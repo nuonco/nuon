@@ -7,14 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-)
-
-const (
-	orgCtxKey string = "org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 func OrgFromContext(ctx ValueContext) (*app.Org, error) {
-	org := ctx.Value(orgCtxKey)
+	org := ctx.Value(keys.OrgCtxKey)
 	if org == nil {
 		return nil, fmt.Errorf("org was not set on middleware context")
 	}
@@ -23,11 +20,11 @@ func OrgFromContext(ctx ValueContext) (*app.Org, error) {
 }
 
 func SetOrgGinContext(ctx *gin.Context, org *app.Org) {
-	ctx.Set(orgCtxKey, org)
-	ctx.Set(orgIDCtxKey, org.ID)
+	ctx.Set(keys.OrgCtxKey, org)
+	ctx.Set(keys.OrgIDCtxKey, org.ID)
 }
 
 func SetOrgContext(ctx context.Context, org *app.Org) context.Context {
-	ctx = context.WithValue(ctx, orgIDCtxKey, org.ID)
-	return context.WithValue(ctx, orgCtxKey, org)
+	ctx = context.WithValue(ctx, keys.OrgIDCtxKey, org.ID)
+	return context.WithValue(ctx, keys.OrgCtxKey, org)
 }
