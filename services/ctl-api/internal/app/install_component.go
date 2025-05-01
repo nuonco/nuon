@@ -50,6 +50,8 @@ type InstallComponent struct {
 	InstallDeploys     []InstallDeploy    `faker:"-" gorm:"constraint:OnDelete:CASCADE;" json:"install_deploys" temporaljson:"install_deploys,omitzero,omitempty"`
 	TerraformWorkspace TerraformWorkspace `json:"terraform_workspace" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"terraform_workspace,omitzero,omitempty"`
 
+	Links map[string]any `json:"links,omitempty" temporaljson:"-" gorm:"-"`
+
 	Status            InstallComponentStatus `json:"status" gorm:"default:''" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                 `json:"status_description" gorm:"default:''" temporaljson:"status_description,omitzero,omitempty"`
 }
