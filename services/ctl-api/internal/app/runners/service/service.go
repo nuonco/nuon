@@ -65,6 +65,8 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/runners", s.AdminGetAllRunners)
 
+	api.POST("/v1/terraform-workspace", s.CreateTerraformWorkspace)
+
 	// runner management methods
 	api.GET("/v1/runners/:runner_id", s.AdminGetRunner)
 	api.GET("/v1/runners/:runner_id/settings", s.AdminGetRunnerSettings)
