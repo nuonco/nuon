@@ -7,14 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-)
-
-const (
-	runnerCtxKey string = "runner"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 func RunnerFromContext(ctx ValueContext) (*app.Runner, error) {
-	runner := ctx.Value(runnerCtxKey)
+	runner := ctx.Value(keys.RunnerCtxKey)
 	if runner == nil {
 		return nil, fmt.Errorf("runner was not set on middleware context")
 	}
@@ -23,11 +20,11 @@ func RunnerFromContext(ctx ValueContext) (*app.Runner, error) {
 }
 
 func SetRunnerGinContext(ctx *gin.Context, runner *app.Runner) {
-	ctx.Set(runnerCtxKey, runner)
-	ctx.Set(runnerIDCtxKey, runner.ID)
+	ctx.Set(keys.RunnerCtxKey, runner)
+	ctx.Set(keys.RunnerIDCtxKey, runner.ID)
 }
 
 func SetRunnerContext(ctx context.Context, runner *app.Runner) context.Context {
-	ctx = context.WithValue(ctx, runnerIDCtxKey, runner.ID)
-	return context.WithValue(ctx, runnerCtxKey, runner)
+	ctx = context.WithValue(ctx, keys.RunnerIDCtxKey, runner.ID)
+	return context.WithValue(ctx, keys.RunnerCtxKey, runner)
 }

@@ -1,39 +1,27 @@
 package links
 
 import (
-	"net/url"
+	"context"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func AppLinks(cfg *internal.Config, appID string) map[string]any {
+func AppLinks(ctx context.Context, appID string) map[string]any {
+	links := map[string]any{
+		"ui":  buildUILink(ctx, orgIDFromContext(ctx), "apps", appID),
+		"api": buildAPILink(ctx, "v1", "apps", appID),
+	}
+	if isEmployeeFromContext(ctx) {
+		links = generics.MergeMap(links, AppEmployeeLinks(ctx, appID))
+	}
+
+	return links
+}
+
+func AppEmployeeLinks(ctx context.Context, appID string) map[string]any {
 	return map[string]any{
-		"ui":               AppUILink(cfg, appID),
-		"api":              AppAPILink(cfg, appID),
-		"temporal_ui_link": AppAPILink(cfg, appID),
+		"event_loop_ui":     eventLoopLink(ctx, "apps", appID),
+		"admin_restart":     buildAdminAPILink(ctx, "v1", "apps", appID, "admin-restart"),
+		"admin_reprovision": buildAdminAPILink(ctx, "v1", "apps", appID, "admin-reprovision"),
 	}
-}
-
-func AppUILink(cfg *internal.Config, appID string) string {
-	link, err := url.JoinPath(cfg.AppURL, "apps", appID)
-	if err != nil {
-		return handleErr(cfg, err)
-	}
-
-	return link
-}
-
-func AppTemporalUILink(cfg *internal.Config, appID string) string {
-	return eventLoopLink(cfg, "apps", appID)
-}
-
-func AppAPILink(cfg *internal.Config, appID string) string {
-	link, err := url.JoinPath(cfg.PublicAPIURL,
-		"v1",
-		"apps", appID)
-	if err != nil {
-		return handleErr(cfg, err)
-	}
-
-	return link
 }

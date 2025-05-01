@@ -1,13 +1,13 @@
 package cctx
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
 
-const (
-	isGlobalKey string = "is_global"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 func IsGlobal(ctx *gin.Context) bool {
-	isGlobal, exists := ctx.Get(isGlobalKey)
+	isGlobal, exists := ctx.Get(keys.IsGlobalKey)
 	if !exists {
 		return false
 	}
@@ -16,5 +16,5 @@ func IsGlobal(ctx *gin.Context) bool {
 }
 
 func SetIsGlobal(ctx *gin.Context, val bool) {
-	ctx.Set(isGlobalKey, val)
+	ctx.Set(keys.IsGlobalKey, val)
 }

@@ -8,10 +8,12 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/poll"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -24,6 +26,14 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 	version, err := activities.AwaitGetInstallStackVersionByInstallID(ctx, sreq.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install version")
+	}
+
+	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+		StepID:         sreq.WorkflowStepID,
+		StepTargetID:   version.ID,
+		StepTargetType: plugins.TableName(w.db, version),
+	}); err != nil {
+		return errors.Wrap(err, "unable to update stack version")
 	}
 
 	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
@@ -47,17 +57,18 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 		run, err := activities.AwaitCreateSandboxInstallStackVersionRun(ctx, &activities.CreateSandboxInstallStackVersionRunRequest{
 			StackVersionID: version.ID,
 			Data: map[string]string{
+				"account":                  generics.GetFakeObj[string](),
 				"region":                   install.AWSAccount.Region,
-				"url":                      "url",
-				"maintenance_iam_role_arn": "maintenance_iam_role_arn",
-				"provision_iam_role_arn":   "provision_iam_role_arn",
-				"deprovision_iam_role_arn": "deprovision_iam_role_arn",
-				"reprovision_iam_role_arn": "reprovision_iam_role_arn",
-				"vpc_id":                   "vpc-id",
-				"account_id":               "account_id",
-				"public_subnets":           "a,b,c",
-				"private_subnets":          "a,b,c",
-				"runner_subnet":            "a",
+				"url":                      generics.GetFakeObj[string](),
+				"maintenance_iam_role_arn": generics.GetFakeObj[string](),
+				"provision_iam_role_arn":   generics.GetFakeObj[string](),
+				"deprovision_iam_role_arn": generics.GetFakeObj[string](),
+				"reprovision_iam_role_arn": generics.GetFakeObj[string](),
+				"vpc_id":                   generics.GetFakeObj[string](),
+				"account_id":               generics.GetFakeObj[string](),
+				"public_subnets":           generics.GetFakeObj[string](),
+				"private_subnets":          generics.GetFakeObj[string](),
+				"runner_subnet":            generics.GetFakeObj[string](),
 			},
 		})
 		if err != nil {
@@ -84,6 +95,15 @@ func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signa
 		InitialInterval: time.Second * 15,
 		MaxInterval:     time.Minute * 15,
 		BackoffFactor:   1.15,
+		PostAttemptHook: func(ctx workflow.Context, dur time.Duration) error {
+			l, err := log.WorkflowLogger(ctx)
+			if err != nil {
+				return errors.Wrap(err, "unable to get workflow logger")
+			}
+
+			l.Debug("checking install stack status again in "+dur.String(), zap.Duration("duration", dur))
+			return nil
+		},
 		Fn: func(ctx workflow.Context) error {
 			run, err = activities.AwaitGetInstallStackVersionRunByVersionID(ctx, version.ID)
 			return err
