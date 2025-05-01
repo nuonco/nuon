@@ -12,7 +12,7 @@ import (
 // @ID						DeleteTerraformWorkspace
 // @Summary					delete terraform workspace
 // @Description.markdown	delete_terraform_workspace.md
-// @Tags						runners/runner
+// @Tags						runners,runners/runner
 // @Accept						json
 // @Produce 					json
 // @Security					APIKey
