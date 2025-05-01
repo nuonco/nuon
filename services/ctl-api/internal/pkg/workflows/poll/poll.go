@@ -26,6 +26,8 @@ type PollOpts struct {
 	MaxInterval     time.Duration `validate:"required"`
 	BackoffFactor   float64       `validate:"required"`
 	Fn              PollerFn      `validate:"required"`
+
+	PostAttemptHook func(workflow.Context, time.Duration) error
 }
 
 func Poll(ctx workflow.Context, v *validator.Validate, opts PollOpts) error {
@@ -41,6 +43,12 @@ func Poll(ctx workflow.Context, v *validator.Validate, opts PollOpts) error {
 		}
 		if errors.Is(err, NonRetryableError) {
 			return err
+		}
+
+		if opts.PostAttemptHook != nil {
+			if err := opts.PostAttemptHook(ctx, currentInterval); err != nil {
+				return errors.Wrap(err, "failed in post attempt hook")
+			}
 		}
 		if err := workflow.Sleep(ctx, currentInterval); err != nil {
 			return errors.Wrap(err, "sleep failed")
@@ -58,7 +66,6 @@ func Poll(ctx workflow.Context, v *validator.Validate, opts PollOpts) error {
 		} else {
 			currentInterval = nextInterval
 		}
-	}
 
-	return ExhaustedError
+	}
 }

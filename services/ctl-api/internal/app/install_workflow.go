@@ -167,10 +167,7 @@ func (i *InstallWorkflow) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (r *InstallWorkflow) AfterQuery(tx *gorm.DB) error {
-	cfg := configFromContext(tx.Statement.Context)
-	if cfg != nil {
-		r.Links = links.InstallWorkflowStepLinks(cfg, r.ID)
-	}
+	r.Links = links.InstallWorkflowLinks(tx.Statement.Context, r.ID)
 
 	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
 	r.Finished = !r.FinishedAt.IsZero()

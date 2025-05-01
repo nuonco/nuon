@@ -9,12 +9,13 @@ import (
 )
 
 type CreateInstallWorkflowStepRequest struct {
-	InstallWorkflowID string              `json:"install_workflow_id"`
-	InstallID         string              `json:"install_id"`
-	Status            app.CompositeStatus `json:"status"`
-	Name              string              `json:"name"`
-	Signal            app.Signal          `json:"signal"`
-	Idx               int                 `json:"idx"`
+	InstallWorkflowID string                               `json:"install_workflow_id"`
+	InstallID         string                               `json:"install_id"`
+	Status            app.CompositeStatus                  `json:"status"`
+	Name              string                               `json:"name"`
+	Signal            app.Signal                           `json:"signal"`
+	Idx               int                                  `json:"idx"`
+	ExecutionType     app.InstallWorkflowStepExecutionType `json:"execution_type"`
 }
 
 // @temporal-gen activity
@@ -26,6 +27,7 @@ func (a *Activities) CreateInstallWorkflowStep(ctx context.Context, req CreateIn
 		Name:              req.Name,
 		Signal:            req.Signal,
 		Idx:               req.Idx,
+		ExecutionType:     req.ExecutionType,
 	}
 
 	if res := a.db.WithContext(ctx).Create(step); res.Error != nil {
