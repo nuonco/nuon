@@ -4,11 +4,10 @@ import (
 	"context"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/keys"
 )
 
-const (
-	runnerIDCtxKey string = "runner_id"
-)
 
 func RunnerIDFromContext(ctx ValueContext) (string, error) {
 	runner, err := RunnerFromContext(ctx)
@@ -20,9 +19,9 @@ func RunnerIDFromContext(ctx ValueContext) (string, error) {
 }
 
 func SetRunnerIDGinContext(ctx *gin.Context, runnerID string) {
-	ctx.Set(runnerCtxKey, runnerID)
+	ctx.Set(keys.RunnerIDCtxKey, runnerID)
 }
 
 func SetRunnerIDContext(ctx context.Context, runnerID string) context.Context {
-	return context.WithValue(ctx, runnerIDCtxKey, runnerID)
+	return context.WithValue(ctx, keys.RunnerIDCtxKey, runnerID)
 }

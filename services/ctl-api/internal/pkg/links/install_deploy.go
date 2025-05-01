@@ -1,51 +1,26 @@
 package links
 
 import (
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"context"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func InstallDeployLinks(cfg *internal.Config, installID, componentID, deployID string) map[string]any {
+func InstallDeployLinks(ctx context.Context, installDeployID string) map[string]any {
+	links := map[string]any{
+		"ui":  buildUILink(ctx, "v1", "installDeploys", installDeployID),
+		"api": buildAPILink(ctx, "v1", "installDeploys", installDeployID),
+	}
+	if isEmployeeFromContext(ctx) {
+		links = generics.MergeMap(links, AppEmployeeLinks(ctx, installDeployID))
+	}
+
+	return links
+}
+
+func InstallDeployEmployeeLinks(ctx context.Context, installDeployID string) map[string]any {
 	return map[string]any{
-		//"ui":  InstallDeployUILink(cfg, installID, componentID, deployID),
-		//"api": InstallDeployAPILink(cfg, id),
+		"event_loop_ui": eventLoopLink(ctx, "installDeploys", installDeployID),
+		"admin_restart": buildAdminAPILink(ctx, "v1", "installDeploys", installDeployID, "admin-restart"),
 	}
 }
-
-//func InstallDeployUILink(cfg *internal.Config, id string) string {
-//link, err := url.JoinPath(cfg.AppURL,
-//"installs",
-//installDeploy.InstallID,
-//"components",
-//installDeploy.InstallComponentID,
-//"deploys",
-//installDeploy.ID,
-//)
-//if err != nil {
-//return handleErr(cfg, err)
-//}
-
-//return link
-//}
-
-func InstallSignalLink(cfg *internal.Config, id string, typ string) string {
-	return eventLoopSignalLink(cfg, "installs", id, typ)
-}
-
-func InstallEventLoopSignalLink(cfg *internal.Config, id string, typ string) string {
-	return eventLoopLink(cfg, "installs", id)
-}
-
-//func InstallDeployAPILink(cfg *internal.Config, id string) string {
-//link, err := url.JoinPath(cfg.PublicAPIURL,
-//"v1",
-//"installs",
-//id.InstallID,
-//"deploys",
-//id.ID,
-//)
-//if err != nil {
-//return handleErr(cfg, err)
-//}
-
-//return link
-//}

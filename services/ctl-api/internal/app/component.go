@@ -122,10 +122,7 @@ type Component struct {
 }
 
 func (c *Component) AfterQuery(tx *gorm.DB) error {
-	cfg := configFromContext(tx.Statement.Context)
-	if cfg != nil {
-		c.Links = links.ComponentLinks(cfg, c.ID)
-	}
+	c.Links = links.ComponentLinks(tx.Statement.Context, c.ID)
 
 	c.ResolvedVarName = generics.First(c.VarName, c.Name)
 
