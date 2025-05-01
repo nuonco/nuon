@@ -6,9 +6,19 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/links"
+)
+
+type InstallWorkflowStepExecutionType string
+
+const (
+	InstallWorkflowStepExecutionTypeSystem   InstallWorkflowStepExecutionType = "system"
+	InstallWorkflowStepExecutionTypeUser     InstallWorkflowStepExecutionType = "user"
+	InstallWorkflowStepExecutionTypeApproval InstallWorkflowStepExecutionType = "approval"
 )
 
 type InstallWorkflowStep struct {
@@ -37,6 +47,8 @@ type InstallWorkflowStep struct {
 
 	Idx int `json:"idx" temporaljson:"idx,omitzero,omitempty"`
 
+	ExecutionType InstallWorkflowStepExecutionType `json:"execution_type" temporaljson:"execution_type"`
+
 	// the following fields are set _once_ a step is in flight, and are orchestrated via the step's signal.
 	//
 	// this is a polymorphic gorm relationship to one of the following objects:
@@ -48,6 +60,8 @@ type InstallWorkflowStep struct {
 	// install_action_workflow_run (can be many of these)
 	StepTargetID   string `json:"step_target_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"step_target_id,omitzero,omitempty"`
 	StepTargetType string `json:"step_target_type" gorm:"type:text;" temporaljson:"step_target_type,omitzero,omitempty"`
+
+	Metadata pgtype.Hstore `json:"metadata" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
 
 	StartedAt  time.Time `json:"started_at" gorm:"default:null" temporaljson:"started_at,omitzero,omitempty"`
 	FinishedAt time.Time `json:"finished_at" gorm:"default:null" temporaljson:"finished_at,omitzero,omitempty"`
@@ -78,10 +92,7 @@ func (a *InstallWorkflowStep) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (r *InstallWorkflowStep) AfterQuery(tx *gorm.DB) error {
-	cfg := configFromContext(tx.Statement.Context)
-	if cfg != nil {
-		r.Links = links.InstallWorkflowStepLinks(cfg, r.ID)
-	}
+	r.Links = links.InstallWorkflowStepLinks(tx.Statement.Context, r.ID)
 
 	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
 	r.Finished = !r.FinishedAt.IsZero()

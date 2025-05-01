@@ -1,48 +1,26 @@
 package links
 
 import (
-	"net/url"
+	"context"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func OrgLinks(cfg *internal.Config, orgID string) map[string]any {
+func OrgLinks(ctx context.Context, orgID string) map[string]any {
+	links := map[string]any{
+		"ui":  buildUILink(ctx, orgIDFromContext(ctx)),
+		"api": buildAPILink(ctx, "v1", "orgs", "current"),
+	}
+	if isEmployeeFromContext(ctx) {
+		links = generics.MergeMap(links, AppEmployeeLinks(ctx, orgID))
+	}
+
+	return links
+}
+
+func OrgEmployeeLinks(ctx context.Context, orgID string) map[string]any {
 	return map[string]any{
-		"ui":               OrgUILink(cfg, orgID),
-		"api":              OrgAPILink(cfg, orgID),
-		"temporal_ui_link": OrgAPILink(cfg, orgID),
+		"event_loop_ui": eventLoopLink(ctx, "orgs", orgID),
+		"admin_restart": buildAdminAPILink(ctx, "v1", "orgs", orgID, "admin-restart"),
 	}
-}
-
-func OrgUILink(cfg *internal.Config, orgID string) string {
-	link, err := url.JoinPath(cfg.AppURL, "orgs", orgID)
-	if err != nil {
-		return handleErr(cfg, err)
-	}
-
-	return link
-}
-
-func OrgTemporalUILink(cfg *internal.Config, orgID string) string {
-	link, err := url.JoinPath(cfg.TemporalUIURL,
-		"namespaces",
-		"orgs",
-		"workflows",
-		"event-loop-"+orgID)
-	if err != nil {
-		return handleErr(cfg, err)
-	}
-
-	return link
-}
-
-func OrgAPILink(cfg *internal.Config, orgID string) string {
-	link, err := url.JoinPath(cfg.PublicAPIURL,
-		"v1",
-		"orgs", orgID)
-	if err != nil {
-		return handleErr(cfg, err)
-	}
-
-	return link
 }

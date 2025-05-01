@@ -1,47 +1,26 @@
 package links
 
 import (
-	"net/url"
+	"context"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func InstallLinks(cfg *internal.Config, id string) map[string]any {
+func InstallLinks(ctx context.Context, actionID string) map[string]any {
+	links := map[string]any{
+		"ui":  buildUILink(ctx, "v1", "actions", actionID),
+		"api": buildAPILink(ctx, "v1", "actions", actionID),
+	}
+	if isEmployeeFromContext(ctx) {
+		links = generics.MergeMap(links, AppEmployeeLinks(ctx, actionID))
+	}
+
+	return links
+}
+
+func InstallEmployeeLinks(ctx context.Context, actionID string) map[string]any {
 	return map[string]any{
-		"ui":         InstallUILink(cfg, id),
-		"api":        InstallAPILink(cfg, id),
-		"event_loop": InstallEventLoopLink(cfg, id),
+		"event_loop_ui": eventLoopLink(ctx, "actions", actionID),
+		"admin_restart": buildAdminAPILink(ctx, "v1", "actions", actionID, "admin-restart"),
 	}
-}
-
-func InstallLinksNested(cfg *internal.Config, installID string) map[string]any {
-	return map[string]any{
-		"ui":         InstallUILink(cfg, installID),
-		"api":        InstallAPILink(cfg, installID),
-		"event_loop": InstallEventLoopLink(cfg, installID),
-	}
-}
-
-func InstallUILink(cfg *internal.Config, installID string) string {
-	link, err := url.JoinPath(cfg.AppURL, "installs", installID)
-	if err != nil {
-		return handleErr(cfg, err)
-	}
-
-	return link
-}
-
-func InstallEventLoopLink(cfg *internal.Config, installID string) string {
-	return eventLoopLink(cfg, "installs", installID)
-}
-
-func InstallAPILink(cfg *internal.Config, installID string) string {
-	link, err := url.JoinPath(cfg.PublicAPIURL,
-		"v1",
-		"installs", installID)
-	if err != nil {
-		return handleErr(cfg, err)
-	}
-
-	return link
 }

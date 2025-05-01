@@ -125,10 +125,7 @@ func (i *Install) BeforeCreate(tx *gorm.DB) error {
 // We want to report the status of the sandbox, the runner, and the components,
 // and then roll that up into a high-level status for the install overall.
 func (i *Install) AfterQuery(tx *gorm.DB) error {
-	cfg := configFromContext(tx.Statement.Context)
-	if cfg != nil {
-		i.Links = links.InstallLinks(cfg, i.ID)
-	}
+	i.Links = links.InstallLinks(tx.Statement.Context, i.ID)
 
 	// get the runner status
 	i.RunnerStatus = RunnerStatusDeprovisioned

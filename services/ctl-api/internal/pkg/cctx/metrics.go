@@ -2,10 +2,8 @@ package cctx
 
 import (
 	"fmt"
-)
 
-const (
-	MetricsKey string = "metrics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 var ErrMetricContextNotFound error = fmt.Errorf("metric context not found")
@@ -21,7 +19,7 @@ type MetricContext struct {
 }
 
 func MetricsContextFromGinContext(ctx ValueContext) (*MetricContext, error) {
-	metrics := ctx.Value(MetricsKey)
+	metrics := ctx.Value(keys.MetricsKey)
 	if metrics == nil {
 		return nil, ErrMetricContextNotFound
 	}

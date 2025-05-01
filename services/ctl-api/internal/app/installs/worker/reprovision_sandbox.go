@@ -38,18 +38,12 @@ func (w *Workflows) ReprovisionSandbox(ctx workflow.Context, sreq signals.Reques
 		return fmt.Errorf("unable to create install: %w", err)
 	}
 
-	enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureIndependentRunner))
-	if err != nil {
-		return err
-	}
-	if enabled {
-		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
-			StepID:         sreq.WorkflowStepID,
-			StepTargetID:   installRun.ID,
-			StepTargetType: plugins.TableName(w.db, installRun),
-		}); err != nil {
-			return errors.Wrap(err, "unable to update install action workflow")
-		}
+	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+		StepID:         sreq.WorkflowStepID,
+		StepTargetID:   installRun.ID,
+		StepTargetType: plugins.TableName(w.db, installRun),
+	}); err != nil {
+		return errors.Wrap(err, "unable to update install action workflow")
 	}
 
 	defer func() {

@@ -105,10 +105,7 @@ type Org struct {
 }
 
 func (o *Org) AfterQuery(tx *gorm.DB) error {
-	cfg := configFromContext(tx.Statement.Context)
-	if cfg != nil {
-		o.Links = links.OrgLinks(cfg, o.ID)
-	}
+	o.Links = links.AppLinks(tx.Statement.Context, o.ID)
 
 	if o.Features == nil {
 		o.Features = make(map[string]bool, 0)
