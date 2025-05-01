@@ -11,7 +11,7 @@ import (
 // @ID						GetTerraformCurrentStateData
 // @Summary				get current terraform
 // @Description.markdown	get_terraform_current_state.md
-// @Tags					runners/runner
+// @Tags					runners,runners/runner
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
