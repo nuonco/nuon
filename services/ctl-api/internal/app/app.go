@@ -36,7 +36,7 @@ type App struct {
 	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
 	Org   *Org   `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	NotificationsConfig NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty" temporaljson:"notifications_config,omitzero,omitempty"`
+	NotificationsConfig NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty,omitzero" temporaljson:"notifications_config,omitzero,omitempty"`
 
 	Components                 []Component        `faker:"components" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"components,omitzero,omitempty"`
 	Installs                   []Install          `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"installs,omitzero,omitempty"`
@@ -74,10 +74,7 @@ func (a *App) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (a *App) AfterQuery(tx *gorm.DB) error {
-	cfg := configFromContext(tx.Statement.Context)
-	if cfg != nil {
-		a.Links = links.AppLinks(cfg, a.ID)
-	}
+	a.Links = links.AppLinks(tx.Statement.Context, a.ID)
 
 	a.CloudPlatform = CloudPlatformUnknown
 	if len(a.AppRunnerConfigs) > 0 {
