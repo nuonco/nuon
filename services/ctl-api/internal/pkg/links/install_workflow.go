@@ -1,39 +1,26 @@
 package links
 
 import (
-	"net/url"
+	"context"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func InstallWorkflowLinks(cfg *internal.Config, iws string) map[string]any {
+func InstallWorkflowLinks(ctx context.Context, installDeployID string) map[string]any {
+	links := map[string]any{
+		"ui":  buildUILink(ctx, "v1", "installDeploys", installDeployID),
+		"api": buildAPILink(ctx, "v1", "installDeploys", installDeployID),
+	}
+	if isEmployeeFromContext(ctx) {
+		links = generics.MergeMap(links, AppEmployeeLinks(ctx, installDeployID))
+	}
+
+	return links
+}
+
+func InstallWorkflowEmployeeLinks(ctx context.Context, installDeployID string) map[string]any {
 	return map[string]any{
-		"ui":               InstallWorkflowUILink(cfg, iws),
-		"api":              InstallWorkflowAPILink(cfg, iws),
-		"temporal_ui_link": InstallWorkflowAPILink(cfg, iws),
+		"event_loop_ui": eventLoopLink(ctx, "installDeploys", installDeployID),
+		"admin_restart": buildAdminAPILink(ctx, "v1", "installDeploys", installDeployID, "admin-restart"),
 	}
-}
-
-func InstallWorkflowUILink(cfg *internal.Config, appID string) string {
-	link, err := url.JoinPath(cfg.TemporalUIURL, "apps", appID)
-	if err != nil {
-		return handleErr(cfg, err)
-	}
-
-	return link
-}
-
-func InstallWorkflowTemporalUILink(cfg *internal.Config, appID string) string {
-	return eventLoopLink(cfg, "apps", appID)
-}
-
-func InstallWorkflowAPILink(cfg *internal.Config, appID string) string {
-	link, err := url.JoinPath(cfg.PublicAPIURL,
-		"v1",
-		"apps", appID)
-	if err != nil {
-		return handleErr(cfg, err)
-	}
-
-	return link
 }

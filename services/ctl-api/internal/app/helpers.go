@@ -6,6 +6,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 
 // createdByIDFromTemporalContext
 func createdByIDFromTemporalContext(ctx workflow.Context) string {
-	val := ctx.Value("account_id")
+	val := ctx.Value(keys.AccountIDCtxKey)
 	valStr, ok := val.(string)
 	if !ok {
 		return ""
@@ -26,7 +27,7 @@ func createdByIDFromTemporalContext(ctx workflow.Context) string {
 // createdByIDFromContext returns the user id from the context. Notably, this depends on the `middlewares/auth` to set
 // this, but we do not use that code to prevent a cycle import
 func createdByIDFromContext(ctx context.Context) string {
-	val := ctx.Value("account_id")
+	val := ctx.Value(keys.AccountIDCtxKey)
 	valStr, ok := val.(string)
 	if !ok {
 		return ""
@@ -38,7 +39,7 @@ func createdByIDFromContext(ctx context.Context) string {
 // orgIDFromContext returns the org id from the context. Notably, this depends on the `middlewares/org` to set
 // this, but we do not use that code to prevent a cycle import
 func orgIDFromContext(ctx context.Context) string {
-	val := ctx.Value("org_id")
+	val := ctx.Value(keys.OrgIDCtxKey)
 	valStr, ok := val.(string)
 	if !ok {
 		return ""
@@ -50,7 +51,7 @@ func orgIDFromContext(ctx context.Context) string {
 // logStreamIDFromContext returns the org id from the context. Notably, this depends on the `middlewares/org` to set
 // this, but we do not use that code to prevent a cycle import
 func logstreamIDFromContext(ctx context.Context) string {
-	val := ctx.Value("log_stream")
+	val := ctx.Value(keys.LogStreamCtxKey)
 	valObj, ok := val.(*LogStream)
 	if !ok {
 		return ""
@@ -60,7 +61,7 @@ func logstreamIDFromContext(ctx context.Context) string {
 }
 
 func installWorkflowFromContext(ctx context.Context) *InstallWorkflowContext {
-	val := ctx.Value("install_workflow")
+	val := ctx.Value(keys.WorkflowCtxKey)
 	valObj, ok := val.(*InstallWorkflowContext)
 	if !ok {
 		return nil
@@ -70,7 +71,7 @@ func installWorkflowFromContext(ctx context.Context) *InstallWorkflowContext {
 }
 
 func configFromContext(ctx context.Context) *internal.Config {
-	val := ctx.Value("config")
+	val := ctx.Value(keys.CfgCtxKey)
 	valObj, ok := val.(*internal.Config)
 	if !ok {
 		return nil
