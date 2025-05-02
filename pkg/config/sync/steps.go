@@ -82,7 +82,6 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 				obj.Dependencies = deps
 				compID, err := s.syncComponent(ctx, resourceName, obj)
 				if err != nil {
-					s.reconcileStates()
 					return err
 				}
 
