@@ -8,8 +8,9 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
+
+// Deprecated: This endpoint is deprecated and will be removed in a future version.
 
 // @ID						DeleteInstallComponent
 // @Summary				delete an install component
@@ -32,58 +33,38 @@ import (
 func (s *service) DeleteInstallComponent(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	componentID := ctx.Param("component_id")
-	force := ctx.DefaultQuery("force", "false") == "true"
 
-	deploy, err := s.queueDeleteInstallDeploy(ctx, installID, componentID)
+	install, err := s.helpers.GetInstall(ctx, installID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to delete install component: %w", err))
+		ctx.Error(fmt.Errorf("unable to get install: %w", err))
+		return
+	}
+
+	component, err := s.helpers.GetComponent(ctx, componentID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get component: %w", err))
+		return
+	}
+
+	workflow, err := s.helpers.CreateInstallWorkflow(ctx,
+		install.ID,
+		app.InstallWorkflowTypeTeardownComponent,
+		map[string]string{
+			"component_id": component.ID,
+		},
+		app.StepErrorBehaviorAbort,
+	)
+	if err != nil {
+		ctx.Error(err)
 		return
 	}
 
 	s.evClient.Send(ctx, installID, &signals.Signal{
-		Type:        signals.OperationDeploy,
-		DeployID:    deploy.ID,
-		ForceDelete: force,
+		Type:              signals.OperationExecuteWorkflow,
+		InstallWorkflowID: workflow.ID,
 	})
+
+	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
+
 	ctx.JSON(http.StatusOK, true)
-}
-
-func (s *service) queueDeleteInstallDeploy(ctx *gin.Context, installID, componentID string) (*app.InstallDeploy, error) {
-	var installDeploy app.InstallDeploy
-	res := s.db.WithContext(ctx).
-		Joins("JOIN install_components ON install_components.id = install_deploys.install_component_id").
-		Order("created_at desc").
-		Where("install_components.component_id = ?", componentID).
-		Where("install_components.install_id = ?", installID).
-		Limit(1).
-		First(&installDeploy)
-	if res.Error != nil {
-		return nil, stderr.ErrUser{
-			Err:         fmt.Errorf("unable to get previous install deploy: %w", res.Error),
-			Description: "please make sure this install component has been deployed, before tearing down",
-		}
-	}
-
-	teardownDeploy := app.InstallDeploy{
-		Status:             app.InstallDeployStatusQueued,
-		StatusDescription:  "waiting to be tear down install component",
-		ComponentBuildID:   installDeploy.ComponentBuildID,
-		InstallComponentID: installDeploy.InstallComponentID,
-		Type:               app.InstallDeployTypeTeardown,
-	}
-	res = s.db.WithContext(ctx).
-		Create(&teardownDeploy)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to queue install deploy: %w", res.Error)
-	}
-
-	res = s.db.WithContext(ctx).
-		Model(&app.InstallComponent{}).
-		Where("component_id = ? and install_id = ?", componentID, installID).
-		Update("status", app.InstallDeployStatusQueued)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to update install component: %w", res.Error)
-	}
-
-	return &teardownDeploy, nil
 }
