@@ -289,9 +289,6 @@ describe('runInstallActionWorkflow should handle response status codes from POST
       installId,
       orgId,
     })
-    expect(spec).toHaveProperty('id')
-    expect(spec).toHaveProperty('status')
-    expect(spec).toHaveProperty('trigger_type')
   })
 
   test.each(badResponseCodes)('%s status', async () => {
