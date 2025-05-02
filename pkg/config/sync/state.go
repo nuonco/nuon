@@ -106,6 +106,9 @@ func (s *sync) fetchState(ctx context.Context) error {
 // required to ensure state persists between configs if we have a partial sync.
 func (s *sync) reconcileStates() {
 	// reconcile components
+	if s.state.Components == nil {
+		s.state.Components = make([]ComponentState, 0)
+	}
 	for _, comp := range s.cfg.Components {
 		obj := comp
 
