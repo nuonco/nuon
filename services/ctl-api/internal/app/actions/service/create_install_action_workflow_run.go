@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
@@ -80,6 +81,13 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	}
 
 	prependRunEnvVars := PrependRunEnvPrefix(req.RunEnvVars)
+	prependRunEnvVars["install_action_workflow_id"] = installActionWorkflow.ID
+	account, err := cctx.AccountFromContext(ctx)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get account from context: %w", err))
+		return
+	}
+	prependRunEnvVars["triggerred_by_id"] = account.ID
 
 	workflow, err := s.CreateInstallWorkflow(ctx,
 		installActionWorkflow.InstallID,
