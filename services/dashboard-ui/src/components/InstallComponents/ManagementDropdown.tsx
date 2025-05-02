@@ -1,7 +1,7 @@
 'use client'
 
 import React, { type FC } from 'react'
-import { GearFine } from '@phosphor-icons/react'
+import { SlidersHorizontal } from '@phosphor-icons/react'
 import { Dropdown } from '@/components/Dropdown'
 import { useOrg } from '@/components/Orgs'
 import { Text } from '@/components/Typography'
@@ -24,7 +24,7 @@ export const InstallComponentManagementDropdown: FC<
       id="mgmt-install"
       text={
         <>
-          <GearFine />
+          <SlidersHorizontal />
           Manage
         </>
       }

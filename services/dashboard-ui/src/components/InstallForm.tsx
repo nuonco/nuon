@@ -19,8 +19,12 @@ interface IInstallForm {
   platform?: string | 'aws' | 'azure'
   inputConfig?: TAppInputConfig
   install?: TInstall
-  onSubmit: (formData: FormData) => Promise<TInstall | string>
-  onSuccess: (install: TInstall | string) => void
+  onSubmit: (
+    formData: FormData
+  ) => Promise<TInstall | string | Record<'installId' | 'workflowId', string>>
+  onSuccess: (
+    install: TInstall | string | Record<'installId' | 'workflowId', string>
+  ) => void
   onCancel: () => void
   cfLink?: string
 }

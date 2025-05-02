@@ -141,20 +141,22 @@ export const Truncate: FC<ITruncate> = ({
   )
 }
 
+export type TTextVariant =
+  | 'reg-12'
+  | 'reg-14'
+  | 'mono-12'
+  | 'mono-14'
+  | 'med-8'
+  | 'med-12'
+  | 'med-14'
+  | 'med-18'
+  | 'semi-14'
+  | 'semi-18'
+
 export interface IText extends React.HTMLAttributes<HTMLSpanElement> {
   level?: 1 | 2 | 3 | 4 | 5 | 6
   role?: 'paragraph' | 'heading' | 'code' | 'time'
-  variant?:
-    | 'reg-12'
-    | 'reg-14'
-    | 'mono-12'
-    | 'mono-14'
-    | 'med-8'
-    | 'med-12'
-    | 'med-14'
-    | 'med-18'
-    | 'semi-14'
-    | 'semi-18'
+  variant?: TTextVariant
 }
 
 export const Text: FC<IText> = ({
@@ -191,7 +193,10 @@ export const Text: FC<IText> = ({
   )
 }
 
-export const ID: FC<{ id: React.ReactElement | string, className?: string }> = ({ className, id }) => (
+export const ID: FC<{
+  id: React.ReactElement | string
+  className?: string
+}> = ({ className, id }) => (
   <Text variant="mono-12" className={className}>
     <ClickToCopy>{id}</ClickToCopy>
   </Text>

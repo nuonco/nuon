@@ -66,7 +66,8 @@ export const Duration: FC<IDuration> = ({
         </Text>
       )
     }
-    duration = LuxonDuration.fromMillis(Math.round(nanoseconds / 1000000))
+    const milliseconds = Math.round(nanoseconds / 1e6)
+    duration = LuxonDuration.fromMillis(milliseconds)
   } else {
     const bt = DateTime.fromISO(beginTime)
     const et = DateTime.fromISO(endTime)
@@ -77,10 +78,12 @@ export const Duration: FC<IDuration> = ({
     <Text {...props} role="time">
       {format === 'timer'
         ? duration.toFormat('T-hh:mm:ss:SS')
-        : duration.rescale().set({ milliseconds: 0 }).rescale().toHuman({
-            listStyle,
-            unitDisplay,
-          })}
+        : duration.as('seconds') < 1
+          ? duration.rescale().toHuman({ listStyle, unitDisplay })
+          : duration.rescale().set({ milliseconds: 0 }).rescale().toHuman({
+              listStyle,
+              unitDisplay,
+            })}
     </Text>
   )
 }
