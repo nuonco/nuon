@@ -18,7 +18,6 @@ func (c *cli) installsCmd() *cobra.Command {
 		componentID   string
 		inputs        []string
 		noSelect      bool
-		force         bool
 		deployDeps    bool
 	)
 
@@ -265,24 +264,10 @@ func (c *cli) installsCmd() *cobra.Command {
 	teardownInstallComponentsCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(teardownInstallComponentsCmd)
 
-	deleteInstallComponentsCmd := &cobra.Command{
-		Use:   "delete-components",
-		Short: "Delete components on install.",
-		Long:  "Delete all deployed components on an install",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.DeleteComponents(cmd.Context(), id, force, PrintJSON)
-		}),
-	}
-	deleteInstallComponentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
-	deleteInstallComponentsCmd.MarkFlagRequired("install-id")
-	deleteInstallComponentsCmd.Flags().BoolVar(&force, "force", false, "Force teardown the component")
-	installsCmds.AddCommand(deleteInstallComponentsCmd)
-
 	teardownInstallComponentCmd := &cobra.Command{
 		Use:   "teardown-component",
 		Short: "Teardown component on install.",
-		Long:  "Teardown all deployed components on an install (deprecated)",
+		Long:  "Teardown all deployed components on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.TeardownComponent(cmd.Context(), id, componentID, PrintJSON)
@@ -293,22 +278,6 @@ func (c *cli) installsCmd() *cobra.Command {
 	teardownInstallComponentCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The ID of the component you want to teardown")
 	teardownInstallComponentCmd.MarkFlagRequired("component-id")
 	installsCmds.AddCommand(teardownInstallComponentCmd)
-
-	deleteInstallComponentCmd := &cobra.Command{
-		Use:   "delete-component",
-		Short: "Delete component on install.",
-		Long:  "Delete all deployed components on an install",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.DeleteComponent(cmd.Context(), id, componentID, force, PrintJSON)
-		}),
-	}
-	deleteInstallComponentCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
-	deleteInstallComponentCmd.MarkFlagRequired("install-id")
-	deleteInstallComponentCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The ID of the component you want to teardown")
-	deleteInstallComponentCmd.MarkFlagRequired("component-id")
-	deleteInstallComponentCmd.Flags().BoolVar(&force, "force", false, "Force teardown the component")
-	installsCmds.AddCommand(deleteInstallComponentCmd)
 
 	deployInstallComponentsCmd := &cobra.Command{
 		Use:   "deploy-components",
