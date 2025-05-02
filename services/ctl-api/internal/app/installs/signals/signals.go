@@ -45,10 +45,10 @@ const (
 	OperationTeardownComponents eventloop.SignalType = "teardown-components"
 	OperationProvision          eventloop.SignalType = "provision"
 	OperationDeprovision        eventloop.SignalType = "deprovision"
-	OperationDelete             eventloop.SignalType = "delete"
 	OperationReprovision        eventloop.SignalType = "reprovision"
 	OperationReprovisionRunner  eventloop.SignalType = "reprovision-runner"
 	OperationDeprovisionRunner  eventloop.SignalType = "deprovision-runner"
+	OperationDelete             eventloop.SignalType = "delete"
 )
 
 type InstallActionWorkflowTriggerSubSignal struct {
