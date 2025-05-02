@@ -1,7 +1,7 @@
 'use client'
 
 import React, { type FC } from 'react'
-import { GearFine } from '@phosphor-icons/react/dist/ssr'
+import { SlidersHorizontal } from '@phosphor-icons/react/dist/ssr'
 import { BreakGlassLink } from './BreakGlassLink'
 import { DeleteInstallModal } from './DeleteModal'
 import { EditModal } from './EditModal'
@@ -32,8 +32,8 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
       id="mgmt-install"
       text={
         <>
-          <GearFine size="16" />
-          Configure
+          <SlidersHorizontal size="16" />
+          Manage
         </>
       }
       isDownIcon

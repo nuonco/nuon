@@ -50,7 +50,7 @@ export const Expand: FC<IExpand> = ({
         className={classNames(
           'flex items-center justify-between cursor-pointer pr-2',
           {
-            'border-t border-b bg-cool-grey-50 dark:bg-dark-grey-200 text-cool-grey-600 dark:text-cool-grey-500 ':
+            'border-t border-b bg-cool-grey-50 dark:bg-dark-grey-200 text-cool-grey-600 dark:text-cool-grey-500':
               hasHeadingStyle,
             'hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10':
               !hasNoHoverStyle,
