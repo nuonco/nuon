@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import React from 'react'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
+import { CalendarBlank, CaretLeft, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   ActionLogsSection,
   ActionWorkflowStatus,
@@ -11,6 +11,7 @@ import {
   DashboardContent,
   Duration,
   EventStatus,
+  Link,
   LogStreamProvider,
   Section,
   Text,
@@ -89,6 +90,14 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       ]}
       heading={`${actionWorkflow?.name} execution`}
       headingUnderline={actionWorkflowId}
+      headingMeta={workflowRun?.install_workflow_id ? (
+          <Link
+            href={`/${orgId}/installs/${installId}/history/${workflowRun?.install_workflow_id}?target=${actionWorkflowRunId}`}
+          >
+            <CaretLeft />
+            View workflow
+          </Link>
+        ) : null}
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
           <Text>
