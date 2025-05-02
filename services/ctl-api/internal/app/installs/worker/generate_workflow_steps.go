@@ -353,21 +353,18 @@ func (w *Workflows) getComponentLifecycleActionsSteps(ctx workflow.Context, inst
 }
 
 func (w *Workflows) getInstallWorkflowActionWorkflowRunSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
-	triggers, err := activities.AwaitGetInstallActionWorkflowsByTriggerType(ctx, activities.GetInstallActionWorkflowsByTriggerTypeRequest{
-		ComponentID: "",
-		InstallID:   wkflow.InstallID,
-		TriggerType: app.ActionWorkflowTriggerTypeManual,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get triggers")
+	installActionWorkflowID, ok := wkflow.Metadata["install_action_workflow_id"]
+	if !ok {
+		return nil, errors.New("install action workflow is not set on the install workflow for a manual deploy")
+	}
+	triggeredByID, ok := wkflow.Metadata["triggerred_by_id"]
+	if !ok {
+		return nil, errors.New("triggerred by id is not set on the install workflow for a manual deploy")
 	}
 
-	if len(triggers) == 0 {
-		return nil, errors.New("no action workflow triggers found")
-	}
+	iaw, err := activities.AwaitGetInstallActionWorkflowByID(ctx, generics.FromPtrStr(installActionWorkflowID))
 
 	steps := make([]*app.InstallWorkflowStep, 0)
-	manualTrigger := triggers[0]
 	prefix := "RUNENV_"
 	runEnvVars := map[string]string{}
 
@@ -384,9 +381,9 @@ func (w *Workflows) getInstallWorkflowActionWorkflowRunSteps(ctx workflow.Contex
 	sig := &signals.Signal{
 		Type: signals.OperationExecuteActionWorkflow,
 		InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
-			InstallActionWorkflowID: manualTrigger.ID,
+			InstallActionWorkflowID: iaw.ID,
 			TriggerType:             app.ActionWorkflowTriggerTypeManual,
-			TriggeredByID:           manualTrigger.ActionWorkflowID,
+			TriggeredByID:           generics.FromPtrStr(triggeredByID),
 			RunEnvVars:              runEnvVars,
 		},
 	}
