@@ -5,22 +5,23 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type AdminDeleteInstallRequest struct{}
 
-//	@ID						AdminDeleteInstall
-//	@Summary				delete an install
-//	@Description.markdown	delete_install.md
-//	@Tags					installs/admin
-//	@Security				AdminEmail
-//	@Accept					json
-//	@Param					req			body	AdminDeleteInstallRequest	true	"Input"
-//	@Param					install_id	path	string						true	"install id"
-//	@Produce				json
-//	@Success				201	{string}	ok
-//	@Router					/v1/installs/{install_id}/admin-delete [POST]
+// @ID						AdminDeleteInstall
+// @Summary				delete an install
+// @Description.markdown	delete_install.md
+// @Tags					installs/admin
+// @Security				AdminEmail
+// @Accept					json
+// @Param					req			body	AdminDeleteInstallRequest	true	"Input"
+// @Param					install_id	path	string						true	"install id"
+// @Produce				json
+// @Success				201	{string}	ok
+// @Router					/v1/installs/{install_id}/admin-delete [POST]
 func (s *service) AdminDeleteInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	install, err := s.getInstall(ctx, installID)
@@ -29,11 +30,25 @@ func (s *service) AdminDeleteInstall(ctx *gin.Context) {
 		return
 	}
 
+	workflow, err := s.helpers.CreateInstallWorkflow(ctx,
+		install.ID,
+		app.InstallWorkflowTypeDeprovision,
+		map[string]string{},
+		app.StepErrorBehaviorAbort)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationTeardownComponents,
+		Type:              signals.OperationExecuteWorkflow,
+		InstallWorkflowID: workflow.ID,
 	})
+
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationDelete,
+		Type: signals.OperationForget,
 	})
-	ctx.JSON(http.StatusOK, true)
+
+	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
+
+	ctx.JSON(http.StatusOK, "ok")
 }
