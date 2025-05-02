@@ -27,8 +27,8 @@ export const RunnerMeta: FC<IRunnerMeta> = async ({
 
   const runnerGroup =
     installId === ''
-      ? await getInstallRunnerGroup({ orgId, installId })
-      : await getOrgRunnerGroup({ orgId })
+      ? await getOrgRunnerGroup({ orgId })
+      : await getInstallRunnerGroup({ orgId, installId })
 
   return (
     <>
