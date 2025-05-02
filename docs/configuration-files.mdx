@@ -356,39 +356,3 @@ image_url = "ecr-url"
 tag = "latest"
 region = "us-west-2"
 ```
-
-### Job Component
-
-To define a [job component](/guides/job-components) use the `job` type.
-
-To configure a job using a docker image from another component:
-
-```toml
-[[components]]
-name = "job"
-type = "job"
-
-image_url = "{{.nuon.components.e2e_docker_build.image.repository.uri}}"
-tag   = "{{.nuon.components.e2e_docker_build.image.tag}}"
-cmd   = ["printenv"]
-args    = ["-a"]
-
-[components.env_vars]
-PUBLIC_DOMAIN = "{{.nuon.components.infra.outputs.iam_role}}"
-```
-
-To configure a job using a docker image from docker hub:
-
-```toml
-[[components]]
-name = "job"
-type = "job"
-
-image_url = "bitnami/kubectl"
-tag   = "latest"
-cmd   = ["printenv"]
-args    = ["-a"]
-
-[components.env_vars]
-PUBLIC_DOMAIN = "{{.nuon.components.infra.outputs.iam_role}}"
-```
