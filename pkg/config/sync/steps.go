@@ -69,6 +69,23 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 		},
 	}
 
+	for _, action := range s.cfg.Actions {
+		obj := action
+
+		resourceName := fmt.Sprintf("action-%s", obj.Name)
+		steps = append(steps, syncStep{
+			Resource: resourceName,
+			Method: func(ctx context.Context) error {
+				_, _, err := s.syncAction(ctx, resourceName, obj)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			},
+		})
+	}
+
 	// warn: our deps are meant to be a graph but we are treating it as a linked list
 	deps := make([]string, 0)
 	for _, comp := range s.cfg.Components {
@@ -87,23 +104,6 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 				}
 
 				deps = []string{compID}
-				return nil
-			},
-		})
-	}
-
-	for _, action := range s.cfg.Actions {
-		obj := action
-
-		resourceName := fmt.Sprintf("action-%s", obj.Name)
-		steps = append(steps, syncStep{
-			Resource: resourceName,
-			Method: func(ctx context.Context) error {
-				_, _, err := s.syncAction(ctx, resourceName, obj)
-				if err != nil {
-					return err
-				}
-
 				return nil
 			},
 		})
