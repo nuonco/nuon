@@ -71,7 +71,7 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
       headingMeta={
         sandboxRun?.install_workflow_id ? (
           <Link
-            href={`/${orgId}/installs/${installId}/history/${sandboxRun?.install_workflow_id}`}
+            href={`/${orgId}/installs/${installId}/history/${sandboxRun?.install_workflow_id}?target=${runId}`}
           >
             <CaretLeft />
             View workflow

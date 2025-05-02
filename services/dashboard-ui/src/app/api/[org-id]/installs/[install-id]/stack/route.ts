@@ -4,13 +4,16 @@ import { nueQueryData } from '@/utils'
 import { TRouteRes } from '@/app/api/[org-id]/types'
 
 export const GET = withApiAuthRequired(
-  async (req: NextRequest, { params }: TRouteRes<'org-id' | 'runner-id'>) => {
+  async (
+    req: NextRequest,
+    { params }: TRouteRes<'org-id' | 'install-id'>
+  ) => {
     const orgId = params?.['org-id']
-    const runnerId = params?.['runner-id']
+    const installId = params?.['install-id']
 
     const res = await nueQueryData({
       orgId,
-      path: `runners/${runnerId}/latest-heart-beat`,
+      path: `installs/${installId}/stack`,
     })
 
     return NextResponse.json(res)

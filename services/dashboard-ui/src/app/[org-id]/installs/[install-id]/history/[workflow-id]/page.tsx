@@ -1,24 +1,26 @@
 import type { Metadata } from 'next'
-import { type FC, Suspense } from 'react'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   Empty,
-  Loading,
   InstallWorkflowActivity,
-  InstallWorkflowCancelModal,
   InstallWorkflowSteps,
-  Section,
 } from '@/components'
 import { getInstall, getInstallWorkflow } from '@/lib'
 
+import { removeSnakeCase, sentanceCase } from '@/utils'
+
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
+  const installWorkflowId = params?.['workflow-id'] as string
   const orgId = params?.['org-id'] as string
-  const install = await getInstall({ installId, orgId })
+  const [install, installWorkflow] = await Promise.all([
+    getInstall({ installId, orgId }),
+    getInstallWorkflow({ installWorkflowId, orgId }),
+  ])
 
   return {
-    title: `${install.name} | Workflow`,
+    title: `${install.name} | ${installWorkflow?.name}`,
   }
 }
 
@@ -45,100 +47,36 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
         },
         {
           href: `/${orgId}/installs/${install.id}/history/${installWorkflowId}`,
-          text: installWorkflow?.name,
+          text:
+            installWorkflow?.name ||
+            removeSnakeCase(sentanceCase(installWorkflow?.type)),
         },
       ]}
       heading={installWorkflow?.name}
-      headingUnderline={installWorkflow.id}
+      headingUnderline={install?.id}
       statues={
-        !installWorkflow?.finished && installWorkflow?.steps?.length > 0 ? (
-          <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
-        ) : null
+        <InstallWorkflowActivity
+          installWorkflow={installWorkflow}
+          shouldPoll
+          pollDuration={3000}
+        />
       }
     >
-      <div className="grid grid-cols-1 md:grid-cols-12 divide-x flex-auto">
-        <div className="flex flex-col lg:flex-row flex-auto col-span-8">
-          <Section heading="Install update steps" className="overflow-auto">
-            <Suspense
-              fallback={
-                <Loading
-                  loadingText="Loading install workflow..."
-                  variant="page"
-                />
-              }
-            >
-              <LoadInstallWorkflow
-                installId={installId}
-                installWorkflowId={installWorkflowId}
-                orgId={orgId}
-              />
-            </Suspense>
-          </Section>
-        </div>
-        <div className="col-span-4">
-          <Section className="overflow-auto">
-            <Suspense
-              fallback={
-                <Loading
-                  loadingText="Loading install activity..."
-                  variant="stack"
-                />
-              }
-            >
-              <LoadInstallWorkflowActivity
-                installId={installId}
-                installWorkflowId={installWorkflowId}
-                orgId={orgId}
-              />
-            </Suspense>
-          </Section>
-        </div>
-      </div>
+      <>
+        {installWorkflow ? (
+          <InstallWorkflowSteps
+            installWorkflow={installWorkflow}
+            orgId={orgId}
+            install={install}
+          />
+        ) : (
+          <Empty
+            emptyTitle="No install history"
+            emptyMessage="Waiting on this install to start provisioning"
+            variant="history"
+          />
+        )}
+      </>
     </DashboardContent>
   )
 })
-
-const LoadInstallWorkflow: FC<{
-  installId: string
-  installWorkflowId: string
-  orgId: string
-}> = async ({ installWorkflowId, orgId }) => {
-  const installWorkflow = await getInstallWorkflow({
-    installWorkflowId,
-    orgId,
-  }).catch(console.error)
-
-  return installWorkflow ? (
-    <InstallWorkflowSteps installWorkflow={installWorkflow} orgId={orgId} />
-  ) : (
-    <Empty
-      emptyTitle="No install history"
-      emptyMessage="Waiting on this install to start provisioning"
-      variant="history"
-    />
-  )
-}
-
-const LoadInstallWorkflowActivity: FC<{
-  installId: string
-  installWorkflowId: string
-  orgId: string
-}> = async ({ installWorkflowId, orgId }) => {
-  const installWorkflow = await getInstallWorkflow({
-    installWorkflowId,
-    orgId,
-  }).catch(console.error)
-
-  return installWorkflow ? (
-    <InstallWorkflowActivity installWorkflow={installWorkflow} shouldPoll />
-  ) : (
-    <div className="p-4 border rounded-md">
-      <Empty
-        emptyTitle="No install activity"
-        emptyMessage="Waiting on this install to start provisioning"
-        variant="history"
-        isSmall
-      />
-    </div>
-  )
-}

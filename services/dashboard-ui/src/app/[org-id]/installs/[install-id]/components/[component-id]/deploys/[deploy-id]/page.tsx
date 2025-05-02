@@ -108,7 +108,7 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
       headingMeta={
         deploy?.install_workflow_id ? (
           <Link
-            href={`/${orgId}/installs/${installId}/history/${deploy?.install_workflow_id}`}
+            href={`/${orgId}/installs/${installId}/history/${deploy?.install_workflow_id}?target=${deployId}`}
           >
             <CaretLeft />
             View workflow

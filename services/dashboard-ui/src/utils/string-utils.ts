@@ -10,7 +10,8 @@ export const initialsFromString = (s = '') => {
   ).toUpperCase()
 }
 
-export const removeSnakeCase = (str?: string) => str ? str?.replace(/_/g, ' ') : "unknown"
+export const removeSnakeCase = (str?: string) =>
+  str ? str?.replace(/_/g, ' ') : 'unknown'
 
 export function getFlagEmoji(countryCode = 'us') {
   const codePoints = countryCode
@@ -24,17 +25,20 @@ export function humandReadableTriggeredBy(triggeredByType: string) {
   let triggeredBy: string
 
   switch (triggeredByType) {
-    case "install_deploys":
-      triggeredBy = "Deploy hook"
-      break;
-    case "install_sandbox_runs":
-      triggeredBy = "Sandbox hook"
-      break;
-    case "install_action_workflow_manual_triggers":
-      triggeredBy = "Manual run"
-      break;
+    case 'install_deploys':
+      triggeredBy = 'Deploy hook'
+      break
+    case 'install_sandbox_runs':
+      triggeredBy = 'Sandbox hook'
+      break
+    case 'pre_component_deploy':
+      triggeredBy = 'Pre deploy hook'
+      break
+    case 'install_action_workflow_manual_triggers':
+      triggeredBy = 'Manual run'
+      break
     default:
-      triggeredBy = "Cron"      
+      triggeredBy = 'Cron'
   }
 
   return triggeredBy

@@ -1,9 +1,9 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createInstall, type ICreateInstallData } from '@/lib'
+import type { ICreateInstallData } from '@/lib'
 import type { TBuild, TComponent } from '@/types'
-import { nueMutateData } from '@/utils'
+import { API_URL, nueMutateData, getFetchOpts } from '@/utils'
 
 interface IRevalidateAppData {
   appId: string
@@ -88,11 +88,30 @@ export async function createAppInstall({
     }
   }
 
-  return createInstall({
-    appId,
-    orgId,
-    data,
+  const res = fetch(`${API_URL}/v1/apps/${appId}/installs`, {
+    ...(await getFetchOpts(orgId)),
+    body: JSON.stringify(data),
+    method: 'POST',
   })
+    .then(async (r) => {
+      if (!r.ok) {
+        throw new Error('Unable to create inputs')
+      } else {
+        return r
+      }
+    })
+    .catch((err) => {
+      throw new Error(err)
+    })
+
+  const response = await res
+  const workflowId = response.headers.get('x-nuon-install-workflow-id')
+  const install = await response.json()
+
+  return {
+    installId: install?.id,
+    workflowId,
+  }
 }
 
 interface IBuildComponents {
