@@ -28,7 +28,7 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
   const params =
     useParams<Record<'org-id' | 'install-id' | 'workflow-id', string>>()
   const orgId = params?.['org-id']
-  const installWorkflowId = params?.['workflow-id']
+  const installWorkflowId = installWorkflow?.id
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
@@ -125,7 +125,7 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
         : null}
       <Button
         disabled={hasBeenCanceled}
-        className={classNames('text-sm !font-medium', {
+        className={classNames('text-sm !font-medium w-fit', {
           'text-red-800 dark:text-red-500': !hasBeenCanceled,
           'text-red-800/50 dark:text-red-500/50': hasBeenCanceled,
         })}

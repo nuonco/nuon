@@ -19,7 +19,7 @@ import { CodeViewer } from '@/components/Code'
 import { Modal } from '@/components/Modal'
 import { Link } from '@/components/Link'
 import { ToolTip } from '@/components/ToolTip'
-import { Text, Truncate } from '@/components/Typography'
+import { Text, Truncate, type TTextVariant } from '@/components/Typography'
 import { TComponentConfig, TVCSGit, TVCSGitHub } from '@/types'
 
 export type TComponentConfigType =
@@ -338,10 +338,16 @@ export const ConfigurationVCS: FC<{ vcs: IConfigurationVCS }> = ({ vcs }) => {
 }
 
 export const ConfigurationVariables: FC<{
+  headingVariant?: TTextVeriant
   heading?: string
   isNotTruncated?: boolean
   variables: Record<string, string>
-}> = ({ heading = 'Variables', isNotTruncated = false, variables }) => {
+}> = ({
+  heading = 'Variables',
+  headingVariant = 'med-12',
+  isNotTruncated = false,
+  variables,
+}) => {
   const variableKeys = Object.keys(variables)
   const isEmpty = variableKeys.length === 0
   const [isOpen, setIsOpen] = useState(false)
@@ -369,9 +375,7 @@ export const ConfigurationVariables: FC<{
           : null}
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <Text className="text-sm !font-medium leading-normal">
-              {heading}
-            </Text>
+            <Text variant={headingVariant}>{heading}</Text>
 
             <Button
               className="text-sm !font-medium flex items-center gap-2 !p-1"
@@ -463,7 +467,6 @@ export const ConfigVariables: FC<{
                 {variables[key] ? (
                   <CodeViewer
                     initCodeSource={JSON.stringify(variables[key], null, 2)}
-                    language="json"
                   />
                 ) : null}
               </div>
