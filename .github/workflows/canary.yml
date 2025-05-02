@@ -1,11 +1,13 @@
 ---
 name: canary
-on:
-  push:
-    branches:
-      - main
-  repository_dispatch:
-    types: [provision_canary]
+// disabling canary workflow as we need to rework our canary strategy
+on: []
+# on:
+#   push:
+#     branches:
+#       - main
+#   repository_dispatch:
+#     types: [provision_canary]
 
 permissions:
   contents: write
