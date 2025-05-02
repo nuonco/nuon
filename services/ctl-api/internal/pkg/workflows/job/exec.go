@@ -25,7 +25,6 @@ const (
 
 var failureStatuses = []app.RunnerJobStatus{
 	app.RunnerJobStatusFailed,
-	app.RunnerJobStatusFailed,
 	app.RunnerJobStatusTimedOut,
 	app.RunnerJobStatusCancelled,
 	app.RunnerJobStatusNotAttempted,
@@ -118,19 +117,37 @@ func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.R
 	}
 	j.mw.Gauge(ctx, "runner_job.client.starting_queue", float64(len(queued)), metrics.ToTags(defaultTags)...)
 
+	var cancelled bool
+	donechan := ctx.Done()
+	dctx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer func() {
+		if cancelled {
+			cancel()
+		}
+	}()
+
+	workflow.Go(dctx, func(ctx workflow.Context) {
+		donechan.Receive(ctx, nil)
+		cancelled = true
+		err = activities.AwaitPkgWorkflowsJobCancelJobByID(ctx, jobID)
+		if err != nil {
+			l.Error("workflow context was cancelled, but propagating cancellation to job failed", zap.Error(err))
+		}
+	})
+
 	for {
 		// if the job is already timed out, there is no reason to continue. In some reasons, if a job fails and
 		// is not updated by it's event loop, then this would catch that.
-		now := workflow.Now(ctx)
+		now := workflow.Now(dctx)
 		if now.After(job.CreatedAt.Add(job.OverallTimeout)) {
 			return app.RunnerJobStatusTimedOut, temporal.NewNonRetryableApplicationError("overall timeout reached", "api", fmt.Errorf("timeout"))
 		}
 
 		if now.After(startTS.Add(pollJobMaxWorkflowDuration)) {
-			return job.Status, workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, req)
+			return job.Status, workflow.NewContinueAsNewError(dctx, workflow.GetInfo(dctx).WorkflowType.Name, req)
 		}
 
-		job, err := activities.AwaitPkgWorkflowsJobGetJobByID(ctx, jobID)
+		job, err := activities.AwaitPkgWorkflowsJobGetJobByID(dctx, jobID)
 		if err != nil {
 			return app.RunnerJobStatusUnknown, fmt.Errorf("unable to get job from database: %w", err)
 		}
@@ -150,11 +167,11 @@ func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.R
 		}
 
 		if job.Status == app.RunnerJobStatusQueued {
-			if err := j.logJobQueue(ctx, jobID); err != nil {
+			if err := j.logJobQueue(dctx, jobID); err != nil {
 				return app.RunnerJobStatusUnknown, errors.Wrap(err, "unable to get runner job queue")
 			}
 		}
 
-		workflow.Sleep(ctx, pollJobPeriod)
+		donechan.ReceiveWithTimeout(ctx, pollJobPeriod, nil)
 	}
 }
