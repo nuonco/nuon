@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getRunner } from '@/lib'
+import { nueQueryData } from '@/utils'
 import { TRouteRes } from '@/app/api/[org-id]/types'
 
 export const GET = withApiAuthRequired(
@@ -8,13 +8,11 @@ export const GET = withApiAuthRequired(
     const orgId = params?.['org-id']
     const runnerId = params?.['runner-id']
 
-    let runner = {}
-    try {
-      runner = await getRunner({ orgId, runnerId })
-    } catch (error) {
-      console.error(error)
-    }
+    const res = await nueQueryData({
+      orgId,
+      path: `runners/${runnerId}`,
+    })
 
-    return NextResponse.json(runner)
+    return NextResponse.json(res)
   }
 )

@@ -96,6 +96,7 @@ export const LogsModal: FC<ILogsModal> = ({ heading, logs }) => {
         ? createPortal(
             <Modal
               actions={<LogsControls showLogExpand showLogFilter />}
+              className="mx-6 xl:mx-auto"
               hasFixedHeight
               heading={heading}
               isOpen={isOpen}

@@ -115,8 +115,8 @@ export type TInstallDeployPlan = {
   actual: {
     waypoint_plan: {
       waypoint_job: {
-        hcl_config: string,
-      },      
+        hcl_config: string
+      }
       variables: {
         intermediate_data: TInstallDeployPlanIntermediateData
       }
@@ -180,5 +180,15 @@ export type TInvite = components['schemas']['app.OrgInvite']
 
 // install workflows
 export type TInstallWorkflow = components['schemas']['app.InstallWorkflow']
-export type TInstallWorkflowStep = components['schemas']['app.InstallWorkflowStep']
+export type TInstallWorkflowStep =
+  components['schemas']['app.InstallWorkflowStep']
 
+// app / install stack
+export type TInstallStack = components['schemas']['app.InstallStack']
+export type TInstallStackVersion =
+  components['schemas']['app.InstallStackVersion']
+export type TInstallStackVersionRun =
+  components['schemas']['app.InstallStackVersionRun']
+export type TInstallStackOutputs =
+  components['schemas']['app.InstallStackOutputs']
+export type TAppStackConfig = components['schemas']['app.AppStackConfig']

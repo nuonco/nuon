@@ -37,45 +37,61 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
   }, [installWorkflow, shouldPoll])
 
   return (
-    <div className="border p-4 rounded-md flex flex-col gap-6">
+    <div className="">
       <span className="flex w-full justify-between flex-wrap">
-        <Text variant="med-14">Install Activity</Text>
+        <span className="flex flex-col gap-0">
+          <span className="flex items-center gap-4">
+            <span>&#x1F680;</span>
+            <progress
+              className="rounded-lg [&::-webkit-progress-bar]:rounded-lg [&::-webkit-progress-value]:rounded-lg   [&::-webkit-progress-bar]:bg-cool-grey-300 [&::-webkit-progress-value]:bg-green-400 [&::-moz-progress-bar]:bg-green-400 [&::-webkit-progress-value]:transition-all [&::-webkit-progress-value]:duration-500 [&::-moz-progress-bar]:transition-all [&::-moz-progress-bar]:duration-500 h-[8px]"
+              max={installWorkflow?.steps?.length}
+              value={
+                installWorkflow?.steps?.filter(
+                  (s) =>
+                    s?.status?.status === 'success' ||
+                    s?.status?.status === 'active' ||
+                    s?.status?.status === 'error'
+                ).length
+              }
+            />
+          </span>
 
-        <Text
-          variant="reg-12"
-          className="text-cool-grey-600 dark:text-white/70"
-        >
-          {
-            installWorkflow?.steps?.filter(
-              (s) =>
-                s?.status?.status === 'success' ||
-                s?.status?.status === 'active' ||
-                s?.status?.status === 'error'
-            ).length
-          }{' '}
-          of {installWorkflow?.steps?.length} steps completed
-        </Text>
+          <Text
+            variant="reg-12"
+            className="text-cool-grey-600 dark:text-white/70 self-end"
+          >
+            {
+              installWorkflow?.steps?.filter(
+                (s) =>
+                  s?.status?.status === 'success' ||
+                  s?.status?.status === 'active' ||
+                  s?.status?.status === 'error'
+              ).length
+            }{' '}
+            of {installWorkflow?.steps?.length} steps completed
+          </Text>
+        </span>
       </span>
 
-      <div className="">
-        {installWorkflow?.status ? (
+      {/* <div className="">
+          {installWorkflow?.status ? (
           <span className="flex gap-2">
-            <YAStatus status={installWorkflow?.status?.status} />
-            <Text variant="reg-12">
-              {sentanceCase(
-                installWorkflow?.status?.status_human_description
-              ) || 'Waiting on workflow to run.'}
-            </Text>
-          </span>
-        ) : null}
-        {installWorkflow?.status?.status === 'error' ? (
-          <Text className="ml-9 text-red-800 dark:text-red-500 text-[12px]">
-            {sentanceCase(
-              installWorkflow?.status?.history?.at(-1)?.status_human_description
-            )}
+          <YAStatus status={installWorkflow?.status?.status} />
+          <Text variant="reg-12">
+          {sentanceCase(
+          installWorkflow?.status?.status_human_description
+          ) || 'Waiting on workflow to run.'}
           </Text>
-        ) : null}
-      </div>
+          </span>
+          ) : null}
+          {installWorkflow?.status?.status === 'error' ? (
+          <Text className="ml-9 text-red-800 dark:text-red-500 text-[12px]">
+          {sentanceCase(
+          installWorkflow?.status?.history?.at(-1)?.status_human_description
+          )}
+          </Text>
+          ) : null}
+          </div> */}
     </div>
   )
 }

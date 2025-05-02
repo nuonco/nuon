@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getInstallDeploy } from '@/lib'
+import { nueQueryData } from '@/utils'
 import { TRouteRes } from '@/app/api/[org-id]/types'
 
 export const GET = withApiAuthRequired(
@@ -12,17 +12,11 @@ export const GET = withApiAuthRequired(
     const installId = params?.['install-id']
     const installDeployId = params?.['deploy-id']
 
-    let installComponent = {}
-    try {
-      installComponent = await getInstallDeploy({
-        orgId,
-        installId,
-        installDeployId,
-      })
-    } catch (error) {
-      console.error(error)
-    }
+    const res = await nueQueryData({
+      orgId,
+      path: `installs/${installId}/deploys/${installDeployId}`,
+    })
 
-    return NextResponse.json(installComponent)
+    return NextResponse.json(res)
   }
 )
