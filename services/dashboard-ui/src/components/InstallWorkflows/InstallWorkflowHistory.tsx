@@ -152,7 +152,7 @@ export const YAStatus: FC<{ status: TInstallWorkflow['status']['status'] }> = ({
   return (
     <span
       className={classNames(
-        'rounded-full w-[26px] h-[26px] flex items-center justify-center self-center',
+        'rounded-full w-[26px] h-[26px] flex items-center justify-center',
         {
           'bg-green-600/15 dark:bg-green-500/15 text-green-800 dark:text-green-500':
             isSuccess,

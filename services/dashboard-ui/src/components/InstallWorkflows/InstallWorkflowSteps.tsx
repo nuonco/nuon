@@ -1,105 +1,237 @@
-import React, { type FC } from 'react'
+'use client'
+
+import classNames from 'classnames'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import React, { type FC, useEffect, useState } from 'react'
+import { Button } from '@/components/Button'
 import { Empty } from '@/components/Empty'
-import { Expand } from '@/components/Expand'
-import { Link } from '@/components/Link'
 import { Notice } from '@/components/Notice'
-import { Duration } from '@/components/Time'
+import { Section } from '@/components/Card'
+import { Loading } from '@/components/Loading'
 import { Text, Code } from '@/components/Typography'
-import type { TInstallWorkflow, TInstallWorkflowStep } from '@/types'
-import { sentanceCase } from '@/utils'
+import type { TInstallWorkflow, TInstallWorkflowStep, TInstall } from '@/types'
+import { removeSnakeCase, sentanceCase } from '@/utils'
+import { InstallWorkflowCancelModal } from './InstallWorkflowCancelModal'
 import { YAStatus } from './InstallWorkflowHistory'
+import { ActionStepDetails } from './ActionStepDetails'
+import { DeployStepDetails } from './DeployStepDetails'
+import { SandboxStepDetails } from './SandboxStepDetails'
+import { StackStep } from './StackStepDetails'
+import { RunnerStepDetails } from './RunnerStepDetails'
 
-function buildDetailsHref(
+function getStepType(
   step: TInstallWorkflowStep,
-  orgId: string
-): string | null {
-  const basePath = `/${orgId}/installs/${step?.install_id}`
-
-  let href: string | null = null
-  switch (step?.step_target_type) {
-    case 'install_action_workflow_runs':
-      break
-
-    case 'install_deploys':
-      break
-
+  install: TInstall
+): React.ReactNode {
+  let stepDetails = <>Unknown step</>
+  switch (step.step_target_type) {
     case 'install_sandbox_runs':
-      href = `${basePath}/sandbox/${step?.step_target_id}`
+      stepDetails = (
+        <SandboxStepDetails
+          step={step}
+          shouldPoll={step?.status?.status === 'in-progress'}
+        />
+      )
+      break
+
+    case 'install_stack_versions':
+      stepDetails = (
+        <StackStep
+          step={step}
+          appId={install?.app_id}
+          shouldPoll={step?.status?.status === 'in-progress'}
+        />
+      )
+      break
+
+    case 'install_action_workflow_runs':
+      stepDetails = (
+        <ActionStepDetails
+          step={step}
+          shouldPoll={step?.status?.status === 'in-progress'}
+        />
+      )
+      break
+
+    case 'runners':
+      stepDetails = (
+        <RunnerStepDetails
+          step={step}
+          shouldPoll={step?.status?.status === 'in-progress'}
+        />
+      )
+      break
+    case 'install_deploys':
+      stepDetails = (
+        <DeployStepDetails
+          step={step}
+          shouldPoll={step?.status?.status === 'in-progress'}
+        />
+      )
       break
     default:
-      href = null
+      stepDetails = <>system</> //<Loading loadingText="Waiting on step..." variant="page" />
   }
 
-  return href
+  return (
+    <>
+      {stepDetails}
+      <Text>Step JSON</Text>
+      <Code variant="preformated">{JSON.stringify(step, null, 2)}</Code>
+    </>
+  )
 }
 
 interface IInstallWorkflowSteps {
+  install: TInstall
   installWorkflow: TInstallWorkflow
   orgId: string
 }
 
 export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
+  install,
   installWorkflow,
-  orgId,
 }) => {
+  const path = usePathname()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const queryTargetId = searchParams.get('target')
+  const [activeStep, setActiveStep] = useState(
+    installWorkflow?.steps.find((s) => s?.step_target_id === queryTargetId) ||
+      installWorkflow?.steps?.find(
+        (s) => s?.status?.status === 'in-progress'
+      ) ||
+      installWorkflow?.steps.at(0)
+  )
+  const [isManualControl, setManualControl] = useState(false)
+
+  /* useEffect(() => {
+   *   if (!isManualControl) {
+   *     if (
+   *       installWorkflow?.steps?.some((s) => s?.status?.status === 'in-progress')
+   *     ) {
+   *       if (
+   *         activeStep?.id !==
+   *         installWorkflow?.steps?.find(
+   *           (s) => s?.status?.status === 'in-progress'
+   *         ).id
+   *       ) {
+   *         setActiveStep(
+   *           installWorkflow?.steps?.find(
+   *             (s) =>
+   *               s?.status?.status === 'in-progress' && s.step_target_type !== ''
+   *           )
+   *         )
+   *       }
+   *     }
+
+   *     
+   *   }
+   * }, [installWorkflow]) */
+
   return (
-    <div className="flex flex-col gap-2">
-      {installWorkflow?.steps?.length ? (
-        installWorkflow?.steps?.map((step, i) => {
-          const href = buildDetailsHref(step, orgId)
-          return (
-            <Expand
-              key={step?.id}
-              heading={
-                <InstallWorkflowStepTitle
-                  executionTime={step?.execution_time}
-                  name={step?.name}
-                  status={step?.status}
-                  stepNumber={i + 1}
-                />
-              }
-              hasHeadingStyle
-              headerClass="p-3 !pr-3 !border-none"
-              className="w-full"
-              id={step?.id}
-              parentClass="border rounded-md overflow-hidden"
-              expandContent={
-                <div className="p-3 border-t flex flex-col gap-4">
-                  {step?.status?.metadata?.reason ? (
-                    <Notice variant="warn">
-                      {sentanceCase(step?.status?.metadata?.reason as string)}
-                    </Notice>
-                  ) : null}
-                  {step?.status?.metadata?.err_message ? (
-                    <Notice variant="error" className="!items-start">
-                      {step?.status?.metadata?.err_message as string}
-                    </Notice>
-                  ) : null}
-                  {href ? (
-                    <Link className="text-sm" href={href}>
-                      View details
-                    </Link>
-                  ) : null}
-                  <div>
-                    <Text variant="med-12" className="mb-2">
-                      Step JSON
-                    </Text>
-                    <Code variant="preformated">
-                      {JSON.stringify(step, null, 2)}
-                    </Code>
+    <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x h-full">
+      <div className="md:col-span-4">
+        <Section
+          heading={`${removeSnakeCase(sentanceCase(installWorkflow?.type))} plan`}
+          className="flex flex-col gap-2"
+          childrenClassName="flex flex-col gap-4"
+        >
+          {installWorkflow?.steps?.length ? (
+            <div className="flex flex-col gap-2 workflow-steps">
+              {installWorkflow?.steps?.map((step, i) => {
+                return step?.step_target_type === '' ? (
+                  <div
+                    key={step?.id}
+                    className={classNames(
+                      'p-2 rounded-md !text-cool-grey-600 dark:!text-cool-grey-500 history-event',
+                      {
+                        '!bg-black/5 dark:!bg-white/5 !text-cool-grey-950 dark:!text-cool-grey-50':
+                          activeStep?.id === step?.id,
+                      }
+                    )}
+                  >
+                    <InstallWorkflowStepTitle
+                      executionTime={step?.execution_time}
+                      name={step?.name}
+                      status={step?.status}
+                      stepNumber={i + 1}
+                    />
                   </div>
-                </div>
-              }
+                ) : (
+                  <Button
+                    className={classNames(
+                      'text-left border-none !p-2 history-event',
+                      {
+                        '!bg-black/5 dark:!bg-white/5 !text-cool-grey-950 dark:!text-cool-grey-50':
+                          activeStep?.id === step?.id,
+                        '!bg-transparent hover:!bg-black/5 focus:!bg-black/5 active:!bg-black/10 dark:hover:!bg-white/5 dark:focus:!bg-white/5 dark:active:!bg-white/10':
+                          activeStep?.id !== step?.id,
+                      }
+                    )}
+                    key={step?.id}
+                    onClick={() => {
+                      if (!isManualControl) setManualControl(true)
+                      router.push(
+                        `${path}?${new URLSearchParams({ target: step?.step_target_id }).toString()}`
+                      )
+                      setActiveStep(step)
+                    }}
+                  >
+                    <InstallWorkflowStepTitle
+                      executionTime={step?.execution_time}
+                      name={step?.name}
+                      status={step?.status}
+                      stepNumber={i + 1}
+                    />
+                  </Button>
+                )
+              })}
+            </div>
+          ) : (
+            <Empty
+              emptyTitle="Waiting on steps"
+              emptyMessage="Waiting on update steps to generate."
+              variant="history"
             />
-          )
-        })
-      ) : (
-        <Empty
-          emptyTitle="Waiting on steps"
-          emptyMessage="Waiting on update steps to generate."
-          variant="history"
-        />
-      )}
+          )}
+          {!installWorkflow?.finished && installWorkflow?.steps?.length > 0 ? (
+            <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
+          ) : null}
+        </Section>
+      </div>
+
+      <div className="md:col-span-8">
+        {activeStep ? (
+          <Section>
+            <div className="flex flex-col gap-4">
+              <hgroup className="flex gap-4 items-center">
+                <YAStatus status={activeStep?.status?.status} />{' '}
+                <Text variant="med-18">{sentanceCase(activeStep?.name)}</Text>
+              </hgroup>
+              {activeStep?.status?.metadata?.reason ? (
+                <Notice variant="warn">
+                  {sentanceCase(activeStep?.status?.metadata?.reason as string)}
+                </Notice>
+              ) : null}
+              {activeStep?.status?.metadata?.err_message ? (
+                <Notice variant="error" className="!items-start">
+                  {activeStep?.status?.metadata?.err_message as string}
+                </Notice>
+              ) : null}
+              {getStepType(activeStep, install)}
+            </div>
+          </Section>
+        ) : (
+          <Section>
+            <Empty
+              emptyTitle="Waiting on steps"
+              emptyMessage="Waiting on update steps to generate."
+              variant="history"
+            />
+          </Section>
+        )}
+      </div>
     </div>
   )
 }
@@ -109,29 +241,20 @@ const InstallWorkflowStepTitle: FC<{
   name: string
   status: TInstallWorkflowStep['status']
   stepNumber: number
-}> = ({ executionTime, name, status, stepNumber }) => {
+}> = ({ name, status, stepNumber }) => {
   return (
-    <span className="flex justify-between w-full pr-3">
-      <span className="flex gap-2">
-        <YAStatus status={status?.status} />
-        <span>
-          <Text className="text-cool-grey-600 dark:text-white/70">
-            Step {stepNumber}
-          </Text>
-          <Text variant="reg-14">{sentanceCase(name)}</Text>
-        </span>
-      </span>
-
-      {status?.status === 'active' ||
-      status?.status === 'error' ||
-      status?.status === 'success' ? (
+    <span className="flex gap-2 items-start justify-start">
+      <YAStatus status={status?.status} />
+      <span>
         <Text
+          className="!text-cool-grey-600 dark:!text-cool-grey-500"
           variant="reg-12"
-          className="text-cool-grey-600 dark:text-white/70"
         >
-          Executed in <Duration nanoseconds={executionTime} />
+          Step {stepNumber}
         </Text>
-      ) : null}
+
+        <Text variant="med-12">{sentanceCase(name)}</Text>
+      </span>
     </span>
   )
 }

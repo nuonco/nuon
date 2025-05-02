@@ -139,14 +139,14 @@
 
 .history-event:before {
   content: '';
-  height: calc(100% - 1.51rem);
+  height: calc(100% - 2rem);
   left: 1.26rem;
   position: absolute;
   width: 1px;
-  top: 2.4rem;
+  top: 2.5rem;
 }
 
-.history-event:last-of-type:before {
+.history-event:last-child:before {
   display: none;
 }
 
