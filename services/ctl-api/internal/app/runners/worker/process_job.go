@@ -57,6 +57,12 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 		return errors.Wrap(err, "unable to flush orphaned jobs")
 	}
 
+	// Bail out if the job was already marked as cancelled
+	if runnerJob.Status == app.RunnerJobStatusCancelled {
+		l.Info("job was already cancelled, not attempting")
+		return nil
+	}
+
 	activities.AwaitUpdateJobStartedAt(ctx, activities.UpdateJobStartedAtRequest{JobID: sreq.JobID, StartedAt: workflow.Now(ctx)})
 	defer func() {
 		// NOTE(fd): wrapped this in a func so the time is set correctly
