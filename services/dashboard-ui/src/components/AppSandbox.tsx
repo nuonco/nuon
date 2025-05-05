@@ -79,7 +79,7 @@ export interface IAppSandboxVariables {
 }
 
 export const AppSandboxVariables: FC<IAppSandboxVariables> = ({
-  heading = 'Sandbox variables',
+  heading = 'Variables',
   isNotTruncated = false,
   variables,
 }) => {

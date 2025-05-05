@@ -48,7 +48,7 @@ type Install struct {
 	InstallInputs           []InstallInputs           `json:"install_inputs" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_inputs,omitzero,omitempty"`
 	InstallEvents           []InstallEvent            `json:"install_events" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_events,omitzero,omitempty"`
 	InstallIntermediateData []InstallIntermediateData `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_intermediate_data,omitzero,omitempty"`
-	InstallSandbox          InstallSandbox            `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox,omitzero,omitempty"`
+	InstallSandbox          InstallSandbox            `json:"sandbox" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox,omitzero,omitempty"`
 
 	InstallStack *InstallStack `json:"install_stack" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_stack,omitzero,omitempty"`
 	AWSAccount   *AWSAccount   `json:"aws_account" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"aws_account,omitzero,omitempty"`
