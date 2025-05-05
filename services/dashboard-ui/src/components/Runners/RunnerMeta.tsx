@@ -1,6 +1,6 @@
 import React, { type FC } from 'react'
 import { Time } from '@/components/Time'
-import { Text } from '@/components/Typography'
+import { ID, Text } from '@/components/Typography'
 import {
   getRunnerLatestHeartbeat,
   getInstallRunnerGroup,
@@ -32,7 +32,7 @@ export const RunnerMeta: FC<IRunnerMeta> = async ({
 
   return (
     <>
-      <span className="flex flex-col gap-2">
+      <span className="flex flex-col gap-x-2">
         <Text className="text-cool-grey-600 dark:text-cool-grey-500">
           Started at
         </Text>
@@ -44,17 +44,21 @@ export const RunnerMeta: FC<IRunnerMeta> = async ({
           />
         </Text>
       </span>
-      <span className="flex flex-col gap-2">
+      <span className="flex flex-col gap-x-2">
         <Text className="text-cool-grey-600 dark:text-cool-grey-500">
           Version
         </Text>
         <Text variant="med-12">{runnerHeartbeat?.version}</Text>
       </span>
-      <span className="flex flex-col gap-2">
+      <span className="flex flex-col gap-x-2">
         <Text className="text-cool-grey-600 dark:text-cool-grey-500">
           Platform
         </Text>
         <Text variant="med-12">{runnerGroup?.platform}</Text>
+      </span>
+      <span className="flex flex-col gap-x-2">
+        <Text className="text-cool-grey-600 dark:text-cool-grey-500">ID</Text>
+        <ID id={runnerId} />
       </span>
     </>
   )
