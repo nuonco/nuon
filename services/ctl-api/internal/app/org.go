@@ -48,6 +48,7 @@ const (
 	OrgFeatureInstallDeleteComponents OrgFeature = "install-delete-components"
 	OrgFeatureInstallDelete           OrgFeature = "install-delete"
 	OrgFeatureIndependentRunner       OrgFeature = "install-independent-runner"
+	OrgFeatureTerraformWorkspace      OrgFeature = "terraform-workspace"
 )
 
 type Org struct {
@@ -180,5 +181,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureInstallDeleteComponents,
 		OrgFeatureInstallDelete,
 		OrgFeatureIndependentRunner,
+		OrgFeatureTerraformWorkspace,
 	}
 }
