@@ -13,7 +13,7 @@ func (s *Service) TeardownComponent(ctx context.Context, installID, componentID 
 		return ui.PrintError(err)
 	}
 
-	_, err = s.api.TeardownInstallComponent(ctx, installID, componentID)
+	err = s.api.TeardownInstallComponent(ctx, installID, componentID)
 	if err != nil {
 		return ui.PrintJSONError(err)
 	}
