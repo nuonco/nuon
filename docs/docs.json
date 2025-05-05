@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "Nuon documentation",
   "colors": {
-    "primary": "#4E17FF",
-    "light": "#08a5fd",
-    "dark": "#4E17FF"
+    "primary": "#8040BF",
+    "light": "#C494F4",
+    "dark": "#8040BF"
   },
   "favicon": "/favicon.svg",
   "navigation": {
