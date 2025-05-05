@@ -1,6 +1,6 @@
 'use server'
 
-import { getSession } from '@auth0/nextjs-auth0'
+import { getSession, getAccessToken } from '@auth0/nextjs-auth0'
 import type { TRunner } from '@/types'
 import { ADMIN_API_URL } from '@/utils'
 
@@ -10,7 +10,7 @@ async function adminAction(
   errMessage = 'Admin action failed'
 ) {
   const { user } = await getSession()
-  
+
   try {
     const result = await fetch(`${ADMIN_API_URL}/v1/${domain}/${path}`, {
       method: 'POST',
@@ -19,11 +19,16 @@ async function adminAction(
         'Content-Type': 'application/json',
         'X-Nuon-Admin-Email': user?.email,
       },
-    }).then((r) => r.json())    
+    }).then((r) => r.json())
     return { status: 201, result }
   } catch (error) {
     throw new Error(errMessage)
   }
+}
+
+export async function getToken() {
+  const result = await getAccessToken()
+  return { status: 200, result }
 }
 
 // org admin actions
@@ -81,7 +86,7 @@ export async function updateOrgFeature(
         acc[feat] = data.hasOwnProperty(feat)
         return acc
       }, {})
-  const { user } = await getSession()  
+  const { user } = await getSession()
 
   try {
     const result = await fetch(

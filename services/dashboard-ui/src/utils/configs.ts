@@ -1,5 +1,5 @@
 export const API_URL =
-  process?.env?.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
   process?.env?.NUON_API_URL ||
   'https://api.nuon.co'
 export const ADMIN_API_URL =
