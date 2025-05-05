@@ -107,7 +107,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
-	ctx.JSON(http.StatusOK, "ok")
+	ctx.JSON(http.StatusCreated, "ok")
 }
 
 // PrependRunEnvPrefix modifies the keys in the provided RunEnvVars map
