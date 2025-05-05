@@ -6,11 +6,8 @@ import { CaretRight } from '@phosphor-icons/react/dist/ssr'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
-  ClickToCopyButton,
-  CodeViewer,
   DashboardContent,
   ErrorFallback,
-  InstallCloudPlatform,
   InstallStatuses,
   InstallPageSubNav,
   InstallManagementDropdown,
@@ -20,18 +17,22 @@ import {
   Section,
   Text,
   Time,
+  ClickToCopyButton,
+  CodeViewer,
 } from '@/components'
+import { TerraformWorkspace } from '@/components/InstallSandbox/TerraformWorkspace'
 import {
   getInstall,
   getInstallSandboxRuns,
   getInstallSandboxRun,
   getRunnerJob,
+  getOrg,
 } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
-  const install = await getInstall({ installId, orgId })
+  const install: any = await getInstall({ installId, orgId })
 
   return {
     title: `${install.name} | Sandbox`,
@@ -43,7 +44,10 @@ export default withPageAuthRequired(async function InstallComponent({
 }) {
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
-  const install = await getInstall({ installId, orgId })
+  const [install, org] = await Promise.all([
+    getInstall({ installId, orgId }),
+    getOrg({ orgId }),
+  ])
 
   return (
     <DashboardContent
@@ -90,7 +94,7 @@ export default withPageAuthRequired(async function InstallComponent({
               </Text>
             }
             className="flex-initial"
-            heading="Sandbox config"
+            heading="Config"
             childrenClassName="flex flex-col gap-4"
           >
             <ErrorBoundary fallbackRender={ErrorFallback}>
@@ -109,26 +113,36 @@ export default withPageAuthRequired(async function InstallComponent({
                 />
               </Suspense>
             </ErrorBoundary>
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading
-                    variant="stack"
-                    loadingText="Loading latest sandbox outputs..."
+            {org?.features?.['terraform-workspace'] || (
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={
+                    <Loading
+                      variant="stack"
+                      loadingText="Loading latest sandbox outputs..."
+                    />
+                  }
+                >
+                  <LoadLatestOutputs
+                    installId={installId}
+                    orgId={orgId}
+                    installSandboxRunId={
+                      install?.install_sandbox_runs?.at(0)?.id
+                    }
                   />
-                }
-              >
-                <LoadLatestOutputs
-                  installId={installId}
-                  orgId={orgId}
-                  installSandboxRunId={install?.install_sandbox_runs?.at(0)?.id}
-                />
-              </Suspense>
+                </Suspense>
+              </ErrorBoundary>
+            )}
+          </Section>
+          {org?.features?.['terraform-workspace'] && (
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <TerraformWorkspace
+                orgId={orgId}
+                installId={install.id}
+                workspace={install.sandbox.terraform_workspace}
+              />
             </ErrorBoundary>
-          </Section>
-          <Section heading="Cloud platform">
-            <InstallCloudPlatform install={install} />
-          </Section>
+          )}
         </div>
 
         <div className="divide-y flex flex-col md:col-span-4">

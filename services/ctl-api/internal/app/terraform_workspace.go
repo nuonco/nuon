@@ -25,7 +25,7 @@ type TerraformWorkspace struct {
 	OwnerType string `json:"owner_type" gorm:"type:text;uniqueIndex:idx_owner" temporaljson:"owner_type,omitzero,omitempty"`
 
 	States      []TerraformWorkspaceState `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"states,omitzero,omitempty"`
-	LockHistory []TerraformWorkspaceLock  `faker:"-" json:"-" swaggerignore:"true" gorm:"foreignKey:WorkspaceID;references:ID;constraint:OnDelete:CASCADE;" temporaljson:"lock_history,omitzero,omitempty"`
+	LockHistory []TerraformWorkspaceLock  `faker:"-" json:"lock_history" swaggerignore:"true" gorm:"foreignKey:WorkspaceID;references:ID;constraint:OnDelete:CASCADE;" temporaljson:"lock_history,omitzero,omitempty"`
 }
 
 func (r *TerraformWorkspace) BeforeCreate(tx *gorm.DB) (err error) {
