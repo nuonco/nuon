@@ -74,6 +74,14 @@ export async function restartOrgRunners(orgId: string) {
   )
 }
 
+export async function enableOrgDebugMode(orgId: string) {
+  return adminOrgAction(
+    orgId,
+    'admin-debug-mode',
+    'Failed to enable debug mode for this org'
+  )
+}
+
 export async function updateOrgFeature(
   orgId: string,
   formData: FormData,
