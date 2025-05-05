@@ -8,7 +8,7 @@ import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { StatusBadge } from '@/components/Status'
 import type { TSandboxRun } from '@/types'
-import { IPollStepDetails } from './StepDetails'
+import type { IPollStepDetails } from './InstallWorkflowSteps'
 
 export const SandboxStepDetails: FC<IPollStepDetails> = ({
   step,
@@ -39,11 +39,6 @@ export const SandboxStepDetails: FC<IPollStepDetails> = ({
   useEffect(() => {
     fetchData()
   }, [])
-
-  useEffect(() => {
-    setIsLoading(true)
-    fetchData()
-  }, [step])
 
   useEffect(() => {
     if (shouldPoll) {
