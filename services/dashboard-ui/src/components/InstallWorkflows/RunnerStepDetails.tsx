@@ -10,7 +10,7 @@ import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import type { TRunner, TRunnerHeartbeat } from '@/types'
-import { IPollStepDetails } from './StepDetails'
+import type { IPollStepDetails } from './InstallWorkflowSteps'
 
 interface IRunnerStepDetails extends IPollStepDetails {
   platform?: string
@@ -57,11 +57,6 @@ export const RunnerStepDetails: FC<IRunnerStepDetails> = ({
   useEffect(() => {
     fetchData()
   }, [])
-
-  useEffect(() => {
-    setIsLoading(true)
-    fetchData()
-  }, [step])
 
   useEffect(() => {
     if (shouldPoll) {
