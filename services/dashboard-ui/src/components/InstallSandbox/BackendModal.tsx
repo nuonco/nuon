@@ -1,0 +1,81 @@
+'use client'
+
+import { API_URL } from '@/utils/configs'
+import React, { type FC, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Button } from '@/components/Button'
+import { Modal } from '@/components/Modal'
+import { Code } from './Code'
+import { BracketsCurly } from '@phosphor-icons/react'
+import { Text } from '@/components/Typography'
+
+interface IBackendModal {
+  orgId: string
+  workspace: any
+  token: string
+}
+
+export const BackendModal: FC<IBackendModal> = ({
+  orgId,
+  workspace,
+  token,
+}) => {
+  const [isOpen, setIsOpen] = useState(false)
+
+  const backendBlock = `
+terraform {
+  backend "http" {
+    address = "${API_URL}/v1/terraform-backend?workspace_id=${workspace.id}&org_id=${orgId}&token=${token}"
+    lock_address = "${API_URL}/v1/terraform-workspaces/${workspace.id}/lock?org_id=${orgId}&token=${token}"
+    unlock_address = "${API_URL}/v1/terraform-workspaces/${workspace.id}/unlock?org_id=${orgId}&token=${token}"
+  }
+}
+`
+
+  return (
+    <>
+      {isOpen
+        ? createPortal(
+            <Modal
+              className="max-w-xxl"
+              heading="Use the Terraform CLI"
+              isOpen={isOpen}
+              onClose={() => {
+                setIsOpen(false)
+              }}
+            >
+              <Text variant="reg-14">
+                To manage the Terraform state directly using the Terraform CLI,
+                add this backend block to your Terraform project and run
+                <code>terraform init -reconfigure</code>.
+              </Text>
+              <div className="flex flex-col gap-3 mb-6 mt-6">
+                <Code>{backendBlock}</Code>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  onClick={() => {
+                    setIsOpen(false)
+                  }}
+                  className="text-sm"
+                >
+                  Close
+                </Button>
+              </div>
+            </Modal>,
+            document.body
+          )
+        : null}
+      <Button
+        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full"
+        variant="ghost"
+        onClick={() => {
+          setIsOpen(true)
+        }}
+      >
+        <BracketsCurly size="16" />
+        Use Terraform CLI
+      </Button>
+    </>
+  )
+}
