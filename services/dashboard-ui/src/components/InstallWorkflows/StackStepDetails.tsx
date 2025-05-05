@@ -12,7 +12,7 @@ import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
 import { Text, Code } from '@/components/Typography'
 import type { TAppStackConfig, TInstallStack } from '@/types'
-import { IPollStepDetails } from './StepDetails'
+import type { IPollStepDetails } from './InstallWorkflowSteps'
 
 interface IStackStepDetails extends IPollStepDetails {
   appId: string
@@ -47,11 +47,6 @@ export const StackStep: FC<IStackStepDetails> = ({
   useEffect(() => {
     fetchData()
   }, [])
-
-  useEffect(() => {
-    setIsLoading(true)
-    fetchData()
-  }, [step])
 
   useEffect(() => {
     if (shouldPoll) {
@@ -228,7 +223,7 @@ const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
               Last checked
             </Text>
             <Time
-              time={stack?.versions?.at(-1).runs?.at(-1).updated_at}
+              time={stack?.versions?.at(-1).runs?.at(-1)?.updated_at}
               format="relative"
             />
           </div>

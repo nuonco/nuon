@@ -8,8 +8,7 @@ import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { StatusBadge } from '@/components/Status'
 import type { TInstallDeploy } from '@/types'
-
-import { IPollStepDetails } from './StepDetails'
+import type { IPollStepDetails } from './InstallWorkflowSteps'
 
 export const DeployStepDetails: FC<IPollStepDetails> = ({
   step,
@@ -40,11 +39,6 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
   useEffect(() => {
     fetchData()
   }, [])
-
-  useEffect(() => {
-    setIsLoading(true)
-    fetchData()
-  }, [step])
 
   useEffect(() => {
     if (shouldPoll) {
