@@ -43,9 +43,13 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 		orgID := ctx.Request.Header.Get(orgIDHeaderKey)
 		if orgID == "" {
+			orgID = ctx.Query("org_id")
+		}
+
+		if orgID == "" {
 			ctx.Error(stderr.ErrAuthorization{
-				Err:         fmt.Errorf("required header %s not found", orgIDHeaderKey),
-				Description: fmt.Sprintf("please retry request with %s header", orgIDHeaderKey),
+				Err:         fmt.Errorf("org ID was empty"),
+				Description: fmt.Sprintf("please retry request with %s header or org query param", orgIDHeaderKey),
 			})
 			ctx.Abort()
 			return

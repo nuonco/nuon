@@ -60,7 +60,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		if token == "" {
 			ctx.Error(stderr.ErrAuthentication{
 				Err:         fmt.Errorf("auth token was empty"),
-				Description: "Please make sure you set the -H Authorization:Bearer <token> header",
+				Description: "Please make sure you set the -H Authorization:Bearer <token> header or token query param",
 			})
 			ctx.Abort()
 
