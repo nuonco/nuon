@@ -7,79 +7,17 @@ import { Button } from '@/components/Button'
 import { Empty } from '@/components/Empty'
 import { Notice } from '@/components/Notice'
 import { Section } from '@/components/Card'
-import { Loading } from '@/components/Loading'
-import { Text, Code } from '@/components/Typography'
+import { Text } from '@/components/Typography'
 import type { TInstallWorkflow, TInstallWorkflowStep, TInstall } from '@/types'
 import { removeSnakeCase, sentanceCase } from '@/utils'
 import { InstallWorkflowCancelModal } from './InstallWorkflowCancelModal'
 import { YAStatus } from './InstallWorkflowHistory'
-import { ActionStepDetails } from './ActionStepDetails'
-import { DeployStepDetails } from './DeployStepDetails'
-import { SandboxStepDetails } from './SandboxStepDetails'
-import { StackStep } from './StackStepDetails'
-import { RunnerStepDetails } from './RunnerStepDetails'
+import { StepDetails, getStepType } from './StepDetails'
 
-function getStepType(
-  step: TInstallWorkflowStep,
-  install: TInstall
-): React.ReactNode {
-  let stepDetails = <>Unknown step</>
-  switch (step.step_target_type) {
-    case 'install_sandbox_runs':
-      stepDetails = (
-        <SandboxStepDetails
-          step={step}
-          shouldPoll={step?.status?.status === 'in-progress'}
-        />
-      )
-      break
-
-    case 'install_stack_versions':
-      stepDetails = (
-        <StackStep
-          step={step}
-          appId={install?.app_id}
-          shouldPoll={step?.status?.status === 'in-progress'}
-        />
-      )
-      break
-
-    case 'install_action_workflow_runs':
-      stepDetails = (
-        <ActionStepDetails
-          step={step}
-          shouldPoll={step?.status?.status === 'in-progress'}
-        />
-      )
-      break
-
-    case 'runners':
-      stepDetails = (
-        <RunnerStepDetails
-          step={step}
-          shouldPoll={step?.status?.status === 'in-progress'}
-        />
-      )
-      break
-    case 'install_deploys':
-      stepDetails = (
-        <DeployStepDetails
-          step={step}
-          shouldPoll={step?.status?.status === 'in-progress'}
-        />
-      )
-      break
-    default:
-      stepDetails = <>system</> //<Loading loadingText="Waiting on step..." variant="page" />
-  }
-
-  return (
-    <>
-      {stepDetails}
-      <Text>Step JSON</Text>
-      <Code variant="preformated">{JSON.stringify(step, null, 2)}</Code>
-    </>
-  )
+export interface IPollStepDetails {
+  pollDuration?: number
+  shouldPoll?: boolean
+  step: TInstallWorkflowStep
 }
 
 interface IInstallWorkflowSteps {
@@ -105,29 +43,28 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
   )
   const [isManualControl, setManualControl] = useState(false)
 
-  /* useEffect(() => {
-   *   if (!isManualControl) {
-   *     if (
-   *       installWorkflow?.steps?.some((s) => s?.status?.status === 'in-progress')
-   *     ) {
-   *       if (
-   *         activeStep?.id !==
-   *         installWorkflow?.steps?.find(
-   *           (s) => s?.status?.status === 'in-progress'
-   *         ).id
-   *       ) {
-   *         setActiveStep(
-   *           installWorkflow?.steps?.find(
-   *             (s) =>
-   *               s?.status?.status === 'in-progress' && s.step_target_type !== ''
-   *           )
-   *         )
-   *       }
-   *     }
-
-   *     
-   *   }
-   * }, [installWorkflow]) */
+  useEffect(() => {
+    if (!isManualControl) {
+      if (
+        installWorkflow?.steps?.some((s) => s?.status?.status === 'in-progress')
+      ) {
+        if (
+          activeStep?.id !==
+          installWorkflow?.steps?.find(
+            (s) => s?.status?.status === 'in-progress'
+          ).id
+        ) {
+          setActiveStep(
+            installWorkflow?.steps?.find(
+              (s) => s?.status?.status === 'in-progress'
+            )
+          )
+        }
+      } else if (!activeStep) {
+        setActiveStep(installWorkflow?.steps?.at(0))
+      }
+    }
+  }, [installWorkflow])
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x h-full">
@@ -204,23 +141,31 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
       <div className="md:col-span-8">
         {activeStep ? (
           <Section>
-            <div className="flex flex-col gap-4">
-              <hgroup className="flex gap-4 items-center">
-                <YAStatus status={activeStep?.status?.status} />{' '}
-                <Text variant="med-18">{sentanceCase(activeStep?.name)}</Text>
-              </hgroup>
-              {activeStep?.status?.metadata?.reason ? (
-                <Notice variant="warn">
-                  {sentanceCase(activeStep?.status?.metadata?.reason as string)}
-                </Notice>
-              ) : null}
-              {activeStep?.status?.metadata?.err_message ? (
-                <Notice variant="error" className="!items-start">
-                  {activeStep?.status?.metadata?.err_message as string}
-                </Notice>
-              ) : null}
-              {getStepType(activeStep, install)}
-            </div>
+            <StepDetails
+              activeStepIndex={installWorkflow?.steps?.findIndex(
+                (s) => s?.id === activeStep?.id
+              )}
+            >
+              {installWorkflow?.steps?.map((step) => (
+                <div className="flex flex-col gap-4" key={step?.id}>
+                  <hgroup className="flex gap-4 items-center">
+                    <YAStatus status={step?.status?.status} />{' '}
+                    <Text variant="med-18">{sentanceCase(step?.name)}</Text>
+                  </hgroup>
+                  {step?.status?.metadata?.reason ? (
+                    <Notice variant="warn">
+                      {sentanceCase(step?.status?.metadata?.reason as string)}
+                    </Notice>
+                  ) : null}
+                  {step?.status?.metadata?.err_message ? (
+                    <Notice variant="error" className="!items-start">
+                      {step?.status?.metadata?.err_message as string}
+                    </Notice>
+                  ) : null}
+                  {getStepType(step, install)}
+                </div>
+              ))}
+            </StepDetails>
           </Section>
         ) : (
           <Section>

@@ -12,7 +12,7 @@ import { Duration } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import type { TActionConfig, TInstallActionWorkflowRun } from '@/types'
 import { sentanceCase } from '@/utils'
-import { type IPollStepDetails } from './StepDetails'
+import type { IPollStepDetails } from './InstallWorkflowSteps'
 
 // hydrate run steps with idx and name
 function hydrateRunSteps(
@@ -58,11 +58,6 @@ export const ActionStepDetails: FC<IPollStepDetails> = ({
   useEffect(() => {
     fetchData()
   }, [])
-
-  useEffect(() => {
-    setIsLoading(true)
-    fetchData()
-  }, [step])
 
   useEffect(() => {
     if (shouldPoll) {
