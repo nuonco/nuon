@@ -33,6 +33,7 @@ import {
   forceInstallRunnerShutdown,
   gracefulOrgRunnerShutdown,
   forceOrgRunnerShutdown,
+  enableOrgDebugMode,
 } from '@/components/admin-actions'
 
 type TAdminAction = {
@@ -85,6 +86,11 @@ export const AdminModal: FC<{ isSidebarOpen: boolean, isModalOpen?: string }> = 
       action: () => forceOrgRunnerShutdown(params?.['org-id'] as string),
       description: 'Forceful shutdown of current org runner',
       text: 'Force org shutdown runner',
+    },
+     {
+      action: () => enableOrgDebugMode(params?.['org-id'] as string),
+      description: 'Debug mode logs all requests for an org.',
+      text: 'Enable debug mode',
     },
   ]
 
