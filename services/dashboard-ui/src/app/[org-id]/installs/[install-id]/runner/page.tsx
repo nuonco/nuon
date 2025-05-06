@@ -81,24 +81,35 @@ export default withPageAuthRequired(async function Runner({
             </ErrorBoundary>
           </Section>
           <Section className="flex-initial">
-            <div className="flex gap-6 items-start justify-start lg:gap-12 xl:gap-24 flex-wrap">
-              <span className="flex flex-col gap-2">
-                <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                  Status
-                </Text>
-                <StatusBadge
-                  status={runner?.status}
-                  description={runner?.status_description}
-                  descriptionAlignment="left"
-                  shouldPoll
-                />
-              </span>
-              <RunnerMeta
-                orgId={orgId}
-                installId={installId}
-                runnerId={runner.id}
-              />
-            </div>
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Loading
+                    variant="stack"
+                    loadingText="Loading runner metadata..."
+                  />
+                }
+              >
+                <div className="flex gap-6 items-start justify-start lg:gap-12 xl:gap-24 flex-wrap">
+                  <span className="flex flex-col gap-2">
+                    <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                      Status
+                    </Text>
+                    <StatusBadge
+                      status={runner?.status}
+                      description={runner?.status_description}
+                      descriptionAlignment="left"
+                      shouldPoll
+                    />
+                  </span>
+                  <RunnerMeta
+                    orgId={orgId}
+                    installId={installId}
+                    runnerId={runner.id}
+                  />
+                </div>
+              </Suspense>
+            </ErrorBoundary>
           </Section>
           <Section heading="Completed jobs">
             <ErrorBoundary fallbackRender={ErrorFallback}>
