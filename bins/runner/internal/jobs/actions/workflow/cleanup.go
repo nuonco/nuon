@@ -3,8 +3,9 @@ package workflow
 import (
 	"context"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"go.uber.org/zap"
+
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 
 	"github.com/nuonco/nuon-runner-go/models"
 )
@@ -16,5 +17,8 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 	}
 
 	l.Info("cleaning up", zap.String("job_type", "actionsworkflow"))
+	if h.state.workspace != nil {
+		return h.state.workspace.Cleanup(ctx)
+	}
 	return nil
 }

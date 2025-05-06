@@ -13,7 +13,11 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
-func (p *Planner) createStepPlan(ctx workflow.Context, step app.InstallActionWorkflowRunStep, installID string) (*plantypes.ActionWorkflowRunStepPlan, error) {
+func (p *Planner) createStepPlan(ctx workflow.Context,
+	step *app.InstallActionWorkflowRunStep,
+	stateMap map[string]any,
+	installID string,
+) (*plantypes.ActionWorkflowRunStepPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
@@ -32,23 +36,10 @@ func (p *Planner) createStepPlan(ctx workflow.Context, step app.InstallActionWor
 	l.Debug("creating git source for config")
 	gitSource, err := activities.AwaitGetActionWorkflowStepGitSourceByStepID(ctx, step.Step.ID)
 	if err != nil {
+		l.Error("unable to  configure git source for step", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to get git source")
 	}
-
 	plan.GitSource = gitSource
-
-	// step 2 - interpolate all variables in the set
-	l.Debug("fetching install state")
-	state, err := activities.AwaitGetInstallStateByInstallID(ctx, installID)
-	if err != nil {
-		l.Error("unable to get install state", zap.Error(err))
-		return nil, errors.Wrap(err, "unable to get install state")
-	}
-
-	stateMap, err := state.AsMap()
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to convert state to map")
-	}
 
 	for k, v := range step.Step.EnvVars {
 		renderedVal, err := render.Render(*v, stateMap)
@@ -75,8 +66,9 @@ func (p *Planner) createStepPlan(ctx workflow.Context, step app.InstallActionWor
 		}
 
 		l.Debug("successfully rendered inline contents", zap.String("rendered", renderedVal))
-		step.Step.InlineContents = renderedVal
+		plan.InterpolatedInlineContents = renderedVal
 	}
+
 	if step.Step.Command != "" {
 		l.Debug("rendering command")
 		renderedVal, err := render.Render(step.Step.Command, stateMap)

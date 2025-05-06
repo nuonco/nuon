@@ -235,6 +235,7 @@ func (s *service) createActionWorkflowSteps(ctx context.Context, parentApp *app.
 			Name:                     step.Name,
 			EnvVars:                  step.EnvVars,
 			Command:                  step.Command,
+			InlineContents:           step.InlineContents,
 			Idx:                      stepIdx,
 			PreviousStepID:           prevStepId,
 			PublicGitVCSConfig:       publicGitConfig,

@@ -20,5 +20,6 @@ func (p *Planner) getEnvVars(ctx workflow.Context, run *app.InstallActionWorkflo
 		"NUON_INSTALL_ID": run.Install.ID,
 		"NUON_API_URL":    token.APIURL,
 		"NUON_API_TOKEN":  token.Token,
+		"TRIGGER_TYPE":    string(run.TriggerType),
 	}, nil
 }

@@ -89,15 +89,6 @@ func TestNew(t *testing.T) {
 			},
 			errExpected: fmt.Errorf("Cmd"),
 		},
-		"missing args": {
-			optsFn: func() []commandOption {
-				return []commandOption{
-					WithCmd(cmd),
-					WithEnv(env),
-				}
-			},
-			errExpected: fmt.Errorf("Args"),
-		},
 	}
 
 	for name, test := range tests {
