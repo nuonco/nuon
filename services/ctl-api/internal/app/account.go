@@ -24,22 +24,22 @@ const (
 )
 
 type Account struct {
-	ID        string                `gorm:"primarykey" json:"id" temporaljson:"id,omitzero,omitempty"`
-	CreatedAt time.Time             `json:"created_at" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt time.Time             `json:"updated_at" temporaljson:"updated_at,omitzero,omitempty"`
+	ID        string                `gorm:"primarykey" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedAt time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_email_subject,unique" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	Email       string      `json:"email" gorm:"index:idx_email_subject,unique,not null;default null" temporaljson:"email,omitzero,omitempty"`
-	Subject     string      `json:"subject" gorm:"index:idx_email_subject,unique,not null;" temporaljson:"subject,omitzero,omitempty"`
-	AccountType AccountType `json:"account_type" temporaljson:"account_type,omitzero,omitempty"`
+	Email       string      `json:"email,omitzero" gorm:"index:idx_email_subject,unique,not null;default null" temporaljson:"email,omitzero,omitempty"`
+	Subject     string      `json:"subject,omitzero" gorm:"index:idx_email_subject,unique,not null;" temporaljson:"subject,omitzero,omitempty"`
+	AccountType AccountType `json:"account_type,omitzero" temporaljson:"account_type,omitzero,omitempty"`
 
-	Roles  []Role  `gorm:"many2many:account_roles;constraint:OnDelete:CASCADE;" json:"roles" temporaljson:"roles,omitzero,omitempty"`
+	Roles  []Role  `gorm:"many2many:account_roles;constraint:OnDelete:CASCADE;" json:"roles,omitzero" temporaljson:"roles,omitzero,omitempty"`
 	Tokens []Token `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"tokens,omitzero,omitempty"`
 
 	// ReadOnly Fields
-	OrgIDs         []string        `json:"org_ids" gorm:"-" temporaljson:"org_i_ds,omitzero,omitempty"`
+	OrgIDs         []string        `json:"org_ids,omitzero" gorm:"-" temporaljson:"org_i_ds,omitzero,omitempty"`
 	Orgs           []*Org          `json:"-" gorm:"-" temporaljson:"orgs,omitzero,omitempty"`
-	AllPermissions permissions.Set `json:"permissions" gorm:"-" temporaljson:"all_permissions,omitzero,omitempty"`
+	AllPermissions permissions.Set `json:"permissions,omitzero" gorm:"-" temporaljson:"all_permissions,omitzero,omitempty"`
 
 	IsEmployee bool `json:"-"`
 }

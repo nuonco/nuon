@@ -11,18 +11,18 @@ import (
 
 // clickhouse table
 type RunnerHeartBeat struct {
-	ID          string `gorm:"primary_key" json:"id" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID string `json:"created_by_id" temporaljson:"created_by_id,omitzero,omitempty"`
+	ID          string `gorm:"primary_key" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string `json:"created_by_id,omitzero" temporaljson:"created_by_id,omitzero,omitempty"`
 
-	CreatedAt time.Time             `json:"created_at" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt time.Time             `json:"updated_at" temporaljson:"updated_at,omitzero,omitempty"`
+	CreatedAt time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	RunnerID string `json:"runner_id" temporaljson:"runner_id,omitzero,omitempty"`
+	RunnerID string `json:"runner_id,omitzero" temporaljson:"runner_id,omitzero,omitempty"`
 
-	AliveTime time.Duration `json:"alive_time" swaggertype:"primitive,integer" temporaljson:"alive_time,omitzero,omitempty"`
-	Version   string        `json:"version" temporaljson:"version,omitzero,omitempty"`
-	StartedAt time.Time     `json:"started_at" gorm:"-" temporaljson:"started_at,omitzero,omitempty"`
+	AliveTime time.Duration `json:"alive_time,omitzero" swaggertype:"primitive,integer" temporaljson:"alive_time,omitzero,omitempty"`
+	Version   string        `json:"version,omitzero" temporaljson:"version,omitzero,omitempty"`
+	StartedAt time.Time     `json:"started_at,omitzero" gorm:"-" temporaljson:"started_at,omitzero,omitempty"`
 }
 
 func (r *RunnerHeartBeat) AfterQuery(tx *gorm.DB) error {

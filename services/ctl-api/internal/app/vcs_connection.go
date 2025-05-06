@@ -10,18 +10,18 @@ import (
 )
 
 type VCSConnection struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
-	CreatedAt   time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id" swaggerignore:"true" gorm:"index:idx_github_install_id,unique" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" swaggerignore:"true" gorm:"index:idx_github_install_id,unique" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `swaggerignore:"true" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	GithubInstallID           string                     `json:"github_install_id" gorm:"index:idx_github_install_id,unique" temporaljson:"github_install_id,omitzero,omitempty"`
-	Commits                   []VCSConnectionCommit      `json:"vcs_connection_commit" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"commits,omitzero,omitempty"`
+	GithubInstallID           string                     `json:"github_install_id,omitzero" gorm:"index:idx_github_install_id,unique" temporaljson:"github_install_id,omitzero,omitempty"`
+	Commits                   []VCSConnectionCommit      `json:"vcs_connection_commit,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"commits,omitzero,omitempty"`
 	ConnectedGithubVCSConfigs []ConnectedGithubVCSConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"connected_github_vcs_configs,omitzero,omitempty"`
 }
 
