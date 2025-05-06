@@ -33,25 +33,25 @@ const (
 )
 
 type ComponentRelease struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
-	CreatedAt   time.Time             `json:"created_at" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt   time.Time             `json:"updated_at" temporaljson:"updated_at,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	ComponentBuildID string         `json:"build_id" temporaljson:"component_build_id,omitzero,omitempty"`
-	ComponentBuild   ComponentBuild `json:"build" swaggerignore:"true" temporaljson:"component_build,omitzero,omitempty"`
+	ComponentBuildID string         `json:"build_id,omitzero" temporaljson:"component_build_id,omitzero,omitempty"`
+	ComponentBuild   ComponentBuild `json:"build,omitzero" swaggerignore:"true" temporaljson:"component_build,omitzero,omitempty"`
 
-	TotalComponentReleaseSteps int                    `json:"total_release_steps" gorm:"-" temporaljson:"total_component_release_steps,omitzero,omitempty"`
-	ComponentReleaseSteps      []ComponentReleaseStep `json:"release_steps,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_release_steps,omitzero,omitempty"`
+	TotalComponentReleaseSteps int                    `json:"total_release_steps,omitzero" gorm:"-" temporaljson:"total_component_release_steps,omitzero,omitempty"`
+	ComponentReleaseSteps      []ComponentReleaseStep `json:"release_steps,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_release_steps,omitzero,omitempty"`
 
-	Status            ReleaseStatus `json:"status" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string        `json:"status_description" temporaljson:"status_description,omitzero,omitempty"`
+	Status            ReleaseStatus `json:"status,omitzero" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string        `json:"status_description,omitzero" temporaljson:"status_description,omitzero,omitempty"`
 }
 
 func (a *ComponentRelease) BeforeCreate(tx *gorm.DB) error {
