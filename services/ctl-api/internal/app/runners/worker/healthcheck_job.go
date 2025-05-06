@@ -21,7 +21,7 @@ type HealthcheckJobRunnerRequest struct {
 }
 
 type HealthcheckJobRunnerResponse struct {
-	ShouldRestart bool
+	ShouldRestart bool `json:"should_restart,omitzero"`
 }
 
 func HealthcheckJobRunnerWorkflowsID(req *HealthcheckJobRunnerRequest) string {

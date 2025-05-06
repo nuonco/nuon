@@ -52,36 +52,36 @@ const (
 )
 
 type Org struct {
-	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string  `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 
-	CreatedAt time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	CreatedAt time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `gorm:"index:idx_org_name,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	Name              string    `gorm:"index:idx_org_name,unique;notnull" json:"name" temporaljson:"name,omitzero,omitempty"`
-	Status            OrgStatus `json:"status" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string    `json:"status_description" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
+	Name              string    `gorm:"index:idx_org_name,unique;notnull" json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
+	Status            OrgStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string    `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 
-	SandboxMode bool `json:"sandbox_mode" gorm:"notnull" temporaljson:"sandbox_mode,omitzero,omitempty"`
+	SandboxMode bool `json:"sandbox_mode,omitzero" gorm:"notnull" temporaljson:"sandbox_mode,omitzero,omitempty"`
 
 	OrgType   OrgType `json:"-" temporaljson:"org_type,omitzero,omitempty"`
 	DebugMode bool    `json:"-" temporaljson:"debug_mode,omitzero,omitempty"`
 
-	NotificationsConfig   NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty" temporaljson:"notifications_config,omitzero,omitempty"`
+	NotificationsConfig   NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitzero,omitempty" temporaljson:"notifications_config,omitzero,omitempty"`
 	NotificationsConfigID string              `json:"-" temporaljson:"notifications_config_id,omitzero,omitempty"`
 
-	RunnerGroup RunnerGroup `json:"runner_group" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"runner_group,omitzero,omitempty"`
+	RunnerGroup RunnerGroup `json:"runner_group,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"runner_group,omitzero,omitempty"`
 
-	LogoURL string `json:"logo_url" temporaljson:"logo_url,omitzero,omitempty"`
+	LogoURL string `json:"logo_url,omitzero" temporaljson:"logo_url,omitzero,omitempty"`
 
 	Priority int `json:"-" temporaljson:"priority,omitzero,omitempty"`
 
-	Apps           []App               `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"apps,omitzero,omitempty"`
-	VCSConnections []VCSConnection     `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"vcs_connections,omitzero,omitempty"`
+	Apps           []App               `faker:"-" swaggerignore:"true" json:"apps,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"apps,omitzero,omitempty"`
+	VCSConnections []VCSConnection     `json:"vcs_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"vcs_connections,omitzero,omitempty"`
 	Invites        []OrgInvite         `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"invites,omitzero,omitempty"`
-	Features       types.StringBoolMap `json:"features" gorm:"type:jsonb;default null" temporaljson:"features,omitzero,omitempty"`
+	Features       types.StringBoolMap `json:"features,omitzero" gorm:"type:jsonb;default null" temporaljson:"features,omitzero,omitempty"`
 
 	// Other relationships as part of the data model
 
@@ -96,9 +96,9 @@ type Org struct {
 	Installers        []Installer         `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"installers,omitzero,omitempty"`
 	InstallerMetadata []InstallerMetadata `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"installer_metadata,omitzero,omitempty"`
 
-	Roles        []Role        `faker:"-" swaggerignore:"true" json:"roles,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"roles,omitzero,omitempty"`
-	Policies     []Policy      `faker:"-" swaggerignore:"true" json:"policies,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"policies,omitzero,omitempty"`
-	AccountRoles []AccountRole `faker:"-" swaggerignore:"true" json:"account_roles,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"account_roles,omitzero,omitempty"`
+	Roles        []Role        `faker:"-" swaggerignore:"true" json:"roles,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"roles,omitzero,omitempty"`
+	Policies     []Policy      `faker:"-" swaggerignore:"true" json:"policies,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"policies,omitzero,omitempty"`
+	AccountRoles []AccountRole `faker:"-" swaggerignore:"true" json:"account_roles,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"account_roles,omitzero,omitempty"`
 
 	// after query
 

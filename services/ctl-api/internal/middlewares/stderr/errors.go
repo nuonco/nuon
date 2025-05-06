@@ -39,9 +39,9 @@ func (u ErrNotReady) Error() string {
 }
 
 type ErrResponse struct {
-	Error       string `json:"error"`
-	UserError   bool   `json:"user_error"`
-	Description string `json:"description"`
+	Error       string `json:"error,omitzero"`
+	UserError   bool   `json:"user_error,omitzero"`
+	Description string `json:"description,omitzero"`
 }
 
 type ErrSystem struct {

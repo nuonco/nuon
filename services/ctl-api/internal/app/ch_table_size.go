@@ -9,9 +9,9 @@ import (
 )
 
 type CHTableSize struct {
-	TableName  string  `json"table_name" gorm:"->;-:migration"`
-	SizePretty string  `json"size_pretty" gorm:"->;-:migration"`
-	SizeBytes  float64 `json:"size_bytes" gorm:"->;-:migration" temporaljson:"size_bytes,omitzero,omitempty"`
+	TableName  string  `json"table_name,omitzero" gorm:"->;-:migration"`
+	SizePretty string  `json"size_pretty,omitzero" gorm:"->;-:migration"`
+	SizeBytes  float64 `json:"size_bytes,omitzero" gorm:"->;-:migration" temporaljson:"size_bytes,omitzero,omitempty"`
 }
 
 func (*CHTableSize) UseView() bool {
