@@ -1,0 +1,40 @@
+---
+title: 002 - Install Inputs, dependencies, and more 
+description: Install Inputs, dependencies and more
+---
+_May 6th, 2025 v0.19.540_
+
+## Input Types
+
+You can now define an input type, which denotes which type of input is accepted. This is used to control rendering 
+across different install inputs, and will allow us to build more semantic meaning into inputs.
+
+You can define a `type` field on an input in your config. The following types are supported:
+
+* `string`
+* `bool`
+* `number`
+* `json`
+* `list`
+
+Input types are currently only settable as metadata, but will be rolled out to all different surfaces of install 
+management soon.
+
+<Note>This change is backwards compatible and all current inputs will default to `string` as their `type`.</Note>
+
+## Internal Inputs
+
+Internal inputs are inputs that are only settable via the Nuon dashboard. This allows you to define inputs that a 
+customer can not control directly, or set internal values.
+
+You can use `internal: true` to mark an input as internal.
+
+<Note>This change is backwards compatible and all current inputs will default to `internal: false`.</Note>
+
+## Dependencies
+
+## Improvements To Deletes
+
+## Fixes
+
+* Input Group and Input ordering is now respected.

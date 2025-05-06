@@ -26,6 +26,7 @@ type AppInputGroup struct {
 	Name        string `json:"name" gorm:"not null;default null" temporaljson:"name,omitzero,omitempty"`
 	DisplayName string `json:"display_name" temporaljson:"display_name,omitzero,omitempty"`
 	Description string `json:"description" gorm:"not null; default null" temporaljson:"description,omitzero,omitempty"`
+	Index       int    `json:"index"`
 
 	AppInputs []AppInput `json:"app_inputs" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_inputs,omitzero,omitempty"`
 }
