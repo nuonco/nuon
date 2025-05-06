@@ -14,9 +14,11 @@ type AppInput struct {
 	DisplayName string `mapstructure:"display_name" jsonschema:"required"`
 	Description string `mapstructure:"description" jsonschema:"required"`
 	Group       string `mapstructure:"group" jsonschema:"required"`
-	Default     string `mapstructure:"default,omitempty"`
+	Default     any    `mapstructure:"default,omitempty"`
 	Required    bool   `mapstructure:"required,omitempty"`
 	Sensitive   bool   `mapstructure:"sensitive"`
+	Type        string `mapstructure:"type"`
+	Internal    bool   `mapstructure:"internal"`
 }
 
 func (a AppInput) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -28,6 +30,8 @@ func (a AppInput) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "default", "The default value for the input.")
 	addDescription(schema, "required", "Denote whether this is a required customer input.")
 	addDescription(schema, "sensitive", "Denote whether this is a sensitive input, which will prevent the value from being displayed after the install is created.")
+	addDescription(schema, "type", "Type of input supported, can be a string, number, list, json or bool")
+	addDescription(schema, "internal", "Internal inputs are only settable via the admin panel")
 }
 
 type AppInputGroup struct {
