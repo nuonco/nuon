@@ -17,9 +17,9 @@ import (
 
 // parse command returns a command that could be either a local script, or an inline command.
 func (h *handler) parseCommand(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *plantypes.GitSource) (string, []string, error) {
-	if cfg.Command == "" {
-		l.Error("no command was defined in action step config")
-		return "", nil, errors.New("no command was defined in action step config")
+	if cfg.Command == "" && cfg.InlineContents == "" {
+		l.Error("no command or inline_contents defined in action step config")
+		return "", nil, errors.New("no command or inline_contents defined in action step config")
 	}
 
 	dirName := git.Dir(src)
