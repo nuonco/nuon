@@ -21,7 +21,7 @@ type HealthcheckUpdateNeededRequest struct {
 }
 
 type HealthcheckUpdateNeededResponse struct {
-	ShouldUpdate bool
+	ShouldUpdate bool `json:"should_update,omitzero"`
 }
 
 func HealthcheckUpdateNeededWorkflowsID(req *HealthcheckUpdateNeededRequest) string {
@@ -35,7 +35,6 @@ func HealthcheckUpdateNeededWorkflowsID(req *HealthcheckUpdateNeededRequest) str
 func (w *Workflows) HealthcheckUpdateNeeded(
 	ctx workflow.Context,
 	req *HealthcheckUpdateNeededRequest,
-
 ) (*HealthcheckUpdateNeededResponse, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -48,7 +47,6 @@ func (w *Workflows) HealthcheckUpdateNeeded(
 
 	heartbeat, err := activities.AwaitGetHeartBeatByID(ctx, req.HeartbeatID)
 	if err != nil {
-
 		return &HealthcheckUpdateNeededResponse{}, errors.Wrap(err, "unable to get heartbeat by id")
 	}
 	var needsUpdate bool
@@ -62,7 +60,6 @@ func (w *Workflows) HealthcheckUpdateNeeded(
 		// set for their expected version, and as a result they're looping here.
 		// So we just never update these, until we have a better strategy.
 		needsUpdate = false
-
 	}
 
 	// NOTE(jm): if we need an update, we just write a metric

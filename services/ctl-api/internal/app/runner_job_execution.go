@@ -54,24 +54,24 @@ func (r RunnerJobExecutionStatus) IsRunning() bool {
 // each runner job can be retried one or more times
 // each execution will be tracked and have logs, metrics, events and more
 type RunnerJobExecution struct {
-	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string  `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 
-	CreatedAt time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	CreatedAt time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_job_execution_runner_job_id,type:btree" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	RunnerJobID string    `json:"runner_job_id" gorm:"notnull;defaultnull;index:idx_runner_job_execution_runner_job_id,type:btree" temporaljson:"runner_job_id,omitzero,omitempty"`
+	RunnerJobID string    `json:"runner_job_id,omitzero" gorm:"notnull;defaultnull;index:idx_runner_job_execution_runner_job_id,type:btree" temporaljson:"runner_job_id,omitzero,omitempty"`
 	RunnerJob   RunnerJob `json:"-" temporaljson:"runner_job,omitzero,omitempty"`
 
-	Status RunnerJobExecutionStatus `json:"status" gorm:"not null;default null;index:idx_runner_job_execution_status,type:hash" temporaljson:"status,omitzero,omitempty"`
+	Status RunnerJobExecutionStatus `json:"status,omitzero" gorm:"not null;default null;index:idx_runner_job_execution_status,type:hash" temporaljson:"status,omitzero,omitempty"`
 
-	Result  *RunnerJobExecutionResult  `json:"result" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"result,omitzero,omitempty"`
-	Outputs *RunnerJobExecutionOutputs `json:"outputs" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"outputs,omitzero,omitempty"`
+	Result  *RunnerJobExecutionResult  `json:"result,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"result,omitzero,omitempty"`
+	Outputs *RunnerJobExecutionOutputs `json:"outputs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"outputs,omitzero,omitempty"`
 }
 
 func (r *RunnerJobExecution) BeforeCreate(tx *gorm.DB) error {

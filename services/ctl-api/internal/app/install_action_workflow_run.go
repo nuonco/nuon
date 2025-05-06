@@ -28,49 +28,49 @@ const (
 )
 
 type InstallActionWorkflowRun struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
-	CreatedBy   Account               `json:"created_by" temporaljson:"created_by,omitzero,omitempty"`
-	CreatedAt   time.Time             `json:"created_at" gorm:"notnull;index:idx_install_action_runs_query,priority:3,sort:desc" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"created_by,omitzero" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull;index:idx_install_action_runs_query,priority:3,sort:desc" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	RunnerJob *RunnerJob `json:"runner_job" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
+	RunnerJob *RunnerJob `json:"runner_job,omitzero" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
 
-	LogStream LogStream `json:"log_stream" gorm:"polymorphic:Owner;" temporaljson:"log_stream,omitzero,omitempty"`
+	LogStream LogStream `json:"log_stream,omitzero" gorm:"polymorphic:Owner;" temporaljson:"log_stream,omitzero,omitempty"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	InstallID string  `json:"install_id" gorm:"not null;default null;index:idx_install_action_runs_query,priority:1" temporaljson:"install_id,omitzero,omitempty"`
+	InstallID string  `json:"install_id,omitzero" gorm:"not null;default null;index:idx_install_action_runs_query,priority:1" temporaljson:"install_id,omitzero,omitempty"`
 	Install   Install `swaggerignore:"true" json:"-" temporaljson:"install,omitzero,omitempty"`
 
-	InstallActionWorkflowID string                `json:"install_action_workflow_id" gorm:"index:idx_install_action_runs_query,priority:2" temporaljson:"install_action_workflow_id,omitzero,omitempty"`
-	InstallActionWorkflow   InstallActionWorkflow `json:"install_action_workflow" temporaljson:"install_action_workflow,omitzero,omitempty"`
+	InstallActionWorkflowID string                `json:"install_action_workflow_id,omitzero" gorm:"index:idx_install_action_runs_query,priority:2" temporaljson:"install_action_workflow_id,omitzero,omitempty"`
+	InstallActionWorkflow   InstallActionWorkflow `json:"install_action_workflow,omitzero" temporaljson:"install_action_workflow,omitzero,omitempty"`
 
-	Status            InstallActionWorkflowRunStatus `json:"status" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string                         `json:"status_description" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
+	Status            InstallActionWorkflowRunStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string                         `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 
-	TriggerType ActionWorkflowTriggerType `json:"trigger_type" gorm:"notnull;default:''" temporaljson:"trigger_type,omitzero,omitempty"`
+	TriggerType ActionWorkflowTriggerType `json:"trigger_type,omitzero" gorm:"notnull;default:''" temporaljson:"trigger_type,omitzero,omitempty"`
 
-	TriggeredByID   string `json:"triggered_by_id" gorm:"type:text;check:triggered_by_id_checker,char_length(id)=26" temporaljson:"triggered_by_id,omitzero,omitempty"`
-	TriggeredByType string `json:"triggered_by_type" gorm:"type:text;" temporaljson:"triggered_by_type,omitzero,omitempty"`
+	TriggeredByID   string `json:"triggered_by_id,omitzero" gorm:"type:text;check:triggered_by_id_checker,char_length(id)=26" temporaljson:"triggered_by_id,omitzero,omitempty"`
+	TriggeredByType string `json:"triggered_by_type,omitzero" gorm:"type:text;" temporaljson:"triggered_by_type,omitzero,omitempty"`
 
-	ActionWorkflowConfigID string               `json:"action_workflow_config_id" gorm:"notnull" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
-	ActionWorkflowConfig   ActionWorkflowConfig `json:"config" temporaljson:"action_workflow_config,omitzero,omitempty"`
+	ActionWorkflowConfigID string               `json:"action_workflow_config_id,omitzero" gorm:"notnull" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
+	ActionWorkflowConfig   ActionWorkflowConfig `json:"config,omitzero" temporaljson:"action_workflow_config,omitzero,omitempty"`
 
-	Steps []InstallActionWorkflowRunStep `json:"steps" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"steps,omitzero,omitempty"`
+	Steps []InstallActionWorkflowRunStep `json:"steps,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"steps,omitzero,omitempty"`
 
-	RunEnvVars pgtype.Hstore `json:"run_env_vars" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"run_env_vars,omitzero,omitempty"`
+	RunEnvVars pgtype.Hstore `json:"run_env_vars,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"run_env_vars,omitzero,omitempty"`
 
 	InstallWorkflowID *string          `json:"install_workflow_id" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
 	InstallWorkflow   *InstallWorkflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
 
 	// after query
 
-	ExecutionTime time.Duration          `json:"execution_time" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
-	Outputs       map[string]interface{} `json:"outputs" gorm:"-" temporaljson:"outputs,omitzero,omitempty"`
+	ExecutionTime time.Duration          `json:"execution_time,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
+	Outputs       map[string]interface{} `json:"outputs,omitzero" gorm:"-" temporaljson:"outputs,omitzero,omitempty"`
 }
 
 func (i *InstallActionWorkflowRun) Views(db *gorm.DB) []migrations.View {

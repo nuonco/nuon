@@ -12,36 +12,36 @@ import (
 )
 
 type AppSecretConfig struct {
-	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
-	CreatedAt   time.Time             `json:"created_at" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt   time.Time             `json:"updated_at" temporaljson:"updated_at,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	AppID string `json:"app_id" temporaljson:"app_id,omitzero,omitempty"`
+	AppID string `json:"app_id,omitzero" temporaljson:"app_id,omitzero,omitempty"`
 	App   App    `faker:"-" json:"-" temporaljson:"app,omitzero,omitempty"`
 
-	AppConfigID string `json:"app_config_id" temporaljson:"app_config_id,omitzero,omitempty"`
+	AppConfigID string `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 
 	AppSecretsConfig   AppSecretsConfig `json:"-" faker:"-" temporaljson:"app_secrets_config,omitzero,omitempty"`
-	AppSecretsConfigID string           `json:"app_secrets_config_id" temporaljson:"app_secrets_config_id,omitzero,omitempty"`
+	AppSecretsConfigID string           `json:"app_secrets_config_id,omitzero" temporaljson:"app_secrets_config_id,omitzero,omitempty"`
 
-	Name        string `json:"name" features:"template" temporaljson:"name,omitzero,omitempty"`
-	DisplayName string `json:"display_name" features:"template" temporaljson:"display_name,omitzero,omitempty"`
-	Description string `json:"description" features:"template" temporaljson:"description,omitzero,omitempty"`
+	Name        string `json:"name,omitzero" features:"template" temporaljson:"name,omitzero,omitempty"`
+	DisplayName string `json:"display_name,omitzero" features:"template" temporaljson:"display_name,omitzero,omitempty"`
+	Description string `json:"description,omitzero" features:"template" temporaljson:"description,omitzero,omitempty"`
 
-	Required bool `json:"required" temporaljson:"required,omitzero,omitempty"`
+	Required bool `json:"required,omitzero" temporaljson:"required,omitzero,omitempty"`
 
 	// for syncing into kubernetes
-	KubernetesSecretNamespace string `json:"kubernetes_secret_namespace" features:"template" temporaljson:"kubernetes_secret_namespace,omitzero,omitempty"`
-	KubernetesSecretName      string `json:"kubernetes_secret_name" features:"template" temporaljson:"kubernetes_secret_name,omitzero,omitempty"`
+	KubernetesSecretNamespace string `json:"kubernetes_secret_namespace,omitzero" features:"template" temporaljson:"kubernetes_secret_namespace,omitzero,omitempty"`
+	KubernetesSecretName      string `json:"kubernetes_secret_name,omitzero" features:"template" temporaljson:"kubernetes_secret_name,omitzero,omitempty"`
 
-	CloudFormationStackName string `json:"cloudformation_stack_name" gorm:"-" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
-	CloudFormationParamName string `json:"cloudformation_param_name" gorm:"-" temporaljson:"cloud_formation_param_name,omitzero,omitempty"`
+	CloudFormationStackName string `json:"cloudformation_stack_name,omitzero" gorm:"-" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
+	CloudFormationParamName string `json:"cloudformation_param_name,omitzero" gorm:"-" temporaljson:"cloud_formation_param_name,omitzero,omitempty"`
 }
 
 func (a *AppSecretConfig) BeforeCreate(tx *gorm.DB) error {
