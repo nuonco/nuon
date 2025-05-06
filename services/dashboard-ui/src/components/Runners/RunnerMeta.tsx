@@ -22,7 +22,7 @@ export const RunnerMeta: FC<IRunnerMeta> = async ({
     getRunnerLatestHeartbeat({
       orgId,
       runnerId,
-    }),
+    }).catch(console.error),
   ])
 
   const runnerGroup =
@@ -32,24 +32,28 @@ export const RunnerMeta: FC<IRunnerMeta> = async ({
 
   return (
     <>
-      <span className="flex flex-col gap-x-2">
-        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-          Started at
-        </Text>
-        <Text>
-          <Time
-            time={runnerHeartbeat?.started_at}
-            format="default"
-            variant="med-12"
-          />
-        </Text>
-      </span>
-      <span className="flex flex-col gap-x-2">
-        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-          Version
-        </Text>
-        <Text variant="med-12">{runnerHeartbeat?.version}</Text>
-      </span>
+      {runnerHeartbeat ? (
+        <>
+          <span className="flex flex-col gap-x-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Started at
+            </Text>
+            <Text>
+              <Time
+                time={runnerHeartbeat?.started_at}
+                format="default"
+                variant="med-12"
+              />
+            </Text>
+          </span>
+          <span className="flex flex-col gap-x-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Version
+            </Text>
+            <Text variant="med-12">{runnerHeartbeat?.version}</Text>
+          </span>
+        </>
+      ) : null}
       <span className="flex flex-col gap-x-2">
         <Text className="text-cool-grey-600 dark:text-cool-grey-500">
           Platform
