@@ -88,6 +88,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/restart", s.RestartRunner)
 	api.POST("/v1/runners/:runner_id/offline-check", s.AdminOfflineCheck)
 	api.POST("/v1/runners/:runner_id/service-account-token", s.AdminCreateRunnerServiceAccountToken)
+	api.POST("/v1/runners/:runner_id/invalidate-service-account-token", s.AdminInvalidateRunnerServiceAccountToken)
 	api.POST("/v1/runners/:runner_id/flush-orphaned-jobs", s.AdminFlushOrphanedJobs)
 	api.GET("/v1/runners/:runner_id/service-account", s.AdminGetRunnerServiceAccount)
 	api.POST("/v1/runners/restart", s.AdminRestartRunners)
@@ -116,39 +117,42 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	api.POST("/v1/runners/:runner_id/health-checks", s.CreateRunnerHealthCheck)
-	api.POST("/v1/runners/:runner_id/heart-beats", s.CreateRunnerHeartBeat)
-	api.GET("/v1/runners/:runner_id", s.GetRunner)
-	api.GET("/v1/runners/:runner_id/jobs", s.GetRunnerJobs)
-	api.GET("/v1/runners/:runner_id/settings", s.GetRunnerSettings)
+	runners := api.Group("/v1/runners/:runner_id")
+	runners.POST("/health-checks", s.CreateRunnerHealthCheck)
+	runners.POST("/heart-beats", s.CreateRunnerHeartBeat)
+	runners.GET("", s.GetRunner)
+	runners.GET("/jobs", s.GetRunnerJobs)
+	runners.GET("/settings", s.GetRunnerSettings)
+	runners.POST("/traces", s.OtelWriteTraces)
+	runners.POST("/metrics", s.OtelWriteMetrics)
 
-	api.POST("/v1/runners/:runner_id/traces", s.OtelWriteTraces)
-	api.POST("/v1/runners/:runner_id/metrics", s.OtelWriteMetrics)
+	runnerJobs := api.Group("/v1/runner-jobs/:runner_job_id")
+	runnerJobs.GET("", s.GetRunnerJob)
+	runnerJobs.PATCH("", s.UpdateRunnerJob)
+	runnerJobs.GET("/plan", s.GetRunnerJobPlan)
 
-	api.GET("/v1/runner-jobs/:runner_job_id", s.GetRunnerJob)
-	api.PATCH("/v1/runner-jobs/:runner_job_id", s.UpdateRunnerJob)
-	api.GET("/v1/runner-jobs/:runner_job_id/plan", s.GetRunnerJobPlan)
-	api.POST("/v1/runner-jobs/:runner_job_id/executions", s.CreateRunnerJobExecution)
-	api.GET("/v1/runner-jobs/:runner_job_id/executions", s.GetRunnerJobExecutions)
-	api.GET("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id", s.GetRunnerJobExecution)
-	api.PATCH("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id", s.UpdateRunnerJobExecution)
-	api.POST("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/result", s.CreateRunnerJobExecutionResult)
-	api.POST("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/outputs", s.CreateRunnerJobExecutionOutputs)
+	executions := runnerJobs.Group("/executions")
+	executions.POST("", s.CreateRunnerJobExecution)
+	executions.GET("", s.GetRunnerJobExecutions)
+	executions.GET("/:runner_job_execution_id", s.GetRunnerJobExecution)
+	executions.PATCH("/:runner_job_execution_id", s.UpdateRunnerJobExecution)
+	executions.POST("/:runner_job_execution_id/result", s.CreateRunnerJobExecutionResult)
+	executions.POST("/:runner_job_execution_id/outputs", s.CreateRunnerJobExecutionOutputs)
 
 	// Terraform backend
-	tfBackendPath := "/v1/terraform-backend"
-	api.GET(tfBackendPath, s.GetTerraformCurrentStateData)
-	api.POST(tfBackendPath, s.UpdateTerraformState)
-	api.DELETE(tfBackendPath, s.DeleteTerraformState)
+	tfBackend := api.Group("/v1/terraform-backend")
+	tfBackend.GET("", s.GetTerraformCurrentStateData)
+	tfBackend.POST("", s.UpdateTerraformState)
+	tfBackend.DELETE("", s.DeleteTerraformState)
 
-	// terraform workpaces
-	tfWorkspacePath := "/v1/terraform-workspaces"
-	api.GET(tfWorkspacePath, s.GetTerraformWorkpaces)
-	api.GET(tfWorkspacePath+"/:workspace_id", s.GetTerraformWorkpace)
-	api.POST(tfWorkspacePath, s.CreateTerraformWorkspace)
-	api.DELETE(tfWorkspacePath+"/:workspace_id", s.DeleteTerraformWorkpace)
-	api.POST(tfWorkspacePath+"/:workspace_id/lock", s.LockTerraformWorkspace)
-	api.POST(tfWorkspacePath+"/:workspace_id/unlock", s.UnlockTerraformWorkspace)
+	// terraform workspaces
+	tfWorkspaces := api.Group("/v1/terraform-workspaces")
+	tfWorkspaces.GET("", s.GetTerraformWorkpaces)
+	tfWorkspaces.POST("", s.CreateTerraformWorkspace)
+	tfWorkspaces.GET("/:workspace_id", s.GetTerraformWorkpace)
+	tfWorkspaces.DELETE("/:workspace_id", s.DeleteTerraformWorkpace)
+	tfWorkspaces.POST("/:workspace_id/lock", s.LockTerraformWorkspace)
+	tfWorkspaces.POST("/:workspace_id/unlock", s.UnlockTerraformWorkspace)
 
 	// TODO(jm): these will be moved to the otel namespace
 	api.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)

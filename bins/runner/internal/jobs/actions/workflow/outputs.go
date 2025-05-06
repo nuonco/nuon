@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -16,13 +18,15 @@ import (
 )
 
 const (
-	kvDelimiter    string = "="
-	jsonObjStart   string = "{"
-	jsonArrayStart string = "["
+	kvDelimiter     string = "="
+	jsonObjStart    string = "{"
+	jsonArrayStart  string = "["
+	outputsFilename string = "%d.nuon-outputs.json"
 )
 
-func (h *handler) outputsFP() string {
-	return filepath.Join(h.state.workspace.Root(), outputsFilename)
+func (h *handler) outputsFP(cfg *models.AppActionWorkflowStepConfig) string {
+	fn := fmt.Sprintf(outputsFilename, cfg.Idx)
+	return filepath.Join(h.state.workspace.Root(), fn)
 }
 
 func (h *handler) parseOutputLine(ctx context.Context, str string) (map[string]interface{}, error) {
@@ -65,30 +69,39 @@ func (h *handler) parseOutputs(ctx context.Context) (map[string]interface{}, err
 		return nil, err
 	}
 
-	fh, err := os.Open(h.outputsFP())
-	if err != nil {
-		l.Error("error opening outputs file", zap.Error(err))
-		return nil, errors.Wrap(err, "unable to get outputs file")
-	}
-	defer fh.Close()
-
+	steps := make(map[string]any, 0)
 	outputs := make(map[string]interface{}, 0)
 
-	scanner := bufio.NewScanner(fh)
-	for scanner.Scan() {
-		line := scanner.Text()
-		lineOutputs, err := h.parseOutputLine(ctx, line)
+	for _, stepCfg := range h.state.workflowCfg.Steps {
+		fh, err := os.Open(h.outputsFP(stepCfg))
 		if err != nil {
-			l.Error("error parsing outputs line", zap.Error(err))
-			return nil, errors.Wrap(err, "error parsing outputs")
+			l.Error("error opening outputs file", zap.Error(err))
+			return nil, errors.Wrap(err, "unable to get outputs file")
+		}
+		defer fh.Close()
+
+		stepOutputs := make(map[string]interface{}, 0)
+
+		scanner := bufio.NewScanner(fh)
+		for scanner.Scan() {
+			line := scanner.Text()
+			lineOutputs, err := h.parseOutputLine(ctx, line)
+			if err != nil {
+				l.Error("error parsing outputs line", zap.Error(err))
+				return nil, errors.Wrap(err, "error parsing outputs")
+			}
+
+			stepOutputs = generics.MergeMap(stepOutputs, lineOutputs)
+		}
+		if err := scanner.Err(); err != nil {
+			return nil, errors.Wrap(err, "unable to scan outputs file")
 		}
 
-		outputs = generics.MergeMap(outputs, lineOutputs)
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, errors.Wrap(err, "unable to scan outputs file")
+		outputs = generics.MergeMap(outputs, stepOutputs)
+		steps[stepCfg.Name] = stepOutputs
 	}
 
+	outputs["steps"] = steps
 	return outputs, nil
 }
 

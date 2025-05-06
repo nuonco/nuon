@@ -1,5 +1,10 @@
 package plantypes
 
+import (
+	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/powertoolsdev/mono/pkg/kube"
+)
+
 type ActionWorkflowRunPlan struct {
 	ID        string `json:"id"`
 	InstallID string `json:"install_id"`
@@ -8,6 +13,10 @@ type ActionWorkflowRunPlan struct {
 
 	Steps   []*ActionWorkflowRunStepPlan `json:"steps"`
 	EnvVars map[string]string            `json:"env_vars"`
+
+	// optional fields based on the configuration
+	ClusterInfo *kube.ClusterInfo      `json:"cluster_info,block"`
+	AWSAuth     *awscredentials.Config `json:"aws_auth"`
 }
 
 type ActionWorkflowRunStepPlan struct {
