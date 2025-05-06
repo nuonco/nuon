@@ -27,6 +27,11 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, errors.Wrap(err, "unable to get run")
 	}
 
+	org, err := activities.AwaitGetOrgByInstallID(ctx, run.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install id")
+	}
+
 	// step 2 - interpolate all variables in the set
 	l.Debug("fetching install state")
 	state, err := activities.AwaitGetInstallStateByInstallID(ctx, run.InstallID)
@@ -60,7 +65,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		Steps:   make([]*plantypes.ActionWorkflowRunStepPlan, 0),
 		EnvVars: envVars,
 	}
-	if stack.InstallStackOutputs.AWSStackOutputs != nil {
+	if !org.SandboxMode && stack.InstallStackOutputs.AWSStackOutputs != nil {
 		plan.AWSAuth = &awscredentials.Config{
 			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
 			AssumeRole: &awscredentials.AssumeRoleConfig{
@@ -70,7 +75,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		}
 	}
 
-	if !generics.SliceContains(run.TriggerType, []app.ActionWorkflowTriggerType{
+	if !org.SandboxMode && !generics.SliceContains(run.TriggerType, []app.ActionWorkflowTriggerType{
 		app.ActionWorkflowTriggerTypePreSandboxRun,
 	}) {
 		clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
