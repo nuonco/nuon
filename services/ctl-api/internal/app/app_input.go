@@ -9,6 +9,16 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
+type AppInputType string
+
+const (
+	AppInputTypeString AppInputType = "string"
+	AppInputTypeNumber AppInputType = "number"
+	AppInputTypeBool   AppInputType = "bool"
+	AppInputTypeList   AppInputType = "list"
+	AppInputTypeJSON   AppInputType = "json"
+)
+
 type AppInput struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -32,6 +42,10 @@ type AppInput struct {
 	Default     string `json:"default" temporaljson:"default,omitzero,omitempty"`
 	Required    bool   `json:"required" temporaljson:"required,omitzero,omitempty"`
 	Sensitive   bool   `json:"sensitive" temporaljson:"sensitive,omitzero,omitempty"`
+
+	Index    int          `json:"index"`
+	Internal bool         `json:"internal"`
+	Type     AppInputType `json:"type" swaggertype:"string"`
 }
 
 func (a *AppInput) BeforeCreate(tx *gorm.DB) error {

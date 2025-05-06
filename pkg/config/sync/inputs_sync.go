@@ -2,8 +2,11 @@ package sync
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nuonco/nuon-go/models"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {
@@ -17,7 +20,7 @@ func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {
 	}
 
 	groups := make(map[string]models.ServiceAppGroupRequest)
-	for _, group := range s.cfg.Inputs.Groups {
+	for idx, group := range s.cfg.Inputs.Groups {
 		group := group
 		groups[group.Name] = models.ServiceAppGroupRequest{
 			Description: &group.Description,
@@ -26,19 +29,25 @@ func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {
 		newGroup := models.ServiceAppGroupRequest{}
 		newGroup.Description = &group.Description
 		newGroup.DisplayName = &group.DisplayName
+		newGroup.Index = generics.ToPtr(int64(idx))
+
 		groups[group.Name] = newGroup
 	}
 
 	inputs := make(map[string]models.ServiceAppInputRequest)
-	for _, input := range s.cfg.Inputs.Inputs {
+	for idx, input := range s.cfg.Inputs.Inputs {
 		input := input
+
 		inputs[input.Name] = models.ServiceAppInputRequest{
-			Default:     input.Default,
+			Default:     fmt.Sprintf("%s", input.Default),
 			Description: &input.Description,
 			DisplayName: &input.DisplayName,
 			Group:       &input.Group,
 			Required:    input.Required,
 			Sensitive:   input.Sensitive,
+			Internal:    input.Internal,
+			Type:        generics.ValOrDefault(input.Type, "string"),
+			Index:       generics.ToPtr(int64(idx)),
 		}
 	}
 
