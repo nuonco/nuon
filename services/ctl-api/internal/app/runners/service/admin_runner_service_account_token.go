@@ -18,7 +18,7 @@ type AdminRunnerServiceAccountTokenRequest struct {
 }
 
 type CreateTokenResponse struct {
-	Token string `json:"token"`
+	Token string `json:"token,omitzero"`
 }
 
 // @ID			AdminGetRunnerServiceAccountToken

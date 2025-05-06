@@ -85,40 +85,40 @@ func (c ComponentType) BuildJobType() RunnerJobType {
 }
 
 type Component struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26;" json:"id" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26;" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
-	CreatedAt   time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_app_component_name,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Name    string `json:"name" gorm:"notnull;index:idx_app_component_name,unique" temporaljson:"name,omitzero,omitempty"`
-	VarName string `json:"var_name" temporaljson:"var_name,omitzero,omitempty"`
+	Name    string `json:"name,omitzero" gorm:"notnull;index:idx_app_component_name,unique" temporaljson:"name,omitzero,omitempty"`
+	VarName string `json:"var_name,omitzero" temporaljson:"var_name,omitzero,omitempty"`
 
-	AppID string `json:"app_id" gorm:"notnull;index:idx_app_component_name,unique" temporaljson:"app_id,omitzero,omitempty"`
+	AppID string `json:"app_id,omitzero" gorm:"notnull;index:idx_app_component_name,unique" temporaljson:"app_id,omitzero,omitempty"`
 	App   App    `faker:"-" json:"-" temporaljson:"app,omitzero,omitempty"`
 
-	Status            ComponentStatus `json:"status" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string          `json:"status_description" temporaljson:"status_description,omitzero,omitempty"`
+	Status            ComponentStatus `json:"status,omitzero" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string          `json:"status_description,omitzero" temporaljson:"status_description,omitzero,omitempty"`
 
-	ConfigVersions    int                         `gorm:"-" json:"config_versions" temporaljson:"config_versions,omitzero,omitempty"`
+	ConfigVersions    int                         `gorm:"-" json:"config_versions,omitzero" temporaljson:"config_versions,omitzero,omitempty"`
 	ComponentConfigs  []ComponentConfigConnection `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_configs,omitzero,omitempty"`
 	InstallComponents []InstallComponent          `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"install_components,omitzero,omitempty"`
 
 	Dependencies  []*Component `gorm:"many2many:component_dependencies;constraint:OnDelete:CASCADE;" json:"-" temporaljson:"dependencies,omitzero,omitempty"`
-	DependencyIDs []string     `gorm:"-" json:"dependencies" temporaljson:"dependency_i_ds,omitzero,omitempty"`
+	DependencyIDs []string     `gorm:"-" json:"dependencies,omitzero" temporaljson:"dependency_i_ds,omitzero,omitempty"`
 
 	// after query loaded items
 
-	Links map[string]any `json:"links,omitempty" temporaljson:"-" gorm:"-"`
+	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
-	Type            ComponentType              `gorm:"-" json:"type" temporaljson:"type,omitzero,omitempty"`
+	Type            ComponentType              `gorm:"-" json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 	LatestConfig    *ComponentConfigConnection `gorm:"-" json:"-" temporaljson:"latest_config,omitzero,omitempty"`
-	ResolvedVarName string                     `json:"resolved_var_name" gorm:"-" temporaljson:"resolved_var_name,omitzero,omitempty"`
+	ResolvedVarName string                     `json:"resolved_var_name,omitzero" gorm:"-" temporaljson:"resolved_var_name,omitzero,omitempty"`
 }
 
 func (c *Component) AfterQuery(tx *gorm.DB) error {

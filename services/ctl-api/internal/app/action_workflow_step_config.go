@@ -19,32 +19,32 @@ type ActionWorkflowStepConfig struct {
 	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_action_workflow_step_config_action_workflow_config_id_name,unique" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	App   App    `json:"-" swaggerignore:"true" temporaljson:"app,omitzero,omitempty"`
-	AppID string `json:"app_id" gorm:"notnull;index:idx_app_install_name,unique" temporaljson:"app_id,omitzero,omitempty"`
+	AppID string `json:"app_id,omitzero" gorm:"notnull;index:idx_app_install_name,unique" temporaljson:"app_id,omitzero,omitempty"`
 
 	// this belongs to an app config id
-	AppConfigID string    `json:"app_config_id" temporaljson:"app_config_id,omitzero,omitempty"`
+	AppConfigID string    `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 	AppConfig   AppConfig `json:"-" temporaljson:"app_config,omitzero,omitempty"`
 
-	ActionWorkflowConfigID string               `json:"action_workflow_config_id" gorm:"index:idx_action_workflow_step_config_action_workflow_config_id_name,unique" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
+	ActionWorkflowConfigID string               `json:"action_workflow_config_id,omitzero" gorm:"index:idx_action_workflow_step_config_action_workflow_config_id_name,unique" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"-" temporaljson:"action_workflow_config,omitzero,omitempty"`
 
 	// metadata
-	Name           string `json:"name" gorm:"index:idx_action_workflow_step_config_action_workflow_config_id_name,unique" temporaljson:"name,omitzero,omitempty"`
-	PreviousStepID string `json:"previous_step_id" temporaljson:"previous_step_id,omitzero,omitempty"`
-	Idx            int    `json:"idx" temporaljson:"idx,omitzero,omitempty"`
+	Name           string `json:"name,omitzero" gorm:"index:idx_action_workflow_step_config_action_workflow_config_id_name,unique" temporaljson:"name,omitzero,omitempty"`
+	PreviousStepID string `json:"previous_step_id,omitzero" temporaljson:"previous_step_id,omitzero,omitempty"`
+	Idx            int    `json:"idx,omitzero" temporaljson:"idx,omitzero,omitempty"`
 
 	// all the details needed for a step
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty" temporaljson:"public_git_vcs_config,omitzero,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty" temporaljson:"connected_github_vcs_config,omitzero,omitempty"`
 	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-" temporaljson:"vcs_connection_type,omitzero,omitempty"`
 
-	EnvVars        pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"env_vars,omitzero,omitempty"`
-	Command        string        `json:"command" temporaljson:"command,omitzero,omitempty"`
-	InlineContents string        `json:"inline_contents" temporaljson:"inline_contents,omitzero,omitempty"`
+	EnvVars        pgtype.Hstore `json:"env_vars,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"env_vars,omitzero,omitempty"`
+	Command        string        `json:"command,omitzero" temporaljson:"command,omitzero,omitempty"`
+	InlineContents string        `json:"inline_contents,omitzero" temporaljson:"inline_contents,omitzero,omitempty"`
 }
 
 func (a *ActionWorkflowStepConfig) BeforeCreate(tx *gorm.DB) error {

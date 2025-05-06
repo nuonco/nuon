@@ -10,21 +10,21 @@ import (
 )
 
 type NotificationsConfig struct {
-	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID string                `json:"created_by_id" gorm:"notnull" temporaljson:"created_by_id,omitzero,omitempty"`
+	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id,omitzero" gorm:"notnull" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
-	CreatedAt   time.Time             `json:"created_at" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt   time.Time             `json:"updated_at" temporaljson:"updated_at,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id" gorm:"notnull;defaultnull" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" gorm:"notnull;defaultnull" temporaljson:"org_id,omitzero,omitempty"`
 
-	OwnerID   string `json:"owner_id" gorm:"notnull;defaultnull;" temporaljson:"owner_id,omitzero,omitempty"`
-	OwnerType string `json:"owner_type" gorm:"notnull;defaultnull;" temporaljson:"owner_type,omitzero,omitempty"`
+	OwnerID   string `json:"owner_id,omitzero" gorm:"notnull;defaultnull;" temporaljson:"owner_id,omitzero,omitempty"`
+	OwnerType string `json:"owner_type,omitzero" gorm:"notnull;defaultnull;" temporaljson:"owner_type,omitzero,omitempty"`
 
 	// slack settings
 	EnableSlackNotifications bool   `json:"-" temporaljson:"enable_slack_notifications,omitzero,omitempty"`
-	SlackWebhookURL          string `json:"slack_webhook_url" temporaljson:"slack_webhook_url,omitzero,omitempty"`
+	SlackWebhookURL          string `json:"slack_webhook_url,omitzero" temporaljson:"slack_webhook_url,omitzero,omitempty"`
 	InternalSlackWebhookURL  string `json:"-" temporaljson:"internal_slack_webhook_url,omitzero,omitempty"`
 
 	// email settings
