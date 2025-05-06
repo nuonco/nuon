@@ -17,7 +17,7 @@ import (
 )
 
 func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *plantypes.GitSource, envVars map[string]string) error {
-	builtInEnv, err := h.getBuiltInEnv(ctx)
+	builtInEnv, err := h.getBuiltInEnv(ctx, cfg)
 	if err != nil {
 		return errors.Wrap(err, "unable to get execution env")
 	}
@@ -70,10 +70,12 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 		command.WithStderr(lErr),
 	)
 	if err != nil {
-		return fmt.Errorf("unable to build command: %w", err)
+		l.Error("error creating command", zap.Error(err))
+		return fmt.Errorf("unable to create command: %w", err)
 	}
 
 	if err := cmdP.Exec(ctx); err != nil {
+		l.Error("error executing command "+err.Error(), zap.Error(err))
 		return fmt.Errorf("unable to execute command: %w", err)
 	}
 

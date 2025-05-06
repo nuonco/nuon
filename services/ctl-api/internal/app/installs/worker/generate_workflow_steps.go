@@ -86,7 +86,7 @@ func (w *Workflows) getSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) 
 func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
 	steps := make([]*app.InstallWorkflowStep, 0)
 
-	step, err := w.installSignalStep(ctx, wkflow.InstallID, "provision runner", &signals.Signal{
+	step, err := w.installSignalStep(ctx, wkflow.InstallID, "provision runner service account", &signals.Signal{
 		Type: signals.OperationProvisionRunner,
 	})
 	if err != nil {
@@ -166,7 +166,7 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkflow *app.InstallWorkflow) ([]*app.InstallWorkflowStep, error) {
 	steps := make([]*app.InstallWorkflowStep, 0)
 
-	step, err := w.installSignalStep(ctx, wkflow.InstallID, "reprovision runner", &signals.Signal{
+	step, err := w.installSignalStep(ctx, wkflow.InstallID, "reprovision runner service account", &signals.Signal{
 		Type: signals.OperationReprovisionRunner,
 	})
 	if err != nil {
