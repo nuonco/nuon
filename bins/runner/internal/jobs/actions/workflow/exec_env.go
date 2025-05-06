@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -11,9 +12,11 @@ import (
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 )
 
-func (h *handler) createExecEnv(ctx context.Context, l *zap.Logger, src *plantypes.GitSource) error {
+func (h *handler) createExecEnv(ctx context.Context, l *zap.Logger, src *plantypes.GitSource, cfg *models.AppActionWorkflowStepConfig) error {
+	fp := h.outputsFP(cfg)
+
 	// create file for outputs
-	f, err := os.OpenFile(h.outputsFP(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := os.OpenFile(fp, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return errors.Wrap(err, "unable to open file")
 	}
@@ -35,6 +38,7 @@ func (h *handler) createExecEnv(ctx context.Context, l *zap.Logger, src *plantyp
 
 	dirPath := h.state.workspace.AbsPath(dirName)
 	if err := git.Clone(ctx, dirPath, src, l); err != nil {
+		l.Error("unable to clone repo", zap.Error(err))
 		return errors.Wrap(err, "unable to clone repository")
 	}
 

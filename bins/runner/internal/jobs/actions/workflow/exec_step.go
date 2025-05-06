@@ -41,7 +41,7 @@ func (h *handler) executeWorkflowStep(ctx, execCtx context.Context, step *models
 		return errors.Wrap(err, "unable to update status")
 	}
 
-	if err := h.createExecEnv(execCtx, l, stepPlan.GitSource); err != nil {
+	if err := h.createExecEnv(execCtx, l, stepPlan.GitSource, cfg); err != nil {
 		h.updateStepStatus(ctx, step.ID, startTS, models.AppInstallActionWorkflowRunStepStatusError)
 		return errors.Wrap(err, "unable to create exec env")
 	}
