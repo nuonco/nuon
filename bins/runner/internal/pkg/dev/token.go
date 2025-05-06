@@ -17,7 +17,7 @@ func (d *devver) initToken(ctx context.Context) error {
 
 	fmt.Println("no runner api token found in environment, looking up a token from the api")
 	fn := func(ctx context.Context) error {
-		token, err := d.apiClient.GetRunnerServiceAccountToken(ctx, d.runnerID, time.Hour)
+		token, err := d.apiClient.GetRunnerServiceAccountToken(ctx, d.runnerID, time.Hour, false)
 		if err != nil {
 			return fmt.Errorf("unable to get service account token: %w", err)
 		}
@@ -26,8 +26,12 @@ func (d *devver) initToken(ctx context.Context) error {
 
 		return nil
 	}
-
-	if err := retry.Retry(ctx, fn, retry.WithMaxAttempts(5), retry.WithSleep(time.Second*5)); err != nil {
+	if err := retry.Retry(
+		ctx,
+		fn,
+		retry.WithMaxAttempts(5),
+		retry.WithSleep(time.Second*5),
+	); err != nil {
 		return err
 	}
 
