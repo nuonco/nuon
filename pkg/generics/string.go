@@ -53,3 +53,13 @@ func StringOneOf(val string, vals ...string) bool {
 
 	return false
 }
+
+func ValOrDefault[T comparable](val, deflt T) T {
+	var empty T
+
+	if val == empty {
+		return deflt
+	}
+
+	return val
+}

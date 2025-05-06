@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
@@ -21,11 +22,17 @@ type AppInputRequest struct {
 	Required    bool   `json:"required"`
 	Sensitive   bool   `json:"sensitive"`
 	Group       string `json:"group" validate:"required"`
+	Index       int    `json:"index" validate:"required"`
+
+	// New, optional fields
+	Internal bool   `json:"internal"`
+	Type     string `json:"type"`
 }
 
 type AppGroupRequest struct {
 	DisplayName string `json:"display_name" validate:"required"`
 	Description string `json:"description" validate:"required"`
+	Index       int    `json:"index" validate:"required"`
 }
 
 type CreateAppInputConfigRequest struct {
@@ -51,6 +58,19 @@ func (c *CreateAppInputConfigRequest) Validate(v *validator.Validate) error {
 			return stderr.ErrUser{
 				Err:         fmt.Errorf("invalid group %s", input.Group),
 				Description: fmt.Sprintf("Please use a valid group, or add %s as a group", input.Group),
+			}
+		}
+
+		if !generics.SliceContains(app.AppInputType(input.Type), []app.AppInputType{
+			app.AppInputTypeBool,
+			app.AppInputTypeJSON,
+			app.AppInputTypeList,
+			app.AppInputTypeNumber,
+			app.AppInputTypeString,
+		}) {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("invalid input type %s", input.Type),
+				Description: fmt.Sprintf("Please use a valid input type"),
 			}
 		}
 	}
@@ -116,6 +136,7 @@ func (s *service) createAppInputGroups(ctx context.Context, orgID, appID string,
 			Name:        name,
 			Description: grp.Description,
 			DisplayName: grp.DisplayName,
+			Index:       grp.Index,
 		})
 	}
 
@@ -160,6 +181,9 @@ func (s *service) createAppInputs(ctx context.Context, cfg *app.AppInputConfig, 
 			Required:         input.Required,
 			Default:          input.Default,
 			Sensitive:        input.Sensitive,
+			Type:             app.AppInputType(input.Type),
+			Internal:         input.Internal,
+			Index:            input.Index,
 		})
 	}
 
