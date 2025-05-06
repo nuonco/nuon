@@ -55,7 +55,7 @@ type Client interface {
 	RestartRunner(ctx context.Context, runnerID string) error
 	GetRunnerGroup(ctx context.Context, id string) (*RunnerGroup, error)
 	GetRunnerServiceAccount(ctx context.Context, runnerID string) (*RunnerServiceAccount, error)
-	GetRunnerServiceAccountToken(ctx context.Context, runnerID string, dur time.Duration) (string, error)
+	GetRunnerServiceAccountToken(ctx context.Context, runnerID string, dur time.Duration, invalidate bool) (string, error)
 }
 
 var _ Client = (*client)(nil)

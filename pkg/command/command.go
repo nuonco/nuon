@@ -17,8 +17,8 @@ type command struct {
 	LineColor      *color.Color
 	FileOutputPath string
 
-	Cmd  string            `validate:"required"`
-	Args []string          `validate:"required"`
+	Cmd  string `validate:"required"`
+	Args []string
 	Env  map[string]string `validate:"required"`
 
 	// non-optional arguments

@@ -2,6 +2,7 @@ package worker
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -96,6 +97,7 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	l.Info("creating plan for executing action run")
 	runPlan, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
 		ActionWorkflowRunID: actionWorkflowRunID,
+		WorkflowID:      fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")

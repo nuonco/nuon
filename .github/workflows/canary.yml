@@ -1,6 +1,6 @@
 ---
 name: canary
-// disabling canary workflow as we need to rework our canary strategy
+# disabling canary workflow as we need to rework our canary strategy
 on: []
 # on:
 #   push:
