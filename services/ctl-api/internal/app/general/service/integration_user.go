@@ -19,20 +19,20 @@ const (
 type CreateIntegrationUserRequest struct{}
 
 type CreateIntegrationUserResponse struct {
-	APIToken        string `json:"api_token"`
-	GithubInstallID string `json:"github_install_id"`
-	Email           string `json:"email"`
+	APIToken        string `json:"api_token,omitzero"`
+	GithubInstallID string `json:"github_install_id,omitzero"`
+	Email           string `json:"email,omitzero"`
 }
 
-//	@ID						CreateIntegrationUser
-//	@Summary				create a temp user for running integration test
-//	@Description.markdown	create_integration_user.md
-//	@Param					req	body	CreateIntegrationUserRequest	true	"Input"
-//	@Tags					general/admin
-//	@Accept					json
-//	@Produce				json
-//	@Success				201	{object}	CreateIntegrationUserResponse
-//	@Router					/v1/general/integration-user [post]
+// @ID						CreateIntegrationUser
+// @Summary				create a temp user for running integration test
+// @Description.markdown	create_integration_user.md
+// @Param					req	body	CreateIntegrationUserRequest	true	"Input"
+// @Tags					general/admin
+// @Accept					json
+// @Produce				json
+// @Success				201	{object}	CreateIntegrationUserResponse
+// @Router					/v1/general/integration-user [post]
 func (s *service) CreateIntegrationUser(ctx *gin.Context) {
 	token, email, err := s.createIntegrationUser(ctx)
 	if err != nil {

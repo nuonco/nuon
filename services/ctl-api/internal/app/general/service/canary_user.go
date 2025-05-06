@@ -24,20 +24,20 @@ type CreateCanaryUserRequest struct {
 }
 
 type CreateCanaryUserResponse struct {
-	APIToken        string `json:"api_token"`
-	GithubInstallID string `json:"github_install_id"`
-	Email           string `json:"email"`
+	APIToken        string `json:"api_token,omitzero"`
+	GithubInstallID string `json:"github_install_id,omitzero"`
+	Email           string `json:"email,omitzero"`
 }
 
-//	@ID						CreateCanaryUser
-//	@Summary				create a temp user for running a canary
-//	@Description.markdown	create_canary_user.md
-//	@Param					req	body	CreateCanaryUserRequest	true	"Input"
-//	@Tags					general/admin
-//	@Accept					json
-//	@Produce				json
-//	@Success				201	{object}	CreateCanaryUserResponse
-//	@Router					/v1/general/canary-user [post]
+// @ID						CreateCanaryUser
+// @Summary				create a temp user for running a canary
+// @Description.markdown	create_canary_user.md
+// @Param					req	body	CreateCanaryUserRequest	true	"Input"
+// @Tags					general/admin
+// @Accept					json
+// @Produce				json
+// @Success				201	{object}	CreateCanaryUserResponse
+// @Router					/v1/general/canary-user [post]
 func (s *service) CreateCanaryUser(ctx *gin.Context) {
 	var req CreateCanaryUserRequest
 	if err := ctx.BindJSON(&req); err != nil {

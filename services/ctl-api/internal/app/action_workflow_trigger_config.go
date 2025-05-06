@@ -46,25 +46,25 @@ type ActionWorkflowTriggerConfig struct {
 	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	App   App    `json:"-" swaggerignore:"true" temporaljson:"app,omitzero,omitempty"`
-	AppID string `json:"app_id" gorm:"notnull;index:idx_app_install_name,unique" temporaljson:"app_id,omitzero,omitempty"`
+	AppID string `json:"app_id,omitzero" gorm:"notnull;index:idx_app_install_name,unique" temporaljson:"app_id,omitzero,omitempty"`
 
 	// this belongs to an app config id
-	AppConfigID string    `json:"app_config_id" temporaljson:"app_config_id,omitzero,omitempty"`
+	AppConfigID string    `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 	AppConfig   AppConfig `json:"-" temporaljson:"app_config,omitzero,omitempty"`
 
-	ActionWorkflowConfigID string               `json:"action_workflow_config_id" gorm:"index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
+	ActionWorkflowConfigID string               `json:"action_workflow_config_id,omitzero" gorm:"index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"-" temporaljson:"action_workflow_config,omitzero,omitempty"`
 
-	Type ActionWorkflowTriggerType `json:"type" swaggertype:"string" gorm:"default null;not null;index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique" temporaljson:"type,omitzero,omitempty"`
+	Type ActionWorkflowTriggerType `json:"type,omitzero" swaggertype:"string" gorm:"default null;not null;index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique" temporaljson:"type,omitzero,omitempty"`
 
 	// individual fields for different types
 
-	CronSchedule string              `json:"cron_schedule,omitempty" temporaljson:"cron_schedule,omitzero,omitempty"`
-	ComponentID  generics.NullString `json:"component_id" swaggertype:"string" temporaljson:"component_id,omitzero,omitempty"`
+	CronSchedule string              `json:"cron_schedule,omitzero,omitempty" temporaljson:"cron_schedule,omitzero,omitempty"`
+	ComponentID  generics.NullString `json:"component_id,omitzero" swaggertype:"string" temporaljson:"component_id,omitzero,omitempty"`
 }
 
 func (a *ActionWorkflowTriggerConfig) BeforeCreate(tx *gorm.DB) error {

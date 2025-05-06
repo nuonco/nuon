@@ -12,20 +12,20 @@ import (
 )
 
 type InstallStackVersionRun struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
-	CreatedAt   time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	InstallStackVersionID string              `json:"install_stack_version_id" gorm:"notnull" swaggerignore:"true" temporaljson:"install_stack_version_id,omitzero,omitempty"`
+	InstallStackVersionID string              `json:"install_stack_version_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"install_stack_version_id,omitzero,omitempty"`
 	InstallStackVersion   InstallStackVersion `json:"-" temporaljson:"install_stack_version,omitzero,omitempty"`
 
-	Data pgtype.Hstore `json:"data" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"data,omitzero,omitempty"`
+	Data pgtype.Hstore `json:"data,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"data,omitzero,omitempty"`
 }
 
 func (i *InstallStackVersionRun) BeforeCreate(tx *gorm.DB) error {

@@ -177,60 +177,60 @@ const (
 )
 
 type RunnerJob struct {
-	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string  `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 
-	CreatedAt time.Time             `json:"created_at" gorm:"notnull;index:idx_runner_jobs_query,priority:4,sort:desc;index:idx_runner_jobs_owner_id,priority:2,sort:desc" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	CreatedAt time.Time             `json:"created_at,omitzero" gorm:"notnull;index:idx_runner_jobs_query,priority:4,sort:desc;index:idx_runner_jobs_owner_id,priority:2,sort:desc" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_name,unique;" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	RunnerID    string  `json:"runner_id" gorm:"index:idx_runner_name,unique;index:idx_runner_jobs_query,priority:1" temporaljson:"runner_id,omitzero,omitempty"`
-	OwnerID     string  `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
-	OwnerType   string  `json:"owner_type" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
-	LogStreamID *string `json:"log_stream_id" temporaljson:"log_stream_id,omitzero,omitempty"`
+	RunnerID    string  `json:"runner_id,omitzero" gorm:"index:idx_runner_name,unique;index:idx_runner_jobs_query,priority:1" temporaljson:"runner_id,omitzero,omitempty"`
+	OwnerID     string  `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
+	OwnerType   string  `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
+	LogStreamID *string `json:"log_stream_id,omitzero" temporaljson:"log_stream_id,omitzero,omitempty"`
 
 	// queue timeout is how long a job can be queued, before being made available
-	QueueTimeout time.Duration `json:"queue_timeout" gorm:"default null;not null" swaggertype:"primitive,integer" temporaljson:"queue_timeout,omitzero,omitempty"`
+	QueueTimeout time.Duration `json:"queue_timeout,omitzero" gorm:"default null;not null" swaggertype:"primitive,integer" temporaljson:"queue_timeout,omitzero,omitempty"`
 	// available timeout is how long a job can be marked as "available" before being requeued
-	AvailableTimeout time.Duration `json:"available_timeout" gorm:"default null;not null" swaggertype:"primitive,integer" temporaljson:"available_timeout,omitzero,omitempty"`
+	AvailableTimeout time.Duration `json:"available_timeout,omitzero" gorm:"default null;not null" swaggertype:"primitive,integer" temporaljson:"available_timeout,omitzero,omitempty"`
 	// execution timeout is how long a job can be marked as "exeucuting" before being requeued
-	ExecutionTimeout time.Duration `json:"execution_timeout" gorm:"default null;not null" swaggertype:"primitive,integer" temporaljson:"execution_timeout,omitzero,omitempty"`
+	ExecutionTimeout time.Duration `json:"execution_timeout,omitzero" gorm:"default null;not null" swaggertype:"primitive,integer" temporaljson:"execution_timeout,omitzero,omitempty"`
 
 	// overall timeout is how long a job can be attempted, before being cancelled
-	OverallTimeout time.Duration `json:"overall_timeout" gorm:"default null;not null" swaggertype:"primitive,integer" temporaljson:"overall_timeout,omitzero,omitempty"`
+	OverallTimeout time.Duration `json:"overall_timeout,omitzero" gorm:"default null;not null" swaggertype:"primitive,integer" temporaljson:"overall_timeout,omitzero,omitempty"`
 
-	MaxExecutions int `json:"max_executions" gorm:"not null;default null" temporaljson:"max_executions,omitzero,omitempty"`
+	MaxExecutions int `json:"max_executions,omitzero" gorm:"not null;default null" temporaljson:"max_executions,omitzero,omitempty"`
 
-	Status            RunnerJobStatus `json:"status" gorm:"not null;default null;index:idx_runner_jobs_query,priority:3" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string          `json:"status_description" gorm:"not null;default null" temporaljson:"status_description,omitzero,omitempty"`
+	Status            RunnerJobStatus `json:"status,omitzero" gorm:"not null;default null;index:idx_runner_jobs_query,priority:3" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string          `json:"status_description,omitzero" gorm:"not null;default null" temporaljson:"status_description,omitzero,omitempty"`
 
-	Type      RunnerJobType          `json:"type" gorm:"default null;not null" temporaljson:"type,omitzero,omitempty"`
-	Group     RunnerJobGroup         `json:"group" gorm:"default:null;not null;index:idx_runner_jobs_query,priority:2" temporaljson:"group,omitzero,omitempty"`
-	Operation RunnerJobOperationType `json:"operation" gorm:"default:null;not null" temporaljson:"operation,omitzero,omitempty"`
+	Type      RunnerJobType          `json:"type,omitzero" gorm:"default null;not null" temporaljson:"type,omitzero,omitempty"`
+	Group     RunnerJobGroup         `json:"group,omitzero" gorm:"default:null;not null;index:idx_runner_jobs_query,priority:2" temporaljson:"group,omitzero,omitempty"`
+	Operation RunnerJobOperationType `json:"operation,omitzero" gorm:"default:null;not null" temporaljson:"operation,omitzero,omitempty"`
 
-	Executions []RunnerJobExecution `json:"executions" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"executions,omitzero,omitempty"`
+	Executions []RunnerJobExecution `json:"executions,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"executions,omitzero,omitempty"`
 	Plan       RunnerJobPlan        `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"plan,omitzero,omitempty"`
 
-	StartedAt  time.Time `json:"started_at" gorm:"default:null" temporaljson:"started_at,omitzero,omitempty"`
-	FinishedAt time.Time `json:"finished_at" gorm:"default:null" temporaljson:"finished_at,omitzero,omitempty"`
+	StartedAt  time.Time `json:"started_at,omitzero" gorm:"default:null" temporaljson:"started_at,omitzero,omitempty"`
+	FinishedAt time.Time `json:"finished_at,omitzero" gorm:"default:null" temporaljson:"finished_at,omitzero,omitempty"`
 
-	Metadata pgtype.Hstore `json:"metadata" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
+	Metadata pgtype.Hstore `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
 
 	// read only fields from view
 
-	ExecutionCount            int    `json:"execution_count" gorm:"->;-:migration" temporaljson:"execution_count,omitzero,omitempty"`
-	FinalRunnerJobExecutionID string `json:"final_runner_job_execution_id" gorm:"->;-:migration" temporaljson:"final_runner_job_execution_id,omitzero,omitempty"`
-	Outputs                   []byte `json:"outputs_json" gorm:"->;-:migration;type:jsonb" swaggertype:"primitive,string" temporaljson:"outputs,omitzero,omitempty"`
+	ExecutionCount            int    `json:"execution_count,omitzero" gorm:"->;-:migration" temporaljson:"execution_count,omitzero,omitempty"`
+	FinalRunnerJobExecutionID string `json:"final_runner_job_execution_id,omitzero" gorm:"->;-:migration" temporaljson:"final_runner_job_execution_id,omitzero,omitempty"`
+	Outputs                   []byte `json:"outputs_json,omitzero" gorm:"->;-:migration;type:jsonb" swaggertype:"primitive,string" temporaljson:"outputs,omitzero,omitempty"`
 
 	// read only fields from gorm AfterQuery
 
-	ExecutionTime time.Duration          `json:"execution_time" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
+	ExecutionTime time.Duration          `json:"execution_time,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
 	Execution     *RunnerJobExecution    `json:"-" gorm:"-" temporaljson:"execution,omitzero,omitempty"`
-	ParsedOutputs map[string]interface{} `json:"outputs" gorm:"-" temporaljson:"parsed_outputs,omitzero,omitempty"`
+	ParsedOutputs map[string]interface{} `json:"outputs,omitzero" gorm:"-" temporaljson:"parsed_outputs,omitzero,omitempty"`
 }
 
 func (*RunnerJob) UseView() bool {
