@@ -38,8 +38,12 @@ func PreloadAppConfigPolicyConfig(db *gorm.DB) *gorm.DB {
 // input config
 func PreloadAppConfigInputConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("InputConfig").
-		Preload("InputConfig.AppInputGroups").
-		Preload("InputConfig.AppInputs")
+		Preload("InputConfig.AppInputGroups", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_input_groups.index ASC")
+		}).
+		Preload("InputConfig.AppInputs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_inputs.index ASC")
+		})
 }
 
 // sandbox config
