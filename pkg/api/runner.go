@@ -10,17 +10,19 @@ import (
 )
 
 type RunnerServiceAccountTokenRequest struct {
-	Duration string `json:"duration"`
+	Duration   string `json:"duration"`
+	Invalidate bool   `json:"invalidate"`
 }
 
 type RunnerServiceAccountTokenResponse struct {
 	Token string `json:"token"`
 }
 
-func (c *client) GetRunnerServiceAccountToken(ctx context.Context, runnerID string, dur time.Duration) (string, error) {
+func (c *client) GetRunnerServiceAccountToken(ctx context.Context, runnerID string, dur time.Duration, invalidate bool) (string, error) {
 	endpoint := fmt.Sprintf("/v1/runners/%s/service-account-token", runnerID)
 	byts, err := c.execPostRequest(ctx, endpoint, RunnerServiceAccountTokenRequest{
-		Duration: dur.String(),
+		Duration:   dur.String(),
+		Invalidate: invalidate,
 	})
 	if err != nil {
 		return "", fmt.Errorf("unable to execute post request: %w", err)
