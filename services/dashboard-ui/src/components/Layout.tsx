@@ -130,14 +130,13 @@ export const Layout: FC<{
               hasCustomPadding
               variant="ghost"
               onClick={() => {
-                localStorage.setItem('isOpen', Boolean(!isOpen).toString())
-
                 if (!isManualOpen && isOpen) {
                   setIsOpen(true)
                 } else {
                   setIsOpen(!isOpen)
                 }
                 setIsManualOpen(!isManualOpen)
+                localStorage.setItem('isOpen', isManualOpen ? 'false' : 'true')
               }}
             >
               {isOpen && isManualOpen ? (

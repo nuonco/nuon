@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { Check, Trash } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
+import { Input } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
@@ -22,6 +23,7 @@ interface IForgetModal {
 export const ForgetModal: FC<IForgetModal> = ({ install, orgId }) => {
   const { user } = useUser()
   const router = useRouter()
+  const [confirm, setConfirm] = useState<string>()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
@@ -44,27 +46,70 @@ export const ForgetModal: FC<IForgetModal> = ({ install, orgId }) => {
       {isOpen
         ? createPortal(
             <Modal
-              className="max-w-lg"
+              className="!max-w-xl"
               isOpen={isOpen}
               heading={
                 <span className="flex items-center gap-3">
-                  Forget {install.name}?
+                  Forget {install.name}
                 </span>
               }
               onClose={() => {
                 setIsOpen(false)
               }}
             >
-              <div className="flex flex-col gap-4 mb-6">
+              <div className="flex flex-col gap-8 mb-12">
                 {error ? <Notice>{error}</Notice> : null}
                 <Notice>
                   This should only be used in cases where an install was broken
                   in an unordinary way and needs to be manually removed.
                 </Notice>
-                <Text variant="reg-14" className="leading-relaxed">
-                  Are you sure you want to forget {install?.name}? <br /> This
-                  action will remove the install and can not be undone.
-                </Text>
+                <span className="flex flex-col gap-1">
+                  <Text variant="med-18" className="leading-relaxed">
+                    Are you sure you want to forget {install?.name}?
+                  </Text>
+                  <Text
+                    className="text-cool-grey-600 dark:text-white/70"
+                    variant="reg-12"
+                  >
+                    This action will remove the install and can not be undone.
+                  </Text>
+                </span>
+
+                <div className="flex flex-col gap-2">
+                  <Text variant="reg-14">
+                    You should only do this after you have:
+                  </Text>
+
+                  <ul className="flex flex-col gap-1 list-disc pl-4">
+                    <li className="text-sm">
+                      Successfully deprovisioned the install
+                    </li>
+                    <li className="text-sm">
+                      Deprovisioned the CloudFormation stack for this install
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="w-full">
+                  <label className="flex flex-col gap-1 w-full">
+                    <Text variant="med-14">
+                      To verify, type{' '}
+                      <span className="text-red-800 dark:text-red-500">
+                        forget
+                      </span>{' '}
+                      below.
+                    </Text>
+                    <Input
+                      placeholder="forget"
+                      className="w-full"
+                      type="text"
+                      value={confirm}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setConfirm(e?.currentTarget?.value)
+                      }}
+                    />
+                  </label>
+                </div>
               </div>
               <div className="flex gap-3 justify-end">
                 <Button
@@ -76,6 +121,7 @@ export const ForgetModal: FC<IForgetModal> = ({ install, orgId }) => {
                   Cancel
                 </Button>
                 <Button
+                  disabled={confirm !== 'forget'}
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
                     setIsLoading(true)

@@ -4,6 +4,8 @@ import React, { type FC } from 'react'
 import { SlidersHorizontal } from '@phosphor-icons/react/dist/ssr'
 import { BreakGlassLink } from './BreakGlassLink'
 import { DeleteInstallModal } from './DeleteModal'
+import { DeprovisionStackModal } from './DeprovisionStackModal'
+import { DeprovisionSandboxModal } from './DeprovisionSandboxModal'
 import { EditModal } from './EditModal'
 import { ForgetModal } from './ForgetModal'
 import { ReprovisionModal } from './ReprovisionModal'
@@ -54,7 +56,8 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
           Controls
         </Text>
         <ReprovisionModal installId={install.id} orgId={orgId} />
-        <ReprovisionSandboxModal installId={install.id} orgId={orgId} />
+        <DeleteInstallModal install={install} />
+        <DeprovisionStackModal install={install} orgId={orgId} />
 
         <>
           <hr className="my-2" />
@@ -64,7 +67,6 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
 
           {org?.features?.['install-delete'] ? (
             <>
-              <DeleteInstallModal install={install} />
               <ForgetModal install={install} orgId={orgId} />
             </>
           ) : null}

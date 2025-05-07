@@ -13,6 +13,20 @@ export const initialsFromString = (s = '') => {
 export const removeSnakeCase = (str?: string) =>
   str ? str?.replace(/_/g, ' ') : 'unknown'
 
+export const sizeToMbOrGB = (bytes: number): string => {
+  const KB = 1024
+  const MB = 1024 ** 2 // 1 MB = 1024 * 1024 bytes
+  const GB = 1024 ** 3 // 1 GB = 1024 * 1024 * 1024 bytes
+
+  return bytes >= GB
+    ? `${(bytes / GB).toFixed(2)} GB`
+    : bytes >= MB
+      ? `${(bytes / MB).toFixed(2)} MB`
+      : bytes >= KB
+        ? `${(bytes / KB).toFixed(2)} KB`
+        : `${bytes} Bytes`
+}
+
 export function getFlagEmoji(countryCode = 'us') {
   const codePoints = countryCode
     .toUpperCase()

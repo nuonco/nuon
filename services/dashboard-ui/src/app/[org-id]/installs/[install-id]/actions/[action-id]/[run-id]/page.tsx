@@ -11,6 +11,7 @@ import {
   DashboardContent,
   Duration,
   EventStatus,
+  InstallWorkflowCancelModal,
   Link,
   LogStreamProvider,
   Section,
@@ -22,6 +23,7 @@ import {
   getInstall,
   getAppActionWorkflow,
   getInstallActionWorkflowRun,
+  getInstallWorkflow,
 } from '@/lib'
 import type { TInstallActionWorkflowRun, TActionConfig } from '@/types'
 import {
@@ -71,6 +73,11 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
     getInstallActionWorkflowRun({ installId, orgId, actionWorkflowRunId }),
   ])
 
+  const installWorkflow = await getInstallWorkflow({
+    orgId,
+    installWorkflowId: workflowRun?.install_workflow_id,
+  }).catch(console.error)
+
   return (
     <DashboardContent
       breadcrumb={[
@@ -90,14 +97,16 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       ]}
       heading={`${actionWorkflow?.name} execution`}
       headingUnderline={actionWorkflowId}
-      headingMeta={workflowRun?.install_workflow_id ? (
+      headingMeta={
+        workflowRun?.install_workflow_id ? (
           <Link
             href={`/${orgId}/installs/${installId}/history/${workflowRun?.install_workflow_id}?target=${actionWorkflowRunId}`}
           >
             <CaretLeft />
             View workflow
           </Link>
-        ) : null}
+        ) : null
+      }
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
           <Text>
@@ -146,12 +155,10 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
           {CANCEL_RUNNER_JOBS &&
           workflowRun?.runner_job?.id &&
           (workflowRun?.status === 'queued' ||
-            workflowRun?.status === 'in-progress') ? (
-            <CancelRunnerJobButton
-              jobType="sandbox-run"
-              runnerJobId={workflowRun?.runner_job?.id}
-              orgId={orgId}
-            />
+            workflowRun?.status === 'in-progress') &&
+          installWorkflow &&
+          !installWorkflow?.finished ? (
+            <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
           ) : null}
         </div>
       }
