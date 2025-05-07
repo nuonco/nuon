@@ -4,3 +4,42 @@ description: Improvements to deletions, cancellations and more.
 ---
 _May 8th, 2025 v0.19.541_
 
+## Component Dependencies Sub-Ordering
+
+When multiple components have either the same dependencies, or no dependencies they will automatically be ordered by 
+component type.
+
+They will use this ordering:
+
+1. `container_image`
+1. `docker_build`
+1. `terraform_module`
+1. `helm_deploy`
+
+![Component Dependencies Sub-Ordering](assets/2025-05-07-15-48-54.png)
+
+If two components have the same dependencies _and_ the same type, they will be ordered by name. For instance, in the 
+  following deploy, only the helm deploy has any defined dependencies:
+
+## Delete an Install
+
+Deleting an install requires tearing down it's deployed components, destroying the sandbox, and destroying the 
+CloudFormation Stack via AWS.
+
+You can now delete an install from the install overview page in the UI:
+
+
+If the install is successfully torn-down, you can then remove the install-stack and forget the install:
+
+
+## Delete an Install Component
+
+Sometimes an install will fail to destroy because a single component has leaked state. You can manually tear down component
+on the install component page.
+
+## Deprovision a Sandbox
+
+In rare cases, it can be helpful to forgo tearing down install components and deprovision only the sandbox. You can do 
+this using the UI:
+
+
