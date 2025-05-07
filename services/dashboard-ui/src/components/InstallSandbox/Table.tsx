@@ -1,8 +1,6 @@
 'use client'
 
 import React, { type FC } from 'react'
-import { Link } from '@/components/Link'
-import { CaretRight } from '@phosphor-icons/react'
 
 export interface IDataTable {
   headers: Array<string>
@@ -30,16 +28,7 @@ export const DataTable: FC<IDataTable> = ({ headers, initData }) => {
             <tr key={`row-${i}`}>
               {row.map((td, i) => (
                 <td className="py-2 max-w-24 overflow-hidden" key={`cell-${i}`}>
-                  {i + 1 !== row.length ? (
-                    <>{td}</>
-                  ) : (
-                    <Link
-                      className="text-gray-950 dark:text-gray-50"
-                      href={td as string}
-                    >
-                      <CaretRight />
-                    </Link>
-                  )}
+                  <>{td}</>
                 </td>
               ))}
             </tr>
