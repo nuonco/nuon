@@ -8,6 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
@@ -21,6 +23,8 @@ type CreateDockerBuildComponentConfigRequest struct {
 	BuildArgs   []string           `json:"build_args"`
 	EnvVars     map[string]*string `json:"env_vars"`
 	AppConfigID string             `json:"app_config_id"`
+
+	Dependencies []string `json:"dependencies"`
 }
 
 func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -84,6 +88,11 @@ func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID st
 		return nil, err
 	}
 
+	depIDs, err := s.helpers.GetComponentIDs(ctx, parentCmp.AppID, req.Dependencies)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get component ids")
+	}
+
 	// build component config
 	connectedGithubVCSConfig, err := req.connectedGithubVCSConfig(ctx, parentCmp, s.vcsHelpers)
 	if err != nil {
@@ -109,6 +118,7 @@ func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID st
 		DockerBuildComponentConfig: &cfg,
 		ComponentID:                parentCmp.ID,
 		AppConfigID:                req.AppConfigID,
+		ComponentDependencyIDs:     pq.StringArray(depIDs),
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create docker build component config connection: %w", res.Error)

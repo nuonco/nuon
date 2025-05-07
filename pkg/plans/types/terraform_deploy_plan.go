@@ -3,6 +3,7 @@ package plantypes
 import (
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
 	azurecredentials "github.com/powertoolsdev/mono/pkg/azure/credentials"
+	"github.com/powertoolsdev/mono/pkg/kube"
 	"github.com/powertoolsdev/mono/pkg/types/state"
 )
 
@@ -16,7 +17,8 @@ type TerraformDeployPlan struct {
 	AWSAuth          *awscredentials.Config   `json:"aws_auth"`
 	Hooks            *TerraformDeployHooks    `json:"hooks"`
 
-	Policies map[string]string `json:"policies"`
+	ClusterInfo *kube.ClusterInfo `json:"cluster_info,block"`
 
-	State *state.State `json:"state" faker:"-"`
+	Policies map[string]string `json:"policies"`
+	State    *state.State      `json:"state" faker:"-"`
 }

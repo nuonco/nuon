@@ -22,6 +22,7 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 		ValuesFiles:              make([]string, 0),
 		Namespace:                obj.Namespace,
 		StorageDriver:            obj.StorageDriver,
+		Dependencies:             comp.Dependencies,
 	}
 	if obj.PublicRepo != nil {
 		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{

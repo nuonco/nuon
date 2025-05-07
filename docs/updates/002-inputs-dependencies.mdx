@@ -33,8 +33,47 @@ You can use `internal: true` to mark an input as internal.
 
 ## Dependencies
 
-## Improvements To Deletes
+Dependencies are now auto configured, based on the variables that you define. For example the following config would 
+mark `container_image` as a dependency.
+
+```toml
+[values]
+"image.repo" = "{{.nuon.components.container_image.outputs.repo_url}}"
+"image.tag" = "{{.nuon.components.container_image.outputs.tag}}"
+```
+
+If you would like to manually declare a dependency, you can define it in a component config using:
+
+```toml
+# define a dependency directly, if you do not use any outputs from it.
+dependencies = ["docker_build", "container_image"]
+```
+
+## Terraform Component `KUBECONFIG`
+
+Each terraform component run will now have a `KUBECONFIG` env-var with the path to the kubeconfig for the run.
+
+You can use the `kubectl` provider without any additional configuration, as the file and env var are exposed using defaults:
+
+```hcl
+provider "kubectl" {}
+
+resource "kubectl_manifest" "example" {
+  yaml_body = <<YAML
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example
+  namespace: default
+data:
+  key: "value"
+YAML
+}
+```
 
 ## Fixes
 
+* Fixed an issue where only 64MB was reserved for the runner.
 * Input Group and Input ordering is now respected.
+* Fixed an internal issue where dependencies were not configured with an app-version, but only used the latest.
+* Missing or circular dependencies will now error when syncing a config.

@@ -98,3 +98,18 @@ func SliceAfterValue[T comparable](vals []T, val T) []T {
 
 	return after
 }
+
+// UniqueSlice takes a slice and returns a deduplicated slice of elements
+func UniqueSlice[T comparable](items []T) []T {
+	uniqueItems := make(map[T]struct{})
+	for _, item := range items {
+		uniqueItems[item] = struct{}{}
+	}
+
+	result := make([]T, 0, len(uniqueItems))
+	for item := range uniqueItems {
+		result = append(result, item)
+	}
+
+	return result
+}

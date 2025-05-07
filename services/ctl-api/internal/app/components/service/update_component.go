@@ -7,6 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -24,23 +26,23 @@ func (c *UpdateComponentRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						UpdateComponent
-//	@Summary				update a component
-//	@Description.markdown	update_component.md
-//	@Param					component_id	path	string					true	"component ID"
-//	@Param					req				body	UpdateComponentRequest	true	"Input"
-//	@Tags					components
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{object}	app.Component
-//	@Router					/v1/components/{component_id} [PATCH]
+// @ID						UpdateComponent
+// @Summary				update a component
+// @Description.markdown	update_component.md
+// @Param					component_id	path	string					true	"component ID"
+// @Param					req				body	UpdateComponentRequest	true	"Input"
+// @Tags					components
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.Component
+// @Router					/v1/components/{component_id} [PATCH]
 func (s *service) UpdateComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 	var req UpdateComponentRequest
@@ -74,15 +76,25 @@ func (s *service) updateComponent(ctx context.Context, componentID string, req *
 			VarName: req.VarName,
 		})
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get component: %w", res.Error)
+		return nil, errors.Wrap(res.Error, "unable to get component")
+	}
+
+	comp, err := s.getComponent(ctx, componentID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get component")
+	}
+
+	depIDs, err := s.helpers.GetComponentIDs(ctx, comp.AppID, req.Dependencies)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get component ids")
 	}
 
 	if err := s.helpers.ClearComponentDependencies(ctx, componentID); err != nil {
 		return nil, fmt.Errorf("unable to clear component dependencies: %w", res.Error)
 	}
 
-	if err := s.helpers.CreateComponentDependencies(ctx, componentID, req.Dependencies); err != nil {
-		return nil, fmt.Errorf("unable to create component dependencies: %w", res.Error)
+	if err := s.helpers.CreateComponentDependencies(ctx, componentID, depIDs); err != nil {
+		return nil, fmt.Errorf("unable to create component dependencies: %w", err)
 	}
 
 	return &currentComponent, nil
