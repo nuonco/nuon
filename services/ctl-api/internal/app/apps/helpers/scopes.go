@@ -61,6 +61,9 @@ func PreloadAppConfigRunnerConfig(db *gorm.DB) *gorm.DB {
 // component config connections
 func PreloadAppConfigComponentConfigConnections(db *gorm.DB) *gorm.DB {
 	return db.
+		// preload the component this belongs too
+		Preload("ComponentConfigConnections.Component").
+
 		// preload all terraform configs
 		Preload("ComponentConfigConnections.TerraformModuleComponentConfig").
 		Preload("ComponentConfigConnections.TerraformModuleComponentConfig.PublicGitVCSConfig").

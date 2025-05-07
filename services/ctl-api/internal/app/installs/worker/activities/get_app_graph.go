@@ -2,32 +2,32 @@ package activities
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/dominikbraun/graph"
+	"github.com/pkg/errors"
 )
 
 type GetAppGraphRequest struct {
-	AppID string `json:"app_id"`
+	InstallID string `json:"install_id"`
+
+	Reverse bool
 }
 
 // @temporal-gen activity
-// @by-id AppID
 func (a *Activities) GetAppGraph(ctx context.Context, req GetAppGraphRequest) ([]string, error) {
-	g, rootIDs, err := a.appsHelpers.GetGraph(ctx, req.AppID)
+	install, err := a.getInstall(ctx, req.InstallID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get graph: %w", err)
+		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	componentIDs := make([]string, 0)
-	for _, rootID := range rootIDs {
-		if err := graph.BFS(g, rootID, func(compID string) bool {
-			componentIDs = append(componentIDs, compID)
-			return false
-		}); err != nil {
-			return nil, fmt.Errorf("unable to build app graph: %w", err)
-		}
+	cfg, err := a.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
 	}
 
-	return componentIDs, nil
+	fn := a.appsHelpers.GetConfigDefaultComponentOrder
+	if req.Reverse {
+		fn = a.appsHelpers.GetConfigReverseDefaultComponentOrder
+	}
+
+	return fn(ctx, cfg)
 }
