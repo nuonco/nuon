@@ -15,6 +15,8 @@ type Archive interface {
 
 	// Unpack is used to unpack an archive, and should call the unpackFn with each source file
 	Unpack(context.Context, Callback) error
+
+	Cleanup(context.Context) error
 }
 
 // Callback is passed in to the call back function to allow the implementer to pass a function in
