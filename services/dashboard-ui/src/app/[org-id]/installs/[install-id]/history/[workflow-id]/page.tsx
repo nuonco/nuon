@@ -57,7 +57,8 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       heading={
         <span className="flex gap-2 items-center">
           <YAStatus status={installWorkflow?.status?.status} />
-          {installWorkflow?.name}
+          {installWorkflow?.name ||
+            removeSnakeCase(sentanceCase(installWorkflow?.type))}
         </span>
       }
       headingUnderline={install?.id}

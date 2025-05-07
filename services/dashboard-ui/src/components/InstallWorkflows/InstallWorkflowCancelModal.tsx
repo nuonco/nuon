@@ -1,7 +1,7 @@
 'use client'
 
 import classNames from 'classnames'
-import { useParams } from 'next/navigation'
+import { useParams, usePathname, useRouter } from 'next/navigation'
 import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
@@ -25,8 +25,10 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
 }) => {
   const { user } = useUser()
   const { org } = useOrg()
+  const pathName = usePathname()
   const params =
     useParams<Record<'org-id' | 'install-id' | 'workflow-id', string>>()
+  const router = useRouter()
   const orgId = params?.['org-id']
   const installWorkflowId = installWorkflow?.id
   const [isOpen, setIsOpen] = useState<boolean>(false)
@@ -36,6 +38,7 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
   const [error, setError] = useState<string>()
 
   const workflowType = removeSnakeCase(installWorkflow?.type)
+  const workflowPath = `/${orgId}/installs/${installWorkflow?.install_id}/history/${installWorkflow?.id}`
 
   return (
     <>
@@ -101,6 +104,10 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
                           })
                           setIsLoading(false)
                           setIsKickedOff(true)
+                          if (pathName !== workflowPath) {
+                            router.push(workflowPath)
+                          }
+
                           setIsOpen(false)
                           setHasBeenCanceled(true)
                         }
@@ -133,7 +140,7 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
           setIsOpen(true)
         }}
       >
-        Cancel {workflowType}
+        Cancel
       </Button>
     </>
   )
