@@ -1,12 +1,13 @@
 'use client'
 
 import { API_URL } from '@/utils/configs'
+import { createFileDownload } from '@/utils/file-download'
 import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@/components/Button'
 import { Modal } from '@/components/Modal'
 import { Code } from './Code'
-import { BracketsCurly } from '@phosphor-icons/react'
+import { BracketsCurly, FileArrowDown } from '@phosphor-icons/react'
 import { Text } from '@/components/Typography'
 
 interface IBackendModal {
@@ -60,6 +61,16 @@ terraform {
                   className="text-sm"
                 >
                   Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    createFileDownload(backendBlock, 'nuon_backend.tf')
+                  }}
+                  className="text-base flex items-center gap-1"
+                  variant="primary"
+                >
+                  <FileArrowDown size="18" />
+                  Download
                 </Button>
               </div>
             </Modal>,
