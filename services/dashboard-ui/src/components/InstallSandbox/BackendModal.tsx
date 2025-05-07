@@ -6,9 +6,8 @@ import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@/components/Button'
 import { Modal } from '@/components/Modal'
-import { Code } from './Code'
 import { BracketsCurly, FileArrowDown } from '@phosphor-icons/react'
-import { Text } from '@/components/Typography'
+import { Text, Code } from '@/components/Typography'
 
 interface IBackendModal {
   orgId: string
@@ -38,7 +37,7 @@ terraform {
       {isOpen
         ? createPortal(
             <Modal
-              className="max-w-xxl"
+              className="max-w-lg"
               heading="Use the Terraform CLI"
               isOpen={isOpen}
               onClose={() => {
@@ -46,14 +45,11 @@ terraform {
               }}
             >
               <Text variant="reg-14">
-                To manage the Terraform state directly using the Terraform CLI,
-                add this backend block to your Terraform project and run
-                <code>terraform init -reconfigure</code>.
+                To manage the Terraform state directly, download the backend
+                config, add it to your Terraform project, and run
               </Text>
-              <div className="flex flex-col gap-3 mb-6 mt-6">
-                <Code>{backendBlock}</Code>
-              </div>
-              <div className="flex gap-3 justify-end">
+              <Code className="mt-4">terraform init -reconfigure</Code>.
+              <div className="mt-4 flex gap-3 justify-end">
                 <Button
                   onClick={() => {
                     setIsOpen(false)
