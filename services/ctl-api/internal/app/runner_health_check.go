@@ -31,7 +31,7 @@ type RunnerHealthCheck struct {
 
 	// after queries
 
-	RunnerStatusCode int `json:"status_code,omitzero" gorm:"-" temporaljson:"runner_status_code,omitzero,omitempty"`
+	RunnerStatusCode int `json:"status_code" gorm:"-" temporaljson:"runner_status_code,omitzero,omitempty"`
 }
 
 func (r *RunnerHealthCheck) BeforeCreate(tx *gorm.DB) error {
