@@ -2,6 +2,7 @@ package worker
 
 import (
 	"strings"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -78,6 +79,11 @@ func (w *Workflows) ExecuteWorkflow(ctx workflow.Context, sreq signals.RequestSi
 				Status:                 app.StatusCancelled,
 				StatusHumanDescription: "workflow was cancelled",
 			}
+			err = w.execCancelled(ctx, sreq.InstallWorkflowID)
+			if err != nil {
+				return err
+			}
+
 		default:
 			status = app.CompositeStatus{
 				Status:                 app.StatusError,
@@ -88,7 +94,7 @@ func (w *Workflows) ExecuteWorkflow(ctx workflow.Context, sreq signals.RequestSi
 			}
 		}
 		if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: sreq.InstallWorkflowID,
+			ID:     sreq.InstallWorkflowID,
 			Status: status,
 		}); err != nil {
 			return err
