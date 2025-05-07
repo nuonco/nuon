@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.541
+
+Hot fix to fix the runner page.
+
 ## v0.19.540
 
 Promoting change-log - https://docs.nuon.co/updates/002-inputs-dependencies.
