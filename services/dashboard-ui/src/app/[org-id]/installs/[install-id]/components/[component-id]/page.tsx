@@ -21,6 +21,7 @@ import {
   Time,
 } from '@/components'
 import { InstallComponentManagementDropdown } from '@/components/InstallComponents/ManagementDropdown'
+import { TerraformWorkspace } from '@/components/InstallSandbox/TerraformWorkspace'
 import {
   getComponent,
   getComponentConfig,
@@ -28,6 +29,8 @@ import {
   getInstallComponentDeploys,
   getInstallComponentOutputs,
   getLatestComponentBuild,
+  getInstallComponent,
+  getOrg,
 } from '@/lib'
 import type { TComponent, TInstallComponent } from '@/types'
 
@@ -52,9 +55,11 @@ export default withPageAuthRequired(async function InstallComponent({
   const installId = params?.['install-id'] as string
   const orgId = params?.['org-id'] as string
 
-  const [install, component] = await Promise.all([
+  const [org, install, component, installComponent] = await Promise.all([
+    getOrg({ orgId }),
     getInstall({ installId, orgId }),
     getComponent({ componentId, orgId }),
+    getInstallComponent({ orgId, installId, componentId }),
   ])
 
   return (
@@ -112,18 +117,29 @@ export default withPageAuthRequired(async function InstallComponent({
                 <LoadComponentConfig componentId={componentId} orgId={orgId} />
               </Suspense>
             </ErrorBoundary>
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={<Loading loadingText="Loading latest outputs..." />}
-              >
-                <LoadLatestOutputs
-                  componentId={componentId}
-                  installId={installId}
-                  orgId={orgId}
-                />
-              </Suspense>
-            </ErrorBoundary>
+            {org?.features?.['terraform-workspace'] || (
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={<Loading loadingText="Loading latest outputs..." />}
+                >
+                  <LoadLatestOutputs
+                    componentId={componentId}
+                    installId={installId}
+                    orgId={orgId}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            )}
           </Section>
+          {org?.features?.['terraform-workspace'] && (
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <TerraformWorkspace
+                orgId={orgId}
+                installId={install.id}
+                workspace={installComponent.terraform_workspace}
+              />
+            </ErrorBoundary>
+          )}
           {component.dependencies && (
             <Section className="flex-initial" heading="Dependencies">
               <DependentComponents
