@@ -10,7 +10,6 @@ import { Section } from '@/components/Card'
 import { Text } from '@/components/Typography'
 import type { TInstallWorkflow, TInstallWorkflowStep, TInstall } from '@/types'
 import { removeSnakeCase, sentanceCase } from '@/utils'
-import { InstallWorkflowCancelModal } from './InstallWorkflowCancelModal'
 import { YAStatus } from './InstallWorkflowHistory'
 import { StepDetails, getStepType } from './StepDetails'
 
@@ -39,7 +38,7 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
       installWorkflow?.steps?.find(
         (s) => s?.status?.status === 'in-progress'
       ) ||
-      installWorkflow?.steps.at(0)
+      installWorkflow?.steps?.find((s) => s?.step_target_type !== '')
   )
   const [isManualControl, setManualControl] = useState(false)
 
@@ -132,9 +131,6 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
               variant="history"
             />
           )}
-          {!installWorkflow?.finished && installWorkflow?.steps?.length > 0 ? (
-            <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
-          ) : null}
         </Section>
       </div>
 
@@ -155,11 +151,6 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
                   {step?.status?.metadata?.reason ? (
                     <Notice variant="warn">
                       {sentanceCase(step?.status?.metadata?.reason as string)}
-                    </Notice>
-                  ) : null}
-                  {step?.status?.metadata?.err_message ? (
-                    <Notice variant="error" className="!items-start">
-                      {step?.status?.metadata?.err_message as string}
                     </Notice>
                   ) : null}
                   {getStepType(step, install)}

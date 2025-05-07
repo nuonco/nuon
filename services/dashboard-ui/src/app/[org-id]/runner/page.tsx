@@ -78,7 +78,7 @@ export default withPageAuthRequired(async function OrgRunner({
               </ErrorBoundary>
             </Section>
             <Section className="flex-initial">
-              <div className="flex gap-6 items-start justify-start lg:gap-12 xl:gap-24 flex-wrap">
+              <div className="flex gap-8 items-start justify-start flex-wrap">
                 <span className="flex flex-col gap-2">
                   <Text className="text-cool-grey-600 dark:text-cool-grey-500">
                     Status
@@ -88,6 +88,7 @@ export default withPageAuthRequired(async function OrgRunner({
                     description={runner?.status_description}
                     descriptionAlignment="left"
                     shouldPoll
+                    isWithoutBorder
                   />
                 </span>
                 <RunnerMeta orgId={orgId} runnerId={runnerId} />
