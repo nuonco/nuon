@@ -27,6 +27,8 @@ type Workspace interface {
 	// Root returns the root directory
 	Root() string
 
+  Cleanup(ctx context.Context) error
+
 	// the following commands are used to run terraform operations against a workspace
 	Apply(context.Context, hclog.Logger) ([]byte, error)
 	Destroy(context.Context, hclog.Logger) ([]byte, error)
