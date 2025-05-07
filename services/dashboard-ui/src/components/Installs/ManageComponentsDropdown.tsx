@@ -3,8 +3,8 @@
 import { useParams } from 'next/navigation'
 import React, { type FC } from 'react'
 import { SlidersHorizontal } from '@phosphor-icons/react/dist/ssr'
-import { DeployComponentsModal } from './DeployComponentsModal'
-import { DeleteComponentsModal } from './DeleteComponentsModal'
+import { DeployComponentsModal } from '../InstallComponents/DeployComponentsModal'
+import { DeleteComponentsModal } from '../InstallComponents/DeleteComponentsModal'
 import { Dropdown } from '@/components/Dropdown'
 import { useOrg } from '@/components/Orgs'
 

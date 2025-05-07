@@ -63,10 +63,11 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
           </Text>
 
           {org?.features?.['install-delete'] ? (
-            <DeleteInstallModal install={install} />
-          ) : (
-            <ForgetModal install={install} orgId={orgId} />
-          )}
+            <>
+              <DeleteInstallModal install={install} />
+              <ForgetModal install={install} orgId={orgId} />
+            </>
+          ) : null}
         </>
       </div>
     </Dropdown>

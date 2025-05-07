@@ -45,14 +45,18 @@ export const SignOutButton: FC<{ isSidebarOpen?: boolean }> = ({
   const { user } = useUser()
   return (
     user && (
-      <a
-        href="/api/auth/logout"
-        className="hover:bg-black/5 dark:hover:bg-white/5 h-[48px] p-1 flex items-center justify-between w-full text-sm leading-5 text-left gap-2 rounded-lg"
-        title="Sign out"
-      >
+      <span className="flex items-center justify-between w-full gap-2">
         <Profile isSidebarOpen={isSidebarOpen} />
-        {isSidebarOpen ? <SignOut size={16} /> : null}
-      </a>
+        {isSidebarOpen ? (
+          <a
+            href="/api/auth/logout"
+            className="hover:bg-black/5 dark:hover:bg-white/5 w-[48px] h-[48px] p-1 flex text-sm leading-5 text-left rounded-lg"
+            title="Sign out"
+          >
+            <SignOut className="m-auto" size={16} />
+          </a>
+        ) : null}
+      </span>
     )
   )
 }

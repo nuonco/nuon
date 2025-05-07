@@ -34,7 +34,7 @@ export const RunnerMeta: FC<IRunnerMeta> = async ({
     <>
       {runnerHeartbeat ? (
         <>
-          <span className="flex flex-col gap-x-2">
+          <span className="flex flex-col gap-2">
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
               Started at
             </Text>
@@ -46,7 +46,7 @@ export const RunnerMeta: FC<IRunnerMeta> = async ({
               />
             </Text>
           </span>
-          <span className="flex flex-col gap-x-2">
+          <span className="flex flex-col gap-2">
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
               Version
             </Text>
@@ -54,13 +54,13 @@ export const RunnerMeta: FC<IRunnerMeta> = async ({
           </span>
         </>
       ) : null}
-      <span className="flex flex-col gap-x-2">
+      <span className="flex flex-col gap-2">
         <Text className="text-cool-grey-600 dark:text-cool-grey-500">
           Platform
         </Text>
         <Text variant="med-12">{runnerGroup?.platform}</Text>
       </span>
-      <span className="flex flex-col gap-x-2">
+      <span className="flex flex-col gap-2">
         <Text className="text-cool-grey-600 dark:text-cool-grey-500">ID</Text>
         <ID id={runnerId} />
       </span>
