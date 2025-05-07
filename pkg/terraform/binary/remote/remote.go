@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/hc-install/releases"
 	"github.com/powertoolsdev/mono/pkg/terraform/binary"
 )
 
@@ -12,6 +13,8 @@ type remote struct {
 	v *validator.Validate
 
 	Version *version.Version `validate:"required"`
+
+	version *releases.ExactVersion
 }
 
 var _ binary.Binary = (*remote)(nil)
