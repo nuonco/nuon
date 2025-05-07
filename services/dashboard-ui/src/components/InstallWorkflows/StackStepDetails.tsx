@@ -116,60 +116,6 @@ const GenerateStack: FC<{
           {stack ? (
             <>
               <>
-                <div className="flex flex-col gap-2">
-                  <Text variant="med-14">Setup your install stack</Text>
-                  <div className="border rounded-lg shadow-sm p-2 flex flex-col gap-1">
-                    <span className="flex justify-between items-center">
-                      <Text variant="med-12">Install quick link</Text>
-                      <ClickToCopyButton
-                        textToCopy={stack?.versions?.at(-1)?.quick_link_url}
-                      />
-                    </span>
-                    <Code>{stack?.versions?.at(-1)?.quick_link_url}</Code>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <hr />
-                  <Text className="shadow-sm px-2 border w-fit rounded-lg bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 absolute inset-0 m-auto h-[18px]">
-                    OR
-                  </Text>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Text variant="med-14">
-                    Setup your install stack using CLI command
-                  </Text>
-                  <div className="border rounded-lg shadow-sm p-2 flex flex-col gap-1">
-                    <ClickToCopyButton
-                      className="w-fit self-end"
-                      textToCopy={stack?.versions?.at(-1)?.quick_link_url}
-                    />
-                    <Code>
-                      aws cloudformation create-stack --stack-name
-                      [YOUR_STACK_NAME] --template-url{' '}
-                      {stack?.versions?.at(-1)?.template_url}
-                    </Code>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Text variant="med-14">
-                    Update an existing install stack using CLI command
-                  </Text>
-                  <div className="border rounded-lg shadow-sm p-2 flex flex-col gap-1">
-                    <ClickToCopyButton
-                      className="w-fit self-end"
-                      textToCopy={stack?.versions?.at(-1)?.quick_link_url}
-                    />
-                    <Code>
-                      aws cloudformation update-stack --stack-name
-                      [YOUR_STACK_NAME] --template-url{' '}
-                      {stack?.versions?.at(-1)?.template_url}
-                    </Code>
-                  </div>
-                </div>
-
                 {stackConfig ? (
                   <div className="flex flex-col gap-2">
                     <ConfigurationVariables
@@ -227,6 +173,56 @@ const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
               format="relative"
             />
           </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Text variant="med-14">Setup your install stack</Text>
+        <div className="border rounded-lg shadow-sm p-2 flex flex-col gap-1">
+          <span className="flex justify-between items-center">
+            <Text variant="med-12">Install quick link</Text>
+            <ClickToCopyButton
+              textToCopy={stack?.versions?.at(-1)?.quick_link_url}
+            />
+          </span>
+          <Code>{stack?.versions?.at(-1)?.quick_link_url}</Code>
+        </div>
+      </div>
+
+      <div className="relative">
+        <hr />
+        <Text className="shadow-sm px-2 border w-fit rounded-lg bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 absolute inset-0 m-auto h-[18px]">
+          OR
+        </Text>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Text variant="med-14">Setup your install stack using CLI command</Text>
+        <div className="border rounded-lg shadow-sm p-2 flex flex-col gap-1">
+          <ClickToCopyButton
+            className="w-fit self-end"
+            textToCopy={stack?.versions?.at(-1)?.quick_link_url}
+          />
+          <Code>
+            aws cloudformation create-stack --stack-name [YOUR_STACK_NAME]
+            --template-url {stack?.versions?.at(-1)?.template_url}
+          </Code>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Text variant="med-14">
+          Update an existing install stack using CLI command
+        </Text>
+        <div className="border rounded-lg shadow-sm p-2 flex flex-col gap-1">
+          <ClickToCopyButton
+            className="w-fit self-end"
+            textToCopy={stack?.versions?.at(-1)?.quick_link_url}
+          />
+          <Code>
+            aws cloudformation update-stack --stack-name [YOUR_STACK_NAME]
+            --template-url {stack?.versions?.at(-1)?.template_url}
+          </Code>
         </div>
       </div>
 

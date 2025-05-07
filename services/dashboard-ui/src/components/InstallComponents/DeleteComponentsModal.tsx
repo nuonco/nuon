@@ -179,8 +179,7 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
           )
         : null}
       <Button
-        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full text-red-800 dark:text-red-500"
-        variant="ghost"
+        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-fit text-red-800 dark:text-red-500"        
         onClick={() => {
           setIsOpen(true)
         }}

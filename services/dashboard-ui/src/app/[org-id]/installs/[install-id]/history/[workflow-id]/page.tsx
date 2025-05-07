@@ -5,6 +5,8 @@ import {
   Empty,
   InstallWorkflowActivity,
   InstallWorkflowSteps,
+  InstallWorkflowCancelModal,
+  YAStatus,
 } from '@/components'
 import { getInstall, getInstallWorkflow } from '@/lib'
 
@@ -52,14 +54,24 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
             removeSnakeCase(sentanceCase(installWorkflow?.type)),
         },
       ]}
-      heading={installWorkflow?.name}
+      heading={
+        <span className="flex gap-2 items-center">
+          <YAStatus status={installWorkflow?.status?.status} />
+          {installWorkflow?.name}
+        </span>
+      }
       headingUnderline={install?.id}
       statues={
-        <InstallWorkflowActivity
-          installWorkflow={installWorkflow}
-          shouldPoll
-          pollDuration={3000}
-        />
+        <div className="flex gap-8 items-center">
+          <InstallWorkflowActivity
+            installWorkflow={installWorkflow}
+            shouldPoll
+            pollDuration={3000}
+          />
+          {!installWorkflow?.finished && installWorkflow?.steps?.length > 0 ? (
+            <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
+          ) : null}
+        </div>
       }
     >
       <>
