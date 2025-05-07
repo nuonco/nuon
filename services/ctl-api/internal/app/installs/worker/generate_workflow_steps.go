@@ -483,8 +483,7 @@ func (w *Workflows) getManualDeploySteps(ctx workflow.Context, wkflow *app.Insta
 	steps = append(steps, postDeploySteps...)
 
 	// now queue up any deploy that _depend_ on the input
-	componentIDs, err := activities.AwaitGetAppInstallGraph(ctx, activities.GetAppInstallGraphRequest{
-		AppID:     install.AppID,
+	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
 		InstallID: install.ID,
 	})
 	if err != nil {
@@ -552,8 +551,7 @@ func (w *Workflows) getComponentsTeardownSteps(ctx workflow.Context, wkflow *app
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	componentIDs, err := activities.AwaitGetAppInstallGraph(ctx, activities.GetAppInstallGraphRequest{
-		AppID:     install.AppID,
+	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
 		InstallID: install.ID,
 		Reverse:   true,
 	})
@@ -641,8 +639,7 @@ func (w *Workflows) getUpdateInputSteps(ctx workflow.Context, wkflow *app.Instal
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	componentIDs, err := activities.AwaitGetAppInstallGraph(ctx, activities.GetAppInstallGraphRequest{
-		AppID:     install.AppID,
+	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
 		InstallID: install.ID,
 	})
 	if err != nil {
@@ -658,8 +655,7 @@ func (w *Workflows) deployAllComponents(ctx workflow.Context, wkflow *app.Instal
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	componentIDs, err := activities.AwaitGetAppInstallGraph(ctx, activities.GetAppInstallGraphRequest{
-		AppID:     install.AppID,
+	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
 		InstallID: install.ID,
 	})
 	if err != nil {
