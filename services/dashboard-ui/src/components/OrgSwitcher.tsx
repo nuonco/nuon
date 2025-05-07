@@ -216,6 +216,7 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({
       text={<OrgSummary org={org} isSidebarOpen={isSidebarOpen} />}
       position="overlay"
       alignment="overlay"
+      wrapperClassName="!z-50"
       dropdownContentClassName="min-w-[250px]"
     >
       <div className="flex flex-col gap-4 overflow-auto max-h-[500px] pb-2 overflow-x-hidden">
