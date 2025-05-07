@@ -78,4 +78,5 @@ type intermediate struct {
 	Install      installIntermediate              `json:"install"`
 	InstallStack installStackIntermediate         `json:"install_stack"`
 	Components   map[string]*instanceIntermediate `json:"components" faker:"-"`
+	Sandbox      installSandboxIntermediate       `json:"sandbox"`
 }

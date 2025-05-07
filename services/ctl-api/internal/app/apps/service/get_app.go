@@ -77,9 +77,15 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 		Preload("AppInputConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_input_configs.created_at DESC").Limit(5)
 		}).
-		Preload("AppInputConfigs.AppInputs").
-		Preload("AppInputConfigs.AppInputs.AppInputGroup").
-		Preload("AppInputConfigs.AppInputGroups.AppInputs").
+		Preload("AppInputConfigs.AppInputs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_inputs.index ASC")
+		}).
+		Preload("AppInputConfigs.AppInputs.AppInputGroup", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_input_groups.index ASC")
+		}).
+		Preload("AppInputConfigs.AppInputGroups.AppInputs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_inputs.index ASC")
+		}).
 
 		// runner config
 		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {

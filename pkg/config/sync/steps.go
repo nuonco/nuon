@@ -69,23 +69,16 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 		},
 	}
 
-	// warn: our deps are meant to be a graph but we are treating it as a linked list
-	deps := make([]string, 0)
 	for _, comp := range s.cfg.Components {
-		// thanks russ cox
-		obj := comp
-
-		resourceName := fmt.Sprintf("component-%s", obj.Name)
+		resourceName := fmt.Sprintf("component-%s", comp.Name)
 		steps = append(steps, syncStep{
 			Resource: resourceName,
 			Method: func(ctx context.Context) error {
-				obj.Dependencies = deps
-				compID, err := s.syncComponent(ctx, resourceName, obj)
+				_, err := s.syncComponent(ctx, resourceName, comp)
 				if err != nil {
 					return err
 				}
 
-				deps = []string{compID}
 				return nil
 			},
 		})
