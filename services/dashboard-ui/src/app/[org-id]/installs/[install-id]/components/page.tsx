@@ -8,12 +8,12 @@ import {
   InstallStatuses,
   InstallComponentsTable,
   InstallPageSubNav,
+  InstallManagementDropdown,
   Loading,
   NoComponents,
   Time,
   type TDataInstallComponent,
 } from '@/components'
-import { InstallManagementDropdown } from '@/components/Installs'
 import {
   getComponentBuild,
   getComponent,

@@ -32,7 +32,7 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
     getWorkspaceState({
       orgId,
       workspaceId: workspace?.id,
-      stateId: states[0].id,
+      stateId: states[0]?.id,
     }),
     getWorkspaceStateResources({
       workspaceId: workspace?.id,

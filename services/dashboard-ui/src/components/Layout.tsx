@@ -2,7 +2,7 @@
 
 import classNames from 'classnames'
 import { useSearchParams } from 'next/navigation'
-import React, { type FC, useState } from 'react'
+import React, { type FC, useEffect, useState } from 'react'
 import {
   ArrowLineLeft,
   ArrowLineRight,
@@ -86,8 +86,16 @@ export const Layout: FC<{
   orgs: Array<TOrg>
   versions: TNuonVersions
 }> = ({ children, orgs, versions }) => {
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
+  const [isManualOpen, setIsManualOpen] = useState(false)
   const searchParams = useSearchParams()
+
+  useEffect(() => {
+    if (localStorage.getItem('isOpen')) {
+      setIsOpen(localStorage.getItem('isOpen') === 'true')
+      setIsManualOpen(localStorage.getItem('isOpen') === 'true')
+    }
+  }, [])
 
   return (
     <div
@@ -95,7 +103,23 @@ export const Layout: FC<{
         'layout--open': isOpen,
       })}
     >
-      <aside className="layout_aside dashboard_sidebar border-r flex flex-col">
+      <aside
+        className="layout_aside dashboard_sidebar border-r flex flex-col"
+        onMouseEnter={() => {
+          if (!isManualOpen) {
+            if (!isOpen) {
+              setIsOpen(true)
+            }
+          }
+        }}
+        onMouseLeave={() => {
+          if (!isManualOpen) {
+            if (isOpen) {
+              setIsOpen(false)
+            }
+          }
+        }}
+      >
         <header className="flex flex-col gap-4">
           <div className="border-b flex items-center justify-between px-4 pt-6 pb-4 h-[75px]">
             {isOpen ? <Logo /> : null}
@@ -106,10 +130,17 @@ export const Layout: FC<{
               hasCustomPadding
               variant="ghost"
               onClick={() => {
-                setIsOpen(!isOpen)
+                localStorage.setItem('isOpen', Boolean(!isOpen).toString())
+
+                if (!isManualOpen && isOpen) {
+                  setIsOpen(true)
+                } else {
+                  setIsOpen(!isOpen)
+                }
+                setIsManualOpen(!isManualOpen)
               }}
             >
-              {isOpen ? (
+              {isOpen && isManualOpen ? (
                 <>
                   <X className="md:hidden" />
                   <ArrowLineLeft className="hidden md:block" />
@@ -119,15 +150,15 @@ export const Layout: FC<{
               )}
             </Button>
           </div>
-
-          <div className="px-4">
-            <OrgSwitcher initOrgs={orgs} isSidebarOpen={isOpen} />
-          </div>
         </header>
 
         <div className="dashboard_nav flex-auto flex flex-col justify-between px-4 pb-6 pt-8">
-          <div className="flex gap-3">
-            <MainNav isSidebarOpen={isOpen} />
+          <div className="flex flex-col gap-8">
+            <OrgSwitcher initOrgs={orgs} isSidebarOpen={isOpen} />
+
+            <div className="flex gap-3">
+              <MainNav isSidebarOpen={isOpen} />
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">
