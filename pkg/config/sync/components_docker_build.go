@@ -15,10 +15,11 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 
 	configRequest := &models.ServiceCreateDockerBuildComponentConfigRequest{
 		// DEPRECATED: BuildArgs is not used and was required for Waypoint
-		BuildArgs:  []string{},
-		Dockerfile: generics.ToPtr(obj.Dockerfile),
-		Target:     "",
-		EnvVars:    map[string]string{},
+		BuildArgs:    []string{},
+		Dockerfile:   generics.ToPtr(obj.Dockerfile),
+		Target:       "",
+		EnvVars:      map[string]string{},
+		Dependencies: comp.Dependencies,
 	}
 
 	if obj.PublicRepo != nil {

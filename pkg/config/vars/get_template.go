@@ -32,6 +32,7 @@ func (v *varsValidator) getTemplate(ctx context.Context) (map[string]interface{}
 		}
 
 		obj.Install.Sandbox.Outputs = out
+		obj.Sandbox.Outputs = out
 	}
 
 	data, err := v.toInterfaceMap(obj)
