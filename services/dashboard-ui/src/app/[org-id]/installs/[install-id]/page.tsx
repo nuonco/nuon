@@ -9,6 +9,7 @@ import {
   InstallInputsModal,
   InstallPageSubNav,
   InstallStatuses,
+  InstallManagementDropdown,
   Loading,
   Notice,
   Section,
@@ -17,7 +18,6 @@ import {
   Time,
   Markdown,
 } from '@/components'
-import { InstallManagementDropdown } from '@/components/Installs'
 import { getInstall, getInstallCurrentInputs, getInstallReadme } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
