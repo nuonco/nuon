@@ -47,7 +47,7 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
         ? createPortal(
             <Modal
               className="max-w-lg"
-              heading="Deploy all components?"
+              heading="Deploy all components"
               isOpen={isOpen}
               onClose={() => {
                 setIsOpen(false)
@@ -127,7 +127,7 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
                   ) : (
                     <CloudArrowUp size="18" />
                   )}{' '}
-                  Deploy components
+                  Deploy all components
                 </Button>
               </div>
             </Modal>,
@@ -141,7 +141,7 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
         }}
       >
         <CloudArrowUp size="16" />
-        Deploy components
+        Deploy all components
       </Button>
     </>
   )

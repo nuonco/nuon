@@ -13,6 +13,7 @@ import {
   RunnerMeta,
   RunnerPastJobs,
   RunnerUpcomingJobs,
+  ShutdownRunnerModal,
   Section,
   Text,
 } from '@/components'
@@ -114,6 +115,9 @@ export default withPageAuthRequired(async function OrgRunner({
             </Section>
           </div>
           <div className="divide-y flex flex-col flex-auto col-span-4">
+            <Section heading="Runner controls" className="flex-initial">
+              <ShutdownRunnerModal orgId={orgId} runnerId={runner?.id} />
+            </Section>
             <Section className="flex-initial" heading="Upcoming jobs ">
               <ErrorBoundary fallbackRender={ErrorFallback}>
                 <Suspense

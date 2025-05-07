@@ -13,6 +13,7 @@ import {
   RunnerUpcomingJobs,
   StatusBadge,
   Section,
+  ShutdownRunnerModal,
   Text,
   Time,
 } from '@/components'
@@ -132,6 +133,9 @@ export default withPageAuthRequired(async function Runner({
           </Section>
         </div>
         <div className="divide-y flex-auto flex flex-col col-span-4">
+          <Section heading="Runner controls" className="flex-initial">
+            <ShutdownRunnerModal orgId={orgId} runnerId={runner?.id} />
+          </Section>
           <Section heading="Upcoming jobs ">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense

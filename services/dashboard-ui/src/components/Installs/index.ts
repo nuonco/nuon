@@ -7,8 +7,8 @@ install page common
 */
 
 // install management dropdown
-export * from "./ManagementDropdown"
-export * from "./ManageComponentsDropdown"
+export * from './ManagementDropdown'
+export * from './ManageComponentsDropdown'
 // edit install modal
 // reprovision install modal
 // deploy components modal
@@ -51,11 +51,12 @@ install break glass page
 =====================================
 */
 
-export * from "./BreakGlassForm"
+export * from './BreakGlassForm'
 
 /* 
 install sandbox page 
 =====================================
 */
-
-export * from "./SandboxHistory"
+export * from './DeprovisionSandboxModal'
+export * from './ReprovisionSandboxModal'
+export * from './SandboxHistory'

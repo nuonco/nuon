@@ -7,12 +7,14 @@ import {
   AppSandboxConfig,
   AppSandboxVariables,
   DashboardContent,
+  DeprovisionSandboxModal,
   ErrorFallback,
   InstallStatuses,
   InstallPageSubNav,
   InstallManagementDropdown,
   Link,
   Loading,
+  ReprovisionSandboxModal,
   SandboxHistory,
   Section,
   Text,
@@ -133,19 +135,34 @@ export default withPageAuthRequired(async function InstallComponent({
                 </Suspense>
               </ErrorBoundary>
             )}
+            {org?.features?.['terraform-workspace'] && (
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={
+                    <Loading
+                      variant="stack"
+                      loadingText="Loading latest Terraform workspace..."
+                    />
+                  }
+                >
+                  <TerraformWorkspace
+                    orgId={orgId}
+                    installId={install.id}
+                    workspace={install.sandbox.terraform_workspace}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            )}
           </Section>
-          {org?.features?.['terraform-workspace'] && (
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <TerraformWorkspace
-                orgId={orgId}
-                installId={install.id}
-                workspace={install.sandbox.terraform_workspace}
-              />
-            </ErrorBoundary>
-          )}
         </div>
 
         <div className="divide-y flex flex-col md:col-span-4">
+          <Section heading="Sandbox controls" className="flex-initial">
+            <div className="flex items-center gap-4">
+              <ReprovisionSandboxModal installId={installId} orgId={orgId} />
+              <DeprovisionSandboxModal install={install} />
+            </div>
+          </Section>
           <Section heading="Sandbox history">
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
