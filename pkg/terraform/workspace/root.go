@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	defaultDirPermissions      fs.FileMode = 0744
-	defaultFilePermissions     fs.FileMode = 0600
-	defaultFileExecPermissions fs.FileMode = 0777
+	defaultDirPermissions      fs.FileMode = 0o744
+	defaultFilePermissions     fs.FileMode = 0o600
+	defaultFileExecPermissions fs.FileMode = 0o777
 )
 
 func (w *workspace) Root() string {
@@ -40,19 +40,6 @@ func (w *workspace) writeFile(path string, byts []byte, perms fs.FileMode) error
 
 	if err := os.WriteFile(fullPath, byts, perms); err != nil {
 		return fmt.Errorf("unable to write file: %w", err)
-	}
-
-	return nil
-}
-
-// cleanup cleans up the root directory and all contents
-func (w *workspace) cleanup() error {
-	if w.DisableCleanup {
-		return nil
-	}
-
-	if err := os.RemoveAll(w.root); err != nil {
-		return fmt.Errorf("unable to remove %s: %w", w.root, err)
 	}
 
 	return nil

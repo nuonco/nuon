@@ -15,5 +15,7 @@ type Binary interface {
 	// exec path to be used
 	Install(context.Context, hclog.Logger, string) (string, error)
 
+	Uninstall(context.Context) error
+
 	Init(context.Context) error
 }
