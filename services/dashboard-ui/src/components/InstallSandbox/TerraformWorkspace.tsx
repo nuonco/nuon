@@ -2,7 +2,6 @@ import React, { FC } from 'react'
 import {
   getWorkspaceStates,
   getWorkspaceState,
-  getInstallSandboxRuns,
   getWorkspaceStateResources,
 } from '@/lib'
 import { Section } from '@/components/Card'
@@ -10,6 +9,7 @@ import { Time } from '@/components/Time'
 import { WorkspaceManagementDropdown } from '@/components/InstallSandbox/WorkspaceManagementDropdown'
 import { DataTable } from '@/components/InstallSandbox/Table'
 import { Tabs, Tab } from '@/components/InstallSandbox/Tabs'
+import { Text, Code } from '@/components/Typography'
 import { getToken } from '@/components/admin-actions'
 
 export interface ITerraformWorkspace {
@@ -28,62 +28,54 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
     workspaceId: workspace?.id,
   }).catch(console.error)
 
-  const [currentRevision, resources, sandboxRuns, tokenRes] = await Promise.all(
-    [
-      getWorkspaceState({
-        orgId,
-        workspaceId: workspace?.id,
-        stateId: states[0].id,
-      }),
-      getWorkspaceStateResources({
-        workspaceId: workspace?.id,
-        stateId: states[0]?.id,
-        orgId,
-      }),
-      getInstallSandboxRuns({
-        installId,
-        orgId,
-      }),
-      getToken(),
-    ]
-  )
+  const [currentRevision, resources, tokenRes] = await Promise.all([
+    getWorkspaceState({
+      orgId,
+      workspaceId: workspace?.id,
+      stateId: states[0].id,
+    }),
+    getWorkspaceStateResources({
+      workspaceId: workspace?.id,
+      stateId: states[0]?.id,
+      orgId,
+    }),
+    getToken(),
+  ])
 
   const token = tokenRes.result.accessToken
 
-  // const revisions = states.map((state, idx) => {
-  //   const sandboxRun = sandboxRuns[idx]
-
-  //   return [
-  //     state.revision,
-  //     <Time>{state.created_at}</Time>,
-  //     `sandbox/${sandboxRun?.id}`,
-  //   ]
-  // })
-  const revisions = states.map((state, idx) => {
-    const sandboxRun = sandboxRuns[idx]
-
+  const revisions = states.map((state: any, idx: number) => {
     return [
-      state.revision,
-      <Time key={idx}>{state.created_at}</Time>,
-      `sandbox/${sandboxRun?.id}`,
+      <Text key={idx}>{state.revision}</Text>,
+      <Time key={idx} time={state.created_at} />,
     ]
   })
 
   const resourceList = resources.map((resource, idx) => {
-    return [
-      resource.type,
-      resource.instances.length,
-      resource.mode,
-      resource.instances,
-    ]
+    if (resource.mode == 'managed') {
+      return [
+        <Text key={idx}>{resource.type}</Text>,
+        <Text key={idx}>{resource.name}</Text>,
+        <Text key={idx}>{resource.instances.length}</Text>,
+      ]
+    }
+  })
+
+  const datasourceList = resources.map((datasource, idx) => {
+    if (datasource.mode == 'data') {
+      return [
+        <Text key={idx}>{datasource.type}</Text>,
+        <Text key={idx}>{datasource.name}</Text>,
+        <Text key={idx}>{datasource.instances.length}</Text>,
+      ]
+    }
   })
 
   const outputs = currentRevision.data.outputs
-  const outputList = Object.keys(outputs).map((key) => [
-    key,
-    outputs[key].type[0],
-    JSON.stringify(outputs[key].value),
-    '',
+  const outputList = Object.keys(outputs).map((key, idx) => [
+    <Text key={idx}>{key}</Text>,
+    <Text key={idx}>{outputs[key].type[0]}</Text>,
+    <Code key={idx}>{JSON.stringify(outputs[key].value)}</Code>,
   ])
 
   return (
@@ -103,19 +95,25 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
         <Tabs>
           <Tab title="Resources">
             <DataTable
-              headers={['Type', 'Count', 'Mode', '']}
+              headers={['Type', 'Name', 'Count']}
               initData={resourceList}
+            />
+          </Tab>
+          <Tab title="Data Sources">
+            <DataTable
+              headers={['Type', 'Name', 'Count']}
+              initData={datasourceList}
             />
           </Tab>
           <Tab title="Outputs">
             <DataTable
-              headers={['Name', 'Type', 'Value', '']}
+              headers={['Name', 'Type', 'Value']}
               initData={outputList}
             />
           </Tab>
           <Tab title="History">
             <DataTable
-              headers={['Revision', 'Created at', '']}
+              headers={['Revision', 'Created at']}
               initData={revisions}
             />
           </Tab>
