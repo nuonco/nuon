@@ -13,11 +13,13 @@ import (
 func (r *remote) Install(ctx context.Context, lg hclog.Logger, dir string) (string, error) {
 	binLog := lg.StandardLogger(nil)
 	installer := r.getInstaller(binLog, dir)
+
 	execPath, err := installer.Install(ctx)
 	if err != nil {
 		return "", fmt.Errorf("unable to install: %w", err)
 	}
 
+	r.version = installer
 	return execPath, nil
 }
 
