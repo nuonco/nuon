@@ -51,17 +51,6 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 		signals.OperationAwaitInstallStackVersionRun: w.AwaitInstallStackVersionRun,
 		signals.OperationUpdateInstallStackOutputs:   w.AwaitUpdateInstallStackOutputs,
 		signals.OperationAwaitRunnerHealthy:          w.AwaitRunnerHealthy,
-
-		// deprecated
-		signals.OperationDeploy:             w.AwaitDeploy,
-		signals.OperationDeployComponents:   w.AwaitDeployComponents,
-		signals.OperationTeardownComponents: w.AwaitTeardownComponents,
-		signals.OperationDeleteComponents:   w.AwaitTeardownComponents,
-		signals.OperationDeprovisionRunner:  w.AwaitDeprovisionRunner,
-		signals.OperationDelete:             w.AwaitDelete,
-		signals.OperationProvision:          w.AwaitProvisionSandbox,
-		signals.OperationReprovision:        w.AwaitReprovisionSandbox,
-		signals.OperationDeprovision:        w.AwaitDeprovisionSandbox,
 	}
 }
 

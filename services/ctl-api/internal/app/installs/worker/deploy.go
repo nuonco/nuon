@@ -11,10 +11,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
 func (w *Workflows) isDeployable(install *app.Install) bool {
@@ -31,50 +29,6 @@ func (w *Workflows) isTeardownable(install *app.Install) bool {
 	}
 
 	return true
-}
-
-// @temporal-gen workflow
-// @execution-timeout 60m
-// @task-timeout 30m
-func (w *Workflows) Deploy(ctx workflow.Context, sreq signals.RequestSignal) error {
-	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
-	if err != nil {
-		w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "unable to get install from database")
-		return fmt.Errorf("unable to get install: %w", err)
-	}
-	defer func() {
-		if pan := recover(); pan != nil {
-			w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "internal error")
-			panic(pan)
-		}
-	}()
-
-	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
-		DeployID: sreq.DeployID,
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to create log stream")
-	}
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
-	}()
-
-	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-	l, err := log.WorkflowLogger(ctx)
-	if err != nil {
-		return err
-	}
-
-	l.Info("performing deploy")
-	err = w.doDeploy(ctx, sreq, install)
-	if err != nil {
-		w.sendNotification(ctx, notifications.NotificationsTypeDeployFailed, install.AppID, map[string]string{
-			"install_name": install.Name,
-			"app_name":     install.App.Name,
-			"created_by":   install.CreatedBy.Email,
-		})
-	}
-	return err
 }
 
 func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, install *app.Install) error {
