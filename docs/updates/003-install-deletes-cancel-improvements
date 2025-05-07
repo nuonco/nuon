@@ -21,25 +21,65 @@ They will use this ordering:
 If two components have the same dependencies _and_ the same type, they will be ordered by name. For instance, in the 
   following deploy, only the helm deploy has any defined dependencies:
 
-## Delete an Install
+## Auto Hide Nav
+
+The side-nav bar will now automatically hide when not being used.
+
+![image](assets/2025-05-07-16-02-30.png).
+
+## Deprovision an Install
 
 Deleting an install requires tearing down it's deployed components, destroying the sandbox, and destroying the 
 CloudFormation Stack via AWS.
 
 You can now delete an install from the install overview page in the UI:
 
+![deprovision install](assets/2025-05-07-15-58-31.png)
 
-If the install is successfully torn-down, you can then remove the install-stack and forget the install:
+If you have components that are not successfully deploying and you want to attempt to tear-down everything in the 
+  install, you can use the `continue` option:
 
+![Continue Option](assets/2025-05-07-15-57-57.png)
 
-## Delete an Install Component
+## Forgot an Install
+
+Once you have deprovisioned an install, you must forget it to remove it from Nuon's system. You can do this from the 
+install overview page:
+
+![forget](assets/2025-05-07-16-01-21.png)
+
+## Other Delete Capabilities
+
+In the happy path, an install should be able to be deleted with just a single run of `Deprovision Install`. However, 
+when things go wrong or you are iterating, you can delete individual parts of an install directly.
+
+### Delete an Install Component
 
 Sometimes an install will fail to destroy because a single component has leaked state. You can manually tear down component
 on the install component page.
 
-## Deprovision a Sandbox
+![Teardown Component](assets/2025-05-07-15-55-12.png)
 
-In rare cases, it can be helpful to forgo tearing down install components and deprovision only the sandbox. You can do 
-this using the UI:
+<Note>If you have a failed install deprovision due to a component, you can directly tear down the component and then 
+re-run Deprovision Install to try again</Note>.
 
+### Teardown Install Components
 
+You can delete all install components using the Teardown All Components option from the components overview.
+
+![Teardown All Components](assets/2025-05-07-15-56-47.png)
+
+### Deprovision a Sandbox
+
+In rare cases, it can be helpful to forgo tearing down install components and deprovision only the sandbox. You can deprovision a sandbox directly from the sandbox tab on an install.
+
+![Deprovision Sandbox](assets/2025-05-07-15-53-35.png)
+
+<Note>It is recommended to try the `Deprovision Install` button first</Note>.
+
+### Deprovision Install Stack
+
+The install stack can only be deleted from an install AWS account directly. If you click the deprovision stack button 
+from the install overview, you can find directions to deprovision it.
+
+![Deprovision Install Stack](assets/2025-05-07-15-50-36.png)
