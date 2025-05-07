@@ -51,19 +51,19 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
             <Modal
               className="!max-w-2xl"
               isOpen={isOpen}
-              heading={`Delete components`}
+              heading={`Teardown all components`}
               onClose={() => {
                 setIsOpen(false)
               }}
             >
-              <div className="flex flex-col gap-3 mb-6">
+              <div className="flex flex-col gap-6 mb-12">
                 {error ? <Notice>{error}</Notice> : null}
-                <span>
-                  <Text variant="med-14">
-                    Are you sure you want to delete all components?
+                <span className="flex flex-col gap-1">
+                  <Text variant="med-18">
+                    Are you sure you want to teardown all components?
                   </Text>
-                  <Text variant="reg-14">
-                    Deleteing components will affect the working nature of this
+                  <Text variant="reg-12">
+                    Tearing down components will affect the working nature of this
                     install.
                   </Text>
                 </span>
@@ -76,12 +76,12 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
                     <Text variant="med-14">
                       To verify, type{' '}
                       <span className="text-red-800 dark:text-red-500">
-                        delete
+                        teardown
                       </span>{' '}
                       below.
                     </Text>
                     <Input
-                      placeholder="delete"
+                      placeholder="teardown"
                       className="w-full"
                       type="text"
                       value={confirm}
@@ -102,9 +102,9 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
                     labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px] !items-start"
                     labelText={
                       <span className="flex flex-col gap2">
-                        <Text variant="med-14">Force delete</Text>
+                        <Text variant="med-14">Force teardown</Text>
                         <Text className="!font-normal" variant="reg-12">
-                          Force deleting may result in orphaned artifacts that
+                          Force tearing down may result in orphaned artifacts that
                           will need manual removal.
                         </Text>
                       </span>
@@ -122,14 +122,14 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
                   Cancel
                 </Button>
                 <Button
-                  disabled={confirm !== 'delete'}
+                  disabled={confirm !== 'teardown'}
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
                     setIsLoading(true)
                     deleteComponents({ installId, orgId, force })
                       .then((workflowId) => {
                         trackEvent({
-                          event: 'components_delete',
+                          event: 'components_teardown',
                           user,
                           status: 'ok',
                           props: { orgId, installId },
@@ -150,7 +150,7 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
                       })
                       .catch((err) => {
                         trackEvent({
-                          event: 'components_delete',
+                          event: 'components_teardown',
                           user,
                           status: 'error',
                           props: { orgId, installId, err },
@@ -171,7 +171,7 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
                   ) : (
                     <TrashSimple size="18" />
                   )}{' '}
-                  Delete components
+                  Teardown all components
                 </Button>
               </div>
             </Modal>,
@@ -184,7 +184,7 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
           setIsOpen(true)
         }}
       >
-        <TrashSimple size="16" /> Delete components
+        <TrashSimple size="16" /> Teardown all components
       </Button>
     </>
   )

@@ -24,6 +24,7 @@ import {
   ErrorFallback,
   InstallDeployIntermediateData,
   InstallComponentManagementDropdown,
+  InstallWorkflowCancelModal,
   Link,
   Loading,
   LogStreamProvider,
@@ -43,9 +44,14 @@ import {
   getInstallComponentOutputs,
   getInstallDeploy,
   getInstallDeployPlan,
+  getInstallWorkflow,
 } from '@/lib'
 import type { TInstallDeployPlan, TInstall } from '@/types'
-import { CANCEL_RUNNER_JOBS, DEPLOY_INTERMEDIATE_DATA } from '@/utils'
+import {
+  CANCEL_RUNNER_JOBS,
+  DEPLOY_INTERMEDIATE_DATA,
+  sizeToMbOrGB,
+} from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const componentId = params?.['component-id'] as string
@@ -85,6 +91,11 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
     }),
     getInstall({ installId, orgId }),
   ])
+
+  const installWorkflow = await getInstallWorkflow({
+    installWorkflowId: deploy?.install_workflow_id,
+    orgId,
+  }).catch(console.error)
 
   return (
     <DashboardContent
@@ -194,12 +205,10 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
           deploy?.status !== 'active' &&
           deploy?.status !== 'error' &&
           deploy?.status !== 'inactive' &&
-          deploy?.runner_jobs?.length ? (
-            <CancelRunnerJobButton
-              jobType="deploy"
-              runnerJobId={deploy?.runner_jobs?.at(-1)?.id}
-              orgId={orgId}
-            />
+          deploy?.runner_jobs?.length &&
+          installWorkflow &&
+          !installWorkflow?.finished ? (
+            <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
           ) : null}
         </div>
       }
@@ -280,6 +289,24 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
               </Suspense>
             </ErrorBoundary>
           </Section>
+
+          {deploy?.oci_artifact ? (
+            <Section>
+              <ConfigurationVariables
+                heading="OCI artifacts"
+                headingVariant="semi-14"
+                isNotTruncated
+                variables={{
+                  tag: deploy?.oci_artifact?.tag,
+                  repository: deploy?.oci_artifact?.repository,
+                  digest: deploy?.oci_artifact?.digest,
+                  size: sizeToMbOrGB(deploy?.oci_artifact?.size),
+                  artifact_type: deploy?.oci_artifact?.artifact_type,
+                  urls: deploy?.oci_artifact?.urls as unknown as string,
+                }}
+              />
+            </Section>
+          ) : null}
 
           {DEPLOY_INTERMEDIATE_DATA ? (
             <ErrorBoundary fallbackRender={ErrorFallback}>
