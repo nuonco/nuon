@@ -66,7 +66,6 @@ type parseFn struct {
 	fn   func() error
 }
 
-// NOTE(jm): this should go away completely, with decoder hooks
 func (a *AppConfig) Parse() error {
 	parseFns := []parseFn{
 		{
