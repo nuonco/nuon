@@ -47,6 +47,7 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 	fs := afero.NewOsFs()
 	cfgFS := afero.NewBasePathFs(fs, fp)
 
+	// parse the directory
 	var obj ConfigDir
 	if err := dir.Parse(ctx, cfgFS, &obj, &dir.ParseOptions{
 		Root:     fp,
@@ -63,11 +64,23 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 		return nil, errors.Wrap(err, "unable to convert to app config")
 	}
 
+	// parse all get functions
 	if err := get.Parse(ctx, appCfg, &get.Options{
 		FieldTimeout: defaultFieldGetTimeout,
 		RootDir:      fp,
 	}); err != nil {
-		return nil, errors.Wrap(err, "unable to parse all get fields")
+		return nil, ParseErr{
+			Description: "unable to get fields",
+			Err:         err,
+		}
+	}
+
+	err = appCfg.Parse()
+	if err != nil {
+		return nil, ParseErr{
+			Description: "error parsing config",
+			Err:         err,
+		}
 	}
 
 	return appCfg, nil

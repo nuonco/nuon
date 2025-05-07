@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/powertoolsdev/mono/pkg/kube"
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/pkg/render"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -25,6 +26,11 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
+	}
+
+	org, err := activities.AwaitGetOrgByInstallID(ctx, req.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install id")
 	}
 
 	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
@@ -87,6 +93,15 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 	}
 
 	roleARN := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
+
+	var clusterInfo *kube.ClusterInfo
+	if !org.SandboxMode {
+		clusterInfo, err = p.getKubeClusterInfo(ctx, stack, state)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get cluster information")
+		}
+	}
+
 	return &plantypes.TerraformDeployPlan{
 		Vars:      vars,
 		EnvVars:   envVars,
@@ -104,6 +119,7 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 				RoleARN:     roleARN,
 			},
 		},
+		ClusterInfo: clusterInfo,
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: false,
 		},
