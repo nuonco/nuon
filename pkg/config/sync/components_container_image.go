@@ -13,7 +13,9 @@ import (
 func (s *sync) createContainerImageComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, string, error) {
 	containerImage := comp.ExternalImage
 
-	configRequest := &models.ServiceCreateExternalImageComponentConfigRequest{}
+	configRequest := &models.ServiceCreateExternalImageComponentConfigRequest{
+		Dependencies: comp.Dependencies,
+	}
 
 	if containerImage.AWSECRImageConfig != nil {
 		configRequest.ImageURL = generics.ToPtr(containerImage.AWSECRImageConfig.ImageURL)

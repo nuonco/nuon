@@ -6,6 +6,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/lib/pq"
+
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
@@ -44,6 +46,7 @@ type ComponentConfigConnection struct {
 	ExternalImageComponentConfig   *ExternalImageComponentConfig   `json:"external_image,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"external_image_component_config,omitzero,omitempty"`
 	DockerBuildComponentConfig     *DockerBuildComponentConfig     `json:"docker_build,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"docker_build_component_config,omitzero,omitempty"`
 	JobComponentConfig             *JobComponentConfig             `json:"job,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"job_component_config,omitzero,omitempty"`
+	ComponentDependencyIDs         pq.StringArray                  `json:"component_dependency_ids" temporaljson:"component_dependency_ids" swaggertype:"array,string" gorm:"type:text[]"`
 
 	// loaded via after query
 	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-" temporaljson:"vcs_connection_type,omitzero,omitempty"`

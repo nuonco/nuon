@@ -20,6 +20,7 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 		EnvVars:                  map[string]string{},
 		VariablesFiles:           make([]string, 0),
 		Version:                  obj.TerraformVersion,
+		Dependencies:             comp.Dependencies,
 	}
 	for _, val := range obj.Variables {
 		configRequest.Variables[val.Name] = val.Value

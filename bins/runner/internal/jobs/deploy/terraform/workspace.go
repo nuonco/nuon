@@ -1,10 +1,12 @@
 package terraform
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/kube/config"
 	dirarchive "github.com/powertoolsdev/mono/pkg/terraform/archive/dir"
 	httpbackend "github.com/powertoolsdev/mono/pkg/terraform/backend/http"
 	remotebinary "github.com/powertoolsdev/mono/pkg/terraform/binary/remote"
@@ -15,7 +17,7 @@ import (
 )
 
 // GetWorkspace returns a valid workspace for working with this plugin
-func (p *handler) GetWorkspace() (workspace.Workspace, error) {
+func (p *handler) GetWorkspace(ctx context.Context) (workspace.Workspace, error) {
 	arch, err := dirarchive.New(p.v,
 		dirarchive.WithPath(p.state.arch.BasePath()),
 		dirarchive.WithAddBackendFile("http"),
@@ -41,10 +43,17 @@ func (p *handler) GetWorkspace() (workspace.Workspace, error) {
 		return nil, fmt.Errorf("unable to create binary: %w", err)
 	}
 
+	extraEnvVars := make(map[string]string, 0)
+	if p.state.plan.TerraformDeployPlan.ClusterInfo != nil {
+		extraEnvVars[config.DefaultKubeConfigEnvVar] = config.DefaultKubeConfigFilename
+	}
+
 	vars, err := staticvars.New(p.v,
 		staticvars.WithFileVars(p.state.plan.TerraformDeployPlan.Vars),
 		staticvars.WithFiles(p.state.plan.TerraformDeployPlan.VarsFiles),
-		staticvars.WithEnvVars(p.state.plan.TerraformDeployPlan.EnvVars))
+		staticvars.WithEnvVars(p.state.plan.TerraformDeployPlan.EnvVars),
+		staticvars.WithEnvVars(extraEnvVars),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create variable set: %w", err)
 	}
