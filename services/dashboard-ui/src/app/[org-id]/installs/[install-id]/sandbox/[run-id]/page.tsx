@@ -10,6 +10,7 @@ import {
   DashboardContent,
   Duration,
   InstallDeployIntermediateData,
+  InstallWorkflowCancelModal,
   Link,
   LogStreamProvider,
   OperationLogsSection,
@@ -19,7 +20,12 @@ import {
   Time,
   ToolTip,
 } from '@/components'
-import { getInstall, getInstallSandboxRun, getRunnerJobPlan } from '@/lib'
+import {
+  getInstall,
+  getInstallSandboxRun,
+  getInstallWorkflow,
+  getRunnerJobPlan,
+} from '@/lib'
 import { CANCEL_RUNNER_JOBS, sentanceCase } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -48,6 +54,11 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
       installSandboxRunId: runId,
     }),
   ])
+
+  const installWorkflow = await getInstallWorkflow({
+    orgId,
+    installWorkflowId: sandboxRun?.install_workflow_id,
+  }).catch(console.error)
 
   return (
     <DashboardContent
@@ -125,12 +136,10 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
           {CANCEL_RUNNER_JOBS &&
           sandboxRun?.runner_job?.status !== 'finished' &&
           sandboxRun?.runner_job?.status !== 'failed' &&
-          sandboxRun?.runner_job?.id ? (
-            <CancelRunnerJobButton
-              jobType="sandbox-run"
-              runnerJobId={sandboxRun?.runner_job?.id}
-              orgId={orgId}
-            />
+          sandboxRun?.runner_job?.id &&
+          installWorkflow &&
+          !installWorkflow?.finished ? (
+            <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
           ) : null}
         </div>
       }

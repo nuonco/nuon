@@ -4,30 +4,28 @@ import { useRouter, useParams } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
-import { Check, TrashSimple } from '@phosphor-icons/react'
+import { BoxArrowDown, Check } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { CheckboxInput, Input } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { deleteComponent } from '@/components/install-actions'
-import { TComponent } from '@/types'
+import { deprovisionSandbox } from '@/components/install-actions'
 import { trackEvent } from '@/utils'
+import { TInstall } from '@/types'
 
-interface IDeleteComponentModal {
-  component: TComponent
+interface IDeprovisionSandboxModal {
+  install: TInstall
 }
 
-export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
-  component,
-}) => {
-  const params =
-    useParams<Record<'org-id' | 'install-id' | 'component-id', string>>()
-  const orgId = params['org-id']
-  const installId = params['install-id']
-  const componentId = params['component-id']
+export const DeprovisionSandboxModal: FC<IDeprovisionSandboxModal> = ({ install }) => {
   const router = useRouter()
+  const params = useParams<Record<'org-id' | 'install-id', string>>()
+
+  const installId = params?.['install-id']
+  const orgId = params?.['org-id']
+
   const { user } = useUser()
   const [confirm, setConfirm] = useState<string>()
   const [force, setForceDelete] = useState(false)
@@ -53,39 +51,49 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
       {isOpen
         ? createPortal(
             <Modal
-              className="!max-w-2xl"
+              className="!max-w-xl"
               isOpen={isOpen}
-              heading={`Teardown ${component?.name}`}
+              heading={`Deprovision install sandbox`}
               onClose={() => {
                 setIsOpen(false)
               }}
             >
-              <div className="flex flex-col gap-6 mb-12">
+              <div className="flex flex-col gap-8 mb-12">
                 {error ? <Notice>{error}</Notice> : null}
                 <span className="flex flex-col gap-1">
                   <Text variant="med-18">
-                    Are you sure you want to teardown {component.name}?
+                    Are you sure you want to deprovision {install?.name} sandbox?
                   </Text>
-                  <Text variant="reg-12">
-                    Tearing down components will affect the working nature of
-                    this install.
+                  <Text
+                    className="text-cool-grey-600 dark:text-white/70"
+                    variant="reg-12"
+                  >
+                    Deprovisioning a sandbox will remove it from the cloud
+                    account.
                   </Text>
                 </span>
-                <Notice>
-                  Warning, this action is not reversible. Please be certain.
-                </Notice>
+
+                <div className="flex flex-col gap-2">
+                  <Text variant="reg-14">
+                    This will create a workflow that attempts to:
+                  </Text>
+
+                  <ul className="flex flex-col gap-1 list-disc pl-4">                   
+                    <li className="text-sm">Teardown the install sandbox</li>
+                  </ul>
+                </div>
 
                 <div className="w-full">
                   <label className="flex flex-col gap-1 w-full">
                     <Text variant="med-14">
                       To verify, type{' '}
                       <span className="text-red-800 dark:text-red-500">
-                        teardown
+                        deprovision
                       </span>{' '}
                       below.
                     </Text>
                     <Input
-                      placeholder="teardown"
+                      placeholder="deprovision"
                       className="w-full"
                       type="text"
                       value={confirm}
@@ -95,26 +103,22 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                     />
                   </label>
                 </div>
-                <div className="flex items-start">
+                <div className="flex flex-col items-start">
+                  <Text className="!font-normal max-w-sm" variant="reg-12">
+                    Sometimes resources can be leaked and prevent deprovision.
+                    Would you like to attempt to teardown all components and the
+                    sandbox, regardless if a previous step fails?
+                  </Text>
                   <CheckboxInput
                     name="ack"
                     defaultChecked={force}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       setForceDelete(Boolean(e?.currentTarget?.checked))
                     }}
-                    className="mt-1.5"
                     labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px] !items-start"
-                    labelText={
-                      <span className="flex flex-col gap2">
-                        <Text variant="med-14">Force teardown</Text>
-                        <Text className="!font-normal" variant="reg-12">
-                          Force teardown may result in orphaned artifacts that
-                          will need manual removal.
-                        </Text>
-                      </span>
-                    }
+                    labelText={'Continue deprovision even if steps fail?'}
                   />
-                </div>
+                </div>                
               </div>
               <div className="flex gap-3 justify-end">
                 <Button
@@ -126,30 +130,18 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                   Cancel
                 </Button>
                 <Button
-                  disabled={confirm !== 'teardown'}
+                  disabled={confirm !== 'deprovision'}
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
                     setIsLoading(true)
-                    deleteComponent({
-                      componentId,
-                      installId,
-                      orgId,
-                      force,
-                    })
+                    deprovisionSandbox({ installId, orgId, force })
                       .then((workflowId) => {
                         trackEvent({
-                          event: 'component_delete',
+                          event: 'install_sandbox_deprovision',
                           user,
                           status: 'ok',
-                          props: {
-                            orgId,
-                            installId,
-                            componentId,
-                          },
+                          props: { orgId, installId },
                         })
-                        setForceDelete(false)
-                        setIsLoading(false)
-                        setIsKickedOff(true)
 
                         if (workflowId) {
                           router.push(
@@ -159,22 +151,20 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                           router.push(`/${orgId}/installs/${installId}/history`)
                         }
 
+                        setForceDelete(false)
+                        setIsLoading(false)
+                        setIsKickedOff(true)
                         setIsOpen(false)
                       })
                       .catch((err) => {
                         trackEvent({
-                          event: 'component_delete',
+                          event: 'install_sandbox_deprovision',
                           user,
                           status: 'error',
-                          props: {
-                            orgId,
-                            installId,
-                            componentId,
-                            err,
-                          },
+                          props: { orgId, installId, err },
                         })
                         setError(
-                          'Error occured trying to delete this component, please refresh page and try again.'
+                          'Error occured, please refresh page and try again.'
                         )
                         setIsLoading(false)
                       })
@@ -186,9 +176,9 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                   ) : isLoading ? (
                     <SpinnerSVG />
                   ) : (
-                    <TrashSimple size="18" />
+                    <BoxArrowDown size="18" />
                   )}{' '}
-                  Teardown component
+                  Deprovision sandbox
                 </Button>
               </div>
             </Modal>,
@@ -196,13 +186,12 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
           )
         : null}
       <Button
-        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full text-red-800 dark:text-red-500"
-        variant="ghost"
+        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 text-red-800 dark:text-red-500"
         onClick={() => {
           setIsOpen(true)
         }}
       >
-        <TrashSimple size="16" /> Teardown component
+        <BoxArrowDown size="16" /> Deprovision sandbox
       </Button>
     </>
   )
