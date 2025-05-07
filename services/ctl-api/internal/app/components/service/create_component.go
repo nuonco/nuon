@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
@@ -25,23 +26,23 @@ func (c *CreateComponentRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						CreateComponent
-//	@Summary				create a component
-//	@Description.markdown	create_component.md
-//	@Param					app_id	path	string					true	"app ID"
-//	@Param					req		body	CreateComponentRequest	true	"Input"
-//	@Tags					components
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.Component
-//	@Router					/v1/apps/{app_id}/components [post]
+// @ID						CreateComponent
+// @Summary				create a component
+// @Description.markdown	create_component.md
+// @Param					app_id	path	string					true	"app ID"
+// @Param					req		body	CreateComponentRequest	true	"Input"
+// @Tags					components
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.Component
+// @Router					/v1/apps/{app_id}/components [post]
 func (s *service) CreateComponent(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
@@ -94,7 +95,11 @@ func (s *service) createComponent(ctx context.Context, appID string, req *Create
 		return nil, fmt.Errorf("unable to create component: %w", res.Error)
 	}
 
-	if err := s.helpers.CreateComponentDependencies(ctx, component.ID, req.Dependencies); err != nil {
+	depIDs, err := s.helpers.GetComponentIDs(ctx, appID, req.Dependencies)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get component ids")
+	}
+	if err := s.helpers.CreateComponentDependencies(ctx, component.ID, depIDs); err != nil {
 		return nil, fmt.Errorf("unable to create component dependencies: %w", err)
 	}
 
