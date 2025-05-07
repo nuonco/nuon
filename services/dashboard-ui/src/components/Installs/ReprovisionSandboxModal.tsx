@@ -4,7 +4,7 @@ import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@auth0/nextjs-auth0/client'
-import { Check, StackSimple } from '@phosphor-icons/react'
+import { Check, BoxArrowUp } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
@@ -116,7 +116,7 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
                   ) : isLoading ? (
                     <SpinnerSVG />
                   ) : (
-                    <StackSimple size="18" />
+                    <BoxArrowUp size="18" />
                   )}{' '}
                   Reprovision sandbox
                 </Button>
@@ -126,13 +126,12 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
           )
         : null}
       <Button
-        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full"
-        variant="ghost"
+        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3"
         onClick={() => {
           setIsOpen(true)
         }}
       >
-        <StackSimple size="16" />
+        <BoxArrowUp size="16" />
         Reprovision sandbox
       </Button>
     </>

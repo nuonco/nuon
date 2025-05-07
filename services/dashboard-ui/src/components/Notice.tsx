@@ -19,7 +19,7 @@ export const Notice: FC<INotice> = ({
   return (
     <div
       className={classNames(
-        'flex items-center gap-2 justify-start w-full p-2 border rounded-md',
+        'flex items-start gap-4 justify-start w-full p-2 border rounded-md',
         {
           'border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600':
             variant === 'error',

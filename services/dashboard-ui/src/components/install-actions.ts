@@ -356,3 +356,32 @@ export async function deleteInstall({
 
   return (await res).headers.get('x-nuon-install-workflow-id')
 }
+
+interface IDeprovisionSandbox extends IDeleteComponents {}
+
+export async function deprovisionSandbox({
+  continueOnError = false,
+  installId,
+  orgId,
+  force = false,
+}: IDeprovisionSandbox) {
+  const res = fetch(`${API_URL}/v1/installs/${installId}/deprovision-sandbox`, {
+    ...(await getFetchOpts(orgId)),
+    body: JSON.stringify({
+      error_behavior: force ? 'continue' : 'abort',
+    }),
+    method: 'POST',
+  })
+    .then((r) => {
+      if (!r.ok) {
+        throw new Error('Unable to kick off components delete')
+      } else {
+        return r
+      }
+    })
+    .catch((err) => {
+      throw new Error(err)
+    })
+
+  return (await res).headers.get('x-nuon-install-workflow-id')
+}
