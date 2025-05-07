@@ -184,7 +184,7 @@ services:
       - "--config"
       - "/etc/ngrok.yml"
     ports:
-      - "4040:4040"
+      - "4041:4040"
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
     volumes:
