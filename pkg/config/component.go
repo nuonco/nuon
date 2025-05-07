@@ -2,6 +2,10 @@ package config
 
 import (
 	"github.com/nuonco/nuon-go/models"
+	"github.com/pkg/errors"
+
+	"github.com/powertoolsdev/mono/pkg/config/refs"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type ComponentType string
@@ -53,9 +57,28 @@ type Component struct {
 	DockerBuild     *DockerBuildComponentConfig     `mapstructure:"docker_build,omitempty" jsonschema:"oneof_required=docker_build"`
 	Job             *JobComponentConfig             `mapstructure:"job,omitempty" jsonschema:"oneof_required=job"`
 	ExternalImage   *ExternalImageComponentConfig   `mapstructure:"external_image,omitempty" jsonschema:"oneof_required=external_image"`
+
+	// created during parsing
+	References []refs.Ref `mapstructure:"-" jsonschema:"-"`
 }
 
 func (c *Component) parse() error {
+	references, err := refs.Parse(c)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse components")
+	}
+	c.References = references
+
+	// set all of the components
+	for _, ref := range c.References {
+		if ref.Type != refs.RefTypeComponents {
+			continue
+		}
+
+		c.Dependencies = append(c.Dependencies, ref.Name)
+	}
+	c.Dependencies = generics.UniqueSlice(c.Dependencies)
+
 	if c.HelmChart != nil {
 		return c.HelmChart.Parse()
 	}

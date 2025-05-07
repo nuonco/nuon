@@ -23,6 +23,9 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 			return ValidateDuplicateComponentNames(a)
 		},
 		func() error {
+			return ValidateDependencies(a)
+		},
+		func() error {
 			return ValidateActionWorkflowTriggers(a)
 		},
 		func() error {

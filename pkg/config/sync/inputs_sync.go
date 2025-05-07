@@ -39,7 +39,7 @@ func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {
 		input := input
 
 		inputs[input.Name] = models.ServiceAppInputRequest{
-			Default:     fmt.Sprintf("%s", input.Default),
+			Default:     fmt.Sprintf("%v", input.Default),
 			Description: &input.Description,
 			DisplayName: &input.DisplayName,
 			Group:       &input.Group,
