@@ -46,7 +46,7 @@ func (a *Activities) UpdateRunStatus(ctx context.Context, req UpdateRunStatusReq
 			return nil
 		}
 
-		if run.InstallSandboxID != nil {
+		if run.InstallSandboxID == nil {
 			return nil
 		}
 
