@@ -5,6 +5,7 @@ import React, { type FC, type FormEvent, useRef, useState } from 'react'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { WarningOctagon, CheckCircle, Cube } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
+import { CodeViewer } from '@/components/Code'
 import { CheckboxInput, Input, RadioInput } from '@/components/Input'
 import { Link } from '@/components/Link'
 import { SpinnerSVG, Loading } from '@/components/Loading'
@@ -313,13 +314,15 @@ const InputConfigs: FC<{
   return (
     <>
       {inputConfig?.input_groups
-        ? inputConfig?.input_groups?.map((group, i) => (
-            <InputGroupFields
-              key={group.id}
-              groupInputs={group}
-              install={install}
-            />
-          ))
+        ? inputConfig?.input_groups
+            ?.sort((a, b) => a?.index - b.index)
+            ?.map((group) => (
+              <InputGroupFields
+                key={group.id}
+                groupInputs={group}
+                install={install}
+              />
+            ))
         : null}
     </>
   )
@@ -340,42 +343,63 @@ const InputGroupFields: FC<{
         <span className="text-sm font-normal">{groupInputs?.description}</span>
       </legend>
 
-      {groupInputs?.app_inputs?.map((input) =>
-        Boolean(input?.default === 'true' || input?.default === 'false') ? (
-          <div
-            key={input?.id}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start"
-          >
-            <div />
-            <div className="ml-1">
-              <CheckboxInput
-                labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0"
-                labelTextClassName="!text-base !font-normal"
-                defaultChecked={
-                  installInputs?.[input?.name]
-                    ? Boolean(installInputs?.[input?.name] === 'true')
-                    : Boolean(input?.default === 'true')
-                }
-                labelText={input?.display_name}
-                name={`inputs:${input?.name}`}
-              />
+      {groupInputs?.app_inputs
+        ?.sort((a, b) => a?.index - b?.index)
+        ?.map((input) =>
+          Boolean(input?.default === 'true' || input?.default === 'false') ||
+          input?.type === 'bool' ? (
+            <div
+              key={input?.id}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start"
+            >
+              <div />
+              <div className="ml-1">
+                <CheckboxInput
+                  labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0"
+                  labelTextClassName="!text-base !font-normal"
+                  defaultChecked={
+                    installInputs?.[input?.name]
+                      ? Boolean(installInputs?.[input?.name] === 'true')
+                      : Boolean(input?.default === 'true')
+                  }
+                  labelText={input?.display_name}
+                  name={`inputs:${input?.name}`}
+                />
+              </div>
             </div>
-          </div>
-        ) : (
-          <Field
-            key={input?.id}
-            labelText={`${input?.display_name}${input?.required ? ' *' : ''}`}
-            helpText={input?.description}
-          >
-            <Input
-              type={input?.sensitive ? 'password' : 'text'}
-              name={`inputs:${input?.name}`}
-              required={input?.required}
-              defaultValue={installInputs?.[input?.name] || input?.default}
-            />
-          </Field>
-        )
-      )}
+          ) : (
+            <Field
+              key={input?.id}
+              labelText={`${input?.display_name}${input?.required ? ' *' : ''}`}
+              helpText={input?.description}
+            >
+              {input?.type === 'json' ? (
+                <CodeViewer
+                  language="json"
+                  initCodeSource={
+                    installInputs?.[input?.name] || input?.default
+                  }
+                  isEditable
+                  name={`inputs:${input?.name}`}
+                  required={input?.required}
+                />
+              ) : (
+                <Input
+                  type={
+                    input?.type === 'number'
+                      ? 'number'
+                      : input?.sensitive
+                        ? 'password'
+                        : 'text'
+                  }
+                  name={`inputs:${input?.name}`}
+                  required={input?.required}
+                  defaultValue={installInputs?.[input?.name] || input?.default}
+                />
+              )}
+            </Field>
+          )
+        )}
     </fieldset>
   )
 }

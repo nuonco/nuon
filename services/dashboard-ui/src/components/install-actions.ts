@@ -262,16 +262,14 @@ export async function deleteComponents({
   orgId,
   force = false,
 }: IDeleteComponents) {
-  // @ts-ignore
-  const params = new URLSearchParams({ force })
   const res = fetch(
-    `${API_URL}/v1/installs/${installId}/components?${params.toString()}`,
+    `${API_URL}/v1/installs/${installId}/components/teardown-all`,
     {
       ...(await getFetchOpts(orgId)),
       body: JSON.stringify({
-        // error_behavior: continueOnError ? 'continue' : 'abort',
+        error_behavior: force ? 'continue' : 'abort',
       }),
-      method: 'DELETE',
+      method: 'POST',
     }
   )
     .then((r) => {
@@ -303,23 +301,14 @@ export async function deleteComponent({
   orgId,
   force = false,
 }: IDeleteComponent) {
-  // @ts-ignore
-  const params = new URLSearchParams({ force })
-  // return mutateData({
-  //   errorMessage: 'Unable to delete component',
-  //   orgId,
-  //   method: 'DELETE',
-  //   path: `installs/${installId}/components/${componentId}?${params.toString()}`,
-  // })
-
   const res = fetch(
-    `${API_URL}/v1/installs/${installId}/components/${componentId}?${params.toString()}`,
+    `${API_URL}/v1/installs/${installId}/components/${componentId}/teardown`,
     {
       ...(await getFetchOpts(orgId)),
       body: JSON.stringify({
-        // error_behavior: continueOnError ? 'continue' : 'abort',
+        error_behavior: force ? 'continue' : 'abort',
       }),
-      method: 'DELETE',
+      method: 'POST',
     }
   )
     .then((r) => {
@@ -347,12 +336,23 @@ export async function deleteInstall({
   orgId,
   force = false,
 }: IDeleteInstall) {
-  // @ts-ignore
-  const params = new URLSearchParams({ force })
-  return mutateData({
-    errorMessage: 'Unable to delete install',
-    orgId,
-    method: 'DELETE',
-    path: `installs/${installId}?${params.toString()}`,
+  const res = fetch(`${API_URL}/v1/installs/${installId}/deprovision`, {
+    ...(await getFetchOpts(orgId)),
+    body: JSON.stringify({
+      error_behavior: force ? 'continue' : 'abort',
+    }),
+    method: 'POST',
   })
+    .then((r) => {
+      if (!r.ok) {
+        throw new Error('Unable to kick off install deprovision')
+      } else {
+        return r
+      }
+    })
+    .catch((err) => {
+      throw new Error(err)
+    })
+
+  return (await res).headers.get('x-nuon-install-workflow-id')
 }

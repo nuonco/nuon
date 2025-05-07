@@ -53,7 +53,7 @@ export const DeleteInstallModal: FC<IDeleteInstallModal> = ({ install }) => {
             <Modal
               className="!max-w-2xl"
               isOpen={isOpen}
-              heading={`Delete install`}
+              heading={`Deprovision install`}
               onClose={() => {
                 setIsOpen(false)
               }}
@@ -62,10 +62,11 @@ export const DeleteInstallModal: FC<IDeleteInstallModal> = ({ install }) => {
                 {error ? <Notice>{error}</Notice> : null}
                 <span>
                   <Text variant="med-14">
-                    Are you sure you want to delete {install?.name}?
+                    Are you sure you want to deprovision {install?.name}?
                   </Text>
                   <Text variant="reg-14">
-                    Deleteing install will remove it from the cloud account.
+                    Deprovisioning an install will remove it from the cloud
+                    account.
                   </Text>
                 </span>
                 <Notice>
@@ -128,14 +129,22 @@ export const DeleteInstallModal: FC<IDeleteInstallModal> = ({ install }) => {
                   onClick={() => {
                     setIsLoading(true)
                     deleteInstall({ installId, orgId, force })
-                      .then(() => {
+                      .then((workflowId) => {
                         trackEvent({
                           event: 'install_delete',
                           user,
                           status: 'ok',
                           props: { orgId, installId },
                         })
-                        router.push(`/${orgId}/installs`)
+
+                        if (workflowId) {
+                          router.push(
+                            `/${orgId}/installs/${installId}/history/${workflowId}`
+                          )
+                        } else {
+                          router.push(`/${orgId}/installs/${installId}/history`)
+                        }
+
                         setForceDelete(false)
                         setIsLoading(false)
                         setIsKickedOff(true)
@@ -163,7 +172,7 @@ export const DeleteInstallModal: FC<IDeleteInstallModal> = ({ install }) => {
                   ) : (
                     <TrashSimple size="18" />
                   )}{' '}
-                  Delete install
+                  Deprovision install
                 </Button>
               </div>
             </Modal>,
@@ -177,7 +186,7 @@ export const DeleteInstallModal: FC<IDeleteInstallModal> = ({ install }) => {
           setIsOpen(true)
         }}
       >
-        <TrashSimple size="16" /> Delete install
+        <TrashSimple size="16" /> Deprovision install
       </Button>
     </>
   )

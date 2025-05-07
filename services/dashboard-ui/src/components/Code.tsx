@@ -1,13 +1,17 @@
+// @ts-nocheck
 'use client'
 
 import React, { useState, type FC } from 'react'
 import CodeEditor from '@uiw/react-textarea-code-editor'
+//import JsonViewer from '@andypf/json-viewer/dist/esm/react/JsonViewer'
 
 export interface ICodeViewer {
   isEditable?: boolean
   initCodeSource?: string
   language?: 'shell' | 'toml' | 'json' | 'hcl' | 'yaml'
   placeholder?: string
+  name?: string
+  required?: boolean
 }
 
 export const CodeViewer: FC<ICodeViewer> = ({
@@ -15,6 +19,8 @@ export const CodeViewer: FC<ICodeViewer> = ({
   initCodeSource = '',
   language = 'shell',
   placeholder = '',
+  name,
+  required,
 }) => {
   const [code, setCode] = useState(initCodeSource)
 
@@ -29,6 +35,8 @@ export const CodeViewer: FC<ICodeViewer> = ({
         }}
         padding={16}
         readOnly={!isEditable}
+        name={name}
+        required={required}
         style={{
           backgroundColor: 'light-dark(#EAEDF0, #19171C)',
           color: 'light-dark(#1E50C0, #6792F4)',
@@ -43,3 +51,16 @@ export const CodeViewer: FC<ICodeViewer> = ({
     </div>
   )
 }
+
+/* export const JsonView = ({ data, ...props }) => (
+ *   <JsonViewer
+ *     data={data}
+ *     {...props}
+ *     theme={
+ *       window.matchMedia &&
+ *       window.matchMedia('(prefers-color-scheme: dark)').matches
+ *         ? 'google-dark'
+ *         : 'google-light'
+ *     }
+ *   />
+ * ) */

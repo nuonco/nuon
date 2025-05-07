@@ -7,7 +7,10 @@ import {
   StaticComponentConfigType,
   getComponentConfigType,
 } from '@/components/ComponentConfig'
-import { InstallComponentsManagementDropdown } from '@/components/Installs'
+import {
+  DeleteComponentsModal,
+  DeployComponentsModal,
+} from '@/components/InstallComponents'
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
 import { DataTableSearch, Table } from '@/components/DataTable'
@@ -39,7 +42,9 @@ function parseInstallComponentsToTableData(
   return installComponents.map((comp) => ({
     buildStatus: comp.build?.status || 'No build',
     componentId: comp.component_id,
-    componentType: comp?.config ?  getComponentConfigType(comp?.config) : undefined,
+    componentType: comp?.config
+      ? getComponentConfigType(comp?.config)
+      : undefined,
     configVersion: comp.config?.version,
     installComponentId: comp.id,
     deployStatus: comp.install_deploys?.[0]?.status || 'Not deployed',
@@ -90,11 +95,16 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
       {
         header: 'Type',
         accessorKey: 'componentType',
-        cell: (props) => props.getValue<string>() ? (
-          <Text className="gap-4">
-            <StaticComponentConfigType configType={props.getValue<string>()} />
-          </Text>
-        ) : "-", 
+        cell: (props) =>
+          props.getValue<string>() ? (
+            <Text className="gap-4">
+              <StaticComponentConfigType
+                configType={props.getValue<string>()}
+              />
+            </Text>
+          ) : (
+            '-'
+          ),
       },
       {
         header: 'Deployment',
@@ -164,7 +174,10 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
             handleOnChange={handleGlobleFilter}
             value={globalFilter}
           />
-          <InstallComponentsManagementDropdown />
+          <div className="flex items-center gap-4">
+            <DeployComponentsModal installId={installId} orgId={orgId} />
+            <DeleteComponentsModal installId={installId} orgId={orgId} />
+          </div>
         </div>
       }
       data={data}
