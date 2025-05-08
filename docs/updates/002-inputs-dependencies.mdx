@@ -2,12 +2,19 @@
 title: 002 - Install Inputs, dependencies, and more 
 description: Install Inputs, dependencies and more
 ---
-_May 6th, 2025 v0.19.540_
+_May 6th, 2025_
+
+<div className="badge badge--primary">v0.19.540</div>
+
+<blockquote>
+This update adds support for input types, internal inputs, auto-configured dependencies, and improvements to Terraform component workflows with KUBECONFIG integration and workspace management.
+</blockquote>
+
+<TOCInline toc={toc} maxHeadingLevel={3} />
 
 ## Input Types
 
-You can now define an input type, which denotes which type of input is accepted. This is used to control rendering 
-across different install inputs, and will allow us to build more semantic meaning into inputs.
+You can now define an input type, which denotes which type of input is accepted. This is used to control rendering across different install inputs and will allow us to build more semantic meaning into inputs.
 
 You can define a `type` field on an input in your config. The following types are supported:
 
@@ -24,8 +31,7 @@ management soon.
 
 ## Internal Inputs
 
-Internal inputs are inputs that are only settable via the Nuon dashboard. This allows you to define inputs that a 
-customer can not control directly, or set internal values.
+Internal inputs are inputs that are only settable via the Nuon dashboard. This allows you to define inputs that a customer cannot control directly or set internal values.
 
 You can use `internal: true` to mark an input as internal.
 
@@ -33,8 +39,7 @@ You can use `internal: true` to mark an input as internal.
 
 ## Dependencies
 
-Dependencies are now auto configured, based on the variables that you define. For example the following config would 
-mark `container_image` as a dependency.
+Dependencies are now auto-configured based on the variables that you define. For example, the following config would mark `container_image` as a dependency.
 
 ```toml
 [values]
@@ -75,13 +80,13 @@ YAML
 
 You can now see resources managed by a Terraform component in the UI.
 
-![Terraform Component Workspace](assets/terraform-component-workspace.png)
+![UI view of resources managed by a Terraform component](assets/terraform-component-workspace.png)
 
 To make working with terraform state easier, you can now download a nuon backend config file for any workspace with the push of a button.
 
-![Terraform Backend File Export](assets/terraform-backend-file-export.png)
+![Export button for downloading Terraform backend configuration](assets/terraform-backend-file-export.png)
 
-## Fixes
+## Bug Fixes and Improvements
 
 * Fixed an issue where only 64MB was reserved for the runner.
 * Input Group and Input ordering is now respected.
