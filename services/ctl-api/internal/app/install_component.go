@@ -71,8 +71,6 @@ func (c *InstallComponent) AfterQuery(tx *gorm.DB) error {
 		return nil
 	}
 
-	c.Status = InstallComponentStatusUnknown
-
 	return nil
 }
 
