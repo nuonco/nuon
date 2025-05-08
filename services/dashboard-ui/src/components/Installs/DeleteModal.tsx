@@ -92,12 +92,12 @@ export const DeleteInstallModal: FC<IDeleteInstallModal> = ({ install }) => {
                     <Text variant="med-14">
                       To verify, type{' '}
                       <span className="text-red-800 dark:text-red-500">
-                        deprovision
+                        {install?.name}
                       </span>{' '}
                       below.
                     </Text>
                     <Input
-                      placeholder="deprovision"
+                      placeholder="install name"
                       className="w-full"
                       type="text"
                       value={confirm}
@@ -138,7 +138,7 @@ export const DeleteInstallModal: FC<IDeleteInstallModal> = ({ install }) => {
                   Cancel
                 </Button>
                 <Button
-                  disabled={confirm !== 'deprovision'}
+                  disabled={confirm !== install.name}
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
                     setIsLoading(true)
