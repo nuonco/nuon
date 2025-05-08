@@ -85,3 +85,28 @@ func PreloadAppConfigComponentConfigConnections(db *gorm.DB) *gorm.DB {
 		// preload all job configs
 		Preload("ComponentConfigConnections.JobComponentConfig")
 }
+
+// component config connections
+func PreloadComponentConfigConnections(db *gorm.DB) *gorm.DB {
+	return db.
+		// preload all terraform configs
+		Preload("ComponentConfigs.TerraformModuleComponentConfig").
+		Preload("ComponentConfigs.TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+
+		// preload all helm configs
+		Preload("ComponentConfigs.HelmComponentConfig").
+		Preload("ComponentConfigs.HelmComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig").
+
+		// preload all docker configs
+		Preload("ComponentConfigs.DockerBuildComponentConfig").
+		Preload("ComponentConfigs.DockerBuildComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
+
+		// preload all external image configs
+		Preload("ComponentConfigs.ExternalImageComponentConfig").
+
+		// preload all job configs
+		Preload("ComponentConfigs.JobComponentConfig")
+}
