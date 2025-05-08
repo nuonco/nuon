@@ -95,12 +95,12 @@ export const ForgetModal: FC<IForgetModal> = ({ install, orgId }) => {
                     <Text variant="med-14">
                       To verify, type{' '}
                       <span className="text-red-800 dark:text-red-500">
-                        forget
+                        {install.name}
                       </span>{' '}
                       below.
                     </Text>
                     <Input
-                      placeholder="forget"
+                      placeholder="install name"
                       className="w-full"
                       type="text"
                       value={confirm}
@@ -121,7 +121,7 @@ export const ForgetModal: FC<IForgetModal> = ({ install, orgId }) => {
                   Cancel
                 </Button>
                 <Button
-                  disabled={confirm !== 'forget'}
+                  disabled={confirm !== install.name}
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
                     setIsLoading(true)
