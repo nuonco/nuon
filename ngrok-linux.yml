@@ -1,0 +1,10 @@
+# configuration for the ngrok tunnels started as part of local dev docker compose
+# these are set up for osx networking, so if you're not 
+version: "3"
+endpoints:
+- name: public
+  upstream:
+    url: http://localhost:8081
+- name: runner
+  upstream:
+    url: http://localhost:8083
