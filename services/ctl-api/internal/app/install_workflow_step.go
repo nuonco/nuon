@@ -19,6 +19,7 @@ const (
 	InstallWorkflowStepExecutionTypeSystem   InstallWorkflowStepExecutionType = "system"
 	InstallWorkflowStepExecutionTypeUser     InstallWorkflowStepExecutionType = "user"
 	InstallWorkflowStepExecutionTypeApproval InstallWorkflowStepExecutionType = "approval"
+	InstallWorkflowStepExecutionTypeSkipped  InstallWorkflowStepExecutionType = "skipped"
 )
 
 type InstallWorkflowStep struct {

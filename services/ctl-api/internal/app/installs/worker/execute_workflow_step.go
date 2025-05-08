@@ -55,6 +55,18 @@ func (w *Workflows) ExecuteWorkflowStep(ctx workflow.Context, sreq signals.Reque
 		return w.handleStepErr(ctx, sreq.WorkflowStepID, err)
 	}
 
+	if step.ExecutionType == app.InstallWorkflowStepExecutionTypeSkipped {
+		if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: sreq.WorkflowStepID,
+			Status: app.CompositeStatus{
+				Status: app.StatusSuccess,
+			},
+		}); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	// NOTE(jm): this is going to be replaced with a way to coordinate signals across namespaces/concurrency models,
 	// but for now we're doing everything in this one process.
 	var sig signals.Signal
