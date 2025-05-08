@@ -11,7 +11,7 @@ import (
 )
 
 // getInstallComponents reads components deployed to an install from the DB.
-func (h *Helpers) getInstallComponents(ctx context.Context, installID string) ([]app.InstallComponent, error) {
+func (h *Helpers) GetInstallComponents(ctx context.Context, installID string) ([]app.InstallComponent, error) {
 	install := &app.Install{}
 	res := h.db.WithContext(ctx).
 		Preload("InstallComponents", func(db *gorm.DB) *gorm.DB {

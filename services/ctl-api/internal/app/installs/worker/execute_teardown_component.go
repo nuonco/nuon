@@ -21,7 +21,6 @@ import (
 func (w *Workflows) ExecuteTeardownComponent(ctx workflow.Context, sreq signals.RequestSignal) error {
 	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
 	if err != nil {
-		w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "unable to get install from database")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
