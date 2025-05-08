@@ -2,7 +2,7 @@
 
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { CaretRight } from '@phosphor-icons/react'
+import { CaretRight, Minus } from '@phosphor-icons/react'
 import { AppSandboxRepoDirLink } from '@/components/AppSandbox'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { InstallPlatform } from '@/components/InstallCloudPlatform'
@@ -26,11 +26,11 @@ type TData = {
 function parseAppsToTableData(apps: Array<TApp>): Array<TData> {
   return apps.map((app) => {
     const isGithubConnected = Boolean(
-      app.sandbox_config?.connected_github_vcs_config
+      app?.sandbox_config?.connected_github_vcs_config
     )
     const repo =
-      app.sandbox_config?.connected_github_vcs_config ||
-      app.sandbox_config?.public_git_vcs_config
+      app?.sandbox_config?.connected_github_vcs_config ||
+      app?.sandbox_config?.public_git_vcs_config
     const sandbox_repo = repo
       ? buildSandboxDirPath(repo?.repo, repo?.directory)
       : null
@@ -38,8 +38,8 @@ function parseAppsToTableData(apps: Array<TApp>): Array<TData> {
     return {
       appId: app.id,
       name: app.name,
-      platform: app.runner_config?.cloud_platform,
-      runner_type: app.runner_config.app_runner_type,
+      platform: app?.runner_config?.cloud_platform,
+      runner_type: app?.runner_config?.app_runner_type,
       sandbox_repo,
       isGithubConnected,
     }
@@ -91,16 +91,14 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
               isGithubConnected={props.row.original.isGithubConnected}
             />
           ) : (
-            <Text>No sandbox config</Text>
+            <Minus />
           )
         },
       },
       {
         header: 'Runner',
         accessorKey: 'runner_type',
-        cell: (props) => (
-          <Text>{props.getValue<string>() || 'No runner config'}</Text>
-        ),
+        cell: (props) => <Text>{props.getValue<string>() || <Minus />}</Text>,
       },
       {
         id: 'test',
