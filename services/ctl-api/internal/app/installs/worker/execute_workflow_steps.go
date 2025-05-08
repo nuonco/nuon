@@ -128,8 +128,8 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 		if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: sreq.InstallWorkflowID,
 			Status: app.CompositeStatus{
-				Status:                 app.StatusError,
-				StatusHumanDescription: "finished executing step " + strconv.Itoa(step.Idx),
+				Status:                 app.StatusSuccess,
+				StatusHumanDescription: "finished executing step " + strconv.Itoa(step.Idx+1),
 				Metadata: map[string]any{
 					"step_idx": step.Idx,
 					"status":   "ok",

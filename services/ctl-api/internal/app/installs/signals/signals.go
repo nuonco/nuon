@@ -68,6 +68,10 @@ type TeardownComponentSubSignal struct {
 	ComponentID string
 }
 
+type SkipStepSubSignal struct {
+	Reason string
+}
+
 type Signal struct {
 	Type eventloop.SignalType `json:"type"`
 
@@ -80,6 +84,7 @@ type Signal struct {
 	InstallActionWorkflowTrigger      InstallActionWorkflowTriggerSubSignal `json:"install_action_workflow_trigger"`
 	ExecuteDeployComponentSubSignal   DeployComponentSubSignal              `json:"deploy_component_sub_signal"`
 	ExecuteTeardownComponentSubSignal TeardownComponentSubSignal            `json:"teardown_component_sub_signal"`
+	ExecuteSkipStepSubSignal          SkipStepSubSignal                     `json:"skip_step_sub_signal"`
 
 	// used for executing an install workflow
 	WorkflowStepID   string `json:"install_workflow_step_id"`

@@ -27,7 +27,7 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string) (*state
 	is.Inputs = h.toInputState(install.CurrentInstallInputs)
 	is.Cloud = h.toCloudAccount(install)
 
-	installComps, err := h.getInstallComponents(ctx, installID)
+	installComps, err := h.GetInstallComponents(ctx, installID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install components")
 	}
