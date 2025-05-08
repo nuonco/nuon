@@ -174,7 +174,8 @@ services:
     volumes:
       - ./parca.yaml:/etc/parca/parca.yaml:ro
 
-  ngrok:
+  ngrok-darwin:
+    profiles: ["darwin"]
     image: ngrok/ngrok:latest
     container_name: ngrok
     restart: unless-stopped
@@ -184,13 +185,29 @@ services:
       - "--config"
       - "/etc/ngrok.yml"
     ports:
-      - "4041:4040"
+      - "4040:4040"
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
     volumes:
-      - ./ngrok-docker.yml:/etc/ngrok.yml:ro
+      - ./ngrok-darwin.yml:/etc/ngrok.yml:ro
     networks:
       - default
+
+  ngrok-linux:
+    profiles: ["linux"]
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    restart: unless-stopped
+    command:
+      - "start"
+      - "--all"
+      - "--config"
+      - "/etc/ngrok.yml"
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    volumes:
+      - ./ngrok-linux.yml:/etc/ngrok.yml:ro
+    network_mode: host
 
 volumes:
   postgres:
