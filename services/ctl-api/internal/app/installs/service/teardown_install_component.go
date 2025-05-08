@@ -62,6 +62,17 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 		return
 	}
 
+	installComponent, err := s.helpers.GetInstallComponent(ctx, installID, componentID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install component: %w", err))
+		return
+	}
+
+	if installComponent.Status == app.InstallComponentStatusInactive {
+		ctx.Error(fmt.Errorf("install component is already inactive"))
+		return
+	}
+
 	workflow, err := s.helpers.CreateInstallWorkflow(ctx,
 		install.ID,
 		app.InstallWorkflowTypeTeardownComponent,

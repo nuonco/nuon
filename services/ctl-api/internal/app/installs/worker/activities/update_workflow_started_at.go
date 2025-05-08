@@ -11,7 +11,7 @@ import (
 )
 
 type UpdateWorkflowStartedAtRequest struct {
-	ID        string    `validate:"required"`
+	ID string `validate:"required"`
 }
 
 // @temporal-gen activity

@@ -30,7 +30,7 @@ func (a *Activities) getInstallComponent(ctx context.Context, installID, compone
 		Preload("Component.Dependencies").
 		Preload("TerraformWorkspace").
 		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_deploys.created_at DESC")
+			return db.Order("install_deploys.created_at DESC").Limit(1)
 		}).
 		Where(app.InstallComponent{
 			InstallID:   installID,
