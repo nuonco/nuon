@@ -54,6 +54,29 @@ func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 		return
 	}
 
+	installCmps, err := s.helpers.GetInstallComponents(ctx, installID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install components: %w", err))
+		return
+	}
+
+	if len(installCmps) == 0 {
+		ctx.JSON(http.StatusNoContent, "no components to teardown")
+		return
+	}
+
+	allInactive := true
+	for _, cmp := range installCmps {
+		if cmp.Status != app.InstallComponentStatusInactive {
+			allInactive = false
+			break
+		}
+	}
+	if allInactive {
+		ctx.Error(fmt.Errorf("install components are already inactive"))
+		return
+	}
+
 	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureIndependentRunner)
 	if err != nil {
 		ctx.Error(err)
