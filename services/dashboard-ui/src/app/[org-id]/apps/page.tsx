@@ -48,6 +48,6 @@ export default withPageAuthRequired(async function Apps({ params }) {
 })
 
 const LoadApps: FC<{ orgId: string }> = async ({ orgId }) => {
-  const apps = await getApps({ orgId })
+  const apps = await getApps({ orgId })  
   return apps?.length ? <OrgAppsTable apps={apps} orgId={orgId} /> : <NoApps />
 }

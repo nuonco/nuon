@@ -25,7 +25,7 @@ export const NuonVersions: FC<INuonVersion> = ({
   return (
     <div
       {...props}
-      className={classNames('flex gap-2', {
+      className={classNames('flex gap-2 on-enter enter-left', {
         [`${className}`]: Boolean(className),
       })}
     >

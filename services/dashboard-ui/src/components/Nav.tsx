@@ -35,8 +35,12 @@ export const MainNav: FC<{
       href: `/${org.id}`,
       text: (
         <>
-          <SquaresFour />
-          {isSidebarOpen ? 'Dashboard' : null}
+          <span>
+            <SquaresFour />
+          </span>
+          {isSidebarOpen ? (
+            <span className="overflow-hidden">Dashboard</span>
+          ) : null}
         </>
       ),
     },
@@ -45,8 +49,10 @@ export const MainNav: FC<{
       href: `/${org.id}/apps`,
       text: (
         <>
-          <AppWindow weight="bold" />
-          {isSidebarOpen ? 'Apps' : null}
+          <span>
+            <AppWindow weight="bold" />
+          </span>
+          {isSidebarOpen ? <span className="overflow-hidden">Apps</span> : null}
         </>
       ),
     },
@@ -54,8 +60,12 @@ export const MainNav: FC<{
       href: `/${org.id}/installs`,
       text: (
         <>
-          <Cube weight="bold" />
-          {isSidebarOpen ? 'Installs' : null}
+          <span>
+            <Cube weight="bold" />
+          </span>
+          {isSidebarOpen ? (
+            <span className="overflow-hidden">Installs</span>
+          ) : null}
         </>
       ),
     },
@@ -63,8 +73,12 @@ export const MainNav: FC<{
       href: `/${org.id}/runner`,
       text: (
         <>
-          <SneakerMove weight="bold" />
-          {isSidebarOpen ? 'Build runner' : null}
+          <span>
+            <SneakerMove weight="bold" />
+          </span>
+          {isSidebarOpen ? (
+            <span className="overflow-hidden">Build runner</span>
+          ) : null}
         </>
       ),
     },
@@ -87,8 +101,10 @@ export const MainNav: FC<{
       href: `/${org.id}/team`,
       text: (
         <>
-          <UsersThree weight="bold" />
-          {isSidebarOpen ? 'Team' : null}
+          <span>
+            <UsersThree weight="bold" />
+          </span>
+          {isSidebarOpen ? <span className="overflow-hidden">Team</span> : null}
         </>
       ),
     },
@@ -99,11 +115,13 @@ export const MainNav: FC<{
       href: `https://docs.nuon.co`,
       text: (
         <>
-          <Books weight="bold" />
+          <span>
+            <Books weight="bold" />
+          </span>
           {isSidebarOpen ? (
-            <>
+            <span className="overflow-hidden flex items-center gap-4">
               Developer docs <ArrowSquareOut size="14" />
-            </>
+            </span>
           ) : null}
         </>
       ),
@@ -114,8 +132,12 @@ export const MainNav: FC<{
       href: `/${org.id}/releases`,
       text: (
         <>
-          <ListDashes weight="bold" />
-          {isSidebarOpen ? 'Releases' : null}
+          <span>
+            <ListDashes weight="bold" />
+          </span>
+          {isSidebarOpen ? (
+            <span className="overflow-hidden">Releases</span>
+          ) : null}
         </>
       ),
     },
@@ -126,7 +148,7 @@ export const MainNav: FC<{
     const hrefParts = link.href.split('/')
     const isActive = pathParts[2] === hrefParts[2]
     const classes = classNames(
-      'flex items-center font-sans font-medium gap-4 text-lg leading-normal rounded-md p-2.5 w-full',
+      'flex items-center font-sans font-medium gap-4 text-lg leading-normal rounded-md p-2.5 w-full text-nowrap overflow-hidden',
       {
         '!text-cool-grey-800 dark:!text-cool-grey-400 hover:bg-black/5 dark:hover:bg-white/10':
           !isActive,
@@ -149,7 +171,7 @@ export const MainNav: FC<{
   }
 
   return (
-    <nav className="flex-auto flex flex-col gap-2">
+    <nav className="flex-auto flex flex-col gap-2 w-full">
       {getMainNavItems(links).map((link) => (
         <NavLink key={link.href} link={link} />
       ))}
