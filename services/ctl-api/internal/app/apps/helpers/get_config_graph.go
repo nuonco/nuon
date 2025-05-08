@@ -20,12 +20,35 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 		graph.Acyclic())
 
 	// add all components to the config here
+	visitedComps := make(map[string]struct{}, 0)
+
 	for _, ccc := range cfg.ComponentConfigConnections {
 		ccc.Component.Type = ccc.Type
+
+		visitedComps[ccc.Component.ID] = struct{}{}
 
 		if err := g.AddVertex(&ccc.Component,
 			graph.VertexAttribute("name", ccc.Component.Name),
 			graph.VertexAttribute("type", string(ccc.Type)),
+		); err != nil {
+			return nil, err
+		}
+	}
+
+	// get all components and their latest config, and then ensure any components which are not connected to this
+	// config use the latest component config to attach them to the graph
+	allComps, err := h.GetAppComponentsAndLatestConfigConnection(ctx, cfg.AppID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app components")
+	}
+	for _, comp := range allComps {
+		if _, visited := visitedComps[comp.ID]; visited {
+			continue
+		}
+
+		if err := g.AddVertex(&comp,
+			graph.VertexAttribute("name", comp.Name),
+			graph.VertexAttribute("type", string(comp.Type)),
 		); err != nil {
 			return nil, err
 		}
