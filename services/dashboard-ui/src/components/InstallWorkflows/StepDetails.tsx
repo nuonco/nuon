@@ -1,5 +1,6 @@
 import React, { type FC } from 'react'
 import { Loading } from '@/components/Loading'
+import { Notice } from '@/components/Notice'
 import { Text, Code } from '@/components/Typography'
 import type { TInstallWorkflowStep, TInstall } from '@/types'
 import { ActionStepDetails } from './ActionStepDetails'
@@ -13,6 +14,7 @@ export function getStepType(
   install: TInstall
 ): React.ReactNode {
   let stepDetails = <>Unknown step</>
+
   switch (step.step_target_type) {
     case 'install_sandbox_runs':
       stepDetails = (
@@ -60,6 +62,17 @@ export function getStepType(
       break
     default:
       stepDetails = <Loading loadingText="Waiting on step..." variant="page" />
+  }
+
+  if (step?.execution_type === 'skipped') {
+    stepDetails = (
+      <div className="flex flex-col gap-2">
+        <Text>Step has been skipped</Text>
+        {step?.metadata?.reason ? (
+          <Notice variant="warn">{step?.metadata?.reason}</Notice>
+        ) : null}
+      </div>
+    )
   }
 
   return (
