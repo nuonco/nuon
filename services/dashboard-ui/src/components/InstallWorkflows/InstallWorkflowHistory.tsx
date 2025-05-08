@@ -122,9 +122,10 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
   )
 }
 
-export const YAStatus: FC<{ status: TInstallWorkflow['status']['status'] }> = ({
-  status,
-}) => {
+export const YAStatus: FC<{
+  status: TInstallWorkflow['status']['status']
+  isSkipped?: boolean
+}> = ({ status, isSkipped = false }) => {
   const isSuccess = status === 'active' || status === 'success'
   const isError = status === 'error'
   const isProhibit = status === 'outdated'
@@ -155,7 +156,7 @@ export const YAStatus: FC<{ status: TInstallWorkflow['status']['status'] }> = ({
         'rounded-full w-[26px] h-[26px] flex items-center justify-center',
         {
           'bg-green-600/15 dark:bg-green-500/15 text-green-800 dark:text-green-500':
-            isSuccess,
+            isSuccess && !isSkipped,
           'bg-red-600/15 dark:bg-red-500/15 text-red-800 dark:text-red-500':
             isError,
           'bg-orange-600/15 dark:bg-orange-500/15 text-orange-800 dark:text-orange-500':
@@ -165,11 +166,11 @@ export const YAStatus: FC<{ status: TInstallWorkflow['status']['status'] }> = ({
           'bg-blue-600/15 dark:bg-blue-500/15 text-blue-800 dark:text-blue-500':
             isInProgress,
           'bg-cool-grey-600/15 dark:bg-cool-grey-500/15 text-cool-grey-800 dark:text-cool-grey-500':
-            isPending,
+            isPending || isSkipped,
         }
       )}
     >
-      {StatusIcon}
+      {isSkipped ? <Prohibit size="18" weight="bold" /> : StatusIcon}
     </span>
   )
 }
