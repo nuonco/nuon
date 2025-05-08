@@ -38,6 +38,8 @@ account-blocklist:
   - 410635945163
   # stage
   - 676549690856
+  # sandbox-retool
+  - 820186421191
 
 accounts:
   # demo
@@ -57,9 +59,29 @@ accounts:
   "034362041463":
     presets:
       - common
-      
+  # sandbox-ja
+  "105962189369":
+    presets:
+      - common
   # sandbox-jm
   "503638872234":
+    presets:
+      - common
+  # sandbox-nh
+  "977099022641":
+    presets:
+      - common
+  # sandbox-rb
+  "145023109787":
+    presets:
+      - common
+
+  # sandbox-sb
+  "390844782764":
+    presets:
+      - common
+  # sandbox-tw
+  "654471563882":
     presets:
       - common
 
