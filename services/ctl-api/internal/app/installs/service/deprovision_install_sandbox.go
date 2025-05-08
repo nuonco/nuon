@@ -47,6 +47,17 @@ func (s *service) DeprovisionInstallSandbox(ctx *gin.Context) {
 		return
 	}
 
+	installComponents, err := s.getUntornInstallComponents(ctx, install.ID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	if len(installComponents) > 0 {
+		ctx.Error(fmt.Errorf("install %s has untorn components", install.ID))
+		return
+	}
+
 	var req DeprovisionInstallSandboxRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
@@ -71,4 +82,15 @@ func (s *service) DeprovisionInstallSandbox(ctx *gin.Context) {
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
 	ctx.JSON(http.StatusCreated, "ok")
+}
+
+func (s *service) getUntornInstallComponents(ctx *gin.Context, installID string) ([]app.InstallComponent, error) {
+	installComponents := []app.InstallComponent{}
+	resp := s.db.WithContext(ctx).
+		Where("install_id = ? and status != ?", installID, app.InstallComponentStatusInactive).
+		Find(&installComponents)
+	if resp.Error != nil {
+		return nil, fmt.Errorf("unable to get install components: %w", resp.Error)
+	}
+	return installComponents, nil
 }
