@@ -19,13 +19,13 @@ export const Profile: FC<{ isSidebarOpen?: boolean }> = ({
       <div className="flex gap-4 items-center">
         <Image
           className="rounded-lg"
-          height={40}
-          width={40}
+          height={39}
+          width={39}
           src={user.picture as string}
           alt={user.name as string}
         />
         {isSidebarOpen ? (
-          <div className="flex flex-col gap-0">
+          <div className="w-full overflow-hidden">
             <Text className="truncate" variant="med-14">
               {user.name}
             </Text>
@@ -45,7 +45,7 @@ export const SignOutButton: FC<{ isSidebarOpen?: boolean }> = ({
   const { user } = useUser()
   return (
     user && (
-      <span className="flex items-center justify-between w-full gap-2">
+      <span className="flex items-center justify-between w-full gap-2 overflow-hidden">
         <Profile isSidebarOpen={isSidebarOpen} />
         {isSidebarOpen ? (
           <a
