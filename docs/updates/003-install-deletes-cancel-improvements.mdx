@@ -2,84 +2,99 @@
 title: 003 - Improvements to deletions, cancellations and more.
 description: Improvements to deletions, cancellations and more.
 ---
-_May 8th, 2025 v0.19.542_
+_May 8th, 2025_
+
+<div className="badge badge--primary">v0.19.542</div>
+
+<blockquote>
+This update focuses on improvements to install management, including component dependency ordering, UI enhancements, and comprehensive options for deprovisioning installs, components, sandboxes, and stacks.
+</blockquote>
+
+<TOCInline toc={toc} maxHeadingLevel={3} />
 
 ## Component Dependencies Sub-Ordering
 
-When multiple components have either the same dependencies, or no dependencies they will automatically be ordered by 
-component type.
+When multiple components have either the same dependencies or no dependencies, they will automatically be ordered by component type.
 
 They will use this ordering:
 
 1. `container_image`
-1. `docker_build`
-1. `terraform_module`
-1. `helm_deploy`
+2. `docker_build`
+3. `terraform_module`
+4. `helm_deploy`
 
-![Component Dependencies Sub-Ordering](assets/2025-05-07-15-48-54.png)
+![UI showing component ordering based on type and dependencies](assets/003/2025-05-07-15-48-54.png)
 
-If two components have the same dependencies _and_ the same type, they will be ordered by name. For instance, in the 
-  following deploy, only the helm deploy has any defined dependencies:
+If two components have the same dependencies _and_ the same type, they will be ordered by name. For instance, in the following deploy, only the helm deploy has any defined dependencies.
 
 ## Auto Hide Nav
 
 The side-nav bar will now automatically hide when not being used.
 
-![image](assets/2025-05-07-16-02-30.png).
+![Collapsible side navigation bar](assets/003/2025-05-07-16-02-30.png)
+
+## Restart Runner
+
+While you should not need this for normal usage, you can now restart your runner from the runners page.
+
+![Button to restart a runner from the runners page](assets/003/2025-05-07-16-44-36.png)
+
+## OCI Artifact Information
+
+Whenever a component is deployed into an install, an OCI artifact is synced into the install first. You can now see any 
+container image, helm chart artifact or terraform artifact that was synced during a deploy on the image tab.
+
+![UI showing OCI artifacts synced during component deployment](assets/003/2025-05-07-16-52-47.png)
 
 ## Deprovision an Install
 
-Deleting an install requires tearing down it's deployed components, destroying the sandbox, and destroying the 
-CloudFormation Stack via AWS.
+Deleting an install requires tearing down its deployed components, destroying the sandbox, and destroying the CloudFormation Stack via AWS.
 
 You can now delete an install from the install overview page in the UI:
 
-![deprovision install](assets/2025-05-07-15-58-31.png)
+![Deprovision Install button on the install overview page](assets/003/2025-05-07-15-58-31.png)
 
-If you have components that are not successfully deploying and you want to attempt to tear-down everything in the 
-  install, you can use the `continue` option:
+If you have components that are not successfully deploying and you want to attempt to tear down everything in the install, you can use the `continue` option:
 
-![Continue Option](assets/2025-05-07-15-57-57.png)
+![Continue option when deprovisioning with failing components](assets/003/2025-05-07-15-57-57.png)
 
 ## Forgot an Install
 
 Once you have deprovisioned an install, you must forget it to remove it from Nuon's system. You can do this from the 
 install overview page:
 
-![forget](assets/2025-05-07-16-01-21.png)
+![Forget Install button to remove a deprovisioned install](assets/003/2025-05-07-16-01-21.png)
 
-## Other Delete Capabilities
+## Additional Delete Options
 
 In the happy path, an install should be able to be deleted with just a single run of `Deprovision Install`. However, 
 when things go wrong or you are iterating, you can delete individual parts of an install directly.
 
 ### Delete an Install Component
 
-Sometimes an install will fail to destroy because a single component has leaked state. You can manually tear down component
-on the install component page.
+Sometimes an install will fail to destroy because a single component has leaked state. You can manually tear down a component on the install component page.
 
-![Teardown Component](assets/2025-05-07-15-55-12.png)
+![Teardown Component button on the install component page](assets/003/2025-05-07-15-55-12.png)
 
-<Note>If you have a failed install deprovision due to a component, you can directly tear down the component and then 
-re-run Deprovision Install to try again</Note>.
+<Note>If you have a failed install deprovision due to a component, you can directly tear down the component and then re-run Deprovision Install to try again</Note>
 
 ### Teardown Install Components
 
 You can delete all install components using the Teardown All Components option from the components overview.
 
-![Teardown All Components](assets/2025-05-07-15-56-47.png)
+![Teardown All Components option on the components overview page](assets/003/2025-05-07-15-56-47.png)
 
 ### Deprovision a Sandbox
 
 In rare cases, it can be helpful to forgo tearing down install components and deprovision only the sandbox. You can deprovision a sandbox directly from the sandbox tab on an install.
 
-![Deprovision Sandbox](assets/2025-05-07-15-53-35.png)
+![Deprovision Sandbox button on the sandbox tab](assets/003/2025-05-07-15-53-35.png)
 
-<Note>It is recommended to try the `Deprovision Install` button first</Note>.
+<Note>It is recommended to try the `Deprovision Install` button first</Note>
 
 ### Deprovision Install Stack
 
 The install stack can only be deleted from an install AWS account directly. If you click the deprovision stack button 
 from the install overview, you can find directions to deprovision it.
 
-![Deprovision Install Stack](assets/2025-05-07-15-50-36.png)
+![Deprovision Stack dialog with AWS CloudFormation instructions](assets/003/2025-05-07-15-50-36.png)
