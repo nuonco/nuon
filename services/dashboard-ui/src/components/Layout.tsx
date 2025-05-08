@@ -86,16 +86,14 @@ export const Layout: FC<{
   orgs: Array<TOrg>
   versions: TNuonVersions
 }> = ({ children, orgs, versions }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isManualOpen, setIsManualOpen] = useState(false)
-  const searchParams = useSearchParams()
-
-  useEffect(() => {
-    if (localStorage.getItem('isOpen')) {
-      setIsOpen(localStorage.getItem('isOpen') === 'true')
-      setIsManualOpen(localStorage.getItem('isOpen') === 'true')
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('isOpen') === 'true' || false
     }
-  }, [])
+
+    return false
+  })
+  const searchParams = useSearchParams()
 
   return (
     <div
@@ -103,23 +101,7 @@ export const Layout: FC<{
         'layout--open': isOpen,
       })}
     >
-      <aside
-        className="layout_aside dashboard_sidebar border-r flex flex-col"
-        onMouseEnter={() => {
-          if (!isManualOpen) {
-            if (!isOpen) {
-              setIsOpen(true)
-            }
-          }
-        }}
-        onMouseLeave={() => {
-          if (!isManualOpen) {
-            if (isOpen) {
-              setIsOpen(false)
-            }
-          }
-        }}
-      >
+      <aside className="layout_aside dashboard_sidebar border-r flex flex-col">
         <header className="flex flex-col gap-4">
           <div className="border-b flex items-center justify-between px-4 pt-6 pb-4 h-[75px]">
             {isOpen ? <Logo /> : null}
@@ -130,16 +112,11 @@ export const Layout: FC<{
               hasCustomPadding
               variant="ghost"
               onClick={() => {
-                if (!isManualOpen && isOpen) {
-                  setIsOpen(true)
-                } else {
-                  setIsOpen(!isOpen)
-                }
-                setIsManualOpen(!isManualOpen)
-                localStorage.setItem('isOpen', isManualOpen ? 'false' : 'true')
+                setIsOpen(!isOpen)
+                localStorage.setItem('isOpen', isOpen ? 'false' : 'true')
               }}
             >
-              {isOpen && isManualOpen ? (
+              {isOpen ? (
                 <>
                   <X className="md:hidden" />
                   <ArrowLineLeft className="hidden md:block" />
@@ -171,7 +148,9 @@ export const Layout: FC<{
                 className="justify-center py-2 flex-initial"
                 {...versions}
               />
-            ) : null}
+            ) : (
+              <div className="w-[32px] h-[32px]" />
+            )}
           </div>
         </div>
       </aside>

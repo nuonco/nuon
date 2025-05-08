@@ -8,7 +8,7 @@ import { AdminOrgActions } from '@/components/AdminOrgActions'
 import { AdminInstallActions } from '@/components/AdminInstallActions'
 import { AdminOrgFeatures } from '@/components/AdminOrgFeatures'
 import { AdminRunnerModal } from '@/components/AdminRunnerModal'
-import { AdminTemporalLink } from "@/components/AdminTemporalLink"
+import { AdminTemporalLink } from '@/components/AdminTemporalLink'
 import { AdminBtn } from '@/components/AdminActionButton'
 import { Button } from '@/components/Button'
 import { Grid } from '@/components/Grid'
@@ -42,10 +42,10 @@ type TAdminAction = {
   text: string
 }
 
-export const AdminModal: FC<{ isSidebarOpen: boolean, isModalOpen?: string }> = ({
-  isSidebarOpen,
-  isModalOpen
-}) => {
+export const AdminModal: FC<{
+  isSidebarOpen: boolean
+  isModalOpen?: string
+}> = ({ isSidebarOpen, isModalOpen }) => {
   const params = useParams()
   const { user } = useUser()
   const { org } = useOrg()
@@ -87,7 +87,7 @@ export const AdminModal: FC<{ isSidebarOpen: boolean, isModalOpen?: string }> = 
       description: 'Forceful shutdown of current org runner',
       text: 'Force org shutdown runner',
     },
-     {
+    {
       action: () => enableOrgDebugMode(params?.['org-id'] as string),
       description: 'Debug mode logs all requests for an org.',
       text: 'Enable debug mode',
@@ -144,12 +144,14 @@ export const AdminModal: FC<{ isSidebarOpen: boolean, isModalOpen?: string }> = 
       text: 'Shutdown runner job',
     },
     {
-      action: () => gracefulInstallRunnerShutdown(params?.['install-id'] as string),
+      action: () =>
+        gracefulInstallRunnerShutdown(params?.['install-id'] as string),
       description: 'Graceful shutdown of current install runner',
       text: 'Graceful install runner shutdown',
     },
     {
-      action: () => forceInstallRunnerShutdown(params?.['install-id'] as string),
+      action: () =>
+        forceInstallRunnerShutdown(params?.['install-id'] as string),
       description: 'Forceful shutdown of current install runner',
       text: 'Force install runner shutdown',
     },
@@ -164,7 +166,12 @@ export const AdminModal: FC<{ isSidebarOpen: boolean, isModalOpen?: string }> = 
         }}
         variant="ghost"
       >
-        <Gear size={18} /> {isSidebarOpen ? 'Admin controls' : null}
+        <span className="inline-block w-[18px] h-[18px]">
+          <Gear size={18} />
+        </span>{' '}
+        {isSidebarOpen ? (
+          <span className="text-nowrap truncate">Admin controls</span>
+        ) : null}
       </Button>
       <Modal
         heading="Admin controls"
@@ -187,7 +194,10 @@ export const AdminModal: FC<{ isSidebarOpen: boolean, isModalOpen?: string }> = 
           {params?.['app-id'] ? (
             <div className="flex flex-col gap-4 pt-4">
               <Text variant="semi-18">App admin controls</Text>
-              <AdminTemporalLink namespace="apps" id={params?.['app-id'] as string} />
+              <AdminTemporalLink
+                namespace="apps"
+                id={params?.['app-id'] as string}
+              />
               <Grid>
                 {appActions.map((action) => (
                   <AdminAction key={action.text} {...action} />

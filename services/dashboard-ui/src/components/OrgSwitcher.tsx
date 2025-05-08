@@ -60,7 +60,7 @@ export const OrgSummary: FC<IOrgSummary> = ({
   isSidebarOpen = true,
 }) => {
   return (
-    <div className="flex gap-4 items-center justify-start">
+    <div className="flex gap-4 items-center justify-start org-summary">
       <OrgAvatar
         name={org?.name}
         logoURL={org?.logo_url}
@@ -68,7 +68,7 @@ export const OrgSummary: FC<IOrgSummary> = ({
       />
 
       {isSidebarOpen ? (
-        <div>
+        <div className="org-summary-name">
           <Text
             className={classNames(
               'text-md !font-medium leading-normal max-w-[150px] mb-1 break-all text-left !flex-nowrap'
@@ -77,7 +77,7 @@ export const OrgSummary: FC<IOrgSummary> = ({
           >
             {org?.sandbox_mode && <TestTube className="text-md" />}
             <span
-              className={classNames('', {
+              className={classNames('inline-block truncate', {
                 'max-w-[120px]': org?.sandbox_mode,
                 'truncate !inline': org?.name?.length >= 16,
               })}
@@ -220,7 +220,7 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({
       dropdownContentClassName="min-w-[250px]"
     >
       <div className="flex flex-col gap-4 overflow-auto max-h-[500px] pb-2 overflow-x-hidden">
-        <div className="pt-2 px-4">
+        <div className="pt-2 px-4 org-details">
           <OrgSummary org={org} />
 
           <Text className="mt-4" variant="mono-12">
