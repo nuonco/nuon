@@ -140,7 +140,6 @@ export default withPageAuthRequired(async function InstallComponent({
                 >
                   <TerraformWorkspace
                     orgId={orgId}
-                    installId={install.id}
                     workspace={installComponent.terraform_workspace}
                   />
                 </Suspense>
