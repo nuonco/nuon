@@ -485,11 +485,12 @@ func (w *Workflows) getManualDeploySteps(ctx workflow.Context, wkflow *app.Insta
 	steps = append(steps, postDeploySteps...)
 
 	// now queue up any deploy that _depend_ on the input
-	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
-		InstallID: install.ID,
+	componentIDs, err := activities.AwaitGetAppComponentGraph(ctx, activities.GetAppComponentGraphRequest{
+		InstallID:   install.ID,
+		ComponentID: comp.ID,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install graph")
+		return nil, errors.Wrap(err, "unable to get app component graph")
 	}
 
 	dependencyCompIDs := generics.SliceAfterValue(componentIDs, comp.ID)
