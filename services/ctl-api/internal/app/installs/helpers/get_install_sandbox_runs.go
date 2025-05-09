@@ -5,12 +5,17 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // getInstallSandboxRuns reads an install's sandbox runs from the DB.
 func (h *Helpers) getInstallSandboxRuns(ctx context.Context, installID string) ([]app.InstallSandboxRun, error) {
 	var installSandboxRuns []app.InstallSandboxRun
 	res := h.db.WithContext(ctx).
+		Scopes(
+			scopes.WithOverrideTable(views.CustomViewName(h.db, &app.InstallSandboxRun{}, "state_view_v1")),
+		).
 		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig.PublicGitVCSConfig").

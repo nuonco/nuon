@@ -9,6 +9,9 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type InstallStackVersionRun struct {
@@ -42,4 +45,14 @@ func (i *InstallStackVersionRun) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (i *InstallStackVersionRun) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name:          views.CustomViewName(db, &InstallStackVersionRun{}, "state_view_v1"),
+			SQL:           viewsql.InstallStackVersionRunsStateViewV1,
+			AlwaysReapply: true,
+		},
+	}
 }
