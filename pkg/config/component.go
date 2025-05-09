@@ -71,7 +71,7 @@ func (c *Component) parse() error {
 
 	// set all of the components
 	for _, ref := range c.References {
-		if ref.Type != refs.RefTypeComponents {
+		if !generics.SliceContains(ref.Type, []refs.RefType{refs.RefTypeComponents, refs.RefTypeComponentsNested}) {
 			continue
 		}
 
