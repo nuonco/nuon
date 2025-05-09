@@ -31,7 +31,19 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string) (*state
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install components")
 	}
-	is.Components = h.toComponents(installComps)
+
+	comps := h.toComponents(installComps)
+	is.Components = make(map[string]any, 0)
+	for name, c := range comps.Components {
+		cMap, err := state.AsMap(c)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create map")
+		}
+
+		is.Components[name] = cMap
+	}
+	is.Components["comps"] = comps
+
 	is.App = h.toAppState(install.App)
 	is.Org = h.toOrgState(install.Org)
 
