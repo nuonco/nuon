@@ -6,26 +6,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func New() *State {
-	return &State{}
-}
-
-func (i State) AsMap() (map[string]interface{}, error) {
-	byts, err := json.Marshal(i)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to convert state to json")
-	}
-
-	var obj map[string]interface{}
-	if err := json.Unmarshal(byts, &obj); err != nil {
-		return nil, errors.Wrap(err, "unable to convert to map[string]interface{}")
-	}
-
-	return obj, nil
-}
-
-// InstallState represents the current state of the install.
-// Copied from the workers-executors variables backend.
 type State struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -43,4 +23,22 @@ type State struct {
 
 	// NOTE: for backwards compatibility, these are remaining in place.
 	Install *InstallState `json:"install"`
+}
+
+func New() *State {
+	return &State{}
+}
+
+func (i State) AsMap() (map[string]interface{}, error) {
+	byts, err := json.Marshal(i)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to convert state to json")
+	}
+
+	var obj map[string]interface{}
+	if err := json.Unmarshal(byts, &obj); err != nil {
+		return nil, errors.Wrap(err, "unable to convert to map[string]interface{}")
+	}
+
+	return obj, nil
 }
