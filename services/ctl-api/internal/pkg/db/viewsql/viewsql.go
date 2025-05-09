@@ -19,6 +19,18 @@ var ComponentConfigConnectionsV1 string
 //go:embed install_action_workflow_latest_runs_view_v1.sql
 var InstallActionWorkflowLatestRunsViewV1 string
 
+//go:embed install_action_workflow_runs_state_view_v1.sql
+var InstallActionWorkflowRunsStateViewV1 string
+
+//go:embed install_sandbox_runs_state_view_v1.sql
+var InstallSandboxRunsStateViewV1 string
+
+//go:embed install_deploys_state_view_v1.sql
+var InstallDeploysStateViewV1 string
+
+//go:embed install_stack_version_runs_state_view_v1.sql
+var InstallStackVersionRunsStateViewV1 string
+
 //go:embed install_deploys_latest_view_v1.sql
 var InstallDeploysLatestViewV1 string
 
