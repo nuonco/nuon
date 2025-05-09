@@ -7,15 +7,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
-	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 )
 
 func (c *cli) appsCmd() *cobra.Command {
-	var (
-		all      bool
-		file     string
-		noSelect bool
-	)
+	var noSelect bool
 
 	appsCmd := &cobra.Command{
 		Use:               "apps",
@@ -139,20 +134,29 @@ func (c *cli) appsCmd() *cobra.Command {
 
 	syncCmd := &cobra.Command{
 		Use:               "sync",
-		Short:             "Sync all .nuon.toml config files in the current directory.",
+		Short:             "Sync nuon app directory (deprecated)",
 		PersistentPreRunE: c.persistentPreRunE,
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			var dirName string
+			if len(args) > 0 {
+				dirName = args[0]
+			} else {
+				var err error
+				dirName, err = os.Getwd()
+				if err != nil {
+					return errors.Wrap(err, "unable to get directory name")
+				}
+			}
+
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.Sync(cmd.Context(), all, file)
+			return svc.SyncDir(cmd.Context(), dirName)
 		}),
 	}
-	syncCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")
-	syncCmd.Flags().BoolVarP(&all, "all", "", false, "sync all config files found")
 	appsCmd.AddCommand(syncCmd)
 
 	syncDirCmd := &cobra.Command{
 		Use:               "sync-dir",
-		Short:             "Sync nuon app directory",
+		Short:             "Sync nuon app directory (deprecated)",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			var dirName string
@@ -174,30 +178,25 @@ func (c *cli) appsCmd() *cobra.Command {
 
 	validateCmd := &cobra.Command{
 		Use:               "validate",
-		Short:             "Validate a toml config file",
+		Short:             "Validate nuon app directory (deprecated)",
 		PersistentPreRunE: c.persistentPreRunE,
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			var dirName string
+			if len(args) > 0 {
+				dirName = args[0]
+			} else {
+				var err error
+				dirName, err = os.Getwd()
+				if err != nil {
+					return errors.Wrap(err, "unable to get directory name")
+				}
+			}
+
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.Validate(cmd.Context(), all, file, PrintJSON)
+			return svc.ValidateDir(cmd.Context(), dirName)
 		}),
 	}
-	validateCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")
-	validateCmd.Flags().BoolVarP(&all, "all", "", false, "sync all config files found")
 	appsCmd.AddCommand(validateCmd)
-
-	parseCmd := &cobra.Command{
-		Use:               "parse",
-		Short:             "parse a config file",
-		PersistentPreRunE: c.persistentPreRunE,
-		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.Parse(cmd.Context(), file)
-		},
-	}
-	parseCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")
-	if config.Debug() {
-		appsCmd.AddCommand(parseCmd)
-	}
 
 	var (
 		name       string
