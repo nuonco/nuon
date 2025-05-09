@@ -34,9 +34,9 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
   // This will display if there are no revisions created in the workspace yet.
   let contents = (
     <Empty
-      emptyTitle="No Revisions"
-      emptyMessage="The workspace has been created, but not state has been written."
-      variant="table"
+      emptyTitle="No revisions yet"
+      emptyMessage="The workspace has been created, but no state has been written."
+      variant="history"
     />
   )
 
