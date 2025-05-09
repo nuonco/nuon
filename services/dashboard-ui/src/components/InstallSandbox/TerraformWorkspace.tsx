@@ -15,37 +15,45 @@ import { getToken } from '@/components/admin-actions'
 
 export interface ITerraformWorkspace {
   orgId: string
-  installId: string
   workspace: any
 }
 
 export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
   orgId,
-  installId,
   workspace,
 }) => {
-  const states = await getWorkspaceStates({
-    orgId,
-    workspaceId: workspace?.id,
-  }).catch(console.error)
-
-  const [currentRevision, resources, tokenRes] = await Promise.all([
-    getWorkspaceState({
+  const [states, tokenRes] = await Promise.all([
+    getWorkspaceStates({
       orgId,
       workspaceId: workspace?.id,
-      stateId: states[0]?.id,
     }).catch(console.error),
-    getWorkspaceStateResources({
-      workspaceId: workspace?.id,
-      stateId: states[0]?.id,
-      orgId,
-    }).catch(console.error),
-    getToken(),
+    getToken().catch(console.error),
   ])
 
-  const token = tokenRes.result.accessToken
+  // Default to an "empty" message.
+  // This will display if there are no revisions created in the workspace yet.
+  let contents = (
+    <Empty
+      emptyTitle="No Revisions"
+      emptyMessage="The workspace has been created, but not state has been written."
+      variant="table"
+    />
+  )
 
-  if (states && resources && currentRevision) {
+  if (states.length) {
+    const [currentRevision, resources] = await Promise.all([
+      getWorkspaceState({
+        orgId,
+        workspaceId: workspace?.id,
+        stateId: states[0]?.id,
+      }).catch(console.error),
+      getWorkspaceStateResources({
+        workspaceId: workspace?.id,
+        stateId: states[0]?.id,
+        orgId,
+      }).catch(console.error),
+    ])
+
     const revisions = states.map((state: any, idx: number) => {
       return [
         <Text key={idx}>{state.revision}</Text>,
@@ -80,50 +88,52 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
       <Code key={idx}>{JSON.stringify(outputs[key].value)}</Code>,
     ])
 
-    return (
-      <>
-        <Section
-          className="flex-initial"
-          heading="Terraform state"
-          childrenClassName="flex flex-col gap-4"
-          actions={
-            <WorkspaceManagementDropdown
-              orgId={orgId}
-              workspace={workspace}
-              token={token}
-            />
-          }
-        >
-          <Tabs>
-            <Tab title="Resources">
-              <DataTable
-                headers={['Type', 'Name', 'Count']}
-                initData={resourceList}
-              />
-            </Tab>
-            <Tab title="Data Sources">
-              <DataTable
-                headers={['Type', 'Name', 'Count']}
-                initData={datasourceList}
-              />
-            </Tab>
-            <Tab title="Outputs">
-              <DataTable
-                headers={['Name', 'Type', 'Value']}
-                initData={outputList}
-              />
-            </Tab>
-            <Tab title="History">
-              <DataTable
-                headers={['Revision', 'Created at']}
-                initData={revisions}
-              />
-            </Tab>
-          </Tabs>
-        </Section>
-      </>
+    contents = (
+      <Tabs>
+        <Tab title="Resources">
+          <DataTable
+            headers={['Type', 'Name', 'Count']}
+            initData={resourceList}
+          />
+        </Tab>
+        <Tab title="Data Sources">
+          <DataTable
+            headers={['Type', 'Name', 'Count']}
+            initData={datasourceList}
+          />
+        </Tab>
+        <Tab title="Outputs">
+          <DataTable
+            headers={['Name', 'Type', 'Value']}
+            initData={outputList}
+          />
+        </Tab>
+        <Tab title="History">
+          <DataTable
+            headers={['Revision', 'Created at']}
+            initData={revisions}
+          />
+        </Tab>
+      </Tabs>
     )
-  } else {
-    return null
   }
+
+  return (
+    <>
+      <Section
+        className="flex-initial"
+        heading="Terraform state"
+        childrenClassName="flex flex-col gap-4"
+        actions={
+          <WorkspaceManagementDropdown
+            orgId={orgId}
+            workspace={workspace}
+            token={(tokenRes as any).result.accessToken}
+          />
+        }
+      >
+        {contents}
+      </Section>
+    </>
+  )
 }
