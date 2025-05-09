@@ -65,11 +65,11 @@ func Parse(obj any) ([]Ref, error) {
 
 func ParseFieldRefs(inputVar string) []Ref {
 	refPatterns := map[RefType]string{
-		RefTypeInputs:           `nuon\.inputs\.([^.}]+)`,
-		RefTypeComponents:       `nuon\.components\.(?!components\.)([^.}]+)\.outputs`,
-		RefTypeComponentsNested: `nuon\.components\.components\.([^.]+)\.outputs`,
-		RefTypeInstallStack:     `nuon\.install_stack\.outputs\.([^.}]+)`,
-		RefTypeSandbox:          `nuon\.sandbox\.outputs\.([^.}]+)`,
+		RefTypeInputs:     `nuon\.inputs\.([^.}]+)`,
+		RefTypeComponents: `nuon\.components\.([^.}]+)\.outputs`,
+		// RefTypeComponentsNested: `nuon\.components\.components\.([^.]+)\.outputs`,
+		RefTypeInstallStack: `nuon\.install_stack\.outputs\.([^.}]+)`,
+		RefTypeSandbox:      `nuon\.sandbox\.outputs\.([^.}]+)`,
 	}
 
 	refs := make([]Ref, 0)
