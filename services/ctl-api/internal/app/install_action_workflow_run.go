@@ -80,6 +80,11 @@ func (i *InstallActionWorkflowRun) Views(db *gorm.DB) []migrations.View {
 			SQL:           viewsql.InstallActionWorkflowLatestRunsViewV1,
 			AlwaysReapply: true,
 		},
+		{
+			Name:          views.CustomViewName(db, &InstallActionWorkflowRun{}, "state_view_v1"),
+			SQL:           viewsql.InstallActionWorkflowLatestRunsViewV1,
+			AlwaysReapply: true,
+		},
 	}
 }
 

@@ -5,7 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	_ "github.com/powertoolsdev/mono/pkg/types/state"
 )
+
+// type State = state.State
 
 // @ID						GetInstallState
 // @Summary				Get the current state of an install.
@@ -25,11 +29,11 @@ import (
 // @Router					/v1/installs/{install_id}/state [get]
 func (s *service) GetInstallState(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-	state, err := s.helpers.GetInstallState(ctx, installID)
+	is, err := s.helpers.GetInstallState(ctx, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install state: %w", err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, state)
+	ctx.JSON(http.StatusOK, is)
 }
