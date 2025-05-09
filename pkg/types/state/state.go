@@ -36,7 +36,7 @@ type State struct {
 	Inputs       *InputsState       `json:"inputs"`
 	Actions      *ActionsState      `json:"actions"`
 	Runner       *RunnerState       `json:"runner"`
-	Components   *ComponentsState   `json:"components"`
+	Components   map[string]any     `json:"components"`
 	Domain       *DomainState       `json:"domain"`
 	Cloud        *CloudAccount      `json:"cloud_account"`
 	InstallStack *InstallStackState `json:"install_stack"`

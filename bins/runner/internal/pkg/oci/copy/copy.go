@@ -18,6 +18,10 @@ import (
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 )
 
+const (
+	defaultCopyConcurrency int = 10
+)
+
 func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (*ocispec.Descriptor, error) {
 	srcRepo, err := oci.GetRepo(ctx, srcCfg)
 	if err != nil {
@@ -46,6 +50,7 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 	}
 
 	cpo := oras.CopyGraphOptions{
+		Concurrency: defaultCopyConcurrency,
 		OnCopySkipped: func(ctx context.Context, desc ocispec.Descriptor) error {
 			hit = true
 			l.Info(fmt.Sprintf("not copying %s of size %s, already present in repo (digest %s)", mediaNoun(desc.MediaType), humanize.Bytes(uint64(desc.Size)), desc.Digest), fields(desc)...)
@@ -72,7 +77,10 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 		},
 	}
 
-	res, err := oras.Copy(ctx, srcRepo, srcTag, dstRepo, dstTag, oras.CopyOptions{CopyGraphOptions: cpo})
+	res, err := oras.Copy(ctx, srcRepo, srcTag, dstRepo, dstTag,
+		oras.CopyOptions{
+			CopyGraphOptions: cpo,
+		})
 	if err != nil {
 		return nil, err
 	}
