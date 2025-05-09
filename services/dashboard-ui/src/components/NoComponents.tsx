@@ -73,17 +73,6 @@ export const NoComponents: FC = () => {
               Learn more
             </Link>
           </Card>
-          <Card>
-            <Text className="!font-medium">Jobs component</Text>
-            <Text>Any script that can be executed using an OCI image.</Text>
-            <Link
-              className="text-sm"
-              href="https://docs.nuon.co/guides/job-components"
-              target="_blank"
-            >
-              Learn more
-            </Link>
-          </Card>
         </div>
       </div>
     </div>
