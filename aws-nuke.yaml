@@ -54,9 +54,12 @@ accounts:
   "423623870300":
     presets:
       - common
-
   # sandbox-fd
   "034362041463":
+    presets:
+      - common
+  # sandbox-ht
+  "504178855485":
     presets:
       - common
   # sandbox-ja
@@ -75,7 +78,6 @@ accounts:
   "145023109787":
     presets:
       - common
-
   # sandbox-sb
   "390844782764":
     presets:
