@@ -7,6 +7,9 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type SandboxRunType string
@@ -87,4 +90,14 @@ func (i *InstallSandboxRun) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (i *InstallSandboxRun) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name:          views.CustomViewName(db, &InstallSandboxRun{}, "state_view_v1"),
+			SQL:           viewsql.InstallSandboxRunsStateViewV1,
+			AlwaysReapply: true,
+		},
+	}
 }
