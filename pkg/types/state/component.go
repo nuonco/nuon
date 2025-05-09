@@ -6,6 +6,8 @@ func NewComponentsState() *ComponentsState {
 	}
 }
 
+type ComponentsStateLegacy map[string]any
+
 type ComponentsState struct {
 	Populated bool `json:"populated"`
 

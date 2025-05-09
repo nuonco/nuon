@@ -3,10 +3,11 @@ package refs
 type RefType string
 
 const (
-	RefTypeSandbox      RefType = "sandbox_outputs"
-	RefTypeInstallStack RefType = "install_stack_outputs"
-	RefTypeComponents   RefType = "component_outputs"
-	RefTypeInputs       RefType = "inputs"
+	RefTypeSandbox          RefType = "sandbox_outputs"
+	RefTypeInstallStack     RefType = "install_stack_outputs"
+	RefTypeComponents       RefType = "component_outputs"
+	RefTypeComponentsNested RefType = "component_outputs_nested"
+	RefTypeInputs           RefType = "inputs"
 )
 
 type Ref struct {
