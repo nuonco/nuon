@@ -102,6 +102,26 @@ func (c *Component) parse() error {
 	return nil
 }
 
+func (a *Component) Validate() error {
+	if a.HelmChart != nil {
+		return a.HelmChart.Validate()
+	}
+
+	if a.TerraformModule != nil {
+		return a.TerraformModule.Validate()
+	}
+
+	if a.DockerBuild != nil {
+		return a.DockerBuild.Validate()
+	}
+
+	if a.ExternalImage != nil {
+		return a.ExternalImage.Validate()
+	}
+
+	return nil
+}
+
 func (c *Component) AddDependency(val string) {
 	c.Dependencies = append(c.Dependencies, val)
 }

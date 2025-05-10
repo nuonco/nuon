@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"gorm.io/gorm"
 )
@@ -41,7 +42,10 @@ func (s *service) GetInstallStackByInstallID(ctx *gin.Context) {
 	}
 
 	if installStack == nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "install stack not found"})
+		ctx.Error(stderr.ErrUser{
+			Description: "No install stack found",
+			Err:         gorm.ErrRecordNotFound,
+		})
 		return
 	}
 
@@ -62,7 +66,7 @@ func (s *service) getInstallStack(ctx *gin.Context, installID, orgID string) (*a
 		Where("id = ? and org_id = ?", installID, orgID).
 		First(&install, "id = ?", installID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install components: %w", res.Error)
+		return nil, fmt.Errorf("unable to get install stack: %w", res.Error)
 	}
 
 	return install.InstallStack, nil

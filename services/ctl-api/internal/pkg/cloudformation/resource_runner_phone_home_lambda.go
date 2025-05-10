@@ -33,6 +33,10 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *TemplateInput) *cloudformation.
 		"region":     cloudformation.RefPtr("AWS::Region"),
 	}
 
+	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {
+		lambdaprops[secret.Name+"_arn"] = cloudformation.RefPtr(secret.CloudFormationStackName)
+	}
+
 	return &cloudformation.CustomResource{
 		Type:       "AWS::CloudFormation::CustomResource",
 		Properties: lambdaprops,
