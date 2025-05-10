@@ -8,11 +8,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (k *k8sSecretGetter) Get(ctx context.Context) ([]byte, error) {
-	client, err := k.getClient(ctx)
+func (k *k8sSecretManager) Get(ctx context.Context) ([]byte, error) {
+	kubeClient, err := k.getClient(ctx)
 	if err != nil {
 		return nil, err
 	}
+	client := kubeClient.CoreV1().Secrets(k.Namespace)
 
 	secret, err := k.getSecret(ctx, client, k.Name)
 	if err != nil {
@@ -34,6 +35,6 @@ type kubeClientSecretGetter interface {
 	Get(ctx context.Context, name string, opts metav1.GetOptions) (*corev1.Secret, error)
 }
 
-func (k *k8sSecretGetter) getSecret(ctx context.Context, client kubeClientSecretGetter, secretName string) (*corev1.Secret, error) {
+func (k *k8sSecretManager) getSecret(ctx context.Context, client kubeClientSecretGetter, secretName string) (*corev1.Secret, error) {
 	return client.Get(ctx, secretName, metav1.GetOptions{})
 }

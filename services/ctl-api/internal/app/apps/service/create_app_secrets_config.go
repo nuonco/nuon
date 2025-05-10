@@ -16,7 +16,14 @@ import (
 type CreateAppSecretsConfigRequest struct {
 	AppConfigID string `json:"app_config_id" validate:"required"`
 
-	Secrets []AppSecretConfig `json:"secrets"`
+	Secrets []AppSecretConfig `json:"secrets" validate:"dive"`
+}
+
+func (c *CreateAppSecretsConfigRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
 }
 
 func (c CreateAppSecretsConfigRequest) getSecrets(appID, appConfigID string) []app.AppSecretConfig {
@@ -26,10 +33,13 @@ func (c CreateAppSecretsConfigRequest) getSecrets(appID, appConfigID string) []a
 			AppID:       appID,
 			AppConfigID: appConfigID,
 
-			Name:                      secr.Name,
-			DisplayName:               secr.DisplayName,
-			Required:                  secr.Required,
-			Description:               secr.Description,
+			Name:         secr.Name,
+			DisplayName:  secr.DisplayName,
+			Description:  secr.Description,
+			Required:     secr.Required,
+			AutoGenerate: secr.AutoGenerate,
+
+			KubernetesSync:            secr.KubernetesSync,
 			KubernetesSecretNamespace: secr.KubernetesSecretNamespace,
 			KubernetesSecretName:      secr.KubernetesSecretName,
 		})
@@ -38,21 +48,16 @@ func (c CreateAppSecretsConfigRequest) getSecrets(appID, appConfigID string) []a
 }
 
 type AppSecretConfig struct {
-	Name        string `json:"name" validate:"required"`
+	Name        string `json:"name" validate:"interpolated_name,required"`
 	DisplayName string `json:"display_name" validate:"required"`
 	Description string `json:"description" validate:"required"`
 
-	Required                  bool   `json:"required"`
+	Required     bool `json:"required"`
+	AutoGenerate bool `json:"auto_generate"`
+
+	KubernetesSync            bool   `json:"kubernetes_sync"`
 	KubernetesSecretNamespace string `json:"kubernetes_secret_namespace"`
 	KubernetesSecretName      string `json:"kubernetes_secret_name"`
-}
-
-func (c *CreateAppSecretsConfigRequest) Validate(v *validator.Validate) error {
-	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
-	}
-
-	return nil
 }
 
 // @ID						CreateAppSecretsConfig

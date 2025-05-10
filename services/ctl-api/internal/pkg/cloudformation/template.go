@@ -13,28 +13,18 @@ import (
 )
 
 type TemplateInput struct {
-	Install                    *app.Install                              `validate:"required"`
+	Install                    *app.Install             `validate:"required"`
 	CloudFormationStackVersion *app.InstallStackVersion `validate:"required"`
-	InstallState               *state.State                              `validate:"required"`
-	AppCfg                     *app.AppConfig                            `validate:"required"`
+	InstallState               *state.State             `validate:"required"`
+	AppCfg                     *app.AppConfig           `validate:"required"`
 
 	Runner   *app.Runner              `validate:"required"`
 	Settings *app.RunnerGroupSettings `validate:"required"`
 	APIToken string                   `validate:"required"`
 }
 
-type TemplateType string
-
-const (
-	TemplateTypeAWSEKS TemplateType = "aws-eks"
-)
-
-func (t *Templates) Template(templateType TemplateType, inputs *TemplateInput) (*cloudformation.Template, string, error) {
-	if templateType != TemplateTypeAWSEKS {
-		return nil, "", errors.New("invalid template type " + string(templateType))
-	}
-
-	tmpl, err := t.getAWSEKSTemplate(inputs)
+func (t *Templates) Template(inputs *TemplateInput) (*cloudformation.Template, string, error) {
+	tmpl, err := t.getAWSTemplate(inputs)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "unable to create aws-eks template")
 	}
