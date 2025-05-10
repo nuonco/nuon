@@ -34,11 +34,14 @@ type AppSecretConfig struct {
 	DisplayName string `json:"display_name,omitzero" features:"template" temporaljson:"display_name,omitzero,omitempty"`
 	Description string `json:"description,omitzero" features:"template" temporaljson:"description,omitzero,omitempty"`
 
-	Required bool `json:"required,omitzero" temporaljson:"required,omitzero,omitempty"`
+	Required     bool `json:"required,omitzero" temporaljson:"required,omitzero,omitempty"`
+	AutoGenerate bool `json:"auto_generate,omitzero" temporaljson:"auto_generate,omitzero,omitempty"`
 
 	// for syncing into kubernetes
+	KubernetesSync            bool   `json:"kubernetes_sync,omitzero" temporaljson:"kubernetes_sync,omitzero,omitempty"`
 	KubernetesSecretNamespace string `json:"kubernetes_secret_namespace,omitzero" features:"template" temporaljson:"kubernetes_secret_namespace,omitzero,omitempty"`
 	KubernetesSecretName      string `json:"kubernetes_secret_name,omitzero" features:"template" temporaljson:"kubernetes_secret_name,omitzero,omitempty"`
+	KubernetesSecretKey       string `json:"-" features:"-" temporaljson:"kubernetes_secret_key,omitzero,omitempty"`
 
 	CloudFormationStackName string `json:"cloudformation_stack_name,omitzero" gorm:"-" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
 	CloudFormationParamName string `json:"cloudformation_param_name,omitzero" gorm:"-" temporaljson:"cloud_formation_param_name,omitzero,omitempty"`
@@ -62,5 +65,6 @@ func (a *AppSecretConfig) AfterQuery(tx *gorm.DB) error {
 	a.CloudFormationStackName = cfnName
 
 	a.CloudFormationParamName = cfnName + "Param"
+	a.KubernetesSecretKey = "value"
 	return nil
 }

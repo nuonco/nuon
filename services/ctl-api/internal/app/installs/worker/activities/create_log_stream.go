@@ -19,6 +19,7 @@ type CreateLogStreamRequest struct {
 	SandboxRunID        string
 	DeployID            string
 	ActionWorkflowRunID string
+	StepID              string
 
 	ParentLogStreamID string
 }

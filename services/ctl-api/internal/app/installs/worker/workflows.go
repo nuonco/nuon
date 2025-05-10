@@ -49,6 +49,7 @@ func (w *Workflows) All() []any {
 		plan.CreateSandboxRunPlan,
 		plan.CreateDeployPlan,
 		plan.CreateSyncPlan,
+		plan.CreateSyncSecretsPlan,
 	}
 
 	return append(wkflows, w.ListWorkflowFns()...)
