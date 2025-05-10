@@ -11,12 +11,16 @@ import (
 
 func (s sync) secretToRequest(secret *config.AppSecret) *models.ServiceAppSecretConfig {
 	return &models.ServiceAppSecretConfig{
-		Description:               generics.ToPtr(secret.Description),
-		DisplayName:               generics.ToPtr(secret.DisplayName),
-		Name:                      generics.ToPtr(secret.Name),
+		Description: generics.ToPtr(secret.Description),
+		DisplayName: generics.ToPtr(secret.DisplayName),
+		Name:        generics.ToPtr(secret.Name),
+
+		KubernetesSync:            secret.KubernetesSync,
 		KubernetesSecretName:      secret.KubernetesSecretName,
 		KubernetesSecretNamespace: secret.KubernetesSecretNamespace,
-		Required:                  secret.Required,
+
+		Required:     secret.Required,
+		AutoGenerate: secret.AutoGenerate,
 	}
 }
 

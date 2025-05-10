@@ -37,6 +37,7 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 		signals.OperationDeprovisionSandbox:       w.AwaitDeprovisionSandbox,
 		signals.OperationReprovisionSandbox:       w.AwaitReprovisionSandbox,
 		signals.OperationProvisionSandbox:         w.AwaitProvisionSandbox,
+		signals.OperationSyncSecrets:              w.AwaitSyncSecrets,
 		signals.OperationExecuteWorkflow:          w.AwaitExecuteWorkflow,
 		signals.OperationExecuteActionWorkflow:    w.AwaitExecuteActionWorkflow,
 		signals.OperationExecuteDeployComponent:   w.AwaitExecuteDeployComponent,

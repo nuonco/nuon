@@ -7,12 +7,13 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/kube"
 )
 
 var errTokenTest = fmt.Errorf("token-test-err")
@@ -40,34 +41,34 @@ func TestNew(t *testing.T) {
 
 	v := validator.New()
 	tests := map[string]struct {
-		optsFn      func() []k8sSecretGetterOption
-		assertFn    func(*testing.T, *k8sSecretGetter)
+		optsFn      func() []k8sSecretManagerOption
+		assertFn    func(*testing.T, *k8sSecretManager)
 		errExpected error
 	}{
 		"happy path": {
-			optsFn: func() []k8sSecretGetterOption {
-				return []k8sSecretGetterOption{
+			optsFn: func() []k8sSecretManagerOption {
+				return []k8sSecretManagerOption{
 					WithKey(key),
 					WithName(name),
 					WithNamespace(namespace),
 				}
 			},
-			assertFn: func(t *testing.T, sg *k8sSecretGetter) {
+			assertFn: func(t *testing.T, sg *k8sSecretManager) {
 				assert.Equal(t, name, sg.Name)
 				assert.Equal(t, namespace, sg.Namespace)
 				assert.Equal(t, key, sg.Key)
 			},
 		},
 		"custom cluster info": {
-			optsFn: func() []k8sSecretGetterOption {
-				return []k8sSecretGetterOption{
+			optsFn: func() []k8sSecretManagerOption {
+				return []k8sSecretManagerOption{
 					WithKey(key),
 					WithName(name),
 					WithNamespace(namespace),
 					WithCluster(clusterInfo),
 				}
 			},
-			assertFn: func(t *testing.T, sg *k8sSecretGetter) {
+			assertFn: func(t *testing.T, sg *k8sSecretManager) {
 				assert.Equal(t, name, sg.Name)
 				assert.Equal(t, namespace, sg.Namespace)
 				assert.Equal(t, key, sg.Key)
@@ -75,8 +76,8 @@ func TestNew(t *testing.T) {
 			},
 		},
 		"missing namespace": {
-			optsFn: func() []k8sSecretGetterOption {
-				return []k8sSecretGetterOption{
+			optsFn: func() []k8sSecretManagerOption {
+				return []k8sSecretManagerOption{
 					WithKey(key),
 					WithName(name),
 				}
@@ -84,8 +85,8 @@ func TestNew(t *testing.T) {
 			errExpected: fmt.Errorf("Namespace"),
 		},
 		"missing name": {
-			optsFn: func() []k8sSecretGetterOption {
-				return []k8sSecretGetterOption{
+			optsFn: func() []k8sSecretManagerOption {
+				return []k8sSecretManagerOption{
 					WithKey(key),
 					WithNamespace(namespace),
 				}
@@ -93,8 +94,8 @@ func TestNew(t *testing.T) {
 			errExpected: fmt.Errorf("Name"),
 		},
 		"missing key": {
-			optsFn: func() []k8sSecretGetterOption {
-				return []k8sSecretGetterOption{
+			optsFn: func() []k8sSecretManagerOption {
+				return []k8sSecretManagerOption{
 					WithName(name),
 					WithNamespace(namespace),
 				}

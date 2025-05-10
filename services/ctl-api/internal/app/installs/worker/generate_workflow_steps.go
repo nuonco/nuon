@@ -142,6 +142,14 @@ func (w *Workflows) getInstallWorkflowProvisionSteps(ctx workflow.Context, wkflo
 	}
 	steps = append(steps, step)
 
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationSyncSecrets,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
 	step, err = w.installSignalStep(ctx, wkflow.InstallID, "provision sandbox dns if enabled", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationProvisionDNS,
 	})
@@ -216,6 +224,14 @@ func (w *Workflows) getInstallWorkflowReprovisionSteps(ctx workflow.Context, wkf
 
 	step, err = w.installSignalStep(ctx, wkflow.InstallID, "reprovision sandbox", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationReprovisionSandbox,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationSyncSecrets,
 	})
 	if err != nil {
 		return nil, err
@@ -797,6 +813,14 @@ func (w *Workflows) getInstallWorkflowReprovisionSandboxSteps(ctx workflow.Conte
 
 	step, err = w.installSignalStep(ctx, wkflow.InstallID, "reprovision sandbox", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationReprovisionSandbox,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	step, err = w.installSignalStep(ctx, wkflow.InstallID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationSyncSecrets,
 	})
 	if err != nil {
 		return nil, err
