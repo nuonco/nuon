@@ -34,6 +34,7 @@ const (
 	OperationExecuteActionWorkflow       eventloop.SignalType = "trigger-install-action-workflow"
 	OperationExecuteDeployComponent      eventloop.SignalType = "execute-deploy-component"
 	OperationExecuteTeardownComponent    eventloop.SignalType = "execute-teardown-component"
+	OperationSyncSecrets                 eventloop.SignalType = "sync-secrets"
 
 	// the following will be sent to a different namespace
 	OperationExecuteWorkflow eventloop.SignalType = "execute-workflow"

@@ -44,9 +44,19 @@ type AppConfig struct {
 	// This requires a bit more work/indirection by us, but a bit less by our customers!
 
 	// Components are used to connect container images, automation and infrastructure as code to your Nuon App
-	Components []*Component `mapstructure:"components"`
+	Components ComponentList `mapstructure:"components"`
 
 	Actions []*ActionConfig `mapstructure:"actions"`
+}
+type ComponentList []*Component
+
+func (a *ComponentList) Validate() error {
+	for _, comp := range *a {
+		if err := comp.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

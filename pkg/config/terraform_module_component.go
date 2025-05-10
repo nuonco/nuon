@@ -24,7 +24,7 @@ func (t *TerraformModuleComponentConfig) Parse() error {
 	return nil
 }
 
-func (t *TerraformModuleComponentConfig) Validate(ctx ConfigContext) error {
+func (t *TerraformModuleComponentConfig) Validate() error {
 	if len(t.Variables) > 0 {
 		return ErrConfig{
 			Description: "the var array is deprecated, please use vars instead.",

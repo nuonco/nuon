@@ -29,10 +29,28 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 			return ValidateActionWorkflowTriggers(a)
 		},
 		func() error {
-			return ValidateVars(ctx, a)
+			return ValidatePolicies(a)
+		},
+
+		// NOTE(jm): we are moving validation functions for types into the actual types.
+		// We build this validation tooling here, so we can validate as many things up front as possible.
+		func() error {
+			if a.Secrets != nil {
+				return a.Secrets.Validate()
+			}
+			return nil
 		},
 		func() error {
-			return ValidatePolicies(a)
+			if a.Components != nil {
+				return a.Components.Validate()
+			}
+			return nil
+		},
+
+		// TBH, this does not really work
+		func() error {
+			return nil
+			return ValidateVars(ctx, a)
 		},
 	}
 	for _, fn := range fns {

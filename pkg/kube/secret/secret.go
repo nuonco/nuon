@@ -5,18 +5,20 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/pkg/kube"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=secret_mock.go -source=secret.go -package=secret
-type Getter interface {
+type Manager interface {
 	Get(context.Context) ([]byte, error)
+	Upsert(context.Context, []byte) error
 }
 
-var _ Getter = (*k8sSecretGetter)(nil)
+var _ Manager = (*k8sSecretManager)(nil)
 
-type k8sSecretGetter struct {
+type k8sSecretManager struct {
 	Namespace   string `validate:"required"`
 	Name        string `validate:"required"`
 	Key         string `validate:"required"`
@@ -24,14 +26,12 @@ type k8sSecretGetter struct {
 
 	// internal state
 	v *validator.Validate
-	// NOTE: this is only used during testing to stub out the actual call
-	client kubeClientSecretGetter
 }
 
-type k8sSecretGetterOption func(*k8sSecretGetter) error
+type k8sSecretManagerOption func(*k8sSecretManager) error
 
-func New(v *validator.Validate, opts ...k8sSecretGetterOption) (*k8sSecretGetter, error) {
-	k := &k8sSecretGetter{v: v}
+func New(v *validator.Validate, opts ...k8sSecretManagerOption) (*k8sSecretManager, error) {
+	k := &k8sSecretManager{v: v}
 
 	if v == nil {
 		return nil, fmt.Errorf("error instantiating token getter: validator is nil")
@@ -50,29 +50,29 @@ func New(v *validator.Validate, opts ...k8sSecretGetterOption) (*k8sSecretGetter
 	return k, nil
 }
 
-func WithNamespace(n string) k8sSecretGetterOption {
-	return func(sg *k8sSecretGetter) error {
+func WithNamespace(n string) k8sSecretManagerOption {
+	return func(sg *k8sSecretManager) error {
 		sg.Namespace = n
 		return nil
 	}
 }
 
-func WithName(n string) k8sSecretGetterOption {
-	return func(sg *k8sSecretGetter) error {
+func WithName(n string) k8sSecretManagerOption {
+	return func(sg *k8sSecretManager) error {
 		sg.Name = n
 		return nil
 	}
 }
 
-func WithKey(n string) k8sSecretGetterOption {
-	return func(sg *k8sSecretGetter) error {
+func WithKey(n string) k8sSecretManagerOption {
+	return func(sg *k8sSecretManager) error {
 		sg.Key = n
 		return nil
 	}
 }
 
-func WithCluster(cfg *kube.ClusterInfo) k8sSecretGetterOption {
-	return func(sg *k8sSecretGetter) error {
+func WithCluster(cfg *kube.ClusterInfo) k8sSecretManagerOption {
+	return func(sg *k8sSecretManager) error {
 		sg.ClusterInfo = cfg
 		return nil
 	}
