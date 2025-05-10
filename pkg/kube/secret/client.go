@@ -4,30 +4,23 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/kube"
+	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
+	"github.com/powertoolsdev/mono/pkg/kube"
 )
 
-func (k *k8sSecretGetter) getClient(ctx context.Context) (kubeClientSecretGetter, error) {
-	if k.client != nil {
-		return k.client, nil
-	}
-
+func (k *k8sSecretManager) getClient(ctx context.Context) (*kubernetes.Clientset, error) {
 	var (
 		kubeCfg *rest.Config
 		err     error
 	)
 
 	if k.ClusterInfo != nil {
-		kubeCfg, err = kube.ConfigForCluster(ctx, &kube.ClusterInfo{
-			ID:             k.ClusterInfo.ID,
-			Endpoint:       k.ClusterInfo.Endpoint,
-			CAData:         k.ClusterInfo.CAData,
-			TrustedRoleARN: k.ClusterInfo.TrustedRoleARN,
-		})
+		kubeCfg, err = kube.ConfigForCluster(ctx, k.ClusterInfo)
 		if err != nil {
-			return nil, fmt.Errorf("unable to get cluster kube config: %w", err)
+			return nil, errors.Wrap(err, "unable to get kube config")
 		}
 	} else {
 		kubeCfg, err = kube.GetKubeConfig()
@@ -41,5 +34,5 @@ func (k *k8sSecretGetter) getClient(ctx context.Context) (kubeClientSecretGetter
 		return nil, fmt.Errorf("failed to create kube client: %w", err)
 	}
 
-	return clientset.CoreV1().Secrets(k.Namespace), nil
+	return clientset, nil
 }

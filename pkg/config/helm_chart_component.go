@@ -70,3 +70,7 @@ func (h *HelmChartComponentConfig) Parse() error {
 
 	return nil
 }
+
+func (t *HelmChartComponentConfig) Validate() error {
+	return nil
+}

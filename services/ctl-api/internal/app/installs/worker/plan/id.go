@@ -22,3 +22,7 @@ func CreateSyncWorkflowIDCallback(req *CreateSyncPlanRequest) string {
 func CreateDeployPlanIDCallback(req *CreateDeployPlanRequest) string {
 	return req.WorkflowID
 }
+
+func SyncSecretsWorkflowIDCallback(req *CreateSyncSecretsPlanRequest) string {
+	return req.WorkflowID
+}

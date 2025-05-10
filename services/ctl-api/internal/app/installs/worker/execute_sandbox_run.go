@@ -94,6 +94,5 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 		l.Error("runner job status was not successful", zap.Any("status", status))
 	}
 
-
 	return nil
 }

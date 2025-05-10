@@ -97,7 +97,8 @@ const (
 	RunnerJobTypeNOOP          RunnerJobType = "noop"
 
 	// sandbox job types
-	RunnerJobTypeSandboxTerraform RunnerJobType = "sandbox-terraform"
+	RunnerJobTypeSandboxTerraform   RunnerJobType = "sandbox-terraform"
+	RunnerJobTypeSandboxSyncSecrets RunnerJobType = "sandbox-sync-secrets"
 
 	// runner job types
 	RunnerJobTypeRunnerHelm      RunnerJobType = "runner-helm"
@@ -139,7 +140,7 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		return RunnerJobGroupRunner
 
 		// sandboxes
-	case RunnerJobTypeSandboxTerraform:
+	case RunnerJobTypeSandboxTerraform, RunnerJobTypeSandboxSyncSecrets:
 		return RunnerJobGroupSandbox
 
 		// health checks

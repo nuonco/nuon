@@ -10,6 +10,10 @@ import (
 func (a *Templates) getSecretsParamLabels(inp *TemplateInput) map[string]any {
 	paramLabels := make(map[string]any, 0)
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {
+		if secret.AutoGenerate {
+			continue
+		}
+
 		paramLabels[secret.CloudFormationParamName] = secret.DisplayName
 	}
 
@@ -20,6 +24,10 @@ func (a *Templates) getSecretsParameters(inp *TemplateInput) map[string]cloudfor
 	params := make(map[string]cloudformation.Parameter, 0)
 
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {
+		if secret.AutoGenerate {
+			continue
+		}
+
 		params[secret.CloudFormationParamName] = cloudformation.Parameter{
 			Type:        "String",
 			Description: generics.ToPtr(secret.Description),
@@ -34,11 +42,19 @@ func (a *Templates) getSecretsResources(inp *TemplateInput, t tagBuilder) map[st
 	rsrcs := make(map[string]cloudformation.Resource, 0)
 
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {
-		rsrcs[secret.CloudFormationStackName] = &secretsmanager.Secret{
+		obj := &secretsmanager.Secret{
 			Name:        generics.ToPtr(secret.Name),
 			Description: generics.ToPtr(secret.Description),
 			Tags:        t.apply(nil, ""),
 		}
+		if secret.AutoGenerate {
+			obj.GenerateSecretString = &secretsmanager.Secret_GenerateSecretString{
+				ExcludePunctuation: generics.ToPtr(true),
+				PasswordLength:     generics.ToPtr(63),
+			}
+		}
+
+		rsrcs[secret.CloudFormationStackName] = obj
 	}
 
 	return rsrcs
