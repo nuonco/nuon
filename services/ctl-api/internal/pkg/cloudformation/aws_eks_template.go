@@ -7,7 +7,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
-func (t *Templates) getAWSEKSTemplate(inp *TemplateInput) (*cloudformation.Template, error) {
+func (t *Templates) getAWSTemplate(inp *TemplateInput) (*cloudformation.Template, error) {
 	tmpl := cloudformation.NewTemplate()
 
 	tb := tagBuilder{

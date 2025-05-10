@@ -87,7 +87,9 @@ const GenerateStack: FC<{
 
   const fetchStackConfig = () => {
     fetch(
-      `/api/${orgId}/apps/${appId}/configs/${stack?.versions?.at(-1).app_config_id}`
+      `/api/${orgId}/apps/${appId}/configs/${
+        stack?.versions?.at(0).app_config_id
+      }`
     ).then((r) =>
       r.json().then((res) => {
         setIsLoading(false)
@@ -150,17 +152,16 @@ const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
         <div className="flex justify-between items-center px-2 py-4 border-b">
           <Text variant="med-12">
             Install stack{' '}
-            {stack?.versions?.at(-1)?.composite_status?.status === 'active'
+            {stack?.versions?.at(0)?.composite_status?.status === 'active'
               ? 'up and running'
               : 'is waiting to run'}
           </Text>
         </div>
         <div className="px-2 py-4 grid grid-cols-4">
           <StatusBadge
-            status={stack?.versions?.at(-1)?.composite_status?.status}
+            status={stack?.versions?.at(0)?.composite_status?.status}
             description={
-              stack?.versions?.at(-1)?.composite_status
-                ?.status_human_description
+              stack?.versions?.at(0)?.composite_status?.status_human_description
             }
             label="Current status"
           />
@@ -169,7 +170,7 @@ const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
               Last checked
             </Text>
             <Time
-              time={stack?.versions?.at(-1).runs?.at(-1)?.updated_at}
+              time={stack?.versions?.at(0).runs?.at(-1)?.updated_at}
               format="relative"
             />
           </div>
@@ -182,10 +183,16 @@ const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
           <span className="flex justify-between items-center">
             <Text variant="med-12">Install quick link</Text>
             <ClickToCopyButton
-              textToCopy={stack?.versions?.at(-1)?.quick_link_url}
+              textToCopy={stack?.versions?.at(0)?.quick_link_url}
             />
           </span>
-          <Code>{stack?.versions?.at(-1)?.quick_link_url}</Code>
+          <Link
+            href={stack?.versions?.at(0)?.quick_link_url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Code>{stack?.versions?.at(0)?.quick_link_url}</Code>
+          </Link>
         </div>
       </div>
 
@@ -201,11 +208,11 @@ const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
         <div className="border rounded-lg shadow-sm p-2 flex flex-col gap-1">
           <ClickToCopyButton
             className="w-fit self-end"
-            textToCopy={stack?.versions?.at(-1)?.quick_link_url}
+            textToCopy={stack?.versions?.at(0)?.quick_link_url}
           />
           <Code>
             aws cloudformation create-stack --stack-name [YOUR_STACK_NAME]
-            --template-url {stack?.versions?.at(-1)?.template_url}
+            --template-url {stack?.versions?.at(0)?.template_url}
           </Code>
         </div>
       </div>
@@ -217,11 +224,11 @@ const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
         <div className="border rounded-lg shadow-sm p-2 flex flex-col gap-1">
           <ClickToCopyButton
             className="w-fit self-end"
-            textToCopy={stack?.versions?.at(-1)?.quick_link_url}
+            textToCopy={stack?.versions?.at(0)?.quick_link_url}
           />
           <Code>
             aws cloudformation update-stack --stack-name [YOUR_STACK_NAME]
-            --template-url {stack?.versions?.at(-1)?.template_url}
+            --template-url {stack?.versions?.at(0)?.template_url}
           </Code>
         </div>
       </div>
