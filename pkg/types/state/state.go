@@ -20,6 +20,7 @@ type State struct {
 	Domain       *DomainState       `json:"domain"`
 	Cloud        *CloudAccount      `json:"cloud_account"`
 	InstallStack *InstallStackState `json:"install_stack"`
+	Secrets      *SecretsState      `json:"secrets"`
 
 	// NOTE: for backwards compatibility, these are remaining in place.
 	Install *InstallState `json:"install"`

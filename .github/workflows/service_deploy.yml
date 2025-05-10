@@ -22,13 +22,12 @@ name: Deploy
         type: string
         required: true
 
-# TODO: reenable this
-#concurrency: 
-  #group: ${{inputs.service}}-${{inputs.env}}-${{ github.head_ref || 'main' }}
+concurrency: 
+  group: ${{inputs.service}}-${{inputs.env}}-${{ github.head_ref || 'main' }}
 
   ## NOTE(jm): we only want to "cancel" in flight jobs if pushing to an existing PR. If this is running on main, do not
   ## cancel previous jobs.
-  #cancel-in-progress: ${{ github.head_ref != 'main' }}
+  cancel-in-progress: ${{ github.head_ref != 'main' }}
 
 defaults:
   run:

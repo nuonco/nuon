@@ -99,7 +99,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		Settings:                   &runner.RunnerGroup.Settings,
 		APIToken:                   generics.FromPtrStr(token),
 	}
-	tmpl, checksum, err := w.templates.Template(cloudformation.TemplateTypeAWSEKS, inp)
+	tmpl, checksum, err := w.templates.Template(inp)
 	if err != nil {
 		return errors.Wrap(err, "unable to create cloudformation template")
 	}

@@ -74,6 +74,14 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string) (*state
 	}
 	is.InstallStack = h.toInstallStackState(stack)
 
+	secrets, err := h.getSecrets(ctx, installID, install.RunnerID)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.Wrap(err, "unable to get secrets")
+		}
+	}
+	is.Secrets = secrets
+
 	// NOTE(JM): this is purely for historical and legacy reasons, and will be removed once we migrate all users to
 	// the flattened structure
 	is.Install = &state.InstallState{
