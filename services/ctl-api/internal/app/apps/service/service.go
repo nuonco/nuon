@@ -52,6 +52,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/apps/:app_id/configs", s.GetAppConfigs)
 	api.GET("/v1/apps/:app_id/config/:app_config_id", s.GetAppConfig)
 	api.PATCH("/v1/apps/:app_id/config/:app_config_id", s.UpdateAppConfig)
+	api.GET("/v1/apps/:app_id/config/:app_config_id/graph", s.GetAppConfigGraph)
 
 	// app sandbox management
 	api.POST("/v1/apps/:app_id/sandbox-config", s.CreateAppSandboxConfig)
@@ -110,6 +111,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/apps/:app_id/admin-restart", s.RestartApp)
 	api.POST("/v1/apps/:app_id/admin-delete", s.AdminDeleteApp)
 	api.POST("/v1/apps/:app_id/admin-aws-delegation", s.AdminAddAWSDelegationConfig)
+	api.POST("/v1/apps/:app_id/admin-config-graph", s.AdminConfigGraph)
+	api.POST("/v1/apps/:app_id/admin-config-order", s.AdminConfigOrder)
 
 	return nil
 }
