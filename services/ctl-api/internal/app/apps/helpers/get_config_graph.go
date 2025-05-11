@@ -76,6 +76,10 @@ func (h *Helpers) GetDeployOrderFromGraph(ctx context.Context, grph graph.Graph[
 		aNode, _ := grph.Vertex(a)
 		bNode, _ := grph.Vertex(b)
 
+		if len(aNode.Dependencies) != len(bNode.Dependencies) {
+			return len(aNode.Dependencies) < len(bNode.Dependencies)
+		}
+
 		typeOrder := map[app.ComponentType]int{
 			"external_image":   0,
 			"docker_build":     1,
