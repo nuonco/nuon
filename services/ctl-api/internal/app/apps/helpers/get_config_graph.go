@@ -29,7 +29,9 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 
 		if err := g.AddVertex(&ccc.Component,
 			graph.VertexAttribute("name", ccc.Component.Name),
+			graph.VertexAttribute("label", ccc.Component.Name),
 			graph.VertexAttribute("type", string(ccc.Type)),
+			graph.VertexAttribute("color", "blue"),
 		); err != nil {
 			return nil, err
 		}
@@ -48,7 +50,9 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 
 		if err := g.AddVertex(&comp,
 			graph.VertexAttribute("name", comp.Name),
+			graph.VertexAttribute("label", comp.Name),
 			graph.VertexAttribute("type", string(comp.Type)),
+			graph.VertexAttribute("color", "red"),
 		); err != nil {
 			return nil, err
 		}
@@ -57,7 +61,10 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 	// add all dependencies
 	for _, ccc := range cfg.ComponentConfigConnections {
 		for _, dep := range ccc.ComponentDependencyIDs {
-			if err := g.AddEdge(dep, ccc.ComponentID); err != nil {
+			if err := g.AddEdge(dep, ccc.ComponentID,
+				graph.EdgeWeight(25),
+				graph.EdgeAttribute("color", "red"),
+			); err != nil {
 				return nil, err
 			}
 		}
@@ -67,8 +74,9 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to reduce graph")
 	}
+	_ = gr
 
-	return gr, nil
+	return g, nil
 }
 
 func (h *Helpers) GetDeployOrderFromGraph(ctx context.Context, grph graph.Graph[string, *app.Component]) ([]string, error) {
