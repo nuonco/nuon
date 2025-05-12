@@ -1,0 +1,23 @@
+name = "Repo Actions"
+timeout = "30s"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name    = "List nodes with dir set on config"
+command = "./list-nodes"
+
+[connected_repo]
+repo      = "nuonco/actions"
+directory = "kube"
+branch    = "main"
+
+[[steps]]
+name    = "List nodes with nested dir command"
+command = "./kube/list-nodes"
+
+[public_repo]
+repo      = "nuonco/actions"
+directory = "."
+branch    = "main"

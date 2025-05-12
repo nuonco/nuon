@@ -1,0 +1,15 @@
+[[policy]]
+type = "runner_job_terraform_deploy"
+contents = "./policies/s3_policy.yml"
+
+[[policy]]
+type = "runner_job_terraform_deploy"
+contents = "./policies/cluster_tags.yml"
+
+[[policy]]
+type = "kubernetes_cluster"
+contents = "./policies/disallow-ingress-nginx-custom-snippets.yml"
+
+[[policy]]
+type = "kubernetes_cluster"
+contents = "https://raw.githubusercontent.com/tryretool/byoc-kyverno-policies/refs/heads/main/no-create-role.yaml"

@@ -1,0 +1,81 @@
+[maintenance_role]
+name = "{{.nuon.id}}-maintenance"
+description = "maintenance"
+display_name = "maintenance"
+permissions_boundary = "./permissions/maintenance_boundary.json"
+
+[[maintenance_role.policies]]
+managed_policy_name = "AdministratorAccess"
+
+[[maintenance_role.policies]]
+name = "remove-secrets-manage"
+contents = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenySecretsManagerAccess",
+            "Effect": "Deny",
+            "Action": [
+                "secretsmanager:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+"""
+
+[provision_role]
+name = "{{.nuon.install.id}}-provision"
+description = "maintenance"
+display_name = "maintenance"
+permissions_boundary = "./permissions/provision_boundary.json"
+
+[[provision_role.policies]]
+managed_policy_name = "AdministratorAccess"
+
+[[provision_role.policies]]
+name = "remove-secrets-manage"
+contents = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenySecretsManagerAccess",
+            "Effect": "Deny",
+            "Action": [
+                "secretsmanager:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+"""
+
+
+[deprovision_role]
+name = "{{.nuon.install.id}}-deprovision"
+description = "deprovision"
+display_name = "deprovision"
+permissions_boundary = "{}"
+
+[[deprovision_role.policies]]
+managed_policy_name = "AdministratorAccess"
+
+[[deprovision_role.policies]]
+name = "remove-secrets-manager"
+contents = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenySecretsManagerAccess",
+            "Effect": "Deny",
+            "Action": [
+                "secretsmanager:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+"""

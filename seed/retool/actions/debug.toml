@@ -1,0 +1,72 @@
+name = "Debug"
+timeout = "30s"
+
+[[triggers]]
+type = "manual"
+
+# echo env
+[[steps]]
+name = "print-env"
+command = "env"
+
+[steps.public_repo]
+repo = "nuonco/actions"
+directory = "actions"
+branch = "main"
+
+[steps.env_vars]
+TEST_NUON_VAR = "{{.nuon.install.id}}"
+
+# echo something out
+[[steps]]
+name = "echo"
+command = "echo 'hello world'"
+
+[steps.env_vars]
+TEST_NUON_VAR = "{{.nuon.install.id}}"
+
+# test outputs with private repo
+
+#[[steps]]
+#name = "nuon cli example"
+#command = "./nuon/cli orgs current"
+
+#[steps.env_vars]
+#TEST_NUON_VAR = "{{.nuon.install.id}}"
+
+#[steps.public_repo]
+#repo = "nuonco/actions"
+#branch = "main"
+#directory = "."
+
+#[[steps]]
+#name = "nuon cli example failure"
+#command = "sleep 30"
+
+#[steps.env_vars]
+#TEST_NUON_VAR = "{{.nuon.install.id}}"
+
+#[steps.public_repo]
+#repo = "nuonco/actions"
+#branch = "main"
+#directory = "."
+
+# inline a script write in your config file
+[[steps]]
+name = "echo inline"
+inline_contents = """
+#!/usr/bin/env sh
+echo "This is a whole script, inline"
+
+kubectl get pods -o name -n {{.nuon.install.id}}
+"""
+
+# interpolate a command
+[[steps]]
+name = "echo interpolated"
+command = "echo {{.nuon.install.id}}"
+
+# read a file
+[[steps]]
+name = "interpolated and loaded"
+inline_contents = "./debug.sh"

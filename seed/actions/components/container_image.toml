@@ -1,0 +1,18 @@
+#:schema https://api.nuon.co/v1/general/config-schema?source=container_image
+name   = "container_image"
+type   = "container_image"
+
+#
+# NOTE: this is configured in our dev infra, in `infra/dev`.
+#
+# To push a new image:
+# 1. `nctl scripts exec ecr-login dev`
+# 2. podman/docker tag docker.io/library/registry 949309607565.dkr.ecr.us-west-2.amazonaws.com/dev:nuonctl-api-seed
+# 3. podman/docker push 949309607565.dkr.ecr.us-west-2.amazonaws.com/dev:nuonctl-api-seed
+#
+[aws_ecr]
+image_url    = "949309607565.dkr.ecr.us-west-2.amazonaws.com/dev"
+tag          = "nuonctl-api-seed"
+region       = "us-west-2"
+iam_role_arn = "arn:aws:iam::949309607565:role/dev-nuon-ecr-access"
+

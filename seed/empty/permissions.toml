@@ -1,0 +1,23 @@
+[maintenance_role]
+name = "{{.nuon.id}}-maintenance"
+description = "maintenance"
+display_name = "maintenance"
+
+[[maintenance_role.policies]]
+managed_policy_name = "AdministratorAccess"
+
+[provision_role]
+name = "{{.nuon.install.id}}-provision"
+description = "provision"
+display_name = "provision"
+
+[[provision_role.policies]]
+managed_policy_name = "AdministratorAccess"
+
+[deprovision_role]
+name = "{{.nuon.install.id}}-deprovision"
+description = "deprovision"
+display_name = "deprovision"
+
+[[deprovision_role.policies]]
+managed_policy_name = "AdministratorAccess"

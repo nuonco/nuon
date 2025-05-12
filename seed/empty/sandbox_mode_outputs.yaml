@@ -1,0 +1,6 @@
+---
+# fake outputs that we need to inject in local sandbox mode to make this work
+sandbox:
+components:
+  ctl_api:
+    api_url: foo

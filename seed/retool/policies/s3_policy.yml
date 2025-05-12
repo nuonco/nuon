@@ -1,0 +1,19 @@
+---
+apiVersion: json.kyverno.io/v1alpha1
+kind: ValidatingPolicy
+metadata:
+  name: s3
+spec:
+  rules:
+    - name: check-tags
+      assert:
+        all:
+        - check:
+            planned_values:
+              root_module:
+                ~.resources:
+                  values:
+                    (keys(tags_all)):
+                      (contains(@, '{{.nuon.install.id}}')): true
+                      (contains(@, 'Name')): true
+                      (contains(@, 'Team')): true

@@ -1,0 +1,29 @@
+name = "Outputs"
+timeout = "30s"
+
+[[triggers]]
+type = "manual"
+
+# echo env
+[[steps]]
+name = "outputs-file"
+inline_contents = """
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+echo >&2 "setting a json output"
+echo '{"json_key":"json_value"}' >> $NUON_ACTIONS_OUTPUT_FILEPATH
+"""
+
+[[steps]]
+name = "outputs-key-value"
+inline_contents = """
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+echo >&2 "setting a key value output"
+echo "KEY=VALUE" >> $NUON_ACTIONS_OUTPUT_FILEPATH
+"""
+

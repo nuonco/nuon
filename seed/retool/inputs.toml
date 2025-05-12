@@ -1,0 +1,96 @@
+#:schema http://localhost:8081/v1/general/config-schema?source=inputs
+[[group]]
+name         = "db"
+description  = "Configuration for the database Retool will create for itself."
+display_name = "Retool database configuration"
+
+[[input]]
+name         = "db_password"
+description  = "Password to use for the database."
+default      = ""
+sensitive    = true
+display_name = "Password"
+group        = "db"
+
+#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+[[group]]
+name         = "retool"
+description  = "Configure Retool"
+display_name = "Retool configuration"
+
+[[input]]
+name         = "license_key"
+description  = "Your Retool license key"
+default      = ""
+sensitive    = true
+display_name = "License Key"
+group        = "retool"
+
+[[input]]
+name         = "encryption_key"
+description  = "Key used to encrypt the database. Generate a random string with openssl."
+default      = ""
+sensitive    = true
+display_name = "Encryption Key"
+group        = "retool"
+
+[[input]]
+name         = "jwt_secret"
+description  = "Secret used to sign authentication requests from Retool's server. Generate a random string with openssl."
+default      = ""
+sensitive    = true
+display_name = "JWT Secret"
+group        = "retool"
+
+[[input]]
+name         = "use_insecure_cookies"
+description  = "Whether to allow insecure cookies. Set to true if you have not configured SSL. Set to false if you use HTTPS to connect to the instance."
+default      = "false"
+sensitive    = false
+display_name = "Use Insecure Cookies"
+group        = "retool"
+
+[[group]]
+name = "types"
+description = "Types Testing"
+display_name = "Testing different names"
+
+[[input]]
+name = "string_type"
+description  = "String value"
+default      = "default"
+sensitive    = true
+display_name = "String Type"
+group        = "types"
+internal = true
+type = "string"
+
+[[input]]
+name = "number_type"
+description  = "Number value"
+default      = "0"
+sensitive    = false
+display_name = "Number Type"
+group        = "types"
+internal = true
+type = "number"
+
+[[input]]
+name = "bool_type"
+description  = "Bool Type"
+default      = false
+sensitive    = false
+display_name = "Bool Type"
+group        = "types"
+internal = true
+type = "bool"
+
+[[input]]
+name = "json_type"
+description  = "JSON Type"
+default      = "{}"
+sensitive    = false
+display_name = "JSON Type"
+group        = "types"
+internal = true
+type = "json"

@@ -1,0 +1,5 @@
+version = "v2"
+
+description = "Actions Kitchen Sink"
+display_name = "Actions Kitchen Sink"
+readme       = "./readme.md"

@@ -1,0 +1,19 @@
+terraform_version = "1.11.3"
+
+[public_repo]
+directory = "/"
+repo      = "nuonco/aws-eks-sandbox"
+branch    = "main"
+
+[env_vars]
+CLUSTER_NAME = "{{.nuon.install.id}}"
+
+[vars]
+cluster_name = "{{ .nuon.install.id }}"
+account_id = "{{.nuon.install_stack.outputs.account_id}}"
+enable_nuon_dns = "true"
+# 
+public_root_domain = "{{.nuon.install.id}}.stage.nuon.run"
+
+[[var_file]]
+contents = "./sandbox.tfvars"

@@ -1,0 +1,14 @@
+name = "Debug"
+timeout = "30s"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name = "echo inline"
+inline_contents = """
+#!/usr/bin/env sh
+echo "This is a whole script, inline"
+
+kubectl get pods -o name -n {{.nuon.install.id}}
+"""

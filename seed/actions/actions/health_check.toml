@@ -1,0 +1,13 @@
+name = "Cron"
+timeout = "30s"
+
+[[triggers]]
+type = "manual"
+
+# echo something out
+[[steps]]
+name = "echo"
+command = "echo 'hello world'"
+
+[steps.env_vars]
+TEST_NUON_VAR = "{{.nuon.install.id}}"

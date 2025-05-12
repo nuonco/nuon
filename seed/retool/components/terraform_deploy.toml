@@ -1,0 +1,16 @@
+#:schema http://localhost:8081/v1/general/config-schema?source=terraform
+name = "toml_terraform_s3"
+type = "terraform_module"
+terraform_version = "1.8.4"
+
+[connected_repo]
+directory = "bins/nuonctl/components/s3_terraform"
+repo = "powertoolsdev/mono"
+branch = "main"
+
+[vars]
+region = "{{.nuon.install_stack.outputs.region}}"
+install_id = "{{.nuon.install.id}}"
+
+[[var_file]]
+contents = "./vars.tfvars"

@@ -1,0 +1,9 @@
+name    = "File Action"
+timeout = "0m15s"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name    = "Test an action with a local file"
+inline_contents = "./debug.sh"

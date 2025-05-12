@@ -1,0 +1,5 @@
+version = "v2"
+
+description = "Empty"
+display_name = "Empty app"
+readme       = "## Empty App"

@@ -1,0 +1,5 @@
+version = "v2"
+
+description = "Retool seed app"
+display_name = "Retool seed app"
+readme       = "./readme.md"
