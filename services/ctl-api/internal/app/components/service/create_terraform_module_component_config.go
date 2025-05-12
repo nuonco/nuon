@@ -122,10 +122,5 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		return nil, fmt.Errorf("unable to create terraform component config connection: %w", res.Error)
 	}
 
-	err = s.helpers.UpdateComponentType(ctx, cmpID, app.ComponentTypeTerraformModule)
-	if err != nil {
-		return nil, fmt.Errorf("unable to update component type: %w", err)
-	}
-
 	return &cfg, nil
 }
