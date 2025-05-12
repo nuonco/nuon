@@ -124,5 +124,10 @@ func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID st
 		return nil, fmt.Errorf("unable to create docker build component config connection: %w", res.Error)
 	}
 
+	err = s.helpers.UpdateComponentType(ctx, cmpID, app.ComponentTypeDockerBuild)
+	if err != nil {
+		return nil, fmt.Errorf("unable to update component type: %w", err)
+	}
+
 	return &cfg, nil
 }
