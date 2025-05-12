@@ -2,7 +2,7 @@ module github.com/powertoolsdev/mono
 
 go 1.23.2
 
-toolchain go1.24.1
+toolchain go1.24.2
 
 // NOTE(jm): some older versions of viper, require an older and incompatible version of ugorgi/go which has some
 // backwards compatibility issues with go modules:
@@ -36,6 +36,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/iam v1.28.5
 	github.com/aws/aws-sdk-go-v2/service/route53 v1.48.5
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.54.3
+	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.35.4
 	github.com/aws/aws-sdk-go-v2/service/sts v1.31.3
 	github.com/awslabs/goformation/v7 v7.14.9
 	github.com/bradleyfalzon/ghinstallation/v2 v2.2.0
@@ -179,7 +180,6 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/aryann/difflib v0.0.0-20210328193216-ff5ff6dc229b // indirect
-	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.35.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
@@ -477,7 +477,7 @@ require (
 	github.com/mitchellh/go-glint v0.0.0-20210722152315-6515ceb4a127 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1
-	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
 	github.com/moby/sys/symlink v0.2.0 // indirect
