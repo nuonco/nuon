@@ -43,7 +43,7 @@ export default withPageAuthRequired(async function AppComponents({ params }) {
       breadcrumb={[
         { href: `/${orgId}/apps`, text: 'Apps' },
         { href: `/${orgId}/apps/${app.id}`, text: app.name },
-        { href: `/${orgId}/apps/${app.id}/components`, text: "Components" },
+        { href: `/${orgId}/apps/${app.id}/components`, text: 'Components' },
       ]}
       heading={app.name}
       headingUnderline={app.id}
@@ -59,7 +59,7 @@ export default withPageAuthRequired(async function AppComponents({ params }) {
       }
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
-      <Section>
+      <Section childrenClassName="flex flex-auto">
         <ErrorBoundary fallbackRender={ErrorFallback}>
           <Suspense
             fallback={
