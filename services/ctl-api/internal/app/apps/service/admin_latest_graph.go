@@ -70,12 +70,5 @@ func (s *service) AdminConfigGraph(ctx *gin.Context) {
 		return
 	}
 
-	// Set headers for file download
-	filename := fmt.Sprintf("app.gv")
-	ctx.Header("Content-Description", "File Transfer")
-	ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
-	ctx.Header("Content-Type", "text/vnd.graphviz")
-	ctx.Header("Content-Length", fmt.Sprintf("%d", buf.Len()))
-
-	ctx.Data(http.StatusOK, "text/vnd.graphviz", buf.Bytes())
+	ctx.String(http.StatusOK, buf.String())
 }
