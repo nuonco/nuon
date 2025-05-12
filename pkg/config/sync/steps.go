@@ -32,7 +32,7 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 			},
 		},
 		{
-			Resource: "app-installer",
+			Resource: "installer",
 			Method: func(ctx context.Context) error {
 				return s.syncAppInstaller(ctx, "installer")
 			},
