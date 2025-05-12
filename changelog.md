@@ -6,6 +6,7 @@ to publish this externally.
 ## v0.19.550
 
 Fix bug in Install Stack Template relateed to AWS Secret Manager secret values.
+Nuon Helm Driver released.
 
 ## v0.19.546
 
