@@ -124,5 +124,10 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		return nil, fmt.Errorf("unable to create helm component config connection: %w", res.Error)
 	}
 
+	err = s.helpers.UpdateComponentType(ctx, cmpID, app.ComponentTypeHelmChart)
+	if err != nil {
+		return nil, fmt.Errorf("unable to update component type: %w", err)
+	}
+
 	return &cfg, nil
 }
