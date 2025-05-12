@@ -1,6 +1,8 @@
 package cloudformation
 
 import (
+	"fmt"
+
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/secretsmanager"
 
@@ -52,6 +54,8 @@ func (a *Templates) getSecretsResources(inp *TemplateInput, t tagBuilder) map[st
 				ExcludePunctuation: generics.ToPtr(true),
 				PasswordLength:     generics.ToPtr(63),
 			}
+		} else {
+			obj.SecretString = generics.ToPtr(cloudformation.Sub(fmt.Sprintf("${%s}", secret.CloudFormationParamName)))
 		}
 
 		rsrcs[secret.CloudFormationStackName] = obj
