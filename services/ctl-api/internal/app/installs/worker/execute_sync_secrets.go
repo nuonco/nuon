@@ -45,6 +45,11 @@ func (w *Workflows) SyncSecrets(ctx workflow.Context, sreq signals.RequestSignal
 		return err
 	}
 
+	if sreq.SandboxMode {
+		l.Debug("skipping sync secrets in sandbox mode")
+		return nil
+	}
+
 	l.Info("creating plan")
 	plan, err := plan.AwaitCreateSyncSecretsPlan(ctx, &plan.CreateSyncSecretsPlanRequest{
 		InstallID:  install.ID,
