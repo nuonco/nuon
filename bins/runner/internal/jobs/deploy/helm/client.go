@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/helm"
+	nuondriver "github.com/powertoolsdev/mono/pkg/helm/driver"
 	"github.com/powertoolsdev/mono/pkg/kube"
 )
 
@@ -23,7 +24,7 @@ func (h *handler) actionInit(ctx context.Context, l *zap.Logger) (*action.Config
 		return nil, nil, errors.Wrap(err, "unable to get kube config")
 	}
 
-	helmCfg, err := helm.Client(l, kubeCfg, h.state.plan.HelmDeployPlan.Namespace)
+	helmCfg, err := helm.ClientV2(l, kubeCfg)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get helm client: %w", err)
 	}
@@ -49,8 +50,20 @@ func (h *handler) getHelmReleaseStore(ctx context.Context, kubeCfg *rest.Config)
 		secrets := k8sClient.CoreV1().Secrets(h.state.plan.HelmDeployPlan.Namespace)
 		d := driver.NewSecrets(secrets)
 		store = storage.Init(d)
+
+	case "nuon":
+		httpDriver, err := nuondriver.NewNuonDriver(fmt.Sprintf("%s/v1/helm-releases/%s/", h.cfg.RunnerAPIURL,
+			h.state.plan.HelmDeployPlan.HelmChartID),
+			h.cfg.RunnerAPIToken)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create http driver")
+		}
+		httpDriver.SetNamespace(h.state.plan.HelmDeployPlan.Namespace)
+		store = storage.Init(httpDriver)
+
 	default:
 		return nil, errors.New("unsupported driver type " + h.state.plan.HelmDeployPlan.StorageDriver)
+
 	}
 	return store, nil
 }
