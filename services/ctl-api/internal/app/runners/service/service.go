@@ -158,15 +158,6 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	tfWorkspaces.POST("/:workspace_id/lock", s.LockTerraformWorkspace)
 	tfWorkspaces.POST("/:workspace_id/unlock", s.UnlockTerraformWorkspace)
 
-	// helm release api
-	helmReleasePath := "/v1/helm-releases/:helm_chart_id/releases/"
-	api.GET(helmReleasePath+":namespace", s.GetHelmReleases)
-	api.GET(helmReleasePath+":namespace/:key", s.GetHelmRelease)
-	api.GET(helmReleasePath+":namespace/query", s.QueryHelmRelease)
-	api.POST(helmReleasePath+":namespace/:key", s.CreateHelmRelease)
-	api.PUT(helmReleasePath+":namespace/:key", s.UpdateHelmRelease)
-	api.DELETE(helmReleasePath+":namespace/:key", s.DeleteHelmRelease)
-
 	// TODO(jm): these will be moved to the otel namespace
 	api.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
 
