@@ -115,6 +115,8 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/install-workflows/:install_workflow_id/steps", s.GetInstallWorkflowSteps)
 	api.GET("/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id", s.GetInstallWorkflowStep)
 	api.POST("/v1/install-workflows/:install_workflow_id/cancel", s.CancelInstallWorkflow)
+	api.GET("/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id/approvals/:approval_id", s.GetInstallWorkflowStepApproval)
+	api.POST("/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id/approvals/:approval_id/response", s.CreateInstallWorkflowStepApprovalResponse)
 
 	// install runner group
 	api.GET("/v1/installs/:install_id/runner-group", s.GetInstallRunnerGroup)
