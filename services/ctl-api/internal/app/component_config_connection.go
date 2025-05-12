@@ -73,6 +73,11 @@ func (c *ComponentConfigConnection) Views(db *gorm.DB) []migrations.View {
 			SQL:           viewsql.ComponentConfigConnectionsV1,
 			AlwaysReapply: true,
 		},
+		{
+			Name:          views.CustomViewName(db, &ComponentConfigConnection{}, "latest_configs_view"),
+			SQL:           viewsql.LatestComponentConfigConnectionsV1,
+			AlwaysReapply: true,
+		},
 	}
 }
 
