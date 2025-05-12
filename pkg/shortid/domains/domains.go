@@ -154,6 +154,14 @@ func NewInstallWorkflowStepID() string {
 	return shortid.NewNanoID("iws")
 }
 
+func NewInstallWorkflowStepApprovalID() string {
+	return shortid.NewNanoID("waa")
+}
+
+func NewInstallWorkflowStepApprovalResponseID() string {
+	return shortid.NewNanoID("war")
+}
+
 func NewInstanceID() string {
 	return shortid.NewNanoID("ins")
 }

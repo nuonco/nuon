@@ -1,8 +1,13 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 )
 
@@ -29,10 +34,11 @@ type InstallWorkflowStepApproval struct {
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	// the step that this approval belongs too
-	InstallWorkflowStepID string `temporaljson:"install_workflow_step_id,omitzero,omitempty"`
+	InstallWorkflowStepID string              `gorm:"install_workflow_step_id,notnull" temporaljson:"install_workflow_step_id,omitzero,omitempty"`
+	InstallWorkflowStep   InstallWorkflowStep `temporaljson:"install_workflow_step,omitzero,omitempty"`
 
 	// the runner job where this approval was created
-	RunnerJobID string    `temporaljson:"runner_job_id,omitzero,omitempty"`
+	RunnerJobID string    `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
 	RunnerJob   RunnerJob `temporaljson:"runner_job,omitzero,omitempty"`
 
 	// status of an approval is either pending, awaiting-response or done.
@@ -47,4 +53,34 @@ type InstallWorkflowStepApproval struct {
 
 	// the response object must be created by the user in the UI or CLI
 	Response *InstallWorkflowStepApprovalResponse `json:"response,omitzero" temporaljson:"response,omitzero,omitempty"`
+}
+
+func (c *InstallWorkflowStepApproval) BeforeCreate(tx *gorm.DB) error {
+	c.ID = domains.NewInstallWorkflowStepApprovalID()
+
+	if c.CreatedByID == "" {
+		c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
+
+	if c.OrgID == "" {
+		c.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+	return nil
+}
+
+func (c *InstallWorkflowStepApproval) AfterQuery(tx *gorm.DB) error {
+	return nil
+}
+
+func (c *InstallWorkflowStepApproval) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &InstallWorkflowStepApproval{}, "uq"),
+			Columns: []string{
+				"install_workflow_step_id",
+				"deleted_at",
+			},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+		},
+	}
 }
