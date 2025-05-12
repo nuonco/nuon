@@ -18,10 +18,15 @@ func (h *Helpers) GetInstallComponents(ctx context.Context, installID string) ([
 			return db.Order("install_components.created_at DESC")
 		}).
 		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithOverrideTable("install_deploys_latest_view_v1"))
+			return db.
+				Where(app.InstallDeploy{
+					Status: app.InstallDeployStatusActive,
+				}).
+				Scopes(scopes.WithOverrideTable("install_deploys_latest_view_v1"))
 		}).
 		Preload("InstallComponents.InstallDeploys.RunnerJobs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("runner_jobs_view_v1.created_at DESC")
+			return db.
+				Order("runner_jobs_view_v1.created_at DESC")
 		}).
 		Preload("InstallComponents.Component").
 		Preload("InstallComponents.TerraformWorkspace").
@@ -32,4 +37,3 @@ func (h *Helpers) GetInstallComponents(ctx context.Context, installID string) ([
 
 	return install.InstallComponents, nil
 }
-

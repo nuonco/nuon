@@ -44,9 +44,9 @@ type AppConfig struct {
 	// This requires a bit more work/indirection by us, but a bit less by our customers!
 
 	// Components are used to connect container images, automation and infrastructure as code to your Nuon App
-	Components ComponentList `mapstructure:"components"`
+	Components ComponentList `mapstructure:"components,omitempty"`
 
-	Actions []*ActionConfig `mapstructure:"actions"`
+	Actions []*ActionConfig `mapstructure:"actions,omitempty"`
 }
 type ComponentList []*Component
 
