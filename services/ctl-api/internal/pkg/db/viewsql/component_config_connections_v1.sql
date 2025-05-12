@@ -11,6 +11,18 @@ WITH component_config_connections_with_count AS (
        ROW_NUMBER() OVER (PARTITION BY rje.component_id ORDER BY rje.created_at DESC) as execution_number
   FROM
      component_config_connections rje
+), 
+
+app_configs_for_component_configs AS (
+SELECT
+    row_number() OVER (
+        PARTITION BY app_id
+        ORDER BY
+            created_at
+    ) AS version,
+    *
+FROM
+    app_configs
 )
 
 SELECT
@@ -18,5 +30,5 @@ SELECT
   ac.version as app_config_version
 FROM component_config_connections_with_count ccc
 JOIN 
-  app_configs_view_v2 ac on ac.id = ccc.app_config_id
+  app_configs_for_component_configs ac on ac.id = ccc.app_config_id
 ORDER BY ccc.version DESC
