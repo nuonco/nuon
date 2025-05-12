@@ -37,9 +37,7 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 		}
 	}
 
-	// get all components and their latest config, and then ensure any components which are not connected to this
-	// config use the latest component config to attach them to the graph
-	allComps, err := h.GetAppComponentsAndLatestConfigConnection(ctx, cfg.AppID)
+	allComps, err := h.GetAppComponentsAtConfigVersion(ctx, cfg.AppID, cfg.Version)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app components")
 	}
