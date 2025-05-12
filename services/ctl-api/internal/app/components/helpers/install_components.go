@@ -104,9 +104,9 @@ func (h *Helpers) HelmChartFromICs(ics []app.InstallComponent, helmCmps map[stri
 	releases := make([]app.HelmChart, 0, len(ics))
 	for _, ic := range ics {
 		// TODO(ht): uncomment once the component type is set properly
-		if !helmCmps[ic.ComponentID] {
-			continue
-		}
+		// if !helmCmps[ic.ComponentID] {
+		// 	continue
+		// }
 		releases = append(releases, h.HelmReleaseFromIC(ic))
 	}
 	return releases
