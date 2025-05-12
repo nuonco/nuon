@@ -13,6 +13,9 @@ WITH component_config_connections_with_count AS (
      component_config_connections rje
 )
 
-SELECT *
-FROM component_config_connections_with_count
-ORDER BY version DESC
+SELECT
+	rje.*
+FROM
+	component_config_connections_with_count rje
+WHERE
+	rje.execution_number = 1
