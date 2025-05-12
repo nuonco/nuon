@@ -61,7 +61,7 @@ func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID string) ([]
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("Configs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("action_workflow_configs.created_at DESC")
+			return db.Order("action_workflow_configs.created_at DESC").Limit(30)
 		}).
 		Preload("Configs.Triggers").
 		Preload("Configs.Steps").
