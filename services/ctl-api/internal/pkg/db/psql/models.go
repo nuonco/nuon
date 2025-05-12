@@ -106,6 +106,7 @@ func AllModels() []interface{} {
 		&app.TerraformWorkspace{},
 		&app.TerraformWorkspaceLock{},
 		&app.OCIArtifact{},
+		&app.HelmRelease{},
 
 		// actions
 		&app.ActionWorkflow{},

@@ -34,6 +34,11 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		return nil, errors.Wrap(err, "unable to get install deploy")
 	}
 
+	hc, err := activities.AwaitGetHelmChartByOwnerID(ctx, installDeploy.InstallComponent.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get helm chart")
+	}
+
 	state, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
 		InstallID: install.ID,
 	})
@@ -100,9 +105,9 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		Namespace:       renderedNamespace,
 		CreateNamespace: true,
 		StorageDriver:   renderedDriver,
-
-		ValuesFiles: valuesFiles,
-		Values:      values,
+		HelmChartID:     hc.ID,
+		ValuesFiles:     valuesFiles,
+		Values:          values,
 
 		ClusterInfo: clusterInfo,
 	}, nil
