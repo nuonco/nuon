@@ -43,6 +43,7 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app components")
 	}
+	missingComps := make([]app.ComponentConfigConnection, 0)
 	for _, comp := range allComps {
 		if _, visited := visitedComps[comp.ID]; visited {
 			continue
@@ -56,10 +57,17 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 		); err != nil {
 			return nil, err
 		}
+
+		if len(comp.ComponentConfigs) < 1 {
+			continue
+		}
+
+		missingComps = append(missingComps, comp.ComponentConfigs[0])
 	}
 
 	// add all dependencies
-	for _, ccc := range cfg.ComponentConfigConnections {
+	allCfgs := append(cfg.ComponentConfigConnections, missingComps...)
+	for _, ccc := range allCfgs {
 		for _, dep := range ccc.ComponentDependencyIDs {
 			if err := g.AddEdge(dep, ccc.ComponentID,
 				graph.EdgeWeight(25),
