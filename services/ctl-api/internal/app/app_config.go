@@ -88,7 +88,7 @@ func (i *AppConfig) Views(db *gorm.DB) []migrations.View {
 		{
 			Name:          views.DefaultViewName(db, &AppConfig{}, 2),
 			SQL:           viewsql.AppConfigViewV2,
-			AlwaysReapply: true,
+			AlwaysReapply: false,
 		},
 	}
 }
