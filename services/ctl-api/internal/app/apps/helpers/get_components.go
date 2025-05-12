@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -16,9 +15,7 @@ func (h *Helpers) GetAppComponentsAndLatestConfigConnection(ctx context.Context,
 		Where(&app.Component{
 			AppID: appID,
 		}).
-		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("created_at DESC").Limit(1)
-		}).
+		Preload("ComponentConfigs").
 		Scopes(PreloadComponentConfigConnections).
 		Find(&components)
 	if res.Error != nil {
