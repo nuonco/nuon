@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a
 promotion. There is currently no intention to publish this externally.
 
+## v0.19.546
+
+Fixing issue with deps.
+
 ## v0.19.544
 
 Promotion for https://docs.nuon.co/updates/004-secrets.
