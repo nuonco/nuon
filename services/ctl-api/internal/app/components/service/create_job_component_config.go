@@ -96,10 +96,5 @@ func (s *service) createJobComponentConfig(ctx context.Context, cmpID string, re
 		return nil, fmt.Errorf("unable to create job component config connection: %w", res.Error)
 	}
 
-	err = s.helpers.UpdateComponentType(ctx, cmpID, app.ComponentTypeJob)
-	if err != nil {
-		return nil, fmt.Errorf("unable to update component type: %w", err)
-	}
-
 	return &cfg, nil
 }
