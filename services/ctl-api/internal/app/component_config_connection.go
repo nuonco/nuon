@@ -55,7 +55,8 @@ type ComponentConfigConnection struct {
 
 	Type ComponentType `gorm:"-" json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 
-	Version int `json:"version,omitzero" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
+	Version          int `json:"version,omitzero" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
+	AppConfigVersion int `json:"app_config_version,omitzero" gorm:"->;-:migration" temporaljson:"app_config_version,omitzero,omitempty"`
 }
 
 func (c *ComponentConfigConnection) UseView() bool {
