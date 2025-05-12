@@ -84,6 +84,11 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 	valuesFiles := []string(cfg.ValuesFiles)
 	values := make([]plantypes.HelmValue, 0)
 	for k, v := range generics.ToStringMap(cfg.Values) {
+		v, err = render.RenderV2(v, stateData)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to render")
+		}
+
 		values = append(values, plantypes.HelmValue{
 			Name:  k,
 			Value: v,
