@@ -19,7 +19,6 @@ type HelmDeployPlan struct {
 	Namespace       string `json:"namespace"`
 	CreateNamespace bool   `json:"create_namespace"`
 	StorageDriver   string `json:"storage_driver"`
-	HelmChartID     string `json:"helm_chart_id"`
 
 	ValuesFiles []string    `json:"values_files"`
 	Values      []HelmValue `json:"values"`
