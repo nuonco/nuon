@@ -157,6 +157,7 @@ export interface IText extends React.HTMLAttributes<HTMLSpanElement> {
   level?: 1 | 2 | 3 | 4 | 5 | 6
   role?: 'paragraph' | 'heading' | 'code' | 'time'
   variant?: TTextVariant
+  isMuted?: boolean
 }
 
 export const Text: FC<IText> = ({
@@ -165,6 +166,7 @@ export const Text: FC<IText> = ({
   level,
   role = 'paragraph',
   variant = 'reg-12',
+  isMuted = false,
   ...props
 }) => {
   return (
@@ -183,6 +185,7 @@ export const Text: FC<IText> = ({
         'font-mono font-normal text-base leading-loose': variant === 'mono-14',
         'font-mono font-normal text-sm leading-relaxed text-cool-grey-600 dark:text-white/70':
           variant === 'mono-12',
+        'text-cool-grey-600 dark:text-white/70': isMuted,
         [`${className}`]: Boolean(className),
       })}
       role={role}

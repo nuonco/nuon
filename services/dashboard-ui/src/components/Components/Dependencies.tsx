@@ -58,7 +58,14 @@ const MultiDependencies: FC<{
               onClose={() => {
                 setIsOpen(false)
               }}
-              heading={`${name} dependencies`}
+              heading={
+                <span className="flex flex-col gap-1">
+                  <Text variant="med-18">{name} dependencies</Text>
+                  <Text variant="reg-12" className="!font-normal" isMuted>
+                    Component dependencies identified on the last app-config
+                  </Text>
+                </span>
+              }
               contentClassName="!p-0"
             >
               <div className="flex flex-wrap gap-4 px-6 py-4">
@@ -92,7 +99,7 @@ const MultiDependencies: FC<{
         />
       ))}
       <Button
-        className="!px-2 !py-1 text-sm"
+        className="!px-2 !py-1 text-sm leading-normal"
         onClick={() => {
           setIsOpen(true)
         }}
