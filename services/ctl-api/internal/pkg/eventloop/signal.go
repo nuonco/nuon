@@ -3,6 +3,7 @@ package eventloop
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.temporal.io/sdk/workflow"
 	"gorm.io/gorm"
@@ -39,6 +40,16 @@ type Signal interface {
 }
 
 // SignalHandlerWorkflowID returns the standard ID to use for a signal handler child workflow
-func SignalHandlerWorkflowID(sig Signal, req EventLoopRequest) string {
+func SignalHandlerWorkflowID(ctx workflow.Context, sig Signal, req EventLoopRequest) string {
+	// If the calling workflow is an event loop, then construct this name hierarchically
+	caller := workflow.GetInfo(ctx).WorkflowExecution.ID
+	if strings.HasPrefix(caller, "event-loop-") {
+		if len(caller) > len(req.ID) && strings.HasSuffix(caller, req.ID) {
+			// If the ID is the same as the caller's, don't repeat it
+			return fmt.Sprintf("%s::%s", caller, sig.SignalType())
+		} else {
+			return fmt.Sprintf("%s::%s-%s", caller, sig.SignalType(), req.ID)
+		}
+	}
 	return fmt.Sprintf("sig-%s-%s", sig.SignalType(), req.ID)
 }
