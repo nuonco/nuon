@@ -14,7 +14,7 @@ import (
 )
 
 // GetInstallState reads the current state of the install from the DB, and returns it in a structure that can be used for variable interpolation.
-func (h *Helpers) GetInstallState(ctx context.Context, installID string) (*state.State, error) {
+func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool) (*state.State, error) {
 	is := state.New()
 
 	// collect all data up front
@@ -24,7 +24,7 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string) (*state
 	}
 	is.ID = install.ID
 	is.Name = install.Name
-	is.Inputs = h.toInputState(install.CurrentInstallInputs)
+	is.Inputs = h.toInputState(install.CurrentInstallInputs, redacted)
 	is.Cloud = h.toCloudAccount(install)
 
 	installComps, err := h.GetInstallComponents(ctx, installID)
@@ -144,13 +144,17 @@ func (h *Helpers) toInstallStackState(stack *app.InstallStack) *state.InstallSta
 	return is
 }
 
-func (h *Helpers) toInputState(inputs *app.InstallInputs) *state.InputsState {
-	if inputs == nil || len(inputs.Values) < 1 {
+func (h *Helpers) toInputState(inputs *app.InstallInputs, redacted bool) *state.InputsState {
+	inputValues := inputs.Values
+	if redacted {
+		inputValues = inputs.ValuesRedacted
+	}
+	if inputs == nil || len(inputValues) < 1 {
 		return nil
 	}
 
 	is := state.NewInputsState()
-	for key, val := range inputs.ValuesRedacted {
+	for key, val := range inputValues {
 		is.Inputs[key] = pkggenerics.FromPtrStr(val)
 	}
 
