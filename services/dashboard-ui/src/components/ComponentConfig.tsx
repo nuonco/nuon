@@ -85,7 +85,7 @@ export const StaticComponentConfigType: FC<{
   }
 
   return (
-    <span className="flex items-center gap-1">
+    <span className="flex items-center gap-1 text-nowrap">
       {cfgType['icon']} {!isIconOnly && cfgType['name']}
     </span>
   )

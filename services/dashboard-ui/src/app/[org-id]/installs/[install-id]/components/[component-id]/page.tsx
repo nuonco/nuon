@@ -6,9 +6,9 @@ import { CaretRight } from '@phosphor-icons/react/dist/ssr'
 import {
   ClickToCopyButton,
   ComponentConfiguration,
+  ComponentDependencies,
   CodeViewer,
   DashboardContent,
-  DependentComponents,
   Duration,
   ErrorFallback,
   InstallComponentDeploys,
@@ -32,7 +32,8 @@ import {
   getInstallComponent,
   getOrg,
 } from '@/lib'
-import type { TComponent, TInstallComponent } from '@/types'
+import type { TComponent } from '@/types'
+import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
@@ -149,14 +150,22 @@ export default withPageAuthRequired(async function InstallComponent({
 
           {component.dependencies && (
             <Section className="flex-initial" heading="Dependencies">
-              <DependentComponents
-                dependentIds={component.dependencies}
-                installComponents={
-                  install?.install_components as Array<TInstallComponent>
-                }
-                installId={installId}
-                orgId={orgId}
-              />
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={
+                    <Loading
+                      variant="stack"
+                      loadingText="Loading component dependencies..."
+                    />
+                  }
+                >
+                  <LoadComponentDependencies
+                    component={component}
+                    orgId={orgId}
+                    installId={installId}
+                  />
+                </Suspense>
+              </ErrorBoundary>
             </Section>
           )}
         </div>
@@ -247,6 +256,31 @@ const LoadComponentConfig: FC<{ componentId: string; orgId: string }> = async ({
     <ComponentConfiguration config={componentConfig} isNotTruncated />
   ) : (
     <Text>No component config found.</Text>
+  )
+}
+
+const LoadComponentDependencies: FC<{
+  component: TComponent
+  installId: string
+  orgId: string
+}> = async ({ component, installId, orgId }) => {
+  const { data, error } = await nueQueryData<Array<TComponent>>({
+    orgId,
+    path: `components/${component?.id}/dependencies`,
+  })
+
+  return (
+    <div className="flex items-center gap-4">
+      {error ? (
+        <Text>{error?.error}</Text>
+      ) : (
+        <ComponentDependencies
+          deps={data}
+          installId={installId}
+          name={component?.name}
+        />
+      )}
+    </div>
   )
 }
 

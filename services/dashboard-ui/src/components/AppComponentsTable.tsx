@@ -3,7 +3,10 @@
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight } from '@phosphor-icons/react'
-import { BuildAllComponentsButton } from '@/components/Components'
+import {
+  BuildAllComponentsButton,
+  ComponentDependencies,
+} from '@/components/Components'
 import {
   StaticComponentConfigType,
   getComponentConfigType,
@@ -17,8 +20,8 @@ import type { TBuild, TComponent, TComponentConfig } from '@/types'
 
 type TDataComponent = {
   deps: Array<TComponent>
-  config: TComponentConfig
-  latestBuild: TBuild
+  config?: TComponentConfig
+  latestBuild?: TBuild
 } & TComponent
 
 type TData = {
@@ -96,16 +99,10 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
         cell: (props) => (
           <div className="flex flex-wrap items-center gap-4">
             {props.getValue<number>() ? (
-              props.row.original.deps.map((dep, i) => (
-                <Text
-                  key={`${dep.id}-${i}`}
-                  className="bg-gray-500/10 px-2 py-1 rounded-lg border w-fit"
-                >
-                  <Link href={`/${orgId}/apps/${appId}/components/${dep.id}`}>
-                    {dep?.name}
-                  </Link>
-                </Text>
-              ))
+              <ComponentDependencies
+                deps={props.row.original.deps}
+                name={props.row.original.name}
+              />
             ) : (
               <Text>None</Text>
             )}
