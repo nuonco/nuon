@@ -23,8 +23,8 @@ export const AppInputConfig: FC<IAppInputConfig> = ({
     <div className="flex flex-col gap-2">
       <div className="grid grid-cols-8 gap-4 px-3 py-2 text-cool-grey-600 dark:text-cool-grey-500 text-base">
         <Text className="!font-medium col-span-2">Name</Text>
-        <Text className="!font-medium col-span-3">Description</Text>
-        <Text className="!font-medium">Default</Text>
+        <Text className="!font-medium col-span-2">Description</Text>
+        <Text className="!font-medium col-span-2">Default</Text>
         <Text className="!font-medium">Required</Text>
         <Text className="!font-medium">Sensitive</Text>
       </div>
@@ -65,11 +65,23 @@ export const AppInputConfig: FC<IAppInputConfig> = ({
                     )}
                   </div>
 
-                  <Text className="col-span-3 text-sm">
+                  <Text className="col-span-2 text-sm">
                     {input.description}
                   </Text>
 
-                  <Text className="text-sm">{input.default || 'None'}</Text>
+                  <div className="col-span-2 gap-2 flex flex-col items-start justify-start">
+                    {input?.default?.length >= 14 && !isNotTruncated ? (
+                      <ToolTip tipContent={input.default}>
+                        <Text className="text-sm">
+                          <Truncate variant="small">{input.default}</Truncate>
+                        </Text>
+                      </ToolTip>
+                    ) : (
+                      <Text className="text-sm">
+                        {input.default || <Minus />}
+                      </Text>
+                    )}
+                  </div>
 
                   <Text className="text-sm">
                     {input.required ? <Check /> : <Minus />}
