@@ -6,20 +6,21 @@ import {
   BuildComponentButton,
   ComponentBuildHistory,
   ComponentConfiguration,
+  ComponentDependencies,
   DashboardContent,
-  DependentComponents,
   ErrorFallback,
   Loading,
   Section,
+  Text,
 } from '@/components'
 import {
   getApp,
-  getAppComponents,
   getComponent,
   getComponentBuilds,
   getComponentConfig,
 } from '@/lib'
 import type { TComponent } from '@/types'
+import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const appId = params?.['app-id'] as string
@@ -74,7 +75,6 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
                   }
                 >
                   <LoadComponentDependencies
-                    appId={appId}
                     component={component}
                     orgId={orgId}
                   />
@@ -146,17 +146,21 @@ const LoadComponentConfig: FC<{ componentId: string; orgId: string }> = async ({
 }
 
 const LoadComponentDependencies: FC<{
-  appId: string
   component: TComponent
   orgId: string
-}> = async ({ appId, component, orgId }) => {
-  const appComponents = await getAppComponents({ appId, orgId })
+}> = async ({ component, orgId }) => {
+  const { data, error } = await nueQueryData<Array<TComponent>>({
+    orgId,
+    path: `components/${component?.id}/dependencies`,
+  })
+
   return (
-    <DependentComponents
-      appId={appId}
-      appComponents={appComponents}
-      dependentIds={component.dependencies}
-      orgId={orgId}
-    />
+    <div className="flex items-center gap-4">
+      {error ? (
+        <Text>{error?.error}</Text>
+      ) : (
+        <ComponentDependencies deps={data} name={component?.name} />
+      )}
+    </div>
   )
 }
