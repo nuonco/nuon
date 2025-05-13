@@ -73,6 +73,14 @@ export default withPageAuthRequired(async function InstallComponent({
       }
       statues={
         <div className="flex items-start gap-8">
+          <span className="flex flex-col gap-2">
+            <Text isMuted>App config</Text>
+            <Text>
+              <Link href={`/${orgId}/apps/${install.app_id}`}>
+                {install?.app?.name}
+              </Link>
+            </Text>
+          </span>
           <InstallStatuses initInstall={install} shouldPoll />
 
           <InstallManagementDropdown
