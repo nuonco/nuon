@@ -351,6 +351,7 @@ func (w *Workflows) getComponentLifecycleActionsSteps(ctx workflow.Context, inst
 				InstallActionWorkflowID: trigger.ID,
 				TriggerType:             triggerTyp,
 				TriggeredByID:           installWorkflowID,
+				TriggeredByType:         string(triggerTyp),
 				RunEnvVars: map[string]string{
 					"TRIGGER_TYPE":   string(triggerTyp),
 					"COMPONENT_ID":   comp.ID,
@@ -402,6 +403,7 @@ func (w *Workflows) getInstallWorkflowActionWorkflowRunSteps(ctx workflow.Contex
 			InstallActionWorkflowID: iaw.ID,
 			TriggerType:             app.ActionWorkflowTriggerTypeManual,
 			TriggeredByID:           generics.FromPtrStr(triggeredByID),
+			TriggeredByType:         string(app.ActionWorkflowTriggerTypeManual),
 			RunEnvVars:              runEnvVars,
 		},
 	}
@@ -756,6 +758,7 @@ func (w *Workflows) getSandboxLifecycleActionsSteps(ctx workflow.Context, instal
 				InstallActionWorkflowID: trigger.ID,
 				TriggerType:             triggerTyp,
 				TriggeredByID:           installWorkflowID,
+				TriggeredByType:         string(triggerTyp),
 				RunEnvVars: map[string]string{
 					"TRIGGER_TYPE":          string(triggerTyp),
 					"INSTALL_WORKFLOW_TYPE": string(workflow.Type),
