@@ -44,13 +44,13 @@ export interface ILoading {
 
 export const Loading: FC<ILoading> = ({
   loadingText = 'Getting things ready...',
-  textClassName = "",
+  textClassName = '',
   variant = 'default',
 }) => {
   return (
     <div
       className={classNames('flex', {
-        'h-[calc(100vh-350px)]': variant === 'page',
+        'h-[calc(100vh-350px)] m-auto': variant === 'page',
       })}
     >
       <span
@@ -64,7 +64,9 @@ export const Loading: FC<ILoading> = ({
             variant === 'page' || variant === 'stack' ? 'large' : 'default'
           }
         />
-        <Text className={textClassName} variant="reg-14">{loadingText}</Text>
+        <Text className={textClassName} variant="reg-14">
+          {loadingText}
+        </Text>
       </span>
     </div>
   )
