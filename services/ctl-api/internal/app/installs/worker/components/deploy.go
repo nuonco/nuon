@@ -1,4 +1,4 @@
-package worker
+package components
 
 import (
 	"fmt"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/actions"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
@@ -103,7 +104,7 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 
 	// skip lifecycle hooks if the deploy is a teardown
 	if installDeploy.Type != app.InstallDeployTypeTeardown {
-		if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
+		if err := w.wfActions.AwaitLifecycleActionWorkflows(ctx, &actions.LifecycleActionWorkflowsRequest{
 			InstallID:       install.ID,
 			TriggerType:     app.ActionWorkflowTriggerTypePreDeployAll,
 			TriggeredByID:   installDeploy.ID,
@@ -131,7 +132,7 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 	// skip lifecycle hooks if the deploy is a teardown
 	if installDeploy.Type != app.InstallDeployTypeTeardown {
 		// run hooks after the deploy
-		if err := w.AwaitLifecycleActionWorkflows(ctx, &LifecycleActionWorkflowsRequest{
+		if err := w.wfActions.AwaitLifecycleActionWorkflows(ctx, &actions.LifecycleActionWorkflowsRequest{
 			InstallID:       install.ID,
 			TriggerType:     app.ActionWorkflowTriggerTypePostDeployAll,
 			TriggeredByID:   installDeploy.ID,
