@@ -7,6 +7,9 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type ActionWorkflowConfig struct {
@@ -64,6 +67,16 @@ func (a *ActionWorkflowConfig) AfterQuery(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (i *ActionWorkflowConfig) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name:          views.CustomViewName(db, &ActionWorkflowConfig{}, "latest_view_v1"),
+			SQL:           viewsql.ActionWorkflowConfigsViewV1,
+			AlwaysReapply: true,
+		},
+	}
 }
 
 func (a *ActionWorkflowConfig) WorkflowConfigCanTriggerManually() bool {
