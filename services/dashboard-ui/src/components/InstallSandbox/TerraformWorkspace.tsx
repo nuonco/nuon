@@ -81,7 +81,7 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
       }
     })
 
-    const outputs = currentRevision.data.outputs
+    const outputs = currentRevision.data.outputs || []
     const outputList = Object.keys(outputs).map((key, idx) => [
       <Text key={idx}>{key}</Text>,
       <Text key={idx}>{outputs[key].type[0]}</Text>,
