@@ -2,7 +2,7 @@
 
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { CaretRight } from '@phosphor-icons/react'
+import { CaretRight, Minus } from '@phosphor-icons/react'
 import { ComponentDependencies } from '@/components/Components'
 import {
   StaticComponentConfigType,
@@ -36,7 +36,7 @@ type TData = {
   componentType: string
   configVersion: number
   installComponentId: string
-  deployStatus: string
+  deployStatus: string | null
   dependencies: number
   deps: Array<TInstallComponent>
   name: string
@@ -53,7 +53,7 @@ function parseInstallComponentsToTableData(
       : undefined,
     configVersion: comp.config?.version,
     installComponentId: comp.id,
-    deployStatus: comp.install_deploys?.[0]?.status || 'Not deployed',
+    deployStatus: comp.install_deploys?.[0]?.status || null,
     dependencies: comp.deps?.length || 0,
     deps: comp.deps,
     name: comp.component?.name,
@@ -115,7 +115,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
       {
         header: 'Deployment',
         accessorKey: 'deployStatus',
-        cell: (props) => <StatusBadge status={props.getValue<string>()} />,
+        cell: (props) => props.getValue<string>() ? <StatusBadge status={props.getValue<string>()} /> : <Minus />,
       },
       {
         header: 'Dependencies',
