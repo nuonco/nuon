@@ -3,6 +3,7 @@ import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
+  AppConfigGraph,
   AppCreateInstallButton,
   AppInputConfig,
   AppInputConfigModal,
@@ -27,8 +28,8 @@ import {
   getAppLatestSandboxConfig,
   type IGetApp,
 } from '@/lib'
-import type { TApp } from "@/types"
-import { nueQueryData } from "@/utils"
+import type { TApp } from '@/types'
+import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const appId = params?.['app-id'] as string
@@ -196,10 +197,14 @@ const LoadAppRunnerConfig: FC<{ appId: string; orgId: string }> = async ({
   )
 }
 
-const LoadAppConfigGraph: FC<{ app: TApp }> = async ({ app }) => {
-  const {} = await nueQueryData<string>({
+const LoadAppConfigGraph: FC<{ app: TApp; configId: string }> = async ({
+  app,
+  configId,
+}) => {
+  const { data } = await nueQueryData<string>({
     orgId: app?.org_id,
-    path: `apps/${app?.id}/configs/${app?.id}/graph`
+    path: `apps/${app?.id}/config/${configId}/graph`,
   })
-  return <>App config</>
+
+  return <AppConfigGraph graph={data} />
 }
