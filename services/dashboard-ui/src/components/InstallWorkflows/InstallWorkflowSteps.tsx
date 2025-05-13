@@ -258,7 +258,7 @@ const InstallWorkflowStepTitle: FC<{
           ) : null}
         </Text>
 
-        <Text variant="med-12">{sentanceCase(name)}</Text>
+        <Text className="text-wrap" variant="med-12">{sentanceCase(name)}</Text>
       </span>
     </span>
   )
