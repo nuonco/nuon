@@ -27,6 +27,8 @@ import {
   getAppLatestSandboxConfig,
   type IGetApp,
 } from '@/lib'
+import type { TApp } from "@/types"
+import { nueQueryData } from "@/utils"
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const appId = params?.['app-id'] as string
@@ -192,4 +194,12 @@ const LoadAppRunnerConfig: FC<{ appId: string; orgId: string }> = async ({
       </Text>
     </div>
   )
+}
+
+const LoadAppConfigGraph: FC<{ app: TApp }> = async ({ app }) => {
+  const {} = await nueQueryData<string>({
+    orgId: app?.org_id,
+    path: `apps/${app?.id}/configs/${app?.id}/graph`
+  })
+  return <>App config</>
 }
