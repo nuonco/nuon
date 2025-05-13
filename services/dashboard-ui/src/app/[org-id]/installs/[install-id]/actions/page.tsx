@@ -3,6 +3,8 @@ import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
+  Link,
+  InstallManagementDropdown,
   InstallPageSubNav,
   InstallStatuses,
   InstallActionWorkflowsTable,
@@ -11,9 +13,9 @@ import {
   Loading,
   NoActions,
   Section,
+  Text,
   Time,
 } from '@/components'
-import { InstallManagementDropdown } from '@/components/Installs'
 import { getInstall, getInstallActionWorkflowLatestRun } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -48,6 +50,14 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
       }
       statues={
         <div className="flex items-start gap-8">
+          <span className="flex flex-col gap-2">
+            <Text isMuted>App config</Text>
+            <Text>
+              <Link href={`/${orgId}/apps/${install.app_id}`}>
+                {install?.app?.name}
+              </Link>
+            </Text>
+          </span>
           <InstallStatuses initInstall={install} shouldPoll />
 
           <InstallManagementDropdown
