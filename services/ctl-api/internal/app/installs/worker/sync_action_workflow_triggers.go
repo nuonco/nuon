@@ -78,7 +78,7 @@ func (w *Workflows) startActionWorkflowCronTrigger(ctx workflow.Context, sreq si
 	})
 
 	dctx := workflow.WithChildOptions(ctx, cwo)
-	workflow.ExecuteChildWorkflow(dctx, w.AwaitExecuteActionWorkflow, req)
+	workflow.ExecuteChildWorkflow(dctx, w.subwfActions.AwaitExecuteActionWorkflow, req)
 
 	return nil
 }

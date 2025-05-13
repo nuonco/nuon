@@ -34,23 +34,23 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 		signals.OperationProvisionRunner:          w.AwaitProvisionRunner,
 		signals.OperationProvisionDNS:             w.AwaitProvisionDNS,
 		signals.OperationDeprovisionDNS:           w.AwaitDeprovisionDNS,
-		signals.OperationDeprovisionSandbox:       w.AwaitDeprovisionSandbox,
-		signals.OperationReprovisionSandbox:       w.AwaitReprovisionSandbox,
-		signals.OperationProvisionSandbox:         w.AwaitProvisionSandbox,
+		signals.OperationDeprovisionSandbox:       w.subwfSandbox.AwaitDeprovisionSandbox,
+		signals.OperationReprovisionSandbox:       w.subwfSandbox.AwaitReprovisionSandbox,
+		signals.OperationProvisionSandbox:         w.subwfSandbox.AwaitProvisionSandbox,
 		signals.OperationSyncSecrets:              w.AwaitSyncSecrets,
 		signals.OperationExecuteWorkflow:          w.AwaitExecuteWorkflow,
-		signals.OperationExecuteActionWorkflow:    w.AwaitExecuteActionWorkflow,
-		signals.OperationExecuteDeployComponent:   w.AwaitExecuteDeployComponent,
-		signals.OperationExecuteTeardownComponent: w.AwaitExecuteTeardownComponent,
+		signals.OperationExecuteActionWorkflow:    w.subwfActions.AwaitExecuteActionWorkflow,
+		signals.OperationExecuteDeployComponent:   w.subwfComponents.AwaitExecuteDeployComponent,
+		signals.OperationExecuteTeardownComponent: w.subwfComponents.AwaitExecuteTeardownComponent,
 		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
 			w.AwaitRestarted(ctx, req)
 			w.handleSyncActionWorkflowTriggers(ctx, req)
 			return nil
 		},
 		signals.OperationSyncActionWorkflowTriggers:  w.handleSyncActionWorkflowTriggers,
-		signals.OperationGenerateInstallStackVersion: w.AwaitGenerateInstallStackVersion,
-		signals.OperationAwaitInstallStackVersionRun: w.AwaitInstallStackVersionRun,
-		signals.OperationUpdateInstallStackOutputs:   w.AwaitUpdateInstallStackOutputs,
+		signals.OperationGenerateInstallStackVersion: w.subwfStack.AwaitGenerateInstallStackVersion,
+		signals.OperationAwaitInstallStackVersionRun: w.subwfStack.AwaitInstallStackVersionRun,
+		signals.OperationUpdateInstallStackOutputs:   w.subwfStack.AwaitUpdateInstallStackOutputs,
 		signals.OperationAwaitRunnerHealthy:          w.AwaitRunnerHealthy,
 	}
 }
