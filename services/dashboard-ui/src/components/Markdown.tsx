@@ -4,9 +4,9 @@ import showdown from 'showdown'
 showdown.extension('targetlink', () => {
   return [
     {
-      type: 'html',
-      regex: /(<a [^>]+?)(>.*<\/a>)/g,
-      replace: '$1 target="_blank"$2',
+      type: 'output',
+      regex: /<a\s+href="(?!#)(.*?)"(.*?)>/g,
+      replace: '<a href="$1" target="_blank" $2>',
     },
   ]
 })
