@@ -2,7 +2,7 @@
 {{- else -}}
 workflow.ChildWorkflowOptions{
     TaskQueue:                {{ if ne .TaskQueue "" }}{{ .TaskQueue }}{{ else }}"api"{{ end }},
-    WorkflowID:               {{ if ne .IDCallback "" }}{{ .IDCallback }}(req){{else}}eventloop.SignalHandlerWorkflowID(req.Signal, req.EventLoopRequest){{ end }},
+    WorkflowID:               {{ if ne .IDCallback "" }}{{ .IDCallback }}(req){{else}}eventloop.SignalHandlerWorkflowID(ctx, req.Signal, req.EventLoopRequest){{ end }},
     {{- if ne .ExecutionTimeout 0 }}
     WorkflowExecutionTimeout: {{ DurationLit .ExecutionTimeout }},
     {{- end }}
