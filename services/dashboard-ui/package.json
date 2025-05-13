@@ -23,6 +23,7 @@
     "@auth0/nextjs-auth0": "^3.5.0",
     "@datadog/browser-logs": "^5.16.0",
     "@datadog/browser-rum": "^5.16.0",
+    "@hpcc-js/wasm": "^2.22.4",
     "@phosphor-icons/react": "^2.1.7",
     "@segment/analytics-next": "^1.72.2",
     "@tailwindcss/typography": "^0.5.15",
