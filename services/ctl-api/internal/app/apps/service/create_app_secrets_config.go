@@ -57,7 +57,7 @@ type AppSecretConfig struct {
 
 	KubernetesSync            bool   `json:"kubernetes_sync"`
 	KubernetesSecretNamespace string `json:"kubernetes_secret_namespace"`
-	KubernetesSecretName      string `json:"kubernetes_secret_name" validate:"hostname_rfc1123"`
+	KubernetesSecretName      string `json:"kubernetes_secret_name" validate:"omitempty,hostname_rfc1123"`
 }
 
 // @ID						CreateAppSecretsConfig
