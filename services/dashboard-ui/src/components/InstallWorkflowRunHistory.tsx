@@ -1,12 +1,13 @@
 'use client'
 
 import React, { type FC, useEffect } from 'react'
+import { Badge } from '@/components/Badge'
 import { Empty } from '@/components/Empty'
 import { Timeline } from '@/components/Timeline'
 import { Text } from '@/components/Typography'
 import { revalidateInstallWorkflowHistory } from '@/components/workflow-actions'
 import type { TInstallActionWorkflow } from '@/types'
-import { SHORT_POLL_DURATION, humandReadableTriggeredBy } from '@/utils'
+import { SHORT_POLL_DURATION } from '@/utils'
 
 interface IInstallWorkflowRunHistory {
   actionsWithRecentRuns: TInstallActionWorkflow
@@ -51,14 +52,14 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
         status: run.status,
         underline: (
           <div>
-            <Text>
-              <span>{action_workflow.name}</span> /
-              <span className="!inline truncate max-w-[100px]">
-                {humandReadableTriggeredBy(run?.triggered_by_type)}
-              </span>
-            </Text>
+            <span className="flex items-center gap-2">
+              <Text variant="reg-12">{action_workflow.name}</Text> /
+              <Badge className="!inline" variant="code">
+                {run?.triggered_by_type}
+              </Badge>
+            </span>
             {run?.created_by ? (
-              <Text className="text-cool-grey-600 dark:text-white/70 !text-[10px]">
+              <Text className="!text-[10px]" isMuted>
                 Run by: {run?.created_by?.email}
               </Text>
             ) : null}
