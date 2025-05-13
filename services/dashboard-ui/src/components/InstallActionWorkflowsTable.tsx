@@ -88,7 +88,7 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
       },
       {
         header: 'Recent trigger',
-        accessorKey: 'latest_run.trigger_type',
+        accessorKey: 'latest_run.triggered_by_type',
         cell: (props) =>
           props.row.original?.latest_run ? (
             <Badge variant="code">{props.getValue<string>()}</Badge>

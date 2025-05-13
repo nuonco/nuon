@@ -3,7 +3,7 @@
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight } from '@phosphor-icons/react'
-import { ActionTriggerType } from '@/components/ActionTriggerType'
+import { Badge } from '@/components/Badge'
 import { Link } from '@/components/Link'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { ID, Text } from '@/components/Typography'
@@ -77,9 +77,11 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
         accessorKey: 'triggers',
         cell: (props) => (
           <Text className="gap-4">
-            {props
-              .getValue<TActionConfigTriggerType[]>()
-              ?.map((t) => <ActionTriggerType key={t} triggerType={t} />)}
+            {props.getValue<TActionConfigTriggerType[]>()?.map((t) => (
+              <Badge key={t} variant="code">
+                {t}
+              </Badge>
+            ))}
           </Text>
         ),
       },
