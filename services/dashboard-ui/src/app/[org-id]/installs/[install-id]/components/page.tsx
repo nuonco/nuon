@@ -21,7 +21,8 @@ import {
   getInstall,
   getInstallComponents,
 } from '@/lib'
-import type { TBuild } from '@/types'
+import type { TBuild, TComponent } from '@/types'
+import { nueQueryData } from "@/utils"
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
@@ -95,7 +96,7 @@ const LoadInstallComponents: FC<{ installId: string; orgId: string }> = async ({
   const hydratedInstallComponents =
     installComponents && installComponents?.length
       ? await Promise.all(
-          installComponents.map(async (comp, _, arr) => {
+          installComponents.map(async (comp, _) => {
             const build = await getComponentBuild({
               buildId: comp.install_deploys?.[0]?.build_id,
               orgId,
@@ -106,19 +107,16 @@ const LoadInstallComponents: FC<{ installId: string; orgId: string }> = async ({
                 ?.component_config_connection_id,
               orgId,
             })
-            const appComponent = await getComponent({
-              componentId: comp.component_id,
+            const { data } = await nueQueryData<Array<TComponent>>({
               orgId,
+              path: `components/${comp.component_id}/dependencies`,
             })
-            const deps = arr.filter((c) =>
-              appComponent.dependencies?.some((d) => d === c.component_id)
-            )
 
             return {
               ...comp,
               build,
               config,
-              deps,
+              deps: data,
             }
           })
         )
