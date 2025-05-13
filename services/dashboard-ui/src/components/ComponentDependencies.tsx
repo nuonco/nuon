@@ -1,4 +1,5 @@
 import React, { type FC } from 'react'
+import { ComponentDependencies } from '@/components/Components'
 import { Link } from '@/components/Link'
 import { Text } from '@/components/Typography'
 import type { TComponent, TInstallComponent } from '@/types'
@@ -9,6 +10,7 @@ export interface IComponentDependencies {
   dependentIds: Array<string>
   installComponents?: Array<TInstallComponent>
   installId?: string
+  name: string
   orgId: string
 }
 
@@ -19,6 +21,7 @@ export const DependentComponents: FC<IComponentDependencies> = ({
   dependentIds,
   installComponents,
   installId,
+  name,
   orgId,
 }) => {
   const path = appId
@@ -27,17 +30,14 @@ export const DependentComponents: FC<IComponentDependencies> = ({
 
   return (
     <div className="flex flex-wrap items-center justify-start gap-3">
-      {appComponents &&
-        appComponents
-          .filter((comp) => dependentIds.some((depId) => comp.id === depId))
-          .map((dep, i) => (
-            <Text
-              key={`${dep.id}-${i}`}
-              className="bg-gray-500/10 p-2 rounded-lg border w-fit"
-            >
-              <Link href={`${path}/${dep.id}`}>{dep.name}</Link>
-            </Text>
-          ))}
+      {appComponents?.length ? (
+        <ComponentDependencies
+          deps={appComponents.filter((comp) =>
+            dependentIds.some((depId) => comp.id === depId)
+          )}
+          name={name}
+        />
+      ) : null}
 
       {installComponents &&
         installComponents
@@ -49,7 +49,9 @@ export const DependentComponents: FC<IComponentDependencies> = ({
               key={`${dep.id}-${i}`}
               className="bg-gray-500/10 p-2 rounded-lg border w-fit"
             >
-              <Link href={`${path}/${dep.component_id}`}>{dep.component?.name}</Link>
+              <Link href={`${path}/${dep.component_id}`}>
+                {dep.component?.name}
+              </Link>
             </Text>
           ))}
     </div>

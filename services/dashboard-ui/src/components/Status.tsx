@@ -89,7 +89,7 @@ export const StatusBadge: FC<IStatusBadge> = ({
         })}
       />
       {isStatusTextHidden ? null : (
-        <span className="text-sm font-medium">
+        <span className="text-sm font-medium text-nowrap">
           {statusText ? titleCase(statusText as string) : 'Unknown'}
         </span>
       )}
