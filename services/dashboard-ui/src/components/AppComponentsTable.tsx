@@ -3,6 +3,7 @@
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight } from '@phosphor-icons/react'
+import { AppConfigGraph } from '@/components/Apps'
 import {
   BuildAllComponentsButton,
   ComponentDependencies,
@@ -52,11 +53,13 @@ export interface IAppComponentsTable {
   appId: string
   components: Array<TDataComponent>
   orgId: string
+  depGraph: string
 }
 
 export const AppComponentsTable: FC<IAppComponentsTable> = ({
   appId,
   components,
+  depGraph,
   orgId,
 }) => {
   const [data, updateData] = useState(parseComponentsToTableData(components))
@@ -153,7 +156,10 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
             handleOnChange={handleGlobleFilter}
             value={globalFilter}
           />
-          <BuildAllComponentsButton components={components} />
+          <div className="flex items-center gap-4">
+            <AppConfigGraph graph={depGraph} />
+            <BuildAllComponentsButton components={components} />
+          </div>
         </div>
       }
       data={data}
