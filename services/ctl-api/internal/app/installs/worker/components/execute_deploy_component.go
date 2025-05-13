@@ -1,4 +1,4 @@
-package worker
+package components
 
 import (
 	"encoding/json"
