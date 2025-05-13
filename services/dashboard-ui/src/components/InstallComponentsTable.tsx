@@ -3,6 +3,7 @@
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight } from '@phosphor-icons/react'
+import { ComponentDependencies } from '@/components/Components'
 import {
   StaticComponentConfigType,
   getComponentConfigType,
@@ -16,11 +17,16 @@ import { StatusBadge } from '@/components/Status'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { ID, Text } from '@/components/Typography'
 // eslint-disable-next-line import/no-cycle
-import type { TBuild, TComponentConfig, TInstallComponent } from '@/types'
+import type {
+  TBuild,
+  TComponent,
+  TComponentConfig,
+  TInstallComponent,
+} from '@/types'
 
 export type TDataInstallComponent = {
   build: TBuild
-  deps: Array<TInstallComponent>
+  deps: Array<TComponent>
   config: TComponentConfig
 } & TInstallComponent
 
@@ -118,18 +124,13 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         cell: (props) => (
           <div className="flex flex-wrap items-center gap-4">
             {props.getValue<number>() ? (
-              props.row.original.deps.map((dep, i) => (
-                <Text
-                  key={`${dep.id}-${i}`}
-                  className="bg-gray-500/10 px-2 py-1 rounded-lg border w-fit"
-                >
-                  <Link
-                    href={`/${orgId}/installs/${installId}/components/${dep.component_id}`}
-                  >
-                    {dep?.component?.name}
-                  </Link>
-                </Text>
-              ))
+              <div className="flex items-center gap-4 flex-wrap w-full">
+                <ComponentDependencies
+                  deps={props.row.original?.deps}
+                  name={props.row.original?.name}
+                  installId={installId}
+                />
+              </div>
             ) : (
               <Text>None</Text>
             )}
