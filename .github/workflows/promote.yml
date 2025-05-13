@@ -3,7 +3,7 @@ name: promote
 on:
   push:
     branches:
-      - main
+      - promote
 
 permissions:
   contents: write
@@ -23,31 +23,9 @@ defaults:
     shell: bash
 
 jobs:
-  # we use the merged pr to see if the PR was labeled "promote", but since this _only_ runs after the PR is merged
-  # (on main), we have to use an action to pull it from the github api.
-  merged_pr:
-    name: Get merged PR
-    runs-on: ubuntu-latest
-    outputs:
-      promote: ${{steps.output.outputs.promote}}
-    steps:
-      - uses: actions-ecosystem/action-get-merged-pull-request@v1
-        name: get merged pr
-        id: merged_pr
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: update promote output
-        id: output
-        if: contains( steps.merged_pr.outputs.labels, 'promote')
-        run: echo "promote=true" >> "$GITHUB_OUTPUT"
-
   tag:
     name: Determine short ref
-    needs:
-      - merged_pr
     runs-on: ubuntu-latest
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     outputs:
       git_ref: ${{steps.git_ref.outputs.git_ref}}
       semver: ${{ steps.semver.outputs.nextStrict }}
@@ -64,7 +42,7 @@ jobs:
         uses: ietf-tools/semver-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+          branch: promote
           minorList: ""
           patchAll: true
 
@@ -72,8 +50,6 @@ jobs:
     name: update promotions channel
     needs:
       - tag
-      - merged_pr
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -93,8 +69,6 @@ jobs:
     name: 🚢
     needs:
       - tag
-      - merged_pr
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -117,8 +91,6 @@ jobs:
     name: 🚢
     needs:
       - tag
-      - merged_pr
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -137,8 +109,6 @@ jobs:
     name: bump tag
     needs:
       - tag
-      - merged_pr
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }} && always()
     runs-on: ubuntu-latest
     steps:
       - name: Push tag
@@ -149,12 +119,10 @@ jobs:
 
   update_statuses:
     name: update statuses
-    if: needs.merged_pr.outputs.promote == 'true' && always()
     needs:
       - tag
       - services
       - artifacts
-      - merged_pr
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -192,10 +160,8 @@ jobs:
     needs:
       - tag
       - bump_tag
-      - merged_pr
       - artifacts
       - services
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     uses: ./.github/workflows/promote_success.yml
     with:
       tag: ${{ needs.tag.outputs.semver }}
