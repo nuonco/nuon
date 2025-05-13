@@ -5,7 +5,7 @@ import { CalendarBlank, CaretLeft, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   ActionLogsSection,
   ActionWorkflowStatus,
-  CancelRunnerJobButton,
+  Badge,
   ClickToCopy,
   CodeViewer,
   DashboardContent,
@@ -136,9 +136,9 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
               Trigger type
             </Text>
-            <Text variant="reg-12">
-              {humandReadableTriggeredBy(workflowRun?.triggered_by_type)}
-            </Text>
+            <Badge variant="code">
+              {workflowRun?.triggered_by_type}
+            </Badge>
           </span>
 
           <span className="flex flex-col gap-2">
