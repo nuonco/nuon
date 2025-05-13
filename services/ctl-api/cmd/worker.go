@@ -16,6 +16,10 @@ import (
 	generalworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/worker"
 	generalactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/worker/activities"
 	installsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker"
+	installsactionsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/actions"
+	installscomponentsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/components"
+	installssandboxworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/sandbox"
+	installsstackworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/stack"
 	installsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	orgsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker"
 	orgsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
@@ -111,6 +115,10 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers,
 			fx.Provide(installsactivities.New),
 			fx.Provide(installsworker.NewWorkflows),
+			fx.Provide(installsactionsworker.NewWorkflows),
+			fx.Provide(installscomponentsworker.NewWorkflows),
+			fx.Provide(installssandboxworker.NewWorkflows),
+			fx.Provide(installsstackworker.NewWorkflows),
 			fx.Provide(worker.AsWorker(installsworker.New)),
 		)
 	}

@@ -1,4 +1,4 @@
-package worker
+package stack
 
 import (
 	"go.temporal.io/sdk/workflow"

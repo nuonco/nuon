@@ -28,10 +28,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		Handlers:         handlers,
 		NewRequestSignal: signals.NewRequestSignal,
 		ExistsHook: func(ctx workflow.Context, req eventloop.EventLoopRequest) (bool, error) {
-			// TODO(sdboyer) remove the hardcoded response. Proper code is kept in so the import can remain
-			// to avoid possibilty of subtle bugs when its enabled.
-			_, _ = activities.AwaitCheckExistsByID(ctx, req.ID)
-			return true, nil
+			return activities.AwaitCheckExistsByID(ctx, req.ID)
 		},
 	}
 
