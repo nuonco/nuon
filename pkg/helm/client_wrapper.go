@@ -1,8 +1,6 @@
 package helm
 
 import (
-	"fmt"
-
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
@@ -11,21 +9,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
-
-const (
-	helmDriver = "secret"
-)
-
-type Logger interface {
-	Debug(msg string, keyvals ...interface{})
-}
-
-type fmtLogger struct{}
-
-func (f fmtLogger) Debug(msg string, keyvals ...interface{}) {
-	fmt.Println(msg, keyvals)
-}
 
 // Helm has this silly interface for k8s clients. It's painful to use in-cluster.
 // This is lightly modified from https://github.com/hashicorp/waypoint/blob/main/builtin/k8s/helm/rest.go
@@ -33,6 +18,7 @@ func (f fmtLogger) Debug(msg string, keyvals ...interface{}) {
 // RestClientGetter is a RESTClientGetter interface implementation for the
 // Helm Go packages.
 type RestClientGetter struct {
+	Namespace  string
 	RestConfig *rest.Config
 	Clientset  kubernetes.Interface
 }
@@ -67,6 +53,10 @@ func (k *RestClientGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
 	// Build our config and client
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		clientcmd.NewDefaultClientConfigLoadingRules(),
-		&clientcmd.ConfigOverrides{},
+		&clientcmd.ConfigOverrides{
+			Context: clientcmdapi.Context{
+				Namespace: k.Namespace,
+			},
+		},
 	)
 }
