@@ -5,24 +5,25 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   ErrorFallback,
+  Link,
   InstallStatuses,
   InstallComponentsTable,
   InstallPageSubNav,
   InstallManagementDropdown,
   Loading,
   NoComponents,
+  Text,
   Time,
   type TDataInstallComponent,
 } from '@/components'
 import {
   getComponentBuild,
-  getComponent,
   getComponentConfig,
   getInstall,
   getInstallComponents,
 } from '@/lib'
 import type { TBuild, TComponent } from '@/types'
-import { nueQueryData } from "@/utils"
+import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
@@ -59,6 +60,14 @@ export default withPageAuthRequired(async function InstallComponents({
       }
       statues={
         <div className="flex items-start gap-8">
+          <span className="flex flex-col gap-2">
+            <Text isMuted>App config</Text>
+            <Text>
+              <Link href={`/${orgId}/apps/${install.app_id}`}>
+                {install?.app?.name}
+              </Link>
+            </Text>
+          </span>
           <InstallStatuses initInstall={install} shouldPoll />
 
           <InstallManagementDropdown
