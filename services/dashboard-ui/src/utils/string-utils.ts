@@ -45,7 +45,7 @@ export function humandReadableTriggeredBy(triggeredByType: string) {
     case 'install_sandbox_runs':
       triggeredBy = 'Sandbox hook'
       break
-    case 'pre_component_deploy':
+    case 'pre-component-deploy':
       triggeredBy = 'Pre deploy hook'
       break
     case 'install_action_workflow_manual_triggers':
