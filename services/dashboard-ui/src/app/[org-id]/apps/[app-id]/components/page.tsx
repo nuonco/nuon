@@ -83,14 +83,18 @@ const LoadAppComponents: FC<{ appId: string; orgId: string }> = async ({
   const hydratedComponents = await Promise.all(
     components.map(async (comp, _, arr) => {
       const [config, builds] = await Promise.all([
-        getComponentConfig({ componentId: comp.id, orgId }),
-        getComponentBuilds({ componentId: comp.id, orgId }),
+        getComponentConfig({ componentId: comp.id, orgId }).catch(
+          console.error
+        ),
+        getComponentBuilds({ componentId: comp.id, orgId }).catch(
+          console.error
+        ),
       ])
       const deps = arr.filter((c) => comp.dependencies?.some((d) => d === c.id))
 
       return {
         ...comp,
-        config,
+        config: config || undefined,
         deps,
         latestBuild: builds[0],
       }

@@ -1,1 +1,2 @@
-export * from "./BuildAllComponentsButton"
+export * from './BuildAllComponentsButton'
+export * from './Dependencies'
