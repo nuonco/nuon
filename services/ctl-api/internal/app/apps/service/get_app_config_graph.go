@@ -46,5 +46,5 @@ func (s *service) GetAppConfigGraph(ctx *gin.Context) {
 		return
 	}
 
-	ctx.String(http.StatusOK, buf.String())
+	ctx.JSON(http.StatusOK, buf.String())
 }

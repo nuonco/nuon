@@ -18,7 +18,9 @@ import {
   getComponentBuilds,
   getComponentConfig,
   getAppLatestInputConfig,
+  getAppLatestConfig,
 } from '@/lib'
+import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const appId = params?.['app-id'] as string
@@ -33,8 +35,9 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 export default withPageAuthRequired(async function AppComponents({ params }) {
   const appId = params?.['app-id'] as string
   const orgId = params?.['org-id'] as string
-  const [app, inputCfg] = await Promise.all([
+  const [app, appConfig, inputCfg] = await Promise.all([
     getApp({ appId, orgId }),
+    getAppLatestConfig({ appId, orgId }),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
   ])
 
@@ -66,7 +69,11 @@ export default withPageAuthRequired(async function AppComponents({ params }) {
               <Loading variant="page" loadingText="Loading components..." />
             }
           >
-            <LoadAppComponents appId={appId} orgId={orgId} />
+            <LoadAppComponents
+              appId={appId}
+              configId={appConfig?.id}
+              orgId={orgId}
+            />
           </Suspense>
         </ErrorBoundary>
       </Section>
@@ -74,11 +81,16 @@ export default withPageAuthRequired(async function AppComponents({ params }) {
   )
 })
 
-const LoadAppComponents: FC<{ appId: string; orgId: string }> = async ({
-  appId,
-  orgId,
-}) => {
+const LoadAppComponents: FC<{
+  appId: string
+  configId: string
+  orgId: string
+}> = async ({ appId, configId, orgId }) => {
   const components = await getAppComponents({ appId, orgId })
+  const { data } = await nueQueryData<string>({
+    orgId: orgId,
+    path: `apps/${appId}/config/${configId}/graph`,
+  })
 
   const hydratedComponents = await Promise.all(
     components.map(async (comp, _, arr) => {
@@ -105,6 +117,7 @@ const LoadAppComponents: FC<{ appId: string; orgId: string }> = async ({
     <AppComponentsTable
       components={hydratedComponents}
       appId={appId}
+      depGraph={data}
       orgId={orgId}
     />
   ) : (
