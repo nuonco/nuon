@@ -4,6 +4,9 @@ import (
 	_ "embed"
 )
 
+//go:embed action_workflow_configs_latest_view_v1.sql
+var ActionWorkflowConfigsViewV1 string
+
 //go:embed installs_view_v3.sql
 var InstallsViewV3 string
 
