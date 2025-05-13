@@ -1,6 +1,7 @@
 package log
 
 import (
+	"errors"
 	"time"
 
 	ginzap "github.com/gin-contrib/zap"
@@ -10,6 +11,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -58,6 +60,16 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return fields
 		},
 		Skipper: func(c *gin.Context) bool {
+			// some errors should never be logged, such as auth issues because they are spammy and could
+			// correspond to actually bad runners or bad actors.
+			if len(c.Errors) > 0 {
+				var errAuth stderr.ErrAuthentication
+				if errors.As(c.Errors[0], &errAuth) {
+					return true
+				}
+			}
+
+			//
 			if m.cfg.ForceDebugMode {
 				return false
 			}
