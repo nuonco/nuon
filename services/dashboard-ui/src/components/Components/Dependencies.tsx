@@ -15,10 +15,13 @@ export const ComponentDependencies: FC<{
   name: string
   installId?: string
 }> = ({ deps, name, installId }) => {
-  return deps?.length > 2 ? (
-    <MultiDependencies installId={installId} deps={deps} name={name} />
+  const uniqueDeps = [...new Set(deps)]
+  
+  
+  return uniqueDeps?.length > 2 ? (
+    <MultiDependencies installId={installId} deps={uniqueDeps} name={name} />
   ) : (
-    deps.map((dep, i) => (
+    uniqueDeps.map((dep, i) => (
       <DependencyLink key={`${dep.id}-${i}`} dep={dep} installId={installId} />
     ))
   )
