@@ -7,8 +7,6 @@ import (
 	"helm.sh/helm/v3/pkg/action"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-
-	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
 )
 
 const (
@@ -28,9 +26,10 @@ func Client(log *zap.Logger, kubeCfg *rest.Config, ns string) (*action.Configura
 
 	// Initialize our action
 	var ac action.Configuration
-	err = ac.Init(&helm.RestClientGetter{
+	err = ac.Init(&RestClientGetter{
 		RestConfig: kubeCfg,
 		Clientset:  clientset,
+		Namespace:  ns,
 	}, ns, defaultHelmDriver, debug)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get rest client: %w", err)
