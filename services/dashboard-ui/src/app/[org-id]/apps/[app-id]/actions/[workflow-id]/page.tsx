@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   ActionTriggerType,
+  CodeViewer,
   Config,
   ConfigurationVariables,
   ConfigurationVCS,
@@ -71,9 +72,26 @@ export default withPageAuthRequired(async function AppWorkflow({ params }) {
                     }
                     expandContent={
                       <div className="flex flex-col gap-4 p-3 border-t">
-                        <Config>
-                          <ConfigurationVCS vcs={s} />
-                        </Config>
+                        {s?.connected_github_vcs_config ||
+                        s?.public_git_vcs_config ? (
+                          <Config>
+                            <ConfigurationVCS vcs={s} />
+                          </Config>
+                        ) : null}
+
+                        {s.inline_contents?.length > 0 ? (
+                          <div className="flex flex-col gap-2">
+                            <Text variant="med-12">Inline contents</Text>
+                            <CodeViewer initCodeSource={s.inline_contents} />
+                          </div>
+                        ) : null}
+
+                        {s?.command?.length > 0 ? (
+                          <div className="flex flex-col gap-2">
+                            <Text variant="med-12">Command</Text>
+                            <CodeViewer initCodeSource={s?.command} />
+                          </div>
+                        ) : null}
 
                         {s?.env_vars ? (
                           <ConfigurationVariables variables={s.env_vars} />
