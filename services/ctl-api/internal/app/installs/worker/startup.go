@@ -3,10 +3,10 @@ package worker
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
+	"strings"
+
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
-	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -48,7 +48,7 @@ func (w *Workflows) startChildren(pctx workflow.Context, sreq signals.RequestSig
 	}
 
 	stack, err := activities.AwaitGetInstallStackByInstallID(pctx, sreq.ID)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	if err != nil && !strings.Contains(err.Error(), "record not found") {
 		return err
 	}
 
