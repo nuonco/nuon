@@ -17,12 +17,13 @@ import {
   type TDataInstallComponent,
 } from '@/components'
 import {
+  getAppComponents,
   getComponentBuild,
   getComponentConfig,
   getInstall,
   getInstallComponents,
 } from '@/lib'
-import type { TBuild, TComponent } from '@/types'
+import type { TBuild, TComponent, TInstall } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -47,12 +48,12 @@ export default withPageAuthRequired(async function InstallComponents({
       breadcrumb={[
         { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${orgId}/installs/${install.id}`,
-          text: install.name,
+          href: `/${orgId}/installs/${install?.id}`,
+          text: install?.name,
         },
       ]}
-      heading={install.name}
-      headingUnderline={install.id}
+      heading={install?.name}
+      headingUnderline={install?.id}
       headingMeta={
         <>
           Last updated <Time time={install?.updated_at} format="relative" />
@@ -86,7 +87,11 @@ export default withPageAuthRequired(async function InstallComponents({
               <Loading loadingText="Loading components..." variant="page" />
             }
           >
-            <LoadInstallComponents installId={install?.id} orgId={orgId} />
+            <LoadInstallComponents
+              appId={install?.app_id}
+              installId={install?.id}
+              orgId={orgId}
+            />
           </Suspense>
         </ErrorBoundary>
       </section>
@@ -94,38 +99,35 @@ export default withPageAuthRequired(async function InstallComponents({
   )
 })
 
-const LoadInstallComponents: FC<{ installId: string; orgId: string }> = async ({
-  installId,
-  orgId,
-}) => {
+const LoadInstallComponents: FC<{
+  appId: string
+  installId: string
+  orgId: string
+}> = async ({ appId, installId, orgId }) => {
   const installComponents = await getInstallComponents({
     installId,
     orgId,
   }).catch(console.error)
+  const appComponents = await getAppComponents({
+    appId,
+    orgId,
+  }).catch(console.error)
+
   const hydratedInstallComponents =
-    installComponents && installComponents?.length
+    installComponents && installComponents?.length && appComponents
       ? await Promise.all(
-          installComponents.map(async (comp, _) => {
-            const build = await getComponentBuild({
-              buildId: comp.install_deploys?.[0]?.build_id,
-              orgId,
-            }).catch((err) => console.error(err))
+          installComponents?.map(async (ic) => {
             const config = await getComponentConfig({
-              componentId: comp.component.id,
-              componentConfigId: (build as TBuild)
-                ?.component_config_connection_id,
+              componentId: ic?.component_id,
               orgId,
-            })
-            const { data } = await nueQueryData<Array<TComponent>>({
-              orgId,
-              path: `components/${comp.component_id}/dependencies`,
             })
 
             return {
-              ...comp,
-              build,
+              ...ic,
               config,
-              deps: data,
+              deps: appComponents.filter((c) =>
+                config?.component_dependency_ids?.some((d) => d === c.id)
+              ),
             }
           })
         )
