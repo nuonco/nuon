@@ -72,7 +72,7 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	latestLatestInstallInputs, err := s.getLatestInstallInputs(ctx, installID)
+	latestLatestInstallInputs, err := s.getLatestInstallInputs(ctx, install.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get latest install inputs: %w", err))
 		return
