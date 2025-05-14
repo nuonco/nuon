@@ -20,7 +20,6 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 		EnvVars:                  map[string]string{},
 		VariablesFiles:           make([]string, 0),
 		Version:                  obj.TerraformVersion,
-		Dependencies:             comp.Dependencies,
 	}
 	for _, val := range obj.Variables {
 		configRequest.Variables[val.Name] = val.Value
@@ -79,6 +78,7 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 
 	// NOTE: we don't want to make a checksum with the app config id since that can change
 	configRequest.AppConfigID = s.appConfigID
+	configRequest.Dependencies = comp.Dependencies
 
 	cfg, err := s.apiClient.CreateTerraformModuleComponentConfig(ctx, compID, configRequest)
 	if err != nil {
