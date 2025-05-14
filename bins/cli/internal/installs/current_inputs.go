@@ -2,9 +2,9 @@ package installs
 
 import (
 	"context"
+	"sort"
 
 	"github.com/nuonco/nuon-go/models"
-	helpers "github.com/powertoolsdev/mono/bins/cli/internal"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/pterm/pterm"
@@ -29,40 +29,30 @@ func (s *Service) CurrentInputs(ctx context.Context, installID string, asJSON bo
 
 	for _, inp := range inputs {
 		data := [][]string{}
-		for k, v := range inp.RedactedValues {
-			data = append(data, []string{k, v})
+		keys := make([]string, 0, len(inp.RedactedValues))
+		for k := range inp.RedactedValues {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			data = append(data, []string{k, inp.RedactedValues[k]})
 		}
 		pterm.Println("")
 		pterm.DefaultBasicText.Println("inputs ID: " + pterm.LightMagenta(inp.ID))
+		pterm.DefaultBasicText.Println("modified at: " + pterm.LightMagenta(inp.CreatedAt))
 		view.Render(data)
 	}
 	return nil
 }
 
 func (s *Service) listInstallInputs(ctx context.Context, installID string) ([]*models.AppInstallInputs, error) {
-	if !s.cfg.PaginationEnabled {
-		cmps, _, err := s.api.GetInstallInputs(ctx, installID, &models.GetInstallInputsQuery{
-			Offset:            0,
-			Limit:             10,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return cmps, nil
+	inputs, _, err := s.api.GetInstallInputs(ctx, installID, &models.GetInstallInputsQuery{
+		Offset:            0,
+		Limit:             1,
+		PaginationEnabled: true,
+	})
+	if err != nil {
+		return nil, err
 	}
-
-	fetchFn := func(ctx context.Context, offset, limit int) ([]*models.AppInstallInputs, bool, error) {
-		cmps, hasMore, err := s.api.GetInstallInputs(ctx, installID, &models.GetInstallInputsQuery{
-			Offset:            offset,
-			Limit:             limit,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, false, err
-		}
-		return cmps, hasMore, nil
-	}
-
-	return helpers.BatchFetch(ctx, 10, 50, fetchFn)
+	return inputs, nil
 }
