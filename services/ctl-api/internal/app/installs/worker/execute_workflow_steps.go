@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/cockroachdb/errors"
+
 	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
@@ -93,7 +94,8 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 		})
 		selector.Select(ctx)
 
-		if cancel != nil || steperr != nil {
+		// handle a cancelled step
+		if cancel != nil {
 			var reason string
 			if cancel != nil {
 				reason = "workflow cancellation was requested"
@@ -107,12 +109,36 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 						"reason": reason,
 					}),
 				})
-			} else {
-				reason = "previous step failed"
-				l.Error("error executing step", zap.String("step", step.ID), zap.Error(err))
 			}
 			// cancel all steps
+			for _, cancelStep := range steps[idx+1:] {
+				statusactivities.AwaitPkgStatusUpdateInstallWorkflowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+					ID: cancelStep.ID,
+					Status: app.NewCompositeTemporalStatus(ctx, app.StatusNotAttempted, map[string]any{
+						"reason": fmt.Sprintf("%s and workflow was configured with abort-on-error.", reason),
+					}),
+				})
+			}
+
+			return steperr
+		}
+
+		// handle the case where a step failed
+		if steperr != nil {
+			l.Error("error executing step",
+				zap.String("step", step.ID),
+				zap.Error(err))
+
+			statusactivities.AwaitPkgStatusUpdateInstallWorkflowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: step.ID,
+				Status: app.NewCompositeTemporalStatus(ctx, app.StatusError, map[string]any{
+					"reason": "step failed",
+				}),
+			})
+
 			if wkflow.StepErrorBehavior == app.StepErrorBehaviorAbort {
+				reason := "previous step failed"
+
 				for _, cancelStep := range steps[idx+1:] {
 					statusactivities.AwaitPkgStatusUpdateInstallWorkflowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 						ID: cancelStep.ID,
@@ -121,8 +147,10 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 						}),
 					})
 				}
+				return steperr
 			}
-			return steperr
+
+			continue
 		}
 
 		if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStatus(ctx, statusactivities.UpdateStatusRequest{
