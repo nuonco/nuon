@@ -23,7 +23,10 @@ type varsOption func(*vars) error
 
 func New(v *validator.Validate, opts ...varsOption) (*vars, error) {
 	s := &vars{
-		v: v,
+		v:        v,
+		EnvVars:  make(map[string]string, 0),
+		FileVars: make(map[string]any, 0),
+		Files:    make([]string, 0),
 	}
 
 	for idx, opt := range opts {
@@ -40,21 +43,27 @@ func New(v *validator.Validate, opts ...varsOption) (*vars, error) {
 
 func WithEnvVars(envVars map[string]string) varsOption {
 	return func(v *vars) error {
-		v.EnvVars = envVars
+		for k, va := range envVars {
+			v.EnvVars[k] = va
+		}
 		return nil
 	}
 }
 
 func WithFileVars(fileVars map[string]interface{}) varsOption {
 	return func(v *vars) error {
-		v.FileVars = fileVars
+		for k, va := range fileVars {
+			v.FileVars[k] = va
+		}
 		return nil
 	}
 }
 
 func WithFiles(files []string) varsOption {
 	return func(v *vars) error {
-		v.Files = files
+		for _, f := range files {
+			v.Files = append(v.Files, f)
+		}
 		return nil
 	}
 }
