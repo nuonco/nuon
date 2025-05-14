@@ -6,14 +6,13 @@ import { TRouteRes } from '@/app/api/[org-id]/types'
 export const GET = withApiAuthRequired(
   async (
     req: NextRequest,
-    { params }: TRouteRes<'org-id' | 'app-id' | 'input-id'>
+    { params }: TRouteRes<'org-id'>
   ) => {
     const orgId = params?.['org-id']
-    const appId = params?.['app-id']
 
     const res = await nueQueryData({
       orgId,
-      path: `apps/${appId}/input-latest-config`,
+      path: `apps`,
     })
 
     return NextResponse.json(res)
