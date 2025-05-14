@@ -1,4 +1,5 @@
 import React, { type FC } from 'react'
+import { CreateInstallModal } from "@/components/Installs"
 import { Link } from '@/components/Link'
 import { Text, CodeInline } from '@/components/Typography'
 
@@ -20,8 +21,10 @@ export const NoInstalls: FC = () => {
             Learn more
           </Link>{' '}
           about installs.
-        </Text>
+        </Text>        
       </div>
+
+      <CreateInstallModal />
 
       <div className="flex flex-col gap-2">
         <Text variant="semi-14">Create an install with the Nuon CLI</Text>
