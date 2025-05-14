@@ -3,6 +3,7 @@ package worker
 import (
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
@@ -35,6 +36,9 @@ func (w *Workflows) updateSandboxRunStatusByInstallID(ctx workflow.Context, inst
 	installSandbox, err := activities.AwaitGetInstallSandboxByInstallID(ctx, installID)
 	if err != nil {
 		return err
+	}
+	if installSandbox == nil {
+		return errors.New("install sandbox not found")
 	}
 
 	if installSandbox.Status != app.InstallSandboxStatusProvisioning && installSandbox.Status != app.InstallSandboxStatusDeprovisioning {
