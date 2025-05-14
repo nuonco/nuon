@@ -73,6 +73,7 @@ func (w *Workflows) DeprovisionSandbox(ctx workflow.Context, sreq signals.Reques
 	l.Info("executing deprovision")
 	err = w.executeSandboxRun(ctx, install, installRun, app.RunnerJobOperationTypeDestroy, sandboxMode)
 	if err != nil {
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "error deprovisioning")
 		return err
 	}
 
