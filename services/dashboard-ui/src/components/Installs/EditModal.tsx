@@ -26,19 +26,17 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
 
   useEffect(() => {
     if (isOpen) {
-      fetch(
-        `/api/${orgId}/apps/${install?.app_id}/input-configs/latest`
-      )
-        .then((res) =>
-          res.json().then((inputs) => {
-            setInputConfig(inputs as TAppInputConfig)
+      fetch(`/api/${orgId}/apps/${install?.app_id}/input-configs/latest`).then(
+        (r) =>
+          r.json().then((res) => {
             setIsLoading(false)
+            if (res?.error) {
+              setError(res?.error?.error || 'Unable to fetch app input configs')
+            } else {
+              setInputConfig(res.data)
+            }
           })
-        )
-        .catch((err) => {
-          setIsLoading(false)
-          setError(err?.message || 'Unable to fetch app input configs')
-        })
+      )
     }
   }, [isOpen])
 
@@ -79,7 +77,7 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
                       )
                     } else {
                       router.push(`/${orgId}/installs/${install.id}/history`)
-                    }                    
+                    }
                   }}
                   onCancel={() => {
                     setIsOpen(false)
