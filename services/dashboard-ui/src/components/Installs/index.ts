@@ -1,5 +1,6 @@
 // org install table
 // app install table
+export * from './CreateInstallModal'
 
 /* 
 install page common 

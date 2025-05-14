@@ -3,6 +3,7 @@
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight } from '@phosphor-icons/react'
+import { CreateInstallModal } from '@/components/Installs'
 import { InstallPlatform } from '@/components/InstallCloudPlatform'
 import { InstallsTableStatusFilter } from '@/components/InstallsTableStatusFilter'
 import { Link } from '@/components/Link'
@@ -184,10 +185,13 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
             value={globalFilter}
           />
 
-          <InstallsTableStatusFilter
-            handleStatusFilter={handleStatusFilter}
-            clearStatusFilter={clearStatusFilter}
-          />
+          <div className="flex items-center gap-4">
+            <InstallsTableStatusFilter
+              handleStatusFilter={handleStatusFilter}
+              clearStatusFilter={clearStatusFilter}
+            />
+            <CreateInstallModal />
+          </div>
         </>
       }
       data={data}

@@ -59,7 +59,7 @@ export const StackStep: FC<IStackStepDetails> = ({
   return (
     <>
       {isLoading ? (
-        <Loading loadingText="Loading deploy details..." variant="page" />
+        <Loading loadingText="Loading stack details..." variant="page" />
       ) : (
         <>
           {error ? <Notice>{error}</Notice> : null}
