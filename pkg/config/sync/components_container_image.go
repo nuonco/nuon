@@ -13,9 +13,7 @@ import (
 func (s *sync) createContainerImageComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, string, error) {
 	containerImage := comp.ExternalImage
 
-	configRequest := &models.ServiceCreateExternalImageComponentConfigRequest{
-		Dependencies: comp.Dependencies,
-	}
+	configRequest := &models.ServiceCreateExternalImageComponentConfigRequest{}
 
 	if containerImage.AWSECRImageConfig != nil {
 		configRequest.ImageURL = generics.ToPtr(containerImage.AWSECRImageConfig.ImageURL)
@@ -53,6 +51,7 @@ func (s *sync) createContainerImageComponentConfig(ctx context.Context, resource
 
 	// NOTE: we don't want to make a checksum with the app config id since that can change
 	configRequest.AppConfigID = s.appConfigID
+	configRequest.Dependencies = comp.Dependencies
 
 	cfg, err := s.apiClient.CreateExternalImageComponentConfig(ctx, compID, configRequest)
 	if err != nil {
