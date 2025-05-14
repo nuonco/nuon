@@ -15,11 +15,10 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 
 	configRequest := &models.ServiceCreateDockerBuildComponentConfigRequest{
 		// DEPRECATED: BuildArgs is not used and was required for Waypoint
-		BuildArgs:    []string{},
-		Dockerfile:   generics.ToPtr(obj.Dockerfile),
-		Target:       "",
-		EnvVars:      map[string]string{},
-		Dependencies: comp.Dependencies,
+		BuildArgs:  []string{},
+		Dockerfile: generics.ToPtr(obj.Dockerfile),
+		Target:     "",
+		EnvVars:    map[string]string{},
 	}
 
 	if obj.PublicRepo != nil {
@@ -66,6 +65,7 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 
 	// NOTE: we don't want to make a checksum with the app config id since that can change
 	configRequest.AppConfigID = s.appConfigID
+	configRequest.Dependencies = comp.Dependencies
 
 	cfg, err := s.apiClient.CreateDockerBuildComponentConfig(ctx, compID, configRequest)
 	if err != nil {
