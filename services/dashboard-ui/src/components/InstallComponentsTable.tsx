@@ -25,20 +25,19 @@ import type {
 } from '@/types'
 
 export type TDataInstallComponent = {
-  build: TBuild
-  deps: Array<TComponent>
   config: TComponentConfig
+  deps: Array<TComponent>
 } & TInstallComponent
 
 type TData = {
   buildStatus: string
   componentId: string
   componentType: string
-  configVersion: number
+  // configVersion: number
   installComponentId: string
   deployStatus: string | null
   dependencies: number
-  deps: Array<TInstallComponent>
+  deps: Array<TComponent>
   name: string
 }
 
@@ -46,12 +45,9 @@ function parseInstallComponentsToTableData(
   installComponents: Array<TDataInstallComponent>
 ): Array<TData> {
   return installComponents.map((comp) => ({
-    buildStatus: comp.build?.status || 'No build',
+    buildStatus: comp.component?.status || 'No build',
     componentId: comp.component_id,
-    componentType: comp?.config
-      ? getComponentConfigType(comp?.config)
-      : undefined,
-    configVersion: comp.config?.version,
+    componentType: getComponentConfigType(comp.config) || 'unknown',
     installComponentId: comp.id,
     deployStatus: comp.install_deploys?.[0]?.status || null,
     dependencies: comp.deps?.length || 0,
@@ -109,13 +105,18 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
               />
             </Text>
           ) : (
-            '-'
+            <Minus />
           ),
       },
       {
         header: 'Deployment',
         accessorKey: 'deployStatus',
-        cell: (props) => props.getValue<string>() ? <StatusBadge status={props.getValue<string>()} /> : <Minus />,
+        cell: (props) =>
+          props.getValue<string>() ? (
+            <StatusBadge status={props.getValue<string>()} />
+          ) : (
+            <Minus />
+          ),
       },
       {
         header: 'Dependencies',
@@ -142,11 +143,11 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         accessorKey: 'buildStatus',
         cell: (props) => <StatusBadge status={props.getValue<string>()} />,
       },
-      {
-        header: 'Config',
-        accessorKey: 'configVersion',
-        cell: (props) => <Text>{props.getValue<number>()}</Text>,
-      },
+      /* {
+       *   header: 'Config',
+       *   accessorKey: 'configVersion',
+       *   cell: (props) => <Text>{props.getValue<number>()}</Text>,
+       * }, */
       {
         id: 'test',
         enableSorting: false,
