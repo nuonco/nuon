@@ -22,8 +22,7 @@ func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
 			"artifact_type": h.state.descriptor.ArtifactType,
 		})
 	}
-
-	if h.state.descriptor.Platform != nil {
+	if h.state.descriptor != nil && h.state.descriptor.Platform != nil {
 		obj = generics.MergeMap(obj, map[string]any{
 			"platform": map[string]any{
 				"architecture": h.state.descriptor.Platform.Architecture,
