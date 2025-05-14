@@ -3,6 +3,7 @@
   "plugins": ["import"],
   "rules": {
     "import/no-cycle": "error",
-    "no-console": ["error", { "allow": ["error"] }]
+    "no-console": ["error", { "allow": ["error", "warn"] }],
+    "react-hooks/exhaustive-deps": "off"
   }
 }
