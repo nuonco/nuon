@@ -6,13 +6,18 @@ import (
 
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
+	"go.temporal.io/sdk/workflow"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
 	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
 	pkgworkflows "github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/actions"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/components"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/sandbox"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/stack"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
 )
 
@@ -37,6 +42,12 @@ type WorkerParams struct {
 
 	SharedActs      *workflows.Activities
 	SharedWorkflows *workflows.Workflows
+
+	// FIXME(sdboyer) hack necessary to allow registration of multiple event loops under custom names
+	SandboxWorkflows    *sandbox.Workflows
+	StackWorkflows      *stack.Workflows
+	ComponentsWorkflows *components.Workflows
+	ActionsWorkflows    *actions.Workflows
 }
 
 func New(params WorkerParams) (*Worker, error) {
@@ -50,6 +61,7 @@ func New(params WorkerParams) (*Worker, error) {
 		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
 		Interceptors:                       params.Interceptors,
 		WorkflowPanicPolicy:                worker.FailWorkflow,
+		DisableRegistrationAliasing:        true,
 	})
 
 	// register activities
@@ -62,6 +74,21 @@ func New(params WorkerParams) (*Worker, error) {
 	for _, wkflow := range params.Wkflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}
+	// register subloop event loops with custom names
+	// FIXME(sdboyer) remove ASAP, once we have the global catalog
+	wkr.RegisterWorkflowWithOptions(params.StackWorkflows.EventLoop, workflow.RegisterOptions{
+		Name: "StackEventLoop",
+	})
+	wkr.RegisterWorkflowWithOptions(params.SandboxWorkflows.EventLoop, workflow.RegisterOptions{
+		Name: "SandboxEventLoop",
+	})
+	wkr.RegisterWorkflowWithOptions(params.ComponentsWorkflows.EventLoop, workflow.RegisterOptions{
+		Name: "ComponentsEventLoop",
+	})
+	wkr.RegisterWorkflowWithOptions(params.ActionsWorkflows.EventLoop, workflow.RegisterOptions{
+		Name: "ActionsEventLoop",
+	})
+
 	for _, wkflow := range params.SharedWorkflows.AllWorkflows() {
 		wkr.RegisterWorkflow(wkflow)
 	}

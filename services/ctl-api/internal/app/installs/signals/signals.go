@@ -17,6 +17,7 @@ const (
 
 	OperationForget                      eventloop.SignalType = "forgotten"
 	OperationRestart                     eventloop.SignalType = "restart"
+	OperationRestartChildren             eventloop.SignalType = "restart-children"
 	OperationSyncActionWorkflowTriggers  eventloop.SignalType = "sync-action-workflow-triggers"
 	OperationActionWorkflowRun           eventloop.SignalType = "action-workflow-run"
 	OperationPollDependencies            eventloop.SignalType = "poll-dependencies"
