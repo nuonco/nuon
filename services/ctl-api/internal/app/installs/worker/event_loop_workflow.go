@@ -1,7 +1,6 @@
 package worker
 
 import (
-	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
@@ -9,21 +8,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/loop"
 )
-
-func (w *Workflows) handleSyncActionWorkflowTriggers(ctx workflow.Context, sreq signals.RequestSignal) error {
-	workflowID := sreq.WorkflowID(sreq.ID) + "-action-workflows"
-	cwo := workflow.ChildWorkflowOptions{
-		TaskQueue:             "api",
-		WorkflowID:            workflowID,
-		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
-		// WaitForCancellation:   true,
-		ParentClosePolicy: enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
-	}
-	ctx = workflow.WithChildOptions(ctx, cwo)
-
-	workflow.ExecuteChildWorkflow(ctx, w.ActionWorkflowTriggers, sreq)
-	return nil
-}
 
 func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
@@ -63,20 +47,9 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		MW:               w.mw,
 		Handlers:         handlers,
 		NewRequestSignal: signals.NewRequestSignal,
-		StartupHook: func(ctx workflow.Context, req eventloop.EventLoopRequest) error {
-			w.handleSyncActionWorkflowTriggers(ctx, signals.RequestSignal{
-				Signal: &signals.Signal{
-					Type: signals.OperationSyncActionWorkflowTriggers,
-				},
-				EventLoopRequest: req,
-			})
-			return nil
-		},
+		StartupHook:      w.startup,
 		ExistsHook: func(ctx workflow.Context, req eventloop.EventLoopRequest) (bool, error) {
-			// TODO(sdboyer) remove the hardcoded response. Proper code is kept in so the import can remain
-			// to avoid possibilty of subtle bugs when its enabled.
-			_, _ = activities.AwaitCheckExistsByID(ctx, req.ID)
-			return true, nil
+			return activities.AwaitCheckExistsByID(ctx, req.ID)
 		},
 	}
 

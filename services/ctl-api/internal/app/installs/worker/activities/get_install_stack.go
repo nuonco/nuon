@@ -3,9 +3,8 @@ package activities
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
 type GetInstallStackRequest struct {
@@ -17,13 +16,14 @@ type GetInstallStackRequest struct {
 func (a *Activities) GetInstallStack(ctx context.Context, req GetInstallStackRequest) (*app.InstallStack, error) {
 	var stack app.InstallStack
 
-	if res := a.db.WithContext(ctx).
+	res := a.db.WithContext(ctx).
 		Where(app.InstallStack{
 			InstallID: req.InstallID,
 		}).
 		Preload("InstallStackOutputs").
-		First(&stack); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get install stack")
+		First(&stack)
+	if res.Error != nil {
+		return nil, generics.TemporalGormError(res.Error, "unable to get install stack")
 	}
 
 	return &stack, nil
