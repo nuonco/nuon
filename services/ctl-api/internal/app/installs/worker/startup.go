@@ -1,0 +1,95 @@
+package worker
+
+import (
+	"fmt"
+
+	"github.com/pkg/errors"
+	enumsv1 "go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/workflow"
+	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+)
+
+func (w *Workflows) startup(ctx workflow.Context, req eventloop.EventLoopRequest) error {
+	sreq := signals.RequestSignal{
+		Signal: &signals.Signal{
+			Type: signals.OperationSyncActionWorkflowTriggers,
+		},
+		EventLoopRequest: req,
+	}
+	w.handleSyncActionWorkflowTriggers(ctx, sreq)
+	w.startChildren(ctx, sreq)
+	return nil
+}
+
+func (w *Workflows) handleSyncActionWorkflowTriggers(ctx workflow.Context, sreq signals.RequestSignal) error {
+	workflowID := sreq.WorkflowID(sreq.ID) + "-action-workflows"
+	cwo := workflow.ChildWorkflowOptions{
+		TaskQueue:             "api",
+		WorkflowID:            workflowID,
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		// WaitForCancellation:   true,
+		ParentClosePolicy: enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	workflow.ExecuteChildWorkflow(ctx, w.ActionWorkflowTriggers, sreq)
+	return nil
+}
+
+func (w *Workflows) startChildren(pctx workflow.Context, sreq signals.RequestSignal) error {
+	cwo := workflow.ChildWorkflowOptions{
+		TaskQueue:             "api",
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
+	}
+
+	stack, err := activities.AwaitGetInstallStackByInstallID(pctx, sreq.ID)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
+	// older installs may not have a stack
+	if stack != nil {
+		cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "stack", stack.ID)
+		ctx := workflow.WithChildOptions(pctx, cwo)
+		// NOTE(sdboyer) re-using sreq here feels like a hack that we need to get away from in a proper system
+		// FIXME(sdboyer) these strings work only because of the custom registration in the install worker. Get rid of them with the global registry
+		workflow.ExecuteChildWorkflow(ctx, "StackEventLoop", sreq)
+	}
+
+	sandbox, err := activities.AwaitGetInstallSandboxByInstallID(pctx, sreq.ID)
+	if err != nil {
+		return err
+	}
+	cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "sandbox", sandbox.ID)
+	ctx := workflow.WithChildOptions(pctx, cwo)
+	workflow.ExecuteChildWorkflow(ctx, "SandboxEventLoop", sreq)
+
+	componentIDs, err := activities.AwaitGetAppGraph(pctx, activities.GetAppGraphRequest{
+		InstallID: sreq.ID,
+	})
+	if err != nil {
+		return err
+	}
+	for _, id := range componentIDs {
+		cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "component", id)
+		ctx = workflow.WithChildOptions(pctx, cwo)
+		workflow.ExecuteChildWorkflow(ctx, "ComponentsEventLoop", sreq)
+	}
+
+	iaws, err := activities.AwaitGetActionWorkflowsByInstallID(pctx, sreq.ID)
+	if err != nil {
+		return err
+	}
+	for _, id := range iaws {
+		cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "action", id.ID)
+		ctx = workflow.WithChildOptions(pctx, cwo)
+		workflow.ExecuteChildWorkflow(ctx, "ActionsEventLoop", sreq)
+	}
+
+	return nil
+}
