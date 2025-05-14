@@ -16,6 +16,10 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
+const (
+	defaultNamespace string = "installs"
+)
+
 type Params struct {
 	fx.In
 
