@@ -12,6 +12,14 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	srcCfg := h.state.plan.Src
 	dstCfg := h.state.plan.Dst
 
+	// NOTE(JM): this is ultimately a short cut for now, until we have time to properly handle oci-cleanup jobs.
+	//
+	// For an OCI Container Image such as a docker-build or oci image this is a noop. For a terraform or helm
+	// deploy, this relies on the fact that the previous image oci artifact is still around.
+	if job.Operation == models.AppRunnerJobOperationTypeDestroy {
+		return nil
+	}
+
 	res, err := h.ociCopy.Copy(ctx,
 		srcCfg,
 		h.state.plan.SrcTag,
