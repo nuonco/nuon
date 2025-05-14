@@ -23,23 +23,23 @@ func (c *UpdateActionWorkflowRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						UpdateAppActionWorkflow
-//	@Summary				patch an app
-//	@Description.markdown	update_app_action_workflow.md
-//	@Param					action_workflow_id	path	string	true	"action workflow ID"
-//	@Tags					actions
-//	@Accept					json
-//	@Param					req	body	UpdateActionWorkflowRequest	true	"Input"
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.ActionWorkflow
-//	@Router					/v1/action-workflows/{action_workflow_id} [patch]
+// @ID						UpdateAppActionWorkflow
+// @Summary				patch an app
+// @Description.markdown	update_app_action_workflow.md
+// @Param					action_workflow_id	path	string	true	"action workflow ID"
+// @Tags					actions
+// @Accept					json
+// @Param					req	body	UpdateActionWorkflowRequest	true	"Input"
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.ActionWorkflow
+// @Router					/v1/action-workflows/{action_workflow_id} [patch]
 func (s *service) UpdateActionWorkflow(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
@@ -64,13 +64,13 @@ func (s *service) UpdateActionWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	app, err := s.updateActionWorkflow(ctx, org.ID, awID, &req)
+	aw, err := s.updateActionWorkflow(ctx, org.ID, awID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, app)
+	ctx.JSON(http.StatusCreated, aw)
 }
 
 func (s *service) updateActionWorkflow(ctx context.Context, orgID, awID string, req *CreateAppActionWorkflowRequest) (*app.ActionWorkflow, error) {
