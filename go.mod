@@ -36,6 +36,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/iam v1.28.5
 	github.com/aws/aws-sdk-go-v2/service/route53 v1.48.5
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.54.3
+	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.35.4
 	github.com/aws/aws-sdk-go-v2/service/sts v1.31.3
 	github.com/awslabs/goformation/v7 v7.14.9
 	github.com/bradleyfalzon/ghinstallation/v2 v2.2.0
@@ -53,7 +54,7 @@ require (
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
 	github.com/envoyproxy/protoc-gen-validate v1.1.0
 	github.com/facebookgo/symwalk v0.0.0-20150726040526-42004b9f3222
-	github.com/getkin/kin-openapi v0.124.0
+	github.com/getkin/kin-openapi v0.131.0
 	github.com/getsentry/sentry-go v0.28.1
 	github.com/gin-contrib/size v1.0.1
 	github.com/gin-contrib/timeout v1.0.2
@@ -179,7 +180,6 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/aryann/difflib v0.0.0-20210328193216-ff5ff6dc229b // indirect
-	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.35.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
@@ -246,7 +246,6 @@ require (
 	github.com/hashicorp/jsonapi v0.0.0-20210826224640-ee7dae0fb22d // indirect
 	github.com/hashicorp/opaqueany v0.0.0-20230114004030-81be31706b04 // indirect
 	github.com/homeport/dyff v1.9.4 // indirect
-	github.com/invopop/yaml v0.2.0 // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
@@ -275,6 +274,8 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
+	github.com/oasdiff/yaml v0.0.0-20250309154309-f31be36b4037 // indirect
+	github.com/oasdiff/yaml3 v0.0.0-20250309153720-d2182401db90 // indirect
 	github.com/paulmach/orb v0.11.1 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
@@ -477,7 +478,7 @@ require (
 	github.com/mitchellh/go-glint v0.0.0-20210722152315-6515ceb4a127 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1
-	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
 	github.com/moby/sys/symlink v0.2.0 // indirect
