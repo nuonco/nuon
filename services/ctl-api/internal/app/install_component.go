@@ -56,6 +56,18 @@ type InstallComponent struct {
 	StatusDescription string                 `json:"status_description,omitzero" gorm:"default:''" temporaljson:"status_description,omitzero,omitempty"`
 }
 
+type InstallComponentSummary struct {
+	ID                      string                     `json:"id"`
+	ComponentID             string                     `json:"component_id"`
+	ComponentName           string                     `json:"component_name"`
+	DeployStatus            InstallDeployStatus        `json:"deploy_status"`
+	DeployStatusDescription string                     `json:"deploy_status_description"`
+	BuildStatus             ComponentBuildStatus       `json:"build_status"`
+	BuildStatusDescription  string                     `json:"build_status_description"`
+	ComponentConfig         *ComponentConfigConnection `json:"component_config"`
+	Dependencies            []Component                `json:"dependencies"`
+}
+
 func (c *InstallComponent) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewInstallComponentID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
