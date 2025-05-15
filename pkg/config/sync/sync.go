@@ -71,6 +71,10 @@ func (s *sync) Sync(ctx context.Context) error {
 	return nil
 }
 
+func (s *sync) GetAppConfigID() string {
+	return s.appConfigID
+}
+
 func (s *sync) GetComponentStateIds() []string {
 	ids := make([]string, 0)
 	if s.state.Components == nil {

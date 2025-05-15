@@ -2,6 +2,7 @@ package parse
 
 import (
 	"context"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -52,7 +53,7 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 	if err := dir.Parse(ctx, cfgFS, &obj, &dir.ParseOptions{
 		Root:     fp,
 		Ext:      ".toml",
-		ParserFn: parseTomlFile,
+		ParserFn: func(rc io.ReadCloser, s string, a any) error { return parseTomlFile(rc, s, a, parseCfg.FileProcessor) },
 	}); err != nil {
 		return nil, errors.Wrap(err, "unable to parse directory")
 	}
