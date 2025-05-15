@@ -50,7 +50,7 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 		default:
 		}
 
-		var err error = nil
+		var groupError error = nil
 		for cmpID := range spinnersByComponentID {
 			cmp, _ := cmpByID[cmpID]
 			cmpBuild, err := s.api.GetComponentLatestBuild(ctx, cmp.ID)
@@ -73,7 +73,7 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 			if cmpBuild.Status == componentBuildStatusError {
 				spinnersByComponentID[cmpID].Fail(fmt.Sprintf("error building component %s %s", cmp.ID, cmp.Name))
 				delete(spinnersByComponentID, cmpID)
-				err = errors.New("at least one build failed")
+				groupError = errors.New("at least one build failed")
 				continue
 			}
 
@@ -86,7 +86,7 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 
 		if len(spinnersByComponentID) == 0 {
 			multi.Stop()
-			return err
+			return groupError
 		}
 
 		time.Sleep(defaultSyncSleep)
