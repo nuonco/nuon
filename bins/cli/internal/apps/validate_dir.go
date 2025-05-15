@@ -30,8 +30,9 @@ func (s *Service) ValidateDir(ctx context.Context, dir string) error {
 	}
 
 	cfg, err := parse.ParseDir(ctx, parse.ParseConfig{
-		Dirname: dir,
-		V:       validator.New(),
+		Dirname:       dir,
+		V:             validator.New(),
+		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 	})
 	if err != nil {
 		return ui.PrintError(err)
