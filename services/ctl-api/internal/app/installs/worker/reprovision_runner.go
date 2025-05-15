@@ -26,13 +26,13 @@ func (w *Workflows) ReprovisionRunner(ctx workflow.Context, sreq signals.Request
 	}
 
 	w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
-		Type: runnersignals.OperationProvisionServiceAccount,
+		Type: runnersignals.OperationReprovisionServiceAccount,
 	})
 
 	// NOTE(jm): this does not send a signal at the moment
 	return nil
 	if err := w.evClient.SendAndWait(ctx, install.RunnerID, &runnersignals.Signal{
-		Type: runnersignals.OperationProvisionServiceAccount,
+		Type: runnersignals.OperationReprovisionServiceAccount,
 	}); err != nil {
 		return errors.Wrap(err, "unable to provision service account")
 	}
