@@ -47,7 +47,9 @@ function parseInstallComponentsToTableData(
   return installComponents.map((comp) => ({
     buildStatus: comp.component?.status || 'No build',
     componentId: comp.component_id,
-    componentType: getComponentConfigType(comp.config) || 'unknown',
+    componentType: comp?.config
+      ? getComponentConfigType(comp.config)
+      : 'unknown',
     installComponentId: comp.id,
     deployStatus: comp.install_deploys?.[0]?.status || null,
     dependencies: comp.deps?.length || 0,
