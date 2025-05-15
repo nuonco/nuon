@@ -36,6 +36,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 
 		// independent runner
 		signals.OperationProvisionServiceAccount: w.AwaitProvisionServiceAccount,
+		signals.OperationReprovisionServiceAccount: w.AwaitReprovisionServiceAccount,
 		signals.OperationInstallStackVersionRun:  w.AwaitInstallStackVersionRun,
 	}
 
