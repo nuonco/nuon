@@ -37,6 +37,13 @@ func (c *cli) rootCmd() *cobra.Command {
 		c.versionCmd(),
 		c.secretsCmd(),
 	}
+
+	org, _ := c.apiClient.GetOrg(c.ctx)
+	if (org != nil) && org.Features["dev-command"] {
+		// TODO: uncomment in next PR
+		// cmds = append(cmds, c.devCmd())
+	}
+
 	for _, cmd := range cmds {
 		rootCmd.AddCommand(cmd)
 	}
