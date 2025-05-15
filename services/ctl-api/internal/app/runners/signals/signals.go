@@ -29,8 +29,9 @@ const (
 	OperationFlushOrphanedJobs eventloop.SignalType = "flush_orphaned_jobs"
 
 	// used for v2 provisioning
-	OperationProvisionServiceAccount eventloop.SignalType = "provision_service_account"
-	OperationInstallStackVersionRun  eventloop.SignalType = "install_stack_version_run"
+	OperationProvisionServiceAccount   eventloop.SignalType = "provision_service_account"
+	OperationReprovisionServiceAccount eventloop.SignalType = "reprovision_service_account"
+	OperationInstallStackVersionRun    eventloop.SignalType = "install_stack_version_run"
 
 	// used for internal provisioning
 	OperationProvision   eventloop.SignalType = "provision"
