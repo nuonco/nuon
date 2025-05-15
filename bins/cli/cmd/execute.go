@@ -1,22 +1,18 @@
 package cmd
 
 import (
-	"context"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/go-playground/validator/v10"
 )
 
 // Execute is essentially the init method of the CLI. It initializes all the components and composes them together.
 func Execute() {
-	// Construct a validator for the API client and the UI logger.
-	v := validator.New()
-	c := &cli{
-		v:   v,
-		ctx: context.Background(),
+	c, err := NewCLI()
+	if err != nil {
+		os.Exit(2)
 	}
 
 	// Kill CLI immediately when user types Ctrl-C.
@@ -29,7 +25,7 @@ func Execute() {
 	}()
 
 	rootCmd := c.rootCmd()
-	err := rootCmd.ExecuteContext(c.ctx)
+	err = rootCmd.ExecuteContext(c.ctx)
 
 	// Sentry should be flushed just the once, just prior to program exit
 	if c.cfg != nil && !c.cfg.DisableTelemetry {
