@@ -85,6 +85,7 @@ type WorkflowGenOptions struct {
 	ExecutionTimeout    time.Duration
 	TaskTimeout         time.Duration
 	IDCallback          string
+	IDTemplate          string
 	WaitForCancellation bool
 	TaskQueue           string
 	OptionsCallback     string
