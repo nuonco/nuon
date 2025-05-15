@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -291,7 +292,19 @@ func extractWorkflowFn(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Pack
 			case "@options-callback":
 				ret.OptionsCallback = parts[2]
 			}
+		default:
+			switch parts[1] {
+			case "@id-template":
+				ret.IDTemplate = strings.Join(parts[2:], " ")
+				if _, err := template.New("workflowID").Parse(ret.IDTemplate); err != nil {
+					return nil, withPos(fset, com.Pos(), fmt.Errorf("@id-template must be a valid Go template string: %s", err))
+				}
+			}
 		}
+	}
+
+	if ret.IDCallback != "" && ret.IDTemplate != "" {
+		return nil, withPos(fset, fn.Pos(), errors.New("@id-callback and @id-template may not be specified together"))
 	}
 
 	return &WorkflowFn{
