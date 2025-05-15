@@ -16,10 +16,11 @@ type ParseConfig struct {
 
 	Bytes []byte
 
-	BackendType config.BackendType
-	V           *validator.Validate
-	Template    bool
-	Context     config.ConfigContext
+	BackendType   config.BackendType
+	V             *validator.Validate
+	Template      bool
+	Context       config.ConfigContext
+	FileProcessor func(name string, obj map[string]any) map[string]any
 }
 
 func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
