@@ -9,7 +9,11 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config"
 )
 
-func parseTomlFile(rw io.ReadCloser, name string, out any) error {
+// FileProcessor is a function to process config files before they're marshalled into a config struct and synced to the api.
+type FileProcessor func(string, map[string]any) map[string]any
+
+func parseTomlFile(rw io.ReadCloser, name string, out any, processor FileProcessor) error {
+
 	tomlDec := toml.NewDecoder(rw)
 	tomlDec.SetTagName("mapstructure")
 
@@ -20,6 +24,8 @@ func parseTomlFile(rw io.ReadCloser, name string, out any) error {
 			Description: "unable to parse configuration file",
 		}
 	}
+
+	obj = processor(name, obj)
 
 	// go from map[string]interface{} => config.AppConfig
 	mapDecCfg := config.DecoderConfig()
