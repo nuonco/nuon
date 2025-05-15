@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -86,20 +85,6 @@ func (s *service) updateAppConfig(ctx context.Context, appConfigID string, req *
 	}
 	if res.RowsAffected < 1 {
 		return nil, fmt.Errorf("app config not found %s %w", appConfigID, gorm.ErrRecordNotFound)
-	}
-
-	// TODO(jm): eventually, this will not be the case, but for now we update all users to the latest config
-	if req.Status == app.AppConfigStatusActive {
-		if res := s.db.WithContext(ctx).
-			Model(&app.Install{}).
-			Where(app.Install{
-				AppID: cfg.AppID,
-			}).
-			Updates(app.Install{
-				AppConfigID: appConfigID,
-			}); res.Error != nil {
-			return nil, errors.Wrap(res.Error, "unable to update installations with new config")
-		}
 	}
 
 	return &cfg, nil
