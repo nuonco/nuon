@@ -14,7 +14,14 @@ func (h *Helpers) GetDependentComponents(ctx context.Context, appID, compRootID 
 	if err != nil {
 		return nil, fmt.Errorf("unable to get graph: %w", err)
 	}
+	depCmps, err := h.GetDependentComponentsByGraph(compRootID, g, cmps)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get dependent components: %w", err)
+	}
+	return depCmps, nil
+}
 
+func (h *Helpers) GetDependentComponentsByGraph(compRootID string, g graph.Graph[string, *app.Component], cmps []app.Component) ([]app.Component, error) {
 	cmpsById := make(map[string]app.Component)
 	for _, c := range cmps {
 		cmpsById[c.ID] = c
@@ -35,6 +42,7 @@ func (h *Helpers) GetDependentComponents(ctx context.Context, appID, compRootID 
 		return nil, fmt.Errorf("unable to build app graph: %w", err)
 	}
 
+	var err error
 	depCmps := make([]app.Component, 0)
 	for _, id := range depsCmpIds {
 		comp, ok := cmpsById[id]
