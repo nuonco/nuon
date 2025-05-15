@@ -47,7 +47,7 @@ func (s *Service) Dev(ctx context.Context, dir, installID, orgID string, autoApp
 	//
 
 	pterm.Println()
-	pterm.Println(pterm.White("Checking that you are ready to create a new app version..."))
+	pterm.Println(pterm.LightCyan("Checking that you are ready to create a new app version..."))
 	pterm.Println()
 
 	ui.PrintLn("checking git branch...")
@@ -144,8 +144,9 @@ func (s *Service) Dev(ctx context.Context, dir, installID, orgID string, autoApp
 	if len(cmpsScheduled) > 0 {
 		ui.PrintLn("some components require new builds...")
 		pterm.Println()
-		if err := s.pollComponentBuilds(ctx, cmpsScheduled); err != nil {
-			return errors.Wrap(err, "unable to poll builds")
+		err = s.pollComponentBuilds(ctx, cmpsScheduled)
+		if err != nil {
+			return ui.PrintError(err)
 		}
 		ui.PrintSuccess("builds complete")
 	}
