@@ -1879,6 +1879,8 @@ github.com/nuonco/nuon-go v0.58.1 h1:sNsV4yOBAJIqYKccqhd8qa/gjwkrJQmkf3ryjNJeSDg
 github.com/nuonco/nuon-go v0.58.1/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
 github.com/nuonco/nuon-go v0.59.0 h1:7qCnw8UbMzxgWHUgKUADWG3O04TGKLW2144qxltWOHg=
 github.com/nuonco/nuon-go v0.59.0/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
+github.com/nuonco/nuon-go v0.60.0 h1:13qSsb9JiEPCuG0nE0ZMUDhAETN/VC0PvjfAQkRlAlU=
+github.com/nuonco/nuon-go v0.60.0/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
 github.com/nuonco/nuon-runner-go v0.13.0 h1:CznQubVwiV7PXvk3JUtT3SL/1PuhaHBrpVNgGmxiuMI=
 github.com/nuonco/nuon-runner-go v0.13.0/go.mod h1:l5SjdHci6MOApI8bAx5oJjLVm9ex35KI/0y8Kz04JlA=
 github.com/nuonco/nuon-runner-go v0.14.0 h1:r0ttzN2MuIAlST4NhDDReXLxdNkw2kafInSexKpQOak=
