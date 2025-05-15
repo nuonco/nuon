@@ -41,7 +41,9 @@ function parseComponentsToTableData(
   return components.map((component) => ({
     build: component?.latestBuild?.status || 'noop',
     componentId: component.id,
-    componentType: getComponentConfigType(component.config),
+    componentType: component?.config
+      ? getComponentConfigType(component.config)
+      : 'Unknown',
     configVersion: component.config_versions,
     dependencies: component.dependencies?.length || 0,
     deps: component.deps,
