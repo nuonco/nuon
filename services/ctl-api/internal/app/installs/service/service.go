@@ -95,6 +95,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	// install components
 	api.GET("/v1/installs/:install_id/components", s.GetInstallComponents)
+	api.GET("/v1/installs/:install_id/components/summary", s.GetInstallComponentSummary)
 	api.POST("/v1/installs/:install_id/components/teardown-all", s.TeardownInstallComponents)
 	api.POST("/v1/installs/:install_id/components/deploy-all", s.DeployInstallComponents)
 	api.GET("/v1/installs/:install_id/components/:component_id", s.GetInstallComponent)
