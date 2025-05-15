@@ -109,7 +109,7 @@ func (h *Helpers) GetDependencyGraph(ctx context.Context, appID string) (graph.G
 		Preload("Components.ComponentConfigs.ComponentBuilds").
 		First(&a, "id = ?", appID)
 	if res.Error != nil {
-		return nil, nil, fmt.Errorf("unable to get app: %w", res.Error)
+		return nil, nil, fmt.Errorf("unable to get app with id %s: %w", appID, res.Error)
 	}
 
 	g := graph.New(componentHash,
