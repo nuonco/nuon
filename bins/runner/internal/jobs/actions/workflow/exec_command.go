@@ -28,11 +28,11 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 	for k, v := range builtInEnv {
 		l.Debug(fmt.Sprintf("setting default env-var %s", k), zap.String("value", v))
 	}
-	for k, v := range h.state.run.RunEnvVars {
-		l.Debug(fmt.Sprintf("setting extra env-var %s", k), zap.String("value", v))
-	}
 	for k, v := range envVars {
 		l.Debug(fmt.Sprintf("setting env-var %s", k), zap.String("value", v))
+	}
+	for k, v := range h.state.run.RunEnvVars {
+		l.Debug(fmt.Sprintf("setting extra env-var %s", k), zap.String("value", v))
 	}
 
 	var cmd string
@@ -63,8 +63,8 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 		command.WithInheritedEnv(),
 		command.WithEnv(h.state.plan.EnvVars),
 		command.WithEnv(builtInEnv),
-		command.WithEnv(h.state.run.RunEnvVars),
 		command.WithEnv(envVars),
+		command.WithEnv(h.state.run.RunEnvVars),
 		command.WithArgs(args),
 		command.WithStdout(lOut),
 		command.WithStderr(lErr),
