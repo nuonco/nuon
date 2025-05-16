@@ -44,11 +44,11 @@ terraform {
                 setIsOpen(false)
               }}
             >
-              <Text variant="reg-14">
+              <Text className="!leading-loose" variant="reg-14">
                 To manage the Terraform state directly, download the backend
-                config, add it to your Terraform project, and run
+                config, add it to your Terraform project, and run the following command.
               </Text>
-              <Code className="mt-4">terraform init -reconfigure</Code>.
+              <Code className="mt-4">terraform init -reconfigure</Code>
               <div className="mt-4 flex gap-3 justify-end">
                 <Button
                   onClick={() => {

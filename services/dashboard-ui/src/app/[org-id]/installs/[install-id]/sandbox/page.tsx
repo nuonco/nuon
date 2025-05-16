@@ -17,6 +17,7 @@ import {
   ReprovisionSandboxModal,
   SandboxHistory,
   Section,
+  SectionHeader,
   Text,
   Time,
   ClickToCopyButton,
@@ -143,24 +144,27 @@ export default withPageAuthRequired(async function InstallComponent({
                 </Suspense>
               </ErrorBoundary>
             )}
-            {org?.features?.['terraform-workspace'] && (
-              <ErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
+          </Section>
+
+          {org?.features?.['terraform-workspace'] && (
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Section heading="Terraform state">
                     <Loading
                       variant="stack"
                       loadingText="Loading latest Terraform workspace..."
                     />
-                  }
-                >
-                  <TerraformWorkspace
-                    orgId={orgId}
-                    workspace={install.sandbox.terraform_workspace}
-                  />
-                </Suspense>
-              </ErrorBoundary>
-            )}
-          </Section>
+                  </Section>
+                }
+              >
+                <TerraformWorkspace
+                  orgId={orgId}
+                  workspace={install.sandbox.terraform_workspace}
+                />
+              </Suspense>
+            </ErrorBoundary>
+          )}
         </div>
 
         <div className="divide-y flex flex-col md:col-span-4">
