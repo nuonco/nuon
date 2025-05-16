@@ -229,6 +229,7 @@
       {
         "tab": "Updates",
         "pages": [
+          "updates/005-developer-experience",
           "updates/004-secrets",
           "updates/003-install-deletes-cancel-improvements",
           "updates/002-inputs-dependencies",
