@@ -15,29 +15,29 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			defer w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
 				RunnerID: req.ID,
 			})
-			return w.AwaitRestart(ctx, req)
+			return AwaitRestart(ctx, req)
 		},
-		signals.OperationDelete: w.AwaitDelete,
+		signals.OperationDelete: AwaitDelete,
 		signals.OperationCreated: func(ctx workflow.Context, req signals.RequestSignal) error {
 			defer w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
 				RunnerID: req.ID,
 			})
-			return w.AwaitCreated(ctx, req)
+			return AwaitCreated(ctx, req)
 		},
-		signals.OperationProvision:         w.AwaitProvision,
-		signals.OperationReprovision:       w.AwaitReprovision,
-		signals.OperationDeprovision:       w.AwaitDeprovision,
-		signals.OperationProcessJob:        w.AwaitProcessJob,
-		signals.OperationUpdateVersion:     w.AwaitUpdateVersion,
-		signals.OperationGracefulShutdown:  w.AwaitGracefulShutdown,
-		signals.OperationForceShutdown:     w.AwaitForceShutdown,
-		signals.OperationOfflineCheck:      w.AwaitOfflineCheck,
-		signals.OperationFlushOrphanedJobs: w.AwaitFlushOrphanedJobs,
+		signals.OperationProvision:         AwaitProvision,
+		signals.OperationReprovision:       AwaitReprovision,
+		signals.OperationDeprovision:       AwaitDeprovision,
+		signals.OperationProcessJob:        AwaitProcessJob,
+		signals.OperationUpdateVersion:     AwaitUpdateVersion,
+		signals.OperationGracefulShutdown:  AwaitGracefulShutdown,
+		signals.OperationForceShutdown:     AwaitForceShutdown,
+		signals.OperationOfflineCheck:      AwaitOfflineCheck,
+		signals.OperationFlushOrphanedJobs: AwaitFlushOrphanedJobs,
 
 		// independent runner
-		signals.OperationProvisionServiceAccount: w.AwaitProvisionServiceAccount,
-		signals.OperationReprovisionServiceAccount: w.AwaitReprovisionServiceAccount,
-		signals.OperationInstallStackVersionRun:  w.AwaitInstallStackVersionRun,
+		signals.OperationProvisionServiceAccount: AwaitProvisionServiceAccount,
+		signals.OperationReprovisionServiceAccount: AwaitReprovisionServiceAccount,
+		signals.OperationInstallStackVersionRun:  AwaitInstallStackVersionRun,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{

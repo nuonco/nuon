@@ -16,7 +16,7 @@ type tvars_asactivity_type struct {
 	BaseTypeName string
 }
 
-type AsActivityTypeJenny struct{}
+type AsActivityTypeJenny struct {}
 
 func (j AsActivityTypeJenny) JennyName() string {
 	return "AsActivityTypeJenny"

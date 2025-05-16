@@ -9,7 +9,9 @@ import (
 
 // WorkflowListJenny is a jenny that generates a function which returns function references to all the base functions underlying the Await wrappers
 // generated in this run. This output is suitable for registration with a Temporal client.
-type WorkflowListJenny struct{}
+type WorkflowListJenny struct {
+	UseMethods bool
+}
 
 func (w WorkflowListJenny) JennyName() string {
 	return "WorkflowListJenny"

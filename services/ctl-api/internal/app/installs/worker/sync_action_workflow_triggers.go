@@ -11,6 +11,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/actions"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
@@ -78,7 +79,7 @@ func (w *Workflows) startActionWorkflowCronTrigger(ctx workflow.Context, sreq si
 	})
 
 	dctx := workflow.WithChildOptions(ctx, cwo)
-	workflow.ExecuteChildWorkflow(dctx, w.subwfActions.AwaitExecuteActionWorkflow, req)
+	workflow.ExecuteChildWorkflow(dctx, actions.AwaitExecuteActionWorkflow, req)
 
 	return nil
 }

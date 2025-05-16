@@ -29,7 +29,7 @@ type tvars_awaitfn_list struct {
 
 // ActivityListJenny is a jenny that generates a function which returns function references to all the base functions underlying the Await wrappers
 // generated in this run. This output is suitable for registration with a Temporal client.
-type ActivityListJenny struct{}
+type ActivityListJenny struct {}
 
 func (w ActivityListJenny) JennyName() string {
 	return "ActivityListJenny"
