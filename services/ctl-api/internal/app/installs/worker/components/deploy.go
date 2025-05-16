@@ -104,7 +104,7 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 
 	// skip lifecycle hooks if the deploy is a teardown
 	if installDeploy.Type != app.InstallDeployTypeTeardown {
-		if err := w.wfActions.AwaitLifecycleActionWorkflows(ctx, &actions.LifecycleActionWorkflowsRequest{
+		if err := actions.AwaitLifecycleActionWorkflows(ctx, &actions.LifecycleActionWorkflowsRequest{
 			InstallID:       install.ID,
 			TriggerType:     app.ActionWorkflowTriggerTypePreDeployAll,
 			TriggeredByID:   installDeploy.ID,
@@ -132,7 +132,7 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 	// skip lifecycle hooks if the deploy is a teardown
 	if installDeploy.Type != app.InstallDeployTypeTeardown {
 		// run hooks after the deploy
-		if err := w.wfActions.AwaitLifecycleActionWorkflows(ctx, &actions.LifecycleActionWorkflowsRequest{
+		if err := actions.AwaitLifecycleActionWorkflows(ctx, &actions.LifecycleActionWorkflowsRequest{
 			InstallID:       install.ID,
 			TriggerType:     app.ActionWorkflowTriggerTypePostDeployAll,
 			TriggeredByID:   installDeploy.ID,

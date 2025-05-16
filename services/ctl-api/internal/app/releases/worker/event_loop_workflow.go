@@ -11,8 +11,8 @@ import (
 
 func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
 	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationPollDependencies: w.AwaitPollDependencies,
-		signals.OperationProvision:        w.AwaitProvision,
+		signals.OperationPollDependencies: AwaitPollDependencies,
+		signals.OperationProvision:        AwaitProvision,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{

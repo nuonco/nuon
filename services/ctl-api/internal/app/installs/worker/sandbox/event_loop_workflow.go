@@ -10,9 +10,9 @@ import (
 
 func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationDeprovisionSandbox: w.AwaitDeprovisionSandbox,
-		signals.OperationReprovisionSandbox: w.AwaitReprovisionSandbox,
-		signals.OperationProvisionSandbox:   w.AwaitProvisionSandbox,
+		signals.OperationDeprovisionSandbox: AwaitDeprovisionSandbox,
+		signals.OperationReprovisionSandbox: AwaitReprovisionSandbox,
+		signals.OperationProvisionSandbox:   AwaitProvisionSandbox,
 		// signals.OperationRestart:            w.AwaitRestarted, // TODO(sdboyer) cant reregister, need namespacing
 	}
 }

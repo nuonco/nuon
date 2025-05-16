@@ -37,11 +37,6 @@ type ExecuteJobRequest struct {
 	WorkflowID string `json:"workflow_id" validate:"required"`
 }
 
-func AwaitExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {
-	var w Workflows
-	return (&w).AwaitExecuteJob(ctx, req)
-}
-
 // @temporal-gen workflow
 // @execution-timeout 1h
 // @task-timeout 1m
