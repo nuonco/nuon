@@ -5,12 +5,13 @@ import {
   getWorkspaceStateResources,
 } from '@/lib'
 import { Section } from '@/components/Card'
+import { JsonView } from '@/components/Code'
 import { Empty } from '@/components/Empty'
 import { Time } from '@/components/Time'
 import { WorkspaceManagementDropdown } from '@/components/InstallSandbox/WorkspaceManagementDropdown'
 import { DataTable } from '@/components/InstallSandbox/Table'
 import { Tabs, Tab } from '@/components/InstallSandbox/Tabs'
-import { Text, Code } from '@/components/Typography'
+import { Text } from '@/components/Typography'
 import { getToken } from '@/components/admin-actions'
 
 export interface ITerraformWorkspace {
@@ -45,7 +46,7 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
       getWorkspaceState({
         orgId,
         workspaceId: workspace?.id,
-        stateId: states[states.at(-1)]?.id,
+        stateId: states.at(-1)?.id,
       }).catch(console.error),
       getWorkspaceStateResources({
         workspaceId: workspace?.id,
@@ -83,9 +84,11 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
 
     const outputs = currentRevision?.data?.outputs || []
     const outputList = Object.keys(outputs).map((key, idx) => [
-      <Text key={idx}>{key}</Text>,
-      <Text key={idx}>{outputs[key].type[0]}</Text>,
-      <Code key={idx}>{JSON.stringify(outputs[key].value)}</Code>,
+      <span key={idx} className="flex flex-col">
+        <Text variant="med-12">{key}</Text>
+        <Text variant="mono-12">{outputs[key].type[0]}</Text>
+      </span>,
+      <JsonView key={idx} data={outputs[key]?.value} />,
     ])
 
     contents = (
@@ -103,10 +106,7 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
           />
         </Tab>
         <Tab title="Outputs">
-          <DataTable
-            headers={['Name', 'Type', 'Value']}
-            initData={outputList}
-          />
+          <DataTable headers={['Name & Type', 'Value']} initData={outputList} />
         </Tab>
         <Tab title="History">
           <DataTable
@@ -119,21 +119,19 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
   }
 
   return (
-    <>
-      <Section
-        className="flex-initial"
-        heading="Terraform state"
-        childrenClassName="flex flex-col gap-4"
-        actions={
-          <WorkspaceManagementDropdown
-            orgId={orgId}
-            workspace={workspace}
-            token={(tokenRes as any).result.accessToken}
-          />
-        }
-      >
-        {contents}
-      </Section>
-    </>
+    <Section
+      className="flex-initial"
+      heading="Terraform state"
+      childrenClassName="flex flex-col gap-4"
+      actions={
+        <WorkspaceManagementDropdown
+          orgId={orgId}
+          workspace={workspace}
+          token={(tokenRes as any).result.accessToken}
+        />
+      }
+    >
+      {contents}
+    </Section>
   )
 }
