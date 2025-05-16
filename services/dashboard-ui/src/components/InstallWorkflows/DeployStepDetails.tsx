@@ -7,6 +7,7 @@ import { Link } from '@/components/Link'
 import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { StatusBadge } from '@/components/Status'
+import { Text } from '@/components/Typography'
 import type { TInstallDeploy } from '@/types'
 import type { IPollStepDetails } from './InstallWorkflowSteps'
 
@@ -59,21 +60,27 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
             <div className="flex flex-col gap-8">
               <>
                 {deploy ? (
-                  <>
-                    <span className="flex gap-4 items-center">
-                      <StatusBadge
-                        description={deploy?.status_description}
-                        status={deploy?.status}
-                      />
+                  <div className="flex flex-col border rounded-md shadow">
+                    <div className="flex items-center justify-between p-3 border-b">
+                      <Text variant="med-14">{deploy?.component_name}</Text>
                       <Link
                         className="text-sm gap-0"
                         href={`/${orgId}/installs/${step?.install_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
                       >
-                        View details
+                        View deploy details
                         <CaretRight />
                       </Link>
-                    </span>
-                  </>
+                    </div>
+                    <div className="p-6">
+                      <span className="flex gap-4 items-center">
+                        <StatusBadge
+                          description={deploy?.status_description}
+                          status={deploy?.status}
+                          label="Deployment status"
+                        />
+                      </span>
+                    </div>
+                  </div>
                 ) : null}
               </>
             </div>
