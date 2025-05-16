@@ -75,12 +75,9 @@ export const ActionStepDetails: FC<IPollStepDetails> = ({
         <>
           {error ? <Notice>{error}</Notice> : null}
           {actionRun ? (
-            <>
-              <span className="flex gap-4 items-center">
-                <StatusBadge
-                  status={actionRun?.status}
-                  description={actionRun?.status_description}
-                />
+            <div className="flex flex-col border rounded-md shadow">
+              <div className="flex items-center justify-between p-3 border-b">
+                <Text variant="med-14">Aciton run</Text>
                 <Link
                   className="text-sm gap-0"
                   href={`/${orgId}/installs/${step?.install_id}/actions/${actionRun?.config?.action_workflow_id}/${actionRun?.id}`}
@@ -88,42 +85,52 @@ export const ActionStepDetails: FC<IPollStepDetails> = ({
                   View details
                   <CaretRight />
                 </Link>
-              </span>
-
-              <div className="flex flex-col gap-2">
-                {hydrateRunSteps(actionRun?.steps, actionRun?.config?.steps)
-                  ?.sort(({ idx: a }, { idx: b }) => b - a)
-                  ?.reverse()
-                  ?.map((actionStep) => {
-                    return (
-                      <span
-                        key={actionStep.id}
-                        className="py-2 px-4 border rounded flex items-center justify-between"
-                      >
-                        <span className="flex items-center gap-3">
-                          <EventStatus status={actionStep.status} />
-                          <Text variant="med-14">{actionStep?.name}</Text>
-                        </span>
-
-                        <Text
-                          className="flex items-center ml-7"
-                          variant="reg-12"
-                        >
-                          {sentanceCase(actionStep.status)}{' '}
-                          {actionStep?.execution_duration > 1000000 ? (
-                            <>
-                              in{' '}
-                              <Duration
-                                nanoseconds={actionStep?.execution_duration}
-                              />
-                            </>
-                          ) : null}
-                        </Text>
-                      </span>
-                    )
-                  })}
               </div>
-            </>
+
+              <div className="p-6 flex flex-col gap-4">
+                <StatusBadge
+                  status={actionRun?.status}
+                  description={actionRun?.status_description}
+                  label="Action status"
+                />
+                <div className="flex flex-col gap-2">
+                  <Text isMuted className="tracking-wide">
+                    Action steps
+                  </Text>
+                  {hydrateRunSteps(actionRun?.steps, actionRun?.config?.steps)
+                    ?.sort(({ idx: a }, { idx: b }) => b - a)
+                    ?.reverse()
+                    ?.map((actionStep) => {
+                      return (
+                        <span
+                          key={actionStep.id}
+                          className="py-2 px-4 border rounded-md flex items-center justify-between"
+                        >
+                          <span className="flex items-center gap-3">
+                            <EventStatus status={actionStep.status} />
+                            <Text variant="med-14">{actionStep?.name}</Text>
+                          </span>
+
+                          <Text
+                            className="flex items-center ml-7"
+                            variant="reg-12"
+                          >
+                            {sentanceCase(actionStep.status)}{' '}
+                            {actionStep?.execution_duration > 1000000 ? (
+                              <>
+                                in{' '}
+                                <Duration
+                                  nanoseconds={actionStep?.execution_duration}
+                                />
+                              </>
+                            ) : null}
+                          </Text>
+                        </span>
+                      )
+                    })}
+                </div>
+              </div>
+            </div>
           ) : null}
         </>
       )}

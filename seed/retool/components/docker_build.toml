@@ -6,5 +6,5 @@ dockerfile = "Dockerfile"
 [connected_repo]
 directory = "exp/runner-testing"
 repo = "powertoolsdev/mono"
-branch = "ja/core-dev-loop"
+branch = "main"
 
