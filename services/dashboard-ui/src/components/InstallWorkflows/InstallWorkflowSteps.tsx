@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import React, { type FC, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/Button'
+import { Badge } from '@/components/Badge'
 import { Empty } from '@/components/Empty'
 import { Notice } from '@/components/Notice'
 import { Section } from '@/components/Card'
@@ -101,7 +102,7 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
           {installWorkflow?.steps?.length ? (
             <div className="flex flex-col gap-2 workflow-steps">
               {installWorkflow?.steps?.map((step, i) => {
-                return step?.step_target_type === '' ? (
+                return step?.status?.status === 'pending' ? (
                   <div
                     ref={(el) => (buttonRefs.current[i] = el)}
                     key={step?.id}
@@ -119,14 +120,13 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
                       status={step?.status}
                       stepNumber={i + 1}
                       isSkipped={step?.execution_type === 'skipped'}
-                      startedAt={step?.started_at}
                     />
                   </div>
                 ) : (
                   <Button
                     ref={(el) => (buttonRefs.current[i] = el)}
                     className={classNames(
-                      'text-left border-none !p-2 history-event',
+                      'text-left border-none !p-2 history-event w-full',
                       {
                         '!bg-black/5 dark:!bg-white/5 !text-cool-grey-950 dark:!text-cool-grey-50':
                           activeStep?.id === step?.id,
@@ -162,7 +162,6 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
                       status={step?.status}
                       stepNumber={i + 1}
                       isSkipped={step?.execution_type === 'skipped'}
-                      startedAt={step?.started_at}
                     />
                   </Button>
                 )
@@ -186,30 +185,16 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
                 (s) => s?.id === activeStep?.id
               )}
             >
-              {installWorkflow?.steps?.map((step) => (
-                <div className="flex flex-col gap-4" key={step?.id}>
-                  <hgroup className="flex gap-4 items-center">
-                    <YAStatus
-                      status={step?.status?.status}
-                      isSkipped={step?.execution_type === 'skipped'}
-                    />{' '}
-                    <Text variant="med-18">{sentanceCase(step?.name)}</Text>
-                  </hgroup>
-                  {step?.status?.metadata?.reason ? (
-                    <Notice variant="warn">
-                      {sentanceCase(step?.status?.metadata?.reason as string)}
-                    </Notice>
-                  ) : null}
-                  {getStepType(step, install)}
-                </div>
-              ))}
+              {installWorkflow?.steps?.map((step) =>
+                getStepType(step, install)
+              )}
             </StepDetails>
           </Section>
         ) : (
           <Section>
             <Empty
               emptyTitle="Waiting on steps"
-              emptyMessage="Waiting on update steps to generate."
+              emptyMessage="Waiting on workflow steps to generate."
               variant="history"
             />
           </Section>
@@ -221,44 +206,44 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
 
 const InstallWorkflowStepTitle: FC<{
   executionTime: number
-  startedAt?: string
   isSkipped?: boolean
   name: string
   status: TInstallWorkflowStep['status']
   stepNumber: number
-}> = ({
-  executionTime,
-  isSkipped = false,
-  name,
-  startedAt,
-  status,
-  stepNumber,
-}) => {
+}> = ({ executionTime, isSkipped = false, name, status, stepNumber }) => {
   return (
     <span className="flex gap-2 items-start justify-start w-full">
       <YAStatus status={status?.status} isSkipped={isSkipped} />
-      <span className="w-full">
+      <span className="flex flex-col w-full max-w-full overflow-hidden">
+        <Text variant="med-12">
+          <span className="truncate">{sentanceCase(name)}</span>
+        </Text>
         <Text
           className="!text-cool-grey-600 dark:!text-cool-grey-500 w-full justify-between"
           variant="reg-12"
         >
           Step {stepNumber}{' '}
           {isSkipped && status.status === 'success' ? (
-            <span className="flex gap-1">
+            <Badge theme="info" isCompact>
               Skipped
-              <Time time={startedAt} format="relative" />
-            </span>
-          ) : status?.status === 'cancelled' ||
-            status?.status === 'success' ||
-            status.status === 'error' ? (
+            </Badge>
+          ) : status?.status === 'cancelled' ? (
+            <Badge theme="warn" isCompact>
+              Cancelled
+            </Badge>
+          ) : status.status === 'error' ? (
+            <Badge theme="error" isCompact>
+              Failed
+            </Badge>
+          ) : status.status === 'not-attempted' ? (
+            <Badge isCompact>Not attempted</Badge>
+          ) : status?.status === 'success' ? (
             <span className="flex gap-1">
               {getFinishedText(status)} in
               <Duration nanoseconds={executionTime} />
             </span>
           ) : null}
         </Text>
-
-        <Text className="text-wrap" variant="med-12">{sentanceCase(name)}</Text>
       </span>
     </span>
   )
@@ -277,7 +262,7 @@ function getFinishedText(
       text = 'Failed'
       break
     case 'success':
-      text = 'Successful'
+      text = 'Completed'
       break
     default:
       text = 'Finished'
