@@ -29,7 +29,7 @@ const (
 
 // Dev syncs, buids, and deploys app changes to a dev install.
 // It does a few pre-flight checks to make sure we're ready to deploy, then executes the sync, builds, and deploys.
-func (s *Service) Dev(ctx context.Context, dir, installID, orgID string, autoApprove bool) error {
+func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bool) error {
 	var err error
 	defer func() {
 		pterm.Println()
