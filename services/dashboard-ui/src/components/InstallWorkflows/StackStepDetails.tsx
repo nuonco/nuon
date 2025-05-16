@@ -119,7 +119,7 @@ const GenerateStack: FC<{
             <>
               <>
                 {stackConfig ? (
-                  <div className="flex flex-col gap-2">
+                  <div className="border p-3 rounded-md shadow flex flex-col gap-2">
                     <ConfigurationVariables
                       heading="Stack template details"
                       headingVariant="med-14"
@@ -148,16 +148,16 @@ const GenerateStack: FC<{
 const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
   return (
     <>
-      <div className="border rounded-lg shadow-sm flex flex-col gap-1">
-        <div className="flex justify-between items-center px-2 py-4 border-b">
-          <Text variant="med-12">
+      <div className="border rounded-md shadow flex flex-col">
+        <div className="flex justify-between items-center p-3 border-b">
+          <Text variant="med-14">
             Install stack{' '}
             {stack?.versions?.at(0)?.composite_status?.status === 'active'
               ? 'up and running'
               : 'is waiting to run'}
           </Text>
         </div>
-        <div className="px-2 py-4 grid grid-cols-4">
+        <div className="p-6 grid grid-cols-4">
           <StatusBadge
             status={stack?.versions?.at(0)?.composite_status?.status}
             description={
@@ -179,7 +179,7 @@ const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
 
       <div className="flex flex-col gap-2">
         <Text variant="med-14">Setup your install stack</Text>
-        <div className="border rounded-lg shadow-sm p-2 flex flex-col gap-1">
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1">
           <span className="flex justify-between items-center">
             <Text variant="med-12">Install quick link</Text>
             <ClickToCopyButton
@@ -194,6 +194,22 @@ const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
             <Code>{stack?.versions?.at(0)?.quick_link_url}</Code>
           </Link>
         </div>
+
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1 mt-3">
+          <span className="flex justify-between items-center">
+            <Text variant="med-12">Install template link</Text>
+            <ClickToCopyButton
+              textToCopy={stack?.versions?.at(0)?.template_url}
+            />
+          </span>
+          <Link
+            href={stack?.versions?.at(0)?.template_url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Code>{stack?.versions?.at(0)?.template_url}</Code>
+          </Link>
+        </div>
       </div>
 
       <div className="relative">
@@ -205,10 +221,11 @@ const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
 
       <div className="flex flex-col gap-2">
         <Text variant="med-14">Setup your install stack using CLI command</Text>
-        <div className="border rounded-lg shadow-sm p-2 flex flex-col gap-1">
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1">
           <ClickToCopyButton
             className="w-fit self-end"
-            textToCopy={stack?.versions?.at(0)?.quick_link_url}
+            textToCopy={` aws cloudformation create-stack --stack-name [YOUR_STACK_NAME]
+            --template-url ${stack?.versions?.at(0)?.template_url}`}
           />
           <Code>
             aws cloudformation create-stack --stack-name [YOUR_STACK_NAME]
@@ -221,10 +238,11 @@ const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
         <Text variant="med-14">
           Update an existing install stack using CLI command
         </Text>
-        <div className="border rounded-lg shadow-sm p-2 flex flex-col gap-1">
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1">
           <ClickToCopyButton
             className="w-fit self-end"
-            textToCopy={stack?.versions?.at(0)?.quick_link_url}
+            textToCopy={` aws cloudformation update-stack --stack-name [YOUR_STACK_NAME]
+            --template-url ${stack?.versions?.at(0)?.template_url}`}
           />
           <Code>
             aws cloudformation update-stack --stack-name [YOUR_STACK_NAME]
@@ -233,7 +251,7 @@ const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="border p-3 rounded-md shadow flex flex-col gap-2">
         <ConfigurationVariables
           heading="Stack outputs"
           headingVariant="med-14"
