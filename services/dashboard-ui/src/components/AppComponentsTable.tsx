@@ -55,13 +55,13 @@ export interface IAppComponentsTable {
   appId: string
   components: Array<TDataComponent>
   orgId: string
-  depGraph: string
+  configId: string
 }
 
 export const AppComponentsTable: FC<IAppComponentsTable> = ({
   appId,
   components,
-  depGraph,
+  configId,
   orgId,
 }) => {
   const [data, updateData] = useState(parseComponentsToTableData(components))
@@ -159,7 +159,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
             value={globalFilter}
           />
           <div className="flex items-center gap-4">
-            <AppConfigGraph graph={depGraph} />
+            <AppConfigGraph appId={appId} configId={configId} />
             <BuildAllComponentsButton components={components} />
           </div>
         </div>

@@ -31,6 +31,7 @@ export async function getWorkspaceState({
     errorMessage: 'Unable to retrieve workspace state.',
     orgId,
     path: `runners/terraform-workspace/${workspaceId}/states/${stateId}`,
+    abortTimeout: 15000,
   })
 }
 
