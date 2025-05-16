@@ -281,6 +281,11 @@ func extractWorkflowFn(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Pack
 				}
 			case "@id-callback":
 				ret.IDCallback = parts[2]
+			case "@id-template":
+				ret.IDTemplate = strings.Join(parts[2:], " ")
+				if _, err := template.New("workflowID").Parse(ret.IDTemplate); err != nil {
+					return nil, withPos(fset, com.Pos(), fmt.Errorf("@id-template must be a valid Go template string: %s", err))
+				}
 			case "@wait-for-cancellation":
 				var err error
 				ret.WaitForCancellation, err = strconv.ParseBool(parts[2])
@@ -302,6 +307,7 @@ func extractWorkflowFn(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Pack
 			}
 		}
 	}
+
 
 	if ret.IDCallback != "" && ret.IDTemplate != "" {
 		return nil, withPos(fset, fn.Pos(), errors.New("@id-callback and @id-template may not be specified together"))
