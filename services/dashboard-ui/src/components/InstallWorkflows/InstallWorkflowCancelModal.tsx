@@ -6,7 +6,7 @@ import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { Check, XSquare } from '@phosphor-icons/react'
-import { Button } from '@/components/Button'
+import { Button, type TButtonVariant } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
@@ -17,10 +17,14 @@ import type { TInstallWorkflow } from '@/types'
 import { trackEvent, removeSnakeCase } from '@/utils'
 
 interface IInstallWorkflowCancelModal {
+  buttonClassName?: string
+  buttonVariant?: TButtonVariant
   installWorkflow: TInstallWorkflow
 }
 
 export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
+  buttonClassName,
+  buttonVariant,
   installWorkflow,
 }) => {
   const { user } = useUser()
@@ -135,10 +139,12 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
         className={classNames('text-sm !font-medium w-fit', {
           'text-red-800 dark:text-red-500': !hasBeenCanceled,
           'text-red-800/50 dark:text-red-500/50': hasBeenCanceled,
+          [`${buttonClassName}`]: Boolean(buttonClassName),
         })}
         onClick={() => {
           setIsOpen(true)
         }}
+        variant={buttonVariant}
       >
         Cancel
       </Button>
