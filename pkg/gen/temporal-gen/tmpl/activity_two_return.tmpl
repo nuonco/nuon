@@ -2,7 +2,11 @@
 // {{ .FnName }} executes [{{ .BaseFnName }}] within a Temporal activity, waits for the future to complete, then returns the response or error.
 //
 // Temporal enforces that only a value XOR an error will be returned.
+{{ if .IsMethod -}}
+func ({{ .Receiver }}) {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) ({{ .RespType }}, error) {
+{{- else -}}
 func {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) ({{ .RespType }}, error) {
+{{- end }}
 	var _ = {{ .BaseFnSymbol }}
 	// use this ^ for to go-to-definition jumping in your editor
 
