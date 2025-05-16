@@ -13,6 +13,17 @@ export const initialsFromString = (s = '') => {
 export const removeSnakeCase = (str?: string) =>
   str ? str?.replace(/_/g, ' ') : 'unknown'
 
+export const slugifyString = (str: string) =>
+  str
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+
 export const sizeToMbOrGB = (bytes: number): string => {
   const KB = 1024
   const MB = 1024 ** 2 // 1 MB = 1024 * 1024 bytes

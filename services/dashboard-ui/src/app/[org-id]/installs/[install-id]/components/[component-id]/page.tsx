@@ -131,22 +131,27 @@ export default withPageAuthRequired(async function InstallComponent({
                 </Suspense>
               </ErrorBoundary>
             )}
-            {org?.features?.['terraform-workspace'] &&
-            component?.type === 'terraform_module' ? (
-              <ErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <Loading loadingText="Loading latest terraform workspace..." />
-                  }
-                >
-                  <TerraformWorkspace
-                    orgId={orgId}
-                    workspace={installComponent.terraform_workspace}
-                  />
-                </Suspense>
-              </ErrorBoundary>
-            ) : null}
           </Section>
+          {org?.features?.['terraform-workspace'] &&
+          component?.type === 'terraform_module' ? (
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Section heading="Terraform workspace">
+                    <Loading
+                      loadingText="Loading latest terraform workspace..."
+                      variant="stack"
+                    />
+                  </Section>
+                }
+              >
+                <TerraformWorkspace
+                  orgId={orgId}
+                  workspace={installComponent.terraform_workspace}
+                />
+              </Suspense>
+            </ErrorBoundary>
+          ) : null}
 
           {component.dependencies && (
             <Section className="flex-initial" heading="Dependencies">

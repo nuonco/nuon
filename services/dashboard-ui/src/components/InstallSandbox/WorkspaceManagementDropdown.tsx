@@ -19,7 +19,7 @@ export const WorkspaceManagementDropdown: FC<IWorkspaceManagementDropdown> = ({
   return (
     <Dropdown
       className="text-sm !font-medium !p-2 h-[32px]"
-      alignment="left"
+      alignment="right"
       id="mgmt-install"
       text={
         <>
