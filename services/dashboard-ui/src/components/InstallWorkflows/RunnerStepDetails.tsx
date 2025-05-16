@@ -74,12 +74,9 @@ export const RunnerStepDetails: FC<IRunnerStepDetails> = ({
         <>
           {error ? <Notice>{error}</Notice> : null}{' '}
           {runner ? (
-            <>
-              <span className="flex gap-4 items-center">
-                <StatusBadge
-                  description={runner?.status_description}
-                  status={runner?.status}
-                />
+            <div className="flex flex-col border rounded-md shadow">
+              <div className="flex items-center justify-between p-3 border-b">
+                <Text variant="med-14">Install runner</Text>
                 <Link
                   className="text-sm gap-0"
                   href={`/${orgId}/installs/${step?.install_id}/runner`}
@@ -87,9 +84,8 @@ export const RunnerStepDetails: FC<IRunnerStepDetails> = ({
                   View details
                   <CaretRight />
                 </Link>
-              </span>
-
-              <div className="grid grid-cols-4">
+              </div>
+              <div className="p-6 grid grid-cols-4">
                 {runnerHeartbeat ? (
                   <>
                     <StatusBadge
@@ -124,7 +120,7 @@ export const RunnerStepDetails: FC<IRunnerStepDetails> = ({
                   <Text variant="med-12">{platform}</Text>
                 </span>
               </div>
-            </>
+            </div>
           ) : null}
         </>
       )}
