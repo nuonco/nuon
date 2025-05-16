@@ -43,7 +43,7 @@ func (w *Workflows) ExecuteWorkflow(ctx workflow.Context, sreq signals.RequestSi
 	}); err != nil {
 		return err
 	}
-	if err := w.AwaitGenerateWorkflowSteps(ctx, sreq); err != nil {
+	if err := AwaitGenerateWorkflowSteps(ctx, sreq); err != nil {
 		if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: sreq.InstallWorkflowID,
 			Status: app.CompositeStatus{
@@ -70,7 +70,7 @@ func (w *Workflows) ExecuteWorkflow(ctx workflow.Context, sreq signals.RequestSi
 	}
 
 	l.Debug("executing steps for workflow")
-	if err := w.AwaitExecuteWorkflowSteps(ctx, sreq); err != nil {
+	if err := AwaitExecuteWorkflowSteps(ctx, sreq); err != nil {
 		var status app.CompositeStatus
 		switch {
 		case strings.Contains(err.Error(), "workflow cancellation was requested"):

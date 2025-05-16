@@ -4,37 +4,41 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/actions"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/components"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/sandbox"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/stack"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/loop"
 )
 
 func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationCreated:                  w.AwaitCreated,
-		signals.OperationPollDependencies:         w.AwaitPollDependencies,
-		signals.OperationForget:                   w.AwaitForget,
-		signals.OperationReprovisionRunner:        w.AwaitReprovisionRunner,
-		signals.OperationProvisionRunner:          w.AwaitProvisionRunner,
-		signals.OperationProvisionDNS:             w.AwaitProvisionDNS,
-		signals.OperationDeprovisionDNS:           w.AwaitDeprovisionDNS,
-		signals.OperationDeprovisionSandbox:       w.subwfSandbox.AwaitDeprovisionSandbox,
-		signals.OperationReprovisionSandbox:       w.subwfSandbox.AwaitReprovisionSandbox,
-		signals.OperationProvisionSandbox:         w.subwfSandbox.AwaitProvisionSandbox,
-		signals.OperationSyncSecrets:              w.AwaitSyncSecrets,
-		signals.OperationExecuteWorkflow:          w.AwaitExecuteWorkflow,
-		signals.OperationExecuteActionWorkflow:    w.subwfActions.AwaitExecuteActionWorkflow,
-		signals.OperationExecuteDeployComponent:   w.subwfComponents.AwaitExecuteDeployComponent,
-		signals.OperationExecuteTeardownComponent: w.subwfComponents.AwaitExecuteTeardownComponent,
+		signals.OperationCreated:                  AwaitCreated,
+		signals.OperationPollDependencies:         AwaitPollDependencies,
+		signals.OperationForget:                   AwaitForget,
+		signals.OperationReprovisionRunner:        AwaitReprovisionRunner,
+		signals.OperationProvisionRunner:          AwaitProvisionRunner,
+		signals.OperationProvisionDNS:             AwaitProvisionDNS,
+		signals.OperationDeprovisionDNS:           AwaitDeprovisionDNS,
+		signals.OperationDeprovisionSandbox:       sandbox.AwaitDeprovisionSandbox,
+		signals.OperationReprovisionSandbox:       sandbox.AwaitReprovisionSandbox,
+		signals.OperationProvisionSandbox:         sandbox.AwaitProvisionSandbox,
+		signals.OperationSyncSecrets:              AwaitSyncSecrets,
+		signals.OperationExecuteWorkflow:          AwaitExecuteWorkflow,
+		signals.OperationExecuteActionWorkflow:    actions.AwaitExecuteActionWorkflow,
+		signals.OperationExecuteDeployComponent:   components.AwaitExecuteDeployComponent,
+		signals.OperationExecuteTeardownComponent: components.AwaitExecuteTeardownComponent,
 		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
-			w.AwaitRestarted(ctx, req)
+			AwaitRestarted(ctx, req)
 			w.handleSyncActionWorkflowTriggers(ctx, req)
 			return nil
 		},
 		signals.OperationSyncActionWorkflowTriggers:  w.handleSyncActionWorkflowTriggers,
-		signals.OperationGenerateInstallStackVersion: w.subwfStack.AwaitGenerateInstallStackVersion,
-		signals.OperationAwaitInstallStackVersionRun: w.subwfStack.AwaitInstallStackVersionRun,
-		signals.OperationUpdateInstallStackOutputs:   w.subwfStack.AwaitUpdateInstallStackOutputs,
+		signals.OperationGenerateInstallStackVersion: stack.AwaitGenerateInstallStackVersion,
+		signals.OperationAwaitInstallStackVersionRun: stack.AwaitInstallStackVersionRun,
+		signals.OperationUpdateInstallStackOutputs:   stack.AwaitUpdateInstallStackOutputs,
 		signals.OperationAwaitRunnerHealthy:          w.AwaitRunnerHealthy,
 	}
 }

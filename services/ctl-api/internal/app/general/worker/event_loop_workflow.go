@@ -12,9 +12,9 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
 		signals.OperationCreated:             w.created,
 		signals.OperationRestart:             w.restart,
-		signals.OperationPromotion:           w.AwaitPromotion,
-		signals.OperationTerminateEventLoops: w.AwaitTerminateEventLoops,
-		signals.OperationSeed:                w.AwaitSeed,
+		signals.OperationPromotion:           AwaitPromotion,
+		signals.OperationTerminateEventLoops: AwaitTerminateEventLoops,
+		signals.OperationSeed:                AwaitSeed,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{

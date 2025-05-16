@@ -67,7 +67,9 @@ type tvars_activityfn_byid struct {
 }
 
 // ActivityJenny is a jenny that generates a function that calls a provided base function as a Temporal activity, then awaits the response.
-type ActivityJenny struct{}
+type ActivityJenny struct {
+	UseMethods bool
+}
 
 func (w ActivityJenny) JennyName() string {
 	return "ActivityJenny"
@@ -115,7 +117,7 @@ func (w ActivityJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 			}
 			// Injecting {} hardcodes assumption that receiver is struct-kinded
 			basebuf.WriteString(astfmt.Sprint(expr) + "{}).")
-			wv.IsMethod = true
+			wv.IsMethod = w.UseMethods
 			recvVar := bfn.Fn.Recv.List[0].Names[0].Name
 			wv.Receiver = fmt.Sprintf("%s %s", recvVar, astfmt.Sprint(bfn.Fn.Recv.List[0].Type))
 

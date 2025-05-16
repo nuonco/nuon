@@ -11,7 +11,7 @@ import (
 func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
 		// TODO(sdboyer) a handful more need to be moved here from the main package, but doing so is too awkward without changing runtime behavior so we deferred in first pass
-		signals.OperationExecuteActionWorkflow: w.AwaitExecuteActionWorkflow,
+		signals.OperationExecuteActionWorkflow: AwaitExecuteActionWorkflow,
 	}
 }
 

@@ -45,8 +45,6 @@ type Workflows struct {
 	analytics temporalanalytics.Writer
 	templates *cloudformation.Templates
 	db        *gorm.DB
-	// FIXME(sdboyer) remove ASAP, once lifecycle workflows are deprecated
-	wfActions *actions.Workflows
 }
 
 func (w *Workflows) All() []any {

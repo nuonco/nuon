@@ -1,6 +1,10 @@
 
 // {{ .FnName }} executes [{{ .BaseFnName }}] within a Temporal activity, waits for the future to complete, then returns the error, if any.
+{{ if .IsMethod -}}
+func ({{ .Receiver }}) {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) error {
+{{- else -}}
 func {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) error {
+{{- end }}
 	var _ = {{ .BaseFnSymbol }}
 	// use this ^ for to go-to-definition jumping in your editor
 

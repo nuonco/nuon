@@ -36,7 +36,9 @@ type tvars_asactivityfn struct {
 	ParamFields []string
 }
 
-type AsActivityJenny struct{}
+type AsActivityJenny struct {
+	UseMethods bool
+}
 
 func (j AsActivityJenny) JennyName() string {
 	return "AsActivityJenny"
