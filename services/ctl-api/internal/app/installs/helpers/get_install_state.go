@@ -22,9 +22,15 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
 	}
+
+	appCfg, err := h.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
+	}
+
 	is.ID = install.ID
 	is.Name = install.Name
-	is.Inputs = h.toInputState(install.CurrentInstallInputs, redacted)
+	is.Inputs = h.toInputState(install.CurrentInstallInputs, appCfg, redacted)
 	is.Cloud = h.toCloudAccount(install)
 
 	installComps, err := h.GetInstallComponents(ctx, installID)
@@ -144,7 +150,7 @@ func (h *Helpers) toInstallStackState(stack *app.InstallStack) *state.InstallSta
 	return is
 }
 
-func (h *Helpers) toInputState(inputs *app.InstallInputs, redacted bool) *state.InputsState {
+func (h *Helpers) toInputState(inputs *app.InstallInputs, cfg *app.AppConfig, redacted bool) *state.InputsState {
 	inputValues := inputs.Values
 	if redacted {
 		inputValues = inputs.ValuesRedacted
@@ -154,8 +160,14 @@ func (h *Helpers) toInputState(inputs *app.InstallInputs, redacted bool) *state.
 	}
 
 	is := state.NewInputsState()
-	for key, val := range inputValues {
-		is.Inputs[key] = pkggenerics.FromPtrStr(val)
+
+	for _, inp := range cfg.InputConfig.AppInputs {
+		val, ok := inputValues[inp.Name]
+		if !ok {
+			val = &inp.Default
+		}
+
+		is.Inputs[inp.Name] = pkggenerics.FromPtrStr(val)
 	}
 
 	return is
