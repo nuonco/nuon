@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC } from 'react'
+import { Text } from '@/components/Typography'
 
 export interface IDataTable {
   headers: Array<string>
@@ -11,30 +12,25 @@ export const DataTable: FC<IDataTable> = ({ headers, initData }) => {
   const data = initData
 
   return (
-    <div className="flex flex-col gap-8">
-      <table className="table-auto w-full">
-        <thead>
-          <tr className="border-b text-left">
-            {headers.map((header, i) => (
-              <th className="text-sm" key={`header-${i}`}>
-                {header}
-              </th>
-            ))}
-            <th></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {data.map((row, i) => (
-            <tr key={`row-${i}`}>
-              {row.map((td, i) => (
-                <td className="py-2 max-w-24 overflow-hidden" key={`cell-${i}`}>
-                  <>{td}</>
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="overflow-auto">
+      <div
+        className="grid"
+        style={{ gridTemplateColumns: `repeat(${headers.length}, auto)` }}
+      >
+        {headers.map((header, i) => (
+          <div className="py-4 pr-6" key={`header-${i}`}>
+            <Text isMuted>{header}</Text>
+          </div>
+        ))}
+
+        {data.map((row) =>
+          row.map((td, i) => (
+            <div className="py-4 border-t" key={`cell-${i}`}>
+              {td}
+            </div>
+          ))
+        )}
+      </div>
     </div>
   )
 }

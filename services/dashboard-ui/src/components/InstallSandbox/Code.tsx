@@ -1,3 +1,5 @@
+'use client'
+
 import React, { type FC } from 'react'
 import { ClickToCopyButton } from '@/components/ClickToCopy'
 import { Text } from '@/components/Typography'

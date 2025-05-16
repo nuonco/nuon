@@ -1,9 +1,21 @@
 // @ts-nocheck
 'use client'
 
+import dynamic from 'next/dynamic'
 import React, { useState, type FC } from 'react'
+import { Loading } from '@/components/Loading'
 import CodeEditor from '@uiw/react-textarea-code-editor'
-//import JsonViewer from '@andypf/json-viewer/dist/esm/react/JsonViewer'
+const JsonViewer = dynamic(
+  () => import('@andypf/json-viewer/dist/esm/react/JsonViewer'),
+  {
+    loading: () => (
+      <div className="border rounded-md overflow-auto p-1.5">
+        <Loading loadingText="Loading JSON viewer..." />
+      </div>
+    ),
+    ssr: false,
+  }
+) as typeof import('@andypf/json-viewer/dist/esm/react/JsonViewer')
 
 export interface ICodeViewer {
   isEditable?: boolean
@@ -52,15 +64,20 @@ export const CodeViewer: FC<ICodeViewer> = ({
   )
 }
 
-/* export const JsonView = ({ data, ...props }) => (
- *   <JsonViewer
- *     data={data}
- *     {...props}
- *     theme={
- *       window.matchMedia &&
- *       window.matchMedia('(prefers-color-scheme: dark)').matches
- *         ? 'google-dark'
- *         : 'google-light'
- *     }
- *   />
- * ) */
+export const JsonView = ({ data, ...props }) => (
+  <>
+    <div className="border rounded-md overflow-auto">
+      <JsonViewer
+        data={data}
+        {...props}
+        theme={
+          window &&
+          window?.matchMedia &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'google-dark'
+            : 'google-light'
+        }
+      />
+    </div>
+  </>
+)
