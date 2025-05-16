@@ -7,6 +7,7 @@ import { Link } from '@/components/Link'
 import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { StatusBadge } from '@/components/Status'
+import { Text } from '@/components/Typography'
 import type { TSandboxRun } from '@/types'
 import type { IPollStepDetails } from './InstallWorkflowSteps'
 
@@ -56,19 +57,29 @@ export const SandboxStepDetails: FC<IPollStepDetails> = ({
         <>
           {error ? <Notice>{error}</Notice> : null}
           {sandboxRun ? (
-            <span className="flex gap-4 items-center">
-              <StatusBadge
-                description={sandboxRun?.status_description}
-                status={sandboxRun?.status}
-              />
-              <Link
-                className="text-sm gap-0"
-                href={`/${orgId}/installs/${step?.install_id}/sandbox/${sandboxRun?.id}`}
-              >
-                View details
-                <CaretRight />
-              </Link>
-            </span>
+            <div className="flex flex-col border rounded-md shadow">
+              <div className="flex items-center justify-between p-3 border-b">
+                <Text variant="med-14">
+                  Install sandbox {sandboxRun?.run_type}
+                </Text>
+                <Link
+                  className="text-sm gap-0"
+                  href={`/${orgId}/installs/${step?.install_id}/sandbox/${sandboxRun?.id}`}
+                >
+                  View details
+                  <CaretRight />
+                </Link>
+              </div>
+              <div className="p-6">
+                <span className="flex gap-4 items-center">
+                  <StatusBadge
+                    description={sandboxRun?.status_description}
+                    status={sandboxRun?.status}
+                    label="Sandbox run status"
+                  />
+                </span>
+              </div>
+            </div>
           ) : null}
         </>
       )}
