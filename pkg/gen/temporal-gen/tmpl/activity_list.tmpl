@@ -4,7 +4,7 @@
 // {{ .FnName }} returns a slice of function refs to a group of functions for which temporal-gen generated a {{ .TemporalVerb }} wrapper function.
 {{ end -}}
 //
-// This list is intended to be passed passing to the Temporal registration function [go.temporal.io/sdk/worker.{{ .TemporalVerb }}Registry.Register{{ .TemporalVerb }}].
+// This list is intended to be passed to the Temporal registration function [go.temporal.io/sdk/worker.{{ .TemporalVerb }}Registry.Register{{ .TemporalVerb }}].
 func {{ .FnName }}() []any {
     {{- if ne .Receiver "" }}
     t := new({{ .Receiver }})
