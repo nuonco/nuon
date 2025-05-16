@@ -28,27 +28,6 @@ func NewCLI() (*cli, error) {
 		ctx: context.Background(),
 	}
 
-	if err := c.initConfig(); err != nil {
-		return c, errors.Wrap(err, "unable to initialize config")
-	}
-
-	if err := c.initAPIClient(); err != nil {
-		return c, errors.Wrap(err, "unable to initialize api client")
-	}
-
-	// TODO: revisit how we handle the version notification for users
-	// if err := c.checkCLIVersion(); err != nil {
-	// 	return err
-	// }
-
-	if err := c.initSentry(); err != nil {
-		return c, errors.Wrap(err, "unable to initialize sentry")
-	}
-
-	if err := c.initAnalytics(); err != nil {
-		return c, errors.Wrap(err, "unable to initialize analytics")
-	}
-
 	return c, nil
 }
 
@@ -64,11 +43,31 @@ func (c *cli) persistentPreRunE(cmd *cobra.Command, args []string) error {
 }
 
 func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
+	if err := c.initConfig(); err != nil {
+		return errors.Wrap(err, "unable to initialize config")
+	}
+
+	if err := c.initAPIClient(); err != nil {
+		return errors.Wrap(err, "unable to initialize api client")
+	}
+
 	if cmd.Use != "login" {
 		if err := c.initUser(); err != nil {
 			return errors.Wrap(err, "unable to initialize user")
 		}
 	}
+
+	if err := c.initSentry(); err != nil {
+		return errors.Wrap(err, "unable to initialize sentry")
+	}
+
+	if err := c.initAnalytics(); err != nil {
+		return errors.Wrap(err, "unable to initialize analytics")
+	}
+
+	//if err := c.checkCLIVersion(); err != nil {
+	//return err
+	//}
 
 	c.cfg.BindCobraFlags(cmd)
 	return nil
