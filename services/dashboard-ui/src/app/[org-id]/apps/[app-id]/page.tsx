@@ -201,10 +201,5 @@ const LoadAppConfigGraph: FC<{ app: TApp; configId: string }> = async ({
   app,
   configId,
 }) => {
-  const { data } = await nueQueryData<string>({
-    orgId: app?.org_id,
-    path: `apps/${app?.id}/config/${configId}/graph`,
-  })
-
-  return <AppConfigGraph graph={data} />
+  return <AppConfigGraph appId={app?.id} configId={configId} />
 }
