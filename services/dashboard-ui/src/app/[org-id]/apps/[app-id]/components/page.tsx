@@ -87,11 +87,6 @@ const LoadAppComponents: FC<{
   orgId: string
 }> = async ({ appId, configId, orgId }) => {
   const components = await getAppComponents({ appId, orgId })
-  const { data } = await nueQueryData<string>({
-    orgId: orgId,
-    path: `apps/${appId}/config/${configId}/graph`,
-  })
-
   const hydratedComponents = await Promise.all(
     components.map(async (comp, _, arr) => {
       const [config, builds] = await Promise.all([
@@ -117,7 +112,7 @@ const LoadAppComponents: FC<{
     <AppComponentsTable
       components={hydratedComponents}
       appId={appId}
-      depGraph={data}
+      configId={configId}
       orgId={orgId}
     />
   ) : (
