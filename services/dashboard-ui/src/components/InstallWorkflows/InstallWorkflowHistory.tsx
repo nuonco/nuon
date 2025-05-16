@@ -5,6 +5,7 @@ import { DateTime } from 'luxon'
 import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect } from 'react'
 import {
+  CaretRight,
   ClockCountdown,
   CheckCircle,
   XCircle,
@@ -18,6 +19,7 @@ import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import type { TInstallWorkflow } from '@/types'
 import { POLL_DURATION, removeSnakeCase, sentanceCase } from '@/utils'
+import { InstallWorkflowCancelModal } from './InstallWorkflowCancelModal'
 
 function formatToRelativeDay(isoDate: string) {
   const inputDate = DateTime.fromISO(isoDate).startOf('day')
@@ -89,32 +91,75 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
             {formatToRelativeDay(k)}
           </Text>
 
-          <div>
-            {workflowHistory[k].map((iw) => (
-              <Link
-                key={iw?.id}
-                className="flex justify-between w-full history-event"
-                href={`/${org?.id}/installs/${iw?.install_id}/history/${iw?.id}`}
-                variant="ghost"
-              >
-                <span className="flex gap-4">
-                  <YAStatus status={iw.status.status} />
-                  <span>
-                    <Text variant="med-12">
-                      {sentanceCase(removeSnakeCase(iw?.type))}{' '}
-                      {iw?.status?.status}
-                    </Text>
-                    <Text variant="mono-12">{iw?.install_id}</Text>
-                  </span>
-                </span>
-                <Text
-                  variant="reg-12"
-                  className="text-cool-grey-600 dark:text-white/70 self-start justify-self-end"
+          <div className="flex flex-col gap-3">
+            {workflowHistory[k].map((iw) =>
+              iw?.finished ? (
+                <Link
+                  key={iw?.id}
+                  className="flex justify-between w-full history-event"
+                  href={`/${org?.id}/installs/${iw?.install_id}/history/${iw?.id}`}
+                  variant="ghost"
                 >
-                  <Time time={iw.created_at} format="relative" />
-                </Text>
-              </Link>
-            ))}
+                  <span className="flex gap-4">
+                    <YAStatus status={iw.status.status} />
+                    <span>
+                      <Text variant="med-12">
+                        {sentanceCase(removeSnakeCase(iw?.type))}{' '}
+                        {iw?.status?.status}
+                      </Text>
+                      <Text variant="mono-12">{iw?.install_id}</Text>
+                    </span>
+                  </span>
+                  <Text
+                    variant="reg-12"
+                    className="text-cool-grey-600 dark:text-white/70 self-end justify-self-end"
+                  >
+                    <Time time={iw.created_at} format="relative" />
+                  </Text>
+                </Link>
+              ) : (
+                <div
+                  key={iw?.id}
+                  className="flex justify-between w-full history-event p-2"
+                >
+                  <span className="flex gap-4">
+                    <YAStatus status={iw.status.status} />
+                    <span>
+                      <Link
+                        href={`/${org?.id}/installs/${iw?.install_id}/history/${iw?.id}`}
+                      >
+                        <Text variant="med-12">
+                          {sentanceCase(removeSnakeCase(iw?.type))}{' '}
+                          {iw?.status?.status}
+                        </Text>
+                      </Link>
+                      <Text variant="mono-12">{iw?.install_id}</Text>
+                    </span>
+                  </span>
+                  <div className="flex flex-col gap-0">
+                    <div className="flex items-center gap-4">
+                      <InstallWorkflowCancelModal
+                        buttonClassName="!px-2 !py-0.5"
+                        buttonVariant="ghost"
+                        installWorkflow={iw}
+                      />
+                      <Link
+                        className="text-sm font-medium"
+                        href={`/${org?.id}/installs/${iw?.install_id}/history/${iw?.id}`}
+                      >
+                        View details <CaretRight />
+                      </Link>
+                    </div>
+                    <Text
+                      variant="reg-12"
+                      className="text-cool-grey-600 dark:text-white/70 self-end"
+                    >
+                      <Time time={iw.created_at} format="relative" />
+                    </Text>
+                  </div>
+                </div>
+              )
+            )}
           </div>
         </div>
       ))}
