@@ -21,19 +21,19 @@ type OrgEventLoopRequest struct {
 
 func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
 	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		sigs.OperationCreated:            w.AwaitCreated,
-		sigs.OperationProvision:          w.AwaitProvision,
-		sigs.OperationReprovision:        w.AwaitReprovision,
-		sigs.OperationDeprovision:        w.AwaitDeprovision,
-		sigs.OperationForceDeprovision:   w.AwaitForceDeprovision,
-		sigs.OperationRestart:            w.AwaitRestart,
-		sigs.OperationRestartRunners:     w.AwaitRestartRunners,
-		sigs.OperationInviteCreated:      w.AwaitInviteUser,
-		sigs.OperationInviteAccepted:     w.AwaitInviteAccepted,
-		sigs.OperationForceDelete:        w.AwaitForceDelete,
-		sigs.OperationDelete:             w.AwaitDelete,
-		sigs.OperationForceSandboxMode:   w.AwaitForceSandboxMode,
-		sigs.OperationEnableFeatureFlags: w.AwaitEnableFeatureFlags,
+		sigs.OperationCreated:            AwaitCreated,
+		sigs.OperationProvision:          AwaitProvision,
+		sigs.OperationReprovision:        AwaitReprovision,
+		sigs.OperationDeprovision:        AwaitDeprovision,
+		sigs.OperationForceDeprovision:   AwaitForceDeprovision,
+		sigs.OperationRestart:            AwaitRestart,
+		sigs.OperationRestartRunners:     AwaitRestartRunners,
+		sigs.OperationInviteCreated:      AwaitInviteUser,
+		sigs.OperationInviteAccepted:     AwaitInviteAccepted,
+		sigs.OperationForceDelete:        AwaitForceDelete,
+		sigs.OperationDelete:             AwaitDelete,
+		sigs.OperationForceSandboxMode:   AwaitForceSandboxMode,
+		sigs.OperationEnableFeatureFlags: AwaitEnableFeatureFlags,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{

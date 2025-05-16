@@ -61,7 +61,7 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 				return
 			}
 
-			if err := w.AwaitExecuteWorkflowStep(ctx, sreq); err != nil {
+			if err := AwaitExecuteWorkflowStep(ctx, sreq); err != nil {
 				if uerr := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStatus(ctx, statusactivities.UpdateStatusRequest{
 					ID: sreq.InstallWorkflowID,
 					Status: app.CompositeStatus{

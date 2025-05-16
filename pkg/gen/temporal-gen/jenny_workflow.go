@@ -53,7 +53,9 @@ type tvars_workflowfn struct {
 }
 
 // WorkflowJenny is a jenny that generates a function that calls a provided base function as a Temporal workflow, and await the result.
-type WorkflowJenny struct{}
+type WorkflowJenny struct {
+	UseMethods bool
+}
 
 func (j WorkflowJenny) JennyName() string {
 	return "WorkflowJenny"
@@ -87,7 +89,7 @@ func (j WorkflowJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 			}
 			// Injecting {} hardcodes assumption that receiver is struct-kinded
 			basebuf.WriteString(astfmt.Sprint(expr) + "{}).")
-			tvars.IsMethod = true
+			tvars.IsMethod = j.UseMethods
 			recvVar := bfn.Fn.Recv.List[0].Names[0].Name
 			tvars.Receiver = fmt.Sprintf("%s %s", recvVar, astfmt.Sprint(bfn.Fn.Recv.List[0].Type))
 

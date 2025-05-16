@@ -65,7 +65,7 @@ func (w *Workflows) HealthcheckJobRunner(ctx workflow.Context, req *HealthcheckJ
 	}
 
 	// NOTE(fd): this should always fire even if the are other jobs in flight/executing.
-	w.AwaitProcessJob(ctx, *request)
+	AwaitProcessJob(ctx, *request)
 	workflow.Sleep(ctx, time.Duration(5)*time.Second) // sleep so the outputs "flush"
 
 	// get the job's execution and the outputs

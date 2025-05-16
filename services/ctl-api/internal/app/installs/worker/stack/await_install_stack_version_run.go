@@ -22,7 +22,7 @@ import (
 // @temporal-gen workflow
 // @execution-timeout 24h
 // @task-timeout 30s
-func (w *Workflows) AwaitInstallStackVersionRun(ctx workflow.Context, sreq signals.RequestSignal) error {
+func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.RequestSignal) error {
 	version, err := activities.AwaitGetInstallStackVersionByInstallID(ctx, sreq.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install version")

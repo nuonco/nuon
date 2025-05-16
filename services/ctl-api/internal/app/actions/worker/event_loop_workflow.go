@@ -11,11 +11,11 @@ import (
 
 func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
 	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationCreated:          w.AwaitCreated,
-		signals.OperationRestart:          w.AwaitRestart,
-		signals.OperationPollDependencies: w.AwaitPollDependencies,
-		signals.OperationDelete:           w.AwaitDelete,
-		signals.OperationConfigCreated:    w.AwaitConfigCreated,
+		signals.OperationCreated:          AwaitCreated,
+		signals.OperationRestart:          AwaitRestart,
+		signals.OperationPollDependencies: AwaitPollDependencies,
+		signals.OperationDelete:           AwaitDelete,
+		signals.OperationConfigCreated:    AwaitConfigCreated,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
