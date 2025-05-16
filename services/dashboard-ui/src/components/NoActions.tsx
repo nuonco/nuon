@@ -8,7 +8,7 @@ export const NoActions: FC = () => {
     <div className="flex flex-auto flex-col items-center justify-center -translate-y-6">
       <Empty
         emptyTitle="No actions yet"
-        emptyMessage="Save time by configuring your aciton workflows. Check out our resources."
+        emptyMessage="Save time by configuring your action workflows. Check out our resources."
         variant="actions"
       />
       <br />
