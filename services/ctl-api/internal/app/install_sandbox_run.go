@@ -32,6 +32,7 @@ const (
 	SandboxRunStatusReprovisioning SandboxRunStatus = "reprovisioning"
 	SandboxRunStatusAccessError    SandboxRunStatus = "access_error"
 	SandboxRunStatusUnknown        SandboxRunStatus = "unknown"
+	SandboxRunStatusCancelled      SandboxRunStatus = "cancelled"
 	SandboxRunStatusEmpty          SandboxRunStatus = "empty"
 )
 

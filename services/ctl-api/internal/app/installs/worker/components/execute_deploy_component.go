@@ -53,6 +53,13 @@ func (w *Workflows) ExecuteDeployComponent(ctx workflow.Context, sreq signals.Re
 		}
 		sreq.DeployID = installDeploy.ID
 	}
+	defer func() {
+		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
+			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer updateCtxCancel()
+			w.updateDeployStatus(updateCtx, installDeploy.ID, app.InstallDeployStatusCancelled, "deploy cancelled")
+		}
+	}()
 
 	err = w.pollForDeployableBuild(ctx, installDeploy.ID, installDeploy.ComponentBuildID)
 	if err != nil {

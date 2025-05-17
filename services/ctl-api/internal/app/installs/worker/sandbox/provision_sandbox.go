@@ -10,7 +10,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
@@ -37,18 +36,20 @@ func (w *Workflows) ProvisionSandbox(ctx workflow.Context, sreq signals.RequestS
 	if err != nil {
 		return fmt.Errorf("unable to create install: %w", err)
 	}
-	enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureIndependentRunner))
-	if err != nil {
-		return err
-	}
-	if enabled {
-		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
-			StepID:         sreq.WorkflowStepID,
-			StepTargetID:   installRun.ID,
-			StepTargetType: plugins.TableName(w.db, installRun),
-		}); err != nil {
-			return errors.Wrap(err, "unable to update install action workflow")
+	defer func() {
+		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
+			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer updateCtxCancel()
+			w.updateRunStatus(updateCtx, installRun.ID, app.SandboxRunStatusCancelled, "install sandbox run cancelled")
 		}
+	}()
+
+	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+		StepID:         sreq.WorkflowStepID,
+		StepTargetID:   installRun.ID,
+		StepTargetType: plugins.TableName(w.db, installRun),
+	}); err != nil {
+		return errors.Wrap(err, "unable to update install action workflow")
 	}
 
 	defer func() {
@@ -81,18 +82,6 @@ func (w *Workflows) ProvisionSandbox(ctx workflow.Context, sreq signals.RequestS
 		return err
 	}
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "install resources provisioned")
-
-	// provision the runner
-	if !enabled {
-		l.Info("polling runner until active")
-		w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-			Type: runnersignals.OperationProvision,
-		})
-		if err := w.pollRunner(ctx, install.RunnerGroup.Runners[0].ID); err != nil {
-			return err
-		}
-
-	}
 
 	l.Info("provision was successful")
 	return nil
