@@ -36,7 +36,9 @@ func (h *handler) writePolicies(ctx context.Context) error {
 	}
 
 	l.Debug("setting kyverno_policy_dir var", zap.String("value", policyPath))
-	h.state.plan.Vars["kyverno_policy_dir"] = policyPath
+	if h.state.plan.Vars != nil {
+		h.state.plan.Vars["kyverno_policy_dir"] = policyPath
+	}
 
 	return nil
 }
