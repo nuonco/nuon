@@ -67,7 +67,7 @@ export function getStepType(
       stepDetails = (
         <div className="flex flex-col gap-2">
           <Text variant="reg-14">
-            Step doesn$apos;t have any details to show.
+            Step doesn&apos;t have any details to show.
           </Text>
         </div>
       )
