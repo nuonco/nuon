@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"strings"
+	"fmt"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -22,6 +22,14 @@ func (w *Workflows) ExecuteWorkflow(ctx workflow.Context, sreq signals.RequestSi
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil
+	}
+
+	wkflow, err := activities.AwaitGetInstallWorkflowByID(ctx, sreq.InstallWorkflowID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get install workflow")
+	}
+	if wkflow.Status.Status == app.StatusCancelled {
+		return errors.New("workflow already cancelled")
 	}
 
 	if err := activities.AwaitUpdateWorkflowStartedAtByID(ctx, sreq.InstallWorkflowID); err != nil {
@@ -72,18 +80,17 @@ func (w *Workflows) ExecuteWorkflow(ctx workflow.Context, sreq signals.RequestSi
 	l.Debug("executing steps for workflow")
 	if err := AwaitExecuteWorkflowSteps(ctx, sreq); err != nil {
 		var status app.CompositeStatus
-		switch {
-		case strings.Contains(err.Error(), "workflow cancellation was requested"):
-			// string sniffing. yuck.
+		switch status.Status {
+		case app.StatusCancelled:
 			status = app.CompositeStatus{
 				Status:                 app.StatusCancelled,
 				StatusHumanDescription: "workflow was cancelled",
 			}
-			err = w.execCancelled(ctx, sreq.InstallWorkflowID)
-			if err != nil {
-				return err
-			}
 
+			cancelErr := w.cancelWorkflowChildren(ctx, sreq.InstallWorkflowID)
+			if cancelErr != nil {
+				return fmt.Errorf("unable to cancel steps: %w: %w", cancelErr, err)
+			}
 		default:
 			status = app.CompositeStatus{
 				Status:                 app.StatusError,
@@ -93,6 +100,7 @@ func (w *Workflows) ExecuteWorkflow(ctx workflow.Context, sreq signals.RequestSi
 				},
 			}
 		}
+
 		if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID:     sreq.InstallWorkflowID,
 			Status: status,

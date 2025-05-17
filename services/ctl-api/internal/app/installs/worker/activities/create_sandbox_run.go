@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -21,6 +22,11 @@ func (a *Activities) CreateSandboxRun(ctx context.Context, req CreateSandboxRunR
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)
+	}
+
+	appCfg, err := a.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get full app config")
 	}
 
 	var status app.SandboxRunStatus
@@ -39,8 +45,7 @@ func (a *Activities) CreateSandboxRun(ctx context.Context, req CreateSandboxRunR
 		OrgID:              install.OrgID,
 		RunType:            req.RunType,
 		InstallID:          req.InstallID,
-		CreatedByID:        install.CreatedByID,
-		AppSandboxConfigID: install.AppSandboxConfigID,
+		AppSandboxConfigID: appCfg.SandboxConfig.ID,
 		Status:             status,
 	}
 
