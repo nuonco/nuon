@@ -31,6 +31,23 @@ func (w *Workflows) ExecuteWorkflowStep(ctx workflow.Context, sreq signals.Reque
 		return nil
 	}
 
+	defer func() {
+		// NOTE(jm): this should be a helper function.
+		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
+			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer cancelCtxCancel()
+
+			if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
+				ID: sreq.WorkflowStepID,
+				Status: app.CompositeStatus{
+					Status: app.StatusCancelled,
+				},
+			}); err != nil {
+				l.Error("unable to update step status on cancellation", zap.Error(err))
+			}
+		}
+	}()
+
 	if err := activities.AwaitUpdateWorkflowStepStartedAtByID(ctx, sreq.WorkflowStepID); err != nil {
 		return err
 	}
