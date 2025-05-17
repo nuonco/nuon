@@ -4,11 +4,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func (w *Workflows) execCancelled(ctx workflow.Context, installWorkflowID string) error {
+func (w *Workflows) cancelWorkflowChildren(ctx workflow.Context, installWorkflowID string) error {
 	wkflow, err := activities.AwaitGetInstallWorkflowByID(ctx, installWorkflowID)
 	if err != nil {
 		return err
