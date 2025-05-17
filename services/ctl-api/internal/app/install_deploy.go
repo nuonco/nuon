@@ -46,6 +46,7 @@ const (
 	InstallDeployStatusPlanning  InstallDeployStatus = "planning"
 	InstallDeployStatusSyncing   InstallDeployStatus = "syncing"
 	InstallDeployStatusExecuting InstallDeployStatus = "executing"
+	InstallDeployStatusCancelled InstallDeployStatus = "cancelled"
 	InstallDeployStatusUnknown   InstallDeployStatus = "unknown"
 	InstallDeployStatusPending   InstallDeployStatus = "pending"
 	InstallDeployStatusQueued    InstallDeployStatus = "queued"
