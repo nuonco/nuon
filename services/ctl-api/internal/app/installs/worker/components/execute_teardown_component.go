@@ -44,6 +44,13 @@ func (w *Workflows) ExecuteTeardownComponent(ctx workflow.Context, sreq signals.
 		return fmt.Errorf("unable to create install deploy: %w", err)
 	}
 	sreq.DeployID = installDeploy.ID
+	defer func() {
+		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
+			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer updateCtxCancel()
+			w.updateDeployStatus(updateCtx, installDeploy.ID, app.InstallDeployStatusCancelled, "teardown cancelled")
+		}
+	}()
 
 	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         sreq.WorkflowStepID,
