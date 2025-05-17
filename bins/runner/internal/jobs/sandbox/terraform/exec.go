@@ -21,16 +21,16 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	hlog := log.NewHClog(l)
 
+	if err := p.writePolicies(ctx); err != nil {
+		return errors.Wrap(err, "unable to write policies")
+	}
+
 	wkspace, err := p.getWorkspace()
 	if err != nil {
 		p.writeErrorResult(ctx, "load terraform workspace", err)
 		return fmt.Errorf("unable to create workspace from config: %w", err)
 	}
 	p.state.tfWorkspace = wkspace
-
-	if err := p.writePolicies(ctx); err != nil {
-		return errors.Wrap(err, "unable to write policies")
-	}
 
 	tfRun, err := run.New(p.v, run.WithWorkspace(wkspace),
 		run.WithLogger(hlog),
