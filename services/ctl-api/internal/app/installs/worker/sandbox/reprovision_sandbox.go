@@ -37,6 +37,13 @@ func (w *Workflows) ReprovisionSandbox(ctx workflow.Context, sreq signals.Reques
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create sandbox run")
 		return fmt.Errorf("unable to create install: %w", err)
 	}
+	defer func() {
+		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
+			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer updateCtxCancel()
+			w.updateRunStatus(updateCtx, installRun.ID, app.SandboxRunStatusCancelled, "install sandbox run cancelled")
+		}
+	}()
 
 	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         sreq.WorkflowStepID,

@@ -1,8 +1,6 @@
 package worker
 
 import (
-	"fmt"
-
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -31,6 +29,23 @@ func (w *Workflows) ExecuteWorkflow(ctx workflow.Context, sreq signals.RequestSi
 	if wkflow.Status.Status == app.StatusCancelled {
 		return errors.New("workflow already cancelled")
 	}
+
+	defer func() {
+		// NOTE(jm): this should be a helper function.
+		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
+			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer cancelCtxCancel()
+
+			if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStatus(cancelCtx, statusactivities.UpdateStatusRequest{
+				ID: sreq.InstallWorkflowID,
+				Status: app.CompositeStatus{
+					Status: app.StatusCancelled,
+				},
+			}); err != nil {
+				l.Error("unable to update status on cancellation", zap.Error(err))
+			}
+		}
+	}()
 
 	if err := activities.AwaitUpdateWorkflowStartedAtByID(ctx, sreq.InstallWorkflowID); err != nil {
 		return err
@@ -79,26 +94,12 @@ func (w *Workflows) ExecuteWorkflow(ctx workflow.Context, sreq signals.RequestSi
 
 	l.Debug("executing steps for workflow")
 	if err := AwaitExecuteWorkflowSteps(ctx, sreq); err != nil {
-		var status app.CompositeStatus
-		switch status.Status {
-		case app.StatusCancelled:
-			status = app.CompositeStatus{
-				Status:                 app.StatusCancelled,
-				StatusHumanDescription: "workflow was cancelled",
-			}
-
-			cancelErr := w.cancelWorkflowChildren(ctx, sreq.InstallWorkflowID)
-			if cancelErr != nil {
-				return fmt.Errorf("unable to cancel steps: %w: %w", cancelErr, err)
-			}
-		default:
-			status = app.CompositeStatus{
-				Status:                 app.StatusError,
-				StatusHumanDescription: "error while executing steps",
-				Metadata: map[string]any{
-					"error_message": err.Error(),
-				},
-			}
+		status := app.CompositeStatus{
+			Status:                 app.StatusError,
+			StatusHumanDescription: "error while executing steps",
+			Metadata: map[string]any{
+				"error_message": err.Error(),
+			},
 		}
 
 		if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStatus(ctx, statusactivities.UpdateStatusRequest{
