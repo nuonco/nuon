@@ -17,6 +17,8 @@ import (
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
+var WorkflowCancellationErr = fmt.Errorf("workflow cancelled")
+
 func ExecuteWorkflowStepsWorkflowID(req signals.RequestSignal) string {
 	return fmt.Sprintf("%s-execute-workflow-steps", req.WorkflowID(req.ID))
 }
@@ -29,6 +31,10 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 	wkflow, err := activities.AwaitGetInstallWorkflowByID(ctx, sreq.InstallWorkflowID)
 	if err != nil {
 		return err
+	}
+
+	if wkflow.Status.Status == app.StatusCancelled {
+		return WorkflowCancellationErr
 	}
 
 	steps, err := activities.AwaitGetInstallWorkflowsStepsByInstallWorkflowID(ctx, sreq.InstallWorkflowID)
@@ -98,8 +104,7 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 		if cancel != nil {
 			var reason string
 			if cancel != nil {
-				reason = "workflow cancellation was requested"
-				steperr = errors.New(reason)
+				steperr = WorkflowCancellationErr
 
 				// Necessary in order to act after a cancellation
 				ctx, _ = workflow.NewDisconnectedContext(ctx)

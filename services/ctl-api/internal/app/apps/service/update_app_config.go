@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type UpdateAppConfigRequest struct {
@@ -68,11 +67,6 @@ func (s *service) UpdateAppConfig(ctx *gin.Context) {
 }
 
 func (s *service) updateAppConfig(ctx context.Context, appConfigID string, req *UpdateAppConfigRequest) (*app.AppConfig, error) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	var cfg app.AppConfig
 	if err := s.db.WithContext(ctx).
 		Where("id = ?", appConfigID).
@@ -94,18 +88,16 @@ func (s *service) updateAppConfig(ctx context.Context, appConfigID string, req *
 		return nil, fmt.Errorf("app config not found %s %w", appConfigID, gorm.ErrRecordNotFound)
 	}
 
-	if !org.Features[string(app.OrgFeatureDevCommand)] {
-		if req.Status == app.AppConfigStatusActive {
-			if res := s.db.WithContext(ctx).
-				Model(&app.Install{}).
-				Where(app.Install{
-					AppID: cfg.AppID,
-				}).
-				Updates(app.Install{
-					AppConfigID: appConfigID,
-				}); res.Error != nil {
-				return nil, errors.Wrap(res.Error, "unable to update installations with new config")
-			}
+	if req.Status == app.AppConfigStatusActive {
+		if res := s.db.WithContext(ctx).
+			Model(&app.Install{}).
+			Where(app.Install{
+				AppID: cfg.AppID,
+			}).
+			Updates(app.Install{
+				AppConfigID: appConfigID,
+			}); res.Error != nil {
+			return nil, errors.Wrap(res.Error, "unable to update installations with new config")
 		}
 	}
 
