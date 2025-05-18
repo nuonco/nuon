@@ -55,6 +55,7 @@ output "org_iam_role_name_templates" {
 # outputs for working with the org's account ECR registry
 output "ecr" {
   value = {
+    account_id = local.org_account_id
     registry_arn = "arn:aws:ecr:${local.region}:${local.org_account_id}:repository",
     region       = local.region
     registry_id  = local.org_account_id
