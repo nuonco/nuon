@@ -99,13 +99,6 @@ func (w *Loop[SignalType, ReqSig]) handleSignal(ctx workflow.Context, wkflowReq 
 		"status": status,
 	}, defaultTags)
 
-	switch status {
-	case "error", "panic":
-		errs.ReportToSentry(err, &errs.SentryErrOptions{
-			Tags: tags,
-		})
-	}
-
 	dur := workflow.Now(ctx).Sub(startTS)
 
 	w.MW.Timing(ctx, "event_loop.signal_duration", dur, metrics.ToTags(tags)...)

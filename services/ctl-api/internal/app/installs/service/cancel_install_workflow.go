@@ -46,7 +46,7 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	if wf.Status.Status == app.StatusCancelled {
+	if wf.Status.Status == app.StatusPending {
 		if err := s.cancelInstallWorkflow(ctx, wf.ID); err != nil {
 			ctx.Error(errors.Wrap(err, "unable to cancel workflow"))
 			return
@@ -54,7 +54,7 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 	}
 
 	if wf.Status.Status == app.StatusInProgress {
-		id := fmt.Sprintf("event-loop-%s", wf.InstallID)
+		id := fmt.Sprintf("sig-execute-workflow-%s", wf.InstallID)
 		err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to cancel install workflow: %w", err))
