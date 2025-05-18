@@ -98,3 +98,5 @@ You can now cancel workflows from the history page.
 * Fixed a bug where manual env-var overrides on an action run were not respected.
 * Fixed a bug where `current-inputs` would show all historical inputs.
 * Fixed a bug where you could not update an input with an install name (needed an install id), via the CLI.
+* Fixed a bug where cancelling future workflows did not give the expected behavior.
+* Fixed a bug where cancelling an in-progress workflow left a deploy, sandbox run or other in an in-progress status.
