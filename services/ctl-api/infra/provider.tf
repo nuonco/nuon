@@ -59,3 +59,16 @@ provider "aws" {
     }
   }
 }
+
+provider "aws" {
+  region = local.vars.region
+  alias  = "orgs"
+
+  assume_role {
+    role_arn = "arn:aws:iam::${local.accounts["orgs-${var.env}"].id}:role/terraform"
+  }
+
+  default_tags {
+    tags = local.tags
+  }
+}
