@@ -14,10 +14,10 @@ import {
   InstallManagementDropdown,
   Link,
   Loading,
+  Notice,
   ReprovisionSandboxModal,
   SandboxHistory,
   Section,
-  SectionHeader,
   Text,
   Time,
   ClickToCopyButton,
@@ -31,6 +31,8 @@ import {
   getRunnerJob,
   getOrg,
 } from '@/lib'
+import type { TAppConfig } from '@/types'
+import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
@@ -117,10 +119,10 @@ export default withPageAuthRequired(async function InstallComponent({
                   />
                 }
               >
-                <AppSandboxConfig sandboxConfig={install?.app_sandbox_config} />
-                <AppSandboxVariables
-                  variables={install?.app_sandbox_config?.variables}
-                  isNotTruncated
+                <LoadSandboxConfig
+                  appId={install?.app_id}
+                  appConfigId={install?.app_config_id}
+                  orgId={orgId}
                 />
               </Suspense>
             </ErrorBoundary>
@@ -193,6 +195,29 @@ export default withPageAuthRequired(async function InstallComponent({
     </DashboardContent>
   )
 })
+
+const LoadSandboxConfig: FC<{
+  appId: string
+  appConfigId: string
+  orgId: string
+}> = async ({ appId, appConfigId, orgId }) => {
+  const { data, error } = await nueQueryData<TAppConfig>({
+    orgId,
+    path: `apps/${appId}/config/${appConfigId}?recurse=true`,
+  })
+
+  return error ? (
+    <Notice>{error?.error}</Notice>
+  ) : (
+    <>
+      <AppSandboxConfig sandboxConfig={data?.sandbox} />
+      <AppSandboxVariables
+        variables={data?.sandbox?.variables}
+        isNotTruncated
+      />
+    </>
+  )
+}
 
 const LoadSandboxHistory: FC<{
   installId: string
