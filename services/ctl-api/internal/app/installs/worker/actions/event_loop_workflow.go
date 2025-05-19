@@ -15,7 +15,7 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 	}
 }
 
-func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
+func (w *Workflows) ActionEventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
 	handlers := w.getHandlers()
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
 		Cfg:              w.cfg,
