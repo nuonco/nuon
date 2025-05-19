@@ -13,7 +13,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/actions"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
 func actionWorkflowTriggerWorkflowID(installID string, actionWorkflowID string) string {
@@ -41,9 +40,6 @@ func (w *Workflows) ActionWorkflowTriggers(ctx workflow.Context, sreq signals.Re
 			return errors.Wrap(err, "unable to sync action workflow trigger")
 		}
 	}
-
-	l, _ := log.WorkflowLogger(ctx)
-	l.Info("waiting until bottom of workflow")
 
 	if err := workflow.Await(ctx, func() bool {
 		return ctx.Err() != nil

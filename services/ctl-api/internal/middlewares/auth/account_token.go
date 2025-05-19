@@ -34,7 +34,7 @@ func (m *middleware) fetchAccountToken(ctx context.Context, token string) (*app.
 
 	// make sure this is not an expired token
 	if time.Now().After(userToken.ExpiresAt) {
-		return nil, stderr.ErrUser{
+		return nil, stderr.ErrAuthentication{
 			Err:         fmt.Errorf("token is expired"),
 			Description: "Please get a new token from the Nuon dashboard",
 		}
