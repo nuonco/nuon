@@ -12,6 +12,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
@@ -247,6 +248,20 @@ func (i *RunnerJob) Views(db *gorm.DB) []migrations.View {
 		{
 			Name: views.DefaultViewName(db, &RunnerJob{}, 1),
 			SQL:  viewsql.RunnerJobViewV1,
+		},
+	}
+}
+
+func (a *RunnerJob) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &RunnerJob{}, "find_type"),
+			Columns: []string{
+				"runner_id",
+				"type",
+				"deleted_at",
+				"created_at DESC",
+			},
 		},
 	}
 }
