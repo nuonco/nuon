@@ -27,14 +27,14 @@ export const ToolTip: FC<IToolTip> = ({
         [`${parentClassName}`]: Boolean(parentClassName),
       })}>
         <span
-          className={classNames('tooltip-wrapper', {
+          className={classNames('tooltip-wrapper !z-20', {
             [`${alignment}`]: true,
             [`${position}`]: true,
           })}
         >
           <div
             className={classNames(
-              'bg-dark text-light dark:bg-light dark:text-dark text-sm px-2 py-1.5 rounded drop-shadow-md max-w-96 '
+              'bg-dark text-light dark:bg-light dark:text-dark text-sm px-2 py-1.5 rounded drop-shadow-md max-w-96'
             )}
           >
             {tipContent}
