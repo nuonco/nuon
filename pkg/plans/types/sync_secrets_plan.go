@@ -7,7 +7,8 @@ import (
 )
 
 type KubernetesSecretSync struct {
-	SecretARN string `json:"secret_arn"`
+	SecretARN  string `json:"secret_arn"`
+	SecretName string `json:"secret_name"` // the name of the secret from the config
 
 	Namespace string `json:"namespace"`
 	Name      string `json:"name"`
