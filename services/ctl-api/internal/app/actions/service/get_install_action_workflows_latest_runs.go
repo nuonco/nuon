@@ -13,22 +13,22 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-//	@ID						GetInstallActionWorkflowsLatestRuns
-//	@Summary				get latest runs for all action workflows by install id
-//	@Description.markdown	get_install_action_workflows_latest_run.md
-//	@Param					install_id	path	string	true	"install ID"
-//	@Tags					actions
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{array}		app.InstallActionWorkflow
-//	@Router					/v1/installs/{install_id}/action-workflows/latest-runs [get]
+// @ID						GetInstallActionWorkflowsLatestRuns
+// @Summary				get latest runs for all action workflows by install id
+// @Description.markdown	get_install_action_workflows_latest_run.md
+// @Param					install_id	path	string	true	"install ID"
+// @Tags					actions
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{array}		app.InstallActionWorkflow
+// @Router					/v1/installs/{install_id}/action-workflows/latest-runs [get]
 func (s *service) GetInstallActionWorkflowsLatestRuns(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
@@ -55,7 +55,7 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx context.Context, orgID,
 			return db.Scopes(scopes.WithOverrideTable("install_action_workflow_runs_latest_view_v1"))
 		}).
 		Preload("Runs.RunnerJob", func(db *gorm.DB) *gorm.DB {
-			return scopes.WithDisableViews(db)
+			return db.Scopes(scopes.WithDisableViews)
 		}).
 		Find(&iaws, "org_id = ? AND install_id = ?", orgID, installID)
 	if res.Error != nil {
