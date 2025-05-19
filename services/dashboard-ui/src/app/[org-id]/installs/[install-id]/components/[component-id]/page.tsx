@@ -68,8 +68,12 @@ export default withPageAuthRequired(async function InstallComponent({
       breadcrumb={[
         { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${orgId}/installs/${install.id}/components`,
+          href: `/${orgId}/installs/${install.id}`,
           text: install.name,
+        },
+        {
+          href: `/${orgId}/installs/${install?.id}/components`,
+          text: 'Components',
         },
         {
           href: `/${orgId}/installs/${install.id}/components/${componentId}`,
