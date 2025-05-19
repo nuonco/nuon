@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID						GetInstallDeploy
@@ -46,7 +48,9 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 		Joins("JOIN install_components ON install_components.id=install_deploys.install_component_id").
 		Preload("InstallComponent").
 		Preload("InstallComponent.Component").
-		Preload("RunnerJobs").
+		Preload("RunnerJobs", func(db *gorm.DB) *gorm.DB {
+			return scopes.WithDisableViews(db).Order("created_at desc").Limit(10)
+		}).
 		Preload("ActionWorkflowRuns").
 		Preload("LogStream").
 		Preload("OCIArtifact").
