@@ -94,13 +94,17 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
             <CalendarBlank />
             <Time time={sandboxRun.created_at} />
           </Text>
-          <Text>
-            <Timer />
-            <Duration
-              beginTime={sandboxRun.created_at}
-              endTime={sandboxRun.updated_at}
-            />
-          </Text>
+          {sandboxRun?.runner_job?.status === 'finished' ||
+          sandboxRun?.runner_job?.status === 'failed' ||
+          sandboxRun?.runner_job?.status === 'cancelled' ? (
+            <Text>
+              <Timer />
+              <Duration
+                beginTime={sandboxRun.created_at}
+                endTime={sandboxRun.updated_at}
+              />
+            </Text>
+          ) : null}
         </div>
       }
       statues={
