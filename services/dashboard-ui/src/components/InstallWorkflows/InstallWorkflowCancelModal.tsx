@@ -43,6 +43,7 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
 
   const workflowType = removeSnakeCase(installWorkflow?.type)
   const workflowPath = `/${orgId}/installs/${installWorkflow?.install_id}/history/${installWorkflow?.id}`
+  const historyPath = `/${orgId}/installs/${installWorkflow?.install_id}/history`
 
   return (
     <>
@@ -108,7 +109,7 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
                           })
                           setIsLoading(false)
                           setIsKickedOff(true)
-                          if (pathName !== workflowPath) {
+                          if (pathName !== workflowPath && pathName !== historyPath) {
                             router.push(workflowPath)
                           }
 
