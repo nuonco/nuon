@@ -15,7 +15,7 @@ func (s *Helpers) GetComponentLatestBuilds(ctx *gin.Context, cmpIDs ...string) (
 			return db.Order("component_config_connections_view_v1.created_at DESC")
 		}).
 		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
-			return db.Order("component_builds.created_at DESC").Limit(1)
+			return db.Order("component_builds.created_at DESC")
 		}).
 		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection").
 		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
