@@ -79,6 +79,11 @@ func (s *service) CreateDockerBuildComponentConfig(ctx *gin.Context) {
 		Type: signals.OperationConfigCreated,
 	})
 
+	s.evClient.Send(ctx, cmpID, &signals.Signal{
+		Type:          signals.OperationUpdateComponentType,
+		ComponentType: app.ComponentTypeDockerBuild,
+	})
+
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
