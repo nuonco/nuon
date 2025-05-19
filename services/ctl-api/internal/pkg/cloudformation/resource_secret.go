@@ -41,11 +41,12 @@ func (a *Templates) getSecretsParameters(inp *TemplateInput) map[string]cloudfor
 }
 
 func (a *Templates) getSecretsResources(inp *TemplateInput, t tagBuilder) map[string]cloudformation.Resource {
+	// NOTE: secrets names are "{{instal.id}}/{{secret.name}}" to guarantee uniqueness
 	rsrcs := make(map[string]cloudformation.Resource, 0)
 
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {
 		obj := &secretsmanager.Secret{
-			Name:        generics.ToPtr(secret.Name),
+			Name:        generics.ToPtr(fmt.Sprintf("%s/%s", t.installID, secret.Name)),
 			Description: generics.ToPtr(secret.Description),
 			Tags:        t.apply(nil, ""),
 		}
