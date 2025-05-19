@@ -78,6 +78,11 @@ func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 	s.evClient.Send(ctx, cmpID, &signals.Signal{
 		Type: signals.OperationConfigCreated,
 	})
+
+	s.evClient.Send(ctx, cmpID, &signals.Signal{
+		Type:          signals.OperationUpdateComponentType,
+		ComponentType: app.ComponentTypeTerraformModule,
+	})
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
@@ -120,6 +125,11 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create terraform component config connection: %w", res.Error)
+	}
+
+	err = s.helpers.UpdateComponentType(ctx, cmpID, app.ComponentTypeTerraformModule)
+	if err != nil {
+		return nil, fmt.Errorf("unable to update component type: %w", err)
 	}
 
 	return &cfg, nil
