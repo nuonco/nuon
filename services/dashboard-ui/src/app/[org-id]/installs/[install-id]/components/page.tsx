@@ -12,18 +12,13 @@ import {
   InstallManagementDropdown,
   Loading,
   NoComponents,
+  Notice,
   Text,
   Time,
-  type TDataInstallComponent,
+  type TTableInstallComponent,
 } from '@/components'
-import {
-  getAppComponents,
-  getComponentBuild,
-  getComponentConfig,
-  getInstall,
-  getInstallComponents,
-} from '@/lib'
-import type { TBuild, TComponent, TInstall } from '@/types'
+import { getComponentConfig, getInstall } from '@/lib'
+import type { TInstallComponentSummary } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -50,6 +45,10 @@ export default withPageAuthRequired(async function InstallComponents({
         {
           href: `/${orgId}/installs/${install?.id}`,
           text: install?.name,
+        },
+        {
+          href: `/${orgId}/installs/${install?.id}/components`,
+          text: 'Components',
         },
       ]}
       heading={install?.name}
@@ -87,11 +86,7 @@ export default withPageAuthRequired(async function InstallComponents({
               <Loading loadingText="Loading components..." variant="page" />
             }
           >
-            <LoadInstallComponents
-              appId={install?.app_id}
-              installId={install?.id}
-              orgId={orgId}
-            />
+            <LoadInstallComponents installId={install?.id} orgId={orgId} />
           </Suspense>
         </ErrorBoundary>
       </section>
@@ -100,43 +95,36 @@ export default withPageAuthRequired(async function InstallComponents({
 })
 
 const LoadInstallComponents: FC<{
-  appId: string
   installId: string
   orgId: string
-}> = async ({ appId, installId, orgId }) => {
-  const installComponents = await getInstallComponents({
-    installId,
+}> = async ({ installId, orgId }) => {
+  const { data, error } = await nueQueryData<Array<TInstallComponentSummary>>({
     orgId,
-  }).catch(console.error)
-  const appComponents = await getAppComponents({
-    appId,
-    orgId,
-  }).catch(console.error)
+    path: `installs/${installId}/components/summary`,
+  })
 
-  const hydratedInstallComponents =
-    installComponents && installComponents?.length && appComponents
-      ? await Promise.all(
-          installComponents?.map(async (ic) => {
-            const config = await getComponentConfig({
-              componentId: ic?.component_id,
-              orgId,
-            })
+  const hydratedInstallComponents = data
+    ? await Promise.all(
+        data?.map(async (ic) => {
+          const config = await getComponentConfig({
+            componentId: ic?.component_id,
+            orgId,
+          }).catch(console.error)
 
-            return {
-              ...ic,
-              config,
-              deps: appComponents.filter((c) =>
-                config?.component_dependency_ids?.some((d) => d === c.id)
-              ),
-            }
-          })
-        )
-      : []
+          return {
+            ...ic,
+            config,
+          }
+        })
+      )
+    : []
 
-  return hydratedInstallComponents?.length ? (
+  return error ? (
+    <Notice>Can&apos;t load install components: {error?.error}</Notice>
+  ) : hydratedInstallComponents?.length ? (
     <InstallComponentsTable
       installComponents={
-        hydratedInstallComponents as Array<TDataInstallComponent>
+        hydratedInstallComponents as Array<TTableInstallComponent>
       }
       installId={installId}
       orgId={orgId}
