@@ -6,7 +6,6 @@ import (
 
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
-	"go.temporal.io/sdk/workflow"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
@@ -74,20 +73,6 @@ func New(params WorkerParams) (*Worker, error) {
 	for _, wkflow := range params.Wkflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}
-	// register subloop event loops with custom names
-	// FIXME(sdboyer) remove ASAP, once we have the global catalog
-	wkr.RegisterWorkflowWithOptions(params.StackWorkflows.EventLoop, workflow.RegisterOptions{
-		Name: "StackEventLoop",
-	})
-	wkr.RegisterWorkflowWithOptions(params.SandboxWorkflows.EventLoop, workflow.RegisterOptions{
-		Name: "SandboxEventLoop",
-	})
-	wkr.RegisterWorkflowWithOptions(params.ComponentsWorkflows.EventLoop, workflow.RegisterOptions{
-		Name: "ComponentsEventLoop",
-	})
-	wkr.RegisterWorkflowWithOptions(params.ActionsWorkflows.EventLoop, workflow.RegisterOptions{
-		Name: "ActionsEventLoop",
-	})
 
 	for _, wkflow := range params.SharedWorkflows.AllWorkflows() {
 		wkr.RegisterWorkflow(wkflow)
