@@ -80,6 +80,10 @@ func (s *service) CreateHelmComponentConfig(ctx *gin.Context) {
 	s.evClient.Send(ctx, cmpID, &signals.Signal{
 		Type: signals.OperationConfigCreated,
 	})
+	s.evClient.Send(ctx, cmpID, &signals.Signal{
+		Type:          signals.OperationUpdateComponentType,
+		ComponentType: app.ComponentTypeHelmChart,
+	})
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
