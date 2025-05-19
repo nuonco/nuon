@@ -17,49 +17,14 @@ import { StatusBadge } from '@/components/Status'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { ID, Text } from '@/components/Typography'
 // eslint-disable-next-line import/no-cycle
-import type {
-  TBuild,
-  TComponent,
-  TComponentConfig,
-  TInstallComponent,
-} from '@/types'
+import type { TComponentConfig, TInstallComponentSummary } from '@/types'
 
-export type TDataInstallComponent = {
-  config: TComponentConfig
-  deps: Array<TComponent>
-} & TInstallComponent
-
-type TData = {
-  buildStatus: string
-  componentId: string
-  componentType: string
-  // configVersion: number
-  installComponentId: string
-  deployStatus: string | null
-  dependencies: number
-  deps: Array<TComponent>
-  name: string
-}
-
-function parseInstallComponentsToTableData(
-  installComponents: Array<TDataInstallComponent>
-): Array<TData> {
-  return installComponents.map((comp) => ({
-    buildStatus: comp.component?.status || 'No build',
-    componentId: comp.component_id,
-    componentType: comp?.config
-      ? getComponentConfigType(comp.config)
-      : 'unknown',
-    installComponentId: comp.id,
-    deployStatus: comp.install_deploys?.[0]?.status || null,
-    dependencies: comp.deps?.length || 0,
-    deps: comp.deps,
-    name: comp.component?.name,
-  }))
+export type TTableInstallComponent = TInstallComponentSummary & {
+  config?: TComponentConfig
 }
 
 export interface IInstallComponentsTable {
-  installComponents: Array<TDataInstallComponent>
+  installComponents: Array<TTableInstallComponent>
   installId: string
   orgId: string
 }
@@ -69,41 +34,41 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
   installId,
   orgId,
 }) => {
-  const [data, updateData] = useState(
-    parseInstallComponentsToTableData(installComponents)
-  )
+  const [data, updateData] = useState(installComponents)
   const [columnFilters, __] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
 
   useEffect(() => {
-    updateData(parseInstallComponentsToTableData(installComponents))
+    updateData(installComponents)
   }, [installComponents])
 
-  const columns: Array<ColumnDef<TData>> = useMemo(
+  const columns: Array<ColumnDef<TTableInstallComponent>> = useMemo(
     () => [
       {
         header: 'Name',
-        accessorKey: 'name',
+        accessorKey: 'component_name',
         cell: (props) => (
           <div className="flex flex-col gap-2">
             <Link
-              href={`/${orgId}/installs/${installId}/components/${props.row.original.componentId}`}
+              href={`/${orgId}/installs/${installId}/components/${props.row.original.component_id}`}
             >
               <Text variant="med-14">{props.getValue<string>()}</Text>
             </Link>
 
-            <ID id={props.row.original.componentId} />
+            <ID id={props.row.original.component_id} />
           </div>
         ),
       },
       {
         header: 'Type',
-        accessorKey: 'componentType',
+        accessorKey: 'config',
         cell: (props) =>
-          props.getValue<string>() ? (
+          props.getValue<TComponentConfig>() ? (
             <Text className="gap-4">
               <StaticComponentConfigType
-                configType={props.getValue<string>()}
+                configType={getComponentConfigType(
+                  props.getValue<TComponentConfig>()
+                )}
               />
             </Text>
           ) : (
@@ -112,10 +77,13 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
       },
       {
         header: 'Deployment',
-        accessorKey: 'deployStatus',
+        accessorKey: 'deploy_status',
         cell: (props) =>
           props.getValue<string>() ? (
-            <StatusBadge status={props.getValue<string>()} />
+            <StatusBadge
+              status={props.getValue<string>()}
+              description={props.row?.original?.deploy_status_description}
+            />
           ) : (
             <Minus />
           ),
@@ -129,8 +97,8 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
             {props.getValue<number>() ? (
               <div className="flex items-center gap-4 flex-wrap w-full">
                 <ComponentDependencies
-                  deps={props.row.original?.deps}
-                  name={props.row.original?.name}
+                  deps={props?.row?.original?.dependencies}
+                  name={props.row.original?.component_name}
                   installId={installId}
                 />
               </div>
@@ -142,8 +110,17 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
       },
       {
         header: 'Build',
-        accessorKey: 'buildStatus',
-        cell: (props) => <StatusBadge status={props.getValue<string>()} />,
+        accessorKey: 'build_status',
+        cell: (props) =>
+          props.getValue<string>() ? (
+            <StatusBadge
+              status={props.getValue<string>()}
+              description={props.row?.original?.build_status_description}
+              descriptionAlignment="right"
+            />
+          ) : (
+            <Minus />
+          ),
       },
       /* {
        *   header: 'Config',
@@ -155,7 +132,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         enableSorting: false,
         cell: (props) => (
           <Link
-            href={`/${orgId}/installs/${installId}/components/${props.row.original.componentId}`}
+            href={`/${orgId}/installs/${installId}/components/${props.row.original.component_id}`}
             variant="ghost"
           >
             <CaretRight />
