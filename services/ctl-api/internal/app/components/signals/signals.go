@@ -17,20 +17,24 @@ const (
 )
 
 const (
-	OperationCreated          eventloop.SignalType = "created"
-	OperationRestart          eventloop.SignalType = "restart"
-	OperationBuild            eventloop.SignalType = "build"
-	OperationQueueBuild       eventloop.SignalType = "queue_build"
-	OperationProvision        eventloop.SignalType = "provision"
-	OperationDelete           eventloop.SignalType = "delete"
-	OperationPollDependencies eventloop.SignalType = "poll_dependencies"
-	OperationConfigCreated    eventloop.SignalType = "config_created"
+	OperationCreated             eventloop.SignalType = "created"
+	OperationRestart             eventloop.SignalType = "restart"
+	OperationBuild               eventloop.SignalType = "build"
+	OperationQueueBuild          eventloop.SignalType = "queue_build"
+	OperationProvision           eventloop.SignalType = "provision"
+	OperationDelete              eventloop.SignalType = "delete"
+	OperationPollDependencies    eventloop.SignalType = "poll_dependencies"
+	OperationConfigCreated       eventloop.SignalType = "config_created"
+	OperationBackillType         eventloop.SignalType = "backfill_type"
+	OperationUpdateComponentType eventloop.SignalType = "update_component_type"
 )
 
 type Signal struct {
 	Type eventloop.SignalType `validate:"required"`
 
 	BuildID string `validate:"required_if=Operation build"`
+
+	ComponentType app.ComponentType `validate:"required_if=Operation update_component_type"`
 
 	eventloop.BaseSignal
 }
