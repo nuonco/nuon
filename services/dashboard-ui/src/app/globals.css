@@ -221,7 +221,6 @@
   display: inline-block;
   position: relative;
   width: fit-content;
-  z-index:10;
 }
 
 .tooltip .tooltip-wrapper {
