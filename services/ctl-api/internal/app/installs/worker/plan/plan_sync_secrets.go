@@ -95,7 +95,9 @@ func (p *Planner) getKubernetesSecret(stack app.InstallStackOutputs, cfg app.App
 	}
 
 	return plantypes.KubernetesSecretSync{
-		SecretARN: generics.FromPtrStr(secretARN),
+		SecretARN:  generics.FromPtrStr(secretARN),
+		SecretName: cfg.Name,
+
 		Namespace: cfg.KubernetesSecretNamespace,
 		Name:      cfg.KubernetesSecretName,
 		KeyName:   cfg.KubernetesSecretKey,

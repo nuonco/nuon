@@ -31,6 +31,7 @@ func (p *handler) execSyncSecret(ctx context.Context, secr plantypes.KubernetesS
 		KubernetesNamespace: secr.Namespace,
 		KubernetesName:      secr.Name,
 		KubernetesKey:       secr.KeyName,
+		ARN:                 secr.SecretARN,
 		Exists:              exists,
 
 		Timestamp: ts,
