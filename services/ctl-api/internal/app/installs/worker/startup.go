@@ -57,8 +57,7 @@ func (w *Workflows) startChildren(pctx workflow.Context, sreq signals.RequestSig
 		cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "stack", stack.ID)
 		ctx := workflow.WithChildOptions(pctx, cwo)
 		// NOTE(sdboyer) re-using sreq here feels like a hack that we need to get away from in a proper system
-		// FIXME(sdboyer) these strings work only because of the custom registration in the install worker. Get rid of them with the global registry
-		workflow.ExecuteChildWorkflow(ctx, "StackEventLoop", sreq)
+		workflow.ExecuteChildWorkflow(ctx, w.subwfStack.StackEventLoop, sreq)
 	}
 
 	sandbox, err := activities.AwaitGetInstallSandboxByInstallID(pctx, sreq.ID)
@@ -67,7 +66,7 @@ func (w *Workflows) startChildren(pctx workflow.Context, sreq signals.RequestSig
 	}
 	cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "sandbox", sandbox.ID)
 	ctx := workflow.WithChildOptions(pctx, cwo)
-	workflow.ExecuteChildWorkflow(ctx, "SandboxEventLoop", sreq)
+	workflow.ExecuteChildWorkflow(ctx, w.subwfSandbox.SandboxEventLoop, sreq)
 
 	componentIDs, err := activities.AwaitGetAppGraph(pctx, activities.GetAppGraphRequest{
 		InstallID: sreq.ID,
@@ -78,7 +77,7 @@ func (w *Workflows) startChildren(pctx workflow.Context, sreq signals.RequestSig
 	for _, id := range componentIDs {
 		cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "component", id)
 		ctx = workflow.WithChildOptions(pctx, cwo)
-		workflow.ExecuteChildWorkflow(ctx, "ComponentsEventLoop", sreq)
+		workflow.ExecuteChildWorkflow(ctx, w.subwfComponents.ComponentEventLoop, sreq)
 	}
 
 	iaws, err := activities.AwaitGetActionWorkflowsByInstallID(pctx, sreq.ID)
@@ -88,7 +87,7 @@ func (w *Workflows) startChildren(pctx workflow.Context, sreq signals.RequestSig
 	for _, id := range iaws {
 		cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "action", id.ID)
 		ctx = workflow.WithChildOptions(pctx, cwo)
-		workflow.ExecuteChildWorkflow(ctx, "ActionsEventLoop", sreq)
+		workflow.ExecuteChildWorkflow(ctx, w.subwfActions.ActionEventLoop, sreq)
 	}
 
 	return nil
