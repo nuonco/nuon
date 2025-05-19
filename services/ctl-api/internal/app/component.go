@@ -116,7 +116,7 @@ type Component struct {
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
-	Type            ComponentType              `gorm:"-" json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
+	Type            ComponentType              `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 	LatestConfig    *ComponentConfigConnection `gorm:"-" json:"-" temporaljson:"latest_config,omitzero,omitempty"`
 	ResolvedVarName string                     `json:"resolved_var_name,omitzero" gorm:"-" temporaljson:"resolved_var_name,omitzero,omitempty"`
 }
