@@ -69,6 +69,10 @@ func (s *service) CreateJobComponentConfig(ctx *gin.Context) {
 	s.evClient.Send(ctx, cmpID, &signals.Signal{
 		Type: signals.OperationConfigCreated,
 	})
+	s.evClient.Send(ctx, cmpID, &signals.Signal{
+		Type:          signals.OperationUpdateComponentType,
+		ComponentType: app.ComponentTypeJob,
+	})
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
