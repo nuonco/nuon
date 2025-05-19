@@ -107,7 +107,7 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                         {sentanceCase(removeSnakeCase(iw?.type))}{' '}
                         {iw?.status?.status}
                       </Text>
-                      <Text variant="mono-12">{iw?.install_id}</Text>
+                      <Text variant="mono-12">{iw?.id}</Text>
                     </span>
                   </span>
                   <Text
