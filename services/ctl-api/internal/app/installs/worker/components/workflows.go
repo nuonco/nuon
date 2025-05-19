@@ -48,7 +48,7 @@ type Workflows struct {
 }
 
 func (w *Workflows) All() []any {
-	return w.ListWorkflowFns()
+	return append(w.ListWorkflowFns(), w.ComponentEventLoop)
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {
