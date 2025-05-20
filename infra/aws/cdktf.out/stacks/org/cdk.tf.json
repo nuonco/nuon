@@ -4,7 +4,7 @@
       "backend": "remote",
       "cloud": "tfc",
       "stackName": "org",
-      "version": "0.20.8"
+      "version": "0.20.12"
     },
     "outputs": {
       "org": {
@@ -25,6 +25,7 @@
         "cross-stack-output-aws_organizations_account.public.id": "cross-stack-output-aws_organizations_accountpublicid",
         "cross-stack-output-aws_organizations_account.runners-prod.id": "cross-stack-output-aws_organizations_accountrunners-prodid",
         "cross-stack-output-aws_organizations_account.runners-stage.id": "cross-stack-output-aws_organizations_accountrunners-stageid",
+        "cross-stack-output-aws_organizations_account.sandbox-cb.id": "cross-stack-output-aws_organizations_accountsandbox-cbid",
         "cross-stack-output-aws_organizations_account.sandbox-fd.id": "cross-stack-output-aws_organizations_accountsandbox-fdid",
         "cross-stack-output-aws_organizations_account.sandbox-ht.id": "cross-stack-output-aws_organizations_accountsandbox-htid",
         "cross-stack-output-aws_organizations_account.sandbox-ja.id": "cross-stack-output-aws_organizations_accountsandbox-jaid",
@@ -33,6 +34,7 @@
         "cross-stack-output-aws_organizations_account.sandbox-rb.id": "cross-stack-output-aws_organizations_accountsandbox-rbid",
         "cross-stack-output-aws_organizations_account.sandbox-retool.id": "cross-stack-output-aws_organizations_accountsandbox-retoolid",
         "cross-stack-output-aws_organizations_account.sandbox-sb.id": "cross-stack-output-aws_organizations_accountsandbox-sbid",
+        "cross-stack-output-aws_organizations_account.sandbox-sk.id": "cross-stack-output-aws_organizations_accountsandbox-skid",
         "cross-stack-output-aws_organizations_account.sandbox-stardog.id": "cross-stack-output-aws_organizations_accountsandbox-stardogid",
         "cross-stack-output-aws_organizations_account.sandbox-tw.id": "cross-stack-output-aws_organizations_accountsandbox-twid",
         "cross-stack-output-aws_organizations_account.stage.id": "cross-stack-output-aws_organizations_accountstageid",
@@ -146,6 +148,10 @@
       "sensitive": true,
       "value": "${aws_organizations_account.runners-stage.id}"
     },
+    "cross-stack-output-aws_organizations_accountsandbox-cbid": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.sandbox-cb.id}"
+    },
     "cross-stack-output-aws_organizations_accountsandbox-fdid": {
       "sensitive": true,
       "value": "${aws_organizations_account.sandbox-fd.id}"
@@ -178,6 +184,10 @@
       "sensitive": true,
       "value": "${aws_organizations_account.sandbox-sb.id}"
     },
+    "cross-stack-output-aws_organizations_accountsandbox-skid": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.sandbox-sk.id}"
+    },
     "cross-stack-output-aws_organizations_accountsandbox-stardogid": {
       "sensitive": true,
       "value": "${aws_organizations_account.sandbox-stardog.id}"
@@ -196,7 +206,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-03-27T21:16:43.323Z"
+      "value": "2025-05-20T05:59:07.887Z"
     }
   },
   "provider": {
@@ -522,6 +532,24 @@
         "name": "runners-stage",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
       },
+      "sandbox-cb": {
+        "//": {
+          "metadata": {
+            "path": "org/sandbox-cb",
+            "uniqueId": "sandbox-cb"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+sandbox-cb@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "sandbox-cb",
+        "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
+      },
       "sandbox-fd": {
         "//": {
           "metadata": {
@@ -664,6 +692,24 @@
           ]
         },
         "name": "sandbox-sb",
+        "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
+      },
+      "sandbox-sk": {
+        "//": {
+          "metadata": {
+            "path": "org/sandbox-sk",
+            "uniqueId": "sandbox-sk"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+sandbox-sk@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "sandbox-sk",
         "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
       },
       "sandbox-stardog": {
@@ -1030,6 +1076,17 @@
         "name": "runners-stage-environment-tag-policy",
         "type": "TAG_POLICY"
       },
+      "env_tag_policy_sandbox-cb": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_sandbox-cb",
+            "uniqueId": "env_tag_policy_sandbox-cb"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"sandbox-cb\"]}}}}",
+        "name": "sandbox-cb-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
       "env_tag_policy_sandbox-fd": {
         "//": {
           "metadata": {
@@ -1116,6 +1173,17 @@
         },
         "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"sandbox-sb\"]}}}}",
         "name": "sandbox-sb-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
+      "env_tag_policy_sandbox-sk": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_sandbox-sk",
+            "uniqueId": "env_tag_policy_sandbox-sk"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"sandbox-sk\"]}}}}",
+        "name": "sandbox-sk-environment-tag-policy",
         "type": "TAG_POLICY"
       },
       "env_tag_policy_sandbox-stardog": {
@@ -1344,6 +1412,16 @@
         "policy_id": "${aws_organizations_policy.env_tag_policy_runners-stage.id}",
         "target_id": "${aws_organizations_account.runners-stage.id}"
       },
+      "env_tag_policy_attach_sandbox-cb": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_sandbox-cb",
+            "uniqueId": "env_tag_policy_attach_sandbox-cb"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_sandbox-cb.id}",
+        "target_id": "${aws_organizations_account.sandbox-cb.id}"
+      },
       "env_tag_policy_attach_sandbox-fd": {
         "//": {
           "metadata": {
@@ -1423,6 +1501,16 @@
         },
         "policy_id": "${aws_organizations_policy.env_tag_policy_sandbox-sb.id}",
         "target_id": "${aws_organizations_account.sandbox-sb.id}"
+      },
+      "env_tag_policy_attach_sandbox-sk": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_sandbox-sk",
+            "uniqueId": "env_tag_policy_attach_sandbox-sk"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_sandbox-sk.id}",
+        "target_id": "${aws_organizations_account.sandbox-sk.id}"
       },
       "env_tag_policy_attach_sandbox-stardog": {
         "//": {
