@@ -53,11 +53,6 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		return nil, errors.Wrap(err, "unable to render secrets config")
 	}
 
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get cluster information")
-	}
-
 	secrets := make([]plantypes.KubernetesSecretSync, 0)
 	for _, cfg := range appCfg.SecretsConfig.Secrets {
 		if !cfg.KubernetesSync {
@@ -72,6 +67,15 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get kubernetes secret")
 		}
+	}
+
+	if len(secrets) < 1 {
+		return &plantypes.SyncSecretsPlan{}, nil
+	}
+
+	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get cluster information")
 	}
 
 	return &plantypes.SyncSecretsPlan{
