@@ -1,14 +1,3 @@
-// status page dns records
-resource "aws_route53_record" "status" {
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "status"
-  type    = "CNAME"
-  ttl     = 300
-  records = [
-    "110422980830157.hostedstatus.com"
-  ]
-}
-
 resource "aws_route53_record" "status_mail_cname" {
   zone_id = aws_route53_zone.main.zone_id
   name    = "em3855.status"
