@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { type FC, Suspense } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, CaretLeft, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
@@ -10,9 +12,11 @@ import {
   Duration,
   InstallDeployIntermediateData,
   InstallWorkflowCancelModal,
+  Loading,
   Link,
   LogStreamProvider,
   OperationLogsSection,
+  RunnerJobPlanModal,
   SandboxRunStatus,
   Section,
   Text,
@@ -25,7 +29,7 @@ import {
   getInstallWorkflow,
   getRunnerJobPlan,
 } from '@/lib'
-import { CANCEL_RUNNER_JOBS, sentanceCase } from '@/utils'
+import { CANCEL_RUNNER_JOBS, sentanceCase, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const installId = params?.['install-id'] as string
@@ -136,6 +140,18 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
               </ToolTip>
             </Text>
           </span>
+          <ErrorBoundary fallback={<Text>Can&apso;t fetching job plan</Text>}>
+            <Suspense
+              fallback={
+                <Loading variant="stack" loadingText="Loading job plan..." />
+              }
+            >
+              <LoadRunnerJobPlan
+                orgId={orgId}
+                runnerJobId={sandboxRun?.runner_job?.id}
+              />
+            </Suspense>
+          </ErrorBoundary>
           {CANCEL_RUNNER_JOBS &&
           sandboxRun?.runner_job?.status !== 'finished' &&
           sandboxRun?.runner_job?.status !== 'failed' &&
@@ -225,5 +241,23 @@ const LoadSandboxRunPlan = async ({ install, orgId, runnerJobId }) => {
         data={plan?.waypointPlan?.variables?.intermediaData}
       />
     </Section>
+  ) : null
+}
+
+const LoadRunnerJobPlan: FC<{ orgId: string; runnerJobId: string }> = async ({
+  orgId,
+  runnerJobId,
+}) => {
+  const { data: plan } = await nueQueryData<string>({
+    orgId,
+    path: `runner-jobs/${runnerJobId}/plan`,
+  })
+
+  return plan ? (
+    <RunnerJobPlanModal
+      buttonText="Run plan"
+      headingText="Sandbox run plan"
+      plan={plan}
+    />
   ) : null
 }

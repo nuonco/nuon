@@ -14,6 +14,7 @@ import {
   Loading,
   LogStreamProvider,
   OperationLogsSection,
+  RunnerJobPlanModal,
   Section,
   Time,
   Text,
@@ -26,7 +27,7 @@ import {
   getComponentBuild,
   getComponentConfig,
 } from '@/lib'
-import { CANCEL_RUNNER_JOBS } from '@/utils'
+import { CANCEL_RUNNER_JOBS, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const componentId = params?.['component-id'] as string
@@ -62,7 +63,7 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
         },
         {
           href: `/${orgId}/apps/${app.id}/components/${build.component_id}/builds/${build.id}`,
-          text: "Build",
+          text: 'Build',
         },
       ]}
       heading={`${component.name} build`}
@@ -103,6 +104,20 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
               </ToolTip>
             </Text>
           </span>
+
+          <ErrorBoundary fallback={<Text>Can&apso;t fetching job plan</Text>}>
+            <Suspense
+              fallback={
+                <Loading variant="stack" loadingText="Loading job plan..." />
+              }
+            >
+              <LoadRunnerJobPlan
+                orgId={orgId}
+                runnerJobId={build?.runner_job?.id}
+              />
+            </Suspense>
+          </ErrorBoundary>
+
           {CANCEL_RUNNER_JOBS &&
           build?.status !== 'active' &&
           build?.status !== 'error' ? (
@@ -207,4 +222,22 @@ const LoadComponentConfig: FC<{
     orgId,
   })
   return <ComponentConfiguration config={componentConfig} />
+}
+
+const LoadRunnerJobPlan: FC<{ orgId: string; runnerJobId: string }> = async ({
+  orgId,
+  runnerJobId,
+}) => {
+  const { data: plan } = await nueQueryData<string>({
+    orgId,
+    path: `runner-jobs/${runnerJobId}/plan`,
+  })
+
+  return plan ? (
+    <RunnerJobPlanModal
+      buttonText="Build plan"
+      headingText="Build job plan"
+      plan={plan}
+    />
+  ) : null
 }
