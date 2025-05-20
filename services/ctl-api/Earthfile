@@ -91,6 +91,7 @@ docker:
     ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
 
     COPY +build/service /bin/service
+    COPY ../../bins/runner+bundle/* /bundle
     COPY ../../images/certs+certs/cert.pem "$ETCSSL"
     COPY ../../images/aws-iam-authenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 

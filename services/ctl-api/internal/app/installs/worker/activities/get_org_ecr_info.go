@@ -21,11 +21,11 @@ func (a *Activities) GetOrgECRAccessInfo(ctx context.Context, orgID string) (*Or
 	ecr, err := ecrauthorization.New(a.v,
 		ecrauthorization.WithCredentials(&credentials.Config{
 			AssumeRole: &credentials.AssumeRoleConfig{
-				RoleARN:     fmt.Sprintf(a.legacyTFCloudOutputs.OrgsIAMRoleNameTemplateOutputs.InstancesAccess, orgID),
+				RoleARN:     a.cfg.ManagementIAMRoleARN,
 				SessionName: fmt.Sprintf("oci-sync-%s", orgID),
 			},
 		}),
-		ecrauthorization.WithRegistryID(a.legacyTFCloudOutputs.ECR.RegistryID),
+		ecrauthorization.WithRegistryID(a.cfg.ManagementECRRegistryID),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create ecrauthorizer for image sync: %w", err)
@@ -37,7 +37,7 @@ func (a *Activities) GetOrgECRAccessInfo(ctx context.Context, orgID string) (*Or
 	}
 
 	return &OrgECRAccessInfo{
-		RegistryID:    a.legacyTFCloudOutputs.ECR.RegistryID,
+		RegistryID:    a.cfg.ManagementECRRegistryID,
 		Username:      ecrAuth.Username,
 		RegistryToken: ecrAuth.RegistryToken,
 		ServerAddress: ecrAuth.ServerAddress,

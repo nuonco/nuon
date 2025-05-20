@@ -13,6 +13,7 @@ import (
 	pkgworkflows "github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
+	orgiam "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/iam"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
 )
 
@@ -51,7 +52,6 @@ func New(params WorkerParams) (*Worker, error) {
 		WorkflowPanicPolicy:                worker.FailWorkflow,
 	})
 
-	// register activities
 	wkr.RegisterActivity(params.Acts)
 	for _, acts := range params.SharedActivities.AllActivities() {
 		wkr.RegisterActivity(acts)
@@ -64,6 +64,9 @@ func New(params WorkerParams) (*Worker, error) {
 	for _, wkflow := range params.SharedWkflows.AllWorkflows() {
 		wkr.RegisterWorkflow(wkflow)
 	}
+
+	// register infra workflows
+	wkr.RegisterActivity(orgiam.NewActivities())
 
 	params.LC.Append(fx.Hook{
 		OnStart: func(context.Context) error {

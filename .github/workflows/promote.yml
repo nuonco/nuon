@@ -76,7 +76,6 @@ jobs:
           - ctl-api
           - dashboard-ui
           - workers-infra-tests
-          - workers-executors
           - wiki
     uses: ./.github/workflows/service.yml
     with:

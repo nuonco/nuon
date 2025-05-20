@@ -11,6 +11,7 @@ import (
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/ecrrepository"
 )
 
 type Workflows struct {
@@ -22,8 +23,11 @@ type Workflows struct {
 }
 
 func (w *Workflows) All() []any {
+	var wkflow ecrrepository.Wkflow
 	wkflows := []any{
 		w.EventLoop,
+		wkflow.ProvisionECRRepository,
+		wkflow.DeprovisionECRRepository,
 	}
 
 	return append(wkflows, w.ListWorkflowFns()...)
