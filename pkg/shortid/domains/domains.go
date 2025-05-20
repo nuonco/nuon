@@ -146,6 +146,10 @@ func NewInstallID() string {
 	return shortid.NewNanoID("inl")
 }
 
+func NewAppRepoID() string {
+	return shortid.NewNanoID("apr")
+}
+
 func NewInstallWorkflowID() string {
 	return shortid.NewNanoID("inw")
 }

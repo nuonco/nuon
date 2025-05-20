@@ -33,6 +33,7 @@ func AllModels() []interface{} {
 
 		// apps
 		&app.App{},
+		&app.AppRepository{},
 		&app.AppConfig{},
 		&app.AppSandboxConfig{},
 		&app.AppAWSDelegationConfig{},

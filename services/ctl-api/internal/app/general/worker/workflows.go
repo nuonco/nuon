@@ -11,7 +11,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -20,7 +19,6 @@ import (
 type Workflows struct {
 	cfg    *internal.Config
 	v      *validator.Validate
-	protos *protos.Adapter
 	mw     tmetrics.Writer
 	logger *temporalzap.Logger
 	ev     teventloop.Client
@@ -45,7 +43,6 @@ type WorkflowsParams struct {
 	V             *validator.Validate
 	Cfg           *internal.Config
 	MetricsWriter metrics.Writer
-	Prt           *protos.Adapter
 	EVClient      teventloop.Client
 }
 
@@ -69,7 +66,6 @@ func NewWorkflows(params WorkflowsParams) (*Workflows, error) {
 	return &Workflows{
 		cfg:    params.Cfg,
 		v:      params.V,
-		protos: params.Prt,
 		ev:     params.EVClient,
 		mw:     tmw,
 		logger: tlogger,

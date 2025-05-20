@@ -13,6 +13,7 @@ import (
 	pkgworkflows "github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/ecrrepository"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
 )
 
@@ -67,6 +68,12 @@ func New(params WorkerParams) (*Worker, error) {
 	for _, wkflow := range params.SharedWorkflows.AllWorkflows() {
 		wkr.RegisterWorkflow(wkflow)
 	}
+
+	// NOTE(jm): I am deferring doing this the proper way, so I can easily add fx dependencies into submodules in a
+	// a follow up
+	wkr.RegisterActivity(ecrrepository.NewActivities(&ecrrepository.ActivitiesParams{
+		Cfg: params.Cfg,
+	}))
 
 	params.LC.Append(fx.Hook{
 		OnStart: func(context.Context) error {

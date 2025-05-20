@@ -16,11 +16,6 @@ services: |
   wiki:
     - services/wiki/**
     - wiki/**
-  workers-executors:
-    - go.mod
-    - go.sum
-    - services/workers-executors/**
-    - pkg/terraform/**
   workers-infra-tests:
     - go.mod
     - go.sum
@@ -38,8 +33,6 @@ terraform-cloud: |
     services/dashboard-ui/infra/**
   workers-canary:
     services/workers-canary/infra/**
-  workers-executors:
-    services/workers-executors/infra/**
   workers-infra-tests:
     services/workers-infra-tests/infra/**
 

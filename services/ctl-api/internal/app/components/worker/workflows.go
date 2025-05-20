@@ -9,14 +9,13 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/plan"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
 type Workflows struct {
 	cfg      *internal.Config
 	v        *validator.Validate
-	protos   *protos.Adapter
 	mw       tmetrics.Writer
 	evClient teventloop.Client
 }
@@ -24,6 +23,7 @@ type Workflows struct {
 func (w *Workflows) All() []any {
 	fns := w.ListWorkflowFns()
 	fns = append(fns, w.EventLoop)
+	fns = append(fns, plan.CreateComponentBuildPlan)
 	return fns
 }
 
@@ -33,7 +33,6 @@ type WorkflowsParams struct {
 	V             *validator.Validate
 	Cfg           *internal.Config
 	MetricsWriter metrics.Writer
-	Prt           *protos.Adapter
 	EvClient      teventloop.Client
 }
 
@@ -50,7 +49,6 @@ func NewWorkflows(params WorkflowsParams) (*Workflows, error) {
 	return &Workflows{
 		cfg:      params.Cfg,
 		v:        params.V,
-		protos:   params.Prt,
 		mw:       tmw,
 		evClient: params.EvClient,
 	}, nil

@@ -9,14 +9,12 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
 type Params struct {
 	fx.In
 
 	Cfg           *internal.Config
-	Prt           *protos.Adapter
 	DB            *gorm.DB `name:"psql"`
 	CHDB          *gorm.DB `name:"ch"`
 	Helpers       *helpers.Helpers
@@ -28,7 +26,6 @@ type Params struct {
 type Activities struct {
 	db          *gorm.DB
 	chDB        *gorm.DB
-	protos      *protos.Adapter
 	helpers     *helpers.Helpers
 	evClient    eventloop.Client
 	authzClient *authz.Client
@@ -41,7 +38,6 @@ func New(params Params) *Activities {
 		cfg:         params.Cfg,
 		db:          params.DB,
 		chDB:        params.CHDB,
-		protos:      params.Prt,
 		helpers:     params.Helpers,
 		evClient:    params.EVClient,
 		authzClient: params.AuthzClient,

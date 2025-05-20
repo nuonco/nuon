@@ -1,14 +1,17 @@
 package worker
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/plan"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -19,21 +22,6 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component")
 		return fmt.Errorf("unable to get component: %w", err)
-	}
-
-	buildCfg, err := activities.AwaitGetComponentConfig(ctx, activities.GetRequest{
-		BuildID: buildID,
-	})
-	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component config")
-		return fmt.Errorf("unable to get build component config: %w", err)
-	}
-
-	// create the sandbox plan request
-	build, err := activities.AwaitGetComponentBuildByID(ctx, buildID)
-	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build")
-		return fmt.Errorf("unable to get component build: %w", err)
 	}
 
 	// create the job
@@ -59,18 +47,22 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		return fmt.Errorf("unable to create job: %w", err)
 	}
 
-	buildPlanWorkflowID := fmt.Sprintf("%s-build-plan-%s", compID, buildID)
-	planReq := w.protos.ToBuildPlanRequest(build, buildCfg)
-
-	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, buildPlanWorkflowID, planReq)
+	runPlan, err := plan.AwaitCreateComponentBuildPlan(ctx, &plan.CreateComponentBuildPlanRequest{
+		ComponentID:      comp.ID,
+		ComponentBuildID: buildID,
+		WorkflowID:       fmt.Sprintf("%s-create-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component config")
-		return fmt.Errorf("unable to create build plan: %w", err)
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build plan")
+		return errors.Wrap(err, "unable to create plan")
 	}
 
-	// store the plan in the db
-	planJSON, err := protos.ToJSON(planResp.Plan)
+	planJSON, err := json.Marshal(runPlan)
 	if err != nil {
+		return errors.Wrap(err, "unable to create json")
+	}
+	if err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get convert build plan to JSON")
 		return fmt.Errorf("unable to convert plan to json: %w", err)
 	}
 
