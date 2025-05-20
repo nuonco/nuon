@@ -2,7 +2,6 @@ package worker
 
 import (
 	"fmt"
-
 	"strings"
 
 	enumsv1 "go.temporal.io/api/enums/v1"
@@ -56,38 +55,46 @@ func (w *Workflows) startChildren(pctx workflow.Context, sreq signals.RequestSig
 	if stack != nil {
 		cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "stack", stack.ID)
 		ctx := workflow.WithChildOptions(pctx, cwo)
+		subsreq := sreq
+		subsreq.ID = stack.ID
 		// NOTE(sdboyer) re-using sreq here feels like a hack that we need to get away from in a proper system
-		workflow.ExecuteChildWorkflow(ctx, w.subwfStack.StackEventLoop, sreq)
+		workflow.ExecuteChildWorkflow(ctx, w.subwfStack.StackEventLoop, subsreq)
 	}
 
-	sandbox, err := activities.AwaitGetInstallSandboxByInstallID(pctx, sreq.ID)
-	if err != nil {
-		return err
+	{
+		sandbox, err := activities.AwaitGetInstallSandboxByInstallID(pctx, sreq.ID)
+		if err != nil {
+			return err
+		}
+		cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "sandbox", sandbox.ID)
+		subsreq := sreq
+		subsreq.ID = sandbox.ID
+		ctx := workflow.WithChildOptions(pctx, cwo)
+		workflow.ExecuteChildWorkflow(ctx, w.subwfSandbox.SandboxEventLoop, subsreq)
 	}
-	cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "sandbox", sandbox.ID)
-	ctx := workflow.WithChildOptions(pctx, cwo)
-	workflow.ExecuteChildWorkflow(ctx, w.subwfSandbox.SandboxEventLoop, sreq)
 
-	componentIDs, err := activities.AwaitGetAppGraph(pctx, activities.GetAppGraphRequest{
-		InstallID: sreq.ID,
-	})
+	componentIDs, err := activities.AwaitGetInstallComponentIDsByInstallID(pctx, sreq.ID)
 	if err != nil {
 		return err
 	}
 	for _, id := range componentIDs {
 		cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "component", id)
-		ctx = workflow.WithChildOptions(pctx, cwo)
-		workflow.ExecuteChildWorkflow(ctx, w.subwfComponents.ComponentEventLoop, sreq)
+		ctx := workflow.WithChildOptions(pctx, cwo)
+		subsreq := sreq
+		subsreq.ID = id
+		workflow.ExecuteChildWorkflow(ctx, w.subwfComponents.ComponentEventLoop, subsreq)
 	}
 
 	iaws, err := activities.AwaitGetActionWorkflowsByInstallID(pctx, sreq.ID)
 	if err != nil {
 		return err
 	}
-	for _, id := range iaws {
-		cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "action", id.ID)
-		ctx = workflow.WithChildOptions(pctx, cwo)
-		workflow.ExecuteChildWorkflow(ctx, w.subwfActions.ActionEventLoop, sreq)
+	for _, iaw := range iaws {
+		cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "action", iaw.ID)
+		ctx := workflow.WithChildOptions(pctx, cwo)
+		subsreq := sreq
+		subsreq.ID = iaw.ID
+		workflow.ExecuteChildWorkflow(ctx, w.subwfActions.ActionEventLoop, subsreq)
 	}
 
 	return nil
