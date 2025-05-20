@@ -3,27 +3,18 @@ package terraform
 import (
 	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/workspace"
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
-	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
 
 const (
 	defaultFileType string = "file/terraform"
 )
 
-type (
-	Registry configs.Registry[configs.OCIRegistryRepository]
-	Build    configs.Build[configs.OCIArchiveBuild, Registry]
-	Deploy   configs.Deploy[configs.NoopDeploy]
-
-	WaypointConfig configs.Apps[Build, Deploy]
-)
-
 type handlerState struct {
 	// set during the fetch/validate phase
-	plan   *planv1.Plan
-	cfg    *configs.OCIArchiveBuild
-	dstCfg *configs.OCIRegistryRepository
+	plan *plantypes.BuildPlan
+	cfg  *plantypes.TerraformBuildPlan
 
 	// fields set by the plugin execution
 	workspace      workspace.Workspace
@@ -31,4 +22,5 @@ type handlerState struct {
 	resultTag      string
 	jobExecutionID string
 	jobID          string
+	regCfg         *configs.OCIRegistryRepository
 }

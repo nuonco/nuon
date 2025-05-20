@@ -27,9 +27,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/loops"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/temporal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
@@ -51,9 +49,6 @@ func (c *cli) providers() []fx.Option {
 
 		fx.Provide(temporal.New),
 		fx.Provide(validator.New),
-		fx.Provide(protos.New),
-		fx.Provide(terraformcloud.NewTerraformCloud),
-		fx.Provide(terraformcloud.NewOrgsOutputs),
 		fx.Provide(notifications.New),
 		fx.Provide(eventloop.New),
 		fx.Provide(teventloop.New),

@@ -128,8 +128,8 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 
 			// NOTE(jm): this is mainly a legacy relic, where instead of actually tracking infra resources in our API, via a
 			// catalog, we actually pass around templates for IAM role ARNs
-			OrgAWSIAMRoleARN:         fmt.Sprintf(h.tfOutputs.OrgsIAMRoleNameTemplateOutputs.Runner, org.ID),
-			LocalAWSIAMRoleARN:       fmt.Sprintf(h.tfOutputs.OrgsIAMRoleNameTemplateOutputs.Runner, org.ID),
+			OrgAWSIAMRoleARN:         "",
+			LocalAWSIAMRoleARN:       "",
 			OrgK8sServiceAccountName: fmt.Sprintf("runner-%s", org.ID),
 		},
 	}
