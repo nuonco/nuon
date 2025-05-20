@@ -1,0 +1,15 @@
+terraform_version = "1.11.3"
+
+[public_repo]
+directory = "."
+repo      = "nuonco/aws-eks-sandbox"
+branch    = "fd/maintance-role/allow-rbac-rule-override"
+
+[vars]
+cluster_name         = "n-{{.nuon.install.id}}"
+enable_nuon_dns      = "true"
+public_root_domain   = "{{.nuon.install.id}}.nuon.run"
+internal_root_domain = "{{.nuon.install.id}}.internal.nuon.run"
+
+[[var_file]]
+contents = "./sandbox.tfvars"

@@ -1,0 +1,77 @@
+[maintenance_role]
+name = "{{.nuon.id}}-maintenance"
+description = "maintenance"
+display_name = "maintenance"
+permissions_boundary = "./permissions/maintenance_boundary.json"
+
+[[maintenance_role.policies]]
+managed_policy_name = "AdministratorAccess"
+
+[[maintenance_role.policies]]
+name = "limited-secrets-manage"
+contents = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowListSecrets",
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:ListSecrets"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+"""
+
+[[maintenance_role.policies]]
+name = "bucket-put-policy-scoped"
+contents = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "s3:PutBucketPolicy",
+            "Resource": "arn:aws:s3:::{{ .nuon.install.name }}-byoc-nuon-*"
+        }
+    ]
+}
+"""
+
+# [[maintenance_role.policies]]
+# name = "allow-describe-cluster"
+# contents = """
+# {
+#     "Version": "2012-10-17",
+#     "Statement": [
+#         {
+#             "Effect": "Allow",
+#             "Action": [
+#                 "eks:*"
+#             ],
+#             "Resource": "arn:aws:eks:{{ .nuon.cloud_account.aws.region }}:::cluster/n-{{ .nuon.install.id }}"
+#         }
+#     ]
+# }
+# """
+
+[provision_role]
+name = "{{.nuon.install.id}}-provision"
+description = "maintenance"
+display_name = "maintenance"
+permissions_boundary = "./permissions/provision_boundary.json"
+
+[[provision_role.policies]]
+managed_policy_name = "AdministratorAccess"
+
+
+[deprovision_role]
+name = "{{.nuon.install.id}}-deprovision"
+description = "deprovision"
+display_name = "deprovision"
+permissions_boundary = "{}"
+
+[[deprovision_role.policies]]
+managed_policy_name = "AdministratorAccess"

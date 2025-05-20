@@ -1,0 +1,7 @@
+#:schema http://localhost:8081/v1/general/config-schema?source=runner
+runner_type = "aws"
+helm_driver = "configmap"
+# helm_driver = "secret"
+
+[env_vars]
+runner-env-var = "runner-env-var"

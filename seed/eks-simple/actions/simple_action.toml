@@ -1,0 +1,23 @@
+#:schema https://api.nuon.co/v1/general/config-schema?source=action
+
+name    = "simple_demonstration"
+timeout = "1m"
+
+[[triggers]]
+type = "post-sandbox-run"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name    = "create secrets in cluster"
+inline_contents = """
+#!/usr/bin/env sh
+password=`openssl rand -hex 12`
+kubectl create -n whoami secret generic whoami \
+  --save-config    \
+  --dry-run=client \
+  --from-literal=value="$password" \
+  -o yaml | kubectl apply -f -
+"""
+

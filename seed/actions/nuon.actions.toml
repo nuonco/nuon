@@ -1,3 +1,14 @@
+# This file contains template values for common Nuon application configuration options.
+# To use it for your app, edit as needed, then rename this file to nuon.empty.toml and run
+#
+#   nuon apps sync -c nuon.empty.toml
+#
+# See https://docs.nuon.co/concepts/apps for more information.
+
+version = "v1"
+description = " actions"
+display_name = "actions"
+readme="""
 h1. Actions
 This is the actions app. 
 It has the following actions:
@@ -46,10 +57,49 @@ It has the following actions:
 
 
 
-### Full State
 
-<details>
-<summary>Full Install State</summary>
-<pre>{{ toPrettyJson .nuon }}</pre>
-</details>
 
+
+
+
+footer_markdown = """
+[Terms of Service](https://nuon.co/terms)
+"""
+post_install_markdown = """
+# empty
+
+empty is being deployed.
+"""
+apps = ["empty"]
+
+[sandbox]
+terraform_version = "1.7.5"
+[sandbox.public_repo]
+directory = "aws-ecs"
+repo = "nuonco/sandboxes"
+branch = "main"
+
+[runner]
+runner_type = "aws-ecs"
+
+
+[[components]]
+source="./components/container_image.toml"
+
+[[actions]]
+source = "./actions/file_action.toml"
+
+[[actions]]
+source = "./actions/health_check.toml"
+
+[[actions]]
+source = "./actions/inline.toml"
+
+[[actions]]
+source = "./actions/outputs.toml"
+
+[[actions]]
+source = "./actions/pre_component.toml"
+
+[[actions]]
+source = "./actions/repo.toml"

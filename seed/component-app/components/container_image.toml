@@ -1,0 +1,6 @@
+name   = "container_image"
+type   = "container_image"
+[public]
+image_url = "tryretool/backend"
+tag       = "latest"
+

@@ -1,0 +1,5 @@
+version = "v2"
+
+description = "Component app"
+display_name = "Component app"
+readme       = "./readme.md"
