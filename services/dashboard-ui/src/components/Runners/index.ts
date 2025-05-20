@@ -1,5 +1,6 @@
 export * from './RunnerHealthChart'
 export * from './RunnerHeartbeat'
+export * from './RunnerJobPlanModal'
 export * from './RunnerPastJobs'
 export * from './RunnerRecentJob'
 export * from './RunnerUpcomingJobs'
