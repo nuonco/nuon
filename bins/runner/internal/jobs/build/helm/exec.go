@@ -43,7 +43,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	res, err := h.ociCopy.CopyFromStore(ctx,
 		h.state.arch.Ref(),
 		"latest",
-		h.state.dstCfg,
+		h.state.regCfg,
 		h.state.resultTag,
 	)
 	if err != nil {

@@ -16,10 +16,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	srcCfg := h.state.cfg.Source
+	srcCfg := h.state.cfg.RepoCfg
 	dstCfg := h.state.regCfg
 
-	l.Info(fmt.Sprintf("copying image from %s:%s to %s", h.state.cfg.Source.Repository, h.state.cfg.Tag, h.state.resultTag))
+	l.Info(fmt.Sprintf("copying image from %s:%s to %s", h.state.cfg.Image, h.state.cfg.Tag, h.state.plan.DstTag))
 	res, err := h.ociCopy.Copy(ctx,
 		srcCfg,
 		h.state.cfg.Tag,

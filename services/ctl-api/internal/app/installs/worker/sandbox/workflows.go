@@ -13,7 +13,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cloudformation"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
 const (
@@ -26,7 +25,6 @@ type Params struct {
 	Cfg       *internal.Config
 	DB        *gorm.DB `name:"psql"`
 	V         *validator.Validate
-	Protos    *protos.Adapter
 	MW        metrics.Writer
 	EVClient  teventloop.Client
 	Analytics temporalanalytics.Writer
@@ -36,7 +34,6 @@ type Params struct {
 type Workflows struct {
 	cfg       *internal.Config
 	v         *validator.Validate
-	protos    *protos.Adapter
 	mw        tmetrics.Writer
 	evClient  teventloop.Client
 	analytics temporalanalytics.Writer
@@ -63,7 +60,6 @@ func NewWorkflows(params Params) (*Workflows, error) {
 	return &Workflows{
 		cfg:       params.Cfg,
 		v:         params.V,
-		protos:    params.Protos,
 		evClient:  params.EVClient,
 		mw:        tmw,
 		analytics: params.Analytics,

@@ -8,7 +8,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 )
 
 type Params struct {
@@ -18,7 +17,6 @@ type Params struct {
 	Cfg        *internal.Config
 	DB         *gorm.DB `name:"psql"`
 	EVClient   eventloop.Client
-	TFOutputs  *terraformcloud.OrgsOutputs
 	AcctClient *account.Client
 }
 
@@ -27,7 +25,6 @@ type Helpers struct {
 	cfg        *internal.Config
 	db         *gorm.DB
 	evClient   eventloop.Client
-	tfOutputs  *terraformcloud.OrgsOutputs
 	acctClient *account.Client
 }
 
@@ -37,7 +34,6 @@ func New(params Params) *Helpers {
 		cfg:        params.Cfg,
 		db:         params.DB,
 		evClient:   params.EVClient,
-		tfOutputs:  params.TFOutputs,
 		acctClient: params.AcctClient,
 	}
 }
