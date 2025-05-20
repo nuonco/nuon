@@ -77,7 +77,7 @@ export const ActionStepDetails: FC<IPollStepDetails> = ({
           {actionRun ? (
             <div className="flex flex-col border rounded-md shadow">
               <div className="flex items-center justify-between p-3 border-b">
-                <Text variant="med-14">Aciton run</Text>
+                <Text variant="med-14">Action run</Text>
                 <Link
                   className="text-sm gap-0"
                   href={`/${orgId}/installs/${step?.install_id}/actions/${actionRun?.config?.action_workflow_id}/${actionRun?.id}`}
