@@ -12,7 +12,6 @@ import {
   Timer,
 } from '@phosphor-icons/react/dist/ssr'
 import {
-  CancelRunnerJobButton,
   ClickToCopy,
   ClickToCopyButton,
   CodeViewer,
@@ -29,6 +28,7 @@ import {
   Loading,
   LogStreamProvider,
   OperationLogsSection,
+  RunnerJobPlanModal,
   StatusBadge,
   Section,
   Text,
@@ -51,6 +51,7 @@ import {
   CANCEL_RUNNER_JOBS,
   DEPLOY_INTERMEDIATE_DATA,
   sizeToMbOrGB,
+  nueQueryData,
 } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -202,6 +203,34 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
               </ToolTip>
             </Text>
           </span>
+           <ErrorBoundary fallback={<Text>Can&apso;t fetching sync plan</Text>}>
+            <Suspense
+              fallback={
+                <Loading variant="stack" loadingText="Loading sync plan..." />
+              }
+            >
+              <LoadRunnerJobPlan
+                buttonText="Sync plan"
+                headingText="Component sync plan"
+                orgId={orgId}
+                runnerJobId={deploy?.runner_jobs?.at(0)?.id}
+              />
+            </Suspense>
+           </ErrorBoundary>
+            <ErrorBoundary fallback={<Text>Can&apso;t fetching deploy plan</Text>}>
+            <Suspense
+              fallback={
+                <Loading variant="stack" loadingText="Loading deploy plan..." />
+              }
+            >
+              <LoadRunnerJobPlan
+                buttonText="Deploy plan"
+                headingText="Component deploy plan"
+                orgId={orgId}
+                runnerJobId={deploy?.runner_jobs?.at(-1)?.id}
+              />
+            </Suspense>
+          </ErrorBoundary>
           {component ? (
             <InstallComponentManagementDropdown component={component} />
           ) : null}
@@ -520,5 +549,25 @@ const LoadLatestOutputs: FC<{
         language="json"
       />
     </div>
+  ) : null
+}
+
+const LoadRunnerJobPlan: FC<{ orgId: string; runnerJobId: string, buttonText: string, headingText: string }> = async ({
+  buttonText,
+  headingText,
+  orgId,
+  runnerJobId,
+}) => {
+  const { data: plan } = await nueQueryData<string>({
+    orgId,
+    path: `runner-jobs/${runnerJobId}/plan`,
+  })
+
+  return plan ? (
+    <RunnerJobPlanModal
+      buttonText={buttonText}
+      headingText={headingText}
+      plan={plan}
+    />
   ) : null
 }
