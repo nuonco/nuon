@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	orgiam "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/iam"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
 )
@@ -35,8 +36,11 @@ type Workflows struct {
 }
 
 func (w *Workflows) All() []any {
+	wkflow := orgiam.NewWorkflow(*w.cfg)
 	wkflows := []any{
 		w.EventLoop,
+		wkflow.ProvisionIAM,
+		wkflow.DeprovisionIAM,
 	}
 
 	return append(wkflows, w.ListWorkflowFns()...)

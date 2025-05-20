@@ -10,9 +10,9 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	installdelegationdns "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/dns"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
@@ -77,7 +77,7 @@ func (w *Workflows) ProvisionDNS(ctx workflow.Context, sreq signals.RequestSigna
 		return nil
 	}
 
-	dnsReq := &executors.ProvisionDNSDelegationRequest{
+	dnsReq := &installdelegationdns.ProvisionDNSDelegationRequest{
 		WorkflowID:  fmt.Sprintf("%s-provision-dns", workflow.GetInfo(ctx).WorkflowExecution.ID),
 		Domain:      outputs.DNS.PublicDomain.Name,
 		Nameservers: outputs.DNS.PublicDomain.Nameservers,
@@ -85,7 +85,7 @@ func (w *Workflows) ProvisionDNS(ctx workflow.Context, sreq signals.RequestSigna
 
 	l.Info("provisioning nuon.run root domain")
 	if !sreq.SandboxMode {
-		_, err = executors.AwaitProvisionDNSDelegation(ctx, dnsReq)
+		_, err = installdelegationdns.AwaitProvisionDNSDelegation(ctx, dnsReq)
 		if err != nil {
 			return errors.Wrap(err, "unable to provision dns delegation")
 		}
