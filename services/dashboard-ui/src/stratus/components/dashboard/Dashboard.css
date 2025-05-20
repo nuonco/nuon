@@ -1,0 +1,55 @@
+.dashboard {
+  display: flex;
+  height: 100vh;
+  width: 200vw;
+  transition: translate 250ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.dashboard.is-open  {
+  translate: -100vw;
+}
+
+.dashboard > aside {
+  flex: 0 1 100vw;
+  height: 100vh;
+}
+
+.dashboard > aside > header {
+  padding: 0 1rem;
+  height: 4rem;
+}
+
+.dashboard > main {
+  flex: 0 1 100vw;
+  height: 100vh;
+}
+
+.dashboard > main > header {  
+  height: 3.75rem;
+}
+
+@media (min-width: 768px) {
+  .dashboard {
+    width: 100vw;
+    transition: unset;
+  }
+
+  .dashboard.is-open {
+    translate: 0;
+  }
+
+  .dashboard > aside {
+    flex: unset;
+    transition: width 250ms cubic-bezier(0.65, 0, 0.35, 1);
+    width: 4.5rem;
+  }
+
+  .dashboard.is-open > aside {
+    width: 19.395rem;
+  }
+  
+  .dashboard > main {
+    flex: 1 1 100vw;
+  }
+}
+
