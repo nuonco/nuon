@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
@@ -14,7 +15,11 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	// "go.temporal.io/api/workflowservice/v1"
+	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap/zaptest"
 )
@@ -81,40 +86,25 @@ type testEnv struct {
 	sar *SendAndReceive
 }
 
-func setupEnv(t *testing.T) *testEnv {
-	// Hack around not actually using the test suite
-	s := &SendTestSuite{}
-	s.SetT(t)
-	s.SetS(s)
-	e := &testEnv{
-		env: s.NewTestWorkflowEnvironment(),
-	}
-	// e.env.SetDataConverter(dataconverter.NewConverter())
-
-	ctx := context.Background()
-	mockCtl, _ := gomock.WithContext(ctx, s.T())
-	mw := metrics.NewMockWriter(mockCtl)
-	mw.EXPECT().Incr(gomock.Any(), gomock.Any()).AnyTimes()
-
-	e.sar = &SendAndReceive{
-		t: t,
-		evClient: New(Params{
-			L:  zaptest.NewLogger(s.T()),
-			MW: mw,
-			V:  validator.New(),
-		}),
-	}
-
-	e.env.RegisterWorkflow(e.sar.Root)
-	e.env.RegisterWorkflow(e.sar.SendAsyncWorkflow)
-	e.env.RegisterWorkflow(e.sar.SendAndWaitWorkflow)
-	e.env.RegisterWorkflow(e.sar.ReceiveWorkflow)
-
-	return e
-}
-
 // TODO(sdboyer) errors.Is() is not currently working across de/serialization, so we have a weird string for Contains-checking
 var testErr = errors.New("sentinel test error BEEP BOOP BEEP")
+
+// func registerNS(opts client.Options, ns string) error {
+// 	namespaceClient, err := client.NewNamespaceClient(opts)
+// 	if err != nil {
+// 		return errors.Wrap(err, "Failed to create namespace client")
+// 	}
+
+// 	err = namespaceClient.Register(context.Background(), &workflowservice.RegisterNamespaceRequest{
+// 		Namespace: ns,
+// 	})
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	namespaceClient.Close()
+// 	return nil
+// }
 
 // Test sending over a matrix of possibilities:
 // - same vs. cross-ns
@@ -123,7 +113,55 @@ var testErr = errors.New("sentinel test error BEEP BOOP BEEP")
 // - request signals pattern vs. base pattern
 // func (s *SendTestSuite) Test_Send() {
 func TestSend(t *testing.T) {
-	t.Skip() // disabled until flakiness fixed
+	clientOpts := new(client.Options)
+	var err error
+	clientOpts.HostPort, err = getFreeHostPort()
+	if err != nil {
+		t.Fatalf("failed to get free host port: %v", err)
+	}
+
+	srv, err := testsuite.StartDevServer(context.Background(), testsuite.DevServerOptions{
+		ClientOptions: clientOpts,
+	})
+	if err != nil {
+		t.Fatalf("failed to set up dev server: %v", err)
+	}
+
+	t.Cleanup(func() {
+		srv.Client().Close()
+		srv.Stop()
+	})
+
+	// if err = registerNS(*clientOpts, "other"); err != nil {
+	// 	t.Fatalf("failed to register namespace: %v", err)
+	// }
+
+	worker := worker.New(srv.Client(), "default", worker.Options{})
+
+	ctx := context.Background()
+	mockCtl, _ := gomock.WithContext(ctx, t)
+	mw := metrics.NewMockWriter(mockCtl)
+	mw.EXPECT().Incr(gomock.Any(), gomock.Any()).AnyTimes()
+
+	sar := &SendAndReceive{
+		t: t,
+		evClient: New(Params{
+			L:  zaptest.NewLogger(t),
+			MW: mw,
+			V:  validator.New(),
+		}),
+	}
+
+	worker.RegisterWorkflow(sar.Root)
+	worker.RegisterWorkflow(sar.SendAsyncWorkflow)
+	worker.RegisterWorkflow(sar.SendAndWaitWorkflow)
+	worker.RegisterWorkflow(sar.ReceiveWorkflow)
+	err = worker.Start()
+	if err != nil {
+		t.Fatalf("failed to start worker: %v", err)
+	}
+	t.Cleanup(worker.Stop)
+
 	// Assemble groups of disjoint tests
 	type caseopts struct {
 		name   string
@@ -153,27 +191,27 @@ func TestSend(t *testing.T) {
 				},
 			},
 		},
-		{
-			groupname: "namespace",
-			cases: []caseopts{
-				{
-					name: "same",
-					optsfn: func(opts SRTestOptions) SRTestOptions {
-						opts.SenderNS = "default"
-						opts.ReceiverNS = "default"
-						return opts
-					},
-				},
-				{
-					name: "cross",
-					optsfn: func(opts SRTestOptions) SRTestOptions {
-						opts.SenderNS = "default"
-						opts.ReceiverNS = "other"
-						return opts
-					},
-				},
-			},
-		},
+		// {
+		// 	groupname: "namespace",
+		// 	cases: []caseopts{
+		// 		{
+		// 			name: "same",
+		// 			optsfn: func(opts SRTestOptions) SRTestOptions {
+		// 				opts.SenderNS = "default"
+		// 				opts.ReceiverNS = "default"
+		// 				return opts
+		// 			},
+		// 		},
+		// 		{
+		// 			name: "cross",
+		// 			optsfn: func(opts SRTestOptions) SRTestOptions {
+		// 				opts.SenderNS = "default"
+		// 				opts.ReceiverNS = "other"
+		// 				return opts
+		// 			},
+		// 		},
+		// 	},
+		// },
 		{
 			groupname: "notify",
 			cases: []caseopts{
@@ -229,21 +267,31 @@ func TestSend(t *testing.T) {
 	runMatrix = func(t *testing.T, groupidx int, opts SRTestOptions) {
 		if groupidx >= len(testGroups) {
 			// When we reach the end of the groups, we've hydrated a full matrix of options and can run the test
-			env := setupEnv(t)
 			t.Logf("%+v\n", opts)
 			opts.ID = t.Name()
 
-			env.env.ExecuteWorkflow(env.sar.Root, opts)
+			run, err := srv.Client().ExecuteWorkflow(context.Background(),
+				client.StartWorkflowOptions{
+					ID:                       "root",
+					TaskQueue:                "default",
+					WorkflowExecutionTimeout: 3 * time.Second,
+				},
+				sar.Root,
+				opts)
+			if err != nil {
+				t.Fatalf("failed to start workflow: %v", err)
+			}
 
-			assert.True(t, env.env.IsWorkflowCompleted())
+			var v any
+			err = run.Get(ctx, v)
 			if opts.Response.Error != nil {
-				// TODO(sdboyer) this is how we should be able to check, once network portability is working properly
-				// assert.ErrorIs(t, env.env.GetWorkflowError(), testErr)
-				if !strings.Contains(env.env.GetWorkflowError().Error(), testErr.Error()) {
+				if err == nil {
+					t.Fatal("expected error, got nil")
+				} else if !strings.Contains(err.Error(), testErr.Error()) {
 					t.Fatal("errors not same")
 				}
 			} else {
-				assert.NoError(t, env.env.GetWorkflowError())
+				assert.NoError(t, run.Get(context.Background(), nil))
 			}
 			return
 		}
@@ -286,18 +334,18 @@ func (o SRTestOptions) getSignal() eventloop.Signal {
 func (w *SendAndReceive) Root(ctx workflow.Context, opts SRTestOptions) error {
 	var sfut, rfut workflow.Future
 	rfut = workflow.ExecuteChildWorkflow(workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
-		WorkflowID: "receive-workflow",
+		WorkflowID: "event-loop-receive.workflow",
 		Namespace:  opts.ReceiverNS,
 	}), w.ReceiveWorkflow, opts)
 
 	if opts.Await {
 		sfut = workflow.ExecuteChildWorkflow(workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
-			WorkflowID: "send-workflow",
+			WorkflowID: "send.workflow",
 			Namespace:  opts.SenderNS,
 		}), w.SendAndWaitWorkflow, opts)
 	} else {
 		sfut = workflow.ExecuteChildWorkflow(workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
-			WorkflowID: "send-workflow",
+			WorkflowID: "send.workflow",
 			Namespace:  opts.SenderNS,
 		}), w.SendAsyncWorkflow, opts)
 	}
@@ -314,7 +362,7 @@ func (w *SendAndReceive) Root(ctx workflow.Context, opts SRTestOptions) error {
 func (w *SendAndReceive) SendAsyncWorkflow(ctx workflow.Context, opts SRTestOptions) error {
 	defer func() { w.t.Log("SEND WF: returning from send") }()
 	w.t.Log("SEND WF: sending")
-	fut, err := w.evClient.SendAsync(ctx, "receive-workflow", opts.getSignal())
+	fut, err := w.evClient.SendAsync(ctx, "receive.workflow", opts.getSignal())
 	w.t.Log("SEND WF: got future")
 	if err != nil {
 		return err
@@ -330,7 +378,7 @@ func (w *SendAndReceive) SendAsyncWorkflow(ctx workflow.Context, opts SRTestOpti
 
 func (w *SendAndReceive) SendAndWaitWorkflow(ctx workflow.Context, opts SRTestOptions) error {
 	defer func() { w.t.Log("SEND WF: returning from send") }()
-	err := w.evClient.SendAndWait(ctx, "receive-workflow", opts.getSignal())
+	err := w.evClient.SendAndWait(ctx, "receive.workflow", opts.getSignal())
 	w.t.Log("SEND WF: wait finished")
 	return err
 }
@@ -341,7 +389,7 @@ func (w *SendAndReceive) SendAndWaitWorkflow(ctx workflow.Context, opts SRTestOp
 // the SUT is solely the SendAsync implementation.
 func (w *SendAndReceive) ReceiveWorkflow(ctx workflow.Context, opts SRTestOptions) error {
 	defer func() { w.t.Log("RECEIVE WF: returning from receive") }()
-	schan := workflow.GetSignalChannel(ctx, opts.ID)
+	schan := workflow.GetSignalChannel(ctx, "receive.workflow")
 
 	// In the real event loop, this is handled with a generic type
 	var signal eventloop.Signal

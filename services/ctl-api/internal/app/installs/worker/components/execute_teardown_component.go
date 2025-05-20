@@ -19,7 +19,7 @@ import (
 // @execution-timeout 60m
 // @task-timeout 30m
 func (w *Workflows) ExecuteTeardownComponent(ctx workflow.Context, sreq signals.RequestSignal) error {
-	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
+	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, sreq.ID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
