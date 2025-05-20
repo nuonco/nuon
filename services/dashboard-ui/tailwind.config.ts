@@ -10,7 +10,7 @@ const config: Config = {
   ],
   safelist: [
     {
-      pattern: /(bg|text)-(red|green|yellow)-(500|600)/,
+      pattern: /(bg|text)-(red|green|yellow|primary)-(500|600)/,
     },
     {
       pattern: /(bg|text)-(slate)-(50|950)/,
@@ -140,8 +140,8 @@ const config: Config = {
       },
     },
     fontFamily: {
-      sans: ['var(--font-geist-sans)'],
-      mono: ['var(--font-geist-mono)'],
+      sans: ['var(--font-inter)'],
+      mono: ['var(--font-hack)'],
     },
     fontSize: {
       xs: '8px',
