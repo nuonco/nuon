@@ -4,7 +4,7 @@ import {
   getWorkspaceState,
   getWorkspaceStateResources,
 } from '@/lib'
-import { Section } from '@/components/Card'
+import { Section, SectionHeader } from '@/components/Card'
 import { JsonView } from '@/components/Code'
 import { Empty } from '@/components/Empty'
 import { Time } from '@/components/Time'
@@ -55,14 +55,14 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
       }).catch(console.error),
     ])
 
-    const revisions = states.map((state: any, idx: number) => {
+    const revisions = states?.map((state: any, idx: number) => {
       return [
         <Text key={idx}>{state.revision}</Text>,
         <Time key={idx} time={state.created_at} />,
       ]
     })
 
-    const resourceList = resources.map((resource, idx) => {
+    const resourceList = resources?.map((resource, idx) => {
       if (resource.mode == 'managed') {
         return [
           <Text key={idx}>{resource.type}</Text>,
@@ -72,7 +72,7 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
       }
     })
 
-    const datasourceList = resources.map((datasource, idx) => {
+    const datasourceList = resources?.map((datasource, idx) => {
       if (datasource.mode == 'data') {
         return [
           <Text key={idx}>{datasource.type}</Text>,
@@ -99,7 +99,7 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
             initData={resourceList}
           />
         </Tab>
-        <Tab title="Data Sources">
+        <Tab title="Data sources">
           <DataTable
             headers={['Type', 'Name', 'Count']}
             initData={datasourceList}
@@ -119,19 +119,18 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
   }
 
   return (
-    <Section
-      className="flex-initial"
-      heading="Terraform state"
-      childrenClassName="flex flex-col gap-4"
-      actions={
-        <WorkspaceManagementDropdown
-          orgId={orgId}
-          workspace={workspace}
-          token={(tokenRes as any).result.accessToken}
-        />
-      }
-    >
+    <>
+      <SectionHeader
+        heading="Terraform state"
+        actions={
+          <WorkspaceManagementDropdown
+            orgId={orgId}
+            workspace={workspace}
+            token={(tokenRes as any).result.accessToken}
+          />
+        }
+      />
       {contents}
-    </Section>
+    </>
   )
 }

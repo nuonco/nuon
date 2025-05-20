@@ -13,6 +13,7 @@ import {
   ErrorFallback,
   InstallComponentDeploys,
   InstallDeployLatestBuildButton,
+  InstallComponentManagementDropdown,
   Link,
   Loading,
   StatusBadge,
@@ -20,8 +21,10 @@ import {
   Text,
   Time,
 } from '@/components'
-import { InstallComponentManagementDropdown } from '@/components/InstallComponents/ManagementDropdown'
-import { TerraformWorkspace } from '@/components/InstallSandbox/TerraformWorkspace'
+import {
+  TerraformWorkspace,
+  ValuesFileModal,
+} from '@/components/InstallSandbox'
 import {
   getComponent,
   getComponentConfig,
@@ -138,23 +141,28 @@ export default withPageAuthRequired(async function InstallComponent({
           </Section>
           {org?.features?.['terraform-workspace'] &&
           component?.type === 'terraform_module' ? (
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Section heading="Terraform workspace">
-                    <Loading
-                      loadingText="Loading latest terraform workspace..."
-                      variant="stack"
-                    />
-                  </Section>
-                }
-              >
-                <TerraformWorkspace
-                  orgId={orgId}
-                  workspace={installComponent.terraform_workspace}
-                />
-              </Suspense>
-            </ErrorBoundary>
+            <Section
+              className="flex-initial"
+              childrenClassName="flex flex-col gap-4"
+            >
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={
+                    <Section heading="Terraform workspace">
+                      <Loading
+                        loadingText="Loading latest terraform workspace..."
+                        variant="stack"
+                      />
+                    </Section>
+                  }
+                >
+                  <TerraformWorkspace
+                    orgId={orgId}
+                    workspace={installComponent.terraform_workspace}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            </Section>
           ) : null}
 
           {component.dependencies && (
@@ -261,8 +269,16 @@ const LoadComponentConfig: FC<{ componentId: string; orgId: string }> = async ({
     componentId,
     orgId,
   }).catch(console.error)
+
   return componentConfig ? (
-    <ComponentConfiguration config={componentConfig} isNotTruncated />
+    <>
+      <ComponentConfiguration config={componentConfig} isNotTruncated />
+      {componentConfig?.terraform_module?.variables_files?.length ? (
+        <ValuesFileModal
+          valuesFiles={componentConfig?.terraform_module?.variables_files}
+        />
+      ) : null}
+    </>
   ) : (
     <Text>No component config found.</Text>
   )
