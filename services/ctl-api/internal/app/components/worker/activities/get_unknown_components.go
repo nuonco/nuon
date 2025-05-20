@@ -2,17 +2,14 @@ package activities
 
 import (
 	"context"
-
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type GetUnknownComponents struct {
-	Limit int
 }
 
 // @temporal-gen activity
-func (a *Activities) GetUnknownComponents(ctx context.Context, req GetUnknownComponents) ([]app.Component, error) {
-	comps, err := a.getUnkownComponents(ctx, req.Limit)
+func (a *Activities) GetUnknownComponentIDs(ctx context.Context, req GetUnknownComponents) ([]string, error) {
+	comps, err := a.getUnkownComponentIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -20,12 +17,12 @@ func (a *Activities) GetUnknownComponents(ctx context.Context, req GetUnknownCom
 	return comps, nil
 }
 
-func (a *Activities) getUnkownComponents(ctx context.Context, limit int) ([]app.Component, error) {
-	comps := make([]app.Component, 0)
-	res := a.db.WithContext(ctx).Model(&app.Component{}).Where("type IS NULL").Order("created_at asc").Limit(limit).Find(&comps)
+func (a *Activities) getUnkownComponentIDs(ctx context.Context) ([]string, error) {
+	ids := make([]string, 0)
+	res := a.db.WithContext(ctx).Raw("select id from public.components where type IS NULL ORDER BY created_at ASC;").Scan(&ids)
 	if res.Error != nil {
 		return nil, res.Error
 	}
 
-	return comps, nil
+	return ids, nil
 }
