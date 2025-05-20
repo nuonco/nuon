@@ -1,9 +1,9 @@
 // @ts-nocheck
 import { UserProvider } from '@auth0/nextjs-auth0/client'
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import localFont from 'next/font/local'
 import { Suspense } from 'react'
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
 import {
   InitDatadogLogs,
   InitDatadogRUM,
@@ -11,6 +11,18 @@ import {
   SegmentAnalyticsIdentify,
 } from '@/utils'
 import './globals.css'
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const hack = localFont({
+  src: [
+    {
+      path: '../../public/fonts/hack-regular.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-hack',
+})
 
 export const metadata: Metadata = {
   title: 'Nuon',
@@ -38,7 +50,7 @@ export default function RootLayout({
             </>
           ) : null}
           <body
-            className={`${GeistMono.variable} ${GeistSans.variable} font-sans overflow-hidden`}
+            className={`${inter.variable} ${hack.variable} font-sans overflow-hidden`}
           >
             <EnvScript env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
             {children}
