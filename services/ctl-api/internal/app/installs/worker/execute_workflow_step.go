@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
-
-	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
@@ -97,18 +96,30 @@ func (w *Workflows) ExecuteWorkflowStep(ctx workflow.Context, sreq signals.Reque
 	})
 	sig.WorkflowStepID = step.ID
 	sig.WorkflowStepName = step.Name
+	handlerSreq := signals.NewRequestSignal(sreq.EventLoopRequest, &sig)
 
-	handlers := w.getHandlers()
-	handler, ok := handlers[sig.Type]
-	if !ok {
-		err := errors.New(fmt.Sprintf("no handler found for signal %s", sig.Type))
+	// Predict the workflow ID of the underlying object's event loop
+	suffix, err := w.subloopSuffix(ctx, handlerSreq)
+	if err != nil {
 		return w.handleStepErr(ctx, sreq.WorkflowStepID, err)
 	}
 
-	// now, execute the handler
-	handlerSreq := signals.NewRequestSignal(sreq.EventLoopRequest, &sig)
-	if err := handler(ctx, handlerSreq); err != nil {
-		return w.handleStepErr(ctx, sreq.WorkflowStepID, err)
+	if suffix != "" {
+		id := fmt.Sprintf("%s-%s", sreq.ID, suffix)
+		if err := w.evClient.SendAndWait(ctx, id, &handlerSreq); err != nil {
+			return w.handleStepErr(ctx, sreq.WorkflowStepID, err)
+		}
+	} else {
+		// no suffix means a workflow on this loop, so we must invoke the handler directly
+		handlers := w.getHandlers()
+		handler, ok := handlers[sig.Type]
+		if !ok {
+			err := errors.New(fmt.Sprintf("no handler found for signal %s", sig.Type))
+			return w.handleStepErr(ctx, sreq.WorkflowStepID, err)
+		}
+		if err := handler(ctx, handlerSreq); err != nil {
+			return w.handleStepErr(ctx, sreq.WorkflowStepID, err)
+		}
 	}
 
 	// update the status at the end
@@ -121,6 +132,54 @@ func (w *Workflows) ExecuteWorkflowStep(ctx workflow.Context, sreq signals.Reque
 		return err
 	}
 	return nil
+}
+
+// NOTE(sdboyer) this method is tightly coupled to the subloop naming logic in ./startup.go
+func (w *Workflows) subloopSuffix(ctx workflow.Context, sreq signals.RequestSignal) (string, error) {
+	// All errors _should_ be unreachable because these activities succeeded when bootstrapping the sub event loops
+	if _, has := w.subwfStack.GetHandlers()[sreq.Type]; has {
+		// uuuugh
+		stack, err := activities.AwaitGetInstallStackByInstallID(ctx, sreq.ID)
+		if err != nil {
+			return "", errors.Wrap(err, "unable to fetch install stack")
+		}
+		return fmt.Sprintf("stack-%s", stack.ID), nil
+	}
+
+	if _, has := w.subwfSandbox.GetHandlers()[sreq.Type]; has {
+		sandbox, err := activities.AwaitGetInstallSandboxByInstallID(ctx, sreq.ID)
+		if err != nil {
+			return "", errors.Wrap(err, "unable to fetch install sandbox")
+		}
+		return fmt.Sprintf("sandbox-%s", sandbox.ID), nil
+	}
+
+	if _, has := w.subwfActions.GetHandlers()[sreq.Type]; has {
+		if sreq.InstallActionWorkflowTrigger.InstallActionWorkflowID == "" {
+			panic("missing action workflow run ID")
+		}
+		return fmt.Sprintf("action-%s", sreq.InstallActionWorkflowTrigger.InstallActionWorkflowID), nil
+	}
+
+	if _, has := w.subwfComponents.GetHandlers()[sreq.Type]; has {
+		id := sreq.ExecuteDeployComponentSubSignal.ComponentID
+		if id == "" {
+			id = sreq.ExecuteTeardownComponentSubSignal.ComponentID
+		}
+		if id == "" {
+			panic("missing component ID")
+		}
+		comp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
+			InstallID:   sreq.ID,
+			ComponentID: id,
+		})
+		if err != nil {
+			return "", errors.Wrap(err, "unable to fetch install component")
+		}
+		return fmt.Sprintf("component-%s", comp.ID), nil
+	}
+
+	return "", nil
 }
 
 func (w *Workflows) handleStepErr(ctx workflow.Context, installWorkflowStepID string, err error) error {
