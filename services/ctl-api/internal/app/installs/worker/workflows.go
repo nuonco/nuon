@@ -13,12 +13,12 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/actions"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/components"
+	installdelegationdns "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/dns"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/sandbox"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/stack"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cloudformation"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
 type Params struct {
@@ -27,7 +27,6 @@ type Params struct {
 	Cfg                 *internal.Config
 	DB                  *gorm.DB `name:"psql"`
 	V                   *validator.Validate
-	Protos              *protos.Adapter
 	MW                  metrics.Writer
 	EVClient            teventloop.Client
 	Analytics           temporalanalytics.Writer
@@ -41,7 +40,6 @@ type Params struct {
 type Workflows struct {
 	cfg       *internal.Config
 	v         *validator.Validate
-	protos    *protos.Adapter
 	mw        tmetrics.Writer
 	evClient  teventloop.Client
 	analytics temporalanalytics.Writer
@@ -56,6 +54,7 @@ type Workflows struct {
 }
 
 func (w *Workflows) All() []any {
+	wkflow := installdelegationdns.NewWorkflow(*w.cfg)
 	wkflows := []any{
 		w.EventLoop,
 		w.ActionWorkflowTriggers,
@@ -64,6 +63,8 @@ func (w *Workflows) All() []any {
 		plan.CreateDeployPlan,
 		plan.CreateSyncPlan,
 		plan.CreateSyncSecretsPlan,
+		wkflow.DeprovisionDNSDelegation,
+		wkflow.ProvisionDNSDelegation,
 	}
 
 	sub := append(append(append(w.subwfSandbox.All(), w.subwfStack.All()...), w.subwfComponents.All()...), w.subwfActions.All()...)
@@ -85,7 +86,6 @@ func NewWorkflows(params Params) (*Workflows, error) {
 	return &Workflows{
 		cfg:             params.Cfg,
 		v:               params.V,
-		protos:          params.Protos,
 		evClient:        params.EVClient,
 		mw:              tmw,
 		analytics:       params.Analytics,

@@ -14,7 +14,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 )
@@ -27,7 +26,6 @@ type Params struct {
 	DB               *gorm.DB `name:"psql"`
 	MW               metrics.Writer
 	Cfg              *internal.Config
-	OrgsOutputs      *terraformcloud.OrgsOutputs
 	ComponentHelpers *componenthelpers.Helpers
 	Helpers          *helpers.Helpers
 	AppsHelpers      *appshelpers.Helpers
@@ -41,7 +39,6 @@ type service struct {
 	db               *gorm.DB
 	mw               metrics.Writer
 	cfg              *internal.Config
-	orgsOutputs      *terraformcloud.OrgsOutputs
 	componentHelpers *componenthelpers.Helpers
 	helpers          *helpers.Helpers
 	appsHelpers      *appshelpers.Helpers
@@ -168,7 +165,6 @@ func New(params Params) *service {
 		v:                params.V,
 		db:               params.DB,
 		mw:               params.MW,
-		orgsOutputs:      params.OrgsOutputs,
 		componentHelpers: params.ComponentHelpers,
 		helpers:          params.Helpers,
 		evClient:         params.EvClient,

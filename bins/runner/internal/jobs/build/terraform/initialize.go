@@ -20,7 +20,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 	// create a new workspace here
 	wkspace, err := workspace.New(h.v,
 		workspace.WithLogger(l),
-		workspace.WithGitSource(h.state.plan.GetWaypointPlan().GetGitSource()),
+		workspace.WithNewGitSource(h.state.plan.Src),
 		workspace.WithWorkspaceID(jobExecution.ID),
 	)
 	if err != nil {

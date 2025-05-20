@@ -70,8 +70,6 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	switch runner.RunnerGroup.Type {
 	case app.RunnerGroupTypeOrg:
 		err = w.executeProvisionOrgRunner(ctx, sreq.ID, token.Token, sreq.SandboxMode)
-	case app.RunnerGroupTypeInstall:
-		err = w.executeProvisionInstallRunner(ctx, sreq.ID, token.Token, sreq.SandboxMode)
 	}
 	if err != nil {
 		w.updateOperationStatus(ctx, op.ID, app.RunnerOperationStatusError)

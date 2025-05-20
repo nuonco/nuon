@@ -69,7 +69,7 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	case app.RunnerGroupTypeOrg:
 		err = w.executeProvisionOrgRunner(ctx, sreq.ID, token.Token, sreq.SandboxMode)
 	case app.RunnerGroupTypeInstall:
-		err = w.executeProvisionInstallRunner(ctx, sreq.ID, token.Token, sreq.SandboxMode)
+		err = errors.New("can not reprovision install runner")
 	}
 	if err != nil {
 		w.updateOperationStatus(ctx, op.ID, app.RunnerOperationStatusError)

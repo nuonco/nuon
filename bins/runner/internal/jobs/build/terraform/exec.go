@@ -37,11 +37,11 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	l.Info("copying archive to destination", zap.String("dst", h.state.resultTag), zap.Any("cfg", h.state.dstCfg))
+	l.Info("copying archive to destination", zap.String("dst", h.state.resultTag), zap.Any("cfg", h.state.regCfg))
 	res, err := h.ociCopy.CopyFromStore(ctx,
 		h.state.arch.Ref(),
 		"latest",
-		h.state.dstCfg,
+		h.state.regCfg,
 		h.state.resultTag,
 	)
 	if err != nil {
