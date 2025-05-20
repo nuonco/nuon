@@ -23,7 +23,11 @@ import (
 // @execution-timeout 24h
 // @task-timeout 30s
 func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.RequestSignal) error {
-	version, err := activities.AwaitGetInstallStackVersionByInstallID(ctx, sreq.ID)
+	install, err := activities.AwaitGetInstallForStackByStackID(ctx, sreq.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get install")
+	}
+	version, err := activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install version")
 	}
@@ -36,17 +40,12 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		return errors.Wrap(err, "unable to update stack version")
 	}
 
-	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get install")
-	}
-
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
 	}
 
-	orgTyp, err := activities.AwaitGetOrgTypeByInstallID(ctx, sreq.ID)
+	orgTyp, err := activities.AwaitGetOrgTypeByInstallID(ctx, install.ID)
 	if err != nil {
 		return err
 	}
