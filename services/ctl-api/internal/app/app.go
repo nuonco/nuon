@@ -37,6 +37,7 @@ type App struct {
 	Org   *Org   `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	NotificationsConfig NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty,omitzero" temporaljson:"notifications_config,omitzero,omitempty"`
+	Repository          AppRepository       `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"repository,omitzero,omitempty"`
 
 	Components                 []Component        `faker:"components" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"components,omitzero,omitempty"`
 	Installs                   []Install          `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"installs,omitzero,omitempty"`

@@ -15,8 +15,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 )
 
 type Params struct {
@@ -24,7 +22,6 @@ type Params struct {
 
 	V                 *validator.Validate
 	DB                *gorm.DB `name:"psql"`
-	Components        *protos.Adapter
 	AppsHelpers       *appshelpers.Helpers
 	ComponentsHelpers *componentshelpers.Helpers
 	RunnersHelpers    *runnershelpers.Helpers
@@ -36,15 +33,12 @@ type Params struct {
 	Cfg               *internal.Config
 	Features          *features.Features
 
-	// NOTE(jm): this is only used as a stop gap until we improve how our repositorys are managed
-	LegacyTFCloudOutputs *terraformcloud.OrgsOutputs
 }
 
 type Activities struct {
 	v                    *validator.Validate
 	db                   *gorm.DB
 	cfg                  *internal.Config
-	components           *protos.Adapter
 	appsHelpers          *appshelpers.Helpers
 	componentsHelpers    *componentshelpers.Helpers
 	runnersHelpers       *runnershelpers.Helpers
@@ -54,7 +48,6 @@ type Activities struct {
 	authzClient          *authz.Client
 	vcsHelpers           *vcshelpers.Helpers
 	features             *features.Features
-	legacyTFCloudOutputs *terraformcloud.OrgsOutputs
 }
 
 func New(params Params) *Activities {
@@ -62,7 +55,6 @@ func New(params Params) *Activities {
 		db:                   params.DB,
 		v:                    params.V,
 		cfg:                  params.Cfg,
-		components:           params.Components,
 		appsHelpers:          params.AppsHelpers,
 		runnersHelpers:       params.RunnersHelpers,
 		helpers:              params.Helpers,
@@ -72,6 +64,5 @@ func New(params Params) *Activities {
 		vcsHelpers:           params.VCSHelpers,
 		componentsHelpers:    params.ComponentsHelpers,
 		features:             params.Features,
-		legacyTFCloudOutputs: params.LegacyTFCloudOutputs,
 	}
 }

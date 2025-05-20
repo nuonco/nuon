@@ -44,6 +44,11 @@ func init() {
 	// max request sizes to prevent too large of requests
 	config.RegisterDefault("max_request_size", 1024*50)
 	config.RegisterDefault("max_request_duration", time.Second*30)
+
+	config.RegisterDefault("app_repository_name_template", "%s/%s")
+	config.RegisterDefault("app_repository_region", "%s/%s")
+
+	config.RegisterDefault("org_runner_helm_chart_dir", "/bundle/helm")
 }
 
 type Config struct {
@@ -117,10 +122,6 @@ type Config struct {
 	SandboxModeSleep         time.Duration `config:"sandbox_mode_sleep" validate:"required"`
 	SandboxModeEnableRunners bool          `config:"sandbox_mode_enable_runners"`
 
-	// terraform cloud
-	TFEToken           string `config:"tfe_token" validate:"required"`
-	TFEOrgsWorkspaceID string `config:"tfe_orgs_workspace_id" validate:"required"`
-
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
 
@@ -139,6 +140,29 @@ type Config struct {
 	AWSCloudFormationStackTemplateBaseURL string `config:"aws_cloudformation_stack_template_base_url"`
 	RunnerEnableSupport                   bool   `config:"runner_enable_support"`
 	RunnerDefaultSupportIAMRole           string `config:"runner_default_support_iam_role_arn" validate:"required"`
+
+	// configuration for managing AWS infra for orgs, apps and installs
+	ManagementIAMRoleARN string `config:"management_iam_role_arn" validate:"required"`
+
+	ManagementAccountID      string `config:"management_account_id" validate:"required"`
+	ManagementECRRegistryID  string `config:"management_ecr_registry_id" validate:"required"`
+	ManagementECRRegistryARN string `config:"management_ecr_registry_arn" validate:"required"`
+
+	// configuration for org runners
+	OrgRunnerK8sClusterID      string `config:"org_runner_k8s_cluster_id" validate:"required"`
+	OrgRunnerK8sPublicEndpoint string `config:"org_runner_k8s_public_endpoint" validate:"required"`
+	OrgRunnerK8sCAData         string `config:"org_runner_k8s_ca_data" validate:"required"`
+	OrgRunnerOIDCProviderURL   string `config:"org_runner_oidc_provider_url" validate:"required"`
+	OrgRunnerOIDCProviderARN   string `config:"org_runner_oidc_provider_arn" validate:"required"`
+	OrgRunnerK8sIAMRoleARN     string `config:"org_runner_k8s_iam_role_arn" validate:"required"`
+	OrgRunnerRegion            string `config:"org_runner_region" validate:"required"`
+	OrgRunnerSupportRoleARN    string `config:"org_runner_support_role_arn" validate:"required"`
+	OrgRunnerHelmChartDir      string `config:"org_runner_helm_chart_dir" validate:"required"`
+
+	// configuration for managing the public dns zone
+	DNSManagementIAMRoleARN string `config:"dns_management_iam_role_arn" validate:"required"`
+	DNSZoneID                  string `config:"dns_zone_id" validate:"required"`
+	DNSRootDomain              string `config:"dns_root_domain" validate:"required"`
 
 	// analytics configuration
 	SegmentWriteKey  string `config:"segment_write_key" validate:"required"`

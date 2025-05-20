@@ -24,9 +24,10 @@ func (b *handler) pushLocal(
 	args := []string{
 		"push",
 		localRef,
+		"--tls-verify=false",
 	}
 
-	lw := zapwriter.New(log, zapcore.InfoLevel, "push")
+	lw := zapwriter.New(log, zapcore.InfoLevel, "push ")
 	cmd, err := command.New(b.v,
 		command.WithCmd(dockerPath),
 		command.WithArgs(args),
