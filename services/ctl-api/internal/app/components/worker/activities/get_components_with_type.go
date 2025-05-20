@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
-	"gorm.io/gorm"
 )
 
 type GetComponentsWithType struct {
@@ -13,16 +11,13 @@ type GetComponentsWithType struct {
 }
 
 // @temporal-gen activity
+// @start-to-close-timeout 300s
+// @max-retries 1
 func (a *Activities) GetComponentsWithType(ctx context.Context, req GetComponentsWithType) ([]app.Component, error) {
 	comps := make([]app.Component, 0)
-	res := a.db.WithContext(ctx).Model(&app.Component{}).Where("ID IN ?", req.IDs).
-		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.
-				Table(views.DefaultViewName(db,
-					&app.ComponentConfigConnection{}, 1)).
-				Order("created_at DESC")
-		}).
 
+	res := a.db.WithContext(ctx).Model(&app.Component{}).Where("ID IN ?", req.IDs).
+		Preload("ComponentConfigs").
 		// preload all terraform configs
 		Preload("ComponentConfigs.TerraformModuleComponentConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.PublicGitVCSConfig").
