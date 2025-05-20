@@ -21,7 +21,7 @@ func (w *Workflows) BackfillComponentType(ctx workflow.Context, sreq signals.Req
 		return nil
 	}
 
-	batchSize := 3
+	batchSize := 1
 	batchCount := len(impactedCompIDs) / batchSize
 	if len(impactedCompIDs)%batchSize != 0 {
 		batchCount++
