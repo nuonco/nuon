@@ -23,7 +23,10 @@ import {
   ClickToCopyButton,
   CodeViewer,
 } from '@/components'
-import { TerraformWorkspace } from '@/components/InstallSandbox/TerraformWorkspace'
+import {
+  TerraformWorkspace,
+  ValuesFileModal,
+} from '@/components/InstallSandbox'
 import {
   getInstall,
   getInstallSandboxRuns,
@@ -149,23 +152,28 @@ export default withPageAuthRequired(async function InstallComponent({
           </Section>
 
           {org?.features?.['terraform-workspace'] && (
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Section heading="Terraform state">
-                    <Loading
-                      variant="stack"
-                      loadingText="Loading latest Terraform workspace..."
-                    />
-                  </Section>
-                }
-              >
-                <TerraformWorkspace
-                  orgId={orgId}
-                  workspace={install.sandbox.terraform_workspace}
-                />
-              </Suspense>
-            </ErrorBoundary>
+            <Section
+              className="flex-initial"
+              childrenClassName="flex flex-col gap-4"
+            >
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={
+                    <Section heading="Terraform state">
+                      <Loading
+                        variant="stack"
+                        loadingText="Loading latest Terraform workspace..."
+                      />
+                    </Section>
+                  }
+                >
+                  <TerraformWorkspace
+                    orgId={orgId}
+                    workspace={install.sandbox.terraform_workspace}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            </Section>
           )}
         </div>
 
@@ -215,6 +223,7 @@ const LoadSandboxConfig: FC<{
         variables={data?.sandbox?.variables}
         isNotTruncated
       />
+      <ValuesFileModal valuesFiles={data?.sandbox?.variables_files} />
     </>
   )
 }
