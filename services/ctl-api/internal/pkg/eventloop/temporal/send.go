@@ -1,6 +1,7 @@
 package temporal
 
 import (
+	"strings"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -104,31 +105,69 @@ func (e *evClient) SendAsync(ctx workflow.Context, id string, signal eventloop.S
 
 	// TODO(sdboyer) should we handle start/restart cases here, like the other Send methods?
 
+	var listenerID string
+	if err := workflow.SideEffect(ctx, func(ctx workflow.Context) interface{} {
+		return shortid.NewNanoID("listen")
+	}).Get(&listenerID); err != nil {
+		return nil, errors.Wrap(err, "unable to generate listener id")
+	}
+	if listenerID == "" {
+		return nil, errors.New("generated listener id was empty")
+	}
+
 	info := workflow.GetInfo(ctx)
 	listener := eventloop.SignalListener{
 		WorkflowID: info.WorkflowExecution.ID,
 		Namespace:  info.Namespace,
-		SignalName: shortid.NewNanoID("listen"),
+		SignalName: listenerID,
 	}
 
 	if err := eventloop.AppendListenerIDs(signal, listener); err != nil {
 		e.mw.Incr("event_loop.signal", metrics.ToStatusTag("unable to add listeners"))
-		l.Error("could not register signal listeners", zap.Error(err))
+		l.Error("unable to register signal listeners", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to add listeners")
 	}
 
-	err := workflow.SignalExternalWorkflow(
-		workflow.WithWorkflowNamespace(ctx, signal.Namespace()),
-		id,
-		"",
-		signal.Name(),
-		signal,
-	)
-	if err != nil {
-		e.mw.Incr("event_loop.signal", metrics.ToStatusTag("unable_to_send"))
+	// This is a nasty hack to compensate for the fact that eventloop assumes an alignment between
+	// workflow id and the signal channel to listen on. that's fine historically, but doesn't work when we have
+	// subloops with a hierarchical id. The simplest solution is probably to not have hierarchical ids, but
+	// for now we munge the id to include only the tail id, which should be the underlying object id that's being
+	// listened on
+	mungeid := id
+	if idx := strings.LastIndex(id, "-"); idx != -1 {
+		mungeid = id[idx+1:]
 	}
 
-	fut, set := workflow.NewFuture(ctx)
+	var cancelled bool
+	err := workflow.SignalExternalWorkflow(
+		workflow.WithWorkflowNamespace(ctx, signal.Namespace()),
+		signal.WorkflowID(id),
+		"",
+		mungeid,
+		signal,
+	).Get(ctx, nil)
+	if err != nil {
+		e.mw.Incr("event_loop.signal", metrics.ToStatusTag("unable_to_send"))
+		l.Warn("unable to dispatch signal to workflow",
+			zap.String("from-workflow", info.WorkflowExecution.ID),
+			zap.String("to-workflow", id),
+			zap.Error(err),
+		)
+		cancelled = true
+		return nil, errors.Wrapf(err, "failed sending signal to workflow with id %q", signal.WorkflowID(id))
+	}
+
+	donechan := ctx.Done()
+	dctx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer func() {
+		if cancelled {
+			cancel()
+		}
+	}()
+
+	// Prepare to receive response before we send the signal
+	selector := workflow.NewSelector(dctx)
+	fut, set := workflow.NewFuture(dctx)
 
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		val := new(eventloop.SignalDoneMessage)
@@ -146,6 +185,33 @@ func (e *evClient) SendAsync(ctx workflow.Context, id string, signal eventloop.S
 		}
 	})
 
+	selector.AddReceive(donechan, func(_ workflow.ReceiveChannel, _ bool) {
+		cancelled = true
+
+		// Propagate the cancellation to the signalled workflow
+		err := workflow.SignalExternalWorkflow(
+			workflow.WithWorkflowNamespace(ctx, signal.Namespace()),
+			signal.WorkflowID(id),
+			"",
+			"cancel-signal",
+			signal,
+		).Get(ctx, nil)
+		if err != nil {
+			e.mw.Incr("event_loop.signal", metrics.ToStatusTag("unable_to_send"))
+			l.Error("unable to dispatch cancellation signal to workflow",
+				zap.String("from-workflow", info.WorkflowExecution.ID),
+				zap.String("to-workflow", id),
+				zap.Error(err),
+			)
+		}
+	})
+	selector.AddFuture(fut, func(f workflow.Future) {})
+
+	// Now send it
+	selector.Select(dctx)
+	if cancelled {
+		return nil, ctx.Err()
+	}
 	return fut, nil
 }
 
