@@ -1,9 +1,10 @@
 package helpers
 
 import (
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
-	"gorm.io/gorm"
 )
 
 // component config connections
@@ -36,4 +37,30 @@ func PreloadLatestConfig(db *gorm.DB) *gorm.DB {
 
 		// preload all job configs
 		Preload("ComponentConfigs.JobComponentConfig")
+}
+
+// component config connections
+func PreloadComponentBuildConfig(db *gorm.DB) *gorm.DB {
+	return db.
+		// preload all terraform configs
+		Preload("ComponentConfigConnection.TerraformModuleComponentConfig").
+		Preload("ComponentConfigConnection.TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigConnection.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigConnection.TerraformModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
+
+		// preload all helm configs
+		Preload("ComponentConfigConnection.HelmComponentConfig").
+		Preload("ComponentConfigConnection.HelmComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigConnection.HelmComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigConnection.HelmComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
+
+		// preload all docker configs
+		Preload("ComponentConfigConnection.DockerBuildComponentConfig").
+		Preload("ComponentConfigConnection.DockerBuildComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigConnection.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigConnection.DockerBuildComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
+
+		// preload all external image configs
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AWSECRImageConfig")
 }

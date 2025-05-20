@@ -12,7 +12,7 @@ import (
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	iamv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
-	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
+	orgiam "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/iam"
 )
 
 func (w *Workflows) execDeprovisionWorkflow(
@@ -48,7 +48,7 @@ func (w *Workflows) execDeprovisionWorkflow(
 func (w *Workflows) execDeprovisionIAMWorkflow(
 	ctx workflow.Context,
 	dryRun bool,
-	req *executors.DeprovisionIAMRequest,
+	req *orgiam.DeprovisionIAMRequest,
 ) (*iamv1.DeprovisionIAMResponse, error) {
 	if dryRun {
 		l := workflow.GetLogger(ctx)

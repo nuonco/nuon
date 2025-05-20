@@ -27,13 +27,7 @@ type ProvisionIAMRequest struct {
 }
 
 type ProvisionIAMResponse struct {
-	DeploymentsRoleArn   string
-	InstallationsRoleArn string
-	RunnerRoleArn     string
-	InstancesRoleArn     string
-	InstallerRoleArn     string
-	OrgsRoleArn          string
-	SecretsRoleArn       string
+	RunnerRoleArn string
 }
 
 type DeprovisionIAMRequest struct {

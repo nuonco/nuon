@@ -12,7 +12,6 @@ import (
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
 type Params struct {
@@ -31,7 +30,6 @@ type Params struct {
 type Activities struct {
 	db              *gorm.DB
 	cfg             *internal.Config
-	components      *protos.Adapter
 	appsHelpers     *appshelpers.Helpers
 	runnersHelpers  *runnershelpers.Helpers
 	installsHelpers *installshelpers.Helpers

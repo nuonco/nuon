@@ -39,13 +39,13 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 		return
 	}
 
-	reorderedCmp, err := s.appsHelpers.OrderComponentsByDep(ctx, component)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to order components by dependency: %w", err))
-		return
-	}
+	//reorderedCmp, err := s.appsHelpers.OrderComponentsByDep(ctx, component)
+	//if err != nil {
+	//ctx.Error(fmt.Errorf("unable to order components by dependency: %w", err))
+	//return
+	//}
 
-	ctx.JSON(http.StatusOK, reorderedCmp)
+	ctx.JSON(http.StatusOK, component)
 }
 
 func (s *service) getAppComponents(ctx *gin.Context, appID string) ([]app.Component, error) {

@@ -37,7 +37,7 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 	case app.RunnerGroupTypeOrg:
 		err = w.executeDeprovisionOrgRunner(ctx, sreq.ID, sreq.SandboxMode)
 	case app.RunnerGroupTypeInstall:
-		err = w.executeDeprovisionInstallRunner(ctx, sreq.ID, sreq.SandboxMode)
+		err = errors.New("install runners are provisioned via cloudformation stacks")
 	}
 	if err != nil {
 		w.updateOperationStatus(ctx, op.ID, app.RunnerOperationStatusError)

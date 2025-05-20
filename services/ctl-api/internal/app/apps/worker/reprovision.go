@@ -6,10 +6,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/ecrrepository"
 )
 
 // @temporal-gen workflow
@@ -40,15 +42,14 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 		return nil
 	}
 
+	var repoResp *ecrrepository.CreateRepositoryResponse
 	if currentApp.Org.OrgType == app.OrgTypeDefault {
-		var repoProvisionResp executors.ProvisionECRRepositoryResponse
-		repoProvisionReq := &executors.ProvisionECRRepositoryRequest{
+		repoResp, err = ecrrepository.AwaitCreateRepository(ctx, &ecrrepository.CreateRepositoryRequest{
 			OrgID: currentApp.OrgID,
 			AppID: sreq.ID,
-		}
-		if err := w.execChildWorkflow(ctx, sreq.ID, executors.ProvisionECRRepositoryWorkflowName, sreq.SandboxMode, repoProvisionReq, &repoProvisionResp); err != nil {
-			w.updateStatus(ctx, sreq.ID, app.AppStatusError, "unable to reprovision ECR repository")
-			return fmt.Errorf("unable to reprovision ECR repository: %w", err)
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to provision ECR repository")
 		}
 	} else {
 		l.Info("skipping reprovision ecr",
@@ -57,6 +58,13 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 			zap.Any("org_type", currentApp.Org.OrgType),
 			zap.String("org_id", currentApp.Org.ID),
 			zap.String("org_name", currentApp.Org.Name))
+	}
+
+	if _, err := activities.AwaitCreateAppRepository(ctx, &activities.CreateAppRepositoryRequest{
+		AppID:          sreq.ID,
+		CreateResponse: repoResp,
+	}); err != nil {
+		return errors.Wrap(err, "unable to create app repository")
 	}
 
 	w.updateStatus(ctx, sreq.ID, app.AppStatusActive, "app resources are reprovisioned")
