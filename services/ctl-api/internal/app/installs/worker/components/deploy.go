@@ -38,7 +38,7 @@ func (w *Workflows) doDeploy(ctx workflow.Context, sreq signals.RequestSignal, i
 		return err
 	}
 
-	installID := install.ID
+	installID := sreq.ID
 	deployID := sreq.DeployID
 	sandboxMode := sreq.SandboxMode
 
