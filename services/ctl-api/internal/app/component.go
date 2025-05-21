@@ -133,14 +133,12 @@ func (c *Component) AfterQuery(tx *gorm.DB) error {
 
 	// set configs
 	c.ConfigVersions = len(c.ComponentConfigs)
-	c.Type = ComponentTypeUnknown
 	if len(c.ComponentConfigs) < 1 {
 		return nil
 	}
 
 	// parse the latest config
 	c.LatestConfig = &c.ComponentConfigs[0]
-	c.Type = c.LatestConfig.Type
 
 	return nil
 }

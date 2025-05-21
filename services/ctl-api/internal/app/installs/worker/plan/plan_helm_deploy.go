@@ -37,6 +37,10 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 	state, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
 		InstallID: install.ID,
 	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install state")
+	}
+
 	stateData, err := state.AsMap()
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get state")
@@ -76,6 +80,15 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		return nil, errors.Wrap(err, "unable to render driver")
 	}
 
+	var helmChartID string
+	if driver == "nuon" {
+		hc, err := activities.AwaitGetHelmChartByOwnerID(ctx, installDeploy.InstallComponent.ID)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get helm chart")
+		}
+		helmChartID = hc.ID
+	}
+
 	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get cluster info")
@@ -100,9 +113,9 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		Namespace:       renderedNamespace,
 		CreateNamespace: true,
 		StorageDriver:   renderedDriver,
-
-		ValuesFiles: valuesFiles,
-		Values:      values,
+		HelmChartID:     helmChartID,
+		ValuesFiles:     valuesFiles,
+		Values:          values,
 
 		ClusterInfo: clusterInfo,
 	}, nil
