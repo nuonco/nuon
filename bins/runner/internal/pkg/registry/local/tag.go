@@ -20,7 +20,7 @@ import (
 
 // GetContainerRuntime returns the container runtime that is installed.
 func GetContainerRuntime() string {
-	if _, err := exec.LookPath("podman"); err != nil {
+	if _, err := exec.LookPath("docker"); err == nil {
 		return "docker"
 	}
 	return "podman"
