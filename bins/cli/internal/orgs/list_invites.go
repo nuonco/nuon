@@ -9,6 +9,11 @@ import (
 )
 
 func (s *Service) ListInvites(ctx context.Context, limit int, asJSON bool) error {
+	if s.cfg.OrgID == "" {
+		s.printOrgNotSetMsg()
+		return nil
+	}
+
 	view := ui.NewGetView()
 
 	invites, err := s.listInvites(ctx, limit)
