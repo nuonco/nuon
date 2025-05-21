@@ -35,7 +35,7 @@ export const InstallComponentManagementDropdown: FC<
         <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
           Controls
         </Text>
-        <InstallDeployBuildModal />
+        <InstallDeployBuildModal componentId={component?.id} />
         <>
           <hr className="my-2" />
           <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
