@@ -49,8 +49,8 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 
 		// TBH, this does not really work
 		func() error {
+			// return ValidateVars(ctx, a)
 			return nil
-			return ValidateVars(ctx, a)
 		},
 	}
 	for _, fn := range fns {

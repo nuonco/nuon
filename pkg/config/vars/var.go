@@ -31,16 +31,19 @@ func ValidateVars(ctx context.Context, params ValidateVarsParams) error {
 		ignoreSandboxOutputs: params.IgnoreSandboxOutputs,
 	}
 
-	tmplData, err := v.getTemplate(ctx)
+	fakeState, err := v.GetFakeState(ctx)
 	if err != nil {
-		return errors.Wrap(err, "unable to get template data")
+		return errors.Wrap(err, "unable to get fake state")
+	}
+
+	fakeStateMap, err := fakeState.AsMap()
+	if err != nil {
+		return errors.Wrap(err, "unable to convert fake state to map")
 	}
 
 	for _, inputVar := range params.Vars {
-		if err := v.validateVar(inputVar, tmplData); err != nil {
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("var %s was not valid", inputVar))
-			}
+		if err := v.validateVarV2(inputVar, fakeStateMap); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("var %s was not valid", inputVar))
 		}
 	}
 
