@@ -10,6 +10,7 @@ import (
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	runner "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/kuberunner"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 )
 
@@ -30,9 +31,12 @@ type WorkflowParams struct {
 }
 
 func (w *Workflows) All() []any {
+	wkflow := runner.NewWorkflow(*w.cfg)
+
 	wkflows := []any{
 		w.EventLoop,
 		w.HealthCheck,
+		wkflow.ProvisionRunner,
 	}
 
 	return append(wkflows, w.ListWorkflowFns()...)
