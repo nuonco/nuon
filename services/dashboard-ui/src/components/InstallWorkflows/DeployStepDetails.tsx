@@ -8,6 +8,7 @@ import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { StatusBadge } from '@/components/Status'
 import { Text } from '@/components/Typography'
+import { InstallDeployBuildModal } from '@/components/InstallComponents/DeployBuildModal'
 import type { TInstallDeploy } from '@/types'
 import type { IPollStepDetails } from './InstallWorkflowSteps'
 
@@ -63,15 +64,17 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
                   <div className="flex flex-col border rounded-md shadow">
                     <div className="flex items-center justify-between p-3 border-b">
                       <Text variant="med-14">{deploy?.component_name}</Text>
-                      <Link
-                        className="text-sm gap-0"
-                        href={`/${orgId}/installs/${step?.install_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
-                      >
-                        View deploy details
-                        <CaretRight />
-                      </Link>
+                      <div className="flex items-center gap-4">
+                        <Link
+                          className="text-sm gap-0"
+                          href={`/${orgId}/installs/${step?.install_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
+                        >
+                          View deploy details
+                          <CaretRight />
+                        </Link>
+                      </div>
                     </div>
-                    <div className="p-6">
+                    <div className="p-6 flex flex-col gap-8">
                       <span className="flex gap-4 items-center">
                         <StatusBadge
                           description={deploy?.status_description}
@@ -79,6 +82,26 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
                           label="Deployment status"
                         />
                       </span>
+
+                      {deploy?.status === 'error' ? (
+                        <div className="flex flex-col gap-2 max-w-md">
+                          <Text isMuted variant="med-12">
+                            Re-try failed deployment
+                          </Text>
+                          <Text className="mb-2">
+                            The {deploy?.component_name} deployment failed. You
+                            can re-try from here by manualy deploying the build
+                            and selecting deploy dependencies.
+                          </Text>
+                          <InstallDeployBuildModal
+                            buttonClassName="text-sm w-fit h-[32px]"
+                            buttonVariant="default"
+                            componentId={deploy?.component_id}
+                            initBuildId={deploy?.build_id}
+                            initDeployDeps
+                          />
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 ) : null}
