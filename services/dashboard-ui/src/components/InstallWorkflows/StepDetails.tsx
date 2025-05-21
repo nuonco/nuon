@@ -113,6 +113,11 @@ export function getStepType(
             {sentanceCase(step?.status?.metadata?.reason as string)}
           </Notice>
         ) : null}
+        {step?.status?.metadata?.err_step_message ? (
+          <Notice variant="warn">
+            {sentanceCase(step?.status?.metadata?.err_step_message as string)}
+          </Notice>
+        ) : null}
         {stepDetails}
         <Expand
           id={step.id}
