@@ -3,11 +3,11 @@
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight, Minus } from '@phosphor-icons/react'
-import { ComponentDependencies } from '@/components/Components'
 import {
-  StaticComponentConfigType,
-  getComponentConfigType,
-} from '@/components/ComponentConfig'
+  ComponentDependencies,
+  ComponentConfigType,
+  type TComponentConfigType,
+} from '@/components/Components'
 import {
   DeleteComponentsModal,
   DeployComponentsModal,
@@ -17,14 +17,10 @@ import { StatusBadge } from '@/components/Status'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { ID, Text } from '@/components/Typography'
 // eslint-disable-next-line import/no-cycle
-import type { TComponentConfig, TInstallComponentSummary } from '@/types'
-
-export type TTableInstallComponent = TInstallComponentSummary & {
-  config?: TComponentConfig
-}
+import type { TInstallComponentSummary } from '@/types'
 
 export interface IInstallComponentsTable {
-  installComponents: Array<TTableInstallComponent>
+  installComponents: Array<TInstallComponentSummary>
   installId: string
   orgId: string
 }
@@ -42,7 +38,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
     updateData(installComponents)
   }, [installComponents])
 
-  const columns: Array<ColumnDef<TTableInstallComponent>> = useMemo(
+  const columns: Array<ColumnDef<TInstallComponentSummary>> = useMemo(
     () => [
       {
         header: 'Name',
@@ -61,14 +57,12 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
       },
       {
         header: 'Type',
-        accessorKey: 'config',
+        accessorKey: 'component_config.type',
         cell: (props) =>
-          props.getValue<TComponentConfig>() ? (
+          props.getValue<TComponentConfigType>() ? (
             <Text className="gap-4">
-              <StaticComponentConfigType
-                configType={getComponentConfigType(
-                  props.getValue<TComponentConfig>()
-                )}
+              <ComponentConfigType
+                configType={props.getValue<TComponentConfigType>()}
               />
             </Text>
           ) : (
