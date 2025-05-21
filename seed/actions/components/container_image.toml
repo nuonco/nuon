@@ -10,9 +10,6 @@ type   = "container_image"
 # 2. podman/docker tag docker.io/library/registry 949309607565.dkr.ecr.us-west-2.amazonaws.com/dev:nuonctl-api-seed
 # 3. podman/docker push 949309607565.dkr.ecr.us-west-2.amazonaws.com/dev:nuonctl-api-seed
 #
-[aws_ecr]
-image_url    = "949309607565.dkr.ecr.us-west-2.amazonaws.com/dev"
-tag          = "nuonctl-api-seed"
-region       = "us-west-2"
-iam_role_arn = "arn:aws:iam::949309607565:role/dev-nuon-ecr-access"
-
+[public]
+image_url = "traefik/whoami"
+tag="latest"

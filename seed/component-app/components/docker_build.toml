@@ -3,8 +3,8 @@ type = "docker_build"
 
 dockerfile = "Dockerfile"
 
-[connected_repo]
-directory = "exp/runner-testing"
-repo = "powertoolsdev/mono"
+[public_repo]
+directory = "./"
+repo = "traefik/whoami"
 branch = "main"
 

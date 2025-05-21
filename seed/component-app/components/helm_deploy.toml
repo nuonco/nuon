@@ -1,30 +1,14 @@
-name       = "helm_chart"
-type       = "helm_chart"
-chart_name = "retool"
-
-namespace = "{{.nuon.install.id}}-test"
+#:schema https://api.nuon.co/v1/general/config-schema?source=helm
+name           = "whoami"
+type           = "helm_chart"
+chart_name     = "whoami"
+namespace      = "whoami"
 storage_driver = "configmap"
 
-# define a dependency directly, if you do not use any outputs from it.
-dependencies = ["toml_docker_build", "container_image", "toml_terraform_s3"]
-
-[connected_repo]
-directory = "charts/helm_configmap"
-repo = "powertoolsdev/mono"
-branch = "main"
+[public_repo]
+repo      = "nuonco/demo"
+directory = "eks-simple/src/components/whoami"
+branch    = "main"
 
 [[values_file]]
-contents = "./values.yaml"
-
-[values]
-"config.postgresql.host"    = "localhost"
-"image.repository"          = "tryretool/retool"
-"image.tag"                 = "latest"
-"config.useInsecureCookies" = "true"
-"input-test" = "{{.nuon.inputs.string_type}}"
-"comp-test" = "{{.nuon.components.container_image.outputs.tag}}"
-"install-stack-test" = "{{.nuon.install_stack.outputs.region}}"
-"sandbox-test" = "{{.nuon.sandbox.outputs.region}}"
-"terraform-test" = "{{.nuon.components.toml_terraform_s3.outputs.region}}"
-"terraform-foo" = "bar"
-"terraform-bar" = "foo"
+contents = "./whoami.yaml"

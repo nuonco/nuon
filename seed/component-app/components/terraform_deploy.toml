@@ -1,16 +1,15 @@
-#:schema http://localhost:8081/v1/general/config-schema?source=terraform
-name = "toml_terraform_s3"
-type = "terraform_module"
-terraform_version = "1.8.4"
+#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
+name              = "certificate_wildcard_public"
+type              = "terraform_module"
+terraform_version = "1.11.3"
 
-[connected_repo]
-directory = "bins/nuonctl/components/s3_terraform"
-repo = "powertoolsdev/mono"
-branch = "main"
+[public_repo]
+repo      = "nuonco/byoc"
+directory = "byoc-nuon/src/components/certificate"
+branch    = "main"
 
 [vars]
-region = "{{.nuon.install_stack.outputs.region}}"
-install_id = "{{.nuon.install.id}}"
-
-[[var_file]]
-contents = "./vars.tfvars"
+install_id  = "{{ .nuon.install.id }}"
+region      = "{{ .nuon.install_stack.outputs.region }}"
+zone_id     = "{{ .nuon.sandbox.outputs.nuon_dns.public_domain.zone_id }}"
+domain_name = "*.{{ .nuon.sandbox.outputs.nuon_dns.public_domain.name }}"
