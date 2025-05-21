@@ -9,6 +9,11 @@ import (
 )
 
 func (s *Service) VCSConnections(ctx context.Context, asJSON bool) error {
+	if s.cfg.OrgID == "" {
+		s.printOrgNotSetMsg()
+		return nil
+	}
+
 	view := ui.NewGetView()
 
 	vcs, err := s.listVCSConnections(ctx)
