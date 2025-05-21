@@ -14,7 +14,7 @@ import (
 )
 
 // @temporal-gen workflow
-// @execution-timeout 120m
+// @execution-timeout 720h
 func (w *Workflows) ExecuteWorkflow(ctx workflow.Context, sreq signals.RequestSignal) error {
 	// generate steps
 	l, err := log.WorkflowLogger(ctx)
