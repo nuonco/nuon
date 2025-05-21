@@ -2,9 +2,7 @@ package loop
 
 import (
 	"fmt"
-	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -43,10 +41,6 @@ type Loop[SignalType eventloop.Signal, ReqSig any] struct {
 	Handlers         map[eventloop.SignalType]func(workflow.Context, ReqSig) error
 	NewRequestSignal func(eventloop.EventLoopRequest, SignalType) ReqSig
 
-	// unprocessed cancellation signals
-	cancellations []SignalType
-	cancelNotify  workflow.Channel
-
 	// hooks
 
 	// StartupHook is called once, before the event loop starts in a call to Run
@@ -58,19 +52,14 @@ type Loop[SignalType eventloop.Signal, ReqSig any] struct {
 	ExistsHook func(workflow.Context, eventloop.EventLoopRequest) (bool, error)
 }
 
-func (w *Loop[SignalType, ReqSig]) handleSignal(pctx workflow.Context, wkflowReq eventloop.EventLoopRequest, signal SignalType, defaultTags map[string]string) error {
-	l, err := log.WorkflowLogger(pctx)
+func (w *Loop[SignalType, ReqSig]) handleSignal(ctx workflow.Context, wkflowReq eventloop.EventLoopRequest, signal SignalType, defaultTags map[string]string) error {
+	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
 	}
 
-	pctx = signal.GetWorkflowContext(pctx)
-	fut, set := workflow.NewFuture(pctx)
-	selector := workflow.NewSelector(pctx)
-	ctx, cancel := workflow.WithCancel(pctx)
-
-	w.cancelNotify = workflow.NewChannel(ctx)
-	cancelChan := workflow.GetSignalChannel(ctx, "cancel-signal")
+	ctx = signal.GetWorkflowContext(ctx)
+	startTS := workflow.Now(ctx)
 
 	// NOTE(jm): this wrapper type is basically the result of two requirements:
 	// 1. - to pass state for the org/sandbox-mode into the signal handler
@@ -84,64 +73,19 @@ func (w *Loop[SignalType, ReqSig]) handleSignal(pctx workflow.Context, wkflowReq
 	// the generated function, ie: these methods should be w.AwaitCreated(wkflow-id, signal) vs
 	// w.AwaitCreated(sigReq)
 
-	startTS := workflow.Now(ctx)
 	sigReq := w.NewRequestSignal(wkflowReq, signal)
 	handler, ok := w.Handlers[signal.SignalType()]
 	if !ok || handler == nil {
-		set.SetError(fmt.Errorf("unhandled signal %s", signal.SignalType()))
+		err = fmt.Errorf("unhandled signal %s", signal.SignalType())
 	} else {
-		workflow.Go(ctx, func(ctx workflow.Context) {
-			// Check all queued cancellation signals and preemptively cancel if we find a match
-			for i, cancelsig := range w.cancellations {
-				if w.signalsMatch(signal, cancelsig) {
-					l.Info("cancelling signal handler", zap.String("signal", signal.Name()))
-					cancel()
-					w.cancellations = slices.Delete(w.cancellations, i, i+1)
-					// The context is pre-cancelled, but for consistency with in-flight cancellations
-					// we still attempt to start the child workflow
-					break
-				}
-			}
-
-			set.SetError(handler(ctx, sigReq))
-		})
+		err = handler(ctx, sigReq)
 	}
-
-	// var done bool
-	selector.AddReceive(cancelChan, func(channel workflow.ReceiveChannel, _ bool) {
-		l.Info("cancel signal received")
-		var cancelsig SignalType
-		channelOpen := channel.Receive(ctx, &cancelsig)
-		if !channelOpen {
-			l.Error("should be unreachable - cancel channel was closed")
-			return
-		}
-		if w.signalsMatch(signal, cancelsig) {
-			// done = true
-			cancel()
-			// err = ctx.Err()
-		} else {
-			// Cancellation wasn't for currently running handler, enqueue it for checking later
-			w.cancellations = append(w.cancellations, cancelsig)
-		}
-	})
-
-	selector.AddFuture(fut, func(f workflow.Future) {
-		// done = true
-	})
-
-	for !fut.IsReady() {
-		selector.Select(ctx)
-	}
-	err = fut.Get(ctx, nil)
 
 	op := signal.Name()
 	status := "ok"
 	if err != nil {
 		status = "error"
-		if temporal.IsTimeoutError(err) {
-			status = "timeout"
-		} else if temporal.IsPanicError(err) {
+		if temporal.IsPanicError(err) {
 			status = "panic"
 		}
 		l.Error("signal handling failed", zap.Error(err), zap.String("signal", op))
@@ -203,11 +147,6 @@ func (w *Loop[SignalType, ReqSig]) handleSignal(pctx workflow.Context, wkflowReq
 	return nil
 }
 
-func (w *Loop[SignalType, ReqSig]) signalsMatch(a, b SignalType) bool {
-	// FIXME(sdboyer) make this a smarter check. just cancelling on name meaans weird behavior if multiple same-name signals are queued. but we need to decide on semantics
-	return a.Name() == b.Name()
-}
-
 func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []SignalType) error {
 	signalChan := workflow.GetSignalChannel(ctx, req.ID)
 	l, err := log.WorkflowLogger(ctx)
@@ -227,7 +166,7 @@ func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.Event
 	w.MW.Gauge(ctx, "event_loop.restart_count", float64(req.RestartCount), metrics.ToTags(defaultTags)...)
 	w.MW.Gauge(ctx, "event_loop.version_change_count", float64(req.VersionChangeCount), metrics.ToTags(defaultTags)...)
 
-	if w.StartupHook != nil && !isWorkflowELoop(wkflowInfo.WorkflowExecution.ID) {
+	if w.StartupHook != nil {
 		if err := w.StartupHook(ctx, req); err != nil {
 			l.Error("startup hook failed, restarting", zap.Error(err))
 			w.MW.Incr(ctx, "event_loop.restart", metrics.ToTags(defaultTags, "op", "restarted", "reason", "startup_hook_failure")...)
@@ -401,9 +340,4 @@ func (w *Loop[SignalType, ReqSig]) filterSignals(ctx workflow.Context, info *wor
 		}
 	}
 	return ret
-}
-
-// TODO(sdboyer) remove this - a temporary hack while user workflows are still cohabiting with event loops
-func isWorkflowELoop(id string) bool {
-	return strings.Index(id, "event-loop-workflow-") == 0
 }
