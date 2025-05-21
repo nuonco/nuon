@@ -50,3 +50,7 @@ func (s *Service) printOrgNotFoundMsg(id string) {
 func (s *Service) notFoundErr(id string) error {
 	return errors.New(fmt.Sprintf("org %s was not found", id))
 }
+
+func (s *Service) printOrgNotSetMsg() {
+	pterm.DefaultBasicText.Printfln("current org is not set, use %s to set one", pterm.LightMagenta("orgs select"))
+}

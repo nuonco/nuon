@@ -101,7 +101,6 @@ func (c *cli) orgsCmd() *cobra.Command {
 			return svc.ConnectGithub(cmd.Context())
 		}),
 	}
-	connectGithubCmd.Flags().StringVarP(&id, "org-id", "o", "", "The ID of the org you want to use")
 	connectGithubCmd.MarkFlagRequired("org-id")
 	orgsCmd.AddCommand(connectGithubCmd)
 
