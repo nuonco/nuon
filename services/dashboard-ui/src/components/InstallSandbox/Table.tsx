@@ -18,14 +18,17 @@ export const DataTable: FC<IDataTable> = ({ headers, initData }) => {
         style={{ gridTemplateColumns: `repeat(${headers.length}, auto)` }}
       >
         {headers.map((header, i) => (
-          <div className="py-4 pr-6" key={`header-${i}`}>
+          <div className={`py-4 ${i !== 0 && 'pl-6'}`} key={`header-${i}`}>
             <Text isMuted>{header}</Text>
           </div>
         ))}
 
         {data.map((row) =>
           row.map((td, i) => (
-            <div className="py-4 border-t" key={`cell-${i}`}>
+            <div
+              className={`border-t py-4 ${i !== 0 && 'pl-6'}`}
+              key={`cell-${i}`}
+            >
               {td}
             </div>
           ))
