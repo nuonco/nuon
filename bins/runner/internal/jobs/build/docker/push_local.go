@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -21,10 +22,19 @@ func (b *handler) pushLocal(
 		return err
 	}
 
-	args := []string{
-		"push",
-		localRef,
-		"--tls-verify=false",
+	var args []string
+	if strings.Contains(dockerPath, "podman") {
+		args = []string{
+			"push",
+			localRef,
+			"--tls-verify=false",
+		}
+	} else {
+		args = []string{
+			"--tlsverify=false",
+			"push",
+			localRef,
+		}
 	}
 
 	lw := zapwriter.New(log, zapcore.InfoLevel, "push ")
