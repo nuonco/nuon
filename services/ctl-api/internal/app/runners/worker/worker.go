@@ -9,11 +9,14 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/go-playground/validator/v10"
+
 	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
 	pkgworkflows "github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
+	runner "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/kuberunner"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
 )
 
@@ -24,6 +27,7 @@ type Worker struct {
 type WorkerParams struct {
 	fx.In
 
+	V *validator.Validate
 	Cfg     *internal.Config
 	Tclient temporalclient.Client
 	Wkflows *Workflows
@@ -54,6 +58,7 @@ func New(params WorkerParams) (*Worker, error) {
 	for _, acts := range params.SharedActivities.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}
+	wkr.RegisterActivity(runner.NewActivities(params.V, params.Cfg))
 
 	// register workflows
 	for _, wkflow := range params.Wkflows.All() {
