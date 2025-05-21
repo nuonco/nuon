@@ -21,7 +21,6 @@ type Signal interface {
 	WorkflowID(id string) string
 	WorkflowName() string
 	Namespace() string
-	// Signal name is the same as temporal workflow type
 	Name() string
 	SignalType() SignalType
 
