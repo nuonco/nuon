@@ -38,6 +38,13 @@ func (h *Helpers) EnsureInstallComponents(ctx context.Context, appID string, ins
 		}
 	}
 
+	helmCmps := make(map[string]bool, 0)
+	for _, component := range parentApp.Components {
+		if component.Type == app.ComponentTypeHelmChart {
+			helmCmps[component.ID] = true
+		}
+	}
+
 	if len(installCmps) < 1 {
 		return nil
 	}
@@ -54,6 +61,16 @@ func (h *Helpers) EnsureInstallComponents(ctx context.Context, appID string, ins
 		Create(h.TFWorkspacesFromICs(installCmps))
 	if res.Error != nil {
 		return fmt.Errorf("unable to create terraform workspaces: %w", res.Error)
+	}
+
+	helmCharts := h.HelmChartFromICs(installCmps, helmCmps)
+	if len(helmCharts) > 0 {
+		res = h.db.WithContext(ctx).
+			Clauses(clause.OnConflict{DoNothing: true}).
+			Create(helmCharts)
+		if res.Error != nil {
+			return fmt.Errorf("unable to create helm releases: %w", res.Error)
+		}
 	}
 
 	return nil
@@ -73,4 +90,23 @@ func (h *Helpers) TFWorkspacesFromICs(ics []app.InstallComponent) []app.Terrafor
 		workspaces = append(workspaces, h.TFWorkSpaceFromIC(ic))
 	}
 	return workspaces
+}
+
+func (h *Helpers) HelmReleaseFromIC(ic app.InstallComponent) app.HelmChart {
+	return app.HelmChart{
+		OrgID:     ic.OrgID,
+		OwnerID:   ic.ID,
+		OwnerType: "install_components",
+	}
+}
+
+func (h *Helpers) HelmChartFromICs(ics []app.InstallComponent, helmCmps map[string]bool) []app.HelmChart {
+	releases := make([]app.HelmChart, 0, len(ics))
+	for _, ic := range ics {
+		if !helmCmps[ic.ComponentID] {
+			continue
+		}
+		releases = append(releases, h.HelmReleaseFromIC(ic))
+	}
+	return releases
 }
