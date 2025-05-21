@@ -5,7 +5,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/kube"
 )
 
-func (w *wkflow) getClusterInfo() *kube.ClusterInfo {
+func (w *Wkflow) getClusterInfo() *kube.ClusterInfo {
 	return &kube.ClusterInfo{
 		ID:       w.cfg.OrgRunnerK8sClusterID,
 		Endpoint: w.cfg.OrgRunnerK8sPublicEndpoint,

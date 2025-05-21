@@ -5,9 +5,11 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
+	kuberunner "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/kuberunner"
 )
 
 func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, apiToken string, sandboxMode bool) error {
@@ -28,22 +30,21 @@ func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, ap
 		return nil
 	}
 
-	req := &executors.ProvisionRunnerRequest{
+	req := &kuberunner.ProvisionRunnerRequest{
 		RunnerID:                 runnerID,
 		APIURL:                   runner.RunnerGroup.Settings.RunnerAPIURL,
 		APIToken:                 apiToken,
-		RunnerIAMRole:            runner.RunnerGroup.Settings.OrgAWSIAMRoleARN,
+		RunnerIAMRole:            fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", w.cfg.ManagementAccountID, runnerID, runnerID),
 		RunnerServiceAccountName: runner.RunnerGroup.Settings.OrgK8sServiceAccountName,
-		Image: executors.ProvisionRunnerRequestImage{
+		Image: kuberunner.ProvisionRunnerRequestImage{
 			URL: runner.RunnerGroup.Settings.ContainerImageURL,
 			Tag: runner.RunnerGroup.Settings.ContainerImageTag,
 		},
 	}
-	var resp executors.ProvisionRunnerResponse
-	err = w.execChildWorkflow(ctx, runnerID, executors.ProvisionRunnerWorkflowName, sandboxMode, req, &resp)
+	_, err = kuberunner.AwaitProvisionRunner(ctx, req)
 	if err != nil {
 		w.updateStatus(ctx, runnerID, app.RunnerStatusError, "unable to provision runner")
-		return fmt.Errorf("unable to provision runner: %w", err)
+		return errors.Wrap(err, "unable to provision runner")
 	}
 
 	w.updateStatus(ctx, runnerID, app.RunnerStatusActive, "runner is active and ready to process jobs")
