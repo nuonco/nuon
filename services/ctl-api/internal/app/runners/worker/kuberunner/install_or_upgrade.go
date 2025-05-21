@@ -10,12 +10,11 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/helm"
 	"github.com/powertoolsdev/mono/pkg/kube"
-	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
 )
 
 type InstallOrUpgradeRequest struct {
 	ClusterInfo *kube.ClusterInfo
-	Image       executors.ProvisionRunnerRequestImage
+	Image       ProvisionRunnerRequestImage
 
 	Namespace                string
 	Timeout                  time.Duration
