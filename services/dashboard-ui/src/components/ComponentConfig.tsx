@@ -22,7 +22,7 @@ import { ToolTip } from '@/components/ToolTip'
 import { Text, Truncate, type TTextVariant } from '@/components/Typography'
 import { TComponentConfig, TVCSGit, TVCSGitHub } from '@/types'
 
-export type TComponentConfigType =
+type TComponentConfigType =
   | 'docker'
   | 'external'
   | 'helm'

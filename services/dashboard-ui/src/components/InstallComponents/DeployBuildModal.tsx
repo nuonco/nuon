@@ -5,7 +5,7 @@ import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { CloudCheck, CloudArrowUp } from '@phosphor-icons/react'
-import { Button } from '@/components/Button'
+import { Button, type TButtonVariant } from '@/components/Button'
 import { CheckboxInput, RadioInput } from '@/components/Input'
 import { SpinnerSVG, Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
@@ -16,17 +16,27 @@ import { deployComponentBuild } from '@/components/install-actions'
 import type { TBuild } from '@/types'
 import { trackEvent } from '@/utils'
 
-export const InstallDeployBuildModal: FC<{}> = ({}) => {
-  const params =
-    useParams<Record<'org-id' | 'install-id' | 'component-id', string>>()
+export const InstallDeployBuildModal: FC<{
+  buttonClassName?: string
+  buttonVariant?: TButtonVariant
+  componentId: string
+  initBuildId?: string
+  initDeployDeps?: boolean
+}> = ({
+  buttonClassName = 'text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full',
+  buttonVariant = 'ghost',
+  initBuildId,
+  componentId,
+  initDeployDeps = false,
+}) => {
+  const params = useParams<Record<'org-id' | 'install-id', string>>()
   const orgId = params['org-id']
   const installId = params['install-id']
-  const componentId = params['component-id']
   const router = useRouter()
   const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
-  const [buildId, setBuildId] = useState<string>()
-  const [deployDeps, setDeployDeps] = useState<boolean>(false)
+  const [buildId, setBuildId] = useState<string>(initBuildId)
+  const [deployDeps, setDeployDeps] = useState<boolean>(initDeployDeps)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [error, setError] = useState<string>()
@@ -68,6 +78,7 @@ export const InstallDeployBuildModal: FC<{}> = ({}) => {
                 </Text>
 
                 <BuildOptions
+                  buildId={buildId}
                   componentId={componentId}
                   orgId={orgId}
                   setBuildId={setBuildId}
@@ -173,11 +184,11 @@ export const InstallDeployBuildModal: FC<{}> = ({}) => {
         : null}
 
       <Button
-        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full"
+        className={buttonClassName}
         onClick={() => {
           setIsOpen(true)
         }}
-        variant="ghost"
+        variant={buttonVariant}
       >
         Deploy component build
       </Button>
@@ -186,10 +197,11 @@ export const InstallDeployBuildModal: FC<{}> = ({}) => {
 }
 
 const BuildOptions: FC<{
+  buildId?: string
   componentId: string
   orgId: string
   setBuildId: (id: string) => void
-}> = ({ componentId, orgId, ...props }) => {
+}> = ({ buildId, componentId, orgId, ...props }) => {
   const [builds, setBuilds] = useState<Array<TBuild>>()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>()
@@ -228,6 +240,7 @@ const BuildOptions: FC<{
             key={build?.id}
             name="build-id"
             value={build?.id}
+            defaultChecked={buildId === build?.id}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               props.setBuildId(e.target?.value)
             }}
