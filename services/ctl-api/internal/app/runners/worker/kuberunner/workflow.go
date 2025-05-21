@@ -5,12 +5,12 @@ import (
 )
 
 // NewWorkflow returns a new workflow executor
-func NewWorkflow(cfg workers.Config) wkflow {
-	return wkflow{
+func NewWorkflow(cfg workers.Config) Wkflow {
+	return Wkflow{
 		cfg: cfg,
 	}
 }
 
-type wkflow struct {
+type Wkflow struct {
 	cfg workers.Config
 }
