@@ -11,8 +11,13 @@ import (
 )
 
 func (s *Service) ConnectGithub(ctx context.Context) error {
+	if s.cfg.OrgID == "" {
+		s.printOrgNotSetMsg()
+		return nil
+	}
+
 	var v *models.AppVCSConnection
-	var connection = "started"
+	connection := "started"
 	view := ui.NewGetView()
 
 	ogVcs, _, err := s.api.GetVCSConnections(ctx, &models.GetVCSConnectionsQuery{
@@ -40,7 +45,6 @@ func (s *Service) ConnectGithub(ctx context.Context) error {
 			Limit:             50,
 			PaginationEnabled: s.cfg.PaginationEnabled,
 		})
-
 		if err != nil {
 			view.Error(err)
 			connection = "failed"
