@@ -15,9 +15,8 @@ import {
   Notice,
   Text,
   Time,
-  type TTableInstallComponent,
 } from '@/components'
-import { getComponentConfig, getInstall } from '@/lib'
+import { getInstall } from '@/lib'
 import type { TInstallComponentSummary } from '@/types'
 import { nueQueryData } from '@/utils'
 
@@ -103,29 +102,11 @@ const LoadInstallComponents: FC<{
     path: `installs/${installId}/components/summary`,
   })
 
-  const hydratedInstallComponents = data
-    ? await Promise.all(
-        data?.map(async (ic) => {
-          const config = await getComponentConfig({
-            componentId: ic?.component_id,
-            orgId,
-          }).catch(console.error)
-
-          return {
-            ...ic,
-            config,
-          }
-        })
-      )
-    : []
-
   return error ? (
     <Notice>Can&apos;t load install components: {error?.error}</Notice>
-  ) : hydratedInstallComponents?.length ? (
+  ) : data?.length ? (
     <InstallComponentsTable
-      installComponents={
-        hydratedInstallComponents as Array<TTableInstallComponent>
-      }
+      installComponents={data}
       installId={installId}
       orgId={orgId}
     />
