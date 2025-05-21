@@ -27,11 +27,11 @@ members:
   # Harsh Thakur
   - username: RealHarshThakur
     role: admin
+  - username: someshkoli
+    role: admin
   # all other team members
   # shared nuon user
   - username: nuonbot
-  # Don Neufeld
-  - username: dnf
   # Casey Bierman
   - username: Casey-00
   # Kristin Jerome
