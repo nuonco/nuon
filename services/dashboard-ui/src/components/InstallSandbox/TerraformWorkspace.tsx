@@ -11,7 +11,7 @@ import { Time } from '@/components/Time'
 import { WorkspaceManagementDropdown } from '@/components/InstallSandbox/WorkspaceManagementDropdown'
 import { DataTable } from '@/components/InstallSandbox/Table'
 import { Tabs, Tab } from '@/components/InstallSandbox/Tabs'
-import { Text } from '@/components/Typography'
+import { Text, Code } from '@/components/Typography'
 import { getToken } from '@/components/admin-actions'
 
 export interface ITerraformWorkspace {
@@ -86,9 +86,17 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
     const outputList = Object.keys(outputs).map((key, idx) => [
       <span key={idx} className="flex flex-col">
         <Text variant="med-12">{key}</Text>
-        <Text variant="mono-12">{outputs[key].type[0]}</Text>
+        <Text variant="mono-12">
+          {Array.isArray(outputs[key].type)
+            ? outputs[key].type[0]
+            : outputs[key].type}
+        </Text>
       </span>,
-      <JsonView key={idx} data={outputs[key]?.value} />,
+      outputs[key]?.type === 'string' ? (
+        <Code>{outputs[key]?.value}</Code>
+      ) : (
+        <JsonView key={idx} data={outputs[key]?.value} />
+      ),
     ])
 
     contents = (
