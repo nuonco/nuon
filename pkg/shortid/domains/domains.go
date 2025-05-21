@@ -309,3 +309,7 @@ func NewUserID() string {
 func NewWaitListID() string {
 	return shortid.NewNanoID("wtl")
 }
+
+func NewHelmChartID() string {
+	return shortid.NewNanoID("hmc")
+}
