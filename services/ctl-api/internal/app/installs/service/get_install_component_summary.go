@@ -66,32 +66,16 @@ func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 		return
 	}
 
-	// Build visitedComps using logic from GetConfigGraph
-	visitedComps := make(map[string]bool)
-	for _, conn := range install.AppConfig.ComponentConfigConnections {
-		visitedComps[conn.ComponentID] = true
-	}
-
 	allComps, err := s.appsHelpers.GetAppComponentsAtConfigVersion(ctx, install.AppID, install.AppConfig.Version)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app components: %w", err))
 		return
 	}
 
-	missingComps := make([]app.ComponentConfigConnection, 0)
-	for _, comp := range allComps {
-		if _, exists := visitedComps[comp.ID]; !exists {
-
-			if len(comp.ComponentConfigs) < 1 {
-				continue
-			}
-
-			missingComps = append(missingComps, comp.ComponentConfigs[0])
-
-		}
-	}
-
+	missingComps := s.getMissingComponents(install.AppConfig.ComponentConfigConnections, allComps)
 	allCfgs := append(install.AppConfig.ComponentConfigConnections, missingComps...)
+
+	fillComponentType(allComps, allCfgs)
 
 	compMap := buildInstallComponentConfig(allCfgs, install.InstallComponents)
 	depComps, err := s.buildDependentComponents(compMap, allComps)
@@ -250,4 +234,35 @@ func (s *service) buildDependentComponents(compMap map[string]*app.ComponentConf
 	}
 
 	return depComps, nil
+}
+
+func (s *service) getMissingComponents(existingConnections []app.ComponentConfigConnection, allComps []app.Component) []app.ComponentConfigConnection {
+	visitedComps := make(map[string]bool)
+	for _, conn := range existingConnections {
+		visitedComps[conn.ComponentID] = true
+	}
+
+	missingComps := make([]app.ComponentConfigConnection, 0)
+	for _, comp := range allComps {
+		if _, exists := visitedComps[comp.ID]; !exists {
+			if len(comp.ComponentConfigs) < 1 {
+				continue
+			}
+			missingComps = append(missingComps, comp.ComponentConfigs[0])
+		}
+	}
+	return missingComps
+}
+
+func fillComponentType(allComps []app.Component, allCfgs []app.ComponentConfigConnection) {
+	compTypeMap := make(map[string]app.ComponentType)
+	for _, comp := range allComps {
+		compTypeMap[comp.ID] = comp.Type
+	}
+
+	for i := range allCfgs {
+		if compType, exists := compTypeMap[allCfgs[i].ComponentID]; exists {
+			allCfgs[i].Type = compType
+		}
+	}
 }
