@@ -21,7 +21,7 @@ func (s *sync) getComponent(ctx context.Context, name string, typ models.AppComp
 		return nil, err
 	}
 
-	if typ != comp.Type {
+	if typ != comp.Type && typ != models.AppComponentTypeUnknown {
 		return nil, SyncErr{
 			Resource:    fmt.Sprintf("%s component", typ),
 			Description: "previous component was found with a different type",
