@@ -66,7 +66,10 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
           </div>
         ),
         time: run.updated_at,
-        href: `/${orgId}/installs/${installId}/actions/${action_workflow?.id}/${run.id}`,
+        href:
+          run?.status !== 'queued'
+            ? `/${orgId}/installs/${installId}/actions/${action_workflow?.id}/${run.id}`
+            : null,
         isMostRecent: i === 0,
       }))}
     />
