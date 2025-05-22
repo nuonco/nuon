@@ -203,7 +203,9 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
               </ToolTip>
             </Text>
           </span>
-           <ErrorBoundary fallback={<Text>Can&apso;t fetching sync plan</Text>}>
+          <ErrorBoundary
+            fallback={<Text>Can&apso;t fetching deploy plan</Text>}
+          >
             <Suspense
               fallback={
                 <Loading variant="stack" loadingText="Loading sync plan..." />
@@ -213,11 +215,11 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
                 buttonText="Sync plan"
                 headingText="Component sync plan"
                 orgId={orgId}
-                runnerJobId={deploy?.runner_jobs?.at(0)?.id}
+                runnerJobId={deploy?.runner_jobs?.at(-1)?.id}
               />
             </Suspense>
-           </ErrorBoundary>
-            <ErrorBoundary fallback={<Text>Can&apso;t fetching deploy plan</Text>}>
+          </ErrorBoundary>
+          <ErrorBoundary fallback={<Text>Can&apso;t fetching sync plan</Text>}>
             <Suspense
               fallback={
                 <Loading variant="stack" loadingText="Loading deploy plan..." />
@@ -227,7 +229,7 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
                 buttonText="Deploy plan"
                 headingText="Component deploy plan"
                 orgId={orgId}
-                runnerJobId={deploy?.runner_jobs?.at(-1)?.id}
+                runnerJobId={deploy?.runner_jobs?.at(0)?.id}
               />
             </Suspense>
           </ErrorBoundary>
@@ -552,12 +554,12 @@ const LoadLatestOutputs: FC<{
   ) : null
 }
 
-const LoadRunnerJobPlan: FC<{ orgId: string; runnerJobId: string, buttonText: string, headingText: string }> = async ({
-  buttonText,
-  headingText,
-  orgId,
-  runnerJobId,
-}) => {
+const LoadRunnerJobPlan: FC<{
+  orgId: string
+  runnerJobId: string
+  buttonText: string
+  headingText: string
+}> = async ({ buttonText, headingText, orgId, runnerJobId }) => {
   const { data: plan } = await nueQueryData<string>({
     orgId,
     path: `runner-jobs/${runnerJobId}/plan`,
