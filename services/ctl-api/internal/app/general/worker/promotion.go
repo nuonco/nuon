@@ -3,7 +3,7 @@ package worker
 import (
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/signals"
 )
@@ -12,13 +12,24 @@ import (
 // @execution-timeout 10m
 // @task-timeout 30s
 func (w *Workflows) Promotion(ctx workflow.Context, _ signals.RequestSignal) error {
-	if err := w.RestartOrgEventLoops(ctx); err != nil {
-		return errors.Wrap(err, "unable to restart org event loops")
-	}
+	grp := workflow.NewWaitGroup(ctx)
+	grp.Add(2)
 
-	if err := w.RestartOrgRunners(ctx); err != nil {
-		return errors.Wrap(err, "unable to restart org runners")
-	}
+	var orgerr, runerr error
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		if err := w.RestartOrgEventLoops(ctx); err != nil {
+			orgerr = errors.Wrap(err, "unable to restart org event loops")
+		}
+		grp.Done()
+	})
 
-	return nil
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		if err := w.RestartOrgRunners(ctx); err != nil {
+			runerr = errors.Wrap(err, "unable to restart org runners")
+		}
+		grp.Done()
+	})
+
+	grp.Wait(ctx)
+	return errors.Join(orgerr, runerr)
 }
