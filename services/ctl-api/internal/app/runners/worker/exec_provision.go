@@ -34,7 +34,7 @@ func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, ap
 		RunnerID:                 runnerID,
 		APIURL:                   runner.RunnerGroup.Settings.RunnerAPIURL,
 		APIToken:                 apiToken,
-		RunnerIAMRole:            fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", w.cfg.ManagementAccountID, runnerID, runnerID),
+		RunnerIAMRole:            fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", w.cfg.ManagementAccountID, runner.OrgID, runner.OrgID),
 		RunnerServiceAccountName: runner.RunnerGroup.Settings.OrgK8sServiceAccountName,
 		Image: kuberunner.ProvisionRunnerRequestImage{
 			URL: runner.RunnerGroup.Settings.ContainerImageURL,
