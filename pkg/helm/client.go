@@ -41,7 +41,7 @@ func Client(log *zap.Logger, kubeCfg *rest.Config, ns string) (*action.Configura
 
 // ClientV2 initializes a new Helm client with the given logger and kube config.
 // NOTE: it doesn't initialise the release store.
-func ClientV2(log *zap.Logger, kubeCfg *rest.Config) (*action.Configuration, error) {
+func ClientV2(log *zap.Logger, kubeCfg *rest.Config, ns string) (*action.Configuration, error) {
 	clientset, err := kubernetes.NewForConfig(kubeCfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create kube client: %w", err)
@@ -56,8 +56,8 @@ func ClientV2(log *zap.Logger, kubeCfg *rest.Config) (*action.Configuration, err
 	ac, err := initActionConfig(&RestClientGetter{
 		RestConfig: kubeCfg,
 		Clientset:  clientset,
+		Namespace:  ns,
 	}, debug)
-
 	if err != nil {
 		return nil, fmt.Errorf("unable to get rest client: %w", err)
 	}
