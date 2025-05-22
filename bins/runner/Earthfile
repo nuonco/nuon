@@ -103,7 +103,8 @@ oci-artifacts:
       aws-cli \
       kubectl \
       zip \
-      openssl
+      openssl \
+      helm
 
     # copy kaniko into the final binary
     COPY +kaniko/kaniko/* /kaniko/
