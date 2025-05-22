@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  font-variant-ligatures: no-contextual !important;
   color-scheme: light dark;
   --border-color-light: #dee3e7;
   --border-color-dark: #27252a;
@@ -94,6 +95,10 @@
   .text-balance {
     text-wrap: balance;
   }
+}
+
+.disable-ligatures {
+  font-variant-ligatures: no-contextual !important;
 }
 
 .dashboard_sidebar,
