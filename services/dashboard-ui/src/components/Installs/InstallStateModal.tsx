@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { CodeBlock } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { ClickToCopyButton } from '@/components/ClickToCopy'
-import { CodeViewer } from '@/components/Code'
+import { JsonView } from '@/components/Code'
 import { Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
@@ -67,10 +67,7 @@ export const InstallStateModal: FC<IInstallStateModal> = ({ install }) => {
                       textToCopy={JSON.stringify(state)}
                     />
                     <div className="overflow-auto max-h-[600px]">
-                      <CodeViewer
-                        initCodeSource={JSON.stringify(state, null, 2)}
-                        language="json"
-                      />
+                      <JsonView data={state} />
                     </div>
                   </div>
                 )}

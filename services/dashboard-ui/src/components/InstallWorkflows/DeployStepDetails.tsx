@@ -87,16 +87,15 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
 
                       {deploy?.status === 'error' ? (
                         <div className="flex flex-col gap-2 max-w-md">
-                          <Text isMuted variant="med-12">
-                            Re-try failed deployment
-                          </Text>
+                          <Text isMuted>Retry failed deployment</Text>
                           <Text className="mb-2">
-                            The {deploy?.component_name} deployment failed. You
-                            can re-try from here by manualy deploying the build
-                            and selecting deploy dependencies.
+                            Retry this workflow starting at this step. This will
+                            deploy this component and any other components that
+                            are dependents of it.
                           </Text>
                           <InstallDeployBuildModal
                             buttonClassName="text-sm w-fit h-[32px]"
+                            buttonText="Retry from here"
                             buttonVariant="default"
                             componentId={deploy?.component_id}
                             initBuildId={deploy?.build_id}
