@@ -4,11 +4,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/actions"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/components"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/sandbox"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/stack"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/loop"
 )
@@ -22,23 +18,14 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 		signals.OperationProvisionRunner:          AwaitProvisionRunner,
 		signals.OperationProvisionDNS:             AwaitProvisionDNS,
 		signals.OperationDeprovisionDNS:           AwaitDeprovisionDNS,
-		signals.OperationDeprovisionSandbox:       sandbox.AwaitDeprovisionSandbox,
-		signals.OperationReprovisionSandbox:       sandbox.AwaitReprovisionSandbox,
-		signals.OperationProvisionSandbox:         sandbox.AwaitProvisionSandbox,
 		signals.OperationSyncSecrets:              AwaitSyncSecrets,
 		signals.OperationExecuteWorkflow:          AwaitExecuteWorkflow,
-		signals.OperationExecuteActionWorkflow:    actions.AwaitExecuteActionWorkflow,
-		signals.OperationExecuteDeployComponent:   components.AwaitExecuteDeployComponent,
-		signals.OperationExecuteTeardownComponent: components.AwaitExecuteTeardownComponent,
 		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
 			AwaitRestarted(ctx, req)
 			w.handleSyncActionWorkflowTriggers(ctx, req)
 			return nil
 		},
 		signals.OperationSyncActionWorkflowTriggers:  w.handleSyncActionWorkflowTriggers,
-		signals.OperationGenerateInstallStackVersion: stack.AwaitGenerateInstallStackVersion,
-		signals.OperationAwaitInstallStackVersionRun: stack.AwaitInstallStackVersionRun,
-		signals.OperationUpdateInstallStackOutputs:   stack.AwaitUpdateInstallStackOutputs,
 		signals.OperationAwaitRunnerHealthy:          w.AwaitRunnerHealthy,
 	}
 }
