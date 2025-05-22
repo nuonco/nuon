@@ -240,7 +240,7 @@ func (*RunnerJob) UseView() bool {
 }
 
 func (*RunnerJob) ViewVersion() string {
-	return "v1"
+	return "v2"
 }
 
 func (i *RunnerJob) Views(db *gorm.DB) []migrations.View {
@@ -248,6 +248,10 @@ func (i *RunnerJob) Views(db *gorm.DB) []migrations.View {
 		{
 			Name: views.DefaultViewName(db, &RunnerJob{}, 1),
 			SQL:  viewsql.RunnerJobViewV1,
+		},
+		{
+			Name: views.DefaultViewName(db, &RunnerJob{}, 2),
+			SQL:  viewsql.RunnerJobViewV2,
 		},
 	}
 }
