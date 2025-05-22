@@ -28,6 +28,7 @@ import { StatusBadge } from '@/components/Status'
 import { Time, Duration } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import {
+  invalidateRunnerToken,
   restartOrgRunners,
   gracefulRunnerShutdown,
   forceRunnerShutdown,
@@ -196,7 +197,8 @@ const RunnerCard: FC<{ runner: TRunner; href: string }> = ({
           </div>
         }
       />
-      <div className="flex gap-4 w-full">
+      <div className="flex flex-wrap gap-4 w-full">
+        <InvalidateTokenButton runnerId={runner.id} />
         <GracefulShutdownButton runnerId={runner.id} />
         <ForceShutdownButton runnerId={runner.id} />
       </div>
@@ -533,6 +535,57 @@ const ForceShutdownButton: FC<{ runnerId: string }> = ({
         <>
           {isSuccess ? <Check size="16" /> : <WarningOctagon size="16" />} Force
           shutdown
+        </>
+      )}
+    </Button>
+  )
+}
+
+const InvalidateTokenButton: FC<{ runnerId: string }> = ({
+  runnerId,
+  ...props
+}) => {
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [error, setError] = useState<string>()
+
+  return error ? (
+    <Notice>{error}</Notice>
+  ) : (
+    <Button
+      onClick={() => {
+        setIsLoading(true)
+        invalidateRunnerToken(runnerId)
+          .then((res) => {
+            setIsLoading(false)
+            if (res.status === 201 || res.status === 200) {
+              setIsSuccess(true)
+              if (props?.onSuccess) props?.onSuccess()
+            } else {
+              setError(
+                'Unable to invalidate runner token, refresh page and try again.'
+              )
+            }
+          })
+          .catch((err) => {
+            console.error(err?.message)
+            setIsLoading(false)
+            setError(
+              'Unable to invalidate runner token, refresh page and try again.'
+            )
+          })
+      }}
+      className="text-sm flex items-center gap-2 flex-auto !px-3 justify-center"
+      disabled={isLoading}
+      variant="caution"
+    >
+      {isLoading ? (
+        <>
+          <SpinnerSVG /> Shutting down
+        </>
+      ) : (
+        <>
+          {isSuccess ? <Check size="16" /> : <WarningOctagon size="16" />} Invalidate token
         </>
       )}
     </Button>
