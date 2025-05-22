@@ -23,7 +23,7 @@ import (
 // @execution-timeout 60m
 // @task-timeout 30m
 func (w *Workflows) ExecuteDeployComponent(ctx workflow.Context, sreq signals.RequestSignal) error {
-	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
+	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, sreq.ID)
 	if err != nil {
 		w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "unable to get install from database")
 		return fmt.Errorf("unable to get install: %w", err)
