@@ -13,7 +13,7 @@ import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { deleteComponent } from '@/components/install-actions'
 import { TComponent } from '@/types'
-import { trackEvent } from '@/utils'
+import { sentanceCase, trackEvent } from '@/utils'
 
 interface IDeleteComponentModal {
   component: TComponent
@@ -61,7 +61,7 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
               }}
             >
               <div className="flex flex-col gap-6 mb-12">
-                {error ? <Notice>{error}</Notice> : null}
+                {error ? <Notice>{sentanceCase(error)}</Notice> : null}
                 <span className="flex flex-col gap-1">
                   <Text variant="med-18">
                     Are you sure you want to teardown {component.name}?
@@ -135,8 +135,25 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                       installId,
                       orgId,
                       force,
-                    })
-                      .then((workflowId) => {
+                    }).then(({ data: workflowId, error }) => {
+                      if (error) {
+                        trackEvent({
+                          event: 'component_delete',
+                          user,
+                          status: 'error',
+                          props: {
+                            orgId,
+                            installId,
+                            componentId,
+                            err: error,
+                          },
+                        })
+                        setError(
+                          error?.error ||
+                            'Error occured trying to delete this component, please refresh page and try again.'
+                        )
+                        setIsLoading(false)
+                      } else {
                         trackEvent({
                           event: 'component_delete',
                           user,
@@ -160,24 +177,8 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                         }
 
                         setIsOpen(false)
-                      })
-                      .catch((err) => {
-                        trackEvent({
-                          event: 'component_delete',
-                          user,
-                          status: 'error',
-                          props: {
-                            orgId,
-                            installId,
-                            componentId,
-                            err,
-                          },
-                        })
-                        setError(
-                          'Error occured trying to delete this component, please refresh page and try again.'
-                        )
-                        setIsLoading(false)
-                      })
+                      }
+                    })
                   }}
                   variant="danger"
                 >

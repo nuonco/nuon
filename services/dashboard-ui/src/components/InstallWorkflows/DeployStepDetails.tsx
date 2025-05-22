@@ -65,13 +65,15 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
                     <div className="flex items-center justify-between p-3 border-b">
                       <Text variant="med-14">{deploy?.component_name}</Text>
                       <div className="flex items-center gap-4">
-                        <Link
-                          className="text-sm gap-0"
-                          href={`/${orgId}/installs/${step?.install_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
-                        >
-                          View deploy details
-                          <CaretRight />
-                        </Link>
+                        {deploy?.status !== 'queued' ? (
+                          <Link
+                            className="text-sm gap-0"
+                            href={`/${orgId}/installs/${step?.install_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
+                          >
+                            View deploy details
+                            <CaretRight />
+                          </Link>
+                        ) : null}
                       </div>
                     </div>
                     <div className="p-6 flex flex-col gap-8">
