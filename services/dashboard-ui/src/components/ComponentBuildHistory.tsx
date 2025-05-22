@@ -80,7 +80,10 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
           </div>
         ),
         time: b.updated_at,
-        href: `/${orgId}/apps/${appId}/components/${b.component_id}/builds/${b.id}`,
+        href:
+          b?.status !== 'queued'
+            ? `/${orgId}/apps/${appId}/components/${b.component_id}/builds/${b.id}`
+            : null,
         isMostRecent: i === 0,
       }))}
     />

@@ -93,7 +93,7 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
 
           <div className="flex flex-col gap-3">
             {workflowHistory[k].map((iw) =>
-              iw?.finished ? (
+              iw?.finished || iw?.status?.status === 'cancelled' ? (
                 <Link
                   key={iw?.id}
                   className="flex justify-between w-full history-event"

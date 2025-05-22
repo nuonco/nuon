@@ -88,7 +88,10 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
           </div>
         ),
         time: d.updated_at,
-        href: `/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${d.id}`,
+        href:
+          d?.status !== 'queued'
+            ? `/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${d.id}`
+            : null,
         isMostRecent: i === 0,
       }))}
     />
