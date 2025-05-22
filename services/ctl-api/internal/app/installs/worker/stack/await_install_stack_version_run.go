@@ -1,6 +1,7 @@
 package stack
 
 import (
+	"context"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -16,6 +17,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/poll"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -91,7 +93,7 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 
 	var run *app.InstallStackVersionRun
 	if err := poll.Poll(ctx, w.v, poll.PollOpts{
-		MaxTS:           workflow.Now(ctx).Add(time.Hour * 24),
+		MaxTS:           workflow.Now(ctx).Add(time.Minute * 1),
 		InitialInterval: time.Second * 15,
 		MaxInterval:     time.Minute * 15,
 		BackoffFactor:   1.15,
@@ -109,12 +111,28 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 			return err
 		},
 	}); err != nil {
-		statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: version.ID,
-			Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusActive, map[string]any{
-				"err_message": err.Error(),
-			}),
-		})
+		if errors.Is(err, context.DeadlineExceeded) {
+			statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: version.ID,
+				Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusExpired, map[string]any{
+					"err_message": "cloudformation stack was not applied before expiring",
+				}),
+			})
+
+			if statusErr := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: sreq.WorkflowStepID,
+				Status: app.CompositeStatus{
+					Status: app.StatusError,
+					Metadata: map[string]any{
+						"err_step_message": "Stack was not applied within 24hrs and expired. Please reprovision install.",
+					},
+				},
+			}); statusErr != nil {
+				return status.WrapStatusErr(err, statusErr)
+			}
+
+			return errors.Wrap(err, "stack was not applied before expiring")
+		}
 
 		return errors.Wrap(err, "unable to get install stack run in time")
 	}
