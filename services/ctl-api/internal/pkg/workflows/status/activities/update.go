@@ -97,6 +97,17 @@ func (a *Activities) updateStatus(ctx context.Context, obj any, status app.Compo
 	existingStatus.History = nil
 	status.History = append(history, existingStatus)
 
+	if status.Metadata == nil {
+		status.Metadata = make(map[string]any, 0)
+	}
+	for k, v := range existingStatus.Metadata {
+		if _, ok := status.Metadata[k]; ok {
+			continue
+		}
+
+		status.Metadata[k] = v
+	}
+
 	res := a.db.WithContext(ctx).Model(obj).Updates(
 		map[string]any{
 			"status": status,

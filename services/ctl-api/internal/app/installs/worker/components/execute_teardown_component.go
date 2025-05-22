@@ -4,9 +4,11 @@ import (
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
+	"gorm.io/gorm"
 
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -29,15 +31,28 @@ func (w *Workflows) ExecuteTeardownComponent(ctx workflow.Context, sreq signals.
 	}
 
 	var installDeploy *app.InstallDeploy
-	componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, sreq.ExecuteTeardownComponentSubSignal.ComponentID)
+	latestDeploy, err := activities.AwaitGetLatestDeploy(ctx, activities.GetLatestDeployRequest{
+		ComponentID: sreq.ExecuteDeployComponentSubSignal.ComponentID,
+		InstallID:   sreq.ID,
+	})
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// no op, because no deploys exist
+			return nil
+		}
+
 		return fmt.Errorf("unable to get component build: %w", err)
+	}
+
+	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, latestDeploy.ComponentBuildID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get build")
 	}
 
 	installDeploy, err = activities.AwaitCreateInstallDeploy(ctx, activities.CreateInstallDeployRequest{
 		InstallID:   install.ID,
 		ComponentID: sreq.ExecuteTeardownComponentSubSignal.ComponentID,
-		BuildID:     componentBuild.ID,
+		BuildID:     build.ID,
 		Teardown:    true,
 	})
 	if err != nil {
@@ -76,11 +91,31 @@ func (w *Workflows) ExecuteTeardownComponent(ctx workflow.Context, sreq signals.
 		return err
 	}
 
-	l.Info("performing deploy")
-	err = w.doTeardown(ctx, sreq, install)
+	installDeploy, err = activities.AwaitGetDeployByDeployID(ctx, installDeploy.ID)
 	if err != nil {
-		return errors.Wrap(err, "unable to perform deploy")
+		return errors.Wrap(err, "unable to get install deploy")
 	}
+
+	shouldTeardown := true
+	comp, err := activities.AwaitGetComponentByComponentID(ctx, installDeploy.InstallComponent.ComponentID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get component")
+	}
+	if generics.SliceContains(comp.Type, []app.ComponentType{}) {
+		l.Info("nothing to teardown")
+		shouldTeardown = false
+	}
+
+	if shouldTeardown {
+		l.Info("performing component teardown")
+		err = w.doTeardown(ctx, sreq, install)
+		if err != nil {
+			return errors.Wrap(err, "unable to perform deploy")
+		}
+	}
+
+	w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusInactive, "successfully torn down")
+	w.updateInstallComponentStatus(ctx, installDeploy.InstallComponentID, app.InstallComponentStatusInactive, "successfully torn down")
 	return err
 }
 
@@ -107,8 +142,6 @@ func (w *Workflows) doTeardown(ctx workflow.Context, sreq signals.RequestSignal,
 	if err := w.execDeploy(ctx, install, installDeploy, sandboxMode); err != nil {
 		return w.errorResponse(ctx, sreq, deployID, installDeploy.InstallComponentID, "error deploying", err)
 	}
-
-	w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusNoop, "build is not deployable")
 
 	finalDeployStatus := app.InstallDeployStatusInactive
 	finalComponentStatus := app.InstallComponentStatusInactive
