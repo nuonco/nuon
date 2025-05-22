@@ -1,6 +1,8 @@
 package worker
 
 import (
+	"time"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -49,6 +51,8 @@ func (w *Workflows) RestartOrgRunners(ctx workflow.Context) error {
 		w.ev.Send(ctx, org.ID, &orgssignals.Signal{
 			Type: orgssignals.OperationRestartRunners,
 		})
+		// mitigate thundering herd
+		workflow.Sleep(ctx, 15*time.Second)
 	}
 
 	return nil
