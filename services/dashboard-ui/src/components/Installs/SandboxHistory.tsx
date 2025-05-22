@@ -76,7 +76,10 @@ export const SandboxHistory: FC<ISandboxHistory> = ({
           </div>
         ),
         time: run.updated_at,
-        href: `/${orgId}/installs/${installId}/sandbox/${run.id}`,
+        href:
+          run?.status !== 'queued'
+            ? `/${orgId}/installs/${installId}/sandbox/${run.id}`
+            : null,
         isMostRecent: i === 0,
       }))}
     />
