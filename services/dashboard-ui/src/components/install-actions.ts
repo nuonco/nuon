@@ -10,7 +10,7 @@ import {
   updateInstall as patchInstall,
   forgetInstall as forget,
 } from '@/lib'
-import { API_URL, mutateData, getFetchOpts } from '@/utils'
+import { API_URL, nueMutateData, getFetchOpts } from '@/utils'
 import type { TInstall } from '@/types'
 
 interface IReprovisionInstall {
@@ -301,7 +301,8 @@ export async function deleteComponent({
   orgId,
   force = false,
 }: IDeleteComponent) {
-  const res = fetch(
+  let error = null
+  const res = await fetch(
     `${API_URL}/v1/installs/${installId}/components/${componentId}/teardown`,
     {
       ...(await getFetchOpts(orgId)),
@@ -311,18 +312,18 @@ export async function deleteComponent({
       method: 'POST',
     }
   )
-    .then((r) => {
+    .then(async (r) => {
       if (!r.ok) {
-        throw new Error('Unable to kick off component delete')
+        error = await r?.json()
       } else {
         return r
       }
     })
     .catch((err) => {
-      throw new Error(err)
+      error = err  
     })
 
-  return (await res).headers.get('x-nuon-install-workflow-id')
+  return { data: res ? res.headers.get('x-nuon-install-workflow-id') : null, error }
 }
 
 interface IDeleteInstall {
