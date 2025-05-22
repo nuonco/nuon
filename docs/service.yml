@@ -1,0 +1,12 @@
+---
+color: red
+env: {}
+env_secrets: {}
+disable_watch: true
+local_startup_cmds: []
+local_build_cmds:
+  - npm install -g mintlify
+local_cmds:
+  - mintlify dev 
+disable_config_map: true
+earthly_cmds: []
