@@ -257,6 +257,14 @@ export async function forceRunnerShutdown(runnerId: string) {
   )
 }
 
+export async function invalidateRunnerToken(runnerId: string) {
+  return adminAction(
+    'runners',
+    `${runnerId}/invalidate-service-account-token`,
+    'Failed to invalidate service account token'
+  )
+}
+
 export async function gracefulInstallRunnerShutdown(installId: string) {
   const runner = await getInstallRunner(installId)
   return gracefulRunnerShutdown(runner.id)
@@ -267,6 +275,11 @@ export async function forceInstallRunnerShutdown(installId: string) {
   return forceRunnerShutdown(runner.id)
 }
 
+export async function invalidateInstallRunnerToken(installId: string) {
+  const runner = await getInstallRunner(installId)
+  return invalidateRunnerToken(runner.id)
+}
+
 export async function gracefulOrgRunnerShutdown(orgId: string) {
   const runner = await getOrgRunner(orgId)
   return gracefulRunnerShutdown(runner.id)
@@ -275,4 +288,9 @@ export async function gracefulOrgRunnerShutdown(orgId: string) {
 export async function forceOrgRunnerShutdown(orgId: string) {
   const runner = await getOrgRunner(orgId)
   return forceRunnerShutdown(runner.id)
+}
+
+export async function invalidateOrgRunnerToken(orgId: string) {
+  const runner = await getOrgRunner(orgId)
+  return invalidateRunnerToken(runner.id)
 }
