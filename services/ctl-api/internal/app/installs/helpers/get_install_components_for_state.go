@@ -24,7 +24,7 @@ func (h *Helpers) getInstallComponentsState(ctx context.Context, installID strin
 			)
 		}).
 		Preload("InstallComponents.InstallDeploys.RunnerJobs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("runner_jobs_view_v1.created_at DESC")
+			return db.Order(views.TableOrViewName(db, &app.RunnerJob{}, ".created_at DESC"))
 		}).
 		Preload("InstallComponents.Component").
 		Preload("InstallComponents.TerraformWorkspace").
