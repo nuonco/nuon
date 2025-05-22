@@ -18,12 +18,14 @@ import { trackEvent } from '@/utils'
 
 export const InstallDeployBuildModal: FC<{
   buttonClassName?: string
+  buttonText?: string
   buttonVariant?: TButtonVariant
   componentId: string
   initBuildId?: string
   initDeployDeps?: boolean
 }> = ({
   buttonClassName = 'text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full',
+  buttonText = 'Deploy component build',
   buttonVariant = 'ghost',
   initBuildId,
   componentId,
@@ -190,7 +192,7 @@ export const InstallDeployBuildModal: FC<{
         }}
         variant={buttonVariant}
       >
-        Deploy component build
+        {buttonText}
       </Button>
     </>
   )
