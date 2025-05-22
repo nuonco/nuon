@@ -12,7 +12,11 @@ import {
 } from '@/utils'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
 const hack = localFont({
   src: [
     {
@@ -50,7 +54,7 @@ export default function RootLayout({
             </>
           ) : null}
           <body
-            className={`${inter.variable} ${hack.variable} font-sans overflow-hidden`}
+            className={`${inter.variable} ${hack.variable} font-sans overflow-hidden disable-ligatures`}
           >
             <EnvScript env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
             {children}
