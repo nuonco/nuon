@@ -83,21 +83,21 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
         cell: (props) => (
           <div className="flex flex-col gap-2">
             <StatusBadge
-              status={props.getValue<TDataStatuses>().sandbox_status}
-              description={
-                props?.getValue<TDataStatuses>()?.sandbox_status_description
-              }
-              descriptionAlignment="right"
-              label="Sandbox"
-              isLabelStatusText
-            />
-            <StatusBadge
               status={props.getValue<TDataStatuses>().runner_status}
               description={
                 props?.getValue<TDataStatuses>()?.runner_status_description
               }
               descriptionAlignment="right"
               label="Runner"
+              isLabelStatusText
+            />
+            <StatusBadge
+              status={props.getValue<TDataStatuses>().sandbox_status}
+              description={
+                props?.getValue<TDataStatuses>()?.sandbox_status_description
+              }
+              descriptionAlignment="right"
+              label="Sandbox"
               isLabelStatusText
             />
             <StatusBadge
