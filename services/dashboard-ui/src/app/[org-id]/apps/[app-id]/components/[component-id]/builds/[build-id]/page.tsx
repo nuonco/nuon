@@ -27,6 +27,7 @@ import {
   getComponentBuild,
   getComponentConfig,
 } from '@/lib'
+import type { TComponentConfig } from '@/types'
 import { CANCEL_RUNNER_JOBS, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -216,12 +217,17 @@ const LoadComponentConfig: FC<{
   componentConfigId: string
   orgId: string
 }> = async ({ componentId, componentConfigId, orgId }) => {
-  const componentConfig = await getComponentConfig({
-    componentId,
-    componentConfigId,
-    orgId,
-  })
-  return <ComponentConfiguration config={componentConfig} />
+  const { data: componentConfig, error } = await nueQueryData<TComponentConfig>(
+    {
+      orgId,
+      path: `components/${componentId}/configs/${componentConfigId}`,
+    }
+  )
+  return error ? (
+    <Text>{error?.error}</Text>
+  ) : (
+    <ComponentConfiguration config={componentConfig} />
+  )
 }
 
 const LoadRunnerJobPlan: FC<{ orgId: string; runnerJobId: string }> = async ({
