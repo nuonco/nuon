@@ -46,13 +46,13 @@ import {
   getInstallDeployPlan,
   getInstallWorkflow,
 } from '@/lib'
-import type { TInstallDeployPlan, TInstall } from '@/types'
-import {
-  CANCEL_RUNNER_JOBS,
-  DEPLOY_INTERMEDIATE_DATA,
-  sizeToMbOrGB,
-  nueQueryData,
-} from '@/utils'
+import type {
+  TBuild,
+  TComponentConfig,
+  TInstallDeployPlan,
+  TInstall,
+} from '@/types'
+import { CANCEL_RUNNER_JOBS, sizeToMbOrGB, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const componentId = params?.['component-id'] as string
@@ -342,27 +342,6 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
               />
             </Section>
           ) : null}
-
-          {DEPLOY_INTERMEDIATE_DATA ? (
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Section>
-                    <Loading
-                      loadingText="Loading intermediate data..."
-                      variant="stack"
-                    />
-                  </Section>
-                }
-              >
-                <LoadIntermediateData
-                  deployId={deploy.id}
-                  install={install}
-                  orgId={orgId}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          ) : null}
         </div>
       </div>
     </DashboardContent>
@@ -413,14 +392,21 @@ const LoadComponentConfig: FC<{
   buildId: string
   orgId: string
 }> = async ({ componentId, buildId, orgId }) => {
-  const build = await getComponentBuild({ buildId, orgId })
-  const componentConfig = await getComponentConfig({
-    componentId,
-    componentConfigId: build.component_config_connection_id,
+  const { data: build, error: buildError } = await nueQueryData<TBuild>({
     orgId,
-  }).catch(console.error)
+    path: `components/builds/${buildId}`,
+  })
 
-  return componentConfig ? (
+  const { data: componentConfig, error } = await nueQueryData<TComponentConfig>(
+    {
+      orgId,
+      path: `components/${componentId}/configs/${build?.component_config_connection_id}`,
+    }
+  )
+
+  return buildError || error ? (
+    <Text>{buildError?.error || error?.error}</Text>
+  ) : componentConfig ? (
     <ComponentConfiguration config={componentConfig} hideHelmValuesFile />
   ) : (
     <Text>No component config found.</Text>
