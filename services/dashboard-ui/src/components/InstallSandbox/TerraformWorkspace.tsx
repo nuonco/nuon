@@ -101,27 +101,38 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
 
     contents = (
       <Tabs>
-        <Tab title="Resources">
-          <DataTable
-            headers={['Type', 'Name', 'Count']}
-            initData={resourceList}
-          />
-        </Tab>
-        <Tab title="Data sources">
-          <DataTable
-            headers={['Type', 'Name', 'Count']}
-            initData={datasourceList}
-          />
-        </Tab>
-        <Tab title="Outputs">
-          <DataTable headers={['Name & Type', 'Value']} initData={outputList} />
-        </Tab>
-        <Tab title="History">
-          <DataTable
-            headers={['Revision', 'Created at']}
-            initData={revisions}
-          />
-        </Tab>
+        {resourceList && (
+          <Tab title="Resources">
+            <DataTable
+              headers={['Type', 'Name', 'Count']}
+              initData={resourceList}
+            />
+          </Tab>
+        )}
+        {datasourceList && (
+          <Tab title="Data sources">
+            <DataTable
+              headers={['Type', 'Name', 'Count']}
+              initData={datasourceList}
+            />
+          </Tab>
+        )}
+        {outputList && (
+          <Tab title="Outputs">
+            <DataTable
+              headers={['Name & Type', 'Value']}
+              initData={outputList}
+            />
+          </Tab>
+        )}
+        {revisions && (
+          <Tab title="History">
+            <DataTable
+              headers={['Revision', 'Created at']}
+              initData={revisions}
+            />
+          </Tab>
+        )}
       </Tabs>
     )
   }
