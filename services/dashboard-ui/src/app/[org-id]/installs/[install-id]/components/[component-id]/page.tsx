@@ -27,7 +27,6 @@ import {
 } from '@/components/InstallSandbox'
 import {
   getComponent,
-  getComponentConfig,
   getInstall,
   getInstallComponentDeploys,
   getInstallComponentOutputs,
@@ -35,7 +34,12 @@ import {
   getInstallComponent,
   getOrg,
 } from '@/lib'
-import type { TComponent } from '@/types'
+import type {
+  TAppConfig,
+  TComponent,
+  TComponentConfig,
+  TInstall,
+} from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -122,7 +126,11 @@ export default withPageAuthRequired(async function InstallComponent({
                   />
                 }
               >
-                <LoadComponentConfig componentId={componentId} orgId={orgId} />
+                <LoadComponentConfig
+                  componentId={componentId}
+                  install={install}
+                  orgId={orgId}
+                />
               </Suspense>
             </ErrorBoundary>
             {org?.features?.['terraform-workspace'] || (
@@ -261,16 +269,30 @@ const LoadLatestOutputs: FC<{
   ) : null
 }
 
-const LoadComponentConfig: FC<{ componentId: string; orgId: string }> = async ({
-  componentId,
-  orgId,
-}) => {
-  const componentConfig = await getComponentConfig({
-    componentId,
-    orgId,
-  }).catch(console.error)
+const LoadComponentConfig: FC<{
+  install: TInstall
+  componentId: string
+  orgId: string
+}> = async ({ componentId, orgId }) => {
+  /* const { data: config, error } = await nueQueryData<TAppConfig>({
+   *    orgId,
+   *    path: `apps/${install?.app_id}/config/${install?.app_config_id}?recurse=true`,
+   *  })
 
-  return componentConfig ? (
+
+   *  const componentConfig = config?.component_config_connections?.find(
+   *    (c) => c.component_id === componentId
+   *  ) */
+
+  const { data: componentConfig, error } = await nueQueryData<TComponentConfig>(
+    {
+      orgId,
+      path: `components/${componentId}/configs/latest`,
+    }
+  )
+  return error ? (
+    <Text>{error?.error}</Text>
+  ) : componentConfig ? (
     <>
       <ComponentConfiguration config={componentConfig} isNotTruncated />
       {componentConfig?.terraform_module?.variables_files?.length ? (
