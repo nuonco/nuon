@@ -12,7 +12,7 @@ func TableOrViewName(db *gorm.DB, obj ViewModel, appendStr string) string {
 	tableName := plugins.TableName(db, obj)
 
 	if !obj.UseView() {
-		return fmt.Sprintf("%s_%s%s", tableName, obj.ViewVersion(), appendStr)
+		return fmt.Sprintf("%s%s", tableName, appendStr)
 	}
 
 	return fmt.Sprintf("%s_view_%s%s", tableName, obj.ViewVersion(), appendStr)
