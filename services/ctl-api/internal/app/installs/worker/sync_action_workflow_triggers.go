@@ -67,7 +67,7 @@ func (w *Workflows) startActionWorkflowCronTrigger(ctx workflow.Context, sreq si
 		InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
 			InstallActionWorkflowID: iw.ID,
 			TriggerType:             app.ActionWorkflowTriggerTypeCron,
-			TriggeredByID:           "cron",
+			TriggeredByType:         "cron",
 			RunEnvVars: map[string]string{
 				"TRIGGER_TYPE": "cron",
 			},
