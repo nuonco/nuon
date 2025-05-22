@@ -2,7 +2,6 @@ package temporal
 
 import (
 	"slices"
-	"sync"
 
 	"go.temporal.io/sdk/workflow"
 )
@@ -10,7 +9,6 @@ import (
 const CancelChannelName = "cancel-signal"
 
 type CancelBroker[Message any] struct {
-	mu       sync.Mutex
 	pctx     workflow.Context
 	done     bool
 	msgs     []Message
@@ -46,9 +44,6 @@ func NewCancelBroker[Message any](pctx workflow.Context) *CancelBroker[Message] 
 }
 
 func (b *CancelBroker[Message]) newMessage(msg Message) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
 	var remove []int
 	defer func() {
 		// TODO(sdboyer) will this actually clean up children? As in, does temporal auto-cancel contexts in a way this code can observe?
@@ -77,9 +72,6 @@ func (b *CancelBroker[Message]) newMessage(msg Message) {
 }
 
 func (b *CancelBroker[Message]) newChild(ch child[Message]) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
 	// new child, check it against all pending messages
 	for i, msg := range b.msgs {
 		if ch.match(msg) {
