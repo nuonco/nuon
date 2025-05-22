@@ -32,7 +32,7 @@ func (w *Workflows) ExecuteTeardownComponent(ctx workflow.Context, sreq signals.
 
 	var installDeploy *app.InstallDeploy
 	latestDeploy, err := activities.AwaitGetLatestDeploy(ctx, activities.GetLatestDeployRequest{
-		ComponentID: sreq.ExecuteDeployComponentSubSignal.ComponentID,
+		ComponentID: sreq.ExecuteTeardownComponentSubSignal.ComponentID,
 		InstallID:   sreq.ID,
 	})
 	if err != nil {
