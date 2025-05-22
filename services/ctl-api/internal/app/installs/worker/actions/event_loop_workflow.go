@@ -8,7 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/loop"
 )
 
-func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
+func (w *Workflows) GetHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
 		// TODO(sdboyer) a handful more need to be moved here from the main package, but doing so is too awkward without changing runtime behavior so we deferred in first pass
 		signals.OperationExecuteActionWorkflow: AwaitExecuteActionWorkflow,
@@ -16,7 +16,7 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 }
 
 func (w *Workflows) ActionEventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
-	handlers := w.getHandlers()
+	handlers := w.GetHandlers()
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
 		Cfg:              w.cfg,
 		V:                w.v,
