@@ -93,7 +93,7 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 
 	var run *app.InstallStackVersionRun
 	if err := poll.Poll(ctx, w.v, poll.PollOpts{
-		MaxTS:           workflow.Now(ctx).Add(time.Minute * 1),
+		MaxTS:           workflow.Now(ctx).Add(time.Hour * 24),
 		InitialInterval: time.Second * 15,
 		MaxInterval:     time.Minute * 15,
 		BackoffFactor:   1.15,

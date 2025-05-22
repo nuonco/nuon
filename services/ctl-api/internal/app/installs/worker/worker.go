@@ -9,12 +9,15 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/go-playground/validator/v10"
+
 	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
 	pkgworkflows "github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/actions"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/components"
+	installdelegationdns "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/dns"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/sandbox"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/stack"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
@@ -31,6 +34,7 @@ type Worker struct {
 type WorkerParams struct {
 	fx.In
 
+	V *validator.Validate
 	Cfg          *internal.Config
 	Tclient      temporalclient.Client
 	Wkflows      *Workflows
@@ -65,6 +69,7 @@ func New(params WorkerParams) (*Worker, error) {
 
 	// register activities
 	wkr.RegisterActivity(params.Acts)
+	wkr.RegisterActivity(installdelegationdns.NewActivities(params.V, params.Cfg))
 	for _, acts := range params.SharedActs.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}
