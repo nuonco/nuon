@@ -6,9 +6,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 type TeardownInstallComponentRequest struct {
@@ -69,7 +71,10 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 	}
 
 	if installComponent.Status == app.InstallComponentStatusInactive {
-		ctx.Error(fmt.Errorf("install component is already inactive"))
+		ctx.Error(stderr.ErrUser{
+                        Err: errors.New("component already inactive"),
+                        Description: "This component is already inactive and can not be torn down",
+                })
 		return
 	}
 
