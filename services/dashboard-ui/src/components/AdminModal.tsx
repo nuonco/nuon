@@ -34,6 +34,8 @@ import {
   gracefulOrgRunnerShutdown,
   forceOrgRunnerShutdown,
   enableOrgDebugMode,
+  invalidateInstallRunnerToken,
+  invalidateOrgRunnerToken,
 } from '@/components/admin-actions'
 
 type TAdminAction = {
@@ -86,6 +88,12 @@ export const AdminModal: FC<{
       action: () => forceOrgRunnerShutdown(params?.['org-id'] as string),
       description: 'Forceful shutdown of current org runner',
       text: 'Force org shutdown runner',
+    },
+    {
+      action: () => invalidateOrgRunnerToken(params?.['org-id'] as string),
+      description:
+        'Invalidate a runner service account token, meaning that any live runners will no longer be able to connect to the API.',
+      text: 'Invalidate org runner token',
     },
     {
       action: () => enableOrgDebugMode(params?.['org-id'] as string),
@@ -154,6 +162,13 @@ export const AdminModal: FC<{
         forceInstallRunnerShutdown(params?.['install-id'] as string),
       description: 'Forceful shutdown of current install runner',
       text: 'Force install runner shutdown',
+    },
+    {
+      action: () =>
+        invalidateInstallRunnerToken(params?.['install-id'] as string),
+      description:
+        'Invalidate a runner service account token, meaning that any live runners will no longer be able to connect to the API.',
+      text: 'Invalidate install runner token',
     },
   ]
 
