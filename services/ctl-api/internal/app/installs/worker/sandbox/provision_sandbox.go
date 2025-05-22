@@ -19,18 +19,14 @@ import (
 // @execution-timeout 60m
 // @task-timeout 30m
 func (w *Workflows) ProvisionSandbox(ctx workflow.Context, sreq signals.RequestSignal) error {
-	installID := sreq.ID
-	sandboxMode := sreq.SandboxMode
-
-	install, err := activities.AwaitGet(ctx, activities.GetRequest{
-		InstallID: installID,
-	})
+	install, err := activities.AwaitGetInstallForSandboxBySandboxID(ctx, sreq.ID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
+	sandboxMode := sreq.SandboxMode
 
 	installRun, err := activities.AwaitCreateSandboxRun(ctx, activities.CreateSandboxRunRequest{
-		InstallID: installID,
+		InstallID: install.ID,
 		RunType:   app.SandboxRunTypeProvision,
 	})
 	if err != nil {

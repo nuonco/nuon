@@ -19,12 +19,12 @@ import (
 // @execution-timeout 1m
 // @task-timeout 30s
 func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signals.RequestSignal) error {
-	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
+	install, err := activities.AwaitGetInstallForStackByStackID(ctx, sreq.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
 	}
 
-	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, sreq.ID)
+	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, install.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get stack")
 	}
@@ -39,7 +39,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		return nil
 	}
 
-	installState, err := activities.AwaitGetInstallStateByInstallID(ctx, sreq.ID)
+	installState, err := activities.AwaitGetInstallStateByInstallID(ctx, install.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install state")
 	}
@@ -66,7 +66,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 
 	// need to generate a token
 	stackVersion, err := activities.AwaitCreateInstallStackVersion(ctx, &activities.CreateInstallStackVersionRequest{
-		InstallID:      sreq.ID,
+		InstallID:      install.ID,
 		InstallStackID: stack.ID,
 		AppConfigID:    cfg.ID,
 		StackName:      cfg.StackConfig.Name,
