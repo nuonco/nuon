@@ -67,6 +67,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/components/:component_id/configs/external-image", s.CreateExternalImageComponentConfig)
 	api.POST("/v1/components/:component_id/configs/job", s.CreateJobComponentConfig)
 	api.GET("/v1/components/:component_id/configs", s.GetComponentConfigs)
+	api.GET("/v1/components/:component_id/configs/:config_id", s.GetComponentConfig)
 	api.GET("/v1/components/:component_id/configs/latest", s.GetComponentLatestConfig)
 
 	// builds are immutable
