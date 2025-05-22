@@ -94,6 +94,7 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 				}
 			}
 
+			// update  the workflow status
 			if err := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
 				ID: step.ID,
 				Status: app.NewCompositeTemporalStatus(ctx, app.StatusCancelled, map[string]any{
@@ -103,6 +104,10 @@ func (w *Workflows) ExecuteWorkflowSteps(ctx workflow.Context, sreq signals.Requ
 				return errors.Wrap(err, "unable to update install workflow step as cancelled")
 			}
 
+			// close the workflow
+			if err := activities.AwaitUpdateWorkflowFinishedAtByID(ctx, step.InstallWorkflowID); err != nil {
+				return errors.Wrap(err, "unable to set finished at on the workflow")
+			}
 			return stepErr
 		}
 
