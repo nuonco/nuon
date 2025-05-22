@@ -19,7 +19,7 @@ import {
   getComponentBuilds,
   getComponentConfig,
 } from '@/lib'
-import type { TComponent } from '@/types'
+import type { TComponent, TComponentConfig } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -141,8 +141,18 @@ const LoadComponentConfig: FC<{ componentId: string; orgId: string }> = async ({
   componentId,
   orgId,
 }) => {
-  const componentConfig = await getComponentConfig({ componentId, orgId })
-  return <ComponentConfiguration config={componentConfig} isNotTruncated />
+  const { data: componentConfig, error } = await nueQueryData<TComponentConfig>(
+    {
+      orgId,
+      path: `components/${componentId}/configs/latest`,
+    }
+  )
+
+  return error ? (
+    <Text>{error?.error}</Text>
+  ) : (
+    <ComponentConfiguration config={componentConfig} isNotTruncated />
+  )
 }
 
 const LoadComponentDependencies: FC<{
