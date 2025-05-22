@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type GetLatestDeployRequest struct {
@@ -27,7 +28,9 @@ func (a *Activities) getLatestDeploy(ctx context.Context, installID, componentID
 	installCmp := app.InstallComponent{}
 	res := a.db.WithContext(ctx).
 		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_deploys.created_at DESC").Limit(1)
+			return db.Where(app.InstallDeploy{
+                                Type: app.InstallDeployTypeInstall,
+                        }).Order("install_deploys.created_at DESC").Limit(1)
 		}).
 		Where(&app.InstallComponent{
 			InstallID:   installID,

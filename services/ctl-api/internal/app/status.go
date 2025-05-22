@@ -30,6 +30,7 @@ const (
 	InstallStackVersionStatusProvisioning Status = "provisioning"
 	InstallStackVersionStatusActive       Status = "active"
 	InstallStackVersionStatusOutdated     Status = "outdated"
+	InstallStackVersionStatusExpired      Status = "expired"
 )
 
 const (
