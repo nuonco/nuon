@@ -209,12 +209,10 @@ export const InstallForm: FC<IInstallForm> = ({
 }
 
 const AWSFields: FC<{ cfLink: string }> = ({ cfLink }) => {
-  const { user } = useUser()
-  const { org } = useOrg()
   const options = AWS_REGIONS.map((o) => ({
     value: o.value,
     label: o?.iconVariant
-      ? `${getFlagEmoji(o.iconVariant.substring(5))} ${o.text}`
+      ? `${getFlagEmoji(o.iconVariant.substring(5))} ${o.text} [${o.value}]`
       : o.text,
   }))
 

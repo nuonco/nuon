@@ -1,5 +1,6 @@
+// @ts-ignore
 import classNames from 'classnames'
-import React, { type FC } from 'react'
+import React, { type FC, forwardRef } from 'react'
 
 export interface IRadioInput extends React.HTMLAttributes<HTMLInputElement> {
   checked?: boolean
@@ -36,22 +37,23 @@ export const RadioInput: FC<IRadioInput> = ({
   )
 }
 
-export interface ICheckboxInput extends React.HTMLAttributes<HTMLInputElement> {
+export interface ICheckboxInput extends React.InputHTMLAttributes<HTMLInputElement> {
   checked?: boolean
   name: string
   labelText?: React.ReactNode
   labelClassName?: string
   labelTextClassName?: string
+  ref?: any
   value?: string
 }
 
-export const CheckboxInput: FC<ICheckboxInput> = ({
+export const CheckboxInput: FC<ICheckboxInput> = forwardRef(({
   className,
   labelClassName,
   labelText,
   labelTextClassName,
   ...props
-}) => {
+}, ref) => {
   return (
     <label
       className={classNames(
@@ -65,6 +67,7 @@ export const CheckboxInput: FC<ICheckboxInput> = ({
         className={classNames('accent-primary-600 w-auto h-[14px]', {
           [`${className}`]: Boolean(className),
         })}
+        ref={ref}
         {...props}
         type="checkbox"
       />
@@ -79,7 +82,10 @@ export const CheckboxInput: FC<ICheckboxInput> = ({
       ) : null}
     </label>
   )
-}
+})
+
+CheckboxInput.displayName = "CheckboxInput"
+
 
 export const Input: FC<
   React.InputHTMLAttributes<HTMLInputElement> & { isSearch?: boolean }
