@@ -17,6 +17,7 @@ type UpdateAppConfigRequest struct {
 	Status            app.AppConfigStatus `json:"status"`
 	StatusDescription string              `json:"status_description"`
 	State             string              `json:"state"`
+	ComponentIDs      []string            `json:"component_ids"`
 }
 
 func (c *UpdateAppConfigRequest) Validate(v *validator.Validate) error {
@@ -74,13 +75,19 @@ func (s *service) updateAppConfig(ctx context.Context, appConfigID string, req *
 		return nil, fmt.Errorf("unable to find app config: %w", err)
 	}
 
+	appConfig := app.AppConfig{
+		Status:            req.Status,
+		StatusDescription: req.StatusDescription,
+		State:             req.State,
+	}
+
+	if len(req.ComponentIDs) > 0 {
+		appConfig.ComponentIDs = req.ComponentIDs
+	}
+
 	res := s.db.WithContext(ctx).
 		Model(&cfg).
-		Updates(app.AppConfig{
-			StatusDescription: req.StatusDescription,
-			Status:            req.Status,
-			State:             req.State,
-		})
+		Updates(appConfig)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update app config: %w", res.Error)
 	}

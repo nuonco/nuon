@@ -29,6 +29,10 @@ func (s *sync) createJobComponentConfig(ctx context.Context, resource, compID st
 		Tag:         generics.ToPtr(containerImage.Tag),
 	}
 
+	for _, ref := range comp.References {
+		configRequest.References = append(configRequest.References, ref.String())
+	}
+
 	newChecksum := comp.Checksum
 
 	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, newChecksum)
