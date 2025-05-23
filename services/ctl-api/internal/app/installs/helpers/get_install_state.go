@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/types/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 // GetInstallState reads the current state of the install from the DB, and returns it in a structure that can be used for variable interpolation.
@@ -120,7 +121,7 @@ func (h *Helpers) getStateInstall(ctx context.Context, installID string) (*app.I
 		Preload("AzureAccount").
 		Preload("AWSAccount").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs_view_v1.created_at DESC").Limit(1)
+			return db.Order(views.TableOrViewName(db, &app.InstallInputs{}, ".created_at DESC")).Limit(1)
 		}).
 		First(&install, "id = ?", installID)
 	if res.Error != nil {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 // @ID						GetInstall
@@ -86,7 +87,7 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		Preload("App.Org").
 		Preload("CreatedBy").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs_view_v1.created_at DESC").Limit(1)
+			return db.Order(views.TableOrViewName(db, &app.InstallInputs{}, ".created_at DESC")).Limit(1)
 		}).
 		Preload("InstallComponents").
 		Preload("InstallComponents.Component").

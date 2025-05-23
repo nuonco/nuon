@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 type GetRequest struct {
@@ -35,7 +36,7 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 		Preload("InstallSandbox").
 		Preload("InstallSandbox.TerraformWorkspace").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs_view_v1.created_at DESC")
+			return db.Order(views.TableOrViewName(db, &app.InstallInputs{}, ".created_at DESC"))
 		}).
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_sandbox_runs.created_at DESC").Limit(1)
