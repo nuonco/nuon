@@ -6,4 +6,4 @@ export * from './RunnerRecentJob'
 export * from './RunnerUpcomingJobs'
 export * from './RunnerMeta'
 export * from './ShutdownRunnerModal'
-// cancel runner job button
+export * from './DeprovisionRunnerModal'
