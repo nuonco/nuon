@@ -157,8 +157,23 @@ func (w *Loop[SignalType, ReqSig]) handleSignal(pctx workflow.Context, wkflowReq
 }
 
 func (w *Loop[SignalType, ReqSig]) signalsMatch(a, b SignalType) bool {
-	// FIXME(sdboyer) make this a smarter check. just cancelling on name meaans weird behavior if multiple same-name signals are queued. but we need to decide on semantics
-	return a.Name() == b.Name()
+	if a.Name() != b.Name() {
+		return false
+	}
+
+	// Allow cancellation only if the signal name of the listener matches
+	//
+	// TODO(sdboyer) this is a bit of a hack, but it's an effective way of ensuring for now that ONLY the workflow that called 
+	// SendAsync can trigger cancellation this way, because SendAsync generates these listener ids on the fly.
+	// This may be more restrictive than the contract we eventually want, but right now, it has no false positives.
+	for _, alistener := range a.Listeners() {
+		for _, blistener := range b.Listeners() {
+			if alistener.SignalName == blistener.SignalName {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []SignalType) error {
