@@ -6,12 +6,11 @@ import { CaretRight } from '@phosphor-icons/react'
 import { AppConfigGraph } from '@/components/Apps'
 import {
   BuildAllComponentsButton,
+  ComponentConfigType,
   ComponentDependencies,
+  ComponentTypeFilterDropdown,
+  type TComponentConfigType,
 } from '@/components/Components'
-import {
-  StaticComponentConfigType,
-  getComponentConfigType,
-} from '@/components/ComponentConfig'
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
 import { DataTableSearch, Table } from '@/components/DataTable'
@@ -28,7 +27,7 @@ type TDataComponent = {
 type TData = {
   build: string
   componentId: string
-  componentType: string
+  type: string
   configVersion: number
   dependencies: number
   deps: Array<TComponent>
@@ -39,11 +38,9 @@ function parseComponentsToTableData(
   components: Array<TDataComponent>
 ): Array<TData> {
   return components.map((component) => ({
-    build: component?.latestBuild?.status || 'noop',
+    build: component?.status || 'noop',
     componentId: component.id,
-    componentType: component?.config
-      ? getComponentConfigType(component.config)
-      : 'Unknown',
+    type: component?.type,
     configVersion: component.config_versions,
     dependencies: component.dependencies?.length || 0,
     deps: component.deps,
@@ -65,7 +62,17 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
   orgId,
 }) => {
   const [data, updateData] = useState(parseComponentsToTableData(components))
-  const [columnFilters, __] = useState([])
+  const [columnFilters, setColumnFilters] = useState([
+    {
+      id: 'type',
+      value: [
+        'docker_build',
+        'external_image',
+        'helm_chart',
+        'terraform_module',
+      ],
+    },
+  ])
   const [globalFilter, setGlobalFilter] = useState('')
 
   useEffect(() => {
@@ -91,10 +98,13 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
       },
       {
         header: 'Type',
-        accessorKey: 'componentType',
+        accessorKey: 'type',
+        filterFn: 'arrIncludesSome',
         cell: (props) => (
           <Text className="gap-4">
-            <StaticComponentConfigType configType={props.getValue<string>()} />
+            <ComponentConfigType
+              configType={props.getValue<TComponentConfigType>()}
+            />
           </Text>
         ),
       },
@@ -146,6 +156,40 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
     []
   )
 
+  const handleTypeFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { checked, value } = e.target
+    setColumnFilters((state) => {
+      const values = [...state?.at(0)?.value]
+      const index = values?.indexOf(value)
+
+      if (checked && index < 0) {
+        values.push(value)
+      } else if (index > -1) {
+        values.splice(index, 1)
+      }
+
+      return [{ id: 'type', value: values }]
+    })
+  }
+
+  const handleTypeOnlyFilter = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setColumnFilters([{ id: 'type', value: [e?.currentTarget?.value] }])
+  }
+
+  const clearTypeFilter = () => {
+    setColumnFilters([
+      {
+        id: 'type',
+        value: [
+          'docker_build',
+          'external_image',
+          'helm_chart',
+          'terraform_module',
+        ],
+      },
+    ])
+  }
+
   const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
     setGlobalFilter(e.target.value || '')
   }
@@ -154,10 +198,23 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
     <Table
       header={
         <div className="w-full flex items-start justify-between">
-          <DataTableSearch
-            handleOnChange={handleGlobleFilter}
-            value={globalFilter}
-          />
+          <div className="flex-auto flex flex-col gap-2">
+            <div className="flex items-center">
+              <DataTableSearch
+                handleOnChange={handleGlobleFilter}
+                value={globalFilter}
+              />
+            </div>
+            <ComponentTypeFilterDropdown
+              {...{
+                handleTypeFilter,
+                handleTypeOnlyFilter,
+                clearTypeFilter,
+                columnFilters,
+              }}
+              isNotDropdown
+            />
+          </div>
           <div className="flex items-center gap-4">
             <AppConfigGraph appId={appId} configId={configId} />
             <BuildAllComponentsButton components={components} />
