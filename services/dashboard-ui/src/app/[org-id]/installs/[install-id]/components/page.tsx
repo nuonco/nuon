@@ -106,7 +106,9 @@ const LoadInstallComponents: FC<{
     <Notice>Can&apos;t load install components: {error?.error}</Notice>
   ) : data?.length ? (
     <InstallComponentsTable
-      installComponents={data}
+      installComponents={data.sort((a, b) =>
+        a?.component_id.localeCompare(b.component_id)
+      )}
       installId={installId}
       orgId={orgId}
     />
