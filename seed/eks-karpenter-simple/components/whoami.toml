@@ -1,0 +1,14 @@
+#:schema https://api.nuon.co/v1/general/config-schema?source=helm
+name           = "whoami"
+type           = "helm_chart"
+chart_name     = "whoami"
+namespace      = "whoami"
+storage_driver = "configmap"
+
+[public_repo]
+repo      = "nuonco/demo"
+directory = "eks-simple/src/components/whoami"
+branch    = "main"
+
+[[values_file]]
+contents = "./values/whoami.yaml"

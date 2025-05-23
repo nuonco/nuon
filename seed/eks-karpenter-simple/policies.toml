@@ -1,0 +1,3 @@
+[[policy]]
+type = "disallow-ingress-nginx-custom-snippets"
+contents = "./policies/disallow-ingress-nginx-custom-snippets.yml"
