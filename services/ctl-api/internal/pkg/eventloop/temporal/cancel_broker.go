@@ -1,7 +1,7 @@
 package temporal
 
 import (
-	"slices"
+	// "slices"
 
 	"go.temporal.io/sdk/workflow"
 )
@@ -65,7 +65,7 @@ func (b *CancelBroker[Message]) newMessage(msg Message) {
 
 		if child.match(msg) {
 			child.cancelfn()
-			b.children = slices.Delete(b.children, i, i+1)
+			// b.children = slices.Delete(b.children, i, i+1)
 			return
 		}
 	}
@@ -75,10 +75,10 @@ func (b *CancelBroker[Message]) newMessage(msg Message) {
 
 func (b *CancelBroker[Message]) newChild(ch child[Message]) {
 	// new child, check it against all pending messages
-	for i, msg := range b.msgs {
+	for _, msg := range b.msgs {
 		if ch.match(msg) {
 			ch.cancelfn()
-			b.msgs = slices.Delete(b.msgs, i, i+1)
+			// b.msgs = slices.Delete(b.msgs, i, i+1)
 			return
 		}
 	}
