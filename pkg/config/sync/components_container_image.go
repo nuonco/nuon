@@ -3,7 +3,6 @@ package sync
 import (
 	"context"
 
-	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
 
 	"github.com/powertoolsdev/mono/pkg/config"
@@ -13,7 +12,10 @@ import (
 func (s *sync) createContainerImageComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, string, error) {
 	containerImage := comp.ExternalImage
 
-	configRequest := &models.ServiceCreateExternalImageComponentConfigRequest{}
+	configRequest := &models.ServiceCreateExternalImageComponentConfigRequest{
+		AppConfigID:  s.appConfigID,
+		Dependencies: comp.Dependencies,
+	}
 
 	if containerImage.AWSECRImageConfig != nil {
 		configRequest.ImageURL = generics.ToPtr(containerImage.AWSECRImageConfig.ImageURL)
@@ -27,32 +29,15 @@ func (s *sync) createContainerImageComponentConfig(ctx context.Context, resource
 		configRequest.Tag = generics.ToPtr(containerImage.PublicImageConfig.Tag)
 	}
 
-	requestChecksum, err := s.getChecksum(configRequest)
+	newChecksum := comp.Checksum
+	// Check if we should skip this build due to checksum match
+	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, newChecksum)
 	if err != nil {
 		return "", "", err
 	}
-
-	cmpBuild, err := s.apiClient.GetComponentLatestBuild(ctx, compID)
-	if err != nil && !nuon.IsNotFound(err) {
-		return "", "", err
+	if shouldSkip {
+		return existingConfigID, newChecksum, nil
 	}
-
-	doChecksumCompare := true
-	if cmpBuild != nil && cmpBuild.Status == "error" {
-		doChecksumCompare = false
-	}
-
-	if doChecksumCompare {
-		prevComponentState := s.getComponentStateById(compID)
-		if prevComponentState != nil && prevComponentState.Checksum == requestChecksum {
-			return prevComponentState.ConfigID, requestChecksum, nil
-		}
-	}
-
-	// NOTE: we don't want to make a checksum with the app config id since that can change
-	configRequest.AppConfigID = s.appConfigID
-	configRequest.Dependencies = comp.Dependencies
-
 	cfg, err := s.apiClient.CreateExternalImageComponentConfig(ctx, compID, configRequest)
 	if err != nil {
 		return "", "", err
@@ -60,5 +45,5 @@ func (s *sync) createContainerImageComponentConfig(ctx context.Context, resource
 
 	s.cmpBuildsScheduled = append(s.cmpBuildsScheduled, compID)
 
-	return cfg.ID, requestChecksum, nil
+	return cfg.ID, newChecksum, nil
 }
