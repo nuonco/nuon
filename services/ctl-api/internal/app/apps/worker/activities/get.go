@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 type GetRequest struct {
@@ -26,7 +27,7 @@ func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.App, error) 
 		Preload("Components").
 		Preload("CreatedBy").
 		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_configs_view_v2.created_at DESC").Limit(1)
+			return db.Order(views.TableOrViewName(a.db, &app.AppConfig{}, ".created_at DESC")).Limit(1)
 		}).
 		First(&currentApp, "id = ?", req.AppID)
 	if res.Error != nil {

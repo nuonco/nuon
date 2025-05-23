@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Component, error) {
@@ -21,7 +22,7 @@ func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Componen
 		Preload("ComponentConfigs").
 		Preload("Dependencies").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("component_config_connections_view_v1.created_at DESC")
+			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))
 		}).
 
 		// preload all terraform configs

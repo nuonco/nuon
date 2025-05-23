@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 type CreateInstallParams struct {
@@ -44,7 +45,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 			return db.Order("app_input_configs.created_at DESC").Limit(1)
 		}).
 		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_configs_view_v2.created_at DESC").Limit(1)
+			return db.Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).Limit(1)
 		}).
 		First(&parentApp, "id = ?", appID)
 	if res.Error != nil {

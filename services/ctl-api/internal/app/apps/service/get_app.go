@@ -11,6 +11,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 // @ID						GetApp
@@ -37,13 +38,13 @@ func (s *service) GetApp(ctx *gin.Context) {
 	}
 
 	appID := ctx.Param("app_id")
-	app, err := s.findApp(ctx, org.ID, appID)
+	a, err := s.findApp(ctx, org.ID, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, app)
+	ctx.JSON(http.StatusOK, a)
 }
 
 func (s *service) appByNameOrID(ctx context.Context, appID string) (*app.App, error) {
@@ -65,12 +66,12 @@ func (s *service) appByNameOrID(ctx context.Context, appID string) (*app.App, er
 }
 
 func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, error) {
-	app := app.App{}
+	a := app.App{}
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Components").
 		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_configs_view_v2.created_at DESC").Limit(5)
+			return db.Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).Limit(5)
 		}).
 
 		//
@@ -102,10 +103,10 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 		Preload("NotificationsConfig").
 		Where("name = ? AND org_id = ?", appID, orgID).
 		Or("id = ?", appID).
-		First(&app)
+		First(&a)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	return &app, nil
+	return &a, nil
 }
