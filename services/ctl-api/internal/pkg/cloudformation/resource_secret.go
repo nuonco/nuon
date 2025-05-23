@@ -30,11 +30,16 @@ func (a *Templates) getSecretsParameters(inp *TemplateInput) map[string]cloudfor
 			continue
 		}
 
-		params[secret.CloudFormationParamName] = cloudformation.Parameter{
-			Type:        "String",
-			Description: generics.ToPtr(secret.Description),
-			NoEcho:      generics.ToPtr(true),
+		param := cloudformation.Parameter{
+			Type:                  "String",
+			Description:           generics.ToPtr(secret.Description),
+			NoEcho:                generics.ToPtr(true),
+			ConstraintDescription: generics.ToPtr("This parameter is required"),
 		}
+		if secret.Required {
+			param.AllowedPattern = generics.ToPtr[string]("^[^\\s]{1,}$")
+		}
+		params[secret.CloudFormationParamName] = param
 	}
 
 	return params
