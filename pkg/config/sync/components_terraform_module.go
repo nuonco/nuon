@@ -22,6 +22,11 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 		VariablesFiles:           make([]string, 0),
 		Version:                  obj.TerraformVersion,
 	}
+
+	for _, ref := range comp.References {
+		configRequest.References = append(configRequest.References, ref.String())
+	}
+
 	for _, val := range obj.Variables {
 		configRequest.Variables[val.Name] = val.Value
 	}

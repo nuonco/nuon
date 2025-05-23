@@ -22,6 +22,10 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 		EnvVars:      map[string]string{},
 	}
 
+	for _, ref := range comp.References {
+		configRequest.References = append(configRequest.References, ref.String())
+	}
+
 	if obj.PublicRepo != nil {
 		public := obj.PublicRepo
 		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{

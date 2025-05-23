@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
@@ -20,7 +21,8 @@ type CreateJobComponentConfigRequest struct {
 	EnvVars  map[string]*string `json:"env_vars"`
 	Args     []string           `json:"args"`
 
-	AppConfigID string `json:"app_config_id"`
+	AppConfigID string   `json:"app_config_id"`
+	References  []string `json:"references"`
 }
 
 func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -95,6 +97,7 @@ func (s *service) createJobComponentConfig(ctx context.Context, cmpID string, re
 		JobComponentConfig: &cfg,
 		ComponentID:        parentCmp.ID,
 		AppConfigID:        req.AppConfigID,
+		References:         pq.StringArray(req.References),
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create job component config connection: %w", res.Error)
