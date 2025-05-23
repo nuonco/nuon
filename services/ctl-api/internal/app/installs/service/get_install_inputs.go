@@ -9,6 +9,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -49,7 +50,7 @@ func (s *service) getInstallInputs(ctx *gin.Context, installID string) ([]app.In
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Scopes(scopes.WithOffsetPagination).
-				Order("install_inputs_view_v1.created_at DESC")
+				Order(views.TableOrViewName(db, &app.InstallInputs{}, ".created_at DESC"))
 		}).
 		First(&install, "id = ?", installID)
 	if res.Error != nil {

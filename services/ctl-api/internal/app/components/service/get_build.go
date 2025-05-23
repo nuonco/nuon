@@ -10,24 +10,25 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
-//	@ID						GetBuild
-//	@Summary				get a build
-//	@Description.markdown	get_component_build.md
-//	@Param					build_id	path	string	true	"build ID"
-//	@Tags					components
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{object}	app.ComponentBuild
-//	@Router					/v1/components/builds/{build_id} [GET]
+// @ID						GetBuild
+// @Summary				get a build
+// @Description.markdown	get_component_build.md
+// @Param					build_id	path	string	true	"build ID"
+// @Tags					components
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.ComponentBuild
+// @Router					/v1/components/builds/{build_id} [GET]
 func (s *service) GetBuild(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
@@ -55,7 +56,7 @@ func (s *service) getBuild(ctx context.Context, orgID, bldID string) (*app.Compo
 		Preload("RunnerJob").
 		Preload("LogStream").
 		Preload("ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
-			return db.Order("component_config_connections_view_v1.created_at DESC")
+			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))
 		}).
 		Where("org_id = ?", orgID).
 		First(&bld, "id = ?", bldID)
