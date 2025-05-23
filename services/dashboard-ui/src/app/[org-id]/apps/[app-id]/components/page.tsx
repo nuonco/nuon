@@ -15,8 +15,6 @@ import {
 import {
   getApp,
   getAppComponents,
-  getComponentBuilds,
-  getComponentConfig,
   getAppLatestInputConfig,
   getAppLatestConfig,
 } from '@/lib'
@@ -88,24 +86,19 @@ const LoadAppComponents: FC<{
 }> = async ({ appId, configId, orgId }) => {
   const components = await getAppComponents({ appId, orgId })
   const hydratedComponents = await Promise.all(
-    components.map(async (comp, _, arr) => {
-      const [config, builds] = await Promise.all([
-        getComponentConfig({ componentId: comp.id, orgId }).catch(
-          console.error
-        ),
-        getComponentBuilds({ componentId: comp.id, orgId }).catch(
-          console.error
-        ),
-      ])
-      const deps = arr.filter((c) => comp.dependencies?.some((d) => d === c.id))
+    components
+      //.filter((c) => c?.type === 'helm_chart' || c?.type === 'terraform_module')
+      .sort((a, b) => a?.id?.localeCompare(b?.id))
+      .map(async (comp, _) => {
+        const deps = components.filter((c) =>
+          comp.dependencies?.some((d) => d === c.id)
+        )
 
-      return {
-        ...comp,
-        config: config || undefined,
-        deps,
-        latestBuild: builds[0],
-      }
-    })
+        return {
+          ...comp,
+          deps,
+        }
+      })
   )
 
   return components.length ? (

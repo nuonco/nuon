@@ -6,6 +6,7 @@ import { CaretRight, Minus } from '@phosphor-icons/react'
 import {
   ComponentDependencies,
   ComponentConfigType,
+  ComponentTypeFilterDropdown,
   type TComponentConfigType,
 } from '@/components/Components'
 import {
@@ -31,7 +32,17 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
   orgId,
 }) => {
   const [data, updateData] = useState(installComponents)
-  const [columnFilters, __] = useState([])
+  const [columnFilters, setColumnFilters] = useState([
+    {
+      id: 'component_config.type',
+      value: [
+        'docker_build',
+        'external_image',
+        'helm_chart',
+        'terraform_module',
+      ],
+    },
+  ])
   const [globalFilter, setGlobalFilter] = useState('')
 
   useEffect(() => {
@@ -58,6 +69,8 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
       {
         header: 'Type',
         accessorKey: 'component_config.type',
+        id: 'component_config.type',
+        filterFn: 'arrIncludesSome',
         cell: (props) =>
           props.getValue<TComponentConfigType>() ? (
             <Text className="gap-4">
@@ -137,6 +150,42 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
     []
   )
 
+  const handleTypeFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { checked, value } = e.target
+    setColumnFilters((state) => {
+      const values = [...state?.at(0)?.value]
+      const index = values?.indexOf(value)
+
+      if (checked && index < 0) {
+        values.push(value)
+      } else if (index > -1) {
+        values.splice(index, 1)
+      }
+
+      return [{ id: 'component_config.type', value: values }]
+    })
+  }
+
+  const handleTypeOnlyFilter = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setColumnFilters([
+      { id: 'component_config.type', value: [e?.currentTarget?.value] },
+    ])
+  }
+
+  const clearTypeFilter = () => {
+    setColumnFilters([
+      {
+        id: 'component_config.type',
+        value: [
+          'docker_build',
+          'external_image',
+          'helm_chart',
+          'terraform_module',
+        ],
+      },
+    ])
+  }
+
   const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
     setGlobalFilter(e.target.value || '')
   }
@@ -145,10 +194,23 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
     <Table
       header={
         <div className="w-full flex items-start justify-between">
-          <DataTableSearch
-            handleOnChange={handleGlobleFilter}
-            value={globalFilter}
-          />
+          <div className="flex-auto flex flex-col gap-2">
+            <div className="flex items-center">
+              <DataTableSearch
+                handleOnChange={handleGlobleFilter}
+                value={globalFilter}
+              />
+            </div>
+            <ComponentTypeFilterDropdown
+              {...{
+                handleTypeFilter,
+                handleTypeOnlyFilter,
+                clearTypeFilter,
+                columnFilters,
+              }}
+              isNotDropdown
+            />
+          </div>
           <div className="flex items-center gap-4">
             <DeployComponentsModal installId={installId} orgId={orgId} />
             <DeleteComponentsModal installId={installId} orgId={orgId} />
