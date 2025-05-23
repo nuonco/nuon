@@ -13,6 +13,7 @@ import (
 type command struct {
 	v *validator.Validate
 
+	LinePrefixFn   func() string
 	LinePrefix     string
 	LineColor      *color.Color
 	FileOutputPath string
@@ -122,6 +123,13 @@ func WithCwd(cwd string) commandOption {
 func WithLinePrefix(prefix string) commandOption {
 	return func(l *command) error {
 		l.LinePrefix = prefix
+		return nil
+	}
+}
+
+func WithLinePrefixFn(fn func() string) commandOption {
+	return func(l *command) error {
+		l.LinePrefixFn = fn
 		return nil
 	}
 }
