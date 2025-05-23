@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -49,7 +50,7 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 	res := s.db.WithContext(ctx).
 		Preload("VCSConnectionCommit").
 		Preload("ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
-			return db.Order("component_config_connections_view_v1.created_at DESC")
+			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))
 		}).
 		Preload("ComponentConfigConnection.Component").
 		Preload("RunnerJob", func(db *gorm.DB) *gorm.DB {

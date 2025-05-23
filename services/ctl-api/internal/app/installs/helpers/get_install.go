@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 // GetInstall reads an install from the DB.
@@ -16,7 +17,7 @@ func (h *Helpers) GetInstall(ctx context.Context, installID string) (*app.Instal
 	res := h.db.WithContext(ctx).
 		Preload("AppRunnerConfig").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs_view_v1.created_at DESC").Limit(1)
+			return db.Order(views.TableOrViewName(db, &app.InstallInputs{}, ".created_at DESC")).Limit(1)
 		}).
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
