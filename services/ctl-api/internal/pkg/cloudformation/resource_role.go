@@ -69,7 +69,7 @@ func (a *Templates) getRolesResources(inp *TemplateInput, t tagBuilder) map[stri
 			})
 		}
 
-		rsrcs[role.CloudFormationStackName] = &iam.Role{
+		roleRsrc := &iam.Role{
 			AWSCloudFormationCondition: a.roleConditionName(role),
 			RoleName:                   generics.ToPtr(role.Name),
 			ManagedPolicyArns:          managedPolicyARNs,
@@ -78,6 +78,10 @@ func (a *Templates) getRolesResources(inp *TemplateInput, t tagBuilder) map[stri
 			},
 			Tags: t.apply(nil, fmt.Sprintf("%s-role", role.Type)),
 		}
+		if len(role.PermissionsBoundaryJSON) > 0 {
+			roleRsrc.PermissionsBoundary = generics.ToPtr(string(role.PermissionsBoundaryJSON))
+		}
+		rsrcs[role.CloudFormationStackName] = roleRsrc
 
 		// create each policy
 		for _, policy := range role.Policies {
