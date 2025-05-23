@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 type GetDeployRequest struct {
@@ -29,7 +30,7 @@ func (a *Activities) getDeploy(ctx context.Context, deployID string) (*app.Insta
 		Preload("InstallComponent.Component").
 		Preload("InstallComponent.Install").
 		Preload("InstallComponent.Install.InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs_view_v1.created_at DESC")
+			return db.Order(views.TableOrViewName(db, &app.InstallInputs{}, ".created_at DESC"))
 		}).
 		Preload("InstallComponent.Install.InstallInputs.AppInputConfig").
 		Preload("InstallComponent.Install.InstallInputs").

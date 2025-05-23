@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"gorm.io/gorm"
 )
 
@@ -13,7 +14,7 @@ func (h *Helpers) getInstallInputs(ctx context.Context, installID string) ([]app
 	var install app.Install
 	res := h.db.WithContext(ctx).
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_inputs_view_v1.created_at DESC")
+			return db.Order(views.TableOrViewName(db, &app.InstallInputs{}, ".created_at DESC"))
 		}).
 		First(&install, "id = ?", installID)
 	if res.Error != nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 type GetComponentLatestBuildRequest struct {
@@ -15,9 +16,10 @@ type GetComponentLatestBuildRequest struct {
 // @by-id ComponentID
 func (a *Activities) GetComponentLatestBuild(ctx context.Context, req GetComponentLatestBuildRequest) (*app.ComponentBuild, error) {
 	var build app.ComponentBuild
+	viewOrTable := views.TableOrViewName(a.db, &app.ComponentConfigConnection{}, "")
 	res := a.db.WithContext(ctx).
-		Joins("JOIN component_config_connections_view_v1 ON component_config_connections_view_v1.id=component_builds.component_config_connection_id").
-		Joins("JOIN components ON components.id=component_config_connections_view_v1.component_id").
+		Joins(fmt.Sprintf("JOIN %s ON %s.id=component_builds.component_config_connection_id", viewOrTable, viewOrTable)).
+		Joins(fmt.Sprintf("JOIN components ON components.id=%s.component_id", viewOrTable)).
 		Where("components.id = ?", req.ComponentID).
 		Order("created_at DESC").
 		First(&build)
