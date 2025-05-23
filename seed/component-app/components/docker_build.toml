@@ -6,5 +6,6 @@ dockerfile = "Dockerfile"
 [public_repo]
 directory = "./"
 repo = "traefik/whoami"
-branch = "main"
+branch = "master"
+
 

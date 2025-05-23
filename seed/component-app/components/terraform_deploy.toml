@@ -1,15 +1,14 @@
 #:schema https://api.nuon.co/v1/general/config-schema?source=terraform
-name              = "certificate_wildcard_public"
+name              = "s3_bucket"
 type              = "terraform_module"
 terraform_version = "1.11.3"
 
 [public_repo]
-repo      = "nuonco/byoc"
-directory = "byoc-nuon/src/components/certificate"
+repo      = "mrwong/s3_for_tests"
+directory = "."
 branch    = "main"
 
 [vars]
-install_id  = "{{ .nuon.install.id }}"
+bucket_name_prefix = "{{.nuon.install.id}}"
 region      = "{{ .nuon.install_stack.outputs.region }}"
-zone_id     = "{{ .nuon.sandbox.outputs.nuon_dns.public_domain.zone_id }}"
-domain_name = "*.{{ .nuon.sandbox.outputs.nuon_dns.public_domain.name }}"
+

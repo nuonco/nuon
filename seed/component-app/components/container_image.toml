@@ -1,6 +1,6 @@
 name   = "container_image"
 type   = "container_image"
 [public]
-image_url = "tryretool/backend"
+image_url = "kennethreitz/httpbin"
 tag       = "latest"
 

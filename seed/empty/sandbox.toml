@@ -3,13 +3,14 @@ terraform_version = "1.11.3"
 [public_repo]
 repo      = "nuonco/sandboxes"
 directory = "aws-ecs"
-branch    = "tw/simplfied-sandbox"
+branch    = "tw/simple2"
 
 [env_vars]
 CLUSTER_NAME = "{{.nuon.install.id}}"
 
 [vars]
-cluster_name = "{{ .nuon.install.id }}"
 account_id = "{{.nuon.install_stack.outputs.account_id}}"
-enable_nuon_dns = "false"
-public_root_domain = "{{.nuon.install.id}}.stage.nuon.run"
+enable_nuon_dns = "true"
+public_root_domain = "{{.nuon.inputs.inputs.root_domain}}"
+internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
+
