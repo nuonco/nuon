@@ -78,9 +78,14 @@ func (a *Templates) getRolesResources(inp *TemplateInput, t tagBuilder) map[stri
 			},
 			Tags: t.apply(nil, fmt.Sprintf("%s-role", role.Type)),
 		}
-		if len(role.PermissionsBoundaryJSON) > 0 {
-			roleRsrc.PermissionsBoundary = generics.ToPtr(string(role.PermissionsBoundaryJSON))
+		if len(role.PermissionsBoundaryJSON) > 0 && string(role.PermissionsBoundaryJSON) != "{}" {
+			boundaryPolicyName := role.CloudFormationStackName + "Boundary"
+			rsrcs[boundaryPolicyName] = a.getPermissionsBoundaryPolicy(role)
+
+			roleRsrc.PermissionsBoundary = cloudformation.RefPtr(boundaryPolicyName)
 		}
+
+		// Add the role resource
 		rsrcs[role.CloudFormationStackName] = roleRsrc
 
 		// create each policy
@@ -94,6 +99,14 @@ func (a *Templates) getRolesResources(inp *TemplateInput, t tagBuilder) map[stri
 	}
 
 	return rsrcs
+}
+
+func (a *Templates) getPermissionsBoundaryPolicy(role app.AppAWSIAMRoleConfig) cloudformation.Resource {
+	return &iam.ManagedPolicy{
+		AWSCloudFormationCondition: a.roleConditionName(role),
+		ManagedPolicyName:          generics.ToPtr(role.Name + "-boundary"),
+		PolicyDocument:             json.RawMessage([]byte(role.PermissionsBoundaryJSON)),
+	}
 }
 
 func (a *Templates) getRolePolicy(role app.AppAWSIAMRoleConfig, policy app.AppAWSIAMPolicyConfig) cloudformation.Resource {
