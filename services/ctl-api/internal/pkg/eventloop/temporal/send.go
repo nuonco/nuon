@@ -193,7 +193,7 @@ func (e *evClient) SendAsync(ctx workflow.Context, id string, signal eventloop.S
 			workflow.WithWorkflowNamespace(ctx, signal.Namespace()),
 			signal.WorkflowID(id),
 			"",
-			"cancel-signal",
+			CancelChannelName,
 			signal,
 		).Get(ctx, nil)
 		if err != nil {

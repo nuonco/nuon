@@ -45,13 +45,15 @@ func NewCancelBroker[Message any](pctx workflow.Context) *CancelBroker[Message] 
 
 func (b *CancelBroker[Message]) newMessage(msg Message) {
 	var remove []int
-	defer func() {
-		// TODO(sdboyer) will this actually clean up children? As in, does temporal auto-cancel contexts in a way this code can observe?
-		for i := len(remove); i >= 0; i-- {
-			pos := remove[i]
-			b.children = slices.Delete(b.children, pos, pos+1)
-		}
-	}()
+
+	// TODO(sdboyer) commented out until we have test showing this is reliable
+	// defer func() {
+	// 	// TODO(sdboyer) will this actually clean up children? As in, does temporal auto-cancel contexts in a way this code can observe?
+	// 	for i := len(remove); i >= 0; i-- {
+	// 		pos := remove[i]
+	// 		b.children = slices.Delete(b.children, pos, pos+1)
+	// 	}
+	// }()
 
 	// new message, check it against all existing children
 	for i, child := range b.children {
