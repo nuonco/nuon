@@ -3,6 +3,7 @@ import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
+  DeprovisionRunnerModal,
   ErrorFallback,
   InstallStatuses,
   InstallPageSubNav,
@@ -143,7 +144,10 @@ export default withPageAuthRequired(async function Runner({
         </div>
         <div className="divide-y flex-auto flex flex-col col-span-4">
           <Section heading="Runner controls" className="flex-initial">
-            <ShutdownRunnerModal orgId={orgId} runnerId={runner?.id} />
+            <div className="flex items-center gap-4">
+              <ShutdownRunnerModal orgId={orgId} runnerId={runner?.id} />
+              <DeprovisionRunnerModal />
+            </div>
           </Section>
           <Section heading="Upcoming jobs ">
             <ErrorBoundary fallbackRender={ErrorFallback}>
