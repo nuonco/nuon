@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/lib/pq"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
@@ -55,6 +56,8 @@ type AppConfig struct {
 	State    string `json:"state,omitzero" temporaljson:"state,omitzero,omitempty"`
 	Readme   string `json:"readme,omitzero" temporaljson:"readme,omitzero,omitempty"`
 	Checksum string `json:"checksum,omitzero" temporaljson:"checksum,omitzero,omitempty"`
+
+	ComponentIDs pq.StringArray `gorm:"type:text[]"`
 
 	// Lookups on the app config
 

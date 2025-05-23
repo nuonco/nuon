@@ -24,6 +24,11 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 		Namespace:                obj.Namespace,
 		StorageDriver:            obj.StorageDriver,
 	}
+
+	for _, ref := range comp.References {
+		configRequest.References = append(configRequest.References, ref.String())
+	}
+
 	if obj.PublicRepo != nil {
 		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
 			Branch:    generics.ToPtr(obj.PublicRepo.Branch),
