@@ -166,6 +166,20 @@ func TestSend(t *testing.T) {
 	}
 	t.Cleanup(wrk.Stop)
 
+	clientOpts.Namespace = "other"
+	client2, err := client.NewClientFromExisting(srv.Client(), *clientOpts)
+	if err != nil {
+		t.Fatalf("failed to create second client: %v", err)
+	}
+
+	wrk2 := worker.New(client2, "default", worker.Options{})
+	wrk2.RegisterWorkflow(sar.ReceiveWorkflow)
+	err = wrk2.Start()
+	if err != nil {
+		t.Fatalf("failed to start worker: %v", err)
+	}
+	t.Cleanup(wrk2.Stop)
+
 	// Assemble groups of disjoint tests
 	type caseopts struct {
 		name   string
@@ -195,27 +209,27 @@ func TestSend(t *testing.T) {
 				},
 			},
 		},
-		// {
-		// 	groupname: "namespace",
-		// 	cases: []caseopts{
-		// 		{
-		// 			name: "same",
-		// 			optsfn: func(opts SRTestOptions) SRTestOptions {
-		// 				opts.SenderNS = "default"
-		// 				opts.ReceiverNS = "default"
-		// 				return opts
-		// 			},
-		// 		},
-		// 		{
-		// 			name: "cross",
-		// 			optsfn: func(opts SRTestOptions) SRTestOptions {
-		// 				opts.SenderNS = "default"
-		// 				opts.ReceiverNS = "other"
-		// 				return opts
-		// 			},
-		// 		},
-		// 	},
-		// },
+		{
+			groupname: "namespace",
+			cases: []caseopts{
+				{
+					name: "same",
+					optsfn: func(opts SRTestOptions) SRTestOptions {
+						opts.SenderNS = "default"
+						opts.ReceiverNS = "default"
+						return opts
+					},
+				},
+				{
+					name: "cross",
+					optsfn: func(opts SRTestOptions) SRTestOptions {
+						opts.SenderNS = "default"
+						opts.ReceiverNS = "other"
+						return opts
+					},
+				},
+			},
+		},
 		{
 			groupname: "notify",
 			cases: []caseopts{
@@ -271,12 +285,11 @@ func TestSend(t *testing.T) {
 	runMatrix = func(t *testing.T, groupidx int, opts SRTestOptions) {
 		if groupidx >= len(testGroups) {
 			// When we reach the end of the groups, we've hydrated a full matrix of options and can run the test
-			t.Logf("%+v\n", opts)
 			opts.ID = t.Name()
 
 			run, err := srv.Client().ExecuteWorkflow(context.Background(),
 				client.StartWorkflowOptions{
-					ID:                       "root",
+					ID:                       opts.makeWorkflowID("root"),
 					TaskQueue:                "default",
 					WorkflowExecutionTimeout: 3 * time.Second,
 				},
@@ -292,7 +305,7 @@ func TestSend(t *testing.T) {
 				if err == nil {
 					t.Fatal("expected error, got nil")
 				} else if !strings.Contains(err.Error(), testErr.Error()) {
-					t.Fatal("errors not same")
+					t.Fatal("did not receive expected sentinel error, got:\n", err)
 				}
 			} else {
 				assert.NoError(t, run.Get(context.Background(), nil))
@@ -302,6 +315,7 @@ func TestSend(t *testing.T) {
 
 		for _, tcase := range testGroups[groupidx].cases {
 			t.Run(fmt.Sprintf("%s-%s", testGroups[groupidx].groupname, tcase.name), func(t *testing.T) {
+				t.Parallel()
 				runMatrix(t, groupidx+1, tcase.optsfn(opts))
 			})
 		}
@@ -326,6 +340,10 @@ type SRTestOptions struct {
 	Response             eventloop.SignalDoneMessage
 }
 
+func (o SRTestOptions) makeWorkflowID(base string) string {
+	return fmt.Sprintf("%s-%s", strings.Replace(o.ID, "/", "_", -1), base)
+}
+
 func (o SRTestOptions) getSignal() eventloop.Signal {
 	if o.UseRequestSignal {
 		return newTestELSignal(o.ID, o.ReceiverNS)
@@ -338,18 +356,18 @@ func (o SRTestOptions) getSignal() eventloop.Signal {
 func (w *SendAndReceive) Root(ctx workflow.Context, opts SRTestOptions) error {
 	var sfut, rfut workflow.Future
 	rfut = workflow.ExecuteChildWorkflow(workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
-		WorkflowID: "event-loop-receive.workflow",
+		WorkflowID: fmt.Sprintf("event-loop-%s", opts.makeWorkflowID("receive.workflow")),
 		Namespace:  opts.ReceiverNS,
 	}), w.ReceiveWorkflow, opts)
 
 	if opts.Await {
 		sfut = workflow.ExecuteChildWorkflow(workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
-			WorkflowID: "send.workflow",
+			WorkflowID: opts.makeWorkflowID("send.workflow"),
 			Namespace:  opts.SenderNS,
 		}), w.SendAndWaitWorkflow, opts)
 	} else {
 		sfut = workflow.ExecuteChildWorkflow(workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
-			WorkflowID: "send.workflow",
+			WorkflowID: opts.makeWorkflowID("send.workflow"),
 			Namespace:  opts.SenderNS,
 		}), w.SendAsyncWorkflow, opts)
 	}
@@ -364,10 +382,7 @@ func (w *SendAndReceive) Root(ctx workflow.Context, opts SRTestOptions) error {
 }
 
 func (w *SendAndReceive) SendAsyncWorkflow(ctx workflow.Context, opts SRTestOptions) error {
-	defer func() { w.t.Log("SEND WF: returning from send") }()
-	w.t.Log("SEND WF: sending")
-	fut, err := w.evClient.SendAsync(ctx, "receive.workflow", opts.getSignal())
-	w.t.Log("SEND WF: got future")
+	fut, err := w.evClient.SendAsync(ctx, opts.makeWorkflowID("receive.workflow"), opts.getSignal())
 	if err != nil {
 		return err
 	}
@@ -375,20 +390,16 @@ func (w *SendAndReceive) SendAsyncWorkflow(ctx workflow.Context, opts SRTestOpti
 	if fut == nil {
 		return errors.New("future was nil")
 	}
-	w.t.Log("SEND WF: blocking on future")
 	err = fut.Get(ctx, nil)
 	return err
 }
 
 func (w *SendAndReceive) SendAndWaitWorkflow(ctx workflow.Context, opts SRTestOptions) error {
-	defer func() { w.t.Log("SEND WF: returning from send") }()
-	err := w.evClient.SendAndWait(ctx, "receive.workflow", opts.getSignal())
-	w.t.Log("SEND WF: wait finished")
+	err := w.evClient.SendAndWait(ctx, opts.makeWorkflowID("receive.workflow"), opts.getSignal())
 	return err
 }
 
 func (w *SendAndReceive) ReceiveWorkflow(ctx workflow.Context, opts SRTestOptions) error {
-	defer func() { w.t.Log("RECEIVE WF: returning from receive") }()
 	schan := workflow.GetSignalChannel(ctx, "receive.workflow")
 
 	// In the real event loop, this is handled with a generic type
@@ -403,7 +414,6 @@ func (w *SendAndReceive) ReceiveWorkflow(ctx workflow.Context, opts SRTestOption
 	if !more {
 		return errors.New("signal channel was closed")
 	}
-	w.t.Log("RECEIVE WF: got signal")
 	if signal == nil {
 		return errors.New("signal was nil")
 	}
@@ -418,7 +428,6 @@ func (w *SendAndReceive) ReceiveWorkflow(ctx workflow.Context, opts SRTestOption
 	var listenErrs []error
 	for _, listener := range signal.Listeners() {
 		lctx := workflow.WithWorkflowNamespace(ctx, listener.Namespace)
-		w.t.Logf("RECEIVE WF: sending response to %+v\n", listener)
 		lerr := workflow.SignalExternalWorkflow(
 			lctx,
 			listener.WorkflowID,
