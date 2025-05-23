@@ -57,7 +57,7 @@ contents = """
 name = "{{.nuon.install.id}}-deprovision"
 description = "deprovision"
 display_name = "deprovision"
-permissions_boundary = "{}"
+permissions_boundary = "./permissions/maintenance_boundary.json"
 
 [[deprovision_role.policies]]
 managed_policy_name = "AdministratorAccess"
