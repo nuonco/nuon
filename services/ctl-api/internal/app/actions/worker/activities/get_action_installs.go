@@ -2,10 +2,12 @@ package activities
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 type GetActionWorkflowInstallsRequest struct {
@@ -22,7 +24,7 @@ func (a *Activities) getActionWorkflowInstalls(ctx context.Context, actionWorkfl
 	installs := []app.Install{}
 
 	res := a.db.WithContext(ctx).
-		Joins("JOIN apps ON apps.id=installs_view_v4.app_id").
+		Joins(fmt.Sprintf("JOIN apps ON apps.id=%s", views.TableOrViewName(a.db, &app.Install{}, ".app_id"))).
 		Joins("JOIN action_workflows ON action_workflows.app_id=apps.id").
 		Where("action_workflows.id = ?", actionWorkflowID).
 		Find(&installs)
