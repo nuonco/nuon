@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -69,10 +70,10 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID string) ([]app.Install,
 		Preload("InstallComponents.Component").
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
-		Joins("JOIN apps ON apps.id=installs_view_v4.app_id").
+		Joins(fmt.Sprintf("JOIN apps ON apps.id=%s", views.TableOrViewName(s.db, &app.Install{}, ".app_id"))).
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Order("created_at desc").
-		Find(&installs, "installs_view_v4.org_id = ?", orgID)
+		Find(&installs, fmt.Sprintf("%s = ?", views.TableOrViewName(s.db, &app.Install{}, ".org_id")), orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org installs: %w", res.Error)
 	}
