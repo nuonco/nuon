@@ -17,6 +17,10 @@ func (s *sync) createContainerImageComponentConfig(ctx context.Context, resource
 		Dependencies: comp.Dependencies,
 	}
 
+	for _, ref := range comp.References {
+		configRequest.References = append(configRequest.References, ref.String())
+	}
+
 	if containerImage.AWSECRImageConfig != nil {
 		configRequest.ImageURL = generics.ToPtr(containerImage.AWSECRImageConfig.ImageURL)
 		configRequest.Tag = generics.ToPtr(containerImage.AWSECRImageConfig.Tag)
