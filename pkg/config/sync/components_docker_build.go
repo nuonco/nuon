@@ -3,7 +3,6 @@ package sync
 import (
 	"context"
 
-	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
 
 	"github.com/powertoolsdev/mono/pkg/config"
@@ -15,10 +14,12 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 
 	configRequest := &models.ServiceCreateDockerBuildComponentConfigRequest{
 		// DEPRECATED: BuildArgs is not used and was required for Waypoint
-		BuildArgs:  []string{},
-		Dockerfile: generics.ToPtr(obj.Dockerfile),
-		Target:     "",
-		EnvVars:    map[string]string{},
+		AppConfigID:  s.appConfigID,
+		Dependencies: comp.Dependencies,
+		BuildArgs:    []string{},
+		Dockerfile:   generics.ToPtr(obj.Dockerfile),
+		Target:       "",
+		EnvVars:      map[string]string{},
 	}
 
 	if obj.PublicRepo != nil {
@@ -41,31 +42,15 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 
 	configRequest.EnvVars = obj.EnvVarMap
 
-	requestChecksum, err := s.getChecksum(configRequest)
+	newChecksum := comp.Checksum
+	// Check if we should skip this build due to checksum match
+	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, newChecksum)
 	if err != nil {
 		return "", "", err
 	}
-
-	cmpBuild, err := s.apiClient.GetComponentLatestBuild(ctx, compID)
-	if err != nil && !nuon.IsNotFound(err) {
-		return "", "", err
+	if shouldSkip {
+		return existingConfigID, newChecksum, nil
 	}
-
-	doChecksumCompare := true
-	if cmpBuild != nil && cmpBuild.Status == "error" {
-		doChecksumCompare = false
-	}
-
-	if doChecksumCompare {
-		prevComponentState := s.getComponentStateById(compID)
-		if prevComponentState != nil && prevComponentState.Checksum == requestChecksum {
-			return prevComponentState.ConfigID, requestChecksum, nil
-		}
-	}
-
-	// NOTE: we don't want to make a checksum with the app config id since that can change
-	configRequest.AppConfigID = s.appConfigID
-	configRequest.Dependencies = comp.Dependencies
 
 	cfg, err := s.apiClient.CreateDockerBuildComponentConfig(ctx, compID, configRequest)
 	if err != nil {
@@ -74,5 +59,5 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 
 	s.cmpBuildsScheduled = append(s.cmpBuildsScheduled, compID)
 
-	return cfg.ID, requestChecksum, nil
+	return cfg.ID, newChecksum, nil
 }

@@ -2,11 +2,15 @@ package parse
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 
@@ -84,5 +88,59 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 		}
 	}
 
+	checksums, err := checksumTOMLFilesByName(cfgFS)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to checksum toml files")
+	}
+
+	for _, cmp := range appCfg.Components {
+		if checksum, ok := checksums[cmp.Name]; ok {
+			cmp.Checksum = checksum
+		}
+	}
+
 	return appCfg, nil
+}
+
+func checksumTOMLFilesByName(cfgFS afero.Fs) (map[string]string, error) {
+	checksums := make(map[string]string)
+
+	// Read the components directory
+	files, err := afero.ReadDir(cfgFS, "components")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read components directory: %w", err)
+	}
+
+	for _, file := range files {
+		// Skip directories and non-TOML files
+		if file.IsDir() || !strings.HasSuffix(strings.ToLower(file.Name()), ".toml") {
+			continue
+		}
+
+		filePath := filepath.Join("components", file.Name())
+
+		// Read file content
+		content, err := afero.ReadFile(cfgFS, filePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read %s: %w", filePath, err)
+		}
+
+		// Parse TOML to get the name
+		var config config.Component
+		if err := toml.Unmarshal(content, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse TOML in %s: %w", filePath, err)
+		}
+
+		// Skip files without a name field
+		if config.Name == "" {
+			fmt.Printf("Warning: %s has no 'name' field, skipping\n", filePath)
+			continue
+		}
+
+		// Calculate SHA256 checksum
+		hash := sha256.Sum256(content)
+		checksums[config.Name] = fmt.Sprintf("%x", hash)
+	}
+
+	return checksums, nil
 }
