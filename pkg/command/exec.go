@@ -57,6 +57,16 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, error) {
 	stdout := c.Stdout
 	stderr := c.Stderr
 	opts := make([]lineprefix.Option, 0)
+
+	if c.LinePrefixFn != nil {
+		if c.LineColor != nil {
+			opts = append(opts, lineprefix.PrefixFunc(func() string {
+				return c.LineColor.Sprint(c.LinePrefixFn())
+			}))
+		} else {
+			opts = append(opts, lineprefix.PrefixFunc(c.LinePrefixFn))
+		}
+	}
 	if c.LinePrefix != "" {
 		prefix := c.LinePrefix
 		if c.LineColor != nil {
