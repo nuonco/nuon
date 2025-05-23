@@ -26,6 +26,7 @@ type CreateTerraformModuleComponentConfigRequest struct {
 	AppConfigID string `json:"app_config_id"`
 
 	Dependencies []string `json:"dependencies"`
+	References   []string `json:"references"`
 }
 
 func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -122,6 +123,7 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		ComponentID:                    parentCmp.ID,
 		AppConfigID:                    req.AppConfigID,
 		ComponentDependencyIDs:         pq.StringArray(depIDs),
+		References:                     pq.StringArray(req.References),
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create terraform component config connection: %w", res.Error)
