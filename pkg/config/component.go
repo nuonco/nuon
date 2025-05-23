@@ -60,6 +60,7 @@ type Component struct {
 
 	// created during parsing
 	References []refs.Ref `mapstructure:"-" jsonschema:"-"`
+	Checksum   string     `mapstructure:"-" jsonschema:"-" toml:"checksum"`
 }
 
 func (c *Component) parse() error {
