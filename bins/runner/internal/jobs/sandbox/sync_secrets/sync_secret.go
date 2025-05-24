@@ -2,6 +2,8 @@ package terraform
 
 import (
 	"context"
+	"encoding/base64"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -21,6 +23,14 @@ func (p *handler) execSyncSecret(ctx context.Context, secr plantypes.KubernetesS
 	exists := val != ""
 
 	if exists {
+		if secr.Format == "base64" {
+			decoded, err := base64.StdEncoding.DecodeString(val)
+			if err != nil {
+				return errors.Wrap(err, "unable to decode base64 secret value")
+			}
+			val = strings.TrimSpace(string(decoded))
+		}
+
 		if err := p.upsertSecret(ctx, secr, val); err != nil {
 			return err
 		}
