@@ -105,5 +105,6 @@ func (p *Planner) getKubernetesSecret(stack app.InstallStackOutputs, cfg app.App
 		Namespace: cfg.KubernetesSecretNamespace,
 		Name:      cfg.KubernetesSecretName,
 		KeyName:   cfg.KubernetesSecretKey,
+		Format:    string(cfg.Format),
 	}, nil
 }
