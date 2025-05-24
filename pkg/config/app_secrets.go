@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/invopop/jsonschema"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type SecretsConfig struct {
@@ -33,8 +35,9 @@ type AppSecret struct {
 	DisplayName string `mapstructure:"display_name,omitempty"`
 	Description string `mapstructure:"description" jsonschema:"required"`
 
-	Required     bool `mapstructure:"required,omitempty"`
-	AutoGenerate bool `mapstructure:"auto_generate,omitempty"`
+	Required     bool   `mapstructure:"required,omitempty"`
+	AutoGenerate bool   `mapstructure:"auto_generate,omitempty"`
+	Format       string `mapstructure:"format,omitempty"`
 
 	// optional fields
 	KubernetesSync            bool   `mapstructure:"kubernetes_sync,omitempty"`
@@ -47,6 +50,7 @@ func (a AppSecret) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "display_name", "Human readable name of the secret. Supports templating.")
 	addDescription(schema, "description", "Description")
 	addDescription(schema, "required", "Whether or not the secret is required.")
+	addDescription(schema, "format", "Format of the secret")
 
 	addDescription(schema, "kubernetes_secret_name", "The secret name to sync the secret into. Supports templating.")
 	addDescription(schema, "kubernetes_secret_namespace", "The namespace to sync the secret into. Supports templating.")
@@ -70,6 +74,15 @@ func (a *AppSecret) Validate() error {
 			return ErrConfig{
 				Description: "kubernetes_secret_namespace must be set when kubernetes_sync is true",
 			}
+		}
+	}
+
+	if !generics.SliceContains(a.Format, []string{
+		"base64",
+		"",
+	}) {
+		return ErrConfig{
+			Description: "Invalid format " + a.Format,
 		}
 	}
 
