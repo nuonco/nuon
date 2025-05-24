@@ -57,7 +57,7 @@ type AppConfig struct {
 	Readme   string `json:"readme,omitzero" temporaljson:"readme,omitzero,omitempty"`
 	Checksum string `json:"checksum,omitzero" temporaljson:"checksum,omitzero,omitempty"`
 
-	ComponentIDs pq.StringArray `gorm:"type:text[]"`
+	ComponentIDs pq.StringArray `gorm:"type:text[]" json:"component_ids,omitzero" temporaljson:"component_ids,omitzero,omitempty" swaggertype:"array,string"`
 
 	// Lookups on the app config
 
