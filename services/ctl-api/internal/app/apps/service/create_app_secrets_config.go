@@ -38,6 +38,7 @@ func (c CreateAppSecretsConfigRequest) getSecrets(appID, appConfigID string) []a
 			Description:  secr.Description,
 			Required:     secr.Required,
 			AutoGenerate: secr.AutoGenerate,
+			Format:       app.AppSecretConfigFmt(secr.Format),
 
 			KubernetesSync:            secr.KubernetesSync,
 			KubernetesSecretNamespace: secr.KubernetesSecretNamespace,
@@ -52,8 +53,9 @@ type AppSecretConfig struct {
 	DisplayName string `json:"display_name" validate:"required"`
 	Description string `json:"description" validate:"required"`
 
-	Required     bool `json:"required"`
-	AutoGenerate bool `json:"auto_generate"`
+	Required     bool   `json:"required"`
+	AutoGenerate bool   `json:"auto_generate"`
+	Format       string `json:"format"`
 
 	KubernetesSync            bool   `json:"kubernetes_sync"`
 	KubernetesSecretNamespace string `json:"kubernetes_secret_namespace"`
