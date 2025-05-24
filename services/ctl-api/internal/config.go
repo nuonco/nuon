@@ -154,15 +154,16 @@ type Config struct {
 	OrgRunnerK8sCAData         string `config:"org_runner_k8s_ca_data" validate:"required"`
 	OrgRunnerOIDCProviderURL   string `config:"org_runner_oidc_provider_url" validate:"required"`
 	OrgRunnerOIDCProviderARN   string `config:"org_runner_oidc_provider_arn" validate:"required"`
-	OrgRunnerK8sIAMRoleARN     string `config:"org_runner_k8s_iam_role_arn" validate:"required"`
 	OrgRunnerRegion            string `config:"org_runner_region" validate:"required"`
 	OrgRunnerSupportRoleARN    string `config:"org_runner_support_role_arn" validate:"required"`
 	OrgRunnerHelmChartDir      string `config:"org_runner_helm_chart_dir" validate:"required"`
+	OrgRunnerK8sIAMRoleARN     string `config:"org_runner_k8s_iam_role_arn" validate:"required"`
+	OrgRunnerK8sUseDefaultCreds   bool   `config:"org_runner_k8s_use_default_creds"`
 
 	// configuration for managing the public dns zone
 	DNSManagementIAMRoleARN string `config:"dns_management_iam_role_arn" validate:"required"`
-	DNSZoneID                  string `config:"dns_zone_id" validate:"required"`
-	DNSRootDomain              string `config:"dns_root_domain" validate:"required"`
+	DNSZoneID               string `config:"dns_zone_id" validate:"required"`
+	DNSRootDomain           string `config:"dns_root_domain" validate:"required"`
 
 	// analytics configuration
 	SegmentWriteKey  string `config:"segment_write_key" validate:"required"`
