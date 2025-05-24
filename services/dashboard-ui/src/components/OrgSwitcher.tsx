@@ -111,6 +111,7 @@ const OrgVCSConnections: FC<Pick<TOrg, 'vcs_connections'>> = ({
 }
 
 export const OrgVCSConnectionsDetails: FC<{ org: TOrg }> = ({ org }) => {
+  
   return (
     <div className="flex flex-col gap-4 mx-4 py-4 border-cool-grey-600 dark:border-cool-grey-500 border-b border-dotted ">
       <div className="flex items-center justify-between">
