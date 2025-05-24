@@ -56,7 +56,10 @@ export default function RootLayout({
           <body
             className={`${inter.variable} ${hack.variable} font-sans overflow-hidden disable-ligatures`}
           >
-            <EnvScript env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
+            <EnvScript
+              env={process?.env?.NEXT_PUBLIC_DATADOG_ENV}
+              githubAppName={process.env.GITHUB_APP_NAME}
+            />
             {children}
             {process.env.SEGMENT_WRITE_KEY && (
               <Suspense>
@@ -73,11 +76,14 @@ export default function RootLayout({
   )
 }
 
-const EnvScript = ({ env }) => {
+const EnvScript = ({ env, githubAppName }) => {
   return (
     <div
       dangerouslySetInnerHTML={{
-        __html: `<script id="client-env">window.env = "${env}"</script>`,
+        __html: `<script id="client-env">
+          window.env = "${env}";
+          window.GITHUB_APP_NAME = "${githubAppName}";
+        </script>`,
       }}
     />
   )
