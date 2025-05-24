@@ -11,6 +11,13 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
+type AppSecretConfigFmt string
+
+const (
+	AppSecretConfigFmtBase64  AppSecretConfigFmt = "base64"
+	AppSecretConfigFmtDefault AppSecretConfigFmt = ""
+)
+
 type AppSecretConfig struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -34,8 +41,9 @@ type AppSecretConfig struct {
 	DisplayName string `json:"display_name,omitzero" features:"template" temporaljson:"display_name,omitzero,omitempty"`
 	Description string `json:"description,omitzero" features:"template" temporaljson:"description,omitzero,omitempty"`
 
-	Required     bool `json:"required,omitzero" temporaljson:"required,omitzero,omitempty"`
-	AutoGenerate bool `json:"auto_generate,omitzero" temporaljson:"auto_generate,omitzero,omitempty"`
+	Required     bool               `json:"required,omitzero" temporaljson:"required,omitzero,omitempty"`
+	AutoGenerate bool               `json:"auto_generate,omitzero" temporaljson:"auto_generate,omitzero,omitempty"`
+	Format       AppSecretConfigFmt `json:"format" temporaljson:"format" swaggertype:"string"`
 
 	// for syncing into kubernetes
 	KubernetesSync            bool   `json:"kubernetes_sync,omitzero" temporaljson:"kubernetes_sync,omitzero,omitempty"`

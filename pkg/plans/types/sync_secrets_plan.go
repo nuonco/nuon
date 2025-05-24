@@ -13,6 +13,10 @@ type KubernetesSecretSync struct {
 	Namespace string `json:"namespace"`
 	Name      string `json:"name"`
 	KeyName   string `json:"key_name"`
+
+	// NOTE(jm): this should probably come from the app config, but for now we just use string parsing to avoid
+	// updating the runner job and save time.
+	Format string `json:"format"`
 }
 
 type SyncSecretsPlan struct {
