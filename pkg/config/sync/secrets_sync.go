@@ -21,6 +21,7 @@ func (s sync) secretToRequest(secret *config.AppSecret) *models.ServiceAppSecret
 
 		Required:     secret.Required,
 		AutoGenerate: secret.AutoGenerate,
+		Format:       secret.Format,
 	}
 }
 
