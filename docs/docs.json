@@ -229,6 +229,7 @@
       {
         "tab": "Updates",
         "pages": [
+          "updates/007-secret-formats",
           "updates/006-secrets-workflows",
           "updates/005-developer-experience",
           "updates/004-secrets",
