@@ -49,6 +49,8 @@ func init() {
 	config.RegisterDefault("app_repository_region", "%s/%s")
 
 	config.RegisterDefault("org_runner_helm_chart_dir", "/bundle/helm")
+
+	config.RegisterDefault("aws_cloudformation_stack_template_bucket_region", "us-east-1")
 }
 
 type Config struct {
@@ -136,10 +138,11 @@ type Config struct {
 	UseLocalRunners         bool   `config:"use_local_runners"`
 
 	// cloudformation phone home
-	AWSCloudFormationStackTemplateBucket  string `config:"aws_cloudformation_stack_template_bucket"`
-	AWSCloudFormationStackTemplateBaseURL string `config:"aws_cloudformation_stack_template_base_url"`
-	RunnerEnableSupport                   bool   `config:"runner_enable_support"`
-	RunnerDefaultSupportIAMRole           string `config:"runner_default_support_iam_role_arn" validate:"required"`
+	AWSCloudFormationStackTemplateBucketRegion string `config:"aws_cloudformation_stack_template_bucket_region"`
+	AWSCloudFormationStackTemplateBucket       string `config:"aws_cloudformation_stack_template_bucket"`
+	AWSCloudFormationStackTemplateBaseURL      string `config:"aws_cloudformation_stack_template_base_url"`
+	RunnerEnableSupport                        bool   `config:"runner_enable_support"`
+	RunnerDefaultSupportIAMRole                string `config:"runner_default_support_iam_role_arn" validate:"required"`
 
 	// configuration for managing AWS infra for orgs, apps and installs
 	ManagementIAMRoleARN string `config:"management_iam_role_arn" validate:"required"`
@@ -149,16 +152,16 @@ type Config struct {
 	ManagementECRRegistryARN string `config:"management_ecr_registry_arn" validate:"required"`
 
 	// configuration for org runners
-	OrgRunnerK8sClusterID      string `config:"org_runner_k8s_cluster_id" validate:"required"`
-	OrgRunnerK8sPublicEndpoint string `config:"org_runner_k8s_public_endpoint" validate:"required"`
-	OrgRunnerK8sCAData         string `config:"org_runner_k8s_ca_data" validate:"required"`
-	OrgRunnerOIDCProviderURL   string `config:"org_runner_oidc_provider_url" validate:"required"`
-	OrgRunnerOIDCProviderARN   string `config:"org_runner_oidc_provider_arn" validate:"required"`
-	OrgRunnerRegion            string `config:"org_runner_region" validate:"required"`
-	OrgRunnerSupportRoleARN    string `config:"org_runner_support_role_arn" validate:"required"`
-	OrgRunnerHelmChartDir      string `config:"org_runner_helm_chart_dir" validate:"required"`
-	OrgRunnerK8sIAMRoleARN     string `config:"org_runner_k8s_iam_role_arn" validate:"required"`
-	OrgRunnerK8sUseDefaultCreds   bool   `config:"org_runner_k8s_use_default_creds"`
+	OrgRunnerK8sClusterID       string `config:"org_runner_k8s_cluster_id" validate:"required"`
+	OrgRunnerK8sPublicEndpoint  string `config:"org_runner_k8s_public_endpoint" validate:"required"`
+	OrgRunnerK8sCAData          string `config:"org_runner_k8s_ca_data" validate:"required"`
+	OrgRunnerOIDCProviderURL    string `config:"org_runner_oidc_provider_url" validate:"required"`
+	OrgRunnerOIDCProviderARN    string `config:"org_runner_oidc_provider_arn" validate:"required"`
+	OrgRunnerRegion             string `config:"org_runner_region" validate:"required"`
+	OrgRunnerSupportRoleARN     string `config:"org_runner_support_role_arn" validate:"required"`
+	OrgRunnerHelmChartDir       string `config:"org_runner_helm_chart_dir" validate:"required"`
+	OrgRunnerK8sIAMRoleARN      string `config:"org_runner_k8s_iam_role_arn" validate:"required"`
+	OrgRunnerK8sUseDefaultCreds bool   `config:"org_runner_k8s_use_default_creds"`
 
 	// configuration for managing the public dns zone
 	DNSManagementIAMRoleARN string `config:"dns_management_iam_role_arn" validate:"required"`
