@@ -19,7 +19,7 @@ func (a *Activities) UploadAWSCloudFormationStackVersionTemplate(ctx context.Con
 	uploader, err := s3uploader.NewS3Uploader(a.v,
 		s3uploader.WithBucketName(a.cfg.AWSCloudFormationStackTemplateBucket),
 		s3uploader.WithCredentials(&credentials.Config{
-			Region:     "us-east-1",
+			Region:     a.cfg.AWSCloudFormationStackTemplateBucketRegion,
 			UseDefault: true,
 		}),
 	)
