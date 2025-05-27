@@ -20,8 +20,10 @@ env:
   CLICKHOUSE_DB_USE_TLS: false
 
   # temp until stage
-  AWS_CLOUDFORMATION_STACK_TEMPLATE_BUCKET: "nuon-install-templates-stage"
   AWS_CLOUDFORMATION_STACK_TEMPLATE_BASE_URL: "https://nuon-install-templates-stage.s3.us-east-1.amazonaws.com/"
+  AWS_CLOUDFORMATION_STACK_TEMPLATE_BUCKET: "nuon-install-templates-stage"
+  AWS_CLOUDFORMATION_STACK_TEMPLATE_BUCKET_REGION: "us-east-1"
+
 
   # defaults
   GIT_REF: local
