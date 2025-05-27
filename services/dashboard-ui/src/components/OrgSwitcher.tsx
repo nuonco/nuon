@@ -10,7 +10,7 @@ import { setOrgSessionCookie } from '@/app/actions'
 import { ClickToCopy } from '@/components/ClickToCopy'
 import { Dropdown } from '@/components/Dropdown'
 import { Link } from '@/components/Link'
-import { useOrg } from '@/components/Orgs'
+import { useOrg, ConnectGithubModal } from '@/components/Orgs'
 import { OrgStatus } from '@/components/OrgStatus'
 import { StatusBadge } from '@/components/Status'
 import { Text } from '@/components/Typography'
@@ -111,18 +111,11 @@ const OrgVCSConnections: FC<Pick<TOrg, 'vcs_connections'>> = ({
 }
 
 export const OrgVCSConnectionsDetails: FC<{ org: TOrg }> = ({ org }) => {
-  
   return (
     <div className="flex flex-col gap-4 mx-4 py-4 border-cool-grey-600 dark:border-cool-grey-500 border-b border-dotted ">
       <div className="flex items-center justify-between">
-        <Text variant="med-14">GitHub Connections</Text>
-        <Link
-          className="flex items-center gap-2 text-sm font-medium"
-          href={`https://github.com/apps/${GITHUB_APP_NAME}/installations/new?state=${org.id}`}
-        >
-          <Plus className="text-lg" />
-          Add
-        </Link>
+        <Text variant="med-14">GitHub connections</Text>
+        <ConnectGithubModal />
       </div>
 
       <div>

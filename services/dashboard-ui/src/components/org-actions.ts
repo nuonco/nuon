@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { joinWaitlist, type IJoinWaitlist } from '@/lib'
 import type { TInvite, TWaitlist } from '@/types'
-import { mutateData } from '@/utils'
+import { mutateData, nueMutateData } from '@/utils'
 
 export async function requestWaitlistAccess(
   formData: FormData
@@ -27,5 +27,22 @@ export async function inviteUserToOrg(
   }).then((invite) => {
     revalidatePath(`/${orgId}/team`)
     return invite
+  })
+}
+
+export async function connectGitHubToOrg({
+  org_id,
+  github_install_id,
+}: {
+  github_install_id: string
+  org_id: string
+}) {
+  return nueMutateData({
+    orgId: org_id,
+    path: 'vcs/connection-callback',
+    body: { github_install_id, org_id },
+  }).then((res) => {
+    revalidatePath(`/${org_id}`)
+    return res
   })
 }
