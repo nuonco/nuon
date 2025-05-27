@@ -61,3 +61,9 @@ install sandbox page
 export * from './DeprovisionSandboxModal'
 export * from './ReprovisionSandboxModal'
 export * from './SandboxHistory'
+
+/* 
+install stacks page 
+=====================================
+*/
+export * from './StacksTable'
