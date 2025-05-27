@@ -26,6 +26,10 @@ export const InstallPageSubNav: FC<IInstallPageSubNav> = ({
           text: 'Sandbox',
         },
         {
+          href: `/${orgId}/installs/${installId}/stacks`,
+          text: 'Stacks',
+        },
+        {
           href: `/${orgId}/installs/${installId}/components`,
           text: 'Components',
         },
