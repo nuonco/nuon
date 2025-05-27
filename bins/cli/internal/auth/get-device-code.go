@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -35,11 +36,22 @@ func (a *Service) getDeviceCode() (string, error) {
 	}
 	defer res.Body.Close()
 
+	// error handling
+	if res.StatusCode >= 300 {
+		bodyBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+		}
+		bodyString := string(bodyBytes)
+		fmt.Println("We have encoutered an unexpected error.")
+		return "", fmt.Errorf("%s", bodyString)
+	}
+
 	deviceCodeData := DeviceCodeRes{}
 	err = json.NewDecoder(res.Body).Decode(&deviceCodeData)
 	if err != nil {
 		return "", fmt.Errorf("couldn't decode device code response data: %w", err)
 	}
+	fmt.Printf("\n\n%+v\n\n", deviceCodeData)
 
 	fmt.Println("Logging in to Nuon")
 	fmt.Printf("Attempting to open the SSO authorization page in your default browser.\nIf the browser does not open or you wish to use a different device to\nauthorize this request, open the following URL:\n\n%s\n\nThen enter the code:\n\n%s\n\n", deviceCodeData.VerificationURL, deviceCodeData.UserCode)
