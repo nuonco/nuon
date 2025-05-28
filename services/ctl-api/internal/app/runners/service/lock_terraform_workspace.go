@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -56,10 +55,6 @@ func (s *service) LockTerraformWorkspace(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to lock workspace: %w", err))
 		return
 	}
-
-	s.evClient.Send(ctx, workspaceID, &signals.Signal{
-		Type: signals.OperationReprovision,
-	})
 
 	ctx.JSON(http.StatusOK, "")
 }
