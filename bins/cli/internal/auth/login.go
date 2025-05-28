@@ -39,7 +39,10 @@ func (a *Service) Login(ctx context.Context, cliCfg *config.Config) error {
 
 	// add access token to config and write to the file
 	cliCfg.Set("api_token", tokens.AccessToken)
-	cliCfg.WriteConfig()
+	err = cliCfg.WriteConfig()
+	if err != nil {
+		return view.Error(err)
+	}
 
 	// get user info from ID token
 	user := a.getUserInfo(tokens.IDToken)
