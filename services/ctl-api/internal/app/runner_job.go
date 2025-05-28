@@ -233,6 +233,11 @@ type RunnerJob struct {
 	ExecutionTime time.Duration          `json:"execution_time,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
 	Execution     *RunnerJobExecution    `json:"-" gorm:"-" temporaljson:"execution,omitzero,omitempty"`
 	ParsedOutputs map[string]interface{} `json:"outputs,omitzero" gorm:"-" temporaljson:"parsed_outputs,omitzero,omitempty"`
+
+	// foreign keys
+	States      []TerraformWorkspaceState     `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"states,omitzero,omitempty"`
+	LockHistory []TerraformWorkspaceLock      `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"lock_history,omitzero,omitempty"`
+	StateJSON   []TerraformWorkspaceStateJSON `json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"statesjson,omitzero,omitempty"`
 }
 
 func (*RunnerJob) UseView() bool {
