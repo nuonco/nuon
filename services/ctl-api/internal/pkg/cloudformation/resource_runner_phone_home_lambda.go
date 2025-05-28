@@ -1,13 +1,9 @@
 package cloudformation
 
 import (
-	"io"
-	"net/http"
-
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
 	"github.com/awslabs/goformation/v7/cloudformation/lambda"
-	"github.com/pkg/errors"
 )
 
 func (a *Templates) getRunnerPhoneHomeProps(inp *TemplateInput) *cloudformation.CustomResource {
@@ -45,23 +41,13 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *TemplateInput) *cloudformation.
 
 func (a *Templates) getRunnerPhoneHomeLambda(inp *TemplateInput, t tagBuilder) *lambda.Function {
 	// This is going to be moved into a cloudformation stack template and split out, with parameters for the body
-	// Grab the latest version of the phone-home script
-	resp, err := http.Get("https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/phonehome.py")
-	if err != nil {
-		panic(errors.Wrap(err, "failed to fetch phone-home script"))
-	}
-	byts, err := io.ReadAll(resp.Body)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to read body of phone-home script"))
-	}
-
 	return &lambda.Function{
 		Handler:     ptr("index.lambda_handler"),
 		Runtime:     ptr("python3.9"),
 		Tags:        t.apply(nil, "phone-home-lambda"),
 		Description: ptr("Notify the Nuon API of the stack state."),
 		Code: &lambda.Function_Code{
-			ZipFile: ptr(string(byts)),
+			ZipFile: ptr(inp.PhonehomeScript),
 		},
 		Role: cloudformation.GetAtt("RunnerPhoneHomeRole", "Arn"),
 	}
