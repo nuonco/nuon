@@ -22,7 +22,10 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   ])
 
   return {
-    title: `${install.name} | ${installWorkflow?.name}`,
+    title: `${install.name} | ${
+      installWorkflow?.name ||
+      removeSnakeCase(sentanceCase(installWorkflow?.type))
+    }`,
   }
 }
 
