@@ -10,6 +10,7 @@ type NuonWorkspaceConfig struct {
 	APIEndpoint string
 	WorkspaceID string
 	Token       string
+	JobID       string
 }
 
 type HTTPBackendConfig struct {
