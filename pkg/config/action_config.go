@@ -5,7 +5,9 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/config/refs"
 	"github.com/powertoolsdev/mono/pkg/config/source"
 )
 
@@ -34,9 +36,21 @@ type ActionStepConfig struct {
 
 	Command        string `mapstructure:"command" features:"template"`
 	InlineContents string `mapstructure:"inline_contents" features:"get,template"`
+
+	// created during parsing
+	References []refs.Ref `mapstructure:"-" jsonschema:"-"`
 }
 
 func (a *ActionConfig) parse() error {
+	for _, step := range a.Steps {
+		references, err := refs.Parse(step)
+		if err != nil {
+			return errors.Wrap(err, "unable to parse components")
+		}
+
+		step.References = references
+	}
+
 	if a.Source == "" {
 		return nil
 	}
