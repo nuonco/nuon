@@ -22,11 +22,11 @@ func (s *Helpers) GetTerraformState(ctx context.Context, workspaceID string) (*a
 	return tfState, nil
 }
 
-func (s *Helpers) InsertTerraformState(ctx context.Context, workspaceID string, contents []byte, data *app.TerraformStateData) (*app.TerraformWorkspaceState, error) {
+func (s *Helpers) InsertTerraformState(ctx context.Context, workspaceID string, jobID *string, contents []byte, data *app.TerraformStateData) (*app.TerraformWorkspaceState, error) {
 	tfState := app.TerraformWorkspaceState{
 		TerraformWorkspaceID: workspaceID,
-		Data:                 data,
 		Contents:             contents,
+		RunnerJobID:          jobID,
 	}
 
 	res := s.db.WithContext(ctx).Create(&tfState)

@@ -40,6 +40,7 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 		APIEndpoint: h.cfg.RunnerAPIURL,
 		WorkspaceID: h.state.plan.TerraformBackend.WorkspaceID,
 		Token:       h.cfg.RunnerAPIToken,
+		JobID:       h.state.jobID,
 	}))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get http backend")

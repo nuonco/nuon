@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/nuonco/nuon-runner-go/models"
@@ -67,6 +68,27 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	if err != nil {
 		l.Error("terraform run errored", zap.Error(err))
 		return fmt.Errorf("unable to execute %s run: %w", job.Operation, err)
+	}
+
+	switch job.Operation {
+	case models.AppRunnerJobOperationTypeApply, models.AppRunnerJobOperationTypeDestroy:
+		state, err := wkspace.Show(ctx, hlog)
+		if err != nil {
+			p.writeErrorResult(ctx, "terraform show", err)
+			return fmt.Errorf("unable to show state: %w", err)
+		}
+
+		stateBody, err := json.Marshal(state)
+		if err != nil {
+			p.writeErrorResult(ctx, "terraform show", err)
+			return fmt.Errorf("unable to marshal state: %w", err)
+		}
+
+		if _, err := p.apiClient.UpdateTerraformStateJSON(ctx, p.state.plan.TerraformBackend.WorkspaceID, &p.state.jobID, stateBody); err != nil {
+			p.writeErrorResult(ctx, "terraform show", err)
+			return fmt.Errorf("unable to update state: %w", err)
+		}
+
 	}
 
 	return nil

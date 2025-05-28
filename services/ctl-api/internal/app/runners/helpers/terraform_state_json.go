@@ -7,8 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *Helpers) GetWorkspaceLock(ctx context.Context, workspaceID string) (*app.TerraformLock, error) {
-	tfs := &app.TerraformWorkspaceLock{}
+func (s *Helpers) GetTerraformStateJSON(ctx context.Context, workspaceID string) ([]byte, error) {
+	tfs := &app.TerraformWorkspaceStateJSON{}
 
 	res := s.db.WithContext(ctx).
 		First(tfs, "workspace_id = ?", workspaceID)
@@ -20,27 +20,27 @@ func (s *Helpers) GetWorkspaceLock(ctx context.Context, workspaceID string) (*ap
 		return nil, res.Error
 	}
 
-	return tfs.Lock, nil
+	return tfs.Contents, nil
 }
 
-func (s *Helpers) LockWorkspace(ctx context.Context, workspaceID string, jobID *string, lock *app.TerraformLock) (*app.TerraformWorkspaceLock, error) {
-	tfs := &app.TerraformWorkspaceLock{
+func (s *Helpers) UpdateStateJSON(ctx context.Context, workspaceID string, jobID *string, contents []byte) error {
+	tfs := &app.TerraformWorkspaceStateJSON{
 		WorkspaceID: workspaceID,
-		Lock:        lock,
 		RunnerJobID: jobID,
+		Contents:    contents,
 	}
 
 	res := s.db.WithContext(ctx).Create(tfs)
 	if res.Error != nil {
-		return nil, res.Error
+		return res.Error
 	}
-	return tfs, nil
+	return nil
 }
 
-func (s *Helpers) UnlockWorkspace(ctx context.Context, workspaceID string) error {
+func (s *Helpers) DeleteStateJSON(ctx context.Context, workspaceID string) error {
 	res := s.db.WithContext(ctx).
 		Where("workspace_id = ?", workspaceID).
-		Delete(&app.TerraformWorkspaceLock{})
+		Delete(&app.TerraformWorkspaceStateJSON{})
 	if res.Error != nil {
 		return res.Error
 	}
