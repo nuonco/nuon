@@ -68,6 +68,10 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/runners/terraform-workspace/:workspace_id/states/:state_id", s.GetTerraformWorkspaceStateByID)
 	api.GET("/v1/runners/terraform-workspace/:workspace_id/states/:state_id/resources", s.GetTerraformWorkspaceStateResources)
 
+	api.GET("/v1/runners/terraform-workspace/:workspace_id/state-json", s.GetTerraformWorkspaceStatesJSON)
+	api.GET("/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id", s.GetTerraformWorkspaceStatesJSONByID)
+	api.GET("/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id/resources", s.GetTerraformWorkspaceStateResources)
+
 	tfBackendPath := "/v1/terraform-backend"
 	api.GET(tfBackendPath, s.GetTerraformCurrentStateData)
 	api.POST(tfBackendPath, s.UpdateTerraformState)
@@ -166,6 +170,9 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.POST(helmReleasePath+":namespace/:key", s.CreateHelmRelease)
 	api.PUT(helmReleasePath+":namespace/:key", s.UpdateHelmRelease)
 	api.DELETE(helmReleasePath+":namespace/:key", s.DeleteHelmRelease)
+	// terraform state json
+	tfWorkspaces.POST("/:workspace_id/state-json", s.UpdateTerraformWorkspaceStateJSON)
+	tfWorkspaces.DELETE("/:workspace_id/states", s.DeleteTerraformWorkspaceStateJSON)
 
 	// TODO(jm): these will be moved to the otel namespace
 	api.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)

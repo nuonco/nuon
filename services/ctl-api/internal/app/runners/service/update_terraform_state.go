@@ -38,6 +38,13 @@ func (s *service) UpdateTerraformState(ctx *gin.Context) {
 		return
 	}
 
+	// keeping jobID optional to remain backwards compatible for old runners
+	jobID := ctx.Query("job_id")
+	var sJobID *string
+	if jobID != "" {
+		sJobID = &jobID
+	}
+
 	reqLockID := ctx.Query("ID")
 	if reqLockID != "" {
 		currLock, err := s.helpers.GetWorkspaceLock(ctx, reqLockID)
@@ -74,7 +81,7 @@ func (s *service) UpdateTerraformState(ctx *gin.Context) {
 		return
 	}
 
-	_, err = s.helpers.InsertTerraformState(ctx, workspaceID, contents, &data)
+	_, err = s.helpers.InsertTerraformState(ctx, workspaceID, sJobID, contents, &data)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update terraform state: %w", err))
 		return

@@ -32,7 +32,7 @@ func (s *service) GetTerraformCurrentStateData(ctx *gin.Context) {
 		return
 	}
 
-	if state == nil || state.Data == nil || state.Data.Version < 1 {
+	if state == nil || state.Contents == nil || len(state.Contents) == 0 {
 		ctx.JSON(http.StatusNoContent, "")
 		return
 	}

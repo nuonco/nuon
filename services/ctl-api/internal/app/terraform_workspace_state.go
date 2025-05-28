@@ -31,10 +31,11 @@ type TerraformWorkspaceState struct {
 
 	Contents []byte `json:"contents,omitzero" gorm:"type:bytea" temporaljson:"contents,omitzero,omitempty"`
 
-	Data *TerraformStateData `json:"data,omitzero" temporaljson:"data,omitzero,omitempty"`
-
 	TerraformWorkspaceID string             `json:"terraform_workspace_id,omitzero" temporaljson:"terraform_workspace_id,omitzero,omitempty"`
 	TerraformWorkspace   TerraformWorkspace `json:"terraform_workspace,omitzero" gorm:"-" temporaljson:"terraform_workspace,omitzero,omitempty"`
+
+	RunnerJobID *string   `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
+	RunnerJob   RunnerJob `json:"-" gorm:"-" temporaljson:"runner_job,omitzero,omitempty"`
 
 	Revision int `json:"revision,omitzero" gorm:"->;-:migration" temporaljson:"revision,omitzero,omitempty"`
 }
