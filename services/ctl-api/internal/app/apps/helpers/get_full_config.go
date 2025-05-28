@@ -54,7 +54,6 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string) (*ap
 		missingComponents := []app.ComponentConfigConnection{}
 		res = h.db.WithContext(ctx).
 			Scopes(
-				scopes.WithDisableViews,
 				scopes.WithOverrideTable("component_config_connections_latest_configs_view"),
 			).
 			// preload the component this belongs too
