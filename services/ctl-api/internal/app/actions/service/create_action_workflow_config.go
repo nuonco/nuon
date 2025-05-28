@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/lib/pq"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -37,6 +38,8 @@ type CreateActionWorkflowConfigStepRequest struct {
 
 	Command        string `json:"command"`
 	InlineContents string `json:"inline_contents"`
+
+	References []string `json:"references"`
 }
 
 const (
@@ -240,6 +243,7 @@ func (s *service) createActionWorkflowSteps(ctx context.Context, parentApp *app.
 			PreviousStepID:           prevStepId,
 			PublicGitVCSConfig:       publicGitConfig,
 			ConnectedGithubVCSConfig: githubVCSConfig,
+			References:               pq.StringArray(step.References),
 		}
 
 		res := s.db.WithContext(ctx).

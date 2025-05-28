@@ -68,11 +68,16 @@ func (s *sync) syncAction(ctx context.Context, resource string, action *config.A
 	}
 
 	for _, step := range action.Steps {
+
 		reqStep := &models.ServiceCreateActionWorkflowConfigStepRequest{
 			Name:           generics.ToPtr(step.Name),
 			EnvVars:        step.EnvVarMap,
 			Command:        step.Command,
 			InlineContents: step.InlineContents,
+		}
+
+		for _, ref := range step.References {
+			reqStep.References = append(reqStep.References, ref.String())
 		}
 
 		if step.ConnectedRepo != nil {
