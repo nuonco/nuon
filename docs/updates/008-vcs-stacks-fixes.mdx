@@ -1,0 +1,39 @@
+---
+title: '008 - Stack Tab, VCS Import, and Component Build Updates'
+description: 'New stack management features, VCS connection importing, and improved component build system'
+---
+
+_May 27th, 2025_
+
+<div className="badge badge--primary">v0.19.576</div>
+
+## Install Stacks
+
+You can now view and interact with versions of an install's stack.
+
+## Import a VCS Connection
+
+You can now import a VCS connection into your org. This is useful for sharing the same Github installation of between 
+different Nuon orgs.
+
+![](assets/2025-05-27-16-13-26.png)
+
+## Refactored component build checksum
+
+We have updated the logic for determining when component builds are triggered.
+The checksum calculation now relies on the contents of the component configuration
+file rather than the previous method. 
+
+![](assets/2025-05-27-16-12-51.png)
+
+<Note>
+Please note that this change is not backwards
+compatible and will require a rebuild of all components during your first file sync
+following this update.
+</Note>
+
+
+## Bug Fixes
+
+* Fixed an issue where cancelling a workflow could leave a component undeployable.
+* Fixed an issue where deprovisioning an install failed to find the latest deploy.
