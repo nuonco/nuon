@@ -15,6 +15,13 @@ export default async function middleware(request: NextRequest) {
   if (session && pathname !== '/favicon.ico') {
     let redirectPath = '/request-access'
 
+    if (
+      pathname === '/admin/temporal' &&
+      !session?.user?.email?.endsWith('@nuon.co')
+    ) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+
     if (pathname === '/' || pathname.split('/')[1] === 'beta') {
       const orgSession = request.cookies.get('org-session')
 

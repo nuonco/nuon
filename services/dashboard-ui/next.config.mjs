@@ -12,6 +12,14 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/admin/temporal/:path*',
+        destination: 'http://localhost:8234/admin/temporal/:path*',
+      },
+    ]
+  },
 }
 
 export default nextConfig
