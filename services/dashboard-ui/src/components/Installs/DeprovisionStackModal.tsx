@@ -63,9 +63,7 @@ export const DeprovisionStackModal: FC<IDeprovisionStackModal> = ({
                 <Notice variant="warn">
                   Once you have deprovisioned the install from the UI, please go
                   to the AWS console and destroy this CloudFormation stack for
-                  your install.Once you have deprovisioned the install from the
-                  UI, please go to the AWS console and destroy this
-                  CloudFormation stack for your install.
+                  your install.
                 </Notice>
               </div>
               <div className="flex gap-3 justify-end">
