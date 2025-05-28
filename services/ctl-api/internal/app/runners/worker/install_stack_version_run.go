@@ -3,6 +3,7 @@ package worker
 import (
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
@@ -17,7 +18,10 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		return err
 	}
 
-	if runner.Status != app.RunnerStatusAwaitingInstallStackRun {
+	if !generics.SliceContains(runner.Status, []app.RunnerStatus{
+	        app.RunnerStatusAwaitingInstallStackRun, 
+	        app.RunnerStatusPending, 
+        }){
 		return nil
 	}
 
