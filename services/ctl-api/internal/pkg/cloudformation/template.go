@@ -17,6 +17,7 @@ type TemplateInput struct {
 	CloudFormationStackVersion *app.InstallStackVersion `validate:"required"`
 	InstallState               *state.State             `validate:"required"`
 	AppCfg                     *app.AppConfig           `validate:"required"`
+	PhonehomeScript            string                   `validate:"required"`
 
 	Runner   *app.Runner              `validate:"required"`
 	Settings *app.RunnerGroupSettings `validate:"required"`
