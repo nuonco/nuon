@@ -89,6 +89,11 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		return errors.Wrap(err, "unable to create runner token")
 	}
 
+	phoneHomeScript, err := activities.AwaitGetPhoneHomeScriptRaw(ctx, &activities.GetPhoneHomeScriptRequest{})
+	if err != nil {
+		return errors.Wrap(err, "unable to get phone home script")
+	}
+
 	// generate the cloudformation stack
 	inp := &cloudformation.TemplateInput{
 		Install:                    install,
@@ -96,6 +101,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		InstallState:               installState,
 		AppCfg:                     cfg,
 		Runner:                     runner,
+		PhonehomeScript:            string(phoneHomeScript),
 		Settings:                   &runner.RunnerGroup.Settings,
 		APIToken:                   generics.FromPtrStr(token),
 	}
