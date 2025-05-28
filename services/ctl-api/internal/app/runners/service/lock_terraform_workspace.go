@@ -7,12 +7,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 // @ID						UpdateTerraformState
 // @Summary				update terraform state
 // @Description.markdown	lock_terraform_workspace.md
+// @Param					workspace_id	path	string	true	"workspace ID"
 // @Tags					runners,runners/runner
 // @Accept					json
 // @Produce				json
@@ -25,7 +27,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.TerraformWorkspaceState
-// @Router					/v1/terraform-workspaces/:workspace_id/lock [post]
+// @Router					/v1/terraform-workspaces/{workspace_id}/lock [post]
 
 func (s *service) LockTerraformWorkspace(ctx *gin.Context) {
 	workspaceID := ctx.Param("workspace_id")
@@ -36,17 +38,28 @@ func (s *service) LockTerraformWorkspace(ctx *gin.Context) {
 		return
 	}
 
+	// keeping jobID optional to remain backwards compatible for old runners
+	jobID := ctx.Query("job_id")
+	var sJobID *string
+	if jobID != "" {
+		sJobID = &jobID
+	}
+
 	var lock app.TerraformLock
 	if err := ctx.BindJSON(&lock); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
 
-	_, err := s.helpers.LockWorkspace(ctx, workspaceID, &lock)
+	_, err := s.helpers.LockWorkspace(ctx, workspaceID, sJobID, &lock)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to lock workspace: %w", err))
 		return
 	}
+
+	s.evClient.Send(ctx, workspaceID, &signals.Signal{
+		Type: signals.OperationReprovision,
+	})
 
 	ctx.JSON(http.StatusOK, "")
 }
