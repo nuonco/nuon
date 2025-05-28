@@ -8,9 +8,9 @@ import (
 
 func (s *http) ConfigFile(ctx context.Context) ([]byte, error) {
 	cfg := HTTPBackendConfig{
-		Address:       s.Config.APIEndpoint + "/v1/terraform-backend?token=" + s.Config.Token + "&workspace_id=" + s.Config.WorkspaceID,
-		LockAddress:   s.Config.APIEndpoint + "/v1/terraform-workspaces/" + s.Config.WorkspaceID + "/lock?token=" + s.Config.Token,
-		UnlockAddress: s.Config.APIEndpoint + "/v1/terraform-workspaces/" + s.Config.WorkspaceID + "/unlock?token=" + s.Config.Token,
+		Address:       s.Config.APIEndpoint + "/v1/terraform-backend?token=" + s.Config.Token + "&workspace_id=" + s.Config.WorkspaceID + "&job_id=" + s.Config.JobID,
+		LockAddress:   s.Config.APIEndpoint + "/v1/terraform-workspaces/" + s.Config.WorkspaceID + "/lock?token=" + s.Config.Token + "&job_id=" + s.Config.JobID,
+		UnlockAddress: s.Config.APIEndpoint + "/v1/terraform-workspaces/" + s.Config.WorkspaceID + "/unlock?token=" + s.Config.Token + "&job_id=" + s.Config.JobID,
 		LockMethod:    "POST",
 		UnlockMethod:  "POST",
 	}
