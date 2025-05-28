@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
@@ -33,9 +34,10 @@ type ActionWorkflowStepConfig struct {
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"-" temporaljson:"action_workflow_config,omitzero,omitempty"`
 
 	// metadata
-	Name           string `json:"name,omitzero" gorm:"index:idx_action_workflow_step_config_action_workflow_config_id_name,unique" temporaljson:"name,omitzero,omitempty"`
-	PreviousStepID string `json:"previous_step_id,omitzero" temporaljson:"previous_step_id,omitzero,omitempty"`
-	Idx            int    `json:"idx,omitzero" temporaljson:"idx,omitzero,omitempty"`
+	Name           string         `json:"name,omitzero" gorm:"index:idx_action_workflow_step_config_action_workflow_config_id_name,unique" temporaljson:"name,omitzero,omitempty"`
+	PreviousStepID string         `json:"previous_step_id,omitzero" temporaljson:"previous_step_id,omitzero,omitempty"`
+	Idx            int            `json:"idx,omitzero" temporaljson:"idx,omitzero,omitempty"`
+	References     pq.StringArray `json:"references" temporaljson:"references" swaggertype:"array,string" gorm:"type:text[]"`
 
 	// all the details needed for a step
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty" temporaljson:"public_git_vcs_config,omitzero,omitempty"`
