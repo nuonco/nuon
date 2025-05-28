@@ -52,6 +52,20 @@ services:
     networks:
       - default
 
+  temporal-proxy:
+    image: temporalio/ui:latest
+    ports:
+      - 8234:8080
+    volumes:
+      - /var/:/tmp/temporalcli
+    networks:
+      - default
+    environment:
+      # NOTE: if you are on docker and this does not work, change the following to:
+      # host.docker.internal:7233
+      TEMPORAL_ADDRESS: host.containers.internal:7233
+      TEMPORAL_UI_PUBLIC_PATH: /admin/temporal
+
   #
   # Replicated ClickHouse
   #
