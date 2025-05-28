@@ -12,6 +12,7 @@ import (
 // @ID						GetTerraformWorkspace
 // @Summary				get  terraform workspace
 // @Description.markdown	get_terraform_workspace.md
+// @Param					workspace_id	path	string	true	"workspace ID"
 // @Tags					runners,runners/runner
 // @Accept					json
 // @Produce				json
@@ -23,7 +24,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}	app.TerraformWorkspace
-// @Router					/v1/terraform-workspace [get]
+// @Router					/v1/terraform-workspace/{workspace_id} [get]
 func (s *service) GetTerraformWorkpace(ctx *gin.Context) {
 	workspaceID := ctx.Param("workspace_id")
 
