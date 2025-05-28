@@ -13,6 +13,7 @@ import (
 // @ID						UpdateTerraformState
 // @Summary				update terraform state
 // @Description.markdown	unlock_terraform_workspace.md
+// @Param					workspace_id	path	string	true	"workspace ID"
 // @Tags					runners,runners/runner
 // @Accept					json
 // @Produce				json
@@ -25,7 +26,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.TerraformWorkspaceState
-// @Router					/v1/terraform-workspaces/:workspace_id/unlock [post]
+// @Router					/v1/terraform-workspaces/{workspace_id}/unlock [post]
 
 func (s *service) UnlockTerraformWorkspace(ctx *gin.Context) {
 	workspaceID := ctx.Param("workspace_id")
