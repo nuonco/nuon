@@ -35,7 +35,7 @@ type TerraformWorkspaceState struct {
 	TerraformWorkspace   TerraformWorkspace `json:"terraform_workspace,omitzero" gorm:"-" temporaljson:"terraform_workspace,omitzero,omitempty"`
 
 	RunnerJobID *string   `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
-	RunnerJob   RunnerJob `json:"-" gorm:"-" temporaljson:"runner_job,omitzero,omitempty"`
+	RunnerJob   RunnerJob `json:"runner_job,omitzero" temporaljson:"runner_job,omitzero,omitempty"`
 
 	Revision int `json:"revision,omitzero" gorm:"->;-:migration" temporaljson:"revision,omitzero,omitempty"`
 }
