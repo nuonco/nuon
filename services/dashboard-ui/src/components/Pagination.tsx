@@ -9,12 +9,14 @@ import { useOrg } from '@/components/Orgs'
 import type { TPagination } from '@/lib'
 
 interface IPagination {
+  limit?: number
   param?: string
   pageData?: TPagination
   position?: 'center' | 'left' | 'right'
 }
 
 export const Pagination: FC<IPagination> = ({
+  limit = 10,
   param,
   pageData = {
     hasNext: 'false',
@@ -39,7 +41,7 @@ export const Pagination: FC<IPagination> = ({
       <Button
         disabled={offset === 0}
         onClick={() => {
-          const path = `${pathname}?${param}=${offset - 1}`
+          const path = `${pathname}?${param}=${offset === limit + 1 ? 0 : offset - limit}`
           router.push(path)
         }}
         className="text-sm flex items-center gap-1 !p-2"
@@ -51,7 +53,7 @@ export const Pagination: FC<IPagination> = ({
       <Button
         disabled={!hasNext}
         onClick={() => {
-          const path = `${pathname}?${param}=${offset + 1}`
+          const path = `${pathname}?${param}=${offset === 0 ? limit + 1 : offset + limit}`
           router.push(path)
         }}
         className="text-sm flex items-center gap-1 !p-2"
