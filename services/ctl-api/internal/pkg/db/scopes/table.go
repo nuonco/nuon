@@ -8,11 +8,11 @@ import (
 
 func WithOverrideTable(name string) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		return db.Table(name)
+		return db.InstanceSet(views.DisableViewsKey, true).Table(name)
 	}
 }
 
 // DisableViews is a scope that removes usage of views. Usage for when the view returns too much data or is slow.
 func WithDisableViews(db *gorm.DB) *gorm.DB {
-	return db.Set(views.DisableViewsKey, true)
+	return db.InstanceSet(views.DisableViewsKey, true)
 }

@@ -85,7 +85,7 @@ func (m *viewsPlugin) modelsToViewTables(db *gorm.DB) {
 
 // see note above
 func (m *viewsPlugin) enableView(tx *gorm.DB) {
-	disable, ok := tx.Get(DisableViewsKey)
+	disable, ok := tx.InstanceGet(DisableViewsKey)
 	if ok && disable.(bool) {
 		return
 	}
