@@ -101,25 +101,13 @@ export default withPageAuthRequired(async function Runner({
                   />
                 }
               >
-                <div className="flex gap-8 items-start justify-start flex-wrap">
-                  <span className="flex flex-col gap-2">
-                    <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                      Status
-                    </Text>
-                    <StatusBadge
-                      status={runner?.status}
-                      description={runner?.status_description}
-                      descriptionAlignment="left"
-                      shouldPoll
-                      isWithoutBorder
-                    />
-                  </span>
+                              
                   <RunnerMeta
                     orgId={orgId}
                     installId={installId}
-                    runnerId={runner.id}
+                    runner={runner}
                   />
-                </div>
+
               </Suspense>
             </ErrorBoundary>
           </Section>
