@@ -60,6 +60,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET(tfWorkspacePath, s.GetTerraformWorkpaces)
 	api.GET(tfWorkspacePath+"/:workspace_id", s.GetTerraformWorkpace)
 	api.DELETE(tfWorkspacePath+"/:workspace_id", s.DeleteTerraformWorkpace)
+	api.GET(tfWorkspacePath+"/:workspace_id/lock", s.GetTerraformWorkspaceLock)
 	api.POST(tfWorkspacePath+"/:workspace_id/lock", s.LockTerraformWorkspace)
 	api.POST(tfWorkspacePath+"/:workspace_id/unlock", s.UnlockTerraformWorkspace)
 
