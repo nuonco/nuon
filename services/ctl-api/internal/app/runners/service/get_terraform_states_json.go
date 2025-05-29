@@ -67,6 +67,7 @@ func (s *service) GetTerraformStatesJSON(ctx *gin.Context, workspaceID string) (
 			"WorkspaceID",
 			"RunnerJobID",
 		).
+		Scopes(runnerJobPreload).
 		Order("created_at DESC").
 		Find(&states)
 	if res.Error != nil {
