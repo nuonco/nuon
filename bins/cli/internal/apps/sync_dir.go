@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/nuonco/nuon-go/models"
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
@@ -59,6 +60,12 @@ func (s *Service) SyncDir(ctx context.Context, dir string) error {
 	err = syncer.Sync(ctx)
 	if err != nil {
 		return ui.PrintError(err)
+	}
+
+	if err := s.api.UpdateAppConfigInstalls(ctx, appID, syncer.GetAppConfigID(), &models.ServiceUpdateAppConfigInstallsRequest{
+		UpdateAll: true,
+	}); err != nil {
+		return err
 	}
 
 	ui.PrintSuccess("successfully synced " + dir)

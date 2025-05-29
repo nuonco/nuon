@@ -42,3 +42,19 @@ display_name = "JSON Type"
 group        = "types"
 internal = true
 type = "json"
+
+[[group]]
+name = "network"
+description = "Configure the install's network settings."
+display_name = "Network"
+
+
+[[input]]
+name = "root_domain"
+description  = "Domain to host this install under"
+default      = "example.nuon.run"
+sensitive    = false
+display_name = "Root Domain"
+group        = "network"
+internal = true
+type = "string"
