@@ -52,9 +52,7 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx context.Context, orgID,
 	res := s.db.WithContext(ctx).
 		Preload("ActionWorkflow").
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(
-				scopes.WithOverrideTable("install_action_workflow_runs_latest_view_v1"),
-			)
+			return db.Scopes(scopes.WithOverrideTable("install_action_workflow_runs_latest_view_v1"))
 		}).
 		Preload("Runs.RunnerJob", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithDisableViews)
