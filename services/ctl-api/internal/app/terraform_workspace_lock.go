@@ -23,7 +23,7 @@ type TerraformWorkspaceLock struct {
 	Lock *TerraformLock `json:"lock,omitzero" temporaljson:"lock,omitzero,omitempty"`
 
 	RunnerJobID *string   `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
-	RunnerJob   RunnerJob `json:"-" gorm:"-" temporaljson:"runner_job,omitzero,omitempty"`
+	RunnerJob   RunnerJob `json:"runner_job,omitzero" temporaljson:"runner_job,omitzero,omitempty"`
 }
 
 func (r *TerraformWorkspaceLock) BeforeCreate(tx *gorm.DB) (err error) {

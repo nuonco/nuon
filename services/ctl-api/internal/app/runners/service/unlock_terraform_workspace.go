@@ -10,8 +10,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
-// @ID						UpdateTerraformState
-// @Summary				update terraform state
+// @ID						UnlockTerraformWorkspace
+// @Summary				unlock terraform workspace
 // @Description.markdown	unlock_terraform_workspace.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Tags					runners,runners/runner
@@ -27,7 +27,6 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.TerraformWorkspaceState
 // @Router					/v1/terraform-workspaces/{workspace_id}/unlock [post]
-
 func (s *service) UnlockTerraformWorkspace(ctx *gin.Context) {
 	workspaceID := ctx.Param("workspace_id")
 	if workspaceID == "" {
