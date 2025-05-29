@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import React from 'react'
+import { type FC, Suspense } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, CaretLeft, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
@@ -13,7 +14,9 @@ import {
   EventStatus,
   InstallWorkflowCancelModal,
   Link,
+  Loading,
   LogStreamProvider,
+  RunnerJobPlanModal,
   Section,
   Text,
   Time,
@@ -24,12 +27,14 @@ import {
   getAppActionWorkflow,
   getInstallActionWorkflowRun,
   getInstallWorkflow,
+  getRunnerJobPlan,
 } from '@/lib'
 import type { TInstallActionWorkflowRun, TActionConfig } from '@/types'
 import {
   sentanceCase,
   CANCEL_RUNNER_JOBS,
   humandReadableTriggeredBy,
+  nueQueryData,
 } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -152,6 +157,19 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
               </ToolTip>
             </Text>
           </span>
+
+          <ErrorBoundary fallback={<Text>Can&apso;t fetching job plan</Text>}>
+            <Suspense
+              fallback={
+                <Loading variant="stack" loadingText="Loading job plan..." />
+              }
+            >
+              <LoadRunnerJobPlan
+                orgId={orgId}
+                runnerJobId={workflowRun?.runner_job?.id}
+              />
+            </Suspense>
+          </ErrorBoundary>
           {CANCEL_RUNNER_JOBS &&
           workflowRun?.runner_job?.id &&
           (workflowRun?.status === 'queued' ||
@@ -221,3 +239,22 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
     </DashboardContent>
   )
 })
+
+
+const LoadRunnerJobPlan: FC<{ orgId: string; runnerJobId: string }> = async ({
+  orgId,
+  runnerJobId,
+}) => {
+  const { data: plan } = await nueQueryData<string>({
+    orgId,
+    path: `runner-jobs/${runnerJobId}/plan`,
+  })
+
+  return plan ? (
+    <RunnerJobPlanModal
+      buttonText="Run plan"
+      headingText="Action run plan"
+      plan={plan}
+    />
+  ) : null
+}
