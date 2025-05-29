@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID						GetInstallComponents
@@ -61,6 +62,7 @@ func (s *service) getInstallComponents(ctx *gin.Context, installID string) ([]ap
 func (s *service) getLatestInstallsDeploys(ctx *gin.Context, installComponentIDs ...string) ([]app.InstallDeploy, error) {
 	installDeploys := []app.InstallDeploy{}
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithOverrideTable("install_deploys_latest_view_v1")).
 		Where("install_component_id IN ?", installComponentIDs).
 		Order("created_at DESC").
 		Find(&installDeploys)
