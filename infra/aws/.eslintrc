@@ -1,6 +1,9 @@
 {
-  "extends": ["@powertoolsdev/eslint-config-nuon"],
+  "extends": "next/core-web-vitals",
+  "plugins": ["import"],
   "rules": {
-    "import/no-namespace": ["error", { "ignore": ["*.json"]}]
+    "import/no-cycle": "error",
+    "no-console": ["error", { "allow": ["error", "warn"] }],
+    "react-hooks/exhaustive-deps": "off"
   }
 }

@@ -71,7 +71,7 @@
   "output": {
     "sso-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-05-20T05:59:07.936Z"
+      "value": "2025-05-28T18:20:22.397Z"
     }
   },
   "provider": {
@@ -327,6 +327,20 @@
         "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
         "principal_type": "GROUP",
         "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountrunners-stageid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-sandbox-byoc": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-sandbox-byoc",
+            "uniqueId": "nuonadmin-sandbox-byoc"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandbox-byocid}",
         "target_type": "AWS_ACCOUNT"
       },
       "nuonadmin-sandbox-cb": {
@@ -763,6 +777,20 @@
         "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountrunners-stageid}",
         "target_type": "AWS_ACCOUNT"
       },
+      "nuonpoweruser-sandbox-byoc": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-sandbox-byoc",
+            "uniqueId": "nuonpoweruser-sandbox-byoc"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandbox-byocid}",
+        "target_type": "AWS_ACCOUNT"
+      },
       "nuonpoweruser-sandbox-cb": {
         "//": {
           "metadata": {
@@ -1046,7 +1074,7 @@
     "required_providers": {
       "aws": {
         "source": "aws",
-        "version": "5.60.0"
+        "version": "5.98.0"
       }
     }
   }

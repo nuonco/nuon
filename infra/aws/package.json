@@ -29,7 +29,6 @@
     "constructs": "^10.1.289"
   },
   "devDependencies": {
-    "@powertoolsdev/eslint-config-nuon": "^1.0.1",
     "@types/jest": "^28.1.7",
     "@types/node": "^18.15.7",
     "@typescript-eslint/eslint-plugin": "^5.56.0",
