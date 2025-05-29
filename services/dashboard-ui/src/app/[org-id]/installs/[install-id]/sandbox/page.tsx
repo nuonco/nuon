@@ -179,7 +179,7 @@ export default withPageAuthRequired(async function InstallComponent({
 
         <div className="divide-y flex flex-col md:col-span-4">
           <Section heading="Sandbox controls" className="flex-initial">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <ReprovisionSandboxModal installId={installId} orgId={orgId} />
               <DeprovisionSandboxModal install={install} />
             </div>
