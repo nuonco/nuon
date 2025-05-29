@@ -197,28 +197,27 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
   return (
     <Table
       header={
-        <div className="w-full flex items-start justify-between">
-          <div className="flex-auto flex flex-col gap-2">
-            <div className="flex items-center">
-              <DataTableSearch
-                handleOnChange={handleGlobleFilter}
-                value={globalFilter}
-              />
-            </div>
-            <ComponentTypeFilterDropdown
-              {...{
-                handleTypeFilter,
-                handleTypeOnlyFilter,
-                clearTypeFilter,
-                columnFilters,
-              }}
-              isNotDropdown
+        <div className="flex-auto flex flex-col gap-2">
+          <div className="w-full flex items-start justify-between">
+            <DataTableSearch
+              handleOnChange={handleGlobleFilter}
+              value={globalFilter}
             />
+
+            <div className="flex items-center gap-4">
+              <AppConfigGraph appId={appId} configId={configId} />
+              <BuildAllComponentsButton components={components} />
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <AppConfigGraph appId={appId} configId={configId} />
-            <BuildAllComponentsButton components={components} />
-          </div>
+          <ComponentTypeFilterDropdown
+            {...{
+              handleTypeFilter,
+              handleTypeOnlyFilter,
+              clearTypeFilter,
+              columnFilters,
+            }}
+            isNotDropdown
+          />
         </div>
       }
       data={data}
