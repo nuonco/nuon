@@ -79,21 +79,7 @@ export default withPageAuthRequired(async function OrgRunner({
               </ErrorBoundary>
             </Section>
             <Section className="flex-initial">
-              <div className="flex gap-8 items-start justify-start flex-wrap">
-                <span className="flex flex-col gap-2">
-                  <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                    Status
-                  </Text>
-                  <StatusBadge
-                    status={runner?.status}
-                    description={runner?.status_description}
-                    descriptionAlignment="left"
-                    shouldPoll
-                    isWithoutBorder
-                  />
-                </span>
-                <RunnerMeta orgId={orgId} runnerId={runnerId} />
-              </div>
+              <RunnerMeta orgId={orgId} runner={runner} />
             </Section>
             <Section heading="Completed jobs">
               <ErrorBoundary fallbackRender={ErrorFallback}>
