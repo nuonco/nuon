@@ -154,11 +154,11 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 	//
 	// Deploy new app version
 	//
-	if err := prompt(autoApprove, "Ready to deploy the new app config version. Continue?"); err != nil {
-		return ui.PrintError(err)
-	}
 	if installID == "" {
 		return ui.PrintError(errors.New("No install is selected. Please select an install to deploy to."))
+	}
+	if err := prompt(autoApprove, "Ready to deploy the new app config version. Deploy to %s?", installID); err != nil {
+		return ui.PrintError(err)
 	}
 
 	ui.PrintLn("updating install to use new app config version...")
