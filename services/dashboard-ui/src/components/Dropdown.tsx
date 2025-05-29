@@ -15,6 +15,7 @@ export interface IDropdown extends IButton {
   dropdownContentClassName?: string
   wrapperClassName?: string
   isDownIcon?: boolean
+  noIcon?: boolean
 }
 
 export const Dropdown: FC<IDropdown> = ({
@@ -30,12 +31,13 @@ export const Dropdown: FC<IDropdown> = ({
   dropdownContentClassName,
   wrapperClassName,
   isDownIcon = false,
+  noIcon = false,
 }) => {
   return (
     <>
       <div
         className={classNames(
-          'z-10 relative inline-block text-left group leading-none',
+          'relative inline-block text-left group leading-none',
           {
             'w-full': isFullWidth,
             [`${wrapperClassName}`]: Boolean(wrapperClassName),
@@ -62,7 +64,7 @@ export const Dropdown: FC<IDropdown> = ({
           <div className="flex items-center justify-between gap-2">
             {text}
 
-            {variant !== 'ghost' && isDownIcon ? (
+            {noIcon ? null : variant !== 'ghost' && isDownIcon ? (
               <CaretDown />
             ) : (
               <CaretUpDown />

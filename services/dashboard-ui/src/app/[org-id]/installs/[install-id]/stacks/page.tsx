@@ -102,7 +102,7 @@ const LoadInstallStacks: FC<{
   return error ? (
     <Notice>Can&apos;t load install stacks: {error?.error}</Notice>
   ) : data?.versions?.length ? (
-    <StacksTable stack={data} installId={installId} orgId={orgId} />
+    <StacksTable stack={data} />
   ) : (
     <Text>No install stacks.</Text>
   )
