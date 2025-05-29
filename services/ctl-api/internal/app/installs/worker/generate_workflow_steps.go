@@ -15,6 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
@@ -651,6 +652,21 @@ func (w *Workflows) installSignalStep(ctx workflow.Context, installID, name stri
 		return nil, errors.Wrap(err, "unable to create signal json")
 	}
 
+	var targettype string
+
+	switch signal.Type {
+	case signals.OperationAwaitInstallStackVersionRun, signals.OperationGenerateInstallStackVersion, signals.OperationUpdateInstallStackOutputs:
+		targettype = plugins.TableName(w.db, &app.InstallStackVersion{})
+	case signals.OperationAwaitRunnerHealthy:
+		targettype = plugins.TableName(w.db, &app.Runner{})
+	case signals.OperationExecuteDeployComponent, signals.OperationExecuteTeardownComponent:
+		targettype = plugins.TableName(w.db, &app.InstallDeploy{})
+	case signals.OperationProvisionSandbox, signals.OperationDeprovisionSandbox, signals.OperationReprovisionSandbox:
+		targettype = plugins.TableName(w.db, &app.InstallSandboxRun{})
+	case signals.OperationExecuteActionWorkflow:
+		targettype = plugins.TableName(w.db, &app.InstallActionWorkflowRun{})
+	}
+
 	executionTyp := app.InstallWorkflowStepExecutionTypeSystem
 	// user signals
 	userSignals := []eventloop.SignalType{
@@ -673,11 +689,12 @@ func (w *Workflows) installSignalStep(ctx workflow.Context, installID, name stri
 	}
 
 	return &app.InstallWorkflowStep{
-		Name:          name,
-		ExecutionType: executionTyp,
-		InstallID:     installID,
-		Status:        app.NewCompositeTemporalStatus(ctx, app.StatusPending),
-		Metadata:      metadata,
+		Name:           name,
+		ExecutionType:  executionTyp,
+		StepTargetType: targettype,
+		InstallID:      installID,
+		Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
+		Metadata:       metadata,
 		Signal: app.Signal{
 			Namespace:   "installs",
 			Type:        string(signal.Type),
