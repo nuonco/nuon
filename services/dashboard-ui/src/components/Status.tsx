@@ -40,7 +40,11 @@ export const StatusBadge: FC<IStatusBadge> = ({
   pollDuration = POLL_DURATION,
 }) => {
   const isActive =
-    status === 'active' || status === 'ok' || status === 'finished'
+    status === 'active' ||
+    status === 'ok' ||
+    status === 'finished' ||
+    status === 'healthy' ||
+    status === 'connected'
   const isError =
     status === 'failed' ||
     status === 'error' ||
@@ -48,7 +52,9 @@ export const StatusBadge: FC<IStatusBadge> = ({
     status === 'access-error' ||
     status === 'access_error' ||
     status === 'timed-out' ||
-    status === 'unknown'
+    status === 'unknown' ||
+    status === 'unhealthy' ||
+    status === 'not connected'
   const isNoop =
     status === 'noop' ||
     status === 'inactive' ||
