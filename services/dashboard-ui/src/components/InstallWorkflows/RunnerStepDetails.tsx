@@ -8,7 +8,7 @@ import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
-import { Text } from '@/components/Typography'
+import { ID, Text } from '@/components/Typography'
 import type { TRunner, TRunnerHeartbeat } from '@/types'
 import type { IPollStepDetails } from './InstallWorkflowSteps'
 
@@ -85,41 +85,79 @@ export const RunnerStepDetails: FC<IRunnerStepDetails> = ({
                   <CaretRight />
                 </Link>
               </div>
-              <div className="p-6 grid grid-cols-4">
-                {runnerHeartbeat ? (
-                  <>
-                    <StatusBadge
-                      description={runner?.status_description}
-                      status={runner?.status}
-                      label="Status"
-                    />
+
+              {runnerHeartbeat ? (
+                <>
+                  <div className="flex gap-8 items-start justify-start flex-wrap p-6">
                     <span className="flex flex-col gap-2">
                       <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                        Started at
+                        Status
                       </Text>
-                      <Text>
-                        <Time
-                          time={runnerHeartbeat?.started_at}
-                          format="default"
-                          variant="med-12"
+                      <StatusBadge
+                        status={
+                          runner?.status === 'active' ? 'healthy' : 'unhealthy'
+                        }
+                        description={runner?.status_description}
+                        descriptionAlignment="left"
+                        shouldPoll
+                        isWithoutBorder
+                      />
+
+                      {runnerHeartbeat &&
+                      runnerHeartbeat?.alive_time > 15 * 1_000_000_000 ? (
+                        <StatusBadge
+                          status="connected"
+                          description="Connected to runner"
+                          descriptionAlignment="left"
+                          shouldPoll
+                          isWithoutBorder
                         />
+                      ) : (
+                        <StatusBadge
+                          status="not-connected"
+                          description="Not connected to runner"
+                          descriptionAlignment="left"
+                          shouldPoll
+                          isWithoutBorder
+                        />
+                      )}
+                    </span>
+                    {runnerHeartbeat ? (
+                      <>
+                        <span className="flex flex-col gap-2">
+                          <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                            Started at
+                          </Text>
+                          <Text>
+                            <Time
+                              time={runnerHeartbeat?.started_at}
+                              format="default"
+                            />
+                          </Text>
+                        </span>
+                        <span className="flex flex-col gap-2">
+                          <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                            Version
+                          </Text>
+                          <Text>{runnerHeartbeat?.version}</Text>
+                        </span>
+                      </>
+                    ) : null}
+                    <span className="flex flex-col gap-2">
+                      <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+                        Platform
                       </Text>
+                      <Text>{platform}</Text>
                     </span>
                     <span className="flex flex-col gap-2">
                       <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                        Version
+                        ID
                       </Text>
-                      <Text variant="med-12">{runnerHeartbeat?.version}</Text>
+                      <ID id={runner?.id} />
                     </span>
-                  </>
-                ) : null}
-                <span className="flex flex-col gap-2">
-                  <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-                    Platform
-                  </Text>
-                  <Text variant="med-12">{platform}</Text>
-                </span>
-              </div>
+                  </div>
+                </>
+              ) : null}
             </div>
           ) : null}
         </>
