@@ -481,11 +481,11 @@ module "shared-neubirdai" {
   }
 }
 
-module "shared-browserbase" {
+module "shared-dremio" {
   source = "./modules/repository"
 
-  name                     = "browserbase"
-  description              = "Nuon configuration for browserbase.com."
+  name                     = "dremio"
+  description              = "Nuon configuration for dremio.com."
   required_checks          = []
   owning_team_id           = github_team.nuonco-shared.id
   is_private               = true
