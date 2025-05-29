@@ -8,8 +8,7 @@ import (
 
 func WithOverrideTable(name string) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		// we need to disable views if we are overriding the table to prevent views from taking precedence
-		return db.Set(views.DisableViewsKey, true).Table(name)
+		return db.Table(name)
 	}
 }
 
