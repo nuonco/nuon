@@ -60,6 +60,7 @@ func (s *service) GetTerraformStates(ctx *gin.Context, workspaceID string) ([]ap
 	states := []app.TerraformWorkspaceState{}
 	res := s.db.WithContext(ctx).Model(&app.TerraformWorkspaceState{}).
 		Scopes(scopes.WithOffsetPagination).Where("terraform_workspace_id = ?", workspaceID).
+		Scopes(runnerJobPreload).
 		Select(
 			"ID",
 			"CreatedByID",
@@ -68,6 +69,7 @@ func (s *service) GetTerraformStates(ctx *gin.Context, workspaceID string) ([]ap
 			"OrgID",
 			"TerraformWorkspaceID",
 			"Revision",
+			"RunnerJobID",
 		).
 		Find(&states)
 	if res.Error != nil {
