@@ -18,6 +18,10 @@ const nextConfig = {
         source: '/admin/temporal/:path*',
         destination: 'http://localhost:8234/admin/temporal/:path*',
       },
+      {
+        source: '/admin/swagger/docs:path*',
+        destination: 'http://localhost:8082/docs/:path*',
+      },
     ]
   },
 }
