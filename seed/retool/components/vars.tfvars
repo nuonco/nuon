@@ -1,5 +1,5 @@
 nested = {
-  name   = "{{.nuon.install.id}}"
+  name = "{{.nuon.install.id}}"
 
   region = "{{.nuon.install_stack.outputs.region}}"
   tags = {
@@ -21,7 +21,7 @@ nested = {
       }
     ]
     networking = {
-      vpc_cidr    = "10.0.0.0/16"
+      vpc_cidr = "10.0.0.0/16"
       subnets = {
         public-1  = "10.0.1.0/24"
         public-2  = "10.0.2.0/24"
