@@ -30,6 +30,9 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string) (*ap
 
 			// components
 			PreloadAppConfigComponentConfigConnections,
+
+			// actions
+			PreloadAppActionWorkflowConfigs,
 		).
 		First(&appCfg)
 	if res.Error != nil {
