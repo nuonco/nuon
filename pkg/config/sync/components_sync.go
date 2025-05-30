@@ -21,7 +21,10 @@ func (s *sync) getComponent(ctx context.Context, name string, typ models.AppComp
 		return nil, err
 	}
 
-	if typ != comp.Type && typ != models.AppComponentTypeUnknown {
+	if typ != comp.Type && !generics.SliceContains(comp.Type, []models.AppComponentType{
+		models.AppComponentTypeUnknown,
+		"",
+	}) {
 		return nil, SyncErr{
 			Resource:    fmt.Sprintf("%s component", typ),
 			Description: "previous component was found with a different type",
@@ -77,48 +80,51 @@ func (s *sync) cleanupComponent(ctx context.Context, compID string) {
 	}
 }
 
-func (s *sync) syncComponent(ctx context.Context, resource string, comp *config.Component) (string, error) {
-	var isNew bool
-	apiComp, err := s.getComponent(ctx, comp.Name, comp.Type.APIType())
+func (s *sync) ensureComponent(ctx context.Context, resource string, comp *config.Component) error {
+	_, err := s.getComponent(ctx, comp.Name, comp.Type.APIType())
 	if err != nil {
 		if !nuon.IsNotFound(err) {
-			return "", err
-		}
-
-		isNew = true
-		apiComp, err = s.apiClient.CreateComponent(ctx, s.appID, &models.ServiceCreateComponentRequest{
-			Dependencies: comp.Dependencies,
-			Name:         generics.ToPtr(comp.Name),
-			VarName:      comp.VarName,
-		})
-		if err != nil {
-			return "", SyncAPIErr{
-				Resource: resource,
-				Err:      err,
-			}
+			return err
 		}
 	}
 
-	if !isNew {
-		_, err = s.apiClient.UpdateComponent(ctx, apiComp.ID, &models.ServiceUpdateComponentRequest{
-			Dependencies: comp.Dependencies,
-			VarName:      comp.VarName,
-			Name:         generics.ToPtr(comp.Name),
-		})
-		if err != nil {
-			return "", SyncAPIErr{
-				Resource: resource,
-				Err:      err,
-			}
+	if err == nil {
+		return nil
+	}
+
+	_, err = s.apiClient.CreateComponent(ctx, s.appID, &models.ServiceCreateComponentRequest{
+		Name: generics.ToPtr(comp.Name),
+	})
+	if err != nil {
+		return SyncAPIErr{
+			Resource: resource,
+			Err:      err,
+		}
+	}
+
+	return nil
+}
+
+func (s *sync) syncComponent(ctx context.Context, resource string, comp *config.Component) (string, error) {
+	apiComp, err := s.getComponent(ctx, comp.Name, comp.Type.APIType())
+	if err != nil {
+		return "", err
+	}
+
+	_, err = s.apiClient.UpdateComponent(ctx, apiComp.ID, &models.ServiceUpdateComponentRequest{
+		Dependencies: comp.Dependencies,
+		VarName:      comp.VarName,
+		Name:         generics.ToPtr(comp.Name),
+	})
+	if err != nil {
+		return "", SyncAPIErr{
+			Resource: resource,
+			Err:      err,
 		}
 	}
 
 	resp, err := s.syncComponentConfig(ctx, comp, resource, apiComp.ID)
 	if err != nil {
-		if isNew {
-			s.cleanupComponent(ctx, apiComp.ID)
-		}
-
 		return "", err
 	}
 
