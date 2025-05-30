@@ -20,5 +20,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "04",
 			SQL:  `ALTER TABLE action_workflow_step_configs ALTER COLUMN command DROP NOT NULL;`,
 		},
+		{
+			Name: "087-install-workflows-backfill-ownership",
+			Fn:   m.Migration087InstallWorkflowsBackfillOwnership,
+		},
 	}
 }
