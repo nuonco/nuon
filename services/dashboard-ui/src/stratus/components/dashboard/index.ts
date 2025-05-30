@@ -1,2 +1,6 @@
 export * from './Dashboard'
 export * from './Logo'
+export * from './Page'
+export * from './PageContent'
+export * from './PageHeader'
+export * from './PageNav'
