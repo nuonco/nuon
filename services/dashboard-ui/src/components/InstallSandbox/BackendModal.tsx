@@ -75,7 +75,6 @@ terraform {
         : null}
       <Button
         className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full"
-        variant="ghost"
         onClick={() => {
           setIsOpen(true)
         }}
