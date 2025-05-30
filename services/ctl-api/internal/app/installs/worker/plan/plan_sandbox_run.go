@@ -51,7 +51,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	}
 
 	l.Info("configuring terraform variables to execute terraform run as")
-	vars, err := p.getSandboxRunTerraformVars(appCfg)
+	vars, err := p.getSandboxRunTerraformVars(appCfg, req.RootDomain)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get vars")
 	}
@@ -304,7 +304,7 @@ func (p *Planner) getSandboxRunEnvVars(appCfg *app.AppConfig) map[string]string 
 	return envVars
 }
 
-func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig) (map[string]any, error) {
+func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain string) (map[string]any, error) {
 	vars := make(map[string]any, 0)
 
 	for k, v := range generics.ToStringMap(appCfg.SandboxConfig.Variables) {
@@ -319,8 +319,8 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig) (map[string]
 		"vpc_id":                   "{{.nuon.install_stack.outputs.vpc_id}}",
 		"nuon_id":                  "{{.nuon.install.id}}",
 		"region":                   "{{.nuon.install_stack.outputs.region}}",
-		"public_root_domain":       "{{.nuon.install.id}}.nuon.run",
-		"internal_root_domain":     "{{.nuon.install.id}}.internal.nuon.run",
+		"public_root_domain":       fmt.Sprintf("{{.nuon.install.id}}.%s", rootDomain),
+		"internal_root_domain":     fmt.Sprintf("{{.nuon.install.id}}.internal.%s", rootDomain),
 		"provision_iam_role_arn":   "{{.nuon.install_stack.outputs.provision_iam_role_arn}}",
 		"deprovision_iam_role_arn": "{{.nuon.install_stack.outputs.deprovision_iam_role_arn}}",
 		"maintenance_iam_role_arn": "{{.nuon.install_stack.outputs.maintenance_iam_role_arn}}",
