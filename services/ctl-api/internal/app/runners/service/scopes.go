@@ -18,6 +18,7 @@ func runnerJobPreload(db *gorm.DB) *gorm.DB {
 			"Type",
 			"Group",
 			"Operation",
+			"Metadata",
 		)
 	})
 }

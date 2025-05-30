@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { cancelRunnerJob as cancelJob } from '@/lib'
-import { nueMutateData } from '@/utils'
+import { nueMutateData, mutateData } from '@/utils'
 
 interface ICancelRunnerJob {
   orgId: string
@@ -54,5 +54,22 @@ export async function shutdownRunner({
   }).then((r) => {
     revalidatePath(path)
     return r
+  })
+}
+
+export interface IUnlockWorkspace {
+  workspaceId: string,
+  orgId: string,
+}
+
+export async function unlockWorkspace({
+  workspaceId,
+  orgId,
+}: IUnlockWorkspace) {
+  return mutateData<any>({
+    errorMessage: 'Unable to lock workspace state.',
+    orgId,
+    path: `terraform-workspaces/${workspaceId}/unlock`,
+    data: {}
   })
 }
