@@ -47,6 +47,8 @@ func (s *sync) createContainerImageComponentConfig(ctx context.Context, resource
 	if shouldSkip {
 		return existingConfigID, newChecksum, nil
 	}
+
+	configRequest.Checksum = newChecksum
 	cfg, err := s.apiClient.CreateExternalImageComponentConfig(ctx, compID, configRequest)
 	if err != nil {
 		return "", "", err
