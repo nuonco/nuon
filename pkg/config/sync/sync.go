@@ -20,6 +20,7 @@ type sync struct {
 	prevState *state
 
 	cmpBuildsScheduled []string
+	cliVersion         string
 }
 
 type syncStep struct {
@@ -103,7 +104,7 @@ func (s *sync) GetComponentsScheduled() []ComponentState {
 	return states
 }
 
-func New(apiClient nuon.Client, appID string, cfg *config.AppConfig) *sync {
+func New(apiClient nuon.Client, appID, cliVersion string, cfg *config.AppConfig) *sync {
 	return &sync{
 		cfg:       cfg,
 		apiClient: apiClient,
@@ -112,5 +113,6 @@ func New(apiClient nuon.Client, appID string, cfg *config.AppConfig) *sync {
 			Version: defaultStateVersion,
 			AppID:   appID,
 		},
+		cliVersion: cliVersion,
 	}
 }
