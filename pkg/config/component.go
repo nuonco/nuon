@@ -1,6 +1,8 @@
 package config
 
 import (
+	"sort"
+
 	"github.com/nuonco/nuon-go/models"
 	"github.com/pkg/errors"
 
@@ -59,8 +61,8 @@ type Component struct {
 	ExternalImage   *ExternalImageComponentConfig   `mapstructure:"external_image,omitempty" jsonschema:"oneof_required=external_image"`
 
 	// created during parsing
-	References []refs.Ref `mapstructure:"-" jsonschema:"-"`
-	Checksum   string     `mapstructure:"-" jsonschema:"-" toml:"checksum"`
+	References []refs.Ref `mapstructure:"-" jsonschema:"-" nuonhash:"-"`
+	Checksum   string     `mapstructure:"-" jsonschema:"-" toml:"checksum" nuonhash:"-"`
 }
 
 func (c *Component) parse() error {
@@ -103,6 +105,7 @@ func (c *Component) parse() error {
 		c.Dependencies = append(c.Dependencies, ref.Name)
 	}
 	c.Dependencies = generics.UniqueSlice(c.Dependencies)
+	sort.Strings(c.Dependencies)
 
 	return nil
 }

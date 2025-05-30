@@ -7,6 +7,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/hasher"
 )
 
 func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, string, error) {
@@ -55,12 +56,16 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 		configRequest.ValuesFiles = append(configRequest.ValuesFiles, value.Contents)
 	}
 
-	newChecksum := comp.Checksum
+	newChecksum, err := hasher.HashStruct(comp)
+	if err != nil {
+		return "", "", err
+	}
 	// Check if we should skip this build due to checksum match
 	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, newChecksum)
 	if err != nil {
 		return "", "", err
 	}
+
 	if shouldSkip {
 		return existingConfigID, newChecksum, nil
 	}
