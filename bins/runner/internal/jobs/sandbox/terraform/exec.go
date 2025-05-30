@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -12,6 +13,7 @@ import (
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/log"
 	"github.com/powertoolsdev/mono/pkg/terraform/run"
+	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
 )
 
 func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
@@ -72,23 +74,31 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeApply, models.AppRunnerJobOperationTypeDestroy:
-		state, err := wkspace.Show(ctx, hlog)
-		if err != nil {
+		if err := p.updateTerraformState(ctx, wkspace, hlog); err != nil {
 			p.writeErrorResult(ctx, "terraform show", err)
-			return fmt.Errorf("unable to show state: %w", err)
+			// skip returning an error here as the terraform operation finished successfully & we don't want to fail the job
 		}
+	}
 
-		stateBody, err := json.Marshal(state)
-		if err != nil {
-			p.writeErrorResult(ctx, "terraform show", err)
-			return fmt.Errorf("unable to marshal state: %w", err)
-		}
+	return nil
+}
 
-		if _, err := p.apiClient.UpdateTerraformStateJSON(ctx, p.state.plan.TerraformBackend.WorkspaceID, &p.state.jobID, stateBody); err != nil {
-			p.writeErrorResult(ctx, "terraform show", err)
-			return fmt.Errorf("unable to update state: %w", err)
-		}
+func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Workspace, hlog hclog.Logger) error {
+	state, err := wkspace.Show(ctx, hlog)
+	if err != nil {
+		p.writeErrorResult(ctx, "terraform show", err)
+		return fmt.Errorf("unable to show state: %w", err)
+	}
 
+	stateBody, err := json.Marshal(state)
+	if err != nil {
+		p.writeErrorResult(ctx, "terraform show", err)
+		return fmt.Errorf("unable to marshal state: %w", err)
+	}
+
+	if _, err := p.apiClient.UpdateTerraformStateJSON(ctx, p.state.plan.TerraformBackend.WorkspaceID, &p.state.jobID, stateBody); err != nil {
+		p.writeErrorResult(ctx, "terraform show", err)
+		return fmt.Errorf("unable to update state: %w", err)
 	}
 
 	return nil
