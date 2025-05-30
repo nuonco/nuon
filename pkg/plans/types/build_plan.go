@@ -15,4 +15,6 @@ type BuildPlan struct {
 	TerraformBuildPlan     *TerraformBuildPlan     `json:"terraform_build_plan,omitempty"`
 	DockerBuildPlan        *DockerBuildPlan        `json:"docker_build_plan,omitempty"`
 	ContainerImagePullPlan *ContainerImagePullPlan `json:"container_image_pull_plan,omitempty"`
+
+	MinSandboxMode
 }

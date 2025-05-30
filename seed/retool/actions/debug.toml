@@ -24,6 +24,9 @@ command = "echo 'hello world'"
 
 [steps.env_vars]
 TEST_NUON_VAR = "{{.nuon.install.id}}"
+TEST_COMP = "{{.nuon.components.container_image.outputs.tag}}"
+"comp-test" = "{{.nuon.components.container_image.outputs.tag}}"
+"install-stack-test" = "{{.nuon.install_stack.outputs.region}}"
 
 # test outputs with private repo
 

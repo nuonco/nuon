@@ -45,6 +45,8 @@ type SandboxRunPlan struct {
 	Policies map[string]string `json:"policies"`
 
 	State *state.State `json:"state"`
+
+	SandboxMode *SandboxMode `json:"omitzero,omitempty"`
 }
 
 type TerraformDeployHooks struct {

@@ -8,9 +8,11 @@ import (
 	"go.uber.org/zap"
 
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/powertoolsdev/mono/pkg/config/refs"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
@@ -30,6 +32,16 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 	org, err := activities.AwaitGetOrgByInstallID(ctx, run.InstallID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install id")
+	}
+
+	install, err := activities.AwaitGetByInstallID(ctx, run.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
 	}
 
 	// step 2 - interpolate all variables in the set
@@ -65,6 +77,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		Steps:   make([]*plantypes.ActionWorkflowRunStepPlan, 0),
 		EnvVars: envVars,
 	}
+
 	if !org.SandboxMode && stack.InstallStackOutputs.AWSStackOutputs != nil {
 		plan.AWSAuth = &awscredentials.Config{
 			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
@@ -94,6 +107,15 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		}
 
 		plan.Steps = append(plan.Steps, stepPlan)
+	}
+
+	if org.SandboxMode {
+		targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)
+
+		plan.SandboxMode = &plantypes.SandboxMode{
+			Enabled: true,
+			Outputs: refs.GetFakeRefs(targetRefs),
+		}
 	}
 
 	l.Info("successfully created plan")

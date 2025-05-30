@@ -8,4 +8,6 @@ type SyncOCIPlan struct {
 
 	Dst    *configs.OCIRegistryRepository `json:"dst_registry" validate:"required"`
 	DstTag string                         `json:"dst_tag" validate:"required"`
+
+	MinSandboxMode
 }

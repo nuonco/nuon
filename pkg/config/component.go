@@ -64,6 +64,30 @@ type Component struct {
 }
 
 func (c *Component) parse() error {
+	if c.HelmChart != nil {
+		if err := c.HelmChart.Parse(); err != nil {
+			return err
+		}
+	}
+
+	if c.TerraformModule != nil {
+		if err := c.TerraformModule.Parse(); err != nil {
+			return err
+		}
+	}
+
+	if c.DockerBuild != nil {
+		if err := c.DockerBuild.Parse(); err != nil {
+			return err
+		}
+	}
+
+	if c.ExternalImage != nil {
+		if err := c.ExternalImage.Parse(); err != nil {
+			return err
+		}
+	}
+
 	references, err := refs.Parse(c)
 	if err != nil {
 		return errors.Wrap(err, "unable to parse components")
@@ -72,33 +96,13 @@ func (c *Component) parse() error {
 
 	// set all of the components
 	for _, ref := range c.References {
-		if !generics.SliceContains(ref.Type, []refs.RefType{refs.RefTypeComponents, refs.RefTypeComponentsNested}) {
+		if !generics.SliceContains(ref.Type, []refs.RefType{refs.RefTypeComponents}) {
 			continue
 		}
 
 		c.Dependencies = append(c.Dependencies, ref.Name)
 	}
 	c.Dependencies = generics.UniqueSlice(c.Dependencies)
-
-	if c.HelmChart != nil {
-		return c.HelmChart.Parse()
-	}
-
-	if c.TerraformModule != nil {
-		return c.TerraformModule.Parse()
-	}
-
-	if c.DockerBuild != nil {
-		return c.DockerBuild.Parse()
-	}
-
-	if c.Job != nil {
-		return c.Job.Parse()
-	}
-
-	if c.ExternalImage != nil {
-		return c.ExternalImage.Parse()
-	}
 
 	return nil
 }
