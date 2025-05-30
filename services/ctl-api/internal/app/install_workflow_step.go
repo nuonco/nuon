@@ -37,6 +37,9 @@ type InstallWorkflowStep struct {
 	Install   Install `swaggerignore:"true" json:"-" temporaljson:"install,omitzero,omitempty"`
 	InstallID string  `json:"install_id,omitzero" gorm:"notnull;default null" temporaljson:"install_id,omitzero,omitempty"`
 
+	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_install_workflows_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
+	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
+
 	InstallWorkflowID string `json:"install_workflow_id,omitzero" temporaljson:"install_workflow_id,omitzero,omitempty"`
 
 	// status
@@ -75,6 +78,17 @@ type InstallWorkflowStep struct {
 	ExecutionTime time.Duration `json:"execution_time,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
+}
+
+func (i *InstallWorkflowStep) BeforeSave(tx *gorm.DB) error {
+	// defensive fallback while we migrate, this should be handled elsewhere
+	if i.OwnerID == "" {
+		i.OwnerID = i.InstallID
+		// If OwnerID wasn't set, the data predates abstracting into workflows and must necessarily be an install
+		i.OwnerType = "installs"
+	}
+
+	return nil
 }
 
 func (a *InstallWorkflowStep) BeforeCreate(tx *gorm.DB) error {

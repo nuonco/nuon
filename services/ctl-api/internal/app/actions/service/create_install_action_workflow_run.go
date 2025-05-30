@@ -127,6 +127,8 @@ func (s *service) CreateInstallWorkflow(ctx context.Context, installID string, w
 	installWorkflow := app.InstallWorkflow{
 		Type:              workflowType,
 		InstallID:         installID,
+		OwnerID:           installID,
+		OwnerType:         "installs",
 		Metadata:          generics.ToHstore(metadata),
 		Status:            app.NewCompositeStatus(ctx, app.StatusPending),
 		StepErrorBehavior: errBehavior,
