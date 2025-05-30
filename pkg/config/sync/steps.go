@@ -69,6 +69,23 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 		},
 	}
 
+	// ensure all components
+	for _, comp := range s.cfg.Components {
+		resourceName := fmt.Sprintf("component-%s", comp.Name)
+		steps = append(steps, syncStep{
+			Resource: resourceName,
+			Method: func(ctx context.Context) error {
+				err := s.ensureComponent(ctx, resourceName, comp)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			},
+		})
+	}
+
+	// sync all components and their configs
 	for _, comp := range s.cfg.Components {
 		resourceName := fmt.Sprintf("component-%s", comp.Name)
 		steps = append(steps, syncStep{

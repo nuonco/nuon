@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/lib/pq"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -23,6 +23,9 @@ type CreateActionWorkflowConfigRequest struct {
 	Triggers    []CreateActionWorkflowConfigTriggerRequest `json:"triggers" validate:"required,dive"`
 	Steps       []CreateActionWorkflowConfigStepRequest    `json:"steps" validate:"required,dive"`
 	Timeout     time.Duration                              `json:"timeout" swaggertype:"primitive,integer"`
+
+	Dependencies []string `json:"dependencies"`
+	References   []string `json:"references"`
 }
 
 type CreateActionWorkflowConfigTriggerRequest struct {
@@ -54,7 +57,7 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 
 	if c.Timeout > maxTimeout {
 		return stderr.ErrUser{
-			Err:         errors.New("invalid timeout"),
+			Err:         fmt.Errorf("invalid timeout"),
 			Description: "timeout cannot exceed " + maxTimeout.String(),
 		}
 	}
@@ -155,12 +158,20 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 	if timeout == 0 {
 		timeout = defaultTimeout
 	}
+
+	depIDs, err := s.compHelpers.GetComponentIDs(ctx, parentApp.ID, req.Dependencies)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get component ids")
+	}
+
 	awc := app.ActionWorkflowConfig{
-		AppID:            parentApp.ID,
-		AppConfigID:      req.AppConfigID,
-		OrgID:            orgID,
-		ActionWorkflowID: awID,
-		Timeout:          timeout,
+		AppID:                  parentApp.ID,
+		AppConfigID:            req.AppConfigID,
+		OrgID:                  orgID,
+		ActionWorkflowID:       awID,
+		Timeout:                timeout,
+		ComponentDependencyIDs: pq.StringArray(depIDs),
+		References:             pq.StringArray(req.References),
 	}
 
 	res := s.db.WithContext(ctx).

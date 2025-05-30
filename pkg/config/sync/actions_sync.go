@@ -55,8 +55,12 @@ func (s *sync) syncAction(ctx context.Context, resource string, action *config.A
 	}
 
 	request := &models.ServiceCreateActionWorkflowConfigRequest{
-		AppConfigID: generics.ToPtr(s.state.CfgID),
-		Timeout:     timeout.Nanoseconds(),
+		AppConfigID:  generics.ToPtr(s.state.CfgID),
+		Timeout:      timeout.Nanoseconds(),
+		Dependencies: action.Dependencies,
+	}
+	for _, ref := range action.References {
+		request.References = append(request.References, ref.String())
 	}
 
 	for _, trigger := range action.Triggers {
