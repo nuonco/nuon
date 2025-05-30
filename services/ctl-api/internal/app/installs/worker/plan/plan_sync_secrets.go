@@ -78,7 +78,7 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		return nil, errors.Wrap(err, "unable to get cluster information")
 	}
 
-	return &plantypes.SyncSecretsPlan{
+	plan := &plantypes.SyncSecretsPlan{
 		ClusterInfo: clusterInfo,
 		AWSAuth: &awscredentials.Config{
 			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
@@ -88,7 +88,22 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 			},
 		},
 		KubernetesSecrets: secrets,
-	}, nil
+	}
+
+	org, err := activities.AwaitGetOrgByInstallID(ctx, install.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get org")
+	}
+	if org.SandboxMode {
+		plan.SandboxMode = &plantypes.SandboxMode{
+			Enabled: true,
+			Outputs: map[string]any{
+				"TBD": "TBD",
+			},
+		}
+	}
+
+	return plan, nil
 }
 
 func (p *Planner) getKubernetesSecret(stack app.InstallStackOutputs, cfg app.AppSecretConfig) (plantypes.KubernetesSecretSync, error) {

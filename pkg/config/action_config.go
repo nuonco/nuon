@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/config/refs"
-	"github.com/powertoolsdev/mono/pkg/config/source"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type ActionConfig struct {
@@ -19,6 +18,9 @@ type ActionConfig struct {
 	Timeout  string                 `mapstructure:"timeout,omitempty"`
 	Triggers []*ActionTriggerConfig `mapstructure:"triggers" jsonschema:"required"`
 	Steps    []*ActionStepConfig    `mapstructure:"steps" jsonschema:"required"`
+
+	References   []refs.Ref `mapstructure:"-" jsonschema:"-"`
+	Dependencies []string   `mapstructure:"dependencies,omitempty"`
 }
 
 type ActionTriggerConfig struct {
@@ -42,27 +44,6 @@ type ActionStepConfig struct {
 }
 
 func (a *ActionConfig) parse() error {
-	for _, step := range a.Steps {
-		references, err := refs.Parse(step)
-		if err != nil {
-			return errors.Wrap(err, "unable to parse components")
-		}
-
-		step.References = references
-	}
-
-	if a.Source == "" {
-		return nil
-	}
-
-	obj, err := source.LoadSource(a.Source)
-	if err != nil {
-		return ErrConfig{
-			Description: fmt.Sprintf("unable to load source %s", a.Source),
-			Err:         err,
-		}
-	}
-
 	if a.Timeout != "" {
 		_, err := time.ParseDuration(a.Timeout)
 		if err != nil {
@@ -73,8 +54,19 @@ func (a *ActionConfig) parse() error {
 		}
 	}
 
-	if err := mapstructure.Decode(obj, &a); err != nil {
-		return err
+	references, err := refs.Parse(a)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse components")
 	}
+	a.References = references
+
+	for _, ref := range a.References {
+		if !generics.SliceContains(ref.Type, []refs.RefType{refs.RefTypeComponents}) {
+			continue
+		}
+
+		a.Dependencies = append(a.Dependencies, ref.Name)
+	}
+	a.Dependencies = generics.UniqueSlice(a.Dependencies)
 	return nil
 }

@@ -3,9 +3,12 @@ package plan
 import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
+	"github.com/powertoolsdev/mono/pkg/config/refs"
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
@@ -65,6 +68,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		l.Info("generating terraform plan")
 		tfPlan, err := p.createTerraformDeployPlan(ctx, req)
 		if err != nil {
+			l.Info("error generating terraform plan", zap.Error(err))
 			return nil, errors.Wrap(err, "unable to create terraform deploy plan")
 		}
 		plan.TerraformDeployPlan = tfPlan
@@ -72,9 +76,30 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		l.Info("generating helm plan")
 		helmPlan, err := p.createHelmDeployPlan(ctx, req)
 		if err != nil {
+			l.Info("error generating helm plan", zap.Error(err))
 			return nil, errors.Wrap(err, "unable to helm deploy plan")
 		}
 		plan.HelmDeployPlan = helmPlan
+	}
+
+	// the following section is for sandbox mode only
+	org, err := activities.AwaitGetOrgByInstallID(ctx, deploy.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get org")
+	}
+	if org.SandboxMode {
+		targetRefs := helpers.GetComponentReferences(appCfg, installDeploy.ComponentName)
+
+		plan.SandboxMode = &plantypes.SandboxMode{
+			Enabled: true,
+			Outputs: refs.GetFakeRefs(targetRefs),
+		}
+
+		switch build.ComponentConfigConnection.Type {
+		case app.ComponentTypeHelmChart:
+		case app.ComponentTypeTerraformModule:
+			plan.SandboxMode.TerraformSandboxMode = p.createTerraformDeploySandboxMode(ctx, plan.TerraformDeployPlan)
+		}
 	}
 
 	return plan, nil

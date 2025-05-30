@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/lib/pq"
+
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
@@ -70,6 +71,7 @@ type AppConfig struct {
 	RunnerConfig               AppRunnerConfig             `json:"runner,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"runner_config,omitzero,omitempty"`
 	StackConfig                AppStackConfig              `json:"stack,omitempty",omitzero gorm:"constraint:OnDelete:CASCADE;" temporaljson:"stack_config,omitzero,omitempty"`
 	ComponentConfigConnections []ComponentConfigConnection `json:"component_config_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_config_connections,omitzero,omitempty"`
+	ActionWorkflowConfigs      []ActionWorkflowConfig      `json:"action_workflow_configs,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"action_workflow_configs,omitzero,omitempty"`
 
 	// individual pointers
 	InstallAWSCloudFormationStackVersion []InstallStackVersion `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_aws_cloud_formation_stack_version,omitzero,omitempty"`

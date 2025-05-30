@@ -6,6 +6,9 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/lib/pq"
+
+	"github.com/powertoolsdev/mono/pkg/config/refs"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
@@ -39,8 +42,12 @@ type ActionWorkflowConfig struct {
 
 	Timeout time.Duration `json:"timeout,omitzero" gorm:"default null;not null" swaggertype:"primitive,integer" temporaljson:"timeout,omitzero,omitempty"`
 
+	ComponentDependencyIDs pq.StringArray `json:"component_dependency_ids" temporaljson:"component_dependency_ids" swaggertype:"array,string" gorm:"type:text[]"`
+	References             pq.StringArray `json:"references" temporaljson:"references" swaggertype:"array,string" gorm:"type:text[]"`
+
 	// after query fields
 
+	Refs              []refs.Ref                    `gorm:"-"`
 	CronTrigger       *ActionWorkflowTriggerConfig  `json:"-" temporaljson:"cron_trigger,omitzero,omitempty"`
 	LifecycleTriggers []ActionWorkflowTriggerConfig `json:"-" temporaljson:"lifecycle_triggers,omitzero,omitempty"`
 }
@@ -53,6 +60,12 @@ func (a *ActionWorkflowConfig) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (a *ActionWorkflowConfig) AfterQuery(tx *gorm.DB) error {
+	cRefs := make([]refs.Ref, 0)
+	for _, ref := range a.References {
+		cRefs = append(cRefs, refs.NewFromString(ref))
+	}
+	a.Refs = cRefs
+
 	a.LifecycleTriggers = make([]ActionWorkflowTriggerConfig, 0)
 
 	for _, trigger := range a.Triggers {

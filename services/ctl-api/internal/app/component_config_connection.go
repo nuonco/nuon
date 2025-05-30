@@ -8,6 +8,7 @@ import (
 
 	"github.com/lib/pq"
 
+	"github.com/powertoolsdev/mono/pkg/config/refs"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -57,8 +58,9 @@ type ComponentConfigConnection struct {
 
 	Type ComponentType `gorm:"-" json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 
-	Version          int `json:"version,omitzero" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
-	AppConfigVersion int `json:"app_config_version,omitzero" gorm:"->;-:migration" temporaljson:"app_config_version,omitzero,omitempty"`
+	Version          int        `json:"version,omitzero" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
+	AppConfigVersion int        `json:"app_config_version,omitzero" gorm:"->;-:migration" temporaljson:"app_config_version,omitzero,omitempty"`
+	Refs             []refs.Ref `gorm:"-"`
 }
 
 func (c *ComponentConfigConnection) UseView() bool {
@@ -97,6 +99,12 @@ func (a *ComponentConfigConnection) Indexes(db *gorm.DB) []migrations.Index {
 }
 
 func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
+	cRefs := make([]refs.Ref, 0)
+	for _, ref := range c.References {
+		cRefs = append(cRefs, refs.NewFromString(ref))
+	}
+	c.Refs = cRefs
+
 	c.Type = ComponentTypeUnknown
 	if c.HelmComponentConfig != nil {
 		c.Type = ComponentTypeHelmChart

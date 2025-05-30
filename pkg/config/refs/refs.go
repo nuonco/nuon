@@ -3,9 +3,12 @@ package refs
 import (
 	"reflect"
 	"regexp"
+	"strings"
 
 	"github.com/mitchellh/reflectwalk"
 	"github.com/pkg/errors"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type Walker struct {
@@ -26,6 +29,10 @@ func (t *Walker) Array(v reflect.Value) error {
 }
 
 func (t *Walker) ArrayElem(idx int, v reflect.Value) error {
+	if v.Kind() == reflect.Struct {
+		return t.Struct(v)
+	}
+
 	return t.Primitive(v)
 }
 
@@ -63,11 +70,17 @@ func Parse(obj any) ([]Ref, error) {
 	return uniqueifyRefs(walker.refs), nil
 }
 
+// NOTE(jm): this was the fastest way to build out a list of all references, however long term we would like to switch
+// to use an AST to identify all references in a "smarter" and less-brittle way.
+//
+// https://pkg.go.dev/text/template/parse
 func ParseFieldRefs(inputVar string) []Ref {
 	refPatterns := map[RefType]string{
-		RefTypeInputs:     `nuon\.inputs\.([^.}]+)`,
-		RefTypeComponents: `nuon\.components\.([^.}]+)\.outputs`,
-		// RefTypeComponentsNested: `nuon\.components\.components\.([^.]+)\.outputs`,
+		RefTypeComponents: `nuon\.components\.([^.}]+)\.outputs\.([^}]+)`,
+		RefTypeActions:    `nuon\.actions\.([^.}]+)\.outputs\.([^.}]+)`,
+
+		RefTypeSecrets:      `nuon\.secrets\.([^.}]+)`,
+		RefTypeInputs:       `nuon\.inputs\.([^.}]+)`,
 		RefTypeInstallStack: `nuon\.install_stack\.outputs\.([^.}]+)`,
 		RefTypeSandbox:      `nuon\.sandbox\.outputs\.([^.}]+)`,
 	}
@@ -78,12 +91,26 @@ func ParseFieldRefs(inputVar string) []Ref {
 		matches := re.FindAllStringSubmatch(inputVar, -1)
 
 		for _, match := range matches {
-			if len(match) > 1 {
-				refs = append(refs, Ref{
-					Type: refType,
-					Name: match[1],
-				})
+			if len(match) < 1 {
+				continue
 			}
+
+			r := Ref{
+				Type:  refType,
+				Name:  strings.TrimSpace(match[1]),
+				Input: strings.TrimSpace(match[0]),
+			}
+
+			if generics.SliceContains(refType, []RefType{
+				RefTypeActions,
+				RefTypeComponents,
+			}) {
+				if len(match) >= 3 {
+					r.Value = strings.TrimSpace(match[2])
+				}
+			}
+
+			refs = append(refs, r)
 		}
 	}
 
