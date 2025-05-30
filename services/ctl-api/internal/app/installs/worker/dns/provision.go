@@ -28,7 +28,7 @@ func (w Wkflow) ProvisionDNSDelegation(ctx workflow.Context, req *ProvisionDNSDe
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
-	if !strings.Contains(req.Domain, defaultNuonRunDomain) {
+	if !strings.Contains(req.Domain, w.cfg.DNSRootDomain) {
 		return nil, nil
 	}
 
