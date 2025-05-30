@@ -4,15 +4,17 @@ import {
   getWorkspaceState,
   getWorkspaceStateResources,
 } from '@/lib'
-import { Section, SectionHeader } from '@/components/Card'
+import { SectionHeader } from '@/components/Card'
 import { JsonView } from '@/components/Code'
 import { Empty } from '@/components/Empty'
 import { Time } from '@/components/Time'
-import { WorkspaceManagementDropdown } from '@/components/InstallSandbox/WorkspaceManagementDropdown'
 import { DataTable } from '@/components/InstallSandbox/Table'
 import { Tabs, Tab } from '@/components/InstallSandbox/Tabs'
 import { Text, Code } from '@/components/Typography'
 import { getToken } from '@/components/admin-actions'
+import { BackendModal } from "./BackendModal"
+import { UnlockModal } from './UnlockStateModal'
+import { nueQueryData } from '@/utils'
 
 export interface ITerraformWorkspace {
   orgId: string
@@ -23,12 +25,16 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
   orgId,
   workspace,
 }) => {
-  const [states, tokenRes] = await Promise.all([
+  const [states, tokenRes, lockRes] = await Promise.all([
     getWorkspaceStates({
       orgId,
       workspaceId: workspace?.id,
     }).catch(console.error),
     getToken().catch(console.error),
+    nueQueryData({
+      orgId,
+      path: `terraform-workspaces/${workspace?.id}/lock`,
+    }),
   ])
 
   // Default to an "empty" message.
@@ -63,13 +69,17 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
     })
 
     const resourceList = resources?.map((resource, idx) => {
-      if (resource.mode == 'managed') {
-        return [
-          <Text key={idx}>{resource.type}</Text>,
-          <Text key={idx}>{resource.name}</Text>,
-          <Text key={idx}>{resource.instances.length}</Text>,
-        ]
-      }
+      return [
+        <span className="block overflow-hidden truncate" key={idx}>
+          <Text
+            className="text-ellipsis overflow-hidden py-2 w-full"
+            variant="mono-12"
+            style={{ display: 'inline' }}
+          >
+            {resource}
+          </Text>
+        </span>,
+      ]
     })
 
     const datasourceList = resources?.map((datasource, idx) => {
@@ -82,7 +92,7 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
       }
     })
 
-    const outputs = currentRevision?.data?.outputs || []
+    const outputs = currentRevision?.values?.outputs || []
     const outputList = Object.keys(outputs).map((key, idx) => [
       <span key={idx} className="flex flex-col">
         <Text variant="med-12">{key}</Text>
@@ -102,34 +112,20 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
     contents = (
       <Tabs>
         {resourceList && (
-          <Tab title="Resources">
-            <DataTable
-              headers={['Type', 'Name', 'Count']}
-              initData={resourceList}
-            />
+          <Tab title="Resources list">
+            <div className="flex flex-col gap-4">
+              <Text>State addresses</Text>
+
+              <div className="flex flex-col divide-y">{resourceList}</div>
+            </div>
           </Tab>
         )}
-        {datasourceList && (
-          <Tab title="Data sources">
-            <DataTable
-              headers={['Type', 'Name', 'Count']}
-              initData={datasourceList}
-            />
-          </Tab>
-        )}
+
         {outputList && (
           <Tab title="Outputs">
             <DataTable
               headers={['Name & Type', 'Value']}
               initData={outputList}
-            />
-          </Tab>
-        )}
-        {revisions && (
-          <Tab title="History">
-            <DataTable
-              headers={['Revision', 'Created at']}
-              initData={revisions}
             />
           </Tab>
         )}
@@ -142,11 +138,10 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
       <SectionHeader
         heading="Terraform state"
         actions={
-          <WorkspaceManagementDropdown
-            orgId={orgId}
-            workspace={workspace}
-            token={(tokenRes as any).result.accessToken}
-          />
+          <div className="flex items-center gap-4">
+            {lockRes?.data ? <UnlockModal workspace={workspace} orgId={orgId} lock={lockRes?.data}  /> : null}
+            <BackendModal orgId={orgId} workspace={workspace} token={(tokenRes as any)?.result?.accessToken} />
+          </div>
         }
       />
       {contents}
