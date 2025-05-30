@@ -1,28 +1,5 @@
-
-.dashboard > aside .link {
-  font-family: var(--font-inter);
-  height: 14px;
-  height: 36px;
-  line-height: 21px;
-  letter-spacing: -0.2px;
-  @apply flex items-center gap-4 overflow-hidden rounded-md py-2.5 px-3 transition-colors;
-}
-
-.dashboard > aside .link:hover {
-  @apply bg-black/5 dark:bg-white/10;
-}
-
-.dashboard > aside .link-active {
-  @apply text-primary-800 dark:text-primary-400 bg-primary-200 dark:bg-primary-600/25;
-}
-
-.dashboard > aside .link-inactive {
-  @apply text-cool-grey-800 dark:text-cool-grey-400;
-}
-
-.dashboard > aside .link svg {
-  height: 1rem;
-  width: 1rem;
+.dashboard > aside nav .tooltip-wrapper:has(.link) .tooltip-content {
+  display: none;
 }
 
 @media (min-width: 768px) {
@@ -57,11 +34,7 @@
     opacity: 0%;  
   }
 
-  .dashboard > aside .link svg {
-
-  }
-
-  .dashboard.is-open > aside .link svg {
-
+  .dashboard > aside nav .tooltip-wrapper:has(.link) .tooltip-content {
+    display: flex;
   }
 }

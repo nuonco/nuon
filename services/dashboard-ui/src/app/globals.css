@@ -20,6 +20,10 @@
 }
 
 @media (prefers-color-scheme: light) {
+  :root {
+    --border-color: var(--border-color-light);
+  }
+  
   *,
   .prose :where(hr):not(:where([class~="not-prose"], [class~="not-prose"] *)),
   .prose :where(tbody tr):not(:where([class~="not-prose"], [class~="not-prose"] *)),
@@ -56,6 +60,10 @@
 }
 
 @media (prefers-color-scheme: dark) {
+  :root {
+    --border-color: var(--border-color-dark);
+  }
+  
   *,
   .prose :where(hr):not(:where([class~="not-prose"], [class~="not-prose"] *)),
   .prose :where(tbody tr):not(:where([class~="not-prose"], [class~="not-prose"] *)),
