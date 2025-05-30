@@ -14,17 +14,14 @@ func TableOrViewName(db *gorm.DB, obj ViewModel, appendStr string) string {
 	disableViewTableName := fmt.Sprintf("%s%s", tableName, appendStr)
 
 	if !obj.UseView() {
-		fmt.Println("rb - disable views: ", disableViewTableName)
 		return disableViewTableName
 	}
 
 	disable, ok := db.InstanceGet(DisableViewsKey)
-	fmt.Println("rb - disable views: ", disable)
 	if ok && disable.(bool) {
 		return disableViewTableName
 	}
 
-	fmt.Println("rb - enable views: ", tableName, appendStr)
 	return fmt.Sprintf("%s_view_%s%s", tableName, obj.ViewVersion(), appendStr)
 }
 
