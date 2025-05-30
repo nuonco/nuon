@@ -15,4 +15,6 @@ type DeployPlan struct {
 	HelmDeployPlan      *HelmDeployPlan      `json:"helm"`
 	TerraformDeployPlan *TerraformDeployPlan `json:"terraform"`
 	NoopDeployPlan      *NoopDeployPlan      `json:"noop"`
+
+	SandboxMode *SandboxMode `json:"omitzero,omitempty"`
 }

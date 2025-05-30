@@ -17,6 +17,8 @@ type ActionWorkflowRunPlan struct {
 	// optional fields based on the configuration
 	ClusterInfo *kube.ClusterInfo      `json:"cluster_info,block"`
 	AWSAuth     *awscredentials.Config `json:"aws_auth"`
+
+	MinSandboxMode
 }
 
 type ActionWorkflowRunStepPlan struct {

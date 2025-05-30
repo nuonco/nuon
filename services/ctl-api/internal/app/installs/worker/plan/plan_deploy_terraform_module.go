@@ -8,6 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	_ "embed"
+
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
@@ -16,6 +18,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
+
+//go:embed fake_terraform_state.json
+var FakeTerraformStateJSON string
 
 func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.TerraformDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
@@ -124,4 +129,11 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 			Enabled: false,
 		},
 	}, nil
+}
+
+func (p *Planner) createTerraformDeploySandboxMode(ctx workflow.Context, req *plantypes.TerraformDeployPlan) *plantypes.TerraformSandboxMode {
+	return &plantypes.TerraformSandboxMode{
+		WorkspaceID: req.TerraformBackend.WorkspaceID,
+		StateJSON:   []byte(FakeTerraformStateJSON),
+	}
 }
