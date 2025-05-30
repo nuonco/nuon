@@ -1,35 +1,52 @@
 package helpers
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"gorm.io/gorm"
 )
 
 func (s *Helpers) GetComponentLatestBuilds(ctx *gin.Context, cmpIDs ...string) ([]app.ComponentBuild, error) {
-	components := make([]app.Component, 0, len(cmpIDs))
-	res := s.db.WithContext(ctx).
-		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))
-		}).
-		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
-			return db.Order("component_builds.created_at DESC")
-		}).
-		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection").
-		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
-		Find(&components, "id IN ?", cmpIDs)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get components: %w", res.Error)
+	if len(cmpIDs) == 0 {
+		return []app.ComponentBuild{}, nil
 	}
 
-	builds := make([]app.ComponentBuild, 0, len(components))
-	for _, cmp := range components {
-		for _, cfg := range cmp.ComponentConfigs {
-			builds = append(builds, cfg.ComponentBuilds...)
+	builds := make([]app.ComponentBuild, 0, len(cmpIDs))
+
+	// TODO: we shoould be able to do this in a single query, but for no just avoiding the previous large result from
+	// the previous implementation
+	for _, cmpID := range cmpIDs {
+		build, err := s.getComponentLatestBuild(ctx, cmpID)
+		if err != nil {
+			// Skip components that don't have builds instead of failing entirely
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
+			return nil, err
 		}
+		builds = append(builds, *build)
 	}
+
 	return builds, nil
+}
+
+func (s *Helpers) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.ComponentBuild, error) {
+	var build app.ComponentBuild
+
+	res := s.db.WithContext(ctx).
+		Joins("JOIN component_config_connections ON component_builds.component_config_connection_id = component_config_connections.id").
+		Where("component_config_connections.component_id = ?", cmpID).
+		Order("component_config_connections.created_at DESC").
+		Preload("ComponentConfigConnection").
+		Preload("VCSConnectionCommit").
+		First(&build)
+
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get latest component build: %w", res.Error)
+	}
+
+	return &build, nil
 }
