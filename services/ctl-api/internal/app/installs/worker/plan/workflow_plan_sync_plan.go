@@ -25,11 +25,42 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		return nil, errors.Wrap(err, "unable to get install registry repository")
 	}
 
-	return &plantypes.SyncOCIPlan{
+	pln := &plantypes.SyncOCIPlan{
 		Src:    srcCfg,
 		SrcTag: deploy.ComponentBuildID,
 
 		DstTag: deploy.ID,
 		Dst:    dstCfg,
-	}, nil
+	}
+
+	org, err := activities.AwaitGetOrgByInstallID(ctx, deploy.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get org")
+	}
+	if org.SandboxMode {
+		pln.SandboxMode = &plantypes.SandboxMode{
+			Enabled: true,
+			Outputs: map[string]any{
+				"image": map[string]interface{}{
+					"tag":           "v1.2.3",
+					"repository":    "nuon/app-service",
+					"media_type":    "application/vnd.docker.distribution.manifest.v2+json",
+					"digest":        "sha256:a123b456c789d012e345f678g901h234i567j890k123l456m789n012o345p",
+					"size":          28437192,
+					"urls":          []string{"registry.example.com/nuon/app-service:v1.2.3"},
+					"annotations":   map[string]string{"org.opencontainers.image.created": "2024-04-29T10:15:30Z"},
+					"artifact_type": "application/vnd.docker.container.image.v1+json",
+					"platform": map[string]any{
+						"architecture": "arm64",
+						"os":           "linux",
+						"os_version":   "10.0",
+						"variant":      "v8",
+						"os_features":  []string{"sse4", "aes"},
+					},
+				},
+			},
+		}
+	}
+
+	return pln, nil
 }
