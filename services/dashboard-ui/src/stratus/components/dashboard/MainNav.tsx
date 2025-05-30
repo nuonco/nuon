@@ -1,29 +1,23 @@
 'use client'
 
 import classNames from 'classnames'
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import React, { useMemo, type FC } from 'react'
+import React, { type FC } from 'react'
 import {
   AppWindow,
   BookOpen,
-  House,
   Cube,
+  House,
+  ListBullets,
   SneakerMove,
   UsersThree,
 } from '@phosphor-icons/react'
 import { useDashboard, useOrg } from '@/stratus/context'
-import { Text } from '@/stratus/components/common'
-import './DashboardSidebarNav.css'
+import { Link, Text, Tooltip } from '@/stratus/components/common'
+import type { TNavLink } from '@/types'
+import './MainNav.css'
 
-export type TNavLink = {
-  icon: React.ReactNode
-  path: string
-  text: string
-  isExternal?: boolean
-}
-
-const DashboardLinks: Array<TNavLink> = [
+const MAIN_LINKS: Array<TNavLink> = [
   {
     icon: <House weight="bold" />,
     path: `/`,
@@ -46,7 +40,7 @@ const DashboardLinks: Array<TNavLink> = [
   },
 ]
 
-const SettingsLinks: Array<TNavLink> = [
+const SETTINGS_LINKS: Array<TNavLink> = [
   {
     icon: <UsersThree weight="bold" />,
     path: `/team`,
@@ -54,24 +48,28 @@ const SettingsLinks: Array<TNavLink> = [
   },
 ]
 
-const SupportLinks: Array<TNavLink> = [
+const SUPPORT_LINKS: Array<TNavLink> = [
   {
     icon: <BookOpen weight="bold" />,
     path: `https://docs.nuon.co/get-started/introduction`,
     text: 'Devloper docs',
     isExternal: true,
   },
+  {
+    icon: <ListBullets weight="bold" />,
+    path: `/releases`,
+    text: 'Releases',
+  },
 ]
 
-export const DashboardSidebarNav: FC = () => {
+export const MainNav: FC = () => {
   const { org } = useOrg()
-  const { isSidebarOpen } = useDashboard()
   const basePath = `/stratus/${org.id}`
   return (
     <nav className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        {DashboardLinks.map((link) => (
-          <SidebarNavLink key={link.text} basePath={basePath} {...link} />
+        {MAIN_LINKS.map((link) => (
+          <MainNavLink key={link.text} basePath={basePath} {...link} />
         ))}
       </div>
 
@@ -83,8 +81,8 @@ export const DashboardSidebarNav: FC = () => {
             Settings
           </Text>
 
-          {SettingsLinks.map((link) => (
-            <SidebarNavLink key={link.text} basePath={basePath} {...link} />
+          {SETTINGS_LINKS.map((link) => (
+            <MainNavLink key={link.text} basePath={basePath} {...link} />
           ))}
         </div>
       ) : null}
@@ -97,8 +95,8 @@ export const DashboardSidebarNav: FC = () => {
             Resources
           </Text>
 
-          {SupportLinks.map((link) => (
-            <SidebarNavLink key={link.text} basePath={basePath} {...link} />
+          {SUPPORT_LINKS.map((link) => (
+            <MainNavLink key={link.text} basePath={basePath} {...link} />
           ))}
         </div>
       ) : null}
@@ -106,17 +104,18 @@ export const DashboardSidebarNav: FC = () => {
   )
 }
 
-interface ISidebarNavLink extends TNavLink {
+interface IMainNavLink extends TNavLink {
   basePath: string
 }
 
-const SidebarNavLink: FC<ISidebarNavLink> = ({
+const MainNavLink: FC<IMainNavLink> = ({
   basePath,
   text,
   icon,
   path,
   isExternal,
 }) => {
+  const { isSidebarOpen } = useDashboard()
   const pathName = usePathname()
   const normalizePath = (path: string) =>
     path.endsWith('/') ? path.slice(0, -1) : path
@@ -126,32 +125,35 @@ const SidebarNavLink: FC<ISidebarNavLink> = ({
     fullPath === normalizedPathName ||
     (path !== `/` && normalizedPathName.startsWith(`${fullPath}/`))
 
-  return isExternal ? (
-    <a
-      key={text}
-      href={path}
-      target="_blank"
-      className={classNames('link', {
-        'link-active': isActive,
-        'link-inactive': !isActive,
-      })}
-      aria-current={isActive ? 'page' : undefined}
-    >
-      <span>{icon}</span>
-      <span className="link-text">{text}</span>
-    </a>
-  ) : (
+  const link =  (
     <Link
-      key={text}
-      href={`${basePath}${path}`}
-      className={classNames('link', {
-        'link-active': isActive,
-        'link-inactive': !isActive,
-      })}
       aria-current={isActive ? 'page' : undefined}
+      href={isExternal ? path : `${basePath}${path}`}
+      isExternal={isExternal}
+      variant="nav"
+      isActive={isActive}
     >
       <span>{icon}</span>
       <span className="link-text">{text}</span>
     </Link>
+  )
+
+  return isSidebarOpen ? (
+    link
+  ) : (
+    <Tooltip
+      position="right"
+      tipContent={
+        <Text variant="subtext" weight="stronger">
+          {text
+            .trim()
+            .split(' ')
+            .at(-1)
+            ?.replace(/^./, (char) => char.toUpperCase())}
+        </Text>
+      }
+    >
+      {link}
+    </Tooltip>
   )
 }

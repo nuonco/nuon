@@ -23,3 +23,10 @@ export interface ILayoutProps<
 }
 
 export interface IRouteProps extends IPageProps {}
+
+export type TNavLink = {
+  icon?: React.ReactNode
+  path: string
+  text: string
+  isExternal?: boolean
+}
