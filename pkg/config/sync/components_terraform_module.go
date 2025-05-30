@@ -74,6 +74,7 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 		return existingConfigID, newChecksum, nil
 	}
 
+	configRequest.Checksum = newChecksum
 	cfg, err := s.apiClient.CreateTerraformModuleComponentConfig(ctx, compID, configRequest)
 	if err != nil {
 		return "", "", err
