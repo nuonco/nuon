@@ -7,8 +7,9 @@ import (
 )
 
 type CreateSandboxRunPlanRequest struct {
-	RunID     string
-	InstallID string
+	RunID      string
+	InstallID  string
+	RootDomain string
 
 	WorkflowID string
 }

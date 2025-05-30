@@ -1,6 +1,8 @@
 package worker
 
 import (
+	"fmt"
+
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
@@ -16,6 +18,6 @@ func (w *Workflows) DeprovisionDNS(ctx workflow.Context, sreq signals.RequestSig
 		return err
 	}
 
-	l.Info("this operation is a noop. nuon.run domains must be manually deleted.")
+	l.Info(fmt.Sprintf("this operation is a noop. %s domains must be manually deleted.", w.cfg.DNSRootDomain))
 	return nil
 }
