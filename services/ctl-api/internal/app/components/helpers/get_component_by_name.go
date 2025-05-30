@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 func (s *Helpers) GetComponentByName(ctx context.Context, appID, name string) (*app.Component, error) {
@@ -43,6 +44,12 @@ func (s *Helpers) GetComponentIDs(ctx context.Context, appID string, comps []str
 	compIDs := make([]string, len(components))
 	for i, comp := range components {
 		compIDs[i] = comp.ID
+	}
+
+	if len(compIDs) != len(comps) {
+		return nil, stderr.ErrInvalidRequest{
+			Err: errors.New("some components not created yet"),
+		}
 	}
 
 	return compIDs, nil

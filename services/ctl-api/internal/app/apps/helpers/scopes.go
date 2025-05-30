@@ -58,6 +58,12 @@ func PreloadAppConfigRunnerConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("RunnerConfig")
 }
 
+// preload action workflow configs
+func PreloadAppActionWorkflowConfigs(db *gorm.DB) *gorm.DB {
+	return db.
+		Preload("ActionWorkflowConfigs")
+}
+
 // component config connections
 func PreloadAppConfigComponentConfigConnections(db *gorm.DB) *gorm.DB {
 	return db.

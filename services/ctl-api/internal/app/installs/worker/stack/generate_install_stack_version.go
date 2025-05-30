@@ -16,8 +16,8 @@ import (
 )
 
 // @temporal-gen workflow
-// @execution-timeout 1m
-// @task-timeout 30s
+// @execution-timeout 5m
+// @task-timeout 1m
 func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signals.RequestSignal) error {
 	install, err := activities.AwaitGetInstallForStackByStackID(ctx, sreq.ID)
 	if err != nil {

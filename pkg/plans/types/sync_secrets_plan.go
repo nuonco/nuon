@@ -25,4 +25,6 @@ type SyncSecretsPlan struct {
 	ClusterInfo *kube.ClusterInfo        `json:"cluster_info,block"`
 	AzureAuth   *azurecredentials.Config `json:"azure_auth"`
 	AWSAuth     *awscredentials.Config   `json:"aws_auth"`
+
+	MinSandboxMode
 }

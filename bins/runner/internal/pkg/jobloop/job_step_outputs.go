@@ -1,125 +1,110 @@
 package jobloop
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/url"
 
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-runner-go/models"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
+	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 )
 
-func (j *jobLoop) sandboxOutputs() map[string]interface{} {
-	return map[string]interface{}{
-		"sandbox-outputs": map[string]interface{}{
-			"sandbox-mode": true,
-			"map": map[string]interface{}{
-				"k": "v",
-			},
-		},
-		"image": map[string]interface{}{
-			"tag":           "v1.2.3",
-			"repository":    "nuon/app-service",
-			"media_type":    "application/vnd.docker.distribution.manifest.v2+json",
-			"digest":        "sha256:a123b456c789d012e345f678g901h234i567j890k123l456m789n012o345p",
-			"size":          28437192,
-			"urls":          []string{"registry.example.com/nuon/app-service:v1.2.3"},
-			"annotations":   map[string]string{"org.opencontainers.image.created": "2024-04-29T10:15:30Z"},
-			"artifact_type": "application/vnd.docker.container.image.v1+json",
-			"platform": map[string]any{
-				"architecture": "arm64",
-				"os":           "linux",
-				"os_version":   "10.0",
-				"variant":      "v8",
-				"os_features":  []string{"sse4", "aes"},
-			},
-		},
+func (j *jobLoop) getSandboxModePlan(ctx context.Context, job *models.AppRunnerJob) (*plantypes.MinSandboxMode, error) {
+	var plan plantypes.MinSandboxMode
 
-		// copied from the aws-eks output
-		"account": map[string]any{
-			"id":     "123456789012",
-			"region": "us-west-2",
-		},
-		"cluster": map[string]any{
-			"arn":                        "arn:aws:eks:us-west-2:123456789012:cluster/nuon-cluster",
-			"certificate_authority_data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREF2TVMwd0t3WURWUVFERXlRME4yVTEKWkRNeE5DMDROelk...",
-			"endpoint":                   "https://A1B2C3D4E5F6.gr7.us-west-2.eks.amazonaws.com",
-			"name":                       "nuon-cluster",
-			"platform_version":           "eks.9",
-			"status":                     "ACTIVE",
-			"oidc_issuer_url":            "https://oidc.eks.us-west-2.amazonaws.com/id/A1B2C3D4E5F6",
-			"oidc_provider_arn":          "arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-west-2.amazonaws.com/id/A1B2C3D4E5F6",
-			"cluster_security_group_id":  "sg-0abc123def456",
-			"node_security_group_id":     "sg-0xyz789uvw456",
-		},
-		"vpc": map[string]any{
-			"id":                         "vpc-0abc123def456",
-			"arn":                        "arn:aws:ec2:us-west-2:123456789012:vpc/vpc-0abc123def456",
-			"cidr":                       "10.0.0.0/16",
-			"azs":                        []string{"us-west-2a", "us-west-2b", "us-west-2c"},
-			"private_subnet_cidr_blocks": []string{"10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"},
-			"private_subnet_ids":         []string{"subnet-0abc123def456", "subnet-0ghi789jkl012", "subnet-0mno345pqr678"},
-			"public_subnet_cidr_blocks":  []string{"10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"},
-			"public_subnet_ids":          []string{"subnet-0stu901vwx234", "subnet-0yza567bcd890", "subnet-0efg123hij456"},
-			"runner_subnet_id":           "subnet-0klm789nop012",
-			"runner_subnet_cidr":         "10.0.7.0/24",
-			"default_security_group_id":  "sg-0qrs345tuv678",
-		},
-		"ecr": map[string]any{
-			"repository_url":  "123456789012.dkr.ecr.us-west-2.amazonaws.com/nuon-app",
-			"repository_arn":  "arn:aws:ecr:us-west-2:123456789012:repository/nuon-app",
-			"repository_name": "nuon-app",
-			"registry_id":     "123456789012",
-			"registry_url":    "123456789012.dkr.ecr.us-west-2.amazonaws.com",
-		},
-		"nuon_dns": map[string]any{
-			"enabled": true,
-			"public_domain": map[string]any{
-				"zone_id":     "Z1A2B3C4D5E6F7",
-				"name":        "example.com",
-				"nameservers": []string{"ns-1234.awsdns-12.org", "ns-567.awsdns-34.com", "ns-890.awsdns-56.net", "ns-1234.awsdns-78.co.uk"},
-			},
-			"internal_domain": map[string]any{
-				"zone_id":     "Z8G9H0I1J2K3L4",
-				"name":        "internal.example.com",
-				"nameservers": []string{"ns-5678.awsdns-90.org", "ns-123.awsdns-12.com", "ns-456.awsdns-34.net", "ns-789.awsdns-56.co.uk"},
-			},
-			"alb_ingress_controller": map[string]any{
-				"enabled":  true,
-				"id":       "alb-ingress-controller",
-				"chart":    "aws-load-balancer-controller",
-				"revision": "1.4.7",
-			},
-			"external_dns": map[string]any{
-				"enabled":  true,
-				"id":       "external-dns",
-				"chart":    "external-dns",
-				"revision": "1.12.1",
-			},
-			"cert_manager": map[string]any{
-				"enabled":  true,
-				"id":       "cert-manager",
-				"chart":    "cert-manager",
-				"revision": "1.11.0",
-			},
-			"ingress_nginx": map[string]any{
-				"enabled":  true,
-				"id":       "ingress-nginx",
-				"chart":    "ingress-nginx",
-				"revision": "4.7.1",
-			},
-		},
+	planJSON, err := j.apiClient.GetJobPlanJSON(ctx, job.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get job plan")
 	}
+
+	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
+		return nil, errors.Wrap(err, "unable to convert to sandbox plan")
+	}
+
+	return &plan, nil
+}
+
+func (j *jobLoop) sandboxOutputs(ctx context.Context, job *models.AppRunnerJob) (map[string]any, error) {
+	plan, err := j.getSandboxModePlan(ctx, job)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get sandbox mode plan")
+	}
+
+	if plan.SandboxMode == nil || !plan.SandboxMode.Enabled {
+		return map[string]any{}, nil
+	}
+
+	return plan.SandboxMode.Outputs, nil
+}
+
+func (j *jobLoop) writeTerraformSandboxMode(ctx context.Context, job *models.AppRunnerJob, plan *plantypes.TerraformSandboxMode) error {
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
+	params := url.Values{
+		"job_id":       {job.ID},
+		"workspace_id": {plan.WorkspaceID},
+		"token":        {j.cfg.RunnerAPIToken},
+	}
+
+	// TODO(jm): move this into the runner-go-sdk.
+	url, err := url.JoinPath(j.cfg.RunnerAPIURL, "/v1/terraform-backend")
+	if err != nil {
+		return errors.Wrap(err, "unable to get url")
+	}
+	url = url + "?" + params.Encode()
+	l.Info(url)
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(plan.StateJSON))
+	if err != nil {
+		return errors.Wrap(err, "unable to create request")
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "unable to make request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	// write the terraform state to our second endpoint for parsing the resources
+	if _, err := j.apiClient.UpdateTerraformStateJSON(ctx, plan.WorkspaceID, &job.ID, []byte(plan.StateJSON)); err != nil {
+		return errors.Errorf("unable to update state json")
+	}
+
+	return nil
+}
+
+func (j *jobLoop) writeHelmSandboxMode(ctx context.Context, job *models.AppRunnerJob, plan *plantypes.MinSandboxMode) error {
+	return nil
 }
 
 func (j *jobLoop) executeOutputsJobStep(ctx context.Context, handler jobs.JobHandler, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	var (
-		outputs map[string]interface{}
-		err     error
-	)
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
 
+	// write outputs to the api for the job
+	var outputs map[string]interface{}
 	if j.isSandbox(job) {
-		outputs = j.sandboxOutputs()
+		outputs, err = j.sandboxOutputs(ctx, job)
+		if err != nil {
+			l.Error("unable to get sandbox outputs", zap.Error(err))
+			return errors.Wrap(err, "unable to get sandbox outputs")
+		}
 	} else {
 		outputs, err = handler.Outputs(ctx)
 		if err != nil {
@@ -132,6 +117,25 @@ func (j *jobLoop) executeOutputsJobStep(ctx context.Context, handler jobs.JobHan
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to write outputs to api")
+	}
+
+	// for additional sandbox job outputs, make custom requests to fill in data
+	if j.isSandbox(job) {
+		plan, err := j.getSandboxModePlan(ctx, job)
+		if err != nil {
+			return errors.Wrap(err, "unable to get sandbox mode plan")
+		}
+
+		if plan.SandboxMode.TerraformSandboxMode != nil {
+			if err := j.writeTerraformSandboxMode(ctx, job, plan.SandboxMode.TerraformSandboxMode); err != nil {
+				return errors.Wrap(err, "unable to write sandbox mode terraform")
+			}
+		}
+		if plan.SandboxMode.HelmSandboxMode != nil {
+			if err := j.writeHelmSandboxMode(ctx, job, plan); err != nil {
+				return errors.Wrap(err, "unable to write sandbox mode helm")
+			}
+		}
 	}
 
 	return nil
