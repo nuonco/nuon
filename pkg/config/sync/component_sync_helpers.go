@@ -21,10 +21,21 @@ func (s *sync) shouldSkipBuildDueToChecksum(ctx context.Context, compID, newChec
 		doChecksumCompare = false
 	}
 
+	cmpLatestConfig, err := s.apiClient.GetComponentLatestConfig(ctx, compID)
+	if err != nil {
+		return false, "", err
+	}
+
+	if cmpLatestConfig == nil {
+		return false, "", nil
+	}
+
 	if doChecksumCompare {
-		prevComponentState := s.getComponentStateById(compID)
-		if prevComponentState != nil && prevComponentState.Checksum == newChecksum {
-			return true, prevComponentState.ConfigID, nil
+		if err != nil {
+			return false, "", err
+		}
+		if cmpLatestConfig.Checksum == newChecksum {
+			return true, cmpLatestConfig.ID, nil
 		}
 	}
 

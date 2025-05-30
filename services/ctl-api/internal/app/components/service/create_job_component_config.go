@@ -23,6 +23,7 @@ type CreateJobComponentConfigRequest struct {
 
 	AppConfigID string   `json:"app_config_id"`
 	References  []string `json:"references"`
+	Checksum    string   `json:"checksum"`
 }
 
 func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -98,6 +99,7 @@ func (s *service) createJobComponentConfig(ctx context.Context, cmpID string, re
 		ComponentID:        parentCmp.ID,
 		AppConfigID:        req.AppConfigID,
 		References:         pq.StringArray(req.References),
+		Checksum:           req.Checksum,
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create job component config connection: %w", res.Error)
