@@ -14,7 +14,8 @@ import (
 
 type CreateAppConfigRequest struct {
 	// not required Readme
-	Readme string `json:"readme,omitempty"`
+	Readme     string `json:"readme,omitempty"`
+	CLIVersion string `json:"cli_version,omitempty"`
 }
 
 func (c *CreateAppConfigRequest) Validate(v *validator.Validate) error {
@@ -25,22 +26,22 @@ func (c *CreateAppConfigRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						CreateAppConfig
-//	@Description.markdown	create_app_config.md
-//	@Tags					apps
-//	@Accept					json
-//	@Param					req	body	CreateAppConfigRequest	true	"Input"
-//	@Produce				json
-//	@Param					app_id	path	string	true	"app ID"
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.AppConfig
-//	@Router					/v1/apps/{app_id}/config [post]
+// @ID						CreateAppConfig
+// @Description.markdown	create_app_config.md
+// @Tags					apps
+// @Accept					json
+// @Param					req	body	CreateAppConfigRequest	true	"Input"
+// @Produce				json
+// @Param					app_id	path	string	true	"app ID"
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.AppConfig
+// @Router					/v1/apps/{app_id}/config [post]
 func (s *service) CreateAppConfig(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
@@ -76,6 +77,7 @@ func (s *service) createAppConfig(ctx context.Context, orgID, appID string, req 
 		Status:            app.AppConfigStatusPending,
 		StatusDescription: "sync pending",
 		Readme:            req.Readme,
+		CLIVersion:        req.CLIVersion,
 	}
 
 	res := s.db.WithContext(ctx).Create(&inputs)
