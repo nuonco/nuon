@@ -67,7 +67,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	doneCh := make(chan struct{})
 	defer close(doneCh)
 	go func() {
-		j.monitorJob(ctx, cancel, doneCh, job.ID, l)
+		j.monitorJob(ctx, cancel, doneCh, job.ID, l, handler)
 	}()
 
 	steps, err := j.getJobSteps(ctx, handler)
