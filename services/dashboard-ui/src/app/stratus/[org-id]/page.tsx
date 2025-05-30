@@ -1,10 +1,140 @@
 import type { FC } from 'react'
-import { Button, Text } from '@/stratus/components'
+import { Stack } from '@phosphor-icons/react/dist/ssr'
+import {
+  Button,
+  Menu,
+  Text,
+  Link,
+  Tooltip,
+  PageHeader,
+} from '@/stratus/components'
 import { IPageProps } from '@/types'
 
 const StratusDasboard: FC<IPageProps<'org-id'>> = () => {
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4 p-4 overflow-auto">
+      <PageHeader className="bg-red-600">
+        <Text variant="h1" weight="stronger" theme="muted">
+          work
+        </Text>
+      </PageHeader>
+      <Text variant="h1" weight="stronger">
+        Menu
+      </Text>
+      <div className="flex gap-4">
+        <Menu className="min-w-52 border rounded-lg">
+          <Text variant="label" theme="muted">
+            Settings
+          </Text>
+          <Button>
+            <Stack /> Option
+          </Button>
+          <Button>Option</Button>
+          <Button>Option</Button>
+
+          <hr />
+
+          <Text variant="label" theme="muted">
+            Controls
+          </Text>
+          <Button>Option</Button>
+          <Button>Option</Button>
+          <Button>Option</Button>
+          <hr />
+          <Text variant="label" theme="muted">
+            Remove
+          </Text>
+          <Link href="#">Option</Link>
+        </Menu>
+      </div>
+
+      <Text variant="h1" weight="stronger">
+        Links
+      </Text>
+      <div className="flex flex-col gap-4">
+        <Link href="#">default</Link>
+        <Link href="#" variant="ghost">
+          ghost
+        </Link>
+        <Link href="#" variant="nav" isActive>
+          nav
+        </Link>
+        <Link href="#" variant="breadcrumb">
+          breadcrumb
+        </Link>
+      </div>
+
+      <Text variant="h1" weight="stronger">
+        Tooltip
+      </Text>
+      <div className="flex gap-4">
+        <div className="flex gap-4 items-start">
+          <Tooltip
+            tipContent={<Text variant="subtext">Something</Text>}
+            position="top"
+          >
+            <Text>Top tooltip</Text>
+          </Tooltip>
+
+          <Tooltip
+            tipContent={<Text variant="subtext">Something</Text>}
+            position="bottom"
+          >
+            <Text>Bottom tooltip</Text>
+          </Tooltip>
+
+          <Tooltip
+            tipContent={<Text variant="subtext">Something</Text>}
+            position="left"
+          >
+            <Text>Left tooltip</Text>
+          </Tooltip>
+
+          <Tooltip
+            tipContent={<Text variant="subtext">Something</Text>}
+            position="right"
+          >
+            <Text>Right tooltip</Text>
+          </Tooltip>
+
+          <Text className="max-w-80 text-balance">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+            eiusmod tempor incididunt ut
+            <Tooltip
+              tipContent={
+                <Text className="w-max" variant="subtext">
+                  Tip with icon
+                </Text>
+              }
+              showIcon
+            >
+              labore
+            </Tooltip>
+            et dolore magna aliqua.
+          </Text>
+        </div>
+
+        <div className="flex gap-4 items-start">
+          <Tooltip
+            tipContent={
+              <div className="flex flex-col w-80">
+                <Text variant="body" weight="stronger">
+                  Complex title
+                </Text>
+
+                <Text className="text-pretty" variant="subtext">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                </Text>
+              </div>
+            }
+            position="bottom"
+          >
+            <Text>Complex tooltip</Text>
+          </Tooltip>
+        </div>
+      </div>
+
       <Text variant="h1" weight="stronger">
         Buttons
       </Text>

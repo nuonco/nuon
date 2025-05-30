@@ -30,7 +30,7 @@ const StratusLayout: FC<ILayoutProps<'org-id'>> = async ({
   }
 
   return (
-    <OrgProvider initOrg={org}>
+    <OrgProvider initOrg={org} shouldPoll>
       <DashboardProvider initIsSidebarOpen={isSidebarOpen}>
         <Dashboard>{children}</Dashboard>
       </DashboardProvider>
