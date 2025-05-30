@@ -131,7 +131,7 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 	}
 
 	ui.PrintLn("syncing config to api...")
-	syncer := sync.New(s.api, appID, cfg)
+	syncer := sync.New(s.api, appID, "", cfg)
 	err = syncer.Sync(ctx)
 	if err != nil {
 		return ui.PrintError(err)
