@@ -1,4 +1,4 @@
-import { queryData } from '@/utils'
+import { queryData, mutateData } from '@/utils'
 
 export interface IGetWorkspace {
   orgId: string
@@ -14,7 +14,7 @@ export async function getWorkspaceStates({
   return queryData<any>({
     errorMessage: 'Unable to retrieve workspace states.',
     orgId,
-    path: `runners/terraform-workspace/${workspaceId}/states`,
+    path: `runners/terraform-workspace/${workspaceId}/state-json`,
   })
 }
 
@@ -30,7 +30,7 @@ export async function getWorkspaceState({
   return queryData<any>({
     errorMessage: 'Unable to retrieve workspace state.',
     orgId,
-    path: `runners/terraform-workspace/${workspaceId}/states/${stateId}`,
+    path: `runners/terraform-workspace/${workspaceId}/state-json/${stateId}`,
     abortTimeout: 15000,
   })
 }
@@ -45,19 +45,19 @@ export async function getWorkspaceStateResources({
   stateId,
 }: IGetWorkspaceStateResources) {
   return queryData<any>({
-    errorMessage: 'Unable to retrieve workspace state.',
+    errorMessage: 'Unable to retrieve workspace resouces.',
     orgId,
-    path: `runners/terraform-workspace/${workspaceId}/states/${stateId}/resources`,
+    path: `runners/terraform-workspace/${workspaceId}/state-json/${stateId}/resources`,
   })
 }
 
 export interface ILockWorkspace extends IGetWorkspace {}
 
 export async function lockWorkspace({ workspaceId, orgId }: ILockWorkspace) {
-  return queryData<any>({
+  return mutateData<any>({
     errorMessage: 'Unable to lock workspace state.',
     orgId,
-    path: `runners/terraform-workspace/${workspaceId}/lock`,
+    path: `terraform-workspaces/${workspaceId}/lock`,
   })
 }
 
@@ -67,9 +67,9 @@ export async function unlockWorkspace({
   workspaceId,
   orgId,
 }: IUnlockWorkspace) {
-  return queryData<any>({
+  return mutateData<any>({
     errorMessage: 'Unable to lock workspace state.',
     orgId,
-    path: `runners/terraform-workspace/${workspaceId}/unlock`,
+    path: `terraform-workspaces/${workspaceId}/unlock`,
   })
 }
