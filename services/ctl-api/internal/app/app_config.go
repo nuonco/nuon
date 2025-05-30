@@ -54,10 +54,10 @@ type AppConfig struct {
 	Status            AppConfigStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string          `json:"status_description,omitzero" gorm:"notnull;default null" temporaljson:"status_description,omitzero,omitempty"`
 
-	State    string `json:"state,omitzero" temporaljson:"state,omitzero,omitempty"`
-	Readme   string `json:"readme,omitzero" temporaljson:"readme,omitzero,omitempty"`
-	Checksum string `json:"checksum,omitzero" temporaljson:"checksum,omitzero,omitempty"`
-
+	State        string         `json:"state,omitzero" temporaljson:"state,omitzero,omitempty"`
+	Readme       string         `json:"readme,omitzero" temporaljson:"readme,omitzero,omitempty"`
+	Checksum     string         `json:"checksum,omitzero" temporaljson:"checksum,omitzero,omitempty"`
+	CLIVersion   string         `json:"cli_version,omitzero" gorm:"default null" temporaljson:"cli_version,omitzero,omitempty"`
 	ComponentIDs pq.StringArray `gorm:"type:text[]" json:"component_ids,omitzero" temporaljson:"component_ids,omitzero,omitempty" swaggertype:"array,string"`
 
 	// Lookups on the app config
