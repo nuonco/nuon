@@ -50,3 +50,14 @@ jobs:
           repository: nuonco/homebrew-tap
           event-type: generate
           client-payload: '{"version": "${{ inputs.tag }}" }'
+  byoc:
+    name: Update BYOC App Config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call nuonco/byoc update_images workflow
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
+          repository: nuonco/byoc
+          event-type: update_images
+          client-payload: '{"version": "${{ inputs.tag }}" }'
