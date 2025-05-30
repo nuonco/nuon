@@ -90,7 +90,7 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			maps.Copy(etags, tags)
 			w.mw.Event(ctx, &statsd.Event{
 				Title:          "Overall timeout reached while job executing",
-				Text:           "Overall end-to-end job execution timeout reached while waiting for job to bewcome healthy",
+				Text:           "Overall end-to-end job execution timeout reached while waiting for job to become healthy",
 				Tags:           metrics.ToTags(etags),
 				SourceTypeName: "nuon-jobsys",
 				Priority:       statsd.Normal,
