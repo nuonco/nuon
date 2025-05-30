@@ -10,6 +10,8 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/links"
 )
 
@@ -126,6 +128,9 @@ type InstallWorkflow struct {
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_app_install_name,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
+	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
+	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
+
 	// used for RLS
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
@@ -164,6 +169,29 @@ func (i *InstallWorkflow) BeforeCreate(tx *gorm.DB) error {
 	i.OrgID = orgIDFromContext(tx.Statement.Context)
 
 	return nil
+}
+
+func (i *InstallWorkflow) BeforeSave(tx *gorm.DB) error {
+	// defensive fallback while we migrate, this should be handled elsewhere
+	if i.OwnerID == "" {
+		i.OwnerID = i.InstallID
+		// If OwnerID wasn't set, the data predates abstracting into workflows and must necessarily be an install
+		i.OwnerType = "installs"
+	}
+
+	return nil
+}
+
+func (i *InstallWorkflow) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &InstallWorkflow{}, "owner"),
+			Columns: []string{
+				"owner_id",
+				"created_at DESC",
+			},
+		},
+	}
 }
 
 func (r *InstallWorkflow) AfterQuery(tx *gorm.DB) error {

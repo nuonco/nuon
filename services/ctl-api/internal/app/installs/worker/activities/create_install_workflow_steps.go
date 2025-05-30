@@ -12,6 +12,8 @@ import (
 type CreateInstallWorkflowStepRequest struct {
 	InstallWorkflowID string                               `json:"install_workflow_id"`
 	InstallID         string                               `json:"install_id"`
+	OwnerID           string                               `json:"owner_id"`
+	OwnerType         string                               `json:"owner_type"`
 	Status            app.CompositeStatus                  `json:"status"`
 	Name              string                               `json:"name"`
 	Signal            app.Signal                           `json:"signal"`
@@ -25,6 +27,8 @@ func (a *Activities) CreateInstallWorkflowStep(ctx context.Context, req CreateIn
 	step := &app.InstallWorkflowStep{
 		InstallWorkflowID: req.InstallWorkflowID,
 		InstallID:         req.InstallID,
+		OwnerID:           req.OwnerID,
+		OwnerType:         req.OwnerType,
 		Status:            req.Status,
 		Name:              req.Name,
 		Signal:            req.Signal,
