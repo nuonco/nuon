@@ -54,7 +54,7 @@ func (w *Workflows) ProvisionDNS(ctx workflow.Context, sreq signals.RequestSigna
 		return err
 	}
 
-	l.Info("configuring DNS for nuon.run domain if enabled")
+	l.Info(fmt.Sprintf("configuring DNS for %s domain if enabled", w.cfg.DNSRootDomain))
 	state, err := activities.AwaitGetInstallStateByInstallID(ctx, sreq.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install state")
@@ -73,7 +73,7 @@ func (w *Workflows) ProvisionDNS(ctx workflow.Context, sreq signals.RequestSigna
 	if !outputs.DNS.Enabled {
 		return nil
 	}
-	if !strings.Contains(outputs.DNS.PublicDomain.Name, "nuon.run") {
+	if !strings.Contains(outputs.DNS.PublicDomain.Name, w.cfg.DNSRootDomain) {
 		return nil
 	}
 
@@ -83,7 +83,7 @@ func (w *Workflows) ProvisionDNS(ctx workflow.Context, sreq signals.RequestSigna
 		Nameservers: outputs.DNS.PublicDomain.Nameservers,
 	}
 
-	l.Info("provisioning nuon.run root domain")
+	l.Info(fmt.Sprintf("provisioning %s root domain", w.cfg.DNSRootDomain))
 	if !sreq.SandboxMode {
 		_, err = installdelegationdns.AwaitProvisionDNSDelegation(ctx, dnsReq)
 		if err != nil {
