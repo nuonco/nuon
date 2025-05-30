@@ -63,3 +63,7 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 	l.Info("cleaning up", zap.String("job_type", "noop"))
 	return nil
 }
+
+func (h *handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob, l *zap.Logger) error {
+	return nil
+}

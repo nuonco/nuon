@@ -14,6 +14,7 @@ import (
 // @Summary				lock terraform state
 // @Description.markdown	lock_terraform_workspace.md
 // @Param					workspace_id	path	string	true	"workspace ID"
+// @Param job_id 				query	string	false	"job ID"
 // @Tags					runners,runners/runner
 // @Accept					json
 // @Produce				json
