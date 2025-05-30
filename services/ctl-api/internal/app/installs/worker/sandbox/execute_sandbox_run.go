@@ -58,6 +58,7 @@ func (w *Workflows) executeSandboxRun(ctx workflow.Context, install *app.Install
 	runPlan, err := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
 		RunID:      installRun.ID,
 		InstallID:  install.ID,
+		RootDomain: w.cfg.DNSRootDomain,
 		WorkflowID: fmt.Sprintf("%s-create-api-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
