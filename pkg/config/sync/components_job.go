@@ -7,6 +7,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/hasher"
 )
 
 func (s *sync) createJobComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, string, error) {
@@ -33,12 +34,16 @@ func (s *sync) createJobComponentConfig(ctx context.Context, resource, compID st
 		configRequest.References = append(configRequest.References, ref.String())
 	}
 
-	newChecksum := comp.Checksum
+	newChecksum, err := hasher.HashStruct(comp)
+	if err != nil {
+		return "", "", err
+	}
 
 	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, newChecksum)
 	if err != nil {
 		return "", "", err
 	}
+
 	if shouldSkip {
 		return existingConfigID, newChecksum, nil
 	}
