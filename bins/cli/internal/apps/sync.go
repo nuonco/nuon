@@ -48,7 +48,7 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 		}
 	}
 
-	syncer := sync.New(s.api, appID, cfg)
+	syncer := sync.New(s.api, appID, "", cfg)
 	err = syncer.Sync(ctx)
 	if err != nil {
 		return err
