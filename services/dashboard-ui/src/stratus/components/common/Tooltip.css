@@ -1,0 +1,85 @@
+@media (prefers-color-scheme: light) {
+  .tooltip-content {
+    --bg-color: #1B242C;
+    --tx-color: #FFF;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .tooltip-content {
+    --bg-color: #FFF;
+    --tx-color: #1B242C
+  }
+}
+
+.tooltip-wrapper {
+
+}
+
+.tooltip-content {
+  background-color: var(--bg-color);
+  color: var(--tx-color);
+  display: flex;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 150ms cubic-bezier(0.65, 0, 0.35, 1), translate 150ms cubic-bezier(0.65, 0, 0.35, 1);
+
+  @apply px-2 py-1 rounded-md shadow-md
+}
+
+.tooltip-content.top {
+  translate: 0 -0.5rem;
+}
+
+.tooltip-content.bottom {
+  translate: 0 0.5rem;
+}
+
+.tooltip-content.right {
+  translate: 0.5rem;
+}
+
+.tooltip-content.left {
+  translate: -0.5rem;
+}
+
+.tooltip-content::after {
+  content: '';
+  position: absolute;
+  border-width: 0.35rem;
+  border-style: solid;
+}
+
+.tooltip-content.top::after {
+  bottom: -0.6rem;
+  left: 50%;
+  translate: -50%;
+  border-color: var(--bg-color) transparent transparent transparent;
+}
+
+.tooltip-content.bottom::after {
+  top: -0.6rem;
+  left: 50%;
+  translate: -50%;
+  border-color: transparent transparent var(--bg-color) transparent;
+}
+
+.tooltip-content.right::after {
+  left: -0.6rem;
+  top: 50%;
+  translate: 0 -50%;
+  border-color: transparent var(--bg-color) transparent transparent;
+}
+
+.tooltip-content.left::after {
+  right: -0.6rem;
+  top: 50%;
+  translate: 0 -50%;
+  border-color: transparent transparent transparent var(--bg-color);
+}
+
+.tooltip-wrapper:hover .tooltip-content {
+  visibility: visible;
+  opacity: 1;
+  translate: 0;
+}
