@@ -48,6 +48,7 @@ func (s *sync) createJobComponentConfig(ctx context.Context, resource, compID st
 		return existingConfigID, newChecksum, nil
 	}
 
+	configRequest.Checksum = newChecksum
 	cfg, err := s.apiClient.CreateJobComponentConfig(ctx, compID, configRequest)
 	if err != nil {
 		return "", "", err

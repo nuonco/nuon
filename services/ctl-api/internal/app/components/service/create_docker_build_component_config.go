@@ -26,6 +26,7 @@ type CreateDockerBuildComponentConfigRequest struct {
 
 	Dependencies []string `json:"dependencies"`
 	References   []string `json:"references"`
+	Checksum     string   `json:"checksum"`
 }
 
 func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -126,6 +127,7 @@ func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID st
 		AppConfigID:                req.AppConfigID,
 		ComponentDependencyIDs:     pq.StringArray(depIDs),
 		References:                 pq.StringArray(req.References),
+		Checksum:                   req.Checksum,
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create docker build component config connection: %w", res.Error)
