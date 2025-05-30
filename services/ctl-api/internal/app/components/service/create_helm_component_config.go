@@ -29,6 +29,7 @@ type CreateHelmComponentConfigRequest struct {
 
 	Dependencies []string `json:"dependencies"`
 	References   []string `json:"references"`
+	Checksum     string   `json:"checksum"`
 }
 
 func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -125,6 +126,7 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		AppConfigID:            req.AppConfigID,
 		ComponentDependencyIDs: pq.StringArray(depIDs),
 		References:             pq.StringArray(req.References),
+		Checksum:               req.Checksum,
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create helm component config connection: %w", res.Error)
