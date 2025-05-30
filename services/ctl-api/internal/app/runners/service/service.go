@@ -122,6 +122,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	// install runners
 	api.POST("/v1/installs/:install_id/runners/shutdown-job", s.AdminCreateInstallRunnerqShutDownJob)
 
+	// workspace management
+	api.POST("/v1/terraform-workspaces/:workspace_id/lock", s.AdminLockWorkspace)
+	api.POST("/v1/terraform-workspaces/:workspace_id/unlock", s.AdminUnlockWorkspace)
+
 	return nil
 }
 
