@@ -6,21 +6,10 @@ const config: Config = {
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/stratus/**/*.{js,ts,jsx,tsx,mdx}',
     './node_modules/react-tailwindcss-select/dist/index.esm.js',
   ],
   safelist: [
-    {
-      pattern: /(bg|text)-(red|green|yellow|primary)-(500|600)/,
-    },
-    {
-      pattern: /(bg|text)-(slate)-(50|950)/,
-    },
-    {
-      pattern: /(bg|text)-(active|light|dark)/,
-    },
-    {
-      pattern: /bg-opacity-(25|50|75|85|95)/,
-    },
     {
       pattern: /z-(10|20|30|40|50)/,
     },
@@ -31,8 +20,25 @@ const config: Config = {
       pattern: /(m|p)-(auto)/,
     },
     {
-      pattern: /(max|min)-(w|h)-(xs|sm|md|lg|xl|2xl)/,
+      pattern: /rounded-none/
     },
+    {
+      pattern: /^divide-(x|y)-/
+    },
+    {
+      pattern: /^size-/
+    }
+    
+
+    // // Width classes
+    // { pattern: /^w-/ }, // Matches w-{value}
+    // { pattern: /^max-w-/ }, // Matches max-w-{value}
+    // { pattern: /^min-w-/ }, // Matches min-w-{value}
+
+    // // Color classes
+    // { pattern: /^bg-/ }, // Matches bg-{color}
+    // { pattern: /^border-/ }, // Matches border-{color}
+    // { pattern: /^text-/ }, // Matches text-{color}
   ],
   theme: {
     colors: {
@@ -111,7 +117,7 @@ const config: Config = {
         950: '#450A0A',
       },
       'cool-grey': {
-        50: '#F9F9FB',
+        50: '#FAFAFA',
         100: '#F0F3F5',
         200: '#EAEDF0',
         300: '#DEE3E7',

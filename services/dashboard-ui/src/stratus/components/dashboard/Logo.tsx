@@ -1,11 +1,8 @@
-import classNames from 'classnames'
 import { useDashboard } from '@/stratus/context'
 import React, { type FC } from 'react'
 import './Logo.css'
 
-export const Logo: FC<{ isDarkModeOnly?: boolean }> = ({
-  isDarkModeOnly = false,
-}) => {
+export const Logo: FC = () => {
   return (
     <a href="/stratus" className="w-full overflow-hidden">
       <span className="sr-only">Nuon</span>
