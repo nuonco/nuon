@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
+	"github.com/powertoolsdev/mono/bins/cli/internal/version"
 )
 
 func (c *cli) appsCmd() *cobra.Command {
@@ -149,7 +150,7 @@ func (c *cli) appsCmd() *cobra.Command {
 			}
 
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.SyncDir(cmd.Context(), dirName)
+			return svc.SyncDir(cmd.Context(), dirName, version.Version)
 		}),
 	}
 	appsCmd.AddCommand(syncCmd)
@@ -171,7 +172,7 @@ func (c *cli) appsCmd() *cobra.Command {
 			}
 
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.SyncDir(cmd.Context(), dirName)
+			return svc.SyncDir(cmd.Context(), dirName, version.Version)
 		}),
 	}
 	appsCmd.AddCommand(syncDirCmd)

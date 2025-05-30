@@ -17,7 +17,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/errs"
 )
 
-func (s *Service) SyncDir(ctx context.Context, dir string) error {
+func (s *Service) SyncDir(ctx context.Context, dir string, version string) error {
 	ui.PrintLn("syncing directory from " + dir)
 
 	appName, err := parse.AppNameFromDirName(dir)
@@ -56,7 +56,7 @@ func (s *Service) SyncDir(ctx context.Context, dir string) error {
 	}
 	ui.PrintLn(fmt.Sprintf("all configs valid"))
 
-	syncer := sync.New(s.api, appID, cfg)
+	syncer := sync.New(s.api, appID, version, cfg)
 	err = syncer.Sync(ctx)
 	if err != nil {
 		return ui.PrintError(err)
