@@ -61,6 +61,7 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 		return existingConfigID, newChecksum, nil
 	}
 
+	configRequest.Checksum = newChecksum
 	cfg, err := s.apiClient.CreateDockerBuildComponentConfig(ctx, compID, configRequest)
 	if err != nil {
 		return "", "", err

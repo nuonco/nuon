@@ -70,6 +70,7 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 		return existingConfigID, newChecksum, nil
 	}
 
+	configRequest.Checksum = newChecksum
 	cfg, err := s.apiClient.CreateHelmComponentConfig(ctx, compID, configRequest)
 	if err != nil {
 		return "", "", err
