@@ -32,7 +32,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/rds/auth v1.5.11
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.16.21
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.38.0
-	github.com/aws/aws-sdk-go-v2/service/eks v1.53.0
+	github.com/aws/aws-sdk-go-v2/service/eks v1.64.0
 	github.com/aws/aws-sdk-go-v2/service/iam v1.28.5
 	github.com/aws/aws-sdk-go-v2/service/route53 v1.48.5
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.54.3
