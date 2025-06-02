@@ -19,23 +19,76 @@ const (
 	// run on a hook
 	ActionWorkflowTriggerTypeCron ActionWorkflowTriggerType = "cron"
 
-	// can add workflow triggers for different types of events
-	ActionWorkflowTriggerTypePreSandboxRun  ActionWorkflowTriggerType = "pre-sandbox-run"
-	ActionWorkflowTriggerTypePostSandboxRun ActionWorkflowTriggerType = "post-sandbox-run"
+	// individaul component ones
+	ActionWorkflowTriggerTypePreDeployComponent  ActionWorkflowTriggerType = "pre-deploy-component"
+	ActionWorkflowTriggerTypePostDeployComponent ActionWorkflowTriggerType = "post-deploy-component"
 
-	// triggers that run on a specific component deploy
-	ActionWorkflowTriggerTypePreDeployComponent  ActionWorkflowTriggerType = "pre-component-deploy"
-	ActionWorkflowTriggerTypePostDeployComponent ActionWorkflowTriggerType = "post-component-deploy"
+	ActionWorkflowTriggerTypePreTeardownComponent  ActionWorkflowTriggerType = "pre-teardown-component"
+	ActionWorkflowTriggerTypePostTeardownComponent ActionWorkflowTriggerType = "post-teardown-component"
 
-	// triggers that are run on delete
-	ActionWorkflowTriggerTypePreTeardownComponent  ActionWorkflowTriggerType = "pre-component-delete"
-	ActionWorkflowTriggerTypePostTeardownComponent ActionWorkflowTriggerType = "post-component-delete"
+	// internals
+	ActionWorkflowTriggerTypePreSecretsSync  ActionWorkflowTriggerType = "pre-secrets-sync"
+	ActionWorkflowTriggerTypePostSecretsSync ActionWorkflowTriggerType = "post-secrets-sync"
 
-	// NOTE(jm): the following triggers are going to be deprecated
-	// triggers that run on _every_ component deploy
-	ActionWorkflowTriggerTypePreDeployAll  ActionWorkflowTriggerType = "pre-deploy"
-	ActionWorkflowTriggerTypePostDeployAll ActionWorkflowTriggerType = "post-deploy"
+	// workflow triggers
+	ActionWorkflowTriggerTypePreProvision  ActionWorkflowTriggerType = "pre-provision"
+	ActionWorkflowTriggerTypePostProvision ActionWorkflowTriggerType = "post-provision"
+
+	ActionWorkflowTriggerTypePreReprovision  ActionWorkflowTriggerType = "pre-reprovision"
+	ActionWorkflowTriggerTypePostReprovision ActionWorkflowTriggerType = "post-reprovision"
+
+	ActionWorkflowTriggerTypePreDeprovision  ActionWorkflowTriggerType = "pre-deprovision"
+	ActionWorkflowTriggerTypePostDeprovision ActionWorkflowTriggerType = "post-deprovision"
+
+	ActionWorkflowTriggerTypePreDeployAllComponents  ActionWorkflowTriggerType = "pre-deploy-all-components"
+	ActionWorkflowTriggerTypePostDeployAllComponents ActionWorkflowTriggerType = "post-deploy-all-components"
+
+	ActionWorkflowTriggerTypePreTeardownAllComponents  ActionWorkflowTriggerType = "pre-teardown-all-components"
+	ActionWorkflowTriggerTypePostTeardownAllComponents ActionWorkflowTriggerType = "post-teardown-all-components"
+
+	ActionWorkflowTriggerTypePreDeprovisionSandbox  ActionWorkflowTriggerType = "pre-deprovision-sandbox"
+	ActionWorkflowTriggerTypePostDeprovisionSandbox ActionWorkflowTriggerType = "post-deprovision-sandbox"
+
+	ActionWorkflowTriggerTypePreReprovisionSandbox  ActionWorkflowTriggerType = "pre-reprovision-sandbox"
+	ActionWorkflowTriggerTypePostReprovisionSandbox ActionWorkflowTriggerType = "post-reprovision-sandbox"
+
+	ActionWorkflowTriggerTypePreUpdateInputs  ActionWorkflowTriggerType = "pre-update-inputs"
+	ActionWorkflowTriggerTypePostUpdateInputs ActionWorkflowTriggerType = "post-update-inputs"
 )
+
+// These component types require a component to be passed with them
+var AllActionWorkflowComponentTriggerTypes = []ActionWorkflowTriggerType{
+	ActionWorkflowTriggerTypePreDeployComponent,
+	ActionWorkflowTriggerTypePostDeployComponent,
+	ActionWorkflowTriggerTypePreTeardownComponent,
+	ActionWorkflowTriggerTypePostTeardownComponent,
+}
+
+// All component types
+var AllActionWorkflowTriggerTypes = []ActionWorkflowTriggerType{
+	ActionWorkflowTriggerTypeManual,
+	ActionWorkflowTriggerTypeCron,
+	ActionWorkflowTriggerTypePreDeployComponent,
+	ActionWorkflowTriggerTypePostDeployComponent,
+	ActionWorkflowTriggerTypePreTeardownComponent,
+	ActionWorkflowTriggerTypePostTeardownComponent,
+	ActionWorkflowTriggerTypePreProvision,
+	ActionWorkflowTriggerTypePostProvision,
+	ActionWorkflowTriggerTypePreReprovision,
+	ActionWorkflowTriggerTypePostReprovision,
+	ActionWorkflowTriggerTypePreDeprovision,
+	ActionWorkflowTriggerTypePostDeprovision,
+	ActionWorkflowTriggerTypePreDeployAllComponents,
+	ActionWorkflowTriggerTypePostDeployAllComponents,
+	ActionWorkflowTriggerTypePreTeardownAllComponents,
+	ActionWorkflowTriggerTypePostTeardownAllComponents,
+	ActionWorkflowTriggerTypePreDeprovisionSandbox,
+	ActionWorkflowTriggerTypePostDeprovisionSandbox,
+	ActionWorkflowTriggerTypePreReprovisionSandbox,
+	ActionWorkflowTriggerTypePostReprovisionSandbox,
+	ActionWorkflowTriggerTypePreUpdateInputs,
+	ActionWorkflowTriggerTypePostUpdateInputs,
+}
 
 type ActionWorkflowTriggerConfig struct {
 	ID          string                `json:"id" gorm:"primary_key;check:id_checker,char_length(id)=26" temporaljson:"id,omitzero,omitempty"`
