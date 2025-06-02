@@ -1,0 +1,28 @@
+package activities
+
+import (
+	"context"
+
+	"github.com/pkg/errors"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+)
+
+type GetFlowStepRequest struct {
+	FlowStepID string `json:"flow_step_id"`
+}
+
+// @temporal-gen activity
+// @by-id FlowStepID
+func (a *Activities) GetFlowsStep(ctx context.Context, req GetFlowStepRequest) (*app.FlowStep, error) {
+	// var step app.FlowStep
+	var step app.InstallWorkflowStep
+
+	res := a.db.WithContext(ctx).
+		First(&step, "id = ?", req.FlowStepID)
+	if res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to get workflow step")
+	}
+
+	return &step, nil
+}

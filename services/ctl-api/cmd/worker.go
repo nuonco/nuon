@@ -33,6 +33,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/activities"
+	flowactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job/activities"
 	signalsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/signals/activities"
@@ -67,6 +68,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	providers = append(
 		providers,
 		fx.Provide(jobactivities.New),
+		fx.Provide(flowactivities.New),
 		fx.Provide(signalsactivities.New),
 		fx.Provide(statusactivities.New),
 		fx.Provide(activities.New),
