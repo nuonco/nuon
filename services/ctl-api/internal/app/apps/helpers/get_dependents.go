@@ -21,6 +21,18 @@ func (h *Helpers) GetDependentComponents(ctx context.Context, appID, compRootID 
 	return depCmps, nil
 }
 
+func (h *Helpers) GetComponentsDependents(compRootID string, cmps []app.Component) []app.Component {
+	var depCmps []app.Component
+	for _, cmp := range cmps {
+		for _, dep := range cmp.Dependencies {
+			if dep.ID == compRootID {
+				depCmps = append(depCmps, cmp)
+			}
+		}
+	}
+	return depCmps
+}
+
 func (h *Helpers) GetDependentComponentsByGraph(compRootID string, g graph.Graph[string, *app.Component], cmps []app.Component) ([]app.Component, error) {
 	cmpsById := make(map[string]app.Component)
 	for _, c := range cmps {
