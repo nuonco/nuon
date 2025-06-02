@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nuonco/nuon-go/models"
 
@@ -60,6 +61,7 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 	if err != nil {
 		return "", "", err
 	}
+
 	// Check if we should skip this build due to checksum match
 	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, newChecksum)
 	if err != nil {
@@ -73,6 +75,7 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 	configRequest.Checksum = newChecksum
 	cfg, err := s.apiClient.CreateHelmComponentConfig(ctx, compID, configRequest)
 	if err != nil {
+		fmt.Println("here", err)
 		return "", "", err
 	}
 

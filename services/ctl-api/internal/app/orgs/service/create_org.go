@@ -53,11 +53,17 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 
 	// NOTE(jm): we have a discrepancy in your db, where some OG members had their data inputted into the accounts
 	// table backwards.
-	isNuon := strings.HasSuffix(acct.Email, "nuon.co") || strings.HasSuffix(acct.Subject, "nuon.co")
-	if acct.AccountType == app.AccountTypeAuth0 && !isNuon {
+	isAllowed := false
+	for _, allowed := range strings.Split(s.cfg.OrgCreationEmailAllowList, ",") {
+		if strings.HasSuffix(acct.Email, allowed) || strings.HasSuffix(acct.Subject, allowed) {
+			isAllowed = true
+		}
+	}
+
+	if acct.AccountType == app.AccountTypeAuth0 && !isAllowed {
 		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("only nuon members can create orgs"),
-			Description: "please reach out to a Nuon team employee to try Nuon",
+			Err:         fmt.Errorf("This email is not allowed to create new orgs."),
+			Description: "Please reach out to team@nuon.co for access.",
 		})
 		return
 	}
