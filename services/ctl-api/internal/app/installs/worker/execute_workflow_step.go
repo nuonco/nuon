@@ -83,8 +83,6 @@ func (w *Workflows) ExecuteWorkflowStep(ctx workflow.Context, sreq signals.Reque
 		return nil
 	}
 
-	// NOTE(jm): this is going to be replaced with a way to coordinate signals across namespaces/concurrency models,
-	// but for now we're doing everything in this one process.
 	var sig signals.Signal
 	if err := json.Unmarshal(step.Signal.SignalJSON, &sig); err != nil {
 		return w.handleStepErr(ctx, sreq.WorkflowStepID, err)
@@ -132,54 +130,6 @@ func (w *Workflows) ExecuteWorkflowStep(ctx workflow.Context, sreq signals.Reque
 		return err
 	}
 	return nil
-}
-
-// NOTE(sdboyer) this method is tightly coupled to the subloop naming logic in ./startup.go
-func (w *Workflows) subloopSuffix(ctx workflow.Context, sreq signals.RequestSignal) (string, error) {
-	// All errors _should_ be unreachable because these activities succeeded when bootstrapping the sub event loops
-	if _, has := w.subwfStack.GetHandlers()[sreq.Type]; has {
-		// uuuugh
-		stack, err := activities.AwaitGetInstallStackByInstallID(ctx, sreq.ID)
-		if err != nil {
-			return "", errors.Wrap(err, "unable to fetch install stack")
-		}
-		return fmt.Sprintf("stack-%s", stack.ID), nil
-	}
-
-	if _, has := w.subwfSandbox.GetHandlers()[sreq.Type]; has {
-		sandbox, err := activities.AwaitGetInstallSandboxByInstallID(ctx, sreq.ID)
-		if err != nil {
-			return "", errors.Wrap(err, "unable to fetch install sandbox")
-		}
-		return fmt.Sprintf("sandbox-%s", sandbox.ID), nil
-	}
-
-	if _, has := w.subwfActions.GetHandlers()[sreq.Type]; has {
-		if sreq.InstallActionWorkflowTrigger.InstallActionWorkflowID == "" {
-			panic("missing action workflow run ID")
-		}
-		return fmt.Sprintf("action-%s", sreq.InstallActionWorkflowTrigger.InstallActionWorkflowID), nil
-	}
-
-	if _, has := w.subwfComponents.GetHandlers()[sreq.Type]; has {
-		id := sreq.ExecuteDeployComponentSubSignal.ComponentID
-		if id == "" {
-			id = sreq.ExecuteTeardownComponentSubSignal.ComponentID
-		}
-		if id == "" {
-			panic("missing component ID")
-		}
-		comp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
-			InstallID:   sreq.ID,
-			ComponentID: id,
-		})
-		if err != nil {
-			return "", errors.Wrap(err, "unable to fetch install component")
-		}
-		return fmt.Sprintf("component-%s", comp.ID), nil
-	}
-
-	return "", nil
 }
 
 func (w *Workflows) handleStepErr(ctx workflow.Context, installWorkflowStepID string, err error) error {
