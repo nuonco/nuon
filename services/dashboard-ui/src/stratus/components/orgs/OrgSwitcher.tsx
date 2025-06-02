@@ -134,7 +134,7 @@ const OrgsNav: FC<IOrgsNav> = () => {
   return (
     <>
       {isLoading
-        ? [0, 1, 2].map((k) => <LoadingOrgSummary key={k} />)
+        ? [0, 1, 2, 3].map((k) => <LoadingOrgSummary key={k} />)
         : orgs?.map((o) => (
             <Link
               key={o?.id}
