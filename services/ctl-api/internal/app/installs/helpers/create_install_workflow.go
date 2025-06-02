@@ -10,6 +10,7 @@ import (
 )
 
 func (s *Helpers) CreateInstallWorkflow(ctx context.Context, installID string, workflowType app.InstallWorkflowType, metadata map[string]string, errBehavior app.StepErrorBehavior) (*app.InstallWorkflow, error) {
+	metadata["install_id"] = installID
 	installWorkflow := app.InstallWorkflow{
 		Type:              workflowType,
 		InstallID:         installID,

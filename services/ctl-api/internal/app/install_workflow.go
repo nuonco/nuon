@@ -208,3 +208,77 @@ func (r *InstallWorkflow) AfterQuery(tx *gorm.DB) error {
 
 	return nil
 }
+
+// Dual-write install workflows to flows.
+// func (i *InstallWorkflow) AfterCreate(tx *gorm.DB) error {
+// 	err := errors.Wrap(tx.Create(i.TransformToFlow()).Error, "failed dual-write to flows after create")
+// 	if err != nil {
+// 		fmt.Println("DUAL WRITE FLOW CREATE ERROR", err)
+// 	}
+// 	return nil
+// }
+
+// func (i *InstallWorkflow) AfterUpdate(tx *gorm.DB) error {
+// 	flw := i.TransformToFlow()
+// 	err := errors.Wrap(tx.Model(&Flow{
+// 		ID: flw.ID,
+// 	}).Updates(flw).Error, "failed dual-write to flows after save")
+// 	if err != nil {
+// 		fmt.Println("DUAL WRITE FLOW UPDATE ERROR", err)
+// 	}
+// 	return nil
+// }
+
+// func (i *InstallWorkflow) AfterSave(tx *gorm.DB) error {
+// 	err := errors.Wrap(tx.Save(i.TransformToFlow()).Error, "failed dual-write to flows after create")
+// 	if err != nil {
+// 		fmt.Println("DUAL WRITE FLOW SAVE ERROR", err)
+// 	}
+// 	return nil
+// }
+
+// func (i *InstallWorkflow) AfterDelete(tx *gorm.DB) error {
+// 	err := errors.Wrap(tx.Delete(i.TransformToFlow()).Error, "failed dual-write to flows after delete")
+// 	if err != nil {
+// 		fmt.Println("DUAL WRITE FLOW DELETE ERROR", err)
+// 	}
+// 	return nil
+// }
+
+// func (i *InstallWorkflow) TransformToFlow() *Flow {
+// 	osteps := make([]FlowStep, 0, len(i.Steps))
+// 	for _, step := range i.Steps {
+// 		osteps = append(osteps, *step.TransformToFlowStep())
+// 	}
+
+// 	return &Flow{
+// 		ID:          strings.Replace(i.ID, "inw", "flw", 1),
+// 		CreatedByID: i.CreatedByID,
+// 		CreatedBy:   i.CreatedBy,
+// 		CreatedAt:   i.CreatedAt,
+// 		UpdatedAt:   i.UpdatedAt,
+// 		DeletedAt:   i.DeletedAt,
+
+// 		OwnerID:   i.OwnerID,
+// 		OwnerType: i.OwnerType,
+// 		OrgID:     i.OrgID,
+// 		Org:       i.Org,
+
+// 		Type:              FlowType(i.Type),
+// 		Metadata:          i.Metadata,
+// 		Status:            i.Status,
+// 		StepErrorBehavior: i.StepErrorBehavior,
+
+// 		StartedAt:  i.StartedAt,
+// 		FinishedAt: i.FinishedAt,
+// 		Finished:   i.Finished,
+
+// 		Steps: osteps,
+// 		Name:  i.Name,
+
+// 		ExecutionTime: i.ExecutionTime,
+
+// 		// TODO(sdboyer) fix these up
+// 		Links: i.Links,
+// 	}
+// }

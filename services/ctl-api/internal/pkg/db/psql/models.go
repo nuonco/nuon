@@ -121,6 +121,8 @@ func AllModels() []interface{} {
 		&app.InstallActionWorkflowRunStep{},
 
 		// install workflows
+		&app.Flow{},
+		&app.FlowStep{},
 		&app.InstallWorkflow{},
 		&app.InstallWorkflowStep{},
 		&app.InstallWorkflowStepApproval{},
