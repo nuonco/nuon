@@ -1,8 +1,9 @@
 .menu {
-  @apply flex flex-col p-2;
+  @apply flex flex-col p-2 gap-0.5;
 }
 
-.menu .ghost {
+.menu .ghost,
+.menu .dropdown-trigger.ghost {
   font-family: var(--font-inter);
   font-size: 12px;
   font-weight: 500;
@@ -10,7 +11,13 @@
   letter-spacing: -0.2px;
   line-height: 21px;
   transition: background-color 100ms cubic-bezier(0.65, 0, 0.35, 1);
-  @apply flex items-center justify-between text-left p-2 gap-2;
+  @apply flex items-center justify-between text-left p-2 gap-2 w-full;
+}
+
+.menu button.ghost:focus,
+.menu a.ghost:focus,
+.menu .dropdown-trigger.ghost:focus {
+  @apply outline-primary-400/80;
 }
 
 .menu .ghost svg {

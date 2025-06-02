@@ -1,5 +1,12 @@
 import type { FC } from 'react'
-import { Stack } from '@phosphor-icons/react/dist/ssr'
+import {
+  CaretLeft,
+  CaretUp,
+  CaretUpDown,
+  CaretRight,
+  DotsThreeVertical,
+  Stack,
+} from '@phosphor-icons/react/dist/ssr'
 import {
   Button,
   Menu,
@@ -7,17 +14,106 @@ import {
   Link,
   Tooltip,
   PageHeader,
+  Dropdown,
 } from '@/stratus/components'
 import { IPageProps } from '@/types'
+
+const DropdownMenu = () => (
+  <Menu className="min-w-52">
+    <Text variant="label" theme="muted">
+      Section label
+    </Text>
+    <Button>
+      Option <Stack />
+    </Button>
+    <Button>Option</Button>
+    <Dropdown
+      id="sub-dropdown"
+      buttonText="Sub menu"
+      position="beside"
+      alignment="right"
+      icon={<CaretRight />}
+    >
+      <Menu className="min-w-52">
+        <Text variant="label" theme="muted">
+          Section label
+        </Text>
+        <Button>Option</Button>
+        <Button>Option</Button>
+        <Dropdown
+          id="sub-sub-dropdown"
+          buttonText="Sub menu"
+          position="beside"
+          alignment="right"
+          icon={<CaretRight />}
+        >
+          <Menu className="min-w-52">
+            <Text variant="label" theme="muted">
+              Section label
+            </Text>
+            <Button>Option</Button>
+            <Button>Option</Button>
+            <Dropdown
+              id="sub-sub-sub-dropdown"
+              buttonText="Sub menu"
+              position="beside"
+              alignment="right"
+              icon={<CaretRight />}
+            >
+              <Menu className="min-w-52">
+                <Text variant="label" theme="muted">
+                  Section label
+                </Text>
+                <Button>Option</Button>
+                <Button>Option</Button>
+                <Button>Option</Button>
+                <hr />
+                <Text variant="label" theme="muted">
+                  Section label
+                </Text>
+                <Button>Option</Button>
+              </Menu>
+            </Dropdown>
+            <hr />
+            <Text variant="label" theme="muted">
+              Section label
+            </Text>
+            <Button>Option</Button>
+          </Menu>
+        </Dropdown>
+        <hr />
+        <Text variant="label" theme="muted">
+          Section label
+        </Text>
+        <Button>Option</Button>
+      </Menu>
+    </Dropdown>
+
+    <hr />
+
+    <Text variant="label" theme="muted">
+      Section label
+    </Text>
+    <Button>Option</Button>
+    <Button>Option</Button>
+    <Button>Option</Button>
+    <hr />
+    <Text variant="label" theme="muted">
+      Section label
+    </Text>
+    <Link href="#">Option</Link>
+  </Menu>
+)
 
 const StratusDasboard: FC<IPageProps<'org-id'>> = () => {
   return (
     <div className="flex flex-col gap-4 p-4 overflow-auto">
-      <PageHeader className="bg-red-600">
-        <Text variant="h1" weight="stronger" theme="muted">
-          work
+      <PageHeader>
+        <Text variant="h1" weight="stronger">
+          Page header
         </Text>
       </PageHeader>
+
       <Text variant="h1" weight="stronger">
         Menu
       </Text>
@@ -39,13 +135,89 @@ const StratusDasboard: FC<IPageProps<'org-id'>> = () => {
           </Text>
           <Button>Option</Button>
           <Button>Option</Button>
-          <Button>Option</Button>
           <hr />
           <Text variant="label" theme="muted">
             Remove
           </Text>
           <Link href="#">Option</Link>
         </Menu>
+      </div>
+
+      <Text variant="h1" weight="stronger">
+        Dropdown
+      </Text>
+      <div className="flex gap-4">
+        <Dropdown id="dropdown" buttonText="Dropdown below left">
+          <DropdownMenu />
+        </Dropdown>
+
+        <Dropdown
+          alignment="right"
+          id="dropdown"
+          buttonText="Dropdown below right"
+        >
+          <DropdownMenu />
+        </Dropdown>
+
+        <Dropdown
+          id="dropdown"
+          buttonText="Dropdown ablove left"
+          position="above"
+          icon={<CaretUp />}
+        >
+          <DropdownMenu />
+        </Dropdown>
+
+        <Dropdown
+          id="dropdown"
+          buttonText="Dropdown above right"
+          alignment="right"
+          position="above"
+          icon={<CaretUp />}
+        >
+          <DropdownMenu />
+        </Dropdown>
+      </div>
+
+      <div className="flex gap-4">
+        <Dropdown
+          alignment="right"
+          id="dropdown"
+          buttonText="Dropdown beside right"
+          position="beside"
+          icon={<CaretRight />}
+        >
+          <DropdownMenu />
+        </Dropdown>
+
+        <Dropdown
+          id="dropdown"
+          buttonText="Dropdown beside left"
+          position="beside"
+          icon={<CaretLeft />}
+          iconAlignment="left"
+        >
+          <DropdownMenu />
+        </Dropdown>
+
+        <Dropdown
+          id="dropdown"
+          buttonText="Dropdown overlay"
+          position="overlay"
+          alignment="overlay"
+          icon={<CaretUpDown />}
+        >
+          <DropdownMenu />
+        </Dropdown>
+
+        <Dropdown
+          id="dropdown"
+          buttonClassName="!p-2"
+          buttonText={<DotsThreeVertical />}
+          hideIcon
+        >
+          <DropdownMenu />
+        </Dropdown>
       </div>
 
       <Text variant="h1" weight="stronger">
