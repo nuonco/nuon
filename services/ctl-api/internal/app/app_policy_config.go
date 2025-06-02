@@ -12,12 +12,19 @@ import (
 type AppPolicyType string
 
 const (
-	AppPolicyTypeKubernetesClusterKyverno string = "kubernetes_cluster"
+	AppPolicyTypeKubernetesClusterKyverno AppPolicyType = "kubernetes_cluster"
 
-	AppPolicyTypeTerraformDeployRunnerJobKyverno string = "runner_job_terraform_deploy"
-	AppPolicyTypeHelmDeployRunnerJobKyverno      string = "runner_job_helm_deploy"
-	AppPolicyTypeActionWorkflowRunnerJobKyverno  string = "runner_job_action_workflow"
+	AppPolicyTypeTerraformDeployRunnerJobKyverno AppPolicyType = "runner_job_terraform_deploy"
+	AppPolicyTypeHelmDeployRunnerJobKyverno      AppPolicyType = "runner_job_helm_deploy"
+	AppPolicyTypeActionWorkflowRunnerJobKyverno  AppPolicyType = "runner_job_action_workflow"
 )
+
+var AllPolicyTypes []AppPolicyType = []AppPolicyType{
+	AppPolicyTypeKubernetesClusterKyverno,
+	AppPolicyTypeTerraformDeployRunnerJobKyverno,
+	AppPolicyTypeHelmDeployRunnerJobKyverno,
+	AppPolicyTypeActionWorkflowRunnerJobKyverno,
+}
 
 type AppPolicyConfig struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`

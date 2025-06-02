@@ -66,6 +66,10 @@ type Component struct {
 }
 
 func (c *Component) parse() error {
+	if c == nil {
+		return nil
+	}
+
 	if c.HelmChart != nil {
 		if err := c.HelmChart.Parse(); err != nil {
 			return err

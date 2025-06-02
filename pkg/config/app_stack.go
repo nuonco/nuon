@@ -1,8 +1,6 @@
 package config
 
 import (
-	"context"
-
 	"github.com/invopop/jsonschema"
 )
 
@@ -23,6 +21,6 @@ func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "runner_nested_template_url", "Nested template used for runner.")
 }
 
-func (a *StackConfig) parse(context.Context) error {
+func (a *StackConfig) parse() error {
 	return nil
 }

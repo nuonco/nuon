@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -78,12 +79,28 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 
 	// verify component is set for component dependency
 	for _, trigger := range c.Triggers {
-		if trigger.Type == app.ActionWorkflowTriggerTypePostDeployComponent || trigger.Type == app.ActionWorkflowTriggerTypePreDeployComponent {
+		if !generics.SliceContains(app.ActionWorkflowTriggerType(trigger.Type), app.AllActionWorkflowTriggerTypes) {
+			return stderr.ErrUser{
+				Err: fmt.Errorf("invalid trigger type %s", trigger.Type),
+				Description: fmt.Sprintf("trigger type must be one of (%s)",
+					strings.Join(generics.ToStringSlice(app.AllActionWorkflowTriggerTypes), ", ")),
+			}
+		}
+
+		if generics.SliceContains(app.ActionWorkflowTriggerType(trigger.Type), app.AllActionWorkflowComponentTriggerTypes) {
 			if trigger.ComponentName == "" {
 				return stderr.ErrUser{
 					Err:         errors.New(fmt.Sprintf("component_name must be set on %s trigger", trigger.Type)),
 					Description: fmt.Sprintf("component_name must be set on %s trigger", trigger.Type),
 				}
+			}
+		}
+
+		if trigger.ComponentName != "" && !generics.SliceContains(app.ActionWorkflowTriggerType(trigger.Type), app.AllActionWorkflowComponentTriggerTypes) {
+			return stderr.ErrUser{
+				Err: errors.New(fmt.Sprintf("component_name not supported for %s trigger", trigger.Type)),
+				Description: fmt.Sprintf("component_name only available for (%s) triggers",
+					strings.Join(generics.ToStringSlice(app.AllActionWorkflowComponentTriggerTypes), ", ")),
 			}
 		}
 	}

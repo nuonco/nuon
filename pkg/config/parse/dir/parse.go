@@ -68,17 +68,21 @@ func (p *parser) parse(ctx context.Context) error {
 			}
 
 			obj := reflect.New(elemType).Interface()
-			err := p.parseFile(fieldOpts.Name, obj, fieldOpts.Required, fieldOpts.Nonempty)
+			parsed, err := p.parseFile(fieldOpts.Name, obj)
 			if err != nil {
 				return errors.Wrap(err, "unable to load file for "+fieldOpts.Name)
 			}
 
-			if fieldValue.CanSet() {
+			if !parsed {
+				continue
+			}
+
+			if fieldValue.CanSet() && !reflect.ValueOf(obj).IsZero() {
 				fieldValue.Set(reflect.ValueOf(obj))
 			}
 		}
 		if field.Type.Kind() == reflect.Slice {
-			objs, err := p.parseDir(fieldOpts.Name, field.Type, fieldOpts.Required, fieldOpts.Nonempty)
+			objs, err := p.parseDir(fieldOpts.Name, field.Type)
 			if err != nil {
 				return errors.Wrap(err, "unable to load subdir "+fieldOpts.Name)
 			}
