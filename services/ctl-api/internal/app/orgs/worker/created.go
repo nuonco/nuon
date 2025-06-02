@@ -24,6 +24,7 @@ func (w *Workflows) Created(ctx workflow.Context, sreq signals.RequestSignal) er
 		"org_name":   org.Name,
 		"created_by": org.CreatedBy.Email,
 		"email":      org.CreatedBy.Email,
+		"org_url":    fmt.Sprintf("%s/%s", w.cfg.AppURL, org.ID),
 	})
 
 	w.analytics.Track(ctx, events.OrgCreated, map[string]interface{}{
