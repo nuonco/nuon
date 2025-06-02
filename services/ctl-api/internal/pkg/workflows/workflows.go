@@ -4,6 +4,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow"
 )
 
 type WorkflowParams struct {
@@ -14,6 +15,7 @@ type WorkflowParams struct {
 
 type Workflows struct {
 	jobWorkflows *job.Workflows
+	workflowWorkflows *workflow.Workflows
 }
 
 func (w *Workflows) AllWorkflows() []interface{} {

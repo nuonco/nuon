@@ -1,0 +1,116 @@
+package flow
+
+import (
+	"encoding/json"
+
+	"github.com/pkg/errors"
+	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status"
+	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
+)
+
+func (c *FlowConductor[DomainSignal]) executeStep(ctx workflow.Context, req eventloop.EventLoopRequest, step *app.FlowStep) error {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return nil
+	}
+
+	defer func() {
+		// NOTE(jm): this should be a helper function.
+		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
+			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer cancelCtxCancel()
+
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
+				ID: step.ID,
+				Status: app.CompositeStatus{
+					Status: app.StatusCancelled,
+				},
+			}); err != nil {
+				l.Error("unable to update step status on cancellation", zap.Error(err))
+			}
+		}
+	}()
+
+	if err := activities.AwaitUpdateFlowStepStartedAtByID(ctx, step.ID); err != nil {
+		return err
+	}
+	defer func() {
+		if err := activities.AwaitUpdateFlowStepFinishedAtByID(ctx, step.ID); err != nil {
+			l.Error("unable to update finished at", zap.Error(err))
+		}
+	}()
+
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: step.ID,
+		Status: app.CompositeStatus{
+			Status: app.StatusInProgress,
+		},
+	}); err != nil {
+		return err
+	}
+
+	if step.ExecutionType == app.FlowStepExecutionTypeSkipped {
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status: app.StatusSuccess,
+			},
+		}); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	var sig DomainSignal
+	if err := json.Unmarshal(step.Signal.SignalJSON, &sig); err != nil {
+		return c.handleStepErr(ctx, step.ID, err)
+	}
+
+	ctx = cctx.SetFlowContextWithinWorkflow(ctx, &app.FlowContext{
+		// ID:         step.FlowID, // TODO(sdboyer) REFACTOR
+		ID:         step.InstallWorkflowID,
+		FlowStepID: &step.ID,
+		StepName:   &step.Name,
+	})
+
+	// TODO(sdboyer) abstract actual dispatch of the signal into here once we can, then remove ExecFn completely
+	err = c.ExecFn(ctx, req, sig, *step)
+	if err != nil {
+		return c.handleStepErr(ctx, step.ID, errors.Wrapf(err, "error executing step %s", step.Name))
+	}
+
+	// update the status at the end
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: step.ID,
+		Status: app.CompositeStatus{
+			Status: app.StatusSuccess,
+		},
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *FlowConductor[DomainSignal]) handleStepErr(ctx workflow.Context, stepID string, err error) error {
+	if statusErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: stepID,
+		Status: app.CompositeStatus{
+			Status: app.StatusError,
+			Metadata: map[string]any{
+				"err_message": err.Error(),
+			},
+		},
+	}); statusErr != nil {
+		return status.WrapStatusErr(err, statusErr)
+	}
+
+	return err
+}
