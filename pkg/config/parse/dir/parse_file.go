@@ -45,50 +45,38 @@ func (e ErrParseFile) Unwrap() error {
 	return e.Err
 }
 
-func (p *parser) parseFile(path string, obj any, required, nonempty bool) error {
+func (p *parser) parseFile(path string, obj any) (bool, error) {
 	if !strings.HasSuffix(path, p.opts.Ext) {
 		path = path + p.opts.Ext
 	}
 
 	exists, err := p.fs.Exists(path)
 	if err != nil {
-		return errors.Wrap(err, "unable to check that file exists")
+		return false, errors.Wrap(err, "unable to check that file exists")
 	}
 	if !exists {
-		if required {
-			return ErrMissingFile{
-				Name: path,
-			}
-		}
-
-		return nil
+		return false, nil
 	}
 
 	empty, err := afero.IsEmpty(p.fs, path)
 	if err != nil {
-		return errors.Wrap(err, "unable to check that file is empty")
+		return false, errors.Wrap(err, "unable to check that file is empty")
 	}
 	if empty {
-		if nonempty {
-			return ErrEmptyFile{
-				Name: path,
-			}
-		}
-
-		return nil
+		return false, nil
 	}
 
 	fh, err := p.fs.Open(path)
 	if err != nil {
-		return errors.Wrap(err, "unable to open path")
+		return false, errors.Wrap(err, "unable to open path")
 	}
 
 	if err := p.opts.ParserFn(fh, path, obj); err != nil {
-		return ErrParseFile{
+		return false, ErrParseFile{
 			Err:  err,
 			Name: path,
 		}
 	}
 
-	return nil
+	return true, nil
 }

@@ -11,9 +11,6 @@ import (
 )
 
 type ActionConfig struct {
-	// Deprecated
-	Source string `mapstructure:"source,omitempty"`
-
 	Name     string                 `mapstructure:"name" jsonschema:"required"`
 	Timeout  string                 `mapstructure:"timeout,omitempty"`
 	Triggers []*ActionTriggerConfig `mapstructure:"triggers" jsonschema:"required"`
@@ -44,6 +41,10 @@ type ActionStepConfig struct {
 }
 
 func (a *ActionConfig) parse() error {
+	if a == nil {
+		return nil
+	}
+
 	if a.Timeout != "" {
 		_, err := time.ParseDuration(a.Timeout)
 		if err != nil {

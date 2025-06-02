@@ -5,6 +5,8 @@ import (
 )
 
 type AppAWSIAMRole struct {
+	Type string `mapstructure:"type"`
+
 	Name        string            `mapstructure:"name" jsonschema:"required" features:"template"`
 	Description string            `mapstructure:"description" jsonschema:"required" features:"template"`
 	DisplayName string            `mapstructure:"display_name,omitempty" features:"template"`
@@ -14,6 +16,7 @@ type AppAWSIAMRole struct {
 }
 
 func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
+	addDescription(schema, "type", "Used when defining permissions in a directory. Must be one of provision, maintenance, deprovision")
 	addDescription(schema, "name", "Name used for the role, this can be templated using standard template variables.")
 	addDescription(schema, "description", "Human readable description which is rendered in the installer.")
 	addDescription(schema, "display_name", "Human readable name which is rendered in the installer.")

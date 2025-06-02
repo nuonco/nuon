@@ -11,32 +11,33 @@ import (
 func (s *sync) shouldSkipBuildDueToChecksum(ctx context.Context, compID, newChecksum string) (bool, string, error) {
 	// Get the latest build to check its status
 	cmpBuild, err := s.apiClient.GetComponentLatestBuild(ctx, compID)
-	if err != nil && !nuon.IsNotFound(err) {
-		return false, "", err
-	}
-
-	// Don't do checksum comparison if the latest build failed
-	doChecksumCompare := true
-	if cmpBuild != nil && cmpBuild.Status == "error" {
-		doChecksumCompare = false
-	}
-
-	cmpLatestConfig, err := s.apiClient.GetComponentLatestConfig(ctx, compID)
 	if err != nil {
+		// if no build was found, attempt to build
+		if nuon.IsNotFound(err) {
+			return false, "", nil
+		}
+
 		return false, "", err
 	}
 
-	if cmpLatestConfig == nil {
+	// if previous build failed, attempt to build again
+	if cmpBuild.Status == "error" {
 		return false, "", nil
 	}
 
-	if doChecksumCompare {
-		if err != nil {
-			return false, "", err
+	// grab the latest config
+	cmpLatestConfig, err := s.apiClient.GetComponentLatestConfig(ctx, compID)
+	if err != nil {
+		if nuon.IsNotFound(err) {
+			return false, "", nil
 		}
-		if cmpLatestConfig.Checksum == newChecksum {
-			return true, cmpLatestConfig.ID, nil
-		}
+
+		return false, "", err
+	}
+
+	// if the new checksum equals the old one, skip
+	if cmpLatestConfig.Checksum == newChecksum {
+		return true, cmpLatestConfig.ID, nil
 	}
 
 	return false, "", nil

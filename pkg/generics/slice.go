@@ -30,7 +30,16 @@ func SliceContains[T comparable](val T, vals []T) bool {
 	return false
 }
 
-func ToStringSlice(vals []interface{}) []string {
+func ToStringSlice[T any](vals []T) []string {
+	strVals := make([]string, len(vals))
+	for idx, val := range vals {
+		strVals[idx] = fmt.Sprint(val)
+	}
+
+	return strVals
+}
+
+func IntSliceToStringSlice(vals []interface{}) []string {
 	strVals := make([]string, len(vals))
 	for idx, val := range vals {
 		strVal, ok := val.(string)

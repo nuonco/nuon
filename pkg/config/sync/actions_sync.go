@@ -11,6 +11,12 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
+// rewrite the following trigger types for backwards compability
+var rewriteTriggerTypes map[string]string = map[string]string{
+	"pre-component-deploy":  "pre-deploy-component",
+	"post-component-deploy": "post-deploy-component",
+}
+
 func (s *sync) syncAction(ctx context.Context, resource string, action *config.ActionConfig) (string, string, error) {
 	isNew := false
 	actionWorkflow, err := s.apiClient.GetAppActionWorkflow(ctx, s.appID, action.Name)
@@ -64,15 +70,20 @@ func (s *sync) syncAction(ctx context.Context, resource string, action *config.A
 	}
 
 	for _, trigger := range action.Triggers {
+		// TODO(jm): remove this once we finish rolling out all new trigger types
+		typ := trigger.Type
+		if _, ok := rewriteTriggerTypes[typ]; ok {
+			typ = rewriteTriggerTypes[typ]
+		}
+
 		request.Triggers = append(request.Triggers, &models.ServiceCreateActionWorkflowConfigTriggerRequest{
-			Type:          models.NewAppActionWorkflowTriggerType(models.AppActionWorkflowTriggerType(trigger.Type)),
+			Type:          models.NewAppActionWorkflowTriggerType(models.AppActionWorkflowTriggerType(typ)),
 			CronSchedule:  trigger.CronSchedule,
 			ComponentName: trigger.ComponentName,
 		})
 	}
 
 	for _, step := range action.Steps {
-
 		reqStep := &models.ServiceCreateActionWorkflowConfigStepRequest{
 			Name:           generics.ToPtr(step.Name),
 			EnvVars:        step.EnvVarMap,

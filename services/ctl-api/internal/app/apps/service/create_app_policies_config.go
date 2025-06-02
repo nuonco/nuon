@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
@@ -40,6 +42,15 @@ type AppPolicyConfig struct {
 func (c *CreateAppPoliciesConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
+	}
+
+	for _, policy := range c.Policies {
+		if !generics.SliceContains(policy.Type, app.AllPolicyTypes) {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("policy type must be one of (%s)", strings.Join(generics.ToStringSlice(app.AllPolicyTypes), ",")),
+				Description: "invalid policy type " + string(policy.Type),
+			}
+		}
 	}
 
 	return nil
