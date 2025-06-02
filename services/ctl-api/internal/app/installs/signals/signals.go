@@ -39,6 +39,7 @@ const (
 
 	// the following will be sent to a different namespace
 	OperationExecuteWorkflow eventloop.SignalType = "execute-workflow"
+	OperationExecuteFlow     eventloop.SignalType = "execute-flow"
 
 	// the following signals will be deprecated with workflows
 	OperationDeploy             eventloop.SignalType = "deploy"
@@ -81,6 +82,7 @@ type Signal struct {
 	ActionWorkflowRunID string `validate:"required_if=Operation action_workflow_run" json:"action_workflow_run_id"`
 	ForceDelete         bool   `json:"force_delete"`
 	InstallWorkflowID   string `validate:"required_if=Operation execute_workflow"`
+	FlowID              string `validate:"required_if=Operation execute_flow"`
 
 	// used for triggering an action workflow
 	InstallActionWorkflowTrigger      InstallActionWorkflowTriggerSubSignal `json:"install_action_workflow_trigger"`
@@ -91,6 +93,8 @@ type Signal struct {
 	// used for executing an install workflow
 	WorkflowStepID   string `json:"install_workflow_step_id"`
 	WorkflowStepName string `json:"install_workflow_step_name"`
+	FlowStepID       string `json:"flow_step_id"`
+	FlowStepName     string `json:"flow_step_name"`
 
 	// used for awaiting the run
 	InstallCloudFormationStackVersionID string `json:"install_cloud_formation_stack_version_id"`
