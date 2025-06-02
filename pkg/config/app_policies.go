@@ -16,9 +16,18 @@ func (a *PoliciesConfig) parse() error {
 	return nil
 }
 
+type AppPolicyType string
+
+const (
+	AppPolicyTypeKubernetesClusterKyverno        AppPolicyType = "kubernetes_cluster"
+	AppPolicyTypeTerraformDeployRunnerJobKyverno AppPolicyType = "runner_job_terraform_deploy"
+	AppPolicyTypeHelmDeployRunnerJobKyverno      AppPolicyType = "runner_job_helm_deploy"
+	AppPolicyTypeActionWorkflowRunnerJobKyverno  AppPolicyType = "runner_job_action_workflow"
+)
+
 type AppPolicy struct {
-	Type     string `mapstructure:"type"`
-	Contents string `mapstructure:"contents" features:"get,template"`
+	Type     AppPolicyType `mapstructure:"type"`
+	Contents string        `mapstructure:"contents" features:"get,template"`
 }
 
 func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {

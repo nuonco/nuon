@@ -10,6 +10,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
@@ -35,8 +36,8 @@ func (c CreateAppPoliciesConfigRequest) getPolicies(appID, appConfigID string) [
 }
 
 type AppPolicyConfig struct {
-	Type     app.AppPolicyType `json:"type" validate:"required"`
-	Contents string            `json:"contents" validate:"required" swaggertype:"string"`
+	Type     config.AppPolicyType `json:"type" validate:"required"`
+	Contents string               `json:"contents" validate:"required" swaggertype:"string"`
 }
 
 func (c *CreateAppPoliciesConfigRequest) Validate(v *validator.Validate) error {
