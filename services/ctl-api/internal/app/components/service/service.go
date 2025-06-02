@@ -59,6 +59,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	// get a component's dependencies
 	api.GET("/v1/components/:component_id/dependencies", s.GetComponentDependencies)
+	api.GET("/v1/components/:component_id/dependents", s.GetComponentDependents)
 
 	// create component configurations
 	api.POST("/v1/components/:component_id/configs/terraform-module", s.CreateTerraformModuleComponentConfig)
