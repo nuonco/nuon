@@ -30,6 +30,7 @@ func (w *Workflows) InviteUser(ctx workflow.Context, sreq signals.RequestSignal)
 		"email":      orgInvite.Email,
 		"org_name":   org.Name,
 		"created_by": orgInvite.CreatedBy.Email,
+		"login_url":  fmt.Sprintf("%s/api/auth/login", w.cfg.AppURL),
 	})
 	return nil
 }
