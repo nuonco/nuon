@@ -14,7 +14,7 @@ func Validate(ctx context.Context, obj *config.AppConfig) ([]gojsonschema.Result
 		return nil, err
 	}
 
-	schma, err := AppSchemaFlat()
+	schma, err := AppConfigSchema()
 	if err != nil {
 		return nil, err
 	}
@@ -26,8 +26,6 @@ func Validate(ctx context.Context, obj *config.AppConfig) ([]gojsonschema.Result
 	if err != nil {
 		return nil, err
 	}
-
-
 
 	return res.Errors(), nil
 }

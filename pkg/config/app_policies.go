@@ -1,8 +1,6 @@
 package config
 
 import (
-	"context"
-
 	"github.com/invopop/jsonschema"
 )
 
@@ -14,7 +12,7 @@ func (a PoliciesConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "policy", "List of policies to enforce.")
 }
 
-func (a *PoliciesConfig) parse(context.Context) error {
+func (a *PoliciesConfig) parse() error {
 	return nil
 }
 
@@ -28,6 +26,6 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "contents", "The policy contents. Supports any reference via https://github.com/hashicorp/go-getter.")
 }
 
-func (a *AppPolicy) parse(ctx context.Context) error {
+func (a *AppPolicy) parse() error {
 	return nil
 }

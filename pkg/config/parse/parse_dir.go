@@ -94,6 +94,10 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 	}
 
 	for _, cmp := range appCfg.Components {
+		if cmp == nil {
+			continue
+		}
+
 		if checksum, ok := checksums[cmp.Name]; ok {
 			cmp.Checksum = checksum
 		}

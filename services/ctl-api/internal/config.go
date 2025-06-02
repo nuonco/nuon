@@ -51,6 +51,7 @@ func init() {
 	config.RegisterDefault("org_runner_helm_chart_dir", "/bundle/helm")
 
 	config.RegisterDefault("aws_cloudformation_stack_template_bucket_region", "us-east-1")
+	config.RegisterDefault("org_creation_email_allow_list", "nuon.co")
 }
 
 type Config struct {
@@ -167,6 +168,9 @@ type Config struct {
 	DNSManagementIAMRoleARN string `config:"dns_management_iam_role_arn" validate:"required"`
 	DNSZoneID               string `config:"dns_zone_id" validate:"required"`
 	DNSRootDomain           string `config:"dns_root_domain" validate:"required"`
+
+	// support for handling org creation
+	OrgCreationEmailAllowList string `config:"org_creation_email_allow_list"`
 
 	// analytics configuration
 	SegmentWriteKey  string `config:"segment_write_key" validate:"required"`
