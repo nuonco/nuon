@@ -100,6 +100,30 @@ func (a *AppConfig) Parse() error {
 			a.Inputs.parse,
 		})
 	}
+	if a.Permissions != nil {
+		parseFns = append(parseFns, parseFn{
+			"permissions",
+			a.Permissions.parse,
+		})
+	}
+	if a.Secrets != nil {
+		parseFns = append(parseFns, parseFn{
+			"secrets",
+			a.Secrets.parse,
+		})
+	}
+	if a.Policies != nil {
+		parseFns = append(parseFns, parseFn{
+			"policies",
+			a.Policies.parse,
+		})
+	}
+	if a.Stack != nil {
+		parseFns = append(parseFns, parseFn{
+			"stack",
+			a.Stack.parse,
+		})
+	}
 
 	for idx, action := range a.Actions {
 		parseFns = append(parseFns, parseFn{

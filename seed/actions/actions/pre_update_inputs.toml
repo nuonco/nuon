@@ -1,0 +1,19 @@
+name = "Pre Update Inputs"
+timeout = "30s"
+
+[[triggers]]
+type = "pre-update-inputs"
+
+# echo something out
+[[steps]]
+name = "echo"
+command = "echo 'pre update inputs'"
+
+[steps.env_vars]
+TEST_NUON_VAR = "{{.nuon.install.id}}"
+
+[[steps]]
+name = "env"
+command = "env"
+
+

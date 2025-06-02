@@ -1,0 +1,26 @@
+type = "deprovision"
+name = "{{.nuon.install.id}}-deprovision"
+description = "deprovision"
+display_name = "deprovision"
+permissions_boundary = ""
+
+[[policies]]
+managed_policy_name = "AdministratorAccess"
+
+[[policies]]
+name = "remove-secrets-manager"
+contents = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenySecretsManagerAccess",
+            "Effect": "Deny",
+            "Action": [
+                "secretsmanager:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+"""

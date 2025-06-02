@@ -20,7 +20,7 @@ func (s *Service) Parse(ctx context.Context, file string) {
 		return
 	}
 
-	if err := s.parse(ctx, parse.File{
+	if err := s.parse(parse.File{
 		AppName: appName,
 		Path:    file,
 	}); err != nil {
@@ -28,8 +28,8 @@ func (s *Service) Parse(ctx context.Context, file string) {
 	}
 }
 
-func (s *Service) parse(ctx context.Context, file parse.File) error {
-	cfg, err := s.loadConfig(ctx, file.Path)
+func (s *Service) parse(file parse.File) error {
+	cfg, err := s.loadConfig(file.Path)
 	if err != nil {
 		ui.PrintError(err)
 		return err

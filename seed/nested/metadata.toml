@@ -1,0 +1,5 @@
+version = "v2"
+
+description = "Nested app with all nested configurations"
+display_name = "Nested"
+readme       = "./readme.md"

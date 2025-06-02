@@ -1,0 +1,17 @@
+name = "Pre Reprovision"
+timeout = "30s"
+
+[[triggers]]
+type = "pre-reprovision"
+
+# echo something out
+[[steps]]
+name = "echo"
+command = "echo 'pre reprovision'"
+
+[steps.env_vars]
+TEST_NUON_VAR = "{{.nuon.install.id}}"
+
+[[steps]]
+name = "env"
+command = "env"

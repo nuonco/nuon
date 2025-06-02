@@ -1,0 +1,21 @@
+name = "Pre Teardown All Components"
+timeout = "30s"
+
+[[triggers]]
+type = "post-teardown-all-components"
+
+# echo something out
+[[steps]]
+name = "echo"
+command = "echo 'pre teardown all components'"
+
+[steps.env_vars]
+TEST_NUON_VAR = "{{.nuon.install.id}}"
+
+[[steps]]
+name = "env"
+command = "env"
+
+
+
+

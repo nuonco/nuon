@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	outputsEnvVar string = "NUON_ACTIONS_OUTPUT_FILEPATH"
-	rootEnvVar           = "NUON_ACTIONS_ROOT"
+	outputsEnvVar       string = "NUON_ACTIONS_OUTPUT_FILEPATH"
+	rootEnvVar                 = "NUON_ACTIONS_ROOT"
+	hasKubeConfigEnvVar string = "NUON_KUBECONFIG_ENABLED"
 )
 
 func (h *handler) getBuiltInEnv(ctx context.Context, cfg *models.AppActionWorkflowStepConfig) (map[string]string, error) {
@@ -30,6 +31,9 @@ func (h *handler) getBuiltInEnv(ctx context.Context, cfg *models.AppActionWorkfl
 		}
 
 		env[config.DefaultKubeConfigEnvVar] = path
+		env[hasKubeConfigEnvVar] = "true"
+	} else {
+		env[hasKubeConfigEnvVar] = "false"
 	}
 
 	if h.state.plan.AWSAuth != nil {

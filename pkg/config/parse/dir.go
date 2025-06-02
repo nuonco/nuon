@@ -1,6 +1,8 @@
 package parse
 
 import (
+	"errors"
+
 	"github.com/powertoolsdev/mono/pkg/config"
 )
 
@@ -9,35 +11,145 @@ import (
 // This will be removed and we will pass the `config.AppConfig` into the directory parser once we have time to remove
 // the old version.
 type ConfigDir struct {
-	Components []*config.Component    `name:"components,nonempty"`
-	Actions    []*config.ActionConfig `name:"actions,nonempty"`
+	Components []*config.Component    `name:"components"`
+	Actions    []*config.ActionConfig `name:"actions"`
 
-	BreakGlass *config.BreakGlass      `name:"break_glass,nonempty"`
-	Installer  *config.InstallerConfig `name:"installer,nonempty"`
-	Policies   *config.PoliciesConfig  `name:"policies,nonempty"`
-	Secrets    *config.SecretsConfig   `name:"secrets,nonempty"`
-	Inputs     *config.AppInputConfig  `name:"inputs,nonempty"`
+	Policies    *config.PoliciesConfig `name:"policies"`
+	PoliciesDir []config.AppPolicy     `name:"policies"`
 
-	Stack       *config.StackConfig       `name:"stack,nonempty"`
-	Sandbox     *config.AppSandboxConfig  `name:"sandbox,required,nonempty"`
-	Runner      *config.AppRunnerConfig   `name:"runner,required,nonempty"`
-	Metadata    *config.MetadataConfig    `name:"metadata,required,nonempty"`
-	Permissions *config.PermissionsConfig `name:"permissions,required,nonempty"`
+	Secrets    *config.SecretsConfig `name:"secrets"`
+	SecretsDir []*config.AppSecret   `name:"secrets"`
+
+	Inputs         *config.AppInputConfig `name:"inputs"`
+	InputsDir      []config.AppInput      `name:"inputs"`
+	InputGroupsDir []config.AppInputGroup `name:"input_groups"`
+
+	Permissions    *config.PermissionsConfig `name:"permissions"`
+	PermissionsDir []*config.AppAWSIAMRole   `name:"permissions"`
+
+	BreakGlass    *config.BreakGlass      `name:"break_glass"`
+	BreakGlassDir []*config.AppAWSIAMRole `name:"break_glass"`
+
+	Stack     *config.StackConfig      `name:"stack"`
+	Sandbox   *config.AppSandboxConfig `name:"sandbox"`
+	Runner    *config.AppRunnerConfig  `name:"runner"`
+	Metadata  *config.MetadataConfig   `name:"metadata"`
+	Installer *config.InstallerConfig  `name:"installer"`
+}
+
+func (c *ConfigDir) getPolicies() (*config.PoliciesConfig, error) {
+	if c.Policies == nil && len(c.PoliciesDir) < 1 {
+		return nil, nil
+	}
+	if c.Policies != nil && len(c.PoliciesDir) > 0 {
+		return nil, ParseErr{
+			Description: "Can not provide policies both with a policies.toml and policies/ directory",
+			Err:         errors.New("Can not provide policies both with a policies.toml and policies/ directory"),
+		}
+	}
+
+	if c.Policies != nil {
+		return c.Policies, nil
+	}
+
+	return &config.PoliciesConfig{
+		Policies: c.PoliciesDir,
+	}, nil
+}
+
+func (c *ConfigDir) getSecrets() (*config.SecretsConfig, error) {
+	if c.Secrets == nil && c.SecretsDir == nil {
+		return nil, nil
+	}
+	if c.Secrets != nil && c.SecretsDir != nil {
+		return nil, ParseErr{
+			Description: "Can not provide secrets both with a secrets.toml and secrets/ directory",
+			Err:         errors.New("Can not provide secrets both with a secrets.toml and secrets/ directory"),
+		}
+	}
+
+	if c.Secrets != nil {
+		return c.Secrets, nil
+	}
+
+	return &config.SecretsConfig{
+		Secrets: c.SecretsDir,
+	}, nil
+}
+
+func (c *ConfigDir) getInputs() (*config.AppInputConfig, error) {
+	if c.Inputs == nil && len(c.InputsDir) < 1 && (len(c.InputGroupsDir) < 1 && len(c.InputsDir) < 1) {
+		return nil, nil
+	}
+	if c.Inputs != nil && (len(c.InputsDir) > 0 || len(c.InputGroupsDir) > 0) {
+		return nil, ParseErr{
+			Description: "Can not provide inputs both with a inputs.toml and inputs/ directory",
+			Err:         errors.New("Can not provide inputs both with a inputs.toml and inputs/ directory"),
+		}
+	}
+
+	if c.Inputs != nil {
+		return c.Inputs, nil
+	}
+
+	return &config.AppInputConfig{
+		Inputs: c.InputsDir,
+		Groups: c.InputGroupsDir,
+	}, nil
+}
+
+func (c *ConfigDir) getPermissions() (*config.PermissionsConfig, error) {
+	if c.Permissions == nil && len(c.PermissionsDir) < 1 {
+		return nil, nil
+	}
+
+	if c.Permissions != nil && len(c.PermissionsDir) > 0 {
+		return nil, ParseErr{
+			Description: "Can not provide permissions both with a permissions.toml and permissions/ directory",
+			Err:         errors.New("Can not provide permissions both with a permissions.toml and permissions/ directory"),
+		}
+	}
+
+	if c.Permissions != nil {
+		return c.Permissions, nil
+	}
+
+	return &config.PermissionsConfig{
+		Roles: c.PermissionsDir,
+	}, nil
 }
 
 func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
+	permissions, err := c.getPermissions()
+	if err != nil {
+		return nil, err
+	}
+
+	secrets, err := c.getSecrets()
+	if err != nil {
+		return nil, err
+	}
+	inputs, err := c.getInputs()
+	if err != nil {
+		return nil, err
+	}
+	policies, err := c.getPolicies()
+	if err != nil {
+		return nil, err
+	}
+
 	cfg := &config.AppConfig{
-		Components:          c.Components,
-		Actions:             c.Actions,
-		BreakGlass:          c.BreakGlass,
-		Policies:            c.Policies,
-		Secrets:             c.Secrets,
-		Inputs:              c.Inputs,
-		Installer:           c.Installer,
-		Sandbox:             c.Sandbox,
-		Runner:              c.Runner,
-		Permissions:         c.Permissions,
-		Stack: c.Stack,
+		Components:  c.Components,
+		Actions:     c.Actions,
+		BreakGlass:  c.BreakGlass,
+		Secrets:     secrets,
+		Inputs:      inputs,
+		Installer:   c.Installer,
+		Sandbox:     c.Sandbox,
+		Runner:      c.Runner,
+		Permissions: permissions,
+		Stack:       c.Stack,
+		Policies:    policies,
 
 		// Metadata
 		Version:         c.Metadata.Version,

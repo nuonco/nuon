@@ -1,0 +1,19 @@
+name = "Post Provision"
+timeout = "30s"
+
+[[triggers]]
+type = "post-provision"
+
+# echo something out
+[[steps]]
+name = "echo"
+command = "echo 'post provision'"
+
+[steps.env_vars]
+TEST_NUON_VAR = "{{.nuon.install.id}}"
+
+[[steps]]
+name = "env"
+command = "env"
+
+

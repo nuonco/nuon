@@ -1,0 +1,17 @@
+name = "Post Update Inputs"
+timeout = "30s"
+
+[[triggers]]
+type = "post-update-inputs"
+
+# echo something out
+[[steps]]
+name = "echo"
+command = "echo 'post update inputs'"
+
+[steps.env_vars]
+TEST_NUON_VAR = "{{.nuon.install.id}}"
+
+[[steps]]
+name = "env"
+command = "env"

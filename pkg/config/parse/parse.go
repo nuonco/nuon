@@ -19,7 +19,6 @@ type ParseConfig struct {
 	BackendType   config.BackendType
 	V             *validator.Validate
 	Template      bool
-	Context       config.ConfigContext
 	FileProcessor func(name string, obj map[string]any) map[string]any
 }
 

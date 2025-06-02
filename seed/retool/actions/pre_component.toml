@@ -2,7 +2,7 @@ name = "Pre Component"
 timeout = "30s"
 
 [[triggers]]
-type = "pre-component-deploy"
+type = "pre-deploy-component"
 component_name = "container_image"
 
 # echo something out

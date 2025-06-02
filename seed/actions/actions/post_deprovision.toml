@@ -1,0 +1,17 @@
+name = "Post Deprovision"
+timeout = "30s"
+
+[[triggers]]
+type = "post-deprovision"
+
+# echo something out
+[[steps]]
+name = "echo"
+command = "echo 'post deprovision'"
+
+[steps.env_vars]
+TEST_NUON_VAR = "{{.nuon.install.id}}"
+
+[[steps]]
+name = "env"
+command = "env"

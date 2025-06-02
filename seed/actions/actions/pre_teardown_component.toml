@@ -1,0 +1,20 @@
+name = "Pre Teardown Component"
+timeout = "30s"
+
+[[triggers]]
+type = "post-teardown-component"
+component_name = "container_image"
+
+# echo something out
+[[steps]]
+name = "echo"
+command = "echo 'post component teardown'"
+
+[steps.env_vars]
+TEST_NUON_VAR = "{{.nuon.install.id}}"
+
+[[steps]]
+name = "env"
+command = "env"
+
+

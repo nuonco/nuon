@@ -1,15 +1,17 @@
-name = "Pre Component"
+name = "Pre Reprovision"
 timeout = "30s"
 
 [[triggers]]
-type = "pre-component-deploy"
-component_name = "container_image"
+type = "pre-reprovision"
 
 # echo something out
 [[steps]]
 name = "echo"
-command = "echo 'hello world'"
+command = "echo 'pre reprovision'"
 
 [steps.env_vars]
 TEST_NUON_VAR = "{{.nuon.install.id}}"
 
+[[steps]]
+name = "env"
+command = "env"

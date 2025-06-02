@@ -1,0 +1,17 @@
+name       = "helm_chart"
+type       = "helm_chart"
+chart_name = "app-helm-chart"
+
+namespace = "{{.nuon.install.id}}"
+storage_driver = "configmap"
+
+# define a dependency directly, if you do not use any outputs from it.
+dependencies = ["container_image"]
+
+[connected_repo]
+directory = "charts/helm_configmap"
+repo = "powertoolsdev/mono"
+branch = "main"
+
+[values]
+foo = "bar"

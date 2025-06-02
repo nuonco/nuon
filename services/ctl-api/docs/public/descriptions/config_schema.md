@@ -7,9 +7,10 @@ Return jsonschemas for Nuon configs. These can be used in frontmatter in most ed
 description = "description"
 ```
 
-You can pass in a valid source argument to render within a specific source file:
+You can pass in a valid source argument to render within a specific config file:
 
 - input
+- input-group
 - installer
 - sandbox
 - runner
@@ -18,6 +19,3 @@ You can pass in a valid source argument to render within a specific source file:
 - helm
 - terraform
 - job
-
-By default, the config expects that you are using multiple files and sources. If you are _not_, then pass the
-`?flat=true` param.
