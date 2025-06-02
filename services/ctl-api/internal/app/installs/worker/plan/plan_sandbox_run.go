@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/powertoolsdev/mono/pkg/config"
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/pkg/render"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -274,7 +275,7 @@ func (p *Planner) getPolicies(cfg *app.AppPoliciesConfig) (map[string]string, er
 	obj := make(map[string]string, 0)
 
 	for idx, policy := range cfg.Policies {
-		if policy.Type != app.AppPolicyType(app.AppPolicyTypeKubernetesClusterKyverno) {
+		if policy.Type != config.AppPolicyType(config.AppPolicyTypeKubernetesClusterKyverno) {
 			continue
 		}
 
