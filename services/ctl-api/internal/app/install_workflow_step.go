@@ -113,3 +113,50 @@ func (r *InstallWorkflowStep) AfterQuery(tx *gorm.DB) error {
 	r.Finished = !r.FinishedAt.IsZero()
 	return nil
 }
+
+// Dual-write install workflows to flows.
+// func (i *InstallWorkflowStep) AfterCreate(tx *gorm.DB) error {
+// 	return errors.Wrap(tx.Create(i.TransformToFlowStep()).Error, "failed dual-write to flows after create")
+// }
+
+// func (i *InstallWorkflowStep) AfterUpdate(tx *gorm.DB) error {
+// 	fls := i.TransformToFlowStep()
+// 	return errors.Wrap(tx.Model(&FlowStep{
+// 		ID: fls.ID,
+// 	}).Updates(fls).Error, "failed dual-write to flows after save")
+// }
+
+// func (i *InstallWorkflowStep) AfterDelete(tx *gorm.DB) error {
+// 	return errors.Wrap(tx.Delete(i.TransformToFlowStep()).Error, "failed dual-write to flows after delete")
+// }
+
+// func (r *InstallWorkflowStep) TransformToFlowStep() *FlowStep {
+// 	return &FlowStep{
+// 		ID:               strings.Replace(r.ID, "iws", "fls", 1),
+// 		CreatedByID:      r.CreatedByID,
+// 		CreatedBy:        r.CreatedBy,
+// 		CreatedAt:        r.CreatedAt,
+// 		UpdatedAt:        r.UpdatedAt,
+// 		DeletedAt:        r.DeletedAt,
+// 		OrgID:            r.OrgID,
+// 		Org:              r.Org,
+// 		OwnerID:          r.OwnerID,
+// 		OwnerType:        r.OwnerType,
+// 		FlowID:           strings.Replace(r.InstallWorkflowID, "inw", "flw", 1),
+// 		Status:           r.Status,
+// 		Name:             r.Name,
+// 		Signal:           r.Signal,
+// 		Idx:              r.Idx,
+// 		ExecutionType:    FlowStepExecutionType(r.ExecutionType),
+// 		StepTargetID:     r.StepTargetID,
+// 		StepTargetType:   r.StepTargetType,
+// 		Metadata:         r.Metadata,
+// 		StartedAt:        r.StartedAt,
+// 		FinishedAt:       r.FinishedAt,
+// 		Finished:         r.Finished,
+// 		Approval:         r.Approval,
+// 		PolicyValidation: r.PolicyValidation,
+// 		ExecutionTime:    r.ExecutionTime,
+// 		Links:            r.Links,
+// 	}
+// }

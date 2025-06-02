@@ -166,6 +166,22 @@ func NewInstallWorkflowStepApprovalResponseID() string {
 	return shortid.NewNanoID("war")
 }
 
+func NewFlowID() string {
+	return shortid.NewNanoID("flw")
+}
+
+func NewFlowStepID() string {
+	return shortid.NewNanoID("fls")
+}
+
+func NewFlowStepApprovalID() string {
+	return shortid.NewNanoID("fsa")
+}
+
+func NewFlowStepApprovalResponseID() string {
+	return shortid.NewNanoID("fsr")
+}
+
 func NewInstanceID() string {
 	return shortid.NewNanoID("ins")
 }
