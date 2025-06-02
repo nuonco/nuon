@@ -26,6 +26,7 @@ type UpdateStatusRequest struct {
 	Status app.CompositeStatus `json:"status"`
 }
 
+// TODO(sdboyer) remove after workflow refactor
 // @temporal-gen activity
 func (a *Activities) PkgStatusUpdateInstallWorkflowStatus(ctx context.Context, req UpdateStatusRequest) error {
 	obj := app.InstallWorkflow{
@@ -44,6 +45,7 @@ func (a *Activities) PkgStatusUpdateInstallWorkflowStatus(ctx context.Context, r
 	return a.updateStatus(ctx, &obj, req.Status, getter)
 }
 
+// TODO(sdboyer) remove after workflow refactor
 // @temporal-gen activity
 func (a *Activities) PkgStatusUpdateInstallWorkflowStepStatus(ctx context.Context, req UpdateStatusRequest) error {
 	obj := app.InstallWorkflowStep{
@@ -119,4 +121,40 @@ func (a *Activities) updateStatus(ctx context.Context, obj any, status app.Compo
 		return errors.New("no object found to update")
 	}
 	return nil
+}
+
+// @temporal-gen activity
+func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateStatusRequest) error {
+	obj := app.Flow{
+		ID: req.ID,
+	}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.Flow
+		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+
+		return obj.Status, nil
+	}
+
+	return a.updateStatus(ctx, &obj, req.Status, getter)
+}
+
+// @temporal-gen activity
+func (a *Activities) PkgStatusUpdateFlowStepStatus(ctx context.Context, req UpdateStatusRequest) error {
+	obj := app.FlowStep{
+		ID: req.ID,
+	}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.FlowStep
+		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+
+		return obj.Status, nil
+	}
+
+	return a.updateStatus(ctx, &obj, req.Status, getter)
 }
