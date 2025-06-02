@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -49,6 +50,7 @@ func (s *service) UpdateTerraformState(ctx *gin.Context) {
 	if reqLockID != "" {
 		currLock, err := s.helpers.GetWorkspaceLock(ctx, reqLockID)
 		if err != nil {
+			s.l.Error("unable to get workspace lock", zap.Error(err))
 			ctx.Error(fmt.Errorf("unable to get lock: %w", err))
 			return
 		}
@@ -65,24 +67,28 @@ func (s *service) UpdateTerraformState(ctx *gin.Context) {
 	// Get the raw body first
 	contents, err := ctx.GetRawData()
 	if err != nil {
+		s.l.Error("unable to read request body", zap.Error(err))
 		ctx.Error(fmt.Errorf("unable to read request body: %w", err))
 		return
 	}
 	var data app.TerraformStateData
 
 	if err := json.Unmarshal(contents, &data); err != nil {
+		s.l.Error("unable to parse request body", zap.Error(err))
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
 
 	_, err = s.helpers.GetTerraformState(ctx, workspaceID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		ctx.Error(err)
+		s.l.Error("unable to get terraform state", zap.Error(err))
+		ctx.Error(fmt.Errorf("unable to get terraform state: %w", err))
 		return
 	}
 
 	_, err = s.helpers.InsertTerraformState(ctx, workspaceID, sJobID, contents, &data)
 	if err != nil {
+		s.l.Error("unable to insert terraform state", zap.Error(err))
 		ctx.Error(fmt.Errorf("unable to update terraform state: %w", err))
 		return
 	}
