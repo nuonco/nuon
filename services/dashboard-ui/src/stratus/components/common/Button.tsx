@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { type FC } from 'react'
+import React, { forwardRef } from 'react'
 import './Button.css'
 
 export type TButtonSize = 'lg' | 'md' | 'sm' | 'xs'
@@ -10,21 +10,23 @@ export interface IButton extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: TButtonVariant
 }
 
-export const Button: FC<IButton> = ({
-  className,
-  children,
-  size = 'md',
-  variant = 'secondary',
-  ...props
-}) => {
-  return (
-    <button
-      className={classNames(`${variant} ${size}`, {
-        [`${className}`]: Boolean(className),
-      })}
-      {...props}
-    >
-      {children}
-    </button>
-  )
-}
+export const Button = forwardRef<HTMLButtonElement, IButton>(
+  (
+    { className, children, size = 'md', variant = 'secondary', ...props },
+    ref
+  ) => {
+    return (
+      <button
+        className={classNames(`${variant} ${size}`, {
+          [`${className}`]: Boolean(className),
+        })}
+        ref={ref}
+        {...props}
+      >
+        {children}
+      </button>
+    )
+  }
+)
+
+Button.displayName = 'Button'
