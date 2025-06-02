@@ -2,7 +2,7 @@
 name = "{{.nuon.id}}-maintenance"
 description = "maintenance"
 display_name = "maintenance"
-permissions_boundary = "./permissions/maintenance_boundary.json"
+permissions_boundary = "./maintenance_boundary.json"
 
 [[maintenance_role.policies]]
 managed_policy_name = "AdministratorAccess"
@@ -29,7 +29,7 @@ contents = """
 name = "{{.nuon.install.id}}-provision"
 description = "maintenance"
 display_name = "maintenance"
-permissions_boundary = "./permissions/provision_boundary.json"
+permissions_boundary = "./provision_boundary.json"
 
 [[provision_role.policies]]
 managed_policy_name = "AdministratorAccess"
@@ -57,7 +57,7 @@ contents = """
 name = "{{.nuon.install.id}}-deprovision"
 description = "deprovision"
 display_name = "deprovision"
-permissions_boundary = "./permissions/maintenance_boundary.json"
+permissions_boundary = "./maintenance_boundary.json"
 
 [[deprovision_role.policies]]
 managed_policy_name = "AdministratorAccess"

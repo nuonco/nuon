@@ -1,14 +1,14 @@
 [[policy]]
 type = "runner_job_terraform_deploy"
-contents = "./policies/s3_policy.yml"
+contents = "./s3_policy.yml"
 
 [[policy]]
 type = "runner_job_terraform_deploy"
-contents = "./policies/cluster_tags.yml"
+contents = "./cluster_tags.yml"
 
 [[policy]]
 type = "kubernetes_cluster"
-contents = "./policies/disallow-ingress-nginx-custom-snippets.yml"
+contents = "./disallow-ingress-nginx-custom-snippets.yml"
 
 [[policy]]
 type = "kubernetes_cluster"
