@@ -21,7 +21,23 @@ func ValidatePolicies(a *config.AppConfig) error {
 				Err:         err,
 			}
 		}
+
+		if err := validatePolicyType(policy.Type); err != nil {
+			return err
+		}
 	}
 
 	return nil
+}
+
+func validatePolicyType(policyType config.AppPolicyType) error {
+	switch config.AppPolicyType(policyType) {
+	case config.AppPolicyTypeActionWorkflowRunnerJobKyverno,
+		config.AppPolicyTypeKubernetesClusterKyverno,
+		config.AppPolicyTypeHelmDeployRunnerJobKyverno,
+		config.AppPolicyTypeTerraformDeployRunnerJobKyverno:
+		return nil
+	default:
+		return fmt.Errorf("invalid policy type %s", policyType)
+	}
 }

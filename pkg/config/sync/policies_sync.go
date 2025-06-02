@@ -12,7 +12,7 @@ import (
 func (s sync) policyToRequest(policy config.AppPolicy) *models.ServiceAppPolicyConfig {
 	return &models.ServiceAppPolicyConfig{
 		Contents: generics.ToPtr(policy.Contents),
-		Type:     generics.ToPtr(policy.Type),
+		Type:     generics.ToPtr(string(policy.Type)),
 	}
 }
 
