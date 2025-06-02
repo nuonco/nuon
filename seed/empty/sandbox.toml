@@ -2,8 +2,8 @@ terraform_version = "1.11.3"
 
 [public_repo]
 repo      = "nuonco/sandboxes"
-directory = "aws-ecs"
-branch    = "tw/simple2"
+directory = "aws-empty"
+branch    = "main"
 
 [env_vars]
 CLUSTER_NAME = "{{.nuon.install.id}}"
