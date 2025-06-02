@@ -1,25 +1,18 @@
 package dir
 
 import (
-	"path/filepath"
 	"reflect"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
-func (p *parser) parseDir(path string, typ reflect.Type, required, nonempty bool) (any, error) {
+func (p *parser) parseDir(path string, typ reflect.Type) (any, error) {
 	exists, err := p.fs.DirExists(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check that file exists")
 	}
 	if !exists {
-		if required {
-			return nil, ErrMissingDir{
-				Name: path,
-			}
-		}
-
 		return nil, nil
 	}
 
@@ -27,10 +20,8 @@ func (p *parser) parseDir(path string, typ reflect.Type, required, nonempty bool
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check that file is empty")
 	}
-	if empty && nonempty {
-		return nil, ErrMissingFile{
-			Name: path,
-		}
+	if empty {
+		return nil, nil
 	}
 
 	files, err := p.listDir(path)
@@ -44,12 +35,20 @@ func (p *parser) parseDir(path string, typ reflect.Type, required, nonempty bool
 		elemType := typ.Elem()
 		obj := reflect.New(elemType).Interface()
 
-		if err := p.parseFile(filepath.Join(path, f), obj, required, nonempty); err != nil {
-			return nil, err
+		parsed, err := p.parseFile(f, obj)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to parse file "+f)
 		}
 
-		objValue := reflect.ValueOf(obj).Elem()
-		objs = reflect.Append(objs, objValue)
+		if !parsed {
+			continue
+		}
+
+		// Only append non-nil objects
+		if !reflect.ValueOf(obj).IsNil() {
+			objValue := reflect.ValueOf(obj).Elem()
+			objs = reflect.Append(objs, objValue)
+		}
 	}
 
 	return objs.Interface(), nil

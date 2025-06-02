@@ -17,9 +17,8 @@ const (
 	localStateFileTemplate string = "/tmp/%s-terraform.tfstate"
 )
 
-func (s *Service) loadConfig(ctx context.Context, file string) (*config.AppConfig, error) {
+func (s *Service) loadConfig(file string) (*config.AppConfig, error) {
 	cfg, err := parse.Parse(parse.ParseConfig{
-		Context:     config.ConfigContextSource,
 		Filename:    file,
 		BackendType: config.BackendTypeLocal,
 		Template:    true,
@@ -85,7 +84,7 @@ func (s *Service) Validate(ctx context.Context, all bool, file string, asJSON bo
 }
 
 func (s *Service) validate(ctx context.Context, file parse.File, asJSON bool) error {
-	cfg, err := s.loadConfig(ctx, file.Path)
+	cfg, err := s.loadConfig(file.Path)
 	if err != nil {
 		return err
 	}

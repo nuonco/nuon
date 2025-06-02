@@ -1,8 +1,6 @@
 package config
 
 import (
-	"context"
-
 	"github.com/invopop/jsonschema"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -16,7 +14,7 @@ func (a SecretsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "secret", "Secrets")
 }
 
-func (a *SecretsConfig) parse(context.Context) error {
+func (a *SecretsConfig) parse() error {
 	return nil
 }
 

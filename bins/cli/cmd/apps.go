@@ -135,7 +135,7 @@ func (c *cli) appsCmd() *cobra.Command {
 
 	syncCmd := &cobra.Command{
 		Use:               "sync",
-		Short:             "Sync nuon app directory (deprecated)",
+		Short:             "Sync nuon app directory",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			var dirName string
@@ -179,7 +179,7 @@ func (c *cli) appsCmd() *cobra.Command {
 
 	validateCmd := &cobra.Command{
 		Use:               "validate",
-		Short:             "Validate nuon app directory (deprecated)",
+		Short:             "Validate nuon app directory",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			var dirName string

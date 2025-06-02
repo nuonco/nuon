@@ -9,9 +9,7 @@ import (
 
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/config/refs"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
@@ -88,14 +86,8 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		}
 	}
 
-	if !org.SandboxMode && !generics.SliceContains(run.TriggerType, []app.ActionWorkflowTriggerType{
-		app.ActionWorkflowTriggerTypePreSandboxRun,
-	}) {
-		clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
-		if err != nil {
-			return plan, errors.Wrap(err, "unable to get cluster information")
-		}
-
+	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
+	if err == nil {
 		plan.ClusterInfo = clusterInfo
 	}
 
