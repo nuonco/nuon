@@ -27,8 +27,9 @@ func (w *Workflows) InviteAccepted(ctx workflow.Context, sreq signals.RequestSig
 	}
 
 	w.sendNotification(ctx, notifications.NotificationsTypeOrgInviteAccepted, sreq.ID, map[string]string{
-		"email":    orgInvite.Email,
-		"org_name": org.Name,
+		"email":     orgInvite.Email,
+		"org_name":  org.Name,
+		"login_url": fmt.Sprintf("%s/api/auth/login", w.cfg.AppURL),
 	})
 	return nil
 }
