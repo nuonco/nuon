@@ -6,6 +6,9 @@ import (
 	"fmt"
 
 	"go.uber.org/zap"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 
@@ -61,6 +64,8 @@ func K8SGetHelmReleaseIngresses(ctx context.Context, chartName string, kubeCfg *
 		}
 		l.Info(fmt.Sprintf("adding ingress to ouputs %s", ing.Name))
 		var ingInterface map[string]interface{}
+		// set ingress spec to empty to reduce output size.
+		ing.Spec = networkingv1.IngressSpec{}
 		inrec, _ := json.Marshal(ing)
 		json.Unmarshal(inrec, &ingInterface)
 		nsIngresses, ok := ingressesOut[ing.Namespace]
@@ -106,6 +111,8 @@ func K8SGetHelmReleaseServices(ctx context.Context, chartName string, kubeCfg *r
 		}
 		l.Info(fmt.Sprintf("adding service to ouputs %s", svc.Name))
 		var svcInterface map[string]interface{}
+		// set service spec to empty to reduce output size.
+		svc.Spec = corev1.ServiceSpec{}
 		inrec, _ := json.Marshal(svc)
 		json.Unmarshal(inrec, &svcInterface)
 		nsServices, ok := servicesOut[svc.Namespace]
@@ -151,6 +158,8 @@ func K8SGetHelmReleaseDeployments(ctx context.Context, chartName string, kubeCfg
 		}
 		l.Info(fmt.Sprintf("adding deployment to ouputs %s", dpl.Name))
 		var dplInterface map[string]interface{}
+		// set deployment spec to empty to reduce output size.
+		dpl.Spec = appsv1.DeploymentSpec{}
 		inrec, _ := json.Marshal(dpl)
 		json.Unmarshal(inrec, &dplInterface)
 		nsDeployments, ok := deploymentsOut[dpl.Namespace]
