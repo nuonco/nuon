@@ -3,27 +3,17 @@ package app
 import (
 	"time"
 
+	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
-
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
-type AppPolicyType string
-
-const (
-	AppPolicyTypeKubernetesClusterKyverno AppPolicyType = "kubernetes_cluster"
-
-	AppPolicyTypeTerraformDeployRunnerJobKyverno AppPolicyType = "runner_job_terraform_deploy"
-	AppPolicyTypeHelmDeployRunnerJobKyverno      AppPolicyType = "runner_job_helm_deploy"
-	AppPolicyTypeActionWorkflowRunnerJobKyverno  AppPolicyType = "runner_job_action_workflow"
-)
-
-var AllPolicyTypes []AppPolicyType = []AppPolicyType{
-	AppPolicyTypeKubernetesClusterKyverno,
-	AppPolicyTypeTerraformDeployRunnerJobKyverno,
-	AppPolicyTypeHelmDeployRunnerJobKyverno,
-	AppPolicyTypeActionWorkflowRunnerJobKyverno,
+var AllPolicyTypes []config.AppPolicyType = []config.AppPolicyType{
+	config.AppPolicyTypeKubernetesClusterKyverno,
+	config.AppPolicyTypeTerraformDeployRunnerJobKyverno,
+	config.AppPolicyTypeHelmDeployRunnerJobKyverno,
+	config.AppPolicyTypeActionWorkflowRunnerJobKyverno,
 }
 
 type AppPolicyConfig struct {
@@ -41,8 +31,8 @@ type AppPolicyConfig struct {
 	AppPoliciesConfigID string            `json:"app_policies_config,omitzero" gorm:"notnull;default null" temporaljson:"app_policies_config_id,omitzero,omitempty"`
 	AppPoliciesConfig   AppPoliciesConfig `json:"-" temporaljson:"app_policies_config,omitzero,omitempty"`
 
-	Type     AppPolicyType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
-	Contents string        `json:"contents,omitzero" features:"template" temporaljson:"contents,omitzero,omitempty"`
+	Type     config.AppPolicyType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
+	Contents string               `json:"contents,omitzero" features:"template" temporaljson:"contents,omitzero,omitempty"`
 }
 
 func (a *AppPolicyConfig) BeforeCreate(tx *gorm.DB) error {
