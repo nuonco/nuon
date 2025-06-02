@@ -11,22 +11,26 @@ import (
 
 func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationCreated:                  AwaitCreated,
-		signals.OperationPollDependencies:         AwaitPollDependencies,
-		signals.OperationForget:                   AwaitForget,
-		signals.OperationReprovisionRunner:        AwaitReprovisionRunner,
-		signals.OperationProvisionRunner:          AwaitProvisionRunner,
-		signals.OperationProvisionDNS:             AwaitProvisionDNS,
-		signals.OperationDeprovisionDNS:           AwaitDeprovisionDNS,
-		signals.OperationSyncSecrets:              AwaitSyncSecrets,
-		signals.OperationExecuteWorkflow:          AwaitExecuteWorkflow,
+		signals.OperationCreated:          AwaitCreated,
+		signals.OperationPollDependencies: AwaitPollDependencies,
+		signals.OperationForget:           AwaitForget,
+		signals.OperationExecuteWorkflow:  AwaitExecuteWorkflow,
 		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
 			AwaitRestarted(ctx, req)
 			w.handleSyncActionWorkflowTriggers(ctx, req)
 			return nil
 		},
-		signals.OperationSyncActionWorkflowTriggers:  w.handleSyncActionWorkflowTriggers,
-		signals.OperationAwaitRunnerHealthy:          w.AwaitRunnerHealthy,
+		signals.OperationSyncActionWorkflowTriggers: w.handleSyncActionWorkflowTriggers,
+
+		// NOTE(jm): these should be cross account to the runners namespace
+		signals.OperationAwaitRunnerHealthy: w.AwaitRunnerHealthy,
+		signals.OperationProvisionRunner:    AwaitProvisionRunner,
+		signals.OperationReprovisionRunner:  AwaitProvisionRunner,
+
+		// NOTE(jm): these should be child loops
+		signals.OperationProvisionDNS:   AwaitProvisionDNS,
+		signals.OperationDeprovisionDNS: AwaitDeprovisionDNS,
+		signals.OperationSyncSecrets:    AwaitSyncSecrets,
 	}
 }
 

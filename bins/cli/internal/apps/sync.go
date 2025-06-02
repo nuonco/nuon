@@ -28,7 +28,6 @@ const (
 
 func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	cfg, err := parse.Parse(parse.ParseConfig{
-		Context:     config.ConfigContextSource,
 		Filename:    cfgFile,
 		BackendType: config.BackendTypeLocal,
 		Template:    true,
