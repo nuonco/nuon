@@ -230,6 +230,13 @@
   }
 }
 
+@keyframes exit {
+  100% {
+    opacity: 0;
+    transform: translateY(-4rem);
+  }
+}
+
 .tooltip {
   display: inline-block;
   position: relative;

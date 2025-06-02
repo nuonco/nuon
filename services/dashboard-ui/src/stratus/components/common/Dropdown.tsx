@@ -1,21 +1,65 @@
 'use client'
 
 import classNames from 'classnames'
-import React, { type FC } from 'react'
+import React, { type FC, forwardRef, useEffect, useRef, useState } from 'react'
 import { CaretDown } from '@phosphor-icons/react'
 import { Button, IButton } from './Button'
+import './Dropdown.css'
+
+const useFocusOutside = (handler: () => void) => {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleFocusIn = (event: FocusEvent) => {
+      const relatedTarget = event.relatedTarget as HTMLElement | null
+
+      if (ref.current && !ref.current.contains(relatedTarget)) {
+        handler() // Call the handler if focus moves outside
+      }
+    }
+
+    ref?.current?.addEventListener('focusout', handleFocusIn, true)
+
+    return () => {
+      ref?.current?.removeEventListener('focusout', handleFocusIn, true)
+    }
+  }, [handler])
+
+  return ref
+}
+
+const useClickOutside = (handler: () => void) => {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        handler()
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [handler])
+
+  return ref
+}
 
 export interface IDropdown extends IButton {
   alignment?: 'left' | 'right' | 'overlay'
   buttonClassName?: string
-  buttonText: React.ReactNode 
+  buttonText: React.ReactNode
   children: React.ReactNode
   dropdownClassName?: string
+  hideIcon?: boolean
   icon?: React.ReactNode
+  iconAlignment?: 'left' | 'right'
   id: string
   position?: 'above' | 'below' | 'beside' | 'overlay'
   wrapperClassName?: string
-  isDownIcon?: boolean
 }
 
 export const Dropdown: FC<IDropdown> = ({
@@ -25,70 +69,112 @@ export const Dropdown: FC<IDropdown> = ({
   className,
   children,
   dropdownClassName,
+  hideIcon = false,
   icon = <CaretDown />,
+  iconAlignment = 'right',
   id,
   position = 'below',
   variant,
 }) => {
+  const [isOpen, setIsOpen] = useState(false)
+
+  const handleClose = () => {
+    setIsOpen(false)
+  }
+
+  const dropdownRef = useFocusOutside(handleClose)
+  const contentRef = useClickOutside(handleClose)
+
   return (
     <>
       <div
-        className={classNames(
-          'z-10 relative inline-block text-left group leading-none dropdown',
-          {
-            [`${className}`]: Boolean(className),
-          }
-        )}
+        className={classNames('dropdown', {
+          [`${className}`]: Boolean(className),
+        })}
         id={id}
-        tabIndex={0}
+        ref={dropdownRef}
       >
         <Button
           aria-haspopup="true"
           aria-expanded="true"
           aria-controls={`dropdown-content-${id}`}
-          className={classNames('!h-fit', {
-            'group-focus-within:opacity-0':
-              position === 'overlay' && alignment === 'overlay',
+          className={classNames('dropdown-trigger', {
+            '!outline-0': position === 'overlay' && alignment === 'overlay',
             [`${buttonClassName}`]: Boolean(buttonClassName),
           })}
           id={`dropdown-button-${id}`}
           type="button"
           variant={variant}
+          onClick={() => {
+            if (!isOpen) setIsOpen(true)
+          }}
+          onFocus={() => {
+            if (!isOpen) setIsOpen(true)
+          }}
         >
-          <div className="flex items-center justify-between gap-2">
-            {buttonText}
-            {icon}
-          </div>
+          {!hideIcon && iconAlignment === 'left' ? icon : null}
+          {buttonText}
+          {!hideIcon && iconAlignment === 'right' ? icon : null}
         </Button>
 
-        <div className="hidden group-focus-within:block w-inherit">
-          <div
-            className={classNames(
-              'absolute z-20 border divide-y rounded-md shadow-md outline-none bg-white dark:bg-dark-grey-100 w-fit',
-              {
-                'left-0': alignment === 'left' && position !== 'beside',
-                'right-0': alignment === 'right' && position !== 'beside',
-                'bottom-full mb-2': position === 'above',
-                'mt-2': position === 'below',
-                'top-0': position === 'beside',
-                'right-full mr-2':
-                  position === 'beside' && alignment === 'left',
-                'left-full ml-2':
-                  position === 'beside' && alignment === 'right',
-                'top-0 w-fit':
-                  position === 'overlay' && alignment === 'overlay',
-                [`${dropdownClassName}`]: Boolean(
-                  dropdownClassName
-                ),
-              }
-            )}
-            aria-labelledby={`dropdown-button-${id}`}
-            id={`dropdown-content-${id}`}
-          >
-            {children}
-          </div>
-        </div>
+        <TransitionDiv
+          ref={contentRef}
+          className={classNames(`dropdown-content ${alignment} ${position}`, {
+            [`${dropdownClassName}`]: Boolean(dropdownClassName),
+          })}
+          aria-labelledby={`dropdown-button-${id}`}
+          id={`dropdown-content-${id}`}
+          isVisible={isOpen}
+          tabIndex={-1}
+        >
+          {children}
+        </TransitionDiv>
       </div>
     </>
   )
 }
+
+interface IDropdownContent extends React.HTMLAttributes<HTMLDivElement> {
+  isVisible: boolean
+  onExited?: () => void
+}
+
+const TransitionDiv = forwardRef<HTMLDivElement, IDropdownContent>(
+  ({ children, className, isVisible, onExited, ...props }, ref) => {
+    const [isExiting, setIsExiting] = useState(false)
+    const [isMounted, setIsMounted] = useState(isVisible)
+
+    useEffect(() => {
+      if (isVisible) {
+        setIsMounted(true) // Mount the component
+        setIsExiting(false) // Remove the exit class
+      } else {
+        setIsExiting(true) // Add the exit class
+        const timeout = setTimeout(() => {
+          setIsMounted(false) // Unmount the component after the animation
+          onExited?.() // Notify parent that the component has exited
+        }, 155) // Duration should match CSS animation duration
+
+        return () => clearTimeout(timeout) // Cleanup timeout on unmount
+      }
+    }, [isVisible, onExited])
+
+    if (!isMounted) {
+      return null // Don't render anything if the component is not mounted
+    }
+
+    return (
+      <div
+        className={classNames(`${isExiting ? 'exit' : 'enter'}`, {
+          [`${className}`]: Boolean(className),
+        })}
+        ref={ref}
+        {...props}
+      >
+        {children}
+      </div>
+    )
+  }
+)
+
+TransitionDiv.displayName = 'TransitionDiv'
