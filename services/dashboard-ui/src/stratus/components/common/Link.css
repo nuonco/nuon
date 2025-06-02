@@ -7,6 +7,11 @@
   @apply transition-colors
 }
 
+.link:focus,
+.link:focus-visible {
+  @apply outline outline-1 outline-offset-0 outline-primary-400/80;
+}
+
 .link.default {
   @apply text-primary-600 dark:text-primary-500;
 }
@@ -28,8 +33,9 @@
   @apply bg-cool-grey-50 dark:bg-white/10;
 }
 
-.link.ghost:focus {
-  @apply outline-primary-400/80 bg-cool-grey-50 dark:bg-white/10;
+.link.ghost:focus,
+.link.ghost:focus-visible {
+  @apply outline-1 outline-offset-0 outline-primary-400/80 bg-cool-grey-50 dark:bg-white/10;
 }
 
 .link.ghost:active {
