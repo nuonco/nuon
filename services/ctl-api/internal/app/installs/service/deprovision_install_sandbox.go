@@ -53,7 +53,7 @@ func (s *service) DeprovisionInstallSandbox(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateInstallWorkflow(ctx,
+	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
 		app.InstallWorkflowTypeDeprovisionSandbox,
 		map[string]string{},
@@ -64,7 +64,7 @@ func (s *service) DeprovisionInstallSandbox(ctx *gin.Context) {
 	}
 
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type:              signals.OperationExecuteWorkflow,
+		Type:              signals.OperationExecuteFlow,
 		InstallWorkflowID: workflow.ID,
 	})
 
