@@ -16,7 +16,7 @@ type UpdateFlowStartedAtRequest struct {
 
 // @temporal-gen activity
 // @by-id ID
-func (a *Activities) UpdateFlowStartedAt(ctx context.Context, req UpdateFlowStartedAtRequest) error {
+func (a *Activities) PkgWorkflowsFlowUpdateFlowStartedAt(ctx context.Context, req UpdateFlowStartedAtRequest) error {
 	runner := app.Flow{
 		ID: req.ID,
 	}

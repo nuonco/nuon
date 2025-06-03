@@ -14,7 +14,7 @@ type GetFlowRequest struct {
 
 // @temporal-gen activity
 // @by-id ID
-func (a *Activities) GetFlow(ctx context.Context, req GetFlowRequest) (*app.Flow, error) {
+func (a *Activities) PkgWorkflowsFlowGetFlow(ctx context.Context, req GetFlowRequest) (*app.Flow, error) {
 	iw := app.Flow{
 		ID: req.ID,
 	}

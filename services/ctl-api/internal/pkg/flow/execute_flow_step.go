@@ -39,11 +39,11 @@ func (c *FlowConductor[DomainSignal]) executeStep(ctx workflow.Context, req even
 		}
 	}()
 
-	if err := activities.AwaitUpdateFlowStepStartedAtByID(ctx, step.ID); err != nil {
+	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepStartedAtByID(ctx, step.ID); err != nil {
 		return err
 	}
 	defer func() {
-		if err := activities.AwaitUpdateFlowStepFinishedAtByID(ctx, step.ID); err != nil {
+		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepFinishedAtByID(ctx, step.ID); err != nil {
 			l.Error("unable to update finished at", zap.Error(err))
 		}
 	}()
