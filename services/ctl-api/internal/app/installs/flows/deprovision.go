@@ -21,6 +21,12 @@ func Deprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
 	}
 	steps = append(steps, step)
 
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeprovision)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
+
 	deploySteps, err := TeardownComponents(ctx, flw)
 	if err != nil {
 		return nil, err
@@ -34,6 +40,12 @@ func Deprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
 		return nil, err
 	}
 	steps = append(steps, step)
+
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeprovision)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 
 	return steps, nil
 }
