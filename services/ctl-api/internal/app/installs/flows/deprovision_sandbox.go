@@ -21,6 +21,12 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, e
 	}
 	steps = append(steps, step)
 
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeprovisionSandbox)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
+
 	step, err = installSignalStep(ctx, installID, "deprovision sandbox", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationDeprovisionSandbox,
 	})
@@ -28,6 +34,12 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, e
 		return nil, err
 	}
 	steps = append(steps, step)
+
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeprovisionSandbox)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 
 	return steps, nil
 }
