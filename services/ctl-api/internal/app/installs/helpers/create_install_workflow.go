@@ -9,7 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
-func (s *Helpers) CreateInstallWorkflow(ctx context.Context, installID string, workflowType app.InstallWorkflowType, metadata map[string]string, errBehavior app.StepErrorBehavior) (*app.InstallWorkflow, error) {
+func (s *Helpers) CreateInstallFlow(ctx context.Context, installID string, workflowType app.InstallWorkflowType, metadata map[string]string, errBehavior app.StepErrorBehavior) (*app.InstallWorkflow, error) {
 	metadata["install_id"] = installID
 	installWorkflow := app.InstallWorkflow{
 		Type:              workflowType,

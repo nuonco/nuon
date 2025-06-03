@@ -54,7 +54,7 @@ func (s *service) DeleteInstallComponents(ctx *gin.Context) {
 		behavior = app.StepErrorBehaviorContinue
 	}
 
-	workflow, err := s.helpers.CreateInstallWorkflow(ctx,
+	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		installID,
 		app.InstallWorkflowTypeTeardownComponents,
 		map[string]string{},
@@ -65,7 +65,7 @@ func (s *service) DeleteInstallComponents(ctx *gin.Context) {
 	}
 
 	s.evClient.Send(ctx, installID, &signals.Signal{
-		Type:              signals.OperationExecuteWorkflow,
+		Type:              signals.OperationExecuteFlow,
 		InstallWorkflowID: workflow.ID,
 	})
 
