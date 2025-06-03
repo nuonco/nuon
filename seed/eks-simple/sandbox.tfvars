@@ -15,8 +15,6 @@ maintenance_role_eks_access_entry_policy_associations = {
 
 additional_namespaces = ["whoami"]
 
-kyverno_policy_dir = "./policies"
-
 maintenance_cluster_role_rules_override = [{
   "apiGroups" = ["*"]
   "resources" = ["*"]
