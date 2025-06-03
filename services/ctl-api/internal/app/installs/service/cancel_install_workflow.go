@@ -54,7 +54,7 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 	}
 
 	if wf.Status.Status == app.StatusInProgress {
-		id := fmt.Sprintf("sig-execute-workflow-%s", wf.InstallID)
+		id := fmt.Sprintf("sig-execute-flow-%s", wf.InstallID)
 		err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to cancel install workflow: %w", err))

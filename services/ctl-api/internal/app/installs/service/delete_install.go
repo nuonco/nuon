@@ -49,7 +49,7 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateInstallWorkflow(ctx,
+	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
 		app.InstallWorkflowTypeDeprovision,
 		map[string]string{},
@@ -59,7 +59,7 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		return
 	}
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type:              signals.OperationExecuteWorkflow,
+		Type:              signals.OperationExecuteFlow,
 		InstallWorkflowID: workflow.ID,
 	})
 
