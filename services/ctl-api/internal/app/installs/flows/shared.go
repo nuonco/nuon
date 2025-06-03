@@ -28,6 +28,21 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 		return nil, errors.Wrap(err, "unable to create signal json")
 	}
 
+	var targettype string
+
+	switch signal.Type {
+	case signals.OperationAwaitInstallStackVersionRun, signals.OperationGenerateInstallStackVersion, signals.OperationUpdateInstallStackOutputs:
+		targettype = "install_stack_versions"
+	case signals.OperationAwaitRunnerHealthy:
+		targettype = "runners"
+	case signals.OperationExecuteDeployComponent, signals.OperationExecuteTeardownComponent:
+		targettype = "install_deploys"
+	case signals.OperationProvisionSandbox, signals.OperationDeprovisionSandbox, signals.OperationReprovisionSandbox:
+		targettype = "install_sandbox_runs"
+	case signals.OperationExecuteActionWorkflow:
+		targettype = "install_action_workflow_runs"
+	}
+
 	executionTyp := app.FlowStepExecutionTypeSystem
 	// user signals
 	userSignals := []eventloop.SignalType{
@@ -50,10 +65,13 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 	}
 
 	return &app.FlowStep{
-		Name:          name,
-		ExecutionType: executionTyp,
-		Status:        app.NewCompositeTemporalStatus(ctx, app.StatusPending),
-		Metadata:      metadata,
+		Name:           name,
+		ExecutionType:  executionTyp,
+		StepTargetType: targettype,
+		OwnerID:        installID,
+		OwnerType:      "installs",
+		Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
+		Metadata:       metadata,
 		Signal: app.Signal{
 			Namespace:   "installs",
 			Type:        string(signal.Type),
@@ -200,11 +218,21 @@ func deployAllComponents(ctx workflow.Context, installID string, flw *app.Flow) 
 	}
 	steps = append(steps, step)
 
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeployAllComponents)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs)
 	if err != nil {
 		return nil, err
 	}
-
 	steps = append(steps, deploySteps...)
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeployAllComponents)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
+
 	return steps, nil
 }
