@@ -15,6 +15,12 @@ func InputUpdate(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
 	}
+	steps := make([]*app.InstallWorkflowStep, 0)
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreUpdateInputs)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 
 	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
 		InstallID: install.ID,
@@ -23,5 +29,17 @@ func InputUpdate(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
 		return nil, errors.Wrap(err, "unable to get install graph")
 	}
 
-	return getComponentDeploySteps(ctx, installID, flw, componentIDs)
+	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get component deploy steps")
+	}
+	steps = append(steps, deploySteps...)
+
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostUpdateInputs)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
+
+	return steps, nil
 }

@@ -35,11 +35,22 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, 
 	}
 	steps = append(steps, step)
 
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeployAllComponents)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	steps = append(steps, deploySteps...)
+
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeployAllComponents)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 	return steps, nil
 }
