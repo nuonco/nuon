@@ -91,7 +91,7 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateInstallWorkflow(ctx,
+	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
 		app.InstallWorkflowTypeProvision,
 		map[string]string{},
@@ -103,7 +103,7 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 	}
 
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type:              signals.OperationExecuteWorkflow,
+		Type:              signals.OperationExecuteFlow,
 		InstallWorkflowID: workflow.ID,
 	})
 
