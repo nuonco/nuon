@@ -25,10 +25,13 @@ const (
 	OperationDeprovision      eventloop.SignalType = "deprovision"
 	OperationReprovision      eventloop.SignalType = "reprovision"
 	OperationUpdateSandbox    eventloop.SignalType = "update_sandbox"
+	OperationExecuteFlow      eventloop.SignalType = "execute-flow"
 )
 
 type Signal struct {
 	Type eventloop.SignalType `validate:"required"`
+
+	FlowID string `validate:"required_if=Operation execute_flow"`
 
 	// required for new app config
 	AppConfigID string `validate:"required_if=Operation config_created"`
