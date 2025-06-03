@@ -38,8 +38,7 @@ const (
 	OperationSyncSecrets                 eventloop.SignalType = "sync-secrets"
 
 	// the following will be sent to a different namespace
-	OperationExecuteWorkflow eventloop.SignalType = "execute-workflow"
-	OperationExecuteFlow     eventloop.SignalType = "execute-flow"
+	OperationExecuteFlow eventloop.SignalType = "execute-flow"
 
 	// the following signals will be deprecated with workflows
 	OperationDeploy             eventloop.SignalType = "deploy"

@@ -68,7 +68,7 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateInstallWorkflow(ctx,
+	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
 		app.InstallWorkflowTypeReprovision,
 		map[string]string{},
@@ -78,7 +78,7 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		return
 	}
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type:              signals.OperationExecuteWorkflow,
+		Type:              signals.OperationExecuteFlow,
 		InstallWorkflowID: workflow.ID,
 	})
 
