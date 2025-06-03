@@ -68,7 +68,7 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateInstallWorkflow(ctx,
+	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		installID,
 		app.InstallWorkflowTypeDeployComponents,
 		map[string]string{},
@@ -79,7 +79,7 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 	}
 
 	s.evClient.Send(ctx, installID, &signals.Signal{
-		Type:              signals.OperationExecuteWorkflow,
+		Type:              signals.OperationExecuteFlow,
 		InstallWorkflowID: workflow.ID,
 	})
 
