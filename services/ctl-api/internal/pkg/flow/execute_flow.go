@@ -20,7 +20,7 @@ func (c *FlowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.E
 		return nil
 	}
 
-	flw, err := activities.AwaitGetFlowByID(ctx, fid)
+	flw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, fid)
 	if err != nil {
 		return errors.Wrap(err, "unable to get flow object")
 	}
@@ -45,11 +45,11 @@ func (c *FlowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.E
 		}
 	}()
 
-	if err := activities.AwaitUpdateFlowStartedAtByID(ctx, fid); err != nil {
+	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStartedAtByID(ctx, fid); err != nil {
 		return err
 	}
 	defer func() {
-		if err := activities.AwaitUpdateFlowFinishedAtByID(ctx, fid); err != nil {
+		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, fid); err != nil {
 			l.Error("unable to update finished at", zap.Error(err))
 		}
 	}()
@@ -84,7 +84,7 @@ func (c *FlowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.E
 
 	steps, err := gen(ctx, flw)
 	for idx, step := range steps {
-		if err := activities.AwaitCreateFlowStep(ctx, activities.CreateFlowStepRequest{
+		if err := activities.AwaitPkgWorkflowsFlowCreateFlowStep(ctx, activities.CreateFlowStepRequest{
 			FlowID:        fid,
 			OwnerID:       flw.OwnerID,
 			OwnerType:     flw.OwnerType,
