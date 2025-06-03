@@ -21,6 +21,13 @@ func TeardownComponents(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, e
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
+	steps := make([]*app.FlowStep, 0)
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreTeardownAllComponents)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
+
 	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
 		InstallID: install.ID,
 		Reverse:   true,
@@ -29,7 +36,6 @@ func TeardownComponents(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, e
 		return nil, errors.Wrap(err, "unable to get install graph")
 	}
 
-	steps := make([]*app.FlowStep, 0)
 	for _, compID := range componentIDs {
 		comp, err := activities.AwaitGetComponentByComponentID(ctx, compID)
 		if err != nil {
@@ -80,6 +86,12 @@ func TeardownComponents(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, e
 		}
 		steps = append(steps, postDeploySteps...)
 	}
+
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostTeardownAllComponents)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 
 	return steps, nil
 }

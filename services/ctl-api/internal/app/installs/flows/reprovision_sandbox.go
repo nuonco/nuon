@@ -35,6 +35,12 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, e
 	}
 	steps = append(steps, step)
 
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
+
 	step, err = installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationSyncSecrets,
 	})
@@ -42,6 +48,12 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, e
 		return nil, err
 	}
 	steps = append(steps, step)
+
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostSecretsSync)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 
 	step, err = installSignalStep(ctx, installID, "reprovision sandbox dns if enabled", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationProvisionDNS,
@@ -51,17 +63,17 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, e
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostReprovisionSandbox)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, lifecycleSteps...)
-
 	deploySteps, err := deployAllComponents(ctx, installID, flw)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, deploySteps...)
+
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostReprovisionSandbox)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 
 	return steps, nil
 }
