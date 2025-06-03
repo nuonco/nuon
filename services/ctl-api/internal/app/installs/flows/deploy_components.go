@@ -12,7 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func (w *Flows) DeployAllComponents(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
+func DeployAllComponents(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
@@ -27,7 +27,7 @@ func (w *Flows) DeployAllComponents(ctx workflow.Context, flw *app.Flow) ([]*app
 	}
 
 	steps := make([]*app.FlowStep, 0)
-	step, err := w.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
+	step, err := installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	})
 	if err != nil {
@@ -35,7 +35,7 @@ func (w *Flows) DeployAllComponents(ctx workflow.Context, flw *app.Flow) ([]*app
 	}
 	steps = append(steps, step)
 
-	deploySteps, err := w.getComponentDeploySteps(ctx, installID, flw, componentIDs)
+	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs)
 	if err != nil {
 		return nil, err
 	}
