@@ -9,7 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func (w *Flows) InputUpdate(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
+func InputUpdate(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
@@ -23,5 +23,5 @@ func (w *Flows) InputUpdate(ctx workflow.Context, flw *app.Flow) ([]*app.FlowSte
 		return nil, errors.Wrap(err, "unable to get install graph")
 	}
 
-	return w.getComponentDeploySteps(ctx, installID, flw, componentIDs)
+	return getComponentDeploySteps(ctx, installID, flw, componentIDs)
 }

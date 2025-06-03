@@ -9,11 +9,11 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-func (w *Flows) Reprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
+func Reprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	steps := make([]*app.FlowStep, 0)
 
-	step, err := w.installSignalStep(ctx, installID, "reprovision runner service account", pgtype.Hstore{}, &signals.Signal{
+	step, err := installSignalStep(ctx, installID, "reprovision runner service account", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationReprovisionRunner,
 	})
 	if err != nil {
@@ -21,7 +21,7 @@ func (w *Flows) Reprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowSte
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(ctx, installID, "generate install stack", pgtype.Hstore{}, &signals.Signal{
+	step, err = installSignalStep(ctx, installID, "generate install stack", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationGenerateInstallStackVersion,
 	})
 	if err != nil {
@@ -29,7 +29,7 @@ func (w *Flows) Reprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowSte
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(ctx, installID, "await install stack", pgtype.Hstore{}, &signals.Signal{
+	step, err = installSignalStep(ctx, installID, "await install stack", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitInstallStackVersionRun,
 	})
 	if err != nil {
@@ -37,7 +37,7 @@ func (w *Flows) Reprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowSte
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(ctx, installID, "update install stack outputs", pgtype.Hstore{}, &signals.Signal{
+	step, err = installSignalStep(ctx, installID, "update install stack outputs", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationUpdateInstallStackOutputs,
 	})
 	if err != nil {
@@ -45,7 +45,7 @@ func (w *Flows) Reprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowSte
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(ctx, installID, "await runner health", pgtype.Hstore{}, &signals.Signal{
+	step, err = installSignalStep(ctx, installID, "await runner health", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	})
 	if err != nil {
@@ -53,13 +53,13 @@ func (w *Flows) Reprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowSte
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err := w.getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreReprovision)
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreReprovision)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	step, err = w.installSignalStep(ctx, installID, "reprovision sandbox", pgtype.Hstore{}, &signals.Signal{
+	step, err = installSignalStep(ctx, installID, "reprovision sandbox", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationReprovisionSandbox,
 	})
 	if err != nil {
@@ -67,7 +67,7 @@ func (w *Flows) Reprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowSte
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
+	step, err = installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationSyncSecrets,
 	})
 	if err != nil {
@@ -75,7 +75,7 @@ func (w *Flows) Reprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowSte
 	}
 	steps = append(steps, step)
 
-	step, err = w.installSignalStep(ctx, installID, "reprovision sandbox dns if enabled", pgtype.Hstore{}, &signals.Signal{
+	step, err = installSignalStep(ctx, installID, "reprovision sandbox dns if enabled", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationProvisionDNS,
 	})
 	if err != nil {
@@ -83,13 +83,13 @@ func (w *Flows) Reprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowSte
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err = w.getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostReprovision)
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostReprovision)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	deploySteps, err := w.deployAllComponents(ctx, installID, flw)
+	deploySteps, err := deployAllComponents(ctx, installID, flw)
 	if err != nil {
 		return nil, err
 	}
