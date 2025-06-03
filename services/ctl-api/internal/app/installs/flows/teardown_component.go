@@ -12,7 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func (w *Flows) TeardownComponent(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
+func TeardownComponent(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
@@ -31,13 +31,13 @@ func (w *Flows) TeardownComponent(ctx workflow.Context, flw *app.Flow) ([]*app.F
 		return nil, errors.Wrap(err, "unable to get component")
 	}
 
-	preDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, flw.ID, generics.FromPtrStr(componentID), installID, app.ActionWorkflowTriggerTypePreTeardownComponent)
+	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, generics.FromPtrStr(componentID), installID, app.ActionWorkflowTriggerTypePreTeardownComponent)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, preDeploySteps...)
 
-	deployStep, err := w.installSignalStep(ctx, install.ID, "teardown "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+	deployStep, err := installSignalStep(ctx, install.ID, "teardown "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationExecuteTeardownComponent,
 		ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 			ComponentID: generics.FromPtrStr(componentID),
@@ -45,7 +45,7 @@ func (w *Flows) TeardownComponent(ctx workflow.Context, flw *app.Flow) ([]*app.F
 	})
 	steps = append(steps, deployStep)
 
-	postDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, flw.ID, generics.FromPtrStr(componentID), installID, app.ActionWorkflowTriggerTypePostTeardownComponent)
+	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, generics.FromPtrStr(componentID), installID, app.ActionWorkflowTriggerTypePostTeardownComponent)
 	if err != nil {
 		return nil, err
 	}
