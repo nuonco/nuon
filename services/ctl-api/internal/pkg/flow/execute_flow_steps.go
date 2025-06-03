@@ -22,7 +22,7 @@ func (c *FlowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req eve
 		return FlowCancellationErr
 	}
 
-	steps, err := activities.AwaitGetFlowStepsByFlowID(ctx, flw.ID)
+	steps, err := activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, flw.ID)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (c *FlowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req eve
 			}
 
 			// close the workflow
-			if err := activities.AwaitUpdateFlowFinishedAtByID(ctx, step.InstallWorkflowID); err != nil {
+			if err := activities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, step.InstallWorkflowID); err != nil {
 				return errors.Wrap(err, "unable to set finished at on the workflow")
 			}
 			return stepErr
