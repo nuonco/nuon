@@ -14,7 +14,7 @@ type GetFlowStepRequest struct {
 
 // @temporal-gen activity
 // @by-id FlowStepID
-func (a *Activities) GetFlowsStep(ctx context.Context, req GetFlowStepRequest) (*app.FlowStep, error) {
+func (a *Activities) PkgWorkflowsFlowGetFlowsStep(ctx context.Context, req GetFlowStepRequest) (*app.FlowStep, error) {
 	// var step app.FlowStep
 	var step app.InstallWorkflowStep
 
