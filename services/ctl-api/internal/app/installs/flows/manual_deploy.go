@@ -14,11 +14,11 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func (w *Flows) ManualDeploySteps(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
+func ManualDeploySteps(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 
 	steps := make([]*app.FlowStep, 0)
-	step, err := w.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
+	step, err := installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	})
 	if err != nil {
@@ -48,13 +48,13 @@ func (w *Flows) ManualDeploySteps(ctx workflow.Context, flw *app.Flow) ([]*app.F
 		return nil, errors.Wrap(err, "unable to get component")
 	}
 
-	preDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, flw.ID, installDeploy.ComponentID, installID, app.ActionWorkflowTriggerTypePreDeployComponent)
+	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, installDeploy.ComponentID, installID, app.ActionWorkflowTriggerTypePreDeployComponent)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, preDeploySteps...)
 
-	deployStep, err := w.installSignalStep(ctx, installID, "deploy "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+	deployStep, err := installSignalStep(ctx, installID, "deploy "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationExecuteDeployComponent,
 		ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 			DeployID:    generics.FromPtrStr(installDeployID),
@@ -63,7 +63,7 @@ func (w *Flows) ManualDeploySteps(ctx workflow.Context, flw *app.Flow) ([]*app.F
 	})
 	steps = append(steps, deployStep)
 
-	postDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, flw.ID, installDeploy.ComponentID, installID, app.ActionWorkflowTriggerTypePostDeployComponent)
+	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, installDeploy.ComponentID, installID, app.ActionWorkflowTriggerTypePostDeployComponent)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (w *Flows) ManualDeploySteps(ctx workflow.Context, flw *app.Flow) ([]*app.F
 	}
 
 	dependencyCompIDs := generics.SliceAfterValue(componentIDs, comp.ID)
-	dependencyDeploySteps, err := w.getComponentDeploySteps(ctx, installID, flw, dependencyCompIDs)
+	dependencyDeploySteps, err := getComponentDeploySteps(ctx, installID, flw, dependencyCompIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component deploy steps")
 	}
