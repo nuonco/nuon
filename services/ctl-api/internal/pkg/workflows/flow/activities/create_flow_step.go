@@ -22,7 +22,7 @@ type CreateFlowStepRequest struct {
 }
 
 // @temporal-gen activity
-func (a *Activities) CreateFlowStep(ctx context.Context, req CreateFlowStepRequest) error {
+func (a *Activities) PkgWorkflowsFlowCreateFlowStep(ctx context.Context, req CreateFlowStepRequest) error {
 	// step := &app.FlowStep{
 	step := &app.InstallWorkflowStep{
 		InstallWorkflowID: req.FlowID,

@@ -16,7 +16,7 @@ type UpdateFlowStepFinishedAtRequest struct {
 
 // @temporal-gen activity
 // @by-id ID
-func (a *Activities) UpdateFlowStepFinishedAt(ctx context.Context, req UpdateFlowStepFinishedAtRequest) error {
+func (a *Activities) PkgWorkflowsFlowUpdateFlowStepFinishedAt(ctx context.Context, req UpdateFlowStepFinishedAtRequest) error {
 	runner := app.FlowStep{
 		ID: req.ID,
 	}
