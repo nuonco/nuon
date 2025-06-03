@@ -20,14 +20,15 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 	if sreq.FlowID == "" {
 		sreq.FlowID = sreq.InstallWorkflowID
 	}
-	ufm := &flow.FlowConductor[*signals.Signal]{
+	fc := &flow.FlowConductor[*signals.Signal]{
 		Cfg:        w.cfg,
 		V:          w.v,
 		MW:         w.mw,
 		Generators: w.getFlowStepGenerators(ctx),
 		ExecFn: func(ctx workflow.Context, ereq eventloop.EventLoopRequest, sig *signals.Signal, step app.FlowStep) error {
 			sig.WorkflowStepID = step.ID
-			sig.WorkflowStepID = step.ID
+			sig.WorkflowStepName = step.Name
+			sig.FlowStepID = step.ID
 			sig.FlowStepName = step.Name
 			handlerSreq := signals.NewRequestSignal(ereq, sig)
 
@@ -58,29 +59,22 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 		},
 	}
 
-	// return ufm.Handle(ctx, sreq.InstallWorkflowID)
-	return ufm.Handle(ctx, sreq.EventLoopRequest, sreq.FlowID)
+	return fc.Handle(ctx, sreq.EventLoopRequest, sreq.FlowID)
 }
 
 func (w *Workflows) getFlowStepGenerators(ctx workflow.Context) map[app.FlowType]flow.FlowStepGenerator {
-	ufg := flows.NewFlows(flows.Params{
-		Cfg: w.cfg,
-		MW:  w.mw,
-		V:   w.v,
-	})
-
 	return map[app.FlowType]flow.FlowStepGenerator{
-		flows.FlowTypeManualDeploy:       ufg.ManualDeploySteps,
-		flows.FlowTypeDeployComponents:   ufg.DeployAllComponents,
-		flows.FlowTypeTeardownComponent:  ufg.TeardownComponent,
-		flows.FlowTypeTeardownComponents: ufg.TeardownComponents,
-		flows.FlowTypeInputUpdate:        ufg.InputUpdate,
-		flows.FlowTypeActionWorkflowRun:  ufg.RunActionWorkflow,
-		flows.FlowTypeProvision:          ufg.Provision,
-		flows.FlowTypeReprovision:        ufg.Reprovision,
-		flows.FlowTypeReprovisionSandbox: ufg.ReprovisionSandbox,
-		flows.FlowTypeDeprovision:        ufg.Deprovision,
-		flows.FlowTypeDeprovisionSandbox: ufg.DeprovisionSandbox,
+		flows.FlowTypeManualDeploy:       flows.ManualDeploySteps,
+		flows.FlowTypeDeployComponents:   flows.DeployAllComponents,
+		flows.FlowTypeTeardownComponent:  flows.TeardownComponent,
+		flows.FlowTypeTeardownComponents: flows.TeardownComponents,
+		flows.FlowTypeInputUpdate:        flows.InputUpdate,
+		flows.FlowTypeActionWorkflowRun:  flows.RunActionWorkflow,
+		flows.FlowTypeProvision:          flows.Provision,
+		flows.FlowTypeReprovision:        flows.Reprovision,
+		flows.FlowTypeReprovisionSandbox: flows.ReprovisionSandbox,
+		flows.FlowTypeDeprovision:        flows.Deprovision,
+		flows.FlowTypeDeprovisionSandbox: flows.DeprovisionSandbox,
 	}
 }
 

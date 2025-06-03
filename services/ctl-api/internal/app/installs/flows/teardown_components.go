@@ -14,7 +14,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func (w *Flows) TeardownComponents(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
+func TeardownComponents(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
@@ -49,7 +49,7 @@ func (w *Flows) TeardownComponents(ctx workflow.Context, flw *app.Flow) ([]*app.
 
 		if installComp.Status == app.InstallComponentStatusInactive {
 			reason := fmt.Sprintf("install component %s is inactive", comp.Name)
-			deployStep, err := w.installSignalStep(ctx, installID, "skipped teardown "+comp.Name, pgtype.Hstore{
+			deployStep, err := installSignalStep(ctx, installID, "skipped teardown "+comp.Name, pgtype.Hstore{
 				"reason": &reason,
 			}, nil)
 			if err != nil {
@@ -60,13 +60,13 @@ func (w *Flows) TeardownComponents(ctx workflow.Context, flw *app.Flow) ([]*app.
 			continue
 		}
 
-		preDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, flw.ID, compID, installID, app.ActionWorkflowTriggerTypePreTeardownComponent)
+		preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, compID, installID, app.ActionWorkflowTriggerTypePreTeardownComponent)
 		if err != nil {
 			return nil, err
 		}
 		steps = append(steps, preDeploySteps...)
 
-		deployStep, err := w.installSignalStep(ctx, installID, "teardown "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+		deployStep, err := installSignalStep(ctx, installID, "teardown "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 			Type: signals.OperationExecuteTeardownComponent,
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: compID,
@@ -74,7 +74,7 @@ func (w *Flows) TeardownComponents(ctx workflow.Context, flw *app.Flow) ([]*app.
 		})
 		steps = append(steps, deployStep)
 
-		postDeploySteps, err := w.getComponentLifecycleActionsSteps(ctx, flw.ID, compID, installID, app.ActionWorkflowTriggerTypePostTeardownComponent)
+		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, compID, installID, app.ActionWorkflowTriggerTypePostTeardownComponent)
 		if err != nil {
 			return nil, err
 		}
