@@ -76,7 +76,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		l.Info("generating helm plan")
 		helmPlan, err := p.createHelmDeployPlan(ctx, req)
 		if err != nil {
-			l.Info("error generating helm plan", zap.Error(err))
+			l.Error("error generating helm plan", zap.Error(err))
 			return nil, errors.Wrap(err, "unable to helm deploy plan")
 		}
 		plan.HelmDeployPlan = helmPlan
