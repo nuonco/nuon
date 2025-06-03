@@ -72,13 +72,13 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 
 	if installComponent.Status == app.InstallComponentStatusInactive {
 		ctx.Error(stderr.ErrUser{
-                        Err: errors.New("component already inactive"),
-                        Description: "This component is already inactive and can not be torn down",
-                })
+			Err:         errors.New("component already inactive"),
+			Description: "This component is already inactive and can not be torn down",
+		})
 		return
 	}
 
-	workflow, err := s.helpers.CreateInstallWorkflow(ctx,
+	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
 		app.InstallWorkflowTypeTeardownComponent,
 		map[string]string{
@@ -92,7 +92,7 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 	}
 
 	s.evClient.Send(ctx, installID, &signals.Signal{
-		Type:              signals.OperationExecuteWorkflow,
+		Type:              signals.OperationExecuteFlow,
 		InstallWorkflowID: workflow.ID,
 	})
 
