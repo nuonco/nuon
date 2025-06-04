@@ -53,7 +53,7 @@ func (s *Service) Rename(ctx context.Context, appID string, name string, rename,
 
 	_, err = os.Stat(newFp)
 	if err == nil {
-		return view.Fail(errs.NewUserFacing("config file already exists at " + newFp))
+		return view.Fail(errs.NewUserFacing("%s", "config file already exists at "+newFp))
 	}
 
 	if rename {

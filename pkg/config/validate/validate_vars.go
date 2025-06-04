@@ -34,7 +34,7 @@ func ValidateVars(ctx context.Context, cfg *config.AppConfig) error {
 	}
 
 	for _, comp := range cfg.Components {
-		ui.Step(ctx, "validating vars for component"+comp.Name)
+		ui.Step(ctx, "%s", "validating vars for component"+comp.Name)
 		if err := vars.ValidateVars(ctx, vars.ValidateVarsParams{
 			Vars:                 comp.AllVars(),
 			Cfg:                  cfg,

@@ -42,7 +42,7 @@ func (s *Service) Create(ctx context.Context, name string, isSandboxMode, nosele
 	if err != nil {
 		// TODO(sdboyer) this kind of string sniffing will be replaced when deep leaf errors are managed by the system
 		if strings.Contains(err.Error(), "duplicated key") {
-			err = errs.WithUserFacing(err, fmt.Sprintf("An organization already exists with the name %q", name))
+			err = errs.WithUserFacing(err, "%s", fmt.Sprintf("An organization already exists with the name %q", name))
 		}
 		return view.Fail(err)
 	}
