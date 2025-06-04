@@ -57,7 +57,7 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(account.New),
 		fx.Provide(analytics.New),
 		fx.Provide(analytics.NewTemporal),
-		fx.Provide( cloudformation.NewTemplates),
+		fx.Provide(cloudformation.NewTemplates),
 
 		// add helpers for each domain
 		fx.Provide(vcshelpers.New),
