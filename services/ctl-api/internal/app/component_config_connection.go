@@ -39,7 +39,7 @@ type ComponentConfigConnection struct {
 	AppConfigID string `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 
 	ComponentID   string    `json:"component_id,omitzero" gorm:"notnull" temporaljson:"component_id,omitzero,omitempty"`
-	ComponentName string    `json:"component_name,omitzero" gorm:"notnull" temporaljson:"component_name,omitzero,omitempty"`
+	ComponentName string    `json:"component_name,omitzero" gorm:"-" temporaljson:"component_name,omitzero,omitempty"`
 	Component     Component `json:"-" temporaljson:"component,omitzero,omitempty"`
 
 	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_builds,omitzero,omitempty"`

@@ -20,7 +20,7 @@ func (s *Service) BrowseAPI(ctx context.Context, asJSON bool) error {
 	url := fmt.Sprintf("%s/docs/index.html?%s", s.cfg.APIURL, params.Encode())
 
 	if asJSON {
-		ui.Line(ctx, url)
+		ui.Line(ctx, "%s", url)
 	} else {
 		browser.OpenURL(url)
 	}

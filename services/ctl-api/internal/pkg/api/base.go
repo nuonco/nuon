@@ -67,7 +67,7 @@ func (a *API) registerServices() error {
 			"internal": svc.RegisterInternalRoutes,
 		}[a.name]
 		if !ok {
-			return fmt.Errorf("invalid name " + a.name)
+			return fmt.Errorf("%s", "invalid name "+a.name)
 		}
 
 		if err := method(a.handler); err != nil {
