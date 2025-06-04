@@ -43,7 +43,12 @@ func (a *Activities) createActionWorkflowRun(ctx context.Context,
 	triggeredByType string,
 	runEnvVars map[string]*string,
 ) (*app.InstallActionWorkflowRun, error) {
-	cfg, err := a.getActionWorkflowLatestConfig(ctx, actionWorkflowID)
+	install, err := a.getInstall(ctx, installID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
+	cfg, err := a.actionHelpers.GetActionWorkflowConfig(ctx, actionWorkflowID, install.AppConfigID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get latest action workflow config")
 	}
