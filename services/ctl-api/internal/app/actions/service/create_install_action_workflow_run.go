@@ -17,7 +17,7 @@ import (
 )
 
 type CreateInstallActionWorkflowRunRequest struct {
-	ActionWorkFlowConfigID string `json:"action_workflow_config_id" binding:"required"`
+	ActionWorkFlowConfigID string `json:"action_workflow_config_id"`
 
 	RunEnvVars map[string]string `json:"run_env_vars"`
 }
@@ -30,24 +30,29 @@ func (c *CreateInstallActionWorkflowRunRequest) Validate(v *validator.Validate) 
 }
 
 // @ID						CreateInstallActionWorkflowRun
-// @Summary				create an action workflow run for an install
+// @Summary					create an action workflow run for an install
 // @Description.markdown	create_install_action_workflow_run.md
 // @Tags					actions
 // @Accept					json
 // @Param					install_id	path	string									true	"install ID"
 // @Param					req			body	CreateInstallActionWorkflowRunRequest	true	"Input"
-// @Produce				json
+// @Produce					json
 // @Security				APIKey
 // @Security				OrgID
-// @Failure				400	{object}	stderr.ErrResponse
-// @Failure				401	{object}	stderr.ErrResponse
-// @Failure				403	{object}	stderr.ErrResponse
-// @Failure				404	{object}	stderr.ErrResponse
-// @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{string}	ok
-// @Router				/v1/installs/{install_id}/action-workflows/runs [post]
+// @Failure					400	{object}	stderr.ErrResponse
+// @Failure					401	{object}	stderr.ErrResponse
+// @Failure					403	{object}	stderr.ErrResponse
+// @Failure					404	{object}	stderr.ErrResponse
+// @Failure					500	{object}	stderr.ErrResponse
+// @Success					201	{string}	ok
+// @Router					/v1/installs/{install_id}/action-workflows/runs [post]
 func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
+	orgId, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get org ID from context: %w", err))
+		return
+	}
 
 	var req CreateInstallActionWorkflowRunRequest
 	if err := ctx.BindJSON(&req); err != nil {
@@ -60,9 +65,15 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		return
 	}
 
-	awc, err := s.findActionWorkflowConfig(ctx, req.ActionWorkFlowConfigID)
+	install, err := s.findInstall(ctx, orgId, installID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app: %w", err))
+		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
+		return
+	}
+
+	awc, err := s.actionsHelpers.GetActionWorkflowConfig(ctx, req.ActionWorkFlowConfigID, install.AppConfigID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get action workflow config: %w", err))
 		return
 	}
 

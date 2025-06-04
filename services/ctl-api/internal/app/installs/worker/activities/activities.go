@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	actionhelper "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	componentshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
@@ -27,42 +28,44 @@ type Params struct {
 	RunnersHelpers    *runnershelpers.Helpers
 	VCSHelpers        *vcshelpers.Helpers
 	Helpers           *helpers.Helpers
+	ActionHelpers     *actionhelper.Helpers
 	EvClient          eventloop.Client
 	AcctClient        *account.Client
 	AuthzClient       *authz.Client
 	Cfg               *internal.Config
 	Features          *features.Features
-
 }
 
 type Activities struct {
-	v                    *validator.Validate
-	db                   *gorm.DB
-	cfg                  *internal.Config
-	appsHelpers          *appshelpers.Helpers
-	componentsHelpers    *componentshelpers.Helpers
-	runnersHelpers       *runnershelpers.Helpers
-	helpers              *helpers.Helpers
-	evClient             eventloop.Client
-	acctClient           *account.Client
-	authzClient          *authz.Client
-	vcsHelpers           *vcshelpers.Helpers
-	features             *features.Features
+	v                 *validator.Validate
+	db                *gorm.DB
+	cfg               *internal.Config
+	appsHelpers       *appshelpers.Helpers
+	componentsHelpers *componentshelpers.Helpers
+	runnersHelpers    *runnershelpers.Helpers
+	helpers           *helpers.Helpers
+	actionHelpers     *actionhelper.Helpers
+	evClient          eventloop.Client
+	acctClient        *account.Client
+	authzClient       *authz.Client
+	vcsHelpers        *vcshelpers.Helpers
+	features          *features.Features
 }
 
 func New(params Params) *Activities {
 	return &Activities{
-		db:                   params.DB,
-		v:                    params.V,
-		cfg:                  params.Cfg,
-		appsHelpers:          params.AppsHelpers,
-		runnersHelpers:       params.RunnersHelpers,
-		helpers:              params.Helpers,
-		evClient:             params.EvClient,
-		acctClient:           params.AcctClient,
-		authzClient:          params.AuthzClient,
-		vcsHelpers:           params.VCSHelpers,
-		componentsHelpers:    params.ComponentsHelpers,
-		features:             params.Features,
+		db:                params.DB,
+		v:                 params.V,
+		cfg:               params.Cfg,
+		appsHelpers:       params.AppsHelpers,
+		runnersHelpers:    params.RunnersHelpers,
+		actionHelpers:     params.ActionHelpers,
+		helpers:           params.Helpers,
+		evClient:          params.EvClient,
+		acctClient:        params.AcctClient,
+		authzClient:       params.AuthzClient,
+		vcsHelpers:        params.VCSHelpers,
+		componentsHelpers: params.ComponentsHelpers,
+		features:          params.Features,
 	}
 }
