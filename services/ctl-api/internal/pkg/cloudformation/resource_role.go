@@ -113,7 +113,7 @@ func (a *Templates) getRolePolicy(role app.AppAWSIAMRoleConfig, policy app.AppAW
 	return &iam.Policy{
 		AWSCloudFormationCondition: a.roleConditionName(role),
 		PolicyName: cloudformation.SubVars(
-			fmt.Sprintf(policy.Name),
+			fmt.Sprintf("%s", policy.Name),
 			map[string]any{"RoleName": cloudformation.Ref(role.CloudFormationStackName)}),
 		PolicyDocument: json.RawMessage([]byte(policy.Contents)),
 		Roles:          []string{cloudformation.Ref(role.CloudFormationStackName)},

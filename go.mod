@@ -1,8 +1,6 @@
 module github.com/powertoolsdev/mono
 
-go 1.23.2
-
-toolchain go1.24.2
+go 1.24.2
 
 // NOTE(jm): some older versions of viper, require an older and incompatible version of ugorgi/go which has some
 // backwards compatibility issues with go modules:

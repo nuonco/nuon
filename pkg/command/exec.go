@@ -70,7 +70,7 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, error) {
 	if c.LinePrefix != "" {
 		prefix := c.LinePrefix
 		if c.LineColor != nil {
-			prefix = c.LineColor.Sprintf(prefix)
+			prefix = c.LineColor.Sprintf("%s", prefix)
 		}
 
 		opts = append(opts, lineprefix.Prefix(prefix))
