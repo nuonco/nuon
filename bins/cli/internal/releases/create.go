@@ -108,7 +108,7 @@ func (s *Service) Create(ctx context.Context, appID, compID, buildID, installID,
 		case err != nil:
 			return view.Fail(err)
 		case release.Status == statusError:
-			return view.Fail(fmt.Errorf(release.StatusDescription))
+			return view.Fail(fmt.Errorf("%s", release.StatusDescription))
 		case release.Status == statusActive:
 			view.Success(release.ID)
 			return nil

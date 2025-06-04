@@ -71,7 +71,7 @@ func (s *Service) checkComponentBranches(ctx context.Context, cfg *config.AppCon
 	// TODO add the ability to override the branch
 	if branchDiff {
 		msg += "\nDo you want to continue"
-		if err := prompt(s.autoApprove, msg); err != nil {
+		if err := prompt(s.autoApprove, "%s", msg); err != nil {
 			return cmpRepos, err
 		}
 	}
