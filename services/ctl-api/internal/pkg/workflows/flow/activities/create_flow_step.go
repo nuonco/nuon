@@ -22,7 +22,7 @@ type CreateFlowStepRequest struct {
 }
 
 // @temporal-gen activity
-func (a *Activities) PkgWorkflowsFlowCreateFlowStep(ctx context.Context, req CreateFlowStepRequest) error {
+func (a *Activities) PkgWorkflowsFlowCreateFlowStep(ctx context.Context, req CreateFlowStepRequest) (string, error) {
 	// step := &app.FlowStep{
 	step := &app.InstallWorkflowStep{
 		InstallWorkflowID: req.FlowID,
@@ -38,8 +38,8 @@ func (a *Activities) PkgWorkflowsFlowCreateFlowStep(ctx context.Context, req Cre
 	}
 
 	if res := a.db.WithContext(ctx).Create(step); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to create step")
+		return "", errors.Wrap(res.Error, "unable to create step")
 	}
 
-	return nil
+	return step.ID, nil
 }

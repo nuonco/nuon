@@ -22,12 +22,7 @@ func (c *FlowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req eve
 		return FlowCancellationErr
 	}
 
-	steps, err := activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, flw.ID)
-	if err != nil {
-		return err
-	}
-
-	for idx, step := range steps {
+	for idx, step := range flw.Steps {
 		ctx = cctx.SetFlowContextWithinWorkflow(ctx, &app.FlowContext{
 			// ID:         step.FlowID, // TODO(sdboyer) REFACTOR
 			ID:         step.InstallWorkflowID,
@@ -70,7 +65,7 @@ func (c *FlowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req eve
 			cancelCtx, _ := workflow.NewDisconnectedContext(ctx)
 
 			// cancel all steps
-			for _, cancelStep := range steps[idx+1:] {
+			for _, cancelStep := range flw.Steps[idx+1:] {
 				if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
 					ID: cancelStep.ID,
 					Status: app.NewCompositeTemporalStatus(ctx, app.StatusNotAttempted, map[string]any{
@@ -111,7 +106,7 @@ func (c *FlowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req eve
 		if flw.StepErrorBehavior == app.StepErrorBehaviorAbort {
 			reason := "previous step failed"
 
-			for _, cancelStep := range steps[idx+1:] {
+			for _, cancelStep := range flw.Steps[idx+1:] {
 				if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 					ID: cancelStep.ID,
 					Status: app.NewCompositeTemporalStatus(ctx, app.StatusNotAttempted, map[string]any{
