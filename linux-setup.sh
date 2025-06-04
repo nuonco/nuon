@@ -138,6 +138,4 @@ else
     echo "Skipping ngrok token setup."
 end
 
-nuonctl scripts exec reset-dependencies
-
 nuonctl scripts exec install-cli
