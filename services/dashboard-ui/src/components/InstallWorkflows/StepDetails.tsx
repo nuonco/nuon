@@ -102,7 +102,8 @@ export function getStepType(
         {step?.status?.metadata?.reason ? (
           <Notice
             variant={
-              step?.status?.status === 'cancelled' ||
+            step?.status?.status === 'cancelled' ||
+            step?.status?.status === 'approval-denied' ||
               step.execution_type === 'skipped'
                 ? 'warn'
                 : step?.status?.status === 'error'

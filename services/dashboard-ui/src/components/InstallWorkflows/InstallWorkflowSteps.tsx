@@ -237,8 +237,18 @@ const InstallWorkflowStepTitle: FC<{
             </Badge>
           ) : status.status === 'not-attempted' ? (
             <Badge isCompact>Not attempted</Badge>
-          ) : status.status === 'pending-approval' ? (
-            <Badge isCompact theme="warn">Needs approval</Badge>
+          ) : status.status === 'approval-awaiting' ? (
+            <Badge isCompact theme="warn">
+              Awaiting approval
+            </Badge>
+          ) : status.status === 'approved' ? (
+            <Badge isCompact theme="success">
+              Plan approved
+            </Badge>
+          ) : status.status === 'approval-denied' ? (
+            <Badge isCompact theme="warn">
+              Approval denied
+            </Badge>
           ) : status?.status === 'success' ? (
             <span className="flex gap-1">
               {getFinishedText(status)} in
