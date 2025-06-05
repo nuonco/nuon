@@ -7,12 +7,15 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/pkg/errors"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type CreateSandboxRunRequest struct {
-	InstallID string             `validate:"required"`
-	RunType   app.SandboxRunType `validate:"required"`
+	InstallID  string             `validate:"required"`
+	RunType    app.SandboxRunType `validate:"required"`
+	WorkflowID string             `validate:"required"`
 }
 
 // @temporal-gen activity
@@ -47,6 +50,7 @@ func (a *Activities) CreateSandboxRun(ctx context.Context, req CreateSandboxRunR
 		InstallID:          req.InstallID,
 		AppSandboxConfigID: appCfg.SandboxConfig.ID,
 		Status:             status,
+		InstallWorkflowID: generics.ToPtr(req.WorkflowID),
 	}
 
 	// TODO: install sandbox should exist after backfilling

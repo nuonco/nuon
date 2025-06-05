@@ -77,20 +77,6 @@ func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 		return
 	}
 
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureIndependentRunner)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if !enabled {
-		s.evClient.Send(ctx, installID, &signals.Signal{
-			Type: signals.OperationTeardownComponents,
-		})
-
-		ctx.JSON(http.StatusCreated, "ok")
-		return
-	}
-
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		installID,
 		app.InstallWorkflowTypeTeardownComponents,

@@ -45,6 +45,7 @@ func (s *service) getInstallWorkflowSteps(ctx *gin.Context, workflowID string) (
 			InstallWorkflowID: workflowID,
 		}).
 		Preload("Approval").
+		Preload("Approval.Response").
 		Preload("PolicyValidation").
 		Order("idx ASC").
 		Find(&steps)

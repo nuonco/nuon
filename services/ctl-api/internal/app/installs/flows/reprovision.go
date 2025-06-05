@@ -2,8 +2,9 @@ package flows
 
 import (
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
@@ -59,8 +60,15 @@ func Reprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	step, err = installSignalStep(ctx, installID, "reprovision sandbox", pgtype.Hstore{}, &signals.Signal{
-		Type: signals.OperationReprovisionSandbox,
+	step, err = installSignalStep(ctx, installID, "reprovision sandbox plan", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationReprovisionSandboxPlan,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+	step, err = installSignalStep(ctx, installID, "reprovision sandbox apply plan", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationReprovisionSandboxApplyPlan,
 	})
 	if err != nil {
 		return nil, err

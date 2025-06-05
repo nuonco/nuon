@@ -10,9 +10,14 @@ import (
 
 func (w *Workflows) GetHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationDeprovisionSandbox: AwaitDeprovisionSandbox,
-		signals.OperationReprovisionSandbox: AwaitReprovisionSandbox,
-		signals.OperationProvisionSandbox:   AwaitProvisionSandbox,
+		signals.OperationDeprovisionSandboxPlan:      AwaitDeprovisionSandboxPlan,
+		signals.OperationDeprovisionSandboxApplyPlan: AwaitDeprovisionSandboxApplyPlan,
+
+		signals.OperationReprovisionSandboxPlan:      AwaitReprovisionSandboxPlan,
+		signals.OperationReprovisionSandboxApplyPlan: AwaitReprovisionSandboxApplyPlan,
+
+		signals.OperationProvisionSandboxPlan:      AwaitProvisionSandboxPlan,
+		signals.OperationProvisionSandboxApplyPlan: AwaitProvisionSandboxApplyPlan,
 	}
 }
 

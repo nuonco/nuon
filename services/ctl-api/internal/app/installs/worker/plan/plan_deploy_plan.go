@@ -97,6 +97,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 
 		switch build.ComponentConfigConnection.Type {
 		case app.ComponentTypeHelmChart:
+			plan.SandboxMode.HelmSandboxMode = p.createHelmDeploySandboxMode(ctx, plan.HelmDeployPlan)
 		case app.ComponentTypeTerraformModule:
 			plan.SandboxMode.TerraformSandboxMode = p.createTerraformDeploySandboxMode(ctx, plan.TerraformDeployPlan)
 		}

@@ -9,13 +9,13 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateInstallDeployRequest struct {
-	InstallID     string
-	ReleaseStepID string
+	InstallID     string `validate:"required"`
+	ReleaseStepID string `validate:"required"`
+	WorkflowID    string `validate:"required"`
 }
 
 // @temporal-gen activity
@@ -77,7 +77,8 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		StatusDescription:      "waiting to be deployed to install",
 		ComponentBuildID:       step.ComponentRelease.ComponentBuildID,
 		ComponentReleaseStepID: generics.ToPtr(req.ReleaseStepID),
-		Type:                   app.InstallDeployTypeRelease,
+		Type:                   app.InstallDeployTypeApply,
+		InstallWorkflowID:      generics.ToPtr(req.WorkflowID),
 	}
 
 	res = a.db.WithContext(ctx).Create(&installDeploy)
@@ -89,9 +90,5 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		return fmt.Errorf("unable to create install deploy: %w", res.Error)
 	}
 
-	a.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type:     signals.OperationDeploy,
-		DeployID: installDeploy.ID,
-	})
 	return nil
 }

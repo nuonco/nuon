@@ -30,27 +30,35 @@ const (
 	OperationProvisionSandbox            eventloop.SignalType = "provision-sandbox"
 	OperationProvisionDNS                eventloop.SignalType = "provision-dns"
 	OperationDeprovisionDNS              eventloop.SignalType = "deprovision-dns"
-	OperationDeprovisionSandbox          eventloop.SignalType = "deprovision-sandbox"
-	OperationReprovisionSandbox          eventloop.SignalType = "reprovision-sandbox"
 	OperationExecuteActionWorkflow       eventloop.SignalType = "trigger-install-action-workflow"
 	OperationExecuteDeployComponent      eventloop.SignalType = "execute-deploy-component"
 	OperationExecuteTeardownComponent    eventloop.SignalType = "execute-teardown-component"
 	OperationSyncSecrets                 eventloop.SignalType = "sync-secrets"
+	//OperationWorkflowApproval            eventloop.SignalType = "workflow-approval"
 
 	// the following will be sent to a different namespace
 	OperationExecuteFlow eventloop.SignalType = "execute-flow"
 
-	// the following signals will be deprecated with workflows
-	OperationDeploy             eventloop.SignalType = "deploy"
-	OperationDeployComponents   eventloop.SignalType = "deploy-components"
-	OperationDeleteComponents   eventloop.SignalType = "delete-components"
-	OperationTeardownComponents eventloop.SignalType = "teardown-components"
-	OperationProvision          eventloop.SignalType = "provision"
-	OperationDeprovision        eventloop.SignalType = "deprovision"
-	OperationReprovision        eventloop.SignalType = "reprovision"
-	OperationReprovisionRunner  eventloop.SignalType = "reprovision-runner"
-	OperationDeprovisionRunner  eventloop.SignalType = "deprovision-runner"
-	OperationDelete             eventloop.SignalType = "delete"
+	// sync images
+	OperationExecuteDeployComponentSyncImage eventloop.SignalType = "component-sync-image"
+
+	// approval based deploys
+	OperationExecuteDeployComponentSyncAndPlan eventloop.SignalType = "component-deploy-sync-and-plan"
+	OperationExecuteDeployComponentApplyPlan   eventloop.SignalType = "component-deploy-apply-plan"
+
+	OperationExecuteTeardownComponentSyncAndPlan eventloop.SignalType = "component-teardown-sync-and-plan"
+	OperationExecuteTeardownComponentApplyPlan   eventloop.SignalType = "component-teardown-apply-plan"
+
+	// approval based sandbox
+	OperationProvisionSandboxPlan        eventloop.SignalType = "provision-sandbox-plan"
+	OperationProvisionSandboxApplyPlan   eventloop.SignalType = "provision-sandbox-apply-plan"
+	OperationDeprovisionSandboxPlan      eventloop.SignalType = "deprovision-sandbox-plan"
+	OperationDeprovisionSandboxApplyPlan eventloop.SignalType = "deprovision-sandbox-apply-plan"
+	OperationReprovisionSandboxPlan      eventloop.SignalType = "reprovision-sandbox-plan"
+	OperationReprovisionSandboxApplyPlan eventloop.SignalType = "reprovision-sandbox-apply-plan"
+
+	// TODO(jm): deprecate
+	OperationReprovisionRunner eventloop.SignalType = "reprovision-runner"
 )
 
 type InstallActionWorkflowTriggerSubSignal struct {
@@ -64,10 +72,30 @@ type InstallActionWorkflowTriggerSubSignal struct {
 type DeployComponentSubSignal struct {
 	DeployID    string
 	ComponentID string
+
+	// used to control if a plan is created or not
+	CreatePlan bool
+
+	// used to consume an existing plan-id
+	PlanID string
 }
 
 type TeardownComponentSubSignal struct {
 	ComponentID string
+
+	// used to control if a plan is created or not
+	CreatePlan bool
+
+	// used to consume an existing plan-id
+	PlanID string
+}
+
+type SandboxSubSignal struct {
+	// used to control if a plan is created or not
+	CreatePlan bool
+
+	// used to consume an existing plan-id
+	PlanID string
 }
 
 type SkipStepSubSignal struct {
@@ -88,6 +116,7 @@ type Signal struct {
 	ExecuteDeployComponentSubSignal   DeployComponentSubSignal              `json:"deploy_component_sub_signal"`
 	ExecuteTeardownComponentSubSignal TeardownComponentSubSignal            `json:"teardown_component_sub_signal"`
 	ExecuteSkipStepSubSignal          SkipStepSubSignal                     `json:"skip_step_sub_signal"`
+	SandboxSubSignal                  SandboxSubSignal                      `json:"sandbox_sub_signal"`
 
 	// used for executing an install workflow
 	WorkflowStepID   string `json:"install_workflow_step_id"`
@@ -97,6 +126,8 @@ type Signal struct {
 
 	// used for awaiting the run
 	InstallCloudFormationStackVersionID string `json:"install_cloud_formation_stack_version_id"`
+
+	// used for sandbox runs
 
 	eventloop.BaseSignal
 }
@@ -137,8 +168,6 @@ func (s *Signal) Name() string {
 
 func (s *Signal) Stop() bool {
 	switch s.Type {
-	case OperationDelete:
-		return true
 	default:
 	}
 
