@@ -66,17 +66,6 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
               workflowId={step?.install_workflow_id}
             />
           ) : null}
-          {step?.approval?.response ? (
-            <Badge
-              theme={
-                step?.approval?.response?.type?.includes('approve')
-                  ? 'success'
-                  : 'warn'
-              }
-            >
-              Plan {step?.approval?.response?.type}
-            </Badge>
-          ) : null}
           {deploy ? (
             <div className="flex flex-col gap-8">
               <>
