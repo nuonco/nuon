@@ -9,7 +9,7 @@ import {
 } from '@phosphor-icons/react/dist/ssr'
 import {
   Button,
-  Editor,
+  CodeEditor,
   DiffEditor,
   Menu,
   Text,
@@ -17,6 +17,7 @@ import {
   Tooltip,
   PageHeader,
   Dropdown,
+  splitYamlDiff,
 } from '@/stratus/components'
 import type { IPageProps } from '@/types'
 import { nueQueryData } from '@/utils'
@@ -108,27 +109,7 @@ const DropdownMenu = () => (
   </Menu>
 )
 
-const StratusDasboard: FC<IPageProps<'org-id'>> = async ({ params }) => {
-  const orgId = params?.['org-id']
-  const { data, error } = await nueQueryData<Record<string, any>>({
-    orgId,
-    path: `orgs/current`,
-  })
-
-  return (
-    <div className="flex flex-col gap-4 p-4 overflow-auto">
-      <PageHeader>
-        <Text variant="h1" weight="stronger">
-          Page header
-        </Text>
-      </PageHeader>
-
-      <Text variant="h1" weight="stronger">
-        Editor
-      </Text>
-      <div className="flex flex-col gap-4">
-        <DiffEditor
-          diff={`
+const splitDiff = splitYamlDiff(`
 # Source: myapp/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -239,7 +220,36 @@ spec:
             name: myapp
             port:
               number: 80
-        `}
+        `)
+
+const StratusDasboard: FC<IPageProps<'org-id'>> = async ({ params }) => {
+  const orgId = params?.['org-id']
+  const { data, error } = await nueQueryData<Record<string, any>>({
+    orgId,
+    path: `orgs/current`,
+  })
+
+  return (
+    <div className="flex flex-col gap-4 p-4 overflow-auto">
+      <PageHeader>
+        <Text variant="h1" weight="stronger">
+          Page header
+        </Text>
+      </PageHeader>
+
+      <Text variant="h1" weight="stronger">
+        Editor
+      </Text>
+      <div className="flex flex-col gap-4">
+        <DiffEditor
+          original={splitDiff?.original}
+          modified={splitDiff?.modified}
+          language="yaml"
+        />
+
+        <CodeEditor
+          defaultValue={JSON.stringify(data, null, 2)}
+          language="json"
         />
       </div>
 

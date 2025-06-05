@@ -9,7 +9,7 @@ import { Notice } from '@/components/Notice'
 import { CodeViewer, JsonView } from '@/components/Code'
 import { Text } from '@/components/Typography'
 import { approveWorkflowStep } from '@/components/install-actions'
-import { DiffEditor } from '@/stratus/components/common/Code'
+import { CodeEditor, DiffEditor, splitYamlDiff } from '@/stratus/components/'
 import type { TInstallWorkflowStep } from '@/types'
 import { removeSnakeCase } from '@/utils'
 
@@ -60,66 +60,70 @@ export const ApprovalStep: FC<IApprovalStep> = ({
         <Text variant="med-14" className="mb-2">
           Action needed: {removeSnakeCase(approval?.type)}
         </Text>
-        <div className="flex flex-col gap-2 !w-full">
-          <Text isMuted>
-            Approve or deny these changes included in this{' '}
-            {removeSnakeCase(approval?.type)}.
-          </Text>
-          <div className="flex flex-col gap-4">
-            {error ? <Notice>{error}</Notice> : null}
-            {approval?.type === 'helm_approval' ? (
-              <div className="rounded-md overflow-hidden border bg-cool-grey-50 dark:bg-dark-grey-200">
-                <DiffEditor diff={approval?.contents} />
-              </div>
-            ) : (
-              <JsonView expanded={2} data={approval?.contents} />
-            )}
-          </div>
-          <div className="mt-4 flex gap-3 justify-end">
-            <Button
-              onClick={() => {
-                setIsDenyLoading(true)
-                approve('deny')
-              }}
-              className="text-sm font-sans flex items-center gap-2 hover:!bg-cool-grey-100 hover:dark:!bg-dark-grey-400"
-              disabled={isKickedOff}
-            >
-              {isDenyLoading ? (
-                <>
-                  <SpinnerSVG />
-                  Denying plan
-                </>
-              ) : (
-                <>
-                  <X />
-                  Deny plan
-                </>
-              )}
-            </Button>
-
-            <Button
-              onClick={() => {
-                setIsApproveLoading(true)
-                approve('approve')
-              }}
-              className="text-sm font-sans flex items-center gap-2 hover:!bg-cool-grey-100 hover:dark:!bg-dark-grey-400"
-              disabled={isKickedOff}
-            >
-              {isApproveLoading ? (
-                <>
-                  <SpinnerSVG />
-                  Approving plan
-                </>
-              ) : (
-                <>
-                  <Check />
-                  Approve plan
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
+        <Text isMuted>
+          Approve or deny these changes included in this{' '}
+          {removeSnakeCase(approval?.type)}.
+        </Text>
       </Notice>
+      <div className="flex flex-col gap-2 !w-full">
+        <div className="flex flex-col gap-4 border rounded-md p-2">
+          {error ? <Notice>{error}</Notice> : null}
+          {approval?.type === 'helm_approval' ? (
+            <HelmDiff diff={approval?.contents} />
+          ) : (
+            <CodeEditor language="json" defaultValue={approval?.contents} />
+          )}
+        </div>
+        <div className="mt-4 flex gap-3 justify-end">
+          <Button
+            onClick={() => {
+              setIsDenyLoading(true)
+              approve('deny')
+            }}
+            className="text-sm font-sans flex items-center gap-2 h-[32px]"
+            disabled={isKickedOff}
+          >
+            {isDenyLoading ? (
+              <>
+                <SpinnerSVG />
+                Denying plan
+              </>
+            ) : (
+              <>
+                <X />
+                Deny plan
+              </>
+            )}
+          </Button>
+
+          <Button
+            onClick={() => {
+              setIsApproveLoading(true)
+              approve('approve')
+            }}
+            className="text-sm font-sans flex items-center gap-2 h-[32px] !px-2"
+            disabled={isKickedOff}
+            variant="primary"
+          >
+            {isApproveLoading ? (
+              <>
+                <SpinnerSVG />
+                Approving plan
+              </>
+            ) : (
+              <>
+                <Check />
+                Approve plan
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
     </>
   )
+}
+
+const HelmDiff: FC<{ diff: string }> = ({ diff }) => {
+  const splitDiff = splitYamlDiff(diff)
+  return <DiffEditor {...splitDiff} language="yaml" />
 }
