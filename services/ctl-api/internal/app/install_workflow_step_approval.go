@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"time"
 
+	"gorm.io/gorm"
+	"gorm.io/plugin/soft_delete"
+
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
-	"gorm.io/gorm"
-	"gorm.io/plugin/soft_delete"
 )
 
 type InstallWorkflowStepApprovalType string
@@ -18,7 +19,6 @@ const (
 
 	TerraformPlanApprovalType InstallWorkflowStepApprovalType = "terraform_plan"
 	HelmApprovalApprovalType  InstallWorkflowStepApprovalType = "helm_approval"
-	ImageApprovalApprovalType InstallWorkflowStepApprovalType = "image_approval"
 )
 
 type InstallWorkflowStepApproval struct {
@@ -38,18 +38,15 @@ type InstallWorkflowStepApproval struct {
 	InstallWorkflowStep   InstallWorkflowStep `temporaljson:"install_workflow_step,omitzero,omitempty"`
 
 	// the runner job where this approval was created
-	RunnerJobID string    `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
-	RunnerJob   RunnerJob `temporaljson:"runner_job,omitzero,omitempty"`
+	RunnerJobID *string    `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
+	RunnerJob   *RunnerJob `temporaljson:"runner_job,omitzero,omitempty"`
 
-	// status of an approval is either pending, awaiting-response or done.
+	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
+	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
-	Status CompositeStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
+	Contents string `json:"contents"`
 
-	// the plan and which type it is here
-	Type              InstallWorkflowStepApprovalType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
-	TerraformPlanJSON string                          `gorm:"jsonb" temporaljson:"terraform_plan_json,omitzero,omitempty"`
-	HelmPlanJSON      string                          `gorm:"jsonb" temporaljson:"helm_plan_json,omitzero,omitempty"`
-	ImageApprovalJSON string                          `gorm:"jsonb" temporaljson:"image_approval_json,omitzero,omitempty"`
+	Type InstallWorkflowStepApprovalType `json:"type"`
 
 	// the response object must be created by the user in the UI or CLI
 	Response *InstallWorkflowStepApprovalResponse `json:"response,omitzero" temporaljson:"response,omitzero,omitempty"`

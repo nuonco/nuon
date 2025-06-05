@@ -21,4 +21,6 @@ type TerraformDeployPlan struct {
 
 	Policies map[string]string `json:"policies"`
 	State    *state.State      `json:"state" faker:"-"`
+
+	PlanJSON []byte `json:"plan_json"`
 }

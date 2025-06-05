@@ -54,20 +54,6 @@ func (s *service) DeprovisionInstall(ctx *gin.Context) {
 		return
 	}
 
-	// TODO(jm): remove this once the legacy install flow is deprecated
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureIndependentRunner)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if !enabled {
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationDeprovision,
-		})
-		ctx.JSON(http.StatusOK, true)
-		return
-	}
-
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
 		app.InstallWorkflowTypeDeprovision,

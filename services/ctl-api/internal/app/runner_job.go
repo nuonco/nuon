@@ -98,8 +98,9 @@ const (
 	RunnerJobTypeNOOP          RunnerJobType = "noop"
 
 	// sandbox job types
-	RunnerJobTypeSandboxTerraform   RunnerJobType = "sandbox-terraform"
-	RunnerJobTypeSandboxSyncSecrets RunnerJobType = "sandbox-sync-secrets"
+	RunnerJobTypeSandboxTerraform     RunnerJobType = "sandbox-terraform"
+	RunnerJobTypeSandboxTerraformPlan RunnerJobType = "sandbox-terraform-plan"
+	RunnerJobTypeSandboxSyncSecrets   RunnerJobType = "sandbox-sync-secrets"
 
 	// runner job types
 	RunnerJobTypeRunnerHelm      RunnerJobType = "runner-helm"
@@ -141,7 +142,9 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		return RunnerJobGroupRunner
 
 		// sandboxes
-	case RunnerJobTypeSandboxTerraform, RunnerJobTypeSandboxSyncSecrets:
+	case RunnerJobTypeSandboxTerraform,
+		RunnerJobTypeSandboxTerraformPlan,
+		RunnerJobTypeSandboxSyncSecrets:
 		return RunnerJobGroupSandbox
 
 		// health checks
@@ -168,12 +171,14 @@ const (
 	// think about operations
 	RunnerJobOperationTypeExec RunnerJobOperationType = "exec"
 
+	// update build
+	RunnerJobOperationTypeBuild RunnerJobOperationType = "build"
+
 	// the following operations are for common use cases for things such as helm, terraform and other jobs that have
 	// multiple operation types.
-	RunnerJobOperationTypeCreate   RunnerJobOperationType = "apply"
-	RunnerJobOperationTypeDestroy  RunnerJobOperationType = "destroy"
-	RunnerJobOperationTypePlanOnly RunnerJobOperationType = "plan-only"
-	RunnerJobOperationTypeBuild    RunnerJobOperationType = "build"
+	RunnerJobOperationTypeCreateApplyPlan    RunnerJobOperationType = "create-apply-plan"
+	RunnerJobOperationTypeCreateTeardownPlan RunnerJobOperationType = "create-teardown-plan"
+	RunnerJobOperationTypeApplyPlan          RunnerJobOperationType = "apply-plan"
 
 	RunnerJobOperationTypeUnknown RunnerJobOperationType = "unknown"
 )
@@ -313,6 +318,10 @@ func (r *RunnerJob) AfterQuery(tx *gorm.DB) error {
 			return errors.Wrap(err, "unable to parse outputs json")
 		}
 		r.ParsedOutputs = outputs
+	}
+
+	if len(r.Executions) > 0 {
+		r.Execution = &r.Executions[0]
 	}
 
 	return nil

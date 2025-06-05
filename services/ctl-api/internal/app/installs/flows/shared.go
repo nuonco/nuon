@@ -6,12 +6,13 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/workflow"
+
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
-	"go.temporal.io/sdk/workflow"
 )
 
 func installSignalStep(ctx workflow.Context, installID, name string, metadata pgtype.Hstore, signal *signals.Signal) (*app.FlowStep, error) {
@@ -35,9 +36,20 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 		targettype = "install_stack_versions"
 	case signals.OperationAwaitRunnerHealthy:
 		targettype = "runners"
-	case signals.OperationExecuteDeployComponent, signals.OperationExecuteTeardownComponent:
+	case signals.OperationExecuteDeployComponentApplyPlan,
+		signals.OperationExecuteDeployComponentSyncAndPlan,
+
+		signals.OperationExecuteDeployComponentSyncImage,
+
+		signals.OperationExecuteTeardownComponentSyncAndPlan,
+		signals.OperationExecuteTeardownComponentApplyPlan:
 		targettype = "install_deploys"
-	case signals.OperationProvisionSandbox, signals.OperationDeprovisionSandbox, signals.OperationReprovisionSandbox:
+	case signals.OperationProvisionSandboxPlan,
+		signals.OperationProvisionSandboxApplyPlan,
+		signals.OperationDeprovisionSandboxPlan,
+		signals.OperationDeprovisionSandboxApplyPlan,
+		signals.OperationReprovisionSandboxPlan,
+		signals.OperationReprovisionSandboxApplyPlan:
 		targettype = "install_sandbox_runs"
 	case signals.OperationExecuteActionWorkflow:
 		targettype = "install_action_workflow_runs"
@@ -54,11 +66,11 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 
 	// await approval signals
 	approvalSignals := []eventloop.SignalType{
-		signals.OperationProvisionSandbox,
-		signals.OperationDeprovisionSandbox,
-		signals.OperationReprovisionSandbox,
-		signals.OperationExecuteDeployComponent,
-		signals.OperationExecuteTeardownComponent,
+		signals.OperationProvisionSandboxPlan,
+		signals.OperationDeprovisionSandboxPlan,
+		signals.OperationReprovisionSandboxPlan,
+		signals.OperationExecuteDeployComponentSyncAndPlan,
+		signals.OperationExecuteTeardownComponentSyncAndPlan,
 	}
 	if generics.SliceContains(signal.Type, approvalSignals) {
 		executionTyp = app.FlowStepExecutionTypeApproval
@@ -138,14 +150,42 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Fl
 		}
 		steps = append(steps, preDeploySteps...)
 
-		deployStep, err := installSignalStep(ctx, installID, "deploy "+comp.Name, pgtype.Hstore{}, &signals.Signal{
-			Type: signals.OperationExecuteDeployComponent,
-			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
-				ComponentID: compID,
-			},
-		})
-		steps = append(steps, deployStep)
+		// sync image
+		if comp.Type.IsImage() {
+			deployStep, err := installSignalStep(ctx, installID, "sync "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+				Type: signals.OperationExecuteDeployComponentSyncImage,
+				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
+					ComponentID: comp.ID,
+				},
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "unable to create image sync")
+			}
 
+			steps = append(steps, deployStep)
+		} else {
+			planStep, err := installSignalStep(ctx, installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+				Type: signals.OperationExecuteDeployComponentSyncAndPlan,
+				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
+					ComponentID: comp.ID,
+				},
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "unable to create image sync")
+			}
+
+			applyPlanStep, err := installSignalStep(ctx, installID, "apply "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+				Type: signals.OperationExecuteDeployComponentApplyPlan,
+				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
+					ComponentID: comp.ID,
+				},
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "unable to create image sync")
+			}
+
+			steps = append(steps, planStep, applyPlanStep)
+		}
 		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, compID, installID, app.ActionWorkflowTriggerTypePostDeployComponent)
 		if err != nil {
 			return nil, err

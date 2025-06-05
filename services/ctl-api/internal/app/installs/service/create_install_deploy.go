@@ -59,20 +59,6 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 		return
 	}
 
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureIndependentRunner)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if !enabled {
-		s.evClient.Send(ctx, installID, &signals.Signal{
-			Type:     signals.OperationDeploy,
-			DeployID: deploy.ID,
-		})
-		ctx.JSON(http.StatusOK, deploy)
-		return
-	}
-
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		installID,
 		app.InstallWorkflowTypeManualDeploy,
@@ -162,7 +148,7 @@ func (s *service) createInstallDeploy(ctx context.Context, installID string, req
 		StatusDescription:  "waiting to be deployed to install",
 		ComponentBuildID:   req.BuildID,
 		InstallComponentID: installCmp.ID,
-		Type:               app.InstallDeployTypeInstall,
+		Type:               app.InstallDeployTypeApply,
 	}
 
 	res = s.db.WithContext(ctx).Create(&deploy)

@@ -44,6 +44,8 @@ func (s *service) getInstallWorkflow(ctx *gin.Context, workflowID string) (*app.
 		Preload("Steps", func(db *gorm.DB) *gorm.DB {
 			return db.Order("idx ASC")
 		}).
+		Preload("Steps.Approval").
+		Preload("Steps.Approval.Response").
 		Where("id = ?", workflowID).
 		First(&installWorkflow)
 	if res.Error != nil {
