@@ -4,6 +4,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	_ "embed"
+
 	"github.com/pkg/errors"
 
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
@@ -12,6 +14,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
+
+//go:embed fake_helm_plan.txt
+var FakeHelmPlanTxt string
 
 func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.HelmDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
@@ -119,4 +124,10 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 
 		ClusterInfo: clusterInfo,
 	}, nil
+}
+
+func (p *Planner) createHelmDeploySandboxMode(ctx workflow.Context, req *plantypes.HelmDeployPlan) *plantypes.HelmSandboxMode {
+	return &plantypes.HelmSandboxMode{
+		PlanText: FakeHelmPlanTxt,
+	}
 }

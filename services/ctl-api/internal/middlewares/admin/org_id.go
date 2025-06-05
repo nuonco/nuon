@@ -129,6 +129,15 @@ var mapper map[string]func(db *gorm.DB, id string) (string, error) = map[string]
 
 		return obj.OrgID, nil
 	},
+	"iws": func(db *gorm.DB, id string) (string, error) {
+		var obj app.InstallWorkflowStep
+		res := db.First(&obj, "id = ?", id)
+		if res.Error != nil {
+			return "", errors.Wrap(res.Error, "unable to fetch step")
+		}
+
+		return obj.OrgID, nil
+	},
 }
 
 func (m *middleware) setOrgID(ctx *gin.Context) error {

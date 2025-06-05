@@ -44,12 +44,7 @@ func (j *jobLoop) sandboxOutputs(ctx context.Context, job *models.AppRunnerJob) 
 	return plan.SandboxMode.Outputs, nil
 }
 
-func (j *jobLoop) writeTerraformSandboxMode(ctx context.Context, job *models.AppRunnerJob, plan *plantypes.TerraformSandboxMode) error {
-	l, err := pkgctx.Logger(ctx)
-	if err != nil {
-		return err
-	}
-
+func (j *jobLoop) writeTerraformSandboxMode(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution, plan *plantypes.TerraformSandboxMode) error {
 	params := url.Values{
 		"job_id":       {job.ID},
 		"workspace_id": {plan.WorkspaceID},
@@ -62,7 +57,6 @@ func (j *jobLoop) writeTerraformSandboxMode(ctx context.Context, job *models.App
 		return errors.Wrap(err, "unable to get url")
 	}
 	url = url + "?" + params.Encode()
-	l.Info(url)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(plan.StateJSON))
 	if err != nil {
@@ -84,10 +78,26 @@ func (j *jobLoop) writeTerraformSandboxMode(ctx context.Context, job *models.App
 		return errors.Errorf("unable to update state json")
 	}
 
+	if len(plan.PlanJSON) > 0 {
+		// write an output
+		if _, err := j.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
+			Contents: plan.PlanJSON,
+			Success:  true,
+		}); err != nil {
+			return errors.Wrap(err, "unable to create job execution results")
+		}
+	}
+
 	return nil
 }
 
-func (j *jobLoop) writeHelmSandboxMode(ctx context.Context, job *models.AppRunnerJob, plan *plantypes.MinSandboxMode) error {
+func (j *jobLoop) writeHelmSandboxMode(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution, plan *plantypes.HelmSandboxMode) error {
+	if len(plan.PlanText) > 0 {
+		// write an output
+		j.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
+			Contents: plan.PlanText,
+		})
+	}
 	return nil
 }
 
@@ -127,12 +137,12 @@ func (j *jobLoop) executeOutputsJobStep(ctx context.Context, handler jobs.JobHan
 		}
 
 		if plan.SandboxMode.TerraformSandboxMode != nil {
-			if err := j.writeTerraformSandboxMode(ctx, job, plan.SandboxMode.TerraformSandboxMode); err != nil {
+			if err := j.writeTerraformSandboxMode(ctx, job, jobExecution, plan.SandboxMode.TerraformSandboxMode); err != nil {
 				return errors.Wrap(err, "unable to write sandbox mode terraform")
 			}
 		}
 		if plan.SandboxMode.HelmSandboxMode != nil {
-			if err := j.writeHelmSandboxMode(ctx, job, plan); err != nil {
+			if err := j.writeHelmSandboxMode(ctx, job, jobExecution, plan.SandboxMode.HelmSandboxMode); err != nil {
 				return errors.Wrap(err, "unable to write sandbox mode helm")
 			}
 		}

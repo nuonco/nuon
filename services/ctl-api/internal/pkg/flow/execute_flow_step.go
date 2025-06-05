@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
@@ -23,20 +22,7 @@ func (c *FlowConductor[DomainSignal]) executeStep(ctx workflow.Context, req even
 	}
 
 	defer func() {
-		// NOTE(jm): this should be a helper function.
-		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
-			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
-			defer cancelCtxCancel()
-
-			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
-				ID: step.ID,
-				Status: app.CompositeStatus{
-					Status: app.StatusCancelled,
-				},
-			}); err != nil {
-				l.Error("unable to update step status on cancellation", zap.Error(err))
-			}
-		}
+		c.checkStepCancellation(ctx, step.ID)
 	}()
 
 	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepStartedAtByID(ctx, step.ID); err != nil {
@@ -74,13 +60,6 @@ func (c *FlowConductor[DomainSignal]) executeStep(ctx workflow.Context, req even
 		return c.handleStepErr(ctx, step.ID, err)
 	}
 
-	ctx = cctx.SetFlowContextWithinWorkflow(ctx, &app.FlowContext{
-		// ID:         step.FlowID, // TODO(sdboyer) REFACTOR
-		ID:         step.InstallWorkflowID,
-		FlowStepID: &step.ID,
-		StepName:   &step.Name,
-	})
-
 	// TODO(sdboyer) abstract actual dispatch of the signal into here once we can, then remove ExecFn completely
 	err = c.ExecFn(ctx, req, sig, *step)
 	if err != nil {
@@ -96,6 +75,7 @@ func (c *FlowConductor[DomainSignal]) executeStep(ctx workflow.Context, req even
 	}); err != nil {
 		return err
 	}
+
 	return nil
 }
 

@@ -98,3 +98,5 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 	})
 	return pipe, nil
 }
+
+// ERROR   Error: Failed to load "plan.json" as a plan file       {"runner_job.id": "jobkzk7jsx8tavjy4srtg7onke", "log_stream.id": "log3s18i3phin4wxzk07qw5tra", "runner_job_execution.id": "run52bzfgzg0pq3ao41bjqhq65", "runner_job_execution_step.name": "execute", "type": "diagnostic", "@module": "terraform.ui", "@timestamp": "2025-06-04T14:58:49.632504-07:00", "diagnostic": {"detail":"Error: stat plan.json: no such file or directory","severity":"error","summary":"Failed to load \"plan.json\" as a plan file"}}

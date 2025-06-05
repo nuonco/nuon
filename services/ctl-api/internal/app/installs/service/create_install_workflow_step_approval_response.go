@@ -13,8 +13,8 @@ import (
 )
 
 type CreateInstallWorkflowStepApprovalResponseRequest struct {
-	ResponseType app.InstallWorkflowStepResponseType `json:"response_type"`
-	Note         string                              `json:"note"`
+	ResponseType app.InstallWorkflowApprovalResponseType `json:"response_type"`
+	Note         string                                  `json:"note"`
 }
 
 func (c *CreateInstallWorkflowStepApprovalResponseRequest) Validate(v *validator.Validate) error {

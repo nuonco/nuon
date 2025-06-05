@@ -48,6 +48,8 @@ func (s *service) getInstallWorkflows(ctx *gin.Context, installID string) ([]app
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("Steps").
+		Preload("Steps.Approval").
+		Preload("Steps.Approval.Response").
 		Where("owner_id = ?", installID).
 		Order("created_at desc").
 		Find(&installWorkflows)

@@ -38,7 +38,8 @@ export const EventStatus: FC<{ status?: string }> = ({
       status === 'provisioning' ||
       status === 'syncing' ||
       status === 'deploying' ||
-      status === 'available',
+      status === 'available' ||
+      status === 'pending-approval',
   }
 
   return (
