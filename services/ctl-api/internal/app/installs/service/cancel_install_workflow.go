@@ -71,7 +71,7 @@ func (s *service) cancelInstallWorkflow(ctx context.Context, installWorkflowID s
 	}
 
 	status := app.NewCompositeStatus(ctx, app.StatusCancelled)
-	res := s.db.WithContext(ctx).Model(obj).Updates(
+	res := s.db.WithContext(ctx).Model(&obj).Updates(
 		map[string]any{
 			"status": status,
 		})

@@ -60,16 +60,6 @@ func logstreamIDFromContext(ctx context.Context) string {
 	return valObj.ID
 }
 
-func installWorkflowFromContext(ctx context.Context) *InstallWorkflowContext {
-	val := ctx.Value(keys.InstallWorkflowCtxKey)
-	valObj, ok := val.(*InstallWorkflowContext)
-	if !ok {
-		return nil
-	}
-
-	return valObj
-}
-
 func configFromContext(ctx context.Context) *internal.Config {
 	val := ctx.Value(keys.CfgCtxKey)
 	valObj, ok := val.(*internal.Config)
