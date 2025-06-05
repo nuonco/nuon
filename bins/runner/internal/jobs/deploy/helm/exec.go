@@ -31,6 +31,7 @@ func (h *handler) execUninstall(ctx context.Context, l *zap.Logger, actionCfg *a
 	return nil
 }
 
+// NOTE: the helm plans are not real plans, they are just diffs
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
@@ -46,13 +47,15 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	// set the release storage backend dynamically
 	releaseStore, err := h.getHelmReleaseStore(ctx, kubeCfg)
-        if err != nil {
-                return errors.Wrap(err, "unable to get release store")
-        }
+	if err != nil {
+		return errors.Wrap(err, "unable to get release store")
+	}
 
 	actionCfg.Releases = releaseStore
 
-	if job.Operation == models.AppRunnerJobOperationTypeDestroy {
+	// op: uninstall
+	if job.Operation == models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan {
+		// create "plan"
 		return h.execUninstall(ctx, l, actionCfg, job, jobExecution)
 	}
 
@@ -63,22 +66,46 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	var (
-		rel *release.Release
-		op  string
+		rel  *release.Release
+		op   string
+		diff string
 	)
-	if prevRel == nil {
-		op = "install"
+
+	switch job.Operation {
+	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
+		// in this case, the diff is generated so it is available to the createAPIResult method
+		l.Info("executing helm diff")
+		if prevRel == nil {
+			diff, err = h.install_diff(ctx, l, actionCfg, kubeCfg)
+		} else {
+			diff, err = h.upgrade_diff(ctx, l, actionCfg, kubeCfg)
+		}
+	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
+		l.Info("executing helm uninstall")
 		rel, err = h.install(ctx, l, actionCfg, kubeCfg)
-	} else {
-		op = "upgrade"
-		rel, err = h.upgrade(ctx, l, actionCfg, kubeCfg)
+	case models.AppRunnerJobOperationTypeApplyDashPlan:
+		l.Info(fmt.Sprintf("executing helm %s", op))
+		if prevRel == nil {
+			op = "install"
+			rel, err = h.install(ctx, l, actionCfg, kubeCfg)
+		} else {
+			op = "upgrade"
+			rel, err = h.upgrade(ctx, l, actionCfg, kubeCfg)
+		}
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unsupported run type %s", job.Operation)
 	}
+
+	// handle error
 	if err != nil {
 		h.writeErrorResult(ctx, op, err)
 		return fmt.Errorf("unable to %s helm chart: %w", op, err)
 	}
 
-	apiRes, err := h.createAPIResult(rel)
+	apiRes, err := h.createAPIResult(rel, diff)
 	if err != nil {
 		h.writeErrorResult(ctx, op, err)
 		return fmt.Errorf("unable to create api result from release: %w", err)

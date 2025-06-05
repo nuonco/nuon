@@ -143,14 +143,14 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 	// NOTE(JM): the following endpoints should be removed after workflows/independent runners are rolled out
 	api.POST("/v1/installs/:install_id/admin-reprovision", s.ReprovisionInstall)
-	api.POST("/v1/installs/:install_id/admin-reprovision-runner", s.AdminReprovisionInstallRunner)
-	api.POST("/v1/installs/:install_id/admin-deprovision-runner", s.AdminDeprovisionInstallRunner)
 	api.POST("/v1/installs/:install_id/admin-delete", s.AdminDeleteInstall)
 	api.POST("/v1/installs/:install_id/admin-forget", s.AdminForgetInstall)
 	api.POST("/v1/installs/:install_id/admin-update-sandbox", s.AdminUpdateSandbox)
-	api.POST("/v1/installs/:install_id/admin-teardown-components", s.AdminTeardownInstallComponents)
 	api.POST("/v1/installs/admin-backfill-install-sandboxes", s.AdminaBackfillInstallSandboxes)
 	api.POST("/v1/installs/admin-backfill-install-components", s.AdminaBackfillInstallComponents)
+
+	// temp for hackathon
+	api.POST("/v1/admin-install-workflow-step-approve", s.AdminInstallWorkflowStepApprove)
 	return nil
 }
 

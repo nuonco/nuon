@@ -97,7 +97,7 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
     installWorkflowId: deploy?.install_workflow_id,
     orgId,
   }).catch(console.error)
-
+  
   return (
     <DashboardContent
       breadcrumb={[
