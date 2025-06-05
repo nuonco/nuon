@@ -23,7 +23,7 @@ export const CodeEditor: FC<ICodeEditor> = ({
     readOnly: true,
     minimap: { enabled: false },
   },
-  theme = 'light',
+  theme = 'vs-dark',
   wrapperClassName,
   ...props
 }) => (
