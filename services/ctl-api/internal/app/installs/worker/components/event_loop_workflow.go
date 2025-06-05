@@ -10,8 +10,13 @@ import (
 
 func (w *Workflows) GetHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationExecuteDeployComponent:   AwaitExecuteDeployComponent,
-		signals.OperationExecuteTeardownComponent: AwaitExecuteTeardownComponent,
+		signals.OperationExecuteDeployComponentSyncAndPlan: AwaitExecuteDeployComponentSyncAndPlan,
+		signals.OperationExecuteDeployComponentApplyPlan:   AwaitExecuteDeployComponentApplyPlan,
+
+		signals.OperationExecuteDeployComponentSyncImage: AwaitExecuteDeployComponentSyncImage,
+
+		signals.OperationExecuteTeardownComponentSyncAndPlan: AwaitExecuteTeardownComponentSyncAndPlan,
+		signals.OperationExecuteTeardownComponentApplyPlan:   AwaitExecuteTeardownComponentApplyPlan,
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
@@ -35,19 +36,6 @@ func (s *service) DeleteInstallComponents(ctx *gin.Context) {
 	}
 
 	force := ctx.GetBool("force")
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureIndependentRunner)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if !enabled {
-		s.evClient.Send(ctx, installID, &signals.Signal{
-			Type: signals.OperationDeleteComponents,
-		})
-
-		ctx.JSON(http.StatusCreated, "ok")
-		return
-	}
 
 	behavior := app.StepErrorBehaviorAbort
 	if force {

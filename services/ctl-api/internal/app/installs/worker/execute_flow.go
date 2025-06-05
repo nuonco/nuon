@@ -26,6 +26,8 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 		MW:         w.mw,
 		Generators: w.getFlowStepGenerators(ctx),
 		ExecFn: func(ctx workflow.Context, ereq eventloop.EventLoopRequest, sig *signals.Signal, step app.FlowStep) error {
+			sig.InstallWorkflowID = sreq.FlowID
+			sig.FlowID = sreq.FlowID
 			sig.WorkflowStepID = step.ID
 			sig.WorkflowStepName = step.Name
 			sig.FlowStepID = step.ID

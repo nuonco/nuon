@@ -34,7 +34,14 @@ const (
 )
 
 const (
-	WorkflowStepApprovalStatusAwaitingResponse Status = "awaiting-response"
+	WorkflowStepApprovalStatusApproved         Status = "approved"
+	WorkflowStepApprovalStatusAwaitingResponse Status = "approval-awaiting"
+	WorkflowStepApprovalStatusApprovalExpired  Status = "approval-expired"
+	WorkflowStepApprovalStatusApprovalDenied   Status = "approval-denied"
+)
+
+const (
+	WorkflowAwaitingApproval Status = "awaiting-approval"
 )
 
 func (s Status) DefaultHumanDescription() string {
@@ -44,7 +51,7 @@ func (s Status) DefaultHumanDescription() string {
 	case StatusPending:
 		return "pending"
 	case StatusInProgress:
-		return "pending"
+		return "in-progress"
 	}
 
 	return string(s)

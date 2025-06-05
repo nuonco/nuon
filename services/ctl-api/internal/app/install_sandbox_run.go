@@ -34,6 +34,8 @@ const (
 	SandboxRunStatusUnknown        SandboxRunStatus = "unknown"
 	SandboxRunStatusCancelled      SandboxRunStatus = "cancelled"
 	SandboxRunStatusEmpty          SandboxRunStatus = "empty"
+	SandboxRunPendingApproval      SandboxRunStatus = "pending-approval"
+	SandboxRunApprovalDenied       SandboxRunStatus = "approval-denied"
 )
 
 type InstallSandboxRun struct {
@@ -81,13 +83,6 @@ func (i *InstallSandboxRun) BeforeCreate(tx *gorm.DB) error {
 
 	if i.OrgID == "" {
 		i.OrgID = orgIDFromContext(tx.Statement.Context)
-	}
-
-	if i.InstallWorkflowID == nil {
-		workflow := installWorkflowFromContext(tx.Statement.Context)
-		if workflow != nil {
-			i.InstallWorkflowID = &workflow.ID
-		}
 	}
 
 	return nil
