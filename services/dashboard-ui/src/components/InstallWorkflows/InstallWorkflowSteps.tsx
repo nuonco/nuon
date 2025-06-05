@@ -237,6 +237,8 @@ const InstallWorkflowStepTitle: FC<{
             </Badge>
           ) : status.status === 'not-attempted' ? (
             <Badge isCompact>Not attempted</Badge>
+          ) : status.status === 'pending-approval' ? (
+            <Badge isCompact theme="warn">Needs approval</Badge>
           ) : status?.status === 'success' ? (
             <span className="flex gap-1">
               {getFinishedText(status)} in

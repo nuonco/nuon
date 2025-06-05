@@ -16,5 +16,8 @@ type DeployPlan struct {
 	TerraformDeployPlan *TerraformDeployPlan `json:"terraform"`
 	NoopDeployPlan      *NoopDeployPlan      `json:"noop"`
 
+	// The following field is for applying a plan that is already save
+	ApplyPlanContents string `json:"apply_plan_contents"`
+
 	SandboxMode *SandboxMode `json:"omitzero,omitempty"`
 }

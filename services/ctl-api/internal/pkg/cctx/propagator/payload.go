@@ -6,25 +6,19 @@ import (
 )
 
 type Payload struct {
-	OrgID           string                      `json:"org_id"`
-	AccountID       string                      `json:"account_id"`
-	LogStream       *app.LogStream              `json:"log_stream,omitempty"`
-	InstallWorkflow *app.InstallWorkflowContext `json:"install_workflow,omitempty"`
-	Flow        *app.FlowContext        `json:"flow,omitempty"`
+	OrgID     string         `json:"org_id"`
+	AccountID string         `json:"account_id"`
+	LogStream *app.LogStream `json:"log_stream,omitempty"`
 }
 
 func FetchPayload(ctx cctx.ValueContext) (*Payload, error) {
 	acctID, _ := cctx.AccountIDFromContext(ctx)
 	orgID, _ := cctx.OrgIDFromContext(ctx)
 	logStream, _ := cctx.GetLogStreamContext(ctx)
-	workflow, _ := cctx.GetInstallWorkflowContext(ctx)
-	flow, _ := cctx.GetFlowContext(ctx)
 
 	return &Payload{
-		OrgID:           orgID,
-		AccountID:       acctID,
-		LogStream:       logStream,
-		InstallWorkflow: workflow,
-		Flow: flow,
+		OrgID:     orgID,
+		AccountID: acctID,
+		LogStream: logStream,
 	}, nil
 }

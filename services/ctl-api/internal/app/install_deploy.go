@@ -16,40 +16,27 @@ import (
 type InstallDeployType string
 
 const (
-	InstallDeployTypeRelease  InstallDeployType = "release"
-	InstallDeployTypeInstall  InstallDeployType = "install"
+	InstallDeployTypeSync     InstallDeployType = "sync-image"
+	InstallDeployTypeApply    InstallDeployType = "apply"
 	InstallDeployTypeTeardown InstallDeployType = "teardown"
-	InstallDeployTypePlanOnly InstallDeployType = "plan-only"
 )
-
-func (i InstallDeployType) RunnerJobOperationType() RunnerJobOperationType {
-	switch i {
-	case InstallDeployTypeTeardown:
-		return RunnerJobOperationTypeDestroy
-	case InstallDeployTypeRelease,
-		InstallDeployTypeInstall:
-		return RunnerJobOperationTypeCreate
-	case InstallDeployTypePlanOnly:
-		return RunnerJobOperationTypePlanOnly
-	}
-
-	return RunnerJobOperationTypeUnknown
-}
 
 type InstallDeployStatus string
 
 const (
-	InstallDeployStatusActive    InstallDeployStatus = "active"
-	InstallDeployStatusInactive  InstallDeployStatus = "inactive"
-	InstallDeployStatusError     InstallDeployStatus = "error"
-	InstallDeployStatusNoop      InstallDeployStatus = "noop"
-	InstallDeployStatusPlanning  InstallDeployStatus = "planning"
-	InstallDeployStatusSyncing   InstallDeployStatus = "syncing"
-	InstallDeployStatusExecuting InstallDeployStatus = "executing"
-	InstallDeployStatusCancelled InstallDeployStatus = "cancelled"
-	InstallDeployStatusUnknown   InstallDeployStatus = "unknown"
-	InstallDeployStatusPending   InstallDeployStatus = "pending"
-	InstallDeployStatusQueued    InstallDeployStatus = "queued"
+	InstallDeployStatusActive          InstallDeployStatus = "active"
+	InstallDeployStatusInactive        InstallDeployStatus = "inactive"
+	InstallDeployStatusError           InstallDeployStatus = "error"
+	InstallDeployStatusNoop            InstallDeployStatus = "noop"
+	InstallDeployStatusPlanning        InstallDeployStatus = "planning"
+	InstallDeployStatusSyncing         InstallDeployStatus = "syncing"
+	InstallDeployStatusExecuting       InstallDeployStatus = "executing"
+	InstallDeployStatusCancelled       InstallDeployStatus = "cancelled"
+	InstallDeployStatusUnknown         InstallDeployStatus = "unknown"
+	InstallDeployStatusPending         InstallDeployStatus = "pending"
+	InstallDeployStatusQueued          InstallDeployStatus = "queued"
+	InstallDeployStatusPendingApproval InstallDeployStatus = "pending-approval"
+	InstallDeployApprovalDenied        InstallDeployStatus = "approval-denied"
 )
 
 type InstallDeploy struct {
@@ -103,12 +90,6 @@ func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {
 	}
 	if c.OrgID == "" {
 		c.OrgID = orgIDFromContext(tx.Statement.Context)
-	}
-	if c.InstallWorkflowID == nil {
-		workflow := installWorkflowFromContext(tx.Statement.Context)
-		if workflow != nil {
-			c.InstallWorkflowID = &workflow.ID
-		}
 	}
 
 	return nil

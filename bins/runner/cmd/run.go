@@ -19,11 +19,9 @@ import (
 	noopdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/noop"
 	terraformdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/terraform"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations"
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner"
-	runnerhelm "github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner/helm"
-	runnerterraform "github.com/powertoolsdev/mono/bins/runner/internal/jobs/runner/terraform"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/sandbox"
 	sandboxsyncsecrets "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sandbox/sync_secrets"
+
 	sandboxterraform "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sandbox/terraform"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync"
 	"github.com/powertoolsdev/mono/bins/runner/internal/registry"
@@ -83,11 +81,6 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 		fx.Provide(jobloop.AsJobLoop(sandbox.NewJobLoop)),
 		fx.Provide(jobs.AsJobHandler("sandbox", sandboxterraform.New)),
 		fx.Provide(jobs.AsJobHandler("sandbox", sandboxsyncsecrets.New)),
-
-		// runner jobs
-		fx.Provide(jobloop.AsJobLoop(runner.NewJobLoop)),
-		fx.Provide(jobs.AsJobHandler("runner", runnerterraform.New)),
-		fx.Provide(jobs.AsJobHandler("runner", runnerhelm.New)),
 
 		// install-only proviers
 		// deploy jobs

@@ -73,24 +73,6 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		Type: signals.OperationSyncActionWorkflowTriggers,
 	})
 
-	// TODO(jm): remove this once the legacy install flow is deprecated
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureIndependentRunner)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if !enabled {
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationProvision,
-		})
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationDeployComponents,
-		})
-
-		ctx.JSON(http.StatusCreated, install)
-		return
-	}
-
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
 		app.InstallWorkflowTypeProvision,

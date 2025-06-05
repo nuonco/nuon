@@ -46,7 +46,7 @@ export const Notice: FC<INotice> = ({
       })}
     >
       <span className="flex self-start">{Icon}</span>
-      <span className="leading-normal text-sm font-mono py-0.5">
+      <span className="leading-normal text-sm font-mono py-0.5 !w-full">
         {children}
       </span>
     </div>

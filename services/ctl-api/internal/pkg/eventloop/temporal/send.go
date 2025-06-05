@@ -138,7 +138,13 @@ func (e *evClient) SendAsync(ctx workflow.Context, id string, signal eventloop.S
 		mungeid = id[idx+1:]
 	}
 
-	var cancelled bool
+	dctx, _ := workflow.NewDisconnectedContext(ctx)
+
+	// Prepare to receive response & cancellation before we send the signal
+	selector := workflow.NewSelector(dctx)
+	fut, set := workflow.NewFuture(ctx)
+
+	donechan := ctx.Done()
 	err := workflow.SignalExternalWorkflow(
 		workflow.WithWorkflowNamespace(ctx, signal.Namespace()),
 		signal.WorkflowID(id),
@@ -153,28 +159,17 @@ func (e *evClient) SendAsync(ctx workflow.Context, id string, signal eventloop.S
 			zap.String("to-workflow", id),
 			zap.Error(err),
 		)
-		cancelled = true
+
 		return nil, errors.Wrapf(err, "failed sending signal to workflow with id %q in namespace %q", signal.WorkflowID(id), signal.Namespace())
 	}
-
-	donechan := ctx.Done()
-	dctx, cancel := workflow.NewDisconnectedContext(ctx)
-	defer func() {
-		if cancelled {
-			cancel()
-		}
-	}()
-
-	// Prepare to receive response before we send the signal
-	selector := workflow.NewSelector(dctx)
-	fut, set := workflow.NewFuture(dctx)
 
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		val := new(eventloop.SignalDoneMessage)
 		schan := workflow.GetSignalChannel(ctx, listener.SignalName)
 		closed := schan.Receive(ctx, val)
-
-		if val != nil {
+		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
+			set.SetError(ctx.Err())
+		} else if val != nil {
 			set.Set(val.Result, val.Error)
 		} else if closed {
 			err := errors.New("notification signal channel was closed")
@@ -186,8 +181,6 @@ func (e *evClient) SendAsync(ctx workflow.Context, id string, signal eventloop.S
 	})
 
 	selector.AddReceive(donechan, func(_ workflow.ReceiveChannel, _ bool) {
-		cancelled = true
-
 		// Propagate the cancellation to the signalled workflow
 		err := workflow.SignalExternalWorkflow(
 			workflow.WithWorkflowNamespace(ctx, signal.Namespace()),
@@ -207,11 +200,11 @@ func (e *evClient) SendAsync(ctx workflow.Context, id string, signal eventloop.S
 	})
 	selector.AddFuture(fut, func(f workflow.Future) {})
 
-	// Now send it
-	selector.Select(dctx)
-	if cancelled {
-		return nil, ctx.Err()
-	}
+	workflow.Go(dctx, func(ctx workflow.Context) {
+		// This will return either when a cancellation is received, or the future is completed
+		selector.Select(ctx)
+	})
+
 	return fut, nil
 }
 

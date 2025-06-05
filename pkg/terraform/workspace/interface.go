@@ -26,17 +26,22 @@ type Workspace interface {
 	LoadVariables(ctx context.Context) error
 	// Root returns the root directory
 	Root() string
+	// Writes plan to plan.json
+	WritePlan(ctx context.Context, plan string) error
 
-  Cleanup(ctx context.Context) error
+	Cleanup(ctx context.Context) error
 
 	// the following commands are used to run terraform operations against a workspace
 	Apply(context.Context, hclog.Logger) ([]byte, error)
+	ApplyPlan(context.Context, hclog.Logger) ([]byte, error)
 	Destroy(context.Context, hclog.Logger) ([]byte, error)
+	ApplyDestroyPlan(context.Context, hclog.Logger) ([]byte, error)
 	Init(context.Context, hclog.Logger) error
 	Refresh(context.Context, hclog.Logger) ([]byte, error)
 	Plan(context.Context, hclog.Logger) ([]byte, error)
 	Output(context.Context, hclog.Logger) (map[string]tfexec.OutputMeta, error)
 	Show(context.Context, hclog.Logger) (*tfjson.State, error)
+	ShowPlan(context.Context, hclog.Logger) (*tfjson.Plan, error)
 	Validate(context.Context, hclog.Logger) (*tfjson.ValidateOutput, error)
 }
 

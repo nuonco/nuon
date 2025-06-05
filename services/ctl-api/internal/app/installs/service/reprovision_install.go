@@ -54,20 +54,6 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		return
 	}
 
-	// TODO(jm): remove this once the legacy install flow is deprecated
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureIndependentRunner)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if !enabled {
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationReprovision,
-		})
-		ctx.JSON(http.StatusCreated, install)
-		return
-	}
-
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
 		app.InstallWorkflowTypeReprovision,

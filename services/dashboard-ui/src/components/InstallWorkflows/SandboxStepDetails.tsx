@@ -3,12 +3,14 @@
 import { useParams } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { CaretRight } from '@phosphor-icons/react'
+import { Badge } from '@/components/Badge'
 import { Link } from '@/components/Link'
 import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { StatusBadge } from '@/components/Status'
 import { Text } from '@/components/Typography'
 import type { TSandboxRun } from '@/types'
+import { ApprovalStep } from './ApproveStep'
 import type { IPollStepDetails } from './InstallWorkflowSteps'
 
 export const SandboxStepDetails: FC<IPollStepDetails> = ({
@@ -56,6 +58,24 @@ export const SandboxStepDetails: FC<IPollStepDetails> = ({
       ) : (
         <>
           {error ? <Notice>{error}</Notice> : null}
+          {step?.approval && !step?.approval?.response ? (
+            <ApprovalStep
+              approval={step?.approval}
+              step={step}
+              workflowId={step?.install_workflow_id}
+            />
+          ) : null}
+          {step?.approval?.response ? (
+            <Badge
+              theme={
+                step?.approval?.response?.type?.includes('approve')
+                  ? 'success'
+                  : 'warn'
+              }
+            >
+              Plan {step?.approval?.response?.type}
+            </Badge>
+          ) : null}
           {sandboxRun ? (
             <div className="flex flex-col border rounded-md shadow">
               <div className="flex items-center justify-between p-3 border-b">
