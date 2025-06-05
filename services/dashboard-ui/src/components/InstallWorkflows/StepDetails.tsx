@@ -20,48 +20,22 @@ export function getStepType(
 
   switch (step.step_target_type) {
     case 'install_sandbox_runs':
-      stepDetails = (
-        <SandboxStepDetails
-          step={step}
-          shouldPoll={step?.status?.status === 'in-progress'}
-        />
-      )
+      stepDetails = <SandboxStepDetails step={step} shouldPoll />
       break
 
     case 'install_stack_versions':
-      stepDetails = (
-        <StackStep
-          step={step}
-          appId={install?.app_id}
-          shouldPoll={step?.status?.status === 'in-progress'}
-        />
-      )
+      stepDetails = <StackStep step={step} appId={install?.app_id} shouldPoll />
       break
 
     case 'install_action_workflow_runs':
-      stepDetails = (
-        <ActionStepDetails
-          step={step}
-          shouldPoll={step?.status?.status === 'in-progress'}
-        />
-      )
+      stepDetails = <ActionStepDetails step={step} shouldPoll />
       break
 
     case 'runners':
-      stepDetails = (
-        <RunnerStepDetails
-          step={step}
-          shouldPoll={step?.status?.status === 'in-progress'}
-        />
-      )
+      stepDetails = <RunnerStepDetails step={step} shouldPoll />
       break
     case 'install_deploys':
-      stepDetails = (
-        <DeployStepDetails
-          step={step}
-          shouldPoll={step?.status?.status === 'in-progress'}
-        />
-      )
+      stepDetails = <DeployStepDetails step={step} shouldPoll />
       break
     default:
       stepDetails = (
@@ -102,8 +76,8 @@ export function getStepType(
         {step?.status?.metadata?.reason ? (
           <Notice
             variant={
-            step?.status?.status === 'cancelled' ||
-            step?.status?.status === 'approval-denied' ||
+              step?.status?.status === 'cancelled' ||
+              step?.status?.status === 'approval-denied' ||
               step.execution_type === 'skipped'
                 ? 'warn'
                 : step?.status?.status === 'error'
