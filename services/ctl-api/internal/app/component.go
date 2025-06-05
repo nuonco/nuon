@@ -31,6 +31,13 @@ const (
 	ComponentTypeUnknown         ComponentType = "unknown"
 )
 
+func (c ComponentType) IsImage() bool {
+	return generics.SliceContains(c, []ComponentType{
+		ComponentTypeDockerBuild,
+		ComponentTypeExternalImage,
+	})
+}
+
 func (c ComponentType) SyncJobType() RunnerJobType {
 	switch c {
 	case ComponentTypeTerraformModule,
@@ -59,6 +66,22 @@ func (c ComponentType) DeployJobType() RunnerJobType {
 		// the following do not require deploys
 	case ComponentTypeDockerBuild,
 		ComponentTypeExternalImage:
+		return RunnerJobTypeJobNOOPDeploy
+	default:
+	}
+
+	return RunnerJobTypeUnknown
+}
+
+func (c ComponentType) DeployPlanJobType() RunnerJobType {
+	switch c {
+	case ComponentTypeTerraformModule:
+		return RunnerJobTypeTerraformDeploy
+	case ComponentTypeHelmChart:
+		return RunnerJobTypeHelmChartDeploy
+	case ComponentTypeDockerBuild:
+		return RunnerJobTypeJobNOOPDeploy
+	case ComponentTypeExternalImage:
 		return RunnerJobTypeJobNOOPDeploy
 	default:
 	}

@@ -243,6 +243,24 @@ func (w *workspace) show(ctx context.Context, client Terraform) (*tfjson.State, 
 	return out, nil
 }
 
+func (w *workspace) ShowPlan(ctx context.Context, log hclog.Logger) (*tfjson.Plan, error) {
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.showPlan(ctx, client)
+}
+
+func (w *workspace) showPlan(ctx context.Context, client Terraform) (*tfjson.Plan, error) {
+	out, err := client.ShowPlanFile(ctx, "tfplan")
+	if err != nil {
+		return nil, fmt.Errorf("unable to execute show: %w", err)
+	}
+
+	return out, nil
+}
+
 func (w *workspace) Validate(ctx context.Context, log hclog.Logger) (*tfjson.ValidateOutput, error) {
 	client, err := w.getClient(ctx, log)
 	if err != nil {
@@ -264,4 +282,112 @@ func (w *workspace) validate(ctx context.Context, client Terraform, log hclog.Lo
 	}
 
 	return out, nil
+}
+
+func (w *workspace) ApplyPlan(ctx context.Context, log hclog.Logger) ([]byte, error) {
+	if err := w.Hooks.PreApply(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing pre-apply hook: %w", err)
+	}
+
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	byts, err := w.applyPlan(ctx, client, log)
+	if err != nil {
+		if hookErr := w.Hooks.ErrorApply(ctx, log); hookErr != nil {
+			return nil, fmt.Errorf("error executing error-apply hook: %w: original-error: %w", hookErr, err)
+		}
+		return nil, err
+	}
+
+	if err := w.Hooks.PostApply(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing post-apply hook: %w", err)
+	}
+	return byts, nil
+}
+
+func (w *workspace) applyPlan(ctx context.Context, client Terraform, log hclog.Logger) ([]byte, error) {
+	out, err := output.New(w.v, output.WithLogger(log))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output: %w", err)
+	}
+
+	writer, err := out.Writer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get writer: %w", err)
+	}
+
+	opts := []tfexec.ApplyOption{
+		tfexec.Refresh(true),
+		tfexec.DirOrPlan("plan.json"),
+	}
+	for _, fp := range w.varsPaths {
+		opts = append(opts, tfexec.VarFile(fp))
+	}
+
+	if err := client.ApplyJSON(ctx,
+		writer,
+		opts...,
+	); err != nil {
+		return nil, fmt.Errorf("error running apply: %w", err)
+	}
+
+	return out.Bytes()
+}
+
+// NOTE: creates a plan for tf destroy
+func (w *workspace) ApplyDestroyPlan(ctx context.Context, log hclog.Logger) ([]byte, error) {
+	if err := w.Hooks.PreApply(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing pre-apply hook: %w", err)
+	}
+
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	byts, err := w.applyDestroyPlan(ctx, client, log)
+	if err != nil {
+		if hookErr := w.Hooks.ErrorApply(ctx, log); hookErr != nil {
+			return nil, fmt.Errorf("error executing error-apply hook: %w: original-error: %w", hookErr, err)
+		}
+		return nil, err
+	}
+
+	if err := w.Hooks.PostApply(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing post-apply hook: %w", err)
+	}
+	return byts, nil
+}
+
+func (w *workspace) applyDestroyPlan(ctx context.Context, client Terraform, log hclog.Logger) ([]byte, error) {
+	out, err := output.New(w.v, output.WithLogger(log))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output: %w", err)
+	}
+
+	writer, err := out.Writer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get writer: %w", err)
+	}
+
+	opts := []tfexec.ApplyOption{
+		tfexec.Refresh(true),
+		tfexec.DirOrPlan("plan.json"),
+		tfexec.Destroy(true),
+	}
+	for _, fp := range w.varsPaths {
+		opts = append(opts, tfexec.VarFile(fp))
+	}
+
+	if err := client.ApplyJSON(ctx,
+		writer,
+		opts...,
+	); err != nil {
+		return nil, fmt.Errorf("error running apply: %w", err)
+	}
+
+	return out.Bytes()
 }

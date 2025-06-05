@@ -4,26 +4,21 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type CreateInstallDeployRequest struct {
-	InstallID   string `json:"install_id"`
-	ComponentID string `json:"component_id"`
-	BuildID     string `json:"build_id"`
-	Teardown    bool   `json:"teardown"`
-	Signal      bool   `json:"signal"`
+	InstallID   string                `json:"install_id"`
+	ComponentID string                `json:"component_id"`
+	BuildID     string                `json:"build_id"`
+	Type        app.InstallDeployType `json:"type"`
+	WorkflowID  string                `json:"workflow_id"`
 }
 
 // @temporal-gen activity
 func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallDeployRequest) (*app.InstallDeploy, error) {
 	// create deploy
-	deployTyp := app.InstallDeployTypeInstall
-	if req.Teardown {
-		deployTyp = app.InstallDeployTypeTeardown
-	}
-
 	install, err := a.getInstall(ctx, req.InstallID)
 	if err != nil {
 		return nil, err
@@ -46,19 +41,13 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		Status:             "queued",
 		StatusDescription:  "waiting to be deployed to install",
 		ComponentBuildID:   req.BuildID,
-		Type:               deployTyp,
+		Type:               req.Type,
+		InstallWorkflowID:  generics.ToPtr(req.WorkflowID),
 	}
 
 	res = a.db.WithContext(ctx).Create(&installDeploy)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install deploy: %w", res.Error)
-	}
-
-	if req.Signal {
-		a.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type:     signals.OperationDeploy,
-			DeployID: installDeploy.ID,
-		})
 	}
 
 	return &installDeploy, nil

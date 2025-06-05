@@ -6,8 +6,14 @@ import (
 )
 
 // TODO(jm): pull out the helm resources and their statuses from the release, and write them to the api
-func (h *handler) createAPIResult(rel *release.Release) (*models.ServiceCreateRunnerJobExecutionResultRequest, error) {
-	return &models.ServiceCreateRunnerJobExecutionResultRequest{
+func (h *handler) createAPIResult(rel *release.Release, plan string) (*models.ServiceCreateRunnerJobExecutionResultRequest, error) {
+	req := &models.ServiceCreateRunnerJobExecutionResultRequest{
 		Success: true,
-	}, nil
+	}
+	if plan != "" {
+		req.Contents = plan
+	}
+
+	return req, nil
+
 }

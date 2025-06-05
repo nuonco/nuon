@@ -4,8 +4,9 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -54,14 +55,44 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, er
 	}
 	steps = append(steps, preDeploySteps...)
 
-	deployStep, err := installSignalStep(ctx, installID, "deploy "+comp.Name, pgtype.Hstore{}, &signals.Signal{
-		Type: signals.OperationExecuteDeployComponent,
-		ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
-			DeployID:    generics.FromPtrStr(installDeployID),
-			ComponentID: comp.ID,
-		},
-	})
-	steps = append(steps, deployStep)
+	// sync image
+	if comp.Type.IsImage() {
+		deployStep, err := installSignalStep(ctx, installID, "sync "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+			Type: signals.OperationExecuteDeployComponentSyncImage,
+			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
+				DeployID:    generics.FromPtrStr(installDeployID),
+				ComponentID: comp.ID,
+			},
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create image sync")
+		}
+
+		steps = append(steps, deployStep)
+	} else {
+		planStep, err := installSignalStep(ctx, installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+			Type: signals.OperationExecuteDeployComponentSyncAndPlan,
+			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
+				DeployID:    generics.FromPtrStr(installDeployID),
+				ComponentID: comp.ID,
+			},
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create image sync")
+		}
+		applyPlanStep, err := installSignalStep(ctx, installID, "apply "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+			Type: signals.OperationExecuteDeployComponentApplyPlan,
+			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
+				DeployID:    generics.FromPtrStr(installDeployID),
+				ComponentID: comp.ID,
+			},
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create image sync")
+		}
+
+		steps = append(steps, planStep, applyPlanStep)
+	}
 
 	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, installDeploy.ComponentID, installID, app.ActionWorkflowTriggerTypePostDeployComponent)
 	if err != nil {

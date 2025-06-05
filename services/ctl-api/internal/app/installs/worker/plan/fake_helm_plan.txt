@@ -1,0 +1,111 @@
+# Source: myapp/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  labels:
+    app: myapp
+    chart: myapp-1.2.0
+-   version: 1.1.0
++   version: 1.2.0
+spec:
+- replicas: 2
++ replicas: 3
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp
+-       image: mycompany/myapp:v1.1.0
++       image: mycompany/myapp:v1.2.0
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+-           cpu: 500m
++           cpu: 1000m
+-           memory: 512Mi
++           memory: 1Gi
+          requests:
+-           cpu: 200m
++           cpu: 500m
+-           memory: 256Mi
++           memory: 512Mi
+-       livenessProbe:
+-         httpGet:
+-           path: /healthz
+-           port: 8080
+-         initialDelaySeconds: 30
++       livenessProbe:
++         httpGet:
++           path: /health/live
++           port: 8080
++         initialDelaySeconds: 20
++       readinessProbe:
++         httpGet:
++           path: /health/ready
++           port: 8080
++         initialDelaySeconds: 10
+
+# Source: myapp/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp
+  labels:
+    app: myapp
+spec:
+  selector:
+    app: myapp
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+-   name: http
++   name: http-web
++   
++ ---
++ # Source: myapp/templates/configmap.yaml
++ apiVersion: v1
++ kind: ConfigMap
++ metadata:
++   name: myapp-config
++ data:
++   application.properties: |
++     app.environment=production
++     app.logging.level=INFO
++     app.feature.newFeature=true
+
+# Source: myapp/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: myapp
+  annotations:
+-   nginx.ingress.kubernetes.io/rewrite-target: /
++   nginx.ingress.kubernetes.io/rewrite-target: /$1
++   cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
++ tls:
++ - hosts:
++   - myapp.example.com
++   secretName: myapp-tls
+  rules:
+- - host: app.example.com
++ - host: myapp.example.com
+    http:
+      paths:
+-     - path: /
++     - path: /(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: myapp
+            port:
+              number: 80
+

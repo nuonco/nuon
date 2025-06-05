@@ -386,3 +386,22 @@ export async function deprovisionSandbox({
 
   return (await res).headers.get('x-nuon-install-workflow-id')
 }
+
+interface IApproveWorklowStep {
+  orgId: string
+  workflowId: string
+  stepId: string
+  approvalId: string
+  responseType: "approve" | "deny"
+}
+
+export async function approveWorkflowStep({ approvalId, orgId, responseType, stepId, workflowId }: IApproveWorklowStep) {
+  return nueMutateData({
+    orgId,
+    path: `install-workflows/${workflowId}/steps/${stepId}/approvals/${approvalId}/response`,
+    body: {
+      note: "",
+      response_type: responseType,
+    }
+  })
+}

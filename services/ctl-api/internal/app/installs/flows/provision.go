@@ -2,8 +2,9 @@ package flows
 
 import (
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
@@ -59,8 +60,16 @@ func Provision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	step, err = installSignalStep(ctx, installID, "provision sandbox", pgtype.Hstore{}, &signals.Signal{
-		Type: signals.OperationProvisionSandbox,
+	step, err = installSignalStep(ctx, installID, "provision sandbox plan", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationProvisionSandboxPlan,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	step, err = installSignalStep(ctx, installID, "provision sandbox apply plan", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationProvisionSandboxApplyPlan,
 	})
 	if err != nil {
 		return nil, err

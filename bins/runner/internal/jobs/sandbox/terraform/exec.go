@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/nuonco/nuon-runner-go/models"
@@ -33,6 +34,12 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		p.writeErrorResult(ctx, "load terraform workspace", err)
 		return fmt.Errorf("unable to create workspace from config: %w", err)
 	}
+
+	// TODO: when we split this up, load the plan into the workspace like this
+	// plan := ""
+	// wkspace.WritePlan(ctx, plan)
+
+	// assign workspace
 	p.state.tfWorkspace = wkspace
 
 	tfRun, err := run.New(p.v, run.WithWorkspace(wkspace),
@@ -53,16 +60,17 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		l.Info("executing with Azure auth " + p.state.plan.AzureAuth.String())
 	}
 
+	// TODO: update these to actulaly plan and apply
 	switch job.Operation {
-	case models.AppRunnerJobOperationTypeApply:
-		l.Info("executing terraform apply")
-		err = tfRun.Apply(ctx)
-	case models.AppRunnerJobOperationTypeDestroy:
-		l.Info("executing terraform destroy")
-		err = tfRun.Destroy(ctx)
-	case models.AppRunnerJobOperationTypePlanDashOnly:
-		l.Info("executing terraform plan")
+	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
+		l.Info("creating terraform plan")
 		err = tfRun.Plan(ctx)
+	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
+		l.Info("creating terraform teardown plan")
+		err = tfRun.DestroyPlan(ctx)
+	case models.AppRunnerJobOperationTypeApplyDashPlan:
+		l.Info("executing terraform apply plan")
+		err = tfRun.ApplyPlan(ctx)
 	default:
 		l.Error("unsupported terraform run type", zap.String("type", string(job.Operation)))
 		return fmt.Errorf("unsupported run type %s", job.Operation)
@@ -73,10 +81,9 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	switch job.Operation {
-	case models.AppRunnerJobOperationTypeApply, models.AppRunnerJobOperationTypeDestroy:
+	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		if err := p.updateTerraformState(ctx, wkspace, hlog); err != nil {
 			p.writeErrorResult(ctx, "terraform show", err)
-			// skip returning an error here as the terraform operation finished successfully & we don't want to fail the job
 		}
 	}
 
@@ -101,5 +108,33 @@ func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Wo
 		return fmt.Errorf("unable to update state: %w", err)
 	}
 
+	return nil
+}
+
+func (p *handler) loadPlan(ctx context.Context) error {
+	// write the plan from p.state.plan <dot> plan to plan.json in the workspace
+	// err := p.state.tfWorkspace.WritePlan(ctx, p.state.plan)
+	// return err
+	return nil
+}
+
+func (p *handler) createResult(ctx context.Context) error {
+	pathToPlan := p.state.tfWorkspace.Root() + "/" + "plan.json"
+
+	// Read the plan.json file into a string
+	planBytes, err := os.ReadFile(pathToPlan)
+	if err != nil {
+		p.writeErrorResult(ctx, "failed to read plan.json file", err)
+		return fmt.Errorf("unable to read plan.json file: %w", err)
+	}
+
+	planJSON := string(planBytes)
+	_, err = p.apiClient.CreateJobExecutionResult(ctx, p.state.jobID, p.state.jobExecutionID, &models.ServiceCreateRunnerJobExecutionResultRequest{
+		Success:  true,
+		Contents: planJSON,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to create terraform apply job execution result : %w", err)
+	}
 	return nil
 }

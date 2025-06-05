@@ -35,6 +35,17 @@ func (p execPlanFn) exec(ctx context.Context, log hclog.Logger) ([]byte, error) 
 	return byts, nil
 }
 
+type execBytesFn func(context.Context, hclog.Logger) ([]byte, error)
+
+func MapBytes(fn execBytesFn) pipeline.ExecFn {
+	return fn.exec
+}
+
+func (p execBytesFn) exec(ctx context.Context, l hclog.Logger) ([]byte, error) {
+	out, err := p(ctx, l)
+	return out, err
+}
+
 func MapTerraformOutput(fn execOutputFn) pipeline.ExecFn {
 	return fn.exec
 }

@@ -2,8 +2,9 @@ package flows
 
 import (
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -37,13 +38,21 @@ func TeardownComponent(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, er
 	}
 	steps = append(steps, preDeploySteps...)
 
-	deployStep, err := installSignalStep(ctx, install.ID, "teardown "+comp.Name, pgtype.Hstore{}, &signals.Signal{
-		Type: signals.OperationExecuteTeardownComponent,
+	deployStep, err := installSignalStep(ctx, install.ID, "teardown sync and plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationExecuteTeardownComponentSyncAndPlan,
 		ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 			ComponentID: generics.FromPtrStr(componentID),
 		},
 	})
 	steps = append(steps, deployStep)
+
+	applyStep, err := installSignalStep(ctx, install.ID, "teardown apply plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationExecuteTeardownComponentApplyPlan,
+		ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
+			ComponentID: generics.FromPtrStr(componentID),
+		},
+	})
+	steps = append(steps, applyStep)
 
 	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, generics.FromPtrStr(componentID), installID, app.ActionWorkflowTriggerTypePostTeardownComponent)
 	if err != nil {

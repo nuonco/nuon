@@ -29,7 +29,7 @@ func (a *Activities) getLatestDeploy(ctx context.Context, installID, componentID
 	res := a.db.WithContext(ctx).
 		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
 			return db.Where(app.InstallDeploy{
-                                Type: app.InstallDeployTypeInstall,
+                                Type: app.InstallDeployTypeApply,
                         }).Order("install_deploys.created_at DESC").Limit(1)
 		}).
 		Where(&app.InstallComponent{

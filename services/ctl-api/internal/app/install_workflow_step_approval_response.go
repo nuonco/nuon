@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"time"
 
+	"gorm.io/gorm"
+	"gorm.io/plugin/soft_delete"
+
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
-	"gorm.io/gorm"
-	"gorm.io/plugin/soft_delete"
 )
 
 type InstallWorkflowStepResponseType string
@@ -39,7 +40,7 @@ type InstallWorkflowStepApprovalResponse struct {
 	InstallWorkflowStepApproval   InstallWorkflowStepApproval `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_workflow_step_approval,omitzero,omitempty"`
 
 	// the response type
-	Type InstallWorkflowStepResponseType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
+	Type InstallWorkflowApprovalResponseType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 
 	Note string `json:"note,omitzero" temporaljson:"note,omitzero,omitempty"`
 }

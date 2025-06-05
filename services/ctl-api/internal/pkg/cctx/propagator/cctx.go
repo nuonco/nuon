@@ -44,13 +44,11 @@ func (s *propagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.He
 	}
 
 	logStream, _ := cctx.GetLogStreamWorkflow(ctx)
-	workflow, err := cctx.GetInstallWorkflowWorkflow(ctx)
 
 	payload, err := s.dataConverter.ToPayload(Payload{
-		OrgID:           orgID,
-		AccountID:       acctID,
-		LogStream:       logStream,
-		InstallWorkflow: workflow,
+		OrgID:     orgID,
+		AccountID: acctID,
+		LogStream: logStream,
 	})
 	if err != nil {
 		return err
@@ -87,10 +85,6 @@ func (s *propagator) Extract(ctx context.Context, reader workflow.HeaderReader) 
 		ctx = cctx.SetLogStreamContext(ctx, payload.LogStream)
 	}
 
-	if payload.InstallWorkflow != nil {
-		ctx = cctx.SetInstallWorkflowContext(ctx, payload.InstallWorkflow)
-	}
-
 	return ctx, nil
 }
 
@@ -106,10 +100,6 @@ func (s *propagator) ExtractToWorkflow(ctx workflow.Context, reader workflow.Hea
 
 	if payload.LogStream != nil {
 		ctx = cctx.SetLogStreamWorkflowContext(ctx, payload.LogStream)
-	}
-
-	if payload.InstallWorkflow != nil {
-		ctx = cctx.SetInstallWorkflowWorkflowContext(ctx, payload.InstallWorkflow)
 	}
 
 	return ctx, nil
