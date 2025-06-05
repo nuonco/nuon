@@ -65,17 +65,6 @@ export const SandboxStepDetails: FC<IPollStepDetails> = ({
               workflowId={step?.install_workflow_id}
             />
           ) : null}
-          {step?.approval?.response ? (
-            <Badge
-              theme={
-                step?.approval?.response?.type?.includes('approve')
-                  ? 'success'
-                  : 'warn'
-              }
-            >
-              Plan {step?.approval?.response?.type}
-            </Badge>
-          ) : null}
           {sandboxRun ? (
             <div className="flex flex-col border rounded-md shadow">
               <div className="flex items-center justify-between p-3 border-b">
