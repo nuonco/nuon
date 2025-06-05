@@ -1,6 +1,5 @@
 export * from './Avatar'
 export * from './Button'
-export * from './Code'
 export * from './Dropdown'
 export * from './Link'
 export * from './Markdown'
