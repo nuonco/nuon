@@ -10,6 +10,8 @@ import {
   CheckCircle,
   XCircle,
   Prohibit,
+  Warning,
+  WarningDiamond,
 } from '@phosphor-icons/react/dist/ssr'
 import { revalidateData } from '@/components/actions'
 import { Link } from '@/components/Link'
@@ -171,13 +173,16 @@ export const YAStatus: FC<{
   status: TInstallWorkflow['status']['status']
   isSkipped?: boolean
 }> = ({ status, isSkipped = false }) => {
-  const isSuccess = status === 'active' || status === 'success'
+  const isSuccess =
+    status === 'active' || status === 'success' || status === 'approved'
   const isError = status === 'error'
   const isProhibit = status === 'outdated'
   const isInProgress = status === 'in-progress'
   const isCanceled = status === 'cancelled'
   const isNotAttempted = status === 'not-attempted'
   const isPending = !isSuccess && !isError && !isProhibit && !isInProgress
+  const isPendingApproval = status === 'approval-awaiting'
+  const isApprovalDenied = status === 'approval-denied'
 
   const StatusIcon = isSuccess ? (
     <CheckCircle size="18" weight="bold" />
@@ -191,6 +196,10 @@ export const YAStatus: FC<{
     <XCircle size="18" weight="bold" />
   ) : isNotAttempted ? (
     <Prohibit size="18" weight="bold" />
+  ) : isApprovalDenied ? (
+    <WarningDiamond size="18" weight="bold" />
+  ) : isPendingApproval ? (
+    <Warning size="18" weight="bold" />
   ) : (
     <ClockCountdown size="18" weight="bold" />
   )
@@ -205,9 +214,9 @@ export const YAStatus: FC<{
           'bg-red-600/15 dark:bg-red-500/15 text-red-800 dark:text-red-500':
             isError,
           'bg-orange-600/15 dark:bg-orange-500/15 text-orange-800 dark:text-orange-500':
-            isProhibit,
+            isProhibit || isApprovalDenied,
           'bg-orange-600/15 dark:bg-orange-500/15 text-orange-600 dark:text-orange-300':
-            isCanceled,
+            isCanceled || isPendingApproval,
           'bg-blue-600/15 dark:bg-blue-500/15 text-blue-800 dark:text-blue-500':
             isInProgress,
           'bg-cool-grey-600/15 dark:bg-cool-grey-500/15 text-cool-grey-800 dark:text-cool-grey-500':
