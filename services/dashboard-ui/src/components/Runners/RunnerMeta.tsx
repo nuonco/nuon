@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon'
 import React, { type FC } from 'react'
 import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
@@ -8,6 +9,14 @@ import {
   getOrgRunnerGroup,
 } from '@/lib'
 import type { TRunner } from '@/types'
+
+function isLessThan15SecondsOld(timestampStr: string) {
+  const date = DateTime.fromISO(timestampStr)
+  const now = DateTime.now()
+  const diffInSeconds = now.diff(date, 'seconds').seconds
+
+  return diffInSeconds >= 0 && diffInSeconds < 15
+}
 
 interface IRunnerMeta {
   orgId: string
@@ -40,7 +49,8 @@ export const RunnerMeta: FC<IRunnerMeta> = async ({
           Status
         </Text>
 
-        {runnerHeartbeat && runnerHeartbeat?.alive_time > 15 * 1_000_000_000 ? (
+        {runnerHeartbeat &&
+        isLessThan15SecondsOld(runnerHeartbeat?.created_at) ? (
           <StatusBadge
             status="connected"
             description="Connected to runner"
