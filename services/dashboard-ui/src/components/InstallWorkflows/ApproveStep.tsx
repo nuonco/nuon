@@ -9,6 +9,7 @@ import { Notice } from '@/components/Notice'
 import { CodeViewer, JsonView } from '@/components/Code'
 import { Text } from '@/components/Typography'
 import { approveWorkflowStep } from '@/components/install-actions'
+import { DiffEditor } from '@/stratus/components/common/Code'
 import type { TInstallWorkflowStep } from '@/types'
 import { removeSnakeCase } from '@/utils'
 
@@ -67,7 +68,9 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           <div className="flex flex-col gap-4">
             {error ? <Notice>{error}</Notice> : null}
             {approval?.type === 'helm_approval' ? (
-              <CodeViewer initCodeSource={approval?.contents} language="yaml" />
+              <div className="rounded-md overflow-hidden border bg-cool-grey-50 dark:bg-dark-grey-200">
+                <DiffEditor diff={approval?.contents} />
+              </div>
             ) : (
               <JsonView expanded={2} data={approval?.contents} />
             )}
