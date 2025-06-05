@@ -19,6 +19,7 @@ export const EventStatus: FC<{ status?: string }> = ({
       status === 'failed' ||
       status === 'error' ||
       status === 'unknown' ||
+      status === 'approval-denied' ||
       status === 'timed-out',
     'bg-cool-grey-600 dark:bg-cool-grey-500':
       status === 'noop' ||
