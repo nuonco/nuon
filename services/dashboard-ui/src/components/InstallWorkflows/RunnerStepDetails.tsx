@@ -43,12 +43,14 @@ export const RunnerStepDetails: FC<IRunnerStepDetails> = ({
       if (run?.error) {
         setError(run?.error?.error)
       } else {
+        setError(undefined)       
         setRunner(run.data)
       }
 
       if (heart?.error) {
         setError(heart?.error?.error)
       } else {
+        setError(undefined)
         setRunnerHeartbeat(heart.data)
       }
     })
