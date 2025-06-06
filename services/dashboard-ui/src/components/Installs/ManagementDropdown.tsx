@@ -1,13 +1,15 @@
 'use client'
 
 import React, { type FC } from 'react'
-import { SlidersHorizontal } from '@phosphor-icons/react/dist/ssr'
+import { SlidersHorizontal, CheckCircle } from '@phosphor-icons/react/dist/ssr'
+import { Button } from '@/components/Button'
+import { AutoApproveModal } from './AutoApproveModal'
 import { BreakGlassLink } from './BreakGlassLink'
 import { DeleteInstallModal } from './DeleteModal'
 import { DeprovisionStackModal } from './DeprovisionStackModal'
 import { EditModal } from './EditModal'
 import { ForgetModal } from './ForgetModal'
-import { InstallStateModal } from "./InstallStateModal"
+import { InstallStateModal } from './InstallStateModal'
 import { ReprovisionModal } from './ReprovisionModal'
 import { Dropdown } from '@/components/Dropdown'
 import { useOrg } from '@/components/Orgs'
@@ -50,6 +52,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
         ) : null}
         <BreakGlassLink installId={install.id} />
         <InstallStateModal install={install} />
+        <AutoApproveModal installId={install?.id} orgId={orgId} />
 
         <hr className="my-2" />
         <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
