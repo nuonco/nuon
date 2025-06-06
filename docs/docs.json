@@ -229,6 +229,7 @@
       {
         "tab": "Updates",
         "pages": [
+          "updates/009-action-triggers-secrets-configs",
           "updates/008-vcs-stacks-fixes",
           "updates/007-secret-formats",
           "updates/006-secrets-workflows",
