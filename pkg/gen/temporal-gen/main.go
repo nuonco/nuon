@@ -8,6 +8,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/grafana/codejen"
@@ -103,6 +104,11 @@ func main() {
 	}
 
 	ctx := context.Background()
+	sloppymod := cwd
+	if idx := strings.Index(cwd, "mono"); idx != -1 {
+		sloppymod = cwd[idx+5:]
+	}
+	fmt.Printf("temporal-gen %s: parsing\n", sloppymod)
 
 	// Parse files in the cwd to find inputs to our generator
 	bfs, err := parseDir(ctx, cwd)
@@ -110,6 +116,7 @@ func main() {
 		die(err)
 	}
 
+	fmt.Printf("temporal-gen %s: generating\n", sloppymod)
 	// Create the base jenny pipeline
 	pipe := codejen.JennyListWithNamer(func(base *BaseFile) string {
 		return filepath.Base(base.Path)
@@ -176,6 +183,7 @@ func main() {
 	if err = jfs.Write(ctx, cwd); err != nil {
 		die(fmt.Errorf("error while writing generated code to disk:\n%s", err))
 	}
+	fmt.Printf("temporal-gen %s: done\n", sloppymod)
 }
 
 func die(err error) {
