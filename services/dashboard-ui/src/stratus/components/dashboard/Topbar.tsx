@@ -2,9 +2,9 @@ import classNames from 'classnames'
 import React, { type FC } from 'react'
 import { MobileSidebarButton, SidebarButton } from './Sidebar'
 
-export interface IPageTopbar extends React.HTMLAttributes<HTMLDivElement> {}
+export interface ITopbar extends React.HTMLAttributes<HTMLDivElement> {}
 
-export const PageTopbar: FC<IPageTopbar> = ({
+export const Topbar: FC<ITopbar> = ({
   className,
   children,
   ...props
