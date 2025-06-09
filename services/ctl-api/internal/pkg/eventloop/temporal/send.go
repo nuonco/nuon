@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 
 	"github.com/cockroachdb/errors"
+
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/pkg/shortid"
 	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
@@ -188,7 +189,7 @@ func (e *evClient) SendAsync(ctx workflow.Context, id string, signal eventloop.S
 			"",
 			CancelChannelName,
 			signal,
-		).Get(ctx, nil)
+		).Get(dctx, nil)
 		if err != nil {
 			e.mw.Incr("event_loop.signal", metrics.ToStatusTag("unable_to_send"))
 			l.Error("unable to dispatch cancellation signal to workflow",

@@ -35,7 +35,7 @@ func (c *FlowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Conte
 		MaxTS:           workflow.Now(ctx).Add(time.Hour * 24 * 30),
 		InitialInterval: time.Second * 15,
 		MaxInterval:     time.Minute * 15,
-		BackoffFactor:   1.15,
+		BackoffFactor:   1,
 		PostAttemptHook: func(ctx workflow.Context, dur time.Duration) error {
 			l, err := log.WorkflowLogger(ctx)
 			if err != nil {
@@ -89,8 +89,4 @@ func (c *FlowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Conte
 	}
 
 	return step.Approval.Response, nil
-}
-
-func (c *FlowConductor[DomainSignal]) updateStepTargetStatus(ctx workflow.Context, step *app.InstallWorkflowStep) error {
-	return nil
 }
