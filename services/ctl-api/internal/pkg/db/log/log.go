@@ -1,6 +1,8 @@
 package log
 
 import (
+	"time"
+
 	"go.uber.org/zap"
 	"gorm.io/gorm/logger"
 	"moul.io/zapgorm2"
@@ -19,6 +21,12 @@ func New(l *zap.Logger, cfg *internal.Config) zapgorm2.Logger {
 	}
 	if cfg.DBLogQueries {
 		dl = dl.LogMode(logger.Info).(zapgorm2.Logger)
+	}
+
+	// default to 5 seconds
+	dl.SlowThreshold = 5 * time.Second
+	if cfg.SlowQueryThresholdMS > 0 {
+		dl.SlowThreshold = time.Duration(cfg.SlowQueryThresholdMS) * time.Millisecond
 	}
 
 	return dl
