@@ -1,30 +1,30 @@
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { Link, Text } from '@/stratus/components'
+import { Link, ScrollableContent, Section, Text } from '@/stratus/components'
 import type { TSandboxRun, IPageProps } from '@/types'
 import { nueQueryData } from '@/utils'
 
-const InstallSandboxPage: FC<IPageProps<'org-id' | 'install-id'>> = ({
-  params,
-}) => {
+const SandboxPage: FC<IPageProps<'org-id' | 'install-id'>> = ({ params }) => {
   const orgId = params?.['org-id']
   const installId = params?.['install-id']
 
   return (
-    <div className="px-8 py-6 flex flex-col">
-      <Text variant="base" weight="strong">
-        Install sandbox details
-      </Text>
-      <ErrorBoundary fallback="Error fetching sandbox runs">
-        <Suspense fallback="Loaidng sandbox runs...">
-          <LoadSandboxRuns installId={installId} orgId={orgId} />
-        </Suspense>
-      </ErrorBoundary>
-    </div>
+    <ScrollableContent>
+      <Section className="gap-8">
+        <Text variant="base" weight="strong">
+          Sandbox details
+        </Text>
+        <ErrorBoundary fallback="Error fetching sandbox runs">
+          <Suspense fallback="Loaidng sandbox runs...">
+            <LoadSandboxRuns installId={installId} orgId={orgId} />
+          </Suspense>
+        </ErrorBoundary>
+      </Section>
+    </ScrollableContent>
   )
 }
 
-export default InstallSandboxPage
+export default SandboxPage
 
 const LoadSandboxRuns: FC<{ installId: string; orgId: string }> = async ({
   installId,

@@ -10,7 +10,14 @@ import {
   Stack,
   TerminalWindow,
 } from '@phosphor-icons/react/dist/ssr'
-import { Page, PageContent, PageHeader, PageNav, Text } from '@/stratus/components'
+import {
+  Header,
+  HeaderGroup,
+  PageLayout,
+  Page,
+  PageNav,
+  Text,
+} from '@/stratus/components'
 import { useInstall, useOrg } from '@/stratus/context'
 
 export default function Template({ children }: { children: React.ReactNode }) {
@@ -18,7 +25,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
   const { org } = useOrg()
   const { install } = useInstall()
   const isThirdLevel = pathName.split('/').length > 6
-  
+
   return isThirdLevel ? (
     <Page
       breadcrumb={{
@@ -38,9 +45,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
         ],
       }}
     >
-      <PageContent>
-        {children}
-      </PageContent>
+      {children}
     </Page>
   ) : (
     <Page
@@ -61,15 +66,18 @@ export default function Template({ children }: { children: React.ReactNode }) {
         ],
       }}
     >
-      <PageHeader>
-        <Text variant="h3" weight="strong" level={1}>
-          {install?.name}
-        </Text>
-        <Text family="mono" variant="subtext">
-          {install?.id}
-        </Text>
-      </PageHeader>
-      <PageContent>
+      <Header className="border-b">
+        <HeaderGroup>
+          <Text variant="h3" weight="strong" level={1}>
+            {install?.name}
+          </Text>
+          <Text family="mono" variant="subtext" theme="muted">
+            {install?.id}
+          </Text>
+        </HeaderGroup>
+        <div>Install statuses</div>
+      </Header>
+      <PageLayout>
         <PageNav
           basePath={`/stratus/${org?.id}/installs/${install?.id}`}
           links={[
@@ -111,7 +119,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
           ]}
         />
         {children}
-      </PageContent>
+      </PageLayout>
     </Page>
   )
 }
