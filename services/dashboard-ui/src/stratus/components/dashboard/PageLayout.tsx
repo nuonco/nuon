@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
 
-interface IPageContent extends React.HTMLAttributes<HTMLDivElement> {}
+interface IPageLayout extends React.HTMLAttributes<HTMLDivElement> {}
 
-export const PageContent: FC<IPageContent> = ({
+export const PageLayout: FC<IPageLayout> = ({
   className,
   children,
   ...props
@@ -11,7 +11,7 @@ export const PageContent: FC<IPageContent> = ({
   return (
     <div
       className={classNames(
-        'flex-auto flex flex-col md:flex-row max-w-full overflow-y-auto',
+        'flex-auto flex flex-col md:flex-row max-w-full overflow-hidden',
         {
           [`${className}`]: Boolean(className),
         }
