@@ -41,6 +41,7 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 	if !generics.SliceContains(wf.Status.Status, []app.Status{
 		app.StatusInProgress,
 		app.StatusPending,
+		app.WorkflowAwaitingApproval,
 	}) {
 		ctx.Error(fmt.Errorf("install workflow is not cancelable"))
 		return
@@ -53,13 +54,11 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 		}
 	}
 
-	if wf.Status.Status == app.StatusInProgress {
-		id := fmt.Sprintf("sig-execute-flow-%s", wf.InstallID)
-		err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to cancel install workflow: %w", err))
-			return
-		}
+	id := fmt.Sprintf("sig-execute-flow-%s", wf.InstallID)
+	err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to cancel install workflow: %w", err))
+		return
 	}
 
 	ctx.JSON(http.StatusAccepted, true)
