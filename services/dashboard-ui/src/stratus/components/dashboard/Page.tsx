@@ -1,7 +1,7 @@
 import React, { type FC } from 'react'
 import { UserDropdown } from '@/stratus/components/user'
 import { BreadcrumbNav, type IBreadcrumbNav } from './BreadcrumbNav'
-import { PageTopbar } from './PageTopbar'
+import { Topbar } from './Topbar'
 
 interface IPage {
   breadcrumb: IBreadcrumbNav
@@ -11,7 +11,7 @@ interface IPage {
 export const Page: FC<IPage> = ({ breadcrumb, children }) => {
   return (
     <main className="flex flex-col h-screen">
-      <PageTopbar>
+      <Topbar>
         <div className="flex items-center justify-between w-full">
           <BreadcrumbNav {...breadcrumb} />
 
@@ -19,7 +19,7 @@ export const Page: FC<IPage> = ({ breadcrumb, children }) => {
             <UserDropdown alignment="right" />
           </div>
         </div>
-      </PageTopbar>
+      </Topbar>
       {children}
     </main>
   )

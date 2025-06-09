@@ -1,12 +1,22 @@
 import classNames from 'classnames'
 import React, { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { CaretRight } from '@phosphor-icons/react/dist/ssr'
-import { Link, Page, PageHeader, Skeleton, Text } from '@/stratus/components'
+import { CaretRight, Cube } from '@phosphor-icons/react/dist/ssr'
+import {
+  Button,
+  Link,
+  Header,
+  HeaderGroup,
+  Page,
+  ScrollableContent,
+  Section,
+  Skeleton,
+  Text,
+} from '@/stratus/components'
 import type { IPageProps, TInstall } from '@/types'
 import { nueQueryData } from '@/utils'
 
-const StratusInstalls: FC<IPageProps<'org-id'>> = async ({ params }) => {
+const InstallsPage: FC<IPageProps<'org-id'>> = async ({ params }) => {
   const orgId = params?.['org-id']
 
   return (
@@ -24,26 +34,32 @@ const StratusInstalls: FC<IPageProps<'org-id'>> = async ({ params }) => {
         ],
       }}
     >
-      <PageHeader>
-        <Text variant="h3" weight="strong">
-          Installs
-        </Text>
-        <Text family="mono" variant="subtext">
-          View your installs here.
-        </Text>
-      </PageHeader>
-      <div className="flex flex-col px-8 py-6 divide-y">
-        <ErrorBoundary fallback="An error happened while loading installs">
-          <Suspense fallback={<LoadInstallsFallback />}>
-            <LoadInstalls orgId={orgId} />
-          </Suspense>
-        </ErrorBoundary>
-      </div>
+      <ScrollableContent>
+        <Header>
+          <HeaderGroup>
+            <Text variant="h3" weight="strong" level={1}>
+              Installs
+            </Text>
+            <Text theme="muted">View your installs here.</Text>
+          </HeaderGroup>
+          <Button className="self-center" variant="primary">
+            <Cube />
+            Create install
+          </Button>
+        </Header>
+        <Section className="divide-y">
+          <ErrorBoundary fallback="An error happened while loading installs">
+            <Suspense fallback={<LoadInstallsFallback />}>
+              <LoadInstalls orgId={orgId} />
+            </Suspense>
+          </ErrorBoundary>
+        </Section>
+      </ScrollableContent>
     </Page>
   )
 }
 
-export default StratusInstalls
+export default InstallsPage
 
 const InstallsTableHeader: FC = () => (
   <div className="py-4">
@@ -134,12 +150,12 @@ const LoadInstallsFallback: FC = () => (
     <InstallsTableHeader />
     {[0, 1, 3].map((k) => (
       <Grid key={k} className="py-4">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <Skeleton width="60%" />
           <Skeleton height="12px" />
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <Skeleton height="12px" width="40%" />
           <Skeleton height="12px" width="40%" />
           <Skeleton height="12px" width="40%" />
