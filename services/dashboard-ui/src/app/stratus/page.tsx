@@ -1,8 +1,18 @@
 import type { FC } from 'react'
-import type { IPageProps } from '@/types'
+import { redirect } from "next/navigation"
+import type { IPageProps, TOrg } from '@/types'
+import { nueQueryData } from "@/utils"
 
-const Stratus: FC<IPageProps> = ({ params }) => {
-  return <>stratus</>
+const Stratus: FC<IPageProps> = async ({ params }) => {
+  const { data, error} = await nueQueryData<Array<TOrg>>({
+    path: `orgs`
+  })
+
+  if (data) {
+    redirect(`/stratus/${data?.at(0).id}`)
+  }
+  
+  return <>{error?.error}</>
 }
 
 export default Stratus

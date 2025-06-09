@@ -144,3 +144,7 @@ button.secondary:not(:disabled):active {
 button.secondary:disabled {
   @apply opacity-50
 }
+
+button:has(svg) {
+  @apply flex items-center gap-2;
+}
