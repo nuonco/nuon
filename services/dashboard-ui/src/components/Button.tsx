@@ -36,7 +36,7 @@ export const Button: FC<IButton> = forwardRef(
     return (
       <button
         className={classNames(
-          'rounded-md border focus:outline outline-1 outline-primary-500 dark:outline-primary-400 text-nowrap',
+          'rounded-md border focus:outline outline-1 outline-primary-500 dark:outline-primary-400 text-nowrap !shadow-none',
           {
             [`${defaultStyles} border`]: variant === 'default',
             'bg-primary-600 hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900':
