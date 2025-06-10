@@ -55,6 +55,7 @@ type InstallComponent struct {
 
 	Status            InstallComponentStatus `json:"status,omitzero" gorm:"default:''" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                 `json:"status_description,omitzero" gorm:"default:''" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus        `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 }
 
 type InstallComponentSummary struct {
@@ -63,8 +64,10 @@ type InstallComponentSummary struct {
 	ComponentName           string                     `json:"component_name"`
 	DeployStatus            InstallDeployStatus        `json:"deploy_status"`
 	DeployStatusDescription string                     `json:"deploy_status_description"`
+	DeployStatusV2          CompositeStatus            `json:"deploy_status_v2"`
 	BuildStatus             ComponentBuildStatus       `json:"build_status"`
 	BuildStatusDescription  string                     `json:"build_status_description"`
+	BuildStatusV2           CompositeStatus            `json:"build_status_v2"`
 	ComponentConfig         *ComponentConfigConnection `json:"component_config"`
 	Dependencies            []Component                `json:"dependencies"`
 }
