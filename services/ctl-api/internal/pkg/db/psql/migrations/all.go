@@ -24,5 +24,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "087-install-workflows-backfill-ownership",
 			Fn:   m.Migration087InstallWorkflowsBackfillOwnership,
 		},
+		{
+			Name: "088-accounts-email-not-empty",
+			Fn:   m.Migration088AccountsEmailsNotEmpty,
+		},
 	}
 }
