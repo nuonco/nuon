@@ -47,7 +47,9 @@ type ComponentBuild struct {
 
 	Status            ComponentBuildStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string               `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
-	GitRef            *string              `json:"git_ref,omitzero" temporaljson:"git_ref,omitzero,omitempty"`
+	StatusV2          CompositeStatus      `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+
+	GitRef *string `json:"git_ref,omitzero" temporaljson:"git_ref,omitzero,omitempty"`
 
 	// Read-only fields set on the object to de-nest data
 	ComponentID            string `gorm:"-" json:"component_id,omitzero" temporaljson:"component_id,omitzero,omitempty"`

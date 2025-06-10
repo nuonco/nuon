@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"sort"
@@ -84,7 +85,7 @@ func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 		return
 	}
 
-	installSummary := s.buildSummary(install.InstallComponents, compMap, builds, depComps)
+	installSummary := s.buildSummary(ctx, install.InstallComponents, compMap, builds, depComps)
 
 	paginatedSummary, err := db.HandlePaginatedResponse(ctx, installSummary)
 	if err != nil {
@@ -155,7 +156,7 @@ func filterAppID(installComponents []app.InstallComponent) string {
 	return ""
 }
 
-func (s *service) buildSummary(installComponents []app.InstallComponent, compMap map[string]*app.ComponentConfigConnection, builds []app.ComponentBuild, depComps map[string][]app.Component) []app.InstallComponentSummary {
+func (s *service) buildSummary(ctx context.Context, installComponents []app.InstallComponent, compMap map[string]*app.ComponentConfigConnection, builds []app.ComponentBuild, depComps map[string][]app.Component) []app.InstallComponentSummary {
 	summaries := make([]app.InstallComponentSummary, 0, len(installComponents))
 	for _, ic := range installComponents {
 		deploy := filterLatestDeploy(ic.InstallDeploys)
@@ -173,6 +174,11 @@ func (s *service) buildSummary(installComponents []app.InstallComponent, compMap
 			buildStatus = build.Status
 			buildStatusDescription = build.StatusDescription
 		}
+		deployStatusV2 := app.NewCompositeStatus(ctx, app.Status(deploy.Status))
+		deployStatusV2.StatusHumanDescription = deploy.StatusDescription
+
+		buildStatusV2 := app.NewCompositeStatus(ctx, app.Status(build.Status))
+		buildStatusV2.StatusHumanDescription = build.StatusDescription
 		summaries = append(summaries, app.InstallComponentSummary{
 			ID:                      ic.ID,
 			ComponentID:             ic.ComponentID,
@@ -181,6 +187,8 @@ func (s *service) buildSummary(installComponents []app.InstallComponent, compMap
 			DeployStatusDescription: deployStatusDescription,
 			BuildStatus:             buildStatus,
 			BuildStatusDescription:  buildStatusDescription,
+			BuildStatusV2:           buildStatusV2,
+			DeployStatusV2:          deployStatusV2,
 			ComponentConfig:         compMap[ic.ComponentID],
 			Dependencies:            depComps[ic.ComponentID],
 		})

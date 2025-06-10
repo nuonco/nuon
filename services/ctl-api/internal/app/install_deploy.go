@@ -70,6 +70,7 @@ type InstallDeploy struct {
 	Status            InstallDeployStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string              `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 	Type              InstallDeployType   `json:"install_deploy_type,omitzero" temporaljson:"type,omitzero,omitempty"`
+	StatusV2          CompositeStatus     `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	// Fields that are de-nested at read time using AfterQuery
 	InstallID              string `json:"install_id" gorm:"-" temporaljson:"install_id,omitzero,omitempty"`
