@@ -77,7 +77,7 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
         header: 'Run duration',
         accessorKey: 'latest_run.execution_time',
         cell: (props) =>
-          props.row.original?.latest_run ? (
+          props.row.original?.latest_run && props.row.original?.latest_run?.status !== 'queued' ? (
             <Text>
               <Timer size={18} />
               <Duration nanoseconds={props.getValue<number>()} />
