@@ -142,6 +142,7 @@ require (
 	go.temporal.io/sdk v1.25.1
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.27.0
+	golang.org/x/net v0.38.0
 	golang.org/x/oauth2 v0.23.0
 	golang.org/x/sync v0.12.0
 	google.golang.org/genproto v0.0.0-20240227224415-6ceb2ff114de
@@ -324,7 +325,6 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.31.0 // indirect
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
-	golang.org/x/net v0.38.0 // indirect
 	gonum.org/v1/gonum v0.15.0 // indirect
 	google.golang.org/api v0.160.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
@@ -375,7 +375,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cheggaaa/pb/v3 v3.1.2 // indirect
-	github.com/cloudflare/circl v1.3.7 // indirect
+	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/containerd/containerd v1.7.24 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
