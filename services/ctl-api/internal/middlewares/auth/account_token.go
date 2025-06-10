@@ -57,6 +57,10 @@ func (m *middleware) saveAccountToken(ctx context.Context, token string, claims 
 		return nil, fmt.Errorf("unable to get custom claims")
 	}
 
+	if customClaims.Email == "" {
+		return nil, fmt.Errorf("email is empty in custom claims")
+	}
+
 	acct, err := m.acctClient.FindAccount(ctx, customClaims.Email)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
