@@ -18,6 +18,12 @@ func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status
 		return
 	}
 
+	err = activities.AwaitUpdateBuildStatusV2(ctx, activities.UpdateBuildStatusV2{
+		BuildID:           bldID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	})
+
 	l := workflow.GetLogger(ctx)
 	l.Error("unable to update build status",
 		zap.String("build-id", bldID),
