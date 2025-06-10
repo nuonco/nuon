@@ -51,6 +51,7 @@ type InstallActionWorkflowRun struct {
 
 	Status            InstallActionWorkflowRunStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                         `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus                `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	TriggerType ActionWorkflowTriggerType `json:"trigger_type,omitzero" gorm:"notnull;default:''" temporaljson:"trigger_type,omitzero,omitempty"`
 

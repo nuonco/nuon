@@ -20,6 +20,15 @@ func (w *Workflows) updateStatus(ctx workflow.Context, runID string, status app.
 			zap.String("run-id", runID),
 			zap.Error(err))
 	}
+	if err := activities.AwaitUpdateInstallWorkflowRunStatusV2(ctx, activities.UpdateInstallWorkflowRunStatusV2Request{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	}); err != nil {
+		l.Error("unable to update run status v2",
+			zap.String("run-id", runID),
+			zap.Error(err))
+	}
 }
 
 // TODO(sdboyer) refactor this to return an error; processing should abort if status updates fail
@@ -33,6 +42,16 @@ func (w *Workflows) updateRunStatus(ctx workflow.Context, runID string, status a
 		SkipStatusSync:    false,
 	}); err != nil {
 		l.Error("unable to update run status",
+			zap.String("run-id", runID),
+			zap.Error(err))
+	}
+
+	if err := activities.AwaitUpdateRunStatusV2(ctx, activities.UpdateRunStatusV2Request{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	}); err != nil {
+		l.Error("unable to update run status v2",
 			zap.String("run-id", runID),
 			zap.Error(err))
 	}
@@ -51,6 +70,17 @@ func (w *Workflows) updateRunStatusWithoutStatusSync(ctx workflow.Context, runID
 			zap.String("run-id", runID),
 			zap.Error(err))
 	}
+
+	if err := activities.AwaitUpdateRunStatusV2(ctx, activities.UpdateRunStatusV2Request{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	}); err != nil {
+		l.Error("unable to update run status v2",
+			zap.String("run-id", runID),
+			zap.Error(err))
+	}
+
 }
 
 func (w *Workflows) updateInstallSandboxStatus(ctx workflow.Context, runID string, status app.InstallSandboxStatus, statusDescription string) {
@@ -78,6 +108,16 @@ func (w *Workflows) updateDeployStatus(ctx workflow.Context, deployID string, st
 			zap.String("deploy-id", deployID),
 			zap.Error(err))
 	}
+	if err := activities.AwaitUpdateDeployStatusV2(ctx, activities.UpdateDeployStatusV2Request{
+		DeployID:          deployID,
+		Status:            app.Status(status),
+		StatusDescription: statusDescription,
+		SkipStatusSync:    false,
+	}); err != nil {
+		l.Error("unable to update deploy status v2",
+			zap.String("deploy-id", deployID),
+			zap.Error(err))
+	}
 }
 
 func (w *Workflows) updateDeployStatusWithoutStatusSync(ctx workflow.Context, deployID string, status app.InstallDeployStatus, statusDescription string) {
@@ -89,6 +129,16 @@ func (w *Workflows) updateDeployStatusWithoutStatusSync(ctx workflow.Context, de
 		SkipStatusSync:    true,
 	}); err != nil {
 		l.Error("unable to update deploy status",
+			zap.String("deploy-id", deployID),
+			zap.Error(err))
+	}
+	if err := activities.AwaitUpdateDeployStatusV2(ctx, activities.UpdateDeployStatusV2Request{
+		DeployID:          deployID,
+		Status:            app.Status(status),
+		StatusDescription: statusDescription,
+		SkipStatusSync:    true,
+	}); err != nil {
+		l.Error("unable to update deploy status v2",
 			zap.String("deploy-id", deployID),
 			zap.Error(err))
 	}
@@ -116,6 +166,15 @@ func (w *Workflows) updateActionRunStatus(ctx workflow.Context, runID string, st
 		StatusDescription: statusDescription,
 	}); err != nil {
 		l.Error("unable to update run status",
+			zap.String("run-id", runID),
+			zap.Error(err))
+	}
+	if err := activities.AwaitUpdateInstallWorkflowRunStatusV2(ctx, activities.UpdateInstallWorkflowRunStatusV2Request{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	}); err != nil {
+		l.Error("unable to update run status v2",
 			zap.String("run-id", runID),
 			zap.Error(err))
 	}
