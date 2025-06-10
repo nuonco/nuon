@@ -133,9 +133,15 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
     >
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="md:col-span-8">
-          <LogStreamProvider initLogStream={build?.log_stream}>
-            <OperationLogsSection heading="Build logs" />
-          </LogStreamProvider>
+          {build?.log_stream ? (
+            <LogStreamProvider initLogStream={build?.log_stream}>
+              <OperationLogsSection heading="Build logs" />
+            </LogStreamProvider>
+          ) : (
+            <Section heading="Build logs">
+              <Text>Waiting on log stream</Text>
+            </Section>
+          )}
         </div>
         <div className="divide-y flex flex-col md:col-span-4">
           {build.vcs_connection_commit && (
