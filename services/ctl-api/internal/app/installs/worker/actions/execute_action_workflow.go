@@ -39,12 +39,15 @@ func (w *Workflows) ExecuteActionWorkflow(ctx workflow.Context, req signals.Requ
 	if err != nil {
 		return errors.Wrap(err, "unable to create action workflow run")
 	}
-	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
-		StepID:         req.WorkflowStepID,
-		StepTargetID:   actionWorkflowRun.ID,
-		StepTargetType: plugins.TableName(w.db, actionWorkflowRun),
-	}); err != nil {
-		return errors.Wrap(err, "unable to update install action workflow")
+
+	if req.WorkflowStepID != "" {
+		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+			StepID:         req.WorkflowStepID,
+			StepTargetID:   actionWorkflowRun.ID,
+			StepTargetType: plugins.TableName(w.db, actionWorkflowRun),
+		}); err != nil {
+			return errors.Wrap(err, "unable to update install action workflow")
+		}
 	}
 
 	if err := w.executeActionWorkflowRun(ctx, installActionWorkflow.InstallID, actionWorkflowRun.ID); err != nil {
