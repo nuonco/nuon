@@ -12,7 +12,8 @@ import (
 )
 
 type DeployInstallComponentsRequest struct {
-	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
+	ErrorBehavior          app.StepErrorBehavior      `json:"error_behavior" swaggertype:"string"`
+	OverrideApprovalOption *app.InstallApprovalOption `json:"override_approval_option,omitempty"`
 }
 
 func (c *DeployInstallComponentsRequest) Validate(v *validator.Validate) error {
@@ -58,7 +59,8 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 		installID,
 		app.InstallWorkflowTypeDeployComponents,
 		map[string]string{},
-		req.ErrorBehavior)
+		req.ErrorBehavior,
+		req.OverrideApprovalOption)
 	if err != nil {
 		ctx.Error(err)
 		return

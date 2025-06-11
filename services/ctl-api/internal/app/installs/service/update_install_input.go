@@ -17,7 +17,8 @@ import (
 )
 
 type UpdateInstallInputsRequest struct {
-	Inputs map[string]*string `json:"inputs" validate:"required,gte=1"`
+	Inputs                 map[string]*string         `json:"inputs" validate:"required,gte=1"`
+	OverrideApprovalOption *app.InstallApprovalOption `json:"override_approval_option,omitempty"`
 }
 
 func (c *UpdateInstallInputsRequest) Validate(v *validator.Validate) error {
@@ -112,7 +113,9 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		// rendering things in the UI and other such things, which is why we are just using a string slice here,
 		// maybe that will change at some point, but this metadata should not be abused.
 		"inputs": strings.Join(generics.MapToKeys(req.Inputs), ","),
-	}, app.StepErrorBehaviorAbort)
+	}, app.StepErrorBehaviorAbort,
+		req.OverrideApprovalOption,
+	)
 	if err != nil {
 		ctx.Error(err)
 		return

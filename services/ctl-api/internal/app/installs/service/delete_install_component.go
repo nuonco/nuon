@@ -53,6 +53,7 @@ func (s *service) DeleteInstallComponent(ctx *gin.Context) {
 			"component_id": component.ID,
 		},
 		app.StepErrorBehaviorAbort,
+		nil,
 	)
 	if err != nil {
 		ctx.Error(err)
