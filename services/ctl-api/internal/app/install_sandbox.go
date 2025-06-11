@@ -65,6 +65,8 @@ func (c *InstallSandbox) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (c *InstallSandbox) AfterQuery(tx *gorm.DB) error {
+	c.Status = InstallSandboxStatus(c.StatusV2.Status)
+	c.StatusDescription = c.StatusV2.StatusHumanDescription
 	return nil
 }
 

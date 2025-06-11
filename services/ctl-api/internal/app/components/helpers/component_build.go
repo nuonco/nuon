@@ -51,7 +51,7 @@ func (s *Helpers) CreateComponentBuild(ctx context.Context, cmpID string, useLat
 	res := s.db.WithContext(ctx).
 		Create(&bld)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create build for component: %w", err)
+		return nil, fmt.Errorf("unable to create build for component: %v", res.Error)
 	}
 	return &bld, nil
 }

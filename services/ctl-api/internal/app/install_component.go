@@ -64,10 +64,8 @@ type InstallComponentSummary struct {
 	ComponentName           string                     `json:"component_name"`
 	DeployStatus            InstallDeployStatus        `json:"deploy_status"`
 	DeployStatusDescription string                     `json:"deploy_status_description"`
-	DeployStatusV2          CompositeStatus            `json:"deploy_status_v2"`
 	BuildStatus             ComponentBuildStatus       `json:"build_status"`
 	BuildStatusDescription  string                     `json:"build_status_description"`
-	BuildStatusV2           CompositeStatus            `json:"build_status_v2"`
 	ComponentConfig         *ComponentConfigConnection `json:"component_config"`
 	Dependencies            []Component                `json:"dependencies"`
 }
@@ -80,6 +78,9 @@ func (c *InstallComponent) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (c *InstallComponent) AfterQuery(tx *gorm.DB) error {
+	c.Status = InstallComponentStatus(c.StatusV2.Status)
+	c.StatusDescription = c.StatusV2.StatusHumanDescription
+
 	if c.Status == InstallComponentStatusUnset && len(c.InstallDeploys) > 0 {
 		// TODO: we shouldn't need this check, after we migrated all statuses from latest deploys
 		status := DeployStatusToComponentStatus(c.InstallDeploys[0].Status)
