@@ -12,6 +12,7 @@ import {
   Timer,
 } from '@phosphor-icons/react/dist/ssr'
 import {
+  ApprovalStep,
   ClickToCopy,
   ClickToCopyButton,
   CodeViewer,
@@ -97,7 +98,10 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
     installWorkflowId: deploy?.install_workflow_id,
     orgId,
   }).catch(console.error)
-  
+  const step = installWorkflow
+    ? installWorkflow?.steps?.find((s) => s?.step_target_id === deploy?.id)
+    : null
+
   return (
     <DashboardContent
       breadcrumb={[
@@ -250,6 +254,23 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
     >
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="md:col-span-8">
+          {installWorkflow &&
+          step &&
+          step?.approval &&
+          !step?.approval?.response ? (
+            <Section
+              className="border-b"
+              childrenClassName="flex flex-col gap-6"
+              heading="Approve change"
+            >
+              <ApprovalStep
+                step={step}
+                approval={step.approval}
+                workflowId={installWorkflow?.id}
+              />
+            </Section>
+          ) : null}
+
           <LogStreamProvider initLogStream={deploy?.log_stream}>
             <OperationLogsSection heading="Deploy logs" />
           </LogStreamProvider>

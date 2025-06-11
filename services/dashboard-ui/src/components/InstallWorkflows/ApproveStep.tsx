@@ -24,11 +24,11 @@ export const ApprovalStep: FC<IApprovalStep> = ({
   approval,
   buttonText = 'Approve changes',
   headingText = 'Approve changes',
+  workflowId,
   step,
 }) => {
   const params = useParams()
   const orgId = params?.['org-id'] as string
-  const workflowId = params?.['workflow-id'] as string
   const [isDenyLoading, setIsDenyLoading] = useState(false)
   const [isApproveLoading, setIsApproveLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
