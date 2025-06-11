@@ -65,7 +65,8 @@
 
 
 .link.breadcrumb {
-
+  text-wrap: nowrap;
+  word-break: keep-all;
 }
 
 .link.breadcrumb.active {

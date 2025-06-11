@@ -1,9 +1,9 @@
 aside.page-nav {
-  @apply border-b flex overflow-x-auto overflow-y-visible w-screen;
+  @apply border-b flex shrink-0 overflow-x-auto overflow-y-visible w-screen;
 }
 
 aside.page-nav nav {
-  @apply flex gap-8 p-4;
+  @apply flex shrink-0 gap-8 px-4 py-3 h-16;
 }
 
 aside.page-nav nav .tooltip-wrapper:has(.link) .tooltip-content {
@@ -25,11 +25,11 @@ aside.page-nav .page-nav-handle {
   }
 
   aside.page-nav.is-open {
-    width: 18rem;
+    width: 17.5rem;
   }
 
   aside.page-nav nav {
-    @apply flex-col gap-1 px-4 py-4 w-full;
+    @apply flex-col gap-1 px-4 py-4 w-full h-full;
   }
 
   aside.page-nav nav a.link span.link-text {

@@ -5,7 +5,7 @@ import React, { type FC, useEffect, useRef, useState } from 'react'
 import { Question } from '@phosphor-icons/react'
 import './Tooltip.css'
 
-interface ITooltip extends React.HTMLAttributes<HTMLSpanElement> {
+export interface ITooltip extends React.HTMLAttributes<HTMLSpanElement> {
   position?: 'top' | 'bottom' | 'left' | 'right'
   showIcon?: boolean
   tipContent: React.ReactNode
