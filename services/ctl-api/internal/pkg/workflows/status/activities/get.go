@@ -2,6 +2,7 @@ package statusactivities
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 
@@ -51,7 +52,7 @@ func (a *Activities) PkgStatusGetInstallStackVersionStatus(ctx context.Context, 
 func (a *Activities) getStatus(ctx context.Context, obj any, objID string) error {
 	if res := a.db.WithContext(ctx).
 		First(obj, "id = ?", objID); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to get status")
+		return errors.Wrap(res.Error, fmt.Sprintf("unable to get status for %s", objID))
 	}
 
 	return nil

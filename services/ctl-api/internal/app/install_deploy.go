@@ -108,6 +108,9 @@ func (c *InstallDeploy) AfterQuery(tx *gorm.DB) error {
 	}
 	c.Outputs = outputs
 
+	c.Status = InstallDeployStatus(c.StatusV2.Status)
+	c.StatusDescription = c.StatusV2.StatusHumanDescription
+
 	return nil
 }
 

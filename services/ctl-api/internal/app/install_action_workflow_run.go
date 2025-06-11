@@ -125,5 +125,9 @@ func (i *InstallActionWorkflowRun) AfterQuery(tx *gorm.DB) error {
 			i.Outputs = i.RunnerJob.ParsedOutputs
 		}
 	}
+
+	i.Status = InstallActionWorkflowRunStatus(i.StatusV2.Status)
+	i.StatusDescription = i.StatusV2.StatusHumanDescription
+
 	return nil
 }
