@@ -6,6 +6,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 func (w *Workflows) updateStatus(ctx workflow.Context, runID string, status app.InstallActionWorkflowRunStatus, statusDescription string) {
@@ -21,7 +22,7 @@ func (w *Workflows) updateStatus(ctx workflow.Context, runID string, status app.
 			zap.Error(err))
 	}
 
-	if err := activities.AwaitUpdateInstallWorkflowRunStatusV2(ctx, activities.UpdateInstallWorkflowRunStatusV2Request{
+	if err := statusactivities.AwaitUpdateInstallWorkflowRunStatusV2(ctx, statusactivities.UpdateInstallWorkflowRunStatusV2Request{
 		RunID:             runID,
 		Status:            status,
 		StatusDescription: statusDescription,
@@ -48,7 +49,7 @@ func (w *Workflows) updateRunStatus(ctx workflow.Context, runID string, status a
 			zap.Error(err))
 	}
 
-	if err := activities.AwaitUpdateRunStatusV2(ctx, activities.UpdateRunStatusV2Request{
+	if err := statusactivities.AwaitUpdateRunStatusV2(ctx, statusactivities.UpdateRunStatusV2Request{
 		RunID:             runID,
 		Status:            status,
 		StatusDescription: statusDescription,
@@ -74,7 +75,7 @@ func (w *Workflows) updateRunStatusWithoutStatusSync(ctx workflow.Context, runID
 			zap.Error(err))
 	}
 
-	if err := activities.AwaitUpdateRunStatusV2(ctx, activities.UpdateRunStatusV2Request{
+	if err := statusactivities.AwaitUpdateRunStatusV2(ctx, statusactivities.UpdateRunStatusV2Request{
 		RunID:             runID,
 		Status:            status,
 		StatusDescription: statusDescription,
@@ -111,7 +112,7 @@ func (w *Workflows) updateDeployStatus(ctx workflow.Context, deployID string, st
 			zap.Error(err))
 	}
 
-	if err := activities.AwaitUpdateDeployStatusV2(ctx, activities.UpdateDeployStatusV2Request{
+	if err := statusactivities.AwaitUpdateDeployStatusV2(ctx, statusactivities.UpdateDeployStatusV2Request{
 		DeployID:          deployID,
 		Status:            app.Status(status),
 		StatusDescription: statusDescription,
@@ -136,7 +137,7 @@ func (w *Workflows) updateDeployStatusWithoutStatusSync(ctx workflow.Context, de
 			zap.Error(err))
 	}
 
-	if err := activities.AwaitUpdateDeployStatusV2(ctx, activities.UpdateDeployStatusV2Request{
+	if err := statusactivities.AwaitUpdateDeployStatusV2(ctx, statusactivities.UpdateDeployStatusV2Request{
 		DeployID:          deployID,
 		Status:            app.Status(status),
 		StatusDescription: statusDescription,
@@ -173,7 +174,7 @@ func (w *Workflows) updateActionRunStatus(ctx workflow.Context, runID string, st
 			zap.String("run-id", runID),
 			zap.Error(err))
 	}
-	if err := activities.AwaitUpdateInstallWorkflowRunStatusV2(ctx, activities.UpdateInstallWorkflowRunStatusV2Request{
+	if err := statusactivities.AwaitUpdateInstallWorkflowRunStatusV2(ctx, statusactivities.UpdateInstallWorkflowRunStatusV2Request{
 		RunID:             runID,
 		Status:            status,
 		StatusDescription: statusDescription,

@@ -182,6 +182,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 					"default",
 					install.ID,
 				},
+				"region": stack.InstallStackOutputs.AWSStackOutputs.Region,
 				"karpenter": map[string]any{
 					"instance_profile": map[string]any{
 						"id":   "karpenter-instance-profile-id",
