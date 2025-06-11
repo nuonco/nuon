@@ -11,8 +11,9 @@ type ActionWorkflowRunPlan struct {
 
 	Attrs map[string]string `json:"attrs"`
 
-	Steps   []*ActionWorkflowRunStepPlan `json:"steps"`
-	EnvVars map[string]string            `json:"env_vars"`
+	Steps      []*ActionWorkflowRunStepPlan `json:"steps"`
+	EnvVars    map[string]string            `json:"env_vars"`
+	RunEnvVars map[string]string            `json:"run_env_vars"`
 
 	// optional fields based on the configuration
 	ClusterInfo *kube.ClusterInfo      `json:"cluster_info,block"`
