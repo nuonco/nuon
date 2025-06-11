@@ -103,6 +103,7 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 			return db.Order("install_sandbox_runs.created_at DESC").Limit(5)
 		}).
 		Preload("InstallSandboxRuns.AppSandboxConfig").
+		Preload("InstallConfig").
 		Where("name = ? AND org_id = ?", installID, orgID).
 		Or("id = ?", installID).
 		First(&install)
