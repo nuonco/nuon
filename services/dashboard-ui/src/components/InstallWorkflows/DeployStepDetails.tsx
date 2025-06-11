@@ -59,7 +59,7 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
       ) : (
         <>
           {error ? <Notice>{error}</Notice> : null}
-          {step?.approval && !step?.approval?.response ? (
+          {step?.approval && step?.execution_type !== 'system' ? (
             <ApprovalStep
               approval={step?.approval}
               step={step}
