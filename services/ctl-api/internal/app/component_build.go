@@ -70,5 +70,9 @@ func (c *ComponentBuild) AfterQuery(tx *gorm.DB) error {
 	c.ComponentID = c.ComponentConfigConnection.ComponentID
 	c.ComponentName = c.ComponentConfigConnection.Component.Name
 	c.ComponentConfigVersion = c.ComponentConfigConnection.Version
+
+	c.Status = ComponentBuildStatus(c.StatusV2.Status)
+	c.StatusDescription = c.StatusV2.StatusHumanDescription
+
 	return nil
 }
