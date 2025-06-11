@@ -29,7 +29,7 @@ const StratusInstallLayout: FC<ILayoutProps<'org-id' | 'install-id'>> = async ({
   }
 
   return (
-    <InstallProvider initInstall={data}>
+    <InstallProvider initInstall={data} shouldPoll>
       <PageProvider initIsPageNavOpen={isPageNavOpen}>{children}</PageProvider>
     </InstallProvider>
   )

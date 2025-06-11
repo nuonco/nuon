@@ -74,8 +74,9 @@ const StratusBuildRunner: FC<IPageProps<'org-id'>> = async ({ params }) => {
               <Text variant="base" weight="strong">
                 Health status
               </Text>
-
-              <RunnerHealthChart orgId={orgId} runnerId={runner?.id} />
+              <div className="align-end">
+                <RunnerHealthChart orgId={orgId} runnerId={runner?.id} />
+              </div>
             </div>
           </div>
           <div className="flex flex-col gap-6">
