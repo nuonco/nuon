@@ -97,10 +97,18 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
                   onSubmit={(e: FormEvent<HTMLFormElement>) => {
                     e.preventDefault()
                     setIsLoading(true)
+
+                    // Variables from the form. This will include overwritten values.
                     const overwrite = Object.fromEntries(
                       new FormData(e.currentTarget)
                     )
+
+                    // Build list of run variables to send, to override default variable values.
                     const vars = Object.keys(overwrite).reduce((acc, key) => {
+                      // If variable value is unchanged, do not add it to the overrides.
+                      // We only want to include variables whose values have been changed.
+                      if (overwrite[key] == envVars[key]) return acc
+
                       const customKey = key.split(':')
                       if (
                         customKey?.at(0) === 'custom' &&
