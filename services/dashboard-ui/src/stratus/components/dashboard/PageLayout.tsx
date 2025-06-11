@@ -11,7 +11,7 @@ export const PageLayout: FC<IPageLayout> = ({
   return (
     <div
       className={classNames(
-        'flex-auto flex flex-col md:flex-row max-w-full overflow-hidden',
+        'flex-auto flex flex-col md:flex-row max-w-full overflow-y-auto md:overflow-hidden',
         {
           [`${className}`]: Boolean(className),
         }

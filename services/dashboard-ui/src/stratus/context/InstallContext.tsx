@@ -37,7 +37,7 @@ export const InstallProvider: FC<IInstallProvider> = ({
 
   useEffect(() => {
     const refreshInstall = () => {
-      fetch(`/api/${initInstall?.id}`)
+      fetch(`/api/${initInstall?.org_id}/installs/${initInstall?.id}`)
         .then((res) => res.json().then((o) => updateInstall(o)))
         .catch((err) => setError(err))
     }

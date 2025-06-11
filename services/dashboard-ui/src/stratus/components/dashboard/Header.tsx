@@ -10,7 +10,7 @@ export const Header: FC<IHeader> = ({
 }) => {
   return (
     <header
-      className={classNames('flex shrink-0 items-start justify-between p-4 md:p-6 md:h-28 w-full', {
+      className={classNames('flex flex-wrap gap-3 shrink-0 items-start justify-between p-4 md:p-6 md:min-h-28 w-full', {
         [`${className}`]: Boolean(className),
       })}
       {...props}

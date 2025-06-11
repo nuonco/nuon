@@ -1,5 +1,6 @@
 export * from './Dashboard'
 export * from './Header'
+export * from "./HeaderDetails"
 export * from './HeaderGroup'
 export * from './Logo'
 export * from './Page'
