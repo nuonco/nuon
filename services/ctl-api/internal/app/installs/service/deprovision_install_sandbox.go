@@ -11,7 +11,8 @@ import (
 )
 
 type DeprovisionInstallSandboxRequest struct {
-	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
+	ErrorBehavior          app.StepErrorBehavior      `json:"error_behavior" swaggertype:"string"`
+	OverrideApprovalOption *app.InstallApprovalOption `json:"override_approval_option,omitempty"`
 }
 
 func (c *DeprovisionInstallSandboxRequest) Validate(v *validator.Validate) error {
@@ -57,7 +58,8 @@ func (s *service) DeprovisionInstallSandbox(ctx *gin.Context) {
 		install.ID,
 		app.InstallWorkflowTypeDeprovisionSandbox,
 		map[string]string{},
-		req.ErrorBehavior)
+		req.ErrorBehavior,
+		req.OverrideApprovalOption)
 	if err != nil {
 		ctx.Error(err)
 		return
