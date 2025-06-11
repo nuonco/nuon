@@ -18,6 +18,7 @@ import {
   getAppLatestInputConfig,
   getAppLatestConfig,
 } from '@/lib'
+import type { TBuild } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -90,12 +91,18 @@ const LoadAppComponents: FC<{
       //.filter((c) => c?.type === 'helm_chart' || c?.type === 'terraform_module')
       .sort((a, b) => a?.id?.localeCompare(b?.id))
       .map(async (comp, _) => {
+        const { data: build } = await nueQueryData<TBuild>({
+          orgId,
+          path: `components/${comp?.id}/builds/latest`,
+        })
+
         const deps = components.filter((c) =>
           comp.dependencies?.some((d) => d === c.id)
         )
 
         return {
           ...comp,
+          latestBuild: build,
           deps,
         }
       })
