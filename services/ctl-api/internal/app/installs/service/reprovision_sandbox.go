@@ -12,7 +12,8 @@ import (
 )
 
 type ReprovisionInstallSandboxRequest struct {
-	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
+	ErrorBehavior          app.StepErrorBehavior      `json:"error_behavior" swaggertype:"string"`
+	OverrideApprovalOption *app.InstallApprovalOption `json:"override_approval_option,omitempty"`
 }
 
 func (c *ReprovisionInstallSandboxRequest) Validate(v *validator.Validate) error {
@@ -69,7 +70,8 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 		install.ID,
 		app.InstallWorkflowTypeReprovisionSandbox,
 		map[string]string{},
-		req.ErrorBehavior)
+		req.ErrorBehavior,
+		req.OverrideApprovalOption)
 	if err != nil {
 		ctx.Error(err)
 		return
