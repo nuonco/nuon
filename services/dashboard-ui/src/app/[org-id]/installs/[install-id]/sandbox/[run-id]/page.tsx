@@ -6,6 +6,7 @@ import { CalendarBlank, CaretLeft, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
+  ApprovalStep,
   ClickToCopy,
   CodeViewer,
   DashboardContent,
@@ -62,6 +63,9 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
     orgId,
     installWorkflowId: sandboxRun?.install_workflow_id,
   }).catch(console.error)
+  const step = installWorkflow
+    ? installWorkflow?.steps?.find((s) => s?.step_target_id === sandboxRun?.id)
+    : null
 
   return (
     <DashboardContent
@@ -165,6 +169,23 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
     >
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="md:col-span-8">
+          {installWorkflow &&
+          step &&
+          step?.approval &&
+          !step?.approval?.response ? (
+            <Section
+              className="border-b"
+              childrenClassName="flex flex-col gap-6"
+              heading="Approve change"
+            >
+              <ApprovalStep
+                step={step}
+                approval={step.approval}
+                workflowId={installWorkflow?.id}
+              />
+            </Section>
+          ) : null}
+
           <LogStreamProvider initLogStream={sandboxRun?.log_stream}>
             <OperationLogsSection
               heading={sentanceCase(sandboxRun?.run_type) + ' logs'}
