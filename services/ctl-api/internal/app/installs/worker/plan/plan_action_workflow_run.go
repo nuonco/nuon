@@ -11,6 +11,7 @@ import (
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/config/refs"
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
+	"github.com/powertoolsdev/mono/pkg/render"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
@@ -75,7 +76,19 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		},
 		Steps:      make([]*plantypes.ActionWorkflowRunStepPlan, 0),
 		EnvVars:    envVars,
-		RunEnvVars: hstoreToMap(run.RunEnvVars),
+		RunEnvVars: map[string]string{},
+	}
+
+	for k, v := range hstoreToMap(run.RunEnvVars) {
+		renderedVal, err := render.Render(v, stateMap)
+		if err != nil {
+			l.Error("error rendering run env-var",
+				zap.String("env-var", v),
+				zap.Error(err))
+			return nil, err
+		}
+
+		plan.RunEnvVars[k] = renderedVal
 	}
 
 	if !org.SandboxMode && stack.InstallStackOutputs.AWSStackOutputs != nil {
