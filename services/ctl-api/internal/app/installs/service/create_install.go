@@ -14,6 +14,7 @@ import (
 
 type CreateInstallRequest struct {
 	helpers.CreateInstallParams
+	OverrideApprovalOption *app.InstallApprovalOption `json:"override_approval_option,omitempty"`
 }
 
 func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
@@ -78,6 +79,7 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		app.InstallWorkflowTypeProvision,
 		map[string]string{},
 		app.StepErrorBehaviorAbort,
+		req.OverrideApprovalOption,
 	)
 	if err != nil {
 		ctx.Error(err)

@@ -91,7 +91,7 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 		return err
 	}
 
-	if resp.Type == app.InstallWorkflowStepApprovalResponseTypeApprove {
+	if resp.Type == app.InstallWorkflowStepApprovalResponseTypeApprove || resp.Type == app.InstallWorkflowStepApprovalResponseTypeAutoApprove {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{

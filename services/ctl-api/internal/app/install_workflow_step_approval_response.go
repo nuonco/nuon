@@ -36,8 +36,8 @@ type InstallWorkflowStepApprovalResponse struct {
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	// the approval the response belongs to
-	InstallWorkflowStepApprovalID string                      `json:"install_workflow_step_approval_id,omitzero" temporaljson:"install_workflow_step_approval_id,omitzero,omitempty"`
-	InstallWorkflowStepApproval   InstallWorkflowStepApproval `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_workflow_step_approval,omitzero,omitempty"`
+	InstallWorkflowStepApprovalID string                          `json:"install_workflow_step_approval_id,omitzero" temporaljson:"install_workflow_step_approval_id,omitzero,omitempty"`
+	InstallWorkflowStepApproval   InstallWorkflowStepResponseType `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_workflow_step_approval,omitzero,omitempty"`
 
 	// the response type
 	Type InstallWorkflowApprovalResponseType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`

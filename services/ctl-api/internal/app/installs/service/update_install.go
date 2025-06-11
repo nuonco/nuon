@@ -12,7 +12,8 @@ import (
 )
 
 type UpdateInstallRequest struct {
-	Name string `json:"name"`
+	Name        *string `json:"name"`
+	AutoApprove *bool   `json:"auto_approve"`
 }
 
 func (c *UpdateInstallRequest) Validate(v *validator.Validate) error {
@@ -22,23 +23,23 @@ func (c *UpdateInstallRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						UpdateInstall
-//	@Summary				update an install
-//	@Description.markdown	update_install.md
-//	@Param					install_id	path	string					true	"app ID"
-//	@Param					req			body	UpdateInstallRequest	true	"Input"
-//	@Tags					installs
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{object}	app.Install
-//	@Router					/v1/installs/{install_id} [PATCH]
+// @ID						UpdateInstall
+// @Summary				update an install
+// @Description.markdown	update_install.md
+// @Param					install_id	path	string					true	"app ID"
+// @Param					req			body	UpdateInstallRequest	true	"Input"
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.Install
+// @Router					/v1/installs/{install_id} [PATCH]
 func (s *service) UpdateInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
@@ -71,7 +72,7 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("AppSandboxConfig").
-		Updates(app.Install{Name: req.Name})
+		Updates(req)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
