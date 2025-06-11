@@ -48,11 +48,6 @@ func (c *CreateInstallActionWorkflowRunRequest) Validate(v *validator.Validate) 
 // @Router					/v1/installs/{install_id}/action-workflows/runs [post]
 func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-	orgId, err := cctx.OrgIDFromContext(ctx)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get org ID from context: %w", err))
-		return
-	}
 
 	var req CreateInstallActionWorkflowRunRequest
 	if err := ctx.BindJSON(&req); err != nil {
@@ -65,13 +60,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		return
 	}
 
-	install, err := s.findInstall(ctx, orgId, installID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
-		return
-	}
-
-	awc, err := s.actionsHelpers.GetActionWorkflowConfig(ctx, req.ActionWorkFlowConfigID, install.AppConfigID)
+	awc, err := s.actionsHelpers.GetActionWorkflowConfigByID(ctx, req.ActionWorkFlowConfigID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action workflow config: %w", err))
 		return
