@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import {
+  CheckCircle,
   CalendarDots,
   HouseSimple,
   ShippingContainer,
@@ -11,12 +12,19 @@ import {
   TerminalWindow,
 } from '@phosphor-icons/react/dist/ssr'
 import {
+  Button,
+  Badge,
   Header,
   HeaderGroup,
+  InstallHeader,
+  Link,
   PageLayout,
   Page,
   PageNav,
+  Status,
+  Tooltip,
   Text,
+  Time,
 } from '@/stratus/components'
 import { useInstall, useOrg } from '@/stratus/context'
 
@@ -66,17 +74,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
         ],
       }}
     >
-      <Header className="border-b">
-        <HeaderGroup>
-          <Text variant="h3" weight="strong" level={1}>
-            {install?.name}
-          </Text>
-          <Text family="mono" variant="subtext" theme="muted">
-            {install?.id}
-          </Text>
-        </HeaderGroup>
-        <div>Install statuses</div>
-      </Header>
+      <InstallHeader />
       <PageLayout>
         <PageNav
           basePath={`/stratus/${org?.id}/installs/${install?.id}`}
