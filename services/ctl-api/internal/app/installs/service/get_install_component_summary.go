@@ -174,8 +174,10 @@ func (s *service) buildSummary(ctx context.Context, installComponents []app.Inst
 			buildStatus = build.Status
 			buildStatusDescription = build.StatusDescription
 		}
-		deployStatusV2 := app.NewCompositeStatus(ctx, app.Status(deploy.Status))
-		deployStatusV2.StatusHumanDescription = deploy.StatusDescription
+		deployStatusV2 := app.NewCompositeStatus(ctx, app.StatusSuccess)
+		if deploy != nil {
+			deployStatusV2.StatusHumanDescription = deploy.StatusDescription
+		}
 
 		buildStatusV2 := app.NewCompositeStatus(ctx, app.Status(build.Status))
 		buildStatusV2.StatusHumanDescription = build.StatusDescription
