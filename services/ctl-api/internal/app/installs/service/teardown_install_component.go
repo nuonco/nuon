@@ -14,7 +14,8 @@ import (
 )
 
 type TeardownInstallComponentRequest struct {
-	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
+	ErrorBehavior          app.StepErrorBehavior      `json:"error_behavior" swaggertype:"string"`
+	OverrideApprovalOption *app.InstallApprovalOption `json:"override_approval_option,omitempty"`
 }
 
 func (c *TeardownInstallComponentRequest) Validate(v *validator.Validate) error {
@@ -85,6 +86,7 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 			"component_id": component.ID,
 		},
 		req.ErrorBehavior,
+		req.OverrideApprovalOption,
 	)
 	if err != nil {
 		ctx.Error(err)
