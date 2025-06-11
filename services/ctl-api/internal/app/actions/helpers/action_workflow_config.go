@@ -32,3 +32,25 @@ func (h *Helpers) GetActionWorkflowConfig(ctx context.Context, actionWorkflowID,
 
 	return &actionWorkflowConfig, nil
 }
+
+func (h *Helpers) GetActionWorkflowConfigByID(ctx context.Context, actionWorkflowConfigID string) (*app.ActionWorkflowConfig, error) {
+	if actionWorkflowConfigID == "" {
+		return nil, errors.New("action workflow config ID is required to be non empty")
+	}
+
+	actionWorkflowConfig := app.ActionWorkflowConfig{
+		ID: actionWorkflowConfigID,
+	}
+
+	res := h.db.WithContext(ctx).
+		Preload("Triggers").
+		Preload("Steps", func(db *gorm.DB) *gorm.DB {
+			return db.Order("action_workflow_step_configs.idx ASC")
+		}).
+		First(&actionWorkflowConfig)
+	if res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to get action workflow config")
+	}
+
+	return &actionWorkflowConfig, nil
+}
