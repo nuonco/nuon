@@ -2,6 +2,7 @@ package flow
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -17,19 +18,7 @@ import (
 )
 
 func (c *FlowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Context, flw *app.Flow, step *app.FlowStep, stepIdx int) (*app.InstallWorkflowStepApprovalResponse, error) {
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: flw.ID,
-		Status: app.CompositeStatus{
-			Status:                 app.WorkflowAwaitingApproval,
-			StatusHumanDescription: "pending approval for step " + strconv.Itoa(step.Idx+1),
-			Metadata: map[string]any{
-				"step_idx": step.Idx,
-				"status":   "pending-approval",
-			},
-		},
-	}); err != nil {
-		return nil, errors.Wrap(err, "unable to update step to success status")
-	}
+	fmt.Printf("rb - Waiting for approval response for step %d in flow %s", step.Idx, flw.ID)
 
 	if err := poll.Poll(ctx, c.V, poll.PollOpts{
 		MaxTS:           workflow.Now(ctx).Add(time.Hour * 24 * 30),
@@ -53,6 +42,35 @@ func (c *FlowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Conte
 
 			if stp.Approval == nil {
 				return errors.New("Approval does not exist yet")
+			}
+
+			if flw.ApprovalOption == app.InstallApprovalOptionApproveAll {
+				fmt.Printf("rb - Auto approving step %d in flow %s", stp.Idx, flw.ID)
+				if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+					ID: flw.ID,
+					Status: app.CompositeStatus{
+						Status:                 app.WorkflowStepApprovalStatusApproved,
+						StatusHumanDescription: "auto approved for step " + strconv.Itoa(stp.Idx+1),
+						Metadata: map[string]any{
+							"step_idx": step.Idx,
+							"status":   "auto-approved",
+						},
+					},
+				}); err != nil {
+					return errors.Wrap(err, "unable to update step to success status")
+				}
+
+				fmt.Printf("rb - is step.Approval nil? %v", stp.Approval == nil)
+				_, err := activities.AwaitCreateApprovalResponse(ctx, activities.CreateStepApprovalResponseRequest{
+					StepApprovalID: stp.Approval.ID,
+					Type:           app.InstallWorkflowStepApprovalResponseTypeAutoApprove,
+					Note:           "auto-approved",
+				})
+				if err != nil {
+					return errors.Wrap(err, "unable to auto-approve step")
+				}
+
+				return nil
 			}
 
 			if stp.Approval.Response == nil {
