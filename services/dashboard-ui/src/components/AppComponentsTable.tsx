@@ -38,7 +38,7 @@ function parseComponentsToTableData(
   components: Array<TDataComponent>
 ): Array<TData> {
   return components.map((component) => ({
-    build: component?.status || 'noop',
+    build: component?.latestBuild?.status || 'noop',
     componentId: component.id,
     type: component?.type,
     configVersion: component.config_versions,
