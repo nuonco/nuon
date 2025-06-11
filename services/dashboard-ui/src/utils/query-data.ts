@@ -66,14 +66,16 @@ export type TQuery<T> = {
 }
 
 interface INueQueryData {
+  abortTimeout?: number
+  headers?: Record<string, unknown>
   orgId?: string
   path: string
   pathVersion?: 'v1'
-  abortTimeout?: number
 }
 
 export async function nueQueryData<T>({
   abortTimeout = 10000,
+  headers = {},
   orgId,
   path,
   pathVersion = 'v1',
@@ -81,7 +83,7 @@ export async function nueQueryData<T>({
   try {
     const response = await fetch(
       `${API_URL}/${pathVersion}/${path}`,
-      await getFetchOpts(orgId, {}, abortTimeout)
+      await getFetchOpts(orgId, headers, abortTimeout)
     )
 
     // Parse the response data
