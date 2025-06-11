@@ -8,9 +8,10 @@ import {
   Header,
   HeaderGroup,
   Page,
-  ScrollableContent,
+  ScrollableContent,  
   Section,
   Skeleton,
+  Status,
   Text,
 } from '@/stratus/components'
 import type { IPageProps, TInstall } from '@/types'
@@ -109,9 +110,9 @@ const LoadInstalls: FC<{ orgId: string }> = async ({ orgId }) => {
           </div>
 
           <div className="flex flex-col gap-1">
-            <Text variant="label">{install?.runner_status}</Text>
-            <Text variant="label">{install?.sandbox_status}</Text>
-            <Text variant="label">{install?.composite_component_status}</Text>
+            <Status status={install?.runner_status} />
+            <Status status={install?.sandbox_status} />
+            <Status status={install?.composite_component_status} />
           </div>
 
           <Text>{install?.app?.name}</Text>
