@@ -12,7 +12,7 @@ export type TTextVariant =
   | 'subtext'
   | 'label'
 export type TTextWeight = 'normal' | 'strong' | 'stronger'
-export type TTextTheme = "default" | "muted"
+export type TTextTheme = "default" | "muted" | "highlighted"
 
 export interface IText extends React.HTMLAttributes<HTMLSpanElement> {
   family?: TTextFamily
@@ -37,8 +37,7 @@ export const Text: FC<IText> = ({
   return (
     <span
       aria-level={role === 'heading' && level ? level : undefined}
-      className={classNames(`${variant} ${family} ${weight}`, {
-        'text-cool-grey-600 dark:text-white/70': theme === "muted",
+      className={classNames(`${variant} ${family} ${weight}, ${theme}`, {
         [`${className}`]: Boolean(className),
       })}
       role={role}
