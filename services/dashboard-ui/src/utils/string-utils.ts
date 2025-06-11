@@ -10,6 +10,8 @@ export const initialsFromString = (s = '') => {
   ).toUpperCase()
 }
 
+export const removeKebabCase = (str: string): string => str ? str.replace(/-/g, ' ') : 'unknown';
+
 export const removeSnakeCase = (str?: string) =>
   str ? str?.replace(/_/g, ' ') : 'unknown'
 

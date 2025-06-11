@@ -19,7 +19,7 @@ export async function runManualWorkflow({
   vars,
 }: IRunManualWorkflow) {
   const options = Object.keys(vars)?.length ? { run_env_vars: vars } : undefined
-
+  
   try {
     await runInstallActionWorkflow({
       installId,
