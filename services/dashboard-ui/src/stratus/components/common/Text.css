@@ -67,3 +67,11 @@
   font-weight: 600;
 }
 
+/* text theme */
+.muted {
+  @apply text-cool-grey-600 dark:text-white/70;
+}
+
+.highlighted {
+  @apply text-blue-800 dark:text-blue-600;
+}
