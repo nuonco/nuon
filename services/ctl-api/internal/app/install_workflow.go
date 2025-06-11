@@ -143,6 +143,8 @@ type InstallWorkflow struct {
 	Status            CompositeStatus     `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
 	StepErrorBehavior StepErrorBehavior   `json:"step_error_behavior,omitzero" temporaljson:"step_error_behavior,omitzero,omitempty"`
 
+	ApprovalOption InstallApprovalOption `json:"approval_option,omitzero" gorm:"default 'auto'" temporaljson:"approval_option,omitzero,omitempty"`
+
 	StartedAt  time.Time `json:"started_at,omitzero" gorm:"default:null" temporaljson:"started_at,omitzero,omitempty"`
 	FinishedAt time.Time `json:"finished_at,omitzero" gorm:"default:null" temporaljson:"finished_at,omitzero,omitempty"`
 	Finished   bool      `json:"finished,omitzero" gorm:"-" temporaljson:"finished,omitzero,omitempty"`

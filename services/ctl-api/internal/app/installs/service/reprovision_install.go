@@ -12,7 +12,8 @@ import (
 )
 
 type ReprovisionInstallRequest struct {
-	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
+	ErrorBehavior          app.StepErrorBehavior      `json:"error_behavior" swaggertype:"string"`
+	OverrideApprovalOption *app.InstallApprovalOption `json:"override_approval_option,omitempty"`
 }
 
 func (c *ReprovisionInstallRequest) Validate(v *validator.Validate) error {
@@ -58,7 +59,8 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		install.ID,
 		app.InstallWorkflowTypeReprovision,
 		map[string]string{},
-		req.ErrorBehavior)
+		req.ErrorBehavior,
+		req.OverrideApprovalOption)
 	if err != nil {
 		ctx.Error(err)
 		return
