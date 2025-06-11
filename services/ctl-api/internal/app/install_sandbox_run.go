@@ -98,3 +98,10 @@ func (i *InstallSandboxRun) Views(db *gorm.DB) []migrations.View {
 		},
 	}
 }
+
+func (i *InstallSandboxRun) AfterQuery(tx *gorm.DB) error {
+	i.Status = SandboxRunStatus(i.StatusV2.Status)
+	i.StatusDescription = i.StatusV2.StatusHumanDescription
+
+	return nil
+}
