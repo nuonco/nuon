@@ -8,7 +8,7 @@ import {
   Header,
   HeaderGroup,
   Page,
-  ScrollableContent,  
+  ScrollableDiv,  
   Section,
   Skeleton,
   Status,
@@ -35,7 +35,7 @@ const InstallsPage: FC<IPageProps<'org-id'>> = async ({ params }) => {
         ],
       }}
     >
-      <ScrollableContent>
+      <ScrollableDiv>
         <Header>
           <HeaderGroup>
             <Text variant="h3" weight="strong" level={1}>
@@ -55,7 +55,7 @@ const InstallsPage: FC<IPageProps<'org-id'>> = async ({ params }) => {
             </Suspense>
           </ErrorBoundary>
         </Section>
-      </ScrollableContent>
+      </ScrollableDiv>
     </Page>
   )
 }

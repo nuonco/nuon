@@ -2,7 +2,7 @@ import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import {
   Markdown,
-  ScrollableContent,
+  ScrollableDiv,
   Section,
   Skeleton,
   Text,
@@ -17,7 +17,7 @@ const InstallOverviewPage: FC<IPageProps<'org-id' | 'install-id'>> = async ({
   const installId = params?.['install-id']
 
   return (
-    <ScrollableContent>
+    <ScrollableDiv>
       <Section>
         <Text variant="base" weight="strong" level={2}>
           Overview
@@ -29,7 +29,7 @@ const InstallOverviewPage: FC<IPageProps<'org-id' | 'install-id'>> = async ({
           </Suspense>
         </ErrorBoundary>
       </Section>
-    </ScrollableContent>
+    </ScrollableDiv>
   )
 }
 

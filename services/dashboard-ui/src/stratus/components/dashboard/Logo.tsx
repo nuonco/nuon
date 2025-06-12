@@ -1,14 +1,15 @@
 import { useDashboard } from '@/stratus/context'
 import React, { type FC } from 'react'
+import { Link } from "@/stratus/components/common"
 import './Logo.css'
 
 export const Logo: FC = () => {
   return (
-    <a href="/stratus" className="w-full overflow-hidden">
+    <Link href="/stratus" className="logo-link w-fit overflow-hidden">
       <span className="sr-only">Nuon</span>
       <LightModeLogo />
       <DarkModeLogo />
-    </a>
+    </Link>
   )
 }
 

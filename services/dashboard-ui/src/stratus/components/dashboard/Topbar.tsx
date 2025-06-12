@@ -12,7 +12,7 @@ export const Topbar: FC<ITopbar> = ({
   return (
     <header
       className={classNames(
-        'py-3 px-4 border-b flex shrink-0 items-center h-[60px] w-full overflow-x-auto',
+        'py-3 px-4 border-b flex shrink-0 items-center h-[60px] w-full overflow-x-auto md:overflow-visible',
         {
           [`${className}`]: Boolean(className),
         }
