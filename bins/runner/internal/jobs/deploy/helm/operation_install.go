@@ -34,7 +34,6 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 
 	client := action.NewInstall(actionCfg)
 	client.ClientOnly = false
-	client.DryRun = true
 	client.DisableHooks = false
 	client.Wait = true
 	client.WaitForJobs = false
@@ -53,20 +52,39 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.Replace = false
 	client.Description = ""
 	client.CreateNamespace = h.state.plan.HelmDeployPlan.CreateNamespace
+	client.IncludeCRDs = false  // default value
+	client.TakeOwnership = true // should come form h.state.plan.HelmDeployPlan.TakeOwnership
+	client.DryRun = true
 
-	l.Info("calculating helm diff")
-	rel, err := client.RunWithContext(ctx, chart, values)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to execute with dry-run")
-	}
-	newMapping := manifest.Parse(rel.Manifest, rel.Namespace, true)
-	if err := h.logDiff(l, map[string]*manifest.MappingResult{}, newMapping); err != nil {
-		return nil, errors.Wrap(err, "unable to execute with dry-run")
+	crds := chart.CRDObjects()
+	if len(crds) > 0 {
+		// skip dry run
+		crdZapFieldList := []zap.Field{}
+		for i, crd := range crds {
+			field := zap.String(fmt.Sprintf("crd.%d", i), crd.Name)
+			crdZapFieldList = append(crdZapFieldList, field)
+		}
+		l.Info(
+			"chart contains CRDs - skipping dry-run",
+			crdZapFieldList...,
+		)
+	} else {
+		// specific to dry run
+
+		l.Info("calculating helm diff")
+		rel, err := client.RunWithContext(ctx, chart, values)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to execute with dry-run")
+		}
+		newMapping := manifest.Parse(rel.Manifest, rel.Namespace, true)
+		if err := h.logDiff(l, map[string]*manifest.MappingResult{}, newMapping); err != nil {
+			return nil, errors.Wrap(err, "unable to execute with dry-run")
+		}
 	}
 
 	l.Info("running helm install")
 	client.DryRun = false
-	rel, err = helm.HelmInstallWithLogStreaming(ctx, client, chart, values, kubeCfg, l)
+	rel, err := helm.HelmInstallWithLogStreaming(ctx, client, chart, values, kubeCfg, l)
 	if err != nil {
 		return nil, fmt.Errorf("unable to upgrade helm release: %w", err)
 	}
