@@ -17,6 +17,16 @@ import (
 	"github.com/powertoolsdev/mono/pkg/errs"
 )
 
+func (s *Service) DeprecatedSyncDir(ctx context.Context, dir string, version string) error {
+	deprecatedWarning := config.ErrConfig{
+		Description: "nuon apps sync-dir is deprecated, please use nuon apps sync instead",
+		Warning:     true,
+		Err:         fmt.Errorf("deprecated command nuon sync-dir"),
+	}
+	ui.PrintError(deprecatedWarning)
+	return s.SyncDir(ctx, dir, version)
+}
+
 func (s *Service) SyncDir(ctx context.Context, dir string, version string) error {
 	ui.PrintLn("syncing directory from " + dir)
 
