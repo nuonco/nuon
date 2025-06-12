@@ -1,9 +1,10 @@
 'use client'
 
 import classNames from 'classnames'
-import React, { type FC, forwardRef, useEffect, useRef, useState } from 'react'
+import React, { type FC, useEffect, useRef, useState } from 'react'
 import { CaretDown } from '@phosphor-icons/react'
 import { Button, IButton } from './Button'
+import { TransitionDiv } from "./TransitionDiv"
 import './Dropdown.css'
 
 const useFocusOutside = (handler: () => void) => {
@@ -14,7 +15,7 @@ const useFocusOutside = (handler: () => void) => {
       const relatedTarget = event.relatedTarget as HTMLElement | null
 
       if (ref.current && !ref.current.contains(relatedTarget)) {
-        handler() // Call the handler if focus moves outside
+        handler()
       }
     }
 
@@ -133,48 +134,3 @@ export const Dropdown: FC<IDropdown> = ({
     </>
   )
 }
-
-interface IDropdownContent extends React.HTMLAttributes<HTMLDivElement> {
-  isVisible: boolean
-  onExited?: () => void
-}
-
-const TransitionDiv = forwardRef<HTMLDivElement, IDropdownContent>(
-  ({ children, className, isVisible, onExited, ...props }, ref) => {
-    const [isExiting, setIsExiting] = useState(false)
-    const [isMounted, setIsMounted] = useState(isVisible)
-
-    useEffect(() => {
-      if (isVisible) {
-        setIsMounted(true) // Mount the component
-        setIsExiting(false) // Remove the exit class
-      } else {
-        setIsExiting(true) // Add the exit class
-        const timeout = setTimeout(() => {
-          setIsMounted(false) // Unmount the component after the animation
-          onExited?.() // Notify parent that the component has exited
-        }, 155) // Duration should match CSS animation duration
-
-        return () => clearTimeout(timeout) // Cleanup timeout on unmount
-      }
-    }, [isVisible, onExited])
-
-    if (!isMounted) {
-      return null // Don't render anything if the component is not mounted
-    }
-
-    return (
-      <div
-        className={classNames(`${isExiting ? 'exit' : 'enter'}`, {
-          [`${className}`]: Boolean(className),
-        })}
-        ref={ref}
-        {...props}
-      >
-        {children}
-      </div>
-    )
-  }
-)
-
-TransitionDiv.displayName = 'TransitionDiv'

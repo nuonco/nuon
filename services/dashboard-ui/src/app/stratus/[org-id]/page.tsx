@@ -20,7 +20,7 @@ import {
   HeaderGroup,
   Page,
   Section,
-  ScrollableContent,
+  ScrollableDiv,
   Dropdown,
   splitYamlDiff,
 } from '@/stratus/components'
@@ -58,7 +58,7 @@ const Dashboard: FC<IPageProps<'org-id'>> = async ({ params }) => {
       </Header>
       <div className="grid md:grid-cols-12 w-full divide-x min-h-full">
         <div className="flex flex-col gap-8 md:col-span-8">
-          <ScrollableContent>
+          <ScrollableDiv>
             <Section>
               <div className="flex flex-col gap-4">
                 <Text variant="h3" weight="strong">
@@ -113,7 +113,7 @@ const Dashboard: FC<IPageProps<'org-id'>> = async ({ params }) => {
                 Recent activities
               </Text>
             </Section>
-          </ScrollableContent>
+          </ScrollableDiv>
         </div>
         <div className="flex flex-col gap-8 md:col-span-4">
           <Section>

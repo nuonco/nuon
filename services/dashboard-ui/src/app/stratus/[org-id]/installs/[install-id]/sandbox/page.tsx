@@ -1,6 +1,6 @@
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { Link, ScrollableContent, Section, Text } from '@/stratus/components'
+import { Link, ScrollableDiv, Section, Text } from '@/stratus/components'
 import type { TSandboxRun, IPageProps } from '@/types'
 import { nueQueryData } from '@/utils'
 
@@ -9,7 +9,7 @@ const SandboxPage: FC<IPageProps<'org-id' | 'install-id'>> = ({ params }) => {
   const installId = params?.['install-id']
 
   return (
-    <ScrollableContent>
+    <ScrollableDiv>
       <Section className="gap-8">
         <Text variant="base" weight="strong">
           Sandbox details
@@ -20,7 +20,7 @@ const SandboxPage: FC<IPageProps<'org-id' | 'install-id'>> = ({ params }) => {
           </Suspense>
         </ErrorBoundary>
       </Section>
-    </ScrollableContent>
+    </ScrollableDiv>
   )
 }
 
