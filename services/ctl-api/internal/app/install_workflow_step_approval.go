@@ -15,8 +15,8 @@ import (
 type InstallWorkflowStepApprovalType string
 
 const (
-	NoopApprovalType InstallWorkflowStepApprovalType = "noop"
-
+	NoopApprovalType          InstallWorkflowStepApprovalType = "noop"
+	ApproveAllApprovalType    InstallWorkflowStepApprovalType = "approve-all"
 	TerraformPlanApprovalType InstallWorkflowStepApprovalType = "terraform_plan"
 	HelmApprovalApprovalType  InstallWorkflowStepApprovalType = "helm_approval"
 )

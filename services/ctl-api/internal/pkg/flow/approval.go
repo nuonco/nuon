@@ -2,7 +2,6 @@ package flow
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -18,8 +17,6 @@ import (
 )
 
 func (c *FlowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Context, flw *app.Flow, step *app.FlowStep, stepIdx int) (*app.InstallWorkflowStepApprovalResponse, error) {
-	fmt.Printf("rb - Waiting for approval response for step %d in flow %s", step.Idx, flw.ID)
-
 	if err := poll.Poll(ctx, c.V, poll.PollOpts{
 		MaxTS:           workflow.Now(ctx).Add(time.Hour * 24 * 30),
 		InitialInterval: time.Second * 15,
@@ -44,10 +41,15 @@ func (c *FlowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Conte
 				return errors.New("Approval does not exist yet")
 			}
 
-			if flw.ApprovalOption == app.InstallApprovalOptionApproveAll {
-				fmt.Printf("rb - Auto approving step %d in flow %s", stp.Idx, flw.ID)
+			// get latest workflow to ensure we have the latest state since approval options can change
+			latestFlw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, flw.ID)
+			if err != nil {
+				return errors.Wrap(err, "unable to get flow object")
+			}
+
+			if latestFlw.ApprovalOption == app.InstallApprovalOptionApproveAll {
 				if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-					ID: flw.ID,
+					ID: latestFlw.ID,
 					Status: app.CompositeStatus{
 						Status:                 app.WorkflowStepApprovalStatusApproved,
 						StatusHumanDescription: "auto approved for step " + strconv.Itoa(stp.Idx+1),
@@ -60,10 +62,9 @@ func (c *FlowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Conte
 					return errors.Wrap(err, "unable to update step to success status")
 				}
 
-				fmt.Printf("rb - is step.Approval nil? %v", stp.Approval == nil)
 				_, err := activities.AwaitCreateApprovalResponse(ctx, activities.CreateStepApprovalResponseRequest{
 					StepApprovalID: stp.Approval.ID,
-					Type:           app.InstallWorkflowStepApprovalResponseTypeAutoApprove,
+					Type:           app.InstallWorkflowStepApprovalResponseTypeApprove,
 					Note:           "auto-approved",
 				})
 				if err != nil {

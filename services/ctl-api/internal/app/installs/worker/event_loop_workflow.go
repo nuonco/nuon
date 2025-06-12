@@ -11,10 +11,11 @@ import (
 
 func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationCreated:          AwaitCreated,
-		signals.OperationPollDependencies: AwaitPollDependencies,
-		signals.OperationForget:           AwaitForget,
-		signals.OperationExecuteFlow:      AwaitExecuteFlow,
+		signals.OperationCreated:            AwaitCreated,
+		signals.OperationPollDependencies:   AwaitPollDependencies,
+		signals.OperationForget:             AwaitForget,
+		signals.OperationExecuteFlow:        AwaitExecuteFlow,
+		signals.OperationWorkflowApproveAll: AwaitWorkflowApproveAll,
 		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
 			AwaitRestarted(ctx, req)
 			w.handleSyncActionWorkflowTriggers(ctx, req)
