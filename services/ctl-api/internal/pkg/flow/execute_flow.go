@@ -84,6 +84,7 @@ func (c *FlowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.E
 
 	steps, err := gen(ctx, flw)
 	for idx, step := range steps {
+		step.Idx = idx
 		if id, err := activities.AwaitPkgWorkflowsFlowCreateFlowStep(ctx, activities.CreateFlowStepRequest{
 			FlowID:        fid,
 			OwnerID:       flw.OwnerID,
@@ -91,7 +92,7 @@ func (c *FlowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.E
 			Status:        step.Status,
 			Name:          step.Name,
 			Signal:        step.Signal,
-			Idx:           idx,
+			Idx:           step.Idx,
 			ExecutionType: step.ExecutionType,
 			Metadata:      step.Metadata,
 		}); err != nil {

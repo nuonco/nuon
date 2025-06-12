@@ -21,7 +21,7 @@ func (a *Activities) PkgWorkflowsFlowGetFlowSteps(ctx context.Context, req GetFl
 		Where(app.InstallWorkflowStep{
 			InstallWorkflowID: req.FlowID,
 		}).
-		Order("idx asc").
+		Order("idx, created_at asc").
 		Find(&steps)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get workflow steps")
