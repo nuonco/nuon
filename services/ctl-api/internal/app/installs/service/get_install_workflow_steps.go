@@ -47,7 +47,7 @@ func (s *service) getInstallWorkflowSteps(ctx *gin.Context, workflowID string) (
 		Preload("Approval").
 		Preload("Approval.Response").
 		Preload("PolicyValidation").
-		Order("idx ASC").
+		Order("idx, created_at ASC").
 		Find(&steps)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get workflow steps")
