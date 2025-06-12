@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
 
-interface IScrollableContent extends React.HTMLAttributes<HTMLDivElement> {}
+interface IScrollableDiv extends React.HTMLAttributes<HTMLDivElement> {}
 
-export const ScrollableContent: FC<IScrollableContent> = ({
+export const ScrollableDiv: FC<IScrollableDiv> = ({
   className,
   children,
   ...props
