@@ -8,11 +8,11 @@ import {
   ActionWorkflowStatus,
   Badge,
   ClickToCopy,
-  CodeViewer,
   DashboardContent,
   Duration,
   EventStatus,
   InstallWorkflowCancelModal,
+  JsonView,
   Link,
   Loading,
   LogStreamProvider,
@@ -27,13 +27,11 @@ import {
   getAppActionWorkflow,
   getInstallActionWorkflowRun,
   getInstallWorkflow,
-  getRunnerJobPlan,
 } from '@/lib'
 import type { TInstallActionWorkflowRun, TActionConfig } from '@/types'
 import {
   sentanceCase,
   CANCEL_RUNNER_JOBS,
-  humandReadableTriggeredBy,
   nueQueryData,
 } from '@/utils'
 
@@ -224,14 +222,7 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
           </Section>
           {workflowRun?.runner_job?.outputs ? (
             <Section className="flex-initial" heading="Workflow outputs">
-              <CodeViewer
-                initCodeSource={JSON.stringify(
-                  workflowRun?.runner_job?.outputs || {},
-                  null,
-                  2
-                )}
-                language="json"
-              />
+              <JsonView data={workflowRun?.runner_job?.outputs} />
             </Section>
           ) : null}
         </div>
