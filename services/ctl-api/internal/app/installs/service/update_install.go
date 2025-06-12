@@ -12,8 +12,7 @@ import (
 )
 
 type UpdateInstallRequest struct {
-	Name        *string `json:"name"`
-	AutoApprove *bool   `json:"auto_approve"`
+	Name *string `json:"name"`
 }
 
 func (c *UpdateInstallRequest) Validate(v *validator.Validate) error {
