@@ -5,7 +5,7 @@ import {
   HeaderGroup,
   Page,
   Section,
-  ScrollableContent,
+  ScrollableDiv,
   Text,
 } from '@/stratus/components'
 import type { IPageProps } from '@/types'
@@ -28,7 +28,7 @@ const AppsPage: FC<IPageProps<'org-id'>> = ({ params }) => {
         ],
       }}
     >
-      <ScrollableContent>
+      <ScrollableDiv>
         <Header>
           <HeaderGroup>
             <Text variant="h3" weight="strong" level={1}>
@@ -42,7 +42,7 @@ const AppsPage: FC<IPageProps<'org-id'>> = ({ params }) => {
             <Suspense fallback={'Loading...'}>Apps: TKTKTK</Suspense>
           </ErrorBoundary>
         </Section>
-      </ScrollableContent>
+      </ScrollableDiv>
     </Page>
   )
 }
