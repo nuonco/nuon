@@ -50,9 +50,8 @@ export const InstallHeaderDetails: FC = () => {
               </Text>
             </span>
           ),
-          position: 'bottom',
         }}
-        title="Runner"
+        label="Runner"
       />
 
       <DetailedStatus
@@ -84,15 +83,13 @@ export const InstallHeaderDetails: FC = () => {
               </Text>
             </span>
           ),
-          position: 'bottom',
         }}
-        title="Sandbox"
+        label="Sandbox"
       />
 
       <DetailedStatus
         status={{ status: install?.composite_component_status }}
         tooltip={{
-          position: 'bottom',
           tipContent: (
             <span className="flex flex-col gap-2 py-2 w-60">
               <Text
@@ -130,7 +127,7 @@ export const InstallHeaderDetails: FC = () => {
             </span>
           ),
         }}
-        title="Components"
+        label="Components"
       />
 
       <InstallManageDropdown />
