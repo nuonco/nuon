@@ -8,9 +8,9 @@ import (
 )
 
 type CreateStepApprovalResponseRequest struct {
-	StepApprovalID string                                  `json:"step_approval_id"`
-	Type           app.InstallWorkflowApprovalResponseType `json:"type"`
-	Note           string                                  `json:"note"`
+	StepApprovalID string                              `json:"step_approval_id"`
+	Type           app.InstallWorkflowStepResponseType `json:"type"`
+	Note           string                              `json:"note"`
 }
 
 // @temporal-gen activity

@@ -15,12 +15,9 @@ import (
 type InstallWorkflowStepResponseType string
 
 const (
-	InstallWorkflowStepApprovalResponseTypeDeny    InstallWorkflowApprovalResponseType = "deny"
-	InstallWorkflowStepApprovalResponseTypeApprove InstallWorkflowApprovalResponseType = "approve"
-	InstallWorkflowStepApprovalResponseTypeSkip    InstallWorkflowApprovalResponseType = "skip"
-
-	// auto approve is when the workflow uses auto-approve
-	InstallWorkflowStepApprovalResponseTypeAutoApprove InstallWorkflowApprovalResponseType = "auto-approve"
+	InstallWorkflowStepApprovalResponseTypeDeny    InstallWorkflowStepResponseType = "deny"
+	InstallWorkflowStepApprovalResponseTypeApprove InstallWorkflowStepResponseType = "approve"
+	InstallWorkflowStepApprovalResponseTypeSkip    InstallWorkflowStepResponseType = "skip"
 )
 
 type InstallWorkflowStepApprovalResponse struct {
@@ -40,7 +37,7 @@ type InstallWorkflowStepApprovalResponse struct {
 	InstallWorkflowStepApproval   InstallWorkflowStepResponseType `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_workflow_step_approval,omitzero,omitempty"`
 
 	// the response type
-	Type InstallWorkflowApprovalResponseType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
+	Type InstallWorkflowStepResponseType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 
 	Note string `json:"note,omitzero" temporaljson:"note,omitzero,omitempty"`
 }
