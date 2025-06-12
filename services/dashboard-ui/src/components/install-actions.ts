@@ -320,7 +320,7 @@ export async function deleteComponent({
       }
     })
     .catch((err) => {
-      error = err  
+      error = err
     })
 
   return { data: res ? res.headers.get('x-nuon-install-workflow-id') : null, error }
@@ -358,7 +358,7 @@ export async function deleteInstall({
   return (await res).headers.get('x-nuon-install-workflow-id')
 }
 
-interface IDeprovisionSandbox extends IDeleteComponents {}
+interface IDeprovisionSandbox extends IDeleteComponents { }
 
 export async function deprovisionSandbox({
   continueOnError = false,
@@ -392,7 +392,7 @@ interface IApproveWorklowStep {
   workflowId: string
   stepId: string
   approvalId: string
-  responseType: "approve" | "deny"
+  responseType: "approve" | "deny" | "retry"
 }
 
 export async function approveWorkflowStep({ approvalId, orgId, responseType, stepId, workflowId }: IApproveWorklowStep) {

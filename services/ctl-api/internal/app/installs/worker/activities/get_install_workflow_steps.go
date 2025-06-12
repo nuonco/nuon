@@ -20,7 +20,7 @@ func (a *Activities) GetInstallWorkflowsSteps(ctx context.Context, req GetInstal
 		Where(app.InstallWorkflowStep{
 			InstallWorkflowID: req.InstallWorkflowID,
 		}).
-		Order("idx asc").
+		Order("idx, created_at asc").
 		Find(&steps)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get workflow steps")

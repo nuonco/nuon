@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation'
 import React, { type FC, useState } from 'react'
-import { X, Check } from '@phosphor-icons/react'
+import { X, Check, ArrowsClockwise } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
@@ -30,11 +30,12 @@ export const ApprovalStep: FC<IApprovalStep> = ({
   const params = useParams()
   const orgId = params?.['org-id'] as string
   const [isDenyLoading, setIsDenyLoading] = useState(false)
+  const [isRetryLoading, setIsRetryLoading] = useState(false)
   const [isApproveLoading, setIsApproveLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [error, setError] = useState<string>()
 
-  const approve = (responseType: 'approve' | 'deny') => {
+  const approve = (responseType: 'approve' | 'deny' | 'retry') => {
     setIsKickedOff(true)
     approveWorkflowStep({
       orgId,
@@ -107,6 +108,26 @@ export const ApprovalStep: FC<IApprovalStep> = ({
               )}
             </Button>
 
+            <Button
+              onClick={() => {
+                setIsRetryLoading(true)
+                approve('retry')
+              }}
+              className="text-sm font-sans flex items-center gap-2 h-[32px]"
+              disabled={isKickedOff}
+            >
+              {isRetryLoading ? (
+                <>
+                  <SpinnerSVG />
+                  Retrying plan
+                </>
+              ) : (
+                <>
+                  <ArrowsClockwise />
+                  Retry Plan
+                </>
+              )}
+            </Button>
             <Button
               onClick={() => {
                 setIsApproveLoading(true)
