@@ -32,6 +32,7 @@ export function getStatusTheme(status: string): TStatusTheme {
     case 'unknown':
     case 'unhealthy':
     case 'not connected':
+    case 'not-connected':
     case 'timed-out':
       theme = 'error'
       break

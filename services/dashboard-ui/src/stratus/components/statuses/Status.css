@@ -7,7 +7,7 @@
 }
 
 .status.badge {
-  @apply border rounded-full px-2 py-0.5;
+  @apply border rounded-full px-2 py-0.5 w-fit;
 }
 
 .status .status-indicator {
