@@ -19,6 +19,7 @@ export const Tooltip: FC<ITooltip> = ({
   tipContent,
   ...props
 }) => {
+  const [isOpen, setIsOpen] = useState(false)
   const [styles, setStyles] = useState<{
     top: string
     left: string
@@ -76,6 +77,10 @@ export const Tooltip: FC<ITooltip> = ({
       style={{ position: 'relative' }}
       onMouseEnter={() => {
         calculatePosition()
+        setIsOpen(true)
+      }}
+      onMouseLeave={() => {
+        setIsOpen(false)
       }}
       {...props}
     >
@@ -89,12 +94,11 @@ export const Tooltip: FC<ITooltip> = ({
 
       <span
         ref={tooltipRef}
-        className={`tooltip-content ${position}`}
-        style={{
-          ...styles,
-          position: 'absolute',
-          zIndex: 1000,
-        }}
+        className={classNames(`tooltip-content ${position}`, {
+          enter: isOpen,
+          exit: !isOpen,
+        })}
+        style={styles}
       >
         {tipContent}
       </span>
