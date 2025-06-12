@@ -13,8 +13,8 @@ import (
 )
 
 type CreateInstallWorkflowStepApprovalResponseRequest struct {
-	ResponseType app.InstallWorkflowApprovalResponseType `json:"response_type"`
-	Note         string                                  `json:"note"`
+	ResponseType app.InstallWorkflowStepResponseType `json:"response_type"`
+	Note         string                              `json:"note"`
 }
 
 func (c *CreateInstallWorkflowStepApprovalResponseRequest) Validate(v *validator.Validate) error {
@@ -86,8 +86,6 @@ func (s *service) CreateInstallWorkflowStepApprovalResponse(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
 		return
 	}
-
-	// TODO: we still need to trigger some background job to process the approval
 
 	ctx.JSON(http.StatusCreated, response)
 }
