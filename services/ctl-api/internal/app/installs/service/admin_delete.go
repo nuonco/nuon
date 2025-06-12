@@ -9,9 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-type AdminDeleteInstallRequest struct {
-	OverrideApprovalOption *app.InstallApprovalOption `json:"override_approval_option,omitempty"`
-}
+type AdminDeleteInstallRequest struct{}
 
 // @ID						AdminDeleteInstall
 // @Summary				delete an install
@@ -42,8 +40,7 @@ func (s *service) AdminDeleteInstall(ctx *gin.Context) {
 		install.ID,
 		app.InstallWorkflowTypeDeprovision,
 		map[string]string{},
-		app.StepErrorBehaviorAbort,
-		req.OverrideApprovalOption)
+		app.StepErrorBehaviorAbort)
 	if err != nil {
 		ctx.Error(err)
 		return
