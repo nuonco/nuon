@@ -8,13 +8,15 @@ export type TStatusType = string | 'success' | 'error'
 type TStatusVariant = 'default' | 'badge' | 'timeline'
 
 export interface IStatus
-  extends Omit<React.HTMLAttributes<HTMLSpanElement>, 'children'> {
+extends Omit<React.HTMLAttributes<HTMLSpanElement>, 'children'> {
+  children?: React.ReactNode
   isWithoutText?: boolean
   status: TStatusType
   variant?: TStatusVariant
 }
 
 export const Status: FC<IStatus> = ({
+  children,
   className,
   isWithoutText = false,
   status,
@@ -23,6 +25,7 @@ export const Status: FC<IStatus> = ({
 }) => {
   const theme = getStatusTheme(status)
   const Icon = variant === 'timeline' ? getStatusIcon(status) : null
+
 
   return (
     <span
@@ -39,7 +42,7 @@ export const Status: FC<IStatus> = ({
 
       {isWithoutText ? null : (
         <span className="status-text">
-          {sentanceCase(removeKebabCase(status))}
+          {children || sentanceCase(removeKebabCase(status))}
         </span>
       )}
     </span>
