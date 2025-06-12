@@ -9,6 +9,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
 )
 
 var FlowCancellationErr = fmt.Errorf("flow cancelled")
@@ -18,19 +19,32 @@ func (c *FlowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req eve
 		return FlowCancellationErr
 	}
 
-	for idx, step := range flw.Steps {
-		err := c.executeFlowStep(ctx, req, idx, &step, flw)
+	steps := flw.Steps
+
+	for i := 0; i < len(steps); i++ {
+		step := &steps[i]
+
+		retry, err := c.executeFlowStep(ctx, req, step.Idx, step, flw)
+		if retry {
+			// outer steps loop should continue to retry the step since the result here is ordered by idx asc
+			steps, err = activities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, activities.GetFlowStepsRequest{
+				FlowID: flw.ID,
+			}) // this will re-query the steps from the database
+			if err != nil {
+				return errors.Wrap(err, "unable to get steps for retry")
+			}
+		}
 		if err == nil {
 			continue
 		}
 
 		// handle cancellation
 		if c.isCancellationErr(ctx, err) {
-			return c.handleCancellation(ctx, err, step.ID, idx, flw)
+			return c.handleCancellation(ctx, err, step.ID, i, flw)
 		}
 
 		if errors.Is(err, NotApprovedErr) {
-			if err := c.cancelFutureSteps(ctx, flw, idx, "workflow step was not approved"); err != nil {
+			if err := c.cancelFutureSteps(ctx, flw, i, "workflow step was not approved"); err != nil {
 				return errors.Wrap(err, "unable to cancel future steps "+err.Error())
 			}
 			return err
@@ -41,7 +55,7 @@ func (c *FlowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req eve
 		}
 
 		// if the workflow was configured to abort, then go ahead and abort and do not attempt future steps
-		if err := c.cancelFutureSteps(ctx, flw, idx, "workflow step failed"); err != nil {
+		if err := c.cancelFutureSteps(ctx, flw, i, "workflow step failed"); err != nil {
 			return errors.Wrap(err, "unable to cancel future steps "+err.Error())
 		}
 		return err
