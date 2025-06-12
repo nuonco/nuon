@@ -11,8 +11,9 @@ import (
 // NOTE(jm): once install-deploys and sandbox-runs objects are updated to the composite status type, we will not need to
 // use this type of update flow
 type UpdateFlowStepTargetStatusRequest struct {
-	StepID string     `validate:"required"`
-	Status app.Status `validate:"required"`
+	StepID            string     `validate:"required"`
+	Status            app.Status `validate:"required"`
+	StatusDescription string
 }
 
 // @temporal-gen activity
@@ -32,7 +33,8 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Cont
 		res := a.db.WithContext(ctx).
 			Model(obj).
 			Updates(app.InstallDeploy{
-				Status: app.InstallDeployStatus(req.Status),
+				Status:            app.InstallDeployStatus(req.Status),
+				StatusDescription: req.StatusDescription,
 			})
 		if res.Error != nil {
 			return errors.Wrap(res.Error, "unable to update install_deploy")
@@ -44,7 +46,8 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Cont
 		res := a.db.WithContext(ctx).
 			Model(obj).
 			Updates(app.InstallSandboxRun{
-				Status: app.SandboxRunStatus(req.Status),
+				Status:            app.SandboxRunStatus(req.Status),
+				StatusDescription: req.StatusDescription,
 			})
 		if res.Error != nil {
 			return errors.Wrap(res.Error, "unable to update install_sandbox_run")

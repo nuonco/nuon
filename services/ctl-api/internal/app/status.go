@@ -34,10 +34,11 @@ const (
 )
 
 const (
-	WorkflowStepApprovalStatusApproved         Status = "approved"
-	WorkflowStepApprovalStatusAwaitingResponse Status = "approval-awaiting"
-	WorkflowStepApprovalStatusApprovalExpired  Status = "approval-expired"
-	WorkflowStepApprovalStatusApprovalDenied   Status = "approval-denied"
+	WorkflowStepApprovalStatusApproved          Status = "approved"
+	WorkflowStepApprovalStatusAwaitingResponse  Status = "approval-awaiting"
+	WorkflowStepApprovalStatusApprovalExpired   Status = "approval-expired"
+	WorkflowStepApprovalStatusApprovalDenied    Status = "approval-denied"
+	WorkflowStepApprovalStatusApprovalRetryPlan Status = "approval-retry"
 )
 
 const (
