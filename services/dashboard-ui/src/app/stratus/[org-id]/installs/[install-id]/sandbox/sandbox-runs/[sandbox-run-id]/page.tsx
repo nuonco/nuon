@@ -1,8 +1,9 @@
 import type { FC } from 'react'
 import {
+  BackLink,
   Header,
   HeaderGroup,
-  ScrollableContent,
+  ScrollableDiv,
   Section,
   Text,
 } from '@/stratus/components'
@@ -21,9 +22,10 @@ const SandboxRunPage: FC<
   })
 
   return (
-    <ScrollableContent>
+    <ScrollableDiv>
       <Header>
         <HeaderGroup>
+          <BackLink />
           <Text variant="h3" weight="strong">
             {data?.run_type}
           </Text>
@@ -33,7 +35,7 @@ const SandboxRunPage: FC<
         </HeaderGroup>
       </Header>
       <Section>Content</Section>
-    </ScrollableContent>
+    </ScrollableDiv>
   )
 }
 

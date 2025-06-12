@@ -11,7 +11,7 @@ import {
   Header,
   HeaderGroup,
   Page,
-  ScrollableContent,
+  ScrollableDiv,
   Section,
   Skeleton,
   Text,
@@ -45,7 +45,7 @@ const StratusBuildRunner: FC<IPageProps<'org-id'>> = async ({ params }) => {
         ],
       }}
     >
-      <ScrollableContent>
+      <ScrollableDiv>
         <Header>
           <HeaderGroup>
             <Text variant="h3" weight="strong" level={1}>
@@ -87,7 +87,7 @@ const StratusBuildRunner: FC<IPageProps<'org-id'>> = async ({ params }) => {
             <RunnerPastJobs orgId={orgId} runnerId={runner?.id} offset="10" />
           </div>
         </Section>
-      </ScrollableContent>
+      </ScrollableDiv>
     </Page>
   )
 }

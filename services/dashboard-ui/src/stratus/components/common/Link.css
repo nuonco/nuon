@@ -7,9 +7,9 @@
   @apply transition-colors
 }
 
-.link:focus,
+.logo-link:focus-visible,
 .link:focus-visible {
-  @apply outline outline-1 outline-offset-0 outline-primary-400/80;
+  @apply outline outline-1 outline-offset-0 outline-primary-400/80 rounded px-0.5;
 }
 
 .link.default {

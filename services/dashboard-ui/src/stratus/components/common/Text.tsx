@@ -37,7 +37,7 @@ export const Text: FC<IText> = ({
   return (
     <span
       aria-level={role === 'heading' && level ? level : undefined}
-      className={classNames(`${variant} ${family} ${weight}, ${theme}`, {
+      className={classNames(`${variant} ${family} ${weight} ${theme}`, {
         [`${className}`]: Boolean(className),
       })}
       role={role}

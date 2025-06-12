@@ -26,6 +26,18 @@ export const slugifyString = (str: string) =>
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
 
+export function removeLastPathSegment(pathname: string) {
+  let path = pathname.endsWith('/') && pathname.length > 1
+    ? pathname.slice(0, -1)
+    : pathname;
+
+  const lastSlashIndex = path.lastIndexOf('/');
+
+  if (lastSlashIndex <= 0) return '/';
+
+  return path.slice(0, lastSlashIndex) || '/';
+}
+
 export const sizeToMbOrGB = (bytes: number): string => {
   const KB = 1024
   const MB = 1024 ** 2 // 1 MB = 1024 * 1024 bytes
