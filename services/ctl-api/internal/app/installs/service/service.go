@@ -110,6 +110,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// install workflows
 	api.GET("/v1/installs/:install_id/workflows", s.GetInstallWorkflows)
 	api.GET("/v1/install-workflows/:install_workflow_id", s.GetInstallWorkflow)
+	api.PATCH("/v1/install-workflows/:install_workflow_id", s.UpdateInstallWorkflow)
 	api.GET("/v1/install-workflows/:install_workflow_id/steps", s.GetInstallWorkflowSteps)
 	api.GET("/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id", s.GetInstallWorkflowStep)
 	api.POST("/v1/install-workflows/:install_workflow_id/cancel", s.CancelInstallWorkflow)
