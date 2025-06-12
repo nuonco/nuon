@@ -156,6 +156,7 @@ func (c *cli) appsCmd() *cobra.Command {
 	appsCmd.AddCommand(syncCmd)
 
 	syncDirCmd := &cobra.Command{
+		Hidden:            true, // Deprecated command
 		Use:               "sync-dir",
 		Short:             "Sync nuon app directory (deprecated)",
 		PersistentPreRunE: c.persistentPreRunE,
@@ -172,7 +173,7 @@ func (c *cli) appsCmd() *cobra.Command {
 			}
 
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.SyncDir(cmd.Context(), dirName, version.Version)
+			return svc.DeprecatedSyncDir(cmd.Context(), dirName, version.Version)
 		}),
 	}
 	appsCmd.AddCommand(syncDirCmd)
