@@ -59,7 +59,7 @@ func (s *service) DeprovisionInstallSandbox(ctx *gin.Context) {
 		app.InstallWorkflowTypeDeprovisionSandbox,
 		map[string]string{},
 		req.ErrorBehavior,
-		req.OverrideApprovalOption)
+	)
 	if err != nil {
 		ctx.Error(err)
 		return
