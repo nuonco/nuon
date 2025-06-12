@@ -60,7 +60,7 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		app.InstallWorkflowTypeReprovision,
 		map[string]string{},
 		req.ErrorBehavior,
-		req.OverrideApprovalOption)
+	)
 	if err != nil {
 		ctx.Error(err)
 		return

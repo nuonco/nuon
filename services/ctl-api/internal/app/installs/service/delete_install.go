@@ -40,7 +40,7 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		app.InstallWorkflowTypeDeprovision,
 		map[string]string{},
 		app.StepErrorBehaviorAbort,
-		nil)
+	)
 	if err != nil {
 		ctx.Error(err)
 		return
