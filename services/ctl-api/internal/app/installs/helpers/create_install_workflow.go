@@ -10,7 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
-func (s *Helpers) CreateInstallFlow(ctx context.Context, installID string, workflowType app.InstallWorkflowType, metadata map[string]string, errBehavior app.StepErrorBehavior, overrideApprovalOption *app.InstallApprovalOption) (*app.InstallWorkflow, error) {
+func (s *Helpers) CreateInstallFlow(ctx context.Context, installID string, workflowType app.InstallWorkflowType, metadata map[string]string, errBehavior app.StepErrorBehavior) (*app.InstallWorkflow, error) {
 	approvalOption := app.InstallApprovalOptionPrompt
 	installConfig := app.InstallConfig{}
 	resp := s.db.WithContext(ctx).Where("install_id = ?", installID).First(&installConfig)
@@ -18,12 +18,8 @@ func (s *Helpers) CreateInstallFlow(ctx context.Context, installID string, workf
 		return nil, errors.Wrap(resp.Error, "unable to find install config")
 	}
 
-	if resp.Error != gorm.ErrRecordNotFound && overrideApprovalOption == nil {
+	if resp.Error != gorm.ErrRecordNotFound {
 		approvalOption = installConfig.ApprovalOption
-	}
-
-	if overrideApprovalOption != nil {
-		approvalOption = *overrideApprovalOption
 	}
 
 	metadata["install_id"] = installID

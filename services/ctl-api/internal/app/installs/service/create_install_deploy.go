@@ -16,9 +16,8 @@ import (
 )
 
 type CreateInstallDeployRequest struct {
-	BuildID                string                     `json:"build_id"`
-	DeployDependents       bool                       `json:"deploy_dependents"`
-	OverrideApprovalOption *app.InstallApprovalOption `json:"override_approval_option,omitempty"`
+	BuildID          string `json:"build_id"`
+	DeployDependents bool   `json:"deploy_dependents"`
 }
 
 func (c *CreateInstallDeployRequest) Validate(v *validator.Validate) error {
@@ -68,7 +67,6 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 			"deploy_dependents": strconv.FormatBool(req.DeployDependents),
 		},
 		app.StepErrorBehaviorAbort,
-		req.OverrideApprovalOption,
 	)
 	if err != nil {
 		ctx.Error(err)

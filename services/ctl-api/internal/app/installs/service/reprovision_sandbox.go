@@ -71,7 +71,7 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 		app.InstallWorkflowTypeReprovisionSandbox,
 		map[string]string{},
 		req.ErrorBehavior,
-		req.OverrideApprovalOption)
+	)
 	if err != nil {
 		ctx.Error(err)
 		return
