@@ -15,9 +15,13 @@ import (
 type InstallWorkflowStepResponseType string
 
 const (
-	InstallWorkflowStepApprovalResponseTypeDeny    InstallWorkflowStepResponseType = "deny"
-	InstallWorkflowStepApprovalResponseTypeApprove InstallWorkflowStepResponseType = "approve"
-	InstallWorkflowStepApprovalResponseTypeSkip    InstallWorkflowStepResponseType = "skip"
+	InstallWorkflowStepApprovalResponseTypeDeny      InstallWorkflowStepResponseType = "deny"
+	InstallWorkflowStepApprovalResponseTypeApprove   InstallWorkflowStepResponseType = "approve"
+	InstallWorkflowStepApprovalResponseTypeSkip      InstallWorkflowStepResponseType = "skip"
+	InstallWorkflowStepApprovalResponseTypeRetryPlan InstallWorkflowStepResponseType = "re-plan"
+
+	// auto approve is when the workflow uses auto-approve
+	InstallWorkflowStepApprovalResponseTypeAutoApprove InstallWorkflowStepResponseType = "auto-approve"
 )
 
 type InstallWorkflowStepApprovalResponse struct {
