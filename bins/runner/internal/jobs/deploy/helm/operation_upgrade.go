@@ -24,6 +24,14 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 		l.Info("attempting install instead of upgrade")
 		return h.install(ctx, l, actionCfg, kubeCfg)
 	}
+	l.Info(
+		"found previous release",
+		zap.String("name", prevRel.Name),
+		zap.String("namespace", prevRel.Namespace),
+		zap.Int("version", prevRel.Version),
+		zap.Time("first_deployed", prevRel.Info.FirstDeployed.Time),
+		zap.Time("last_deployed", prevRel.Info.LastDeployed.Time),
+	)
 
 	l.Info("loading chart options")
 	chart, err := helm.GetChartByPath(h.state.chartPath)
