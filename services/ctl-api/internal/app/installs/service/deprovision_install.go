@@ -12,8 +12,7 @@ import (
 )
 
 type DeprovisionInstallRequest struct {
-	ErrorBehavior          app.StepErrorBehavior      `json:"error_behavior" swaggertype:"string"`
-	OverrideApprovalOption *app.InstallApprovalOption `json:"override_approval_option,omitempty"`
+	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
 }
 
 func (c *DeprovisionInstallRequest) Validate(v *validator.Validate) error {
