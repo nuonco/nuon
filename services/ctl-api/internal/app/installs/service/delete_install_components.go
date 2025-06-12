@@ -47,7 +47,7 @@ func (s *service) DeleteInstallComponents(ctx *gin.Context) {
 		app.InstallWorkflowTypeTeardownComponents,
 		map[string]string{},
 		behavior,
-		nil)
+	)
 	if err != nil {
 		ctx.Error(err)
 		return

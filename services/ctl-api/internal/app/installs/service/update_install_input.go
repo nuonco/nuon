@@ -17,8 +17,7 @@ import (
 )
 
 type UpdateInstallInputsRequest struct {
-	Inputs                 map[string]*string         `json:"inputs" validate:"required,gte=1"`
-	OverrideApprovalOption *app.InstallApprovalOption `json:"override_approval_option,omitempty"`
+	Inputs map[string]*string `json:"inputs" validate:"required,gte=1"`
 }
 
 func (c *UpdateInstallInputsRequest) Validate(v *validator.Validate) error {
@@ -114,7 +113,6 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		// maybe that will change at some point, but this metadata should not be abused.
 		"inputs": strings.Join(generics.MapToKeys(req.Inputs), ","),
 	}, app.StepErrorBehaviorAbort,
-		req.OverrideApprovalOption,
 	)
 	if err != nil {
 		ctx.Error(err)
