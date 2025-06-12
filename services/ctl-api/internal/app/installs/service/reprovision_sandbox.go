@@ -12,8 +12,7 @@ import (
 )
 
 type ReprovisionInstallSandboxRequest struct {
-	ErrorBehavior          app.StepErrorBehavior      `json:"error_behavior" swaggertype:"string"`
-	OverrideApprovalOption *app.InstallApprovalOption `json:"override_approval_option,omitempty"`
+	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
 }
 
 func (c *ReprovisionInstallSandboxRequest) Validate(v *validator.Validate) error {
