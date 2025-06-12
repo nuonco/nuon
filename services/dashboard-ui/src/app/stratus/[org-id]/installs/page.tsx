@@ -110,9 +110,9 @@ const LoadInstalls: FC<{ orgId: string }> = async ({ orgId }) => {
           </div>
 
           <div className="flex flex-col gap-1">
-            <Status status={install?.runner_status} />
-            <Status status={install?.sandbox_status} />
-            <Status status={install?.composite_component_status} />
+            <Status status={install?.runner_status}>Runner</Status>
+            <Status status={install?.sandbox_status}>Sandbox</Status>
+            <Status status={install?.composite_component_status}>Components</Status>
           </div>
 
           <Text>{install?.app?.name}</Text>
