@@ -2,21 +2,18 @@ import React, { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { Power } from '@phosphor-icons/react/dist/ssr'
 import {
-  RunnerMeta,
-  RunnerHealthChart,
-  RunnerPastJobs,
-} from '@/components/Runners'
-import {
   Button,
+  Card,
   Header,
   HeaderGroup,
   Page,
+  RunnerDetails,
+  RunnerDetailsSkeleton,
   ScrollableDiv,
   Section,
-  Skeleton,
   Text,
 } from '@/stratus/components'
-import type { IPageProps, TOrg, TRunner } from '@/types'
+import type { IPageProps, TOrg, TRunnerHeartbeat } from '@/types'
 import { nueQueryData } from '@/utils'
 
 const StratusBuildRunner: FC<IPageProps<'org-id'>> = async ({ params }) => {
@@ -24,10 +21,6 @@ const StratusBuildRunner: FC<IPageProps<'org-id'>> = async ({ params }) => {
   const { data: org } = await nueQueryData<TOrg>({
     orgId,
     path: 'orgs/current',
-  })
-  const { data: runner } = await nueQueryData<TRunner>({
-    orgId,
-    path: `runners/${org?.runner_group?.runners?.at(0)?.id}`,
   })
 
   return (
@@ -62,29 +55,22 @@ const StratusBuildRunner: FC<IPageProps<'org-id'>> = async ({ params }) => {
         </Header>
         <Section className="gap-12">
           <div className="grid md:grid-cols-12 gap-6">
-            <div className="flex flex-col gap-6 p-6 border rounded-md md:col-span-6">
-              <Text variant="base" weight="strong">
-                Runner details
-              </Text>
-
-              <RunnerMeta orgId={orgId} runner={runner} />
-            </div>
+            <ErrorBoundary fallback={<RunnerError />}>
+              <Suspense fallback={<RunnerDetailsSkeleton />}>
+                <LoadRunnerDetails org={org} />
+              </Suspense>
+            </ErrorBoundary>
 
             <div className="flex flex-col gap-6 p-6 border rounded-md md:col-span-6">
               <Text variant="base" weight="strong">
                 Health status
               </Text>
-              <div className="align-end">
-                <RunnerHealthChart orgId={orgId} runnerId={runner?.id} />
-              </div>
             </div>
           </div>
           <div className="flex flex-col gap-6">
             <Text variant="base" weight="strong">
               Recent activity
             </Text>
-
-            <RunnerPastJobs orgId={orgId} runnerId={runner?.id} offset="10" />
           </div>
         </Section>
       </ScrollableDiv>
@@ -93,3 +79,31 @@ const StratusBuildRunner: FC<IPageProps<'org-id'>> = async ({ params }) => {
 }
 
 export default StratusBuildRunner
+
+const LoadRunnerDetails: FC<{ org: TOrg }> = async ({ org }) => {
+  const runnerGroup = org?.runner_group
+  const runner = runnerGroup?.runners?.at(0)
+  const { data: runnerHeartbeat, error } = await nueQueryData<TRunnerHeartbeat>(
+    {
+      orgId: org?.id,
+      path: `runners/${runner?.id}/latest-heart-beat`,
+    }
+  )
+
+  return runnerGroup && runner && !error ? (
+    <RunnerDetails
+      runner={runner}
+      runnerGroup={runnerGroup}
+      runnerHeartbeat={runnerHeartbeat}
+      className="md:col-span-6"
+    />
+  ) : (
+    <RunnerError />
+  )
+}
+
+const RunnerError: FC = () => (
+  <Card className="md:col-span-6">
+    <Text>Unable to load build runner</Text>
+  </Card>
+)
