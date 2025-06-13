@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"go.uber.org/zap"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v4/pkg/action"
+	release "helm.sh/helm/v4/pkg/release/v1"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/helm"
@@ -31,7 +31,6 @@ func (h *Activities) upgrade(ctx context.Context, actionCfg *action.Configuratio
 	client := action.NewUpgrade(actionCfg)
 	client.DryRun = false
 	client.DisableHooks = false
-	client.Wait = true
 	client.WaitForJobs = false
 	client.Devel = false
 	client.DependencyUpdate = true

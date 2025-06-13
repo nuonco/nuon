@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -43,6 +44,10 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 		app.StatusPending,
 		app.WorkflowAwaitingApproval,
 	}) {
+		s.l.Error("install workflow is not cancelable",
+			zap.String("workflow_id", wf.ID),
+			zap.String("status", string(wf.Status.Status)),
+		)
 		ctx.Error(fmt.Errorf("install workflow is not cancelable"))
 		return
 	}

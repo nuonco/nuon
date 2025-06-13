@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v4/pkg/action"
+	release "helm.sh/helm/v4/pkg/release/v1"
 
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	"github.com/powertoolsdev/mono/pkg/helm"
@@ -43,7 +43,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	if err != nil {
 		return fmt.Errorf("unable to initialize helm actions: %w", err)
 	}
-	actionCfg.Log = helm.Logger(l)
 
 	// set the release storage backend dynamically
 	releaseStore, err := h.getHelmReleaseStore(ctx, kubeCfg)
