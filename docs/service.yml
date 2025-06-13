@@ -5,6 +5,6 @@ env_secrets: {}
 disable_watch: true
 local_startup_cmds: []
 local_cmds:
-  - mintlify dev 
+  - mintlify dev --no-open 
 disable_config_map: true
 earthly_cmds: []
