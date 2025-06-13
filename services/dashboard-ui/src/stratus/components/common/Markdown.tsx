@@ -1,4 +1,5 @@
 import showdown from 'showdown'
+import './Markdown.css'
 
 showdown.extension('targetlink', () => {
   return [
@@ -29,7 +30,7 @@ const markdown = new showdown.Converter({
 
 export const Markdown = ({ markdownStr = '' }) => (
   <div
-    className="prose prose-sm dark:prose-invert !max-w-full"
+    className="markdown prose prose-sm dark:prose-invert !max-w-full"
     dangerouslySetInnerHTML={{
       __html: markdown.makeHtml(markdownStr),
     }}

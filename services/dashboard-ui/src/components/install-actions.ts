@@ -323,7 +323,10 @@ export async function deleteComponent({
       error = err
     })
 
-  return { data: res ? res.headers.get('x-nuon-install-workflow-id') : null, error }
+  return {
+    data: res ? res.headers.get('x-nuon-install-workflow-id') : null,
+    error,
+  }
 }
 
 interface IDeleteInstall {
@@ -358,7 +361,7 @@ export async function deleteInstall({
   return (await res).headers.get('x-nuon-install-workflow-id')
 }
 
-interface IDeprovisionSandbox extends IDeleteComponents { }
+interface IDeprovisionSandbox extends IDeleteComponents {}
 
 export async function deprovisionSandbox({
   continueOnError = false,
@@ -392,16 +395,65 @@ interface IApproveWorklowStep {
   workflowId: string
   stepId: string
   approvalId: string
-  responseType: "approve" | "deny" | "retry"
+  responseType: 'approve' | 'deny' | 'retry'
 }
 
-export async function approveWorkflowStep({ approvalId, orgId, responseType, stepId, workflowId }: IApproveWorklowStep) {
+export async function approveWorkflowStep({
+  approvalId,
+  orgId,
+  responseType,
+  stepId,
+  workflowId,
+}: IApproveWorklowStep) {
   return nueMutateData({
     orgId,
     path: `install-workflows/${workflowId}/steps/${stepId}/approvals/${approvalId}/response`,
     body: {
-      note: "",
+      note: '',
       response_type: responseType,
-    }
+    },
+  })
+}
+
+interface ICreateInstallConfig {
+  approvalOption: 'approve-all' | 'prompt'
+  installId: string
+  orgId: string
+}
+
+export async function createInstallConfig({
+  approvalOption,
+  installId,
+  orgId,
+}: ICreateInstallConfig) {
+  return nueMutateData({
+    orgId,
+    path: `installs/${installId}/configs`,
+    body: {
+      approvalOption,
+    },
+  })
+}
+
+interface IUpdateInstallConfig {
+  approvalOption: 'approve-all' | 'prompt'
+  configId: string
+  installId: string
+  orgId: string
+}
+
+export async function updateInstallConfig({
+  approvalOption,
+  configId,
+  installId,
+  orgId,
+}: IUpdateInstallConfig) {
+  return nueMutateData({
+    orgId,
+    path: `installs/${installId}/configs/${configId}`,
+    method: 'PATCH',
+    body: {
+      approvalOption,
+    },
   })
 }

@@ -1,33 +1,49 @@
 'use client'
 
+import classNames from 'classnames'
 import { useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0/client'
-import { Check, ArrowURightUp, CheckCircle } from '@phosphor-icons/react'
+import { CheckCircle, ToggleLeft, ToggleRight } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
+import { useOrg } from '@/components/Orgs'
 import { Text } from '@/components/Typography'
-import { reprovisionInstall } from '@/components/install-actions'
+import {
+  createInstallConfig,
+  updateInstallConfig,
+} from '@/components/install-actions'
+import type { TInstall } from '@/types'
 import { trackEvent } from '@/utils'
 
 interface IAutoApproveModal {
-  installId: string
-  orgId: string
+  install: TInstall
 }
 
-export const AutoApproveModal: FC<IAutoApproveModal> = ({
-  installId,
-  orgId,
-}) => {
-  const router = useRouter()
-  const { user } = useUser()
+export const AutoApproveModal: FC<IAutoApproveModal> = ({ install }) => {
+  const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [error, setError] = useState()
+
+  const hasInstallConfig = Boolean(install?.install_config)
+  const isApproveAll =
+    hasInstallConfig &&
+    install?.install_config?.approval_option === 'approve-all'
+  const buttonText = isApproveAll ? (
+    <>Disable auto approval</>
+  ) : (
+    <>Enable auto approval</>
+  )
+  const buttonIcon = isApproveAll ? (
+    <ToggleRight size="18" />
+  ) : (
+    <ToggleLeft size="18" />
+  )
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -40,6 +56,53 @@ export const AutoApproveModal: FC<IAutoApproveModal> = ({
       }
     }
   }, [isKickedOff])
+
+  const handleApprovalOptionError = (err) => {
+    setIsLoading(false)
+    setError(err?.message || 'Unable to set approval option')
+  }
+  const handleApprovalOptionChange = ({ data, error }) => {
+    setIsLoading(false)
+    if (error) {
+      setError(error?.error)
+      console.error(error)
+    } else {
+      setError(undefined)
+      setIsOpen(false)
+    }
+  }
+  const toggleApprovalOption = () => {
+    setIsLoading(true)
+    if (isApproveAll) {
+      updateInstallConfig({
+        approvalOption: 'prompt',
+        configId: install?.install_config?.id,
+        installId: install?.id,
+        orgId: org?.id,
+      })
+        .then(handleApprovalOptionChange)
+        .catch(handleApprovalOptionError)
+    } else {
+      updateInstallConfig({
+        approvalOption: 'approve-all',
+        configId: install?.install_config?.id,
+        installId: install?.id,
+        orgId: org?.id,
+      })
+        .then(handleApprovalOptionChange)
+        .catch(handleApprovalOptionError)
+    }
+  }
+
+  const createApprovalOption = () => {
+    createInstallConfig({
+      approvalOption: 'approve-all',
+      installId: install?.id,
+      orgId: org?.id,
+    })
+      .then(handleApprovalOptionChange)
+      .catch(handleApprovalOptionError)
+  }
 
   return (
     <>
@@ -71,19 +134,22 @@ export const AutoApproveModal: FC<IAutoApproveModal> = ({
                 <Button
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
-                    setIsLoading(true)
-                    
+                    if (hasInstallConfig) {
+                      toggleApprovalOption()
+                    } else {
+                      createApprovalOption()
+                    }
                   }}
                   variant="primary"
                 >
                   {isKickedOff ? (
-                    <Check size="18" />
+                    <CheckCircle size="18" />
                   ) : isLoading ? (
                     <SpinnerSVG />
                   ) : (
-                    <CheckCircle size="18" />
+                    buttonIcon
                   )}{' '}
-                  Auto approve
+                  {buttonText}
                 </Button>
               </div>
             </Modal>,
@@ -97,8 +163,7 @@ export const AutoApproveModal: FC<IAutoApproveModal> = ({
           setIsOpen(true)
         }}
       >
-        <CheckCircle size="16" />
-        Auto approve changes
+        {buttonIcon} {buttonText}
       </Button>
     </>
   )
