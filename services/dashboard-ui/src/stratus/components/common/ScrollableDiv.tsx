@@ -10,7 +10,7 @@ export const ScrollableDiv: FC<IScrollableDiv> = ({
 }) => {
   return (
     <div
-      className={classNames('overflow-scroll w-full', {
+      className={classNames('overflow-y-auto w-full max-w-full', {
         [`${className}`]: Boolean(className),
       })}
       {...props}
