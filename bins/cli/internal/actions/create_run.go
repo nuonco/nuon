@@ -6,7 +6,6 @@ import (
 
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID string, asJSON bool) error {
@@ -17,7 +16,7 @@ func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID str
 	}
 
 	req := &models.ServiceCreateInstallActionWorkflowRunRequest{
-		ActionWorkflowConfigID: generics.ToPtr(awc.ID),
+		ActionWorkflowConfigID: awc.ID,
 	}
 
 	err = s.api.CreateInstallActionWorkflowRun(ctx, installID, req)

@@ -2,7 +2,7 @@ package helm
 
 import (
 	"github.com/nuonco/nuon-runner-go/models"
-	"helm.sh/helm/v3/pkg/release"
+	release "helm.sh/helm/v4/pkg/release/v1"
 )
 
 // TODO(jm): pull out the helm resources and their statuses from the release, and write them to the api

@@ -121,6 +121,7 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		HelmChartID:     helmChartID,
 		ValuesFiles:     valuesFiles,
 		Values:          values,
+		TakeOwnership:   cfg.TakeOwnership,
 
 		ClusterInfo: clusterInfo,
 	}, nil
