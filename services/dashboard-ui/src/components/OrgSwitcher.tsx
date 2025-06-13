@@ -203,10 +203,11 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({
     <Dropdown
       className={classNames('w-full', {
         '!p-1': !isSidebarOpen,
-      })}
+      })}      
       hasCustomPadding
       id="test"
       isFullWidth
+      noIcon={!isSidebarOpen}
       text={<OrgSummary org={org} isSidebarOpen={isSidebarOpen} />}
       position="overlay"
       alignment="overlay"

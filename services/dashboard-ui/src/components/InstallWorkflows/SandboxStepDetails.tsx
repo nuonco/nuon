@@ -33,6 +33,7 @@ export const SandboxStepDetails: FC<IPollStepDetails> = ({
         if (res?.error) {
           setError(res?.error?.error)
         } else {
+          setError(undefined)
           setData(res.data)
         }
       })
