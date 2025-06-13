@@ -147,7 +147,7 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
         }}
         variant={buttonVariant}
       >
-        Cancel
+        Cancel {workflowType}
       </Button>
     </>
   )
