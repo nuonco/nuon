@@ -25,6 +25,7 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 		ValuesFiles:              make([]string, 0),
 		Namespace:                obj.Namespace,
 		StorageDriver:            obj.StorageDriver,
+		TakeOwnership:            obj.TakeOwnership,
 	}
 
 	for _, ref := range comp.References {

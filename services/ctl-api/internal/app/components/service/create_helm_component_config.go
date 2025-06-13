@@ -24,6 +24,7 @@ type CreateHelmComponentConfigRequest struct {
 	ChartName     string             `json:"chart_name,omitempty" validate:"required,dns_rfc1035_label,min=5,max=62"`
 	Namespace     string             `json:"namespace,omitempty"`
 	StorageDriver string             `json:"storage_driver,omitempty"`
+	TakeOwnership bool               `json:"take_ownership,omitempty"`
 
 	AppConfigID string `json:"app_config_id"`
 
@@ -114,11 +115,14 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 	cfg := app.HelmComponentConfig{
 		PublicGitVCSConfig:       publicGitVCSConfig,
 		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
-		Values:                   pgtype.Hstore(req.Values),
-		ValuesFiles:              pq.StringArray(req.ValuesFiles),
-		ChartName:                req.ChartName,
-		Namespace:                generics.NewNullString(req.Namespace),
-		StorageDriver:            generics.NewNullString(req.StorageDriver),
+		HelmConfig: &app.HelmConfig{
+			ChartName:     req.ChartName,
+			Namespace:     generics.NewNullString(req.Namespace),
+			StorageDriver: generics.NewNullString(req.StorageDriver),
+			Values:        pgtype.Hstore(req.Values),
+			ValuesFiles:   pq.StringArray(req.ValuesFiles),
+			TakeOwnership: req.TakeOwnership,
+		},
 	}
 	componentConfigConnection := app.ComponentConfigConnection{
 		HelmComponentConfig:    &cfg,

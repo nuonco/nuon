@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"go.uber.org/zap"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v4/pkg/action"
+	release "helm.sh/helm/v4/pkg/release/v1"
 	"k8s.io/client-go/rest"
 
 	"github.com/databus23/helm-diff/v3/manifest"
@@ -35,7 +35,7 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client := action.NewInstall(actionCfg)
 	client.ClientOnly = false
 	client.DisableHooks = false
-	client.Wait = true
+
 	client.WaitForJobs = false
 	client.Devel = true
 	client.DependencyUpdate = true
@@ -52,9 +52,7 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.Replace = false
 	client.Description = ""
 	client.CreateNamespace = h.state.plan.HelmDeployPlan.CreateNamespace
-	client.IncludeCRDs = false  // default value
-	client.TakeOwnership = true // should come form h.state.plan.HelmDeployPlan.TakeOwnership
-	client.DryRun = true
+	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
 
 	crds := chart.CRDObjects()
 	if len(crds) > 0 {
@@ -69,7 +67,6 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 			crdZapFieldList...,
 		)
 	} else {
-		// specific to dry run
 
 		l.Info("calculating helm diff")
 		rel, err := client.RunWithContext(ctx, chart, values)
@@ -80,6 +77,7 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 		if err := h.logDiff(l, map[string]*manifest.MappingResult{}, newMapping); err != nil {
 			return nil, errors.Wrap(err, "unable to execute with dry-run")
 		}
+
 	}
 
 	l.Info("running helm install")
