@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	rspb "helm.sh/helm/v3/pkg/release"
-	hdriver "helm.sh/helm/v3/pkg/storage/driver"
+	rspb "helm.sh/helm/v4/pkg/release/v1"
+	hdriver "helm.sh/helm/v4/pkg/storage/driver"
 )
 
 func TestHTTPName(t *testing.T) {

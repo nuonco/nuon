@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"io"
 
-	"helm.sh/helm/v3/pkg/chart"
-	rspb "helm.sh/helm/v3/pkg/release"
+	chart "helm.sh/helm/v4/pkg/chart/v2"
+	rspb "helm.sh/helm/v4/pkg/release/v1"
 )
 
 var b64 = base64.StdEncoding

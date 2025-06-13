@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
-	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v4/pkg/action"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
@@ -17,9 +16,6 @@ import (
 )
 
 func (s *svc) getHelmCfg(ctx context.Context, namespace string) (*action.Configuration, error) {
-	l := zap.L()
-	actionLogger := func(format string, v ...interface{}) { l.Debug(fmt.Sprintf(format, v...)) }
-
 	kubeCfg, err := s.getKubeConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get kube config: %w", err)
@@ -32,7 +28,7 @@ func (s *svc) getHelmCfg(ctx context.Context, namespace string) (*action.Configu
 
 	rcg := &RestClientGetter{RestConfig: kubeCfg, Clientset: clientset}
 	actionCfg := new(action.Configuration)
-	err = actionCfg.Init(rcg, namespace, "secret", actionLogger)
+	err = actionCfg.Init(rcg, namespace, "secret")
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize action config: %w", err)
 	}
