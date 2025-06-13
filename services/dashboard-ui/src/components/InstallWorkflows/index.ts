@@ -1,3 +1,4 @@
+export * from '@/components/InstallWorkflows/ApproveAllModal'
 export * from '@/components/InstallWorkflows/ApproveStep'
 export * from '@/components/InstallWorkflows/InstallWorkflowActivity'
 export * from '@/components/InstallWorkflows/InstallWorkflowCancelModal'

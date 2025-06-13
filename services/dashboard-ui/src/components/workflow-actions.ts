@@ -57,3 +57,19 @@ export async function cancelInstallWorkflow({
     orgId,
   })
 }
+
+interface IInstallWorkflowApproveAll {
+  orgId: string
+  workflowId: string
+}
+
+export async function installWorkflowApproveAll({ orgId, workflowId }: IInstallWorkflowApproveAll) {
+  return nueMutateData({
+    orgId,
+    path: `install-workflows/${workflowId}`,
+    method: "PATCH",
+    body: {
+      approval_option: "approve-all"
+    }
+  })
+}

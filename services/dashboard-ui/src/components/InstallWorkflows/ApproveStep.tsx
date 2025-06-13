@@ -45,6 +45,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
       responseType,
     }).then(({ data, error }) => {
       setIsDenyLoading(false)
+      setIsRetryLoading(false)
       setIsApproveLoading(false)
       if (error) {
         setError(error?.error)

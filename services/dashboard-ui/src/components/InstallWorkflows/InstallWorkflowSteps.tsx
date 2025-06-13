@@ -38,13 +38,19 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
   const [activeStep, setActiveStep] = useState(
     installWorkflow?.steps.find((s) => s?.step_target_id === queryTargetId) ||
       installWorkflow?.steps?.find(
-        (s) => s?.status?.status === 'in-progress'
+        (s) =>
+          s?.status?.status === 'in-progress' ||
+          s?.status?.status === 'approval-awaiting'
       ) ||
       installWorkflow?.steps?.find((s) => s?.step_target_type !== '')
   )
   const scrollableRef = useRef(null)
   const buttonRefs = useRef([])
-  const buttonOffset = 200
+  const buttonOffset = installWorkflow?.finished
+    ? 300
+    : installWorkflow?.approval_option === 'approve-all'
+      ? 325
+      : 375
   const [isManualControl, setManualControl] = useState(false)
 
   useEffect(() => {
@@ -137,10 +143,11 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
                     key={step?.id}
                     onClick={() => {
                       if (!isManualControl) setManualControl(true)
-
-                      router.push(
-                        `${path}?${new URLSearchParams({ target: step?.step_target_id }).toString()}`
-                      )
+                      if (step?.step_target_id) {
+                        router.push(
+                          `${path}?${new URLSearchParams({ target: step?.step_target_id }).toString()}`
+                        )
+                      }
                       setActiveStep(step)
 
                       if (buttonRefs.current[i] && scrollableRef.current) {
