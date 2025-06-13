@@ -2,13 +2,14 @@ package flow
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	pkgErrors "github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
@@ -25,7 +26,7 @@ func (c *FlowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Conte
 		PostAttemptHook: func(ctx workflow.Context, dur time.Duration) error {
 			l, err := log.WorkflowLogger(ctx)
 			if err != nil {
-				return errors.Wrap(err, "unable to get workflow logger")
+				return pkgErrors.Wrap(err, "unable to get workflow logger")
 			}
 
 			l.Debug("checking approval status again in "+dur.String(), zap.Duration("duration", dur))
@@ -34,17 +35,17 @@ func (c *FlowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Conte
 		Fn: func(ctx workflow.Context) error {
 			stp, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
 			if err != nil {
-				return errors.Wrap(err, "unable to get flow step")
+				return pkgErrors.Wrap(err, "unable to get flow step")
 			}
 
 			if stp.Approval == nil {
-				return errors.New("Approval does not exist yet")
+				return pkgErrors.New("Approval does not exist yet")
 			}
 
 			// get latest workflow to ensure we have the latest state since approval options can change
 			latestFlw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, flw.ID)
 			if err != nil {
-				return errors.Wrap(err, "unable to get flow object")
+				return errors.Join(pkgErrors.Wrap(err, "unable to get latest flow"), poll.NonRetryableError)
 			}
 
 			if latestFlw.ApprovalOption == app.InstallApprovalOptionApproveAll {
@@ -59,7 +60,7 @@ func (c *FlowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Conte
 						},
 					},
 				}); err != nil {
-					return errors.Wrap(err, "unable to update step to success status")
+					return errors.Join(pkgErrors.Wrap(err, "unable to update flow status"), poll.NonRetryableError)
 				}
 
 				_, err := activities.AwaitCreateApprovalResponse(ctx, activities.CreateStepApprovalResponseRequest{
@@ -68,14 +69,14 @@ func (c *FlowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Conte
 					Note:           "auto-approved",
 				})
 				if err != nil {
-					return errors.Wrap(err, "unable to auto-approve step")
+					return errors.Join(pkgErrors.Wrap(err, "unable to create auto-approval response"), poll.NonRetryableError)
 				}
 
 				return nil
 			}
 
 			if stp.Approval.Response == nil {
-				return errors.New("approval does not yet have a response")
+				return pkgErrors.New("approval does not yet have a response")
 			}
 
 			return nil
@@ -95,7 +96,7 @@ func (c *FlowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Conte
 
 	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get approval step")
+		return nil, pkgErrors.Wrap(err, "unable to get approval step")
 	}
 
 	if step.Approval.Response.Type == app.InstallWorkflowStepApprovalResponseTypeDeny {
@@ -103,7 +104,7 @@ func (c *FlowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Conte
 			StepID: step.ID,
 			Status: app.WorkflowStepApprovalStatusApprovalDenied,
 		}); err != nil {
-			return nil, errors.Wrap(err, "unable to update step target status")
+			return nil, pkgErrors.Wrap(err, "unable to update step target status")
 		}
 	}
 
