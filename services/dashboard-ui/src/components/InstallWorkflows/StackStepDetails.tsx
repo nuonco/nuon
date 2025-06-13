@@ -38,6 +38,7 @@ export const StackStep: FC<IStackStepDetails> = ({
         if (res?.error) {
           setError(res?.error?.error)
         } else {
+          setError(undefined)
           setData(res.data)
         }
       })
@@ -96,6 +97,7 @@ const GenerateStack: FC<{
         if (res?.error) {
           setError(res?.error?.error)
         } else {
+          setError(undefined)
           setStackConfig(res.data?.stack)
         }
       })

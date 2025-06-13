@@ -1,7 +1,7 @@
 'use client'
 
 import React, { type FC } from 'react'
-import { CheckCircle } from '@phosphor-icons/react/dist/ssr'
+import { CheckCircle, WarningCircle } from '@phosphor-icons/react/dist/ssr'
 import { Link, Text } from '@/stratus/components/common'
 import { HeaderDetails } from '@/stratus/components/dashboard'
 import { DetailedStatus, Status } from '@/stratus/components/statuses'
@@ -35,12 +35,25 @@ export const InstallHeaderDetails: FC = () => {
                 variant="subtext"
                 weight="strong"
               >
-                <CheckCircle
-                  size="18"
-                  className="text-green-600"
-                  weight="bold"
-                />
-                Runner is provisioned
+                {install?.runner_status === 'active' ? (
+                  <>
+                    <CheckCircle
+                      size="18"
+                      className="text-green-600"
+                      weight="bold"
+                    />
+                    Runner is provisioned
+                  </>
+                ) : (
+                  <>
+                    <WarningCircle
+                      size="18"
+                      className="text-red-600"
+                      weight="bold"
+                    />
+                    Runner is down
+                  </>
+                )}
               </Text>
               <Text variant="label" theme="muted">
                 {install.runner_status_description}
