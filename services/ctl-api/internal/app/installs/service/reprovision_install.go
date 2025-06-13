@@ -11,9 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-type ReprovisionInstallRequest struct {
-	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
-}
+type ReprovisionInstallRequest struct{}
 
 func (c *ReprovisionInstallRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
@@ -58,7 +56,7 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		install.ID,
 		app.InstallWorkflowTypeReprovision,
 		map[string]string{},
-		req.ErrorBehavior,
+		app.StepErrorBehaviorAbort,
 	)
 	if err != nil {
 		ctx.Error(err)
