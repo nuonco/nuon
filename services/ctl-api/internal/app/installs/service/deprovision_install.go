@@ -58,7 +58,7 @@ func (s *service) DeprovisionInstall(ctx *gin.Context) {
 		install.ID,
 		app.InstallWorkflowTypeDeprovision,
 		map[string]string{},
-		req.ErrorBehavior,
+		app.StepErrorBehaviorAbort,
 	)
 	if err != nil {
 		ctx.Error(err)
