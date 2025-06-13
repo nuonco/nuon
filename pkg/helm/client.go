@@ -2,10 +2,11 @@ package helm
 
 import (
 	"fmt"
+	"log/slog"
 
 	"go.uber.org/zap"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/kube"
+	"helm.sh/helm/v4/pkg/action"
+	"helm.sh/helm/v4/pkg/kube"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -19,19 +20,17 @@ func Client(log *zap.Logger, kubeCfg *rest.Config, ns string) (*action.Configura
 	if err != nil {
 		return nil, fmt.Errorf("failed to create kube client: %w", err)
 	}
-
-	debug := func(format string, vs ...interface{}) {
-		msg := fmt.Sprintf(format, vs...)
-		log.Info(msg)
-	}
-
+	logger := NewLogger(func() bool {
+		return true
+	})
+	slog.SetDefault(logger)
 	// Initialize our action
 	var ac action.Configuration
 	err = ac.Init(&RestClientGetter{
 		RestConfig: kubeCfg,
 		Clientset:  clientset,
 		Namespace:  ns,
-	}, ns, defaultHelmDriver, debug)
+	}, ns, defaultHelmDriver)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get rest client: %w", err)
 	}
@@ -47,17 +46,12 @@ func ClientV2(log *zap.Logger, kubeCfg *rest.Config, ns string) (*action.Configu
 		return nil, fmt.Errorf("failed to create kube client: %w", err)
 	}
 
-	debug := func(format string, vs ...interface{}) {
-		msg := fmt.Sprintf(format, vs...)
-		log.Info(msg)
-	}
-
 	// Initialize our action
 	ac, err := initActionConfig(&RestClientGetter{
 		RestConfig: kubeCfg,
 		Clientset:  clientset,
 		Namespace:  ns,
-	}, debug)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get rest client: %w", err)
 	}
@@ -65,14 +59,13 @@ func ClientV2(log *zap.Logger, kubeCfg *rest.Config, ns string) (*action.Configu
 	return ac, nil
 }
 
-func initActionConfig(getter *RestClientGetter, log action.DebugLog) (*action.Configuration, error) {
+func initActionConfig(getter *RestClientGetter) (*action.Configuration, error) {
 	actionCfg := action.Configuration{}
 
 	kc := kube.New(getter)
 
 	actionCfg.RESTClientGetter = getter
 	actionCfg.KubeClient = kc
-	actionCfg.Log = log
 
 	return &actionCfg, nil
 }

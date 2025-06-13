@@ -1,10 +1,13 @@
 package app
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
@@ -28,13 +31,17 @@ type HelmComponentConfig struct {
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id,omitzero" gorm:"notnull" temporaljson:"component_config_connection_id,omitzero,omitempty"`
 	ComponentConfigConnection   ComponentConfigConnection `json:"-" temporaljson:"component_config_connection,omitzero,omitempty"`
 
-	// Helm specific configurations
-	ChartName   string              `json:"chart_name,omitzero" gorm:"notnull" features:"template" temporaljson:"chart_name,omitzero,omitempty"`
-	Values      pgtype.Hstore       `json:"values,omitzero" gorm:"type:hstore" swaggertype:"object,string" features:"template" temporaljson:"values,omitzero,omitempty"`
-	ValuesFiles pq.StringArray      `gorm:"type:text[]" json:"values_files,omitzero" swaggertype:"array,string" features:"template" temporaljson:"values_files,omitzero,omitempty"`
-	Namespace   generics.NullString `json:"namespace,omitzero" swaggertype:"string" features:"template" temporaljson:"namespace,omitzero,omitempty"`
+	HelmConfig *HelmConfig `json:"helm_config_json,omitzero" gorm:"type:jsonb" temporaljson:"helm_config_json,omitzero,omitempty"`
 
-	StorageDriver            generics.NullString       `json:"storage_driver,omitzero" swaggertype:"string" features:"template" temporaljson:"storage_driver,omitzero,omitempty"`
+	// Helm specific configurations
+	ChartName     string              `json:"chart_name,omitzero" gorm:"notnull" features:"template" temporaljson:"chart_name,omitzero,omitempty"`
+	Values        pgtype.Hstore       `json:"values,omitzero" gorm:"type:hstore" swaggertype:"object,string" features:"template" temporaljson:"values,omitzero,omitempty"`
+	ValuesFiles   pq.StringArray      `gorm:"type:text[]" json:"values_files,omitzero" swaggertype:"array,string" features:"template" temporaljson:"values_files,omitzero,omitempty"`
+	Namespace     generics.NullString `json:"namespace,omitzero" swaggertype:"string" features:"template" temporaljson:"namespace,omitzero,omitempty"`
+	StorageDriver generics.NullString `json:"storage_driver,omitzero" swaggertype:"string" features:"template" temporaljson:"storage_driver,omitzero,omitempty"`
+	// Newer config fields that we don't need a column for
+	TakeOwnership bool `json:"take_ownership,omitzero" gorm:"-" features:"template" temporaljson:"take_ownership,omitzero,omitempty"`
+
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitzero,omitempty" temporaljson:"public_git_vcs_config,omitzero,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitzero,omitempty" temporaljson:"connected_github_vcs_config,omitzero,omitempty"`
 }
@@ -44,4 +51,48 @@ func (c *HelmComponentConfig) BeforeCreate(tx *gorm.DB) error {
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	c.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
+}
+
+func (c *HelmComponentConfig) AfterQuery(tx *gorm.DB) error {
+	if c.HelmConfig != nil {
+		c.ChartName = c.HelmConfig.ChartName
+		c.Values = c.HelmConfig.Values
+		c.ValuesFiles = c.HelmConfig.ValuesFiles
+		c.Namespace = c.HelmConfig.Namespace
+		c.StorageDriver = c.HelmConfig.StorageDriver
+		c.TakeOwnership = c.HelmConfig.TakeOwnership
+	}
+	return nil
+}
+
+type HelmConfig struct {
+	ChartName     string              `json:"chart_name"`
+	Values        pgtype.Hstore       `json:"values"`
+	ValuesFiles   pq.StringArray      `json:"values_files"`
+	Namespace     generics.NullString `json:"namespace"`
+	StorageDriver generics.NullString `json:"storage_driver"`
+	// Newer fields that we don't need to store as columns in the database
+	TakeOwnership bool `json:"take_ownership,omitempty"`
+}
+
+// Scan implements the database/sql.Scanner interface.
+func (c *HelmConfig) Scan(v interface{}) (err error) {
+	switch v := v.(type) {
+	case nil:
+		return nil
+	case []byte:
+		if err := json.Unmarshal(v, c); err != nil {
+			return errors.Wrap(err, "unable to scan composite status")
+		}
+	}
+	return
+}
+
+// Value implements the driver.Valuer interface.
+func (c *HelmConfig) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
+func (HelmConfig) GormDataType() string {
+	return "jsonb"
 }

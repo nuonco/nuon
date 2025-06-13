@@ -21,6 +21,7 @@ type HelmDeployPlan struct {
 	StorageDriver   string `json:"storage_driver"`
 	HelmChartID     string `json:"helm_chart_id"`
 
-	ValuesFiles []string    `json:"values_files"`
-	Values      []HelmValue `json:"values"`
+	ValuesFiles   []string    `json:"values_files"`
+	Values        []HelmValue `json:"values"`
+	TakeOwnership bool        `json:"take_ownership"`
 }

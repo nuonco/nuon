@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"go.uber.org/zap"
-	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v4/pkg/action"
 	"k8s.io/client-go/rest"
 
 	"github.com/databus23/helm-diff/v3/manifest"
@@ -40,7 +40,6 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	client := action.NewUpgrade(actionCfg)
 	client.DryRun = true
 	client.DisableHooks = false
-	client.Wait = true
 	client.WaitForJobs = false
 	client.Devel = true
 	client.DependencyUpdate = true
@@ -95,7 +94,7 @@ func (h *handler) install_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	client.ClientOnly = false
 	client.DryRun = true
 	client.DisableHooks = false
-	client.Wait = true
+
 	client.WaitForJobs = false
 	client.Devel = true
 	client.DependencyUpdate = true
