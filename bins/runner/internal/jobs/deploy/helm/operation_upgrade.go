@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"go.uber.org/zap"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v4/pkg/action"
+	release "helm.sh/helm/v4/pkg/release/v1"
 	"k8s.io/client-go/rest"
 
 	"github.com/databus23/helm-diff/v3/manifest"
@@ -50,7 +50,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client := action.NewUpgrade(actionCfg)
 	client.DryRun = true
 	client.DisableHooks = false
-	client.Wait = true
+
 	client.WaitForJobs = false
 	client.Devel = true
 	client.DependencyUpdate = true
@@ -67,23 +67,39 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.MaxHistory = 0
 	client.CleanupOnFail = false
 	client.Force = false
+	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
 
-	l.Info("calculating helm diff")
-	rel, err := client.RunWithContext(ctx, prevRel.Name, chart, values)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to execute with dry-run")
-	}
-	prevMapping := manifest.Parse(prevRel.Manifest, prevRel.Namespace, true)
-	newMapping := manifest.Parse(rel.Manifest, rel.Namespace, true)
-	if err := h.logDiff(l, prevMapping, newMapping); err != nil {
-		return nil, errors.Wrap(err, "unable to execute with dry-run")
+	crds := chart.CRDObjects()
+	if len(crds) > 0 {
+		// skip dry run
+		crdZapFieldList := []zap.Field{}
+		for i, crd := range crds {
+			field := zap.String(fmt.Sprintf("crd.%d", i), crd.Name)
+			crdZapFieldList = append(crdZapFieldList, field)
+		}
+		l.Info(
+			"chart contains CRDs - skipping dry-run",
+			crdZapFieldList...,
+		)
+	} else {
+
+		l.Info("calculating helm diff")
+		rel, err := client.RunWithContext(ctx, prevRel.Name, chart, values)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to execute with dry-run")
+		}
+		prevMapping := manifest.Parse(prevRel.Manifest, prevRel.Namespace, true)
+		newMapping := manifest.Parse(rel.Manifest, rel.Namespace, true)
+		if err := h.logDiff(l, prevMapping, newMapping); err != nil {
+			return nil, errors.Wrap(err, "unable to execute with dry-run")
+		}
 	}
 
 	l.Info("upgrading helm release")
 	client = action.NewUpgrade(actionCfg)
 	client.DryRun = false
 	client.DisableHooks = false
-	client.Wait = true
+
 	client.WaitForJobs = false
 	client.Devel = true
 	client.DependencyUpdate = true
@@ -100,8 +116,9 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.MaxHistory = 0
 	client.CleanupOnFail = false
 	client.Force = false
+	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
 
-	rel, err = helm.HelmUpgradeWithLogStreaming(ctx, client, prevRel.Name, chart, values, kubeCfg, l)
+	rel, err := helm.HelmUpgradeWithLogStreaming(ctx, client, prevRel.Name, chart, values, kubeCfg, l)
 	if err != nil {
 		return nil, fmt.Errorf("unable to upgrade helm release: %w", err)
 	}

@@ -29,6 +29,8 @@ type HelmChartComponentConfig struct {
 	Namespace     string `mapstructure:"namespace" features:"template"`
 	StorageDriver string `mapstructure:"storage_driver" features:"template"`
 
+	TakeOwnership bool `mapstructure:"take_ownership" features:"template"`
+
 	// deprecated
 	Values []HelmValue `mapstructure:"value,omitempty"`
 }

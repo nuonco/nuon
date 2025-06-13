@@ -42,27 +42,7 @@ const (
 )
 
 const (
-	InstallDeployStatusV2Active          Status = "active"
-	InstallDeployStatusV2Inactive        Status = "inactive"
-	InstallDeployStatusV2Error           Status = "error"
-	InstallDeployStatusV2Noop            Status = "noop"
-	InstallDeployStatusV2Planning        Status = "planning"
-	InstallDeployStatusV2Syncing         Status = "syncing"
-	InstallDeployStatusV2Executing       Status = "executing"
-	InstallDeployStatusV2Cancelled       Status = "cancelled"
-	InstallDeployStatusV2Unknown         Status = "unknown"
-	InstallDeployStatusV2Pending         Status = "pending"
-	InstallDeployStatusV2Queued          Status = "queued"
-	InstallDeployStatusV2PendingApproval Status = "pending-approval"
-	InstallDeployV2ApprovalDenied        Status = "approval-denied"
-)
-
-const (
-	ComponentBuildStatusV2Planning ComponentBuildStatus = "planning"
-	ComponentBuildStatusV2Error    ComponentBuildStatus = "error"
-	ComponentBuildStatusV2Building ComponentBuildStatus = "building"
-	ComponentBuildStatusV2Active   ComponentBuildStatus = "active"
-	ComponentBuildStatusV2Deleting ComponentBuildStatus = "deleting"
+	InstallDeployStatusV2Noop Status = "noop"
 )
 
 const (

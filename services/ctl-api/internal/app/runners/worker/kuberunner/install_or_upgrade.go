@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"helm.sh/helm/v3/pkg/release"
+	release "helm.sh/helm/v4/pkg/release/v1"
 
 	"github.com/powertoolsdev/mono/pkg/helm"
 	"github.com/powertoolsdev/mono/pkg/kube"
