@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"go.uber.org/zap"
-	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v4/pkg/action"
 
 	"github.com/powertoolsdev/mono/pkg/helm"
 )
