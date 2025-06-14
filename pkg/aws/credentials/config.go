@@ -17,6 +17,7 @@ type AssumeRoleConfig struct {
 
 	// configuration for two stepping before assuming this role
 	TwoStepConfig *assumerole.TwoStepConfig `cty:"two_step_config" hcl:"two_step_config" mapstructure:"two_step_config,omitempty" json:"two_step_config" temporaljson:"two_step_config"`
+	UseGithubOIDC bool                      `json:"use_github_oidc"`
 }
 
 // StaticCredentials are used to create credentials ahead of time, and pass them around for use. Specifically, we do
