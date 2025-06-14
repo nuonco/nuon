@@ -1,4 +1,51 @@
 ---
+type: service
+# sources define which pieces of the mono repo are included in your builds/envs.
+sources:
+  - src: pkg
+  - src: go.mod
+  - src: go.sum
+  - src: tools.go
+  - src: images/go-base/Dockerfile
+    dst: Dockerfile.base
+  - src: images/go-base/Dockerfile.build
+    dst: Dockerfile.build
+
+# tests define which tests to run as part of CI. These are run sequentially, in GHA or locally using `nctl test all`
+tests:
+  # a standard test with nothing much spun up.
+  - name: lint
+    docker_target: lint
+    cmd: golangci lint ./...
+
+  # this test runs a setup command, before executing the test
+  - name: setup
+    docker_target: lint
+    cmd: go version
+    setup_cmds:
+      - echo setup
+      - env
+
+  # an integration test that can write to/from the DB, clickhouse, or temporal
+  - name: integration
+    dependencies: true
+    docker_target: lint
+    cmd: /bin/scripts/test
+    env_vars:
+      INTEGRATION: "true"
+
+  # an integration test that can use both dependencies, but other services. Useful, for example, for running canaries in 
+  # ci, or doing things like running the full test suite when the CLI changes.
+  # 
+  # NOTE(jm): not currently supported
+  #- name: e2e
+    #dependencies: true
+    #docker_target: test
+    #cmd: /bin/scripts/test
+    #services:
+      #- ctl-api
+      #- workers-infra-tests
+
 color: cyan
 env:
   # psql db configuration

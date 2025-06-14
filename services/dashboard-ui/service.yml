@@ -1,4 +1,6 @@
 ---
+type: service
+
 color: red
 env:
   # use this to write out debug logs locally
