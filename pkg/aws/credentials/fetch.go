@@ -39,7 +39,7 @@ type ErrUnableToAssumeRole struct {
 }
 
 func (e ErrUnableToAssumeRole) Error() string {
-	return fmt.Sprintf("unable to assume role: %s", e.RoleARN)
+	return fmt.Sprintf("unable to assume role: %s: %s", e.RoleARN, e.Err.Error())
 }
 
 func (e ErrUnableToAssumeRole) Unwrap() error {
@@ -99,6 +99,7 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 		RoleSessionName:     c.AssumeRole.SessionName,
 		RoleSessionDuration: time.Second * time.Duration(c.AssumeRole.SessionDurationSeconds),
 
+		UseGithubOIDC: c.AssumeRole.UseGithubOIDC,
 		TwoStepConfig: c.AssumeRole.TwoStepConfig,
 		Region:        c.Region,
 	}))

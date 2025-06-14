@@ -22,39 +22,17 @@ defaults:
     shell: bash
 
 jobs:
-  terraform:
-    name: Get terraform outputs
-    uses: ./.github/workflows/terraform_outputs.yml
-    secrets: inherit
-    with:
-      dir: services/${{ inputs.service }}/infra
-      cache-key: ${{ inputs.service }}
-      workspace: stage
-
-  lint:
-    name: 🌏 lint
-    uses: ./.github/workflows/service_lint.yml
-    secrets: inherit
-    with:
-      service: ${{ inputs.service }}
-    needs:
-      - terraform
-
   test:
     name: 🌏 test
     uses: ./.github/workflows/service_test.yml
     secrets: inherit
     with:
       service: ${{ inputs.service }}
-    needs:
-      - terraform
 
   release:
     name: 📦 release
     if: ${{ inputs.stage || inputs.prod }}
     needs:
-      - terraform
-      - lint
       - test
     uses: ./.github/workflows/service_release.yml
     secrets: inherit

@@ -116,9 +116,10 @@ oci-artifacts:
 
     # copy nuon specific artifacts into the final binary
     COPY +build/runner /bin/runner
+    COPY ./bundle /bundle
+
     COPY ../../images/certs+certs/cert.pem "$ETCSSL"
     COPY ../../images/aws-iam-authenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
-    COPY ./bundle /bundle
 
     ENV GIT_REF=$image_tag
 
