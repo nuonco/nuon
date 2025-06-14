@@ -21,7 +21,7 @@ import (
 // uploader is the interface for uploading data into output runs directory
 type Uploader interface {
 	// uploadFile writes the data in the file into the output s3 blob
-	UploadFile(context.Context, string, string, string) error
+	UploadFile(context.Context, string, string) error
 
 	// uploadBlob writes the data in the byte slice into the output s3 blob
 	UploadBlob(context.Context, []byte, string) error
@@ -121,7 +121,7 @@ func (s *s3Uploader) loadAWSConfig(ctx context.Context) (aws.Config, error) {
 	return cfg, nil
 }
 
-func (s *s3Uploader) UploadFile(ctx context.Context, tmpDir, inputName, outputName string) error {
+func (s *s3Uploader) UploadFile(ctx context.Context, srcFp, outputName string) error {
 	cfg, err := s.loadAWSConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to load aws config: %w", err)
@@ -130,8 +130,7 @@ func (s *s3Uploader) UploadFile(ctx context.Context, tmpDir, inputName, outputNa
 	client := s3.NewFromConfig(cfg)
 	uploader := manager.NewUploader(client)
 
-	inputFp := filepath.Join(tmpDir, inputName)
-	f, err := os.Open(inputFp)
+	f, err := os.Open(srcFp)
 	if err != nil {
 		return err
 	}

@@ -23,29 +23,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Download terraform outputs
-        uses: actions/download-artifact@v4
-        with:
-          name: env-${{ github.run_id }}-${{ inputs.service }}-env
-          include-hidden-files: true
+      - name: Setup nuonctl 
+        uses: powertoolsdev/mono/actions/setup-nuonctl@jm/nuonctl-commands
 
-      - name: Setup for CI
-        uses: powertoolsdev/mono/actions/setup-ci@main
-        with:
-          tfcloud_token: ${{ secrets.TF_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Setup terraform environment
-        run: |
-          cat .tfenv >> "$GITHUB_ENV"
-
-      - name: Earthly test target
-        working-directory: services/${{inputs.service}}
-        if: always()
-        run: |
-          earthly \
-            --allow-privileged \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --ci \
-            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
-            +test
+      #- name: Lint
+        #working-directory: services/${{inputs.service}}
+        #run: |
+          #CI=true nuonctl tests run --name=${{inputs.service}} --test='lint'

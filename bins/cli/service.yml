@@ -1,0 +1,12 @@
+---
+type: artifact
+
+# sources define which pieces of the mono repo are included in your builds/envs.
+sources:
+  - src: images/
+  - src: pkg
+  - src: go.mod
+  - src: go.sum
+  - src: tools.go
+
+color: green
