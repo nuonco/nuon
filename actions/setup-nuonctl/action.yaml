@@ -1,0 +1,35 @@
+---
+name: setup-nuonctl
+description: |
+  Sets up everything necessary to run nuonctl
+author: "@jonmorehouse"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.oci-cache-app
+        key: ${{ runner.os }}-oci-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-oci-app
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: install nuonctl
+      shell: bash
+      run: |
+        chmod +x ./bins/nuonctl/install.sh && \
+        echo "y" | ./bins/nuonctl/install.sh
+
+    - name: test-nuonctl
+      shell: bash
+      run: nuonctl version
+
+branding:
+  icon: "check"
+  color: "blue"
