@@ -45,6 +45,9 @@ type Settings struct {
 	// role that is assumable by our systems/workers, that our customer's grant access too.
 	TwoStepConfig *TwoStepConfig
 
+	// Github Config is an optional config which will direct this to grab the github OIDC role
+	UseGithubOIDC bool
+
 	Region string
 }
 
@@ -60,6 +63,7 @@ type assumer struct {
 	Region string
 
 	TwoStepConfig *TwoStepConfig
+	UseGithubOIDC bool
 
 	// internal state
 	v *validator.Validate
@@ -105,6 +109,7 @@ func WithSettings(s Settings) assumerOptions {
 		a.RoleARN = s.RoleARN
 		a.RoleSessionName = s.RoleSessionName
 		a.TwoStepConfig = s.TwoStepConfig
+		a.UseGithubOIDC = s.UseGithubOIDC
 		a.Region = s.Region
 
 		if s.RoleSessionDuration > 0 {

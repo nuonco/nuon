@@ -122,8 +122,15 @@ func main() {
 		generateAdminSchema,
 	}
 
-	for _, fn := range fns {
-		fn := fn
+	for idx, fn := range fns {
+		if err := fn(ctx); err != nil {
+			log.Fatal("failed on %d %s", idx, err.Error())
+		}
+
+		// NOTE(jm): this is not parallelized any more because docker builds seem to run out of resources when
+		// building. Since it's not a huge speedup, I'm just disabling it for now, and we can revisit increasing
+		// memory during builds later.
+		continue
 		eg.Go(func() error {
 			return fn(ctx)
 		})
