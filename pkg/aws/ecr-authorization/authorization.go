@@ -32,11 +32,11 @@ func (e *ecrAuthorizer) GetAuthorization(ctx context.Context) (*Authorization, e
 		return nil, fmt.Errorf("unable to get ecr authorization token: %w", err)
 	}
 
-	return e.parseAuthorizationData(authData)
+	return ParseAuthorizationData(authData)
 }
 
 // parseAuthorizationData: parses authorization data into the required return format
-func (e *ecrAuthorizer) parseAuthorizationData(data *ecr_types.AuthorizationData) (*Authorization, error) {
+func ParseAuthorizationData(data *ecr_types.AuthorizationData) (*Authorization, error) {
 	auth, err := base64.StdEncoding.DecodeString(*data.AuthorizationToken)
 	if err != nil {
 		return nil, fmt.Errorf("unable to decode auth string: %w", err)
