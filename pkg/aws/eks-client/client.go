@@ -2,13 +2,17 @@ package eksclient
 
 import (
 	"github.com/go-playground/validator/v10"
+
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 )
 
 type eksClient struct {
 	RoleARN         string
 	RoleSessionName string
-	ClusterName     string `validate:"required"`
-	Region          string `validate:"required"`
+	AWSAuth         *credentials.Config
+
+	ClusterName string `validate:"required"`
+	Region      string `validate:"required"`
 
 	// internal state
 	v *validator.Validate
@@ -31,6 +35,15 @@ func New(v *validator.Validate, opts ...eksOptions) (*eksClient, error) {
 		return nil, err
 	}
 	return e, nil
+}
+
+// WithCredentials
+func WithCredentials(cfg *credentials.Config) eksOptions {
+	return func(e *eksClient) error {
+		e.AWSAuth = cfg
+		e.Region = cfg.Region
+		return nil
+	}
 }
 
 // WithRoleARN sets the ARN of the role to assume

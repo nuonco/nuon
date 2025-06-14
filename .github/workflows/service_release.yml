@@ -33,46 +33,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Download terraform outputs
-        uses: actions/download-artifact@v4
-        with:
-          name: env-${{ github.run_id }}-${{inputs.service}}-env
-          include-hidden-files: true
+      - name: Setup nuonctl 
+        uses: powertoolsdev/mono/actions/setup-nuonctl@jm/nuonctl-commands
 
-      - name: Setup environment
-        run: |
-          cat .tfenv >> "$GITHUB_ENV"
-
-      - name: Setup for CI
-        uses: powertoolsdev/mono/actions/setup-ci@main
-        with:
-          tfcloud_token: ${{ secrets.TF_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          aws_role: ${{ env.TFO_GH_ROLE_ARN }}
-          aws_region: ${{ env.TFO_REGION }}
-          ecr_registries: ${{ env.TFO_ECR_REGISTRY_ID }}
-
-      - name: Build and push container
+      - name: Build
         working-directory: services/${{inputs.service}}
         run: |
-          earthly \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --ci \
-            --push \
-            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
-            +docker \
-            --repo=${{ env.TFO_ECR_REPOSITORY_URL }} \
-            --image_tag=${{ inputs.tag }}
-
-      - name: Handle failures
-        if: failure()
-        run: |
-          earthly \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            github.com/powertoolsdev/shared-configs+helm-unrelease \
-            --repo_name=${{ github.repository }} \
-            --registry_id=${{ env.TFO_ECR_REGISTRY_ID }} \
-            --chart_version=v0.0.1-${{ inputs.tag }} \
-            --image_tag=${{ inputs.tag }} \
-            --helm_repos="nuon=${{ env.TFO_NUON_CHARTS }}" \
-          || true
+          CI=true nuonctl builds release --name=${{inputs.service}} --tag=${{inputs.tag}}

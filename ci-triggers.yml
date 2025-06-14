@@ -21,6 +21,16 @@ services: |
     - go.sum
     - services/workers-infra-tests/**
     - pkg/terraform/**
+  bins/runner:
+    - bins/runner/**
+    - pkg/**
+  bins/nuonctl:
+    - bins/nuonctl/**
+  bins/cli:
+    - bins/cli/**
+    - go.mod
+    - go.sum
+    - pkg/types/workflows/executors/**
 
 
 # infra is managed via terraform cloud
@@ -41,19 +51,9 @@ artifacts: |
   services/e2e:
     - services/e2e/**
 
-  bins/nuonctl:
-    - bins/nuonctl/**
-  bins/cli:
-    - bins/cli/**
-    - go.mod
-    - go.sum
-    - pkg/types/workflows/executors/**
 
   charts/demo:
     - charts/demo/**
   charts/temporal:
     - charts/temporal/**
 
-  bins/runner:
-    - bins/runner/**
-    - pkg/**
