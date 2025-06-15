@@ -7,9 +7,7 @@ import (
 )
 
 type eksClient struct {
-	RoleARN         string
-	RoleSessionName string
-	AWSAuth         *credentials.Config
+	AWSAuth *credentials.Config
 
 	ClusterName string `validate:"required"`
 	Region      string `validate:"required"`
@@ -46,34 +44,10 @@ func WithCredentials(cfg *credentials.Config) eksOptions {
 	}
 }
 
-// WithRoleARN sets the ARN of the role to assume
-func WithRoleARN(s string) eksOptions {
-	return func(e *eksClient) error {
-		e.RoleARN = s
-		return nil
-	}
-}
-
-// WithRoleSessionName specifies the session name to use when assuming the role
-func WithRoleSessionName(s string) eksOptions {
-	return func(e *eksClient) error {
-		e.RoleSessionName = s
-		return nil
-	}
-}
-
 // WithClusterName specifies the session name to use when assuming the role
 func WithClusterName(s string) eksOptions {
 	return func(e *eksClient) error {
 		e.ClusterName = s
-		return nil
-	}
-}
-
-// WithRegion specifies the session name to use when assuming the role
-func WithRegion(s string) eksOptions {
-	return func(e *eksClient) error {
-		e.Region = s
 		return nil
 	}
 }

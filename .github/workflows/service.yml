@@ -22,45 +22,67 @@ defaults:
     shell: bash
 
 jobs:
-  test:
-    name: 🌏 test
-    uses: ./.github/workflows/service_test.yml
-    secrets: inherit
-    with:
-      service: ${{ inputs.service }}
+  # NOTE(jm): I'm not the biggest fan of having this all connected in a single stage, however this ultimately gives us 
+  # the best performance. This is because each job has it's own runner, and that means loading in our GHA cache each 
+  # time.
+  service:
+    name: all
+    runs-on: mono
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-  release:
-    name: 📦 release
-    if: ${{ inputs.stage || inputs.prod }}
-    needs:
-      - test
-    uses: ./.github/workflows/service_release.yml
-    secrets: inherit
-    with:
-      service: ${{ inputs.service }}
-      tag: ${{ inputs.tag }}
+      - name: Setup nuonctl 
+        uses: powertoolsdev/mono/actions/setup-nuonctl@jm/ci-build-caching
+        
+      #- name: Lint
+        #working-directory: services/${{inputs.service}}
+        #run: |
+          #CI=true nuonctl tests run --name=${{inputs.service}} --test='lint'
 
-  deploy-stage:
-    name: ☁️  deploy stage
-    # only run on main, or when the auto-deploy label is set
-    if: ${{ inputs.stage }}
-    needs:
-      - release
-    uses: ./.github/workflows/service_deploy.yml
-    secrets: inherit
-    with:
-      env: stage
-      tag: ${{ needs.release.outputs.image_tag }}
-      service: ${{ inputs.service }}
+      - name: 📦 Build
+        working-directory: services/${{inputs.service}}
+        run: |
+          CI=true nuonctl builds release \
+            --name=${{inputs.service}} \
+            --tag=${{inputs.tag}} \
+            --write-cache=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
-  deploy-prod:
-    if: ${{ inputs.prod }}
-    name: ☁️  deploy prod
-    needs:
-      - release
-    uses: ./.github/workflows/service_deploy.yml
-    secrets: inherit
-    with:
-      env: prod
-      tag: ${{ needs.release.outputs.image_tag }}
-      service: ${{ inputs.service }}
+      - name: 🚪 Dry-Run Deploy Stage
+        working-directory: services/${{inputs.service}}
+        if: ${{ inputs.stage }}
+        run: |
+          CI=true nuonctl deploys deploy \
+            --name=${{inputs.service}} \
+            --env=stage \
+            --tag=${{inputs.tag}} \
+            --dry-run=true
+
+      - name: ⬆️ Deploy Stage
+        working-directory: services/${{inputs.service}}
+        if: ${{ inputs.stage }}
+        run: |
+          CI=true nuonctl deploys deploy \
+            --name=${{inputs.service}} \
+            --env=stage \
+            --tag=${{inputs.tag}}
+
+      - name: 🚪 Dry-Run Deploy Prod
+        working-directory: services/${{inputs.service}}
+        if: ${{ inputs.prod }}
+        run: |
+          CI=true nuonctl deploys deploy \
+            --name=${{inputs.service}} \
+            --env=prod \
+            --tag=${{inputs.tag}} \
+            --dry-run=true
+
+      - name: 🌎 Deploy Prod
+        working-directory: services/${{inputs.service}}
+        if: ${{ inputs.prod }}
+        run: |
+          CI=true nuonctl deploys deploy \
+            --name=${{inputs.service}} \
+            --env=prod \
+            --tag=${{inputs.tag}}

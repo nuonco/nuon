@@ -5,11 +5,16 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
+	"os"
 
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
 
+	"github.com/pkg/errors"
+
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
 	azurecredentials "github.com/powertoolsdev/mono/pkg/azure/credentials"
 )
@@ -31,6 +36,9 @@ type ClusterInfo struct {
 	// them in the environment.
 	AWSAuth   *awscredentials.Config   `json:"aws_auth" hcl:"aws_auth,block"`
 	AzureAuth *azurecredentials.Config `json:"azure_auth" hcl:"azure_auth,block"`
+
+	// If this is set, we will _not_ use aws-iam-authenticator, but rather inline create the token
+	Inline bool `json:"inline"`
 
 	// TrustedRoleARN is the arn of the role that should be assumed to interact with the cluster
 	// NOTE(JM): we are deprecating this
@@ -79,6 +87,28 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 	// TODO(jm): this is deprecated and only used in legacy users of this
 	if cInfo.TrustedRoleARN != "" {
 		cfg.ExecProvider.Args = []string{"token", "-i", cInfo.ID, "-r", cInfo.TrustedRoleARN}
+	}
+
+	if cInfo.Inline {
+		env, err := credentials.FetchEnv(ctx, cInfo.AWSAuth)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to fetch env")
+		}
+		for k, v := range env {
+			os.Setenv(k, v)
+		}
+
+		gen, err := token.NewGenerator(true, false)
+		if err != nil {
+			return nil, err
+		}
+
+		tok, err := gen.Get(cInfo.ID)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get token")
+		}
+		cfg.BearerToken = tok.Token
+		cfg.ExecProvider = nil
 	}
 
 	return cfg, nil
