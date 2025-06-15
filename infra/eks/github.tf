@@ -1,78 +1,35 @@
-locals {
-  github = {
-    uri = "token.actions.githubusercontent.com"
-  }
-}
-
-data "aws_iam_openid_connect_provider" "github" {
-  url = "https://${local.github.uri}"
-}
-
-data "aws_iam_policy_document" "github_actions_assume_role" {
-  # allow GH actions that have assumed a workflow specific role to assume this role
-  # for e.g. deploying to k8s
+data "aws_iam_policy_document" "github_actions_policy_doc" {
   statement {
-    actions = [
-      "sts:AssumeRole",
-      "sts:AssumeRoleWithWebIdentity",
-      "sts:TagSession",
-    ]
-
-    # this is pretty broad and typically not a great idea,
-    # unfortunately, it's not really tenable to list all of the
-    # principals here as wildcards aren't supported for iam/sts principals
-    principals {
-      type        = "AWS"
-      identifiers = ["*", ]
-    }
-
-    # limit the principals that can assume this role to those coming in via
-    # our Github OIDC setup in _this_ account
-    condition {
-      test     = "StringEquals"
-      variable = "aws:FederatedProvider"
-      values   = [data.aws_iam_openid_connect_provider.github.arn, ]
-    }
-  }
-}
-
-data "aws_iam_policy_document" "github_actions_policy" {
-  statement {
-    actions   = ["eks:DescribeCluster", ]
-    resources = [module.eks.cluster_arn, ]
-  }
-
-  statement {
+    effect = "Allow"
     actions = [
       "ecr:GetAuthorizationToken",
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:BatchGetImage",
-      "ecr:BatchImportUpstreamImage",
-      "ecr:CompleteLayerUpload",
-      "ecr:DescribeImages",
-      "ecr:DescribeRepositories",
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:InitiateLayerUpload",
-      "ecr:ListImages",
-      "ecr:PutImage",
-      "ecr:UploadLayerPart",
+      "eks:DescribeCluster",
+      "eks:ListCluster",
     ]
+
+    // NOTE(jm): we can not use `module.eks.arn` here, because that would create a circular dependency. Since we only 
+    // run a single cluster per account, this is effectively the same thing, regardless.
     resources = ["*", ]
   }
 }
 
-resource "aws_iam_role" "github_actions" {
-  name               = "github-actions-role-${local.workspace_trimmed}"
-  assume_role_policy = data.aws_iam_policy_document.github_actions_assume_role.json
+resource "aws_iam_policy" "github_actions_policy" {
+  name   = "github-actions-policy-${local.workspace_trimmed}"
+  policy = data.aws_iam_policy_document.github_actions_policy_doc.json
 }
 
-resource "aws_iam_policy" "github_actions" {
-  name = "github-actions-${local.workspace_trimmed}"
+module "github_actions" {
+  source      = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
+  version     = ">= 5.1.0"
+  create_role = true
 
-  policy = data.aws_iam_policy_document.github_actions_policy.json
-}
+  role_name               = "github-actions-role-${local.workspace_trimmed}"
 
-resource "aws_iam_role_policy_attachment" "github_actions" {
-  role       = aws_iam_role.github_actions.name
-  policy_arn = aws_iam_policy.github_actions.arn
+  provider_url                   = "token.actions.githubusercontent.com"
+  oidc_subjects_with_wildcards   = ["repo:${local.github_organization}/${local.github_repository}:*", ]
+  oidc_fully_qualified_audiences = ["sts.amazonaws.com", ]
+
+  role_policy_arns = [
+    aws_iam_policy.github_actions_policy.arn,
+  ]
 }

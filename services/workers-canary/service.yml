@@ -1,6 +1,6 @@
 ---
 color: blue
-type: worker
+type: service
 env:
   DISABLE_METRICS: true
   API_URL: http://localhost:8081

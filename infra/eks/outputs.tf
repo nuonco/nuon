@@ -196,7 +196,7 @@ output "private_zone" {
 
 output "github_action_role_arn" {
   description = "The ARN of the role to be assumed by Github Actions"
-  value       = aws_iam_role.github_actions.arn
+  value       = module.github_actions.iam_role_arn
 }
 
 output "auth_map_additional_role_arns" {

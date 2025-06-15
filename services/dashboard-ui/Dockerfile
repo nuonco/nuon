@@ -28,18 +28,12 @@ COPY src src
 
 FROM deps AS test
 
-RUN echo "running unit test..." && \
-  npm run test
-
-FROM deps AS lint
-
-RUN echo "running lint..." && \
-  npm run lint && \
-  npm run tsc
+ENV NUON_API_URL=https://api.stage.nuon.co
 
 FROM deps as build
 
 ARG NUON_API_URL=https://api.stage.nuon.co
+
 RUN npm run build
 
 FROM build as final

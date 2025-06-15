@@ -1,6 +1,19 @@
 ---
 type: service
 
+tests:
+  - name: lint
+    docker_target: test
+    cmd: npm run lint
+
+  - name: compile
+    docker_target: test
+    cmd: npm run tsc
+
+  - name: test
+    docker_target: test
+    cmd: npm run test
+
 color: red
 env:
   # use this to write out debug logs locally
