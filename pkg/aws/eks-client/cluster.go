@@ -37,7 +37,7 @@ func (e *eksClient) getCluster(ctx context.Context, client awsEKSClient) (*eksty
 
 	resp, err := client.DescribeCluster(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get describe cluster: %w", err)
+		return nil, fmt.Errorf("unable to describe cluster: %w", err)
 	}
 
 	return resp.Cluster, nil
