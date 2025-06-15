@@ -1,4 +1,5 @@
 ---
+type: service
 color: red
 env: {}
 env_secrets: {}
