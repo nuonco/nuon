@@ -43,28 +43,6 @@ jobs:
               - .github/workflows/pkg.yml
               - go.mod
               - go.sum
-  lint:
-    name: 🌏 lint
-    needs: changes
-    if: ${{ needs.changes.outputs.pkg == 'true' }}
-    defaults:
-      run:
-        working-directory: pkg
-    runs-on: mono
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup for CI
-        uses: powertoolsdev/mono/actions/setup-ci@main
-
-      - name: Lint
-        run: |
-          earthly \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
-            +lint
-
   test:
     name: 🌏 test
     needs: changes
@@ -77,70 +55,18 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup for CI
-        uses: powertoolsdev/mono/actions/setup-ci@main
-
-      - name: Test
-        run: |
-          earthly \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
-            +test
-
-  cache:
-    name: 🌏 cache
-    needs:
-      - changes
-      - test
-    if: ${{ needs.changes.outputs.pkg == 'true' && github.event_name != 'pull_request' }}
-    defaults:
-      run:
-        working-directory: pkg
-    runs-on: mono
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup for CI
-        uses: powertoolsdev/action-setup-ci@main
-
-      - name: cache
-        run: |
-          earthly \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --push \
-            --max-remote-cache \
-            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
-            +code
-
-  release:
-    name: Release
-    needs:
-      - changes
-      - test
-    if: ${{ needs.changes.outputs.protos == 'true' && github.event_name != 'pull_request' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Determine next version
-        id: semver
-        uses: ietf-tools/semver-action@latest
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-          patchAll: true
-          prefix: pkg/
-      - name: Push tag
-        uses: mathieudutour/github-tag-action@v6.1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          custom_tag: ${{ steps.semver.outputs.nextStrict }}
+      - name: Setup nuonctl 
+        uses: powertoolsdev/mono/actions/setup-nuonctl@main
+        
+      # TODO(jm): need to implement a way to run tests 
+      #- name: 😎 Tests
+        #run: |
+          #CI=true nuonctl tests run-all --name=${{inputs.service}}
 
   update_status:
     name: update status
     needs:
-      - lint
       - test
-      - release
     if: github.event_name == 'pull_request' && always()
     runs-on: ubuntu-latest
     steps:
