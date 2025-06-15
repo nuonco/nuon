@@ -80,4 +80,4 @@ COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 COPY --from=build /bin/service /bin/service
 COPY bundle /bundle
 
-#ENTRYPOINT ["/bin/service"]
+ENTRYPOINT ["/bin/service"]
