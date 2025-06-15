@@ -11,6 +11,8 @@ services: |
     - go.mod
     - go.sum
     - pkg/types/workflows/executors/**
+
+disabled_services: |
   dashboard-ui:
     - services/dashboard-ui/**
   wiki:
