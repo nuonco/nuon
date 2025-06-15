@@ -36,9 +36,9 @@ jobs:
       - name: Setup nuonctl 
         uses: powertoolsdev/mono/actions/setup-nuonctl@main
         
-      #- name: Lint
-        #run: |
-          #CI=true nuonctl tests run --name=${{inputs.service}} --test='lint'
+      - name: 😎 Tests
+        run: |
+          CI=true nuonctl tests run-all --name=${{inputs.service}}
 
       - name: 📦 Build
         run: |

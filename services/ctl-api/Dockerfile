@@ -46,8 +46,6 @@ RUN curl \
 
 FROM golang:1.24-alpine as certs
 
-# NOTE(jdt): ideally we would wget -a but busybox doesn't support it
-# or use `update-ca-certificate` but it can't handle a single file w/ multiple certs
 RUN wget \
         https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
     && cat global-bundle.pem >> /global-bundle.pem
@@ -56,25 +54,9 @@ FROM golang:1.24-alpine as final
 
 WORKDIR /src/services/ctl-api
 
-ENV CGO_ENABLED=0
-RUN apk add --no-cache \
-  libc6-compat \
-  build-base \
-  make \
-  ca-certificates-bundle \
-  coreutils \
-  curl \
-  protoc \
-  bash \
-  jq \
-  git \
-  python3 \
-  py3-pip \
-  zip && \
-  pip3 install awscli --upgrade --user --break-system-packages
-
 ENV PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
 
+# NOTE(JM): this can be removed once `inline: true` is set on all uses of the kube config package
 COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 COPY bundle /bundle
