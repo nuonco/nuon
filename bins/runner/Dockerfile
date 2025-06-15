@@ -72,7 +72,7 @@ COPY --from=kaniko /kaniko/.docker /kaniko/.docker
 COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
 COPY --from=nuon-cli /bin/nuon /usr/bin/nuon
 COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
-COPY --from=certs /global-bundle.pem $ETCSSL
+COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 
 RUN apk add --no-cache \
   libc6-compat \

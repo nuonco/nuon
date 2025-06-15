@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/ui"
 )
 
 // LoadConfigWithAssumedRole loads an AWS config using the default credential provider chain
@@ -43,6 +44,7 @@ func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, er
 
 func (a *assumer) assumeIamRole(ctx context.Context, client *sts.Client, role string) (*sts_types.Credentials, error) {
 	if a.UseGithubOIDC {
+		ui.Step(ctx, "fetching github OIDC token")
 		token, err := a.getGithubOIDCToken(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get token")
@@ -57,7 +59,7 @@ func (a *assumer) assumeIamRole(ctx context.Context, client *sts.Client, role st
 
 		resp, err := client.AssumeRoleWithWebIdentity(ctx, params)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "unable to assume role with web identity "+token)
 		}
 
 		return resp.Credentials, nil
