@@ -5,7 +5,6 @@ ARG SERVICE=runner
 ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
 ARG PKG_ROOT=github.com/powertoolsdev/mono/bins/runner
-ARG ETCSSL=/etc/ssl/cert.pem
 
 # copy deps, tools and fetch dependencies
 COPY tools.go go.mod go.sum .
@@ -61,19 +60,6 @@ RUN wget \
 
 FROM golang:1.24-alpine as final
 
-WORKDIR /src/services/ctl-api
-
-COPY --from=build /bin/runner /bin/runner
-
-# add dependencies
-COPY ./bundle /bundle
-COPY --from=kaniko /kaniko/* /kaniko/
-COPY --from=kaniko /kaniko/.docker /kaniko/.docker
-COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
-COPY --from=nuon-cli /bin/nuon /usr/bin/nuon
-COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
-COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
-
 RUN apk add --no-cache \
   libc6-compat \
   build-base \
@@ -90,4 +76,19 @@ RUN apk add --no-cache \
   openssl \
   helm
 
+WORKDIR /src/bins/runner
+
+# add dependencies
+COPY --from=kaniko /kaniko/* /kaniko/
+COPY --from=kaniko /kaniko/.docker /kaniko/.docker
+COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
+COPY --from=nuon-cli /bin/nuon /usr/bin/nuon
+COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
+
+COPY ./bundle /bundle
+COPY --from=build /bin/runner /bin/runner
+
 ENTRYPOINT ["/bin/runner"]
+
+FROM scratch as artifacts
