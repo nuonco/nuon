@@ -12,7 +12,11 @@ data "aws_iam_policy_document" "github_actions_assume_role" {
   # allow GH actions that have assumed a workflow specific role to assume this role
   # for e.g. deploying to k8s
   statement {
-    actions = ["sts:AssumeRole", ]
+    actions = [
+      "sts:AssumeRole",
+      "sts:AssumeRoleWithWebIdentity",
+      "sts:TagSession",
+    ]
 
     # this is pretty broad and typically not a great idea,
     # unfortunately, it's not really tenable to list all of the
