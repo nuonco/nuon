@@ -118,8 +118,11 @@ export const desiredOrgStructure: orgStructure = [
       { name: "sandbox-tw" },
       { name: "sandbox-cb" },
       { name: "sandbox-sk" },
+      { name: "sandbox-mm" },
+      { name: "sandbox-pk" },
+      { name: "sandbox-ey" },
       { name: "sandbox-byoc" },
-      
+
       // NOTE(jm): these accounts can be deprecated
       { name: "sandbox-retool" },
       { name: "sandbox-stardog" },

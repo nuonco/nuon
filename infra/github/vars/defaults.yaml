@@ -29,14 +29,17 @@ members:
     role: admin
   - username: someshkoli
     role: admin
-  # all other team members
   # shared nuon user
   - username: nuonbot
   # Casey Bierman
   - username: Casey-00
-  # Kristin Jerome
-  - username: KJerome415
-  # Andrea Echstenkamper
-  - username: aechsten
   # Tim Wong
   - username: mrwong
+    role: admin
+  - username: onprem
+    role: admin
+  - username: sharkymark
+    role: admin
+  # yellott starts the 23rd
+  #- username: yellottyellott
+    #role: admin

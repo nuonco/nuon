@@ -18,7 +18,6 @@ ecr_repos:
 required_checks:
   # lints + tests + release + deploys for services and lib/infra.
   - services ✅
-  - pkg ✅
   - protos ✅
 
   # linting and various hygiene checks
@@ -29,3 +28,5 @@ required_checks:
   # terraform cloud infra checks
   - Terraform Cloud/nuonco/repo-id-B14tP6vG7ia3CQHo
 
+  # TODO(jm): reenable this once nctl supports packages
+  # - pkg ✅
