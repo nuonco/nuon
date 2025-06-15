@@ -6,6 +6,9 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
+	"github.com/pkg/errors"
+
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
@@ -13,9 +16,9 @@ import (
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=cluster_mock_test.go -source=cluster.go -package=eksclient
 func (e *eksClient) GetCluster(ctx context.Context) (*ekstypes.Cluster, error) {
-	cfg, err := e.getConfig(ctx)
+	cfg, err := credentials.Fetch(ctx, e.AWSAuth)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get config: %w", err)
+		return nil, errors.Wrap(err, "unable to get aws credentials")
 	}
 
 	eksClient := eks.NewFromConfig(cfg)

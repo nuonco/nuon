@@ -10,6 +10,8 @@ sources:
     dst: Dockerfile.base
   - src: images/go-base/Dockerfile.build
     dst: Dockerfile.build
+  - src: bins/runner/bundle
+    dst: bundle
 
 # tests define which tests to run as part of CI. These are run sequentially, in GHA or locally using `nctl test all`
 tests:
