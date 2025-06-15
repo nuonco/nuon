@@ -1,5 +1,15 @@
 FROM golang:1.24 as code
 
+RUN apt-get update && apt-get install -y ca-certificates \
+    coreutils \
+    make \
+    git \
+    curl \
+    jq
+
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
+  | sh -s -- -b $(go env GOPATH)/bin v2.1.6
+
 WORKDIR /src
 ARG SERVICE=ctl-api
 ARG GOCACHE=/go-cache
@@ -15,6 +25,10 @@ RUN go mod download
 COPY pkg pkg
 RUN cd pkg && \
   go generate ./...
+
+# run golangci-lint to see if we can cache any tools
+COPY .golangci.yml .
+# RUN golangci-lint run -c .golangci.yml --issues-exit-code 0 -v .
 
 # copy each file that is specific to the api into the correct directory
 WORKDIR /src/services/${SERVICE}
@@ -32,6 +46,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/service
 FROM code AS test
 
 FROM code AS lint
+
+COPY .golangci.yml .
 
 FROM golang:1.24-alpine as aws-iam-authenticator
 
