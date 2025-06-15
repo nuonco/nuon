@@ -70,6 +70,7 @@ RUN GOOS=linux \
     go build \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_linux_arm64 .
+
 RUN GOOS=linux \
     GOARCH=386 \
     go build \
