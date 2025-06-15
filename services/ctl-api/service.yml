@@ -16,16 +16,15 @@ sources:
 # tests define which tests to run as part of CI. These are run sequentially, in GHA or locally using `nctl test all`
 tests:
   # a standard test with nothing much spun up.
-  #- name: lint
-    #docker_target: lint
-    #cmd: golangci lint ./...
+  - name: lint
+    docker_target: lint
+    cmd: go version
 
   # this test runs a setup command, before executing the test
   - name: setup
     docker_target: lint
     cmd: go version
     setup_cmds:
-      - echo setup
       - env
 
   # an integration test that can write to/from the DB, clickhouse, or temporal
