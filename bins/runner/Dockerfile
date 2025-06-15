@@ -4,7 +4,7 @@ WORKDIR /src
 ARG SERVICE=runner
 ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
-ARG PKG_ROOT=github.com/powertoolsdev/mono/bins/runner
+ARG PKG_ROOT=github.com/powertoolsdev/mono/bins/${SERVICE}
 
 # copy deps, tools and fetch dependencies
 COPY tools.go go.mod go.sum .
@@ -60,6 +60,8 @@ RUN wget \
 
 FROM golang:1.24-alpine as final
 
+ARG tag
+
 RUN apk add --no-cache \
   libc6-compat \
   build-base \
@@ -89,6 +91,18 @@ COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 COPY ./bundle /bundle
 COPY --from=build /bin/runner /bin/runner
 
+ENV git_ref=$tag
+
 ENTRYPOINT ["/bin/runner"]
 
-FROM scratch as artifacts
+FROM build as artifacts
+
+ARG BIN_NAME=runner
+ARG tag=
+RUN mkdir -p /out
+
+RUN GOOS=linux \
+    GOARCH=amd64 \
+    go build \
+    -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
+    -o /out/${BIN_NAME}_linux_amd64 .
