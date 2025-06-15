@@ -37,12 +37,10 @@ jobs:
         uses: powertoolsdev/mono/actions/setup-nuonctl@main
         
       #- name: Lint
-        #working-directory: services/${{inputs.service}}
         #run: |
           #CI=true nuonctl tests run --name=${{inputs.service}} --test='lint'
 
       - name: 📦 Build
-        working-directory: services/${{inputs.service}}
         run: |
           CI=true nuonctl builds release \
             --name=${{inputs.service}} \
@@ -50,7 +48,6 @@ jobs:
             --write-cache=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
       - name: 🚪 Dry-Run Deploy Stage
-        working-directory: services/${{inputs.service}}
         if: ${{ inputs.stage }}
         run: |
           CI=true nuonctl deploys deploy \
@@ -60,7 +57,6 @@ jobs:
             --dry-run=true
 
       - name: ⬆️ Deploy Stage
-        working-directory: services/${{inputs.service}}
         if: ${{ inputs.stage }}
         run: |
           CI=true nuonctl deploys deploy \
@@ -69,7 +65,6 @@ jobs:
             --tag=${{inputs.tag}}
 
       - name: 🚪 Dry-Run Deploy Prod
-        working-directory: services/${{inputs.service}}
         if: ${{ inputs.prod }}
         run: |
           CI=true nuonctl deploys deploy \
@@ -79,7 +74,6 @@ jobs:
             --dry-run=true
 
       - name: 🌎 Deploy Prod
-        working-directory: services/${{inputs.service}}
         if: ${{ inputs.prod }}
         run: |
           CI=true nuonctl deploys deploy \
