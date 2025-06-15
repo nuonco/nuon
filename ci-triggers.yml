@@ -10,7 +10,23 @@ services: |
     - services/ctl-api/**
     - go.mod
     - go.sum
+    - pkg/**
+
+  runner:
+    - bins/runner/**
+    - pkg/**
+
+  cli:
+    - bins/cli/**
+    - go.mod
+    - go.sum
     - pkg/types/workflows/executors/**
+
+  nuonctl:
+    - bins/nuonctl/**
+
+  dashboard-ui:
+    - services/dashboard-ui/**
 
 disabled_services: |
   dashboard-ui:
@@ -23,16 +39,6 @@ disabled_services: |
     - go.sum
     - services/workers-infra-tests/**
     - pkg/terraform/**
-  bins/runner:
-    - bins/runner/**
-    - pkg/**
-  bins/nuonctl:
-    - bins/nuonctl/**
-  bins/cli:
-    - bins/cli/**
-    - go.mod
-    - go.sum
-    - pkg/types/workflows/executors/**
 
 
 # infra is managed via terraform cloud
@@ -52,7 +58,6 @@ terraform-cloud: |
 artifacts: |
   services/e2e:
     - services/e2e/**
-
 
   charts/demo:
     - charts/demo/**
