@@ -77,7 +77,7 @@ ENV PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr
 
 COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
-COPY --from=build /bin/service /bin/service
 COPY bundle /bundle
+COPY --from=build /bin/service /bin/service
 
 ENTRYPOINT ["/bin/service"]
