@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup nuonctl 
-        uses: powertoolsdev/mono/actions/setup-nuonctl@jm/ci-build-caching
+        uses: powertoolsdev/mono/actions/setup-nuonctl@main
         
       #- name: Lint
         #working-directory: services/${{inputs.service}}
