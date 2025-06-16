@@ -58,19 +58,19 @@ func (c *HelmComponentConfig) AfterQuery(tx *gorm.DB) error {
 		c.ChartName = c.HelmConfig.ChartName
 		c.Values = c.HelmConfig.Values
 		c.ValuesFiles = c.HelmConfig.ValuesFiles
-		c.Namespace = c.HelmConfig.Namespace
-		c.StorageDriver = c.HelmConfig.StorageDriver
+		c.Namespace = generics.NewNullString(c.HelmConfig.Namespace)
+		c.StorageDriver = generics.NewNullString(c.HelmConfig.StorageDriver)
 		c.TakeOwnership = c.HelmConfig.TakeOwnership
 	}
 	return nil
 }
 
 type HelmConfig struct {
-	ChartName     string              `json:"chart_name"`
-	Values        pgtype.Hstore       `json:"values"`
-	ValuesFiles   pq.StringArray      `json:"values_files"`
-	Namespace     generics.NullString `json:"namespace"`
-	StorageDriver generics.NullString `json:"storage_driver"`
+	ChartName     string             `json:"chart_name"`
+	Values        map[string]*string `json:"values"`
+	ValuesFiles   []string           `json:"values_files"`
+	Namespace     string             `json:"namespace"`
+	StorageDriver string             `json:"storage_driver"`
 	// Newer fields that we don't need to store as columns in the database
 	TakeOwnership bool `json:"take_ownership,omitempty"`
 }
@@ -82,7 +82,7 @@ func (c *HelmConfig) Scan(v interface{}) (err error) {
 		return nil
 	case []byte:
 		if err := json.Unmarshal(v, c); err != nil {
-			return errors.Wrap(err, "unable to scan composite status")
+			return errors.Wrap(err, "unable to scan helm config")
 		}
 	}
 	return
