@@ -1,7 +1,5 @@
 'use client'
 
-import classNames from 'classnames'
-import Image from 'next/image'
 import React, { type FC } from 'react'
 import {
   CaretUp,
@@ -9,20 +7,17 @@ import {
   ArrowLineRight,
   Sidebar as SidebarIcon,
 } from '@phosphor-icons/react'
-import { useDashboard, useOrg } from '@/stratus/context'
-import { Avatar, Button, Text } from '@/stratus/components/common'
+import { useDashboard } from '@/stratus/context'
+import { Button } from '@/stratus/components/common'
 import { OrgSwitcher } from '@/stratus/components/orgs'
 import { UserDropdown } from '@/stratus/components/user'
-import { initialsFromString } from '@/utils'
+
 import { MainNav } from './MainNav'
 import { Logo } from './Logo'
 
 interface ISidebar {}
 
 export const Sidebar: FC<ISidebar> = () => {
-  const { isSidebarOpen } = useDashboard()
-  const { org } = useOrg()
-
   return (
     <aside className="bg-cool-grey-50 dark:bg-dark-grey-200 flex flex-col">
       <header className="flex items-center justify-between">
