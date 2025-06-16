@@ -107,6 +107,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, errors.Wrap(err, "unable to render policies")
 	}
 
+	l.Info("getting policies")
 	policies, err := p.getPolicies(&appCfg.PoliciesConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get policies")
@@ -118,6 +119,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, errors.Wrap(err, "unable to get sandbox run git source")
 	}
 
+	l.Info("determining role arn")
 	roleARN := stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN
 	if run.RunType == app.SandboxRunTypeReprovision {
 		roleARN = stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN

@@ -2,9 +2,11 @@ package terraform
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/nuonco/nuon-runner-go/models"
@@ -29,22 +31,49 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return errors.Wrap(err, "unable to write policies")
 	}
 
-	wkspace, err := p.getWorkspace()
+	// Load Plan Bytes
+	var planBytes []byte
+	if len(p.state.plan.ApplyPlanContents) > 0 {
+		b64EncodedContent := p.state.plan.ApplyPlanContents
+		planBytes, err = base64.StdEncoding.DecodeString(b64EncodedContent)
+		if err != nil {
+			return errors.Wrap(err, "unable to decode base64 Plan.Contents into bytes.")
+		}
+	} else {
+		planBytes = []byte{}
+	}
+
+	// get the right workspace
+	var wkspace workspace.Workspace
+	if len(planBytes) > 0 {
+		l.Info("the plan has ApplyPlanContents, intializing workspace with plan", zap.Int("plan.bytes.count", len(planBytes)))
+		wkspace, err = p.getWorkspaceWithPlan(planBytes)
+		l.Debug("create workspace with plan bytes", zap.Int("plan.bytes.count", len(planBytes)))
+	} else {
+		l.Info("the plan has no ApplyPlanContents, intializing workspace without plan", zap.Int("plan.bytes.count", len(planBytes)))
+		wkspace, err = p.getWorkspace()
+	}
+
+	// initialize
+	if err := wkspace.InitRoot(ctx); err != nil {
+		return errors.Wrap(err, "unable to initialize root")
+	}
 	if err != nil {
 		p.writeErrorResult(ctx, "load terraform workspace", err)
 		return fmt.Errorf("unable to create workspace from config: %w", err)
+	} else {
+		l.Info(
+			"workspace acquired",
+			zap.String("root", wkspace.Root()),
+		)
 	}
-
-	// TODO: when we split this up, load the plan into the workspace like this
-	// plan := ""
-	// wkspace.WritePlan(ctx, plan)
 
 	// assign workspace
 	p.state.tfWorkspace = wkspace
 
 	tfRun, err := run.New(p.v, run.WithWorkspace(wkspace),
 		run.WithLogger(hlog),
-		run.WithOutputSettings(&run.OutputSettings{
+		run.WithOutputSettings(&run.OutputSettings{ // TODO: remove entirely - this is for S3
 			Ignore: true,
 		}),
 	)
@@ -60,16 +89,17 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		l.Info("executing with Azure auth " + p.state.plan.AzureAuth.String())
 	}
 
-	// TODO: update these to actulaly plan and apply
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
-		l.Info("creating terraform plan")
+		l.Info("creating terraform plan", zap.String("operation", string(job.Operation)))
 		err = tfRun.Plan(ctx)
+		p.createResult(ctx)
 	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
-		l.Info("creating terraform teardown plan")
+		l.Info("creating terraform teardown plan", zap.String("operation", string(job.Operation)))
 		err = tfRun.DestroyPlan(ctx)
+		p.createResult(ctx)
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
-		l.Info("executing terraform apply plan")
+		l.Info("executing terraform apply plan", zap.String("operation", string(job.Operation)))
 		err = tfRun.ApplyPlan(ctx)
 	default:
 		l.Error("unsupported terraform run type", zap.String("type", string(job.Operation)))
@@ -111,27 +141,17 @@ func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Wo
 	return nil
 }
 
-func (p *handler) loadPlan(ctx context.Context) error {
-	// write the plan from p.state.plan <dot> plan to plan.json in the workspace
-	// err := p.state.tfWorkspace.WritePlan(ctx, p.state.plan)
-	// return err
-	return nil
-}
-
 func (p *handler) createResult(ctx context.Context) error {
-	pathToPlan := p.state.tfWorkspace.Root() + "/" + "plan.json"
-
-	// Read the plan.json file into a string
+	pathToPlan := filepath.Join(p.state.tfWorkspace.Root(), "tfplan") // TODO: make this a built in on the workspace (tfplan)
 	planBytes, err := os.ReadFile(pathToPlan)
 	if err != nil {
-		p.writeErrorResult(ctx, "failed to read plan.json file", err)
-		return fmt.Errorf("unable to read plan.json file: %w", err)
+		p.writeErrorResult(ctx, "failed to read tfplan file", err)
+		return fmt.Errorf("unable to read tfplan file: %w", err)
 	}
-
-	planJSON := string(planBytes)
+	planContents := base64.StdEncoding.EncodeToString(planBytes)
 	_, err = p.apiClient.CreateJobExecutionResult(ctx, p.state.jobID, p.state.jobExecutionID, &models.ServiceCreateRunnerJobExecutionResultRequest{
 		Success:  true,
-		Contents: planJSON,
+		Contents: planContents,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create terraform apply job execution result : %w", err)
