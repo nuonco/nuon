@@ -86,6 +86,26 @@ accounts:
   "654471563882":
     presets:
       - common
+  # infra-tests-00
+  "704353679439":
+    presets:
+      - common
+  # infra-tests-01
+  "542568752864":
+    presets:
+      - common
+  # infra-tests-02
+  "764373559498":
+    presets:
+      - common
+  # infra-tests-03
+  "644629842868":
+    presets:
+      - common
+  # infra-tests-04
+  "958110090201":
+    presets:
+      - common
 
 presets:
   common:
