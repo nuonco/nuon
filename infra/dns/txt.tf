@@ -13,6 +13,8 @@ resource "aws_route53_record" "txt-records" {
     "v=spf1 a mx include:_spf.google.com ~all",
 
     # webflow
-    "proxy-ssl.webflow.com"
+    "proxy-ssl.webflow.com",
+    # Microsoft Azure 
+    "MS=ms36861904"
   ]
 }
