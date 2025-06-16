@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation'
 import React, { type FC, useState } from 'react'
-import { X, Check } from '@phosphor-icons/react'
+import { ArrowsClockwise, X, Check } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { JsonView } from '@/components/Code'
 import { SpinnerSVG } from '@/components/Loading'
@@ -19,6 +19,7 @@ interface IApprovalStep {
   headingText?: string
   step: TInstallWorkflowStep
   workflowId: string
+  workflowApproveOption?: 'prompt' | 'approve-all'
 }
 
 export const ApprovalStep: FC<IApprovalStep> = ({
@@ -26,6 +27,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
   buttonText = 'Approve changes',
   headingText = 'Approve changes',
   workflowId,
+  workflowApproveOption = 'prompt',
   step,
 }) => {
   const params = useParams()
@@ -79,7 +81,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
             </Text>
           </Notice>
         )
-      ) : (
+      ) : workflowApproveOption === 'prompt' ? (
         <Notice className="!p-4 w-full" variant="warn">
           <Text variant="med-14" className="mb-2">
             Action needed: {removeSnakeCase(approval?.type)}
@@ -89,7 +91,8 @@ export const ApprovalStep: FC<IApprovalStep> = ({
             {removeSnakeCase(approval?.type)}.
           </Text>
         </Notice>
-      )}
+      ) : null}
+
       <div className="flex flex-col gap-2 !w-full">
         <div className="flex flex-col gap-4 border rounded-md p-2">
           {error ? <Notice>{error}</Notice> : null}
@@ -99,7 +102,8 @@ export const ApprovalStep: FC<IApprovalStep> = ({
             <JsonView data={approval?.contents} expanded={2} />
           )}
         </div>
-        {approval?.response ? null : (
+        {approval?.response ||
+        workflowApproveOption === 'approve-all' ? null : (
           <div className="mt-4 flex gap-3 justify-end">
             <Button
               onClick={() => {
@@ -122,26 +126,26 @@ export const ApprovalStep: FC<IApprovalStep> = ({
               )}
             </Button>
 
-            {/* <Button
-                onClick={() => {
+            <Button
+              onClick={() => {
                 setIsRetryLoading(true)
                 approve('retry')
-                }}
-                className="text-sm font-sans flex items-center gap-2 h-[32px]"
-                disabled={isKickedOff}
-                >
-                {isRetryLoading ? (
+              }}
+              className="text-sm font-sans flex items-center gap-2 h-[32px]"
+              disabled={isKickedOff}
+            >
+              {isRetryLoading ? (
                 <>
-                <SpinnerSVG />
-                Retrying plan
+                  <SpinnerSVG />
+                  Retrying plan
                 </>
-                ) : (
+              ) : (
                 <>
-                <ArrowsClockwise />
-                Retry Plan
+                  <ArrowsClockwise />
+                  Retry Plan
                 </>
-                )}
-                </Button> */}
+              )}
+            </Button>
             <Button
               onClick={() => {
                 setIsApproveLoading(true)
