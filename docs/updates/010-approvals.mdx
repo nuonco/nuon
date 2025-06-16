@@ -1,0 +1,44 @@
+---
+title: '010 - Approvals'
+description: 'Workflows now support approvals, so you can verify the helm / terraform plan.'
+---
+
+_June 5th, 2025_
+
+<div className="badge badge--primary">v0.19.590</div>
+
+## Approvals
+
+You can now see a Helm or Terraform plan when updating an install. Each workflow will automatically prompt you to 
+approve the plan, and only proceed upon approval.
+
+![Approve Sandbox](assets/010_approve_sandbox.png)
+
+## Auto Approve Install
+
+You can auto approve all changes on an install.
+
+![Auto Approve Install](assets/010_auto_approve_enabled.png)
+
+## Auto Approve Workflow
+
+Sometimes, you just want to approve the first step in a workflow. You can approve all following steps on a workflow, 
+which means each step will automatically proceed.
+
+![Approve Workflow](assets/010_approve_workflow.png)
+
+## Rerun Plan
+
+When an approval has been waiting for an extended period of time, you can re-run the plan phase by pressing the 
+**Retry Plan** button.
+
+![Retry Plan](assets/010_retry_plan.png)
+
+This will re-run the plan step, and prompt the approval before continuing.
+
+## Bug Fixes and other
+
+* `nuon apps sync-dir` has been deprecated in favor of `nuon apps sync`.
+* Fixed an issue related to authentication for BYOC installs of Nuon.
+* Fixed a bug where actions could not be deleted.
+* Fixed a bug where some cron actions did not run.
