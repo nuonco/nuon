@@ -3,24 +3,37 @@ package workspace
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/hashicorp/go-hclog"
+	"go.uber.org/zap"
 )
 
 const (
-	defaultPlanConfigFilename = "plan.json"
+	defaultPlanFilename = "tfplan"
 )
 
-// WritePlan writes the Terraform plan JSON to a file in the workspace
-func (w *workspace) WritePlan(ctx context.Context, plan string) error {
-	// NOTE: the plan is expected to be a json tf plan
+// WritePlan writes the Terraform tfplan to a file called tfplan in the workspace
+func (w *workspace) WriteTFPlan(ctx context.Context, log hclog.Logger) ([]byte, error) {
+	// NOTE: the plan is expected to be an opaque format tfplan file (not human legible)
 
 	// Create the plan.json file in the workspace directory
-	planFilePath := w.root + "/" + defaultPlanConfigFilename
-
+	planFilePath := filepath.Join(w.root, defaultPlanFilename)
+	log.Debug("writing plan", zap.String("path", planFilePath), zap.Int("plan.bytes.count", len(w.PlanBytes)))
 	// Write the JSON plan string to the file
-	err := w.writeFile(planFilePath, []byte(plan), 0644)
+	fd, err := os.Create(planFilePath)
+	defer fd.Close()
 	if err != nil {
-		return fmt.Errorf("unable to write %s file: %w", defaultPlanConfigFilename, err)
+		return []byte{}, fmt.Errorf("unable to create %s file: %w", defaultPlanFilename, err)
 	}
 
-	return nil
+	n, err := fd.Write(w.PlanBytes)
+	if err != nil {
+		return []byte{}, fmt.Errorf("unable to write %s file: %w", defaultPlanFilename, err)
+	}
+	log.Debug("wrote plan", zap.String("path", planFilePath), zap.Int("plan.bytes.count", len(w.PlanBytes)), zap.Int("bytes-written", n))
+	fd.Sync()
+
+	return w.PlanBytes, nil
 }

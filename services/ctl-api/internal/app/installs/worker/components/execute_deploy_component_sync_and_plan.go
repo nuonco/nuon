@@ -87,9 +87,10 @@ func (w *Workflows) ExecuteDeployComponentSyncAndPlan(ctx workflow.Context, sreq
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream")
 	}
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
-	}()
+	// NOTE: not closed so we can re-use this log stream
+	// defer func() {
+	// 	activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+	// }()
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l, err := log.WorkflowLogger(ctx)
