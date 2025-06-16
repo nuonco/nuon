@@ -15,8 +15,7 @@ func (j *jobLoop) executeExecuteJobStep(ctx context.Context, handler jobs.JobHan
 			return j.execActionSandboxStep(ctx, job)
 		}
 
-		j.execSandboxStep(ctx)
-		return nil
+		return j.execSandboxStep(ctx)
 	}
 
 	if err := handler.Exec(ctx, job, jobExecution); err != nil {
