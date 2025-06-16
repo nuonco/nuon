@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -26,13 +27,35 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 	hclog := log.NewHClog(l)
 
-	wkspace, err := p.GetWorkspace(ctx)
+	// Load Plan Bytes
+	var planBytes []byte
+	if len(p.state.plan.ApplyPlanContents) > 0 {
+		b64EncodedContent := p.state.plan.ApplyPlanContents
+		planBytes, err = base64.StdEncoding.DecodeString(b64EncodedContent)
+		if err != nil {
+			return errors.Wrap(err, "unable to decode base64 Plan.Contents into bytes.")
+		}
+	} else {
+		planBytes = []byte{}
+	}
+
+	// get the right workspace
+	var wkspace workspace.Workspace
+	if len(planBytes) > 0 {
+		l.Info("the plan has ApplyPlanContents, intializing workspace with plan", zap.Int("plan.bytes.count", len(planBytes)))
+		wkspace, err = p.GetWorkspaceWithPlan(ctx, planBytes)
+		l.Debug("create workspace with plan bytes", zap.Int("plan.bytes.count", len(planBytes)))
+	} else {
+		l.Info("the plan has no ApplyPlanContents, intializing workspace without plan", zap.Int("plan.bytes.count", len(planBytes)))
+		wkspace, err = p.GetWorkspace(ctx)
+	}
 	if err != nil {
 		p.writeErrorResult(ctx, "load terraform workspace", err)
 		return fmt.Errorf("unable to create workspace from config: %w", err)
 	}
 	p.state.tfWorkspace = wkspace
 
+	// Set the cluster info
 	if p.state.plan.TerraformDeployPlan.ClusterInfo != nil {
 		// NOTE(jm): we initialize the root here, because we need to write some state to the directory _before_ we do
 		// the run. Ideally this would be handled as part of the lifecycle of the workspace, but it is not yet.
@@ -59,17 +82,13 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
-		l.Info("executing terraform plan")
+		l.Info("executing create terraform apply plan")
 		err = tfRun.Plan(ctx)
 	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
-		l.Info("executing terraform destroy")
+		l.Info("executing create terraform destroy plan")
 		err = tfRun.DestroyPlan(ctx)
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		l.Info("executing terraform apply")
-		err := p.loadPlan(ctx)
-		if err != nil {
-			return err
-		}
 		err = tfRun.ApplyPlan(ctx)
 	default:
 		return fmt.Errorf("unsupported run type %s", job.Operation)
@@ -122,28 +141,19 @@ func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Wo
 	return nil
 }
 
-func (p *handler) loadPlan(ctx context.Context) error {
-	// write the plan from p.state.plan <dot> plan to plan.json in the workspace
-	err := p.state.tfWorkspace.WritePlan(ctx, p.state.plan.ApplyPlanContents)
-	return err
-}
-
 // NOTE: createResult is only called in cases when there _is_ a plan. otherwise, we don't really need a result object.
 // as a result, we're handling the loading of the plan.json within createResult
 func (p *handler) createResult(ctx context.Context) error {
-	pathToPlan := p.state.tfWorkspace.Root() + "/" + "plan.json"
-
-	// Read the plan.json file into a string
+	pathToPlan := filepath.Join(p.state.tfWorkspace.Root(), "tfplan") // TODO: make this a built in on the workspace (tfplan)
 	planBytes, err := os.ReadFile(pathToPlan)
 	if err != nil {
-		p.writeErrorResult(ctx, "failed to read plan.json file", err)
-		return fmt.Errorf("unable to read plan.json file: %w", err)
+		p.writeErrorResult(ctx, "failed to read tfplan file", err)
+		return fmt.Errorf("unable to read tfplan file: %w", err)
 	}
-
-	planJSON := string(planBytes)
+	planContents := base64.StdEncoding.EncodeToString(planBytes)
 	_, err = p.apiClient.CreateJobExecutionResult(ctx, p.state.jobID, p.state.jobExecutionID, &models.ServiceCreateRunnerJobExecutionResultRequest{
 		Success:  true,
-		Contents: planJSON,
+		Contents: planContents,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create terraform apply job execution result : %w", err)

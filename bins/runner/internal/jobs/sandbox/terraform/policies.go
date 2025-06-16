@@ -22,7 +22,14 @@ func (h *handler) writePolicies(ctx context.Context) error {
 		return err
 	}
 
-	policyPath := filepath.Join(h.state.workspace.Root(), policiesDirName)
+	// NOTE: this block ⤵A is preserved here for posterity
+	// policyPath := filepath.Join(h.state.workspace.Root(), policiesDirName)
+
+	// NOTE: we are using a deterministic filepath here in order to avoid the change in the path breaking the plan/apply
+	// due to the change in the policy dir location. this potentially exposes for a undesirable type of error so we must
+	// ensure we clean up this directory.
+	policyPath := filepath.Join("/tmp", h.state.plan.InstallID)
+
 	l.Debug("creating temporary directory to write rendered policies into", zap.String("dir", policyPath))
 	if err := os.Mkdir(policyPath, 0o750); err != nil {
 		return errors.Wrap(err, "unable to write policies to path")

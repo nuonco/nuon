@@ -26,6 +26,7 @@ func (a *Activities) getInstallSandboxRunForApplyStep(ctx context.Context, insta
 			InstallWorkflowID: generics.ToPtr(installWorkflowID),
 			InstallID:         installID,
 		}).
+		Preload("LogStream").
 		First(&installSandboxRun)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to find install sandbox run")

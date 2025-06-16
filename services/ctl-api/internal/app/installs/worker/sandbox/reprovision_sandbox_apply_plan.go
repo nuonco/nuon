@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -15,7 +16,6 @@ import (
 
 // @temporal-gen workflow
 // @execution-timeout 60m
-// @execution-timeout 30m
 func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signals.RequestSignal) error {
 	install, err := activities.AwaitGetInstallForSandboxBySandboxID(ctx, sreq.ID)
 	if err != nil {
@@ -30,8 +30,8 @@ func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 		return errors.Wrap(err, "unable to get install deploy")
 	}
 
-	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
-		DeployID: sreq.DeployID,
+	logStream, err := activities.AwaitGetLogStream(ctx, activities.GetLogStreamRequest{
+		LogStreamID: installRun.LogStream.ID,
 	})
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
@@ -39,6 +39,10 @@ func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 	}
 	defer func() {
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+		// NOTE: if we use the parent, we would close the parent log stream here too
+		// if logStream.ParentLogStreamID != nil {
+		// 	activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ParentLogStreamID)
+		// }
 	}()
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
@@ -47,12 +51,16 @@ func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 		return err
 	}
 
-	l.Info("executing plan")
-	if err := w.executeApplyPlan(ctx, install, installRun, sreq.FlowStepID, sreq.SandboxMode); err != nil {
+	l.Info("executing sandbox apply plan", zap.String("install_run.id", installRun.ID))
+	err = w.executeApplyPlan(ctx, install, installRun, sreq.FlowStepID, sreq.SandboxMode)
+	if err != nil {
+		l.Error("error executing sandbox apply plan", zap.String("install_run.id", installRun.ID), zap.Error(err))
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job did not succeed")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
+	l.Debug("finished executing sandbox apply plan", zap.String("install_run.id", installRun.ID))
 
+	l.Info("updating install sandbox run status", zap.String("install_run.id", installRun.ID))
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")
 	return nil
 }

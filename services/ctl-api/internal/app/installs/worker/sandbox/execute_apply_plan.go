@@ -20,6 +20,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	if err != nil {
 		return err
 	}
+	l.Info("executing apply plan")
 
 	prevJob, err := activities.AwaitGetLatestJobByOwnerID(ctx, installRun.ID)
 	if err != nil {
@@ -44,6 +45,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
+	l.Info("creating sandbox run plan")
 	runPlan, err := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
 		RunID:      installRun.ID,
 		InstallID:  install.ID,
@@ -93,21 +95,22 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job failed with status"+string(status))
 	}
 
-	job, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get job")
-	}
+	// job, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
+	// if err != nil {
+	// 	return errors.Wrap(err, "unable to get job")
+	// }
 
-	if _, err := activities.AwaitCreateStepApproval(ctx, &activities.CreateStepApprovalRequest{
-		OwnerID:     installRun.ID,
-		OwnerType:   "install_sandbox_runs",
-		RunnerJobID: job.ID,
-		StepID:      stepID,
-		Plan:        job.Execution.Result.Contents,
-		Type:        app.TerraformPlanApprovalType,
-	}); err != nil {
-		return errors.Wrap(err, "unable to create approval")
-	}
+	// NOTE(fd): this is not necessary here - this is only necessary in the plan step
+	// if _, err := activities.AwaitCreateStepApproval(ctx, &activities.CreateStepApprovalRequest{
+	// 	OwnerID:     installRun.ID,
+	// 	OwnerType:   "install_sandbox_runs",
+	// 	RunnerJobID: job.ID,
+	// 	StepID:      stepID,
+	// 	Plan:        job.Execution.Result.Contents,
+	// 	Type:        app.TerraformPlanApprovalType,
+	// }); err != nil {
+	// 	return errors.Wrap(err, "unable to create approval")
+	// }
 
 	return nil
 }
