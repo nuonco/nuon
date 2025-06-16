@@ -3,7 +3,6 @@
 import { useParams } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { CaretRight } from '@phosphor-icons/react'
-import { Badge } from '@/components/Badge'
 import { Link } from '@/components/Link'
 import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
@@ -17,6 +16,7 @@ export const SandboxStepDetails: FC<IPollStepDetails> = ({
   step,
   shouldPoll = false,
   pollDuration = 5000,
+  workflowApproveOption,
 }) => {
   const params = useParams<Record<'org-id', string>>()
   const orgId = params?.['org-id']
@@ -64,6 +64,7 @@ export const SandboxStepDetails: FC<IPollStepDetails> = ({
               approval={step?.approval}
               step={step}
               workflowId={step?.install_workflow_id}
+              workflowApproveOption={workflowApproveOption}
             />
           ) : null}
           {sandboxRun ? (
