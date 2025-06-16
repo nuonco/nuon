@@ -3,5 +3,8 @@
 }
 
 .markdown pre {
+  max-width: 100%;
+  white-space: pre-wrap;
+  width: fit-content;
   word-break: break-all;
 }
