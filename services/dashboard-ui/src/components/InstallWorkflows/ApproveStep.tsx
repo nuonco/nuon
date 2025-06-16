@@ -2,13 +2,14 @@
 
 import { useParams } from 'next/navigation'
 import React, { type FC, useState } from 'react'
-import { X, Check, ArrowsClockwise } from '@phosphor-icons/react'
+import { X, Check } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
+import { JsonView } from '@/components/Code'
 import { SpinnerSVG } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { approveWorkflowStep } from '@/components/install-actions'
-import { CodeEditor, DiffEditor, splitYamlDiff } from '@/stratus/components/'
+import { DiffEditor, splitYamlDiff } from '@/stratus/components/'
 import type { TInstallWorkflowStep } from '@/types'
 import { removeSnakeCase } from '@/utils'
 
@@ -58,14 +59,26 @@ export const ApprovalStep: FC<IApprovalStep> = ({
   return (
     <>
       {approval?.response ? (
-        <Notice className="!p-4 w-full" variant="success">
-          <Text variant="med-14" className="mb-2">
-            Step approved: {removeSnakeCase(approval?.type)}
-          </Text>
-          <Text isMuted>
-            These {removeSnakeCase(approval?.type)} changes have been approved.
-          </Text>
-        </Notice>
+        approval?.response?.type === 'approve' ? (
+          <Notice className="!p-4 w-full" variant="success">
+            <Text variant="med-14" className="mb-2">
+              Step approved: {removeSnakeCase(approval?.type)}
+            </Text>
+            <Text isMuted>
+              These {removeSnakeCase(approval?.type)} changes have been
+              approved.
+            </Text>
+          </Notice>
+        ) : (
+          <Notice className="!p-4 w-full" variant="default">
+            <Text variant="med-14" className="mb-2">
+              Step denied: {removeSnakeCase(approval?.type)}
+            </Text>
+            <Text isMuted>
+              These {removeSnakeCase(approval?.type)} changes have been denied.
+            </Text>
+          </Notice>
+        )
       ) : (
         <Notice className="!p-4 w-full" variant="warn">
           <Text variant="med-14" className="mb-2">
@@ -83,7 +96,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           {approval?.type === 'helm_approval' ? (
             <HelmDiff diff={approval?.contents} />
           ) : (
-            <CodeEditor language="json" defaultValue={approval?.contents} />
+            <JsonView data={approval?.contents} expanded={2} />
           )}
         </div>
         {approval?.response ? null : (
@@ -109,26 +122,26 @@ export const ApprovalStep: FC<IApprovalStep> = ({
               )}
             </Button>
 
-            <Button
-              onClick={() => {
+            {/* <Button
+                onClick={() => {
                 setIsRetryLoading(true)
                 approve('retry')
-              }}
-              className="text-sm font-sans flex items-center gap-2 h-[32px]"
-              disabled={isKickedOff}
-            >
-              {isRetryLoading ? (
+                }}
+                className="text-sm font-sans flex items-center gap-2 h-[32px]"
+                disabled={isKickedOff}
+                >
+                {isRetryLoading ? (
                 <>
-                  <SpinnerSVG />
-                  Retrying plan
+                <SpinnerSVG />
+                Retrying plan
                 </>
-              ) : (
+                ) : (
                 <>
-                  <ArrowsClockwise />
-                  Retry Plan
+                <ArrowsClockwise />
+                Retry Plan
                 </>
-              )}
-            </Button>
+                )}
+                </Button> */}
             <Button
               onClick={() => {
                 setIsApproveLoading(true)
