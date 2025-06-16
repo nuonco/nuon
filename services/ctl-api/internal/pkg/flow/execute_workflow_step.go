@@ -42,6 +42,8 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 		}); err != nil {
 			return false, errors.Wrap(err, "unable to mark step as error")
 		}
+
+		return false, stepErr
 	}
 
 	if step.ExecutionType != app.FlowStepExecutionTypeApproval {
@@ -109,6 +111,7 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 		}); err != nil {
 			return false, errors.Wrap(err, "unable to update step to success status")
 		}
+
 		return false, nil
 	}
 
@@ -152,6 +155,13 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 		}),
 	}); err != nil {
 		return false, errors.Wrap(err, "unable to update")
+	}
+	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
+		StepID:            step.ID,
+		Status:            app.Status(app.InstallDeployApprovalDenied),
+		StatusDescription: "Approval denied",
+	}); err != nil {
+		return false, errors.Wrap(err, "unable to update step target status")
 	}
 
 	return false, NotApprovedErr
