@@ -35,7 +35,7 @@ export const StatusBadge: FC<IStatusBadge> = ({
   isStatusTextHidden = false,
   isWithoutBorder = false,
   label,
-  status,
+  status = "unknown",
   shouldPoll = false,
   pollDuration = POLL_DURATION,
 }) => {
