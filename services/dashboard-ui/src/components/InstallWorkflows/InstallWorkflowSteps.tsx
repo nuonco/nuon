@@ -19,6 +19,7 @@ export interface IPollStepDetails {
   pollDuration?: number
   shouldPoll?: boolean
   step: TInstallWorkflowStep
+  workflowApproveOption?: 'prompt' | 'approve-all'
 }
 
 interface IInstallWorkflowSteps {
@@ -193,7 +194,7 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
               )}
             >
               {installWorkflow?.steps?.map((step) =>
-                getStepType(step, install)
+                getStepType(step, install, installWorkflow?.approval_option)
               )}
             </StepDetails>
           </Section>
