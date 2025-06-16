@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
@@ -62,9 +63,9 @@ func (w *Workflows) ReprovisionSandboxPlan(ctx workflow.Context, sreq signals.Re
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream")
 	}
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
-	}()
+	// defer func() {
+	// 	activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
+	// }()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 
 	l, err := log.WorkflowLogger(ctx)
@@ -72,7 +73,7 @@ func (w *Workflows) ReprovisionSandboxPlan(ctx workflow.Context, sreq signals.Re
 		return err
 	}
 
-	l.Info("executing sandbox")
+	l.Info("executing sandbox plan", zap.String("log_stream.id", logStream.ID))
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
 
 	err = w.executeSandboxPlan(ctx, install, installRun, sreq.FlowStepID, sandboxMode)

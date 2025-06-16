@@ -28,6 +28,7 @@ type workspace struct {
 	Variables []variables.Variables `validate:"required,min=1"`
 	Binary    binary.Binary         `validate:"required"`
 	Hooks     hooks.Hooks           `validate:"required"`
+	PlanBytes []byte
 
 	DisableCleanup bool
 	ControlCache   bool
@@ -107,6 +108,12 @@ func WithDisableCleanup(disable bool) workspaceOption {
 func WithControlCache(control bool) workspaceOption {
 	return func(w *workspace) error {
 		w.ControlCache = control
+		return nil
+	}
+}
+func WithPlanBytes(bytes []byte) workspaceOption {
+	return func(w *workspace) error {
+		w.PlanBytes = bytes
 		return nil
 	}
 }

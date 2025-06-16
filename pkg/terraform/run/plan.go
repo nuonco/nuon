@@ -3,13 +3,14 @@ package run
 import (
 	"context"
 	"fmt"
+	"path"
 
 	"github.com/powertoolsdev/mono/pkg/pipeline"
 	callbackmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/callbacks"
 	execmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/exec"
 )
 
-// Plan will initialize the workspace and then execute functions in it
+// plan will initialize the workspace and then execute functions in it
 func (r *run) Plan(ctx context.Context) error {
 	pipe, err := r.getPlanPipeline()
 	if err != nil {
@@ -21,6 +22,22 @@ func (r *run) Plan(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (r *run) localFileCallback(filename string) (pipeline.CallbackFn, error) {
+	r.Log.Info(fmt.Sprintf("writing file to %s / %s", r.Workspace.Root(), filename))
+	applyCb, err := callbackmappers.NewLocalCallback(r.v,
+		callbackmappers.WithFilename(path.Join(r.Workspace.Root(), filename)),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create apply cb: %w", err)
+	}
+
+	return applyCb, nil
+}
+
+func (r *run) noopOutputCallback() (pipeline.CallbackFn, error) {
+	return callbackmappers.Noop, nil
 }
 
 func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
@@ -67,36 +84,30 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: callbackmappers.Noop,
 	})
 
-	planCb, err := r.outputCallback("plan.json")
-	if err != nil {
-		return nil, fmt.Errorf("unable to create plan callback: %w", err)
-	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "plan",
 		ExecFn:     execmappers.MapBytesLog(r.Workspace.Plan),
-		CallbackFn: planCb,
+		CallbackFn: callbackmappers.Noop,
 	})
 
-	outputCb, err := r.outputCallback("output.json")
-	if err != nil {
-		return nil, fmt.Errorf("unable to create output callback: %w", err)
-	}
-	pipe.AddStep(&pipeline.Step{
-		Name:       "get output",
-		ExecFn:     execmappers.MapTerraformOutput(r.Workspace.Output),
-		CallbackFn: outputCb,
-	})
+	// planCb, err := r.localFileCallback("plan.json")
+	// pipe.AddStep(&pipeline.Step{
+	// 	Name:       "show plan",
+	// 	ExecFn:     execmappers.MapTerraformPlan(r.Workspace.ShowPlan),
+	// 	CallbackFn: callbackmappers.Noop,
+	// })
 
-	stateCb, err := r.outputCallback("state.json")
-	if err != nil {
-		return nil, fmt.Errorf("unable to create state callback: %w", err)
-	}
-	pipe.AddStep(&pipeline.Step{
-		Name:       "get state",
-		ExecFn:     execmappers.MapTerraformState(r.Workspace.Show),
-		CallbackFn: stateCb,
-	})
+	// NOTE: ensure this doesn't break expectations downstream
+	// TODO: remove this - these have no real outputs
+	// outputCb, err := r.localFileCallback("output.json")
+	// if err != nil {
+	// 	return nil, fmt.Errorf("unable to create output callback: %w", err)
+	// }
+	// pipe.AddStep(&pipeline.Step{
+	// 	Name:       "get output",
+	// 	ExecFn:     execmappers.MapTerraformOutput(r.Workspace.Output),
+	// 	CallbackFn: outputCb,
+	// })
+
 	return pipe, nil
 }
-
-// ERROR   Error: Failed to load "plan.json" as a plan file       {"runner_job.id": "jobkzk7jsx8tavjy4srtg7onke", "log_stream.id": "log3s18i3phin4wxzk07qw5tra", "runner_job_execution.id": "run52bzfgzg0pq3ao41bjqhq65", "runner_job_execution_step.name": "execute", "type": "diagnostic", "@module": "terraform.ui", "@timestamp": "2025-06-04T14:58:49.632504-07:00", "diagnostic": {"detail":"Error: stat plan.json: no such file or directory","severity":"error","summary":"Failed to load \"plan.json\" as a plan file"}}
