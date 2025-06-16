@@ -1,11 +1,9 @@
 package app
 
 import (
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
@@ -50,49 +48,5 @@ func (a *ActionWorkflow) BeforeCreate(tx *gorm.DB) error {
 	a.ID = domains.NewActionWorkflowID()
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	a.OrgID = orgIDFromContext(tx.Statement.Context)
-	return nil
-}
-
-func (a *ActionWorkflow) BeforeDelete(tx *gorm.DB) error {
-	if a.ID == "" {
-		return nil
-	}
-
-	configs := []ActionWorkflowConfig{}
-	resp := tx.Find(&configs, " action_workflow_id = ?", a.ID)
-	if resp.Error != nil {
-		return resp.Error
-	}
-
-	for _, config := range configs {
-		installActionWorkflowRuns := []InstallActionWorkflowRun{}
-		resp = tx.Select(clause.Associations).Delete(&installActionWorkflowRuns, " action_workflow_config_id = ?", config.ID)
-		if resp.Error != nil {
-			return fmt.Errorf("error deleting install action workflow runs: %w", resp.Error)
-		}
-
-		triggers := []ActionWorkflowTriggerConfig{}
-		resp := tx.Delete(&triggers, " action_workflow_config_id = ?", config.ID)
-		if resp.Error != nil {
-			return fmt.Errorf("error deleting action workflow triggers: %w", resp.Error)
-		}
-
-		steps := []ActionWorkflowStepConfig{}
-		resp = tx.Delete(&steps, " action_workflow_config_id = ?", config.ID)
-		if resp.Error != nil {
-			return fmt.Errorf("error deleting action workflow steps: %w", resp.Error)
-		}
-
-		resp = tx.Delete(&config)
-		if resp.Error != nil {
-			return fmt.Errorf("error deleting action workflow config: %w", resp.Error)
-		}
-	}
-
-	installActionWorkflows := []InstallActionWorkflow{}
-	resp = tx.Delete(&installActionWorkflows, " action_workflow_id = ?", a.ID)
-	if resp.Error != nil {
-		return fmt.Errorf("error deleting install action workflows: %w", resp.Error)
-	}
 	return nil
 }
