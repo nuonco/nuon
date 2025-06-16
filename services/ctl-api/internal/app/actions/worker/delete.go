@@ -11,8 +11,8 @@ import (
 )
 
 // @temporal-gen workflow
-// @execution-timeout 1m
-// @task-timeout 30s
+// @execution-timeout 5m
+// @task-timeout 3m
 func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) error {
 	acw, err := activities.AwaitGetActionWorkflowByWorkflowID(ctx, sreq.ID)
 	if err != nil {
@@ -23,7 +23,7 @@ func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) err
 		return nil
 	}
 
-	err = activities.AwaitDeleteActionWorkflowByWorkflowID(ctx, sreq.ID)
+	err = activities.AwaitDeleteActionWorkflowByActionWorkflowID(ctx, sreq.ID)
 	if err != nil {
 		if statusErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 			WorkflowID:        sreq.ID,

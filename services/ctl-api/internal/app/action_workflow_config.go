@@ -36,6 +36,7 @@ type ActionWorkflowConfig struct {
 	ActionWorkflowID string         `json:"action_workflow_id,omitzero" gorm:"index:idx_action_workflow_id_app_config_id,unique" temporaljson:"action_workflow_id,omitzero,omitempty"`
 	ActionWorkflow   ActionWorkflow `json:"-" temporaljson:"action_workflow,omitzero,omitempty"`
 
+	// INFO: if adding new associations here, ensure they are added to the batch delete activity
 	Triggers []ActionWorkflowTriggerConfig `json:"triggers,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"triggers,omitzero,omitempty"`
 	Steps    []ActionWorkflowStepConfig    `json:"steps,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"steps,omitzero,omitempty"`
 	Runs     []InstallActionWorkflowRun    `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"runs,omitzero,omitempty"`
