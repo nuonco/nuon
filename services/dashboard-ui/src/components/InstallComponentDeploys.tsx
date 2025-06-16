@@ -60,40 +60,42 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
           isSmall
         />
       }
-      events={deploys.map((d, i) => ({
-        id: d.id,
-        status: d.status,
-        underline: (
-          <div>
-            <Text>
-              <ToolTip tipContent={d.id}>
-                <span className="truncate text-ellipsis w-16">{d.id}</span>
-              </ToolTip>
-              <>
-                /{' '}
-                {component.name.length >= 12 ? (
-                  <ToolTip tipContent={component.name} alignment="right">
-                    <Truncate variant="small">{component.name}</Truncate>
-                  </ToolTip>
-                ) : (
-                  component.name
-                )}
-              </>
-            </Text>
-            {d?.created_by ? (
-              <Text className="text-cool-grey-600 dark:text-white/70 !text-[10px]">
-                Deployed by: {d?.created_by?.email}
+      events={deploys.map((d, i) => {
+        return {
+          id: d.id,
+          status: d.status,
+          underline: (
+            <div>
+              <Text>
+                <ToolTip tipContent={d.id}>
+                  <span className="truncate text-ellipsis w-16">{d.id}</span>
+                </ToolTip>
+                <>
+                  /{' '}
+                  {component.name.length >= 12 ? (
+                    <ToolTip tipContent={component.name} alignment="right">
+                      <Truncate variant="small">{component.name}</Truncate>
+                    </ToolTip>
+                  ) : (
+                    component.name
+                  )}
+                </>
               </Text>
-            ) : null}
-          </div>
-        ),
-        time: d.updated_at,
-        href:
-          d?.status !== 'queued'
-            ? `/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${d.id}`
-            : null,
-        isMostRecent: i === 0,
-      }))}
+              {d?.created_by ? (
+                <Text className="text-cool-grey-600 dark:text-white/70 !text-[10px]">
+                  Deployed by: {d?.created_by?.email}
+                </Text>
+              ) : null}
+            </div>
+          ),
+          time: d.updated_at,
+          href:
+            d?.status && d?.status !== 'queued'
+              ? `/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${d.id}`
+              : null,
+          isMostRecent: i === 0,
+        }
+      })}
     />
   )
 }
