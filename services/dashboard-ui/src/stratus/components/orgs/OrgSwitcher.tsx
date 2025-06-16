@@ -2,7 +2,8 @@
 
 import classNames from 'classnames'
 import React, { type FC, useEffect, useState } from 'react'
-import { CaretUpDown, GithubLogo } from '@phosphor-icons/react'
+import { FaGithub } from 'react-icons/fa'
+import { CaretUpDown, Plus, TestTube } from '@phosphor-icons/react'
 import {
   Avatar,
   Dropdown,
@@ -12,8 +13,10 @@ import {
   Text,
   type IDropdown,
 } from '@/stratus/components/common'
+import { Status } from '@/stratus/components/statuses'
 import { useDashboard, useOrg } from '@/stratus/context'
 import type { TOrg } from '@/types'
+import { GITHUB_APP_NAME } from '@/utils'
 
 interface IOrgSwitcher
   extends Omit<IDropdown, 'buttonText' | 'children' | 'id'> {}
@@ -24,7 +27,7 @@ export const OrgSwitcher: FC<IOrgSwitcher> = () => {
   return (
     <Dropdown
       alignment="overlay"
-      className="w-full"
+      className="w-[248px]"
       buttonClassName={classNames(
         'w-full text-left transition-all !border-cool-grey-300 dark:!border-dark-grey-500',
         {
@@ -39,13 +42,26 @@ export const OrgSwitcher: FC<IOrgSwitcher> = () => {
       variant="ghost"
     >
       <Menu
-        className="w-full !min-w-72 min-h-14 max-h-80 overflow-auto focus:outline-primay-400"
+        className="w-[248px] h-[308px] overflow-y-scroll overflow-x-hidden focus:outline-primay-400 !p-0"
         tabIndex={-1}
+        style={{ scrollbarGutter: 'stable' }}
       >
-        <OrgSummary org={org} />
-        <div className="py-4 flex flex-col">
+        <div className="p-3">
+          <OrgSummary org={org} />
+        </div>
+        <div className="px-3 py-4 flex flex-col gap-4">
           <div className="flex justify-between">
-            <Text weight="strong">GitHub connections</Text>
+            <Text variant="subtext" weight="strong">
+              GitHub connections
+            </Text>
+            <Text variant="subtext">
+              <Link
+                className="flex items-center gap-1.5"
+                href={`https://github.com/apps/${GITHUB_APP_NAME}/installations/new?state=${org.id}`}
+              >
+                <Plus /> Add
+              </Link>
+            </Text>
           </div>
           {org?.vcs_connections?.map((vcs) => (
             <Text
@@ -55,12 +71,19 @@ export const OrgSwitcher: FC<IOrgSwitcher> = () => {
               variant="subtext"
               theme="muted"
             >
-              <GithubLogo size="16" /> {vcs?.github_install_id}
+              <FaGithub /> {vcs?.github_install_id}
             </Text>
           ))}
         </div>
-        <hr />
-        <OrgsNav />
+        <hr className="border-dashed mx-4" />
+        <div className="px-1 py-4 flex flex-col gap-1.5">
+          <div className="px-2">
+            <Text variant="subtext" weight="strong">
+              GitHub connections
+            </Text>
+          </div>
+          <OrgsNav />
+        </div>
       </Menu>
     </Dropdown>
   )
@@ -73,13 +96,13 @@ interface IOrgSummary {
 
 const OrgSummary: FC<IOrgSummary> = ({ isSidebarOpen = true, org }) => {
   return (
-    <div className="flex gap-4 items-center">
+    <div className="flex gap-4 items-center overflow-hidden">
       <Avatar
         {...(org?.logo_url ? { src: org?.logo_url } : { name: org.name })}
         size={isSidebarOpen ? 'xl' : 'md'}
       />
       <div
-        className={classNames('flex flex-col transition-all', {
+        className={classNames('transition-all max-w-full overflow-hidden', {
           'opacity-100': isSidebarOpen,
           'opacity-0': !isSidebarOpen,
         })}
@@ -87,11 +110,14 @@ const OrgSummary: FC<IOrgSummary> = ({ isSidebarOpen = true, org }) => {
         <Text
           weight="strong"
           variant="subtext"
-          className="text-nowrap truncate w-fit"
+          className="text-nowrap flex items-center gap-1.5"
         >
-          {org.name}
+          {org.sandbox_mode && (
+            <TestTube className="!w-[12px] !h-[12px] shrink-0" size="12" />
+          )}
+          <span className="truncate">{org.name}</span>
         </Text>
-        <Text variant="subtext">{org?.status}</Text>
+        <Status status={org?.status} />
       </div>
     </div>
   )
@@ -138,7 +164,7 @@ const OrgsNav: FC<IOrgsNav> = () => {
         : orgs?.map((o) => (
             <Link
               key={o?.id}
-              className="!h-fit"
+              className="!h-fit !block"
               href={`/stratus/${o?.id}`}
               variant="ghost"
             >
