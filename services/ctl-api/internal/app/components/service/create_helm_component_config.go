@@ -7,11 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
 )
@@ -117,10 +115,10 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
 		HelmConfig: &app.HelmConfig{
 			ChartName:     req.ChartName,
-			Namespace:     generics.NewNullString(req.Namespace),
-			StorageDriver: generics.NewNullString(req.StorageDriver),
-			Values:        pgtype.Hstore(req.Values),
-			ValuesFiles:   pq.StringArray(req.ValuesFiles),
+			Namespace:     req.Namespace,
+			StorageDriver: req.StorageDriver,
+			Values:        req.Values,
+			ValuesFiles:   req.ValuesFiles,
 			TakeOwnership: req.TakeOwnership,
 		},
 	}
