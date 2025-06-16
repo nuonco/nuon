@@ -14,13 +14,14 @@ import { RunnerStepDetails } from './RunnerStepDetails'
 
 export function getStepType(
   step: TInstallWorkflowStep,
-  install: TInstall
+  install: TInstall,
+  workflowApproveOption: "prompt" | "approve-all"
 ): React.ReactNode {
   let stepDetails = <Loading loadingText="Waiting on step..." variant="page" />
 
   switch (step.step_target_type) {
     case 'install_sandbox_runs':
-      stepDetails = <SandboxStepDetails step={step} shouldPoll />
+      stepDetails = <SandboxStepDetails step={step} shouldPoll workflowApproveOption={workflowApproveOption}  />
       break
 
     case 'install_stack_versions':
@@ -35,7 +36,7 @@ export function getStepType(
       stepDetails = <RunnerStepDetails step={step} shouldPoll />
       break
     case 'install_deploys':
-      stepDetails = <DeployStepDetails step={step} shouldPoll />
+      stepDetails = <DeployStepDetails step={step} shouldPoll workflowApproveOption={workflowApproveOption} />
       break
     default:
       stepDetails = (

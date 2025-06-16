@@ -18,6 +18,7 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
   step,
   shouldPoll = false,
   pollDuration = 5000,
+  workflowApproveOption = 'prompt',
 }) => {
   const params = useParams<Record<'org-id', string>>()
   const orgId = params?.['org-id']
@@ -65,6 +66,7 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
               approval={step?.approval}
               step={step}
               workflowId={step?.install_workflow_id}
+              workflowApproveOption={workflowApproveOption}
             />
           ) : null}
           {deploy ? (
