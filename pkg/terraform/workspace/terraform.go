@@ -2,7 +2,11 @@ package workspace
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path"
+	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/terraform-exec/tfexec"
@@ -157,6 +161,7 @@ func (w *workspace) plan(ctx context.Context, client Terraform, log hclog.Logger
 
 	opts := []tfexec.PlanOption{
 		tfexec.Refresh(true),
+		tfexec.Out("tfplan"), // NOTE: this should probably be configured w/ a WithPlanOut
 	}
 	for _, fp := range w.varsPaths {
 		opts = append(opts, tfexec.VarFile(fp))
@@ -252,10 +257,22 @@ func (w *workspace) ShowPlan(ctx context.Context, log hclog.Logger) (*tfjson.Pla
 	return w.showPlan(ctx, client)
 }
 
+// TODO: revisit and use a callback to write to local instead of writing to local directly
 func (w *workspace) showPlan(ctx context.Context, client Terraform) (*tfjson.Plan, error) {
 	out, err := client.ShowPlanFile(ctx, "tfplan")
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute show: %w", err)
+	}
+
+	planJSON, err := json.MarshalIndent(out, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal plan to JSON: %w", err)
+	}
+
+	// TODO: this should be legible from the workspace root but somethign is wrong in
+	// the local file writer callback pkg/terraform
+	if err := os.WriteFile(path.Join("/tmp", "plan.json"), planJSON, 0644); err != nil {
+		return nil, fmt.Errorf("unable to write plan to file: %w", err)
 	}
 
 	return out, nil
@@ -321,7 +338,7 @@ func (w *workspace) applyPlan(ctx context.Context, client Terraform, log hclog.L
 
 	opts := []tfexec.ApplyOption{
 		tfexec.Refresh(true),
-		tfexec.DirOrPlan("plan.json"),
+		tfexec.DirOrPlan(filepath.Join(w.Root(), "tfplan")),
 	}
 	for _, fp := range w.varsPaths {
 		opts = append(opts, tfexec.VarFile(fp))

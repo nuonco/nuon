@@ -26,6 +26,7 @@ func (a *Activities) getInstallDeployForApplyStep(ctx context.Context, installWo
 			InstallWorkflowID: generics.ToPtr(installWorkflowID),
 			ComponentID:       componentID,
 		}).
+		Preload("LogStream").
 		First(&installDeploy)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to find install deploy")
