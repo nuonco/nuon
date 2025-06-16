@@ -11,7 +11,7 @@ import { sentanceCase } from '@/utils'
 
 export const EventStatus: FC<{ status?: string }> = ({
   status = 'waiting',
-}) => {
+}) => {  
   const statusColor = {
     'bg-green-800 dark:bg-green-500':
       status === 'finished' || status === 'active',
@@ -86,12 +86,12 @@ interface ITimelineEvent {
 }
 
 export const TimelineEvent: FC<ITimelineEvent> = ({
-  status,
+  status = 'waiting',
   underline,
   time,
   href,
   isMostRecent = false,
-}) => {
+}) => {  
   const Event = (
     <div
       className={classNames('flex items-center justify-between p-4', {

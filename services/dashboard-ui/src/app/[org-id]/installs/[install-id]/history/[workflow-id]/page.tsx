@@ -120,6 +120,12 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
                   </Text>
                   <WorkflowApproveAllModal workflow={installWorkflow} />
                 </>
+              ) : installWorkflow?.steps?.some(
+                  (s) => s?.approval?.response?.type === 'deny'
+                ) ? (
+                <Text className="text-red-600 dark:text-red-400">
+                  Changes have been denied
+                </Text>
               ) : (
                 <Text className="text-green-600 dark:text-green-400">
                   All changes have been approved
