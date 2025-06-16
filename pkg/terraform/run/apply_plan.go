@@ -68,6 +68,13 @@ func (r *run) getApplyPlanPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: callbackmappers.Noop,
 	})
 
+	// TODO: we actually do not need to do anything w/ the returned value so remove return and write new mapper
+	pipe.AddStep(&pipeline.Step{
+		Name:       "write plan",
+		ExecFn:     execmappers.MapBytesLog(r.Workspace.WriteTFPlan),
+		CallbackFn: callbackmappers.Noop,
+	})
+
 	applyCb, err := r.outputCallback("apply.json")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create apply callback: %w", err)
