@@ -99,7 +99,7 @@ export const InstallDeployBuildModal: FC<{
                     labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[250px] !items-start"
                     labelText={
                       <span className="flex flex-col gap-1">
-                        <Text variant="med-12">Deploy dependent</Text>
+                        <Text variant="med-12">Deploy dependents</Text>
                         <Text className="!font-normal" variant="reg-12">
                           Deploy all dependents as well as the selected build.
                         </Text>
