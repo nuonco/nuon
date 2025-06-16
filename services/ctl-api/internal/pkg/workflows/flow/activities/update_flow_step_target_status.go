@@ -35,6 +35,7 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Cont
 			Updates(app.InstallDeploy{
 				Status:            app.InstallDeployStatus(req.Status),
 				StatusDescription: req.StatusDescription,
+				StatusV2:          app.NewCompositeStatus(ctx, req.Status),
 			})
 		if res.Error != nil {
 			return errors.Wrap(res.Error, "unable to update install_deploy")
@@ -48,6 +49,7 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Cont
 			Updates(app.InstallSandboxRun{
 				Status:            app.SandboxRunStatus(req.Status),
 				StatusDescription: req.StatusDescription,
+				StatusV2:          app.NewCompositeStatus(ctx, req.Status),
 			})
 		if res.Error != nil {
 			return errors.Wrap(res.Error, "unable to update install_sandbox_run")
