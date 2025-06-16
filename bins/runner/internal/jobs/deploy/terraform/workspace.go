@@ -82,3 +82,71 @@ func (p *handler) GetWorkspace(ctx context.Context) (workspace.Workspace, error)
 
 	return wkspace, nil
 }
+
+// GetWorkspace returns a valid workspace for working with this plugin
+func (p *handler) GetWorkspaceWithPlan(ctx context.Context, planBytes []byte) (workspace.Workspace, error) {
+	arch, err := dirarchive.New(p.v,
+		dirarchive.WithPath(p.state.arch.BasePath()),
+		dirarchive.WithAddBackendFile("http"),
+		dirarchive.WithIgnoreTerraformStateFile(),
+		dirarchive.WithIgnoreDotTerraformDir(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create local archive: %w", err)
+	}
+
+	back, err := httpbackend.New(p.v, httpbackend.WithNuonTerraformWorkspaceConfig(&httpbackend.NuonWorkspaceConfig{
+		APIEndpoint: p.cfg.RunnerAPIURL,
+		WorkspaceID: p.state.plan.TerraformDeployPlan.TerraformBackend.WorkspaceID,
+		Token:       p.cfg.RunnerAPIToken,
+		JobID:       p.state.jobID,
+	}))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get http backend")
+	}
+
+	bin, err := remotebinary.New(p.v,
+		remotebinary.WithVersion(p.state.terraformCfg.Version))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create binary: %w", err)
+	}
+
+	extraEnvVars := make(map[string]string, 0)
+	if p.state.plan.TerraformDeployPlan.ClusterInfo != nil {
+		extraEnvVars[config.DefaultKubeConfigEnvVar] = config.DefaultKubeConfigFilename
+	}
+
+	vars, err := staticvars.New(p.v,
+		staticvars.WithFileVars(p.state.plan.TerraformDeployPlan.Vars),
+		staticvars.WithFiles(p.state.plan.TerraformDeployPlan.VarsFiles),
+		staticvars.WithEnvVars(p.state.plan.TerraformDeployPlan.EnvVars),
+		staticvars.WithEnvVars(extraEnvVars),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create variable set: %w", err)
+	}
+
+	authVars, err := authvars.New(p.v,
+		authvars.WithAWSAuth(p.state.plan.TerraformDeployPlan.AWSAuth),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create auth vars: %w", err)
+	}
+
+	hooks := noop.New()
+
+	wkspace, err := workspace.New(p.v,
+		workspace.WithHooks(hooks),
+		workspace.WithArchive(arch),
+		workspace.WithBackend(back),
+		workspace.WithBinary(bin),
+		workspace.WithVariables(vars),
+		workspace.WithVariables(authVars),
+		workspace.WithPlanBytes(planBytes),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create workspace: %w", err)
+	}
+
+	return wkspace, nil
+}
