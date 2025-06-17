@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -17,7 +18,8 @@ type CreateRunnerJobExecutionResultRequest struct {
 	ErrorMetadata map[string]*string `json:"error_metadata"`
 	ErrorCode     int                `json:"error_code"`
 
-	Contents string `json:"contents" swaggertype:"string"`
+	Contents        string                 `json:"contents" swaggertype:"string"`
+	ContentsDisplay map[string]interface{} `json:"contents_display"`
 }
 
 // @ID						CreateRunnerJobExecutionResult
@@ -63,11 +65,14 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 		return nil, err
 	}
 
+	// TOOD: check error
+	byts, err := json.Marshal(req.ContentsDisplay)
 	result := app.RunnerJobExecutionResult{
 		OrgID:                runnerJob.OrgID,
 		RunnerJobExecutionID: runnerJobExecutionID,
 		Success:              req.Success,
 		Contents:             req.Contents,
+		ContentsDisplay:      byts,
 
 		ErrorCode:     req.ErrorCode,
 		ErrorMetadata: pgtype.Hstore(req.ErrorMetadata),
