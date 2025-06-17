@@ -35,8 +35,8 @@ const (
 )
 
 const (
-	WorkflowStepApprovalStatusApproved          Status = "approved"
-	WorkflowStepApprovalStatusAwaitingResponse  Status = "approval-awaiting"
+	WorkflowStepApprovalStatusApproved Status = "approved"
+	// WorkflowStepApprovalStatusAwaitingResponse  Status = "approval-awaiting" // NOTE(fd): superceded by shared const below
 	WorkflowStepApprovalStatusApprovalExpired   Status = "approval-expired"
 	WorkflowStepApprovalStatusApprovalDenied    Status = "approval-denied"
 	WorkflowStepApprovalStatusApprovalRetryPlan Status = "approval-retry"
@@ -46,8 +46,13 @@ const (
 	InstallDeployStatusV2Noop Status = "noop"
 )
 
+// const (
+// 	WorkflowAwaitingApproval Status = "approval-awaiting" // NOTE(fd): superceded by shared const below
+// )
+
+// shared by WorkflowStep and Workflow
 const (
-	WorkflowAwaitingApproval Status = "approval-awaiting"
+	AwaitingApproval Status = "approval-awaiting"
 )
 
 func (s Status) DefaultHumanDescription() string {
