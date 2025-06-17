@@ -62,6 +62,20 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 		return nil, errors.Wrap(err, "unable to parse directory")
 	}
 
+	hasConfigs, err := hasTomlFiles(cfgFS)
+	if err != nil {
+		return nil, ParseErr{
+			Description: "error checking for toml files in directory",
+			Err:         err,
+		}
+	}
+	if !hasConfigs {
+		return nil, ParseErr{
+			Description: "no configuration files found in directory",
+			Err:         fmt.Errorf("no configuration files found in directory %s", fp),
+		}
+	}
+
 	// NOTE(jm): this will go away once we deprecate the legacy config, and we can just have a pipeline of
 	// `config.AppConfig` parsers.
 	appCfg, err := obj.toAppConfig()
@@ -106,6 +120,24 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 	return appCfg, nil
 }
 
+func hasTomlFiles(fs afero.Fs) (bool, error) {
+	// Read directory contents
+	files, err := afero.ReadDir(fs, ".")
+	if err != nil {
+		return false, err
+	}
+
+	// Check each file for .toml extension
+	for _, file := range files {
+		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), ".toml") {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// Deprecated: we not hash the intermediatery strucst for component configs
 func checksumTOMLFilesByName(cfgFS afero.Fs) (map[string]string, error) {
 	checksums := make(map[string]string)
 
