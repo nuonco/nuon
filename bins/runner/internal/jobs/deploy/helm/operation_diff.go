@@ -6,6 +6,8 @@ import (
 
 	"go.uber.org/zap"
 	"helm.sh/helm/v4/pkg/action"
+	kube "helm.sh/helm/v4/pkg/kube"
+	release "helm.sh/helm/v4/pkg/release/v1"
 	"k8s.io/client-go/rest"
 
 	"github.com/databus23/helm-diff/v3/manifest"
@@ -41,6 +43,7 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	client.DryRun = true
 	client.DisableHooks = false
 	client.WaitForJobs = false
+	client.WaitStrategy = kube.StatusWatcherStrategy
 	client.Devel = true
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
@@ -96,6 +99,7 @@ func (h *handler) install_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	client.DisableHooks = false
 
 	client.WaitForJobs = false
+	client.WaitStrategy = kube.StatusWatcherStrategy
 	client.Devel = true
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
@@ -125,5 +129,44 @@ func (h *handler) install_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 
 	h.state.outputs = map[string]interface{}{"diff": diff}
 
-	return "", nil
+	return diff, nil
+}
+
+func (h *handler) uninstall_diff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, prevRel *release.Release) (string, error) {
+	// not functional atm (panics)
+	l.Info("loading chart options")
+	chart, err := helm.GetChartByPath(h.state.chartPath)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to get chart")
+	}
+
+	l.Info("found default chart values", zap.Any("values", chart.Values))
+
+	l.Info("loading provided values")
+	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values)
+	if err != nil {
+		return "", fmt.Errorf("unable to load helm values: %w", err)
+	}
+	l.Info("rendered values", zap.Any("values", values))
+
+	client := action.NewUninstall(actionCfg)
+	client.DryRun = true
+	client.DisableHooks = false
+	client.WaitStrategy = kube.StatusWatcherStrategy
+	client.Timeout = h.state.timeout
+
+	l.Info("calculating helm diff")
+	rel, err := client.Run(prevRel.Name)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to execute with dry-run")
+	}
+	newMapping := manifest.Parse(rel.Release.Manifest, rel.Release.Namespace, true)
+	diff, err := h.getDiff(map[string]*manifest.MappingResult{}, newMapping)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to execute with dry-run")
+	}
+
+	h.state.outputs = map[string]interface{}{"diff": diff}
+
+	return diff, nil
 }
