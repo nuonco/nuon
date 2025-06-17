@@ -63,7 +63,7 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
       events={deploys.map((d, i) => {
         return {
           id: d.id,
-          status: d.status,
+          status: d?.status_v2?.status,
           underline: (
             <div>
               <Text>
@@ -90,7 +90,8 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
           ),
           time: d.updated_at,
           href:
-            d?.status && d?.status !== 'queued'
+            d?.status_v2?.status &&
+            (d?.status_v2?.status as string) !== 'queued'
               ? `/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${d.id}`
               : null,
           isMostRecent: i === 0,

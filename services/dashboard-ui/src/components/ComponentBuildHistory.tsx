@@ -52,7 +52,7 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
       }
       events={builds.map((b, i) => ({
         id: b.id,
-        status: b.status,
+        status: b?.status_v2?.status,
         underline: (
           <div>
             <Text>
@@ -81,7 +81,7 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
         ),
         time: b.updated_at,
         href:
-          b?.status !== 'queued'
+          b?.status_v2?.status && (b?.status_v2?.status as string) !== 'queued'
             ? `/${orgId}/apps/${appId}/components/${b.component_id}/builds/${b.id}`
             : null,
         isMostRecent: i === 0,
