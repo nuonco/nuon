@@ -81,7 +81,7 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: flw.ID,
 		Status: app.CompositeStatus{
-			Status:                 app.WorkflowStepApprovalStatusAwaitingResponse,
+			Status:                 app.WorkflowAwaitingApproval,
 			StatusHumanDescription: "awaiting approval " + strconv.Itoa(step.Idx+1),
 			Metadata: map[string]any{
 				"step_idx": step.Idx,
