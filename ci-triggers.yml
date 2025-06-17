@@ -20,7 +20,7 @@ services: |
     - bins/cli/**
     - go.mod
     - go.sum
-    - pkg/types/workflows/executors/**
+    - pkg/**
 
   nuonctl:
     - bins/nuonctl/**
