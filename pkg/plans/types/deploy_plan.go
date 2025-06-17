@@ -18,6 +18,8 @@ type DeployPlan struct {
 
 	// The following field is for applying a plan that is already save
 	ApplyPlanContents string `json:"apply_plan_contents"`
+	// This field is for storing a human legible plan or corollary representation
+	ApplyPlanDisplay string `json:"apply_plan_display"`
 
 	SandboxMode *SandboxMode `json:"omitzero,omitempty"`
 }

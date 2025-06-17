@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/zap"
 	"helm.sh/helm/v4/pkg/action"
+	kube "helm.sh/helm/v4/pkg/kube"
 	release "helm.sh/helm/v4/pkg/release/v1"
 	"k8s.io/client-go/rest"
 
@@ -35,8 +36,9 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client := action.NewInstall(actionCfg)
 	client.ClientOnly = false
 	client.DisableHooks = false
-
+	// wait logic
 	client.WaitForJobs = false
+	client.WaitStrategy = kube.StatusWatcherStrategy
 	client.Devel = true
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
@@ -67,8 +69,7 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 			crdZapFieldList...,
 		)
 	} else {
-
-		l.Info("calculating helm diff")
+		l.Info("calculating helm diff", zap.String("operation", "install"), zap.String("exec", "install"))
 		rel, err := client.RunWithContext(ctx, chart, values)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to execute with dry-run")
