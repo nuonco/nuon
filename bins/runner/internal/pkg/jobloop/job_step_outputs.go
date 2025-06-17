@@ -78,11 +78,12 @@ func (j *jobLoop) writeTerraformSandboxMode(ctx context.Context, job *models.App
 		return errors.Errorf("unable to update state json")
 	}
 
-	if len(plan.PlanJSON) > 0 {
+	if len(plan.PlanContents) > 0 {
 		// write an output
 		if _, err := j.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
-			Contents: plan.PlanJSON,
-			Success:  true,
+			Contents:        plan.PlanContents,
+			ContentsDisplay: plan.PlanDisplayContents,
+			Success:         true,
 		}); err != nil {
 			return errors.Wrap(err, "unable to create job execution results")
 		}
