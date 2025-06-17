@@ -91,13 +91,15 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
                     <div className="p-6 flex flex-col gap-8">
                       <span className="flex gap-4 items-center">
                         <StatusBadge
-                          description={deploy?.status_description}
-                          status={deploy?.status}
+                          description={
+                            deploy?.status_v2?.status_human_description
+                          }
+                          status={deploy?.status_v2?.status}
                           label="Deployment status"
                         />
                       </span>
 
-                      {deploy?.status === 'error' ? (
+                      {deploy?.status_v2?.status === 'error' ? (
                         <div className="flex flex-col gap-2 max-w-md">
                           <Text isMuted>Retry failed deployment</Text>
                           <Text className="mb-2">
