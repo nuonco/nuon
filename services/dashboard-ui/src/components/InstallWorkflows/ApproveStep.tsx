@@ -71,7 +71,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
               approved.
             </Text>
           </Notice>
-        ) : (
+        ) : approval?.response?.type === 'deny' ? (
           <Notice className="!p-4 w-full" variant="default">
             <Text variant="med-14" className="mb-2">
               Step denied: {removeSnakeCase(approval?.type)}
@@ -80,8 +80,18 @@ export const ApprovalStep: FC<IApprovalStep> = ({
               These {removeSnakeCase(approval?.type)} changes have been denied.
             </Text>
           </Notice>
+        ) : (
+          <Notice className="!p-4 w-full" variant="default">
+            <Text variant="med-14" className="mb-2">
+              Step retry: {removeSnakeCase(approval?.type)}
+            </Text>
+            <Text isMuted>
+              These {removeSnakeCase(approval?.type)} changes have been retried.
+            </Text>
+          </Notice>
         )
-      ) : workflowApproveOption === 'prompt' ? (
+      ) : workflowApproveOption === 'prompt' &&
+        step?.status?.status !== 'cancelled' ? (
         <Notice className="!p-4 w-full" variant="warn">
           <Text variant="med-14" className="mb-2">
             Action needed: {removeSnakeCase(approval?.type)}
@@ -103,7 +113,8 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           )}
         </div>
         {approval?.response ||
-        workflowApproveOption === 'approve-all' ? null : (
+        workflowApproveOption === 'approve-all' ||
+        step?.status?.status === 'cancelled' ? null : (
           <div className="mt-4 flex gap-3 justify-end">
             <Button
               onClick={() => {
