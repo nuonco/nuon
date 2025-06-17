@@ -42,7 +42,7 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 	if !generics.SliceContains(wf.Status.Status, []app.Status{
 		app.StatusInProgress,
 		app.StatusPending,
-		app.WorkflowAwaitingApproval,
+		app.AwaitingApproval,
 		app.Status("awaiting-approval"),
 	}) {
 		s.l.Error("install workflow is not cancelable",
