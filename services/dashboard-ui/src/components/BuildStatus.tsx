@@ -29,10 +29,11 @@ export const BuildStatus: FC<IBuildStatus> = ({
       const pollBuild = setInterval(fetchBuild, SHORT_POLL_DURATION)
 
       if (
-        build?.status === 'active' ||
-        build?.status === 'error' ||
-        build?.status === 'failed' ||
-        build?.status === 'noop'
+        build?.status_v2?.status === 'active' ||
+        build?.status_v2?.status === 'error' ||
+        build?.status_v2?.status === 'cancelled' ||
+        build?.status_v2?.status === 'not-attempted' ||
+        build?.status_v2?.status === 'noop'
       ) {
         clearInterval(pollBuild)
       }
@@ -43,8 +44,8 @@ export const BuildStatus: FC<IBuildStatus> = ({
 
   return (
     <StatusBadge
-      description={build?.status_description}
-      status={build?.status}
+      description={build?.status_v2?.status_human_description}
+      status={build?.status_v2?.status}
       {...props}
     />
   )

@@ -29,10 +29,11 @@ export const SandboxRunStatus: FC<ISandboxRunStatus> = ({
       const pollSandboxRun = setInterval(fetchSandboxRun, SHORT_POLL_DURATION)
 
       if (
-        run?.status === 'active' ||
-        run?.status === 'error' ||
-        run?.status === 'failed' ||
-        run?.status === 'noop'
+        run?.status_v2.status === 'active' ||
+        run?.status_v2.status === 'error' ||
+        run?.status_v2.status === 'cancelled' ||
+        run?.status_v2.status === 'not-attempted' ||
+        run?.status_v2.status === 'noop'
       ) {
         clearInterval(pollSandboxRun)
       }
@@ -43,8 +44,8 @@ export const SandboxRunStatus: FC<ISandboxRunStatus> = ({
 
   return (
     <StatusBadge
-      description={run?.status_description}
-      status={run?.status}
+      description={run?.status_v2.status_human_description}
+      status={run?.status_v2.status}
       label="Status"
       {...props}
     />

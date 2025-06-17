@@ -48,7 +48,7 @@ export const SandboxHistory: FC<ISandboxHistory> = ({
       }
       events={sandboxRuns.map((run, i) => ({
         id: run.id,
-        status: run.status,
+        status: run?.status_v2?.status,
         underline: (
           <div>
             <Text>
@@ -77,7 +77,8 @@ export const SandboxHistory: FC<ISandboxHistory> = ({
         ),
         time: run.updated_at,
         href:
-          run?.status !== 'queued'
+          run?.status_v2?.status &&
+          (run?.status_v2?.status as string) !== 'queued'
             ? `/${orgId}/installs/${installId}/sandbox/${run.id}`
             : null,
         isMostRecent: i === 0,
