@@ -90,12 +90,12 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: callbackmappers.Noop,
 	})
 
-	// planCb, err := r.localFileCallback("plan.json")
-	// pipe.AddStep(&pipeline.Step{
-	// 	Name:       "show plan",
-	// 	ExecFn:     execmappers.MapTerraformPlan(r.Workspace.ShowPlan),
-	// 	CallbackFn: callbackmappers.Noop,
-	// })
+	planCb, err := r.localFileCallback("plan.json")
+	pipe.AddStep(&pipeline.Step{
+		Name:       "show plan",
+		ExecFn:     execmappers.MapTerraformPlan(r.Workspace.ShowPlan),
+		CallbackFn: planCb,
+	})
 
 	// NOTE: ensure this doesn't break expectations downstream
 	// TODO: remove this - these have no real outputs
