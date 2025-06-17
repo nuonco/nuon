@@ -1,11 +1,14 @@
 FROM golang:1.24 as code
 
-RUN apt-get update && apt-get install -y ca-certificates \
+RUN rm -f /etc/apt/apt.conf.d/docker-clean
+
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install --no-install-recommends -y ca-certificates \
     coreutils \
     make \
     git \
     curl \
-    jq
+    jq && rm -rf /var/lib/apt/lists/*
 
 RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
   | sh -s -- -b $(go env GOPATH)/bin v2.1.6
@@ -19,16 +22,20 @@ ARG ETCSSL=/etc/ssl/cert.pem
 
 # copy deps, tools and fetch dependencies
 COPY tools.go go.mod go.sum .
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go mod download
 
 # copy package and generate it
 COPY pkg pkg
-RUN cd pkg && \
-  go generate ./...
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    cd pkg && go generate ./...
 
 # run golangci-lint to see if we can cache any tools
 COPY .golangci.yml .
-# RUN golangci-lint run -c .golangci.yml --issues-exit-code 0 -v .
+RUN --mount=type=cache,target=/root/.cache/golangci-lint \
+    golangci-lint run -c .golangci.yml --issues-exit-code 0 -v
 
 # copy each file that is specific to the api into the correct directory
 WORKDIR /src/services/${SERVICE}
@@ -37,7 +44,9 @@ COPY cmd  ./cmd/
 COPY internal ./internal/
 COPY docs ./docs/
 COPY main.go tools.go admin.go public.go runner.go .
-RUN go generate ./...
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go generate ./...
 
 FROM code AS build
 
