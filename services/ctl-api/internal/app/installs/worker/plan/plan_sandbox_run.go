@@ -175,9 +175,10 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		plan.SandboxMode = &plantypes.SandboxMode{
 			Enabled: true,
 			TerraformSandboxMode: &plantypes.TerraformSandboxMode{
-				WorkspaceID: install.InstallSandbox.TerraformWorkspace.ID,
-				StateJSON:   []byte(FakeTerraformStateJSON),
-				PlanJSON:    FakeTerraformPlanJSON,
+				WorkspaceID:      install.InstallSandbox.TerraformWorkspace.ID,
+				StateJSON:        []byte(FakeTerraformStateJSON),
+				PlanContents: FakeTerraformPlanContents,
+				PlanDisplayContents:  FakeTerraformPlanDisplayContents,
 			},
 			Outputs: map[string]any{
 				"namespaces": []string{
