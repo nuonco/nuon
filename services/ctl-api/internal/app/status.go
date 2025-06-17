@@ -21,6 +21,7 @@ const (
 	StatusSuccess      Status = "success"
 	StatusNotAttempted Status = "not-attempted"
 	StatusCancelled    Status = "cancelled"
+	StatusDiscarded    Status = "discarded"
 )
 
 // type specific statuses

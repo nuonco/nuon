@@ -3,7 +3,7 @@ package flow
 import (
 	"fmt"
 	"strconv"
-	"time"
+	"strings"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -115,7 +115,7 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 		return false, nil
 	}
 
-	// aproval response retry flow
+	// approval response retry flow
 	if resp.Type == app.InstallWorkflowStepApprovalResponseTypeRetryPlan {
 		// cloned step which will be retried next
 		err := c.cloneWorkflowStep(ctx, step, flw)
@@ -139,7 +139,7 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 
 		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
 			StepID:            step.ID,
-			Status:            app.InstallDeployStatusV2Noop,
+			Status:            app.StatusDiscarded,
 			StatusDescription: "Retrying step " + strconv.Itoa(step.Idx),
 		}); err != nil {
 			return false, errors.Wrap(err, "unable to update step target status")
@@ -168,11 +168,15 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 }
 
 func (c *FlowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context, step *app.InstallWorkflowStep, flw *app.Flow) error {
+	name := step.Name
+	if !strings.HasSuffix(name, "(retry)") {
+		name = fmt.Sprintf("%s (retry)", step.Name)
+	}
 	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowStep(ctx, activities.CreateFlowStepRequest{
 		FlowID:        flw.ID,
 		OwnerID:       flw.OwnerID,
 		OwnerType:     flw.OwnerType,
-		Name:          fmt.Sprintf("%s (retry)-%d", step.Name, time.Now().Unix()),
+		Name:          name,
 		Signal:        step.Signal,
 		Status:        step.Status,
 		Idx:           step.Idx,

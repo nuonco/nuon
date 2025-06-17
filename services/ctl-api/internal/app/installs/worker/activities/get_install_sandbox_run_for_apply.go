@@ -27,6 +27,7 @@ func (a *Activities) getInstallSandboxRunForApplyStep(ctx context.Context, insta
 			InstallID:         installID,
 		}).
 		Preload("LogStream").
+		Order("created_at desc").
 		First(&installSandboxRun)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to find install sandbox run")
