@@ -3,6 +3,7 @@ package apps
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon-go/models"
@@ -15,6 +16,16 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config/sync"
 	"github.com/powertoolsdev/mono/pkg/config/validate"
 	"github.com/powertoolsdev/mono/pkg/errs"
+)
+
+const (
+	defaultSyncTimeout        time.Duration = time.Minute * 12
+	defaultSyncSleep          time.Duration = time.Second * 20
+	componentBuildStatusError               = "error"
+
+	componentBuildStatusBuilding = "building"
+	componentBuildStatusActive   = "active"
+	componentStatusQueued        = "queued"
 )
 
 func (s *Service) DeprecatedSyncDir(ctx context.Context, dir string, version string) error {
@@ -92,4 +103,33 @@ func (s *Service) SyncDir(ctx context.Context, dir string, version string) error
 	}
 
 	return nil
+}
+
+func (s *Service) notifyOrphanedComponents(cmps map[string]string) {
+	if len(cmps) == 0 {
+		return
+	}
+
+	msg := "Existing component(s) are no longer defined in the config:\n"
+
+	for name, id := range cmps {
+		msg += fmt.Sprintf("Component: Name=%s | ID=%s\n", name, id)
+	}
+
+	ui.PrintLn(msg)
+}
+
+func (s *Service) notifyOrphanedActions(actions map[string]string) {
+	if len(actions) == 0 {
+		return
+	}
+
+	msg := "Existing action(s) are no longer defined in the config:\n"
+
+	for name, id := range actions {
+		msg += fmt.Sprintf("Action: Name=%s | ID=%s\n", name, id)
+	}
+
+	ui.PrintLn(msg)
+	return
 }
