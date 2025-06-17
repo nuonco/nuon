@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/zap"
 	"helm.sh/helm/v4/pkg/action"
+	kube "helm.sh/helm/v4/pkg/kube"
 
 	"github.com/powertoolsdev/mono/pkg/helm"
 )
@@ -24,7 +25,11 @@ func (h *handler) uninstall(ctx context.Context, l *zap.Logger, actionCfg *actio
 	}
 
 	l.Info("uninstalling release", zap.String("release", prevRel.Name))
-	_, err = action.NewUninstall(actionCfg).Run(prevRel.Name)
+	client := action.NewUninstall(actionCfg)
+	// NOTE(fd): determine what the right wait strategy should be here
+	client.WaitStrategy = kube.LegacyStrategy
+	client.Timeout = h.state.timeout
+	_, err = client.Run(prevRel.Name)
 	if err != nil {
 		return fmt.Errorf("unable to uninstall previous release: %w", err)
 	}

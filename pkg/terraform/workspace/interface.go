@@ -44,4 +44,5 @@ type Workspace interface {
 	Validate(context.Context, hclog.Logger) (*tfjson.ValidateOutput, error)
 	// Writes plan to plan.json
 	WriteTFPlan(context.Context, hclog.Logger) ([]byte, error)
+	PlanDestroy(context.Context, hclog.Logger) ([]byte, error)
 }

@@ -2,6 +2,7 @@ package helm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/nuonco/nuon-runner-go/models"
@@ -31,6 +32,12 @@ func (h *handler) execUninstall(ctx context.Context, l *zap.Logger, actionCfg *a
 	return nil
 }
 
+// struct for helm plan: essentially a light wrapper around an Op
+type HelmPlanContents struct {
+	Diff string `json:"plan"`
+	Op   string `json:"op"`
+}
+
 // NOTE: the helm plans are not real plans, they are just diffs
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	l, err := pkgctx.Logger(ctx)
@@ -52,12 +59,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	actionCfg.Releases = releaseStore
 
-	// op: uninstall
-	if job.Operation == models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan {
-		// create "plan"
-		return h.execUninstall(ctx, l, actionCfg, job, jobExecution)
-	}
-
 	l.Info("Checking for previous Helm release...", zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()})
 	prevRel, err := helm.GetRelease(actionCfg, h.state.plan.HelmDeployPlan.Name)
 	if err != nil {
@@ -65,31 +66,55 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	var (
-		rel  *release.Release
-		op   string
-		diff string
+		rel      *release.Release
+		op       string
+		diff     string
+		helmPlan HelmPlanContents
 	)
+
+	// load helm plan from the plan
+	if len(h.state.plan.ApplyPlanContents) > 0 {
+		bytes, err := json.Marshal(h.state.plan.ApplyPlanContents)
+		if err != nil {
+			return fmt.Errorf("ApplyPlanContents found but unable to marshall it out: %w", err)
+		}
+		json.Unmarshal(bytes, helmPlan)
+	}
 
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
 		// in this case, the diff is generated so it is available to the createAPIResult method
-		l.Info("executing helm diff")
 		if prevRel == nil {
 			diff, err = h.install_diff(ctx, l, actionCfg, kubeCfg)
+			helmPlan.Op = "install"
 		} else {
 			diff, err = h.upgrade_diff(ctx, l, actionCfg, kubeCfg)
+			helmPlan.Op = "upgrade"
 		}
+		if diff == "" {
+			diff = "no changes"
+		}
+		helmPlan.Diff = diff
+		l.Debug("calculated helm diff", zap.String("diff", diff))
 	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
+		// TODO(fd): figure out the best way to get a plan for this
 		l.Info("executing helm uninstall")
-		rel, err = h.install(ctx, l, actionCfg, kubeCfg)
+		// diff, err = h.uninstall_diff(ctx, l, actionCfg, prevRel)
+		// TODO(fd): we may need a new type to get a proper two step here
+		helmPlan.Op = "uninstall"
+		diff = "release uninstalled"
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		l.Info(fmt.Sprintf("executing helm %s", op))
-		if prevRel == nil {
+		switch helmPlan.Op {
+		case "install":
 			op = "install"
 			rel, err = h.install(ctx, l, actionCfg, kubeCfg)
-		} else {
+		case "upgrade":
 			op = "upgrade"
 			rel, err = h.upgrade(ctx, l, actionCfg, kubeCfg)
+		case "uninstall":
+			op = "uninstall"
+			err = h.execUninstall(ctx, l, actionCfg, job, jobExecution)
 		}
 		if err != nil {
 			return err
@@ -104,12 +129,29 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unable to %s helm chart: %w", op, err)
 	}
 
-	apiRes, err := h.createAPIResult(rel, diff)
-	if err != nil {
-		h.writeErrorResult(ctx, op, err)
-		return fmt.Errorf("unable to create api result from release: %w", err)
+	var apiRes *models.ServiceCreateRunnerJobExecutionResultRequest
+	if job.Operation == models.AppRunnerJobOperationTypeApplyDashPlan {
+		// we only need to send success
+		apiRes, err = h.createAPIResult(rel, "", map[string]interface{}{}) // Ensure empty plan does not get written
+		if err != nil {
+			h.writeErrorResult(ctx, op, err)
+			return fmt.Errorf("unable to create api result from release: %w", err)
+		}
+	} else {
+		// save the plan w/ the diff
+		m := map[string]interface{}{}
+		bytes, err := json.Marshal(helmPlan)
+		json.Unmarshal(bytes, &m)
+		apiRes, err = h.createAPIResult(rel, string(bytes), m) // NOTES: something downstream expects Contents so we're storing the plan in both for now
+		if err != nil {
+			h.writeErrorResult(ctx, op, err)
+			return fmt.Errorf("unable to create api result from release: %w", err)
+		}
 	}
-	if _, err := h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, apiRes); err != nil {
+
+	_, err = h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, apiRes)
+	if err != nil {
+		l.Error("failed to create job executione result")
 		h.errRecorder.Record("write job execution result", err)
 	}
 

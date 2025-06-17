@@ -144,6 +144,7 @@ func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Wo
 // NOTE: createResult is only called in cases when there _is_ a plan. otherwise, we don't really need a result object.
 // as a result, we're handling the loading of the plan.json within createResult
 func (p *handler) createResult(ctx context.Context) error {
+	// read the tfplan into b64 byts
 	pathToPlan := filepath.Join(p.state.tfWorkspace.Root(), "tfplan") // TODO: make this a built in on the workspace (tfplan)
 	planBytes, err := os.ReadFile(pathToPlan)
 	if err != nil {
@@ -151,12 +152,26 @@ func (p *handler) createResult(ctx context.Context) error {
 		return fmt.Errorf("unable to read tfplan file: %w", err)
 	}
 	planContents := base64.StdEncoding.EncodeToString(planBytes)
+
+	// read the plan.json into Display
+	pathToPlanJson := filepath.Join(p.state.tfWorkspace.Root(), "plan.json") // TODO: make this a built in on the workspace (GetPlan)
+	planJsonString, err := os.ReadFile(pathToPlanJson)
+	var planJson *map[string]interface{}
+	err = json.Unmarshal(planJsonString, &planJson)
+
+	if err != nil {
+		p.writeErrorResult(ctx, "failed to read plan.json file", err)
+		return fmt.Errorf("unable to read plan.json file: %w", err)
+	}
+	// create the result object
 	_, err = p.apiClient.CreateJobExecutionResult(ctx, p.state.jobID, p.state.jobExecutionID, &models.ServiceCreateRunnerJobExecutionResultRequest{
-		Success:  true,
-		Contents: planContents,
+		Success:         true,
+		Contents:        planContents,
+		ContentsDisplay: planJson,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create terraform apply job execution result : %w", err)
 	}
+
 	return nil
 }
