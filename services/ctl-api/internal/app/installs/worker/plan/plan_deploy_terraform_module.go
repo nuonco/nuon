@@ -22,8 +22,11 @@ import (
 //go:embed fake_terraform_state.json
 var FakeTerraformStateJSON string
 
-//go:embed fake_terraform_plan.json
-var FakeTerraformPlanJSON string
+//go:embed fake_terraform_plan_contents.json
+var FakeTerraformPlanContents string
+
+//go:embed fake_terraform_plan_display_contents.json
+var FakeTerraformPlanDisplayContents string
 
 func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.TerraformDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
@@ -136,8 +139,9 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 
 func (p *Planner) createTerraformDeploySandboxMode(ctx workflow.Context, req *plantypes.TerraformDeployPlan) *plantypes.TerraformSandboxMode {
 	return &plantypes.TerraformSandboxMode{
-		WorkspaceID: req.TerraformBackend.WorkspaceID,
-		StateJSON:   []byte(FakeTerraformStateJSON),
-		PlanJSON:    FakeTerraformPlanJSON,
+		WorkspaceID:            req.TerraformBackend.WorkspaceID,
+		StateJSON:              []byte(FakeTerraformStateJSON),
+		PlanContents:               FakeTerraformPlanContents,
+		PlanDisplayContents:FakeTerraformPlanDisplayContents,
 	}
 }
