@@ -85,6 +85,7 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 		return errors.Wrap(err, "unable to update install workflow")
 	}
 	plan.ApplyPlanContents = prevJob.Execution.Result.Contents
+	plan.ApplyPlanDisplay = string(prevJob.Execution.Result.ContentsDisplay)
 
 	planJSON, err := json.Marshal(plan)
 	if err != nil {

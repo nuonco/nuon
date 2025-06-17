@@ -2,10 +2,7 @@ package workspace
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
@@ -248,36 +245,6 @@ func (w *workspace) show(ctx context.Context, client Terraform) (*tfjson.State, 
 	return out, nil
 }
 
-func (w *workspace) ShowPlan(ctx context.Context, log hclog.Logger) (*tfjson.Plan, error) {
-	client, err := w.getClient(ctx, log)
-	if err != nil {
-		return nil, err
-	}
-
-	return w.showPlan(ctx, client)
-}
-
-// TODO: revisit and use a callback to write to local instead of writing to local directly
-func (w *workspace) showPlan(ctx context.Context, client Terraform) (*tfjson.Plan, error) {
-	out, err := client.ShowPlanFile(ctx, "tfplan")
-	if err != nil {
-		return nil, fmt.Errorf("unable to execute show: %w", err)
-	}
-
-	planJSON, err := json.MarshalIndent(out, "", "  ")
-	if err != nil {
-		return nil, fmt.Errorf("unable to marshal plan to JSON: %w", err)
-	}
-
-	// TODO: this should be legible from the workspace root but somethign is wrong in
-	// the local file writer callback pkg/terraform
-	if err := os.WriteFile(path.Join("/tmp", "plan.json"), planJSON, 0644); err != nil {
-		return nil, fmt.Errorf("unable to write plan to file: %w", err)
-	}
-
-	return out, nil
-}
-
 func (w *workspace) Validate(ctx context.Context, log hclog.Logger) (*tfjson.ValidateOutput, error) {
 	client, err := w.getClient(ctx, log)
 	if err != nil {
@@ -392,7 +359,6 @@ func (w *workspace) applyDestroyPlan(ctx context.Context, client Terraform, log 
 
 	opts := []tfexec.ApplyOption{
 		tfexec.Refresh(true),
-		tfexec.DirOrPlan("plan.json"),
 		tfexec.Destroy(true),
 	}
 	for _, fp := range w.varsPaths {

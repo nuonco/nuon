@@ -29,6 +29,7 @@ type Run interface {
 	Validate(context.Context) error
 	Plan(context.Context) error
 	Destroy(context.Context) error
+	DestroyPlan(context.Context) error
 }
 
 var _ Run = (*run)(nil)

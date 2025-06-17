@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/go-hclog"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/pipeline"
 )
@@ -49,12 +50,12 @@ func (s *localCallback) callback(ctx context.Context,
 	// TODO: revisit this - we should accept arbitrary file paths
 	fp := s.Filename
 
-	if err := os.WriteFile(fp, byts, 0644); err != nil {
+	err := os.WriteFile(fp, byts, 0644)
+	if err != nil {
 		log.Error("failed to write file", "path", fp, "error", err)
 		return fmt.Errorf("failed to write file %s: %w", fp, err)
 	}
-
-	log.Info("successfully wrote file", "path", fp, "size", len(byts))
+	log.Info("successfully wrote file", zap.String("path", fp), zap.Int("size", len(byts)))
 	return nil
 }
 
