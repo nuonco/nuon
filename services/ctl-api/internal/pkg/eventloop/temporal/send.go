@@ -139,10 +139,8 @@ func (e *evClient) SendAsync(ctx workflow.Context, id string, signal eventloop.S
 		mungeid = id[idx+1:]
 	}
 
-	dctx, _ := workflow.NewDisconnectedContext(ctx)
-
 	// Prepare to receive response & cancellation before we send the signal
-	selector := workflow.NewSelector(dctx)
+	selector := workflow.NewSelector(ctx)
 	fut, set := workflow.NewFuture(ctx)
 
 	donechan := ctx.Done()
@@ -189,7 +187,7 @@ func (e *evClient) SendAsync(ctx workflow.Context, id string, signal eventloop.S
 			"",
 			CancelChannelName,
 			signal,
-		).Get(dctx, nil)
+		).Get(ctx, nil)
 		if err != nil {
 			e.mw.Incr("event_loop.signal", metrics.ToStatusTag("unable_to_send"))
 			l.Error("unable to dispatch cancellation signal to workflow",
@@ -201,7 +199,7 @@ func (e *evClient) SendAsync(ctx workflow.Context, id string, signal eventloop.S
 	})
 	selector.AddFuture(fut, func(f workflow.Future) {})
 
-	workflow.Go(dctx, func(ctx workflow.Context) {
+	workflow.Go(ctx, func(ctx workflow.Context) {
 		// This will return either when a cancellation is received, or the future is completed
 		selector.Select(ctx)
 	})
