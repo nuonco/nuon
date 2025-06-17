@@ -30,8 +30,8 @@ type RunnerJobExecutionResult struct {
 	ErrorCode     int           `json:"error_code,omitzero" temporaljson:"error_code,omitzero,omitempty"`
 	ErrorMetadata pgtype.Hstore `json:"error_metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"error_metadata,omitzero,omitempty"`
 
-	Contents        string `json:"contents,omitzero" gorm:"string" swaggertype:"string" temporaljson:"contents,omitzero,omitempty"`
-	ContentsDisplay []byte `json:"contents_display,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"contents_display,omitzero,omitempty"`
+	Contents        string `json:"contents,omitzero" gorm:"string" swaggertype:"string" temporaljson:"-"`
+	ContentsDisplay []byte `json:"contents_display,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"-"`
 }
 
 func (r *RunnerJobExecutionResult) BeforeCreate(tx *gorm.DB) error {
