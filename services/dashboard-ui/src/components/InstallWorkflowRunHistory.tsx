@@ -49,7 +49,7 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
       }
       events={runs?.map((run, i) => ({
         id: run.id,
-        status: run.status,
+        status: run?.status_v2?.status,
         underline: (
           <div>
             <span className="flex items-center gap-2">
@@ -67,7 +67,8 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
         ),
         time: run.updated_at,
         href:
-          run?.status !== 'queued'
+          run?.status_v2?.status &&
+          (run?.status_v2?.status as string) !== 'queued'
             ? `/${orgId}/installs/${installId}/actions/${action_workflow?.id}/${run.id}`
             : null,
         isMostRecent: i === 0,
