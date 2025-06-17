@@ -90,8 +90,8 @@ export const ActionStepDetails: FC<IPollStepDetails> = ({
 
               <div className="p-6 flex flex-col gap-4">
                 <StatusBadge
-                  status={actionRun?.status}
-                  description={actionRun?.status_description}
+                  status={actionRun?.status_v2?.status}
+                  description={actionRun?.status_v2?.status_human_description}
                   label="Action status"
                 />
                 <div className="flex flex-col gap-2">

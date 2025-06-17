@@ -213,7 +213,7 @@ const BuildOptions: FC<{
       .then((res) =>
         res.json().then((blds) => {
           setBuilds(
-            (blds as Array<TBuild>).filter((b) => b.status === 'active')
+            (blds as Array<TBuild>).filter((b) => b.status_v2?.status === 'active')
           )
           setIsLoading(false)
         })
