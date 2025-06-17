@@ -79,10 +79,17 @@ func (j *jobLoop) writeTerraformSandboxMode(ctx context.Context, job *models.App
 	}
 
 	if len(plan.PlanContents) > 0 {
+
+		var planDisplayJson *map[string]interface{}
+		err = json.Unmarshal([]byte(plan.PlanDisplayContents), &planDisplayJson)
+		if err != nil {
+			return errors.Wrap(err, "unable to unmarshal plan display")
+		}
+
 		// write an output
 		if _, err := j.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
 			Contents:        plan.PlanContents,
-			ContentsDisplay: plan.PlanDisplayContents,
+			ContentsDisplay: planDisplayJson,
 			Success:         true,
 		}); err != nil {
 			return errors.Wrap(err, "unable to create job execution results")
