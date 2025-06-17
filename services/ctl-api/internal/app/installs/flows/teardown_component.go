@@ -26,6 +26,13 @@ func TeardownComponent(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, er
 	}
 
 	steps := make([]*app.FlowStep, 0)
+	step, err := installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationAwaitRunnerHealthy,
+	})
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
 
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, generics.FromPtrStr(componentID))
 	if err != nil {
