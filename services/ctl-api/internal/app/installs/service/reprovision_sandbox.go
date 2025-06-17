@@ -11,7 +11,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-type ReprovisionInstallSandboxRequest struct{}
+type ReprovisionInstallSandboxRequest struct {
+	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
+}
 
 func (c *ReprovisionInstallSandboxRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
@@ -67,7 +69,7 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 		install.ID,
 		app.InstallWorkflowTypeReprovisionSandbox,
 		map[string]string{},
-		app.StepErrorBehaviorAbort,
+		req.ErrorBehavior,
 	)
 	if err != nil {
 		ctx.Error(err)
