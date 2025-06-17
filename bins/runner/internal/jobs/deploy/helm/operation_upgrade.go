@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/zap"
 	"helm.sh/helm/v4/pkg/action"
+	kube "helm.sh/helm/v4/pkg/kube"
 	release "helm.sh/helm/v4/pkg/release/v1"
 	"k8s.io/client-go/rest"
 
@@ -50,8 +51,9 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client := action.NewUpgrade(actionCfg)
 	client.DryRun = true
 	client.DisableHooks = false
-
+	// wait logic
 	client.WaitForJobs = false
+	client.WaitStrategy = kube.StatusWatcherStrategy
 	client.Devel = true
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
@@ -101,6 +103,8 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.DisableHooks = false
 
 	client.WaitForJobs = false
+	client.WaitStrategy = kube.StatusWatcherStrategy
+
 	client.Devel = true
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
