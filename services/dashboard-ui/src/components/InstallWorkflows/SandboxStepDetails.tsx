@@ -84,8 +84,8 @@ export const SandboxStepDetails: FC<IPollStepDetails> = ({
               <div className="p-6">
                 <span className="flex gap-4 items-center">
                   <StatusBadge
-                    description={sandboxRun?.status_description}
-                    status={sandboxRun?.status}
+                    description={sandboxRun?.status_v2?.status_human_description}
+                    status={sandboxRun?.status_v2?.status}
                     label="Sandbox run status"
                   />
                 </span>

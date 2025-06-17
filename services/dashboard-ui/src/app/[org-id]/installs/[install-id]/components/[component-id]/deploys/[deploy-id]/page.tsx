@@ -40,7 +40,6 @@ import {
 import {
   getComponentBuild,
   getComponent,
-  getComponentConfig,
   getInstall,
   getInstallComponentOutputs,
   getInstallDeploy,
