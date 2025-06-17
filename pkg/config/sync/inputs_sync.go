@@ -38,8 +38,7 @@ func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {
 	for idx, input := range s.cfg.Inputs.Inputs {
 		input := input
 
-		inputs[input.Name] = models.ServiceAppInputRequest{
-			Default:     fmt.Sprintf("%v", input.Default),
+		inp := models.ServiceAppInputRequest{
 			Description: &input.Description,
 			DisplayName: &input.DisplayName,
 			Group:       &input.Group,
@@ -49,6 +48,10 @@ func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {
 			Type:        generics.ValOrDefault(input.Type, "string"),
 			Index:       generics.ToPtr(int64(idx)),
 		}
+		if input.Default != nil {
+			inp.Default = fmt.Sprintf("%v", input.Default)
+		}
+		inputs[input.Name] = inp
 	}
 
 	return &models.ServiceCreateAppInputConfigRequest{
