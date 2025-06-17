@@ -33,6 +33,7 @@ func (c *FlowConductor[DomainSignal]) checkStepCancellation(ctx workflow.Context
 		}); err != nil {
 			return err
 		}
+
 	}
 
 	return nil
@@ -44,6 +45,15 @@ func (c *FlowConductor[DomainSignal]) handleCancellation(ctx workflow.Context, s
 	}
 
 	cancelCtx, _ := workflow.NewDisconnectedContext(ctx)
+
+	// update the step target
+	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(cancelCtx, activities.UpdateFlowStepTargetStatusRequest{
+		StepID:            stepID,
+		Status:            app.StatusCancelled,
+		StatusDescription: "Cancelled",
+	}); err != nil {
+		return errors.Wrap(err, "unable to update step target status")
+	}
 
 	// cancel all steps
 	for _, cancelStep := range flw.Steps[idx+1:] {
