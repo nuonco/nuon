@@ -27,6 +27,7 @@ func (a *Activities) getInstallDeployForApplyStep(ctx context.Context, installWo
 			ComponentID:       componentID,
 		}).
 		Preload("LogStream").
+		Order("created_at desc").
 		First(&installDeploy)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to find install deploy")
