@@ -1,0 +1,375 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.11.3",
+  "variables": {
+    "domain_name": {
+      "value": "inloc7vgalygu08naq3fthkc0n.nuon.run"
+    },
+    "zone_id": {
+      "value": "Z003918439DCF6OLQ2OU"
+    }
+  },
+  "planned_values": {
+    "root_module": {}
+  },
+  "configuration": {
+    "provider_config": {
+      "module.certificate:aws": {
+        "name": "aws",
+        "full_name": "registry.terraform.io/hashicorp/aws",
+        "version_constraint": ">= 4.40.0",
+        "module_address": "module.certificate"
+      }
+    },
+    "root_module": {
+      "outputs": {
+        "public_domain_certificate_arn": {
+          "expression": {
+            "references": [
+              "module.certificate.acm_certificate_arn",
+              "module.certificate"
+            ]
+          }
+        }
+      },
+      "module_calls": {
+        "certificate": {
+          "source": "terraform-aws-modules/acm/aws",
+          "expressions": {
+            "domain_name": {
+              "references": [
+                "var.domain_name"
+              ]
+            },
+            "validation_method": {
+              "constant_value": "DNS"
+            },
+            "wait_for_validation": {
+              "constant_value": false
+            },
+            "zone_id": {
+              "references": [
+                "var.zone_id"
+              ]
+            }
+          },
+          "module": {
+            "outputs": {
+              "acm_certificate_arn": {
+                "expression": {
+                  "references": [
+                    "aws_acm_certificate_validation.this[0].certificate_arn",
+                    "aws_acm_certificate_validation.this[0]",
+                    "aws_acm_certificate_validation.this",
+                    "aws_acm_certificate.this[0].arn",
+                    "aws_acm_certificate.this[0]",
+                    "aws_acm_certificate.this"
+                  ]
+                },
+                "description": "The ARN of the certificate"
+              },
+              "acm_certificate_domain_validation_options": {
+                "expression": {
+                  "references": [
+                    "aws_acm_certificate.this"
+                  ]
+                },
+                "description": "A list of attributes to feed into other resources to complete certificate validation. Can have more than one element, e.g. if SANs are defined. Only set if DNS-validation was used."
+              },
+              "acm_certificate_status": {
+                "expression": {
+                  "references": [
+                    "aws_acm_certificate.this[0].status",
+                    "aws_acm_certificate.this[0]",
+                    "aws_acm_certificate.this"
+                  ]
+                },
+                "description": "Status of the certificate."
+              },
+              "acm_certificate_validation_emails": {
+                "expression": {
+                  "references": [
+                    "aws_acm_certificate.this"
+                  ]
+                },
+                "description": "A list of addresses that received a validation E-Mail. Only set if EMAIL-validation was used."
+              },
+              "distinct_domain_names": {
+                "expression": {
+                  "references": [
+                    "local.distinct_domain_names"
+                  ]
+                },
+                "description": "List of distinct domains names used for the validation."
+              },
+              "validation_domains": {
+                "expression": {
+                  "references": [
+                    "local.validation_domains"
+                  ]
+                },
+                "description": "List of distinct domain validation options. This is useful if subject alternative names contain wildcards."
+              },
+              "validation_route53_record_fqdns": {
+                "expression": {
+                  "references": [
+                    "aws_route53_record.validation"
+                  ]
+                },
+                "description": "List of FQDNs built using the zone domain and name."
+              }
+            },
+            "resources": [
+              {
+                "address": "aws_acm_certificate.this",
+                "mode": "managed",
+                "type": "aws_acm_certificate",
+                "name": "this",
+                "provider_config_key": "module.certificate:aws",
+                "expressions": {
+                  "domain_name": {
+                    "references": [
+                      "var.domain_name"
+                    ]
+                  },
+                  "key_algorithm": {
+                    "references": [
+                      "var.key_algorithm"
+                    ]
+                  },
+                  "options": [
+                    {
+                      "certificate_transparency_logging_preference": {
+                        "references": [
+                          "var.certificate_transparency_logging_preference"
+                        ]
+                      }
+                    }
+                  ],
+                  "subject_alternative_names": {
+                    "references": [
+                      "var.subject_alternative_names"
+                    ]
+                  },
+                  "tags": {
+                    "references": [
+                      "var.tags"
+                    ]
+                  },
+                  "validation_method": {
+                    "references": [
+                      "var.validation_method"
+                    ]
+                  }
+                },
+                "schema_version": 0,
+                "count_expression": {
+                  "references": [
+                    "local.create_certificate"
+                  ]
+                }
+              },
+              {
+                "address": "aws_acm_certificate_validation.this",
+                "mode": "managed",
+                "type": "aws_acm_certificate_validation",
+                "name": "this",
+                "provider_config_key": "module.certificate:aws",
+                "expressions": {
+                  "certificate_arn": {
+                    "references": [
+                      "aws_acm_certificate.this[0].arn",
+                      "aws_acm_certificate.this[0]",
+                      "aws_acm_certificate.this"
+                    ]
+                  },
+                  "timeouts": {
+                    "create": {
+                      "references": [
+                        "var.validation_timeout"
+                      ]
+                    }
+                  },
+                  "validation_record_fqdns": {
+                    "references": [
+                      "aws_route53_record.validation",
+                      "var.validation_record_fqdns"
+                    ]
+                  }
+                },
+                "schema_version": 0,
+                "count_expression": {
+                  "references": [
+                    "local.create_certificate",
+                    "var.validation_method",
+                    "var.validate_certificate",
+                    "var.wait_for_validation"
+                  ]
+                }
+              },
+              {
+                "address": "aws_route53_record.validation",
+                "mode": "managed",
+                "type": "aws_route53_record",
+                "name": "validation",
+                "provider_config_key": "module.certificate:aws",
+                "expressions": {
+                  "allow_overwrite": {
+                    "references": [
+                      "var.validation_allow_overwrite_records"
+                    ]
+                  },
+                  "name": {
+                    "references": [
+                      "local.validation_domains",
+                      "count.index"
+                    ]
+                  },
+                  "records": {
+                    "references": [
+                      "local.validation_domains",
+                      "count.index"
+                    ]
+                  },
+                  "ttl": {
+                    "references": [
+                      "var.dns_ttl"
+                    ]
+                  },
+                  "type": {
+                    "references": [
+                      "local.validation_domains",
+                      "count.index"
+                    ]
+                  },
+                  "zone_id": {
+                    "references": [
+                      "var.zone_id"
+                    ]
+                  }
+                },
+                "schema_version": 2,
+                "count_expression": {
+                  "references": [
+                    "local.create_certificate",
+                    "local.create_route53_records_only",
+                    "var.validation_method",
+                    "var.create_route53_records",
+                    "var.validate_certificate",
+                    "local.create_route53_records_only",
+                    "local.distinct_domain_names"
+                  ]
+                },
+                "depends_on": [
+                  "aws_acm_certificate.this"
+                ]
+              }
+            ],
+            "variables": {
+              "acm_certificate_domain_validation_options": {
+                "default": {},
+                "description": "A list of domain_validation_options created by the ACM certificate to create required Route53 records from it (used when create_route53_records_only is set to true)"
+              },
+              "certificate_transparency_logging_preference": {
+                "default": true,
+                "description": "Specifies whether certificate details should be added to a certificate transparency log"
+              },
+              "create_certificate": {
+                "default": true,
+                "description": "Whether to create ACM certificate"
+              },
+              "create_route53_records": {
+                "default": true,
+                "description": "When validation is set to DNS, define whether to create the DNS records internally via Route53 or externally using any DNS provider"
+              },
+              "create_route53_records_only": {
+                "default": false,
+                "description": "Whether to create only Route53 records (e.g. using separate AWS provider)"
+              },
+              "distinct_domain_names": {
+                "default": [],
+                "description": "List of distinct domains and SANs (used when create_route53_records_only is set to true)"
+              },
+              "dns_ttl": {
+                "default": 60,
+                "description": "The TTL of DNS recursive resolvers to cache information about this record."
+              },
+              "domain_name": {
+                "default": "",
+                "description": "A domain name for which the certificate should be issued"
+              },
+              "key_algorithm": {
+                "default": null,
+                "description": "Specifies the algorithm of the public and private key pair that your Amazon issued certificate uses to encrypt data"
+              },
+              "putin_khuylo": {
+                "default": true,
+                "description": "Do you agree that Putin doesn't respect Ukrainian sovereignty and territorial integrity? More info: https://en.wikipedia.org/wiki/Putin_khuylo!"
+              },
+              "subject_alternative_names": {
+                "default": [],
+                "description": "A list of domains that should be SANs in the issued certificate"
+              },
+              "tags": {
+                "default": {},
+                "description": "A mapping of tags to assign to the resource"
+              },
+              "validate_certificate": {
+                "default": true,
+                "description": "Whether to validate certificate by creating Route53 record"
+              },
+              "validation_allow_overwrite_records": {
+                "default": true,
+                "description": "Whether to allow overwrite of Route53 records"
+              },
+              "validation_method": {
+                "default": "DNS",
+                "description": "Which method to use for validation. DNS or EMAIL are valid, NONE can be used for certificates that were imported into ACM and then into Terraform."
+              },
+              "validation_option": {
+                "default": {},
+                "description": "The domain name that you want ACM to use to send you validation emails. This domain name is the suffix of the email addresses that you want ACM to use."
+              },
+              "validation_record_fqdns": {
+                "default": [],
+                "description": "When validation is set to DNS and the DNS validation records are set externally, provide the fqdns for the validation"
+              },
+              "validation_timeout": {
+                "default": null,
+                "description": "Define maximum timeout to wait for the validation to complete"
+              },
+              "wait_for_validation": {
+                "default": true,
+                "description": "Whether to wait for the validation to complete"
+              },
+              "zone_id": {
+                "default": "",
+                "description": "The ID of the hosted zone to contain this record. Required when validating via Route53"
+              }
+            }
+          },
+          "version_constraint": "~> 4.0"
+        }
+      },
+      "variables": {
+        "domain_name": {},
+        "zone_id": {}
+      }
+    }
+  },
+  "checks": [
+    {
+      "address": {
+        "kind": "var",
+        "module": "module.certificate",
+        "name": "validation_method",
+        "to_display": "module.certificate.var.validation_method"
+      },
+      "status": "unknown"
+    }
+  ],
+  "timestamp": "2025-06-17T04:30:35Z",
+  "applyable": false,
+  "complete": true,
+  "errored": false
+}
