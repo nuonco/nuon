@@ -10,7 +10,8 @@ type TerraformSandboxMode struct {
 	WorkspaceID string `json:"workspace_id"`
 
 	// create the plan output
-	PlanJSON string `json:"plan_json"`
+	PlanContents        string `json:"plan_contents"`
+	PlanDisplayContents string `json:"plan_display_contents"`
 }
 
 type HelmSandboxMode struct {
