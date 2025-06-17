@@ -1,32 +1,19 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-type DeployInstallComponentsRequest struct {
-	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
-}
-
-func (c *DeployInstallComponentsRequest) Validate(v *validator.Validate) error {
-	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
-	}
-	return nil
-}
-
-// @ID						DeployInstallComponents
-// @Summary				deploy all components on an install
-// @Description.markdown	install_deploy_components.md
-// @Param					install_id	path	string							true	"install ID"
-// @Param					req			body	DeployInstallComponentsRequest	true	"Input"
+// @ID						DeleteInstallComponents
+// @Summary				delete an install component
+// @Description.markdown	delete_install_components.md
+// @Param					install_id		path	string				true	"install ID"
+// @Param					force					query	bool					false	"force delete"
 // @Tags					installs
 // @Accept					json
 // @Produce				json
@@ -37,16 +24,10 @@ func (c *DeployInstallComponentsRequest) Validate(v *validator.Validate) error {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{string}	ok
-// @Router					/v1/installs/{install_id}/components/deploy-all [post]
-func (s *service) DeployInstallComponents(ctx *gin.Context) {
+// @Success				200	{boolean} 		true
+// @Router					/v1/installs/{install_id}/components [delete]
+func (s *service) DeleteInstallComponents(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-
-	var req DeployInstallComponentsRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
-		return
-	}
 
 	_, err := s.getInstall(ctx, installID)
 	if err != nil {
@@ -54,11 +35,18 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 		return
 	}
 
+	force := ctx.GetBool("force")
+
+	behavior := app.StepErrorBehaviorAbort
+	if force {
+		behavior = app.StepErrorBehaviorContinue
+	}
+
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		installID,
-		app.InstallWorkflowTypeDeployComponents,
+		app.InstallWorkflowTypeTeardownComponents,
 		map[string]string{},
-		req.ErrorBehavior,
+		behavior,
 	)
 	if err != nil {
 		ctx.Error(err)
