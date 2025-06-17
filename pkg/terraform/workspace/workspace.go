@@ -23,12 +23,13 @@ var _ Workspace = (*workspace)(nil)
 type workspace struct {
 	v *validator.Validate
 
-	Archive   archive.Archive       `validate:"required"`
-	Backend   backend.Backend       `validate:"required"`
-	Variables []variables.Variables `validate:"required,min=1"`
-	Binary    binary.Binary         `validate:"required"`
-	Hooks     hooks.Hooks           `validate:"required"`
-	PlanBytes []byte
+	Archive     archive.Archive       `validate:"required"`
+	Backend     backend.Backend       `validate:"required"`
+	Variables   []variables.Variables `validate:"required,min=1"`
+	Binary      binary.Binary         `validate:"required"`
+	Hooks       hooks.Hooks           `validate:"required"`
+	PlanBytes   []byte
+	PlanDisplay string
 
 	DisableCleanup bool
 	ControlCache   bool

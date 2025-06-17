@@ -11,7 +11,7 @@ import (
 
 // create a plan for destroy
 func (r *run) DestroyPlan(ctx context.Context) error {
-	pipe, err := r.getDestroyPipeline()
+	pipe, err := r.getDestroyPlanPipeline()
 	if err != nil {
 		return fmt.Errorf("unable to get destroy pipeline: %w", err)
 	}
@@ -67,25 +67,17 @@ func (r *run) getDestroyPlanPipeline() (*pipeline.Pipeline, error) {
 		ExecFn:     execmappers.MapInitLog(r.Workspace.Init),
 		CallbackFn: callbackmappers.Noop,
 	})
-
-	planCb, err := r.outputCallback("tfplan")
-	if err != nil {
-		return nil, fmt.Errorf("unable to create output callback: %w", err)
-	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "plan destroy",
-		ExecFn:     execmappers.MapBytesLog(r.Workspace.ApplyDestroyPlan),
-		CallbackFn: planCb,
+		ExecFn:     execmappers.MapBytesLog(r.Workspace.PlanDestroy),
+		CallbackFn: callbackmappers.Noop,
 	})
-
-	planJsonCb, err := r.outputCallback("plan.json")
-	if err != nil {
-		return nil, fmt.Errorf("unable to create plan callback: %w", err)
-	}
+	planCb, err := r.localFileCallback("plan.json")
 	pipe.AddStep(&pipeline.Step{
 		Name:       "show plan",
 		ExecFn:     execmappers.MapTerraformPlan(r.Workspace.ShowPlan),
-		CallbackFn: planJsonCb,
+		CallbackFn: planCb,
 	})
+
 	return pipe, nil
 }
