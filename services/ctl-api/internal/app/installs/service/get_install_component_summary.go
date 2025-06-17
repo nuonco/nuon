@@ -8,10 +8,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
-	"gorm.io/gorm"
 )
 
 // @ID						GetInstallComponentsSummary
@@ -45,6 +46,11 @@ func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 	err = s.populateInstallComponentsWithDeploys(ctx, install)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to populate install components with deploys: %w", err))
+		return
+	}
+
+	if len(install.InstallComponents) < 1 {
+		ctx.JSON(http.StatusOK, []app.InstallComponentSummary{})
 		return
 	}
 
@@ -104,7 +110,6 @@ func buildInstallComponentConfig(installComponentConfigurations []app.ComponentC
 				compMap[installComponent.ComponentID] = &installComponentConfig
 			}
 		}
-
 	}
 	return compMap
 }
