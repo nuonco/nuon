@@ -40,7 +40,7 @@ type HelmComponentConfig struct {
 	Namespace     generics.NullString `json:"namespace,omitzero" swaggertype:"string" features:"template" temporaljson:"namespace,omitzero,omitempty"`
 	StorageDriver generics.NullString `json:"storage_driver,omitzero" swaggertype:"string" features:"template" temporaljson:"storage_driver,omitzero,omitempty"`
 	// Newer config fields that we don't need a column for
-	TakeOwnership bool `json:"take_ownership,omitzero" gorm:"-" features:"template" temporaljson:"take_ownership,omitzero,omitempty"`
+	TakeOwnership bool `json:"take_ownership,omitzero" gorm:"-" temporaljson:"take_ownership,omitzero,omitempty"`
 
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitzero,omitempty" temporaljson:"public_git_vcs_config,omitzero,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitzero,omitempty" temporaljson:"connected_github_vcs_config,omitzero,omitempty"`
