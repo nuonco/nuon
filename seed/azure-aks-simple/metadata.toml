@@ -1,0 +1,5 @@
+version = "v2"
+
+description = "An Azure EKS app that runs a single container."
+display_name = "Azure AKS Simple"
+readme       = "./README.md"

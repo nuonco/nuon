@@ -1,0 +1,16 @@
+#:schema https://api.nuon.co/v1/general/config-schema?source=sandbox
+terraform_version = "1.11.3"
+
+[public_repo]
+directory = "."
+repo      = "nuonco/azure-aks-sandbox"
+branch    = "ja/azure-support"
+
+[vars]
+cluster_name         = "n-{{.nuon.install.id}}"
+enable_nuon_dns      = "true"
+public_root_domain   = "{{ .nuon.inputs.inputs.root_domain }}"
+internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
+
+[[var_file]]
+contents = "./sandbox.tfvars"
