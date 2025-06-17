@@ -14,6 +14,20 @@ import (
 	"github.com/powertoolsdev/mono/pkg/errs"
 )
 
+func (s *Service) loadConfig(file string) (*config.AppConfig, error) {
+	cfg, err := parse.Parse(parse.ParseConfig{
+		Filename:    file,
+		BackendType: config.BackendTypeLocal,
+		Template:    true,
+		V:           validator.New(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
 func (s *Service) ValidateDir(ctx context.Context, dir string) error {
 	ui.PrintLn("syncing directory from " + dir)
 
