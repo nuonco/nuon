@@ -11,7 +11,7 @@ import { sentanceCase } from '@/utils'
 
 export const EventStatus: FC<{ status?: string }> = ({
   status = 'waiting',
-}) => {  
+}) => {
   const statusColor = {
     'bg-green-800 dark:bg-green-500':
       status === 'finished' || status === 'active',
@@ -27,6 +27,7 @@ export const EventStatus: FC<{ status?: string }> = ({
       status === 'inactive' ||
       status === 'cancelled' ||
       status === 'not-attempted' ||
+      status === 'discarded' ||
       status === 'deprovisioned',
     'bg-orange-800 dark:bg-orange-500':
       status === 'executing' ||
@@ -91,7 +92,7 @@ export const TimelineEvent: FC<ITimelineEvent> = ({
   time,
   href,
   isMostRecent = false,
-}) => {  
+}) => {
   const Event = (
     <div
       className={classNames('flex items-center justify-between p-4', {
