@@ -18,7 +18,6 @@ import {
   Truncate,
 } from '@/components'
 import { getInstall, getInstallActionWorkflowRecentRun } from '@/lib'
-import { humandReadableTriggeredBy } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const actionWorkflowId = params?.['action-id'] as string
@@ -69,7 +68,13 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
                   Recent status
                 </Text>
                 <StatusBadge
-                  status={actionWithRecentRuns.runs?.[0]?.status || 'noop'}
+                  description={
+                    actionWithRecentRuns.runs?.[0]?.status_v2
+                      ?.status_human_description
+                  }
+                  status={
+                    actionWithRecentRuns.runs?.[0]?.status_v2?.status || 'noop'
+                  }
                 />
               </span>
 
