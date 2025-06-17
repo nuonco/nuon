@@ -43,6 +43,7 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 		app.StatusInProgress,
 		app.StatusPending,
 		app.WorkflowAwaitingApproval,
+		app.Status("awaiting-approval"),
 	}) {
 		s.l.Error("install workflow is not cancelable",
 			zap.String("workflow_id", wf.ID),

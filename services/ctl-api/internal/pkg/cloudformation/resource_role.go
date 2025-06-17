@@ -83,12 +83,12 @@ func (a *Templates) getRolesResources(inp *TemplateInput, t tagBuilder) map[stri
 			// json.RawMessage requires the input to be valid json,
 			// {} is a valid json but bytes slice with 0 size is not
 			role.PermissionsBoundaryJSON = []byte(`""`)
+		} else {
+			boundaryPolicyName := role.CloudFormationStackName + "Boundary"
+			rsrcs[boundaryPolicyName] = a.getPermissionsBoundaryPolicy(role)
+
+			roleRsrc.PermissionsBoundary = cloudformation.RefPtr(boundaryPolicyName)
 		}
-
-		boundaryPolicyName := role.CloudFormationStackName + "Boundary"
-		rsrcs[boundaryPolicyName] = a.getPermissionsBoundaryPolicy(role)
-
-		roleRsrc.PermissionsBoundary = cloudformation.RefPtr(boundaryPolicyName)
 
 		// Add the role resource
 		rsrcs[role.CloudFormationStackName] = roleRsrc
