@@ -46,7 +46,7 @@ const (
 )
 
 const (
-	WorkflowAwaitingApproval Status = "awaiting-approval"
+	WorkflowAwaitingApproval Status = "approval-awaiting"
 )
 
 func (s Status) DefaultHumanDescription() string {
