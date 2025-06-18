@@ -31,7 +31,7 @@ resource "helm_release" "alb-ingress-controller" {
   name       = "aws-load-balancer-controller"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
-  version    = "1.6.1"
+  version    = "1.6.2"
 
   # https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/main/helm/aws-load-balancer-controller/README.md#configuration
   set {
