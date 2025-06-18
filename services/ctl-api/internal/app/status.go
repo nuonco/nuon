@@ -22,6 +22,8 @@ const (
 	StatusNotAttempted Status = "not-attempted"
 	StatusCancelled    Status = "cancelled"
 	StatusDiscarded    Status = "discarded"
+	StatusPlanning  Status = "planning"
+	StatusApplying  Status = "applying"
 )
 
 // type specific statuses

@@ -94,7 +94,6 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		OwnerType:   "install_sandbox_runs",
 		RunnerJobID: job.ID,
 		StepID:      stepID,
-		Plan:        string(job.Execution.Result.ContentsDisplay),
 		Type:        app.TerraformPlanApprovalType,
 	}); err != nil {
 		return errors.Wrap(err, "unable to create approval")
