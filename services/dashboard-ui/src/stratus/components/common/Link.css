@@ -4,7 +4,7 @@
   font-size: inherit;
   line-height: inherit;
   letter-spacing: inherit;
-  @apply transition-colors
+  @apply transition-colors w-fit; 
 }
 
 .logo-link:focus-visible,
@@ -48,7 +48,7 @@
   height: 36px;
   line-height: 21px;
   letter-spacing: -0.2px;
-  @apply flex items-center gap-4 overflow-hidden rounded-md py-2.5 px-3 transition-colors;
+  @apply flex items-center gap-4 overflow-hidden rounded-md py-2.5 px-3 transition-colors w-full;
 }
 
 .link.nav:hover {
