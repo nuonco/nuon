@@ -20,6 +20,10 @@ export const SandboxRunStatus: FC<ISandboxRunStatus> = ({
   ...props
 }) => {
   const path = usePathname()
+  const status = run?.status_v2 || {
+    status: run?.status || 'Unknown',
+    status_human_description: run?.status_description || undefined,
+  }
 
   useEffect(() => {
     const fetchSandboxRun = () => {
@@ -29,11 +33,11 @@ export const SandboxRunStatus: FC<ISandboxRunStatus> = ({
       const pollSandboxRun = setInterval(fetchSandboxRun, SHORT_POLL_DURATION)
 
       if (
-        run?.status_v2.status === 'active' ||
-        run?.status_v2.status === 'error' ||
-        run?.status_v2.status === 'cancelled' ||
-        run?.status_v2.status === 'not-attempted' ||
-        run?.status_v2.status === 'noop'
+        status.status === 'active' ||
+        status.status === 'error' ||
+        status.status === 'cancelled' ||
+        status.status === 'not-attempted' ||
+        status.status === 'noop'
       ) {
         clearInterval(pollSandboxRun)
       }
@@ -44,8 +48,8 @@ export const SandboxRunStatus: FC<ISandboxRunStatus> = ({
 
   return (
     <StatusBadge
-      description={run?.status_v2.status_human_description}
-      status={run?.status_v2.status}
+      description={status.status_human_description}
+      status={status.status}
       label="Status"
       {...props}
     />

@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect } from 'react'
 import { StatusBadge } from '@/components/Status'
-import { revalidateData } from "@/components/actions"
+import { revalidateData } from '@/components/actions'
 import type { TInstallDeploy } from '@/types'
 import { SHORT_POLL_DURATION } from '@/utils'
 
@@ -20,7 +20,11 @@ export const DeployStatus: FC<IDeployStatus> = ({
   ...props
 }) => {
   const path = usePathname()
-  
+  const status = deploy?.status_v2 || {
+    status: deploy?.status || 'Unknown',
+    status_human_description: deploy?.status_description || undefined,
+  }
+
   useEffect(() => {
     const fetchDeploy = () => {
       revalidateData({ path })
@@ -29,11 +33,11 @@ export const DeployStatus: FC<IDeployStatus> = ({
       const pollDeploy = setInterval(fetchDeploy, SHORT_POLL_DURATION)
 
       if (
-        deploy?.status_v2.status === 'active' ||
-        deploy?.status_v2.status === 'error' ||
-        deploy?.status_v2.status === 'cancelled' ||
-        deploy?.status_v2.status === 'not-attempted' ||
-        deploy?.status_v2.status === 'noop'
+        status.status === 'active' ||
+        status.status === 'error' ||
+        status.status === 'cancelled' ||
+        status.status === 'not-attempted' ||
+        status.status === 'noop'
       ) {
         clearInterval(pollDeploy)
       }
@@ -44,8 +48,8 @@ export const DeployStatus: FC<IDeployStatus> = ({
 
   return (
     <StatusBadge
-      description={deploy?.status_v2.status_human_description}
-      status={deploy?.status_v2.status}
+      description={status.status_human_description}
+      status={status.status}
       label="Status"
       {...props}
     />
