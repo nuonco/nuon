@@ -37,6 +37,18 @@ When an approval has been waiting for an extended period of time, you can re-run
 
 This will re-run the plan step, and prompt the approval before continuing.
 
+
+## Helm component config 
+You can now define the `TakeOwnership` flag in the helm component config.
+```toml 
+name       = "helm_chart_two"
+type       = "helm_chart"
+chart_name = "retool"
+take_ownership = true
+```
+
+We'll be exposing more helm install flags in the future releases.
+
 ## Bug Fixes and other
 
 * `nuon apps sync-dir` has been deprecated in favor of `nuon apps sync`.
