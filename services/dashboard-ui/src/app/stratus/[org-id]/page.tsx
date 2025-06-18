@@ -1,28 +1,12 @@
 import type { FC } from 'react'
 import { getSession } from '@auth0/nextjs-auth0'
 import {
-  CaretLeft,
-  CaretUp,
-  CaretUpDown,
-  CaretRight,
-  DotsThreeVertical,
-  Stack,
-} from '@phosphor-icons/react/dist/ssr'
-import {
-  Button,
-  CodeEditor,
-  DiffEditor,
-  Menu,
   Text,
-  Link,
-  Tooltip,
   Header,
-  HeaderGroup,
+  HeadingGroup,
   Page,
   Section,
   ScrollableDiv,
-  Dropdown,
-  splitYamlDiff,
 } from '@/stratus/components'
 import type { IPageProps } from '@/types'
 import { nueQueryData } from '@/utils'
@@ -47,14 +31,14 @@ const Dashboard: FC<IPageProps<'org-id'>> = async ({ params }) => {
       }}
     >
       <Header className="border-b">
-        <HeaderGroup>
+        <HeadingGroup>
           <Text variant="h3" weight="strong" level={1}>
             Welcome, {user?.given_name}!
           </Text>
           <Text theme="muted">
             Manage your applications and deployed installs.
           </Text>
-        </HeaderGroup>
+        </HeadingGroup>
       </Header>
       <div className="grid md:grid-cols-12 w-full divide-x min-h-full">
         <div className="flex flex-col gap-8 md:col-span-8">
