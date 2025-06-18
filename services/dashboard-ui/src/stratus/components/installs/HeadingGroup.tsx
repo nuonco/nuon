@@ -1,15 +1,14 @@
 'use client'
 
 import React, { type FC } from 'react'
-import { Text, Time } from '@/stratus/components/common'
-import { HeaderGroup } from '@/stratus/components/dashboard'
+import { HeadingGroup, Text, Time } from '@/stratus/components/common'
 import { useInstall } from '@/stratus/context'
 
-export const InstallHeaderGroup: FC = () => {
+export const InstallHeadingGroup: FC = () => {
   const { install } = useInstall()
 
   return (
-    <HeaderGroup>
+    <HeadingGroup>
       <Text variant="h3" weight="strong" level={1}>
         {install?.name}
       </Text>
@@ -19,6 +18,6 @@ export const InstallHeaderGroup: FC = () => {
       <Text theme="highlighted" variant="subtext" weight="strong">
         Last updated <Time time={install?.updated_at} format="relative" />
       </Text>
-    </HeaderGroup>
+    </HeadingGroup>
   )
 }

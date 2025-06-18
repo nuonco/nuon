@@ -5,7 +5,7 @@ import {
   Button,
   Card,
   Header,
-  HeaderGroup,
+  HeadingGroup,
   Page,
   RunnerDetails,
   RunnerDetailsSkeleton,
@@ -40,14 +40,14 @@ const StratusBuildRunner: FC<IPageProps<'org-id'>> = async ({ params }) => {
     >
       <ScrollableDiv>
         <Header>
-          <HeaderGroup>
+          <HeadingGroup>
             <Text variant="h3" weight="strong" level={1}>
               Build runner
             </Text>
             <Text theme="muted">
               View your organizations build runner performance and activities.
             </Text>
-          </HeaderGroup>
+          </HeadingGroup>
           <Button variant="danger" className="self-center">
             <Power />
             Shutdown runner

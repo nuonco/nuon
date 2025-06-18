@@ -6,7 +6,7 @@ import {
   Button,
   Link,
   Header,
-  HeaderGroup,
+  HeadingGroup,
   Page,
   ScrollableDiv,  
   Section,
@@ -37,12 +37,12 @@ const InstallsPage: FC<IPageProps<'org-id'>> = async ({ params }) => {
     >
       <ScrollableDiv>
         <Header>
-          <HeaderGroup>
+          <HeadingGroup>
             <Text variant="h3" weight="strong" level={1}>
               Installs
             </Text>
             <Text theme="muted">View your installs here.</Text>
-          </HeaderGroup>
+          </HeadingGroup>
           <Button className="self-center" variant="primary">
             <Cube />
             Create install

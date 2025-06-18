@@ -46,6 +46,7 @@
     "react-icons": "^5.0.1",
     "react-tailwindcss-select": "^1.8.5",
     "showdown": "^2.1.0",
+    "uuid": "^11.1.0",
     "yaml": "^2.7.1"
   },
   "devDependencies": {

@@ -15,12 +15,13 @@ export const Dashboard: FC<IDashboard> = ({ children }) => {
 
   return (
     <div
-      className={classNames('dashboard divide-x', {
+      className={classNames('dashboard', {
         'is-open': isSidebarOpen,
       })}
     >
       <Sidebar />
-      {children}
+      {children}     
+      <div id="surface-root" />
     </div>
   )
 }
