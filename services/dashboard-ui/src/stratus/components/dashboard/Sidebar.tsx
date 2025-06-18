@@ -5,7 +5,7 @@ import {
   CaretUp,
   ArrowLineLeft,
   ArrowLineRight,
-  Sidebar as SidebarIcon,
+  SidebarSimple as SidebarIcon,
 } from '@phosphor-icons/react'
 import { useDashboard } from '@/stratus/context'
 import { Button } from '@/stratus/components/common'
@@ -19,7 +19,7 @@ interface ISidebar {}
 
 export const Sidebar: FC<ISidebar> = () => {
   return (
-    <aside className="bg-cool-grey-50 dark:bg-dark-grey-200 flex flex-col">
+    <aside className="bg-cool-grey-50 dark:bg-dark-grey-200 flex flex-col border-r">
       <header className="flex items-center justify-between">
         <Logo />
         <div className="md:hidden">
