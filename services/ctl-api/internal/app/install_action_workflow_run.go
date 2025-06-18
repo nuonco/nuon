@@ -126,8 +126,10 @@ func (i *InstallActionWorkflowRun) AfterQuery(tx *gorm.DB) error {
 		}
 	}
 
-	i.Status = InstallActionWorkflowRunStatus(i.StatusV2.Status)
-	i.StatusDescription = i.StatusV2.StatusHumanDescription
+	if i.StatusV2.Status != "" {
+		i.Status = InstallActionWorkflowRunStatus(i.StatusV2.Status)
+		i.StatusDescription = i.StatusV2.StatusHumanDescription
+	}
 
 	return nil
 }
