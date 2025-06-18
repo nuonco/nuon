@@ -144,7 +144,6 @@ jobs:
     needs:
       - tag
       - bump_tag
-      - artifacts
       - services
     uses: ./.github/workflows/promote_success.yml
     with:
