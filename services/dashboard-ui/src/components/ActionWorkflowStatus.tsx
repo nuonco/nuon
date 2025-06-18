@@ -1,9 +1,9 @@
 'use client'
 
-import { usePathname } from "next/navigation"
+import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect } from 'react'
 import { StatusBadge } from '@/components/Status'
-import { revalidateData } from "@/components/actions"
+import { revalidateData } from '@/components/actions'
 import type { TInstallActionWorkflowRun } from '@/types'
 import { SHORT_POLL_DURATION } from '@/utils'
 
@@ -20,6 +20,11 @@ export const ActionWorkflowStatus: FC<IActionWorkflowStatus> = ({
   ...props
 }) => {
   const path = usePathname()
+  const status = actionWorkflowRun?.status_v2 || {
+    status: actionWorkflowRun?.status || 'Unknown',
+    status_human_description:
+      actionWorkflowRun?.status_description || undefined,
+  }
 
   useEffect(() => {
     const refreshData = () => {
@@ -29,11 +34,11 @@ export const ActionWorkflowStatus: FC<IActionWorkflowStatus> = ({
       const pollBuild = setInterval(refreshData, SHORT_POLL_DURATION)
 
       if (
-        actionWorkflowRun?.status_v2?.status === 'active' ||
-        actionWorkflowRun?.status_v2?.status === 'error' ||
-        actionWorkflowRun?.status_v2?.status === 'cancelled' ||
-        actionWorkflowRun?.status_v2?.status === 'not-attempted' ||
-        actionWorkflowRun?.status_v2?.status === 'noop'
+        status.status === 'active' ||
+        status.status === 'error' ||
+        status.status === 'cancelled' ||
+        status.status === 'not-attempted' ||
+        status.status === 'noop'
       ) {
         clearInterval(pollBuild)
       }
@@ -44,8 +49,8 @@ export const ActionWorkflowStatus: FC<IActionWorkflowStatus> = ({
 
   return (
     <StatusBadge
-      description={actionWorkflowRun?.status_v2?.status_human_description}
-      status={actionWorkflowRun?.status_v2?.status}
+      description={status.status_human_description}
+      status={status.status}
       {...props}
     />
   )

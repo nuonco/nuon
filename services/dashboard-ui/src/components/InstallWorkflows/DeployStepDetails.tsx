@@ -92,9 +92,9 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
                       <span className="flex gap-4 items-center">
                         <StatusBadge
                           description={
-                            deploy?.status_v2?.status_human_description
+                            deploy?.status_v2?.status_human_description || deploy?.status
                           }
-                          status={deploy?.status_v2?.status}
+                          status={deploy?.status_v2?.status || deploy?.status_description}
                           label="Deployment status"
                         />
                       </span>
