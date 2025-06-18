@@ -1,32 +1,21 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-type DeployInstallComponentsRequest struct {
-	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
-}
-
-func (c *DeployInstallComponentsRequest) Validate(v *validator.Validate) error {
-	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
-	}
-	return nil
-}
+type DeployInstallComponentsRequest struct{}
 
 // @ID						DeployInstallComponents
 // @Summary				deploy all components on an install
 // @Description.markdown	install_deploy_components.md
 // @Param					install_id	path	string							true	"install ID"
-// @Param					req			body	DeployInstallComponentsRequest	true	"Input"
+// @Param					req			body	DeployInstallComponentsRequest	false	"Input"
 // @Tags					installs
 // @Accept					json
 // @Produce				json
@@ -42,12 +31,6 @@ func (c *DeployInstallComponentsRequest) Validate(v *validator.Validate) error {
 func (s *service) DeployInstallComponents(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
-	var req DeployInstallComponentsRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
-		return
-	}
-
 	_, err := s.getInstall(ctx, installID)
 	if err != nil {
 		ctx.Error(err)
@@ -58,7 +41,7 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 		installID,
 		app.InstallWorkflowTypeDeployComponents,
 		map[string]string{},
-		req.ErrorBehavior,
+		app.StepErrorBehaviorAbort,
 	)
 	if err != nil {
 		ctx.Error(err)
