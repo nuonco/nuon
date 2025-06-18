@@ -1,7 +1,5 @@
 FROM golang:1.24 as code
 
-RUN rm -f /etc/apt/apt.conf.d/docker-clean
-
 WORKDIR /src
 ARG SERVICE=runner
 ARG GOCACHE=/go-cache
@@ -10,16 +8,12 @@ ARG PKG_ROOT=github.com/powertoolsdev/mono/bins/${SERVICE}
 
 # copy deps, tools and fetch dependencies
 COPY tools.go go.mod go.sum .
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    go mod download
+RUN go mod download
 
 # copy package and generate it
 COPY pkg pkg
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    cd pkg && \
-    go generate ./...
+RUN cd pkg && \
+  go generate ./...
 
 # copy each file that is specific to the api into the correct directory
 WORKDIR /src/bins/${SERVICE}
@@ -28,9 +22,7 @@ COPY cmd  ./cmd/
 COPY internal ./internal/
 COPY main.go .
 COPY generate.sh .
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    go generate ./...
+RUN go generate ./...
 
 FROM code as build
 
@@ -70,22 +62,21 @@ FROM golang:1.24-alpine as final
 
 ARG tag
 
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --no-cache \
-    libc6-compat \
-    build-base \
-    make \
-    ca-certificates-bundle \
-    coreutils \
-    curl \
-    protoc \
-    jq \
-    git \
-    aws-cli \
-    kubectl \
-    zip \
-    openssl \
-    helm
+RUN apk add --no-cache \
+  libc6-compat \
+  build-base \
+  make \
+  ca-certificates-bundle \
+  coreutils \
+  curl \
+  protoc \
+  jq \
+  git \
+  aws-cli \
+  kubectl \
+  zip \
+  openssl \
+  helm
 
 WORKDIR /src/bins/runner
 
@@ -110,9 +101,7 @@ ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    GOOS=linux \
+RUN GOOS=linux \
     GOARCH=amd64 \
     go build \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
