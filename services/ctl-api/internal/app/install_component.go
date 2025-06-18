@@ -78,8 +78,10 @@ func (c *InstallComponent) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (c *InstallComponent) AfterQuery(tx *gorm.DB) error {
-	c.Status = InstallComponentStatus(c.StatusV2.Status)
-	c.StatusDescription = c.StatusV2.StatusHumanDescription
+	if c.StatusV2.Status != "" {
+		c.Status = InstallComponentStatus(c.StatusV2.Status)
+		c.StatusDescription = c.StatusV2.StatusHumanDescription
+	}
 
 	if c.Status == InstallComponentStatusUnset && len(c.InstallDeploys) > 0 {
 		// TODO: we shouldn't need this check, after we migrated all statuses from latest deploys
