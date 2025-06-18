@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import {
   BackLink,
   Header,
-  HeaderGroup,
+  HeadingGroup,
   ScrollableDiv,
   Section,
   Text,
@@ -24,7 +24,7 @@ const SandboxRunPage: FC<
   return (
     <ScrollableDiv>
       <Header>
-        <HeaderGroup>
+        <HeadingGroup>
           <BackLink />
           <Text variant="h3" weight="strong">
             {data?.run_type}
@@ -32,7 +32,7 @@ const SandboxRunPage: FC<
           <Text family="mono" variant="subtext" theme="muted">
             {data?.id}
           </Text>
-        </HeaderGroup>
+        </HeadingGroup>
       </Header>
       <Section>Content</Section>
     </ScrollableDiv>
