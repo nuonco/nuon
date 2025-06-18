@@ -70,10 +70,13 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
                 <StatusBadge
                   description={
                     actionWithRecentRuns.runs?.[0]?.status_v2
-                      ?.status_human_description
+                      ?.status_human_description ||
+                    actionWithRecentRuns?.runs?.[0]?.status_description
                   }
                   status={
-                    actionWithRecentRuns.runs?.[0]?.status_v2?.status || 'noop'
+                    actionWithRecentRuns.runs?.[0]?.status_v2?.status ||
+                    actionWithRecentRuns?.runs?.[0]?.status ||
+                    'noop'
                   }
                 />
               </span>
