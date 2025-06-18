@@ -14,18 +14,31 @@ type CreateStepApprovalRequest struct {
 	OwnerType string `validate:"required"`
 
 	RunnerJobID string
-	StepID      string `validate:"required"`
-	Plan        string
+	StepID      string                              `validate:"required"`
 	Type        app.InstallWorkflowStepApprovalType `validate:"required"`
+
+	Plan string
 }
 
 // @temporal-gen activity
 func (a *Activities) CreateStepApproval(ctx context.Context, req *CreateStepApprovalRequest) (*app.InstallWorkflowStepApproval, error) {
+	plan := req.Plan
+	if req.Plan == "" {
+		job, err := a.GetJob(ctx, &GetJobRequest{
+			ID: req.RunnerJobID,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get job")
+		}
+
+		plan = string(job.Execution.Result.ContentsDisplay)
+	}
+
 	sa := app.InstallWorkflowStepApproval{
 		InstallWorkflowStepID: req.StepID,
 		OwnerType:             req.OwnerType,
 		OwnerID:               req.OwnerID,
-		Contents:              req.Plan,
+		Contents:              plan,
 		Type:                  req.Type,
 	}
 
