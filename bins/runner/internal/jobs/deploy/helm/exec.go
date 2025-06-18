@@ -74,11 +74,16 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	// load helm plan from the plan
 	if len(h.state.plan.ApplyPlanContents) > 0 {
-		bytes, err := json.Marshal(h.state.plan.ApplyPlanContents)
+		// TODO: use the actual struct and move into a shared pk
+		l.Debug("extracting apply plan contents", zap.Int("contents.length", len(h.state.plan.ApplyPlanContents)), zap.String("raw", h.state.plan.ApplyPlanContents))
+		var result map[string]interface{}
+		err = json.Unmarshal([]byte(h.state.plan.ApplyPlanContents), &result)
 		if err != nil {
-			return fmt.Errorf("ApplyPlanContents found but unable to marshall it out: %w", err)
+			return fmt.Errorf("unable to parse the plan contents into a usable map")
 		}
-		json.Unmarshal(bytes, helmPlan)
+		helmPlan.Op = result["op"].(string)
+		helmPlan.Diff = result["plan"].(string)
+		l.Debug("extracting apply plan contents", zap.Any("plan", helmPlan), zap.String("op", helmPlan.Op))
 	}
 
 	switch job.Operation {
