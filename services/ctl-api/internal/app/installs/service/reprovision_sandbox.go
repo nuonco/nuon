@@ -1,26 +1,15 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-type ReprovisionInstallSandboxRequest struct {
-	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
-}
-
-func (c *ReprovisionInstallSandboxRequest) Validate(v *validator.Validate) error {
-	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
-	}
-	return nil
-}
+type ReprovisionInstallSandboxRequest struct{}
 
 // @ID						ReprovisionInstallSandbox
 // @Summary				reprovision an install sandbox
@@ -41,12 +30,6 @@ func (c *ReprovisionInstallSandboxRequest) Validate(v *validator.Validate) error
 // @Router					/v1/installs/{install_id}/reprovision-sandbox [post]
 func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-
-	var req ReprovisionInstallSandboxRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
-		return
-	}
 
 	install, err := s.getInstall(ctx, installID)
 	if err != nil {
@@ -69,7 +52,7 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 		install.ID,
 		app.InstallWorkflowTypeReprovisionSandbox,
 		map[string]string{},
-		req.ErrorBehavior,
+		app.StepErrorBehaviorAbort,
 	)
 	if err != nil {
 		ctx.Error(err)
