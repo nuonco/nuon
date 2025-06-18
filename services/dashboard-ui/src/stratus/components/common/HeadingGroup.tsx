@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
 
-interface IHeaderGroup extends React.HTMLAttributes<HTMLDivElement> {}
+interface IHeadingGroup extends React.HTMLAttributes<HTMLDivElement> {}
 
-export const HeaderGroup: FC<IHeaderGroup> = ({
+export const HeadingGroup: FC<IHeadingGroup> = ({
   className,
   children,
   ...props
