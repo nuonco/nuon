@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	defaultSyncTimeout        time.Duration = time.Minute * 12
+	defaultSyncTimeout        time.Duration = time.Minute * 20
 	defaultSyncSleep          time.Duration = time.Second * 20
 	componentBuildStatusError               = "error"
 
