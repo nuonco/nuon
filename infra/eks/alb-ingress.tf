@@ -74,6 +74,11 @@ resource "helm_release" "alb-ingress-controller" {
     value = module.alb_controller_irsa.iam_role_arn
   }
 
+  set {
+    name  = "enableServiceMutatorWebhook"
+    value = "false"
+  }
+
   values = [
     yamlencode(local.vars.alb_settings)
   ]
