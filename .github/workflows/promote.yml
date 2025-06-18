@@ -75,33 +75,19 @@ jobs:
         service:
           - ctl-api
           - dashboard-ui
-          - workers-infra-tests
-          - wiki
+          - nuonctl
+          - runner
+          - cli
+
+          # need to be updated to use nctl
+          # - workers-infra-tests
+          # - wiki
     uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
       tag: ${{ needs.tag.outputs.semver }}
       prod: true
       stage: false
-    secrets: inherit
-
-  artifacts:
-    # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
-    name: 🚢
-    needs:
-      - tag
-    strategy:
-      fail-fast: false
-      matrix:
-        dir:
-          - services/e2e
-          - bins/cli
-          - bins/runner
-    uses: ./.github/workflows/artifact.yml
-    with:
-      dir: ${{matrix.dir}}
-      tag: ${{ needs.tag.outputs.semver }}
-      is_promotion: true
     secrets: inherit
 
   bump_tag:
@@ -121,7 +107,6 @@ jobs:
     needs:
       - tag
       - services
-      - artifacts
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
