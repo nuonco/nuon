@@ -37,6 +37,8 @@ var defaultSupportUsers = [][2]string{
 	{"google-oauth2|109216513967056704574", "somesh@nuon.co"},
 	// Mark Milligan
 	{"google-oauth2|112768740915143844087", "mark@nuon.co"},
+	// Prem Saraswat
+	{"google-oauth2|110547539022695245311", "prem@nuon.co"},
 }
 
 // @ID						AdminCreateSupportUsers
