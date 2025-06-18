@@ -5,14 +5,15 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
-	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 )
 
 func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, stepID string, sandboxMode bool) error {
@@ -22,6 +23,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	}
 	l.Info("executing apply plan")
 
+	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatus(app.StatusApplying), "applying plan")
 	prevJob, err := activities.AwaitGetLatestJobByOwnerID(ctx, installRun.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get latest runner job")
