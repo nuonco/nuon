@@ -1,8 +1,12 @@
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import {
+  ExampleModal,
+  ExampleToast,
+  PermToast,
   Header,
-  HeaderGroup,
+  HeadingGroup,
+  Link,
   Page,
   Section,
   ScrollableDiv,
@@ -30,14 +34,20 @@ const AppsPage: FC<IPageProps<'org-id'>> = ({ params }) => {
     >
       <ScrollableDiv>
         <Header>
-          <HeaderGroup>
+          <HeadingGroup>
             <Text variant="h3" weight="strong" level={1}>
               Installs
             </Text>
             <Text theme="muted">View your installs here.</Text>
-          </HeaderGroup>
+          </HeadingGroup>
         </Header>
         <Section className="divide-y">
+          <div className="flex gap-6">
+            <ExampleModal />
+            <ExampleToast />
+            <PermToast />
+          </div>
+
           <ErrorBoundary fallback="An error happened while loading installs">
             <Suspense fallback={'Loading...'}>Apps: TKTKTK</Suspense>
           </ErrorBoundary>
