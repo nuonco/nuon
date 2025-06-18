@@ -10,17 +10,14 @@ ENV GOMODCACHE=/go-mod-cache
 ENV CGO_ENABLED=0
 ENV GOPRIVATE=github.com/powertoolsdev/*
 
-RUN --mount=type=cache,target=/root/.cache/golangci-lint \
-    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
-    | sh -s -- -b $(go env GOPATH)/bin ${GOLANGCI_LINT_VERSION}
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+  | sh -s -- -b $(go env GOPATH)/bin ${GOLANGCI_LINT_VERSION}
 
-RUN rm -f /etc/apt/apt.conf.d/docker-clean
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get update && \
-    apt-get install --no-install-recommends -y ca-certificates \
+RUN apt-get update && \
+  apt-get install -y ca-certificates \
     coreutils \
     make \
     git \
     curl \
     protobuf-compiler \
-    jq && rm -rf /var/lib/apt/lists/*
+    jq
