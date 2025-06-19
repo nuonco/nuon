@@ -8,11 +8,11 @@
     },
     "outputs": {
       "org": {
-        "cross-stack-output-aws_organizations_account.ci.id": "cross-stack-output-aws_organizations_accountciid",
         "cross-stack-output-aws_organizations_account.demo-govcloud.id": "cross-stack-output-aws_organizations_accountdemo-govcloudid",
         "cross-stack-output-aws_organizations_account.demo.id": "cross-stack-output-aws_organizations_accountdemoid",
         "cross-stack-output-aws_organizations_account.govcloud-prod.id": "cross-stack-output-aws_organizations_accountgovcloud-prodid",
         "cross-stack-output-aws_organizations_account.govcloud-stage.id": "cross-stack-output-aws_organizations_accountgovcloud-stageid",
+        "cross-stack-output-aws_organizations_account.infra-shared-ci.id": "cross-stack-output-aws_organizations_accountinfra-shared-ciid",
         "cross-stack-output-aws_organizations_account.infra-shared-prod.id": "cross-stack-output-aws_organizations_accountinfra-shared-prodid",
         "cross-stack-output-aws_organizations_account.infra-shared-stage.id": "cross-stack-output-aws_organizations_accountinfra-shared-stageid",
         "cross-stack-output-aws_organizations_account.infra-tests-00.id": "cross-stack-output-aws_organizations_accountinfra-tests-00id",
@@ -85,10 +85,6 @@
     }
   },
   "output": {
-    "cross-stack-output-aws_organizations_accountciid": {
-      "sensitive": true,
-      "value": "${aws_organizations_account.ci.id}"
-    },
     "cross-stack-output-aws_organizations_accountdemo-govcloudid": {
       "sensitive": true,
       "value": "${aws_organizations_account.demo-govcloud.id}"
@@ -104,6 +100,10 @@
     "cross-stack-output-aws_organizations_accountgovcloud-stageid": {
       "sensitive": true,
       "value": "${aws_organizations_account.govcloud-stage.id}"
+    },
+    "cross-stack-output-aws_organizations_accountinfra-shared-ciid": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.infra-shared-ci.id}"
     },
     "cross-stack-output-aws_organizations_accountinfra-shared-prodid": {
       "sensitive": true,
@@ -231,7 +231,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-06-19T16:50:32.413Z"
+      "value": "2025-06-19T17:39:57.624Z"
     }
   },
   "provider": {
@@ -251,24 +251,6 @@
   },
   "resource": {
     "aws_organizations_account": {
-      "ci": {
-        "//": {
-          "metadata": {
-            "path": "org/ci",
-            "uniqueId": "ci"
-          }
-        },
-        "close_on_deletion": true,
-        "email": "aws-accounts+ci@powertools.dev",
-        "iam_user_access_to_billing": "ALLOW",
-        "lifecycle": {
-          "ignore_changes": [
-            "iam_user_access_to_billing"
-          ]
-        },
-        "name": "ci",
-        "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
-      },
       "demo": {
         "//": {
           "metadata": {
@@ -339,6 +321,24 @@
           ]
         },
         "name": "govcloud-stage",
+        "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
+      },
+      "infra-shared-ci": {
+        "//": {
+          "metadata": {
+            "path": "org/infra-shared-ci",
+            "uniqueId": "infra-shared-ci"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+infra-shared-ci@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "infra-shared-ci",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
       },
       "infra-shared-prod": {
@@ -1004,17 +1004,6 @@
         "name": "org-environment-tag-policy",
         "type": "TAG_POLICY"
       },
-      "env_tag_policy_ci": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_ci",
-            "uniqueId": "env_tag_policy_ci"
-          }
-        },
-        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"ci\"]}}}}",
-        "name": "ci-environment-tag-policy",
-        "type": "TAG_POLICY"
-      },
       "env_tag_policy_demo": {
         "//": {
           "metadata": {
@@ -1057,6 +1046,17 @@
         },
         "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"govcloud-stage\",\"stage\"]}}}}",
         "name": "govcloud-stage-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
+      "env_tag_policy_infra-shared-ci": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_infra-shared-ci",
+            "uniqueId": "env_tag_policy_infra-shared-ci"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"infra-shared-ci\"]}}}}",
+        "name": "infra-shared-ci-environment-tag-policy",
         "type": "TAG_POLICY"
       },
       "env_tag_policy_infra-shared-prod": {
@@ -1412,16 +1412,6 @@
         "policy_id": "${aws_organizations_policy.ai_opt_out_policy.id}",
         "target_id": "${aws_organizations_organization.org.roots[0].id}"
       },
-      "env_tag_policy_attach_ci": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_attach_ci",
-            "uniqueId": "env_tag_policy_attach_ci"
-          }
-        },
-        "policy_id": "${aws_organizations_policy.env_tag_policy_ci.id}",
-        "target_id": "${aws_organizations_account.ci.id}"
-      },
       "env_tag_policy_attach_demo": {
         "//": {
           "metadata": {
@@ -1461,6 +1451,16 @@
         },
         "policy_id": "${aws_organizations_policy.env_tag_policy_govcloud-stage.id}",
         "target_id": "${aws_organizations_account.govcloud-stage.id}"
+      },
+      "env_tag_policy_attach_infra-shared-ci": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_infra-shared-ci",
+            "uniqueId": "env_tag_policy_attach_infra-shared-ci"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_infra-shared-ci.id}",
+        "target_id": "${aws_organizations_account.infra-shared-ci.id}"
       },
       "env_tag_policy_attach_infra-shared-prod": {
         "//": {

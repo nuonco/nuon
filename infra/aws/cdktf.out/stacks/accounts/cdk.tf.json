@@ -9,11 +9,11 @@
     "outputs": {
       "accounts": {
         "accounts-last-updated": "accounts-last-updated",
-        "ci-gh-oidc-provider": "ci-gh-oidc-provider",
         "demo-gh-oidc-provider": "demo-gh-oidc-provider",
         "demo-govcloud-gh-oidc-provider": "demo-govcloud-gh-oidc-provider",
         "govcloud-prod-gh-oidc-provider": "govcloud-prod-gh-oidc-provider",
         "govcloud-stage-gh-oidc-provider": "govcloud-stage-gh-oidc-provider",
+        "infra-shared-ci-gh-oidc-provider": "infra-shared-ci-gh-oidc-provider",
         "infra-shared-prod-gh-oidc-provider": "infra-shared-prod-gh-oidc-provider",
         "infra-shared-stage-gh-oidc-provider": "infra-shared-stage-gh-oidc-provider",
         "infra-tests-00-gh-oidc-provider": "infra-tests-00-gh-oidc-provider",
@@ -88,11 +88,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-06-19T16:50:32.547Z"
-    },
-    "ci-gh-oidc-provider": {
-      "description": "The Github OIDC provider for the ci account",
-      "value": "${aws_iam_openid_connect_provider.ci-github-oidc-provider}"
+      "value": "2025-06-19T17:39:57.752Z"
     },
     "demo-gh-oidc-provider": {
       "description": "The Github OIDC provider for the demo account",
@@ -109,6 +105,10 @@
     "govcloud-stage-gh-oidc-provider": {
       "description": "The Github OIDC provider for the govcloud-stage account",
       "value": "${aws_iam_openid_connect_provider.govcloud-stage-github-oidc-provider}"
+    },
+    "infra-shared-ci-gh-oidc-provider": {
+      "description": "The Github OIDC provider for the infra-shared-ci account",
+      "value": "${aws_iam_openid_connect_provider.infra-shared-ci-github-oidc-provider}"
     },
     "infra-shared-prod-gh-oidc-provider": {
       "description": "The Github OIDC provider for the infra-shared-prod account",
@@ -1184,10 +1184,10 @@
         "region": "us-west-2"
       },
       {
-        "alias": "ci",
+        "alias": "infra-shared-ci",
         "assume_role": [
           {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountciid}:role/OrganizationAccountAccessRole"
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-shared-ciid}:role/OrganizationAccountAccessRole"
           }
         ],
         "default_tags": [
@@ -1201,10 +1201,10 @@
         "region": "us-east-2"
       },
       {
-        "alias": "ci-us-east-1",
+        "alias": "infra-shared-ci-us-east-1",
         "assume_role": [
           {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountciid}:role/OrganizationAccountAccessRole"
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-shared-ciid}:role/OrganizationAccountAccessRole"
           }
         ],
         "default_tags": [
@@ -1218,10 +1218,10 @@
         "region": "us-east-1"
       },
       {
-        "alias": "ci-us-east-2",
+        "alias": "infra-shared-ci-us-east-2",
         "assume_role": [
           {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountciid}:role/OrganizationAccountAccessRole"
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-shared-ciid}:role/OrganizationAccountAccessRole"
           }
         ],
         "default_tags": [
@@ -1235,10 +1235,10 @@
         "region": "us-east-2"
       },
       {
-        "alias": "ci-us-west-1",
+        "alias": "infra-shared-ci-us-west-1",
         "assume_role": [
           {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountciid}:role/OrganizationAccountAccessRole"
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-shared-ciid}:role/OrganizationAccountAccessRole"
           }
         ],
         "default_tags": [
@@ -1252,10 +1252,10 @@
         "region": "us-west-1"
       },
       {
-        "alias": "ci-us-west-2",
+        "alias": "infra-shared-ci-us-west-2",
         "assume_role": [
           {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountciid}:role/OrganizationAccountAccessRole"
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-shared-ciid}:role/OrganizationAccountAccessRole"
           }
         ],
         "default_tags": [
@@ -3312,16 +3312,6 @@
   },
   "resource": {
     "aws_iam_account_alias": {
-      "ci-iam-alias": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-iam-alias",
-            "uniqueId": "ci-iam-alias"
-          }
-        },
-        "account_alias": "nuon-ci",
-        "provider": "aws.ci"
-      },
       "demo-govcloud-iam-alias": {
         "//": {
           "metadata": {
@@ -3361,6 +3351,16 @@
         },
         "account_alias": "nuon-govcloud-stage",
         "provider": "aws.govcloud-stage"
+      },
+      "infra-shared-ci-iam-alias": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-shared-ci-iam-alias",
+            "uniqueId": "infra-shared-ci-iam-alias"
+          }
+        },
+        "account_alias": "nuon-infra-shared-ci",
+        "provider": "aws.infra-shared-ci"
       },
       "infra-shared-prod-iam-alias": {
         "//": {
@@ -3674,23 +3674,6 @@
       }
     },
     "aws_iam_openid_connect_provider": {
-      "ci-github-oidc-provider": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-github-oidc-provider",
-            "uniqueId": "ci-github-oidc-provider"
-          }
-        },
-        "client_id_list": [
-          "sts.amazonaws.com"
-        ],
-        "provider": "aws.ci",
-        "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1",
-          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
-        ],
-        "url": "https://token.actions.githubusercontent.com"
-      },
       "demo-github-oidc-provider": {
         "//": {
           "metadata": {
@@ -3753,6 +3736,23 @@
           "sts.amazonaws.com"
         ],
         "provider": "aws.govcloud-stage",
+        "thumbprint_list": [
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
+        ],
+        "url": "https://token.actions.githubusercontent.com"
+      },
+      "infra-shared-ci-github-oidc-provider": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-shared-ci-github-oidc-provider",
+            "uniqueId": "infra-shared-ci-github-oidc-provider"
+          }
+        },
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
+        "provider": "aws.infra-shared-ci",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
           "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
@@ -4288,22 +4288,6 @@
       }
     },
     "aws_iam_role": {
-      "ci-terraform-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-terraform-role",
-            "uniqueId": "ci-terraform-role"
-          }
-        },
-        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
-        "description": "Terraform role to assume",
-        "managed_policy_arns": [
-          "arn:aws:iam::aws:policy/AdministratorAccess"
-        ],
-        "name": "terraform",
-        "path": "/",
-        "provider": "aws.ci"
-      },
       "demo-govcloud-terraform-role": {
         "//": {
           "metadata": {
@@ -4367,6 +4351,22 @@
         "name": "terraform",
         "path": "/",
         "provider": "aws.govcloud-stage"
+      },
+      "infra-shared-ci-terraform-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-shared-ci-terraform-role",
+            "uniqueId": "infra-shared-ci-terraform-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
+        "description": "Terraform role to assume",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "terraform",
+        "path": "/",
+        "provider": "aws.infra-shared-ci"
       },
       "infra-shared-prod-terraform-role": {
         "//": {
@@ -4866,36 +4866,6 @@
       }
     },
     "aws_iam_service_linked_role": {
-      "ci-opensearch-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-opensearch-service-linked-role",
-            "uniqueId": "ci-opensearch-service-linked-role"
-          }
-        },
-        "aws_service_name": "opensearchservice.amazonaws.com",
-        "provider": "aws.ci"
-      },
-      "ci-spot-fleet-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-spot-fleet-service-linked-role",
-            "uniqueId": "ci-spot-fleet-service-linked-role"
-          }
-        },
-        "aws_service_name": "spotfleet.amazonaws.com",
-        "provider": "aws.ci"
-      },
-      "ci-spot-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-spot-service-linked-role",
-            "uniqueId": "ci-spot-service-linked-role"
-          }
-        },
-        "aws_service_name": "spot.amazonaws.com",
-        "provider": "aws.ci"
-      },
       "demo-govcloud-opensearch-service-linked-role": {
         "//": {
           "metadata": {
@@ -5015,6 +4985,36 @@
         },
         "aws_service_name": "spot.amazonaws.com",
         "provider": "aws.govcloud-stage"
+      },
+      "infra-shared-ci-opensearch-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-shared-ci-opensearch-service-linked-role",
+            "uniqueId": "infra-shared-ci-opensearch-service-linked-role"
+          }
+        },
+        "aws_service_name": "opensearchservice.amazonaws.com",
+        "provider": "aws.infra-shared-ci"
+      },
+      "infra-shared-ci-spot-fleet-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-shared-ci-spot-fleet-service-linked-role",
+            "uniqueId": "infra-shared-ci-spot-fleet-service-linked-role"
+          }
+        },
+        "aws_service_name": "spotfleet.amazonaws.com",
+        "provider": "aws.infra-shared-ci"
+      },
+      "infra-shared-ci-spot-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-shared-ci-spot-service-linked-role",
+            "uniqueId": "infra-shared-ci-spot-service-linked-role"
+          }
+        },
+        "aws_service_name": "spot.amazonaws.com",
+        "provider": "aws.infra-shared-ci"
       },
       "infra-shared-prod-opensearch-service-linked-role": {
         "//": {
@@ -5948,20 +5948,6 @@
       }
     },
     "aws_route53_record": {
-      "ci-ns-delegation": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-ns-delegation",
-            "uniqueId": "ci-ns-delegation"
-          }
-        },
-        "name": "ci.nuon.co",
-        "provider": "aws",
-        "records": "${aws_route53_zone.ci-hosted-zone.name_servers}",
-        "ttl": 300,
-        "type": "NS",
-        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
-      },
       "demo-govcloud-ns-delegation": {
         "//": {
           "metadata": {
@@ -6014,6 +6000,20 @@
         "name": "govcloud-stage.nuon.co",
         "provider": "aws",
         "records": "${aws_route53_zone.govcloud-stage-hosted-zone.name_servers}",
+        "ttl": 300,
+        "type": "NS",
+        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
+      },
+      "infra-shared-ci-ns-delegation": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-shared-ci-ns-delegation",
+            "uniqueId": "infra-shared-ci-ns-delegation"
+          }
+        },
+        "name": "infra-shared-ci.nuon.co",
+        "provider": "aws",
+        "records": "${aws_route53_zone.infra-shared-ci-hosted-zone.name_servers}",
         "ttl": 300,
         "type": "NS",
         "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
@@ -6454,16 +6454,6 @@
       }
     },
     "aws_route53_zone": {
-      "ci-hosted-zone": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-hosted-zone",
-            "uniqueId": "ci-hosted-zone"
-          }
-        },
-        "name": "ci.nuon.co",
-        "provider": "aws.ci"
-      },
       "demo-govcloud-hosted-zone": {
         "//": {
           "metadata": {
@@ -6503,6 +6493,16 @@
         },
         "name": "govcloud-stage.nuon.co",
         "provider": "aws.govcloud-stage"
+      },
+      "infra-shared-ci-hosted-zone": {
+        "//": {
+          "metadata": {
+            "path": "accounts/infra-shared-ci-hosted-zone",
+            "uniqueId": "infra-shared-ci-hosted-zone"
+          }
+        },
+        "name": "infra-shared-ci.nuon.co",
+        "provider": "aws.infra-shared-ci"
       },
       "infra-shared-prod-hosted-zone": {
         "//": {

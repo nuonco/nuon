@@ -75,7 +75,7 @@ export const desiredOrgStructure: orgStructure = [
     accounts: [
       { name: "prod" },
       { name: "stage" },
-      { name: "ci" },
+      { name: "infra-shared-ci" },
       { additionalEnvTags: ["stage"], name: "infra-shared-stage" },
       { additionalEnvTags: ["prod"], name: "infra-shared-prod" },
       { additionalEnvTags: ["stage"], name: "govcloud-stage" },
