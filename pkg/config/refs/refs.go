@@ -76,13 +76,13 @@ func Parse(obj any) ([]Ref, error) {
 // https://pkg.go.dev/text/template/parse
 func ParseFieldRefs(inputVar string) []Ref {
 	refPatterns := map[RefType]string{
-		RefTypeComponents: `nuon\.components\.([^.}]+)\.outputs\.([^}]+)`,
-		RefTypeActions:    `nuon\.actions\.([^.}]+)\.outputs\.([^.}]+)`,
-
-		RefTypeSecrets:      `nuon\.secrets\.([^.}]+)`,
-		RefTypeInputs:       `nuon\.inputs\.([^.}]+)`,
-		RefTypeInstallStack: `nuon\.install_stack\.outputs\.([^.}]+)`,
-		RefTypeSandbox:      `nuon\.sandbox\.outputs\.([^.}]+)`,
+		RefTypeComponents:    `nuon\.components\.([^.}]+)\.outputs\.([^}]+)`,
+		RefTypeActions:       `nuon\.actions\.([^.}]+)\.outputs\.([^.}]+)`,
+		RefTypeSecrets:       `nuon\.secrets\.([^.}]+)`,
+		RefTypeInputs:        `nuon\.inputs\.inputs\.([^.}]+)`,
+		RefTypeInstallInputs: `nuon\.install\.inputs\.([^.}]+)`,
+		RefTypeInstallStack:  `nuon\.install_stack\.outputs\.([^.}]+)`,
+		RefTypeSandbox:       `nuon\.sandbox\.outputs\.([^.}]+)`,
 	}
 
 	refs := make([]Ref, 0)
