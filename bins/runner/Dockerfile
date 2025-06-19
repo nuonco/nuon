@@ -91,7 +91,7 @@ COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 COPY ./bundle /bundle
 COPY --from=build /bin/runner /bin/runner
 
-ENV git_ref=$tag
+ENV GIT_REF=$tag
 
 ENTRYPOINT ["/bin/runner"]
 
