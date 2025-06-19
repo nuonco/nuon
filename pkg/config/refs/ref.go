@@ -8,12 +8,13 @@ import (
 type RefType string
 
 const (
-	RefTypeSandbox      RefType = "sandbox"
-	RefTypeInstallStack RefType = "install_stack"
-	RefTypeComponents   RefType = "component"
-	RefTypeInputs       RefType = "inputs"
-	RefTypeSecrets      RefType = "secrets"
-	RefTypeActions      RefType = "actions"
+	RefTypeSandbox       RefType = "sandbox"
+	RefTypeInstallStack  RefType = "install_stack"
+	RefTypeComponents    RefType = "component"
+	RefTypeInputs        RefType = "inputs"
+	RefTypeInstallInputs RefType = "install_inputs"
+	RefTypeSecrets       RefType = "secrets"
+	RefTypeActions       RefType = "actions"
 )
 
 type Ref struct {
