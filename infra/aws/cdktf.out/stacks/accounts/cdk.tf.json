@@ -4,7 +4,7 @@
       "backend": "remote",
       "cloud": "tfc",
       "stackName": "accounts",
-      "version": "0.21.0"
+      "version": "0.20.12"
     },
     "outputs": {
       "accounts": {
@@ -88,7 +88,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-06-18T18:46:13.780Z"
+      "value": "2025-06-19T16:50:32.547Z"
     },
     "ci-gh-oidc-provider": {
       "description": "The Github OIDC provider for the ci account",

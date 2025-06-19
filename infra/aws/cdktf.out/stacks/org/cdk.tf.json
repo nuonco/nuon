@@ -4,7 +4,7 @@
       "backend": "remote",
       "cloud": "tfc",
       "stackName": "org",
-      "version": "0.21.0"
+      "version": "0.20.12"
     },
     "outputs": {
       "org": {
@@ -231,7 +231,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-06-18T18:46:13.669Z"
+      "value": "2025-06-19T16:50:32.413Z"
     }
   },
   "provider": {
