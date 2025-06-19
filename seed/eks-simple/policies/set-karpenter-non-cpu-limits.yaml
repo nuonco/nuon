@@ -18,6 +18,8 @@ metadata:
       which may lead to memory pressure on nodes. This is especially important in consolidation
       mode.
 spec:
+  validationFailureAction: audit
+  background: true
   rules:
     - name: set-memory
       match:
@@ -25,6 +27,13 @@ spec:
           - resources:
               kinds:
                 - Pod
+      terms:
+        - name: memory-terms
+          condition:
+            all:
+              - key: "{{request.object.spec.containers[].resources.requests.memory || ''}}"
+                operator: Equals
+                value: ""
       mutate:
         foreach:
           - list: request.object.spec.containers

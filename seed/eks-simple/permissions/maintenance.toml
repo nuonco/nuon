@@ -1,0 +1,73 @@
+type = "maintenance"
+name                 = "{{ .nuon.install.id }}-maintenance"
+description          = "maintenance"
+display_name         = "byoc-nuon maintenance role"
+permissions_boundary = "./maintenance_boundary.json"
+
+[[policies]]
+managed_policy_name = "AdministratorAccess"
+
+# NOTE: the tag in this policy is determined by the rds_cluster_* component config. the format is known ahead of time by 
+# convention.
+[[policies]]
+name = "{{ .nuon.install.id }}-limited-secrets-manage-rds"
+contents = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowSecretsManagerReadScoped",
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:CreateSecret",
+                "secretsmanager:PutSecretValue",
+                "secretsmanager:TagResource",
+                "secretsmanager:UpdateSecret",
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:GetResourcePolicy",
+                "secretsmanager:DescribeSecret",
+                "secretsmanager:ListSecretVersionIds"
+            ],
+            "Resource": "arn:aws:secretsmanager:{{ .nuon.cloud_account.aws.region }}::secret:rds!*",
+            "Condition": {
+                "StringEquals": {
+                    "aws:ResourceTag/install.nuon.co/id": "{{ .nuon.install.id }}"
+                }
+            }
+        }
+    ]
+}
+"""
+
+[[policies]]
+name = "{{ .nuon.install.id }}-allow-secret-list"
+contents = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowListSecrets",
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:ListSecrets"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+"""
+
+[[policies]]
+name = "bucket-put-policy-scoped"
+contents = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "s3:PutBucketPolicy",
+            "Resource": "*"
+        }
+    ]
+}
+"""

@@ -1,3 +1,7 @@
 [[policy]]
-type = "disallow-ingress-nginx-custom-snippets"
+type = "kubernetes_cluster"
 contents = "./disallow-ingress-nginx-custom-snippets.yml"
+
+[[policy]]
+type = "kubernetes_cluster"
+contents = "./policies/set-karpenter-non-cpu-limits.yaml"

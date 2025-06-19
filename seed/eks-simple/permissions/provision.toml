@@ -1,0 +1,9 @@
+type = "provision"
+name = "{{.nuon.install.id}}-provision"
+description = "maintenance"
+display_name = "maintenance"
+permissions_boundary = "./provision_boundary.json"
+
+[[policies]]
+managed_policy_name = "AdministratorAccess"
+

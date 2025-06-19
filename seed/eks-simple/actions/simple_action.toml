@@ -4,7 +4,7 @@ name    = "simple_demonstration"
 timeout = "1m"
 
 [[triggers]]
-type = "post-sandbox-run"
+type = "post-provision"
 
 [[triggers]]
 type = "manual"

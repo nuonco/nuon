@@ -1,0 +1,41 @@
+type = "maintenance"
+name = "{{.nuon.id}}-maintenance"
+description = "maintenance"
+display_name = "maintenance"
+permissions_boundary = "./maintenance_boundary.json"
+
+[[policies]]
+managed_policy_name = "AdministratorAccess"
+
+[[policies]]
+name = "limited-secrets-manage"
+contents = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowListSecrets",
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:ListSecrets"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+"""
+
+[[policies]]
+name = "bucket-put-policy-scoped"
+contents = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "s3:PutBucketPolicy",
+            "Resource": "arn:aws:s3:::{{ .nuon.install.name }}-byoc-nuon-*"
+        }
+    ]
+}
+"""
