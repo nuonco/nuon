@@ -4,10 +4,11 @@
       "backend": "remote",
       "cloud": "tfc",
       "stackName": "org",
-      "version": "0.20.12"
+      "version": "0.21.0"
     },
     "outputs": {
       "org": {
+        "cross-stack-output-aws_organizations_account.ci.id": "cross-stack-output-aws_organizations_accountciid",
         "cross-stack-output-aws_organizations_account.demo-govcloud.id": "cross-stack-output-aws_organizations_accountdemo-govcloudid",
         "cross-stack-output-aws_organizations_account.demo.id": "cross-stack-output-aws_organizations_accountdemoid",
         "cross-stack-output-aws_organizations_account.govcloud-prod.id": "cross-stack-output-aws_organizations_accountgovcloud-prodid",
@@ -84,6 +85,10 @@
     }
   },
   "output": {
+    "cross-stack-output-aws_organizations_accountciid": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.ci.id}"
+    },
     "cross-stack-output-aws_organizations_accountdemo-govcloudid": {
       "sensitive": true,
       "value": "${aws_organizations_account.demo-govcloud.id}"
@@ -226,7 +231,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-06-15T23:23:57.905Z"
+      "value": "2025-06-18T18:46:13.669Z"
     }
   },
   "provider": {
@@ -246,6 +251,24 @@
   },
   "resource": {
     "aws_organizations_account": {
+      "ci": {
+        "//": {
+          "metadata": {
+            "path": "org/ci",
+            "uniqueId": "ci"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+ci@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "ci",
+        "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
+      },
       "demo": {
         "//": {
           "metadata": {
@@ -981,6 +1004,17 @@
         "name": "org-environment-tag-policy",
         "type": "TAG_POLICY"
       },
+      "env_tag_policy_ci": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_ci",
+            "uniqueId": "env_tag_policy_ci"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"ci\"]}}}}",
+        "name": "ci-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
       "env_tag_policy_demo": {
         "//": {
           "metadata": {
@@ -1378,6 +1412,16 @@
         "policy_id": "${aws_organizations_policy.ai_opt_out_policy.id}",
         "target_id": "${aws_organizations_organization.org.roots[0].id}"
       },
+      "env_tag_policy_attach_ci": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_ci",
+            "uniqueId": "env_tag_policy_attach_ci"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_ci.id}",
+        "target_id": "${aws_organizations_account.ci.id}"
+      },
       "env_tag_policy_attach_demo": {
         "//": {
           "metadata": {
@@ -1753,7 +1797,7 @@
     "required_providers": {
       "aws": {
         "source": "aws",
-        "version": "5.60.0"
+        "version": "5.98.0"
       }
     }
   }
