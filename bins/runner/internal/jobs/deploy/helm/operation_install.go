@@ -55,7 +55,7 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.Description = ""
 	client.CreateNamespace = h.state.plan.HelmDeployPlan.CreateNamespace
 	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
-	client.DryRun = false
+	client.DryRun = true
 
 	// determine if we're going to calculate the diff
 	crds := chart.CRDObjects()
