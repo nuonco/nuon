@@ -210,6 +210,26 @@ module "infra-eks-stage-nuon" {
   }
 }
 
+
+
+module "infra-eks-infra-shared-ci-nuon" {
+  source = "./modules/workspace"
+
+  name                            = "infra-eks-ci-nuon"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/eks"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
+
+  variable_sets = ["aws-environment-credentials", "twingate-api-token"]
+  project_id    = tfe_project.infra.id
+  vars = {
+    account = "infra-shared-ci"
+    pool    = "nuon"
+  }
+}
+
 module "infra-github" {
   source = "./modules/workspace"
 

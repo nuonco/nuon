@@ -1,0 +1,28 @@
+---
+cluster_version: "1.32"
+auth_map_additions:
+  - name: eks-ctl-api
+    account: infra-shared-ci
+    groups:
+      - "system:masters"
+    trust:
+      - "arn:aws:iam::766121324316:role/nuon-internal-support-stage"
+  - name: eks-workers-executors
+    account: infra-shared-ci
+    groups:
+      - "system:masters"
+    trust:
+      - "arn:aws:iam::766121324316:role/nuon-internal-support-stage"
+
+managed_node_group:
+  desired_size: 1
+  min_size: 1
+  max_size: 1
+  instance_types:
+    - t3.2xlarge
+
+tier: beta
+
+karpenter:
+  instance_types:
+    - t3.2xlarge
