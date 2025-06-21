@@ -63,7 +63,6 @@ FROM golang:1.24-alpine as final
 ARG tag
 
 RUN apk add --no-cache \
-  bash \
   libc6-compat \
   build-base \
   make \
@@ -91,10 +90,6 @@ COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 
 COPY ./bundle /bundle
 COPY --from=build /bin/runner /bin/runner
-
-# udpate the ca certs so python's urllib cert verification passes
-RUN update-ca-certificates
-
 
 ENV GIT_REF=$tag
 
