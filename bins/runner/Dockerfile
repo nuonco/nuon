@@ -63,6 +63,7 @@ FROM golang:1.24-alpine as final
 ARG tag
 
 RUN apk add --no-cache \
+  bash \
   libc6-compat \
   build-base \
   make \
