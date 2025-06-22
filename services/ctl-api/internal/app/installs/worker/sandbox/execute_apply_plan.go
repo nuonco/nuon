@@ -96,24 +96,8 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	if status != app.RunnerJobStatusFinished {
 		l.Error("runner job status was not successful", zap.Any("status", status))
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job failed with status"+string(status))
+		return errors.New("job was not successful" + err.Error())
 	}
-
-	// job, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
-	// if err != nil {
-	// 	return errors.Wrap(err, "unable to get job")
-	// }
-
-	// NOTE(fd): this is not necessary here - this is only necessary in the plan step
-	// if _, err := activities.AwaitCreateStepApproval(ctx, &activities.CreateStepApprovalRequest{
-	// 	OwnerID:     installRun.ID,
-	// 	OwnerType:   "install_sandbox_runs",
-	// 	RunnerJobID: job.ID,
-	// 	StepID:      stepID,
-	// 	Plan:        job.Execution.Result.Contents,
-	// 	Type:        app.TerraformPlanApprovalType,
-	// }); err != nil {
-	// 	return errors.Wrap(err, "unable to create approval")
-	// }
 
 	return nil
 }
