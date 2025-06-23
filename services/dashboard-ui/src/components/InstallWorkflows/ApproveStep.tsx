@@ -12,6 +12,7 @@ import { approveWorkflowStep } from '@/components/install-actions'
 import { DiffEditor, splitYamlDiff } from '@/stratus/components/'
 import type { TInstallWorkflowStep } from '@/types'
 import { removeSnakeCase } from '@/utils'
+import { TerraformPlanViewer } from './TerraformPlanDiff'
 
 interface IApprovalStep {
   approval?: TInstallWorkflowStep['approval']
@@ -108,8 +109,10 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           {error ? <Notice>{error}</Notice> : null}
           {approval?.type === 'helm_approval' ? (
             <HelmDiff diff={approval?.contents} />
+          ) : approval?.contents ? (
+            <TerraformPlanViewer plan={JSON.parse(approval?.contents)} />
           ) : (
-            <JsonView data={approval?.contents} expanded={2} />
+            <JsonView data={approval?.contents} />
           )}
         </div>
         {approval?.response ||
