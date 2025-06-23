@@ -3,7 +3,7 @@
 import React, { type FC } from 'react'
 import { SignOut } from '@phosphor-icons/react'
 import Image from 'next/image'
-import { useUser } from '@auth0/nextjs-auth0/client'
+import { useUser } from '@auth0/nextjs-auth0'
 import { Text } from '@/components/Typography'
 
 export const Profile: FC<{ isSidebarOpen?: boolean }> = ({

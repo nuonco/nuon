@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 'use client'
 
 import { v4 as uuid } from 'uuid'

@@ -20,25 +20,14 @@ const config: Config = {
       pattern: /(m|p)-(auto)/,
     },
     {
-      pattern: /rounded-none/
+      pattern: /rounded-none/,
     },
     {
-      pattern: /^divide-(x|y)-/
+      pattern: /^divide-(x|y)-/,
     },
     {
-      pattern: /^size-/
-    }
-    
-
-    // // Width classes
-    // { pattern: /^w-/ }, // Matches w-{value}
-    // { pattern: /^max-w-/ }, // Matches max-w-{value}
-    // { pattern: /^min-w-/ }, // Matches min-w-{value}
-
-    // // Color classes
-    // { pattern: /^bg-/ }, // Matches bg-{color}
-    // { pattern: /^border-/ }, // Matches border-{color}
-    // { pattern: /^text-/ }, // Matches text-{color}
+      pattern: /^size-/,
+    },
   ],
   theme: {
     colors: {

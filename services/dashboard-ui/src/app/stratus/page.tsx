@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import type { IPageProps, TOrg } from '@/types'
 import { nueQueryData } from "@/utils"
 
-const Stratus: FC<IPageProps> = async ({ params }) => {
+const Stratus: FC<IPageProps> = async () => {
   const { data, error} = await nueQueryData<Array<TOrg>>({
     path: `orgs`
   })

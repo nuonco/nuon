@@ -2,7 +2,7 @@
 
 import classNames from 'classnames'
 import React, { type FC, type FormEvent, useRef, useState } from 'react'
-import { useUser } from '@auth0/nextjs-auth0/client'
+import { useUser } from '@auth0/nextjs-auth0'
 import { WarningOctagon, CheckCircle, Cube } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { CodeViewer } from '@/components/Code'

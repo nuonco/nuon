@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   ActionTriggerButton,
   Badge,
@@ -20,9 +19,11 @@ import {
 import { getInstall, getInstallActionWorkflowRecentRun } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const actionWorkflowId = params?.['action-id'] as string
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
+  const {
+    ['org-id']: orgId,
+    ['install-id']: installId,
+    ['action-id']: actionWorkflowId,
+  } = await params
   const [install, action] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallActionWorkflowRecentRun({ actionWorkflowId, installId, orgId }),
@@ -33,12 +34,12 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function InstallWorkflowRuns({
-  params,
-}) {
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
-  const actionWorkflowId = params?.['action-id'] as string
+export default async function InstallWorkflowRuns({ params }) {
+  const {
+    ['org-id']: orgId,
+    ['install-id']: installId,
+    ['action-id']: actionWorkflowId,
+  } = await params
   const [install, actionWithRecentRuns] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallActionWorkflowRecentRun({ actionWorkflowId, installId, orgId }),
@@ -181,4 +182,4 @@ export default withPageAuthRequired(async function InstallWorkflowRuns({
       </div>
     </DashboardContent>
   )
-})
+}

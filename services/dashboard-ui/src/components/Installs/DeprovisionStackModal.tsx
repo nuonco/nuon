@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useUser } from '@auth0/nextjs-auth0/client'
 import { Check, StackMinus } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
@@ -23,7 +22,6 @@ export const DeprovisionStackModal: FC<IDeprovisionStackModal> = ({
   install,
   orgId,
 }) => {
-  const { user } = useUser()
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)

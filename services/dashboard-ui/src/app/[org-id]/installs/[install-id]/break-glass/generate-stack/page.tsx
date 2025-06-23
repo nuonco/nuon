@@ -1,47 +1,11 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
-import { type FC, Suspense } from 'react'
-import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import {
-  AppSandboxConfig,
-  AppSandboxVariables,
-  Config,
-  ConfigContent,
-  DashboardContent,
-  Duration,
-  ErrorFallback,
-  ID,
-  InstallCloudPlatform,
-  InstallInputs,
-  InstallInputsModal,
-  InstallPageSubNav,
-  InstallStatuses,
-  Loading,
-  Notice,
-  StatusBadge,
-  Section,
-  SectionHeader,
-  Text,
-  Time,
-  Markdown,
-} from '@/components'
-import {
-  InstallManagementDropdown,
-  BreakGlassForm,
-} from '@/components/Installs'
-import {
-  getInstall,
-  getInstallCurrentInputs,
-  getInstallReadme,
-  getInstallRunnerGroup,
-  getRunnerLatestHeartbeat,
-} from '@/lib'
-import { RUNNERS, USER_REPROVISION } from '@/utils'
+import { DashboardContent, Section, Text } from '@/components'
+import { BreakGlassForm } from '@/components/Installs'
+import { getInstall } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
+  const { ['org-id']: orgId, ['install-id']: installId } = await params
   const install = await getInstall({ installId, orgId })
 
   return {
@@ -49,11 +13,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function InstallBreakGlass({
-  params,
-}) {
-  const orgId = params?.['org-id'] as string
-  const installId = params?.['install-id'] as string
+export default async function InstallBreakGlass({ params }) {
+  const { ['org-id']: orgId, ['install-id']: installId } = await params
   const install = await getInstall({ installId, orgId })
 
   return (
@@ -114,4 +75,4 @@ export default withPageAuthRequired(async function InstallBreakGlass({
       </>
     </DashboardContent>
   )
-})
+}
