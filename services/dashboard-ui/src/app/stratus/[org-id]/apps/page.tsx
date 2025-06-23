@@ -14,8 +14,8 @@ import {
 } from '@/stratus/components'
 import type { IPageProps } from '@/types'
 
-const AppsPage: FC<IPageProps<'org-id'>> = ({ params }) => {
-  const orgId = params?.['org-id']
+const AppsPage: FC<IPageProps<'org-id'>> = async ({ params }) => {
+  const { ['org-id']: orgId } = await params
 
   return (
     <Page

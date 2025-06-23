@@ -13,9 +13,11 @@ import { nueQueryData } from '@/utils'
 const SandboxRunPage: FC<
   IPageProps<'org-id' | 'install-id' | 'sandbox-run-id'>
 > = async ({ params }) => {
-  const orgId = params?.['org-id']
-  const installId = params?.['install-id']
-  const sandboxRunId = params?.['sandbox-run-id']
+  const {
+    ['install-id']: installId,
+    ['org-id']: orgId,
+    ['sandbox-run-id']: sandboxRunId,
+  } = await params
   const { data, error } = await nueQueryData<TSandboxRun>({
     orgId,
     path: `installs/sandbox-runs/${sandboxRunId}`,

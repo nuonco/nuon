@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppConfigGraph,
   AppCreateInstallButton,
@@ -32,8 +31,7 @@ import type { TApp } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const appId = params?.['app-id'] as string
-  const orgId = params?.['org-id'] as string
+  const { ['org-id']: orgId, ['app-id']: appId } = await params
   const app = await getApp({ appId, orgId })
 
   return {
@@ -41,9 +39,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function App({ params }) {
-  const appId = params?.['app-id'] as string
-  const orgId = params?.['org-id'] as string
+export default async function App({ params }) {
+  const { ['org-id']: orgId, ['app-id']: appId } = await params
   const [app, appConfig, inputCfg] = await Promise.all([
     getApp({ appId, orgId }),
     getAppLatestConfig({ appId, orgId }).catch(console.error),
@@ -135,7 +132,7 @@ export default withPageAuthRequired(async function App({ params }) {
       </div>
     </DashboardContent>
   )
-})
+}
 
 const LoadAppSandboxConfig: FC<IGetApp> = async (props) => {
   const sandboxConfig = await getAppLatestSandboxConfig(props).catch(
