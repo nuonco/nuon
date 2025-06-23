@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
@@ -47,7 +48,7 @@ type InstallSandboxRun struct {
 	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// runner details
-	RunnerJob          RunnerJob                  `json:"runner_job,omitzero" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
+	RunnerJobs         []RunnerJob                `json:"runner_jobs,omitzero" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
 	LogStream          LogStream                  `json:"log_stream,omitzero" gorm:"polymorphic:Owner;" temporaljson:"log_stream,omitzero,omitempty"`
 	ActionWorkflowRuns []InstallActionWorkflowRun `json:"action_workflow_runs,omitzero" gorm:"polymorphic:TriggeredBy;" temporaljson:"action_workflow_runs,omitzero,omitempty"`
 
@@ -71,6 +72,8 @@ type InstallSandboxRun struct {
 
 	AppSandboxConfigID string           `json:"-" temporaljson:"app_sandbox_config_id,omitzero,omitempty"`
 	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config,omitzero" temporaljson:"app_sandbox_config,omitzero,omitempty"`
+
+	Outputs map[string]any `json:"outputs,omitzero" gorm:"-" temporaljson:"outputs,omitzero,omitempty"`
 }
 
 func (i *InstallSandboxRun) BeforeCreate(tx *gorm.DB) error {
@@ -104,6 +107,12 @@ func (i *InstallSandboxRun) AfterQuery(tx *gorm.DB) error {
 		i.Status = SandboxRunStatus(i.StatusV2.Status)
 		i.StatusDescription = i.StatusV2.StatusHumanDescription
 	}
+
+	outputs := make(map[string]any, 0)
+	for _, rj := range i.RunnerJobs {
+		outputs = generics.MergeMaps(outputs, rj.ParsedOutputs)
+	}
+	i.Outputs = outputs
 
 	return nil
 }
