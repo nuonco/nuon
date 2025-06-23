@@ -1,14 +1,16 @@
 #toast-portal {
   --stack-gap: 24px;
-  --ease: cubic-bezier(0.65, 0, 0.35, 1);
-  --speed: 150ms;
+  --ease: ease;
+  --speed: 0.4s;
+  --speed-fast: 0.25s;
   height: var(--height);
-  transition: height var(--speed) var(--ease);
+  transition: height var(--speed) var(--ease), bottom var(--speed) var(--ease);;
   @apply fixed bottom-6 right-6 z-20 w-full max-w-72 block overflow-visible;
 }
 
 #toast-portal:hover {
   height: var(--hover-height);
+  @apply bottom-10;
 }
 
 #toast-portal:hover .toast-wrapper:not(:last-child) .toast {
@@ -31,7 +33,7 @@
 }
 
 .toast-wrapper.enter.toast-wrapper-4 .toast {
-  animation: fade-toast var(--speed) var(--ease) forwards;
+  animation: fade-toast var(--speed-fast) var(--ease) forwards;
 }
 
 /* toast component */
@@ -48,7 +50,7 @@
 }
 
 .exit .toast {
-  animation: exit-toast var(--speed) var(--ease) forwards;
+  animation: exit-toast var(--speed-fast) var(--ease) forwards;
 }
 
 @keyframes enter-toast {
