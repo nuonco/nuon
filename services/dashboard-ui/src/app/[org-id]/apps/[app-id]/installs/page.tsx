@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   AppCreateInstallButton,
   AppInstallsTable,
@@ -16,8 +15,7 @@ import { getApp, getAppInstalls, getAppLatestInputConfig } from '@/lib'
 import type { TApp } from '@/types'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const appId = params?.['app-id'] as string
-  const orgId = params?.['org-id'] as string
+  const { ['org-id']: orgId, ['app-id']: appId } = await params
   const app = await getApp({ appId, orgId })
 
   return {
@@ -25,9 +23,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function AppInstalls({ params }) {
-  const appId = params?.['app-id'] as string
-  const orgId = params?.['org-id'] as string
+export default async function AppInstalls({ params }) {
+  const { ['org-id']: orgId, ['app-id']: appId } = await params
   const [app, inputCfg] = await Promise.all([
     getApp({ appId, orgId }),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
@@ -67,7 +64,7 @@ export default withPageAuthRequired(async function AppInstalls({ params }) {
       </Section>
     </DashboardContent>
   )
-})
+}
 
 const LoadAppInstalls: FC<{
   app: TApp

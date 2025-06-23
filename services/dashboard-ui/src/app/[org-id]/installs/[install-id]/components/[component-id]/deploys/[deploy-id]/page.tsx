@@ -4,7 +4,6 @@ import * as hcl from 'hcl2-json-parser'
 import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   CalendarBlank,
   CaretLeft,
@@ -55,10 +54,12 @@ import type {
 import { CANCEL_RUNNER_JOBS, sizeToMbOrGB, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const componentId = params?.['component-id'] as string
-  const deployId = params?.['deploy-id'] as string
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
+  const {
+    ['org-id']: orgId,
+    ['install-id']: installId,
+    ['component-id']: componentId,
+    ['deploy-id']: deployId,
+  } = await params
   const [deploy, component] = await Promise.all([
     getInstallDeploy({
       installDeployId: deployId,
@@ -73,13 +74,13 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function InstallComponentDeploy({
-  params,
-}) {
-  const componentId = params?.['component-id'] as string
-  const deployId = params?.['deploy-id'] as string
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
+export default async function InstallComponentDeploy({ params }) {
+  const {
+    ['org-id']: orgId,
+    ['install-id']: installId,
+    ['component-id']: componentId,
+    ['deploy-id']: deployId,
+  } = await params
   const [component, deploy, install] = await Promise.all([
     getComponent({
       componentId,
@@ -366,7 +367,7 @@ export default withPageAuthRequired(async function InstallComponentDeploy({
       </div>
     </DashboardContent>
   )
-})
+}
 
 // load log stream
 

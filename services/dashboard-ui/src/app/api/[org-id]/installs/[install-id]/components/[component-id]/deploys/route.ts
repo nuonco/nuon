@@ -1,28 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { withApiAuthRequired } from '@auth0/nextjs-auth0'
 import { getInstallComponentDeploys } from '@/lib'
 import { TRouteRes } from '@/app/api/[org-id]/types'
 
-export const GET = withApiAuthRequired(
-  async (
-    req: NextRequest,
-    { params }: TRouteRes<'org-id' | 'install-id' | 'component-id'>
-  ) => {
-    const orgId = params?.['org-id']
-    const installId = params?.['install-id']
-    const componentId = params?.['component-id']
+export const GET = async (
+  req: NextRequest,
+  { params }: TRouteRes<'org-id' | 'install-id' | 'component-id'>
+) => {
+  const {
+    ['org-id']: orgId,
+    ['install-id']: installId,
+    ['component-id']: componentId,
+  } = await params
 
-    let deploys = []
-    try {
-      deploys = await getInstallComponentDeploys({
-        orgId,
-        installId,
-        componentId,
-      })
-    } catch (error) {
-      console.error(error)
-    }
-
-    return NextResponse.json(deploys)
+  let deploys = []
+  try {
+    deploys = await getInstallComponentDeploys({
+      orgId,
+      installId,
+      componentId,
+    })
+  } catch (error) {
+    console.error(error)
   }
-)
+
+  return NextResponse.json(deploys)
+}

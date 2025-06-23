@@ -3,5 +3,6 @@
 import { cookies } from 'next/headers'
 
 export async function setOrgSessionCookie(orgId: string) {
-  cookies().set('org-session', orgId)
+  const cookieStore = await cookies()
+  cookieStore.set('org-session', orgId)
 }

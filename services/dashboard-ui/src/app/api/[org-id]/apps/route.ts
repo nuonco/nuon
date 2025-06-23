@@ -1,20 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { withApiAuthRequired } from '@auth0/nextjs-auth0'
 import { nueQueryData } from '@/utils'
 import { TRouteRes } from '@/app/api/[org-id]/types'
 
-export const GET = withApiAuthRequired(
-  async (
-    req: NextRequest,
-    { params }: TRouteRes<'org-id'>
-  ) => {
-    const orgId = params?.['org-id']
+export const GET = async (
+  req: NextRequest,
+  { params }: TRouteRes<'org-id'>
+) => {
+  const { ['org-id']: orgId } = await params
 
-    const res = await nueQueryData({
-      orgId,
-      path: `apps`,
-    })
+  const res = await nueQueryData({
+    orgId,
+    path: `apps`,
+  })
 
-    return NextResponse.json(res)
-  }
-)
+  return NextResponse.json(res)
+}

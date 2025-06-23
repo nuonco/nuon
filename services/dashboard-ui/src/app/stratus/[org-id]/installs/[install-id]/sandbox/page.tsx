@@ -4,9 +4,10 @@ import { Link, ScrollableDiv, Section, Text } from '@/stratus/components'
 import type { TSandboxRun, IPageProps } from '@/types'
 import { nueQueryData } from '@/utils'
 
-const SandboxPage: FC<IPageProps<'org-id' | 'install-id'>> = ({ params }) => {
-  const orgId = params?.['org-id']
-  const installId = params?.['install-id']
+const SandboxPage: FC<IPageProps<'org-id' | 'install-id'>> = async ({
+  params,
+}) => {
+  const { ['install-id']: installId, ['org-id']: orgId } = await params
 
   return (
     <ScrollableDiv>

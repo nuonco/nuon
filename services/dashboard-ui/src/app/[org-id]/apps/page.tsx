@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   ErrorFallback,
@@ -15,7 +14,7 @@ import { getApps, getOrg } from '@/lib'
 import { SegmentAnalyticsSetOrg } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const orgId = params?.['org-id'] as string
+  const { ['org-id']: orgId } = await params
   const org = await getOrg({ orgId })
 
   return {
@@ -23,8 +22,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function Apps({ params }) {
-  const orgId = params?.['org-id'] as string
+export default async function Apps({ params }) {
+  const { ['org-id']: orgId } = await params
   const org = await getOrg({ orgId })
 
   return (
@@ -45,9 +44,9 @@ export default withPageAuthRequired(async function Apps({ params }) {
       </DashboardContent>
     </>
   )
-})
+}
 
 const LoadApps: FC<{ orgId: string }> = async ({ orgId }) => {
-  const apps = await getApps({ orgId })  
+  const apps = await getApps({ orgId })
   return apps?.length ? <OrgAppsTable apps={apps} orgId={orgId} /> : <NoApps />
 }

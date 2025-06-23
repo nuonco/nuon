@@ -22,7 +22,7 @@ export interface IButton extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   ref?: any
 }
 
-export const Button: FC<IButton> = forwardRef(
+export const Button = forwardRef<HTMLButtonElement, IButton>(
   (
     {
       children,

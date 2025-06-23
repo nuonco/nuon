@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, CaretLeft, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   AppSandboxConfig,
@@ -33,9 +32,7 @@ import {
 import { CANCEL_RUNNER_JOBS, sentanceCase, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
-  const runId = params?.['run-id'] as string
+ const { ['org-id']: orgId, ['install-id']: installId, ['run-id']: runId } = await params
   const [install, sandboxRun] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallSandboxRun({ installId, installSandboxRunId: runId, orgId }),
@@ -46,10 +43,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function SandboxRuns({ params }) {
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
-  const runId = params?.['run-id'] as string
+export default async function SandboxRuns({ params }) {
+ const { ['org-id']: orgId, ['install-id']: installId, ['run-id']: runId } = await params
   const [install, sandboxRun] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallSandboxRun({
@@ -248,7 +243,7 @@ export default withPageAuthRequired(async function SandboxRuns({ params }) {
       </div>
     </DashboardContent>
   )
-})
+}
 
 const LoadSandboxRunPlan = async ({ install, orgId, runnerJobId }) => {
   const plan = await getRunnerJobPlan({ orgId, runnerJobId }).catch(
