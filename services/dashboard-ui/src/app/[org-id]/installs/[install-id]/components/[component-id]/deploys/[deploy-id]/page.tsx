@@ -334,14 +334,6 @@ export default async function InstallComponentDeploy({ params }) {
                   componentId={deploy.component_id}
                   orgId={orgId}
                 />
-                <ErrorBoundary fallbackRender={ErrorFallback}>
-                  <LoadHelmValues
-                    componentId={deploy.component_id}
-                    deployId={deploy.id}
-                    install={install}
-                    orgId={orgId}
-                  />
-                </ErrorBoundary>
               </Suspense>
             </ErrorBoundary>
           </Section>
