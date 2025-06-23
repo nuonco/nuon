@@ -103,16 +103,17 @@ export const AppConfigGraphRenderer: FC<AppConfigGraphRendererProps> = ({
         },
         position: { x: 0, y: 0 }, // Will be set by dagre
         style: {
-          background: attributes.color === 'blue' ? '#4299E1' : '#E53E3E',
-          color: 'white',
+          background: attributes.color === 'blue' ? '#1e50c0' : '#991B1B',
+          color: '#FAFAFA',
           padding: '8px 12px',
           borderRadius: '4px',
-          fontSize: '14px',
+          fontFamily: 'var(--font-hack)',
+          fontSize: '12px',
           fontWeight: 500,
           width: 'auto',
           minWidth: '150px',
           textAlign: 'center',
-          border: '1px solid #2D3748',
+          border: 'none',
         },
       })
     }
@@ -128,12 +129,12 @@ export const AppConfigGraphRenderer: FC<AppConfigGraphRendererProps> = ({
         type: 'smoothstep',
         animated: false,
         style: {
-          stroke: '#E53E3E',
+          stroke: '#991B1B',
           strokeWidth: 2,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: '#E53E3E',
+          color: '#991B1B',
         },
       })
     }
@@ -178,7 +179,8 @@ export const AppConfigGraphRenderer: FC<AppConfigGraphRendererProps> = ({
       {isOpen &&
         createPortal(
           <Modal
-            className="w-full max-w-[calc(100%-4rem)] mx-6 xl:mx-auto !max-h-[calc(100vh-4rem)] h-screen"
+            contentClassName="flex flex-col !max-h-[calc(100%-4rem)] overflow-y-scroll"
+            className="w-full max-w-[calc(100%-4rem)] mx-6 xl:mx-auto !max-h-[calc(100vh-4rem)] h-screen overflow-hidden"
             heading={
               <span>
                 <Text variant="med-14">App component dependency graph</Text>
@@ -234,9 +236,18 @@ export const AppConfigGraphRenderer: FC<AppConfigGraphRendererProps> = ({
                   maxZoom={1.5}
                   defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
                   proOptions={{ hideAttribution: true }}
+                  style={{
+                    borderRadius: '8px',
+                  }}
                 >
-                  <Controls />
-                  <Background color="#aaa" gap={16} />
+                  <Controls
+                    position="top-right"
+                    orientation="horizontal"
+                    style={{
+                      color: '#121212',
+                    }}
+                  />
+                  <Background bgColor="#121212" color="#aaa" gap={16} />
                 </ReactFlow>
               </div>
             )}
