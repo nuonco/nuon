@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
@@ -21,9 +23,14 @@ func (h *Helpers) getInstallSandboxRuns(ctx context.Context, installID string) (
 		Preload("AppSandboxConfig.PublicGitVCSConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig.VCSConnection").
-		Preload("RunnerJob").
+		Preload("RunnerJobs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("runner_jobs_view_v2.created_at DESC")
+		}).
 		Preload("LogStream").
-		Where("install_id = ?", installID).
+		Where(app.InstallSandboxRun{
+			InstallID: installID,
+			Status:    "active",
+		}).
 		Order("created_at desc").
 		Limit(5).
 		Find(&installSandboxRuns)
