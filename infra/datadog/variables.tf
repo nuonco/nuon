@@ -2,7 +2,7 @@ locals {
   name                   = "datadog"
   terraform_organization = "nuonco"
 
-  zone = nonsensitive(data.tfe_outputs.infra-eks-nuon.values.private_zone)
+  # zone = nonsensitive(data.tfe_outputs.infra-eks-nuon.values.private_zone)
 
   tags = {
     environment = var.env

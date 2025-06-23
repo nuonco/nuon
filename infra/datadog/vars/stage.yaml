@@ -103,3 +103,7 @@ synthetics:
 installer_synthetics:
   installers: {}
   config: {}
+
+byoc_synthetics:
+  instances: {}
+  config: {}

@@ -211,3 +211,40 @@ installer_synthetics:
       monitor_options:
         renotify_interval: 120
       monitor_priority: 1
+
+# NOTE: this should be updated every time we add a byoc-nuon install
+# instances is the list of install root_domains which we can use to derivce urls for the ctl-api, runner api, and dashboard-ui
+# config is the synthetic monitor configuration used for all of the instances.
+# we monitor the ctl-api, runner-api, and dashboard-ui
+byoc_synthetics:
+  instances:
+    org_name:
+      instance_1: byoc.example.com
+      instance_2: byoc.dev.example.com
+    retool:
+      nuon-prod: byoc.retool.com
+      nuon-dev-2: byoc.retool.dev
+  config:
+    name: "[byoc] byoc-nuon > $org > $service" # overwritten
+    type: "api"
+    subtype: "http"
+    status: "live"
+    message: "@slack-alerts-prod-product @pagerduty-Datadog" # TODO: use a dedicated channel
+    locations: ["aws:us-east-1", "aws:us-west-2"]
+    tags: ["service:byoc-nuon", "terraform:true", "env:byoc"]
+    request_definition:
+      method: "GET"
+      url: ""
+    request_headers: {}
+    assertion:
+      type: "statusCode"
+      operator: "is"
+      target: 200
+    options_list:
+      tick_every: 360
+      retry:
+        count: 2
+        interval: 1000
+      monitor_options:
+        renotify_interval: 120
+      monitor_priority: 1
