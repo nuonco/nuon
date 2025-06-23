@@ -27,7 +27,7 @@ resource "datadog_synthetics_test" "byoc-ctl-api" {
 
   request_definition {
     method = local.vars.byoc_synthetics.config.request_definition.method
-    url    = "api.${each.value.root_domain}/livez"
+    url    = "https://api.${each.value.root_domain}/livez"
   }
 
   request_headers = local.vars.byoc_synthetics.config.request_headers
@@ -66,7 +66,7 @@ resource "datadog_synthetics_test" "byoc-dashboard-ui" {
 
   request_definition {
     method = local.vars.byoc_synthetics.config.request_definition.method
-    url    = "app.${each.value.root_domain}/livez"
+    url    = "https://app.${each.value.root_domain}/livez"
   }
 
   request_headers = local.vars.byoc_synthetics.config.request_headers
