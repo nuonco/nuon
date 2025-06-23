@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"context"
 	"slices"
 	"testing"
 
@@ -64,4 +65,36 @@ func TestGetComponentsDependent(t *testing.T) {
 			assert.True(t, slices.Equal(depCmpIDs, tc.expectedCmps), "expected dependent components to match")
 		})
 	}
+}
+
+func TestGetInvertedDependentComponentsFromComponents(t *testing.T) {
+	// Mock data
+	ctx := context.Background()
+	componentA := app.Component{ID: "cmpk8fzv4yziwnorlo9qc006zk"}
+	componentB := app.Component{ID: "cmpl1d5yibj3mtculzgt914109"}
+	componentC := app.Component{ID: "cmpri57fpbvr8i8up3mjcrwh1p"}
+	componentD := app.Component{ID: "cmp9ctnsrgm12jxy7391tujr78", Dependencies: []*app.Component{&app.Component{ID: "cmpk8fzv4yziwnorlo9qc006zk"}, &app.Component{ID: "cmpl1d5yibj3mtculzgt914109"}, &app.Component{ID: "cmpri57fpbvr8i8up3mjcrwh1p"}}}
+	componentE := app.Component{ID: "cmp6pns2xtt3toyre1y7frdz91", Dependencies: []*app.Component{&app.Component{ID: "cmpk8fzv4yziwnorlo9qc006zk"}, &app.Component{ID: "cmpl1d5yibj3mtculzgt914109"}, &app.Component{ID: "cmpri57fpbvr8i8up3mjcrwh1p"}}}
+	components := []app.Component{componentA, componentB, componentC, componentD, componentE}
+
+	helpers := &Helpers{}
+
+	g, _, err := helpers.getInvertedDependencyGraphFromComponents(ctx, &components)
+
+	assert.NoError(t, err)
+
+	t.Run("should return dependent components successfully", func(t *testing.T) {
+		dependentComponents, err := helpers.getInvertedDependentComponentsFromComponents(ctx, &g, &components, componentA.ID)
+		assert.NoError(t, err)
+		assert.Len(t, dependentComponents, 2)
+		assert.Contains(t, dependentComponents, componentD)
+		assert.Contains(t, dependentComponents, componentE)
+	})
+
+	t.Run("should return error if component root ID is not found", func(t *testing.T) {
+		invalidRootID := "invalid"
+		dependentComponents, err := helpers.getInvertedDependentComponentsFromComponents(ctx, &g, &components, invalidRootID)
+		assert.Error(t, err)
+		assert.Nil(t, dependentComponents)
+	})
 }

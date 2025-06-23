@@ -10,7 +10,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
@@ -90,7 +89,7 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	inputs, err := s.newInstallInputs(ctx, *latestLatestInstallInputs, *latestAppInputConfig, req)
+	inputs, changedInputs, err := s.newInstallInputs(ctx, *latestLatestInstallInputs, *latestAppInputConfig, req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
@@ -111,11 +110,12 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		// NOTE(jm): this metadata field is not really designed to be used for anything serious, outside of
 		// rendering things in the UI and other such things, which is why we are just using a string slice here,
 		// maybe that will change at some point, but this metadata should not be abused.
-		"inputs": strings.Join(generics.MapToKeys(req.Inputs), ","),
+		"inputs": strings.Join(*changedInputs, ","),
 	}, app.StepErrorBehaviorAbort,
 	)
 	if err != nil {
 		ctx.Error(err)
+
 		return
 	}
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
@@ -171,7 +171,7 @@ func (s *service) validateInstallInput(ctx context.Context, appInputConfig app.A
 	return nil
 }
 
-func (s *service) newInstallInputs(ctx context.Context, installInputs app.InstallInputs, appInputConfig app.AppInputConfig, req UpdateInstallInputsRequest) (*app.InstallInputs, error) {
+func (s *service) newInstallInputs(ctx context.Context, installInputs app.InstallInputs, appInputConfig app.AppInputConfig, req UpdateInstallInputsRequest) (*app.InstallInputs, *[]string, error) {
 	inputs := map[string]*string{}
 	for k, v := range installInputs.Values {
 		inputs[k] = v
@@ -188,10 +188,23 @@ func (s *service) newInstallInputs(ctx context.Context, installInputs app.Instal
 		appInputNames[input.Name] = struct{}{}
 	}
 
+	// existing installInputs
+	existingInputs := make(map[string]*string)
+	for k, v := range installInputs.Values {
+		existingInputs[k] = v
+	}
+
+	var changedInputs []string
+
 	// remove inputs not in the latest app input config
 	for k := range inputs {
 		if _, ok := appInputNames[k]; !ok {
 			delete(inputs, k)
+		}
+
+		// remove input who's values are not changed
+		if v, _ := existingInputs[k]; *v != *inputs[k] {
+			changedInputs = append(changedInputs, k)
 		}
 	}
 
@@ -203,15 +216,15 @@ func (s *service) newInstallInputs(ctx context.Context, installInputs app.Instal
 	}
 	res := s.db.WithContext(ctx).Create(&obj)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create install inputs: %w", res.Error)
+		return nil, nil, fmt.Errorf("unable to create install inputs: %w", res.Error)
 	}
 
 	latestInstallInputs, err := s.getLatestInstallInputs(ctx, installInputs.InstallID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get latest install inputs: %w", err)
+		return nil, nil, fmt.Errorf("unable to get latest install inputs: %w", err)
 	}
 
 	latestInstallInputs.Values = nil
 
-	return latestInstallInputs, nil
+	return latestInstallInputs, &changedInputs, nil
 }
