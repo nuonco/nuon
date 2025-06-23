@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CaretRight } from '@phosphor-icons/react/dist/ssr'
 import {
   ClickToCopyButton,
@@ -35,7 +34,6 @@ import {
   getOrg,
 } from '@/lib'
 import type {
-  TAppConfig,
   TComponent,
   TComponentConfig,
   TInstall,
@@ -43,9 +41,7 @@ import type {
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
-  const componentId = params?.['component-id'] as string
+  const { ['org-id']: orgId, ['install-id']: installId, ['component-id']: componentId } = await params
   const [install, component] = await Promise.all([
     getInstall({ installId, orgId }),
     getComponent({ componentId, orgId }),
@@ -56,13 +52,10 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function InstallComponent({
+export default async function InstallComponent({
   params,
 }) {
-  const componentId = params?.['component-id'] as string
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
-
+  const { ['org-id']: orgId, ['install-id']: installId, ['component-id']: componentId } = await params
   const [org, install, component, installComponent] = await Promise.all([
     getOrg({ orgId }),
     getInstall({ installId, orgId }),
@@ -217,7 +210,7 @@ export default withPageAuthRequired(async function InstallComponent({
       </div>
     </DashboardContent>
   )
-})
+}
 
 const LoadDeployHistory: FC<{
   component: TComponent

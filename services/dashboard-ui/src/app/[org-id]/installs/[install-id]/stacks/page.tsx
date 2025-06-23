@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   ErrorFallback,
@@ -20,8 +19,7 @@ import type { TInstallStack } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
+  const { ['org-id']: orgId, ['install-id']: installId } = await params
   const install: any = await getInstall({ installId, orgId })
 
   return {
@@ -29,9 +27,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function InstallStack({ params }) {
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
+export default async function InstallStack({ params }) {
+  const { ['org-id']: orgId, ['install-id']: installId } = await params
   const install = await getInstall({ installId, orgId })
 
   return (
@@ -88,7 +85,7 @@ export default withPageAuthRequired(async function InstallStack({ params }) {
       </section>
     </DashboardContent>
   )
-})
+}
 
 const LoadInstallStacks: FC<{
   installId: string

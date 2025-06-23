@@ -2,11 +2,9 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   ErrorFallback,
-  ID,
   Loading,
   StatusBadge,
   RunnerHealthChart,
@@ -20,7 +18,7 @@ import {
 import { getRunner, getOrg } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const orgId = params?.['org-id'] as string
+  const { ['org-id']: orgId } = await params
   const org = await getOrg({ orgId })
 
   return {
@@ -28,11 +26,9 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function OrgRunner({
-  params,
-  searchParams,
-}) {
-  const orgId = params?.['org-id'] as string
+export default async function OrgRunner({ params, searchParams }) {
+  const { ['org-id']: orgId } = await params
+  const sp = await searchParams
   const org = await getOrg({ orgId })
   const runnerId = org?.runner_group?.runners?.at(0)?.id
   const [runner] = await Promise.all([
@@ -94,7 +90,7 @@ export default withPageAuthRequired(async function OrgRunner({
                   <RunnerPastJobs
                     runnerId={runnerId}
                     orgId={orgId}
-                    offset={(searchParams['past-jobs'] as string) || '0'}
+                    offset={(sp['past-jobs'] as string) || '0'}
                   />
                 </Suspense>
               </ErrorBoundary>
@@ -117,7 +113,7 @@ export default withPageAuthRequired(async function OrgRunner({
                   <RunnerUpcomingJobs
                     runnerId={runnerId}
                     orgId={orgId}
-                    offset={(searchParams['upcoming-jobs'] as string) || '0'}
+                    offset={(sp['upcoming-jobs'] as string) || '0'}
                   />
                 </Suspense>
               </ErrorBoundary>
@@ -129,4 +125,4 @@ export default withPageAuthRequired(async function OrgRunner({
   } else {
     redirect(`/${orgId}/apps`)
   }
-})
+}

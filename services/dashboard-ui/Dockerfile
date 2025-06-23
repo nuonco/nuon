@@ -33,10 +33,15 @@ ENV NUON_API_URL=https://api.stage.nuon.co
 FROM deps as build
 
 ARG NUON_API_URL=https://api.stage.nuon.co
+ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
+ENV NEXT_PUBLIC_ACCESS_TOKEN_ROUTE=/api/auth/access-token
 
 RUN npm run build
 
 FROM build as final
+
+ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
+ENV NEXT_PUBLIC_ACCESS_TOKEN_ROUTE=/api/auth/access-token
 
 EXPOSE 4000
 ENTRYPOINT ["npm", "run", "start"]

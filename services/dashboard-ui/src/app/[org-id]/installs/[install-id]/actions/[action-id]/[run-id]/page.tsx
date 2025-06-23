@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, CaretLeft, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   ActionLogsSection,
@@ -29,17 +28,15 @@ import {
   getInstallWorkflow,
 } from '@/lib'
 import type { TInstallActionWorkflowRun, TActionConfig } from '@/types'
-import {
-  sentanceCase,
-  CANCEL_RUNNER_JOBS,
-  nueQueryData,
-} from '@/utils'
+import { sentanceCase, CANCEL_RUNNER_JOBS, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const actionWorkflowId = params?.['action-id'] as string
-  const actionWorkflowRunId = params?.['run-id'] as string
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
+  const {
+    ['org-id']: orgId,
+    ['install-id']: installId,
+    ['action-id']: actionWorkflowId,
+    ['run-id']: actionWorkflowRunId,
+  } = await params
   const [action, run] = await Promise.all([
     getAppActionWorkflow({ actionWorkflowId, orgId }),
     getInstallActionWorkflowRun({ actionWorkflowRunId, installId, orgId }),
@@ -65,11 +62,13 @@ function hydrateRunSteps(
   })
 }
 
-export default withPageAuthRequired(async function InstallWorkflow({ params }) {
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
-  const actionWorkflowId = params?.['action-id'] as string
-  const actionWorkflowRunId = params?.['run-id'] as string
+export default async function InstallWorkflow({ params }) {
+  const {
+    ['org-id']: orgId,
+    ['install-id']: installId,
+    ['action-id']: actionWorkflowId,
+    ['run-id']: actionWorkflowRunId,
+  } = await params
   const [install, actionWorkflow, workflowRun] = await Promise.all([
     getInstall({ installId, orgId }),
     getAppActionWorkflow({ actionWorkflowId, orgId }),
@@ -139,9 +138,7 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
               Trigger type
             </Text>
-            <Badge variant="code">
-              {workflowRun?.triggered_by_type}
-            </Badge>
+            <Badge variant="code">{workflowRun?.triggered_by_type}</Badge>
           </span>
 
           <span className="flex flex-col gap-2">
@@ -229,8 +226,7 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       </div>
     </DashboardContent>
   )
-})
-
+}
 
 const LoadRunnerJobPlan: FC<{ orgId: string; runnerJobId: string }> = async ({
   orgId,
