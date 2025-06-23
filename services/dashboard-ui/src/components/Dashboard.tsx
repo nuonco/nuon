@@ -204,7 +204,7 @@ export const DashboardContent: FC<{
               }
             )}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4">
               <hgroup className="flex flex-col gap-2">
                 <Text level={1} role="heading" variant="semi-18">
                   {heading}
