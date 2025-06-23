@@ -1,22 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { withApiAuthRequired } from '@auth0/nextjs-auth0'
 import { nueQueryData } from '@/utils'
 import { TRouteRes } from '@/app/api/[org-id]/types'
 
-export const GET = withApiAuthRequired(
-  async (
-    req: NextRequest,
-    { params }: TRouteRes<'org-id' | 'workflow-id' | 'step-id'>
-  ) => {
-    const orgId = params?.['org-id']
-    const workflowId = params?.['workflow-id']
-    const stepId = params?.['step-id']
+export const GET = async (
+  req: NextRequest,
+  { params }: TRouteRes<'org-id' | 'workflow-id' | 'step-id'>
+) => {
+  const {
+    ['org-id']: orgId,
+    ['workflow-id']: workflowId,
+    ['step-id']: stepId,
+  } = await params
 
-    const res = await nueQueryData({
-      orgId,
-      path: `install-workflows/${workflowId}/steps/${stepId}`,
-    })
+  const res = await nueQueryData({
+    orgId,
+    path: `install-workflows/${workflowId}/steps/${stepId}`,
+  })
 
-    return NextResponse.json(res)
-  }
-)
+  return NextResponse.json(res)
+}

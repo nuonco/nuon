@@ -1,0 +1,256 @@
+'use client'
+
+import React, { type FC, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
+import {
+  ReactFlow,
+  Node,
+  Edge,
+  Controls,
+  Background,
+  useNodesState,
+  useEdgesState,
+  MarkerType,
+} from '@xyflow/react'
+import dagre from '@dagrejs/dagre'
+import '@xyflow/react/dist/style.css'
+
+import { Button } from '@/components/Button'
+import { Loading } from '@/components/Loading'
+import { Modal } from '@/components/Modal'
+import { Notice } from '@/components/Notice'
+import { useOrg } from '@/components/Orgs'
+import { Text, Code } from '@/components/Typography'
+
+interface AppConfigGraphRendererProps {
+  appId: string
+  configId: string
+}
+
+const getLayoutedElements = (
+  nodes: Node[],
+  edges: Edge[],
+  direction = 'LR'
+) => {
+  const dagreGraph = new dagre.graphlib.Graph()
+  dagreGraph.setDefaultEdgeLabel(() => ({}))
+
+  const nodeWidth = 200 // Increased width for longer labels
+  const nodeHeight = 40
+
+  dagreGraph.setGraph({ rankdir: direction })
+
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight })
+  })
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target)
+  })
+
+  dagre.layout(dagreGraph)
+
+  const layoutedNodes = nodes.map((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id)
+    return {
+      ...node,
+      position: {
+        x: nodeWithPosition.x - nodeWidth / 2,
+        y: nodeWithPosition.y - nodeHeight / 2,
+      },
+    }
+  })
+
+  return { nodes: layoutedNodes, edges }
+}
+
+export const AppConfigGraphRenderer: FC<AppConfigGraphRendererProps> = ({
+  appId,
+  configId,
+}) => {
+  const { org } = useOrg()
+  const [isOpen, setIsOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string>()
+  const [nodes, setNodes, onNodesChange] = useNodesState([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState([])
+
+  const convertDotToFlowData = (dotGraph: string) => {
+    const nodes: Node[] = []
+    const edges: Edge[] = []
+
+    // Parse nodes with their attributes
+    const nodeRegex = /"([^"]+)"\s*\[\s*([^\]]+)\]/g
+    let match
+
+    while ((match = nodeRegex.exec(dotGraph)) !== null) {
+      const [, id, attrs] = match
+      const attributes = Object.fromEntries(
+        attrs.split(',').map((attr) => {
+          const [key, value] = attr
+            .split('=')
+            .map((s) => s.trim().replace(/"/g, ''))
+          return [key, value]
+        })
+      )
+
+      nodes.push({
+        id,
+        type: 'default',
+        data: {
+          label: attributes.label || id,
+          type: attributes.type, // Store type for potential use
+        },
+        position: { x: 0, y: 0 }, // Will be set by dagre
+        style: {
+          background: attributes.color === 'blue' ? '#4299E1' : '#E53E3E',
+          color: 'white',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          fontSize: '14px',
+          fontWeight: 500,
+          width: 'auto',
+          minWidth: '150px',
+          textAlign: 'center',
+          border: '1px solid #2D3748',
+        },
+      })
+    }
+
+    // Parse edges
+    const edgeRegex = /"([^"]+)"\s*->\s*"([^"]+)"\s*\[\s*([^\]]+)\]/g
+    while ((match = edgeRegex.exec(dotGraph)) !== null) {
+      const [, source, target, attrs] = match
+      edges.push({
+        id: `${source}-${target}`,
+        source,
+        target,
+        type: 'smoothstep',
+        animated: false,
+        style: {
+          stroke: '#E53E3E',
+          strokeWidth: 2,
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#E53E3E',
+        },
+      })
+    }
+
+    return getLayoutedElements(nodes, edges)
+  }
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch(
+        `/api/${org?.id}/apps/${appId}/configs/${configId}/graph`
+      )
+      const res = await response.json()
+      setIsLoading(false)
+
+      if (res?.error) {
+        setError(res?.error?.error)
+      } else {
+        const { nodes: newNodes, edges: newEdges } = convertDotToFlowData(
+          res.data
+        )
+        setNodes(newNodes)
+        setEdges(newEdges)
+      }
+    } catch (err) {
+      console.error('Graph fetch error:', err)
+      setError(
+        err instanceof Error ? err.message : 'Failed to fetch graph data'
+      )
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (org?.id && appId && configId && isOpen) {
+      fetchData()
+    }
+  }, [org?.id, appId, configId, isOpen])
+
+  return (
+    <>
+      {isOpen &&
+        createPortal(
+          <Modal
+            className="w-full max-w-[calc(100%-4rem)] mx-6 xl:mx-auto !max-h-[calc(100vh-4rem)] h-screen"
+            heading={
+              <span>
+                <Text variant="med-14">App component dependency graph</Text>
+              </span>
+            }
+            isOpen={isOpen}
+            onClose={() => {
+              setIsOpen(false)
+            }}
+          >
+            <div className="flex flex-col gap-2 mb-6">
+              <Text variant="reg-14">
+                Nuon automatically creates a graph of all of the components in
+                your application.
+              </Text>
+
+              <ul className="flex flex-col gap-1 list-disc pl-4">
+                <li className="text-sm max-w-xl">
+                  Dependencies are from root to dependencies (so a red-arrow
+                  from a to b, means that b depends on a, or that when a
+                  changes, b would be updated when{' '}
+                  <Code
+                    className="!inline-block !align-middle !py-0 !text-sm"
+                    variant="inline"
+                  >
+                    select-dependencies
+                  </Code>{' '}
+                  is true)
+                </li>
+                <li className="text-sm">
+                  Blue nodes mean that the current config version has changes to
+                  that component
+                </li>
+              </ul>
+            </div>
+            {isLoading ? (
+              <Loading
+                loadingText="Loading component graph..."
+                variant="stack"
+              />
+            ) : error ? (
+              <Notice>{error}</Notice>
+            ) : (
+              <div className="w-full h-full border rounded-lg bg-white dark:bg-gray-800">
+                <ReactFlow
+                  nodes={nodes}
+                  edges={edges}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  fitView
+                  fitViewOptions={{ padding: 0.2 }}
+                  minZoom={0.1}
+                  maxZoom={1.5}
+                  defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+                  proOptions={{ hideAttribution: true }}
+                >
+                  <Controls />
+                  <Background color="#aaa" gap={16} />
+                </ReactFlow>
+              </div>
+            )}
+          </Modal>,
+          document.body
+        )}
+      <Button
+        className="text-sm"
+        onClick={() => {
+          setIsOpen(true)
+        }}
+      >
+        View dependency graph
+      </Button>
+    </>
+  )
+}

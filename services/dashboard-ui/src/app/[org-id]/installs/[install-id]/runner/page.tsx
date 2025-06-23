@@ -1,6 +1,5 @@
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   DeprovisionRunnerModal,
@@ -13,7 +12,6 @@ import {
   RunnerHealthChart,
   RunnerPastJobs,
   RunnerUpcomingJobs,
-  StatusBadge,
   Section,
   ShutdownRunnerModal,
   Text,
@@ -22,12 +20,12 @@ import {
 import { InstallManagementDropdown } from '@/components/Installs'
 import { getInstall, getRunner } from '@/lib'
 
-export default withPageAuthRequired(async function Runner({
+export default async function Runner({
   params,
   searchParams,
 }) {
-  const orgId = params?.['org-id'] as string
-  const installId = params?.['install-id'] as string
+  const { ['org-id']: orgId, ['install-id']: installId } = await params
+  const sp = await searchParams
   const install = await getInstall({ installId, orgId })
   const runner = await getRunner({
     orgId,
@@ -124,7 +122,7 @@ export default withPageAuthRequired(async function Runner({
                 <RunnerPastJobs
                   runnerId={runner.id}
                   orgId={orgId}
-                  offset={(searchParams['past-jobs'] as string) || '0'}
+                  offset={(sp['past-jobs'] as string) || '0'}
                 />
               </Suspense>
             </ErrorBoundary>
@@ -150,7 +148,7 @@ export default withPageAuthRequired(async function Runner({
                 <RunnerUpcomingJobs
                   runnerId={runner.id}
                   orgId={orgId}
-                  offset={(searchParams['upcoming-jobs'] as string) || '0'}
+                  offset={(sp['upcoming-jobs'] as string) || '0'}
                 />
               </Suspense>
             </ErrorBoundary>
@@ -159,4 +157,4 @@ export default withPageAuthRequired(async function Runner({
       </div>
     </DashboardContent>
   )
-})
+}

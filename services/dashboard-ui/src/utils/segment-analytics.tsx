@@ -4,7 +4,7 @@
 import React, { type FC, useEffect } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import Script from 'next/script'
-import { useUser, type UserProfile } from '@auth0/nextjs-auth0/client'
+import { useUser, type UserProfile } from '@auth0/nextjs-auth0'
 import { AnalyticsBrowser } from '@segment/analytics-next'
 import type { TOrg } from '@/types'
 

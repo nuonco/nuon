@@ -17,7 +17,7 @@ import type { IPageProps, TOrg, TRunnerHeartbeat } from '@/types'
 import { nueQueryData } from '@/utils'
 
 const StratusBuildRunner: FC<IPageProps<'org-id'>> = async ({ params }) => {
-  const orgId = params?.['org-id']
+  const { ['org-id']: orgId } = await params
   const { data: org } = await nueQueryData<TOrg>({
     orgId,
     path: 'orgs/current',

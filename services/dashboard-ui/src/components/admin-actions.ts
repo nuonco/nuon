@@ -1,7 +1,7 @@
 'use server'
 
-import { getSession, getAccessToken } from '@auth0/nextjs-auth0'
 import type { TRunner } from '@/types'
+import { auth0 } from "@/utils/auth"
 import { ADMIN_API_URL } from '@/utils'
 
 async function adminAction(
@@ -9,7 +9,7 @@ async function adminAction(
   path: string,
   errMessage = 'Admin action failed'
 ) {
-  const { user } = await getSession()
+  const { user } = await auth0.getSession()
 
   try {
     const result = await fetch(`${ADMIN_API_URL}/v1/${domain}/${path}`, {
@@ -27,7 +27,7 @@ async function adminAction(
 }
 
 export async function getToken() {
-  const result = await getAccessToken()
+  const result = await auth0.getAccessToken()
   return { status: 200, result }
 }
 
@@ -94,7 +94,7 @@ export async function updateOrgFeature(
         acc[feat] = data.hasOwnProperty(feat)
         return acc
       }, {})
-  const { user } = await getSession()
+  const { user } = await auth0.getSession()
 
   try {
     const result = await fetch(

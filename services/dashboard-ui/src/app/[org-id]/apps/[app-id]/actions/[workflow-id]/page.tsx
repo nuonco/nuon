@@ -1,6 +1,5 @@
 import cronstrue from 'cronstrue'
 import type { Metadata } from 'next'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   ActionTriggerType,
   CodeViewer,
@@ -15,9 +14,11 @@ import {
 import { getApp, getAppActionWorkflow } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const appId = params?.['app-id'] as string
-  const orgId = params?.['org-id'] as string
-  const workflowId = params?.['workflow-id'] as string
+  const {
+    ['org-id']: orgId,
+    ['app-id']: appId,
+    ['workflow-id']: workflowId,
+  } = await params
   const [app, workflow] = await Promise.all([
     getApp({ appId, orgId }),
     getAppActionWorkflow({ orgId, actionWorkflowId: workflowId }),
@@ -28,10 +29,12 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function AppWorkflow({ params }) {
-  const appId = params?.['app-id'] as string
-  const orgId = params?.['org-id'] as string
-  const workflowId = params?.['workflow-id'] as string
+export default async function AppWorkflow({ params }) {
+  const {
+    ['org-id']: orgId,
+    ['app-id']: appId,
+    ['workflow-id']: workflowId,
+  } = await params
   const [app, workflow] = await Promise.all([
     getApp({ appId, orgId }),
     getAppActionWorkflow({ orgId, actionWorkflowId: workflowId }),
@@ -127,4 +130,4 @@ export default withPageAuthRequired(async function AppWorkflow({ params }) {
       </div>
     </DashboardContent>
   )
-})
+}
