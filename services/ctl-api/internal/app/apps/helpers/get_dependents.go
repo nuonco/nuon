@@ -74,13 +74,31 @@ func (h *Helpers) GetInvertedDependentComponents(ctx context.Context, appID, com
 		return nil, fmt.Errorf("unable to get graph: %w", err)
 	}
 
+	return h.getInvertedDependentComponentsFromComponents(ctx, &g, &cmps, compRootID)
+
+}
+
+// GetInvertedDependentByComponentConfigVersion retrieves the components that depend on the given component root ID
+func (h *Helpers) GetInvertedDependentByComponentConfigVersion(ctx context.Context, appID string, configVersion int, compRootID string) (
+	[]app.Component, error) {
+	g, cmps, err := h.getInvertedDependencyGraphByConfigVersion(ctx, appID, configVersion)
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to get graph: %w", err)
+	}
+
+	return h.getInvertedDependentComponentsFromComponents(ctx, &g, &cmps, compRootID)
+}
+
+// getInvertedDependentComponentsFromComponents from list of components, retrieves the components that depend on the given component root ID
+func (h *Helpers) getInvertedDependentComponentsFromComponents(ctx context.Context, g *graph.Graph[string, *app.Component], cmps *[]app.Component, compRootID string) ([]app.Component, error) {
 	cmpsById := make(map[string]app.Component)
-	for _, c := range cmps {
+	for _, c := range *cmps {
 		cmpsById[c.ID] = c
 	}
 
 	depsCmpIds := make([]string, 0)
-	if err := graph.BFS(g, compRootID, func(compID string) bool {
+	if err := graph.BFS(*g, compRootID, func(compID string) bool {
 		if compID == compRootID {
 			return false
 		}
@@ -98,7 +116,7 @@ func (h *Helpers) GetInvertedDependentComponents(ctx context.Context, appID, com
 	for _, id := range depsCmpIds {
 		comp, ok := cmpsById[id]
 		if !ok {
-			return nil, fmt.Errorf("unable to get component: %w", err)
+			return nil, fmt.Errorf("unable to get component")
 		}
 		depCmps = append(depCmps, comp)
 	}
