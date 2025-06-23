@@ -1,5 +1,4 @@
 // @ts-nocheck
-import { UserProvider } from '@auth0/nextjs-auth0/client'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
@@ -43,35 +42,31 @@ export default function RootLayout({
       className="bg-light text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 overflow-hidden"
       lang="en"
     >
-      <UserProvider>
-        <>
-          {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
-          process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'stage' ||
-          process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'local' ? (
-            <>
-              <InitDatadogLogs env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
-              <InitDatadogRUM env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
-            </>
-          ) : null}
-          <body
-            className={`${inter.variable} ${hack.variable} font-sans overflow-hidden disable-ligatures`}
-          >
-            <EnvScript
-              env={process?.env?.NEXT_PUBLIC_DATADOG_ENV}
-              githubAppName={process.env.GITHUB_APP_NAME}
-            />
-            {children}
-            {process.env.SEGMENT_WRITE_KEY && (
-              <Suspense>
-                <InitSegmentAnalytics
-                  writeKey={process.env.SEGMENT_WRITE_KEY}
-                />
-                <SegmentAnalyticsIdentify />
-              </Suspense>
-            )}
-          </body>
-        </>
-      </UserProvider>
+      <>
+        {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
+        process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'stage' ||
+        process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'local' ? (
+          <>
+            <InitDatadogLogs env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
+            <InitDatadogRUM env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
+          </>
+        ) : null}
+        <body
+          className={`${inter.variable} ${hack.variable} font-sans overflow-hidden disable-ligatures`}
+        >
+          <EnvScript
+            env={process?.env?.NEXT_PUBLIC_DATADOG_ENV}
+            githubAppName={process.env.GITHUB_APP_NAME}
+          />
+          {children}
+          {process.env.SEGMENT_WRITE_KEY && (
+            <Suspense>
+              <InitSegmentAnalytics writeKey={process.env.SEGMENT_WRITE_KEY} />
+              <SegmentAnalyticsIdentify />
+            </Suspense>
+          )}
+        </body>
+      </>
     </html>
   )
 }

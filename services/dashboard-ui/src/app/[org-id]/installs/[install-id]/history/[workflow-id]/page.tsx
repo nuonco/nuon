@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   Empty,
@@ -15,9 +14,7 @@ import { getInstall, getInstallWorkflow } from '@/lib'
 import { removeSnakeCase, sentanceCase } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const installId = params?.['install-id'] as string
-  const installWorkflowId = params?.['workflow-id'] as string
-  const orgId = params?.['org-id'] as string
+  const { ['org-id']: orgId, ['install-id']: installId, ['workflow-id']: installWorkflowId } = await params
   const [install, installWorkflow] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallWorkflow({ installWorkflowId, orgId }),
@@ -31,10 +28,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function InstallWorkflow({ params }) {
-  const orgId = params?.['org-id'] as string
-  const installId = params?.['install-id'] as string
-  const installWorkflowId = params?.['workflow-id'] as string
+export default async function InstallWorkflow({ params }) {
+  const { ['org-id']: orgId, ['install-id']: installId, ['workflow-id']: installWorkflowId } = await params
   const [install, installWorkflow] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallWorkflow({ installWorkflowId, orgId }),
@@ -166,4 +161,4 @@ export default withPageAuthRequired(async function InstallWorkflow({ params }) {
       </>
     </DashboardContent>
   )
-})
+}

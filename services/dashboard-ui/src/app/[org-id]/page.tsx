@@ -1,33 +1,17 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { CaretRight, Heartbeat, Timer } from '@phosphor-icons/react/dist/ssr'
+import { CaretRight } from '@phosphor-icons/react/dist/ssr'
 import {
-  Config,
-  ConfigContent,
-  CancelRunnerJobButton,
   DashboardContent,
-  Duration,
-  EmptyStateGraphic,
-  ErrorFallback,
-  ID,
   Link,
-  Loading,
   StatusBadge,
-  RunnerHeartbeatChart,
   Section,
-  SubNav,
   Text,
-  Time,
-  Timeline,
-  ToolTip,
-  Truncate,
 } from '@/components'
 import { getOrg } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const orgId = params?.['org-id'] as string
+  const { ['org-id']: orgId } = await params
   const org = await getOrg({ orgId })
 
   return {
@@ -35,8 +19,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function OrgDashboard({ params }) {
-  const orgId = params?.['org-id'] as string
+export default async function OrgDashboard({ params }) {
+  const { ['org-id']: orgId } = await params
   const org = await getOrg({ orgId })
 
   if (org?.features?.['org-dashboard']) {
@@ -108,4 +92,4 @@ export default withPageAuthRequired(async function OrgDashboard({ params }) {
       redirect(`/${orgId}/apps`)
     }
   }
-})
+}

@@ -11,15 +11,17 @@ export interface IPageProps<
   P extends string | number | symbol = string,
   S extends string | number | symbol = string,
 > {
-  params?: TRouteParams<P>
-  searchParams?: TRouteSearchParams<S>
+  params?: Promise<TRouteParams<P>>
+  searchParams?: Promise<TRouteSearchParams<S>>
 }
 
 export interface ILayoutProps<
   P extends string | number | symbol = string,
   S extends string | number | symbol = string,
-> extends IPageProps<P, S> {
+> {
   children: ReactNode
+  params?: Promise<TRouteParams<P>>
+  searchParams?: Promise<TRouteSearchParams<S>>
 }
 
 export interface IRouteProps extends IPageProps {}

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   Link,
@@ -22,8 +21,7 @@ import {
 } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const installId = params?.['install-id'] as string
-  const orgId = params?.['org-id'] as string
+  const { ['org-id']: orgId, ['install-id']: installId } = await params
   const install = await getInstall({ installId, orgId })
 
   return {
@@ -31,9 +29,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function Install({ params }) {
-  const orgId = params?.['org-id'] as string
-  const installId = params?.['install-id'] as string
+export default async function Install({ params }) {
+  const { ['org-id']: orgId, ['install-id']: installId } = await params
   const [install, org] = await Promise.all([
     getInstall({ installId, orgId }),
     getOrg({ orgId }),
@@ -96,7 +93,7 @@ export default withPageAuthRequired(async function Install({ params }) {
       </div>
     </DashboardContent>
   )
-})
+}
 
 const LoadInstallWorkflows: FC<{ installId: string; orgId: string }> = async ({
   installId,

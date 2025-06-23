@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation'
 import React, { type FC, useState } from 'react'
-import { useUser } from '@auth0/nextjs-auth0/client'
+import { useUser } from '@auth0/nextjs-auth0'
 import { Gear } from '@phosphor-icons/react'
 import { AdminOrgActions } from '@/components/AdminOrgActions'
 import { AdminInstallActions } from '@/components/AdminInstallActions'
