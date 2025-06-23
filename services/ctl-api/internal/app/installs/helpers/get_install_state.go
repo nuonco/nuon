@@ -211,7 +211,7 @@ func (h *Helpers) toSandboxRunState(run app.InstallSandboxRun) *state.SandboxSta
 
 	st.Populated = true
 	st.Status = string(run.Status)
-	st.Outputs = run.RunnerJob.ParsedOutputs
+	st.Outputs = run.Outputs
 
 	publicVCSConfig := run.AppSandboxConfig.PublicGitVCSConfig
 	connectedVCSConfig := run.AppSandboxConfig.ConnectedGithubVCSConfig
@@ -267,12 +267,12 @@ func (h *Helpers) toDomainState(run *app.InstallSandboxRun) *state.DomainState {
 		return st
 	}
 
-	publicDomain, ok := run.RunnerJob.ParsedOutputs["public_domain"].(string)
+	publicDomain, ok := run.Outputs["public_domain"].(string)
 	if ok {
 		st.PublicDomain = publicDomain
 	}
 
-	internalDomain, ok := run.RunnerJob.ParsedOutputs["internal_domain"].(string)
+	internalDomain, ok := run.Outputs["internal_domain"].(string)
 	if ok {
 		st.InternalDomain = internalDomain
 	}
