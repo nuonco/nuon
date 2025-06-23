@@ -2,7 +2,7 @@
 
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useUser } from '@auth0/nextjs-auth0/client'
+import { useUser } from '@auth0/nextjs-auth0'
 import { CloudCheck, CloudArrowUp } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Dropdown } from '@/components/Dropdown'

@@ -8,7 +8,7 @@ import {
   Header,
   HeadingGroup,
   Page,
-  ScrollableDiv,  
+  ScrollableDiv,
   Section,
   Skeleton,
   Status,
@@ -18,7 +18,7 @@ import type { IPageProps, TInstall } from '@/types'
 import { nueQueryData } from '@/utils'
 
 const InstallsPage: FC<IPageProps<'org-id'>> = async ({ params }) => {
-  const orgId = params?.['org-id']
+  const { ['org-id']: orgId } = await params
 
   return (
     <Page
@@ -112,7 +112,9 @@ const LoadInstalls: FC<{ orgId: string }> = async ({ orgId }) => {
           <div className="flex flex-col gap-1">
             <Status status={install?.runner_status}>Runner</Status>
             <Status status={install?.sandbox_status}>Sandbox</Status>
-            <Status status={install?.composite_component_status}>Components</Status>
+            <Status status={install?.composite_component_status}>
+              Components
+            </Status>
           </div>
 
           <Text>{install?.app?.name}</Text>

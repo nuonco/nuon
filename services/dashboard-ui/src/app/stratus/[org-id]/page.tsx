@@ -1,5 +1,4 @@
 import type { FC } from 'react'
-import { getSession } from '@auth0/nextjs-auth0'
 import {
   Text,
   Header,
@@ -8,13 +7,13 @@ import {
   Section,
   ScrollableDiv,
 } from '@/stratus/components'
-import type { IPageProps } from '@/types'
-import { nueQueryData } from '@/utils'
+import type { IPageProps, TOrg } from '@/types'
+import { auth0, nueQueryData } from '@/utils'
 
 const Dashboard: FC<IPageProps<'org-id'>> = async ({ params }) => {
-  const orgId = params?.['org-id']
-  const { user } = await getSession()
-  const { data, error } = await nueQueryData<Record<string, any>>({
+  const { ['org-id']: orgId } = await params
+  const { user } = (await auth0?.getSession()) || { user: undefined }
+  const { data, error } = await nueQueryData<TOrg>({
     orgId,
     path: `orgs/current`,
   })

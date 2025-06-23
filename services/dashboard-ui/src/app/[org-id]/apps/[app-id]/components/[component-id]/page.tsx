@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   BuildComponentButton,
   ComponentBuildHistory,
@@ -13,19 +12,16 @@ import {
   Section,
   Text,
 } from '@/components'
-import {
-  getApp,
-  getComponent,
-  getComponentBuilds,
-  getComponentConfig,
-} from '@/lib'
+import { getApp, getComponent, getComponentBuilds } from '@/lib'
 import type { TComponent, TComponentConfig } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const appId = params?.['app-id'] as string
-  const componentId = params?.['component-id'] as string
-  const orgId = params?.['org-id'] as string
+  const {
+    ['org-id']: orgId,
+    ['app-id']: appId,
+    ['component-id']: componentId,
+  } = await params
   const [app, component] = await Promise.all([
     getApp({ appId, orgId }),
     getComponent({ componentId, orgId }),
@@ -36,11 +32,12 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function AppComponent({ params }) {
-  const appId = params?.['app-id'] as string
-  const componentId = params?.['component-id'] as string
-  const orgId = params?.['org-id'] as string
-
+export default async function AppComponent({ params }) {
+  const {
+    ['org-id']: orgId,
+    ['app-id']: appId,
+    ['component-id']: componentId,
+  } = await params
   const [app, component] = await Promise.all([
     getApp({ appId, orgId }),
     getComponent({ componentId, orgId }),
@@ -118,7 +115,7 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
       </div>
     </DashboardContent>
   )
-})
+}
 
 const LoadComponentBuilds: FC<{
   appId: string
