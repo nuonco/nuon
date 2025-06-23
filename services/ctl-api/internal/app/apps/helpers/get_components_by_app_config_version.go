@@ -17,6 +17,7 @@ func (h *Helpers) GetAppComponentsAtConfigVersion(ctx context.Context, appID str
 		Where(&app.Component{
 			AppID: appID,
 		}).
+		Preload("Dependencies").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Where("version <= ?", appCfgVersion)
 		}).
