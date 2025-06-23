@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/dominikbraun/graph"
+	"github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
@@ -152,20 +153,35 @@ func (h *Helpers) GetInvertedDependencyGraph(ctx context.Context, appID string) 
 		return nil, nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
+	return h.getInvertedDependencyGraphFromComponents(ctx, &a.Components)
+}
+
+// getInvertedDependencyGraphByConfigVersion builds a graph from components at a specific config version.
+func (h *Helpers) getInvertedDependencyGraphByConfigVersion(ctx context.Context, appID string, configVersion int) (graph.Graph[string, *app.Component], []app.Component, error) {
+	comps, err := h.GetAppComponentsAtConfigVersion(ctx, appID, configVersion)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "unable to get app components at config version")
+	}
+
+	return h.getInvertedDependencyGraphFromComponents(ctx, &comps)
+}
+
+// getInvertedDependencyuuGraphFromComponents builds a inverted dependency graph from input list of components.
+func (h *Helpers) getInvertedDependencyGraphFromComponents(ctx context.Context, comps *[]app.Component) (graph.Graph[string, *app.Component], []app.Component, error) {
 	g := graph.New(componentHash,
 		graph.Directed(),
 		graph.PreventCycles(),
 		graph.Rooted(),
 		graph.Acyclic())
 
-	for _, comp := range a.Components {
+	for _, comp := range *comps {
 		c := &comp
 		if err := g.AddVertex(c); err != nil {
 			return nil, nil, err
 		}
 	}
 
-	for _, comp := range a.Components {
+	for _, comp := range *comps {
 		for _, dep := range comp.Dependencies {
 			// edge assignment should be dep.ID -> comp.ID in order to BFS search and fetch all dependents of this component
 			if err := g.AddEdge(dep.ID, comp.ID); err != nil {
@@ -174,7 +190,7 @@ func (h *Helpers) GetInvertedDependencyGraph(ctx context.Context, appID string) 
 		}
 	}
 
-	return g, a.Components, nil
+	return g, *comps, nil
 }
 
 func (h *Helpers) GetGraph(ctx context.Context, appID string) (graph.Graph[string, *app.Component], []string, error) {

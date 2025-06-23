@@ -85,7 +85,7 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 	return g, nil
 }
 
-func (h *Helpers) GetDeployOrderFromGraph(ctx context.Context, grph graph.Graph[string, *app.Component]) ([]string, error) {
+func getDeployOrderFromGraph(ctx context.Context, grph graph.Graph[string, *app.Component]) ([]string, error) {
 	diff := func(a, b string) bool {
 		aNode, _ := grph.Vertex(a)
 		bNode, _ := grph.Vertex(b)
@@ -120,13 +120,45 @@ func (h *Helpers) GetDeployOrderFromGraph(ctx context.Context, grph graph.Graph[
 	return order, nil
 }
 
+func GetDeploymentOrderFromComponents(ctx context.Context, comps *[]app.Component) (*[]string, error) {
+	grph := graph.New(componentHash,
+		graph.Directed(),
+		graph.PreventCycles(),
+		graph.Rooted(),
+		graph.Acyclic())
+
+	for _, comp := range *comps {
+		if err := grph.AddVertex(&comp); err != nil {
+			return nil, errors.Wrap(err, "unable to add vertex to graph")
+		}
+	}
+
+	for _, comp := range *comps {
+		for _, dep := range comp.Dependencies {
+			if _, err := grph.Vertex(dep.ID); err != nil {
+				continue
+			}
+			if err := grph.AddEdge(comp.ID, dep.ID); err != nil {
+				return nil, errors.Wrap(err, "unable to add edge to graph")
+			}
+		}
+	}
+
+	order, err := getDeployOrderFromGraph(ctx, grph)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get deploy order from graph")
+	}
+
+	return &order, nil
+}
+
 func (h *Helpers) GetConfigDefaultComponentOrder(ctx context.Context, cfg *app.AppConfig) ([]string, error) {
 	grph, err := h.GetConfigGraph(ctx, cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get config graph")
 	}
 
-	return h.GetDeployOrderFromGraph(ctx, grph)
+	return getDeployOrderFromGraph(ctx, grph)
 }
 
 func (h *Helpers) GetConfigReverseDefaultComponentOrder(ctx context.Context, cfg *app.AppConfig) ([]string, error) {
@@ -135,7 +167,7 @@ func (h *Helpers) GetConfigReverseDefaultComponentOrder(ctx context.Context, cfg
 		return nil, errors.Wrap(err, "unable to get config graph")
 	}
 
-	comps, err := h.GetDeployOrderFromGraph(ctx, grph)
+	comps, err := getDeployOrderFromGraph(ctx, grph)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get deploy order from graph")
 	}
