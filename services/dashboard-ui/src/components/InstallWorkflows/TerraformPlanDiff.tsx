@@ -89,7 +89,9 @@ export function TerraformPlanViewer({ plan }: { plan: TerraformPlan }) {
   const [open, setOpen] = useState<Record<string, boolean>>({})
 
   if (!plan?.resource_changes?.length) {
-    return  plan ?  <JsonView data={plan} /> : (
+    return plan ? (
+      <JsonView data={plan} />
+    ) : (
       <div className="p-8 text-base text-center">
         No changes found in the Terraform plan.
       </div>
@@ -97,7 +99,7 @@ export function TerraformPlanViewer({ plan }: { plan: TerraformPlan }) {
   }
 
   return (
-    <div className="max-w-full mx-auto space-y-2">
+    <div className="w-full mx-auto space-y-2">
       {plan.resource_changes.map((res) => {
         const actionLabel = getActionLabel(res.change.actions)
         const color = getActionColor(res.change.actions)
