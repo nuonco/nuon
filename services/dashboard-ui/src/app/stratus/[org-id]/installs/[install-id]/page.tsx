@@ -13,8 +13,7 @@ import { nueQueryData } from '@/utils'
 const InstallOverviewPage: FC<IPageProps<'org-id' | 'install-id'>> = async ({
   params,
 }) => {
-  const orgId = params?.['org-id']
-  const installId = params?.['install-id']
+  const { ['install-id']: installId, ['org-id']: orgId } = await params
 
   return (
     <ScrollableDiv>

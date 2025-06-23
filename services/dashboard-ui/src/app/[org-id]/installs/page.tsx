@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   ErrorFallback,
@@ -13,7 +12,7 @@ import {
 import { getInstalls, getOrg } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const orgId = params?.['org-id'] as string
+  const { ['org-id']: orgId } = await params
   const org = await getOrg({ orgId })
 
   return {
@@ -21,8 +20,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function Installs({ params }) {
-  const orgId = params?.['org-id'] as string
+export default async function Installs({ params }) {
+  const { ['org-id']: orgId } = await params
   return (
     <DashboardContent
       breadcrumb={[{ href: `/${orgId}/installs`, text: 'Installs' }]}
@@ -40,7 +39,7 @@ export default withPageAuthRequired(async function Installs({ params }) {
       </Section>
     </DashboardContent>
   )
-})
+}
 
 const LoadInstalls: FC<{ orgId: string }> = async ({ orgId }) => {
   const installs = await getInstalls({ orgId })

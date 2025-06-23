@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   DashboardContent,
   ErrorFallback,
@@ -18,7 +17,7 @@ import type { TAccount, TInvite } from '@/types'
 import { API_URL, getFetchOpts } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const orgId = params?.['org-id'] as string
+  const { ['org-id']: orgId } = await params
   const org = await getOrg({ orgId })
 
   return {
@@ -26,8 +25,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function OrgTeam({ params }) {
-  const orgId = params?.['org-id'] as string
+export default async function OrgTeam({ params }) {
+  const { ['org-id']: orgId } = await params
   const org = await getOrg({ orgId })
 
   if (org?.features?.['org-settings']) {
@@ -92,7 +91,7 @@ export default withPageAuthRequired(async function OrgTeam({ params }) {
   } else {
     redirect(`/${orgId}/apps`)
   }
-})
+}
 
 const OrgMembers: FC<{ orgId: string }> = async ({ orgId }) => {
   const members = await fetch(

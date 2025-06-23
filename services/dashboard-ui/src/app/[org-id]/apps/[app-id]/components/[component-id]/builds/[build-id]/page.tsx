@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   BuildStatus,
@@ -21,18 +20,12 @@ import {
   ToolTip,
   Truncate,
 } from '@/components'
-import {
-  getApp,
-  getComponent,
-  getComponentBuild,
-  getComponentConfig,
-} from '@/lib'
+import { getApp, getComponent, getComponentBuild } from '@/lib'
 import type { TComponentConfig } from '@/types'
 import { CANCEL_RUNNER_JOBS, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const componentId = params?.['component-id'] as string
-  const orgId = params?.['org-id'] as string
+  const { ['org-id']: orgId, ['component-id']: componentId } = await params
   const component = await getComponent({ componentId, orgId })
 
   return {
@@ -40,11 +33,13 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default withPageAuthRequired(async function AppComponent({ params }) {
-  const appId = params?.['app-id'] as string
-  const buildId = params?.['build-id'] as string
-  const componentId = params?.['component-id'] as string
-  const orgId = params?.['org-id'] as string
+export default async function AppComponent({ params }) {
+  const {
+    ['org-id']: orgId,
+    ['app-id']: appId,
+    ['component-id']: componentId,
+    ['build-id']: buildId,
+  } = await params
 
   const [app, build, component] = await Promise.all([
     getApp({ appId, orgId }),
@@ -216,7 +211,7 @@ export default withPageAuthRequired(async function AppComponent({ params }) {
       </div>
     </DashboardContent>
   )
-})
+}
 
 const LoadComponentConfig: FC<{
   componentId: string

@@ -1,14 +1,17 @@
 import { afterAll, expect, test, vi } from 'vitest'
 import { getFetchOpts } from './get-fetch-opts'
 
-vi.mock('@auth0/nextjs-auth0', async (og) => {
-  const mod = await og<typeof import('@auth0/nextjs-auth0')>()
+vi.mock('./auth.ts', async (og) => {
+  const mod = await og<typeof import('./auth.ts')>()
+
   return {
-    ...mod,
-    getSession: vi
-      .fn()
-      .mockResolvedValueOnce({ accessToken: 'test-token' })
-      .mockResolvedValueOnce(null),
+    auth0: {
+      ...mod.auth0,
+      getSession: vi
+        .fn()
+        .mockResolvedValueOnce({ tokenSet: { accessToken: 'test-token' } })
+        .mockResolvedValueOnce(null),
+    },
   }
 })
 
