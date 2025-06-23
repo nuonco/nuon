@@ -40,6 +40,5 @@ members:
     role: admin
   - username: sharkymark
     role: admin
-  # yellott starts the 23rd
-  #- username: yellottyellott
-    #role: admin
+  - username: yellottyellott
+    role: admin
