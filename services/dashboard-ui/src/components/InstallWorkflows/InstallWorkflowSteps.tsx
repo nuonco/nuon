@@ -187,7 +187,7 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
         </Section>
       </div>
 
-      <div className="md:col-span-8 h-[calc(100vh-195px)] overflow-auto">
+      <div className="md:col-span-8">
         {activeStep ? (
           <Section>
             <StepDetails
@@ -224,7 +224,7 @@ const InstallWorkflowStepTitle: FC<{
   return (
     <span className="flex gap-2 items-start justify-start w-full">
       <YAStatus status={status?.status} isSkipped={isSkipped} />
-      <span className="flex flex-col w-full max-w-full overflow-hidden">
+      <span className="flex flex-col w-full max-w-full overflow-hidden gap-1">
         <Text variant="med-12">
           <span className="truncate">{sentanceCase(name)}</span>
         </Text>
