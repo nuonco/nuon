@@ -76,7 +76,12 @@ func (s *Service) GetLivezHandler(ctx *gin.Context) {
 		"status": "ok",
 	}))
 
-	ctx.JSON(http.StatusOK, map[string]interface{}{
+	status := http.StatusOK
+	if len(degraded) > 0 {
+		status = http.StatusMultiStatus
+	}
+
+	ctx.JSON(status, map[string]interface{}{
 		"status":   "ok",
 		"degraded": degraded,
 	})
