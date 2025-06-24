@@ -132,7 +132,7 @@ export default async function InstallWorkflow({ params }) {
       }
       statues={
         <div className="flex flex-col gap-3 items-end">
-          {!installWorkflow?.finished && installWorkflow?.steps?.length > 0 ? (
+          {!installWorkflow?.finished ? (
             <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
           ) : null}
 
