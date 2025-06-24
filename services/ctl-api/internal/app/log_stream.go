@@ -10,6 +10,8 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type LogStream struct {
@@ -56,4 +58,17 @@ func (r *LogStream) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (a *LogStream) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &LogStream{}, "preload"),
+			Columns: []string{
+				"owner_id",
+				"owner_type",
+				"deleted_at",
+			},
+		},
+	}
 }
