@@ -8,17 +8,15 @@ import {
   InstallPageSubNav,
   InstallStatuses,
   InstallWorkflowHistory,
+  InstallManagementDropdown,
+  Pagination,
   Section,
   Text,
   Time,
 } from '@/components'
-import { InstallManagementDropdown } from '@/components/Installs'
-import {
-  getInstall,
-  getInstallEvents,
-  getInstallWorkflows,
-  getOrg,
-} from '@/lib'
+import { getInstall, getInstallEvents, getOrg } from '@/lib'
+import { TInstallWorkflow } from '@/types'
+import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
@@ -29,8 +27,9 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function Install({ params }) {
+export default async function Install({ params, searchParams }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
+  const sp = await searchParams
   const [install, org] = await Promise.all([
     getInstall({ installId, orgId }),
     getOrg({ orgId }),
@@ -84,7 +83,11 @@ export default async function Install({ params }) {
             }
           >
             {org?.features?.['install-independent-runner'] ? (
-              <LoadInstallWorkflows installId={installId} orgId={orgId} />
+              <LoadInstallWorkflows
+                installId={installId}
+                orgId={orgId}
+                offset={sp['workflows'] || '0'}
+              />
             ) : (
               <LoadInstallHistory installId={installId} orgId={orgId} />
             )}
@@ -95,17 +98,44 @@ export default async function Install({ params }) {
   )
 }
 
-const LoadInstallWorkflows: FC<{ installId: string; orgId: string }> = async ({
-  installId,
-  orgId,
-}) => {
-  const installWorkflows = await getInstallWorkflows({
-    installId,
+const LoadInstallWorkflows: FC<{
+  installId: string
+  orgId: string
+  offset?: string
+  limit?: string
+}> = async ({ installId, orgId, offset, limit = '20' }) => {
+  const params = new URLSearchParams({ offset, limit }).toString()
+  const {
+    data: installWorkflows,
+    error,
+    headers,
+  } = await nueQueryData<Array<TInstallWorkflow>>({
     orgId,
-  }).catch(console.error)
+    path: `installs/${installId}/workflows${params ? '?' + params : params}`,
+    headers: {
+      'x-nuon-pagination-enabled': true,
+    },
+  })
+
+  const pageData = {
+    hasNext: headers.get('x-nuon-page-next') || 'false',
+    offset: headers?.get('x-nuon-page-offset') || '0',
+  }
+  /* const installWorkflows = await getInstallWorkflows({
+   *   installId,
+   *   orgId,
+   * }).catch(console.error) */
 
   return installWorkflows ? (
-    <InstallWorkflowHistory installWorkflows={installWorkflows} shouldPoll />
+    <div className="flex flex-col gap-4">
+      <InstallWorkflowHistory installWorkflows={installWorkflows} shouldPoll />
+      <Pagination
+        param="workflows"
+        pageData={pageData}
+        position="center"
+        limit={20}
+      />
+    </div>
   ) : (
     <Text>No install history yet.</Text>
   )
