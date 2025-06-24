@@ -27,7 +27,9 @@ export default async function middleware(request: NextRequest) {
 
   if (!session && pathname !== '/') {
     const { origin } = new URL(request.url)
-    return NextResponse.redirect(`${origin}/auth/login?returnTo=${pathname}`)
+    return NextResponse.redirect(
+      `${origin}/api/auth/login?returnTo=${pathname}`
+    )
   }
 
   if (session && pathname !== '/favicon.ico') {
