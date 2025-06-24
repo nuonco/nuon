@@ -44,6 +44,13 @@ locals {
       private_subnets = ["10.136.128.0/22", "10.136.132.0/22", "10.136.136.0/22"]
     }
 
+
+    infra-shared-ci-nuon = {
+      cidr            = "10.137.0.0/16"
+      public_subnets  = ["10.137.0.0/26", "10.137.0.64/26", "10.137.0.128/26"]
+      private_subnets = ["10.137.128.0/24", "10.137.129.0/24", "10.137.130.0/24"]
+    }
+
     # to create a new environment with a new network add a segement exactly the same as the one above but bump the /16
     # octet up by one
   }
