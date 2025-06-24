@@ -75,6 +75,37 @@ export const AppConfigGraphRenderer: FC<AppConfigGraphRendererProps> = ({
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
+  const updateNodes = (nodes: any[]) => {
+    // First, create a map of nodes with data
+    const dataMap = nodes.reduce(
+      (acc, node) => {
+        if (node.data?.label && node.data?.type) {
+          acc[node.id] = {
+            label: node.data.label,
+            type: node.data.type,
+          }
+        }
+        return acc
+      },
+      {} as Record<string, { label: string; type: string }>
+    )
+
+    // Then update nodes that have empty data
+    return nodes.map((node) => {
+      if (!node.data?.label && !node.data?.type && dataMap[node.id]) {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            label: dataMap[node.id].label,
+            type: dataMap[node.id].type,
+          },
+        }
+      }
+      return node
+    })
+  }
+
   const convertDotToFlowData = (dotGraph: string) => {
     const nodes: Node[] = []
     const edges: Edge[] = []
@@ -98,10 +129,10 @@ export const AppConfigGraphRenderer: FC<AppConfigGraphRendererProps> = ({
         id,
         type: 'default',
         data: {
-          label: attributes.label || id,
-          type: attributes.type, // Store type for potential use
+          label: attributes.label,
+          type: attributes.type,
         },
-        position: { x: 0, y: 0 }, // Will be set by dagre
+        position: { x: 0, y: 0 },
         style: {
           background: attributes.color === 'blue' ? '#1e50c0' : '#991B1B',
           color: '#FAFAFA',
@@ -139,7 +170,7 @@ export const AppConfigGraphRenderer: FC<AppConfigGraphRendererProps> = ({
       })
     }
 
-    return getLayoutedElements(nodes, edges)
+    return getLayoutedElements(updateNodes(nodes), edges)
   }
 
   const fetchData = async () => {
