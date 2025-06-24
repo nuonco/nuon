@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Service) GetLivezHandler(ctx *gin.Context) {
-        // ping psql
+	// ping psql
 	sqlDB, err := s.db.DB()
 	if err != nil {
 		ctx.Error(stderr.ErrSystem{
@@ -43,7 +43,7 @@ func (s *Service) GetLivezHandler(ctx *gin.Context) {
 	if err != nil {
 		degraded = append(degraded, "ch")
 		s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
-			"system": "psql",
+			"system": "ch",
 			"status": "unable_to_connect",
 		}))
 	} else {
@@ -65,7 +65,7 @@ func (s *Service) GetLivezHandler(ctx *gin.Context) {
 	// ping temporal
 	_, err = s.tclient.CheckHealth(ctx, &client.CheckHealthRequest{})
 	if err != nil {
-		degraded = append(degraded, "ch")
+		degraded = append(degraded, "temporal")
 		s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
 			"system": "temporal",
 			"status": "unable_to_ping",
