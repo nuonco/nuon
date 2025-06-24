@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { JsonView } from '@/components/Code'
+import { JsonView, CodeViewer } from '@/components/Code'
 
 type ChangeAction =
   | 'create'
@@ -58,25 +58,32 @@ function diffFields(
   return allKeys.map((key) => {
     if (before[key] !== after[key]) {
       return (
-        <div className="flex gap-2 items-center my-1" key={key}>
-          <span className="font-mono text-[11px] text-gray-400 dark:text-cool-grey-200 w-32">
-            {key}
+        <div
+          className="flex gap-2 items-start my-1 overflow-x-scroll"
+          key={key}
+        >
+          <span className="font-mono text-[11px] text-gray-400 dark:text-cool-grey-200 w-fit">
+            {key}:
           </span>
-          <span className="line-through text-red-600 bg-red-50 dark:text-red-50 dark:bg-red-600/10 px-1 rounded">
-            {before[key] !== undefined ? JSON.stringify(before[key]) : ''}
+          <span className="text-[11px] line-through text-red-600 bg-red-50 dark:text-red-50 dark:bg-red-600/10 px-1 rounded">
+            {before[key] !== undefined
+              ? JSON.stringify(before[key], null, 2)
+              : ''}
           </span>
-          <span className="text-green-700 bg-green-50 dark:text-green-50 dark:bg-green-600/10 px-1 rounded">
-            {after[key] !== undefined ? JSON.stringify(after[key]) : ''}
+          <span className="text-[11px] text-green-700 bg-green-50 dark:text-green-50 dark:bg-green-600/10 px-1 rounded">
+            {after[key] !== undefined
+              ? JSON.stringify(after[key], null, 2)
+              : ''}
           </span>
         </div>
       )
     } else {
       return (
-        <div className="flex gap-2 items-center my-1" key={key}>
-          <span className="font-mono text-[11px] text-cool-grey-400 dark:text-cool-grey-200 w-32">
-            {key}
+        <div className="flex gap-2 items-start my-1" key={key}>
+          <span className="font-mono text-[11px] text-cool-grey-400 dark:text-cool-grey-200 w-fit">
+            {key}:
           </span>
-          <span className="text-cool-grey-700 dark;text-cool-grey-100">
+          <span className="text-[11px] text-cool-grey-700 dark;text-cool-grey-100">
             {JSON.stringify(before[key])}
           </span>
         </div>
@@ -142,13 +149,13 @@ export function TerraformPlanViewer({ plan }: { plan: TerraformPlan }) {
                       </pre>
                     )}
                   {res.change.actions.includes('update') && (
-                    <div className="">
+                    <div className="my-2">
                       {diffFields(res.change.before, res.change.after)}
                     </div>
                   )}
                   {res.change.actions.includes('create') &&
                     res.change.actions.includes('delete') && (
-                      <div className="">
+                      <div className="my-2">
                         {diffFields(res.change.before, res.change.after)}
                       </div>
                     )}
