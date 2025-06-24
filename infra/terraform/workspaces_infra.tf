@@ -215,7 +215,7 @@ module "infra-eks-stage-nuon" {
 module "infra-eks-infra-shared-ci-nuon" {
   source = "./modules/workspace"
 
-  name                            = "infra-eks-ci-nuon"
+  name                            = "infra-eks-infra-shared-ci-nuon"
   repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
   auto_apply                      = true
