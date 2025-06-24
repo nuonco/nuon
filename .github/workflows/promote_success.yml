@@ -13,15 +13,15 @@ defaults:
     shell: bash
 
 jobs:
-  trigger_promotion_callback:
-    name: trigger promotion callback
-    uses: ./.github/workflows/internal_api.yml
-    with:
-      env: prod
-      endpoint: /v1/general/promotion
-      method: POST
-      data: '{"tag": "${{ inputs.tag }}" }'
-    secrets: inherit
+  # trigger_promotion_callback:
+  #   name: trigger promotion callback
+  #   uses: ./.github/workflows/internal_api.yml
+  #   with:
+  #     env: prod
+  #     endpoint: /v1/general/promotion
+  #     method: POST
+  #     data: '{"tag": "${{ inputs.tag }}" }'
+  #   secrets: inherit
   sdks:
     name: Update SDKs
     runs-on: ubuntu-latest
