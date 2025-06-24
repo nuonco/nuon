@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envoy-configmap
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "buildkit.labels" . | nindent 4 }}
+data:
+  envoy.yaml: |
+    node:
+      id: id_1
+      cluster: test
+
+    dynamic_resources:
+      lds_config:
+        path_config_source:
+          path: /var/lib/envoy/lds.yaml
+          watched_directory:
+            path: /var/lib/envoy
+      cds_config:
+        path_config_source:
+          path: /var/lib/envoy/cds.yaml
+          watched_directory:
+            path: /var/lib/envoy
+
+    admin:
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: {{ .Values.proxy.config.admin.port }}
+  
+  cds.yaml: |
+    resources:
+      - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+        name: local_service
+        type: LOGICAL_DNS
+        dns_lookup_family: V4_ONLY
+        lb_policy: ROUND_ROBIN
+        load_assignment:
+          cluster_name: local_service
+          endpoints:
+            - lb_endpoints:
+                - endpoint:
+                    address:
+                      socket_address:
+                        address: buildkitd.{{ .Values.namespace }}.svc.cluster.local  
+                        port_value: {{ .Values.buildkit.port }}
+
+  lds.yaml: |
+    resources:
+    - "@type": type.googleapis.com/envoy.config.listener.v3.Listener
+      name: listener_0
+      address:
+        socket_address:
+          protocol: TCP
+          address: 0.0.0.0
+          port_value: {{ .Values.buildkit.port }}
+      filter_chains:
+      {{- if .Values.tls.enabled }}
+      - transport_socket:
+          name: envoy.transport_sockets.tls
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+            require_client_certificate: true
+            common_tls_context:
+              tls_certificates:
+              - certificate_chain:
+                  filename: "/certs/server.pem"  
+                private_key:
+                  filename: "/certs/server-key.pem"
+              validation_context:
+                trusted_ca:
+                  filename: "/certs/ca.pem"
+      {{- else }}
+      - 
+      {{- end }}
+        filters:
+        - name: envoy.filters.network.tcp_proxy
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+            stat_prefix: tcp_local_service
+            cluster: local_service

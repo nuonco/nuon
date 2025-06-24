@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: proxy
+  namespace: {{ .Values.namespace }}
+  labels:
+    io.kompose.service: proxy
+    {{- include "buildkit.labels" . | nindent 4 }}
+  annotations:
+    {{- with .Values.proxy.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ports:
+    - name: "envoytcp"
+      port: {{ .Values.buildkit.port }}
+      protocol: TCP
+      targetPort: {{ .Values.buildkit.port }}
+    # - name: envoyadmin
+    #   port: {{ .Values.proxy.config.admin.port }}
+    #   protocol: TCP
+    #   targetPort: {{ .Values.proxy.config.admin.port }}
+  selector:
+    io.kompose.service: proxy
+  type: {{ .Values.proxy.service.type }}

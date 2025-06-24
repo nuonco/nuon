@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxy
+  namespace: {{ .Values.namespace }}
+  labels:
+    io.kompose.service: proxy
+    {{- include "buildkit.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.proxy.replicas }}
+  selector:
+    matchLabels:
+      io.kompose.service: proxy
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        io.kompose.service: proxy
+    spec:
+      containers:
+        - image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag }}"
+          name: proxy
+          imagePullPolicy: {{ .Values.proxy.image.pullPolicy }}
+          command:
+            - "/usr/local/bin/envoy"
+            - "--log-level"
+            - "debug"
+            - "-c"
+            - "/var/lib/envoy/envoy.yaml"
+          volumeMounts:
+            - name: envoy-config
+              mountPath: /var/lib/envoy
+            {{- if .Values.tls.enabled }}
+            - name: certs
+              mountPath: /certs
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.buildkit.port }}
+              protocol: TCP
+            - name: envoyadmin
+              containerPort: {{ .Values.proxy.config.admin.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.proxy.resources | nindent 12 }}
+        - name: hup-script
+          image: busybox
+          command: ["/bin/sh", "-c", "trap 'mv /var/lib/envoy/* /tmp/envoy && mv /tmp/envoy /var/lib/envoy/' HUP; sleep infinity"]
+          volumeMounts:
+            - name: envoy-config
+              mountPath: /var/lib/envoy
+            {{- if .Values.tls.enabled }}
+            - name: certs
+              mountPath: /certs
+            {{- end }}
+      volumes:
+        - name: envoy-config
+          configMap:
+            name: envoy-configmap
+        {{- if .Values.tls.enabled }}
+        - name: certs
+          secret:
+            secretName: {{ .Values.tls.secretName }}
+        {{- end }}
+      restartPolicy: Always

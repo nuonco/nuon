@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remote-buildkit-agent
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "buildkit.labels" . | nindent 4 }}
+data:
+  buildkitd.toml: |
+    root = "{{ .Values.buildkit.config.root }}"
+
+    [worker]
+
+    [worker.containerd]
+      enabled = {{ .Values.buildkit.config.worker.containerd.enabled }}
+
+    [worker.oci]
+      enabled = {{ .Values.buildkit.config.worker.oci.enabled }}
+      gc = {{ .Values.buildkit.config.worker.oci.gc }}
+      gckeepstorage = {{ .Values.buildkit.config.worker.oci.gckeepstorage }}
+      snapshotter = "{{ .Values.buildkit.config.worker.oci.snapshotter }}"
+
+      {{- range .Values.buildkit.config.worker.oci.gcpolicy }}
+      [[worker.oci.gcpolicy]]
+        {{- if .filters }}
+        filters = {{ .filters | toJson }}
+        {{- end }}
+        {{- if .keepBytes }}
+        keepBytes = {{ .keepBytes }}
+        {{- end }}
+        {{- if .keepDuration }}
+        keepDuration = {{ .keepDuration }}
+        {{- end }}
+        {{- if .all }}
+        all = {{ .all }}
+        {{- end }}
+      {{- end }}

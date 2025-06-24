@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: remote-buildkit-agent
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "buildkit.labels" . | nindent 4 }}
+spec:
+  storageClassName: "{{ .Values.buildkit.persistence.storageClass }}"
+  resources:
+    requests:
+      storage: "{{ .Values.buildkit.persistence.size }}"
+  accessModes:
+    - "ReadWriteOnce"
