@@ -49,9 +49,15 @@ fi
 OS=$(uname -s |  awk '{print tolower($0)}')
 echo "✅ using version ${OS}_${ARCH}..."
 
-echo "calculating latest version..."
-VERSION=$(curl -s $BASE_URL/latest.txt)
-echo "✅ using version ${VERSION}..."
+# Check if version override is provided
+if [ -n "${NUONCTL_VERSION:-}" ]; then
+  echo "⚠️  overriding version with NUONCTL_VERSION=${NUONCTL_VERSION}"
+  VERSION=$NUONCTL_VERSION
+else
+  echo "calculating latest version..."
+  VERSION=$(curl -s $BASE_URL/latest.txt)
+  echo "✅ using version ${VERSION}..."
+fi
 
 echo "fetching binary for ${OS} ${ARCH}..."
 curl -s -o $DIR/$NAME $BASE_URL/$VERSION/${NAME}_${OS}_${ARCH}
