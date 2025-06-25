@@ -8,12 +8,13 @@ import (
 )
 
 type CreateSandboxJobRequest struct {
-	InstallID string
-	RunnerID  string
-	OwnerType string
-	OwnerID   string
-	Op        app.RunnerJobOperationType
-	Metadata  map[string]string
+	InstallID   string
+	RunnerID    string
+	OwnerType   string
+	OwnerID     string
+	Op          app.RunnerJobOperationType
+	Metadata    map[string]string
+	LogStreamID string
 }
 
 // @temporal-gen activity
@@ -25,6 +26,7 @@ func (a *Activities) CreateSandboxJob(ctx context.Context, req *CreateSandboxJob
 		app.RunnerJobTypeSandboxTerraform,
 		req.Op,
 		req.Metadata,
+		req.LogStreamID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create install sandbox job: %w", err)
