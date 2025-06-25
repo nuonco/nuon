@@ -352,3 +352,23 @@ module "infra-vantage" {
   variable_sets = []
   project_id    = tfe_project.infra.id
 }
+
+
+
+module "buildkit-infra-shared-ci" {
+  source = "./modules/workspace"
+
+  name       = "buildkit-infra-shared-ci"
+  repo       = "powertoolsdev/mono"
+  dir        = "infra/buildkit"
+  auto_apply = true
+  vars = {
+    env = "infra-shared-ci"
+  }
+
+  variable_sets                   = ["aws-environment-credentials"]
+  project_id                      = tfe_project.product.id
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
+  trigger_workspaces              = [module.infra-eks-infra-shared-ci-nuon.workspace_id]
+}

@@ -1,0 +1,5 @@
+---
+pool: nuon
+
+# Configuration specific to the infra-shared-ci environment
+# Add any environment-specific variables here
