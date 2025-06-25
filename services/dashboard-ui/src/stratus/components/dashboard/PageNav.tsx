@@ -1,10 +1,9 @@
 'use client'
 
-import classNames from 'classnames'
 import { usePathname } from 'next/navigation'
-import React, { type FC, useRef, useState } from 'react'
-import { SplitHorizontal } from '@phosphor-icons/react'
-import { Link, Text, Tooltip } from '@/stratus/components/common'
+import React, { useRef, useState } from 'react'
+import { cn } from '@/stratus/components/helpers'
+import { Icon, Link, Text, Tooltip } from '@/stratus/components/common'
 import { usePage } from '@/stratus/context'
 import type { TNavLink } from '@/types'
 import './PageNav.css'
@@ -14,7 +13,7 @@ interface IPageNav {
   links: Array<TNavLink>
 }
 
-export const PageNav: FC<IPageNav> = ({ basePath, links }) => {
+export const PageNav = ({ basePath, links }: IPageNav) => {
   const { isPageNavOpen, closePageNav, openPageNav, togglePageNav } = usePage()
   const [dragging, setDragging] = useState(false)
   const handleRef = useRef<HTMLDivElement>(null)
@@ -48,7 +47,7 @@ export const PageNav: FC<IPageNav> = ({ basePath, links }) => {
 
   return (
     <aside
-      className={classNames('page-nav', {
+      className={cn('page-nav', {
         'is-open': isPageNavOpen,
       })}
     >
@@ -73,19 +72,19 @@ export const PageNav: FC<IPageNav> = ({ basePath, links }) => {
             togglePageNav()
           }}
         >
-          <SplitHorizontal />
+          <Icon variant="SplitHorizontal" />
         </button>
       </div>
     </aside>
   )
 }
 
-const PageNavLink: FC<TNavLink & { basePath: string }> = ({
+const PageNavLink = ({
   basePath,
   icon,
   path,
   text,
-}) => {
+}: TNavLink & { basePath: string }) => {
   const { isPageNavOpen } = usePage()
   const pathName = usePathname()
   const normalizePath = (path: string) =>

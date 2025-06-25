@@ -1,4 +1,4 @@
-import React, { type FC } from 'react'
+import React from 'react'
 import { UserDropdown } from '@/stratus/components/user'
 import { BreadcrumbNav, type IBreadcrumbNav } from './BreadcrumbNav'
 import { Topbar } from './Topbar'
@@ -8,7 +8,7 @@ interface IPage {
   children: React.ReactNode
 }
 
-export const Page: FC<IPage> = ({ breadcrumb, children }) => {
+export const Page = ({ breadcrumb, children }: IPage) => {
   return (
     <main className="flex flex-col h-screen">
       <Topbar>

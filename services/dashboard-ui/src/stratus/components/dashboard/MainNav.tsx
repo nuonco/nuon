@@ -1,40 +1,30 @@
 'use client'
 
-import classNames from 'classnames'
 import { usePathname } from 'next/navigation'
-import React, { type FC } from 'react'
-import {
-  AppWindow,
-  BookOpen,
-  Cube,
-  House,
-  ListBullets,
-  SneakerMove,
-  UsersThree,
-} from '@phosphor-icons/react'
+import React from 'react'
 import { useDashboard, useOrg } from '@/stratus/context'
-import { Link, Text, Tooltip } from '@/stratus/components/common'
+import { Icon, Link, Text, Tooltip } from '@/stratus/components/common'
 import type { TNavLink } from '@/types'
 import './MainNav.css'
 
 const MAIN_LINKS: Array<TNavLink> = [
   {
-    icon: <House weight="bold" />,
+    icon: <Icon variant="House" weight="bold" />,
     path: `/`,
     text: 'Dashboard',
   },
   {
-    icon: <AppWindow weight="bold" />,
+    icon: <Icon variant="AppWindow" weight="bold" />,
     path: `/apps`,
     text: 'Apps',
   },
   {
-    icon: <Cube weight="bold" />,
+    icon: <Icon variant="Cube" weight="bold" />,
     path: `/installs`,
     text: 'Installs',
   },
   {
-    icon: <SneakerMove weight="bold" />,
+    icon: <Icon variant="SneakerMove" weight="bold" />,
     path: `/runner`,
     text: 'Build runner',
   },
@@ -42,7 +32,7 @@ const MAIN_LINKS: Array<TNavLink> = [
 
 const SETTINGS_LINKS: Array<TNavLink> = [
   {
-    icon: <UsersThree weight="bold" />,
+    icon: <Icon variant="UsersThree" weight="bold" />,
     path: `/team`,
     text: 'Team',
   },
@@ -50,19 +40,19 @@ const SETTINGS_LINKS: Array<TNavLink> = [
 
 const SUPPORT_LINKS: Array<TNavLink> = [
   {
-    icon: <BookOpen weight="bold" />,
+    icon: <Icon variant="BookOpen" weight="bold" />,
     path: `https://docs.nuon.co/get-started/introduction`,
     text: 'Devloper docs',
     isExternal: true,
   },
   {
-    icon: <ListBullets weight="bold" />,
+    icon: <Icon variant="ListBullets" weight="bold" />,
     path: `/releases`,
     text: 'Releases',
   },
 ]
 
-export const MainNav: FC = () => {
+export const MainNav = () => {
   const { org } = useOrg()
   const basePath = `/stratus/${org.id}`
   return (
@@ -108,13 +98,13 @@ interface IMainNavLink extends TNavLink {
   basePath: string
 }
 
-const MainNavLink: FC<IMainNavLink> = ({
+const MainNavLink = ({
   basePath,
   text,
   icon,
   path,
   isExternal,
-}) => {
+}: IMainNavLink) => {
   const { isSidebarOpen } = useDashboard()
   const pathName = usePathname()
   const normalizePath = (path: string) =>
@@ -125,7 +115,7 @@ const MainNavLink: FC<IMainNavLink> = ({
     fullPath === normalizedPathName ||
     (path !== `/` && normalizedPathName.startsWith(`${fullPath}/`))
 
-  const link =  (
+  const link = (
     <Link
       aria-current={isActive ? 'page' : undefined}
       href={isExternal ? path : `${basePath}${path}`}

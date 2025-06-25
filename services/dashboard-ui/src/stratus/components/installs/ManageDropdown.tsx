@@ -1,19 +1,9 @@
 'use client'
 
-import React, { type FC, useEffect, useState } from 'react'
-import {
-  ArrowURightDown,
-  ArrowURightUp,
-  CodeBlock,
-  ListChecks,
-  LockLaminated,
-  PencilSimpleLine,
-  StackMinus,
-  Trash,
-} from '@phosphor-icons/react/dist/ssr'
-import { Button, Dropdown, Menu, Text } from '@/stratus/components/common'
+import React, { useEffect, useState } from 'react'
+import { Button, Dropdown, Icon, Menu, Text } from '@/stratus/components/common'
 
-export const InstallManageDropdown: FC = () => {
+export const InstallManageDropdown = () => {
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
@@ -35,37 +25,37 @@ export const InstallManageDropdown: FC = () => {
           Settings
         </Text>
         <Button>
-          Edit inputs <PencilSimpleLine />
+          Edit inputs <Icon variant="PencilSimpleLine" />
         </Button>
         <Button>
-          Auto approve changes <ListChecks />
+          Auto approve changes <Icon variant="ListChecks" />
         </Button>
         <Button>
-          View state <CodeBlock />
+          View state <Icon variant="CodeBlock" />
         </Button>
         <hr />
         <Text variant="label" theme="muted">
           Controlls
         </Text>
         <Button>
-          Reprovision install <ArrowURightUp />
+          Reprovision install <Icon variant="ArrowURightUp" />
         </Button>
         <Button>
-          Deprovision install <ArrowURightDown />
+          Deprovision install <Icon variant="ArrowURightDown" />
         </Button>
         <Button>
-          Deprovision stack <StackMinus />
+          Deprovision stack <Icon variant="StackMinus" />
         </Button>
         <hr />
         <Text variant="label" theme="muted">
           Danger
         </Text>
         <Button>
-          Break glass permissions <LockLaminated />
+          Break glass permissions <Icon variant="LockLaminated" />
         </Button>
         <Button className="!text-red-800 dark:!text-red-500">
           Forget install
-          <Trash />
+          <Icon variant="Trash" />
         </Button>
       </Menu>
     </Dropdown>

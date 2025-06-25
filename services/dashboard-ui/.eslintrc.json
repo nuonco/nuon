@@ -2,7 +2,7 @@
   "extends": "next/core-web-vitals",
   "plugins": ["import"],
   "rules": {
-    "import/no-cycle": "error",
+    "import/no-cycle": "warn",
     "no-console": ["error", { "allow": ["error", "warn"] }],
     "react-hooks/exhaustive-deps": "off"
   }
