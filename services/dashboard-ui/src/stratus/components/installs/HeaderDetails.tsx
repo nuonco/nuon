@@ -1,14 +1,13 @@
 'use client'
 
-import React, { type FC } from 'react'
-import { CheckCircle, WarningCircle } from '@phosphor-icons/react/dist/ssr'
-import { Link, Text } from '@/stratus/components/common'
+import React from 'react'
+import { Icon, Link, Text } from '@/stratus/components/common'
 import { HeaderDetails } from '@/stratus/components/dashboard'
 import { DetailedStatus, Status } from '@/stratus/components/statuses'
 import { useInstall } from '@/stratus/context'
 import { InstallManageDropdown } from './ManageDropdown'
 
-export const InstallHeaderDetails: FC = () => {
+export const InstallHeaderDetails = () => {
   const { install } = useInstall()
   const pathRoot = `/stratus/${install?.org_id}/installs/${install?.id}`
 
@@ -37,7 +36,8 @@ export const InstallHeaderDetails: FC = () => {
               >
                 {install?.runner_status === 'active' ? (
                   <>
-                    <CheckCircle
+                    <Icon
+                      variant="CheckCircle"
                       size="18"
                       className="text-green-600"
                       weight="bold"
@@ -46,7 +46,8 @@ export const InstallHeaderDetails: FC = () => {
                   </>
                 ) : (
                   <>
-                    <WarningCircle
+                    <Icon
+                      variant="WarningCircle"
                       size="18"
                       className="text-red-600"
                       weight="bold"
@@ -77,7 +78,8 @@ export const InstallHeaderDetails: FC = () => {
                 variant="subtext"
                 weight="strong"
               >
-                <CheckCircle
+                <Icon
+                  variant="CheckCircle"
                   size="18"
                   className="text-green-600"
                   weight="bold"
@@ -110,7 +112,8 @@ export const InstallHeaderDetails: FC = () => {
                 variant="subtext"
                 weight="strong"
               >
-                <CheckCircle
+                <Icon
+                  variant="CheckCircle"
                   size="18"
                   className="text-green-600"
                   weight="bold"

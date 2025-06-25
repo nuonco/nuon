@@ -1,33 +1,30 @@
 'use client'
 
-import classNames from 'classnames'
 import { useRouter } from 'next/navigation'
-import React, { type FC } from 'react'
-import { CaretLeft } from '@phosphor-icons/react'
-import { Text, type IText } from '@/stratus/components/common'
+import React from 'react'
+import { Icon, Text, type IText } from '@/stratus/components/common'
+import { cn } from '@/stratus/components/helpers'
 
 interface IBackLink extends IText {}
 
-export const BackLink: FC<IBackLink> = ({
+export const BackLink = ({
   className,
   children = (
     <>
-      <CaretLeft weight="bold" /> Back
+      <Icon variant="CaretLeft" weight="bold" /> Back
     </>
   ),
   variant = 'base',
   weight = 'strong',
   ...props
-}) => {
+}: IBackLink) => {
   const router = useRouter()
 
   return (
     <Text
-      className={classNames(
+      className={cn(
         'flex items-center gap-1.5 link default cursor-pointer',
-        {
-          [`${className}`]: Boolean(className),
-        }
+        className
       )}
       onClick={() => {
         router.back()

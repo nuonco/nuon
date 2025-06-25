@@ -1,7 +1,7 @@
 "use client"
 
-import classNames from "classnames"
 import React, { forwardRef, useEffect, useState } from 'react';
+import { cn } from '@/stratus/components/helpers'
 
 export interface ITransitionDiv extends React.HTMLAttributes<HTMLDivElement> {
   isVisible: boolean
@@ -34,9 +34,7 @@ export const TransitionDiv = forwardRef<HTMLDivElement, ITransitionDiv>(
 
     return (
       <div
-        className={classNames(`${isExiting ? 'exit' : 'enter'}`, {
-          [`${className}`]: Boolean(className),
-        })}
+        className={cn(`${isExiting ? 'exit' : 'enter'}`, className)}
         ref={ref}
         {...props}
       >

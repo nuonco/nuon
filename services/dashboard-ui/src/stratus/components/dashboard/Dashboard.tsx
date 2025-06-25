@@ -1,7 +1,7 @@
 'use client'
 
-import classNames from 'classnames'
-import React, { type FC } from 'react'
+import React from 'react'
+import { cn } from '@/stratus/components/helpers'
 import { useDashboard } from '@/stratus/context'
 import { Sidebar } from './Sidebar'
 import './Dashboard.css'
@@ -10,17 +10,17 @@ interface IDashboard {
   children: React.ReactNode
 }
 
-export const Dashboard: FC<IDashboard> = ({ children }) => {
+export const Dashboard = ({ children }: IDashboard) => {
   const { isSidebarOpen } = useDashboard()
 
   return (
     <div
-      className={classNames('dashboard', {
+      className={cn('dashboard', {
         'is-open': isSidebarOpen,
       })}
     >
       <Sidebar />
-      {children}     
+      {children}
       <div id="surface-root" />
     </div>
   )

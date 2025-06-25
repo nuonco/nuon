@@ -1,10 +1,10 @@
 'use client'
 
-import React, { type FC } from 'react'
+import React from 'react'
 import { HeadingGroup, Text, Time } from '@/stratus/components/common'
 import { useInstall } from '@/stratus/context'
 
-export const InstallHeadingGroup: FC = () => {
+export const InstallHeadingGroup = () => {
   const { install } = useInstall()
 
   return (
