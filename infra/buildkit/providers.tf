@@ -53,10 +53,13 @@ provider "datadog" {
 }
 
 provider "helm" {
-  experiments {
+
+    experiments {
     // TODO(jm): figure out why the plan and apply phases are inconsistent
     manifest = false
   }
+
+
 
   kubernetes {
     host                   = data.tfe_outputs.infra-eks-nuon.values.cluster_endpoint
