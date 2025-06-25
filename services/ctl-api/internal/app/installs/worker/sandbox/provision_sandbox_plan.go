@@ -56,7 +56,7 @@ func (w *Workflows) ProvisionSandboxPlan(ctx workflow.Context, sreq signals.Requ
 		}
 	}()
 
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
+	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatus(app.InstallDeployStatusPlanning), "planning")
 
 	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
 		SandboxRunID: installRun.ID,
@@ -76,10 +76,11 @@ func (w *Workflows) ProvisionSandboxPlan(ctx workflow.Context, sreq signals.Requ
 	l.Info("executing provision plan")
 	err = w.executeSandboxPlan(ctx, install, installRun, sreq.FlowStepID, sandboxMode)
 	if err != nil {
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 		return err
 	}
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunPendingApproval, "pending approval")
 
+	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunPendingApproval, "pending approval")
 	l.Info("provision plan was successful")
 	return nil
 }

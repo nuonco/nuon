@@ -26,9 +26,9 @@ func (w *Workflows) DeprovisionSandboxPlan(ctx workflow.Context, sreq signals.Re
 	sandboxMode := sreq.SandboxMode
 
 	installRun, err := activities.AwaitCreateSandboxRun(ctx, activities.CreateSandboxRunRequest{
-		InstallID: install.ID,
-		RunType:   app.SandboxRunTypeDeprovision,
-                WorkflowID: sreq.FlowID,
+		InstallID:  install.ID,
+		RunType:    app.SandboxRunTypeDeprovision,
+		WorkflowID: sreq.FlowID,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create install: %w", err)
@@ -80,6 +80,7 @@ func (w *Workflows) DeprovisionSandboxPlan(ctx workflow.Context, sreq signals.Re
 	err = w.executeSandboxPlan(ctx, install, installRun, sreq.FlowStepID, sandboxMode)
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "error deprovisioning")
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 		return err
 	}
 
