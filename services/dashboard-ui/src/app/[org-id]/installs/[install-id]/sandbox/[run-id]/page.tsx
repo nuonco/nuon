@@ -15,6 +15,7 @@ import {
   Loading,
   Link,
   LogStreamProvider,
+  JsonView,
   OperationLogsSection,
   RunnerJobPlanModal,
   SandboxRunStatus,
@@ -32,7 +33,11 @@ import {
 import { CANCEL_RUNNER_JOBS, sentanceCase, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
- const { ['org-id']: orgId, ['install-id']: installId, ['run-id']: runId } = await params
+  const {
+    ['org-id']: orgId,
+    ['install-id']: installId,
+    ['run-id']: runId,
+  } = await params
   const [install, sandboxRun] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallSandboxRun({ installId, installSandboxRunId: runId, orgId }),
@@ -44,7 +49,11 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 }
 
 export default async function SandboxRuns({ params }) {
- const { ['org-id']: orgId, ['install-id']: installId, ['run-id']: runId } = await params
+  const {
+    ['org-id']: orgId,
+    ['install-id']: installId,
+    ['run-id']: runId,
+  } = await params
   const [install, sandboxRun] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallSandboxRun({
@@ -97,9 +106,9 @@ export default async function SandboxRuns({ params }) {
             <CalendarBlank />
             <Time time={sandboxRun.created_at} />
           </Text>
-          {sandboxRun?.runner_job?.status === 'finished' ||
-          sandboxRun?.runner_job?.status === 'failed' ||
-          sandboxRun?.runner_job?.status === 'cancelled' ? (
+          {sandboxRun?.runner_jobs?.at(0)?.status === 'finished' ||
+          sandboxRun?.runner_jobs?.at(0)?.status === 'failed' ||
+          sandboxRun?.runner_jobs?.at(0)?.status === 'cancelled' ? (
             <Text>
               <Timer />
               <Duration
@@ -147,14 +156,14 @@ export default async function SandboxRuns({ params }) {
             >
               <LoadRunnerJobPlan
                 orgId={orgId}
-                runnerJobId={sandboxRun?.runner_job?.id}
+                runnerJobId={sandboxRun?.runner_jobs?.at(0)?.id}
               />
             </Suspense>
           </ErrorBoundary>
           {CANCEL_RUNNER_JOBS &&
-          sandboxRun?.runner_job?.status !== 'finished' &&
-          sandboxRun?.runner_job?.status !== 'failed' &&
-          sandboxRun?.runner_job?.id &&
+          sandboxRun?.runner_jobs?.at(0)?.status !== 'finished' &&
+          sandboxRun?.runner_jobs?.at(0)?.status !== 'failed' &&
+          sandboxRun?.runner_jobs?.at(0)?.id &&
           installWorkflow &&
           !installWorkflow?.finished ? (
             <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
@@ -198,25 +207,18 @@ export default async function SandboxRuns({ params }) {
             </div>
           </Section>
 
-          {sandboxRun?.runner_job?.outputs ? (
+          {sandboxRun?.runner_jobs?.at(0)?.outputs ? (
             <Section className="flex-initial" heading="Sandbox outputs">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <Text variant="med-12">Outputs</Text>
                   <ClickToCopy className="hover:bg-black/10 rounded-md p-1 text-sm">
                     <span className="hidden">
-                      {JSON.stringify(sandboxRun?.runner_job.outputs)}
+                      {JSON.stringify(sandboxRun?.runner_jobs?.at(0).outputs)}
                     </span>
                   </ClickToCopy>
                 </div>
-                <CodeViewer
-                  initCodeSource={JSON.stringify(
-                    sandboxRun?.runner_job?.outputs,
-                    null,
-                    2
-                  )}
-                  language="json"
-                />
+                <JsonView data={sandboxRun?.runner_jobs?.at(0)?.outputs} />
               </div>
             </Section>
           ) : null}
@@ -235,7 +237,7 @@ export default async function SandboxRuns({ params }) {
               <LoadSandboxRunPlan
               install={install}
               orgId={orgId}
-              runnerJobId={sandboxRun?.runner_job?.id}
+              runnerJobId={sandboxRun?.runner_jobs?.at(0)?.id}
               />
               </Suspense>
               </ErrorBoundary> */}
