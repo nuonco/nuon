@@ -1,8 +1,8 @@
 'use client'
 
-import classNames from 'classnames'
 import dynamic from 'next/dynamic'
-import React, { FC } from 'react'
+import React from 'react'
+import { cn } from '@/stratus/components/helpers'
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   ssr: false,
@@ -14,7 +14,7 @@ interface ICodeEditor extends MonacoEditorProps {
   wrapperClassName?: string
 }
 
-export const CodeEditor: FC<ICodeEditor> = ({
+export const CodeEditor = ({
   height = 500,
   options = {
     codeLens: false,
@@ -26,11 +26,9 @@ export const CodeEditor: FC<ICodeEditor> = ({
   theme = 'vs-dark',
   wrapperClassName,
   ...props
-}) => (
+}: ICodeEditor) => (
   <div
-    className={classNames('rounded-md min-h-[500px] overflow-hidden', {
-      [`${wrapperClassName}`]: Boolean(wrapperClassName),
-    })}
+    className={cn('rounded-md min-h-[500px] overflow-hidden', wrapperClassName)}
   >
     <MonacoEditor height={height} theme={theme} options={options} {...props} />
   </div>

@@ -1,13 +1,13 @@
 import { DateTime, Duration as LuxonDuration, type DurationUnits } from 'luxon'
-import React, { type FC } from 'react'
-import { Minus } from '@phosphor-icons/react/dist/ssr'
+import React from 'react'
 
-export interface ITime extends Omit<React.HTMLAttributes<HTMLSpanElement>, 'role'> {
+export interface ITime
+  extends Omit<React.HTMLAttributes<HTMLSpanElement>, 'role'> {
   format?: 'default' | 'long' | 'relative' | 'time-only'
   time?: string
 }
 
-export const Time: FC<ITime> = ({ format, time, ...props }) => {
+export const Time = ({ format, time, ...props }: ITime) => {
   const datetime = time ? DateTime.fromISO(time) : DateTime.now()
 
   return (

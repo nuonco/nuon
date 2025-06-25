@@ -1,14 +1,15 @@
-import classNames from 'classnames'
 import React, { type FC } from 'react'
+import { cn } from '@/stratus/components/helpers'
+import { Icon } from '@/stratus/components/common'
 import { removeKebabCase, sentanceCase } from '@/utils'
-import { getStatusTheme, getStatusIcon } from './status-helpers'
+import { getStatusTheme, getStatusIconVariant } from './status-helpers'
 import './Status.css'
 
 export type TStatusType = string | 'success' | 'error'
 type TStatusVariant = 'default' | 'badge' | 'timeline'
 
 export interface IStatus
-extends Omit<React.HTMLAttributes<HTMLSpanElement>, 'children'> {
+  extends Omit<React.HTMLAttributes<HTMLSpanElement>, 'children'> {
   children?: React.ReactNode
   isWithoutText?: boolean
   status: TStatusType
@@ -24,19 +25,19 @@ export const Status: FC<IStatus> = ({
   ...props
 }) => {
   const theme = getStatusTheme(status)
-  const Icon = variant === 'timeline' ? getStatusIcon(status) : null
-
+  const iconVariant =
+    variant === 'timeline' ? getStatusIconVariant(status) : null
 
   return (
-    <span
-      className={classNames(`status ${variant}`, {
-        [`${className}`]: Boolean(className),
-      })}
-      {...props}
-    >
+    <span className={cn('status', variant, className)} {...props}>
       <span className={`status-indicator ${theme}`}>
-        {Icon ? (
-          <Icon className={`status-icon`} weight="bold" size="18" />
+        {iconVariant ? (
+          <Icon
+            className="status-icon"
+            variant={iconVariant}
+            weight="bold"
+            size="18"
+          />
         ) : null}
       </span>
 

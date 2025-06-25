@@ -1,5 +1,5 @@
-import classNames from 'classnames'
-import React, { type FC } from 'react'
+import React from 'react'
+import { cn } from '@/stratus/components/helpers'
 import './Badge.css'
 
 type TBadgeVariant = 'default' | 'code'
@@ -11,21 +11,16 @@ interface IBadge extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: TBadgeVariant
 }
 
-export const Badge: FC<IBadge> = ({
+export const Badge = ({
   className,
   children,
   size = 'lg',
   theme = 'neutral',
   variant = 'default',
   ...props
-}) => {
+}: IBadge) => {
   return (
-    <span
-      className={classNames(`badge ${variant} ${theme} ${size}`, {
-        [`${className}`]: Boolean(className),
-      })}
-      {...props}
-    >
+    <span className={cn('badge', variant, theme, size, className)} {...props}>
       {children}
     </span>
   )

@@ -1,8 +1,8 @@
 'use client'
 
-import classNames from 'classnames'
 import dynamic from 'next/dynamic'
-import React, { type FC } from 'react'
+import React from 'react'
+import { cn } from '@/stratus/components/helpers'
 
 const MonacoDiffEditor = dynamic(
   () => import('@monaco-editor/react').then((m) => m.DiffEditor),
@@ -15,7 +15,7 @@ interface IDiffEditor extends MonacoDiffEditorProps {
   wrapperClassName?: string
 }
 
-export const DiffEditor: FC<IDiffEditor> = ({
+export const DiffEditor = ({
   height = 500,
   options = {
     renderSideBySide: true,
@@ -26,12 +26,13 @@ export const DiffEditor: FC<IDiffEditor> = ({
   theme = 'vs-dark',
   wrapperClassName,
   ...props
-}) => {
+}: IDiffEditor) => {
   return (
     <div
-      className={classNames('rounded-md min-h-[500px] overflow-hidden', {
-        [`${wrapperClassName}`]: Boolean(wrapperClassName),
-      })}
+      className={cn(
+        'rounded-md min-h-[500px] overflow-hidden',
+        wrapperClassName
+      )}
     >
       <MonacoDiffEditor
         height={height}

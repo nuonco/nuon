@@ -1,18 +1,16 @@
-import classNames from 'classnames'
-import React, { type FC } from 'react'
+import React from 'react'
+import { cn } from '@/stratus/components/helpers'
 
 interface IScrollableDiv extends React.HTMLAttributes<HTMLDivElement> {}
 
-export const ScrollableDiv: FC<IScrollableDiv> = ({
+export const ScrollableDiv = ({
   className,
   children,
   ...props
-}) => {
+}: IScrollableDiv) => {
   return (
     <div
-      className={classNames('overflow-y-auto w-full max-w-full', {
-        [`${className}`]: Boolean(className),
-      })}
+      className={cn('overflow-y-auto w-full max-w-full', className)}
       {...props}
     >
       {children}
