@@ -12,6 +12,7 @@ import { approveWorkflowStep } from '@/components/install-actions'
 import { DiffEditor, splitYamlDiff } from '@/stratus/components/'
 import type { TInstallWorkflowStep } from '@/types'
 import { removeSnakeCase } from '@/utils'
+import { HelmChangesViewer } from './HelmPlanDiff'
 import { TerraformPlanViewer } from './TerraformPlanDiff'
 
 interface IApprovalStep {
@@ -105,10 +106,10 @@ export const ApprovalStep: FC<IApprovalStep> = ({
       ) : null}
 
       <div className="flex flex-col gap-2 !w-full">
-        <div className="flex flex-col gap-4 border rounded-md p-2">
+        <div className="flex flex-col gap-4">
           {error ? <Notice>{error}</Notice> : null}
           {approval?.type === 'helm_approval' ? (
-            <HelmDiff diff={approval?.contents} />
+            <HelmChangesViewer planData={JSON.parse(approval.contents)} />
           ) : approval?.contents ? (
             <TerraformPlanViewer plan={JSON.parse(approval?.contents)} />
           ) : (
