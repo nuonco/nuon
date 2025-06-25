@@ -55,17 +55,7 @@ func (w *Workflows) ExecuteTeardownComponentApplyPlan(ctx workflow.Context, sreq
 		return errors.Wrap(err, "unable to update install workflow")
 	}
 
-	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
-		DeployID: sreq.DeployID,
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to create log stream")
-	}
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
-	}()
-
-	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, &installDeploy.LogStream)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err

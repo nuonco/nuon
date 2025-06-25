@@ -10,6 +10,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
@@ -198,12 +199,14 @@ func (s *service) newInstallInputs(ctx context.Context, installInputs app.Instal
 
 	// remove inputs not in the latest app input config
 	for k := range inputs {
-		if _, ok := appInputNames[k]; !ok {
+		_, ok := appInputNames[k]
+		if !ok {
 			delete(inputs, k)
+			continue
 		}
 
-		// remove input who's values are not changed
-		if v, _ := existingInputs[k]; *v != *inputs[k] {
+		existingVal, ok := existingInputs[k]
+		if generics.FromPtrStr(existingVal) != generics.FromPtrStr(inputs[k]) {
 			changedInputs = append(changedInputs, k)
 		}
 	}

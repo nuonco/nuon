@@ -63,22 +63,19 @@ func (w *Workflows) ReprovisionSandboxPlan(ctx workflow.Context, sreq signals.Re
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream")
 	}
-	// defer func() {
-	// 	activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
-	// }()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
 	}
 
 	l.Info("executing sandbox plan", zap.String("log_stream.id", logStream.ID))
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusProvisioning, "provisioning")
+	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusPlanning, "planning")
 
 	err = w.executeSandboxPlan(ctx, install, installRun, sreq.FlowStepID, sandboxMode)
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, err.Error())
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 		return err
 	}
 
