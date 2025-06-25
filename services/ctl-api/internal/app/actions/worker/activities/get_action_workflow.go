@@ -21,7 +21,8 @@ func (a *Activities) GetActionWorkflow(ctx context.Context, req *GetActionWorkfl
 func (a *Activities) getActionWorkflow(ctx context.Context, workflowID string) (*app.ActionWorkflow, error) {
 	aw := app.ActionWorkflow{}
 	res := a.db.WithContext(ctx).
-		First(&aw, "id = ?", workflowID)
+		Where("id = ?", workflowID).
+		First(&aw)
 
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get action workflow config")
