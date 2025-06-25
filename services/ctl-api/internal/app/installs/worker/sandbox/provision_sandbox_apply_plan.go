@@ -6,6 +6,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -30,22 +31,14 @@ func (w *Workflows) ProvisionSandboxApplyPlan(ctx workflow.Context, sreq signals
 		return errors.Wrap(err, "unable to get install deploy")
 	}
 
-	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
-		DeployID: sreq.DeployID,
-	})
-	if err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
-		return errors.Wrap(err, "unable to create log stream")
-	}
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
-	}()
-
-	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, &installRun.LogStream)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
 	}
+	defer func() {
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, installRun.LogStream.ID)
+	}()
 
 	l.Info("executing plan")
 	if err := w.executeApplyPlan(ctx, install, installRun, sreq.FlowStepID, sreq.SandboxMode); err != nil {

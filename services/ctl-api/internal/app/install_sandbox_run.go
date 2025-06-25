@@ -31,6 +31,8 @@ const (
 	SandboxRunStatusDeprovisioning SandboxRunStatus = "deprovisioning"
 	SandboxRunStatusProvisioning   SandboxRunStatus = "provisioning"
 	SandboxRunStatusReprovisioning SandboxRunStatus = "reprovisioning"
+	SandboxRunStatusPlanning       SandboxRunStatus = "planning"
+	SandboxRunStatusApplying       SandboxRunStatus = "applying"
 	SandboxRunStatusAccessError    SandboxRunStatus = "access_error"
 	SandboxRunStatusUnknown        SandboxRunStatus = "unknown"
 	SandboxRunStatusCancelled      SandboxRunStatus = "cancelled"
