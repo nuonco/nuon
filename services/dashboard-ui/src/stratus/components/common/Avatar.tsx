@@ -1,6 +1,6 @@
-import classNames from 'classnames'
 import Image from 'next/image'
-import React, { type FC } from 'react'
+import React from 'react'
+import { cn } from '@/stratus/components/helpers'
 import { initialsFromString } from '@/utils'
 import './Avatar.css'
 
@@ -35,21 +35,24 @@ type TAvatar =
 
 export type IAvatar = IAvatarProps & TAvatar
 
-export const Avatar: FC<IAvatar> = ({
+export const Avatar = ({
   alt = '',
   className,
   isLoading = false,
   name,
   src,
   size = 'md',
-}) => {
+}: IAvatar) => {
   return (
     <span
-      className={classNames('avatar', {
-        loading: isLoading,
-        [`size-${AVATAR_SIZES[size].tw}`]: true,
-        [`${className}`]: Boolean(className),
-      })}
+      className={cn(
+        'avatar',
+        {
+          loading: isLoading,
+          [`size-${AVATAR_SIZES[size].tw}`]: true,
+        },
+        className
+      )}
     >
       {isLoading ? null : src ? (
         <Image

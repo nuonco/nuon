@@ -1,23 +1,14 @@
 'use client'
 
-import React, { type FC } from 'react'
-import {
-  CaretUp,
-  ArrowLineLeft,
-  ArrowLineRight,
-  SidebarSimple as SidebarIcon,
-} from '@phosphor-icons/react'
+import React from 'react'
 import { useDashboard } from '@/stratus/context'
-import { Button } from '@/stratus/components/common'
+import { Button, Icon } from '@/stratus/components/common'
 import { OrgSwitcher } from '@/stratus/components/orgs'
 import { UserDropdown } from '@/stratus/components/user'
-
 import { MainNav } from './MainNav'
 import { Logo } from './Logo'
 
-interface ISidebar {}
-
-export const Sidebar: FC<ISidebar> = () => {
+export const Sidebar = () => {
   return (
     <aside className="bg-cool-grey-50 dark:bg-dark-grey-200 flex flex-col border-r">
       <header className="flex items-center justify-between">
@@ -38,7 +29,7 @@ export const Sidebar: FC<ISidebar> = () => {
             alignment="left"
             className="!w-full"
             buttonClassName="!w-full"
-            icon={<CaretUp />}
+            icon={<Icon variant="CaretUp" />}
             position="above"
           />
         </div>
@@ -47,22 +38,26 @@ export const Sidebar: FC<ISidebar> = () => {
   )
 }
 
-export const SidebarButton: FC = () => {
+export const SidebarButton = () => {
   const { toggleSidebar } = useDashboard()
 
   return (
     <Button variant="ghost" className="!py-1 !px-1.5" onClick={toggleSidebar}>
-      <SidebarIcon size="20" />
+      <Icon variant="SidebarSimple" size="20" />
     </Button>
   )
 }
 
-export const MobileSidebarButton: FC = () => {
+export const MobileSidebarButton = () => {
   const { isSidebarOpen, toggleSidebar } = useDashboard()
 
   return (
     <Button variant="ghost" className="!px-2" onClick={toggleSidebar}>
-      {isSidebarOpen ? <ArrowLineLeft /> : <ArrowLineRight />}
+      {isSidebarOpen ? (
+        <Icon variant="ArrowLineLeft" />
+      ) : (
+        <Icon variant="ArrowLineRight" />
+      )}
     </Button>
   )
 }

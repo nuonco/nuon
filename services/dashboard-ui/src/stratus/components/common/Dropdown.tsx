@@ -1,10 +1,10 @@
 'use client'
 
-import classNames from 'classnames'
-import React, { type FC, useEffect, useRef, useState } from 'react'
-import { CaretDown } from '@phosphor-icons/react'
+import React, { useEffect, useRef, useState } from 'react'
+import { cn } from '@/stratus/components/helpers'
 import { Button, IButton } from './Button'
-import { TransitionDiv } from "./TransitionDiv"
+import { Icon } from './Icon'
+import { TransitionDiv } from './TransitionDiv'
 import './Dropdown.css'
 
 const useFocusOutside = (handler: () => void) => {
@@ -63,7 +63,7 @@ export interface IDropdown extends IButton {
   wrapperClassName?: string
 }
 
-export const Dropdown: FC<IDropdown> = ({
+export const Dropdown = ({
   alignment = 'left',
   buttonText,
   buttonClassName,
@@ -71,12 +71,12 @@ export const Dropdown: FC<IDropdown> = ({
   children,
   dropdownClassName,
   hideIcon = false,
-  icon = <CaretDown />,
+  icon = <Icon variant="CaretDown" />,
   iconAlignment = 'right',
   id,
   position = 'below',
   variant,
-}) => {
+}: IDropdown) => {
   const [isOpen, setIsOpen] = useState(false)
 
   const handleClose = () => {
@@ -88,21 +88,18 @@ export const Dropdown: FC<IDropdown> = ({
 
   return (
     <>
-      <div
-        className={classNames('dropdown', {
-          [`${className}`]: Boolean(className),
-        })}
-        id={id}
-        ref={dropdownRef}
-      >
+      <div className={cn('dropdown', className)} id={id} ref={dropdownRef}>
         <Button
           aria-haspopup="true"
           aria-expanded="true"
           aria-controls={`dropdown-content-${id}`}
-          className={classNames('dropdown-trigger', {
-            '!outline-0': position === 'overlay' && alignment === 'overlay',
-            [`${buttonClassName}`]: Boolean(buttonClassName),
-          })}
+          className={cn(
+            'dropdown-trigger',
+            {
+              '!outline-0': position === 'overlay' && alignment === 'overlay',
+            },
+            buttonClassName
+          )}
           id={`dropdown-button-${id}`}
           type="button"
           variant={variant}
@@ -120,9 +117,12 @@ export const Dropdown: FC<IDropdown> = ({
 
         <TransitionDiv
           ref={contentRef}
-          className={classNames(`dropdown-content ${alignment} ${position}`, {
-            [`${dropdownClassName}`]: Boolean(dropdownClassName),
-          })}
+          className={cn(
+            'dropdown-content',
+            alignment,
+            position,
+            dropdownClassName
+          )}
           aria-labelledby={`dropdown-button-${id}`}
           id={`dropdown-content-${id}`}
           isVisible={isOpen}

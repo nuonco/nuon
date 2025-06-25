@@ -1,12 +1,12 @@
 'use client'
 
-import classNames from 'classnames'
-import React, { type FC } from 'react'
-import { Bug, SignOut, UserPlus } from '@phosphor-icons/react'
+import React from 'react'
 import { useOrg } from '@/stratus/context'
+import { cn } from '@/stratus/components/helpers'
 import {
   Button,
   Dropdown,
+  Icon,
   Link,
   Menu,
   Text,
@@ -17,16 +17,11 @@ import { Profile } from './Profile'
 export interface IUserDropdown
   extends Omit<IDropdown, 'buttonText' | 'children' | 'id' | 'variant'> {}
 
-export const UserDropdown: FC<IUserDropdown> = ({
-  buttonClassName,
-  ...props
-}) => {
+export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
   const { org } = useOrg()
   return (
     <Dropdown
-      buttonClassName={classNames('text-left !px-px !py-px', {
-        [`${buttonClassName}`]: Boolean(buttonClassName),
-      })}
+      buttonClassName={cn('text-left !px-px !py-px', buttonClassName)}
       buttonText={<Profile />}
       id="profile"
       variant="ghost"
@@ -37,10 +32,10 @@ export const UserDropdown: FC<IUserDropdown> = ({
           {org?.name} settings
         </Text>
         <Button>
-          Invite team member <UserPlus />
+          Invite team member <Icon variant="UserPlus" />
         </Button>
         <Link href="/settings">
-          Report bug <Bug />
+          Report bug <Icon variant="Bug" />
         </Link>
         <hr />
         <Link
@@ -48,7 +43,7 @@ export const UserDropdown: FC<IUserDropdown> = ({
           className="!text-red-800 dark:!text-red-500"
           title="Sign out"
         >
-          Log out <SignOut />
+          Log out <Icon variant="SignOut" />
         </Link>
       </Menu>
     </Dropdown>

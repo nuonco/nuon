@@ -1,6 +1,6 @@
 'use client'
 
-import React, { type FC } from 'react'
+import React from 'react'
 import {
   Card,
   LabeledValue,
@@ -22,12 +22,12 @@ interface IRunnerDetails extends IRunnerDetailsCard {
   runnerHeartbeat: TRunnerHeartbeat
 }
 
-export const RunnerDetails: FC<IRunnerDetails> = ({
+export const RunnerDetails = ({
   runner,
   runnerGroup,
   runnerHeartbeat: initRunnerHeartbeat,
   ...props
-}) => {
+}: IRunnerDetails) => {
   const { org } = useOrg()
   const { data: runnerHeartbeat, error } = usePolling<TRunnerHeartbeat>({
     path: `/api/${org?.id}/runners/${runner?.id}/latest-heart-beat`,
@@ -88,7 +88,7 @@ export const RunnerDetails: FC<IRunnerDetails> = ({
   )
 }
 
-export const RunnerDetailsSkeleton: FC<IRunnerDetailsCard> = ({ ...props }) => {
+export const RunnerDetailsSkeleton = (props: IRunnerDetailsCard) => {
   return (
     <Card {...props}>
       <Skeleton height="24px" width="106px" />
