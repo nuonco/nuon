@@ -79,9 +79,9 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
         accessorKey: 'latest_run.execution_time',
         cell: (props) =>
           props.row.original?.latest_run &&
-          ((props.row.original?.latest_run?.status_v2?.status as string) !==
-            'queued' ||
-            (props.row.original?.latest_run?.status as string) !== 'queued') ? (
+          (props.row.original?.latest_run?.status_v2?.status as string) !==
+            'queued' &&
+          (props.row.original?.latest_run?.status as string) !== 'queued' ? (
             <Text>
               <Timer size={18} />
               <Duration nanoseconds={props.getValue<number>()} />
