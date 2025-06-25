@@ -53,7 +53,7 @@ export const LogsViewer: FC<ILogsViewer> = ({
       {table.getHeaderGroups().map((group) => (
         <div
           key={`header-${group.id}`}
-          className="grid grid-cols-12 items-center justify-start gap-5 py-2 w-[calc(100%-20px)]"
+          className="grid grid-cols-12 items-center justify-start gap-3 py-2 w-[calc(100%-20px)]"
         >
           {group.headers.map((header, i) => (
             <Text
@@ -112,7 +112,7 @@ export const LogsViewer: FC<ILogsViewer> = ({
                 row.original?.service_name === 'api',
             })}
             className={classNames(
-              'grid grid-cols-12 items-start justify-start gap-6 py-1 w-full'
+              'grid grid-cols-12 items-start justify-start gap-4 py-1 w-full'
             )}
             heading={
               row
@@ -227,7 +227,7 @@ export const LogsViewer: FC<ILogsViewer> = ({
         ) : (
           <span
             key={row.id}
-            className="grid grid-cols-12 items-start justify-start gap-6 py-1 w-full"
+            className="grid grid-cols-12 items-start justify-start gap-4 py-1 w-full"
           >
             {row.getVisibleCells().map((cell) => (
               <React.Fragment key={cell.id}>

@@ -129,7 +129,7 @@ export const AdminRunnerModal: FC = ({}) => {
       <div className="flex flex-col gap-2">
         <Text variant="reg-14">Manage all runners in this org</Text>
         <Button
-          className="text-base"
+          className="text-base w-full"
           onClick={() => {
             setIsOpen(true)
           }}
