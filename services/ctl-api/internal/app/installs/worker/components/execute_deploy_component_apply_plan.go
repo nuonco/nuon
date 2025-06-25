@@ -33,17 +33,7 @@ func (w *Workflows) ExecuteDeployComponentApplyPlan(ctx workflow.Context, sreq s
 		return errors.Wrap(err, "unable to get install deploy")
 	}
 
-	logStream, err := activities.AwaitGetLogStream(ctx, activities.GetLogStreamRequest{
-		LogStreamID: installDeploy.LogStream.ID,
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to create log stream")
-	}
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
-	}()
-
-	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, &installDeploy.LogStream)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err

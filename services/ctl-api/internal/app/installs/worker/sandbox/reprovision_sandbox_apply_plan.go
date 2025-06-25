@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -30,26 +31,14 @@ func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 		return errors.Wrap(err, "unable to get install deploy")
 	}
 
-	logStream, err := activities.AwaitGetLogStream(ctx, activities.GetLogStreamRequest{
-		LogStreamID: installRun.LogStream.ID,
-	})
-	if err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
-		return errors.Wrap(err, "unable to create log stream")
-	}
-	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
-		// NOTE: if we use the parent, we would close the parent log stream here too
-		// if logStream.ParentLogStreamID != nil {
-		// 	activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ParentLogStreamID)
-		// }
-	}()
-
-	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, &installRun.LogStream)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
 	}
+	defer func() {
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, installRun.LogStream.ID)
+	}()
 
 	l.Info("executing sandbox apply plan", zap.String("install_run.id", installRun.ID))
 	err = w.executeApplyPlan(ctx, install, installRun, sreq.FlowStepID, sreq.SandboxMode)
