@@ -175,7 +175,7 @@ export const AdminModal: FC<{
   return user && /@nuon.co\s*$/.test(user?.email) ? (
     <>
       <Button
-        className="text-sm !font-medium flex items-center justify-center gap-2"
+        className="text-sm !font-medium flex items-center justify-center gap-2 w-full"
         onClick={() => {
           setIsOpen(true)
         }}

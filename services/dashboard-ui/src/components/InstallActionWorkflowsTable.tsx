@@ -9,6 +9,7 @@ import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
 import { Time, Duration } from '@/components/Time'
 import { ID, Text } from '@/components/Typography'
+import { InstallActionTriggerFilter } from '@/components/InstallActionTriggerFilter'
 // eslint-disable-next-line import/no-cycle
 import type {
   TActionWorkflow,
@@ -40,7 +41,7 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
   orgId,
 }) => {
   const [data, _] = useState(parseActionData(actions))
-  const [columnFilters, __] = useState([])
+  const [columnFilters, setColumnFilters] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
 
   const columns: Array<ColumnDef<TData>> = useMemo(
@@ -91,6 +92,7 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
       },
       {
         header: 'Recent trigger',
+        id: 'trigger_by_type',
         accessorKey: 'latest_run.triggered_by_type',
         cell: (props) =>
           props.row.original?.latest_run ? (
@@ -133,6 +135,15 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
     []
   )
 
+  const handleTriggerFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setColumnFilters(() => [{ id: 'trigger_by_type', value: value }])
+  }
+
+  const clearTriggerFilter = () => {
+    setColumnFilters(() => [])
+  }
+
   const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
     setGlobalFilter(e.target.value || '')
   }
@@ -144,6 +155,11 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
           <DataTableSearch
             handleOnChange={handleGlobleFilter}
             value={globalFilter}
+          />
+
+          <InstallActionTriggerFilter
+            handleTriggerFilter={handleTriggerFilter}
+            clearTriggerFilter={clearTriggerFilter}
           />
         </>
       }
