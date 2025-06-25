@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
@@ -15,6 +16,7 @@ func (h *Helpers) CreateInstallSandboxJob(ctx context.Context,
 	typ app.RunnerJobType,
 	op app.RunnerJobOperationType,
 	metadata map[string]string,
+	logStreamID string,
 ) (*app.RunnerJob, error) {
 	job := &app.RunnerJob{
 		RunnerID:          runnerID,
@@ -29,6 +31,9 @@ func (h *Helpers) CreateInstallSandboxJob(ctx context.Context,
 		Type:              typ,
 		Operation:         op,
 		Metadata:          generics.ToHstore(metadata),
+	}
+	if logStreamID != "" {
+		job.LogStreamID = pkggenerics.ToPtr(logStreamID)
 	}
 
 	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {
