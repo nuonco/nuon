@@ -1,20 +1,14 @@
-import classNames from 'classnames'
-import React, { type FC } from 'react'
+import React from 'react'
+import { cn } from '@/stratus/components/helpers'
 
 interface IPageLayout extends React.HTMLAttributes<HTMLDivElement> {}
 
-export const PageLayout: FC<IPageLayout> = ({
-  className,
-  children,
-  ...props
-}) => {
+export const PageLayout = ({ className, children, ...props }: IPageLayout) => {
   return (
     <div
-      className={classNames(
+      className={cn(
         'flex-auto flex flex-col md:flex-row max-w-full overflow-y-auto md:overflow-hidden',
-        {
-          [`${className}`]: Boolean(className),
-        }
+        className
       )}
       {...props}
     >

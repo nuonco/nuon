@@ -1,5 +1,5 @@
-import classNames from 'classnames'
-import React, { type FC } from 'react'
+import React from 'react'
+import { cn } from '@/stratus/components/helpers'
 import './Text.css'
 
 export type TTextFamily = 'sans' | 'mono'
@@ -12,7 +12,7 @@ export type TTextVariant =
   | 'subtext'
   | 'label'
 export type TTextWeight = 'normal' | 'strong' | 'stronger'
-export type TTextTheme = "default" | "muted" | "highlighted"
+export type TTextTheme = 'default' | 'muted' | 'highlighted'
 
 export interface IText extends React.HTMLAttributes<HTMLSpanElement> {
   family?: TTextFamily
@@ -23,7 +23,7 @@ export interface IText extends React.HTMLAttributes<HTMLSpanElement> {
   weight?: TTextWeight
 }
 
-export const Text: FC<IText> = ({
+export const Text = ({
   className,
   children,
   family = 'sans',
@@ -33,13 +33,11 @@ export const Text: FC<IText> = ({
   theme = 'default',
   weight = 'normal',
   ...props
-}) => {
+}: IText) => {
   return (
     <span
       aria-level={role === 'heading' && level ? level : undefined}
-      className={classNames(`${variant} ${family} ${weight} ${theme}`, {
-        [`${className}`]: Boolean(className),
-      })}
+      className={cn(variant, family, weight, theme, className)}
       role={role}
       {...props}
     >

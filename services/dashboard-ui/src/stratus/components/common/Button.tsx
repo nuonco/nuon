@@ -1,5 +1,5 @@
-import classNames from 'classnames'
 import React, { forwardRef } from 'react'
+import { cn } from '@/stratus/components/helpers'
 import './Button.css'
 
 export type TButtonSize = 'lg' | 'md' | 'sm' | 'xs'
@@ -16,13 +16,7 @@ export const Button = forwardRef<HTMLButtonElement, IButton>(
     ref
   ) => {
     return (
-      <button
-        className={classNames(`${variant} ${size}`, {
-          [`${className}`]: Boolean(className),
-        })}
-        ref={ref}
-        {...props}
-      >
+      <button className={cn(variant, size, className)} ref={ref} {...props}>
         {children}
       </button>
     )

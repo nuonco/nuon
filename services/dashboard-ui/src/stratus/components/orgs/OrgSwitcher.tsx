@@ -1,12 +1,11 @@
 'use client'
 
-import classNames from 'classnames'
-import React, { type FC, useEffect, useState } from 'react'
-import { FaGithub } from 'react-icons/fa'
-import { CaretUpDown, Plus, TestTube } from '@phosphor-icons/react'
+import React, { useEffect, useState } from 'react'
+import { cn } from '@/stratus/components/helpers'
 import {
   Avatar,
   Dropdown,
+  Icon,
   Link,
   Menu,
   Skeleton,
@@ -21,14 +20,14 @@ import { GITHUB_APP_NAME } from '@/utils'
 interface IOrgSwitcher
   extends Omit<IDropdown, 'buttonText' | 'children' | 'id'> {}
 
-export const OrgSwitcher: FC<IOrgSwitcher> = () => {
+export const OrgSwitcher = ({}: IOrgSwitcher) => {
   const { isSidebarOpen } = useDashboard()
   const { org } = useOrg()
   return (
     <Dropdown
       alignment="overlay"
       className="w-[248px]"
-      buttonClassName={classNames(
+      buttonClassName={cn(
         'w-full text-left transition-all !border-cool-grey-300 dark:!border-dark-grey-500',
         {
           '!px-4 !py-1.5 ': isSidebarOpen,
@@ -36,7 +35,7 @@ export const OrgSwitcher: FC<IOrgSwitcher> = () => {
         }
       )}
       buttonText={<OrgSummary isSidebarOpen={isSidebarOpen} org={org} />}
-      icon={isSidebarOpen ? <CaretUpDown /> : null}
+      icon={isSidebarOpen ? <Icon variant="CaretUpDown" /> : null}
       id="org-switcher"
       position="overlay"
       variant="ghost"
@@ -59,7 +58,7 @@ export const OrgSwitcher: FC<IOrgSwitcher> = () => {
                 className="flex items-center gap-1.5"
                 href={`https://github.com/apps/${GITHUB_APP_NAME}/installations/new?state=${org.id}`}
               >
-                <Plus /> Add
+                <Icon variant="Plus" /> Add
               </Link>
             </Text>
           </div>
@@ -71,7 +70,7 @@ export const OrgSwitcher: FC<IOrgSwitcher> = () => {
               variant="subtext"
               theme="muted"
             >
-              <FaGithub /> {vcs?.github_install_id}
+              <Icon variant="GitHub" /> {vcs?.github_install_id}
             </Text>
           ))}
         </div>
@@ -94,7 +93,7 @@ interface IOrgSummary {
   org: TOrg
 }
 
-const OrgSummary: FC<IOrgSummary> = ({ isSidebarOpen = true, org }) => {
+const OrgSummary = ({ isSidebarOpen = true, org }: IOrgSummary) => {
   return (
     <div className="flex gap-4 items-center overflow-hidden">
       <Avatar
@@ -102,7 +101,7 @@ const OrgSummary: FC<IOrgSummary> = ({ isSidebarOpen = true, org }) => {
         size={isSidebarOpen ? 'xl' : 'md'}
       />
       <div
-        className={classNames('transition-all max-w-full overflow-hidden', {
+        className={cn('transition-all max-w-full overflow-hidden', {
           'opacity-100': isSidebarOpen,
           'opacity-0': !isSidebarOpen,
         })}
@@ -113,7 +112,11 @@ const OrgSummary: FC<IOrgSummary> = ({ isSidebarOpen = true, org }) => {
           className="text-nowrap flex items-center gap-1.5"
         >
           {org.sandbox_mode && (
-            <TestTube className="!w-[12px] !h-[12px] shrink-0" size="12" />
+            <Icon
+              variant="TestTube"
+              className="!w-[12px] !h-[12px] shrink-0"
+              size="12"
+            />
           )}
           <span className="truncate">{org.name}</span>
         </Text>
@@ -123,13 +126,11 @@ const OrgSummary: FC<IOrgSummary> = ({ isSidebarOpen = true, org }) => {
   )
 }
 
-const LoadingOrgSummary: FC = () => {
+const LoadingOrgSummary = () => {
   return (
     <div className="flex gap-4 items-center p-2 w-full">
       <Avatar size="xl" isLoading />
-      <div
-        className={classNames('flex flex-col gap-1 transition-all w-full', {})}
-      >
+      <div className="flex flex-col gap-1 transition-all w-full">
         <Skeleton height="14px" width="80%" />
         <Skeleton height="14px" width="40%" />
       </div>
@@ -139,7 +140,7 @@ const LoadingOrgSummary: FC = () => {
 
 interface IOrgsNav {}
 
-const OrgsNav: FC<IOrgsNav> = () => {
+const OrgsNav = ({}: IOrgsNav) => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>()
   const [orgs, setOrgs] = useState<Array<TOrg>>()

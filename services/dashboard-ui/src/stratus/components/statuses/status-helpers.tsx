@@ -1,13 +1,4 @@
-import type { ComponentProps, FC } from 'react'
-import {
-  ClockCountdown,
-  CheckCircle,
-  FlowArrow,
-  Prohibit,
-  Warning,
-  WarningDiamond,
-  XCircle,
-} from '@phosphor-icons/react/dist/ssr'
+import type { TIconVariant } from "@/stratus/components/common"
 
 type TStatusTheme = 'success' | 'warn' | 'neutral' | 'error' | 'info' | 'brand'
 
@@ -75,10 +66,8 @@ export function getStatusTheme(status: string): TStatusTheme {
   return theme
 }
 
-type TIconProps = ComponentProps<typeof CheckCircle>
-
-export function getStatusIcon(status: string): FC<TIconProps> {
-  let icon: FC<TIconProps>
+export function getStatusIconVariant(status: string): TIconVariant {
+  let icon: TIconVariant
 
   switch (status) {
     case 'active':
@@ -87,7 +76,7 @@ export function getStatusIcon(status: string): FC<TIconProps> {
     case 'healthy':
     case 'connected':
     case 'approved':
-      icon = CheckCircle
+      icon = "CheckCircle"
       break
     case 'failed':
     case 'error':
@@ -99,13 +88,13 @@ export function getStatusIcon(status: string): FC<TIconProps> {
     case 'unhealthy':
     case 'not connected':
     case 'timed-out':
-      icon = XCircle
+      icon = "XCircle"
       break
     case 'approval-denied':
     case 'approval-waiting':
     case 'cancelled':
     case 'outdated':
-      icon = Warning
+      icon = "Warning"
       break
     case 'executing':
     case 'waiting':
@@ -119,7 +108,7 @@ export function getStatusIcon(status: string): FC<TIconProps> {
     case 'deploying':
     case 'available':
     case 'pending-approval':
-      icon = WarningDiamond
+      icon = "WarningDiamond"
       break
     case 'noop':
     case 'inactive':
@@ -129,13 +118,13 @@ export function getStatusIcon(status: string): FC<TIconProps> {
     case 'No build':
     case 'not-attempted':
     case 'deprovisioned':
-      icon = ClockCountdown
+      icon = "ClockCountdown"
       break
     case 'special':
-      icon = Prohibit
+      icon = "Prohibit"
       break
     default:
-      icon = ClockCountdown
+      icon = "ClockCountdown"
   }
 
   return icon

@@ -1,9 +1,8 @@
-import { useDashboard } from '@/stratus/context'
-import React, { type FC } from 'react'
+import React from 'react'
 import { Link } from "@/stratus/components/common"
 import './Logo.css'
 
-export const Logo: FC = () => {
+export const Logo = () => {
   return (
     <Link href="/stratus" className="logo-link w-fit overflow-hidden">
       <span className="sr-only">Nuon</span>
@@ -71,7 +70,6 @@ const DarkModeLogo = () => {
 }
 
 const LightModeLogo = () => {
-  const { isSidebarOpen } = useDashboard()
   return (
     <svg
       className="block dark:hidden logo"
