@@ -13,6 +13,7 @@ import {
   InstallManagementDropdown,
   Link,
   Loading,
+  JsonView,
   Notice,
   ReprovisionSandboxModal,
   SandboxHistory,
@@ -256,7 +257,7 @@ const LoadLatestOutputs: FC<{
   })
   const runnerJob = await getRunnerJob({
     orgId,
-    runnerJobId: sandboxRun?.runner_job?.id,
+    runnerJobId: sandboxRun?.runner_jobs?.at(0)?.id,
   }).catch(console.error)
 
   return runnerJob ? (
@@ -265,10 +266,7 @@ const LoadLatestOutputs: FC<{
         <Text variant="med-12">Outputs</Text>
         <ClickToCopyButton textToCopy={JSON.stringify(runnerJob.outputs)} />
       </div>
-      <CodeViewer
-        initCodeSource={JSON.stringify(runnerJob.outputs, null, 2)}
-        language="json"
-      />
+      <JsonView data={runnerJob.outputs} />
     </div>
   ) : null
 }

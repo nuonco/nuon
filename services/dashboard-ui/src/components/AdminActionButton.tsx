@@ -18,7 +18,7 @@ export const AdminBtn: FC<IAdminButton> = ({ children, action }) => {
 
   return (
     <Button
-      className="flex gap-2 items-center justify-center text-base"
+      className="flex gap-2 items-center justify-center text-base w-full"
       onClick={() => {
         setIsActing(true)
         action()
