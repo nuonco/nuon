@@ -1,6 +1,6 @@
-import classNames from 'classnames'
-import React, { type FC } from 'react'
+import React from 'react'
 import NextLink, { type LinkProps as NextLinkProps } from 'next/link'
+import { cn } from '@/stratus/components/helpers'
 import './Link.css'
 
 export type TLinkVariant = 'default' | 'ghost' | 'nav' | 'breadcrumb'
@@ -13,7 +13,7 @@ export interface ILink
   variant?: TLinkVariant
 }
 
-export const Link: FC<ILink> = ({
+export const Link = ({
   className,
   children,
   href,
@@ -21,12 +21,16 @@ export const Link: FC<ILink> = ({
   isExternal = false,
   variant = 'default',
   ...props
-}) => {
-  const classes = classNames(`link ${variant}`, {
-    active: isActive,
-    inactive: !isActive,
-    [`${className}`]: Boolean(className),
-  })
+}: ILink) => {
+  const classes = cn(
+    'link',
+    variant,
+    {
+      active: isActive,
+      inactive: !isActive,
+    },
+    className
+  )
 
   return isExternal ? (
     <a

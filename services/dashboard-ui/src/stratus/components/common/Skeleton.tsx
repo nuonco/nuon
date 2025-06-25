@@ -1,17 +1,17 @@
-import React, { type FC } from 'react';
+import React from 'react'
 
 interface ISkeleton {
-  lines?: number;
-  width?: string | string[];
-  height?: string;
+  lines?: number
+  width?: string | string[]
+  height?: string
 }
 
-export const Skeleton: FC<ISkeleton> = ({
+export const Skeleton = ({
   lines = 1,
   width = '100%',
   height = '1rem',
-}) => {
-  const widths = Array.isArray(width) ? width : Array(lines).fill(width);
+}: ISkeleton) => {
+  const widths = Array.isArray(width) ? width : Array(lines).fill(width)
 
   return (
     <div className="skeleton-text">
@@ -26,6 +26,5 @@ export const Skeleton: FC<ISkeleton> = ({
         ></div>
       ))}
     </div>
-  );
-};
-
+  )
+}

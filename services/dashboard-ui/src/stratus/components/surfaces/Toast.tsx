@@ -1,9 +1,8 @@
 'use client'
 
-import classNames from 'classnames'
 import React, { forwardRef, useEffect, useRef } from 'react'
-import { RocketLaunch, X } from '@phosphor-icons/react'
-import { Button, Text } from '@/stratus/components/common'
+import { cn } from '@/stratus/components/helpers'
+import { Button, Icon, Text } from '@/stratus/components/common'
 import { useDashboard } from '@/stratus/context'
 import './Toast.css'
 
@@ -60,9 +59,7 @@ export const Toast = forwardRef<HTMLDivElement, IToast>(
 
     return (
       <div
-        className={classNames(`toast ${variant} group`, {
-          [`${className}`]: Boolean(className),
-        })}
+        className={cn('toast group', variant, className)}
         onMouseEnter={clearTimer}
         onMouseLeave={startTimer}
         ref={ref}
@@ -70,7 +67,7 @@ export const Toast = forwardRef<HTMLDivElement, IToast>(
       >
         <div className="flex items-center justify-between">
           <div className="flex gap-4 items-center">
-            <RocketLaunch />
+            <Icon variant="RocketLaunch" />
             {typeof heading === 'string' ? (
               <Text weight="strong">{heading}</Text>
             ) : (
@@ -82,7 +79,7 @@ export const Toast = forwardRef<HTMLDivElement, IToast>(
             onClick={handleRemove}
             variant="ghost"
           >
-            <X />
+            <Icon variant="X" />
           </Button>
         </div>
         <Text className="ml-8 flex flex-col gap-4" variant="subtext">
