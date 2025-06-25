@@ -156,7 +156,7 @@ require (
 	gorm.io/driver/sqlite v1.4.3
 	gorm.io/gorm v1.25.10
 	gorm.io/plugin/soft_delete v1.2.1
-	helm.sh/helm/v3 v3.17.0
+	helm.sh/helm/v3 v3.17.3
 	helm.sh/helm/v4 v4.0.0-20250610195754-0a8194c9a3cd
 	k8s.io/api v0.33.1
 	k8s.io/apimachinery v0.33.1
