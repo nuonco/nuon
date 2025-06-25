@@ -117,7 +117,7 @@ export const AdminOrgFeatures: FC<{ org: TOrg }> = ({ org }) => {
       <div className="flex flex-col gap-2">
         <Text variant="reg-14">Manage org features</Text>
         <Button
-          className="text-base"
+          className="text-base w-full"
           onClick={() => {
             setIsOpen(true)
           }}
