@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 // getInstallComponents reads components deployed to an install from the DB.
@@ -23,9 +22,6 @@ func (h *Helpers) GetInstallComponents(ctx context.Context, installID string) ([
 					Status: app.InstallDeployStatusActive,
 				})
 			// Scopes(scopes.WithOverrideTable("install_deploys_latest_view_v1"))
-		}).
-		Preload("InstallComponents.InstallDeploys.RunnerJobs", func(db *gorm.DB) *gorm.DB {
-			return db.Order(views.TableOrViewName(db, &app.RunnerJob{}, ".created_at DESC"))
 		}).
 		Preload("InstallComponents.Component").
 		Preload("InstallComponents.TerraformWorkspace").
