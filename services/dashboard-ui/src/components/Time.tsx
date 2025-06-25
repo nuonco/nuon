@@ -2,7 +2,7 @@
 
 import { DateTime, Duration as LuxonDuration, type DurationUnits } from 'luxon'
 import React, { type FC } from 'react'
-import { Minus } from '@phosphor-icons/react/dist/ssr'
+import { Minus } from '@phosphor-icons/react'
 import { Text, type IText } from '@/components/Typography'
 
 export interface ITime extends Omit<IText, 'role'> {
@@ -76,14 +76,20 @@ export const Duration: FC<IDuration> = ({
 
   return (
     <Text {...props} role="time">
-      {format === 'timer'
-        ? duration.toFormat('T-hh:mm:ss:SS')
-        : duration.as('seconds') < 1
-          ? duration.rescale().toHuman({ listStyle, unitDisplay })
-          : duration.rescale().set({ milliseconds: 0 }).rescale().toHuman({
-              listStyle,
-              unitDisplay,
-            })}
+      {duration?.isValid ? (
+        format === 'timer' ? (
+          duration.toFormat('T-hh:mm:ss:SS')
+        ) : duration.as('seconds') < 1 ? (
+          duration.rescale().toHuman({ listStyle, unitDisplay })
+        ) : (
+          duration.rescale().set({ milliseconds: 0 }).rescale().toHuman({
+            listStyle,
+            unitDisplay,
+          })
+        )
+      ) : (
+        <Minus />
+      )}
     </Text>
   )
 }
