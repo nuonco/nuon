@@ -28,6 +28,7 @@ const markdown = new showdown.Converter({
   tasklists: true,
 })
 
+// TODO(nnnnat): fix typing for this component
 export const Markdown = ({ markdownStr = '' }) => (
   <div
     className="markdown prose prose-sm dark:prose-invert !max-w-full"

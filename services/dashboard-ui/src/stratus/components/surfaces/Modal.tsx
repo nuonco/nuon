@@ -1,12 +1,12 @@
 'use client'
 
-import classNames from 'classnames'
-import React, { type FC, useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Rocket } from '@phosphor-icons/react'
+import { cn } from '@/stratus/components/helpers'
 import {
   Button,
   HeadingGroup,
+  Icon,
   Text,
   TransitionDiv,
   type IButton,
@@ -22,7 +22,7 @@ export interface IModal
   trigger?: Omit<IButton, 'onClick'>
 }
 
-export const Modal: FC<IModal> = ({
+export const Modal = ({
   actions,
   children,
   className,
@@ -33,7 +33,7 @@ export const Modal: FC<IModal> = ({
     children: 'Open',
   },
   ...props
-}) => {
+}: IModal) => {
   const [isModalOpen, setIsModalOpen] = useState(isOpen)
   const modalRef = useRef(null)
 
@@ -76,14 +76,12 @@ export const Modal: FC<IModal> = ({
         ? null
         : createPortal(
             <TransitionDiv
-              className={classNames('modal-wrapper', {})}
+              className={cn('modal-wrapper', {})}
               isVisible={isModalOpen}
             >
               <div className="modal-overlay" onClick={handleClose} />
               <div
-                className={classNames('modal', {
-                  [`${className}`]: Boolean(className),
-                })}
+                className={cn('modal', className)}
                 tabIndex={-1}
                 ref={modalRef}
                 {...props}
@@ -103,7 +101,7 @@ export const Modal: FC<IModal> = ({
                   <div className="flex items-center gap-4">
                     {actions}
                     <Button className="!p-2" onClick={handleClose}>
-                      <X />
+                      <Icon variant="X" />
                     </Button>
                   </div>
                 </div>
@@ -122,7 +120,7 @@ export const Modal: FC<IModal> = ({
   )
 }
 
-export const ExampleModal: FC = () => {
+export const ExampleModal = () => {
   return (
     <Modal
       className="max-w-2xl"
@@ -133,7 +131,7 @@ export const ExampleModal: FC = () => {
             variant="h3"
             weight="strong"
           >
-            <Rocket /> Heading title
+            <Icon variant="Rocket" /> Heading title
           </Text>
           <Text variant="base" weight="strong" theme="muted">
             Heading subtext

@@ -1,8 +1,8 @@
 'use client'
 
-import classNames from 'classnames'
-import React, { type FC, useEffect, useRef, useState } from 'react'
-import { Question } from '@phosphor-icons/react'
+import React, { useEffect, useRef, useState } from 'react'
+import { cn } from '@/stratus/components/helpers'
+import { Icon } from './Icon'
 import './Tooltip.css'
 
 export interface ITooltip extends React.HTMLAttributes<HTMLSpanElement> {
@@ -11,14 +11,14 @@ export interface ITooltip extends React.HTMLAttributes<HTMLSpanElement> {
   tipContent: React.ReactNode
 }
 
-export const Tooltip: FC<ITooltip> = ({
+export const Tooltip = ({
   className,
   children,
   position = 'top',
   showIcon = false,
   tipContent,
   ...props
-}) => {
+}: ITooltip) => {
   const [isOpen, setIsOpen] = useState(false)
   const [styles, setStyles] = useState<{
     top: string
@@ -70,9 +70,7 @@ export const Tooltip: FC<ITooltip> = ({
 
   return (
     <span
-      className={classNames('tooltip-wrapper', {
-        [`${className}`]: Boolean(className),
-      })}
+      className={cn('tooltip-wrapper', className)}
       ref={triggerRef}
       style={{ position: 'relative' }}
       onMouseEnter={() => {
@@ -86,7 +84,7 @@ export const Tooltip: FC<ITooltip> = ({
     >
       {showIcon ? (
         <span className="inline-flex items-center gap-1 mr-1">
-          {children} <Question />
+          {children} <Icon variant="Question" />
         </span>
       ) : (
         children
@@ -94,7 +92,7 @@ export const Tooltip: FC<ITooltip> = ({
 
       <span
         ref={tooltipRef}
-        className={classNames(`tooltip-content ${position}`, {
+        className={cn(`tooltip-content ${position}`, {
           enter: isOpen,
           exit: !isOpen,
         })}
