@@ -218,6 +218,8 @@ installer_synthetics:
 # we monitor the ctl-api, runner-api, and dashboard-ui
 byoc_synthetics:
   instances:
+    byoc:
+      nuon-dev-main: nuon-dev-main.nuon.run
     retool:
       nuon-prod: byoc.retool.com
       nuon-dev-2: byoc.retool.dev
