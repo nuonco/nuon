@@ -189,13 +189,13 @@ func (s *service) newInstallInputs(ctx context.Context, installInputs app.Instal
 		appInputNames[input.Name] = struct{}{}
 	}
 
-	// existing installInputs
-	existingInputs := make(map[string]*string)
-	for k, v := range installInputs.Values {
-		existingInputs[k] = v
-	}
-
 	var changedInputs []string
+	for k, v := range req.Inputs {
+		ov, ok := installInputs.Values[k]
+		if !ok || generics.FromPtrStr(v) != generics.FromPtrStr(ov) {
+			changedInputs = append(changedInputs, k)
+		}
+	}
 
 	// remove inputs not in the latest app input config
 	for k := range inputs {
@@ -203,11 +203,6 @@ func (s *service) newInstallInputs(ctx context.Context, installInputs app.Instal
 		if !ok {
 			delete(inputs, k)
 			continue
-		}
-
-		existingVal, ok := existingInputs[k]
-		if generics.FromPtrStr(existingVal) != generics.FromPtrStr(inputs[k]) {
-			changedInputs = append(changedInputs, k)
 		}
 	}
 
