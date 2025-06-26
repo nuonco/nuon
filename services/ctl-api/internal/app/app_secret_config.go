@@ -44,6 +44,7 @@ type AppSecretConfig struct {
 	Required     bool               `json:"required,omitzero" temporaljson:"required,omitzero,omitempty"`
 	AutoGenerate bool               `json:"auto_generate,omitzero" temporaljson:"auto_generate,omitzero,omitempty"`
 	Format       AppSecretConfigFmt `json:"format" temporaljson:"format" swaggertype:"string"`
+	Default      string             `json:"default" temporaljson:"default"`
 
 	// for syncing into kubernetes
 	KubernetesSync            bool   `json:"kubernetes_sync,omitzero" temporaljson:"kubernetes_sync,omitzero,omitempty"`
