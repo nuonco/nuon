@@ -23,7 +23,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   const install = await getInstall({ installId, orgId })
 
   return {
-    title: `${install.name} | History`,
+    title: `${install.name} | Workflows`,
   }
 }
 
@@ -42,6 +42,10 @@ export default async function Install({ params, searchParams }) {
         {
           href: `/${orgId}/installs/${install.id}`,
           text: install.name,
+        },
+        {
+          href: `/${orgId}/installs/${install.id}/workflows`,
+          text: 'Workflows',
         },
       ]}
       heading={install.name}

@@ -1,13 +1,13 @@
 import { Text } from '@/stratus/components'
 
-const InstallHistoryPage = () => {
+const InstallWorkflowsPage = () => {
   return (
     <div className="px-8 py-6">
       <Text variant="base" weight="strong">
-        Install History
+        Install Workflows
       </Text>
     </div>
   )
 }
 
-export default InstallHistoryPage
+export default InstallWorkflowsPage
