@@ -8,6 +8,7 @@ const config: Config = {
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
     './src/stratus/**/*.{js,ts,jsx,tsx,mdx}',
     './node_modules/react-tailwindcss-select/dist/index.esm.js',
+    './node_modules/react-tailwindcss-datepicker/dist/index.esm.{js,ts}',
   ],
   safelist: [
     {
