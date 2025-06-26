@@ -15,6 +15,8 @@ replace github.com/go-playground/validator/v10 v10.22.1 => github.com/go-playgro
 
 replace github.com/go-playground/validator/v10 v10.23.0 => github.com/go-playground/validator/v10 v10.16.0
 
+exclude google.golang.org/grpc/stats/opentelemetry v0.0.0-20240907200651-3ffb98b2c93a
+
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.0
@@ -137,7 +139,6 @@ require (
 	go.opentelemetry.io/contrib/bridges/otelzap v0.11.0
 	go.opentelemetry.io/otel v1.36.0
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.8.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.33.0
 	go.opentelemetry.io/otel/sdk v1.34.0
 	go.opentelemetry.io/otel/sdk/log v0.8.0
 	go.temporal.io/api v1.24.0
@@ -335,6 +336,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.8.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.32.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.32.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.33.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.32.0 // indirect
 	go.opentelemetry.io/otel/exporters/prometheus v0.54.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdoutlog v0.8.0 // indirect
@@ -498,7 +500,7 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nuonco/nuon-go v0.67.2
+	github.com/nuonco/nuon-go v0.67.3
 	github.com/nwaples/rardecode/v2 v2.0.0-beta.2 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect

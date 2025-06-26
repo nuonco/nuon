@@ -34,5 +34,7 @@ ENTRYPOINT [   \
   "-n", "runners",     \
   "-n", "canary",      \
   "-n", "infra-tests", \
-  "--db-filename", "/tmp/nuon-dev-temporal.db" \
+  "--db-filename", "/tmp/nuon-dev-temporal.db", \
+  "--dynamic-config-value", "limit.maxWorkflowExecutionSize=262144000", \
+  "--dynamic-config-value", "limit.blobSize.error=5242880" \
 ]

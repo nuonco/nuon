@@ -100,12 +100,19 @@ func (j *jobLoop) writeTerraformSandboxMode(ctx context.Context, job *models.App
 }
 
 func (j *jobLoop) writeHelmSandboxMode(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution, plan *plantypes.HelmSandboxMode) error {
-	if len(plan.PlanText) > 0 {
+	if len(plan.PlanContents) > 0 {
+		var planDisplayJson *map[string]interface{}
+		err := json.Unmarshal([]byte(plan.PlanDisplayContents), &planDisplayJson)
+		if err != nil {
+			return errors.Wrap(err, "unable to unmarshal plan display")
+		}
 		// write an output
 		j.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
-			Contents: plan.PlanText,
+			Contents:        plan.PlanContents,
+			ContentsDisplay: planDisplayJson,
 		})
 	}
+
 	return nil
 }
 
@@ -144,13 +151,13 @@ func (j *jobLoop) executeOutputsJobStep(ctx context.Context, handler jobs.JobHan
 			return errors.Wrap(err, "unable to get sandbox mode plan")
 		}
 
-		if plan.SandboxMode.TerraformSandboxMode != nil {
-			if err := j.writeTerraformSandboxMode(ctx, job, jobExecution, plan.SandboxMode.TerraformSandboxMode); err != nil {
+		if plan.SandboxMode != nil && plan.SandboxMode.Terraform != nil {
+			if err := j.writeTerraformSandboxMode(ctx, job, jobExecution, plan.SandboxMode.Terraform); err != nil {
 				return errors.Wrap(err, "unable to write sandbox mode terraform")
 			}
 		}
-		if plan.SandboxMode.HelmSandboxMode != nil {
-			if err := j.writeHelmSandboxMode(ctx, job, jobExecution, plan.SandboxMode.HelmSandboxMode); err != nil {
+		if plan.SandboxMode != nil && plan.SandboxMode.Helm != nil {
+			if err := j.writeHelmSandboxMode(ctx, job, jobExecution, plan.SandboxMode.Helm); err != nil {
 				return errors.Wrap(err, "unable to write sandbox mode helm")
 			}
 		}

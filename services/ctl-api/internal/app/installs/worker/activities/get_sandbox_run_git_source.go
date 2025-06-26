@@ -29,5 +29,5 @@ func (a *Activities) GetSandboxRunGitSource(ctx context.Context, req GetSandboxR
 	default:
 	}
 
-	return nil, nil
+	return nil, errors.New("no vcs connection found")
 }

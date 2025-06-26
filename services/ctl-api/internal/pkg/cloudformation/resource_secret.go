@@ -36,6 +36,9 @@ func (a *Templates) getSecretsParameters(inp *TemplateInput) map[string]cloudfor
 			NoEcho:                generics.ToPtr(true),
 			ConstraintDescription: generics.ToPtr("This parameter is required"),
 		}
+		if secret.Default != "" {
+			param.Default = generics.ToPtr(secret.Default)
+		}
 		if secret.Required {
 			param.AllowedPattern = generics.ToPtr[string]("^[^\\s]{1,}$")
 		}

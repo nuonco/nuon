@@ -1,8 +1,6 @@
 package app
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -51,17 +49,8 @@ type AppSandboxConfig struct {
 	TerraformVersion   string              `json:"terraform_version,omitzero" gorm:"notnull" temporaljson:"terraform_version,omitzero,omitempty"`
 	InstallSandboxRuns []InstallSandboxRun `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox_runs,omitzero,omitempty"`
 
-	// Links are dynamically loaded using an after query
-	Artifacts struct {
-		DeprovisionPolicy           string `json:"deprovision_policy,omitzero" gorm:"-" temporaljson:"deprovision_policy,omitzero,omitempty"`
-		ProvisionPolicy             string `json:"provision_policy,omitzero" gorm:"-" temporaljson:"provision_policy,omitzero,omitempty"`
-		TrustPolicy                 string `json:"trust_policy,omitzero" gorm:"-" temporaljson:"trust_policy,omitzero,omitempty"`
-		CloudformationStackTemplate string `json:"cloudformation_stack_template,omitzero" gorm:"-" temporaljson:"cloudformation_stack_template,omitzero,omitempty"`
-	} `json:"artifacts,omitzero" gorm:"-" temporaljson:"artifacts,omitzero,omitempty"`
-
 	// cloud specific fields
-	AWSDelegationConfig *AppAWSDelegationConfig `json:"aws_delegation_config,omitzero" temporaljson:"aws_delegation_config,omitzero,omitempty"`
-	AWSRegionType       generics.NullString     `json:"aws_region_type,omitzero" swaggertype:"string" temporaljson:"aws_region_type,omitzero,omitempty"`
+	AWSRegionType generics.NullString `json:"aws_region_type,omitzero" swaggertype:"string" temporaljson:"aws_region_type,omitzero,omitempty"`
 
 	// fields set via after query
 	CloudPlatform CloudPlatform `json:"cloud_platform,omitzero" gorm:"-" swaggertype:"string" temporaljson:"cloud_platform,omitzero,omitempty"`
@@ -82,24 +71,6 @@ func (c *AppSandboxConfig) Indexes(db *gorm.DB) []migrations.Index {
 
 // NOTE: currently, only public repo vcs configs are supported when rendering policies and artifacts
 func (c *AppSandboxConfig) AfterQuery(tx *gorm.DB) error {
-	vcsCfg := c.PublicGitVCSConfig
-	if vcsCfg == nil {
-		return nil
-	}
-
-	// the below is all legacy
-	if strings.HasPrefix(vcsCfg.Directory, "aws") {
-		c.CloudPlatform = CloudPlatformAWS
-	}
-	if strings.HasPrefix(vcsCfg.Directory, "azure") {
-		c.CloudPlatform = CloudPlatformAzure
-	}
-
-	c.Artifacts.DeprovisionPolicy = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "deprovision.json")
-	c.Artifacts.ProvisionPolicy = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "provision.json")
-	c.Artifacts.TrustPolicy = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "trust.json")
-	c.Artifacts.CloudformationStackTemplate = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "cloudformation-template.yaml")
-
 	// set the vcs connection type correctly
 	if c.ConnectedGithubVCSConfig != nil {
 		c.VCSConnectionType = VCSConnectionTypeConnectedRepo

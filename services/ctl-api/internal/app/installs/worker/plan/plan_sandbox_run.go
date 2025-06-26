@@ -1,6 +1,8 @@
 package plan
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
@@ -172,13 +174,23 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, errors.Wrap(err, "unable to get org")
 	}
 	if org.SandboxMode {
+		pdcJSONByts := new(bytes.Buffer)
+		if err := json.Compact(pdcJSONByts, []byte(FakeTerraformPlanDisplayContents)); err != nil {
+			return nil, errors.Wrap(err, "unable to get json")
+		}
+
+		stJSONByts := new(bytes.Buffer)
+		if err := json.Compact(stJSONByts, []byte(FakeTerraformStateJSON)); err != nil {
+			return nil, errors.Wrap(err, "unable to get json")
+		}
+
 		plan.SandboxMode = &plantypes.SandboxMode{
 			Enabled: true,
-			TerraformSandboxMode: &plantypes.TerraformSandboxMode{
-				WorkspaceID:      install.InstallSandbox.TerraformWorkspace.ID,
-				StateJSON:        []byte(FakeTerraformStateJSON),
-				PlanContents: FakeTerraformPlanContents,
-				PlanDisplayContents:  FakeTerraformPlanDisplayContents,
+			Terraform: &plantypes.TerraformSandboxMode{
+				WorkspaceID:         install.InstallSandbox.TerraformWorkspace.ID,
+				StateJSON:           stJSONByts.Bytes(),
+				PlanContents:        FakeTerraformPlanContents,
+				PlanDisplayContents: pdcJSONByts.String(),
 			},
 			Outputs: map[string]any{
 				"namespaces": []string{

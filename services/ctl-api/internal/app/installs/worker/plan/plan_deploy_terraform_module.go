@@ -1,6 +1,8 @@
 package plan
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
@@ -137,11 +139,22 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 	}, nil
 }
 
-func (p *Planner) createTerraformDeploySandboxMode(ctx workflow.Context, req *plantypes.TerraformDeployPlan) *plantypes.TerraformSandboxMode {
-	return &plantypes.TerraformSandboxMode{
-		WorkspaceID:            req.TerraformBackend.WorkspaceID,
-		StateJSON:              []byte(FakeTerraformStateJSON),
-		PlanContents:               FakeTerraformPlanContents,
-		PlanDisplayContents:FakeTerraformPlanDisplayContents,
+func (p *Planner) createTerraformDeploySandboxMode(ctx workflow.Context, req *plantypes.TerraformDeployPlan) (*plantypes.TerraformSandboxMode, error) {
+	pdcJSONByts := new(bytes.Buffer)
+	if err := json.Compact(pdcJSONByts, []byte(FakeTerraformPlanDisplayContents)); err != nil {
+		return nil, errors.Wrap(err, "unable to get json")
 	}
+
+	stJSONByts := new(bytes.Buffer)
+	if err := json.Compact(stJSONByts, []byte(FakeTerraformStateJSON)); err != nil {
+		return nil, errors.Wrap(err, "unable to get json")
+	}
+
+	return &plantypes.TerraformSandboxMode{
+		WorkspaceID: req.TerraformBackend.WorkspaceID,
+
+		StateJSON:           stJSONByts.Bytes(),
+		PlanContents:        FakeTerraformPlanContents,
+		PlanDisplayContents: pdcJSONByts.String(),
+	}, nil
 }
