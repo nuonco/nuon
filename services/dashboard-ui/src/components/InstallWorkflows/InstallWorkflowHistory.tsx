@@ -99,7 +99,7 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                 <Link
                   key={iw?.id}
                   className="flex justify-between w-full history-event"
-                  href={`/${org?.id}/installs/${iw?.install_id}/history/${iw?.id}`}
+                  href={`/${org?.id}/installs/${iw?.install_id}/workflows/${iw?.id}`}
                   variant="ghost"
                 >
                   <span className="flex gap-4">
@@ -128,7 +128,7 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                     <YAStatus status={iw.status.status} />
                     <span>
                       <Link
-                        href={`/${org?.id}/installs/${iw?.install_id}/history/${iw?.id}`}
+                        href={`/${org?.id}/installs/${iw?.install_id}/workflows/${iw?.id}`}
                       >
                         <Text variant="med-12">
                           {sentanceCase(removeSnakeCase(iw?.type))}{' '}
@@ -147,7 +147,7 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                       />
                       <Link
                         className="text-sm font-medium"
-                        href={`/${org?.id}/installs/${iw?.install_id}/history/${iw?.id}`}
+                        href={`/${org?.id}/installs/${iw?.install_id}/workflows/${iw?.id}`}
                       >
                         View details <CaretRight />
                       </Link>
