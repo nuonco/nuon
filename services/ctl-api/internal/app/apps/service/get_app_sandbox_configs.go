@@ -64,7 +64,6 @@ func (s *service) findAppSandboxConfigs(ctx *gin.Context, orgID, appID string) (
 		}).
 		Preload("AppSandboxConfigs.PublicGitVCSConfig").
 		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
-		Preload("AppSandboxConfigs.AWSDelegationConfig").
 		Where("name = ? AND org_id = ?", appID, orgID).
 		Or("id = ?", appID).
 		First(&app)

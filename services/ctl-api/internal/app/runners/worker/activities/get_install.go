@@ -32,7 +32,6 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
 		Preload("AppSandboxConfig.PublicGitVCSConfig").
-		Preload("AppSandboxConfig.AWSDelegationConfig").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
 			return db.Order(views.TableOrViewName(db, &app.InstallInputs{}, ".created_at DESC"))
 		}).

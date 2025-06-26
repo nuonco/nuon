@@ -15,8 +15,11 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
-//go:embed fake_helm_plan.txt
-var FakeHelmPlanTxt string
+//go:embed fake_helm_plan.json
+var FakeHelmPlanJSON string
+
+//go:embed fake_helm_plan_display.json
+var FakeHelmPlanDisplayJSON string
 
 func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.HelmDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
@@ -129,6 +132,7 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 
 func (p *Planner) createHelmDeploySandboxMode(ctx workflow.Context, req *plantypes.HelmDeployPlan) *plantypes.HelmSandboxMode {
 	return &plantypes.HelmSandboxMode{
-		PlanText: FakeHelmPlanTxt,
+		PlanContents:        FakeHelmPlanJSON,
+		PlanDisplayContents: FakeHelmPlanDisplayJSON,
 	}
 }
