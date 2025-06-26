@@ -12,6 +12,7 @@ import {
   ScrollableDiv,
   Text,
 } from '@/stratus/components'
+import { ExampleDatePicker } from '@/stratus/components/form'
 import type { IPageProps } from '@/types'
 
 const AppsPage: FC<IPageProps<'org-id'>> = async ({ params }) => {
@@ -41,12 +42,14 @@ const AppsPage: FC<IPageProps<'org-id'>> = async ({ params }) => {
             <Text theme="muted">View your installs here.</Text>
           </HeadingGroup>
         </Header>
-        <Section className="divide-y">
+        <Section className="divide-y h-screen">
           <div className="flex gap-6">
             <ExampleModal />
             <ExampleToast />
             <PermToast />
           </div>
+
+          <ExampleDatePicker />
 
           <ErrorBoundary fallback="An error happened while loading installs">
             <Suspense fallback={'Loading...'}>Apps: TKTKTK</Suspense>
