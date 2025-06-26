@@ -90,7 +90,7 @@ export const AppCreateInstallButton: FC<IAppCreateInstallButton> = ({
                   }}
                   onSuccess={(data) => {
                     router.push(
-                      `/${orgId}/installs/${(data as Record<'installId' | 'workflowId', string>)?.installId}/history/${(data as Record<'installId' | 'workflowId', string>)?.workflowId}`
+                      `/${orgId}/installs/${(data as Record<'installId' | 'workflowId', string>)?.installId}/workflows/${(data as Record<'installId' | 'workflowId', string>)?.workflowId}`
                     )
                   }}
                   onCancel={() => {
