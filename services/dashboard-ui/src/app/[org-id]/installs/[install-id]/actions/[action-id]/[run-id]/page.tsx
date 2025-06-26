@@ -102,7 +102,7 @@ export default async function InstallWorkflow({ params }) {
       headingMeta={
         workflowRun?.install_workflow_id ? (
           <Link
-            href={`/${orgId}/installs/${installId}/history/${workflowRun?.install_workflow_id}?target=${actionWorkflowRunId}`}
+            href={`/${orgId}/installs/${installId}/workflows/${workflowRun?.install_workflow_id}?target=${actionWorkflowRunId}`}
           >
             <CaretLeft />
             View workflow
