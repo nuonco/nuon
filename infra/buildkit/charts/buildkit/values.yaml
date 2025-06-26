@@ -15,7 +15,7 @@ buildkit:
     privileged: true
   persistence:
     storageClass: "gp2"
-    size: "5Gi"
+    size: "50Gi"
   port: 1234
   
   # BuildKit configuration
@@ -26,16 +26,21 @@ buildkit:
         enabled: false
       oci:
         enabled: true
-        gc: true
-        gckeepstorage: 30000000000
-        snapshotter: "overlayfs"
+        gc: true                      # Enable garbage collection
+        gckeepstorage: 30000000000    # Keep up to 30GB of storage before triggering GC
+        snapshotter: "overlayfs"      # Use overlayfs snapshotter for filesystem layers
         gcpolicy:
+          # Policy for source code, cache mounts, and git checkouts
           - filters: ["type==source.local", "type==exec.cachemount", "type==source.git.checkout"]
-            keepBytes: 10240000000
-            keepDuration: 604800
-          - keepBytes: 30000000000
-          - all: true
-            keepBytes: 30000000000
+            keepBytes: 10240000000    # Keep ~10GB of these specific types of cache
+            keepDuration: 604800      # Keep for 7 days (in seconds)
+          
+          # General policy for other cache types
+          - keepBytes: 30000000000    # Keep up to 30GB of other cache types
+          
+          # Fallback policy
+          - all: true                 # Apply to any remaining cache entries
+            keepBytes: 30000000000    # Total cache shouldn't exceed 30GB
 
 # Envoy proxy configuration
 proxy:
