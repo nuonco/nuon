@@ -90,75 +90,75 @@ const AWSAccount: FC<Pick<TInstall, 'aws_account'>> = ({ aws_account }) => {
   )
 }
 
-const AWSPolicies: FC<Pick<TSandboxConfig, 'artifacts'>> = ({ artifacts }) => {
-  return (
-    <div className="flex flex-col gap-4">
-      <Text className="flex items-center gap-2 text-sm !font-medium leading-normal">
-        Policies{' '}
-        <Link
-          className="text-sm"
-          href="https://docs.nuon.co/guides/install-access-permissions"
-          target="_blank"
-          title="Install access permission documentation"
-          rel="noreferrer"
-        >
-          <QuestionMark />
-        </Link>
-      </Text>
-      <Text className="flex items-center gap-4 text-sm">
-        <Link href={artifacts?.trust_policy} target="_blank" rel="noreferrer">
-          Trust policy
-        </Link>
-
-        <Link
-          href={artifacts?.provision_policy}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Provision policy
-        </Link>
-
-        <Link
-          href={artifacts?.deprovision_policy}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Deprovision policy
-        </Link>
-      </Text>
-    </div>
-  )
-}
-
-export interface IInstallCloudPlatform {
-  install: TInstall
-}
-
-export const InstallCloudPlatform: FC<IInstallCloudPlatform> = ({
-  install,
-}) => {
-  const {
-    app_runner_config: { cloud_platform },
-  } = install
-  const isAWS = Boolean(install.aws_account)
-
-  return (
-    <div className="flex flex-col gap-6">
-      <Config>
-        <ConfigContent
-          label="Platform"
-          value={<InstallPlatform platform={cloud_platform} />}
-        />
-        <ConfigContent
-          label="Runner type"
-          value={install.app_runner_config?.app_runner_type}
-        />
-        {isAWS ? <AWSAccount {...install} /> : <AzureAccount {...install} />}
-      </Config>
-
-      {isAWS && (
-        <AWSPolicies artifacts={install?.app_sandbox_config?.artifacts} />
-      )}
-    </div>
-  )
-}
+/* const AWSPolicies: FC<Pick<TSandboxConfig, 'artifacts'>> = ({ artifacts }) => {
+ *   return (
+ *     <div className="flex flex-col gap-4">
+ *       <Text className="flex items-center gap-2 text-sm !font-medium leading-normal">
+ *         Policies{' '}
+ *         <Link
+ *           className="text-sm"
+ *           href="https://docs.nuon.co/guides/install-access-permissions"
+ *           target="_blank"
+ *           title="Install access permission documentation"
+ *           rel="noreferrer"
+ *         >
+ *           <QuestionMark />
+ *         </Link>
+ *       </Text>
+ *       <Text className="flex items-center gap-4 text-sm">
+ *         <Link href={artifacts?.trust_policy} target="_blank" rel="noreferrer">
+ *           Trust policy
+ *         </Link>
+ * 
+ *         <Link
+ *           href={artifacts?.provision_policy}
+ *           target="_blank"
+ *           rel="noreferrer"
+ *         >
+ *           Provision policy
+ *         </Link>
+ * 
+ *         <Link
+ *           href={artifacts?.deprovision_policy}
+ *           target="_blank"
+ *           rel="noreferrer"
+ *         >
+ *           Deprovision policy
+ *         </Link>
+ *       </Text>
+ *     </div>
+ *   )
+ * }
+ * 
+ * export interface IInstallCloudPlatform {
+ *   install: TInstall
+ * }
+ * 
+ * export const InstallCloudPlatform: FC<IInstallCloudPlatform> = ({
+ *   install,
+ * }) => {
+ *   const {
+ *     app_runner_config: { cloud_platform },
+ *   } = install
+ *   const isAWS = Boolean(install.aws_account)
+ * 
+ *   return (
+ *     <div className="flex flex-col gap-6">
+ *       <Config>
+ *         <ConfigContent
+ *           label="Platform"
+ *           value={<InstallPlatform platform={cloud_platform} />}
+ *         />
+ *         <ConfigContent
+ *           label="Runner type"
+ *           value={install.app_runner_config?.app_runner_type}
+ *         />
+ *         {isAWS ? <AWSAccount {...install} /> : <AzureAccount {...install} />}
+ *       </Config>
+ * 
+ *       {isAWS && (
+ *         <AWSPolicies artifacts={install?.app_sandbox_config?.artifacts} />
+ *       )}
+ *     </div>
+ *   )
+ * } */
