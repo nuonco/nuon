@@ -8,11 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
 
 type UpdateInstallRequest struct {
-	Name *string `json:"name"`
+	Name string `json:"name"`
 }
 
 func (c *UpdateInstallRequest) Validate(v *validator.Validate) error {
@@ -67,11 +68,13 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 	}
 
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPatcher(nil)).
 		Model(&currentInstall).
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("AppSandboxConfig").
-		Updates(req)
+		UpdateColumns(&app.Install{Name: req.Name})
+
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
