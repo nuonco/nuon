@@ -46,8 +46,8 @@ func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context, pa
 
 	return &app.ConnectedGithubVCSConfig{
 		Repo:            b.ConnectedGithubVCSConfig.Repo,
-		RepoName:        owner,
-		RepoOwner:       repo,
+		RepoName:        repo,
+		RepoOwner:       owner,
 		Directory:       b.ConnectedGithubVCSConfig.Directory,
 		Branch:          b.ConnectedGithubVCSConfig.Branch,
 		VCSConnectionID: vcsConnID,

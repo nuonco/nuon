@@ -36,6 +36,7 @@ type AppSecret struct {
 	Required     bool   `mapstructure:"required,omitempty"`
 	AutoGenerate bool   `mapstructure:"auto_generate,omitempty"`
 	Format       string `mapstructure:"format,omitempty"`
+	Default      string `mapstructure:"default,omitempty"`
 
 	// optional fields
 	KubernetesSync            bool   `mapstructure:"kubernetes_sync,omitempty"`
@@ -49,6 +50,7 @@ func (a AppSecret) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "description", "Description")
 	addDescription(schema, "required", "Whether or not the secret is required.")
 	addDescription(schema, "format", "Format of the secret")
+	addDescription(schema, "default", "Optional default value")
 
 	addDescription(schema, "kubernetes_secret_name", "The secret name to sync the secret into. Supports templating.")
 	addDescription(schema, "kubernetes_secret_namespace", "The namespace to sync the secret into. Supports templating.")
@@ -58,6 +60,17 @@ func (a *AppSecret) Validate() error {
 	if a.AutoGenerate && a.Required {
 		return ErrConfig{
 			Description: "both auto_generate and required can not be set.",
+		}
+	}
+
+	if a.Default != "" && a.Required {
+		return ErrConfig{
+			Description: "can not have both required and default set.",
+		}
+	}
+	if a.Default != "" && a.AutoGenerate {
+		return ErrConfig{
+			Description: "can not have both auto_generate and default set.",
 		}
 	}
 
