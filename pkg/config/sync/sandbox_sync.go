@@ -31,7 +31,6 @@ func (s *sync) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigReque
 	req := &models.ServiceCreateAppSandboxConfigRequest{
 		AppConfigID:             s.appConfigID,
 		TerraformVersion:        &s.cfg.Sandbox.TerraformVersion,
-		AwsDelegationIamRoleArn: s.cfg.Sandbox.AWSDelegationIAMRoleARN,
 		Variables:               map[string]string{},
 		EnvVars:                 map[string]string{},
 		VariablesFiles:          make([]string, 0),

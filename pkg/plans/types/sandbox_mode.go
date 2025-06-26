@@ -1,7 +1,7 @@
 package plantypes
 
 type MinSandboxMode struct {
-	SandboxMode *SandboxMode `json:"omitzero,omitempty"`
+	SandboxMode *SandboxMode `json:"sandbox_mode,omitzero,omitempty"`
 }
 
 type TerraformSandboxMode struct {
@@ -15,8 +15,8 @@ type TerraformSandboxMode struct {
 }
 
 type HelmSandboxMode struct {
-	// write resources into the api
-	PlanText string `json:"plan_text"`
+	PlanContents        string `json:"plan_contents"`
+	PlanDisplayContents string `json:"plan_display_contents"`
 }
 
 type SandboxMode struct {
@@ -24,6 +24,6 @@ type SandboxMode struct {
 
 	Outputs map[string]any `json:"outputs"`
 
-	*TerraformSandboxMode `json:"terraform,omitzero,omitempty"`
-	*HelmSandboxMode      `json:"helm,omitzero,omitempty"`
+	Terraform *TerraformSandboxMode `json:"terraform,omitzero,omitempty"`
+	Helm      *HelmSandboxMode      `json:"helm,omitzero,omitempty"`
 }

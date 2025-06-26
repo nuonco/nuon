@@ -50,7 +50,8 @@ func PreloadAppConfigInputConfig(db *gorm.DB) *gorm.DB {
 func PreloadAppConfigSandboxConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("SandboxConfig").
 		Preload("SandboxConfig.PublicGitVCSConfig").
-		Preload("SandboxConfig.ConnectedGithubVCSConfig")
+		Preload("SandboxConfig.ConnectedGithubVCSConfig").
+		Preload("SandboxConfig.ConnectedGithubVCSConfig.VCSConnection")
 }
 
 // runner config
