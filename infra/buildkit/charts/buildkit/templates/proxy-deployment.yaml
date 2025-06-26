@@ -17,6 +17,13 @@ spec:
       labels:
         io.kompose.service: proxy
     spec:
+      nodeSelector:
+        karpenter.sh/nodepool: {{ .Values.nodePool.name }}
+      tolerations:
+      - key: "pool.nuon.co"
+        operator: "Equal"
+        value: {{ .Values.nodePool.name }}
+        effect: "NoSchedule"
       containers:
         - image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag }}"
           name: proxy

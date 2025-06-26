@@ -16,6 +16,13 @@ spec:
       labels:
         app: remote-buildkit-agent
     spec:
+      nodeSelector:
+        karpenter.sh/nodepool: {{ .Values.nodePool.name }}
+      tolerations:
+        - key: "pool.nuon.co"
+          operator: "Equal"
+          value: {{ .Values.nodePool.name }}
+          effect: "NoSchedule"
       containers:
         - name: buildkitd
           image: "{{ .Values.buildkit.image.repository }}:{{ .Values.buildkit.image.tag }}"

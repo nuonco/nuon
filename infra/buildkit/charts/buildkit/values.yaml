@@ -1,5 +1,9 @@
 # Default values for buildkit chart
 
+# Node pool configuration
+nodePool:
+  name: "buildkit"  # The name of the node pool to deploy on
+
 # BuildKit agent configuration
 buildkit:
   replicas: 1
@@ -9,8 +13,8 @@ buildkit:
     pullPolicy: IfNotPresent
   resources:
     limits:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 10000m
+      memory: 24Gi
   securityContext:
     privileged: true
   persistence:
@@ -49,7 +53,10 @@ proxy:
     repository: envoyproxy/envoy-dev
     tag: latest
     pullPolicy: IfNotPresent
-  resources: {}
+  resources: 
+    limits:
+      cpu: 1000m
+      memory: 1Gi
   service:
     type: LoadBalancer
 
@@ -57,6 +64,7 @@ proxy:
   config:
     admin:
       port: 9901
+      
 
 # TLS configuration
 tls:
