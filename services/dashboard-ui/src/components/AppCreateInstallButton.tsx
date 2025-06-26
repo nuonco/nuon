@@ -5,7 +5,6 @@ import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Cube } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
-import { composeCloudFormationQuickCreateUrl } from '@/components/Installs/helpers'
 import { InstallForm } from '@/components/InstallForm'
 import { Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
@@ -99,7 +98,6 @@ export const AppCreateInstallButton: FC<IAppCreateInstallButton> = ({
                   }}
                   platform={platform}
                   inputConfig={inputConfig}
-                  cfLink={composeCloudFormationQuickCreateUrl(sandboxConfig)}
                 />
               )}
             </Modal>,
