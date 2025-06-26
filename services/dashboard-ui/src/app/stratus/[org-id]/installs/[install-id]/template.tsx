@@ -2,13 +2,13 @@
 
 import { usePathname } from 'next/navigation'
 import {
-  CalendarDots,
   HouseSimple,
   ShippingContainer,
   SneakerMove,
   Cards,
   Stack,
   TerminalWindow,
+  TreeStructure
 } from '@phosphor-icons/react/dist/ssr'
 import { InstallHeader, PageLayout, Page, PageNav } from '@/stratus/components'
 import { useInstall, useOrg } from '@/stratus/context'
@@ -79,9 +79,9 @@ export default function Template({ children }: { children: React.ReactNode }) {
                   text: 'Actions',
                 },
                 {
-                  path: `/history`,
-                  icon: <CalendarDots />,
-                  text: 'History',
+                  path: `/workflows`,
+                  icon: <TreeStructure />,
+                  text: 'Workflows',
                 },
               ]}
             />

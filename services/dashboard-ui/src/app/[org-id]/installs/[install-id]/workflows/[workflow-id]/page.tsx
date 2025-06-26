@@ -44,11 +44,11 @@ export default async function InstallWorkflow({ params }) {
           text: install.name,
         },
         {
-          href: `/${orgId}/installs/${install.id}/history`,
-          text: 'History',
+          href: `/${orgId}/installs/${install.id}/workflows`,
+          text: 'Workflows',
         },
         {
-          href: `/${orgId}/installs/${install.id}/history/${installWorkflowId}`,
+          href: `/${orgId}/installs/${install.id}/workflows/${installWorkflowId}`,
           text:
             installWorkflow?.name ||
             removeSnakeCase(sentanceCase(installWorkflow?.type)),
