@@ -198,7 +198,7 @@ const CreateInstallFromApp: FC<{
             }}
             onSuccess={(data) => {
               router.push(
-                `/${org?.id}/installs/${(data as Record<'installId' | 'workflowId', string>)?.installId}/history/${(data as Record<'installId' | 'workflowId', string>)?.workflowId}`
+                `/${org?.id}/installs/${(data as Record<'installId' | 'workflowId', string>)?.installId}/workflows/${(data as Record<'installId' | 'workflowId', string>)?.workflowId}`
               )
             }}
             onCancel={() => {

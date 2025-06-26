@@ -73,10 +73,10 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
                   onSuccess={(workflowId) => {
                     if (workflowId) {
                       router.push(
-                        `/${orgId}/installs/${install.id}/history/${workflowId}`
+                        `/${orgId}/installs/${install.id}/workflows/${workflowId}`
                       )
                     } else {
-                      router.push(`/${orgId}/installs/${install.id}/history`)
+                      router.push(`/${orgId}/installs/${install.id}/workflows`)
                     }
                   }}
                   onCancel={() => {
