@@ -27,14 +27,12 @@ interface IInstallForm {
     install: TInstall | string | Record<'installId' | 'workflowId', string>
   ) => void
   onCancel: () => void
-  cfLink?: string
 }
 
 export const InstallForm: FC<IInstallForm> = ({
   inputConfig,
   install,
   platform,
-  cfLink,
   ...props
 }) => {
   const { user } = useUser()
@@ -169,7 +167,7 @@ export const InstallForm: FC<IInstallForm> = ({
           )}
           {platform ? (
             platform === 'aws' ? (
-              <AWSFields cfLink={cfLink} />
+              <AWSFields />
             ) : (
               <AzureFields />
             )
@@ -208,7 +206,7 @@ export const InstallForm: FC<IInstallForm> = ({
   )
 }
 
-const AWSFields: FC<{ cfLink: string }> = ({ cfLink }) => {
+const AWSFields: FC<{ cfLink?: string }> = ({ cfLink }) => {
   const options = AWS_REGIONS.map((o) => ({
     value: o.value,
     label: o?.iconVariant
