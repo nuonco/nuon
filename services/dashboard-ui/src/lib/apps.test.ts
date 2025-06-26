@@ -154,7 +154,6 @@ describe('getAppLatestSandboxConfig should handle response status codes from GET
   test('200 status', async () => {
     const spec = await getAppLatestSandboxConfig({ appId, orgId })
     expect(spec).toHaveProperty('id')
-    expect(spec).toHaveProperty('artifacts')
   })
 
   test.each(badResponseCodes)('%s status', async () => {

@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/Status'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { ID, Text } from '@/components/Typography'
 import type { TInstall } from '@/types'
+import { AWS_REGIONS, AZURE_REGIONS, getFlagEmoji } from '@/utils'
 
 type TDataStatuses = {
   composite_component_status: string
@@ -27,6 +28,7 @@ type TData = {
   app: string
   appId: string
   platform: string
+  region: string | undefined
 }
 
 function parseInstallsToTableData(installs: Array<TInstall>): Array<TData> {
@@ -45,6 +47,11 @@ function parseInstallsToTableData(installs: Array<TInstall>): Array<TData> {
     app: install?.app?.name,
     appId: install?.app?.id,
     platform: install?.app_sandbox_config?.cloud_platform,
+    region: install?.aws_account
+      ? install?.aws_account?.region
+      : install?.azure_account
+        ? install.azure_account?.location
+        : undefined,
   }))
 }
 
@@ -131,6 +138,29 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
             <Text className="break-all">{props.getValue<string>()}</Text>
           </Link>
         ),
+      },
+      {
+        header: 'Region',
+        accessorKey: 'region',
+        cell: (props) => {
+          const region = props.row.original.region
+            ? props.row.original.platform === 'azure'
+              ? AZURE_REGIONS.find((r) => r.value === props.row.original.region)
+              : AWS_REGIONS.find((r) => r.value === props.row.original.region)
+            : null
+          return (
+            <Text className="break-all">
+              {region ? (
+                <>
+                  {getFlagEmoji(region.iconVariant?.substring(5))}{' '}
+                  {region?.text}
+                </>
+              ) : (
+                'Unknown'
+              )}
+            </Text>
+          )
+        },
       },
       {
         header: 'Platform',
