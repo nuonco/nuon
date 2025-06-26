@@ -206,7 +206,6 @@ const CreateInstallFromApp: FC<{
             }}
             platform={app.cloud_platform}
             inputConfig={inputConfig}
-            cfLink={''}
           />
         </>
       )}
