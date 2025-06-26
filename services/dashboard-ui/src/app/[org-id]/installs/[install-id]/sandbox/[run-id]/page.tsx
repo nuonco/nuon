@@ -76,7 +76,7 @@ export default async function SandboxRuns({ params }) {
       breadcrumb={[
         { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${orgId}/installs/${install.id}/history`,
+          href: `/${orgId}/installs/${install.id}/workflows`,
           text: install.name,
         },
         {

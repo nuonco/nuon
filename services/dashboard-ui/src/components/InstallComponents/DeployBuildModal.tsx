@@ -139,11 +139,11 @@ export const InstallDeployBuildModal: FC<{
 
                           if (workflowId) {
                             router.push(
-                              `/${orgId}/installs/${installId}/history/${workflowId}`
+                              `/${orgId}/installs/${installId}/workflows/${workflowId}`
                             )
                           } else {
                             router.push(
-                              `/${orgId}/installs/${installId}/history`
+                              `/${orgId}/installs/${installId}/workflows`
                             )
                           }
 

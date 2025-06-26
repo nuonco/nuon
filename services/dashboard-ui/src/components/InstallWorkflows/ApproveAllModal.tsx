@@ -43,8 +43,8 @@ export const WorkflowApproveAllModal: FC<IWorkflowApproveAllModal> = ({
   const [error, setError] = useState<string>()
 
   const workflowType = removeSnakeCase(workflow?.type)
-  const workflowPath = `/${orgId}/installs/${workflow?.install_id}/history/${workflow?.id}`
-  const historyPath = `/${orgId}/installs/${workflow?.install_id}/history`
+  const workflowPath = `/${orgId}/installs/${workflow?.install_id}/workflows/${workflow?.id}`
+  const historyPath = `/${orgId}/installs/${workflow?.install_id}/workflows`
 
   return (
     <>
