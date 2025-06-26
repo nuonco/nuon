@@ -57,7 +57,6 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		&app.AppInputGroup{},
 		&app.AppInput{},
 		&app.AppRunnerConfig{},
-		&app.AppAWSDelegationConfig{},
 		&app.AppSandboxConfig{},
 		&app.AppConfig{},
 		&app.App{},
