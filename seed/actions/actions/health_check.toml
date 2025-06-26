@@ -4,6 +4,10 @@ timeout = "30s"
 [[triggers]]
 type = "manual"
 
+[[triggers]]
+type = "cron"
+cron_schedule = "* * * * *"
+
 # echo something out
 [[steps]]
 name = "echo"

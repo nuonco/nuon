@@ -18,8 +18,6 @@ type AppSandboxConfig struct {
 	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty"`
 	VarsMap        map[string]string        `mapstructure:"vars,omitempty"`
 	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty"`
-
-	AWSDelegationIAMRoleARN string `mapstructure:"aws_delegation_iam_role_arn,omitempty"`
 }
 
 func (a *AppSandboxConfig) parse() error {

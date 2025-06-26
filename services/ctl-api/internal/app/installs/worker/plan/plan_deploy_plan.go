@@ -97,9 +97,14 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 
 		switch build.ComponentConfigConnection.Type {
 		case app.ComponentTypeHelmChart:
-			plan.SandboxMode.HelmSandboxMode = p.createHelmDeploySandboxMode(ctx, plan.HelmDeployPlan)
+			plan.SandboxMode.Helm = p.createHelmDeploySandboxMode(ctx, plan.HelmDeployPlan)
 		case app.ComponentTypeTerraformModule:
-			plan.SandboxMode.TerraformSandboxMode = p.createTerraformDeploySandboxMode(ctx, plan.TerraformDeployPlan)
+			sandboxPlan, err := p.createTerraformDeploySandboxMode(ctx, plan.TerraformDeployPlan)
+			if err != nil {
+				return nil, errors.Wrap(err, "unable to create sandbox plan")
+			}
+
+			plan.SandboxMode.Terraform = sandboxPlan
 		}
 	}
 

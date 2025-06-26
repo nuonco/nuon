@@ -33,7 +33,6 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("AppSandboxConfig").
-		Preload("AppSandboxConfig.AWSDelegationConfig").
 		Preload("InstallSandbox").
 		Preload("InstallSandbox.TerraformWorkspace").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {

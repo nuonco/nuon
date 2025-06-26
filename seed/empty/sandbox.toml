@@ -1,8 +1,8 @@
 terraform_version = "1.11.3"
 
-[public_repo]
-repo      = "nuonco/sandboxes"
-directory = "aws-empty"
+[connected_repo]
+repo      = "powertoolsdev/mono"
+directory = "infra/datadog"
 branch    = "main"
 
 [env_vars]

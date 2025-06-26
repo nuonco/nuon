@@ -1,0 +1,25 @@
+---
+title: '011 - Approval Improvements'
+description: 'Improvements to Approvals'
+---
+
+_June 26th, 2025_
+
+<div className="badge badge--primary">v0.19.590</div>
+
+## Improvements to Approvals
+
+You can now see a Helm or Terraform plan when updating an install. Each workflow will automatically prompt you to 
+approve the plan, and only proceed upon approval.
+
+## Inline Workflow Retries
+
+
+## Fixes
+
+* Default secrets are now respected. Adding a `default` field on a secret will be respected.
+* Fixed an issue where `connected_github` repos for sandboxes were not respected.
+* Selective component build on install input update
+* Improved ctl-api healthchecks
+* Inputs reference parsing
+
