@@ -23,4 +23,5 @@ const (
 	RunnerCtxKey          string = "runner"
 	RunnerIDCtxKey        string = "runner_id"
 	DisableViewCtxKey     string = "disable_view"
+	PatcherCtxKey         string = "patcher"
 )
