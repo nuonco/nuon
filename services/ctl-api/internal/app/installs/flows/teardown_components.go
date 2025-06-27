@@ -54,8 +54,8 @@ func TeardownComponents(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, e
 			continue
 		}
 
-		if installComp.Status == app.InstallComponentStatusInactive {
-			reason := fmt.Sprintf("install component %s is inactive", comp.Name)
+		if installComp.StatusV2.Status == app.Status(app.InstallComponentStatusInactive) || installComp.StatusV2.Status == app.Status("") {
+			reason := fmt.Sprintf("install component %s is not deployed", comp.Name)
 			deployStep, err := installSignalStep(ctx, installID, "skipped teardown "+comp.Name, pgtype.Hstore{
 				"reason": &reason,
 			}, nil)
