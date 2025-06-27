@@ -1,0 +1,57 @@
+package service
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+)
+
+type RemoveOrgUserRequest struct {
+	UserID string `json:"user_id"`
+}
+
+// @ID						RemoveUser
+// @Summary				Remove a user from the current org
+// @Description.markdown	remove_org_user.md
+// @Param					req	body	RemoveOrgUserRequest	true	"Input"
+// @Tags					orgs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.Account
+// @Router					/v1/orgs/current/remove-user [POST]
+func (s *service) RemoveUser(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	acct, err := cctx.AccountFromGinContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	var req RemoveOrgUserRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+
+	if err := s.authzClient.RemoveAccountOrgRoles(ctx, org.ID, req.UserID); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusAccepted, acct)
+}
