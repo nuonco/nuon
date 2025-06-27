@@ -78,6 +78,12 @@ type AppConfig struct {
 
 	// fields that are filled in via after query or views
 	Version int `json:"version,omitzero" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
+
+	AppBranchID *string    `json:"app_branch_id,omitzero" gorm:"index:idx_app_app_branch" temporaljson:"app_branch_id,omitzero,omitempty"`
+	AppBranch   *AppBranch `json:"app_branch" temporaljson:"app_branch,omitzero,omitempty"`
+
+	VCSConnectionCommitID *string              `json:"-" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
+	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit,omitzero" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
 }
 
 func (a AppConfig) UseView() bool {
