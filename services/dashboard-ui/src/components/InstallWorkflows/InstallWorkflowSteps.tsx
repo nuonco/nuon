@@ -100,7 +100,7 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x h-full">
       <div
-        className="md:col-span-4 h-[calc(100vh-195px)] overflow-auto"
+        className="md:col-span-4 overflow-auto"
         ref={scrollableRef}
       >
         <Section

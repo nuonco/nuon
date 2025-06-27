@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    optimizePackageImports: ['@/components', '@/stratus']
+  },
   images: {
     remotePatterns: [
       {
