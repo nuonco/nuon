@@ -50,6 +50,14 @@ export async function addSupportUsersToOrg(orgId: string) {
   )
 }
 
+export async function removeSupportUsersFromOrg(orgId: string) {
+  return adminOrgAction(
+    orgId,
+    'admin-remove-support-users',
+    'Failed to remove support users from the org'
+  )
+}
+
 export async function reprovisionOrg(orgId: string) {
   return adminOrgAction(
     orgId,
