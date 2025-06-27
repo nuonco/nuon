@@ -83,7 +83,7 @@ function diffFields(
           <span className="font-mono text-[11px] text-cool-grey-400 dark:text-cool-grey-200 w-fit">
             {key}:
           </span>
-          <span className="text-[11px] text-cool-grey-700 dark;text-cool-grey-100">
+          <span className="text-[11px] text-cool-grey-700 dark;text-cool-grey-100 break-all">
             {JSON.stringify(before[key])}
           </span>
         </div>
