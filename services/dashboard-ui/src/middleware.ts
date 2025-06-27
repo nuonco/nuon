@@ -9,10 +9,22 @@ export default async function middleware(request: NextRequest) {
   const authResponse = await auth0.middleware(request)
   const { pathname } = new URL(request.url)
   const headers = new Headers(request.headers)
+  const reqCookieNames = request.cookies.getAll().map((cookie) => cookie.name)
 
   // set origin url encase of login redirect
   // TODO(nnnat): don't think we need this anymore
   headers.set('x-origin-path', pathname)
+
+  if (request.nextUrl.pathname === '/api/auth/login') {
+    // This is a workaround for this issue: https://github.com/auth0/nextjs-auth0/issues/1917
+    // The auth0 middleware sets some transaction cookies that are not deleted after the login flow completes.
+    // This causes stale cookies to be used in subsequent requests and eventually causes the request header to be rejected because it is too large.
+    reqCookieNames.forEach((cookie) => {
+      if (cookie.startsWith('__txn')) {
+        authResponse.cookies.delete(cookie)
+      }
+    })
+  }
 
   // if path starts with /auth, let the auth middleware handle it
   if (
