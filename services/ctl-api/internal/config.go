@@ -117,8 +117,8 @@ type Config struct {
 	AppURL        string `config:"app_url" validate:"required"`
 	RunnerAPIURL  string `config:"runner_api_url" validate:"required"`
 	PublicAPIURL  string `config:"public_api_url" validate:"required"`
+	AdminAPIURL   string `config:"admin_api_url" validate:"required"`
 	TemporalUIURL string `config:"temporal_ui_url" validate:"required"`
-	AdminAPIUIURL string `config:"admin_api_url" validate:"required"`
 
 	// flags for controlling the background workers
 	ForceSandboxMode         bool          `config:"force_sandbox_mode"`
