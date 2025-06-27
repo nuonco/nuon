@@ -63,6 +63,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.DELETE("/v1/orgs/current", s.DeleteOrg)
 	api.PATCH("/v1/orgs/current", s.UpdateOrg)
 	api.POST("/v1/orgs/current/user", s.CreateUser)
+	api.POST("/v1/orgs/current/remove-user", s.RemoveUser)
 
 	// accounts
 	api.GET("/v1/orgs/current/accounts", s.GetOrgAccounts)
@@ -86,6 +87,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 	api.POST("/v1/orgs/:org_id/admin-add-user", s.CreateOrgUser)
 	api.POST("/v1/orgs/:org_id/admin-support-users", s.CreateSupportUsers)
+	api.POST("/v1/orgs/:org_id/admin-remove-support-users", s.RemoveSupportUsers)
 	api.POST("/v1/orgs/:org_id/admin-delete", s.AdminDeleteOrg)
 	api.POST("/v1/orgs/:org_id/admin-reprovision", s.AdminReprovisionOrg)
 	api.POST("/v1/orgs/:org_id/admin-deprovision", s.AdminDeprovisionOrg)
