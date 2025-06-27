@@ -25,6 +25,7 @@ func (a *Activities) getActionWorkflows(ctx context.Context, installID string) (
 		Where(app.InstallActionWorkflow{
 			InstallID: installID,
 		}).
+		Preload("ActionWorkflow").
 		Find(&actionWorkflows)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get action workflows")
