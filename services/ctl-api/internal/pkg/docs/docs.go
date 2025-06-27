@@ -1,7 +1,10 @@
 package docs
 
 import (
+	"net/url"
+
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/services/config"
 	"github.com/powertoolsdev/mono/services/ctl-api/docs/admin"
@@ -28,10 +31,12 @@ func (r *Docs) RegisterPublicRoutes(g *gin.Engine) error {
 	case config.Development:
 		public.SwaggerInfo.Host = "localhost:8081"
 		public.SwaggerInfo.Schemes = []string{"http"}
-	case config.Production:
-		public.SwaggerInfo.Host = "api.nuon.co"
-	case config.Stage:
-		public.SwaggerInfo.Host = "api.stage.nuon.co"
+	default:
+		u, err := url.Parse(r.cfg.PublicAPIURL)
+		if err != nil {
+			return errors.Wrap(err, "unable to parse public api url")
+		}
+		public.SwaggerInfo.Host = u.Host
 	}
 
 	g.GET("/oapi/v3", r.getOAPI3publicSpec)
@@ -46,12 +51,14 @@ func (r *Docs) RegisterPublicRoutes(g *gin.Engine) error {
 
 func (r *Docs) RegisterInternalRoutes(g *gin.Engine) error {
 	switch r.cfg.Env {
-	case "development":
+	case config.Development:
 		admin.SwaggerInfoadmin.Host = "localhost:8082"
-	case "prod":
-		admin.SwaggerInfoadmin.Host = "ctl.nuon.us-west-2.prod.nuon.cloud"
-	case "stage":
-		admin.SwaggerInfoadmin.Host = "ctl.nuon.us-west-2.stage.nuon.cloud"
+	default:
+		u, err := url.Parse(r.cfg.AdminAPIURL)
+		if err != nil {
+			return errors.Wrap(err, "unable to parse admin api url")
+		}
+		admin.SwaggerInfoadmin.Host = u.Host
 	}
 
 	admin.SwaggerInfoadmin.Version = r.cfg.Version
@@ -78,10 +85,12 @@ func (r *Docs) RegisterRunnerRoutes(g *gin.Engine) error {
 	case config.Development:
 		runner.SwaggerInforunner.Host = "localhost:8083"
 		runner.SwaggerInforunner.Schemes = []string{"http"}
-	case config.Production:
-		runner.SwaggerInforunner.Host = "runner.nuon.co"
-	case config.Stage:
-		runner.SwaggerInforunner.Host = "runner.stage.nuon.co"
+	default:
+		u, err := url.Parse(r.cfg.RunnerAPIURL)
+		if err != nil {
+			return errors.Wrap(err, "unable to parse runner api url")
+		}
+		admin.SwaggerInfoadmin.Host = u.Host
 	}
 
 	g.GET("/oapi/v3", r.getOAPI3RunnerSpec)
