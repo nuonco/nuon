@@ -23,29 +23,29 @@ module "ecr" {
   repository_policy             = data.aws_iam_policy_document.ecr_policy.json
   repository_lifecycle_policy = jsonencode({
     rules = [
-     {
-            "rulePriority": 1,
-            "description": "Retain last 100 images",
-            "selection": {
-                "tagStatus": "any",
-                "countType": "imageCountMoreThan",
-                "countNumber": 100
-            },
-            "action": {
-                "type": "expire"
-            }
+      {
+        "rulePriority": 1,
+        "description": "Remove untagged images older than 7 days",
+        "selection": {
+          "tagStatus": "untagged",
+          "countType": "sinceImagePushed",
+          "countUnit": "days",
+          "countNumber": 7
+        },
+        "action": {
+          "type": "expire"
+        }
       },
       {
-        rulePriority = 2,
-        description  = "Remove untagged images older than 7 days",
-        selection = {
-          tagStatus    = "untagged",
-          countType    = "sinceImagePushed",
-          countUnit    = "days",
-          countNumber  = 7
+        "rulePriority": 2,
+        "description": "Retain last 100 images",
+        "selection": {
+          "tagStatus": "any",
+          "countType": "imageCountMoreThan",
+          "countNumber": 100
         },
-        action = {
-          type = "expire"
+        "action": {
+          "type": "expire"
         }
       }
     ]
@@ -82,29 +82,29 @@ module "extra-ecr-repos" {
   repository_policy               = data.aws_iam_policy_document.ecr_policy.json
   repository_lifecycle_policy = jsonencode({
     rules = [
-     {
-            "rulePriority": 1,
-            "description": "Retain last 100 images",
-            "selection": {
-                "tagStatus": "any",
-                "countType": "imageCountMoreThan",
-                "countNumber": 100
-            },
-            "action": {
-                "type": "expire"
-            }
+      {
+        "rulePriority": 1,
+        "description": "Remove untagged images older than 7 days",
+        "selection": {
+          "tagStatus": "untagged",
+          "countType": "sinceImagePushed",
+          "countUnit": "days",
+          "countNumber": 7
+        },
+        "action": {
+          "type": "expire"
+        }
       },
       {
-        rulePriority = 2,
-        description  = "Remove untagged images older than 7 days",
-        selection = {
-          tagStatus    = "untagged",
-          countType    = "sinceImagePushed",
-          countUnit    = "days",
-          countNumber  = 7
+        "rulePriority": 2,
+        "description": "Retain last 100 images",
+        "selection": {
+          "tagStatus": "any",
+          "countType": "imageCountMoreThan",
+          "countNumber": 100
         },
-        action = {
-          type = "expire"
+        "action": {
+          "type": "expire"
         }
       }
     ]
