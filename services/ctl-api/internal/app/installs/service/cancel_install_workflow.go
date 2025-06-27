@@ -53,11 +53,12 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 		return
 	}
 
+	if err := s.cancelInstallWorkflow(ctx, wf.ID); err != nil {
+		ctx.Error(errors.Wrap(err, "unable to cancel workflow"))
+		return
+	}
 	if wf.Status.Status == app.StatusPending {
-		if err := s.cancelInstallWorkflow(ctx, wf.ID); err != nil {
-			ctx.Error(errors.Wrap(err, "unable to cancel workflow"))
-			return
-		}
+		ctx.JSON(http.StatusAccepted, true)
 	}
 
 	id := fmt.Sprintf("sig-execute-flow-%s", wf.InstallID)
