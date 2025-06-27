@@ -46,3 +46,18 @@ export async function connectGitHubToOrg({
     return res
   })
 }
+
+export async function removeUserFromOrg(
+  data: { user_id: string },
+  orgId: string
+): Promise<TInvite> {
+  return mutateData({
+    errorMessage: 'Unable to remove user',
+    data,
+    path: `orgs/current/remove-user`,
+    orgId,
+  }).then((invite) => {
+    revalidatePath(`/${orgId}/team`)
+    return invite
+  })
+}

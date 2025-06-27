@@ -26,6 +26,7 @@ import {
   restartOrg,
   restartOrgRunners,
   restartOrgRunner,
+  removeSupportUsersFromOrg,
   shutdownInstallRunnerJob,
   teardownInstallComponents,
   updateInstallSandbox,
@@ -58,6 +59,11 @@ export const AdminModal: FC<{
       action: () => addSupportUsersToOrg(params?.['org-id'] as string),
       description: 'Add all nuon support users to current org',
       text: 'Add support users',
+    },
+    {
+      action: () => removeSupportUsersFromOrg(params?.['org-id'] as string),
+      description: 'Remove all nuon support users from current org',
+      text: 'Remove support users',      
     },
     {
       action: () => reprovisionOrg(params?.['org-id'] as string),
