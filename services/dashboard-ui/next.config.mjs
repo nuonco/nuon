@@ -27,6 +27,15 @@ const nextConfig = {
       },
     ]
   },
+  async redirects() {
+    return [
+      {
+        source: '/:orgId/installs/:installId/history',
+        destination: '/:orgId/installs/:installId/workflows',
+        permanent: true, // This sends a 308 status code
+      },
+    ];
+  },
   onDemandEntries: {
     // period (in ms) where the server will keep pages in the buffer
     maxInactiveAge: 15 * 60 * 1000, // 15 minutes
