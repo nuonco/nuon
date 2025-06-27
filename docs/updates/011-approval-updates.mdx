@@ -3,23 +3,50 @@ title: '011 - Approval Improvements'
 description: 'Improvements to Approvals'
 ---
 
-_June 26th, 2025_
+_June 27th, 2025_
 
 <div className="badge badge--primary">v0.19.590</div>
 
-## Improvements to Approvals
-
-You can now see a Helm or Terraform plan when updating an install. Each workflow will automatically prompt you to 
-approve the plan, and only proceed upon approval.
-
 ## Inline Workflow Retries
 
+Failures can now be retried inline, and a new step will be generated.
+
+![Inline workflow retries interface](assets/2025-06-27-15-38-48.png)
+
+## Auto Approve Workflow
+
+You can now approve all steps in a workflow.
+
+![Auto Approve Workflow interface](assets/2025-06-27-15-33-52.png)
+
+## Renamed History to Workflows
+
+In preparation of the new Audit Log tool, we are renaming history to workflows.
+
+![Inline workflow retries interface](assets/2025-06-27-15-25-59.png)
+
+## Remove Team Member
+
+You can now remove team members from your org.
+
+![Update](assets/2025-06-27-15-24-23.png)
+
+## Improved Approval Diffs
+
+The diffs displayed for Helm and Terraform approval steps have been improved to preview more of the underlying changes.
+
+## Approvals on Deploy and Sandbox Run Pages
+
+We now keep approvals for all deploys and sandbox runs on the detail pages.
+
+![Approvals pinned interface](assets/2025-06-27-15-30-22.png)
 
 ## Fixes
 
 * Default secrets are now respected. Adding a `default` field on a secret will be respected.
 * Fixed an issue where `connected_github` repos for sandboxes were not respected.
-* Selective component build on install input update
-* Improved ctl-api healthchecks
-* Inputs reference parsing
-
+* Selective component build on install input update.
+* Improved ctl-api healthchecks.
+* Inputs reference parsing.
+* Fixed a bug where authentication cookie could become too large and show a 431 response.
+* Fixed a bug where components that were not deployed, would still be torndown during deprovision.
