@@ -4,13 +4,13 @@ data "aws_caller_identity" "current" {}
 # This should be enabled for any services deployed to EKS
 module "ecr" {
   source  = "terraform-aws-modules/ecr/aws"
-  version = ">= 1.3.2"
+  version = ">= 2.4.0"
 
   create                                    = var.enable_ecr == true && var.archived == false
   create_repository                         = true
   create_repository_policy                  = false
   attach_repository_policy                  = true
-  create_lifecycle_policy                   = false
+  create_lifecycle_policy                   = true
   create_registry_replication_configuration = true
 
   // NOTE(jm): we enable mutable images to help when debugging our CI systems. The only time we would _ever_ run into an
@@ -21,6 +21,35 @@ module "ecr" {
   repository_encryption_type    = "KMS"
   repository_image_scan_on_push = true
   repository_policy             = data.aws_iam_policy_document.ecr_policy.json
+  repository_lifecycle_policy = jsonencode({
+    rules = [
+     {
+            "rulePriority": 1,
+            "description": "Retain last 100 images",
+            "selection": {
+                "tagStatus": "any",
+                "countType": "imageCountMoreThan",
+                "countNumber": 100
+            },
+            "action": {
+                "type": "expire"
+            }
+      },
+      {
+        rulePriority = 2,
+        description  = "Remove untagged images older than 7 days",
+        selection = {
+          tagStatus    = "untagged",
+          countType    = "sinceImagePushed",
+          countUnit    = "days",
+          countNumber  = 7
+        },
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
   registry_replication_rules = [
     {
       destinations = [{
@@ -43,7 +72,7 @@ module "extra-ecr-repos" {
   create_repository                         = true
   create_repository_policy                  = false
   attach_repository_policy                  = true
-  create_lifecycle_policy                   = false
+  create_lifecycle_policy                   = true
   create_registry_replication_configuration = true
 
   repository_name                 = "${var.name}/${element(var.extra_ecr_repos, count.index)}"
@@ -51,6 +80,35 @@ module "extra-ecr-repos" {
   repository_encryption_type      = "KMS"
   repository_image_scan_on_push   = true
   repository_policy               = data.aws_iam_policy_document.ecr_policy.json
+  repository_lifecycle_policy = jsonencode({
+    rules = [
+     {
+            "rulePriority": 1,
+            "description": "Retain last 100 images",
+            "selection": {
+                "tagStatus": "any",
+                "countType": "imageCountMoreThan",
+                "countNumber": 100
+            },
+            "action": {
+                "type": "expire"
+            }
+      },
+      {
+        rulePriority = 2,
+        description  = "Remove untagged images older than 7 days",
+        selection = {
+          tagStatus    = "untagged",
+          countType    = "sinceImagePushed",
+          countUnit    = "days",
+          countNumber  = 7
+        },
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
   registry_replication_rules = [
     {
       destinations = [{
