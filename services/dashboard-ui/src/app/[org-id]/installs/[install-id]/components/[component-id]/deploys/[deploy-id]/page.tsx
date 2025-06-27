@@ -274,6 +274,23 @@ export default async function InstallComponentDeploy({ params }) {
           <LogStreamProvider initLogStream={deploy?.log_stream}>
             <OperationLogsSection heading="Deploy logs" />
           </LogStreamProvider>
+
+          {installWorkflow &&
+          step &&
+          step?.approval &&
+          step?.approval?.response ? (
+            <Section
+              className="border-t"
+              childrenClassName="flex flex-col gap-6"
+              heading="Approve change"
+            >
+              <ApprovalStep
+                step={step}
+                approval={step.approval}
+                workflowId={installWorkflow?.id}
+              />
+            </Section>
+          ) : null}
         </div>
 
         <div className="divide-y flex flex-col md:col-span-4">
