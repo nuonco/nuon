@@ -9,8 +9,10 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/config/refs"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
@@ -34,6 +36,11 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		return errors.Wrap(err, "unable to get install version")
 	}
 
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get app config")
+	}
+
 	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         sreq.WorkflowStepID,
 		StepTargetID:   version.ID,
@@ -55,22 +62,26 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		l.Info("sandbox mode org")
 		workflow.Sleep(ctx, time.Second*5)
 
+		stackRefs := helpers.GetStackReferences(appCfg)
+		data := map[string]any{
+			"account":                  generics.GetFakeObj[string](),
+			"region":                   install.AWSAccount.Region,
+			"url":                      generics.GetFakeObj[string](),
+			"maintenance_iam_role_arn": generics.GetFakeObj[string](),
+			"provision_iam_role_arn":   generics.GetFakeObj[string](),
+			"deprovision_iam_role_arn": generics.GetFakeObj[string](),
+			"reprovision_iam_role_arn": generics.GetFakeObj[string](),
+			"vpc_id":                   generics.GetFakeObj[string](),
+			"account_id":               generics.GetFakeObj[string](),
+			"public_subnets":           generics.GetFakeObj[string](),
+			"private_subnets":          generics.GetFakeObj[string](),
+			"runner_subnet":            generics.GetFakeObj[string](),
+		}
+		data = generics.MergeMap(data, refs.GetFakeRefs(stackRefs))
+
 		run, err := activities.AwaitCreateSandboxInstallStackVersionRun(ctx, &activities.CreateSandboxInstallStackVersionRunRequest{
 			StackVersionID: version.ID,
-			Data: map[string]string{
-				"account":                  generics.GetFakeObj[string](),
-				"region":                   install.AWSAccount.Region,
-				"url":                      generics.GetFakeObj[string](),
-				"maintenance_iam_role_arn": generics.GetFakeObj[string](),
-				"provision_iam_role_arn":   generics.GetFakeObj[string](),
-				"deprovision_iam_role_arn": generics.GetFakeObj[string](),
-				"reprovision_iam_role_arn": generics.GetFakeObj[string](),
-				"vpc_id":                   generics.GetFakeObj[string](),
-				"account_id":               generics.GetFakeObj[string](),
-				"public_subnets":           generics.GetFakeObj[string](),
-				"private_subnets":          generics.GetFakeObj[string](),
-				"runner_subnet":            generics.GetFakeObj[string](),
-			},
+			Data:           generics.ToStringMap(data),
 		})
 		if err != nil {
 			return errors.Wrap(err, "unable to create sandbox version run")

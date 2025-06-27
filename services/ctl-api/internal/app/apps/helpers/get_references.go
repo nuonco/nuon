@@ -46,3 +46,23 @@ func GetActionReferences(cfg *app.AppConfig, action string) []refs.Ref {
 
 	return rfs
 }
+
+func GetStackReferences(cfg *app.AppConfig) []refs.Ref {
+	rfs := make([]refs.Ref, 0)
+	for _, cc := range cfg.ComponentConfigConnections {
+		for _, ref := range cc.Refs {
+			if ref.Type == refs.RefTypeInstallStack {
+				rfs = append(rfs, ref)
+			}
+		}
+	}
+	for _, cc := range cfg.ActionWorkflowConfigs {
+		for _, ref := range cc.Refs {
+			if ref.Type == refs.RefTypeInstallStack {
+				rfs = append(rfs, ref)
+			}
+		}
+	}
+
+	return rfs
+}

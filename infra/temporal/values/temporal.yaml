@@ -25,6 +25,8 @@ server:
   dynamicConfig:
      limit.historySize.error: 
       - value: 209715200
+     limit.blobSize.error:
+      - value: 5242880
   config:
     prometheus:
       framework: opentelemetry
