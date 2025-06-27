@@ -100,7 +100,7 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flowID, componentID
 	}
 
 	steps := make([]*app.FlowStep, 0)
-	triggers, err := activities.AwaitGetInstallActionWorkflowsByTriggerType(ctx, activities.GetInstallActionWorkflowsByTriggerTypeRequest{
+	installActions, err := activities.AwaitGetInstallActionWorkflowsByTriggerType(ctx, activities.GetInstallActionWorkflowsByTriggerTypeRequest{
 		ComponentID: comp.ID,
 		InstallID:   installID,
 		TriggerType: triggerTyp,
@@ -109,11 +109,11 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flowID, componentID
 		return nil, errors.Wrap(err, "unable to get components")
 	}
 
-	for _, trigger := range triggers {
+	for _, installAction := range installActions {
 		sig := &signals.Signal{
 			Type: signals.OperationExecuteActionWorkflow,
 			InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
-				InstallActionWorkflowID: trigger.ID,
+				InstallActionWorkflowID: installAction.ID,
 				TriggerType:             triggerTyp,
 				TriggeredByID:           flowID,
 				TriggeredByType:         string(triggerTyp),
@@ -124,7 +124,7 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flowID, componentID
 				},
 			},
 		}
-		name := fmt.Sprintf("%s %s action workflow run", comp.Name, triggerTyp)
+		name := fmt.Sprintf("%s Action Run (%s)", installAction.ActionWorkflow.Name, triggerTyp)
 		step, err := installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig)
 		if err != nil {
 			return nil, err
@@ -198,7 +198,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Fl
 
 func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.Flow, triggerTyp app.ActionWorkflowTriggerType) ([]*app.FlowStep, error) {
 	steps := make([]*app.FlowStep, 0)
-	triggers, err := activities.AwaitGetInstallActionWorkflowsByTriggerType(ctx, activities.GetInstallActionWorkflowsByTriggerTypeRequest{
+	installActions, err := activities.AwaitGetInstallActionWorkflowsByTriggerType(ctx, activities.GetInstallActionWorkflowsByTriggerTypeRequest{
 		InstallID:   installID,
 		TriggerType: triggerTyp,
 	})
@@ -206,11 +206,11 @@ func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.F
 		return nil, errors.Wrap(err, "unable to get components")
 	}
 
-	for _, trigger := range triggers {
+	for _, installAction := range installActions {
 		sig := &signals.Signal{
 			Type: signals.OperationExecuteActionWorkflow,
 			InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
-				InstallActionWorkflowID: trigger.ID,
+				InstallActionWorkflowID: installAction.ID,
 				TriggerType:             triggerTyp,
 				TriggeredByID:           flw.ID,
 				TriggeredByType:         string(triggerTyp),
@@ -224,7 +224,7 @@ func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.F
 				},
 			},
 		}
-		name := fmt.Sprintf("%s action workflow run", triggerTyp)
+		name := fmt.Sprintf("%s Action Run (%s)", installAction.ActionWorkflow.Name, triggerTyp)
 		step, err := installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig)
 		if err != nil {
 			return nil, err
