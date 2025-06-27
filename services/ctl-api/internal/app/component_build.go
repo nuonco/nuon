@@ -36,6 +36,7 @@ type ComponentBuild struct {
 
 	LogStream LogStream `json:"log_stream,omitzero" gorm:"polymorphic:Owner;" temporaljson:"log_stream,omitzero,omitempty"`
 
+	// DEPRECATED: will retain the field to connect against the last component config connection that set this build
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id,omitzero" gorm:"notnull" temporaljson:"component_config_connection_id,omitzero,omitempty"`
 	ComponentConfigConnection   ComponentConfigConnection `json:"-" temporaljson:"component_config_connection,omitzero,omitempty"`
 
@@ -55,6 +56,9 @@ type ComponentBuild struct {
 	ComponentID            string `gorm:"-" json:"component_id,omitzero" temporaljson:"component_id,omitzero,omitempty"`
 	ComponentName          string `gorm:"-" json:"component_name,omitzero" temporaljson:"component_name,omitzero,omitempty"`
 	ComponentConfigVersion int    `gorm:"-" json:"component_config_version,omitzero" temporaljson:"component_config_version,omitzero,omitempty"`
+
+	// checksum of our intermediate component config
+	Checksum string `json:"checksum,omitzero" gorm:"default null" temporaljson:"checksum,omitzero,omitempty"`
 }
 
 func (c *ComponentBuild) BeforeCreate(tx *gorm.DB) error {

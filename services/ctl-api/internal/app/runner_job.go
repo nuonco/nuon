@@ -81,6 +81,7 @@ const (
 	RunnerJobTypeTerraformModuleBuild RunnerJobType = "terraform-module-build"
 	RunnerJobTypeHelmChartBuild       RunnerJobType = "helm-chart-build"
 	RunnerJobTypeNOOPBuild            RunnerJobType = "noop-build"
+	RunnerJobTypeAppConfigSync        RunnerJobType = "app-config-sync" // Slightly out of place b/c it's operating on app configs
 
 	// sync job types
 	RunnerJobTypeOCISync  RunnerJobType = "oci-sync"
@@ -122,7 +123,8 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		RunnerJobTypeContainerImageBuild,
 		RunnerJobTypeNOOPBuild,
 		RunnerJobTypeTerraformModuleBuild,
-		RunnerJobTypeHelmChartBuild:
+		RunnerJobTypeHelmChartBuild,
+		RunnerJobTypeAppConfigSync:
 		return RunnerJobGroupBuild
 
 		// syncing
