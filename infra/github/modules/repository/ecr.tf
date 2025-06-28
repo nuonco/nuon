@@ -36,18 +36,6 @@ module "ecr" {
           "type": "expire"
         }
       },
-      {
-        "rulePriority": 2,
-        "description": "Retain last 100 images",
-        "selection": {
-          "tagStatus": "any",
-          "countType": "imageCountMoreThan",
-          "countNumber": 100
-        },
-        "action": {
-          "type": "expire"
-        }
-      }
     ]
   })
   registry_replication_rules = [
@@ -95,18 +83,6 @@ module "extra-ecr-repos" {
           "type": "expire"
         }
       },
-      {
-        "rulePriority": 2,
-        "description": "Retain last 100 images",
-        "selection": {
-          "tagStatus": "any",
-          "countType": "imageCountMoreThan",
-          "countNumber": 100
-        },
-        "action": {
-          "type": "expire"
-        }
-      }
     ]
   })
   registry_replication_rules = [
