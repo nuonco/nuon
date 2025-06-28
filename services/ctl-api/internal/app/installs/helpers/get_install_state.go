@@ -5,9 +5,11 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/conc/pool"
 	"gorm.io/gorm"
 
 	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/types/outputs"
 	"github.com/powertoolsdev/mono/pkg/types/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
@@ -18,26 +20,103 @@ import (
 func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool) (*state.State, error) {
 	is := state.New()
 
+	var (
+		install      *app.Install
+		appCfg       *app.AppConfig
+		installComps []app.InstallComponent
+		stack        *app.InstallStack
+		sandboxRuns  []app.InstallSandboxRun
+		actions      []app.InstallActionWorkflow
+		secrets      *outputs.SyncSecretsOutput
+	)
+
+	p := pool.New().WithErrors()
+
 	// collect all data up front
-	install, err := h.getStateInstall(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
+	p.Go(func() error {
+		var err error
+		install, err = h.getStateInstall(ctx, installID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install")
+		}
+
+		return nil
+	})
+	p.Go(func() error {
+		var err error
+		install, err := h.getStateInstall(ctx, installID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install")
+		}
+
+		appCfg, err = h.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get app config")
+		}
+
+		return nil
+	})
+	p.Go(func() error {
+		var err error
+		installComps, err = h.getInstallComponentsState(ctx, installID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install components")
+		}
+		return nil
+	})
+	p.Go(func() error {
+		var err error
+		stack, err = h.getInstallStack(ctx, installID)
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.Wrap(err, "unable to get install stack")
+			}
+		}
+		return nil
+	})
+	p.Go(func() error {
+		var err error
+		sandboxRuns, err = h.getInstallSandboxRuns(ctx, installID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install sandbox runs")
+		}
+		return nil
+	})
+
+	p.Go(func() error {
+		var err error
+		actions, err = h.getInstallActionWorkflows(ctx, installID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get actions")
+		}
+
+		return nil
+	})
+	p.Go(func() error {
+		var err error
+		install, err := h.getStateInstall(ctx, installID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install")
+		}
+
+		secrets, err = h.getSecrets(ctx, installID, install.RunnerID)
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.Wrap(err, "unable to get secrets")
+			}
+		}
+
+		return nil
+	})
+	if err := p.Wait(); err != nil {
+		return nil, errors.Wrap(err, "unable to get data for state")
 	}
 
-	appCfg, err := h.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get app config")
-	}
-
+	// build the state with all the resources here
 	is.ID = install.ID
 	is.Name = install.Name
 	is.Inputs = h.toInputState(install.CurrentInstallInputs, appCfg, redacted)
 	is.Cloud = h.toCloudAccount(install)
-
-	installComps, err := h.getInstallComponentsState(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install components")
-	}
 
 	comps := h.toComponents(installComps)
 	is.Components = make(map[string]any, 0)
@@ -58,35 +137,13 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 		is.Runner = h.toRunnerState(install.RunnerGroup.Runners[0])
 	}
 
-	sandboxRuns, err := h.getInstallSandboxRuns(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install sandbox runs")
-	}
 	is.Sandbox = h.toSandboxesState(sandboxRuns)
 	if len(sandboxRuns) > 0 {
 		is.Domain = h.toDomainState(&sandboxRuns[0])
 	}
 
-	actions, err := h.getInstallActionWorkflows(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get actions")
-	}
 	is.Actions = h.toActions(actions)
-
-	stack, err := h.getInstallStack(ctx, installID)
-	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.Wrap(err, "unable to get install stack")
-		}
-	}
 	is.InstallStack = h.toInstallStackState(stack)
-
-	secrets, err := h.getSecrets(ctx, installID, install.RunnerID)
-	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.Wrap(err, "unable to get secrets")
-		}
-	}
 	is.Secrets = secrets
 
 	// NOTE(JM): this is purely for historical and legacy reasons, and will be removed once we migrate all users to
