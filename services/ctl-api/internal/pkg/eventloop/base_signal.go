@@ -13,8 +13,9 @@ import (
 )
 
 type BaseSignal struct {
-	CtxPayload   *propagator.Payload `json:"ctx_payload"`
+	CtxPayload      *propagator.Payload `json:"ctx_payload"`
 	SignalListeners []SignalListener    `json:"signal_listeners"`
+	CGroup          string              `json:"cgroup`
 }
 
 func (BaseSignal) WorkflowName() string {
@@ -23,6 +24,10 @@ func (BaseSignal) WorkflowName() string {
 
 func (BaseSignal) WorkflowID(id string) string {
 	return "event-loop-" + id
+}
+
+func (b BaseSignal) ConcurrencyGroup() string {
+	return b.CGroup
 }
 
 func (b *BaseSignal) PropagateContext(ctx cctx.ValueContext) error {
