@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/gin-gonic/gin"
@@ -31,6 +32,11 @@ type CreateTerraformModuleComponentConfigRequest struct {
 	Dependencies []string `json:"dependencies"`
 	References   []string `json:"references"`
 	Checksum     string   `json:"checksum"`
+}
+
+type LatestTerraformVersion struct {
+	Version   string
+	Timestamp time.Time
 }
 
 const MinTerraformVersion = "1.8.0"
@@ -188,7 +194,14 @@ type GitHubRelease struct {
 	Prerelease bool   `json:"prerelease"`
 }
 
+var latestTerraformVersion = LatestTerraformVersion{}
+
 func getLatestTerraformVersion() (string, error) {
+	fiveMinutes := 5 * time.Minute
+	if latestTerraformVersion.Version != "" && time.Since(latestTerraformVersion.Timestamp) < fiveMinutes {
+		return latestTerraformVersion.Version, nil // 🎯 Cache hit - no API call
+	}
+
 	url := "https://api.github.com/repos/hashicorp/terraform/releases/latest"
 
 	resp, err := http.Get(url)
@@ -208,5 +221,11 @@ func getLatestTerraformVersion() (string, error) {
 
 	// Remove 'v' prefix if present
 	version := strings.TrimPrefix(release.TagName, "v")
+
+	latestTerraformVersion = LatestTerraformVersion{
+		Version:   version,
+		Timestamp: time.Now(),
+	}
+
 	return version, nil
 }
