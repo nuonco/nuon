@@ -219,7 +219,6 @@ installer_synthetics:
 byoc_synthetics:
   instances:
     byoc:
-      nuon-dev-main: nuon-dev-main.nuon.run
       nuon-dev-main-us-west-2: nuon-dev-main-us-west-2.nuon.run
     retool:
       nuon-prod: byoc.retool.com
