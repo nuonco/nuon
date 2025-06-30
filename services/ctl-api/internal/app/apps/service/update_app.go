@@ -14,10 +14,12 @@ import (
 )
 
 type UpdateAppRequest struct {
-	Name            string `json:"name"`
-	Description     string `json:"description"`
-	DisplayName     string `json:"display_name"`
+	Name            string  `json:"name"`
+	Description     string  `json:"description"`
+	DisplayName     string  `json:"display_name"`
 	SlackWebhookURL *string `json:"slack_webhook_url"`
+	ConfigRepo      *string `json:"config_repo"`
+	ConfigDirectory *string `json:"config_directory"`
 }
 
 func (c *UpdateAppRequest) Validate(v *validator.Validate) error {
@@ -27,23 +29,23 @@ func (c *UpdateAppRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						UpdateApp
-//	@Summary				update an app
-//	@Description.markdown	update_app.md
-//	@Param					app_id	path	string				true	"app ID"
-//	@Param					req		body	UpdateAppRequest	true	"Input"
-//	@Tags					apps
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{object}	app.App
-//	@Router					/v1/apps/{app_id} [patch]
+// @ID						UpdateApp
+// @Summary				update an app
+// @Description.markdown	update_app.md
+// @Param					app_id	path	string				true	"app ID"
+// @Param					req		body	UpdateAppRequest	true	"Input"
+// @Tags					apps
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.App
+// @Router					/v1/apps/{app_id} [patch]
 func (s *service) UpdateApp(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
@@ -71,13 +73,20 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 		ID: appID,
 	}
 
+	updates := app.App{
+		Name:        req.Name,
+		Description: generics.NewNullString(req.Description),
+		DisplayName: generics.NewNullString(req.DisplayName),
+	}
+
+	if req.ConfigRepo != nil && req.ConfigDirectory != nil {
+		updates.ConfigRepo = *req.ConfigRepo
+		updates.ConfigDirectory = *req.ConfigDirectory
+	}
+
 	res := s.db.WithContext(ctx).
 		Model(&currentApp).
-		Updates(app.App{
-			Name:        req.Name,
-			Description: generics.NewNullString(req.Description),
-			DisplayName: generics.NewNullString(req.DisplayName),
-		})
+		Updates(updates)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update app: %w", res.Error)
 	}
@@ -87,7 +96,7 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 
 	if req.SlackWebhookURL != nil {
 		res = s.db.WithContext(ctx).
-      Select("slack_webhook_url").
+			Select("slack_webhook_url").
 			Model(&app.NotificationsConfig{}).
 			Where(&app.NotificationsConfig{
 				OwnerID: currentApp.ID,
@@ -102,3 +111,4 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 
 	return &currentApp, nil
 }
+
