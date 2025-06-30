@@ -30,11 +30,20 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
+	// vcs connections
+	api.POST("/v1/vcs/connections", s.CreateConnection)
 	api.GET("/v1/vcs/connections", s.GetConnections)
 	api.GET("/v1/vcs/connections/:connection_id", s.GetConnection)
+
+	// vcs connection repos
 	api.GET("/v1/vcs/connected-repos", s.GetAllConnectedRepos)
 
-	api.POST("/v1/vcs/connections", s.CreateConnection)
+	// vcs connection branches
+	api.POST("/v1/vcs/connections/:connection_id/branches", s.CreateConnectionBranch)
+	api.PATCH("/v1/vcs/connections/:connection_id/branches/:connection_branch_id", s.UpdateConnectionBranch)
+	api.GET("/v1/vcs/branches", s.GetVCSBranches)
+
+	// other
 	api.POST("/v1/vcs/connection-callback", s.CreateConnectionCallback)
 	return nil
 }

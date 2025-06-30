@@ -54,6 +54,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.PATCH("/v1/apps/:app_id/config/:app_config_id", s.UpdateAppConfig)
 	api.POST("/v1/apps/:app_id/config/:app_config_id/update-installs", s.UpdateAppConfigInstalls)
 	api.GET("/v1/apps/:app_id/config/:app_config_id/graph", s.GetAppConfigGraph)
+	api.GET("/v1/apps/:app_id/config-sync-run/:app_config_sync_run_id", s.GetAppConfigSyncRun)
 
 	// app sandbox management
 	api.POST("/v1/apps/:app_id/sandbox-config", s.CreateAppSandboxConfig)
@@ -93,6 +94,11 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/apps/:app_id/secrets", s.GetAppSecrets)
 	api.DELETE("/v1/apps/:app_id/secret/:secret_id", s.DeleteAppSecret)
 
+	// app branches
+	api.POST("/v1/apps/:app_id/branches", s.CreateAppBranch)
+	api.GET("/v1/apps/:app_id/branches", s.GetAppBranches)
+	api.GET("/v1/apps/:app_id/branches/:app_branch_id/configs", s.GetAppBranchAppConfigs)
+
 	// TODO deprecate
 	api.GET("/v1/apps/:app_id/latest-break-glass-config", s.GetLatestAppBreakGlassConfig)
 	api.GET("/v1/apps/:app_id/runner-latest-config", s.GetAppRunnerLatestConfig)
@@ -118,6 +124,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.GET("/v1/apps/:app_id/config/:app_config_id", s.GetRunnerAppConfig)
+	api.GET("/v1/apps/:app_id/config-sync-run/:app_config_sync_run_id", s.GetAppConfigSyncRun)
 	return nil
 }
 
