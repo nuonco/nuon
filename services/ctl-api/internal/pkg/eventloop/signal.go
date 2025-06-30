@@ -18,6 +18,7 @@ import (
 type SignalType string
 
 type Signal interface {
+	// WorkflowID returns the string ID of the event loop workflow to which this signal is being sent.
 	WorkflowID(id string) string
 	WorkflowName() string
 	Namespace() string
@@ -27,6 +28,13 @@ type Signal interface {
 
 	// for managing intra-workflow communication
 	Listeners() []SignalListener
+
+	// ConcurrencyGroup returns the name of the concurrency group this signal belongs to.
+	// Signals in different concurrency groups execute independently. Signals in the same group
+	// execute sequentially in the order they are received by the event loop.
+	//
+	// The empty string identifies the default group.
+	ConcurrencyGroup() string
 
 	// for managing context
 	GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error)
