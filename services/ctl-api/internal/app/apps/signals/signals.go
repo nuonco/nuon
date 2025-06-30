@@ -56,6 +56,15 @@ type RequestSignal struct {
 
 var _ eventloop.Signal = (*Signal)(nil)
 
+func (s *Signal) ConcurrencyGroup() string {
+	switch s.Type {
+	case OperationExecuteFlow:
+		return "flows"
+	default:
+		return ""
+	}
+}
+
 func (s *Signal) Validate(v *validator.Validate) error {
 	if err := v.Struct(s); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
