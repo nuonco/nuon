@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -24,10 +25,10 @@ type VCSConnectionCommit struct {
 	VCSConnection   VCSConnection `json:"-" temporaljson:"vcs_connection,omitzero,omitempty"`
 	VCSConnectionID string        `json:"vcs_connection_id,omitzero" gorm:"notnull" temporaljson:"vcs_connection_id,omitzero,omitempty"`
 
-	VCSConnectionRepoID *string            `json:"vcs_connection_repo_id,omitzero" gorm:"default:null" temporaljson:"vcs_connection_repo_id,omitzero,omitempty"`
-	VCSConnectionRepo   *VCSConnectionRepo `json:"-" temporaljson:"vcs_connection_repo,omitzero,omitempty"`
+	VCSConnectionRepoID generics.NullString `json:"vcs_connection_repo_id,omitzero" gorm:"default:null" temporaljson:"vcs_connection_repo_id,omitzero,omitempty"`
+	VCSConnectionRepo   *VCSConnectionRepo  `json:"-" temporaljson:"vcs_connection_repo,omitzero,omitempty"`
 
-	VCSConnectionBranchID *string              `json:"vcs_connection_branch_id,omitzero" gorm:"default:null" temporaljson:"vcs_connection_branch_id,omitzero,omitempty"`
+	VCSConnectionBranchID generics.NullString  `json:"vcs_connection_branch_id,omitzero" gorm:"default:null" temporaljson:"vcs_connection_branch_id,omitzero,omitempty"`
 	VCSConnectionBranch   *VCSConnectionBranch `json:"-" temporaljson:"vcs_connection_branch,omitzero,omitempty"`
 
 	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_builds,omitzero,omitempty"`
