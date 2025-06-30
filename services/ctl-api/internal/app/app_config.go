@@ -8,6 +8,7 @@ import (
 
 	"github.com/lib/pq"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
@@ -79,10 +80,10 @@ type AppConfig struct {
 	// fields that are filled in via after query or views
 	Version int `json:"version,omitzero" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
 
-	AppBranchID *string    `json:"app_branch_id,omitzero" gorm:"index:idx_app_app_branch" temporaljson:"app_branch_id,omitzero,omitempty"`
-	AppBranch   *AppBranch `json:"app_branch" temporaljson:"app_branch,omitzero,omitempty"`
+	AppBranchID generics.NullString `json:"app_branch_id,omitzero" gorm:"index:idx_app_app_branch" swaggertype:"string" temporaljson:"app_branch_id,omitzero,omitempty"`
+	AppBranch   *AppBranch          `json:"app_branch" temporaljson:"app_branch,omitzero,omitempty"`
 
-	VCSConnectionCommitID *string              `json:"-" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
+	VCSConnectionCommitID generics.NullString  `json:"-"  swaggertype:"string" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
 	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit,omitzero" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
 }
 
