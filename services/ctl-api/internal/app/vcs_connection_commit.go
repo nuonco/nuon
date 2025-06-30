@@ -27,7 +27,7 @@ type VCSConnectionCommit struct {
 	VCSConnectionRepoID *string            `json:"vcs_connection_repo_id,omitzero" gorm:"default:null" temporaljson:"vcs_connection_repo_id,omitzero,omitempty"`
 	VCSConnectionRepo   *VCSConnectionRepo `json:"-" temporaljson:"vcs_connection_repo,omitzero,omitempty"`
 
-	VCSConnectionBranchID *string              `json:"vcs_connection_branch_id,omitzero" gorm:"defaukt:null" temporaljson:"vcs_connection_branch_id,omitzero,omitempty"`
+	VCSConnectionBranchID *string              `json:"vcs_connection_branch_id,omitzero" gorm:"default:null" temporaljson:"vcs_connection_branch_id,omitzero,omitempty"`
 	VCSConnectionBranch   *VCSConnectionBranch `json:"-" temporaljson:"vcs_connection_branch,omitzero,omitempty"`
 
 	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_builds,omitzero,omitempty"`
