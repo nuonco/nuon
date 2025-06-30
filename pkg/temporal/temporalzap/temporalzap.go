@@ -35,7 +35,7 @@ func (log *Logger) fields(keyvals []interface{}) []zap.Field {
 	}
 
 	if len(other)%2 != 0 {
-		return []zap.Field{zap.Error(fmt.Errorf("odd number of keyvals pairs: %v", other))}
+		return append(fields, zap.Error(fmt.Errorf("odd number of keyvals pairs: %v", other)))
 	}
 
 	for i := 0; i < len(other); i += 2 {
