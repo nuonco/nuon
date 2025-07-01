@@ -133,7 +133,7 @@
   position: relative;
 }
 
-.timeline-event:before {
+.timeline:not(.new) .timeline-event:before {
   content: '';
   height: calc(100% - 1.25rem);
   left: 1.26rem;
@@ -142,7 +142,7 @@
   top: 2.4rem;
 }
 
-.timeline-event:last-of-type:before {
+.timeline:not(.new) .timeline-event:last-of-type:before {
   display: none;
 }
 
