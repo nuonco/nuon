@@ -14,10 +14,9 @@ locals {
 }
 
 resource "datadog_synthetics_test" "byoc-ctl-api" {
-  # combine the map (org: [install_name: root_domain, ...]) into a list of tuples [(org, install_name, root_domain)]
   for_each = local.instances_map
 
-  name      = "[byoc] ctl-api: ${each.value.org_name}"
+  name      = "[byoc] ${each.value.org_name}: ${each.value.instance_name}: ctl-api"
   type      = local.vars.byoc_synthetics.config.type
   subtype   = local.vars.byoc_synthetics.config.subtype
   status    = local.vars.byoc_synthetics.config.status
@@ -53,10 +52,9 @@ resource "datadog_synthetics_test" "byoc-ctl-api" {
 }
 
 resource "datadog_synthetics_test" "byoc-dashboard-ui" {
-  # combine the map (org: [install_name: root_domain, ...]) into a list of tuples [(org, install_name, root_domain)]
   for_each = local.instances_map
 
-  name      = "[byoc] ctl-api: ${each.value.org_name}"
+  name      = "[byoc] ${each.value.org_name}: ${each.value.instance_name}: dashboard-ui"
   type      = local.vars.byoc_synthetics.config.type
   subtype   = local.vars.byoc_synthetics.config.subtype
   status    = local.vars.byoc_synthetics.config.status
