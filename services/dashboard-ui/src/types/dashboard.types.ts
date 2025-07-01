@@ -5,7 +5,7 @@ export type TRouteParams<S extends string | number | symbol = string> = Record<
   string
 >
 export type TRouteSearchParams<S extends string | number | symbol = string> =
-  Record<S, string | string[] | undefined>
+  Record<S, string>
 
 export interface IPageProps<
   P extends string | number | symbol = string,
@@ -31,4 +31,9 @@ export type TNavLink = {
   path: string
   text: string
   isExternal?: boolean
+}
+
+export type TPaginationPageData = {
+  hasNext: string
+  offset: string
 }
