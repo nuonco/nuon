@@ -322,13 +322,13 @@ As soon as you kick off the install provisioning, you should see the new install
 
 ### Create the CloudFormation Stack in AWS
 
-Click or copy the CloudFormation link to open it in your AWS account. You will need to log in to your AWS account if you are not already logged in. This creates a VM and installs the Nuon Runner in your AWS account, which will be used to provision the install.
+Click or copy the CloudFormation link to open it in your AWS account. You will need to log in to your AWS account if you are not already logged in. This creates a VPC, required policies that Nuon expects, an Autoscaling Group, a VM with Docker and a container that installs the Nuon Build Runner in your AWS account, which will be used to provision the Install of your App. Scroll down to the bottom of the page, accept the defaults, and click the Create Stack button.
 
 ![CloudFormation Stack](/images/get-started/create-your-first-app/tutorial-7.jpeg)
 
 ### Monitor the CloudFormation Stack creation in AWS
 
-Click or copy the CloudFormation link to open it in your AWS account. You will need to log in to your AWS account if you are not already logged in. This creates a VM and installs the Nuon Runner in your AWS account, which will be used to provision the install.
+Monitor the CloudFormation stack creation in the AWS console. This will take a few minutes to complete. You can also pull up the AWS EC2 console and see the EC2 VM appear at some point with the install Id in its name. The Nuon Dashboard will not provide feedback until the Runner is up and connected to Nuon.
 
 ![Stack Log](/images/get-started/create-your-first-app/tutorial-8.jpeg)
 
@@ -338,6 +338,14 @@ If plan steps require approvals, you will need to approve them in the Dashboard.
 
 ![Workflow](/images/get-started/create-your-first-app/tutorial-10.jpeg)
 
+In the AWS console, you can see the EKS cluster being created.
+
+![Cluster](/images/get-started/create-your-first-app/tutorial-11.jpeg)
+
+In the AWS console, you can see the Application Load Balancer being created and the Target Group being created for the Whoami service.
+
+![ALB](/images/get-started/create-your-first-app/tutorial-12.jpeg)
+
 ### Inspect the Install
 
 When the install has provisioned, and the deploys have completed, copy the install ID from the UI and curl the API to verify it's running.
@@ -345,6 +353,41 @@ When the install has provisioned, and the deploys have completed, copy the insta
 ```sh
 curl https://whoami.{install_id}.nuon.run
 ```
+
+You should see a response similar to the following:
+
+```bash
+Hostname: whoami-78ffb6cbf9-rhtlb
+IP: 127.0.0.1
+IP: ::1
+IP: 10.128.130.230
+IP: fe80::1076:d7ff:fe3c:3bab
+RemoteAddr: 10.128.0.10:11270
+GET / HTTP/1.1
+Host: whoami.inlgekffpkqv08yy8ayt7mxuyy.nuon.run
+User-Agent: curl/8.7.1
+Accept: */*
+X-Amzn-Trace-Id: Root=1-6864407f-5e2b57f16533e41347ae8c8c
+X-Forwarded-For: 136.49.24.124
+X-Forwarded-Port: 443
+```
+
+## Deprovision the Install
+
+Nuon is mindful of your public cloud spend, so provide the following deprovisioning steps. Deprovisioning the Install is a two-step process. First, you need to deprovision the Install in the Nuon Dashboard, which will deprovision the resources to install your App.  Once that is completed successfully, you then need to delete the CloudFormation stack in the AWS console, which removes the Build Runner by destroying the EC2 VM, ASG, and VPC.
+
+<Note>
+Be sure to back up any data you want to keep before deprovisioning the Install, as this will delete all resources created by the Install.
+</Note>
+
+
+## Manually Deprovision the Install
+
+If deprovisioning the Install in the Dashboard fails, there is a `error-destroy.sh` script in the [Nuon Managed Sandboxes](/concepts/sandboxes#nuon-managed-sandboxes) repository that you can use to manually deprovision the Install. This script will remove all resources created by the Install, including the EKS cluster, ALB, certificates, and Route53 DNS records.
+
+<Note>
+You still have to delete the CloudFormation stack in the AWS console after running this script to remove the Build Runner, ASG, EC2 VM, and VPC.
+</Note>
 
 ## Wrapping Up and Next Steps
 
