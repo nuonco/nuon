@@ -1,155 +1,162 @@
 ---
-title: 'App Inputs'
-description: "App inputs allow you to define customer provided values that can be used to configure your app."
+title: 'Inputs'
+description: "Inputs allow you to define customer provided values that can be used to configure your App."
 ---
 
-Inputs are used to collect customer provider values, for configuring your app.
+Inputs are used to collect customer provider values for configuring your App.
 
-## Defining App Inputs
+## Defining Inputs
 
-Add inputs to your app using the following configuration block
+Inputs are configured in a `inputs.toml` file inside the root of your App Config directory.
 
-```toml TOML
-[inputs]
-[[inputs.input]]
+Add Inputs to your App using the following configuration block
+
+```toml inputs.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+
+[[group]]
+name = "network"
+description = "Configure the install's network settings."
+display_name = "Network"
+
 name         = "vpc_id"
 display_name = "VPC ID"
+group        = "network"
 description  = "ID of the VPC to install the app into."
 default      = ""
 required     = true
 sensitive    = false
 ```
 
-## Configuration Using App Inputs
+## Configuration Using Inputs
 
-App inputs can be used to configure both sandboxes and components. All inputs are made available via
+Inputs can be used to configure both Sandboxes and Components. All Inputs are made available via
 [variable](/guides/using-variables) configuration.
 
-All inputs are accessed using `{{.nuon.install.inputs.<input-name>}}`.
+Inputs are defined in a `inputs.toml` file inside the root of your App Config directory.
+
+All Inputs are accessed using `{{.nuon.install.inputs.<input-name>}}`.
 
 ### Configuring Sandboxes
 
-You can configure sandboxes by using install inputs as `var`s.
+You can configure Sandboxes by using Inputs as `var`s.
 
-For example, to use the `vpc_id` input, as a variable to configure the `aws-eks-byovpc` sandbox:
+For example, to use the `root_domain` Input, as a variable to configure the Sandbox:
 
-```toml nuon.<your-app>.toml
-[sandbox]
-terraform_version = "1.6.3"
-[sandbox.public_repo]
-directory = "aws-eks-byovpc"
-repo      = "nuonco/sandboxes"
+```toml sandbox.toml
+
+#:schema https://api.nuon.co/v1/general/config-schema?source=sandbox
+terraform_version = "1.11.3"
+
+[public_repo]
+directory = "."
+repo      = "nuonco/aws-eks-karpenter-sandbox"
 branch    = "main"
-[sandbox.vars]
-vpc_id = "{{.nuon.install.inputs.vpc_id}}"
+
+[vars]
+public_root_domain   = "{{ .nuon.inputs.inputs.root_domain }}"
 ```
 
 ### Configuring Components
 
-Depending upon the component type, you can use install inputs to configure components using Helm values, Terraform
+Depending upon the Component type, you can use install Inputs to configure Components using Helm values, Terraform
 variables or environment variables.
 
-To use inputs in a Terraform module.
+To use Inputs in a Terraform module.
 
-```toml nuon.<your-app>.toml
-[[components]]
-name              = "database"
+```toml components.database.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
 type              = "terraform_module"
-terraform_version = "1.6.3"
-[components.connected_repo]
+name              = "database"
+terraform_version = "1.11.3"
+
+[public_repo]
 directory = "terraform"
 repo      = "your-org/your-repo"
 branch    = "main"
-[components.vars]
+
+[vars]
 DATABASE_PASSWORD = "{{.nuon.install.inputs.database_password}}"
 DATABASE_HOST     = "{{.nuon.install.inputs.database_host}}"
 ```
 
-To use inputs in a Helm chart.
+To use inputs in a Helm chart Component.
 
-```toml nuon.<your-app>.toml
-[[components]]
-name   = "database"
-[components.connected_repo]
+```toml components.helm-database.toml
+
+type   = "helm_chart"
+name   = "helm-database"
+chart_name = "database"
+
+[public_repo]
 directory = "helm"
 repo      = "your-org/your-repo"
 branch    = "main"
-[components.values]
+
+[values]
 DATABASE_PASSWORD = "{{.nuon.install.inputs.database_password}}"
 DATABASE_HOST     = "{{.nuon.install.inputs.database_host}}"
 ```
 
 To use inputs in a Docker image.
 
-```toml nuon.<your-app>.toml
-[[components]]
-name   = "docker-build"
+```toml components.docker-build.toml
+
 type   = "docker_build"
-[components.connected_repo]
+name   = "docker-build"
+
+[public_repo]
 directory = "."
 repo      = "your-org/your-repo"
 branch    = "main"
+
 # use an input to pass in a docker registry password, when building an image
-[components.env_vars]
+[vars]
 docker_build_registry_password = "{{.nuon.install.inputs.docker_build_registry_password}}"
-```
-
-To use inputs in a Kubernetes job.
-
-```toml nuon.<your-app>.toml
-[[components]]
-name      = "job"
-type      = "job"
-image_url = "httpbin"
-tag       = "latest"
-[components.env_vars]
-ENV_VAR_API_TOKEN = "{{.nuon.install.inputs.api_token}}"
 ```
 
 ## App Input Groups
 
-You can organize inputs into groups, which are useful for structuring how they are visualized in the installer. By 
-default, all inputs are created in the `default` group.
+You can organize Inputs into Groups, which are useful for structuring how they are visualized in the installer. By 
+default, all Inputs are created in the `default` group.
 
-To create a group, and add an input to it, simply declare the group in your config or terraform and set the `group` 
+To create a Group, and add an Input to it, simply declare the Group in your config or terraform and set the `group` 
 field on any input belonging to it.
 
-```toml nuon.<your-app>.toml
-[[inputs.group]]
-name = "sandbox"
-description = "Sandbox inputs"
-display_name = "Sandbox inputs"
+```toml inputs.toml
+#:schema http://localhost:8081/v1/general/config-schema?source=inputs
+[[group]]
+name         = "db"
+description  = "Configuration for the database "
+display_name = "Database configuration"
 
-[[inputs.input]]
-name = "vpc_id"
-description = "vpc_id to install application into"
-default = ""
-sensitive = false
-display_name = "VPC ID"
-group = "sandbox"
+[[input]]
+name         = "db_password"
+description  = "Password to use for the database."
+default      = ""
+sensitive    = true
+display_name = "Password"
+group        = "db"
 ```
 
-## App Inputs For Customer Resources
+## Inputs For Customer Resources
 
-App inputs are commonly used to allow a customer to provide access to existing resources. For example, an input can be
+Inputs are commonly used to allow a customer to provide access to existing resources. For example, an Input can be
 used for:
 
 * accepting a database url, or database ID to connect to
 * accepting a VPC ID to install an app into
 * accepting a token to access a third party cloud provider or account
 
-The [nuon managed sandboxes](/concepts/sandboxes#nuon-managed-sandboxes) offer "bring-your-own-vpc" options, where inputs are
-used to accept the ID of a customer managed VPC for installation.
-
-You can even use app inputs to manage resources from [third party cloud providers](/concepts/platforms#supporting-custom-platforms).
+You can even use Inputs to manage resources from [third party cloud providers](/concepts/platforms#supporting-custom-platforms).
 
 ## Updating Inputs
 
-If you add a required input _after_ an install is created, the inputs must be added to the install before it can process
-  any new sandbox updates or component provision/deprovision jobs.
+If you add a required Input _after_ an install is created, the Inputs must be added to the Install before it can process
+  any new Sandbox updates or Component provision/deprovision jobs.
 
-Currently, updating inputs is only supported via our [api](/api-ref/installs/update-an-install).
+Currently, updating Inputs is only supported via our [api](/api-ref/installs/update-an-install).
 
 <Note>
-We recommend avoiding adding backwards incompatible input changes in the same app.
+We recommend avoiding adding backwards incompatible Input changes in the same App.
 </Note>

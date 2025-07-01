@@ -1,9 +1,9 @@
 ---
 title: 'Supported Platforms'
-description: "You can deploy existing apps that use Kubernetes, AWS ECS, AWS Lambda or anything that can be containerized. We are currently testing Azure support with a handful of early customers."
+description: "You can deploy existing apps that use Kubernetes, AWS ECS, AWS Lambda, Azure Kubernetes Service or anything that can be containerized."
 ---
 
-Each Nuon app allows you to deploy to a single platform, by combining a [Sandbox](/concepts/sandboxes) with your application and
+Each App allows you to deploy to a single platform, by combining a [Sandbox](/concepts/sandboxes) with your application and
 infrastructure code. This document outlines the supported platforms, and how you can use a platform that is not
 currently supported by Nuon.
 
@@ -14,68 +14,32 @@ While Nuon has first class support for the following platforms, [terraform compo
 
 ## AWS EKS
 
-Nuon supports running your app via [AWS EKS](https://aws.amazon.com/eks/).
-You can create apps that provision a completely new network (VPC) and k8s cluster, or use an existing customer managed network or cluster (using [app-inputs](/concepts/app-inputs)).
+Nuon supports running your App via [AWS EKS](https://aws.amazon.com/eks/).
+You can create apps that provision a completely new network (VPC) and k8s cluster, or use an existing customer managed network or cluster (using [Inputs](/concepts/app-inputs)).
 
-To use AWS EKS, configure your app with the following:
+Nuon maintains the following EKS Sandboxes as GitHub repositories.
 
-```toml nuon.<your-app>.toml
-[sandbox]
-terraform_version = "1.7.5"
-[sandbox.public_repo]
-directory = "aws-eks"
-repo = "nuonco/sandboxes"
-branch = "main"
+[AWS EKS Sandbox](https://github.com/nuonco/aws-eks-sandbox)
 
-[runner]
-runner_type = "aws-eks"
+[AWS EKS with Karpenter Sandbox](https://github.com/nuonco/aws-eks-karpenter-sandbox)
+
+To use AWS EKS, configure your App with either of the following:
+
+```toml sandbox.toml
+[public_repo]
+directory = "."
+repo      = "nuonco/aws-eks-sandbox"
+branch    = "main"
 ```
 
-<br />
-
-<Note>
-We provide a supported aws-eks sandbox that creates a new VPC, as well as a byo-vpc sandbox. Both sandboxes support
-customization using app inputs, to override values such as the cluster version and more.
-
-Read more about this in [sandboxes](/concepts/sandboxes#aws-eks).
-</Note>
-
-## AWS ECS
-
-Nuon supports running your app via [AWS ECS](https://aws.amazon.com/ecs/).
-You can create apps that provision a completely new network (VPC) and ECS cluster, or use an existing customer managed network or cluster (using [app-inputs](/concepts/app-inputs)).
-
-To use AWS ECS, configure your app with the following:
-
-```toml nuon.<your-app>.toml
-[sandbox]
-terraform_version = "1.7.5"
-[sandbox.public_repo]
-directory = "aws-ecs"
-repo = "nuonco/sandboxes"
-branch = "main"
-
-[runner]
-runner_type = "aws-ecs"
+```toml sandbox.toml
+[public_repo]
+directory = "."
+repo      = "nuonco/aws-eks-karpenter-sandbox"
+branch    = "main"
 ```
-
-<br />
-
-<Note>
-We provide a supported aws-ecs sandbox that creates a new VPC, as well as a byo-vpc sandbox. Both sandboxes support
-customization using app inputs, to override values such as the cluster version and more.
-
-Read more about this in [sandboxes](/concepts/sandboxes#aws-ecs).
-</Note>
 
 ## AWS Serverless
-
-Nuon supports running any app using [AWS Lambda](https://aws.amazon.com/lambda/), by configuring your app using the [AWS 
-ECS](#aws_ecs) section above and configuring all serverless resources using terraform.
-
-You can configure any serverless infrastructure using [terraform components](/guides/terraform-components), and can 
-model your container images using either [docker](/guides/docker-build-components) or 
-[external](/guides/container-image-components) image components.
 
 <Note>
 If you have a serverless use case, we would love to hear more.
@@ -83,8 +47,6 @@ If you have a serverless use case, we would love to hear more.
 </Note>
 
 ## Azure AKS
-
-We are currently building Azure AKS support with a handful of early customers.
 
 <Note>
 If you have an Azure app, customers who are asking for Azure deployments or are trying to sell into the EU, [please get in touch](mailto:team@nuon.co).
@@ -96,86 +58,18 @@ You can provision custom IAC resources on any platform using a [terraform compon
 
 This is useful for configuring additional resources such as databases, storage buckets and other resources that your application requires.
 
-To provision third party cloud providers, please refer to [Supporting Custom Platforms](#supporting_custom_platforms).
-
 ## Supporting Multiple Platforms
 
-You can support deploying your product to multiple platforms, by creating different apps that reference the same component code.
-
-For example, you can create an app to deploy a containerized service to ECS, using our ECS sandbox and a Terraform component.
-
-```toml nuon.<your-app>-aws-ecs.toml
-version = "v1"
-
-[runner]
-runner_type = "aws-ecs"
-
-[sandbox]
-terraform_version = "1.7.5"
-[sandbox.public_repo]
-directory = "aws-ecs"
-repo = "nuonco/sandboxes"
-branch = "main"
-
-[[components]]
-name = "<your-app>-image"
-type = "container_image"
-[components.public]
-image_url = "<your-image-url>"
-tag = "latest"
-
-[[components]]
-name = "<your-app>-ecs-service"
-type = "terraform_module"
-terraform_version = "1.7.5"
-[components.connected_repo]
-directory = "components/ecs-service"
-repo = "<your-app>"
-branch = "main"
-```
-
-Then, create another app using our EKS sandbox and a Helm chart component to deploy the same container to EKS.
-
-```toml nuon.<your-app>-aws-eks.toml
-version = "v1"
-
-[runner]
-runner_type = "aws-eks"
-
-[sandbox]
-terraform_version = "1.7.5"
-[sandbox.public_repo]
-directory = "aws-eks"
-repo = "nuonco/sandboxes"
-branch = "main"
-[sandbox.vars]
-enable_nginx_ingress_controller = "false"
-
-[[components]]
-name = "<your-app>-image"
-type = "container_image"
-[components.public]
-image_url = "<your-image-url>"
-tag = "latest"
-
-[[components]]
-name = "<your-app>-helm-chart"
-type = "helm_chart"
-chart_name = "<your-app>"
-[components.public_repo]
-directory = "component/helm-chart"
-repo = "<your-app>"
-branch = "main"
-```
+You can support deploying your product to multiple platforms, by creating different Apps that reference the same component code.
 
 ## Supporting Custom Platforms
 
-If you would like to support third party cloud providers that Nuon does not natively support, you can use [app inputs](/concepts/app-inputs) and [terraform components](/guides/terraform-components.mdx).
+If you would like to support third party cloud providers that Nuon does not natively support, you can use [Inputs](/concepts/app-inputs) and [Terraform Components](/guides/terraform-components.mdx).
 This is useful for managing things such as third party databases, AI tools, or even CDN providers alongside your application.
 
 For example, if you would like to provision additional resources using a provider such as the [Cloudflare Terraform Provider](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs),
 
-First, define an app input to require a customer api token:
+First, define an Input to require a customer api token:
 
 ```toml nuon.<your-app>.toml
 [inputs]
@@ -188,7 +82,7 @@ required     = true
 
 Second, configure your terraform component to use this api token. This will be set as a terraform variable and can be used to configure the provider.
 
-```toml nuon.<your-app>.toml
+```toml <your-component>.toml
 [[components]]
 name   = "cloudflare"
 app_id = nuon_app.<your_app>.id
@@ -203,6 +97,6 @@ value = "{{.nuon.install.inputs.cloudflare_api_token}}"
 <br />
 
 <Note>
-In some cases, customizations can be handled using a custom sandbox, if they do not require a different cloud provider.
-Read more about customizing sandboxes [here](/concepts/sandboxes).
+In some cases, customizations can be handled using a custom Sandbox, if they do not require a different cloud provider.
+Read more about customizing Sandboxes [here](/concepts/sandboxes).
 </Note>

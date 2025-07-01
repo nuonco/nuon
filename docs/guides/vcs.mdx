@@ -4,7 +4,7 @@ description: 'Connect your GitHub account to use both public and private reposit
 icon: 'terminal'
 ---
 
-Connecting Nuon with your Version Control System (VCS) will give Nuon the ability to use your code when configuring your application. In this guide we'll use the [Nuon CLI](/cli) to connect your Nuon Org to a GitHub account or repository and verify the connection is working by listing the connected repositories.
+Connecting Nuon with your Version Control System (VCS) will give Nuon the ability to use your code when configuring your application. To use public repositories, you do not have to connect Nuon with your VCS. In this guide we'll use the [Nuon CLI](/cli) to connect your Nuon Org to a GitHub account or repository and verify the connection is working by listing the connected repositories.
 
 <Note>
 You may want to update an existing GitHub connection (e.g. add a new repository to the connection). To do this follow the steps below, make the updates with in the GitHub connection flow and your existing connection should be updated.
@@ -65,3 +65,23 @@ nuon orgs list-connected-repos
 ```
 
 If the connection was successful you should see a list on connected GitHub accounts and a list of connected repositories that you can now use to configure you're application in Nuon.
+
+## Use Connected Repositories in Nuon
+
+In a Component configuration file, you must use the `[connected_repo]` table syntax to reference a connected repository. For example:
+
+```toml components/my-component.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=connected-repo
+name = "my-private-component"
+type = "helm_chart"
+chart_name = "my-private-chart"
+namespace = "my-namespace"
+storage_driver = "configmap"
+
+[connected_repo]
+repo      = "acmeco/my-app"
+directory = "chart"
+branch    = "main"
+```
+
+If the repository is public, you must use the `[public_repo]` table syntax instead. If you use `[public_repo]` and the repository is private, Nuon will not be able to access it and will throw an error when you try to deploy the App.

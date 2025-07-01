@@ -28,20 +28,20 @@ It should address:
 
 ## Break Glass Permissions
 
-You can define the permissions needed to break glass in your app config.
+You can define the permissions needed to break glass in your [App Config](/concepts/apps).
 There are four levels of access:
 
 - Network: Permissions to access, update, and delete the VPC the install is provisioned in.
-- Sandbox: Permissions to access, update, and delete the install sandbox resources.
-- Runner: Permissions to access, update, and delete the install runner resources.
-- Component: Permissions to access, update, and delete the install component resources.
+- [Sandboxes](/concepts/sandboxes): Permissions to access, update, and delete the install Sandbox resources.
+- [Runners](/concepts/runners): Permissions to access, update, and delete the install Runner resources.
+- [Components](/concepts/components): Permissions to access, update, and delete the install Component resources.
 
 While getting full access may be convenient, you should provide guidance for how much access is needed in your runbook.
 
 ### Customer-Managed Networks
 
-If your app is hosted in its own, isolated network, then you can probably grant yourself full access to that network and all of its resources.
-However, if the app is hosted in a customer-managed network, you should be very careful about how much access you have.
+If your App is hosted in its own, isolated network, then you can probably grant yourself full access to that network and all of its resources.
+However, if the App is hosted in a customer-managed network, you should be very careful about how much access you have.
 
 A few recommendations you should consider:
 
