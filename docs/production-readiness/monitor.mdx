@@ -4,18 +4,18 @@ description: ""
 icon: 'code'
 ---
 
-Since you will not have direct access to the customer's environment, you will need to ensure you have robust monitoring in place to maintain visibility into your app's health.
+Since you will not have direct access to the customer's environment, you will need to ensure you have robust monitoring in place to maintain visibility into your App's health.
 
 ## Application Design
 
-Before you can implement monitoring, ensure your app is designed to be monitored.
+Before you can implement monitoring, ensure your App is designed to be monitored.
 While this is outside the scope of Nuon, following the best practices for your chosen architecture will allow you to get the most out of this platform.
 
 ### Service Endpoints
 
 Services should have readiness, liveness, and/or healthcheck endpoints you can use to determine their status.
 
-In addition to monitoring for health, readiness checks can be useful to determine when your app is ready to start using.
+In addition to monitoring for health, readiness checks can be useful to determine when your App is ready to start using.
 You may want to use this in a customer-facing runbook to tell your customer when their install is ready to use.
 
 A healthcheck endpoint typically reports on the status of a service and it's dependencies.
@@ -24,14 +24,14 @@ This will allow you to not only monitor it's status, but get actionable informat
 
 ### Instrumentation
 
-You should instrument your code throughout your application to record metrics and important events.
-The more robust your Instrumentation, the easier it is to inspect the health of your application.
+You should instrument your code throughout your App to record metrics and important events.
+The more robust your instrumentation, the easier it is to inspect the health of your App.
 
 ## Health Checks
 
-Once your application is set up for monitoring, you can use actions to watch healtcheck endpoints and metrics.
+Once your App is set up for monitoring, you can use [Actions](/concepts/actions) to watch healtcheck endpoints and metrics.
 
-A healthcheck is simply an action that runs on a cron and returns a zero or non-zero status code, failing or succeeding based on your custom logic. A few common use-cases for these are:
+A healthcheck is simply an Action that runs on a cron and returns a zero or non-zero status code, failing or succeeding based on your custom logic. A few common use-cases for these are:
 
 - Making requests to an HTTP endpoint to determine availability
 - Checking readiness and liveness probes on a kubernetes service

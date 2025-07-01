@@ -25,7 +25,7 @@ database_url = "{{.nuon.components.database.outputs.database_url}}"
 [[components]]
 name              = "database"
 type              = "terraform_module"
-terraform_version = "v1.6.3"
+terraform_version = "1.11.3"
 [components.connected_repo]
 directory = "components/database"
 repo      = "<your-org>/<your-repo>"
@@ -60,7 +60,7 @@ Taking the example above, you can make the Helm chart depend on the database by 
 [[components]]
 name              = "database"
 type              = "terraform_module"
-terraform_version = "v1.6.3"
+terraform_version = "1.11.3"
 [components.connected_repo]
 directory = "components/database"
 repo      = "<your-org>/<your-repo>"
