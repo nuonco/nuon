@@ -4,20 +4,20 @@ description: ""
 icon: 'code'
 ---
 
-Your customer owns the account that your app will be deployed to.
+Your customer owns the account that your [App](/concepts/apps) will be deployed to.
 You may not always have much say over how this is configured and managed, but there are some best practices here as well.
 In this section of the guide we will cover these, and how to work within the constraints you may be faced with.
 
 ## The Shared-Responsibility Model
 
-When defining where your app is installed, the permissions it needs, what customer systems it needs to integrate with, etc. your are effectively defining a contract with your customer.
+When defining where your App is installed, the permissions it needs, what customer systems it needs to integrate with, etc. your are effectively defining a contract with your customer.
 These set the expectations they have for how your app will behave in their account.
 In order to build and maintain trust, you do not want them to be surprised by something your app does in their account.
 
 It's worth asking a few questions about your app, before going into production.
 
-- Will your app be deployed into an isolated or customer-managed network?
-- What permissions will your app require?
+- Will your App be deployed into an isolated or customer-managed network?
+- What permissions will your App require?
 - What security requirements will your customer have?
 - Will these requirements vary across customers?
 - Are there things your customer will want to configure to manage costs?
@@ -26,12 +26,12 @@ Thinking ahead about these will help clarify the boundary between what you are r
 
 ## Customer-Managed Networks
 
-As we've mentioned before, we recommend deploying your app into it's own, isolated network.
+As we've mentioned before, we recommend deploying your App into it's own, isolated network.
 This tends to keep permissions simpler, reduce the blast radius of any production issues, and make it easy to monitor and control data going in and out of the app.
 
-But isolation may not work for all apps, and some customers will require you deploy into a network that they manage.
-In these cases, there are a few things you can do to contain your app within a network you do not manage.
+But isolation may not work for all Apps, and some customers will require you deploy into a network that they manage.
+In these cases, there are a few things you can do to contain your App within a network you do not manage.
 
-- Place your app resouces in their own subnets to control egress and ingress
+- Place your App resouces in their own subnets to control egress and ingress
 - Place your resrouces in security groups to control their access to other parts of the network
 - Apply permissions boundaries to the IAM roles your resources use to limit the actions they can take

@@ -1,13 +1,10 @@
 ---
 title: 'Helm Chart Components'
-description: "Helm chart components allow you to connect an existing Helm chart and deploy it into your customer's cloud account."
+description: "Helm chart Components allow you to connect an existing Helm chart and deploy it into your customer's cloud account."
 icon: 'code'
 ---
 
-Helm chart components allow you to deploy any helm from a public or connected repo. Please refer to the [Helm
-reference](https://registry.terraform.io/providers/nuonco/nuon/latest/docs/resources/helm_chart_component) for
-full configuration
-options.
+Helm chart Components allow you to deploy any helm from a public or connected repo.
 
 ## Configuring a Helm component
 
@@ -35,13 +32,13 @@ image:
 source = "./values.yaml"
 ```
 
-You can configure Helm components to use either a public repo (using a `public_repo` block) or a private GitHub
+You can configure Helm Components to use either a public repo (using a `public_repo` block) or a private GitHub
 repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
 
 ## Open Source and Private Charts
 
 Nuon supports any Helm chart that can be accessed using git. It is common for apps to have both a combination of public,
-open source helm charts for deploying standard components and private helm charts for application specific
+open source helm charts for deploying standard Components and private helm charts for application specific
 configuration.
 
 ## Helm Value Configuration
@@ -50,7 +47,7 @@ One of the most important parts of deploying a Helm chart into a customer accoun
 Values can be used for everything from accessing infrastructure, setting images or scaling pods.
 
 [Variables](/guides/using-variables) allow you to set default values for a Nuon app, expose customer configuration
-options, reference infrastructure from other components or access an image that was synced into the customer account.
+options, reference infrastructure from other Components or access an image that was synced into the customer account.
 
 Examples for accessing common interpolated variables:
 
@@ -70,11 +67,11 @@ image_tag        = "{{.nuon.components.image.image.tag}}"
 # access outputs from a terraform component
 output_value = "{{.nuon.components.terraform.outputs.output_value}}"
 # access outputs from the sandbox
-aws_region = "{{.nuon.install.sandbox.outputs.aws_region}}"
+aws_region = "{{.nuon.install.sandbox.outputs.account.aws_region}}"
 vpc_id     = "{{.nuon.install.sandbox.outputs.vpc.id}}"
 # access information about the install domain
-public_root_domain   = "{{.nuon.install.public_domain}}"
-internal_root_domain = "{{.nuon.install.internal_domain}}"
+public_root_domain   = "{{.nuon.sandbox.outputs.nuon_dns.public_domain.name}}"
+internal_root_domain = "{{.nuon.sandbox.outputs.nuon_dns.internal_domain.name}}"
 ```
 
 ## Using a Helm Values File
@@ -103,9 +100,9 @@ image:
 For now, we do not support reading values files from disk. If this is something that would make your configuration easier, [let us know](mailto:team@nuon.co)!
 </Note>
 
-## Default Sandbox Components and DNS
+## Nuon Managed Sandbox Components and DNS
 
-The `aws-eks` managed sandbox ships with standard Helm components + DNS zones to solve for common use cases, such
+The `aws-eks-sandbox` [managed Sandbox](/concepts/sandboxes#nuon-managed-sandboxes) ships with standard Helm Components + DNS zones to solve for common use cases, such
 as exposing a public or private https service. This includes:
 
 * [AWS ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller)
@@ -114,12 +111,12 @@ as exposing a public or private https service. This includes:
 * [Nginx Ingress](https://docs.nginx.com/nginx-ingress-controller/)
 * [EBS CSI](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html)
 
-The sandboxes are [open source](https://github.com/nuonco/sandboxes) and can be [customized](/concepts/sandboxes#create-a-custom-sandbox), if these components do not work for your application.
+The Sandboxes are [open source](/concepts/sandboxes#nuon-managed-sandboxes) and can be [customized](/concepts/sandboxes#create-a-custom-sandbox), if these Components do not work for your application.
 
 ## Using Domains
 
-The Nuon managed sandboxes automatically deploy the components required to provision DNS, Certificate and Load Balancer resources using Helm.
-There are multiple ways to use these components. Here are examples of the two most common.
+The [Nuon managed Sandboxes](/concepts/sandboxes#nuon-managed-sandboxes) automatically deploy the Components required to provision DNS, Certificate and Load Balancer resources using Helm.
+There are multiple ways to use these Components. Here are examples of the two most common.
 
 ### AWS NLB with AWS ACM
 
@@ -158,7 +155,7 @@ spec:
       targetPort: http
 ```
 
-You would parametrize the Service with the following values in your chart's `values.yaml` file, to accept public and private domains an ACM certificate ARN.
+You would parametrize the Service with the following values in your chart's `values.yaml` file, to accept public and private domains and an ACM certificate ARN.
 
 ```yaml
 nlbs:
@@ -179,7 +176,7 @@ directory = "components/nlb"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
 [components.values]
-"nlbs.public_domain"                 = "nlb.{{.nuon.install.public_domain}}"
+"nlbs.public_domain"                 = "nlb.{{.nuon.sandbox.outputs.nuon_dns.public_domain.name}}"
 "nlbs.public_domain_certificate_arn" = "{{.nuon.components.infra.outputs.public_domain_certificate_arn}}"
 ```
 
@@ -241,7 +238,7 @@ nginx:
   public_domain: nlb.INSTALL_PUBLIC_DOMAIN
 ```
 
-You could then set the domain per install in your component config.
+You could then set the domain per install in your Component config.
 
 ```toml nuon.<your-app>.toml
 [[components]]
@@ -253,13 +250,13 @@ directory = "components/nlb"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
 [components.values]
-"nlbs.public_domain"                 = "nlb.{{.nuon.install.public_domain}}"
+"nlbs.public_domain"                 = "nlb.{{.nuon.sandbox.outputs.nuon_dns.public_domain.name}}"
 ```
 
 <br />
 
 <Note>
-By default, Nuon provisions a custom domain for each install under the `nuon.run` domain (eg: inl8ybt7gajofh33e0h3pqyw1t.nuon.run).
+By default, Nuon provisions a custom domain for each install id under the `nuon.run` domain (eg: inl8ybt7gajofh33e0h3pqyw1t.nuon.run).
 
 If you would like to use a customer provided domain, you can accept customer domains using [inputs](/concepts/app-inputs.mdx). We
   are planning to improve support for this, and would love to [hear about](mailto:team@nuon.co) your use case.
