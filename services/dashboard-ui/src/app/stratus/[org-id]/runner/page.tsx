@@ -7,17 +7,24 @@ import {
   Header,
   HeadingGroup,
   Page,
-  RunnerDetails,
-  RunnerDetailsSkeleton,
+  RunnerDetailsCard,
+  RunnerDetailsCardSkeleton,
+  RunnerRecentActivity,
   ScrollableDiv,
   Section,
   Text,
+  RECENT_ACTIVITY_LIMIT,
+  RECENT_ACTIVITY_SEARCH_PARAM,
 } from '@/stratus/components'
-import type { IPageProps, TOrg, TRunnerHeartbeat } from '@/types'
+import type { IPageProps, TOrg, TRunnerHeartbeat, TRunnerJob } from '@/types'
 import { nueQueryData } from '@/utils'
 
-const StratusBuildRunner: FC<IPageProps<'org-id'>> = async ({ params }) => {
+const StratusBuildRunner = async ({
+  params,
+  searchParams,
+}: IPageProps<'org-id'>) => {
   const { ['org-id']: orgId } = await params
+  const sp = await searchParams
   const { data: org } = await nueQueryData<TOrg>({
     orgId,
     path: 'orgs/current',
@@ -56,8 +63,12 @@ const StratusBuildRunner: FC<IPageProps<'org-id'>> = async ({ params }) => {
         <Section className="gap-12">
           <div className="grid md:grid-cols-12 gap-6">
             <ErrorBoundary fallback={<RunnerError />}>
-              <Suspense fallback={<RunnerDetailsSkeleton />}>
-                <LoadRunnerDetails org={org} />
+              <Suspense
+                fallback={
+                  <RunnerDetailsCardSkeleton className="md:col-span-6" />
+                }
+              >
+                <LoadRunnerDetailsCard org={org} />
               </Suspense>
             </ErrorBoundary>
 
@@ -71,6 +82,19 @@ const StratusBuildRunner: FC<IPageProps<'org-id'>> = async ({ params }) => {
             <Text variant="base" weight="strong">
               Recent activity
             </Text>
+
+            <ErrorBoundary fallback={<RunnerError />}>
+              <Suspense
+                fallback={
+                  <RunnerDetailsCardSkeleton className="md:col-span-6" />
+                }
+              >
+                <LoadRunnerRecentActivity
+                  org={org}
+                  offset={sp[RECENT_ACTIVITY_SEARCH_PARAM] || '0'}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </Section>
       </ScrollableDiv>
@@ -80,7 +104,7 @@ const StratusBuildRunner: FC<IPageProps<'org-id'>> = async ({ params }) => {
 
 export default StratusBuildRunner
 
-const LoadRunnerDetails: FC<{ org: TOrg }> = async ({ org }) => {
+const LoadRunnerDetailsCard: FC<{ org: TOrg }> = async ({ org }) => {
   const runnerGroup = org?.runner_group
   const runner = runnerGroup?.runners?.at(0)
   const { data: runnerHeartbeat, error } = await nueQueryData<TRunnerHeartbeat>(
@@ -91,7 +115,7 @@ const LoadRunnerDetails: FC<{ org: TOrg }> = async ({ org }) => {
   )
 
   return runnerGroup && runner && !error ? (
-    <RunnerDetails
+    <RunnerDetailsCard
       runner={runner}
       runnerGroup={runnerGroup}
       runnerHeartbeat={runnerHeartbeat}
@@ -107,3 +131,50 @@ const RunnerError: FC = () => (
     <Text>Unable to load build runner</Text>
   </Card>
 )
+
+interface ILoadRunnerRecentActivity {
+  offset: string
+  org: TOrg
+}
+
+const LoadRunnerRecentActivity = async ({
+  org,
+  offset,
+}: ILoadRunnerRecentActivity) => {
+  const params = new URLSearchParams({
+    offset,
+    limit: RECENT_ACTIVITY_LIMIT.toString(),
+  }).toString()
+
+  const runnerGroup = org?.runner_group
+  const runner = runnerGroup?.runners?.at(0)
+  const {
+    data: jobs,
+    error,
+    headers,
+  } = await nueQueryData<Array<TRunnerJob>>({
+    orgId: org?.id,
+    path: `runners/${runner?.id}/jobs${params ? '?' + params : params}`,
+    headers: {
+      'x-nuon-pagination-enabled': true,
+    },
+  })
+
+  const pageData = {
+    hasNext: headers.get('x-nuon-page-next') || 'false',
+    offset: headers.get('x-nuon-page-offset') || '0',
+  }
+
+  return runnerGroup && runner && jobs && !error ? (
+    <RunnerRecentActivity
+      jobs={jobs}
+      pagination={{
+        pageData,
+        param: RECENT_ACTIVITY_SEARCH_PARAM,
+        limit: RECENT_ACTIVITY_LIMIT,
+      }}
+    />
+  ) : (
+    <RunnerError />
+  )
+}
