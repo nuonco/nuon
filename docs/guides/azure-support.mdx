@@ -30,11 +30,10 @@ az ad sp create-for-rbac --name <principal-name> --role Owner --scopes /subscrip
 
 ## Sandboxes
 
-We support two sandboxes for Azure:
+Our current experimental Sandbox repository:
 
-* [Azure AKS](/concepts/sandboxes#azure-aks) - A fully managed app sandbox that provisions both the VPN and AKS cluster.
-* [Azure AKS BYOVPN](/concepts/sandboxes#azure-aks-byovpn) - A shared-responsibility sandbox that provisions the AKS cluster in a customer provided VPN.
+* [Azure AKS](https://github.com/nuonco/terraform-azure-aks-sandbox) - A fully managed app sandbox that provisions both the VPN and AKS cluster.
 
-We build these sandboxes using the standard [Azure modules](https://github.com/Azure/terraform-azure-modules).
+We build this Sandbox using the standard [Azure modules](https://github.com/Azure/terraform-azure-modules).
 
-Reference the [Sandboxes Guide](/concepts/sandboxes) for more information on using sandboxes.
+Reference the [Sandboxes Guide](/concepts/sandboxes) for more information on using Sandboxes.

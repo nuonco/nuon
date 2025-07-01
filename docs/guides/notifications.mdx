@@ -4,14 +4,14 @@ description: "Notifications for application events"
 icon: 'code'
 ---
 
-We support sending slack notifications for apps and orgs.
+We support sending slack notifications for [Apps](/concepts/apps) and Orgs.
 
 ## Slack Webhook Notifications
 
 You can receive notifications for events in your application in slack, by creating a channel and generating a [Slack 
 Incoming Webhook URL](https://api.slack.com/messaging/webhooks).
 
-To add notifications for an app, update the app metadata to set the webhook url:
+To add notifications for an App, update the App metadata to set the webhook url:
 
 ```toml nuon.<your-app>.toml
 slack_webhook_url = "<slack-webhook-url>"
@@ -27,10 +27,10 @@ please <a mailto="team@nuon.co">let us know</a>.
 
 Currently, the following notifications are supported:
 
-* `App Sync Error` - get a notification for any app sync error.
-* `Install Created` - notification for any new install created.
+* `App Sync Error` - get a notification for any [App](/concepts/apps) sync error.
+* `Install Created` - notification for any new [Install](/concepts/installs) created.
 
 ## Org Events
 
-We support sending additional events for an entire org, but do not (yet) expose a way to manage these directly. If you 
-would like to setup notifications for your entire org, please reach out and we can set this up internally.
+We support sending additional events for an entire Org, but do not (yet) expose a way to manage these directly. If you 
+would like to setup notifications for your entire Org, please reach out and we can set this up internally.

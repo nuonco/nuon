@@ -4,15 +4,13 @@ description: "Docker build  components allow you to connect a Dockerfile that wi
 icon: 'code'
 ---
 
-Docker build components allow you to build an existing `Dockerfile` in a public or connected repo, and sync it into your
-customer installs. Please refer to the [Terraform
-reference](https://registry.terraform.io/providers/nuonco/nuon/latest/docs/resources/docker_build_component) for full configuration
-options.
+Docker build Components allow you to build an existing `Dockerfile` in a public or connected repo, and sync it into your
+customer installs.
 
 
-## Configuring a Docker build component
+## Configuring a Docker build Component
 
-To configure a Docker build component, specify a repo, the required build paramaters and Dockerfile path.
+To configure a Docker build Component, specify a repo, the required build paramaters and Dockerfile path.
 
 ```toml nuon.<your-app>.toml
 [[components]]
@@ -25,15 +23,15 @@ repo      = "<your-app>"
 branch    = "main"
 ```
 
-You can configure Docker build components to use either a public repo (using a `public_repo` block) or a private GitHub
+You can configure Docker build Components to use either a public repo (using a `public_repo` block) or a private GitHub
 repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
 
 ## Deployments
 
-Docker build components _cannot_ be deployed directly in a customer install. When an image is released, it will be _synced_
-into the customer install and made available to other components via [variables](/guides/using-variables).
+Docker build Components _cannot_ be deployed directly in a customer install. When an image is released, it will be _synced_
+into the customer install and made available to other Components via [variables](/guides/using-variables).
 
-To deploy a Docker build component, reference the image from a Helm component or Terraform component:
+To deploy a Docker build component, reference the image from a Helm Component or Terraform Component:
 
 ```toml nuon.<your-app>.toml
 [[components]]
@@ -51,7 +49,7 @@ branch    = "main"
 [[components]]
 name              = "ecs_service"
 type              = "terraform_module"
-terraform_version = "v1.6.3"
+terraform_version = "1.11.3"
 [components.connected_repo]
 repo      = "<your-app>"
 directory = "components/ecs-service"
@@ -69,13 +67,13 @@ tag       = "{{.nuon.components.app_image.image.tag}}"
 
 ## Image Syncing
 
-When a Docker build component is released, Nuon will automatically sync the image into the end customer account. This
+When a Docker build Component is released, Nuon will automatically sync the image into the end customer account. This
 image is stored in a local registry that is provisioned in the customer account.
 
 Nuon image syncing allows you to sync images into accounts, without worrying about cross account permissions, registry
 authentication or publishing public images. Any `Dockerfile` in a repo can be built, and synced.
 
-The sync process works by creating a 1-time authentication flow that grants the install runner access to pull the image
+The sync process works by creating a 1-time authentication flow that grants the Install Runner access to pull the image
 from the org data plane, and copy it into the local registry.
 
 ## Build Arguments and Environment Variables

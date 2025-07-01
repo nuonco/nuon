@@ -1,12 +1,10 @@
 ---
 title: 'Container Image Components'
-description: "Container image components allow you to use prebuilt container images."
+description: "Container image Components allow you to use prebuilt container images."
 icon: 'code'
 ---
 
-Container images allow you to import prebuilt container images from public sources, and private ECR repositories. Please refer to the [Terraform
-reference](https://registry.terraform.io/providers/nuonco/nuon/latest/docs/resources/container_image_component) for full configuration
-options.
+Container images allow you to import prebuilt container images from public sources, and private ECR repositories.
 
 ## Container Images vs Docker Build images
 
@@ -64,8 +62,8 @@ To use an AWS ECR image, [please follow the directions](#ecr-access-iam-role) to
 
 ## Deployments
 
-Container image components _cannot_ be deployed directly in a customer install. When an image is released, it will be _synced_
-into the customer install and made available to other components via [variables](/guides/using-variables).
+Container image Components _cannot_ be deployed directly in a customer install. When an image is released, it will be _synced_
+into the customer install and made available to other Components via [variables](/guides/using-variables).
 
 To deploy a Container image component, reference the image from a Helm component or Terraform component:
 
