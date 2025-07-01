@@ -72,6 +72,12 @@ WORKDIR /src/services/ctl-api
 
 ENV PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
 
+# expected as --build-args flags
+ARG VERSION
+ARG GIT_REF
+ENV VERSION=$VERSION
+ENV GIT_REF=$GIT_REF
+
 # NOTE(JM): this can be removed once `inline: true` is set on all uses of the kube config package
 COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem

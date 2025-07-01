@@ -17,7 +17,7 @@ COPY \
   postcss.config.js \
   tailwind.config.ts \
   package.json \
-  tsconfig.json \      
+  tsconfig.json \
  ./
 RUN \
 npm install
@@ -42,6 +42,11 @@ FROM build as final
 
 ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
 ENV NEXT_PUBLIC_ACCESS_TOKEN_ROUTE=/api/auth/access-token
+
+ARG VERSION
+ARG GIT_REF
+ENV VERSION=$VERSION
+ENV GIT_REF=$GIT_REF
 
 EXPOSE 4000
 ENTRYPOINT ["npm", "run", "start"]
