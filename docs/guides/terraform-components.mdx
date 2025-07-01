@@ -1,13 +1,11 @@
 ---
 title: 'Terraform Components'
-description: "Terraform components allow you to provision infrastructure in your customer's cloud account to power your install."
+description: "Terraform Components allow you to provision infrastructure in your customer's cloud account to power your install."
 icon: 'code'
 ---
 
-Terraform components allow you to deploy Terraform from a public or connected repo, to provision infrastructure
-resources in customer installs. Please refer to the [Terraform
-reference](https://registry.terraform.io/providers/nuonco/nuon/latest/docs/resources/terraform_module_component) for
-full configuration options.
+Terraform Components allow you to deploy Terraform from a public or connected repo, to provision infrastructure
+resources in customer installs. 
 
 <Note>
 In order for Terraform modules to properly work with Nuon, they must specify an `s3 {}` backend for state. [Read more below](#state-management) for more details.
@@ -21,27 +19,27 @@ To configure a Terraform component, specify a repo, the required configuration v
 [[components]]
 name              = "infra"
 type              = "terraform_module"
-terraform_version = "1.6.3"
+terraform_version = "1.11.3"
 [components.connected_repo]
 directory = "components/infra"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
 ```
 
-You can configure Terraform components to use either a public repo (using a `public_repo` block) or a private GitHub
+You can configure Terraform Components to use either a public repo (using a `public_repo` block) or a private GitHub
 repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
 
 ## Configuring Terraform Vars
 
 You can configure terraform variables for a component using [component variables](/guides/using-variables).
 
-These variables can access inputs, other components, the sandbox, and details on the install itself.
+These variables can access inputs, other Components, the sandbox, and details on the install itself.
 
 ```toml nuon.<your-app>.toml
 [[components]]
 name              = "lambda_function"
 type              = "terraform_module"
-terraform_version = "1.6.3"
+terraform_version = "1.11.3"
 [components.connected_repo]
 directory = "components/lambda-function"
 repo      = "<your-org>/<your-repo>"
@@ -63,7 +61,7 @@ backend](https://developer.hashicorp.com/terraform/language/settings/backends/s3
 
 ```hcl
 terraform {
-  required_version = ">= 1.3.7"
+  required_version = ">= 1.11.3"
 
   backend "s3" {}
 
