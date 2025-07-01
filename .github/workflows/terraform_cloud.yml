@@ -1,5 +1,5 @@
 ---
-name: terraform cloud 
+name: terraform cloud
 "on":
   pull_request:
   push:

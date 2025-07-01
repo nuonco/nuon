@@ -29,7 +29,7 @@ jobs:
   checks:
     name: 🔍 checks
     runs-on: ubuntu-latest
-    # NOTE(jm): by doing this all inline, we only have a single result on the final PR, which makes it easier to read 
+    # NOTE(jm): by doing this all inline, we only have a single result on the final PR, which makes it easier to read
     # than parsing the output of matrix
     steps:
       - name: set services

@@ -1,6 +1,6 @@
 ---
 name: branch checks
-on: 
+on:
   pull_request:
     types: ['opened', 'edited', 'synchronize']
 
