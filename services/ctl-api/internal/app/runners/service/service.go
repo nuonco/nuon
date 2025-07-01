@@ -57,6 +57,10 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/graceful-shutdown", s.GracefulShutDown)
 	api.POST("/v1/runners/:runner_id/force-shutdown", s.ForceShutDown)
 
+	// settings
+	api.GET("/v1/runners/:runner_id/settings", s.GetRunnerSettings)
+	api.PATCH("/v1/runners/:runner_id/settings", s.UpdateRunnerSettings)
+
 	tfWorkspacePath := "/v1/terraform-workspaces"
 	api.GET(tfWorkspacePath, s.GetTerraformWorkpaces)
 	api.GET(tfWorkspacePath+"/:workspace_id", s.GetTerraformWorkpace)
