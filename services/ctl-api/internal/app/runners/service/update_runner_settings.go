@@ -8,38 +8,45 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-type AdminUpdateRunnerSettingsRequest struct {
+type UpdateRunnerSettingsRequest struct {
 	ContainerImageURL string `json:"container_image_url"`
 	ContainerImageTag string `json:"container_image_tag"`
 	RunnerAPIURL      string `json:"runner_api_url"`
 
-	K8sServiceAccountName string `json:"k8s_service_account_name"`
-	AWSIAMRoleARN         string `json:"aws_iam_role_arn"`
+	K8sServiceAccountName string `json:"org_k8s_service_account_name"`
+	AWSIAMRoleARN         string `json:"org_awsiam_role_arn"`
 }
 
-// @ID						AdminUpdateRunnerSettings
-// @Summary				update a runner's settings
+// @ID						UpdateRunnerSettings
+// @Summary				update a runner job execution
 // @Description.markdown	update_runner_settings.md
-// @Param					runner_id	path	string								true	"runner ID"
-// @Param					req			body	AdminUpdateRunnerSettingsRequest	true	"Input"
-// @Tags					runners/admin
-// @Security				AdminEmail
+// @Param					req						body	UpdateRunnerSettingsRequest	true	"Input"
+// @Param					runner_id			path	string							true	"runner ID"
+// @Tags					runners
 // @Accept					json
 // @Produce				json
-// @Success				200	{object}	app.RunnerGroupSettings
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.RunnerJobExecution
 // @Router					/v1/runners/{runner_id}/settings [PATCH]
-func (s *service) AdminUpdateRunnerSettings(ctx *gin.Context) {
+func (s *service) UpdateRunnerSettings(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
-	var req AdminUpdateRunnerSettingsRequest
+	var req UpdateRunnerSettingsRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
 
-	settings, err := s.adminUpdateRunnerSettings(ctx, runnerID, &req)
+	settings, err := s.updateRunnerSettings(ctx, runnerID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update settings: %w", err))
 		return
@@ -48,10 +55,14 @@ func (s *service) AdminUpdateRunnerSettings(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, settings)
 }
 
-func (s *service) adminUpdateRunnerSettings(ctx context.Context, runnerID string, req *AdminUpdateRunnerSettingsRequest) (*app.RunnerGroupSettings, error) {
+func (s *service) updateRunnerSettings(ctx context.Context, runnerID string, req *UpdateRunnerSettingsRequest) (*app.RunnerGroupSettings, error) {
 	runner, err := s.getRunner(ctx, runnerID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get runner: %w", err)
+	}
+
+	if runner.RunnerGroup.ID == "" {
+		return nil, fmt.Errorf("runner %s does not have a runner group", runnerID)
 	}
 
 	updates := app.RunnerGroupSettings{
@@ -66,10 +77,12 @@ func (s *service) adminUpdateRunnerSettings(ctx context.Context, runnerID string
 	}
 
 	if res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPatcher(nil)).
 		Where(obj).
-		Updates(updates); res.Error != nil {
+		UpdateColumns(updates); res.Error != nil {
 		return nil, fmt.Errorf("unable to update runner settings: %w", res.Error)
 	}
 
 	return &obj, nil
 }
+
