@@ -22,8 +22,8 @@ defaults:
     shell: bash
 
 jobs:
-  # NOTE(jm): I'm not the biggest fan of having this all connected in a single stage, however this ultimately gives us 
-  # the best performance. This is because each job has it's own runner, and that means loading in our GHA cache each 
+  # NOTE(jm): I'm not the biggest fan of having this all connected in a single stage, however this ultimately gives us
+  # the best performance. This is because each job has it's own runner, and that means loading in our GHA cache each
   # time.
   service:
     name: all
@@ -33,9 +33,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup nuonctl 
+      - name: Setup nuonctl
         uses: powertoolsdev/mono/actions/setup-nuonctl@main
-        
+
       - name: 😎 Tests
         run: |
           CI=true nuonctl tests run-all --name=${{inputs.service}}
