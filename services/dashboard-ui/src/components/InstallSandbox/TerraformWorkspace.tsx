@@ -12,7 +12,7 @@ import { DataTable } from '@/components/InstallSandbox/Table'
 import { Tabs, Tab } from '@/components/InstallSandbox/Tabs'
 import { Text, Code } from '@/components/Typography'
 import { getToken } from '@/components/admin-actions'
-import { BackendModal } from "./BackendModal"
+import { BackendModal } from './BackendModal'
 import { UnlockModal } from './UnlockStateModal'
 import { nueQueryData } from '@/utils'
 
@@ -102,7 +102,7 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
             : outputs[key].type}
         </Text>
       </span>,
-      outputs[key]?.type === 'string' ? (
+      outputs[key]?.type === 'string' || outputs[key]?.type === 'number' ? (
         <Code>{outputs[key]?.value}</Code>
       ) : (
         <JsonView key={idx} data={outputs[key]?.value} />
@@ -139,8 +139,18 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
         heading="Terraform state"
         actions={
           <div className="flex items-center gap-4">
-            {lockRes?.data ? <UnlockModal workspace={workspace} orgId={orgId} lock={lockRes?.data}  /> : null}
-            <BackendModal orgId={orgId} workspace={workspace} token={(tokenRes as any)?.result?.accessToken} />
+            {lockRes?.data ? (
+              <UnlockModal
+                workspace={workspace}
+                orgId={orgId}
+                lock={lockRes?.data}
+              />
+            ) : null}
+            <BackendModal
+              orgId={orgId}
+              workspace={workspace}
+              token={(tokenRes as any)?.result?.accessToken}
+            />
           </div>
         }
       />
