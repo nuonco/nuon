@@ -14,20 +14,20 @@ import { useOrg } from '@/stratus/context'
 import type { TRunner, TRunnerGroup, TRunnerHeartbeat } from '@/types'
 import { isLessThan15SecondsOld, usePolling } from '@/utils'
 
-interface IRunnerDetailsCard extends Omit<ICard, 'children'> {}
+interface IDetailsCard extends Omit<ICard, 'children'> {}
 
-interface IRunnerDetails extends IRunnerDetailsCard {
+interface IRunnerDetailsCard extends IDetailsCard {
   runner: TRunner
   runnerGroup: TRunnerGroup
   runnerHeartbeat: TRunnerHeartbeat
 }
 
-export const RunnerDetails = ({
+export const RunnerDetailsCard = ({
   runner,
   runnerGroup,
   runnerHeartbeat: initRunnerHeartbeat,
   ...props
-}: IRunnerDetails) => {
+}: IRunnerDetailsCard) => {
   const { org } = useOrg()
   const { data: runnerHeartbeat, error } = usePolling<TRunnerHeartbeat>({
     path: `/api/${org?.id}/runners/${runner?.id}/latest-heart-beat`,
@@ -88,7 +88,7 @@ export const RunnerDetails = ({
   )
 }
 
-export const RunnerDetailsSkeleton = (props: IRunnerDetailsCard) => {
+export const RunnerDetailsCardSkeleton = (props: IDetailsCard) => {
   return (
     <Card {...props}>
       <Skeleton height="24px" width="106px" />
