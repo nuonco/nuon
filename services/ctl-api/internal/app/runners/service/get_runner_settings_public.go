@@ -4,13 +4,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetRunnerSettings
 // @Summary				get runner settings
 // @Description.markdown	get_runner_settings.md
 // @Param					runner_id	path	string	true	"runner ID"
-// @Tags					runners/runner
+// @Tags					runners
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -22,10 +23,15 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.RunnerGroupSettings
 // @Router					/v1/runners/{runner_id}/settings [get]
-func (s *service) GetRunnerSettings(ctx *gin.Context) {
+func (s *service) GetRunnerSettingsPublic(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	runnerID := ctx.Param("runner_id")
 
-	runner, err := s.getRunner(ctx, runnerID)
+	runner, err := s.getOrgRunner(ctx, runnerID, org.ID)
 	if err != nil {
 		ctx.Error(err)
 		return
