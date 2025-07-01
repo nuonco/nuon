@@ -3,10 +3,10 @@ title: 'Create Your First App'
 description: 'Learn how to package an app for BYOC distribution.'
 ---
 
-This guide walks you through packaging an AWS ECS application and deploying it to an install.
+This guide walks you through packaging an AWS EKS Traefik `whomani` application and deploying it to an Install.
 
 <Note>
-All the configuration and component code used in this guide can be found in our [Guides repo](https://github.com/nuonco/guides/tree/main/aws-ecs-tutorial).
+This [App Config](/concepts/apps) can be found in a [GitHub repository](https://github.com/nuonco/example-app-configs).
 </Note>
 
 ## Prerequisites
@@ -19,214 +19,331 @@ All the configuration and component code used in this guide can be found in our 
 This tutorial will walk you through creating the following:
 
 - An [App](/concepts/apps)
-- A [Docker Build component](/guides/docker-build-components)
-- A [Terraform component](/guides/terraform-components)
-- An [Install](/concepts/installs), using our [AWS ECS sandbox](/concepts/sandboxes)
+- A [Whoami component](/concepts/components)
+- An [Install](/concepts/installs), using our [AWS EKS sandbox](/concepts/sandboxes#nuon-managed-sandboxes)
+
+<Note>
+You can alternatively clone the [`example-app-configs` repository](https://github.com/nuonco/example-app-configs) which includes the `eks-simple` App Config versus creating each config file manually. This guide is meant to explain the concepts behind each config file, so you can create your own App Configs in the future.  
+</Note>
 
 ## Configure App
 
-To configure the app, you will create a TOML config file using our CLI.
+To configure the app, you will create several TOML config files.
 In each section below we will provide you with configuration snippets for the app itself as well as it's components.
 
 ### Create App
 
 Define the app itself and give it a name.
-This will create the app in Nuon and generate a config file named `nuon.demo_ecs_app.toml`.
-This file will be populated with sample config, which we will update in this guide.
+This will create the app in `app.nuon.co`
 
 ```sh
-nuon apps create --name=demo_ecs_app
+mkdir eks-simple
+cd eks-simple
+nuon apps create --name=eks-simple --no-template
 ```
 
-You should see the new app in the dashboard.
+You should see the new App in the dashboard.
 
 ![App List](/images/get-started/create-your-first-app/tutorial-2.jpeg)
 
-### App Input
+### Inputs
 
-This is a setting that your customer will be able to configure when they install the app.
-It will be displayed on the installer page as a text field.
+Inputs are customer-specific configs that are entered when you install the App in the customer's cloud account. They will be displayed in the Dashboard UI. Inputs are optional.
 
-```toml nuon.demo_ecs_app.toml
-[inputs]
-[[inputs.group]]
-name = "app"
-description = "App inputs"
-display_name = "App inputs"
+In the App root directory, create a file named `inputs.toml` and add the following:
 
-[[inputs.input]]
-name = "service_name"
-description = "What to name the ECS service"
-default = "api"
-sensitive = false
-display_name = "Service Name"
-group = "app"
+```toml inputs.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+[[group]]
+name         = "dns"
+description  = "DNS Configrations"
+display_name = "Configurations for the root domain for Route53"
+
+[[input]]
+name         = "sub_domain"
+description  = "The sub domain for the Whoami service"
+default      = "whoami"
+display_name = "Sub Domain"
+group        = "dns"
+
 ```
 
-### Installer
+This Input defines a subdomain for the Whoami service that will be deployed in the customer's AWS account. The customer will be prompted to enter this value when they create an Install of the App. It will default to `whoami`, but the customer can change it to whatever they want.
 
-Update the installer config.
-Installers provide an out-of-the-box installation flow your customers can use to install your app.
-You will use it later in this guide to create an install yourself.
-
-```toml nuon.demo_ecs_app.toml
-[installer]
-name               = "Demo ECS App"
-description        = "A demo app that runs on ECS."
-documentation_url  = "https://docs.nuon.co/"
-community_url      = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
-github_url         = "https://github.com/nuonco"
-homepage_url       = "https://www.nuon.co/"
-demo_url           = "https://www.nuon.co/"
-logo_url           = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
-og_image_url       = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
-favicon_url        = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
-copyright_markdown = """
-© 2024 Nuon.
-"""
-footer_markdown = """
-[Terms of Service](https://nuon.co/terms)
-"""
-post_install_markdown = """
-# Demo ECS App
-
-Demo ECS App is being deployed.
-"""
-apps = ["demo_ecs_app"]
-```
 
 ### Sandbox
 
-Update the sandbox config.
-The aws-ecs sandbox will provide everything you need to run ECS services, from the ECS Fargate cluster down to the VPC.
+Nuon provides a set of [Nuon Managed Sandboxes](/concepts/sandboxes#nuon-managed-sandboxes) that can be used to provision the infrastructure needed for your app.
+The `aws-eks-sandbox` will provide everything you need to run an EKS, from the EKS cluster down to the VPC.
 
-```toml nuon.demo_ecs_app.toml
-[sandbox]
-terraform_version = "1.7.5"
-[sandbox.public_repo]
-directory = "aws-ecs"
-repo = "nuonco/sandboxes"
-branch = "main"
+Your App references these Sandboxes in the `sandbox.toml` file.
+
+In the App root directory, create a file named `sandbox.toml` and add the following:
+
+```toml sandbox.toml
+terraform_version = "1.11.3"
+
+[public_repo]
+directory = "."
+repo      = "nuonco/aws-eks-sandbox"
+branch    = "main"
+
+[vars]
+cluster_name         = "n-{{.nuon.install.id}}"
+enable_nuon_dns      = "true"
+public_root_domain   = "{{ .nuon.install.id }}.nuon.run"
+internal_root_domain = "internal.{{ .nuon.install.id }}.nuon.run"
+
+[[var_file]]
+contents = "./sandbox.tfvars"
 ```
 
-### Runner
+With `enable_nuon_dns` set to `true`, the Sandbox will create a Route53 DNS zone for the install, allowing you to access the services deployed in the customer's AWS account using a Nuon-managed domain. The config uses the Install ID as the subdomain, which will be unique for each install.
 
-Update the runner config.
-The `aws-ecs` sandbox requires that we use the `aws-ecs` runner.
-The runner manages the sandbox, provisioning and deprovisioning AWS resources during deploys.
+The Sandbox expects variables, some of which are defined in the `vars` section while others are defined in the `sandbox.tfvars` file.
 
-<Tip>
-The `aws-ecs` runner is so named because it runs on ECS, but it can be used to manage any AWS resources.
-Since it runs on ECS Fargate, no resources beyond what is needed for the runner are provisioned by default.
-You can use our ECS sandbox and runner to manage Lambda or EC2 deployments without worrying about extraneous ECS costs.
-</Tip>
+In the App root directory, create a file named `sandbox.tfvars` and add the following:
 
-```toml nuon.demo_ecs_app.toml
-[runner]
-runner_type = "aws-ecs"
+```hcl sandbox.tfvars
+maintenance_role_eks_access_entry_policy_associations = {
+  eks_admin = {
+    policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
+    access_scope = {
+      type = "cluster"
+    }
+  }
+  eks_view = {
+    policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+    access_scope = {
+      type = "cluster"
+    }
+  }
+}
+
+additional_namespaces = ["whoami"]
+
+maintenance_cluster_role_rules_override = [{
+  "apiGroups" = ["*"]
+  "resources" = ["*"]
+  "verbs"     = ["*"]
+}]
+
+min_size = 2
+max_size = 3
+desired_capacity = 2
 ```
+
+<Note>
+Notice you can manage compute costs by setting the `min_size`, `max_size`, and `desired_capacity` of the EKS cluster.
+</Note>
+
+
+### Components
+
+Components are the building blocks of your App and where a software vendor's application is installed on top of the Sandbox infrastructure.
+
+In this example, we will create a Component to install Traefik's [Whoami](https://github.com/traefik/whoami) service, a Tiny Go webserver that prints OS information and HTTP request headers.
+
+In the App root directory, create directory called `components` and within it, a file named `whoami.toml` and add the following:
+
+```toml whoami.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=helm
+name           = "whoami"
+type           = "helm_chart"
+chart_name     = "whoami"
+namespace      = "whoami"
+storage_driver = "configmap"
+
+[public_repo]
+repo      = "nuonco/example-app-configs"
+directory = "eks-simple/src/components/whoami"
+branch    = "main"
+
+[[values_file]]
+contents = "./values/whoami.yaml"
+```
+
+You will also need ALB and Certificate components to expose the Whoami service to the internet.
+
+In the `components` directory, create a file named `alb.toml` and add the following:
+
+```toml alb.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=helm
+
+name         = "application_load_balancer"
+type         = "helm_chart"
+chart_name   = "application-load-balancer"
+dependencies = ["whoami"]
+
+[public_repo]
+repo      = "nuonco/components"
+directory = "aws/alb"
+branch    = "main"
+
+[values]
+domain_certificate = "{{.nuon.components.certificate.outputs.public_domain_certificate_arn}}"
+domain             = "{{.nuon.inputs.inputs.sub_domain}}.{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.name}}"
+https_port         = "443"
+service_name       = "whoami"
+service_port       = "80"
+install_name       = "{{.nuon.install.id}}"
+
+```
+
+In the components directory, create a file named `certificate.toml` and add the following:
+
+```toml certificate.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
+
+name              = "certificate"
+type              = "terraform_module"
+terraform_version = "1.11.3"
+
+[public_repo]
+repo      = "nuonco/example-app-configs"
+directory = "eks-simple/src/components/certificate"
+branch    = "main"
+
+[vars]
+install_id  = "{{ .nuon.install.id }}"
+region      = "{{ .nuon.install_stack.outputs.region }}"
+zone_id     = "{{ .nuon.install.sandbox.outputs.nuon_dns.public_domain.zone_id }}"
+domain_name = "*.{{ .nuon.install.sandbox.outputs.nuon_dns.public_domain.name }}"
+
+```
+
+### Actions
+
+[Actions](/concepts/actions) are used to perform operations on your App, such as healthchecks or running `kubectl` commands.
+
+In the App root directory, create directory called `actions` and within it, a file named `simple_action.toml` and add the following to create a random secret in the `whoami` namespace:
+
+```toml simple_action.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=action
+
+name    = "simple_demonstration"
+timeout = "1m"
+
+[[triggers]]
+type = "post-provision"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name    = "create secrets in cluster"
+inline_contents = """
+#!/usr/bin/env sh
+password=`openssl rand -hex 12`
+kubectl create -n whoami secret generic whoami \
+  --save-config    \
+  --dry-run=client \
+  --from-literal=value="$password" \
+  -o yaml | kubectl apply -f -
+"""
+
+```
+
+### Other Configuration Files
+
+Look at the `eks-simple` App Config in the [`example-app-configs` repository](https://github.com/nuonco/example-app-configs) for the remaining and required directory structure and files. The files created above are marked in **.
+
+```
+- **eks-simple**
+    - **actions**
+        - **simple_action.toml**
+    - **components**
+        - **alb.toml**
+        - **certificate.toml**
+        - **whoami.toml**
+    - permissions 
+        - deprovision_boundary.json
+        - deprovision.toml
+        - maintenance_boundary.json
+        - maintenance.toml
+        - provision_boundary.json
+        - provision.toml
+    - policies
+        - disallow-ingress-nginx-custom-snippets.yml
+        - set-karpenter-non-cpu-limits.yaml
+    - src
+        - components
+            - whoami
+                - templates
+                    - deployment.yaml
+                    - service.yaml
+                - Chart.yaml
+    - break_glass.toml
+    - **inputs.toml**
+    - installer.toml
+    - metadata.toml
+    - policies.toml
+    - README.md
+    - runner.toml
+    - **sandbox.tfvars**
+    - **sandbox.toml**
+    - secrets.toml
+    - stack.toml
+```
+
 
 ### Sync App Config to Nuon
 
-You now have a complete Nuon app config.
+You now have a complete Nuon App Config.
+
 This is a good place to stop and sync it to Nuon.
 
+Make sure you are in the root directory of your app, then run:
+
 ```sh
-nuon apps sync --file=nuon.demo_ecs_app.toml
+nuon apps sync .
 ```
 
-Select the app in the dashboard, and you should now see the updated inputs, sandbox, and runner configuration.
+Select the App in the Dashboard, and you should now see the updated Inputs, Sandbox, Components, and Runner configuration.
 
 ![App Config](/images/get-started/create-your-first-app/tutorial-3.jpeg)
 
-## Connect Components
-
-This app consists of two components: one to build the Docker image, and another to provision the ECS service.
-
-### Docker Image
-
-This is a [Docker Build component](/guides/docker-build-components) that will build the API and create a Docker image containing it.
-When released, it will sync the image to each install's ECR so ECS can pull it when creating tasks.
-
-```toml nuon.demo_ecs_app.toml
-[[components]]
-name   = "docker_image"
-type = "docker_build"
-dockerfile = "Dockerfile"
-[components.public_repo]
-repo      = "nuonco/guides"
-directory = "aws-ecs-tutorial/components/docker-image"
-branch    = "main"
-```
-
-### ECS Service
-
-This component will create an ECS service using the docker image, and expose it to the internet with an ALB.
-It requires some info about the install it will run in, so we use Nuon variables to interpolate the required info on a per-install basis.
-See our [Using Variables](/guides/using-variables) guide for more info about how this works.
-
-```toml nuon.demo_ecs_app.toml
-[[components]]
-name   = "ecs_service"
-type = "terraform_module"
-terraform_version = "1.7.5"
-[components.public_repo]
-repo      = "nuonco/guides"
-directory = "aws-ecs-tutorial/components/ecs-service"
-branch    = "main"
-[components.vars]
-service_name = "{{.nuon.install.inputs.service_name}}"
-cluster_arn = "{{.nuon.install.sandbox.outputs.ecs_cluster.arn}}"
-image_url = "{{.nuon.components.docker_image.image.repository.uri}}"
-image_tag = "{{.nuon.components.docker_image.image.tag}}"
-app_id = "{{.nuon.app.id}}"
-org_id = "{{.nuon.org.id}}"
-install_id = "{{.nuon.install.id}}"
-vpc_id = "{{.nuon.install.sandbox.outputs.vpc.id}}"
-domain_name = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
-zone_id = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
-```
-
-### Sync Component Configs to Nuon
-
-Now that you have the components, sync the update config to Nuon.
-
-```sh
-nuon apps sync --file=nuon.demo_ecs_app.toml
-```
-
-Select the "Components" tab in the dashboard to see the updated list of components.
-
-![App Components](/images/get-started/create-your-first-app/tutorial-4.jpeg)
 
 ## Create an Install
 
-Creating an install requires two steps: granting access to the AWS account via an IAM role, and then provisioning the install in that account.
-The easiest way to do this is to use the installer you configured earlier, via our installer UI template.
-You can find the template at https://github.com/nuonco/installer. Clone that and run it locally following the instructions in the README.
+Click the Create Install button in the top right corner of the App page in the Dashboard. Give your Install a name choosethe AWS Region.
 
-The installer UI will guide you through granting access to your AWS account, and provisioning the install. Expect this to take about 10 minutes.
+Notice the Inputs you defined in the `inputs.toml` file are displayed here, allowing the customer to enter their own values.
 
-<Note>
-For other ways to create and manage installs, see our guides [Install Access Permissions](/guides/install-access-permissions)  and [Create Installs](/guides/create-installs).
-</Note>
+After entering the Inputs, click the Create Install button at the bottom of the page to start the Workflow including the creation of an AWS CloudFormation stack link for the customer to open in their AWS account.
+
+![Create Install](/images/get-started/create-your-first-app/tutorial-4.jpeg)
 
 ### Monitoring Installs
 
-As soon as you kick off the install provisioning, you should see the new install in the dashboard.
+As soon as you kick off the install provisioning, you should see the new install's workflow in the dashboard.
 
 ![Install List](/images/get-started/create-your-first-app/tutorial-9.jpeg)
 
-Click on the install in the list to monitor the provisioning process and view other details about the install.
+### Create the CloudFormation Stack in AWS
 
-![Install Details](/images/get-started/create-your-first-app/tutorial-10.jpeg)
+Click or copy the CloudFormation link to open it in your AWS account. You will need to log in to your AWS account if you are not already logged in. This creates a VM and installs the Nuon Runner in your AWS account, which will be used to provision the install.
+
+![CloudFormation Stack](/images/get-started/create-your-first-app/tutorial-7.jpeg)
+
+### Monitor the CloudFormation Stack creation in AWS
+
+Click or copy the CloudFormation link to open it in your AWS account. You will need to log in to your AWS account if you are not already logged in. This creates a VM and installs the Nuon Runner in your AWS account, which will be used to provision the install.
+
+![Stack Log](/images/get-started/create-your-first-app/tutorial-8.jpeg)
+
+### Monitor the Remainder of the Install Workflow
+
+If plan steps require approvals, you will need to approve them in the Dashboard. You can also monitor the progress of the install in the Dashboard.
+
+![Workflow](/images/get-started/create-your-first-app/tutorial-10.jpeg)
 
 ### Inspect the Install
 
 When the install has provisioned, and the deploys have completed, copy the install ID from the UI and curl the API to verify it's running.
 
 ```sh
-curl https://api.{install_id}.nuon.run/introspect/env
+curl https://whoami.{install_id}.nuon.run
 ```
 
 ## Wrapping Up and Next Steps
