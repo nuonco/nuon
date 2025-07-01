@@ -4,7 +4,7 @@ description: ""
 icon: 'code'
 ---
 
-Deploying your app to a customer's account involves more than simply creating all the components.
+Deploying your App to a customer's account involves more than simply creating all the [Component](/concepts/components).
 You should consider what the installation experience will be for your customers, and how to make it as simple and clear as possible.
 
 ## Managed vs Self-Serve
@@ -12,10 +12,10 @@ You should consider what the installation experience will be for your customers,
 There two approaches you can take to deploying your app into a customer's cloud account.
 
 - Managed: The customer gives you access to their environment, and you manage the installation and setup.
-- Self-Serve: The customer installs and sets up the app themselves.
+- Self-Serve: The customer installs and sets up the App themselves.
 
 For Managed installs, you can simply use the Dashboard to create an install.
-It will allow you to deploy the runner, fill out the inputs you have configured, and monitor the initial deployment.
+It will allow you to deploy the [Runner](/concepts/runners), fill out the inputs you have configured, and monitor the initial deployment.
 
 For self-serve installs, we recommend integrating with our API to provide a custom, fully-branded installation flow.
 
@@ -27,14 +27,14 @@ This will allow you to provide a self-serve experience without building custom U
 
 ## Outputs, Healthchecks, and Runbooks
 
-Make sure your components provide the outputs you need to determine what URL a web UI or API is hosted at.
-You can also use healthcheck actions to watch liveness endpoints, to know when the app is ready to use.
+Make sure your Components provide the outputs you need to determine what URL a web UI or API is hosted at.
+You can also use healthcheck actions to watch liveness endpoints, to know when the App is ready to use.
 
-Beyond the basic install creation UI, you can also use a runbook to provide information specific to your app during deployment.
-Component and action outputs are available in runbook templates as variables, so you can use these to show your customer when the app is ready to use, and where to access it.
+Beyond the basic install creation UI, you can also use a runbook to provide information specific to your App during deployment.
+Component and Action outputs are available in runbook templates as variables, so you can use these to show your customer when the App is ready to use, and where to access it.
 
 ## Manual Steps
 
-Ideally, your app can be deployed in a fully automated fashion.
-If this is not the case, and there are manual steps required after the initial deployment, you can use actions to run those.
+Ideally, your App can be deployed in a fully automated fashion.
+If this is not the case, and there are manual steps required after the initial deployment, you can use Actions to run those.
 If a customer needs to be able to run these themselves, we recommend providing instructions in a runbook for them to follow.

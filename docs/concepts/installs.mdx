@@ -3,34 +3,34 @@ title: 'Installs'
 description: 'Installs are instances of an application in a customer cloud account.'
 ---
 
-Installs are instances of an application in a customer cloud account.
-
 ## What is an Install?
 
-An install is an instance of an application running in a customer cloud account. When an install is created, each 
-component in your application will be deployed in the correct order, alongside a runner which is responsible for 
-managing the software.
+When an Install is created, a [Runner](/concepts/runners) is initially created as a VM in the customer's cloud and is responsible for 
+deploying the Sandbox, Components, and Actions in your App in the correct order defined in the App Config. 
 
 ## Install Lifecycle
 
-When an install is created, the following components are provisioned:
+When an Install is created, the following Components are provisioned:
 
-* [sandbox](/concepts/sandboxes) - the base infrastructure for networking and compute. 
-* [runner](/concepts/runners) - the Nuon managed runner that manages the install.
-* [components](/concepts/components) - the parts of your application.
+* [Runner](/concepts/runners) - the Nuon managed Runner that manages the Install.
+* [Sandbox](/concepts/sandboxes) - the base infrastructure for networking and compute. 
+* [Components](/concepts/components) - the parts of your App.
+* [Actions](/concepts/actions) - any operational tasks that can be run in the Install.
 
-When an install is deleted, each component will be deleted in reverse order, according to its 
-[dependencies](/guides/component-dependencies), and then the runner and sandbox are destroyed.
+When an Install is deleted, each Component will be deleted in reverse order, according to its 
+[dependencies](/guides/component-dependencies), and then the Sandbox is destroyed. The Runner is then deleted by deleting the configuration that was used to create it. e.g., deleting the AWS CloudFormation stack.
 
 ## Install Management
 
-The [cli](/cli) exposes many operational commands to manage an install.
+The primary and recommended way to create and manage Installs is through the Dashboard. The Dashboard outputs the AWS CloudFormation stack link to create the Runner and kick off the Install process.
+
+The [cli](/cli) exposes many operational commands to manage an Install.
 
 To see all available commands, run: `nuon installs --help`.
 
 ### Pinning an Install
 
-You can pin an install, which will set it's ID as a default argument to all install commands. This is helpful to avoid 
+You can pin an Install, which will set it's ID as a default argument to all Install commands. This is helpful to avoid 
 having to pass `-i` to each command.
 
 <CodeGroup>
@@ -43,7 +43,7 @@ nuon installs select
 Each example below assumes you have run `nuon installs select` first.
 </Note>
 
-To show the currently pinned install:
+To show the currently pinned Install:
 
 <CodeGroup>
 ```sh nuon
@@ -53,12 +53,12 @@ nuon installs current
 
 ### Install Management Commands
 
-Commands for creating, deleting and viewing installs.
+Commands for creating, deleting and viewing Installs.
 
-**Create an install** - create an install for an AWS application, passing in one or more inputs.
+**Create an Install** - create an Install for an AWS application, passing in one or more Inputs.
 
 <Note>
-Creating Azure installs is currently only supported using an installer, or our API.
+Creating Azure Installs is currently only supported using an installer, or our API.
 </Note>
 
 <CodeGroup>
@@ -70,7 +70,7 @@ nuon installs create  \
 ```
 </CodeGroup>
 
-**Delete an install** - delete an install
+**Delete an Install** - Delete an Install
 
 <CodeGroup>
 ```sh nuon
@@ -78,7 +78,7 @@ nuon installs delete
 ```
 </CodeGroup>
 
-**List all installs** - list an install
+**List all Installs** - list an Install
 
 <CodeGroup>
 ```sh nuon
@@ -86,7 +86,7 @@ nuon installs list
 ```
 </CodeGroup>
 
-**Get an install** - get an install
+**Get an Install** - get an Install
 
 <CodeGroup>
 ```sh nuon
@@ -96,9 +96,9 @@ nuon installs get
 
 ### Install Sandbox Commands
 
-Commands for working with an install's sandbox.
+Commands for working with an Install's Sandbox.
 
-**Show sandbox updates** - show all updates to an install sandbox.
+**Show Sandbox updates** - show all updates to an Install's Sandbox.
 
 <CodeGroup>
 ```sh nuon
@@ -106,7 +106,7 @@ nuon installs sandbox-runs
 ```
 </CodeGroup>
 
-**Show sandbox run logs** - show logs for a specific sandbox run.
+**Show Sandbox run logs** - show logs for a specific Sandbox run.
 
 <CodeGroup>
 ```sh nuon
@@ -114,7 +114,7 @@ nuon installs sandbox-run-logs -r <run-id>
 ```
 </CodeGroup>
 
-**Reprovision a sandbox** - reprovision the sandbox with the latest configured sandbox version for an app.
+**Reprovision a Sandbox** - reprovision the Sandbox with the latest configured Sandbox version for an App.
 
 <CodeGroup>
 ```sh nuon
@@ -122,7 +122,7 @@ nuon installs reprovision
 ```
 </CodeGroup>
 
-**Deprovision a sandbox** - deprovision a sandbox.
+**Deprovision a Sandbox** - Deprovision a Sandbox.
 
 <CodeGroup>
 ```sh nuon
@@ -132,16 +132,16 @@ nuon installs deprovision
 
 ### Install Components
 
-Each component is deployed to an install when it is first created. When a component is created after an install has been 
+Each Component is deployed to an Install when it is first created. When a Component is created after an Install has been 
 provisioned, it will automatically be deployed to it upon the first release.
 
-The Nuon CLI provides the following commands to manage install components:
+The Nuon CLI provides the following commands to manage install Components:
 
 <Note>
 Each example here assumes you have run `nuon installs select` first.
 </Note>
 
-**Show Deploys** - show deploys for an install.
+**Show Deploys** - show deploys for an Install.
 
 <CodeGroup>
 ```sh nuon
@@ -167,10 +167,9 @@ nuon installs print-deploy-plan -d <deploy-id>
 </CodeGroup>
 
 
-## Deploying to a specific install
+## Deploying to a specific Install
 
-While iterating on your application's configuration it can be helpful to deploy to a single install, you can do this by 
-  creating a release and targeting a single install id.
+While iterating on your App's config, it can be helpful to deploy to a single Install, you can do this by creating a release and targeting a single Install id.
 
 <CodeGroup>
 ```sh nuon

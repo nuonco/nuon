@@ -1,13 +1,13 @@
 ---
 title: 'GitHub Actions'
-description: 'Automatically update your apps from GitHub Actions.'
+description: 'Automatically update your Apps from GitHub Actions.'
 icon: code
 ---
 
-You can use GitHub Actions to automatically build and release your components as part of your workflow. This can be used
-to update your Nuon applications, running in customer accounts alongside updating other platforms.
+You can use GitHub Actions to automatically build and release your Components as part of your workflow. This can be used
+to update your Nuon Apps, running in customer accounts alongside updating other platforms.
 
-We offer the following actions:
+We offer the following Actions:
 - [Build](https://github.com/nuonco/actions-build)
 - [Release](https://github.com/nuonco/actions-release)
 
@@ -16,8 +16,8 @@ for details on configuring each action.
 
 ## Automatically Build Components
 
-In order to update customer applications with the latest version of a component, it must be built first. You can
-automatically build a component using GitHub actions.
+In order to update customer applications with the latest version of a Component, it must be built first. You can
+automatically build a component using GitHub Actions.
 
 To automatically build from an Action:
 
@@ -47,7 +47,7 @@ jobs:
 
 ## Automatically Release Components
 
-Release are used to update components in a Nuon application.
+Releases are used to update Components in a Nuon App.
 
 To automatically build _and_ release a component from an Action:
 
@@ -82,11 +82,11 @@ on:
           build_id: ${{ steps.build.outputs.build_id }}
 ```
 
-Please refer to [creating releases](/guides/create-releases) for more details on releases.
+Please refer to [creating releases](/guides/create-releases) for more details on Releases.
 
 ## Configuration
 
-Both an API token and an org ID are required to configure Nuon github actions.
+Both an API token and an org ID are required to configure Nuon GitHub Actions.
 
 It is recommended to set the API token using a [GitHub Action secret](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions).
 
