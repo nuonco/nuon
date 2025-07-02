@@ -14,9 +14,9 @@ func (a *evClient) Send(ctx context.Context, id string, signal Signal) {
 	if err := a.v.Struct(signal); err != nil {
 		a.mw.Incr("event_loop.signal", metrics.ToStatusTag("invalid signal"))
 		a.l.Error("invalid signal", zap.Error(err))
+
 		return
 	}
-
 	if err := signal.PropagateContext(ctx); err != nil {
 		a.mw.Incr("event_loop.signal", metrics.ToStatusTag("unable to propagate"))
 		a.l.Error("unable to propagate", zap.Error(err))
