@@ -57,9 +57,39 @@ export async function shutdownRunner({
   })
 }
 
+interface IUpdateRunner {
+  orgId: string
+  runnerId: string
+  path: string
+  body: {
+    container_image_tag: string
+    container_image_url: string
+    org_awsiam_role_arn: string
+    org_k8s_service_account_name: string
+    runner_api_url: string
+  }
+}
+
+export async function updateRunner({
+  body,
+  orgId,
+  path,
+  runnerId,
+}: IUpdateRunner) {
+  return nueMutateData({
+    orgId,
+    method: 'PATCH',
+    path: `runners/${runnerId}/settings`,
+    body,
+  }).then((r) => {
+    revalidatePath(path)
+    return r
+  })
+}
+
 export interface IUnlockWorkspace {
-  workspaceId: string,
-  orgId: string,
+  workspaceId: string
+  orgId: string
 }
 
 export async function unlockWorkspace({
@@ -70,6 +100,6 @@ export async function unlockWorkspace({
     errorMessage: 'Unable to lock workspace state.',
     orgId,
     path: `terraform-workspaces/${workspaceId}/unlock`,
-    data: {}
+    data: {},
   })
 }

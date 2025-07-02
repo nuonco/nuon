@@ -3,12 +3,9 @@ import React, { type FC } from 'react'
 import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
 import { ID, Text } from '@/components/Typography'
-import {
-  getRunnerLatestHeartbeat,
-  getInstallRunnerGroup,
-  getOrgRunnerGroup,
-} from '@/lib'
-import type { TRunner } from '@/types'
+import { getRunnerLatestHeartbeat } from '@/lib'
+import type { TRunner, TRunnerGroupSettings } from '@/types'
+import { nueQueryData } from '@/utils'
 
 function isLessThan15SecondsOld(timestampStr: string) {
   const date = DateTime.fromISO(timestampStr)
@@ -24,26 +21,20 @@ interface IRunnerMeta {
   installId?: string
 }
 
-export const RunnerMeta: FC<IRunnerMeta> = async ({
-  orgId,
-  runner,
-  installId = '',
-}) => {
-  const getRunnerGroup = () =>
-    installId === ''
-      ? getOrgRunnerGroup({ orgId })
-      : getInstallRunnerGroup({ orgId, installId })
-
-  const [runnerHeartbeat, runnerGroup] = await Promise.all([
+export const RunnerMeta: FC<IRunnerMeta> = async ({ orgId, runner }) => {
+  const [runnerHeartbeat, { data: settings }] = await Promise.all([
     getRunnerLatestHeartbeat({
       orgId,
       runnerId: runner.id,
     }).catch(console.error),
-    getRunnerGroup().catch(console.error),
+    nueQueryData<TRunnerGroupSettings>({
+      orgId,
+      path: `runners/${runner?.id}/settings`,
+    }),
   ])
 
   return (
-    <div className="flex gap-8 items-start justify-start flex-wrap">
+    <div className="grid md:grid-cols-3 gap-8 items-start justify-start">
       <span className="flex flex-col gap-2">
         <Text className="text-cool-grey-600 dark:text-cool-grey-500">
           Status
@@ -93,17 +84,25 @@ export const RunnerMeta: FC<IRunnerMeta> = async ({
           </span>
         </>
       ) : null}
-      {runnerGroup ? (
-        <span className="flex flex-col gap-2">
-          <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-            Platform
-          </Text>
-          <Text>{runnerGroup?.platform}</Text>
-        </span>
+      {settings ? (
+        <>
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Tag
+            </Text>
+            <Text>{settings?.container_image_tag}</Text>
+          </span>
+          <span className="flex flex-col gap-2">
+            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
+              Platform
+            </Text>
+            <Text>{settings?.metadata?.['runner.platform'] || 'Unknown'}</Text>
+          </span>
+        </>
       ) : null}
       <span className="flex flex-col gap-2">
         <Text className="text-cool-grey-600 dark:text-cool-grey-500">ID</Text>
-        <ID id={runner?.id} />
+        <ID className="break-all" id={runner?.id} />
       </span>
     </div>
   )

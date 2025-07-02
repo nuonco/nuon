@@ -14,23 +14,29 @@ import {
   RunnerUpcomingJobs,
   Section,
   ShutdownRunnerModal,
+  UpdateRunnerModal,
   Text,
   Time,
 } from '@/components'
 import { InstallManagementDropdown } from '@/components/Installs'
 import { getInstall, getRunner } from '@/lib'
+import type { TRunnerGroupSettings } from '@/types'
+import { nueQueryData } from '@/utils'
 
-export default async function Runner({
-  params,
-  searchParams,
-}) {
+export default async function Runner({ params, searchParams }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const sp = await searchParams
   const install = await getInstall({ installId, orgId })
-  const runner = await getRunner({
-    orgId,
-    runnerId: install.runner_id,
-  })
+  const [runner, { data: settings }] = await Promise.all([
+    getRunner({
+      orgId,
+      runnerId: install.runner_id,
+    }),
+    nueQueryData<TRunnerGroupSettings>({
+      orgId,
+      path: `runners/${install?.runner_id}/settings`,
+    }),
+  ])
 
   return (
     <DashboardContent
@@ -99,13 +105,11 @@ export default async function Runner({
                   />
                 }
               >
-                              
-                  <RunnerMeta
-                    orgId={orgId}
-                    installId={installId}
-                    runner={runner}
-                  />
-
+                <RunnerMeta
+                  orgId={orgId}
+                  installId={installId}
+                  runner={runner}
+                />
               </Suspense>
             </ErrorBoundary>
           </Section>
@@ -130,9 +134,16 @@ export default async function Runner({
         </div>
         <div className="divide-y flex-auto flex flex-col col-span-4">
           <Section heading="Runner controls" className="flex-initial">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <ShutdownRunnerModal orgId={orgId} runnerId={runner?.id} />
               <DeprovisionRunnerModal />
+              {settings ? (
+                <UpdateRunnerModal
+                  orgId={orgId}
+                  runnerId={runner?.id}
+                  settings={settings}
+                />
+              ) : null}
             </div>
           </Section>
           <Section heading="Upcoming jobs ">
