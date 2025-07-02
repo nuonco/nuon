@@ -12,10 +12,13 @@ import {
   RunnerPastJobs,
   RunnerUpcomingJobs,
   ShutdownRunnerModal,
+  UpdateRunnerModal,
   Section,
   Text,
 } from '@/components'
 import { getRunner, getOrg } from '@/lib'
+import type { TRunnerGroupSettings } from '@/types'
+import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
@@ -31,10 +34,14 @@ export default async function OrgRunner({ params, searchParams }) {
   const sp = await searchParams
   const org = await getOrg({ orgId })
   const runnerId = org?.runner_group?.runners?.at(0)?.id
-  const [runner] = await Promise.all([
+  const [runner, { data: settings }] = await Promise.all([
     getRunner({
       orgId,
       runnerId,
+    }),
+    nueQueryData<TRunnerGroupSettings>({
+      orgId,
+      path: `runners/${runnerId}/settings`,
     }),
   ])
 
@@ -98,7 +105,16 @@ export default async function OrgRunner({ params, searchParams }) {
           </div>
           <div className="divide-y flex flex-col flex-auto col-span-4">
             <Section heading="Runner controls" className="flex-initial">
-              <ShutdownRunnerModal orgId={orgId} runnerId={runner?.id} />
+              <div className="flex gap-4 flex-wrap">
+                <ShutdownRunnerModal orgId={orgId} runnerId={runner?.id} />{' '}
+                {settings ? (
+                  <UpdateRunnerModal
+                    orgId={orgId}
+                    runnerId={runnerId}
+                    settings={settings}
+                  />
+                ) : null}
+              </div>
             </Section>
             <Section className="flex-initial" heading="Upcoming jobs ">
               <ErrorBoundary fallbackRender={ErrorFallback}>
