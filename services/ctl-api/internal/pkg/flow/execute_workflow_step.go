@@ -2,6 +2,7 @@ package flow
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -36,9 +37,13 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 	if stepErr != nil {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
-			Status: app.NewCompositeTemporalStatus(ctx, app.StatusError, map[string]any{
-				"reason": "step failed",
-			}),
+			Status: app.CompositeStatus{
+				Status: app.StatusError,
+				Metadata: map[string]any{
+					"reason": "Step failed, review the error and try again.",
+				},
+				StatusHumanDescription: "Step failed",
+			},
 		}); err != nil {
 			return false, errors.Wrap(err, "unable to mark step as error")
 		}
@@ -168,20 +173,36 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 }
 
 func (c *FlowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context, step *app.InstallWorkflowStep, flw *app.Flow) error {
-	name := step.Name
-	if !strings.HasSuffix(name, "(retry)") {
-		name = fmt.Sprintf("%s (retry)", step.Name)
-	}
+
 	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowStep(ctx, activities.CreateFlowStepRequest{
 		FlowID:        flw.ID,
 		OwnerID:       flw.OwnerID,
 		OwnerType:     flw.OwnerType,
-		Name:          name,
+		Name:          getCloneStepName(step.Name),
 		Signal:        step.Signal,
 		Status:        step.Status,
 		Idx:           step.Idx,
 		ExecutionType: step.ExecutionType,
 		Metadata:      step.Metadata,
+		Retryable:     step.Retryable,
 	})
 	return err
+}
+
+// getCloneStepName generates a new step name for a cloned step.
+// this is quick regex based approach to skip unwanted db call
+func getCloneStepName(name string) string {
+	re := regexp.MustCompile(`^(.*)\(retry (\d+)\)$`)
+	matches := re.FindStringSubmatch(name)
+
+	if len(matches) == 3 {
+		base := strings.TrimSpace(matches[1])
+		retryCount, err := strconv.Atoi(matches[2])
+		if err == nil {
+			return fmt.Sprintf("%s (retry %d)", base, retryCount+1)
+		}
+	}
+
+	// No retry suffix found, or unable to parse
+	return fmt.Sprintf("%s (retry 1)", name)
 }

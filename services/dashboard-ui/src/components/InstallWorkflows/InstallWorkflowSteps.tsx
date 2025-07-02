@@ -3,7 +3,7 @@
 'use client'
 
 import classNames from 'classnames'
-import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { useSearchParams, useRouter, usePathname, useParams } from 'next/navigation'
 import React, { type FC, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
@@ -12,10 +12,13 @@ import { Notice } from '@/components/Notice'
 import { Section } from '@/components/Card'
 import { Duration, Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
+import { retryWorkflow } from '@/components/install-actions'
 import type { TInstallWorkflow, TInstallWorkflowStep, TInstall } from '@/types'
 import { removeSnakeCase, sentanceCase } from '@/utils'
 import { YAStatus } from './InstallWorkflowHistory'
 import { StepDetails, getStepType } from './StepDetails'
+import { SpinnerSVG } from '../Loading'
+import { ArrowArcRight, ArrowCircleRight, ArrowClockwiseIcon, ArrowsClockwise, SkipForwardCircleIcon, SkipForwardIcon, X } from '@phosphor-icons/react'
 
 export interface IPollStepDetails {
   pollDuration?: number
@@ -36,16 +39,22 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
 }) => {
   const path = usePathname()
   const router = useRouter()
+  const params = useParams()
+  const [isRetryLoading, setIsRetryLoading] = useState(false)
+  const [isSkipLoading, setIsSkipLoading] = useState(false)
+  const [isKickedOff, setIsKickedOff] = useState(false)
+  const [error, setError] = useState<string>()
   const searchParams = useSearchParams()
   const queryTargetId = searchParams.get('target')
+  const orgId = params?.['org-id'] as string
   const [activeStep, setActiveStep] = useState(
     installWorkflow?.steps.find((s) => s?.step_target_id === queryTargetId) ||
-      installWorkflow?.steps?.find(
-        (s) =>
-          s?.status?.status === 'in-progress' ||
-          s?.status?.status === 'approval-awaiting'
-      ) ||
-      installWorkflow?.steps?.find((s) => s?.step_target_type !== '')
+    installWorkflow?.steps?.find(
+      (s) =>
+        s?.status?.status === 'in-progress' ||
+        s?.status?.status === 'approval-awaiting'
+    ) ||
+    installWorkflow?.steps?.find((s) => s?.step_target_type !== '')
   )
   const scrollableRef = useRef(null)
   const buttonRefs = useRef([])
@@ -55,6 +64,27 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
       ? 325
       : 375
   const [isManualControl, setManualControl] = useState(false)
+
+  const retry = (retryStep: boolean, stepID: string) => {
+    setIsKickedOff(true)
+    setIsSkipLoading(true)
+    retryWorkflow({
+      orgId,
+      installId: install?.id,
+      workflowId: installWorkflow?.id,
+      stepId: stepID,
+      retryStep: retryStep
+    }).then(({ data, error }) => {
+      setIsRetryLoading(false)
+      setIsSkipLoading(false)
+      setIsKickedOff(false)
+      if (error) {
+        setError(error?.error)
+        console.error(error)
+      } else {
+      }
+    })
+  }
 
   useEffect(() => {
     if (!isManualControl) {
@@ -129,6 +159,7 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
                       status={step?.status}
                       stepNumber={i + 1}
                       isSkipped={step?.execution_type === 'skipped'}
+                      isRetried={step?.retried}
                     />
                   </div>
                 ) : (
@@ -172,6 +203,7 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
                       status={step?.status}
                       stepNumber={i + 1}
                       isSkipped={step?.execution_type === 'skipped'}
+                      isRetried={step?.retried}
                     />
                   </Button>
                 )
@@ -199,6 +231,57 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
                 getStepType(step, install, installWorkflow?.approval_option)
               )}
             </StepDetails>
+            {activeStep?.retryable && activeStep?.status?.status == "error" && !activeStep?.retried ? (
+              <div className="mt-4">
+                <span className="flex justify-between">
+                  <Button
+                    onClick={() => {
+                      setIsSkipLoading(true)
+                      retry(false, activeStep?.id)
+                    }}
+                    variant={'secondary'}
+                    className="w-fit"
+                    disabled={isKickedOff}
+                  >
+                    {isSkipLoading ? (
+                      <>
+                        <SpinnerSVG />
+                        Continuing
+                      </>
+                    ) : (
+                      <>
+                        Skip and continue
+                        <SkipForwardIcon />
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setIsRetryLoading(true)
+                      retry(true, activeStep?.id)
+                    }}
+                    variant={'primary'}
+                    className="w-fit"
+                    disabled={isKickedOff}
+                  >
+                    {isRetryLoading ? (
+                      <>
+                        <SpinnerSVG />
+                        Retrying
+                      </>
+                    ) : (
+                      <>
+                        Retry
+                        <ArrowClockwiseIcon />
+                      </>
+                    )}
+                  </Button>
+                  {error ? <Notice>{error}</Notice> : null}
+                </span>
+              </div>
+            ) : <> </>
+            }
+
           </Section>
         ) : (
           <Section>
@@ -217,13 +300,14 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
 const InstallWorkflowStepTitle: FC<{
   executionTime: number
   isSkipped?: boolean
+  isRetried?: boolean
   name: string
   status: TInstallWorkflowStep['status']
   stepNumber: number
-}> = ({ executionTime, isSkipped = false, name, status, stepNumber }) => {
+}> = ({ executionTime, isSkipped = false, isRetried = false, name, status, stepNumber }) => {
   return (
     <span className="flex gap-2 items-start justify-start w-full">
-      <YAStatus status={status?.status} isSkipped={isSkipped} />
+      <YAStatus status={status?.status} isSkipped={isSkipped} isRetried={isRetried} />
       <span className="flex flex-col w-full max-w-full overflow-hidden gap-1">
         <Text variant="med-12">
           <span className="truncate">{sentanceCase(name)}</span>
@@ -232,7 +316,7 @@ const InstallWorkflowStepTitle: FC<{
           className="!text-cool-grey-600 dark:!text-cool-grey-500 w-full justify-between"
           variant="reg-12"
         >
-          Step {stepNumber}{' '}
+          Step {stepNumber}{' '} {isRetried ? 'retry initiated by the user' : null}
           {isSkipped && status.status === 'success' ? (
             <Badge theme="info" isCompact>
               Skipped
@@ -264,6 +348,14 @@ const InstallWorkflowStepTitle: FC<{
               {getFinishedText(status)} in
               <Duration nanoseconds={executionTime} />
             </span>
+          ) : status?.status === 'user-skipped' ? (
+            <Badge isCompact theme="not-attempted">
+              Skipped
+            </Badge>
+          ) : status?.status === 'discarded' ? (
+            <Badge isCompact theme="not-attempted">
+              Discarded
+            </Badge>
           ) : null}
         </Text>
       </span>

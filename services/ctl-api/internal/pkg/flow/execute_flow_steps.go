@@ -15,13 +15,17 @@ import (
 var FlowCancellationErr = fmt.Errorf("flow cancelled")
 
 func (c *FlowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req eventloop.EventLoopRequest, flw *app.Flow) error {
+	return c.executeFlowSteps(ctx, req, flw, 0)
+}
+
+func (c *FlowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context, req eventloop.EventLoopRequest, flw *app.Flow, startingStepNumber int) error {
 	if flw.Status.Status == app.StatusCancelled {
 		return FlowCancellationErr
 	}
 
 	steps := flw.Steps
 
-	for i := 0; i < len(steps); i++ {
+	for i := startingStepNumber; i < len(steps); i++ {
 		step := &steps[i]
 
 		retry, err := c.executeFlowStep(ctx, req, step.Idx, step, flw)

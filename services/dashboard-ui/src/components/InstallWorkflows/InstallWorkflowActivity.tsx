@@ -28,10 +28,6 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
     if (shouldPoll) {
       const pollBuild = setInterval(refreshData, pollDuration)
 
-      if (installWorkflow?.finished) {
-        clearInterval(pollBuild)
-      }
-
       return () => clearInterval(pollBuild)
     }
   }, [installWorkflow, shouldPoll])
