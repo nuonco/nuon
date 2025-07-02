@@ -361,7 +361,7 @@ export async function deleteInstall({
   return (await res).headers.get('x-nuon-install-workflow-id')
 }
 
-interface IDeprovisionSandbox extends IDeleteComponents {}
+interface IDeprovisionSandbox extends IDeleteComponents { }
 
 export async function deprovisionSandbox({
   continueOnError = false,
@@ -454,6 +454,33 @@ export async function updateInstallConfig({
     method: 'PATCH',
     body: {
       approvalOption,
+    },
+  })
+}
+
+interface IRetryWorklow {
+  orgId: string
+  workflowId: string
+  stepId: string
+  installId: string
+  retryStep?: boolean
+}
+
+export async function retryWorkflow({
+  orgId,
+  workflowId,
+  stepId,
+  installId,
+  retryStep = false,
+}: IRetryWorklow) {
+  let path = `installs/${installId}/retry-workflow`
+  return nueMutateData({
+    orgId,
+    path,
+    body: {
+      workflow_id: workflowId,
+      step_id: stepId,
+      retry: retryStep ? true : false,
     },
   })
 }
