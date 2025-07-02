@@ -21,10 +21,9 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   ])
 
   return {
-    title: `${install.name} | ${
-      installWorkflow?.name ||
+    title: `${install.name} | ${installWorkflow?.name ||
       removeSnakeCase(sentanceCase(installWorkflow?.type))
-    }`,
+      }`,
   }
 }
 
@@ -108,7 +107,7 @@ export default async function InstallWorkflow({ params }) {
           ) ? (
             <div className="flex flex-col gap-3">
               {installWorkflow?.approval_option === 'prompt' &&
-              !installWorkflow?.finished ? (
+                !installWorkflow?.finished ? (
                 <>
                   <Text>
                     Automatically approve all changes waiting for approval
@@ -116,8 +115,8 @@ export default async function InstallWorkflow({ params }) {
                   <WorkflowApproveAllModal workflow={installWorkflow} />
                 </>
               ) : installWorkflow?.steps?.some(
-                  (s) => s?.approval?.response?.type === 'deny'
-                ) ? (
+                (s) => s?.approval?.response?.type === 'deny'
+              ) ? (
                 <Text className="text-red-600 dark:text-red-400">
                   Changes have been denied
                 </Text>

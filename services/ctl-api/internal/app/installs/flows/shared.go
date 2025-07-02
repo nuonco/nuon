@@ -30,12 +30,15 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 	}
 
 	var targettype string
+	retryable := true
 
 	switch signal.Type {
 	case signals.OperationAwaitInstallStackVersionRun, signals.OperationGenerateInstallStackVersion, signals.OperationUpdateInstallStackOutputs:
 		targettype = "install_stack_versions"
+		retryable = false
 	case signals.OperationAwaitRunnerHealthy:
 		targettype = "runners"
+		retryable = false
 	case signals.OperationExecuteDeployComponentApplyPlan,
 		signals.OperationExecuteDeployComponentSyncAndPlan,
 
@@ -90,6 +93,7 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 			EventLoopID: installID,
 			SignalJSON:  byts,
 		},
+		Retryable: retryable,
 	}, nil
 }
 
