@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { JsonView } from '@/components/Code'
 
-// Original types for classic plan
 type ChangeAction =
   | 'create'
   | 'update'
@@ -12,6 +11,7 @@ type ChangeAction =
   | 'create-before-destroy'
   | 'destroy-before-create'
   | 'replace'
+  | 'read'
 
 type TFResourceChange = {
   address: string
@@ -40,8 +40,10 @@ function detectPlanFormat(plan: any): PlanFormat {
 }
 
 function getActionColor(actions: ChangeAction[]): string {
+  if (actions.length === 1 && actions[0] === 'read')
+    return 'bg-blue-100 text-blue-700 border-blue-400 dark:bg-blue-500/10 dark:border-blue-600 dark:text-blue-200'
   if (actions.includes('create') && actions.includes('delete'))
-    return 'bg-primary-100 text-primary-700 border-primary-400 dark:bg-primary-500/10 dark:border-primary-600 dark:text-primary-200' // replace
+    return 'bg-primary-100 text-primary-700 border-primary-400 dark:bg-primary-500/10 dark:border-primary-600 dark:text-primary-200'
   if (actions.includes('create'))
     return 'bg-green-100 text-green-700 border-green-400 dark:bg-green-500/10 dark:border-green-600 dark:text-green-200'
   if (actions.includes('update'))
@@ -52,6 +54,7 @@ function getActionColor(actions: ChangeAction[]): string {
 }
 
 function getActionLabel(actions: ChangeAction[]): string {
+  if (actions.length === 1 && actions[0] === 'read') return 'Read'
   if (actions.includes('create') && actions.includes('delete')) return 'Replace'
   if (actions.includes('create')) return 'Create'
   if (actions.includes('update')) return 'Update'
@@ -107,26 +110,34 @@ function diffFields(
   })
 }
 
-// ---- StatePlanViewer styled like the resource_changes viewer ----
-function StatePlanViewer({ plan }: { plan: any }) {
+function StatePlanViewer({
+  plan,
+  hideNoOps,
+}: {
+  plan: any
+  hideNoOps: boolean
+}) {
   const [open, setOpen] = useState<Record<string, boolean>>({})
 
-  // Helper for state plan "output_changes" -- convert to ChangeAction[]
   function getOutputChangeActions(change: any): ChangeAction[] {
-    // Usually it's an array like ["no-op"], ["create"], etc.
     if (Array.isArray(change?.actions)) {
       return change.actions as ChangeAction[]
     }
     return ['no-op']
   }
 
-  // Render output changes as cards
   const outputKeys = plan.output_changes ? Object.keys(plan.output_changes) : []
+  const filteredKeys = hideNoOps
+    ? outputKeys.filter((key) => {
+        const acts = getOutputChangeActions(plan.output_changes[key])
+        return !(acts.length === 1 && acts[0] === 'no-op')
+      })
+    : outputKeys
 
   return (
     <div className="w-full mx-auto space-y-2">
-      {outputKeys.length > 0 ? (
-        outputKeys.map((key) => {
+      {filteredKeys.length > 0 ? (
+        filteredKeys.map((key) => {
           const change = plan.output_changes[key]
           const actions = getOutputChangeActions(change)
           const actionLabel = getActionLabel(actions)
@@ -175,21 +186,13 @@ function StatePlanViewer({ plan }: { plan: any }) {
                         )}
                       </div>
                     )}
+                    {actions.length === 1 && actions[0] === 'read' && (
+                      <div className="my-2 text-blue-700 dark:text-blue-200 text-sm">
+                        Terraform will refresh this output value from the
+                        provider.
+                      </div>
+                    )}
                   </div>
-                  {/* <div className="mt-2 text-sm text-gray-400">
-                      <span className="flex gap-2">
-                      <b>Unknown after: </b> {String(change.after_unknown)}
-                      </span>
-
-                      <span className="flex gap-2">
-                      <b>Sensitive after: </b> {String(change.after_sensitive)}
-                      </span>
-
-                      <span className="flex gap-2">
-                      <b>Sensitive before: </b>{' '}
-                      {String(change.before_sensitive)}
-                      </span>
-                      </div> */}
                 </div>
               )}
             </div>
@@ -247,13 +250,38 @@ function StatePlanViewer({ plan }: { plan: any }) {
 
 export function TerraformPlanViewer({ plan }: { plan: any }) {
   const [open, setOpen] = useState<Record<string, boolean>>({})
+  // Default: hide no-op changes, so set true
+  const [hideNoOps, setHideNoOps] = useState<boolean>(true)
   const format = detectPlanFormat(plan)
 
-  // Classic format
   if (format === 'resource_changes') {
-    if (!plan?.resource_changes?.length) {
+    const displayedResources = hideNoOps
+      ? plan.resource_changes.filter(
+          (res: TFResourceChange) =>
+            !(
+              res.change.actions.length === 1 &&
+              res.change.actions[0] === 'no-op'
+            )
+        )
+      : plan.resource_changes
+
+    if (!displayedResources.length) {
       return plan ? (
-        <JsonView data={plan} />
+        <div>
+          <div className="flex items-center mb-4">
+            <input
+              id="show-noops"
+              type="checkbox"
+              className="mr-2"
+              checked={!hideNoOps}
+              onChange={() => setHideNoOps((v) => !v)}
+            />
+            <label htmlFor="show-noops" className="text-sm">
+              Show no-op changes
+            </label>
+          </div>
+          <JsonView data={plan} />
+        </div>
       ) : (
         <div className="p-8 text-base text-center">
           No changes found in the Terraform plan.
@@ -263,10 +291,22 @@ export function TerraformPlanViewer({ plan }: { plan: any }) {
 
     return (
       <div className="w-full mx-auto space-y-2">
-        <div className="text-sm text-gray-400 mb-2">
-          Detected resource changes.
+        <div className="flex items-center mb-4">
+          <input
+            id="show-noops"
+            type="checkbox"
+            className="mr-2"
+            checked={!hideNoOps}
+            onChange={() => setHideNoOps((v) => !v)}
+          />
+          <label htmlFor="show-noops" className="text-sm">
+            Show no-op changes
+          </label>
+          <span className="ml-4 text-sm text-gray-400">
+            Detected resource changes.
+          </span>
         </div>
-        {plan.resource_changes.map((res: TFResourceChange) => {
+        {displayedResources.map((res: TFResourceChange) => {
           const actionLabel = getActionLabel(res.change.actions)
           const color = getActionColor(res.change.actions)
           const isOpen = open[res.address] ?? false
@@ -320,6 +360,13 @@ export function TerraformPlanViewer({ plan }: { plan: any }) {
                           {diffFields(res.change.before, res.change.after)}
                         </div>
                       )}
+                    {res.change.actions.length === 1 &&
+                      res.change.actions[0] === 'read' && (
+                        <div className="my-2 text-blue-700 dark:text-blue-200 text-sm">
+                          Terraform will refresh this resource from the
+                          provider.
+                        </div>
+                      )}
                   </div>
                 </div>
               )}
@@ -330,19 +377,29 @@ export function TerraformPlanViewer({ plan }: { plan: any }) {
     )
   }
 
-  // New state file style
   if (format === 'state_plan') {
     return (
       <div>
-        <div className="text-sm text-gray-400 mb-2">
-          Detected output changes.
+        <div className="flex items-center mb-4">
+          <input
+            id="show-noops"
+            type="checkbox"
+            className="mr-2"
+            checked={!hideNoOps}
+            onChange={() => setHideNoOps((v) => !v)}
+          />
+          <label htmlFor="show-noops" className="text-sm">
+            Show no-op changes
+          </label>
+          <span className="ml-4 text-sm text-gray-400">
+            Detected output changes.
+          </span>
         </div>
-        <StatePlanViewer plan={plan} />
+        <StatePlanViewer plan={plan} hideNoOps={hideNoOps} />
       </div>
     )
   }
 
-  // fallback
   return (
     <div>
       <div className="text-sm text-gray-400 mb-2">
