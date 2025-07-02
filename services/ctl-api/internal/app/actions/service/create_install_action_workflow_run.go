@@ -48,6 +48,11 @@ func (c *CreateInstallActionWorkflowRunRequest) Validate(v *validator.Validate) 
 // @Router					/v1/installs/{install_id}/action-workflows/runs [post]
 func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
+	install, err := s.getInstall(ctx, installID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install: %w", err))
+		return
+	}
 
 	var req CreateInstallActionWorkflowRunRequest
 	if err := ctx.BindJSON(&req); err != nil {
@@ -63,6 +68,14 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	awc, err := s.actionsHelpers.GetActionWorkflowConfigByID(ctx, req.ActionWorkFlowConfigID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action workflow config: %w", err))
+		return
+	}
+
+	if awc.AppConfigID != install.AppConfigID {
+		ctx.Error(stderr.ErrSystem{
+			Err:         fmt.Errorf("action workflow config does not belong to the install's app config"),
+			Description: "action workflow config does not belong to the install's app config",
+		})
 		return
 	}
 
@@ -140,4 +153,14 @@ func (s *service) CreateInstallWorkflow(ctx context.Context, installID string, w
 	}
 
 	return &installWorkflow, nil
+}
+
+func (s *service) getInstall(ctx context.Context, installID string) (*app.Install, error) {
+	var install app.Install
+	res := s.db.WithContext(ctx).First(&install, "id = ?", installID)
+	if res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to get install")
+	}
+
+	return &install, nil
 }
