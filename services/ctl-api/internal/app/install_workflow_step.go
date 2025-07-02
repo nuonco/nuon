@@ -78,6 +78,9 @@ type InstallWorkflowStep struct {
 	ExecutionTime time.Duration `json:"execution_time,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
+
+	Retryable bool `json:"retryable,omitzero" gorm:"default:false" temporaljson:"retryable,omitzero,omitempty"`
+	Retried   bool `json:"retried,omitzero" gorm:"default:false" temporaljson:"retried,omitzero,omitempty"`
 }
 
 func (i *InstallWorkflowStep) BeforeSave(tx *gorm.DB) error {

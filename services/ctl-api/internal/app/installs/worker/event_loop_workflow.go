@@ -15,6 +15,7 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 		signals.OperationPollDependencies:   AwaitPollDependencies,
 		signals.OperationForget:             AwaitForget,
 		signals.OperationExecuteFlow:        AwaitExecuteFlow,
+		signals.OperationRerunFlow:          AwaitRerunFlow,
 		signals.OperationWorkflowApproveAll: AwaitWorkflowApproveAll,
 		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
 			AwaitRestarted(ctx, req)

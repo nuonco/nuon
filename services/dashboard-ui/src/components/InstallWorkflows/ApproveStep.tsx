@@ -117,8 +117,8 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           )}
         </div>
         {approval?.response ||
-        workflowApproveOption === 'approve-all' ||
-        step?.status?.status === 'cancelled' ? null : (
+          workflowApproveOption === 'approve-all' ||
+          step?.status?.status === 'cancelled' ? null : (
           <div className="mt-4 flex gap-3 justify-end">
             <Button
               onClick={() => {

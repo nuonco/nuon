@@ -63,7 +63,8 @@ export const StatusBadge: FC<IStatusBadge> = ({
     status === 'cancelled' ||
     status === 'Not deployed' ||
     status === 'No build' ||
-    status === 'deprovisioned'
+    status === 'deprovisioned' ||
+    status === 'user-skipped'
 
   const statusText = isLabelStatusText ? label : status
 

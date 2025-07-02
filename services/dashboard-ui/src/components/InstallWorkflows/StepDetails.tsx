@@ -1,4 +1,4 @@
-import React, { type FC } from 'react'
+import React, { useState, type FC } from 'react'
 import { Expand } from '@/components/Expand'
 import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
@@ -11,6 +11,8 @@ import { DeployStepDetails } from './DeployStepDetails'
 import { SandboxStepDetails } from './SandboxStepDetails'
 import { StackStep } from './StackStepDetails'
 import { RunnerStepDetails } from './RunnerStepDetails'
+import { Button } from '../Button'
+import { StatusBadge } from '../Status'
 
 export function getStepType(
   step: TInstallWorkflowStep,
@@ -21,7 +23,7 @@ export function getStepType(
 
   switch (step.step_target_type) {
     case 'install_sandbox_runs':
-      stepDetails = <SandboxStepDetails step={step} shouldPoll workflowApproveOption={workflowApproveOption}  />
+      stepDetails = <SandboxStepDetails step={step} shouldPoll workflowApproveOption={workflowApproveOption} />
       break
 
     case 'install_stack_versions':
@@ -71,22 +73,30 @@ export function getStepType(
           <YAStatus
             status={step?.status?.status}
             isSkipped={step?.execution_type === 'skipped'}
+            isRetried={step?.retried}
           />{' '}
           <Text variant="med-18">{sentanceCase(step?.name)}</Text>
         </hgroup>
-        {step?.status?.metadata?.reason ? (
+        {step?.status?.metadata?.reason && step?.status?.metadata?.reason !== "" ? (
           <Notice
             variant={
               step?.status?.status === 'cancelled' ||
-              step?.status?.status === 'approval-denied' ||
-              step.execution_type === 'skipped'
+                step?.status?.status === 'approval-denied' ||
+                step.execution_type === 'skipped'
                 ? 'warn'
-                : step?.status?.status === 'error'
-                  ? 'error'
-                  : 'default'
+                : step?.status?.status === 'discarded' || step?.status?.status === 'user-skipped'
+                  ? "info" : step?.status?.status === 'error'
+                    ? 'error'
+                    : 'default'
             }
+            className="!p-4 w-full"
           >
-            {sentanceCase(step?.status?.metadata?.reason as string)}
+            <Text variant="med-14" className="mb-2">
+              {sentanceCase(step?.status?.status_human_description as string || "Component deployment failed.")}
+            </Text>
+            <Text isMuted>
+              {sentanceCase(step?.status?.metadata?.reason as string)}
+            </Text>
           </Notice>
         ) : null}
         {step?.status?.metadata?.err_step_message ? (
@@ -106,7 +116,7 @@ export function getStepType(
             </div>
           }
         />
-      </div>
+      </div >
     </>
   )
 }

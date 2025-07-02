@@ -22,6 +22,7 @@ import { Text } from '@/components/Typography'
 import type { TInstallWorkflow } from '@/types'
 import { POLL_DURATION, removeSnakeCase, sentanceCase } from '@/utils'
 import { InstallWorkflowCancelModal } from './InstallWorkflowCancelModal'
+import { CheckCircleIcon, MinusCircleIcon, ProhibitIcon, Repeat, RepeatIcon, RepeatOnceIcon, WarningDiamondIcon } from '@phosphor-icons/react'
 
 function formatToRelativeDay(isoDate: string) {
   const inputDate = DateTime.fromISO(isoDate).startOf('day')
@@ -172,7 +173,8 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
 export const YAStatus: FC<{
   status: TInstallWorkflow['status']['status']
   isSkipped?: boolean
-}> = ({ status, isSkipped = false }) => {
+  isRetried?: boolean
+}> = ({ status, isSkipped = false, isRetried = false, }) => {
   const isSuccess =
     status === 'active' || status === 'success' || status === 'approved'
   const isError = status === 'error'
@@ -183,18 +185,24 @@ export const YAStatus: FC<{
   const isPending = !isSuccess && !isError && !isProhibit && !isInProgress
   const isPendingApproval = status === 'approval-awaiting'
   const isApprovalDenied = status === 'approval-denied'
+  const isDiscarded = status === 'discarded'
+  const isUserSkipped = status === 'user-skipped'
 
   const StatusIcon = isSuccess ? (
     <CheckCircle size="18" weight="bold" />
   ) : isError ? (
     <XCircle size="18" weight="bold" />
+  ) : isRetried ? (
+    <RepeatIcon size="18" weight="bold" />
+  ) : isUserSkipped ? (
+    <MinusCircleIcon size="18" weight="bold" />
   ) : isProhibit ? (
-    <Prohibit size="18" weight="bold" />
+    <ProhibitIcon size="18" weight="bold" />
   ) : isInProgress ? (
     <SpinnerSVG />
   ) : isCanceled ? (
     <XCircle size="18" weight="bold" />
-  ) : isNotAttempted ? (
+  ) : isNotAttempted || isDiscarded ? (
     <Prohibit size="18" weight="bold" />
   ) : isApprovalDenied ? (
     <WarningDiamond size="18" weight="bold" />
@@ -220,7 +228,7 @@ export const YAStatus: FC<{
           'bg-blue-600/15 dark:bg-blue-500/15 text-blue-800 dark:text-blue-500':
             isInProgress,
           'bg-cool-grey-600/15 dark:bg-cool-grey-500/15 text-cool-grey-800 dark:text-cool-grey-500':
-            isPending || isSkipped,
+            isPending || isSkipped || isDiscarded,
         }
       )}
     >
