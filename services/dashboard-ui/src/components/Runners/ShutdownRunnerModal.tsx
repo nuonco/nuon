@@ -156,7 +156,7 @@ export const ShutdownRunnerModal: FC<IShutdownRunnerModal> = ({
           )
         : null}
       <Button
-        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3"
+        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 text-red-600 dark:text-red-400"
         onClick={() => {
           setIsOpen(true)
         }}
