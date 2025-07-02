@@ -25,40 +25,7 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 		V:          w.v,
 		MW:         w.mw,
 		Generators: w.getFlowStepGenerators(ctx),
-		ExecFn: func(ctx workflow.Context, ereq eventloop.EventLoopRequest, sig *signals.Signal, step app.FlowStep) error {
-			sig.InstallWorkflowID = sreq.FlowID
-			sig.FlowID = sreq.FlowID
-			sig.WorkflowStepID = step.ID
-			sig.WorkflowStepName = step.Name
-			sig.FlowStepID = step.ID
-			sig.FlowStepName = step.Name
-			handlerSreq := signals.NewRequestSignal(ereq, sig)
-
-			// Predict the workflow ID of the underlying object's event loop
-			suffix, err := w.subloopSuffix(ctx, handlerSreq)
-			if err != nil {
-				return err
-			}
-
-			if suffix != "" {
-				id := fmt.Sprintf("%s-%s", sreq.ID, suffix)
-				if err := w.evClient.SendAndWait(ctx, id, &handlerSreq); err != nil {
-					return err
-				}
-			} else {
-				// no suffix means a workflow on this loop, so we must invoke the handler directly
-				handlers := w.getHandlers()
-				handler, ok := handlers[sig.Type]
-				if !ok {
-					return errors.New(fmt.Sprintf("no handler found for signal %s", sig.Type))
-				}
-				if err := handler(ctx, handlerSreq); err != nil {
-					return err
-				}
-			}
-
-			return nil
-		},
+		ExecFn:     w.getExecuteFlowExecFn(sreq),
 	}
 
 	return fc.Handle(ctx, sreq.EventLoopRequest, sreq.FlowID)
@@ -77,6 +44,42 @@ func (w *Workflows) getFlowStepGenerators(ctx workflow.Context) map[app.FlowType
 		flows.FlowTypeReprovisionSandbox: flows.ReprovisionSandbox,
 		flows.FlowTypeDeprovision:        flows.Deprovision,
 		flows.FlowTypeDeprovisionSandbox: flows.DeprovisionSandbox,
+	}
+}
+
+func (w *Workflows) getExecuteFlowExecFn(sreq signals.RequestSignal) func(workflow.Context, eventloop.EventLoopRequest, *signals.Signal, app.FlowStep) error {
+	return func(ctx workflow.Context, ereq eventloop.EventLoopRequest, sig *signals.Signal, step app.FlowStep) error {
+		sig.InstallWorkflowID = sreq.FlowID
+		sig.FlowID = sreq.FlowID
+		sig.WorkflowStepID = step.ID
+		sig.WorkflowStepName = step.Name
+		sig.FlowStepID = step.ID
+		sig.FlowStepName = step.Name
+		handlerSreq := signals.NewRequestSignal(ereq, sig)
+
+		// Predict the workflow ID of the underlying object's event loop
+		suffix, err := w.subloopSuffix(ctx, handlerSreq)
+		if err != nil {
+			return err
+		}
+
+		if suffix != "" {
+			id := fmt.Sprintf("%s-%s", sreq.ID, suffix)
+			if err := w.evClient.SendAndWait(ctx, id, &handlerSreq); err != nil {
+				return err
+			}
+		} else {
+			// no suffix means a workflow on this loop, so we must invoke the handler directly
+			handlers := w.getHandlers()
+			handler, ok := handlers[sig.Type]
+			if !ok {
+				return errors.New(fmt.Sprintf("no handler found for signal %s", sig.Type))
+			}
+			if err := handler(ctx, handlerSreq); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 }
 

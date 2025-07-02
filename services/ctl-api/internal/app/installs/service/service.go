@@ -64,6 +64,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	api.POST("/v1/installs/:install_id/deprovision", s.DeprovisionInstall)
 	api.POST("/v1/installs/:install_id/forget", s.ForgetInstall)
+	api.POST("/v1/installs/:install_id/retry-workflow", s.RetryWorkflow)
 
 	// install deploys
 	api.GET("/v1/installs/:install_id/deploys", s.GetInstallDeploys)

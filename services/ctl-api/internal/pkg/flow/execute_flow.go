@@ -85,7 +85,7 @@ func (c *FlowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.E
 	steps, err := gen(ctx, flw)
 	for idx, step := range steps {
 		step.Idx = idx
-		if id, err := activities.AwaitPkgWorkflowsFlowCreateFlowStep(ctx, activities.CreateFlowStepRequest{
+		s, err := activities.AwaitPkgWorkflowsFlowCreateFlowStep(ctx, activities.CreateFlowStepRequest{
 			FlowID:        fid,
 			OwnerID:       flw.OwnerID,
 			OwnerType:     flw.OwnerType,
@@ -95,11 +95,12 @@ func (c *FlowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.E
 			Idx:           step.Idx,
 			ExecutionType: step.ExecutionType,
 			Metadata:      step.Metadata,
-		}); err != nil {
+			Retryable:     step.Retryable,
+		})
+		if err != nil {
 			return errors.Wrap(err, "unable to create steps")
-		} else {
-			step.ID = id
 		}
+		step.ID = s.ID
 	}
 	if err != nil {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
