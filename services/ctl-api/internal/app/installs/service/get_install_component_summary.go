@@ -49,19 +49,26 @@ func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 		return
 	}
 
-	if len(install.InstallComponents) < 1 {
+	// pagination helper relies on providing +1 results to determine if there are more results.
+	// summary wasnt really designed for this. so we decrement here using the HandlePaginatedResponse.
+	ics, err := db.HandlePaginatedResponse(ctx, install.InstallComponents)
+	if err != nil {
+		ctx.Error(fmt.Errorf("failed to paginate install components: %w", err))
+		return
+	}
+
+	if len(ics) == 0 {
 		ctx.JSON(http.StatusOK, []app.InstallComponentSummary{})
 		return
 	}
 
-	appID := filterAppID(install.InstallComponents)
+	appID := filterAppID(ics)
 	if appID == "" {
 		ctx.Error(fmt.Errorf("unable to get app ID: %w", err))
 		return
 	}
 
-	// Extract component IDs and app ID
-	cmpIDs := make([]string, 0, len(install.InstallComponents))
+	cmpIDs := make([]string, 0, len(ics))
 	for _, ic := range install.InstallComponents {
 		cmpIDs = append(cmpIDs, ic.ComponentID)
 	}
@@ -84,7 +91,7 @@ func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 
 	fillComponentType(allComps, allCfgs)
 
-	compMap := buildInstallComponentConfig(allCfgs, install.InstallComponents)
+	compMap := buildInstallComponentConfig(allCfgs, ics)
 	depComps, err := s.buildDependentComponents(compMap, allComps)
 	if err != nil {
 		ctx.Error(err)
@@ -93,13 +100,7 @@ func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 
 	installSummary := s.buildSummary(ctx, install.InstallComponents, compMap, builds, depComps)
 
-	paginatedSummary, err := db.HandlePaginatedResponse(ctx, installSummary)
-	if err != nil {
-		ctx.Error(fmt.Errorf("failed to paginate install components: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, paginatedSummary)
+	ctx.JSON(http.StatusOK, installSummary)
 }
 
 func buildInstallComponentConfig(installComponentConfigurations []app.ComponentConfigConnection, installComponents []app.InstallComponent) map[string]*app.ComponentConfigConnection {
