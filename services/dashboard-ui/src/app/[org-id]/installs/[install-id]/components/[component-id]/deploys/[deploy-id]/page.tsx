@@ -247,12 +247,12 @@ export default async function InstallComponentDeploy({ params }) {
             <InstallComponentManagementDropdown component={component} />
           ) : null}
           {CANCEL_RUNNER_JOBS &&
-          deploy?.status !== 'active' &&
-          deploy?.status !== 'error' &&
-          deploy?.status !== 'inactive' &&
-          deploy?.runner_jobs?.length &&
-          installWorkflow &&
-          !installWorkflow?.finished ? (
+            deploy?.status !== 'active' &&
+            deploy?.status !== 'error' &&
+            deploy?.status !== 'inactive' &&
+            deploy?.runner_jobs?.length &&
+            installWorkflow &&
+            !installWorkflow?.finished ? (
             <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
           ) : null}
         </div>
@@ -261,9 +261,9 @@ export default async function InstallComponentDeploy({ params }) {
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="md:col-span-8">
           {installWorkflow &&
-          step &&
-          step?.approval &&
-          !step?.approval?.response ? (
+            step &&
+            step?.approval &&
+            !step?.approval?.response ? (
             <Section
               className="border-b"
               childrenClassName="flex flex-col gap-6"
@@ -282,9 +282,9 @@ export default async function InstallComponentDeploy({ params }) {
           </LogStreamProvider>
 
           {installWorkflow &&
-          step &&
-          step?.approval &&
-          step?.approval?.response ? (
+            step &&
+            step?.approval &&
+            step?.approval?.response ? (
             <Section
               className="border-t"
               childrenClassName="flex flex-col gap-6"
