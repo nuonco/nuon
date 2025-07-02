@@ -19,10 +19,11 @@ type CreateFlowStepRequest struct {
 	Idx           int                       `json:"idx"`
 	ExecutionType app.FlowStepExecutionType `json:"execution_type"`
 	Metadata      pgtype.Hstore             `json:"metadata"`
+	Retryable     bool                      `json:"retryable"`
 }
 
 // @temporal-gen activity
-func (a *Activities) PkgWorkflowsFlowCreateFlowStep(ctx context.Context, req CreateFlowStepRequest) (string, error) {
+func (a *Activities) PkgWorkflowsFlowCreateFlowStep(ctx context.Context, req CreateFlowStepRequest) (*app.InstallWorkflowStep, error) {
 	// step := &app.FlowStep{
 	step := &app.InstallWorkflowStep{
 		InstallWorkflowID: req.FlowID,
@@ -35,11 +36,12 @@ func (a *Activities) PkgWorkflowsFlowCreateFlowStep(ctx context.Context, req Cre
 		Idx:               req.Idx,
 		ExecutionType:     req.ExecutionType,
 		Metadata:          req.Metadata,
+		Retryable:         req.Retryable,
 	}
 
 	if res := a.db.WithContext(ctx).Create(step); res.Error != nil {
-		return "", errors.Wrap(res.Error, "unable to create step")
+		return nil, errors.Wrap(res.Error, "unable to create step")
 	}
 
-	return step.ID, nil
+	return step, nil
 }

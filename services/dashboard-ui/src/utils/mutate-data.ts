@@ -18,7 +18,7 @@ export async function mutateData<T>({
   orgId,
   path,
   pathVersion = 'v1',
-}: IMutateData): Promise<T> {  
+}: IMutateData): Promise<T> {
   const res = await fetch(`${API_URL}/${pathVersion}/${path}`, {
     ...(await getFetchOpts(orgId, {}, 10000)),
     body: data && JSON.stringify(data),
@@ -48,7 +48,7 @@ export async function nueMutateData<T>({
   orgId,
   path,
   pathVersion = 'v1',
-}: INueMutateData): Promise<TQuery<T>> {  
+}: INueMutateData): Promise<TQuery<T>> {
   return fetch(`${API_URL}/${pathVersion}/${path}`, {
     ...(await getFetchOpts(orgId, {}, abortTimeout)),
     body: body ? JSON.stringify(body) : undefined,
@@ -58,11 +58,11 @@ export async function nueMutateData<T>({
       r.json().then((data) =>
         r.ok
           ? {
-              data,
-              error: null,
-              status: r.status,
-              headers: r.headers,
-            }
+            data,
+            error: null,
+            status: r.status,
+            headers: r.headers,
+          }
           : { data: null, error: data, status: r.status, headers: r.headers }
       )
     )

@@ -38,6 +38,7 @@ const (
 
 	// the following will be sent to a different namespace
 	OperationExecuteFlow eventloop.SignalType = "execute-flow"
+	OperationRerunFlow   eventloop.SignalType = "rerun-flow"
 
 	// sync images
 	OperationExecuteDeployComponentSyncImage eventloop.SignalType = "component-sync-image"
@@ -102,6 +103,11 @@ type SkipStepSubSignal struct {
 	Reason string
 }
 
+type RerunConfiguration struct {
+	StepID    string `json:"step_id"`
+	RetryStep bool   `json:"retry"`
+}
+
 type Signal struct {
 	Type eventloop.SignalType `json:"type"`
 
@@ -123,6 +129,9 @@ type Signal struct {
 	WorkflowStepName string `json:"install_workflow_step_name"`
 	FlowStepID       string `json:"flow_step_id"`
 	FlowStepName     string `json:"flow_step_name"`
+
+	// used for rerunning an install workflow
+	RerunConfiguration RerunConfiguration `validate:"required_if=Operation rerun_flow" json:"rerun_configuration"`
 
 	// used for awaiting the run
 	InstallCloudFormationStackVersionID string `json:"install_cloud_formation_stack_version_id"`

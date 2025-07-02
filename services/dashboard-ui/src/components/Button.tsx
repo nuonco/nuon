@@ -14,6 +14,7 @@ export type TButtonVariant =
   | 'ghost'
   | 'caution'
   | 'danger'
+  | 'secondary'
 
 export interface IButton extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   hasCustomPadding?: boolean
@@ -44,6 +45,7 @@ export const Button = forwardRef<HTMLButtonElement, IButton>(
             [`${defaultStyles} border-transparent`]: variant === 'ghost',
             [`${defaultStyles} border-red-800 text-red-800 dark:border-red-500 dark:text-red-500`]:
               variant === 'caution',
+            [`${defaultStyles} border bg-cool-grey-300 text-primary-400 dark:bg-dark-grey-300 dark:text-primary-400`]: variant === 'secondary',
             'bg-red-700 hover:bg-red-600': variant === 'danger',
             'text-gray-50 px-5 border-transparent font-medium':
               variant === 'primary' || variant === 'danger',
