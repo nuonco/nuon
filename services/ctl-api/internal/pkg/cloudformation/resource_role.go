@@ -1,6 +1,7 @@
 package cloudformation
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -79,10 +80,10 @@ func (a *Templates) getRolesResources(inp *TemplateInput, t tagBuilder) map[stri
 			Tags: t.apply(nil, fmt.Sprintf("%s-role", role.Type)),
 		}
 
-		if len(role.PermissionsBoundaryJSON) == 0 {
+		if len(role.PermissionsBoundaryJSON) < 1 || bytes.Equal(role.PermissionsBoundaryJSON, []byte("{}")) {
 			// json.RawMessage requires the input to be valid json,
 			// {} is a valid json but bytes slice with 0 size is not
-			role.PermissionsBoundaryJSON = []byte(`""`)
+			// role.PermissionsBoundaryJSON = []byte(`""`)
 		} else {
 			boundaryPolicyName := role.CloudFormationStackName + "Boundary"
 			rsrcs[boundaryPolicyName] = a.getPermissionsBoundaryPolicy(role)
