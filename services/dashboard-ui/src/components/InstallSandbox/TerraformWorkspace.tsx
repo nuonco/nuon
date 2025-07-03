@@ -52,7 +52,7 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
       getWorkspaceState({
         orgId,
         workspaceId: workspace?.id,
-        stateId: states.at(-1)?.id,
+        stateId: states.at(0)?.id,
       }).catch(console.error),
       getWorkspaceStateResources({
         workspaceId: workspace?.id,
