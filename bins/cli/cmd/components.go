@@ -7,8 +7,12 @@ import (
 )
 
 func (c *cli) componentsCmd() *cobra.Command {
-	var id string
-
+	var (
+		id     string
+		appID  string
+		offset int
+		limit  int
+	)
 	componentsCmd := &cobra.Command{
 		Use:               "components",
 		Short:             "Manage app components",
@@ -16,7 +20,6 @@ func (c *cli) componentsCmd() *cobra.Command {
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 
-	appID := ""
 	listCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -24,10 +27,12 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Long:    "List your app's components",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := components.New(c.apiClient, c.cfg)
-			return svc.List(cmd.Context(), appID, PrintJSON)
+			return svc.List(cmd.Context(), appID, offset, limit, PrintJSON)
 		}),
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter components by")
+	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	componentsCmd.AddCommand(listCmd)
 
 	getCmd := &cobra.Command{
@@ -81,13 +86,15 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Long:  "List component configs",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := components.New(c.apiClient, c.cfg)
-			return svc.ListConfigs(cmd.Context(), appID, id, PrintJSON)
+			return svc.ListConfigs(cmd.Context(), appID, id, offset, limit, PrintJSON)
 		}),
 	}
 	listConfigsCmd.Flags().StringVarP(&id, "component-id", "c", "", "The ID or name of the component you want to delete")
 	listConfigsCmd.MarkFlagRequired("id")
 	listConfigsCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app the component belongs to")
 	listConfigsCmd.MarkFlagRequired("app-id")
+	listConfigsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listConfigsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	componentsCmd.AddCommand(listConfigsCmd)
 
 	return componentsCmd
