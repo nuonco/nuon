@@ -13,11 +13,11 @@ func (w *Workflows) RerunFlow(ctx workflow.Context, sreq signals.RequestSignal) 
 	if sreq.FlowID == "" {
 		sreq.FlowID = sreq.InstallWorkflowID
 	}
-	fc := &flow.FlowConductor[*signals.Signal]{
+	fc := &flow.WorkflowConductor[*signals.Signal]{
 		Cfg:        w.cfg,
 		V:          w.v,
 		MW:         w.mw,
-		Generators: w.getFlowStepGenerators(ctx),
+		Generators: w.getWorkflowStepGenerators(ctx),
 		ExecFn:     w.getExecuteFlowExecFn(sreq),
 	}
 

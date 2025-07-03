@@ -15,14 +15,14 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func TeardownComponents(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
+func TeardownComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	steps := make([]*app.FlowStep, 0)
+	steps := make([]*app.WorkflowStep, 0)
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreTeardownAllComponents)
 	if err != nil {
 		return nil, err

@@ -19,7 +19,7 @@ type GetStatusRequest struct {
 // @temporal-gen activity
 // @by-id ID
 func (a *Activities) PkgStatusGetInstallWorkflowStatus(ctx context.Context, req GetStatusRequest) (*app.CompositeStatus, error) {
-	var obj app.InstallWorkflow
+	var obj app.Workflow
 	if err := a.getStatus(ctx, &obj, req.ID); err != nil {
 		return nil, nil
 	}
@@ -30,7 +30,7 @@ func (a *Activities) PkgStatusGetInstallWorkflowStatus(ctx context.Context, req 
 // @temporal-gen activity
 // @by-id ID
 func (a *Activities) PkgStatusGetInstallWorkflowStepStatus(ctx context.Context, req GetStatusRequest) (*app.CompositeStatus, error) {
-	var obj app.InstallWorkflowStep
+	var obj app.WorkflowStep
 	if err := a.getStatus(ctx, &obj, req.ID); err != nil {
 		return nil, nil
 	}

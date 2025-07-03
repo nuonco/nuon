@@ -50,7 +50,7 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
-		app.InstallWorkflowTypeReprovisionSandbox,
+		app.WorkflowTypeReprovisionSandbox,
 		map[string]string{},
 		app.StepErrorBehaviorAbort,
 	)

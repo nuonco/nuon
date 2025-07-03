@@ -20,35 +20,35 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 	if sreq.FlowID == "" {
 		sreq.FlowID = sreq.InstallWorkflowID
 	}
-	fc := &flow.FlowConductor[*signals.Signal]{
+	fc := &flow.WorkflowConductor[*signals.Signal]{
 		Cfg:        w.cfg,
 		V:          w.v,
 		MW:         w.mw,
-		Generators: w.getFlowStepGenerators(ctx),
+		Generators: w.getWorkflowStepGenerators(ctx),
 		ExecFn:     w.getExecuteFlowExecFn(sreq),
 	}
 
 	return fc.Handle(ctx, sreq.EventLoopRequest, sreq.FlowID)
 }
 
-func (w *Workflows) getFlowStepGenerators(ctx workflow.Context) map[app.FlowType]flow.FlowStepGenerator {
-	return map[app.FlowType]flow.FlowStepGenerator{
-		flows.FlowTypeManualDeploy:       flows.ManualDeploySteps,
-		flows.FlowTypeDeployComponents:   flows.DeployAllComponents,
-		flows.FlowTypeTeardownComponent:  flows.TeardownComponent,
-		flows.FlowTypeTeardownComponents: flows.TeardownComponents,
-		flows.FlowTypeInputUpdate:        flows.InputUpdate,
-		flows.FlowTypeActionWorkflowRun:  flows.RunActionWorkflow,
-		flows.FlowTypeProvision:          flows.Provision,
-		flows.FlowTypeReprovision:        flows.Reprovision,
-		flows.FlowTypeReprovisionSandbox: flows.ReprovisionSandbox,
-		flows.FlowTypeDeprovision:        flows.Deprovision,
-		flows.FlowTypeDeprovisionSandbox: flows.DeprovisionSandbox,
+func (w *Workflows) getWorkflowStepGenerators(ctx workflow.Context) map[app.WorkflowType]flow.WorkflowStepGenerator {
+	return map[app.WorkflowType]flow.WorkflowStepGenerator{
+		flows.WorkflowTypeManualDeploy:       flows.ManualDeploySteps,
+		flows.WorkflowTypeDeployComponents:   flows.DeployAllComponents,
+		flows.WorkflowTypeTeardownComponent:  flows.TeardownComponent,
+		flows.WorkflowTypeTeardownComponents: flows.TeardownComponents,
+		flows.WorkflowTypeInputUpdate:        flows.InputUpdate,
+		flows.WorkflowTypeActionWorkflowRun:  flows.RunActionWorkflow,
+		flows.WorkflowTypeProvision:          flows.Provision,
+		flows.WorkflowTypeReprovision:        flows.Reprovision,
+		flows.WorkflowTypeReprovisionSandbox: flows.ReprovisionSandbox,
+		flows.WorkflowTypeDeprovision:        flows.Deprovision,
+		flows.WorkflowTypeDeprovisionSandbox: flows.DeprovisionSandbox,
 	}
 }
 
-func (w *Workflows) getExecuteFlowExecFn(sreq signals.RequestSignal) func(workflow.Context, eventloop.EventLoopRequest, *signals.Signal, app.FlowStep) error {
-	return func(ctx workflow.Context, ereq eventloop.EventLoopRequest, sig *signals.Signal, step app.FlowStep) error {
+func (w *Workflows) getExecuteFlowExecFn(sreq signals.RequestSignal) func(workflow.Context, eventloop.EventLoopRequest, *signals.Signal, app.WorkflowStep) error {
+	return func(ctx workflow.Context, ereq eventloop.EventLoopRequest, sig *signals.Signal, step app.WorkflowStep) error {
 		sig.InstallWorkflowID = sreq.FlowID
 		sig.FlowID = sreq.FlowID
 		sig.WorkflowStepID = step.ID

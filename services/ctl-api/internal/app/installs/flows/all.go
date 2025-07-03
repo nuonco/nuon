@@ -5,40 +5,40 @@ import (
 )
 
 const (
-	FlowTypeProvision          app.FlowType = "provision"
-	FlowTypeDeprovision        app.FlowType = "deprovision"
-	FlowTypeDeprovisionSandbox app.FlowType = "deprovision_sandbox"
+	WorkflowTypeProvision          app.WorkflowType = "provision"
+	WorkflowTypeDeprovision        app.WorkflowType = "deprovision"
+	WorkflowTypeDeprovisionSandbox app.WorkflowType = "deprovision_sandbox"
 
 	// day-2 triggers
-	FlowTypeManualDeploy       app.FlowType = "manual_deploy"
-	FlowTypeInputUpdate        app.FlowType = "input_update"
-	FlowTypeDeployComponents   app.FlowType = "deploy_components"
-	FlowTypeTeardownComponent  app.FlowType = "teardown_component"
-	FlowTypeTeardownComponents app.FlowType = "teardown_components"
-	FlowTypeReprovisionSandbox app.FlowType = "reprovision_sandbox"
-	FlowTypeActionWorkflowRun  app.FlowType = "action_workflow_run"
+	WorkflowTypeManualDeploy       app.WorkflowType = "manual_deploy"
+	WorkflowTypeInputUpdate        app.WorkflowType = "input_update"
+	WorkflowTypeDeployComponents   app.WorkflowType = "deploy_components"
+	WorkflowTypeTeardownComponent  app.WorkflowType = "teardown_component"
+	WorkflowTypeTeardownComponents app.WorkflowType = "teardown_components"
+	WorkflowTypeReprovisionSandbox app.WorkflowType = "reprovision_sandbox"
+	WorkflowTypeActionWorkflowRun  app.WorkflowType = "action_workflow_run"
 
 	// reprovision everything
-	FlowTypeReprovision app.FlowType = "reprovision"
+	WorkflowTypeReprovision app.WorkflowType = "reprovision"
 )
 
-// func (i FlowType) PastTenseName() string {
+// func (i WorkflowType) PastTenseName() string {
 // 	switch i {
-// 	case FlowTypeProvision:
+// 	case WorkflowTypeProvision:
 // 		return "Provisioned install"
-// 	case FlowTypeReprovision:
+// 	case WorkflowTypeReprovision:
 // 		return "Reprovisioned install"
-// 	case FlowTypeReprovisionSandbox:
+// 	case WorkflowTypeReprovisionSandbox:
 // 		return "Reprovisioned sandbox"
-// 	case FlowTypeDeprovision:
+// 	case WorkflowTypeDeprovision:
 // 		return "Deprovisioned install"
-// 	case FlowTypeManualDeploy:
+// 	case WorkflowTypeManualDeploy:
 // 		return "Deployed to install"
-// 	case FlowTypeInputUpdate:
+// 	case WorkflowTypeInputUpdate:
 // 		return "Updated Input"
-// 	case FlowTypeTeardownComponents:
+// 	case WorkflowTypeTeardownComponents:
 // 		return "Tore down all components"
-// 	case FlowTypeDeployComponents:
+// 	case WorkflowTypeDeployComponents:
 // 		return "Deployed all components"
 // 	default:
 // 	}
@@ -46,23 +46,23 @@ const (
 // 	return ""
 // }
 
-// func (i FlowType) Name() string {
+// func (i WorkflowType) Name() string {
 // 	switch i {
-// 	case FlowTypeProvision:
+// 	case WorkflowTypeProvision:
 // 		return "Provisioning install"
-// 	case FlowTypeReprovision:
+// 	case WorkflowTypeReprovision:
 // 		return "Reprovisioning install"
-// 	case FlowTypeDeprovision:
+// 	case WorkflowTypeDeprovision:
 // 		return "Deprovisioning install"
-// 	case FlowTypeManualDeploy:
+// 	case WorkflowTypeManualDeploy:
 // 		return "Deploying to install"
-// 	case FlowTypeInputUpdate:
+// 	case WorkflowTypeInputUpdate:
 // 		return "Input Update"
-// 	case FlowTypeTeardownComponents:
+// 	case WorkflowTypeTeardownComponents:
 // 		return "Tearing down all components"
-// 	case FlowTypeDeployComponents:
+// 	case WorkflowTypeDeployComponents:
 // 		return "Deploying all components"
-// 	case FlowTypeReprovisionSandbox:
+// 	case WorkflowTypeReprovisionSandbox:
 // 		return "Reprovisioning sandbox"
 // 	default:
 // 	}
@@ -70,23 +70,23 @@ const (
 // 	return ""
 // }
 
-// func (i FlowType) Description() string {
+// func (i WorkflowType) Description() string {
 // 	switch i {
-// 	case FlowTypeProvision:
+// 	case WorkflowTypeProvision:
 // 		return "Creates a runner stack, waits for it to be applied and then provisions the sandbox and deploys all components."
-// 	case FlowTypeReprovision:
+// 	case WorkflowTypeReprovision:
 // 		return "Creates a new runner stack, waits for it to be applied and then reprovisions the sandbox and deploys all components."
-// 	case FlowTypeReprovisionSandbox:
+// 	case WorkflowTypeReprovisionSandbox:
 // 		return "Reprovisions the sandbox and redeploys everything on top of it."
-// 	case FlowTypeDeprovision:
+// 	case WorkflowTypeDeprovision:
 // 		return "Deprovisions all components, deprovisions the sandbox and then waits for the cloudformation stack to be deleted."
-// 	case FlowTypeManualDeploy:
+// 	case WorkflowTypeManualDeploy:
 // 		return "Deploys a single component."
-// 	case FlowTypeInputUpdate:
+// 	case WorkflowTypeInputUpdate:
 // 		return "Depending on which input was changed, will reprovision the sandbox and deploy one or all components."
-// 	case FlowTypeDeployComponents:
+// 	case WorkflowTypeDeployComponents:
 // 		return "Deploy all components in the order of their dependencies."
-// 	case FlowTypeTeardownComponents:
+// 	case WorkflowTypeTeardownComponents:
 // 		return "Teardown components in the reverse order of their dependencies."
 // 	}
 

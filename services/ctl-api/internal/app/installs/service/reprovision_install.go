@@ -39,7 +39,7 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
-		app.InstallWorkflowTypeReprovision,
+		app.WorkflowTypeReprovision,
 		map[string]string{},
 		app.StepErrorBehaviorAbort,
 	)

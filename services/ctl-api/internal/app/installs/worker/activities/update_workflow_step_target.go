@@ -17,13 +17,13 @@ type UpdateInstallWorkflowStepTargetRequest struct {
 
 // @temporal-gen activity
 func (a *Activities) UpdateInstallWorkflowStepTarget(ctx context.Context, req UpdateInstallWorkflowStepTargetRequest) error {
-	step := app.InstallWorkflowStep{
+	step := app.WorkflowStep{
 		ID: req.StepID,
 	}
 
 	res := a.db.WithContext(ctx).
 		Model(&step).
-		Updates(app.InstallWorkflowStep{
+		Updates(app.WorkflowStep{
 			StepTargetID:   req.StepTargetID,
 			StepTargetType: req.StepTargetType,
 		})
