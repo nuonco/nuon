@@ -192,7 +192,7 @@ function OutputChangesViewer({
             )
           })
         ) : (
-          <div className="p-8 text-base text-center text-gray-500">
+          <div className="p-8 text-base text-center bg-black/5 text-cool-grey-800 dark:bg-white/5 dark:text-cool-grey-300 border rounded-md">
             No output changes in the Terraform plan.
           </div>
         )}
@@ -296,7 +296,7 @@ function ResourceChangesViewer({
             )
           })
         ) : (
-          <div className="p-8 text-base text-center text-gray-500">
+          <div className="p-8 text-base text-center bg-black/5 text-cool-grey-800 dark:bg-white/5 dark:text-cool-grey-300 border rounded-md">
             No resource changes in the Terraform plan.
           </div>
         )}
@@ -329,7 +329,7 @@ export function TerraformPlanViewer({ plan }: { plan: any }) {
             Show no-op changes
           </label>
         </div>
-        <div className="p-8 text-base text-center text-gray-500">
+        <div className="p-8 text-base text-center bg-black/5 text-cool-grey-800 dark:bg-white/5 dark:text-cool-grey-300 border rounded-md">
           No changes found in the Terraform plan.
         </div>
       </div>
