@@ -57,14 +57,14 @@ func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 		return
 	}
 
-	if len(ics) == 0 {
+	if len(ics) < 1 {
 		ctx.JSON(http.StatusOK, []app.InstallComponentSummary{})
 		return
 	}
 
 	appID := filterAppID(ics)
 	if appID == "" {
-		ctx.Error(fmt.Errorf("unable to get app ID: %w", err))
+		ctx.Error(fmt.Errorf("unable to get app ID from install components"))
 		return
 	}
 
@@ -98,7 +98,7 @@ func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 		return
 	}
 
-	installSummary := s.buildSummary(ctx, install.InstallComponents, compMap, builds, depComps)
+	installSummary := s.buildSummary(ctx, ics, compMap, builds, depComps)
 
 	ctx.JSON(http.StatusOK, installSummary)
 }
