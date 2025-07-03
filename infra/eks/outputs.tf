@@ -199,6 +199,11 @@ output "github_action_role_arn" {
   value       = module.github_actions.iam_role_arn
 }
 
+output "cluster_gh_role_arn"{
+  description = "The ARN of the role to be assumed by Github Actions"
+  value       = module.github_actions.iam_role_arn
+}
+
 output "auth_map_additional_role_arns" {
   description = "The ARNs of the assumable roles indexed by assuming role name"
   value = {
