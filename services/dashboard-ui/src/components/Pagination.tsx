@@ -38,29 +38,33 @@ export const Pagination: FC<IPagination> = ({
         'self-start': position === 'left',
       })}
     >
-      <Button
-        disabled={offset === 0}
-        onClick={() => {
-          const path = `${pathname}?${param}=${offset === limit + 1 ? 0 : offset - limit}`
-          router.push(path)
-        }}
-        className="text-sm flex items-center gap-1 !p-2"
-        title="previous"
-      >
-        <ArrowLeft />
-      </Button>
+      {offset === 0 && !hasNext ? null : (
+        <>
+          <Button
+            disabled={offset === 0}
+            onClick={() => {
+              const path = `${pathname}?${param}=${offset === limit + 1 ? 0 : offset - limit}`
+              router.push(path)
+            }}
+            className="text-sm flex items-center gap-1 !p-2"
+            title="previous"
+          >
+            <ArrowLeft />
+          </Button>
 
-      <Button
-        disabled={!hasNext}
-        onClick={() => {
-          const path = `${pathname}?${param}=${offset === 0 ? limit + 1 : offset + limit}`
-          router.push(path)
-        }}
-        className="text-sm flex items-center gap-1 !p-2"
-        title="next"
-      >
-        <ArrowRight />
-      </Button>
+          <Button
+            disabled={!hasNext}
+            onClick={() => {
+              const path = `${pathname}?${param}=${offset === 0 ? limit + 1 : offset + limit}`
+              router.push(path)
+            }}
+            className="text-sm flex items-center gap-1 !p-2"
+            title="next"
+          >
+            <ArrowRight />
+          </Button>
+        </>
+      )}
     </div>
   ) : null
 }
