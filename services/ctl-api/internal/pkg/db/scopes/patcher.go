@@ -1,21 +1,13 @@
 package scopes
 
 import (
-	"gorm.io/gorm"
-
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/patcher"
+	"gorm.io/gorm"
 )
 
-func WithPatcher(exclusions []string) func(db *gorm.DB) *gorm.DB {
+func WithPatcher(options patcher.PatcherOptions) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		if exclusions == nil || len(exclusions) == 0 {
-			db = db.Set(patcher.PatcherExclusionsKey, []string{})
-		}
-
-		if len(exclusions) > 0 {
-			db = db.Set(patcher.PatcherExclusionsKey, exclusions)
-		}
-
+		db = db.Set(patcher.PatcherOptionsKey, options.Exclusions)
 		db = db.Set(patcher.PatcherEnabledKey, true)
 		return db
 	}

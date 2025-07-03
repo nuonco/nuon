@@ -28,16 +28,21 @@ func (m *patcherPlugin) enablePatcher(tx *gorm.DB) {
 		return
 	}
 
-	ctxExclusions := []string{}
+	var ctxOptions PatcherOptions
 	ctxPatcher := cctx.PatcherFromContext(tx.Statement.Context)
-	exclusions, ok := tx.Get(PatcherExclusionsKey)
+	options, ok := tx.Get(PatcherOptionsKey)
 	if !ok {
-		exclusions = []string{}
+		options = []string{}
 	} else {
-		ctxExclusions, _ = exclusions.([]string)
+		ctxOptions, _ = options.(PatcherOptions)
 	}
 
-	filteredProperties := filterProperties(ctxPatcher.SelectFields, ctxExclusions)
+	filteredProperties := filterProperties(ctxPatcher.SelectFields, ctxOptions.Exclusions)
+	for i, prop := range filteredProperties {
+		if override, exists := ctxOptions.Overrides[prop]; exists {
+			filteredProperties[i] = override
+		}
+	}
 
 	tx.Select(filteredProperties)
 }
