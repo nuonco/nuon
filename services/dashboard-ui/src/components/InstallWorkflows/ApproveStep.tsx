@@ -1,5 +1,6 @@
 'use client'
 
+import classNames from 'classnames'
 import { useParams } from 'next/navigation'
 import React, { type FC, useState } from 'react'
 import { ArrowsClockwise, X, Check } from '@phosphor-icons/react'
@@ -60,6 +61,90 @@ export const ApprovalStep: FC<IApprovalStep> = ({
     })
   }
 
+  const ApprovalButtons = ({ inBanner = false }: { inBanner?: boolean }) =>
+    approval?.response ||
+    workflowApproveOption === 'approve-all' ||
+    step?.status?.status === 'cancelled' ? null : (
+      <div className="mt-4 flex gap-3 justify-end">
+        <Button
+          onClick={() => {
+            setIsDenyLoading(true)
+            approve('deny')
+          }}
+          className={classNames(
+            'text-sm font-sans flex items-center gap-2 h-[32px] !transition-all',
+            {
+              '!bg-black/10 dark:!bg-black/50 hover:!bg-black/20 dark:hover:!bg-black/60':
+                inBanner,
+            }
+          )}
+          disabled={isKickedOff}
+          variant={inBanner ? 'ghost' : 'default'}
+        >
+          {isDenyLoading ? (
+            <>
+              <SpinnerSVG />
+              Denying plan
+            </>
+          ) : (
+            <>
+              <X />
+              Deny plan
+            </>
+          )}
+        </Button>
+
+        <Button
+          onClick={() => {
+            setIsRetryLoading(true)
+            approve('retry')
+          }}
+          className={classNames(
+            'text-sm font-sans flex items-center gap-2 h-[32px] !transition-all',
+            {
+              '!bg-black/10 dark:!bg-black/50 hover:!bg-black/20 dark:hover:!bg-black/60':
+                inBanner,
+            }
+          )}
+          disabled={isKickedOff}
+          variant={inBanner ? 'ghost' : 'default'}
+        >
+          {isRetryLoading ? (
+            <>
+              <SpinnerSVG />
+              Retrying plan
+            </>
+          ) : (
+            <>
+              <ArrowsClockwise />
+              Retry Plan
+            </>
+          )}
+        </Button>
+        <Button
+          onClick={() => {
+            setIsApproveLoading(true)
+            approve('approve')
+          }}
+          className="text-sm font-sans flex items-center gap-2 h-[32px] !px-2"
+          disabled={isKickedOff}
+          variant="primary"
+        >
+          {isApproveLoading ? (
+            <>
+              <SpinnerSVG />
+              Approving plan
+            </>
+          ) : (
+            <>
+              <Check />
+              Approve plan
+            </>
+          )}
+        </Button>
+      </div>
+    )
+
   return (
     <>
       {approval?.response ? (
@@ -102,6 +187,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
             Approve or deny these changes included in this{' '}
             {removeSnakeCase(approval?.type)}.
           </Text>
+          <ApprovalButtons inBanner />
         </Notice>
       ) : null}
 
@@ -116,74 +202,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
             <JsonView data={approval?.contents} />
           )}
         </div>
-        {approval?.response ||
-          workflowApproveOption === 'approve-all' ||
-          step?.status?.status === 'cancelled' ? null : (
-          <div className="mt-4 flex gap-3 justify-end">
-            <Button
-              onClick={() => {
-                setIsDenyLoading(true)
-                approve('deny')
-              }}
-              className="text-sm font-sans flex items-center gap-2 h-[32px]"
-              disabled={isKickedOff}
-            >
-              {isDenyLoading ? (
-                <>
-                  <SpinnerSVG />
-                  Denying plan
-                </>
-              ) : (
-                <>
-                  <X />
-                  Deny plan
-                </>
-              )}
-            </Button>
-
-            <Button
-              onClick={() => {
-                setIsRetryLoading(true)
-                approve('retry')
-              }}
-              className="text-sm font-sans flex items-center gap-2 h-[32px]"
-              disabled={isKickedOff}
-            >
-              {isRetryLoading ? (
-                <>
-                  <SpinnerSVG />
-                  Retrying plan
-                </>
-              ) : (
-                <>
-                  <ArrowsClockwise />
-                  Retry Plan
-                </>
-              )}
-            </Button>
-            <Button
-              onClick={() => {
-                setIsApproveLoading(true)
-                approve('approve')
-              }}
-              className="text-sm font-sans flex items-center gap-2 h-[32px] !px-2"
-              disabled={isKickedOff}
-              variant="primary"
-            >
-              {isApproveLoading ? (
-                <>
-                  <SpinnerSVG />
-                  Approving plan
-                </>
-              ) : (
-                <>
-                  <Check />
-                  Approve plan
-                </>
-              )}
-            </Button>
-          </div>
-        )}
+        <ApprovalButtons />
       </div>
     </>
   )
