@@ -14,7 +14,7 @@ type ResetFlowFinishedAtRequest struct {
 // @temporal-gen activity
 // @by-id ID
 func (a *Activities) PkgWorkflowsFlowResetFlowFinishedAt(ctx context.Context, req ResetFlowFinishedAtRequest) error {
-	iwf := app.Flow{
+	iwf := app.Workflow{
 		ID: req.ID,
 	}
 

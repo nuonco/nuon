@@ -17,10 +17,10 @@ type UpdateFlowStartedAtRequest struct {
 // @temporal-gen activity
 // @by-id ID
 func (a *Activities) PkgWorkflowsFlowUpdateFlowStartedAt(ctx context.Context, req UpdateFlowStartedAtRequest) error {
-	runner := app.Flow{
+	runner := app.Workflow{
 		ID: req.ID,
 	}
-	res := a.db.WithContext(ctx).Model(&runner).Updates(app.Flow{
+	res := a.db.WithContext(ctx).Model(&runner).Updates(app.Workflow{
 		StartedAt: time.Now(),
 	})
 	if res.Error != nil {

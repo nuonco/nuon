@@ -8,22 +8,22 @@ import (
 )
 
 type CreateStepApprovalResponseRequest struct {
-	StepApprovalID string                              `json:"step_approval_id"`
-	Type           app.InstallWorkflowStepResponseType `json:"type"`
-	Note           string                              `json:"note"`
+	StepApprovalID string                       `json:"step_approval_id"`
+	Type           app.WorkflowStepResponseType `json:"type"`
+	Note           string                       `json:"note"`
 }
 
 // @temporal-gen activity
 // @schedule-to-close-timeout 1m
 // @start-to-close-timeout 10s
-func (a *Activities) CreateApprovalResponse(ctx context.Context, req CreateStepApprovalResponseRequest) (*app.InstallWorkflowStepApprovalResponse, error) {
-	approval := app.InstallWorkflowStepApproval{}
-	res := a.db.WithContext(ctx).Where(app.InstallWorkflowStepApproval{ID: req.StepApprovalID}).First(&approval)
+func (a *Activities) CreateApprovalResponse(ctx context.Context, req CreateStepApprovalResponseRequest) (*app.WorkflowStepApprovalResponse, error) {
+	approval := app.WorkflowStepApproval{}
+	res := a.db.WithContext(ctx).Where(app.WorkflowStepApproval{ID: req.StepApprovalID}).First(&approval)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to find approval with ID %s: %w", req.StepApprovalID, res.Error)
 	}
 
-	approvalResponse := app.InstallWorkflowStepApprovalResponse{
+	approvalResponse := app.WorkflowStepApprovalResponse{
 		OrgID:                         approval.OrgID,
 		CreatedBy:                     approval.CreatedBy,
 		InstallWorkflowStepApprovalID: approval.ID,

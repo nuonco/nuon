@@ -128,13 +128,11 @@ func AllModels() []interface{} {
 		&app.InstallActionWorkflowRunStep{},
 
 		// install workflows
-		&app.Flow{},
-		&app.FlowStep{},
-		&app.InstallWorkflow{},
-		&app.InstallWorkflowStep{},
-		&app.InstallWorkflowStepApproval{},
-		&app.InstallWorkflowStepApprovalResponse{},
-		&app.InstallWorkflowStepPolicyValidation{},
+		&app.Workflow{},
+		&app.WorkflowStep{},
+		&app.WorkflowStepApproval{},
+		&app.WorkflowStepApprovalResponse{},
+		&app.WorkflowStepPolicyValidation{},
 
 		// internal
 		&migrations.MigrationModel{},

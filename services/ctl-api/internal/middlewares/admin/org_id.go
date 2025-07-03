@@ -130,7 +130,7 @@ var mapper map[string]func(db *gorm.DB, id string) (string, error) = map[string]
 		return obj.OrgID, nil
 	},
 	"iws": func(db *gorm.DB, id string) (string, error) {
-		var obj app.InstallWorkflowStep
+		var obj app.WorkflowStep
 		res := db.First(&obj, "id = ?", id)
 		if res.Error != nil {
 			return "", errors.Wrap(res.Error, "unable to fetch step")

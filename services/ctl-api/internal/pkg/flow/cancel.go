@@ -12,7 +12,7 @@ import (
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-func (c *FlowConductor[DomainSignal]) isCancellationErr(ctx workflow.Context, err error) bool {
+func (c *WorkflowConductor[DomainSignal]) isCancellationErr(ctx workflow.Context, err error) bool {
 	if errors.Is(ctx.Err(), workflow.ErrCanceled) || errors.Is(err, context.Canceled) {
 		return true
 	}
@@ -20,7 +20,7 @@ func (c *FlowConductor[DomainSignal]) isCancellationErr(ctx workflow.Context, er
 	return false
 }
 
-func (c *FlowConductor[DomainSignal]) checkStepCancellation(ctx workflow.Context, stepID string) error {
+func (c *WorkflowConductor[DomainSignal]) checkStepCancellation(ctx workflow.Context, stepID string) error {
 	if errors.Is(ctx.Err(), workflow.ErrCanceled) {
 		cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
 		defer cancelCtxCancel()
@@ -39,7 +39,7 @@ func (c *FlowConductor[DomainSignal]) checkStepCancellation(ctx workflow.Context
 	return nil
 }
 
-func (c *FlowConductor[DomainSignal]) handleCancellation(ctx workflow.Context, stepErr error, stepID string, idx int, flw *app.Flow) error {
+func (c *WorkflowConductor[DomainSignal]) handleCancellation(ctx workflow.Context, stepErr error, stepID string, idx int, flw *app.Workflow) error {
 	if !c.isCancellationErr(ctx, stepErr) {
 		return stepErr
 	}
@@ -85,7 +85,7 @@ func (c *FlowConductor[DomainSignal]) handleCancellation(ctx workflow.Context, s
 	return stepErr
 }
 
-func (c *FlowConductor[DomainSignal]) cancelFutureSteps(ctx workflow.Context, flw *app.InstallWorkflow, idx int, reason string) error {
+func (c *WorkflowConductor[DomainSignal]) cancelFutureSteps(ctx workflow.Context, flw *app.Workflow, idx int, reason string) error {
 	for _, cancelStep := range flw.Steps[idx+1:] {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: cancelStep.ID,

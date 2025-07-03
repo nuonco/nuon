@@ -72,7 +72,7 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 }
 
 func (s *service) cancelInstallWorkflow(ctx context.Context, installWorkflowID string) error {
-	obj := app.InstallWorkflow{
+	obj := app.Workflow{
 		ID: installWorkflowID,
 	}
 

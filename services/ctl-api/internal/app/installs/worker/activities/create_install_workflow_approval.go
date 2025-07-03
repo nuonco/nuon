@@ -13,15 +13,15 @@ type CreateInstallWorkflowApprovalRequest struct {
 }
 
 // @temporal-gen activity
-func (a *Activities) CreateInstallWorkflowApproval(ctx context.Context, req *CreateInstallWorkflowApprovalRequest) (*app.InstallWorkflowStepApproval, error) {
-	var step app.InstallWorkflowStep
+func (a *Activities) CreateInstallWorkflowApproval(ctx context.Context, req *CreateInstallWorkflowApprovalRequest) (*app.WorkflowStepApproval, error) {
+	var step app.WorkflowStep
 	res := a.db.WithContext(ctx).
 		First(&step, "id = ?", req.InstallWorkflowStepID)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get workflow step")
 	}
 
-	workflowApproval := app.InstallWorkflowStepApproval{
+	workflowApproval := app.WorkflowStepApproval{
 		CreatedByID:           step.CreatedByID,
 		InstallWorkflowStepID: step.ID,
 		OrgID:                 step.OrgID,
