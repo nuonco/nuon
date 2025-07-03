@@ -21,6 +21,16 @@ func (a *Templates) getRunnerASG(inp *TemplateInput, t tagBuilder) *autoscaling.
 				PropagateAtLaunch: false, // handled directly
 			},
 			{
+				Key:               "install.nuon.co/id",
+				Value:             inp.Install.ID,
+				PropagateAtLaunch: false, // handled directly
+			},
+			{
+				Key:               "component.nuon.co/name",
+				Value:             "runner",
+				PropagateAtLaunch: false, // handled directly
+			},
+			{
 				Key:               "Name",
 				Value:             cloudformation.Sub("${AWS::StackName}-runner"),
 				PropagateAtLaunch: false,
