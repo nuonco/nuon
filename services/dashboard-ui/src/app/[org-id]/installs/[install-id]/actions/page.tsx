@@ -11,11 +11,14 @@ import {
   ErrorFallback,
   Loading,
   NoActions,
+  Pagination,
   Section,
   Text,
   Time,
 } from '@/components'
-import { getInstall, getInstallActionWorkflowLatestRun } from '@/lib'
+import { getInstall } from '@/lib'
+import type { TInstallActionWorkflow } from '@/types'
+import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
@@ -26,8 +29,9 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function InstallWorkflowRuns({ params }) {
+export default async function InstallWorkflowRuns({ params, searchParams }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
+  const sp = await searchParams
   const install = await getInstall({ installId, orgId })
 
   return (
@@ -71,7 +75,11 @@ export default async function InstallWorkflowRuns({ params }) {
               <Loading variant="page" loadingText="Loading actions..." />
             }
           >
-            <LoadInstallActions installId={installId} orgId={orgId} />
+            <LoadInstallActions
+              installId={installId}
+              orgId={orgId}
+              offset={sp['offset'] || '0'}
+            />
           </Suspense>
         </ErrorBoundary>
       </Section>
@@ -79,21 +87,44 @@ export default async function InstallWorkflowRuns({ params }) {
   )
 }
 
-const LoadInstallActions: FC<{ installId: string; orgId: string }> = async ({
-  installId,
-  orgId,
-}) => {
-  const actionsWithLatestRun = await getInstallActionWorkflowLatestRun({
-    installId,
+const LoadInstallActions: FC<{
+  installId: string
+  orgId: string
+  limit?: string
+  offset?: string
+}> = async ({ installId, orgId, limit = '10', offset }) => {
+  const params = new URLSearchParams({ offset, limit }).toString()
+  const {
+    data: actionsWithLatestRun,
+    error,
+    headers,
+  } = await nueQueryData<TInstallActionWorkflow[]>({
     orgId,
+    path: `installs/${installId}/action-workflows/latest-runs${params ? '?' + params : params}`,
+    headers: {
+      'x-nuon-pagination-enabled': true,
+    },
   })
 
-  return actionsWithLatestRun?.length ? (
-    <InstallActionWorkflowsTable
-      actions={actionsWithLatestRun}
-      installId={installId}
-      orgId={orgId}
-    />
+  const pageData = {
+    hasNext: headers?.get('x-nuon-page-next') || 'false',
+    offset: headers?.get('x-nuon-page-offset') || '0',
+  }
+
+  return actionsWithLatestRun?.length && !error ? (
+    <div className="flex flex-col gap-4 w-full">
+      <InstallActionWorkflowsTable
+        actions={actionsWithLatestRun}
+        installId={installId}
+        orgId={orgId}
+      />
+      <Pagination
+        param="offset"
+        pageData={pageData}
+        position="center"
+        limit={parseInt(limit)}
+      />
+    </div>
   ) : (
     <NoActions />
   )
