@@ -9,6 +9,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/patcher"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -84,7 +85,7 @@ func (s *service) updateRunnerSettings(ctx context.Context, runnerID, orgID stri
 	}
 
 	if res := s.db.WithContext(ctx).
-		Scopes(scopes.WithPatcher(nil)).
+		Scopes(scopes.WithPatcher(patcher.PatcherOptions{})).
 		Where(obj).
 		UpdateColumns(updates); res.Error != nil {
 		return nil, fmt.Errorf("unable to update runner settings: %w", res.Error)
