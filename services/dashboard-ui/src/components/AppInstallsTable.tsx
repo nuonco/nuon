@@ -1,6 +1,6 @@
 'use client'
 
-import React, { type FC, useMemo, useState } from 'react'
+import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight } from '@phosphor-icons/react'
 import { InstallPlatform } from '@/components/InstallCloudPlatform'
@@ -64,9 +64,13 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
   installs,
   orgId,
 }) => {
-  const [data, _] = useState(parseInstallsToTableData(installs))
+  const [data, updateData] = useState(parseInstallsToTableData(installs))
   const [columnFilters, setColumnFilters] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
+
+  useEffect(() => {
+    updateData(parseInstallsToTableData(installs))
+  }, [installs])
 
   const columns: Array<ColumnDef<TData>> = useMemo(
     () => [
