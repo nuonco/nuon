@@ -22,7 +22,7 @@ type RerunInput struct {
 // Rerun is a workflow that reruns a flow from a specific step.
 // It marks the existing step as discarded and creates a new step with the same parameters.
 // It then executes the flow steps from the newly created step.
-func (c *FlowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloop.EventLoopRequest, inp RerunInput) error {
+func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloop.EventLoopRequest, inp RerunInput) error {
 	// generate steps
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -213,9 +213,9 @@ func (c *FlowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloop.Ev
 		return err
 	}
 
-	flw.Steps = make([]app.FlowStep, len(flowSteps))
+	flw.Steps = make([]app.WorkflowStep, len(flowSteps))
 	for i, step := range flowSteps {
-		flw.Steps[i] = app.InstallWorkflowStep(step)
+		flw.Steps[i] = app.WorkflowStep(step)
 	}
 
 	l.Debug("executing steps for flow")

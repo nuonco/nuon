@@ -13,8 +13,8 @@ import (
 )
 
 type CreateInstallWorkflowStepApprovalResponseRequest struct {
-	ResponseType app.InstallWorkflowStepResponseType `json:"response_type"`
-	Note         string                              `json:"note"`
+	ResponseType app.WorkflowStepResponseType `json:"response_type"`
+	Note         string                       `json:"note"`
 }
 
 func (c *CreateInstallWorkflowStepApprovalResponseRequest) Validate(v *validator.Validate) error {
@@ -41,7 +41,7 @@ func (c *CreateInstallWorkflowStepApprovalResponseRequest) Validate(v *validator
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{object}	app.InstallWorkflowStepApprovalResponse
+// @Success				201	{object}	app.WorkflowStepApprovalResponse
 // @Router			/v1/install-workflows/{install_workflow_id}/steps/{install_workflow_step_id}/approvals/{approval_id}/response [post]
 func (s *service) CreateInstallWorkflowStepApprovalResponse(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -90,8 +90,8 @@ func (s *service) CreateInstallWorkflowStepApprovalResponse(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, response)
 }
 
-func (s *service) createInstallWorkflowStepApprovalResponse(ctx *gin.Context, approvalID string, req *CreateInstallWorkflowStepApprovalResponseRequest) (*app.InstallWorkflowStepApprovalResponse, error) {
-	response := app.InstallWorkflowStepApprovalResponse{
+func (s *service) createInstallWorkflowStepApprovalResponse(ctx *gin.Context, approvalID string, req *CreateInstallWorkflowStepApprovalResponseRequest) (*app.WorkflowStepApprovalResponse, error) {
+	response := app.WorkflowStepApprovalResponse{
 		InstallWorkflowStepApprovalID: approvalID,
 		Type:                          req.ResponseType,
 		Note:                          req.Note,

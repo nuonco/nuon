@@ -61,7 +61,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		installID,
-		app.InstallWorkflowTypeManualDeploy,
+		app.WorkflowTypeManualDeploy,
 		map[string]string{
 			"install_deploy_id": deploy.ID,
 			"deploy_dependents": strconv.FormatBool(req.DeployDependents),

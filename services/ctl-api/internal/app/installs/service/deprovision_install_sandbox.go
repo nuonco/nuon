@@ -55,7 +55,7 @@ func (s *service) DeprovisionInstallSandbox(ctx *gin.Context) {
 
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
-		app.InstallWorkflowTypeDeprovisionSandbox,
+		app.WorkflowTypeDeprovisionSandbox,
 		map[string]string{},
 		req.ErrorBehavior,
 	)

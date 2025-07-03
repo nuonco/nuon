@@ -78,8 +78,8 @@ type InstallDeploy struct {
 	ComponentName          string `json:"component_name,omitzero" gorm:"-" temporaljson:"component_name,omitzero,omitempty"`
 	ComponentConfigVersion int    `gorm:"-" json:"component_config_version,omitzero" temporaljson:"component_config_version,omitzero,omitempty"`
 
-	InstallWorkflowID *string          `json:"install_workflow_id,omitzero" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
-	InstallWorkflow   *InstallWorkflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
+	InstallWorkflowID *string   `json:"install_workflow_id,omitzero" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
+	InstallWorkflow   *Workflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
 
 	Outputs map[string]any `json:"outputs,omitzero" gorm:"-" temporaljson:"outputs,omitzero,omitempty"`
 }

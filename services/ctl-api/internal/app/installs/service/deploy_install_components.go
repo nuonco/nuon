@@ -39,7 +39,7 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		installID,
-		app.InstallWorkflowTypeDeployComponents,
+		app.WorkflowTypeDeployComponents,
 		map[string]string{},
 		app.StepErrorBehaviorAbort,
 	)

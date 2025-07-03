@@ -20,7 +20,7 @@ var NotApprovedErr error = fmt.Errorf("Not approved")
 
 // executeFlowStep executes a single step in the flow. It handles the execution of the step, updates the status, and waits for approval if necessary.
 // It returns true if the step needs to be retried (in case of approval steps), false otherwise.
-func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req eventloop.EventLoopRequest, idx int, step *app.InstallWorkflowStep, flw *app.Flow) (bool, error) {
+func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req eventloop.EventLoopRequest, idx int, step *app.WorkflowStep, flw *app.Workflow) (bool, error) {
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: flw.ID,
 		Status: app.CompositeStatus{
@@ -51,7 +51,7 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 		return false, stepErr
 	}
 
-	if step.ExecutionType != app.FlowStepExecutionTypeApproval {
+	if step.ExecutionType != app.WorkflowStepExecutionTypeApproval {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: flw.ID,
 			Status: app.CompositeStatus{
@@ -102,7 +102,7 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 		return false, err
 	}
 
-	if resp.Type == app.InstallWorkflowStepApprovalResponseTypeApprove {
+	if resp.Type == app.WorkflowStepApprovalResponseTypeApprove {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
@@ -121,7 +121,7 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 	}
 
 	// approval response retry flow
-	if resp.Type == app.InstallWorkflowStepApprovalResponseTypeRetryPlan {
+	if resp.Type == app.WorkflowStepApprovalResponseTypeRetryPlan {
 		// cloned step which will be retried next
 		err := c.cloneWorkflowStep(ctx, step, flw)
 		if err != nil {
@@ -172,7 +172,7 @@ func (c *FlowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req 
 	return false, NotApprovedErr
 }
 
-func (c *FlowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context, step *app.InstallWorkflowStep, flw *app.Flow) error {
+func (c *WorkflowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
 
 	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowStep(ctx, activities.CreateFlowStepRequest{
 		FlowID:        flw.ID,
