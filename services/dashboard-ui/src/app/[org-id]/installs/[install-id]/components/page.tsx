@@ -12,6 +12,7 @@ import {
   Loading,
   NoComponents,
   Notice,
+  Pagination,
   Text,
   Time,
 } from '@/components'
@@ -28,8 +29,9 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function InstallComponents({ params }) {
+export default async function InstallComponents({ params, searchParams }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
+  const sp = await searchParams
   const install = await getInstall({ orgId, installId })
 
   return (
@@ -80,7 +82,11 @@ export default async function InstallComponents({ params }) {
               <Loading loadingText="Loading components..." variant="page" />
             }
           >
-            <LoadInstallComponents installId={install?.id} orgId={orgId} />
+            <LoadInstallComponents
+              installId={install?.id}
+              orgId={orgId}
+              offset={sp['offset'] || '0'}
+            />
           </Suspense>
         </ErrorBoundary>
       </section>
@@ -91,22 +97,43 @@ export default async function InstallComponents({ params }) {
 const LoadInstallComponents: FC<{
   installId: string
   orgId: string
-}> = async ({ installId, orgId }) => {
-  const { data, error } = await nueQueryData<Array<TInstallComponentSummary>>({
+  limit?: string
+  offset?: string
+}> = async ({ installId, orgId, limit = '10', offset }) => {
+  const params = new URLSearchParams({ offset, limit }).toString()
+  const { data, error, headers } = await nueQueryData<
+    Array<TInstallComponentSummary>
+  >({
     orgId,
-    path: `installs/${installId}/components/summary`,
+    path: `installs/${installId}/components/summary${params ? '?' + params : params}`,
+    headers: {
+      'x-nuon-pagination-enabled': true,
+    },
   })
+
+  const pageData = {
+    hasNext: headers.get('x-nuon-page-next') || 'false',
+    offset: headers?.get('x-nuon-page-offset') || '0',
+  }
 
   return error ? (
     <Notice>Can&apos;t load install components: {error?.error}</Notice>
   ) : data?.length ? (
-    <InstallComponentsTable
-      installComponents={data.sort((a, b) =>
-        a?.component_id.localeCompare(b.component_id)
-      )}
-      installId={installId}
-      orgId={orgId}
-    />
+    <div className="flex flex-col gap-4">
+      <InstallComponentsTable
+        installComponents={data.sort((a, b) =>
+          a?.component_id.localeCompare(b.component_id)
+        )}
+        installId={installId}
+        orgId={orgId}
+      />
+      <Pagination
+        param="offset"
+        pageData={pageData}
+        position="center"
+        limit={parseInt(limit)}
+      />
+    </div>
   ) : (
     <NoComponents />
   )
