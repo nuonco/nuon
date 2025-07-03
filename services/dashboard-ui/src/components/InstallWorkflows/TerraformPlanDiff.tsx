@@ -26,19 +26,6 @@ type TFResourceChange = {
   }
 }
 
-type TerraformPlanClassic = {
-  resource_changes: TFResourceChange[]
-}
-
-type PlanFormat = 'resource_changes' | 'state_plan' | 'unknown'
-
-function detectPlanFormat(plan: any): PlanFormat {
-  if (Array.isArray(plan?.resource_changes)) return 'resource_changes'
-  if (plan?.configuration && plan?.planned_values && plan?.output_changes)
-    return 'state_plan'
-  return 'unknown'
-}
-
 function getActionColor(actions: ChangeAction[]): string {
   if (actions.length === 1 && actions[0] === 'read')
     return 'bg-blue-100 text-blue-700 border-blue-400 dark:bg-blue-500/10 dark:border-blue-600 dark:text-blue-200'
@@ -110,7 +97,7 @@ function diffFields(
   })
 }
 
-function StatePlanViewer({
+function OutputChangesViewer({
   plan,
   hideNoOps,
 }: {
@@ -134,113 +121,183 @@ function StatePlanViewer({
       })
     : outputKeys
 
+  if (!outputKeys.length) {
+    return null
+  }
+
   return (
-    <div className="w-full mx-auto space-y-2">
-      {filteredKeys.length > 0 ? (
-        filteredKeys.map((key) => {
-          const change = plan.output_changes[key]
-          const actions = getOutputChangeActions(change)
-          const actionLabel = getActionLabel(actions)
-          const color = getActionColor(actions)
-          const isOpen = open[key] ?? false
+    <div>
+      <h3 className="font-bold text-base mb-2 mt-6">Output Changes</h3>
+      <div className="w-full mx-auto space-y-2">
+        {filteredKeys.length > 0 ? (
+          filteredKeys.map((key) => {
+            const change = plan.output_changes[key]
+            const actions = getOutputChangeActions(change)
+            const actionLabel = getActionLabel(actions)
+            const color = getActionColor(actions)
+            const isOpen = open[key] ?? false
 
-          return (
-            <div
-              key={key}
-              className={`border-l-4 shadow rounded ${color} relative transition-all`}
-            >
-              <button
-                onClick={() => setOpen((o) => ({ ...o, [key]: !isOpen }))}
-                className="w-full flex justify-between items-center px-4 py-3 gap-3 text-left focus:outline-none"
+            return (
+              <div
+                key={key}
+                className={`border-l-4 shadow rounded ${color} relative transition-all`}
               >
-                <span className="font-mono text-sm font-semibold truncate">
-                  {key}
-                </span>
-                <span
-                  className={`px-2 py-1 rounded-full text-[11px] border ${color} !bg-white/50 dark:!bg-black/20`}
+                <button
+                  onClick={() => setOpen((o) => ({ ...o, [key]: !isOpen }))}
+                  className="w-full flex justify-between items-center px-4 py-3 gap-3 text-left focus:outline-none"
                 >
-                  {actionLabel}
-                </span>
-              </button>
-              {isOpen && (
-                <div className="bg-cool-grey-50 dark:bg-dark-grey-200 px-6 py-4 border-t">
-                  <div className="mb-4 text-sm text-cool-grey-600 dark:text-cool-grey-300">
-                    <b>Output:</b> {key}
+                  <span className="font-mono text-sm font-semibold truncate">
+                    {key}
+                  </span>
+                  <span
+                    className={`px-2 py-1 rounded-full text-[11px] border ${color} !bg-white/50 dark:!bg-black/20`}
+                  >
+                    {actionLabel}
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className="bg-cool-grey-50 dark:bg-dark-grey-200 px-6 py-4 border-t">
+                    <div className="mb-4 text-sm text-cool-grey-600 dark:text-cool-grey-300">
+                      <b>Output:</b> {key}
+                    </div>
+                    <div>
+                      {(actions.includes('update') ||
+                        actions.includes('create') ||
+                        actions.includes('delete')) && (
+                        <div className="my-2">
+                          {diffFields(
+                            { value: change.before },
+                            { value: change.after }
+                          )}
+                        </div>
+                      )}
+                      {actions.includes('no-op') && (
+                        <div className="my-2">
+                          {diffFields(
+                            { value: change.before },
+                            { value: change.after }
+                          )}
+                        </div>
+                      )}
+                      {actions.length === 1 && actions[0] === 'read' && (
+                        <div className="my-2 text-blue-700 dark:text-blue-200 text-sm">
+                          Terraform will refresh this output value from the
+                          provider.
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    {(actions.includes('update') ||
-                      actions.includes('create') ||
-                      actions.includes('delete')) && (
-                      <div className="my-2">
-                        {diffFields(
-                          { value: change.before },
-                          { value: change.after }
-                        )}
-                      </div>
-                    )}
-                    {actions.includes('no-op') && (
-                      <div className="my-2">
-                        {diffFields(
-                          { value: change.before },
-                          { value: change.after }
-                        )}
-                      </div>
-                    )}
-                    {actions.length === 1 && actions[0] === 'read' && (
-                      <div className="my-2 text-blue-700 dark:text-blue-200 text-sm">
-                        Terraform will refresh this output value from the
-                        provider.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        })
-      ) : (
-        <div className="p-8 text-base text-center text-gray-500">
-          No output changes in the Terraform plan.
-        </div>
-      )}
-
-      {/* Planned Outputs */}
-      <div className="border-l-4 shadow rounded bg-cool-grey-100 dark:bg-dark-grey-500/10 mt-4">
-        <button
-          onClick={() =>
-            setOpen((o) => ({ ...o, planned_outputs: !o.planned_outputs }))
-          }
-          className="w-full flex justify-between items-center px-4 py-3 gap-3 text-left focus:outline-none"
-        >
-          <span className="font-mono text-sm font-semibold truncate">
-            Planned Outputs
-          </span>
-        </button>
-        {open.planned_outputs && (
-          <div className="bg-cool-grey-50 dark:bg-dark-grey-200 px-6 py-4 border-t">
-            <JsonView data={plan.planned_values?.outputs || {}} />
+                )}
+              </div>
+            )
+          })
+        ) : (
+          <div className="p-8 text-base text-center text-gray-500">
+            No output changes in the Terraform plan.
           </div>
         )}
       </div>
+    </div>
+  )
+}
 
-      {/* Configuration Resources */}
-      <div className="border-l-4 shadow rounded bg-cool-grey-100 dark:bg-dark-grey-500/10 mt-4">
-        <button
-          onClick={() =>
-            setOpen((o) => ({
-              ...o,
-              configuration_resources: !o.configuration_resources,
-            }))
-          }
-          className="w-full flex justify-between items-center px-4 py-3 gap-3 text-left focus:outline-none"
-        >
-          <span className="font-mono text-sm font-semibold truncate">
-            Configuration Resources
-          </span>
-        </button>
-        {open.configuration_resources && (
-          <div className="bg-cool-grey-50 dark:bg-dark-grey-200 px-6 py-4 border-t">
-            <JsonView data={plan.configuration?.root_module?.resources || []} />
+function ResourceChangesViewer({
+  resource_changes,
+  hideNoOps,
+}: {
+  resource_changes: TFResourceChange[]
+  hideNoOps: boolean
+}) {
+  const [open, setOpen] = useState<Record<string, boolean>>({})
+
+  const displayedResources = hideNoOps
+    ? resource_changes.filter(
+        (res: TFResourceChange) =>
+          !(
+            res.change.actions.length === 1 && res.change.actions[0] === 'no-op'
+          )
+      )
+    : resource_changes
+
+  if (!resource_changes.length) {
+    return null
+  }
+
+  return (
+    <div>
+      <h3 className="font-bold text-base mb-2 mt-6">Resource Changes</h3>
+      <div className="w-full mx-auto space-y-2">
+        {displayedResources.length > 0 ? (
+          displayedResources.map((res: TFResourceChange) => {
+            const actionLabel = getActionLabel(res.change.actions)
+            const color = getActionColor(res.change.actions)
+            const isOpen = open[res.address] ?? false
+            return (
+              <div
+                key={res.address}
+                className={`border-l-4 shadow rounded ${color} relative transition-all`}
+              >
+                <button
+                  onClick={() =>
+                    setOpen((o) => ({ ...o, [res.address]: !isOpen }))
+                  }
+                  className="w-full flex justify-between items-center px-4 py-3 gap-3 text-left focus:outline-none"
+                >
+                  <span className="font-mono text-sm font-semibold truncate">
+                    {res.address}
+                  </span>
+                  <span
+                    className={`px-2 py-1 rounded-full text-[11px] border ${color} !bg-white/50 dark:!bg-black/20`}
+                  >
+                    {actionLabel}
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className="bg-cool-grey-50 dark:bg-dark-grey-200 px-6 py-4 border-t">
+                    <div className="mb-4 text-sm text-cool-grey-600 dark:text-cool-grey-300">
+                      <b>Type:</b> {res.type} &nbsp;
+                      <b>Name:</b> {res.name}
+                    </div>
+                    <div>
+                      {res.change.actions.includes('create') &&
+                        !res.change.before && (
+                          <pre className="text-green-700 bg-green-50 dark:text-green-50 dark:bg-green-600/10 rounded p-2 text-[11px] overflow-x-auto">
+                            {JSON.stringify(res.change.after, null, 2)}
+                          </pre>
+                        )}
+                      {res.change.actions.includes('delete') &&
+                        !res.change.after && (
+                          <pre className="text-red-700 bg-red-50 dark:text-red-50 dark:bg-red-600/10 rounded p-2 text-[11px] overflow-x-auto">
+                            {JSON.stringify(res.change.before, null, 2)}
+                          </pre>
+                        )}
+                      {res.change.actions.includes('update') && (
+                        <div className="my-2">
+                          {diffFields(res.change.before, res.change.after)}
+                        </div>
+                      )}
+                      {res.change.actions.includes('create') &&
+                        res.change.actions.includes('delete') && (
+                          <div className="my-2">
+                            {diffFields(res.change.before, res.change.after)}
+                          </div>
+                        )}
+                      {res.change.actions.length === 1 &&
+                        res.change.actions[0] === 'read' && (
+                          <div className="my-2 text-blue-700 dark:text-blue-200 text-sm">
+                            Terraform will refresh this resource from the
+                            provider.
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })
+        ) : (
+          <div className="p-8 text-base text-center text-gray-500">
+            No resource changes in the Terraform plan.
           </div>
         )}
       </div>
@@ -249,135 +306,15 @@ function StatePlanViewer({
 }
 
 export function TerraformPlanViewer({ plan }: { plan: any }) {
-  const [open, setOpen] = useState<Record<string, boolean>>({})
   // Default: hide no-op changes, so set true
   const [hideNoOps, setHideNoOps] = useState<boolean>(true)
-  const format = detectPlanFormat(plan)
 
-  if (format === 'resource_changes') {
-    const displayedResources = hideNoOps
-      ? plan.resource_changes.filter(
-          (res: TFResourceChange) =>
-            !(
-              res.change.actions.length === 1 &&
-              res.change.actions[0] === 'no-op'
-            )
-        )
-      : plan.resource_changes
+  const hasResourceChanges =
+    Array.isArray(plan?.resource_changes) && plan.resource_changes.length > 0
+  const hasOutputChanges =
+    plan?.output_changes && Object.keys(plan.output_changes).length > 0
 
-    if (!displayedResources.length) {
-      return plan ? (
-        <div>
-          <div className="flex items-center mb-4">
-            <input
-              id="show-noops"
-              type="checkbox"
-              className="mr-2"
-              checked={!hideNoOps}
-              onChange={() => setHideNoOps((v) => !v)}
-            />
-            <label htmlFor="show-noops" className="text-sm">
-              Show no-op changes
-            </label>
-          </div>
-          <JsonView data={plan} />
-        </div>
-      ) : (
-        <div className="p-8 text-base text-center">
-          No changes found in the Terraform plan.
-        </div>
-      )
-    }
-
-    return (
-      <div className="w-full mx-auto space-y-2">
-        <div className="flex items-center mb-4">
-          <input
-            id="show-noops"
-            type="checkbox"
-            className="mr-2"
-            checked={!hideNoOps}
-            onChange={() => setHideNoOps((v) => !v)}
-          />
-          <label htmlFor="show-noops" className="text-sm">
-            Show no-op changes
-          </label>
-          <span className="ml-4 text-sm text-gray-400">
-            Detected resource changes.
-          </span>
-        </div>
-        {displayedResources.map((res: TFResourceChange) => {
-          const actionLabel = getActionLabel(res.change.actions)
-          const color = getActionColor(res.change.actions)
-          const isOpen = open[res.address] ?? false
-          return (
-            <div
-              key={res.address}
-              className={`border-l-4 shadow rounded ${color} relative transition-all`}
-            >
-              <button
-                onClick={() =>
-                  setOpen((o) => ({ ...o, [res.address]: !isOpen }))
-                }
-                className="w-full flex justify-between items-center px-4 py-3 gap-3 text-left focus:outline-none"
-              >
-                <span className="font-mono text-sm font-semibold truncate">
-                  {res.address}
-                </span>
-                <span
-                  className={`px-2 py-1 rounded-full text-[11px] border ${color} !bg-white/50 dark:!bg-black/20`}
-                >
-                  {actionLabel}
-                </span>
-              </button>
-              {isOpen && (
-                <div className="bg-cool-grey-50 dark:bg-dark-grey-200 px-6 py-4 border-t">
-                  <div className="mb-4 text-sm text-cool-grey-600 dark:text-cool-grey-300">
-                    <b>Type:</b> {res.type} &nbsp;
-                    <b>Name:</b> {res.name}
-                  </div>
-                  <div>
-                    {res.change.actions.includes('create') &&
-                      !res.change.before && (
-                        <pre className="text-green-700 bg-green-50 dark:text-green-50 dark:bg-green-600/10 rounded p-2 text-[11px] overflow-x-auto">
-                          {JSON.stringify(res.change.after, null, 2)}
-                        </pre>
-                      )}
-                    {res.change.actions.includes('delete') &&
-                      !res.change.after && (
-                        <pre className="text-red-700 bg-red-50 dark:text-red-50 dark:bg-red-600/10 rounded p-2 text-[11px] overflow-x-auto">
-                          {JSON.stringify(res.change.before, null, 2)}
-                        </pre>
-                      )}
-                    {res.change.actions.includes('update') && (
-                      <div className="my-2">
-                        {diffFields(res.change.before, res.change.after)}
-                      </div>
-                    )}
-                    {res.change.actions.includes('create') &&
-                      res.change.actions.includes('delete') && (
-                        <div className="my-2">
-                          {diffFields(res.change.before, res.change.after)}
-                        </div>
-                      )}
-                    {res.change.actions.length === 1 &&
-                      res.change.actions[0] === 'read' && (
-                        <div className="my-2 text-blue-700 dark:text-blue-200 text-sm">
-                          Terraform will refresh this resource from the
-                          provider.
-                        </div>
-                      )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-    )
-  }
-
-  if (format === 'state_plan') {
+  if (!hasResourceChanges && !hasOutputChanges) {
     return (
       <div>
         <div className="flex items-center mb-4">
@@ -391,21 +328,37 @@ export function TerraformPlanViewer({ plan }: { plan: any }) {
           <label htmlFor="show-noops" className="text-sm">
             Show no-op changes
           </label>
-          <span className="ml-4 text-sm text-gray-400">
-            Detected output changes.
-          </span>
         </div>
-        <StatePlanViewer plan={plan} hideNoOps={hideNoOps} />
+        <div className="p-8 text-base text-center text-gray-500">
+          No changes found in the Terraform plan.
+        </div>
       </div>
     )
   }
 
   return (
     <div>
-      <div className="text-sm text-gray-400 mb-2">
-        Unknown Terraform plan format. Showing as JSON.
+      <div className="flex items-center mb-4">
+        <input
+          id="show-noops"
+          type="checkbox"
+          className="mr-2"
+          checked={!hideNoOps}
+          onChange={() => setHideNoOps((v) => !v)}
+        />
+        <label htmlFor="show-noops" className="text-sm">
+          Show no-op changes
+        </label>
       </div>
-      <JsonView data={plan} />
+      {hasResourceChanges && (
+        <ResourceChangesViewer
+          resource_changes={plan.resource_changes}
+          hideNoOps={hideNoOps}
+        />
+      )}
+      {hasOutputChanges && (
+        <OutputChangesViewer plan={plan} hideNoOps={hideNoOps} />
+      )}
     </div>
   )
 }
