@@ -1,6 +1,6 @@
 'use client'
 
-import React, { type FC, useMemo, useState } from 'react'
+import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight, Minus } from '@phosphor-icons/react'
 import { AppSandboxRepoDirLink } from '@/components/AppSandbox'
@@ -52,9 +52,13 @@ export interface IOrgAppsTable {
 }
 
 export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
-  const [data, _] = useState(parseAppsToTableData(apps))
+  const [data, updateData] = useState(parseAppsToTableData(apps))
   const [columnFilters, __] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
+
+  useEffect(() => {
+    updateData(parseAppsToTableData(apps))
+  }, [apps])
 
   const columns: Array<ColumnDef<TData>> = useMemo(
     () => [

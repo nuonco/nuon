@@ -1,6 +1,6 @@
 'use client'
 
-import React, { type FC, useMemo, useState } from 'react'
+import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight, Timer, CalendarBlank, Minus } from '@phosphor-icons/react'
 import { Badge } from '@/components/Badge'
@@ -40,9 +40,13 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
   actions,
   orgId,
 }) => {
-  const [data, _] = useState(parseActionData(actions))
+  const [data, updateData] = useState(parseActionData(actions))
   const [columnFilters, setColumnFilters] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
+
+  useEffect(() => {
+    updateData(parseActionData(actions))
+  }, [actions])
 
   const columns: Array<ColumnDef<TData>> = useMemo(
     () => [

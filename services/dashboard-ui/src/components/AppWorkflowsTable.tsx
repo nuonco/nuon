@@ -1,6 +1,6 @@
 'use client'
 
-import React, { type FC, useMemo, useState } from 'react'
+import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight } from '@phosphor-icons/react'
 import { Badge } from '@/components/Badge'
@@ -44,9 +44,13 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
   orgId,
   workflows,
 }) => {
-  const [data, _] = useState(parseWorkflowsToTableData(workflows))
+  const [data, updateData] = useState(parseWorkflowsToTableData(workflows))
   const [columnFilters, __] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
+
+  useEffect(() => {
+    updateData(parseWorkflowsToTableData(workflows))
+  }, [workflows])
 
   const columns: Array<ColumnDef<TData>> = useMemo(
     () => [
