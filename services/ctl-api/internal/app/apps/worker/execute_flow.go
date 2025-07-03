@@ -13,12 +13,12 @@ import (
 // @temporal-gen workflow
 // @execution-timeout 720h
 func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal) error {
-	fc := &flow.FlowConductor[*signals.Signal]{
+	fc := &flow.WorkflowConductor[*signals.Signal]{
 		Cfg:        w.cfg,
 		V:          w.v,
 		MW:         w.mw,
-		Generators: w.getFlowStepGenerators(ctx),
-		ExecFn: func(ctx workflow.Context, ereq eventloop.EventLoopRequest, sig *signals.Signal, step app.FlowStep) error {
+		Generators: w.getWorkflowStepGenerators(ctx),
+		ExecFn: func(ctx workflow.Context, ereq eventloop.EventLoopRequest, sig *signals.Signal, step app.WorkflowStep) error {
 			// 	sig.WorkflowStepID = step.ID
 			// 	sig.WorkflowStepID = step.ID
 			// 	sig.FlowStepName = step.Name
@@ -55,8 +55,8 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 	return fc.Handle(ctx, sreq.EventLoopRequest, sreq.FlowID)
 }
 
-func (w *Workflows) getFlowStepGenerators(ctx workflow.Context) map[app.FlowType]flow.FlowStepGenerator {
-	return map[app.FlowType]flow.FlowStepGenerator{
+func (w *Workflows) getWorkflowStepGenerators(ctx workflow.Context) map[app.WorkflowType]flow.WorkflowStepGenerator {
+	return map[app.WorkflowType]flow.WorkflowStepGenerator{
 		flows.FlowTypeAppBranchUpdate: flows.AppBranchUpdate,
 	}
 }

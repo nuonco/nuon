@@ -12,7 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func DeployAllComponents(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
+func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
@@ -26,7 +26,7 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, 
 		return nil, errors.Wrap(err, "unable to get install graph")
 	}
 
-	steps := make([]*app.FlowStep, 0)
+	steps := make([]*app.WorkflowStep, 0)
 	step, err := installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	})

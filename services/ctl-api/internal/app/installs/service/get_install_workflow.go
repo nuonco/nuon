@@ -24,7 +24,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{object}		app.InstallWorkflow
+// @Success				200	{object}		app.Workflow
 // @Router					/v1/install-workflows/{install_workflow_id} [GET]
 func (s *service) GetInstallWorkflow(ctx *gin.Context) {
 	workflowID := ctx.Param("install_workflow_id")
@@ -38,8 +38,8 @@ func (s *service) GetInstallWorkflow(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installWorkflow)
 }
 
-func (s *service) getInstallWorkflow(ctx *gin.Context, workflowID string) (*app.InstallWorkflow, error) {
-	var installWorkflow app.InstallWorkflow
+func (s *service) getInstallWorkflow(ctx *gin.Context, workflowID string) (*app.Workflow, error) {
+	var installWorkflow app.Workflow
 	res := s.db.WithContext(ctx).
 		Preload("Steps", func(db *gorm.DB) *gorm.DB {
 			return db.Order("idx, created_at ASC")

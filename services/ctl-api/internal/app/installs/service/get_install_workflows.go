@@ -29,7 +29,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{array}		app.InstallWorkflow
+// @Success				200	{array}		app.Workflow
 // @Router					/v1/installs/{install_id}/workflows [GET]
 func (s *service) GetInstallWorkflows(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
@@ -43,8 +43,8 @@ func (s *service) GetInstallWorkflows(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installWorkflows)
 }
 
-func (s *service) getInstallWorkflows(ctx *gin.Context, installID string) ([]app.InstallWorkflow, error) {
-	var installWorkflows []app.InstallWorkflow
+func (s *service) getInstallWorkflows(ctx *gin.Context, installID string) ([]app.Workflow, error) {
+	var installWorkflows []app.Workflow
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("Steps").

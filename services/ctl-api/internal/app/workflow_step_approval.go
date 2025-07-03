@@ -8,20 +8,19 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-type InstallWorkflowStepApprovalType string
+type WorkflowStepApprovalType string
 
 const (
-	NoopApprovalType          InstallWorkflowStepApprovalType = "noop"
-	ApproveAllApprovalType    InstallWorkflowStepApprovalType = "approve-all"
-	TerraformPlanApprovalType InstallWorkflowStepApprovalType = "terraform_plan"
-	HelmApprovalApprovalType  InstallWorkflowStepApprovalType = "helm_approval"
+	NoopApprovalType          WorkflowStepApprovalType = "noop"
+	ApproveAllApprovalType    WorkflowStepApprovalType = "approve-all"
+	TerraformPlanApprovalType WorkflowStepApprovalType = "terraform_plan"
+	HelmApprovalApprovalType  WorkflowStepApprovalType = "helm_approval"
 )
 
-type InstallWorkflowStepApproval struct {
+type WorkflowStepApproval struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
@@ -34,8 +33,8 @@ type InstallWorkflowStepApproval struct {
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	// the step that this approval belongs too
-	InstallWorkflowStepID string              `gorm:"install_workflow_step_id,notnull" temporaljson:"install_workflow_step_id,omitzero,omitempty"`
-	InstallWorkflowStep   InstallWorkflowStep `temporaljson:"install_workflow_step,omitzero,omitempty"`
+	InstallWorkflowStepID string       `gorm:"install_workflow_step_id,notnull" temporaljson:"install_workflow_step_id,omitzero,omitempty"`
+	InstallWorkflowStep   WorkflowStep `temporaljson:"install_workflow_step,omitzero,omitempty"`
 
 	// the runner job where this approval was created
 	RunnerJobID *string    `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
@@ -46,14 +45,18 @@ type InstallWorkflowStepApproval struct {
 
 	Contents string `json:"contents" temporaljson:"-"`
 
-	Type InstallWorkflowStepApprovalType `json:"type"`
+	Type WorkflowStepApprovalType `json:"type"`
 
 	// the response object must be created by the user in the UI or CLI
-	Response *InstallWorkflowStepApprovalResponse `json:"response,omitzero" temporaljson:"response,omitzero,omitempty"`
+	Response *WorkflowStepApprovalResponse `gorm:"foreignKey:InstallWorkflowStepApprovalID" json:"response,omitzero" temporaljson:"response,omitzero,omitempty"`
 }
 
-func (c *InstallWorkflowStepApproval) BeforeCreate(tx *gorm.DB) error {
-	c.ID = domains.NewInstallWorkflowStepApprovalID()
+func (c *WorkflowStepApproval) TableName() string {
+	return "install_workflow_step_approvals"
+}
+
+func (c *WorkflowStepApproval) BeforeCreate(tx *gorm.DB) error {
+	c.ID = domains.NewWorkflowStepApprovalID()
 
 	if c.CreatedByID == "" {
 		c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
@@ -65,14 +68,14 @@ func (c *InstallWorkflowStepApproval) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (c *InstallWorkflowStepApproval) AfterQuery(tx *gorm.DB) error {
+func (c *WorkflowStepApproval) AfterQuery(tx *gorm.DB) error {
 	return nil
 }
 
-func (c *InstallWorkflowStepApproval) Indexes(db *gorm.DB) []migrations.Index {
+func (c *WorkflowStepApproval) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
-			Name: indexes.Name(db, &InstallWorkflowStepApproval{}, "uq"),
+			Name: "idx_install_workflow_step_approvals_uq",
 			Columns: []string{
 				"install_workflow_step_id",
 				"deleted_at",

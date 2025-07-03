@@ -13,7 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func TeardownComponent(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
+func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
@@ -25,7 +25,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, er
 		return nil, errors.New("component id is not set on the install workflow for a manual deploy")
 	}
 
-	steps := make([]*app.FlowStep, 0)
+	steps := make([]*app.WorkflowStep, 0)
 	step, err := installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	})

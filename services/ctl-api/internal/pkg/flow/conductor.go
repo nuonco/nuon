@@ -10,14 +10,14 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-type FlowStepGenerator func(ctx workflow.Context, uf *app.Flow) ([]*app.FlowStep, error)
+type WorkflowStepGenerator func(ctx workflow.Context, uf *app.Workflow) ([]*app.WorkflowStep, error)
 
-type FlowConductor[DomainSignal eventloop.Signal] struct {
+type WorkflowConductor[DomainSignal eventloop.Signal] struct {
 	Cfg        *internal.Config
 	MW         tmetrics.Writer
 	V          *validator.Validate
 	EVClient   teventloop.Client
-	Generators map[app.FlowType]FlowStepGenerator
+	Generators map[app.WorkflowType]WorkflowStepGenerator
 
 	// ExecFn is called to actually execute the signal handler for a step.
 	//
@@ -27,7 +27,7 @@ type FlowConductor[DomainSignal eventloop.Signal] struct {
 	// signal the same event loop that's running this workflow. It'll also be a
 	// bit of awkward coupling to do it without totally predictable event loop
 	// workflow IDs, but that's not a hard blocker.
-	ExecFn func(workflow.Context, eventloop.EventLoopRequest, DomainSignal, app.FlowStep) error
+	ExecFn func(workflow.Context, eventloop.EventLoopRequest, DomainSignal, app.WorkflowStep) error
 
 	// NOTE(sdboyer) these will be used after ExecFn is removed
 	// NewRequestSignal is used by the conductor to create new request signals as needed

@@ -14,8 +14,8 @@ type GetInstallWorkflowStepRequest struct {
 
 // @temporal-gen activity
 // @by-id InstallWorkflowStepID
-func (a *Activities) GetInstallWorkflowsStep(ctx context.Context, req GetInstallWorkflowStepRequest) (*app.InstallWorkflowStep, error) {
-	var step app.InstallWorkflowStep
+func (a *Activities) GetInstallWorkflowsStep(ctx context.Context, req GetInstallWorkflowStepRequest) (*app.WorkflowStep, error) {
+	var step app.WorkflowStep
 
 	res := a.db.WithContext(ctx).
 		First(&step, "id = ?", req.InstallWorkflowStepID)

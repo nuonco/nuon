@@ -28,30 +28,30 @@ tests:
 
   # this test runs a setup command, before executing the test
   #- name: setup
-    #docker_target: lint
-    #cmd: go version
-    #setup_cmds:
-      #- env
+  #docker_target: lint
+  #cmd: go version
+  #setup_cmds:
+  #- env
 
   # an integration test that can write to/from the DB, clickhouse, or temporal
   - name: integration
     dependencies: true
     docker_target: lint
-    cmd: echo $INTEGRATION 
+    cmd: echo $INTEGRATION
     env_vars:
       INTEGRATION: "true"
 
-  # an integration test that can use both dependencies, but other services. Useful, for example, for running canaries in 
+  # an integration test that can use both dependencies, but other services. Useful, for example, for running canaries in
   # ci, or doing things like running the full test suite when the CLI changes.
-  # 
+  #
   # NOTE(jm): not currently supported
   #- name: e2e
-    #dependencies: true
-    #docker_target: test
-    #cmd: /bin/scripts/test
-    #services:
-      #- ctl-api
-      #- workers-infra-tests
+  #dependencies: true
+  #docker_target: test
+  #cmd: /bin/scripts/test
+  #services:
+  #- ctl-api
+  #- workers-infra-tests
 
 color: cyan
 env:
@@ -77,7 +77,6 @@ env:
   AWS_CLOUDFORMATION_STACK_TEMPLATE_BASE_URL: "https://nuon-install-templates-stage.s3.us-east-1.amazonaws.com/"
   AWS_CLOUDFORMATION_STACK_TEMPLATE_BUCKET: "nuon-install-templates-stage"
   AWS_CLOUDFORMATION_STACK_TEMPLATE_BUCKET_REGION: "us-east-1"
-
 
   # defaults
   GIT_REF: local
@@ -130,7 +129,7 @@ env:
   FORCE_DEBUG_MODE: true
   ENABLE_PROFILING: false
   PROFILING_PORT: 6060
-  #LOG_LEVEL: "DEBUG"
+  # LOG_LEVEL: "DEBUG"
 
 env_secrets:
   GITHUB_APP_KEY:

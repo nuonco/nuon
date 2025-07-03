@@ -10,7 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
-func (s *Helpers) CreateInstallFlow(ctx context.Context, installID string, workflowType app.InstallWorkflowType, metadata map[string]string, errBehavior app.StepErrorBehavior) (*app.InstallWorkflow, error) {
+func (s *Helpers) CreateInstallFlow(ctx context.Context, installID string, workflowType app.WorkflowType, metadata map[string]string, errBehavior app.StepErrorBehavior) (*app.Workflow, error) {
 	approvalOption := app.InstallApprovalOptionPrompt
 	installConfig := app.InstallConfig{}
 	resp := s.db.WithContext(ctx).Where("install_id = ?", installID).First(&installConfig)
@@ -23,7 +23,7 @@ func (s *Helpers) CreateInstallFlow(ctx context.Context, installID string, workf
 	}
 
 	metadata["install_id"] = installID
-	installWorkflow := app.InstallWorkflow{
+	installWorkflow := app.Workflow{
 		Type:              workflowType,
 		InstallID:         installID,
 		OwnerID:           installID,

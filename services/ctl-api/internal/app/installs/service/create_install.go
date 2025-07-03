@@ -75,7 +75,7 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
-		app.InstallWorkflowTypeProvision,
+		app.WorkflowTypeProvision,
 		map[string]string{},
 		app.StepErrorBehaviorAbort,
 	)
