@@ -124,7 +124,7 @@ const LoadAppComponents: FC<{
     offset: headers?.get('x-nuon-page-offset') || '0',
   }
 
-  return components.length && !error ? (
+  return components?.length && !error ? (
     <div className="flex flex-col gap-4 w-full">
       <AppComponentsTable
         components={hydratedComponents}

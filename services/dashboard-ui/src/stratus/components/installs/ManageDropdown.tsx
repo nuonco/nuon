@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { Button, Dropdown, Icon, Menu, Text } from '@/stratus/components/common'
+import { ReprovisionToast } from "@/stratus/components/surfaces/Toast"
 
 export const InstallManageDropdown = () => {
   const [isMobile, setIsMobile] = useState(false)
@@ -37,9 +38,7 @@ export const InstallManageDropdown = () => {
         <Text variant="label" theme="muted">
           Controlls
         </Text>
-        <Button>
-          Reprovision install <Icon variant="ArrowURightUp" />
-        </Button>
+        <ReprovisionToast />
         <Button>
           Deprovision install <Icon variant="ArrowURightDown" />
         </Button>

@@ -34,3 +34,4 @@ export const ORG_SETTINGS =
   Boolean(process?.env?.NUON_ORG_SETTINGS === 'true') || false
 export const ORG_SUPPORT =
   Boolean(process?.env?.NUON_ORG_SUPPORT === 'true') || false
+export const SF_TRIAL_ACCESS_ENDPOINT = process?.env?.SF_TRIAL_ACCESS_ENDPOINT

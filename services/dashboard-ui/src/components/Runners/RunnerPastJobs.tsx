@@ -1,11 +1,12 @@
 import React, { type FC } from 'react'
+import { Badge } from '@/components/Badge'
 import { Empty } from '@/components/Empty'
 import { Pagination } from '@/components/Pagination'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
 import { Truncate } from '@/components/Typography'
 import { getRunnerJobs, type TRunnerJobGroup } from '@/lib'
-import { jobHrefPath, jobName } from './helpers'
+import { jobHrefPath, jobName, jobOperation } from './helpers'
 
 interface IRunnerPastJobs {
   orgId: string
@@ -64,6 +65,7 @@ export const RunnerPastJobs: FC<IRunnerPastJobs> = async ({
                 <span className="!inline truncate max-w-[100px]">
                   {job?.group}
                 </span>
+                <Badge className="text-[11px]">{job?.operation}</Badge>
               </>
             ),
             time: job?.updated_at,

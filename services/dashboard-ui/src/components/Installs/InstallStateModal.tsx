@@ -24,17 +24,19 @@ export const InstallStateModal: FC<IInstallStateModal> = ({ install }) => {
   const [error, setError] = useState()
 
   useEffect(() => {
-    fetch(`/api/${org?.id}/installs/${install?.id}/state`).then((r) =>
-      r.json().then((res) => {
-        setIsLoading(false)
-        if (res?.error) {
-          setError(res?.error?.error || 'Unable to fetch install state')
-        } else {
-          setState(res.data)
-        }
-      })
-    )
-  }, [])
+    if (isOpen) {
+      fetch(`/api/${org?.id}/installs/${install?.id}/state`).then((r) =>
+        r.json().then((res) => {
+          setIsLoading(false)
+          if (res?.error) {
+            setError(res?.error?.error || 'Unable to fetch install state')
+          } else {
+            setState(res.data)
+          }
+        })
+      )
+    }
+  }, [isOpen])
 
   return (
     <>
