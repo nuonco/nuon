@@ -17,10 +17,10 @@ type UpdateFlowFinishedAtRequest struct {
 // @temporal-gen activity
 // @by-id ID
 func (a *Activities) PkgWorkflowsFlowUpdateFlowFinishedAt(ctx context.Context, req UpdateFlowFinishedAtRequest) error {
-	runner := app.Flow{
+	runner := app.Workflow{
 		ID: req.ID,
 	}
-	res := a.db.WithContext(ctx).Model(&runner).Updates(app.Flow{
+	res := a.db.WithContext(ctx).Model(&runner).Updates(app.Workflow{
 		FinishedAt: time.Now(),
 	})
 	if res.Error != nil {

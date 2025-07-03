@@ -13,12 +13,11 @@ type GetFlowStepsRequest struct {
 
 // @temporal-gen activity
 // @by-id FlowID
-func (a *Activities) PkgWorkflowsFlowGetFlowSteps(ctx context.Context, req GetFlowStepsRequest) ([]app.FlowStep, error) {
-	// var steps []app.FlowStep
-	var steps []app.InstallWorkflowStep
+func (a *Activities) PkgWorkflowsFlowGetFlowSteps(ctx context.Context, req GetFlowStepsRequest) ([]app.WorkflowStep, error) {
+	var steps []app.WorkflowStep
 
 	res := a.db.WithContext(ctx).
-		Where(app.InstallWorkflowStep{
+		Where(app.WorkflowStep{
 			InstallWorkflowID: req.FlowID,
 		}).
 		Order("idx, created_at asc").

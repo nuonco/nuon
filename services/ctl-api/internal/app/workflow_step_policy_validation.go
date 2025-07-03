@@ -6,7 +6,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 )
 
-type InstallWorkflowStepPolicyValidation struct {
+type WorkflowStepPolicyValidation struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
@@ -28,4 +28,8 @@ type InstallWorkflowStepPolicyValidation struct {
 	Status CompositeStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
 	// response is the kyverno response
 	Response string `json:"response,omitzero" gorm:"jsonb" temporaljson:"response,omitzero,omitempty"`
+}
+
+func (v *WorkflowStepPolicyValidation) TableName() string {
+	return "install_workflow_step_policy_validations"
 }

@@ -21,7 +21,7 @@ type AdminInstallWorkflowStepApproveRequest struct {
 // @Accept					json
 // @Param					req	body	AdminInstallWorkflowStepApproveRequest	true	"Input"
 // @Produce				json
-// @Success				200	{object}	app.InstallWorkflowStepApprovalResponse
+// @Success				200	{object}	app.WorkflowStepApprovalResponse
 // @Router					/v1/admin-install-workflow-step-approve [post]
 func (s *service) AdminInstallWorkflowStepApprove(ctx *gin.Context) {
 	var req AdminInstallWorkflowStepApproveRequest
@@ -30,7 +30,7 @@ func (s *service) AdminInstallWorkflowStepApprove(ctx *gin.Context) {
 		return
 	}
 
-	var installWorkflowStep app.InstallWorkflowStep
+	var installWorkflowStep app.WorkflowStep
 	res := s.db.WithContext(ctx).
 		Where("id = ?", req.StepID).
 		Preload("Approval").
@@ -53,10 +53,10 @@ func (s *service) AdminInstallWorkflowStepApprove(ctx *gin.Context) {
 		return
 	}
 
-	response := app.InstallWorkflowStepApprovalResponse{
+	response := app.WorkflowStepApprovalResponse{
 		OrgID:                         installWorkflowStep.OrgID,
 		InstallWorkflowStepApprovalID: installWorkflowStep.Approval.ID,
-		Type:                          app.InstallWorkflowStepApprovalResponseTypeApprove,
+		Type:                          app.WorkflowStepApprovalResponseTypeApprove,
 		Note:                          "Admin approved the step",
 	}
 

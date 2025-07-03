@@ -5,5 +5,5 @@ import (
 )
 
 const (
-	FlowTypeAppBranchUpdate app.FlowType = "app_branch_update"
+	FlowTypeAppBranchUpdate app.WorkflowType = "app_branch_update"
 )

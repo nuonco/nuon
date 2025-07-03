@@ -162,36 +162,20 @@ func NewAppRepoID() string {
 	return shortid.NewNanoID("apr")
 }
 
-func NewInstallWorkflowID() string {
+func NewWorkflowID() string {
 	return shortid.NewNanoID("inw")
 }
 
-func NewInstallWorkflowStepID() string {
+func NewWorkflowStepID() string {
 	return shortid.NewNanoID("iws")
 }
 
-func NewInstallWorkflowStepApprovalID() string {
+func NewWorkflowStepApprovalID() string {
 	return shortid.NewNanoID("waa")
 }
 
-func NewInstallWorkflowStepApprovalResponseID() string {
+func NewWorkflowStepApprovalResponseID() string {
 	return shortid.NewNanoID("war")
-}
-
-func NewFlowID() string {
-	return shortid.NewNanoID("flw")
-}
-
-func NewFlowStepID() string {
-	return shortid.NewNanoID("fls")
-}
-
-func NewFlowStepApprovalID() string {
-	return shortid.NewNanoID("fsa")
-}
-
-func NewFlowStepApprovalResponseID() string {
-	return shortid.NewNanoID("fsr")
 }
 
 func NewInstanceID() string {

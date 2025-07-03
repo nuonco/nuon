@@ -37,7 +37,7 @@ func (c *UpdateInstallWorkflowRequest) Validate(v *validator.Validate) error {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{object}	app.InstallWorkflow
+// @Success				200	{object}	app.Workflow
 // @Router					/v1/install-workflows/{install_workflow_id}  [PATCH]
 func (s *service) UpdateInstallWorkflow(ctx *gin.Context) {
 	installWorkflowID := ctx.Param("install_workflow_id")
@@ -61,13 +61,13 @@ func (s *service) UpdateInstallWorkflow(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installWorkflow)
 }
 
-func (s *service) updateInstallWorkflow(ctx context.Context, installWorkflowID string, req *UpdateInstallWorkflowRequest) (*app.InstallWorkflow, error) {
-	currentInstallWorkflow := app.InstallWorkflow{
+func (s *service) updateInstallWorkflow(ctx context.Context, installWorkflowID string, req *UpdateInstallWorkflowRequest) (*app.Workflow, error) {
+	currentWorkflow := app.Workflow{
 		ID: installWorkflowID,
 	}
 
 	res := s.db.WithContext(ctx).
-		Model(&currentInstallWorkflow).
+		Model(&currentWorkflow).
 		Updates(req)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install workflow: %w", res.Error)
@@ -76,5 +76,5 @@ func (s *service) updateInstallWorkflow(ctx context.Context, installWorkflowID s
 		return nil, fmt.Errorf("install workflow not found: %w", gorm.ErrRecordNotFound)
 	}
 
-	return &currentInstallWorkflow, nil
+	return &currentWorkflow, nil
 }
