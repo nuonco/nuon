@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
@@ -51,8 +52,9 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 func (s *service) getAppComponents(ctx *gin.Context, appID string) ([]app.Component, error) {
 	currentApp := &app.App{}
 	res := s.db.WithContext(ctx).
-		Scopes(scopes.WithOffsetPagination).
-		Preload("Components").
+		Preload("Components", func(db *gorm.DB) *gorm.DB {
+			return db.Scopes(scopes.WithOffsetPagination)
+		}).
 		Preload("Components.ComponentConfigs").
 		Preload("Components.Dependencies").
 		First(&currentApp, "id = ?", appID)
