@@ -80,9 +80,18 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
                         {deploy?.status !== 'queued' ? (
                           <Link
                             className="text-sm gap-0"
+                            href={`/${orgId}/installs/${step?.install_id}/components/${deploy?.component_id}`}
+                          >
+                            View component
+                            <CaretRight />
+                          </Link>
+                        ) : null}
+                        {deploy?.status !== 'queued' ? (
+                          <Link
+                            className="text-sm gap-0"
                             href={`/${orgId}/installs/${step?.install_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
                           >
-                            View deploy details
+                            View deployment
                             <CaretRight />
                           </Link>
                         ) : null}

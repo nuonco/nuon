@@ -3,12 +3,33 @@
 import { revalidatePath } from 'next/cache'
 import { joinWaitlist, type IJoinWaitlist } from '@/lib'
 import type { TInvite, TWaitlist } from '@/types'
-import { mutateData, nueMutateData } from '@/utils'
+import {
+  mutateData,
+  nueMutateData,
+  auth0,
+  SF_TRIAL_ACCESS_ENDPOINT,
+} from '@/utils'
 
 export async function requestWaitlistAccess(
   formData: FormData
 ): Promise<TWaitlist> {
+  const session = await auth0.getSession()
   const data = Object.fromEntries(formData) as IJoinWaitlist
+
+  if (SF_TRIAL_ACCESS_ENDPOINT) {
+    await fetch(SF_TRIAL_ACCESS_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: session?.user?.given_name,
+        lastName: session?.user?.family_name,
+        email: session?.user?.email,
+        organizationName: data?.org_name,
+      }),
+    }).catch((err) => {
+      console.error('error posting to salesforce api')
+    })
+  }
 
   return joinWaitlist(data)
 }
