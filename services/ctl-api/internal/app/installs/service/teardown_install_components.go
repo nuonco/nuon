@@ -79,7 +79,7 @@ func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		installID,
-		app.InstallWorkflowTypeTeardownComponents,
+		app.WorkflowTypeTeardownComponents,
 		map[string]string{},
 		req.ErrorBehavior,
 	)

@@ -31,12 +31,12 @@ type UpdateStatusRequest struct {
 // TODO(sdboyer) remove after workflow refactor
 // @temporal-gen activity
 func (a *Activities) PkgStatusUpdateInstallWorkflowStatus(ctx context.Context, req UpdateStatusRequest) error {
-	obj := app.InstallWorkflow{
+	obj := app.Workflow{
 		ID: req.ID,
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var obj app.InstallWorkflow
+		var obj app.Workflow
 		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}
@@ -50,12 +50,12 @@ func (a *Activities) PkgStatusUpdateInstallWorkflowStatus(ctx context.Context, r
 // TODO(sdboyer) remove after workflow refactor
 // @temporal-gen activity
 func (a *Activities) PkgStatusUpdateInstallWorkflowStepStatus(ctx context.Context, req UpdateStatusRequest) error {
-	obj := app.InstallWorkflowStep{
+	obj := app.WorkflowStep{
 		ID: req.ID,
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var obj app.InstallWorkflowStep
+		var obj app.WorkflowStep
 		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}
@@ -135,12 +135,12 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 
 // @temporal-gen activity
 func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateStatusRequest) error {
-	obj := app.Flow{
+	obj := app.Workflow{
 		ID: req.ID,
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var obj app.Flow
+		var obj app.Workflow
 		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}
@@ -153,12 +153,12 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 
 // @temporal-gen activity
 func (a *Activities) PkgStatusUpdateFlowStepStatus(ctx context.Context, req UpdateStatusRequest) error {
-	obj := app.FlowStep{
+	obj := app.WorkflowStep{
 		ID: req.ID,
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var obj app.FlowStep
+		var obj app.WorkflowStep
 		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}

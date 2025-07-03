@@ -14,13 +14,13 @@ type UpdateInstallWorkflowStepRetry struct {
 // UpdateInstallWorkflowStepRetry updates the retry status of an install workflow step.
 // This makes the step non retryable for next attempts.
 func (h *Helpers) UpdateInstallWorkflowStepRetry(ctx context.Context, req UpdateInstallWorkflowStepRetry) error {
-	step := app.InstallWorkflowStep{
+	step := app.WorkflowStep{
 		ID: req.StepID,
 	}
 
 	res := h.db.WithContext(ctx).
 		Model(&step).
-		Updates(app.InstallWorkflowStep{
+		Updates(app.WorkflowStep{
 			Retried: true,
 		})
 	if res.Error != nil {

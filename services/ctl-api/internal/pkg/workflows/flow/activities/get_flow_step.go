@@ -14,9 +14,8 @@ type GetFlowStepRequest struct {
 
 // @temporal-gen activity
 // @by-id FlowStepID
-func (a *Activities) PkgWorkflowsFlowGetFlowsStep(ctx context.Context, req GetFlowStepRequest) (*app.FlowStep, error) {
-	// var step app.FlowStep
-	var step app.InstallWorkflowStep
+func (a *Activities) PkgWorkflowsFlowGetFlowsStep(ctx context.Context, req GetFlowStepRequest) (*app.WorkflowStep, error) {
+	var step app.WorkflowStep
 
 	res := a.db.WithContext(ctx).
 		Preload("Approval").

@@ -24,8 +24,8 @@ type AppConfigSyncRun struct {
 	AppBranchID string    `json:"app_branch_id,omitzero" gorm:"not null;default:null" temporaljson:"app_branch_id,omitzero,omitempty"`
 	AppBranch   AppBranch `json:"-" temporaljson:"app_branch,omitzero,omitempty"`
 
-	WorkflowID string          `json:"workflow_id,omitzero" gorm:"not null" temporaljson:"flow_id,omitzero,omitempty"`
-	Workflow   InstallWorkflow `json:"-" temporaljson:"flow,omitzero,omitempty"`
+	WorkflowID string   `json:"workflow_id,omitzero" gorm:"not null" temporaljson:"workflow_id,omitzero,omitempty"`
+	Workflow   Workflow `json:"-" temporaljson:"workflow,omitzero,omitempty"`
 
 	VCSConnectionCommitID *string              `json:"-" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
 	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit,omitzero" temporaljson:"vcs_connection_commit,omitzero,omitempty"`

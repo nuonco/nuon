@@ -65,8 +65,8 @@ type InstallActionWorkflowRun struct {
 
 	RunEnvVars pgtype.Hstore `json:"run_env_vars,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"run_env_vars,omitzero,omitempty"`
 
-	InstallWorkflowID *string          `json:"install_workflow_id" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
-	InstallWorkflow   *InstallWorkflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
+	InstallWorkflowID *string   `json:"install_workflow_id" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
+	InstallWorkflow   *Workflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
 
 	// after query
 

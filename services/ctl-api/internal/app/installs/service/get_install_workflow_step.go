@@ -24,7 +24,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{array}		app.InstallWorkflowStep
+// @Success				200	{array}		app.WorkflowStep
 // @Router /v1/install-workflows/{install_workflow_id}/steps/{install_workflow_step_id} [GET]
 func (s *service) GetInstallWorkflowStep(ctx *gin.Context) {
 	workflowID := ctx.Param("install_workflow_id")
@@ -39,8 +39,8 @@ func (s *service) GetInstallWorkflowStep(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installWorkflow)
 }
 
-func (s *service) getInstallWorkflowStep(ctx *gin.Context, workflowID, stepID string) (*app.InstallWorkflowStep, error) {
-	var installWorkflowStep app.InstallWorkflowStep
+func (s *service) getInstallWorkflowStep(ctx *gin.Context, workflowID, stepID string) (*app.WorkflowStep, error) {
+	var installWorkflowStep app.WorkflowStep
 	res := s.db.WithContext(ctx).
 		Where("id = ? AND install_workflow_id = ?", stepID, workflowID).
 		Preload("Approval").

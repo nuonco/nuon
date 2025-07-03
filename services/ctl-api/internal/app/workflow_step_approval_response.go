@@ -8,24 +8,23 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-type InstallWorkflowStepResponseType string
+type WorkflowStepResponseType string
 
 const (
-	InstallWorkflowStepApprovalResponseTypeDeny    InstallWorkflowStepResponseType = "deny"
-	InstallWorkflowStepApprovalResponseTypeApprove InstallWorkflowStepResponseType = "approve"
-	InstallWorkflowStepApprovalResponseTypeSkip    InstallWorkflowStepResponseType = "skip"
+	WorkflowStepApprovalResponseTypeDeny    WorkflowStepResponseType = "deny"
+	WorkflowStepApprovalResponseTypeApprove WorkflowStepResponseType = "approve"
+	WorkflowStepApprovalResponseTypeSkip    WorkflowStepResponseType = "skip"
 
-	InstallWorkflowStepApprovalResponseTypeRetryPlan InstallWorkflowStepResponseType = "retry"
+	WorkflowStepApprovalResponseTypeRetryPlan WorkflowStepResponseType = "retry"
 
 	// auto approve is when the workflow uses auto-approve
-	InstallWorkflowStepApprovalResponseTypeAutoApprove InstallWorkflowStepResponseType = "auto-approve"
+	WorkflowStepApprovalResponseTypeAutoApprove WorkflowStepResponseType = "auto-approve"
 )
 
-type InstallWorkflowStepApprovalResponse struct {
+type WorkflowStepApprovalResponse struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
@@ -38,17 +37,21 @@ type InstallWorkflowStepApprovalResponse struct {
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	// the approval the response belongs to
-	InstallWorkflowStepApprovalID string                          `json:"install_workflow_step_approval_id,omitzero" temporaljson:"install_workflow_step_approval_id,omitzero,omitempty"`
-	InstallWorkflowStepApproval   InstallWorkflowStepResponseType `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_workflow_step_approval,omitzero,omitempty"`
+	InstallWorkflowStepApprovalID string               `json:"install_workflow_step_approval_id,omitzero" temporaljson:"install_workflow_step_approval_id,omitzero,omitempty"`
+	InstallWorkflowStepApproval   WorkflowStepApproval `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_workflow_step_approval,omitzero,omitempty"`
 
 	// the response type
-	Type InstallWorkflowStepResponseType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
+	Type WorkflowStepResponseType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 
 	Note string `json:"note,omitzero" temporaljson:"note,omitzero,omitempty"`
 }
 
-func (c *InstallWorkflowStepApprovalResponse) BeforeCreate(tx *gorm.DB) error {
-	c.ID = domains.NewInstallWorkflowStepApprovalID()
+func (c *WorkflowStepApprovalResponse) TableName() string {
+	return "install_workflow_step_approval_responses"
+}
+
+func (c *WorkflowStepApprovalResponse) BeforeCreate(tx *gorm.DB) error {
+	c.ID = domains.NewWorkflowStepApprovalID()
 
 	if c.CreatedByID == "" {
 		c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
@@ -60,14 +63,14 @@ func (c *InstallWorkflowStepApprovalResponse) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (c *InstallWorkflowStepApprovalResponse) AfterQuery(tx *gorm.DB) error {
+func (c *WorkflowStepApprovalResponse) AfterQuery(tx *gorm.DB) error {
 	return nil
 }
 
-func (c *InstallWorkflowStepApprovalResponse) Indexes(db *gorm.DB) []migrations.Index {
+func (c *WorkflowStepApprovalResponse) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
-			Name: indexes.Name(db, &InstallWorkflowStepApprovalResponse{}, "uq"),
+			Name: "idx_install_workflow_step_approval_responses_uq",
 			Columns: []string{
 				"install_workflow_step_approval_id",
 				"deleted_at",

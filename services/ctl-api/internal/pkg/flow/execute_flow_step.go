@@ -15,7 +15,7 @@ import (
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-func (c *FlowConductor[DomainSignal]) executeStep(ctx workflow.Context, req eventloop.EventLoopRequest, step *app.FlowStep) error {
+func (c *WorkflowConductor[DomainSignal]) executeStep(ctx workflow.Context, req eventloop.EventLoopRequest, step *app.WorkflowStep) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil
@@ -43,7 +43,7 @@ func (c *FlowConductor[DomainSignal]) executeStep(ctx workflow.Context, req even
 		return err
 	}
 
-	if step.ExecutionType == app.FlowStepExecutionTypeSkipped {
+	if step.ExecutionType == app.WorkflowStepExecutionTypeSkipped {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
@@ -79,7 +79,7 @@ func (c *FlowConductor[DomainSignal]) executeStep(ctx workflow.Context, req even
 	return nil
 }
 
-func (c *FlowConductor[DomainSignal]) handleStepErr(ctx workflow.Context, stepID string, err error) error {
+func (c *WorkflowConductor[DomainSignal]) handleStepErr(ctx workflow.Context, stepID string, err error) error {
 	if statusErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: stepID,
 		Status: app.CompositeStatus{

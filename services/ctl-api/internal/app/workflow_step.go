@@ -13,16 +13,16 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/links"
 )
 
-type InstallWorkflowStepExecutionType string
+type WorkflowStepExecutionType string
 
 const (
-	InstallWorkflowStepExecutionTypeSystem   InstallWorkflowStepExecutionType = "system"
-	InstallWorkflowStepExecutionTypeUser     InstallWorkflowStepExecutionType = "user"
-	InstallWorkflowStepExecutionTypeApproval InstallWorkflowStepExecutionType = "approval"
-	InstallWorkflowStepExecutionTypeSkipped  InstallWorkflowStepExecutionType = "skipped"
+	WorkflowStepExecutionTypeSystem   WorkflowStepExecutionType = "system"
+	WorkflowStepExecutionTypeUser     WorkflowStepExecutionType = "user"
+	WorkflowStepExecutionTypeApproval WorkflowStepExecutionType = "approval"
+	WorkflowStepExecutionTypeSkipped  WorkflowStepExecutionType = "skipped"
 )
 
-type InstallWorkflowStep struct {
+type WorkflowStep struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
@@ -51,7 +51,7 @@ type InstallWorkflowStep struct {
 
 	Idx int `json:"idx,omitzero" temporaljson:"idx,omitzero,omitempty"`
 
-	ExecutionType InstallWorkflowStepExecutionType `json:"execution_type,omitzero" temporaljson:"execution_type"`
+	ExecutionType WorkflowStepExecutionType `json:"execution_type,omitzero" temporaljson:"execution_type"`
 
 	// the following fields are set _once_ a step is in flight, and are orchestrated via the step's signal.
 	//
@@ -72,8 +72,8 @@ type InstallWorkflowStep struct {
 	Finished   bool      `json:"finished,omitzero" gorm:"-" temporaljson:"finished,omitzero,omitempty"`
 
 	// the step approval is built into each step at the runner level.
-	Approval         *InstallWorkflowStepApproval         `json:"approval,omitzero" temporaljson:"approval,omitzero,omitempty"`
-	PolicyValidation *InstallWorkflowStepPolicyValidation `json:"policy_validation,omitzero" temporaljson:"policy_validation,omitzero,omitempty"`
+	Approval         *WorkflowStepApproval         `gorm:"foreignKey:InstallWorkflowStepID" json:"approval,omitzero" temporaljson:"approval,omitzero,omitempty"`
+	PolicyValidation *WorkflowStepPolicyValidation `gorm:"foreignKey:InstallWorkflowStepID" json:"policy_validation,omitzero" temporaljson:"policy_validation,omitzero,omitempty"`
 
 	ExecutionTime time.Duration `json:"execution_time,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
 
@@ -83,7 +83,12 @@ type InstallWorkflowStep struct {
 	Retried   bool `json:"retried,omitzero" gorm:"default:false" temporaljson:"retried,omitzero,omitempty"`
 }
 
-func (i *InstallWorkflowStep) BeforeSave(tx *gorm.DB) error {
+func (i *WorkflowStep) TableName() string {
+	// WorkflowStep used to be called InstallWorkflowStep
+	return "install_workflow_steps"
+}
+
+func (i *WorkflowStep) BeforeSave(tx *gorm.DB) error {
 	// defensive fallback while we migrate, this should be handled elsewhere
 	if i.OwnerID == "" {
 		i.OwnerID = i.InstallID
@@ -94,9 +99,9 @@ func (i *InstallWorkflowStep) BeforeSave(tx *gorm.DB) error {
 	return nil
 }
 
-func (a *InstallWorkflowStep) BeforeCreate(tx *gorm.DB) error {
+func (a *WorkflowStep) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
-		a.ID = domains.NewInstallWorkflowStepID()
+		a.ID = domains.NewWorkflowStepID()
 	}
 
 	if a.CreatedByID == "" {
@@ -109,7 +114,7 @@ func (a *InstallWorkflowStep) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (r *InstallWorkflowStep) AfterQuery(tx *gorm.DB) error {
+func (r *WorkflowStep) AfterQuery(tx *gorm.DB) error {
 	r.Links = links.InstallWorkflowStepLinks(tx.Statement.Context, r.ID)
 
 	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
