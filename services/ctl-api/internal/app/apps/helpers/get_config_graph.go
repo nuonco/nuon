@@ -183,16 +183,31 @@ func (h *Helpers) GetConfigComponentDeployOrder(ctx context.Context, cfg *app.Ap
 		return nil, errors.Wrap(err, "unable to get config graph")
 	}
 
-	comps := make([]string, 0)
+	visitedCmps := make([]string, 0)
 	err = graph.BFSWithDepth(grph, compID, func(id string, depth int) bool {
-		comps = append(comps, id)
+		visitedCmps = append(visitedCmps, id)
 		return false
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get subgraph")
 	}
 
-	return comps, nil
+	sortedComps, err := getDeployOrderFromGraph(ctx, grph)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get deploy order from graph")
+	}
+
+	sortedVisitedCmps := make([]string, 0, len(visitedCmps))
+	for _, id := range sortedComps {
+		for _, visitedID := range visitedCmps {
+			if id == visitedID {
+				sortedVisitedCmps = append(sortedVisitedCmps, id)
+				break
+			}
+		}
+	}
+
+	return sortedVisitedCmps, nil
 }
 
 func (h *Helpers) GetReverseConfigComponentDeployOrder(ctx context.Context, cfg *app.AppConfig, compID string) ([]string, error) {
