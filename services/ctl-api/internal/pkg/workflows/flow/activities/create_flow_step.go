@@ -10,22 +10,21 @@ import (
 )
 
 type CreateFlowStepRequest struct {
-	FlowID        string                    `json:"flow_id" validate:"required"`
-	OwnerID       string                    `json:"owner_id" validate:"required"`
-	OwnerType     string                    `json:"owner_type" validate:"required"`
-	Status        app.CompositeStatus       `json:"status"`
-	Name          string                    `json:"name"`
-	Signal        app.Signal                `json:"signal"`
-	Idx           int                       `json:"idx"`
-	ExecutionType app.FlowStepExecutionType `json:"execution_type"`
-	Metadata      pgtype.Hstore             `json:"metadata"`
-	Retryable     bool                      `json:"retryable"`
+	FlowID        string                        `json:"flow_id" validate:"required"`
+	OwnerID       string                        `json:"owner_id" validate:"required"`
+	OwnerType     string                        `json:"owner_type" validate:"required"`
+	Status        app.CompositeStatus           `json:"status"`
+	Name          string                        `json:"name"`
+	Signal        app.Signal                    `json:"signal"`
+	Idx           int                           `json:"idx"`
+	ExecutionType app.WorkflowStepExecutionType `json:"execution_type"`
+	Metadata      pgtype.Hstore                 `json:"metadata"`
+	Retryable     bool                          `json:"retryable"`
 }
 
 // @temporal-gen activity
-func (a *Activities) PkgWorkflowsFlowCreateFlowStep(ctx context.Context, req CreateFlowStepRequest) (*app.InstallWorkflowStep, error) {
-	// step := &app.FlowStep{
-	step := &app.InstallWorkflowStep{
+func (a *Activities) PkgWorkflowsFlowCreateFlowStep(ctx context.Context, req CreateFlowStepRequest) (*app.WorkflowStep, error) {
+	step := &app.WorkflowStep{
 		InstallWorkflowID: req.FlowID,
 		InstallID:         req.OwnerID,
 		OwnerID:           req.OwnerID,

@@ -15,7 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func InputUpdate(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
+func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 
 	changedInputsRaw := generics.FromPtrStr(flw.Metadata["inputs"])
@@ -26,7 +26,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	steps := make([]*app.InstallWorkflowStep, 0)
+	steps := make([]*app.WorkflowStep, 0)
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreUpdateInputs)
 	if err != nil {
 		return nil, err

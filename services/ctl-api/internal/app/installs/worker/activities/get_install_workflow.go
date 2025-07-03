@@ -14,8 +14,8 @@ type GetInstallWorkflowRequest struct {
 
 // @temporal-gen activity
 // @by-id ID
-func (a *Activities) GetInstallWorkflow(ctx context.Context, req GetInstallWorkflowRequest) (*app.InstallWorkflow, error) {
-	iw := app.InstallWorkflow{
+func (a *Activities) GetInstallWorkflow(ctx context.Context, req GetInstallWorkflowRequest) (*app.Workflow, error) {
+	iw := app.Workflow{
 		ID: req.ID,
 	}
 	if res := a.db.WithContext(ctx).

@@ -14,14 +14,14 @@ type GetFlowRequest struct {
 
 // @temporal-gen activity
 // @by-id ID
-func (a *Activities) PkgWorkflowsFlowGetFlow(ctx context.Context, req GetFlowRequest) (*app.Flow, error) {
-	iw := app.Flow{
+func (a *Activities) PkgWorkflowsFlowGetFlow(ctx context.Context, req GetFlowRequest) (*app.Workflow, error) {
+	wf := app.Workflow{
 		ID: req.ID,
 	}
 	if res := a.db.WithContext(ctx).
-		First(&iw, "id = ?", req.ID); res.Error != nil {
+		First(&wf, "id = ?", req.ID); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get install workflow")
 	}
 
-	return &iw, nil
+	return &wf, nil
 }

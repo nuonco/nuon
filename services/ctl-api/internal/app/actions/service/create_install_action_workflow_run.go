@@ -102,9 +102,9 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	}
 	prependRunEnvVars["triggerred_by_id"] = account.ID
 
-	workflow, err := s.CreateInstallWorkflow(ctx,
+	workflow, err := s.CreateWorkflow(ctx,
 		installActionWorkflow.InstallID,
-		app.InstallWorkflowTypeActionWorkflowRun,
+		app.WorkflowTypeActionWorkflowRun,
 		prependRunEnvVars,
 		app.StepErrorBehaviorAbort,
 	)
@@ -136,8 +136,8 @@ func PrependRunEnvPrefix(runEnvVars map[string]string) map[string]string {
 	return result
 }
 
-func (s *service) CreateInstallWorkflow(ctx context.Context, installID string, workflowType app.InstallWorkflowType, metadata map[string]string, errBehavior app.StepErrorBehavior) (*app.InstallWorkflow, error) {
-	installWorkflow := app.InstallWorkflow{
+func (s *service) CreateWorkflow(ctx context.Context, installID string, workflowType app.WorkflowType, metadata map[string]string, errBehavior app.StepErrorBehavior) (*app.Workflow, error) {
+	installWorkflow := app.Workflow{
 		Type:              workflowType,
 		InstallID:         installID,
 		OwnerID:           installID,

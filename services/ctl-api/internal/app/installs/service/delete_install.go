@@ -37,7 +37,7 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
-		app.InstallWorkflowTypeDeprovision,
+		app.WorkflowTypeDeprovision,
 		map[string]string{},
 		app.StepErrorBehaviorAbort,
 	)

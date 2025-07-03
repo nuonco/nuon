@@ -13,7 +13,7 @@ import (
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-func (c *FlowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.EventLoopRequest, fid string) error {
+func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.EventLoopRequest, fid string) error {
 	// generate steps
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -129,7 +129,7 @@ func (c *FlowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.E
 	}
 
 	// TODO(sdboyer) remove this once types align
-	flw.Steps = make([]app.FlowStep, len(steps))
+	flw.Steps = make([]app.WorkflowStep, len(steps))
 	for i, step := range steps {
 		flw.Steps[i] = *step
 	}
