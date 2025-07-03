@@ -54,3 +54,29 @@ export function jobName(job: TRunnerJob): string {
 
   return name
 }
+
+export function jobOperation(job: TRunnerJob): string {
+  let operation: string
+
+  switch (job?.operation) {
+    case 'create-apply-plan':
+      operation = 'plan'
+      break
+    case 'create-teardown-plan':
+      operation = 'teardown plan'
+      break
+    case 'apply-plan':
+      operation = 'apply'
+      break
+    case 'exec':
+      operation = 'run'
+      break
+    case 'build':
+      operation = job?.group === 'sync' ? 'sync' : 'build'
+      break
+    default:
+      operation = ''
+  }
+
+  return operation
+}
