@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -10,6 +9,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -17,6 +17,9 @@ import (
 // @Summary				get latest runs for all action workflows by install id
 // @Description.markdown	get_install_action_workflows_latest_run.md
 // @Param					install_id	path	string	true	"install ID"
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
 // @Tags					actions
 // @Accept					json
 // @Produce				json
@@ -47,12 +50,15 @@ func (s *service) GetInstallActionWorkflowsLatestRuns(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, iaws)
 }
 
-func (s *service) getInstallActionWorkflowsLatestRun(ctx context.Context, orgID, installID string) ([]*app.InstallActionWorkflow, error) {
+func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, installID string) ([]*app.InstallActionWorkflow, error) {
 	iaws := []*app.InstallActionWorkflow{}
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithOffsetPagination).
 		Preload("ActionWorkflow").
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithOverrideTable("install_action_workflow_runs_latest_view_v1"))
+			return db.Scopes(
+				scopes.WithOverrideTable("install_action_workflow_runs_latest_view_v1"),
+			)
 		}).
 		Preload("Runs.RunnerJob", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithDisableViews)
@@ -60,6 +66,11 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx context.Context, orgID,
 		Find(&iaws, "org_id = ? AND install_id = ?", orgID, installID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install action workflows: %w", res.Error)
+	}
+
+	iaws, err := db.HandlePaginatedResponse(ctx, iaws)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return iaws, nil
