@@ -9,15 +9,11 @@ import {
   ErrorFallback,
   Loading,
   NoComponents,
+  Pagination,
   Section,
 } from '@/components'
-import {
-  getApp,
-  getAppComponents,
-  getAppLatestInputConfig,
-  getAppLatestConfig,
-} from '@/lib'
-import type { TBuild } from '@/types'
+import { getApp, getAppLatestInputConfig, getAppLatestConfig } from '@/lib'
+import type { TBuild, TComponent } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -29,8 +25,9 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function AppComponents({ params }) {
+export default async function AppComponents({ params, searchParams }) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
+  const sp = await searchParams
   const [app, appConfig, inputCfg] = await Promise.all([
     getApp({ appId, orgId }),
     getAppLatestConfig({ appId, orgId }),
@@ -69,6 +66,7 @@ export default async function AppComponents({ params }) {
               appId={appId}
               configId={appConfig?.id}
               orgId={orgId}
+              offset={sp['offset'] || '0'}
             />
           </Suspense>
         </ErrorBoundary>
@@ -81,37 +79,66 @@ const LoadAppComponents: FC<{
   appId: string
   configId: string
   orgId: string
-}> = async ({ appId, configId, orgId }) => {
-  const components = await getAppComponents({ appId, orgId })
-  const hydratedComponents = await Promise.all(
-    components
-      //.filter((c) => c?.type === 'helm_chart' || c?.type === 'terraform_module')
-      .sort((a, b) => a?.id?.localeCompare(b?.id))
-      .map(async (comp, _) => {
-        const { data: build } = await nueQueryData<TBuild>({
-          orgId,
-          path: `components/${comp?.id}/builds/latest`,
+  limit?: string
+  offset?: string
+}> = async ({ appId, configId, orgId, limit = '10', offset }) => {
+  const params = new URLSearchParams({ offset, limit }).toString()
+  const {
+    data: components,
+    error,
+    headers,
+  } = await nueQueryData<TComponent[]>({
+    orgId,
+    path: `apps/${appId}/components${params ? '?' + params : params}`,
+    headers: {
+      'x-nuon-pagination-enabled': true,
+    },
+  })
+  const hydratedComponents =
+    components &&
+    !error &&
+    (await Promise.all(
+      components
+        //.filter((c) => c?.type === 'helm_chart' || c?.type === 'terraform_module')
+        .sort((a, b) => a?.id?.localeCompare(b?.id))
+        .map(async (comp, _) => {
+          const { data: build } = await nueQueryData<TBuild>({
+            orgId,
+            path: `components/${comp?.id}/builds/latest`,
+          })
+
+          const deps = components.filter((c) =>
+            comp.dependencies?.some((d) => d === c.id)
+          )
+
+          return {
+            ...comp,
+            latestBuild: build,
+            deps,
+          }
         })
+    ))
 
-        const deps = components.filter((c) =>
-          comp.dependencies?.some((d) => d === c.id)
-        )
+  const pageData = {
+    hasNext: headers?.get('x-nuon-page-next') || 'false',
+    offset: headers?.get('x-nuon-page-offset') || '0',
+  }
 
-        return {
-          ...comp,
-          latestBuild: build,
-          deps,
-        }
-      })
-  )
-
-  return components.length ? (
-    <AppComponentsTable
-      components={hydratedComponents}
-      appId={appId}
-      configId={configId}
-      orgId={orgId}
-    />
+  return components.length && !error ? (
+    <div className="flex flex-col gap-4 w-full">
+      <AppComponentsTable
+        components={hydratedComponents}
+        appId={appId}
+        configId={configId}
+        orgId={orgId}
+      />
+      <Pagination
+        param="offset"
+        pageData={pageData}
+        position="center"
+        limit={parseInt(limit)}
+      />
+    </div>
   ) : (
     <NoComponents />
   )
