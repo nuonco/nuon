@@ -7,11 +7,13 @@ import {
   NoApps,
   Loading,
   OrgAppsTable,
+  Pagination,
   Section,
 } from '@/components'
-import { getApps, getOrg } from '@/lib'
+import { getOrg } from '@/lib'
 // TODO(nnnat): move segment init script to org dashboard
-import { SegmentAnalyticsSetOrg } from '@/utils'
+import type { TApp } from '@/types'
+import { SegmentAnalyticsSetOrg, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
@@ -22,8 +24,9 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function Apps({ params }) {
+export default async function Apps({ params, searchParams }) {
   const { ['org-id']: orgId } = await params
+  const sp = await searchParams
   const org = await getOrg({ orgId })
 
   return (
@@ -37,7 +40,7 @@ export default async function Apps({ params }) {
                 <Loading variant="page" loadingText="Loading apps..." />
               }
             >
-              <LoadApps orgId={orgId} />
+              <LoadApps orgId={orgId} offset={sp['offset'] || '0'} />
             </Suspense>
           </ErrorBoundary>
         </Section>
@@ -46,7 +49,40 @@ export default async function Apps({ params }) {
   )
 }
 
-const LoadApps: FC<{ orgId: string }> = async ({ orgId }) => {
-  const apps = await getApps({ orgId })
-  return apps?.length ? <OrgAppsTable apps={apps} orgId={orgId} /> : <NoApps />
+const LoadApps: FC<{
+  orgId: string
+  limit?: string
+  offset?: string
+}> = async ({ orgId, limit = '10', offset }) => {
+  const params = new URLSearchParams({ offset, limit }).toString()
+  const {
+    data: apps,
+    error,
+    headers,
+  } = await nueQueryData<TApp[]>({
+    orgId,
+    path: `apps${params ? '?' + params : params}`,
+    headers: {
+      'x-nuon-pagination-enabled': true,
+    },
+  })
+
+  const pageData = {
+    hasNext: headers?.get('x-nuon-page-next') || 'false',
+    offset: headers?.get('x-nuon-page-offset') || '0',
+  }
+
+  return apps?.length && !error ? (
+    <div className="flex flex-col gap-4 w-full">
+      <OrgAppsTable apps={apps} orgId={orgId} />
+      <Pagination
+        param="offset"
+        pageData={pageData}
+        position="center"
+        limit={parseInt(limit)}
+      />
+    </div>
+  ) : (
+    <NoApps />
+  )
 }

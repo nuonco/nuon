@@ -9,10 +9,12 @@ import {
   ErrorFallback,
   Loading,
   NoInstalls,
+  Pagination,
   Section,
 } from '@/components'
-import { getApp, getAppInstalls, getAppLatestInputConfig } from '@/lib'
-import type { TApp } from '@/types'
+import { getApp, getAppLatestInputConfig } from '@/lib'
+import type { TApp, TInstall } from '@/types'
+import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
@@ -23,8 +25,9 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function AppInstalls({ params }) {
+export default async function AppInstalls({ params, searchParams }) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
+  const sp = await searchParams
   const [app, inputCfg] = await Promise.all([
     getApp({ appId, orgId }),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
@@ -58,7 +61,12 @@ export default async function AppInstalls({ params }) {
               <Loading variant="page" loadingText="Loading installs..." />
             }
           >
-            <LoadAppInstalls app={app} appId={appId} orgId={orgId} />
+            <LoadAppInstalls
+              app={app}
+              appId={appId}
+              orgId={orgId}
+              offset={sp['offset'] || '0'}
+            />
           </Suspense>
         </ErrorBoundary>
       </Section>
@@ -70,14 +78,40 @@ const LoadAppInstalls: FC<{
   app: TApp
   appId: string
   orgId: string
-}> = async ({ app, appId, orgId }) => {
-  const installs = await getAppInstalls({ appId, orgId })
+  limit?: string
+  offset?: string
+}> = async ({ app, appId, orgId, limit = '10', offset }) => {
+  const params = new URLSearchParams({ offset, limit }).toString()
+  const {
+    data: installs,
+    error,
+    headers,
+  } = await nueQueryData<TInstall[]>({
+    orgId,
+    path: `apps/${appId}/installs${params ? '?' + params : params}`,
+    headers: {
+      'x-nuon-pagination-enabled': true,
+    },
+  })
 
-  return installs.length ? (
-    <AppInstallsTable
-      installs={installs.map((install) => ({ ...install, app }))}
-      orgId={orgId}
-    />
+  const pageData = {
+    hasNext: headers?.get('x-nuon-page-next') || 'false',
+    offset: headers?.get('x-nuon-page-offset') || '0',
+  }
+
+  return installs?.length && !error ? (
+    <div className="flex flex-col gap-8 w-full">
+      <AppInstallsTable
+        installs={installs.map((install) => ({ ...install, app }))}
+        orgId={orgId}
+      />
+      <Pagination
+        param="offset"
+        pageData={pageData}
+        position="center"
+        limit={parseInt(limit)}
+      />
+    </div>
   ) : (
     <NoInstalls />
   )
