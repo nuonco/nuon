@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/patcher"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
@@ -68,7 +69,7 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 	}
 
 	res := s.db.WithContext(ctx).
-		Scopes(scopes.WithPatcher(nil)).
+		Scopes(scopes.WithPatcher(patcher.PatcherOptions{})).
 		Model(&currentInstall).
 		Preload("AWSAccount").
 		Preload("AzureAccount").
