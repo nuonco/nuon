@@ -13,11 +13,11 @@ type GetInstallWorkflowStepsRequest struct {
 
 // @temporal-gen activity
 // @by-id InstallWorkflowID
-func (a *Activities) GetInstallWorkflowsSteps(ctx context.Context, req GetInstallWorkflowStepsRequest) ([]app.InstallWorkflowStep, error) {
-	var steps []app.InstallWorkflowStep
+func (a *Activities) GetInstallWorkflowsSteps(ctx context.Context, req GetInstallWorkflowStepsRequest) ([]app.WorkflowStep, error) {
+	var steps []app.WorkflowStep
 
 	res := a.db.WithContext(ctx).
-		Where(app.InstallWorkflowStep{
+		Where(app.WorkflowStep{
 			InstallWorkflowID: req.InstallWorkflowID,
 		}).
 		Order("idx, created_at asc").

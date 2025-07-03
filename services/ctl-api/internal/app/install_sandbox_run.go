@@ -64,8 +64,8 @@ type InstallSandboxRun struct {
 	InstallSandboxID *string         `json:"install_sandbox_id,omitzero" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
 	InstallSandbox   *InstallSandbox `swaggerignore:"true" json:"-" temporaljson:"install_sandbox,omitzero,omitempty"`
 
-	InstallWorkflowID *string          `json:"install_workflow_id,omitzero" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
-	InstallWorkflow   *InstallWorkflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
+	InstallWorkflowID *string   `json:"install_workflow_id,omitzero" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
+	InstallWorkflow   *Workflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
 
 	RunType           SandboxRunType   `json:"run_type,omitzero" temporaljson:"run_type,omitzero,omitempty"`
 	Status            SandboxRunStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`

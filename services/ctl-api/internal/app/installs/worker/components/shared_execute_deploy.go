@@ -108,7 +108,7 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		return errors.Wrap(err, "unable to get job")
 	}
 
-	var approvalTyp app.InstallWorkflowStepApprovalType
+	var approvalTyp app.WorkflowStepApprovalType
 	switch comp.Type {
 	case app.ComponentTypeHelmChart:
 		approvalTyp = app.HelmApprovalApprovalType

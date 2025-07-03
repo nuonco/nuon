@@ -10,9 +10,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-func Deprovision(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
+func Deprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
-	steps := make([]*app.FlowStep, 0)
+	steps := make([]*app.WorkflowStep, 0)
 
 	step, err := installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,

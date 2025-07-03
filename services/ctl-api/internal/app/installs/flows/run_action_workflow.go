@@ -14,7 +14,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func RunActionWorkflow(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, error) {
+func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	installActionWorkflowID, ok := flw.Metadata["install_action_workflow_id"]
 	if !ok {
@@ -27,7 +27,7 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Flow) ([]*app.FlowStep, er
 
 	iaw, err := activities.AwaitGetInstallActionWorkflowByID(ctx, generics.FromPtrStr(installActionWorkflowID))
 
-	steps := make([]*app.FlowStep, 0)
+	steps := make([]*app.WorkflowStep, 0)
 	prefix := "RUNENV_"
 	runEnvVars := map[string]string{}
 
