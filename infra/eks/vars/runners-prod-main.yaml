@@ -1,5 +1,5 @@
 ---
-cluster_version: "1.32"
+cluster_version: "1.33"
 auth_map_additions:
   - name: eks-ctl-api
     account: prod
