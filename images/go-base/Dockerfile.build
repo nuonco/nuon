@@ -1,23 +1,52 @@
-FROM golang:1.24
+FROM golang:1.24 AS build-base
 
-FROM golang:1.24
+RUN rm -f /etc/apt/apt.conf.d/docker-clean
 
-ARG GOLANGCI_LINT_VERSION=v1.55.2
-
-ENV CGO_ENABLED=0
-ENV GOCACHE=/go-cache
-ENV GOMODCACHE=/go-mod-cache
-ENV CGO_ENABLED=0
-ENV GOPRIVATE=github.com/powertoolsdev/*
-
-RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
-  | sh -s -- -b $(go env GOPATH)/bin ${GOLANGCI_LINT_VERSION}
-
-RUN apt-get update && \
-  apt-get install -y ca-certificates \
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install --no-install-recommends -y ca-certificates \
     coreutils \
     make \
     git \
     curl \
     protobuf-compiler \
-    jq
+    jq && rm -rf /var/lib/apt/lists/*
+
+# Get golangci-lint from the official image
+FROM golangci/golangci-lint:latest AS golangci
+
+# Back to main build
+FROM build-base AS build
+
+# Copy golangci-lint binary from the golangci image
+COPY --from=golangci /usr/bin/golangci-lint /usr/bin/
+
+# Configure standard Go paths
+ENV GOCACHE=/go-cache
+ENV GOMODCACHE=/go-mod-cache
+
+WORKDIR /src
+
+# Copy core dependencies (will be overridden in service build)
+COPY tools.go go.mod go.sum ./
+
+# Pre-download dependencies
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go mod download
+
+# Copy and generate package code (common code generation)
+COPY pkg pkg
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    cd pkg && go generate ./...
+
+# Final build image that can be referenced
+FROM build-base AS final
+
+# Copy the binaries and any other necessary files from the build stage
+COPY --from=build /usr/bin/golangci-lint /usr/bin/golangci-lint
+COPY --from=build /src/ /src/
+
+WORKDIR /src
+# Set default CMD
+CMD ["bash"]

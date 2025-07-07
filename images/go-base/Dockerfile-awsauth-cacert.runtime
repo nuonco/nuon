@@ -1,0 +1,29 @@
+FROM golang:1.24-alpine AS aws-iam-authenticator
+
+RUN apk add --update --no-cache curl ca-certificates
+WORKDIR /bin
+ARG version=0.6.2
+RUN curl \
+        -Lo aws-iam-authenticator \
+        "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
+    && chmod +x aws-iam-authenticator
+
+FROM golang:1.24-alpine AS certs
+
+RUN wget \
+        https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
+    && cat global-bundle.pem >> /global-bundle.pem
+
+# Create the final runtime image with all necessary components
+FROM golang:1.24-alpine AS final
+
+WORKDIR /app
+
+ENV PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
+
+# NOTE(JM): this can be removed once `inline: true` is set on all uses of the kube config package
+COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
+
+# Install basic runtime dependencies
+RUN apk add --update --no-cache ca-certificates

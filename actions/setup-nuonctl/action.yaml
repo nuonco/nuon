@@ -20,7 +20,8 @@ runs:
     - name: install nuonctl
       shell: bash
       run: |
-        chmod +x ./bins/nuonctl/install.sh && \
+        chmod +x ./bins/nuonctl/install.sh
+        export NUONCTL_VERSION="${{ github.event.pull_request.number || '' }}"
         echo "y" | ./bins/nuonctl/install.sh
 
     - name: test-nuonctl

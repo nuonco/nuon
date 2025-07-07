@@ -1,4 +1,6 @@
-FROM golang:1.24 as code
+ARG BUILD_IMAGE=buildimage
+
+FROM ${BUILD_IMAGE} AS code
 
 WORKDIR /src
 ARG SERVICE=runner
@@ -6,14 +8,6 @@ ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
 ARG PKG_ROOT=github.com/powertoolsdev/mono/bins/${SERVICE}
 
-# copy deps, tools and fetch dependencies
-COPY tools.go go.mod go.sum .
-RUN go mod download
-
-# copy package and generate it
-COPY pkg pkg
-RUN cd pkg && \
-  go generate ./...
 
 # copy each file that is specific to the api into the correct directory
 WORKDIR /src/bins/${SERVICE}
@@ -22,15 +16,24 @@ COPY cmd  ./cmd/
 COPY internal ./internal/
 COPY main.go .
 COPY generate.sh .
-RUN go generate ./...
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go generate ./...
 
 FROM code as build
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/runner
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux go build -o /bin/runner
 
-FROM code as test
+FROM code AS test
+RUN --mount=type=cache,target=/root/.cache/go-build \
+        go test -v ./...
 
-FROM code as lint
+FROM code AS lint
+COPY .golangci.yml .
+RUN --mount=type=cache,target=/root/.cache/golangci-lint \
+    golangci-lint run -c .golangci.yml --issues-exit-code 0 -v
 
 FROM golang:1.24-alpine as nuon-cli
 
@@ -100,14 +103,19 @@ ENV GIT_REF=$tag
 
 ENTRYPOINT ["/bin/runner"]
 
-FROM build as artifacts
+FROM build as build-artifacts
 
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 
-RUN GOOS=linux \
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    GOOS=linux \
     GOARCH=amd64 \
     go build \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_linux_amd64 .
+
+FROM scratch AS artifacts 
+COPY --from=build-artifacts /out /
