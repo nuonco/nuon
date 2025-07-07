@@ -3,12 +3,9 @@ type: artifact
 
 # NOTE this does not work yet but will soon
 base_images:
-  - src: images/go-base/Dockerfile.build
-    name: BUILD_BASE_IMAGE
-    target: build
-  - src: images/go-base/Dockerfile.final
-    name: FINAL_BASE_IMAGE
-
+  - src: Dockerfile.build
+    name: BUILD_IMAGE
+    tag: buildimage
 # sources define which pieces of the mono repo are included in your builds/envs.
 sources:
   - src: images/
@@ -16,6 +13,20 @@ sources:
   - src: go.mod
   - src: go.sum
   - src: tools.go
+  - src: images/go-base/Dockerfile.build
+    dst: Dockerfile.build
+  - src: .golangci.yml
+
+
+tests:
+  # a test is a dockerfile target. 
+  # we can make sure to cache mounts by leveraging dockerfile targets.
+  - name: lint
+    docker_target: lint
+
+
+  - name: unit test
+    docker_target: test
 
 color: green
 
