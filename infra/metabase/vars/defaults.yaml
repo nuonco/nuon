@@ -3,7 +3,7 @@ root_domain: nuon.cloud
 region: us-west-2
 rds:
   engine: postgres
-  engine_version: "15.8"
+  engine_version: "15.12"
   family: "postgres15"
   major_engine_version: "15"
   instance_class: "db.t4g.small"
