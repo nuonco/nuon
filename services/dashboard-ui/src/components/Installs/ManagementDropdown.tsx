@@ -10,6 +10,7 @@ import { EditModal } from './EditModal'
 import { ForgetModal } from './ForgetModal'
 import { InstallStateModal } from './InstallStateModal'
 import { ReprovisionModal } from './ReprovisionModal'
+import { InstallAuditHistoryModal } from './InstallAuditHistoryModal'
 import { Dropdown } from '@/components/Dropdown'
 import { useOrg } from '@/components/Orgs'
 import { Text } from '@/components/Typography'
@@ -50,6 +51,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
           <EditModal install={install} orgId={orgId} />
         ) : null}
         <BreakGlassLink installId={install.id} />
+        <InstallAuditHistoryModal installId={install.id} orgId={org.id} />
         <InstallStateModal install={install} />
         <AutoApproveModal install={install} />
 
