@@ -1,13 +1,13 @@
 terraform {
-  required_version = ">= 1.3.7"
+  required_version = ">= 1.7.5"
 
-  backend "remote" {
-    organization = "nuonco"
+  # backend "remote" {
+  #   organization = "nuonco"
 
-    workspaces {
-      prefix = "ctl-api-"
-    }
-  }
+  #   workspaces {
+  #     prefix = "ctl-api-"
+  #   }
+  # }
 
   required_providers {
     aws = {

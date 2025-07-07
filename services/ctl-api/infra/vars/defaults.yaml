@@ -7,7 +7,7 @@ region: us-west-2
 pool: nuon
 rds:
   engine: postgres
-  engine_version: "15.8"
+  engine_version: "15.12"
   family: "postgres15"
   parameters:
     - name: max_connections
