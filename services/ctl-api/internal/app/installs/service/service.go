@@ -130,6 +130,9 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/configs", s.CreateInstallConfig)
 	api.PATCH("/v1/installs/:install_id/configs/:config_id", s.UpdateInstallConfig)
 
+	// install audit logs
+	api.GET("/v1/installs/:install_id/audit_logs", s.GetInstallAuditLogs)
+
 	return nil
 }
 
