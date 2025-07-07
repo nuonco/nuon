@@ -16,15 +16,16 @@ func (s *Service) List(ctx context.Context, appNameOrID string, offset, limit in
 	var (
 		components []*models.AppComponent
 		err        error
+		hasMore    bool
 	)
 	if appNameOrID != "" {
 		appID, err := lookup.AppID(ctx, s.api, appNameOrID)
 		if err != nil {
 			return view.Error(err)
 		}
-		components, err = s.listAppComponents(ctx, appID, offset, limit)
+		components, hasMore, err = s.listAppComponents(ctx, appID, offset, limit)
 	} else {
-		components, err = s.listComponents(ctx, offset, limit)
+		components, hasMore, err = s.listComponents(ctx, offset, limit)
 	}
 	if err != nil {
 		return view.Error(err)
@@ -55,30 +56,30 @@ func (s *Service) List(ctx context.Context, appNameOrID string, offset, limit in
 			strconv.Itoa(int(component.ConfigVersions)),
 		})
 	}
-	view.Render(data)
+	view.RenderPaging(data, offset, limit, hasMore)
 	return nil
 }
 
-func (s *Service) listComponents(ctx context.Context, offset, limit int) ([]*models.AppComponent, error) {
-	cmps, _, err := s.api.GetAllComponents(ctx, &models.GetAllComponentsQuery{
+func (s *Service) listComponents(ctx context.Context, offset, limit int) ([]*models.AppComponent, bool, error) {
+	cmps, hasMore, err := s.api.GetAllComponents(ctx, &models.GetPaginatedQuery{
 		Offset:            offset,
 		Limit:             limit,
 		PaginationEnabled: true,
 	})
 	if err != nil {
-		return nil, err
+		return nil, hasMore, err
 	}
-	return cmps, nil
+	return cmps, hasMore, nil
 }
 
-func (s *Service) listAppComponents(ctx context.Context, appID string, offset, limit int) ([]*models.AppComponent, error) {
-	cmps, _, err := s.api.GetAppComponents(ctx, appID, &models.GetAppComponentsQuery{
+func (s *Service) listAppComponents(ctx context.Context, appID string, offset, limit int) ([]*models.AppComponent, bool, error) {
+	cmps, hasMore, err := s.api.GetAppComponents(ctx, appID, &models.GetPaginatedQuery{
 		Offset:            offset,
 		Limit:             limit,
 		PaginationEnabled: true,
 	})
 	if err != nil {
-		return nil, err
+		return nil, hasMore, err
 	}
-	return cmps, nil
+	return cmps, hasMore, nil
 }

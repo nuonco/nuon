@@ -16,7 +16,7 @@ func (s *Service) ListConfigs(ctx context.Context, appID, compID string, offset,
 
 	view := ui.NewGetView()
 
-	configs, err := s.listConfigs(ctx, compID, offset, limit)
+	configs, _, err := s.listConfigs(ctx, compID, offset, limit)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -25,14 +25,14 @@ func (s *Service) ListConfigs(ctx context.Context, appID, compID string, offset,
 	return nil
 }
 
-func (s *Service) listConfigs(ctx context.Context, compID string, offset, limit int) ([]*models.AppComponentConfigConnection, error) {
-	cmps, _, err := s.api.GetComponentConfigs(ctx, compID, &models.GetComponentConfigsQuery{
+func (s *Service) listConfigs(ctx context.Context, compID string, offset, limit int) ([]*models.AppComponentConfigConnection, bool, error) {
+	cmps, hasMore, err := s.api.GetComponentConfigs(ctx, compID, &models.GetPaginatedQuery{
 		Offset:            offset,
 		Limit:             limit,
 		PaginationEnabled: true,
 	})
 	if err != nil {
-		return nil, err
+		return nil, hasMore, err
 	}
-	return cmps, nil
+	return cmps, hasMore, nil
 }
