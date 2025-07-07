@@ -1,0 +1,34 @@
+---
+name: build-base-images
+on:
+  workflow_call:
+    inputs:
+      service:
+        type: string
+        required: true
+    outputs: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-base:
+    name: build-base
+    runs-on: mono
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup nuonctl
+        uses: ./actions/setup-nuonctl
+
+      - name: Use nuon buildkit in infra-shared-ci
+        run: |
+         CI=true nuonctl builds driver --name ctl-api && docker buildx ls
+
+      - name: 📦 Build base images
+        run: |
+         CI=true nuonctl builds base \
+           --name=${{inputs.service}}
