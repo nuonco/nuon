@@ -79,6 +79,22 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           allow_failure: true
 
+  build_base_images:
+    name: 🏗️ Build Base Images
+    needs:
+      - changes
+      - tag
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
+    strategy:
+      fail-fast: false
+    # nb: given that we've a common base for all Go services, we can do it for just ctl-api
+      matrix:
+        service: ['ctl-api']
+    uses: ./.github/workflows/build-base-images.yml
+    with:
+      service: ${{ matrix.service }}
+    secrets: inherit
+
   services:
     # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
     name: 🚢
@@ -86,6 +102,7 @@ jobs:
       - changes
       - check_labels
       - tag
+      - build_base_images
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
     strategy:
       fail-fast: false
