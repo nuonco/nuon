@@ -1,2 +1,6 @@
 Dockerfile
 service.yml
+node_modules
+.next
+.git
+.github
