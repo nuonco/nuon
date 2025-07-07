@@ -66,6 +66,7 @@ func AllModels() []interface{} {
 		&app.InstallSandboxRun{},
 		&app.InstallIntermediateData{},
 		&app.InstallConfig{},
+		&app.InstallAuditLog{},
 
 		// install stacks
 		&app.InstallStack{},
