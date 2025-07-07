@@ -34,12 +34,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup nuonctl
-        uses: powertoolsdev/mono/actions/setup-nuonctl@main
+        uses: ./actions/setup-nuonctl
+
+      - name: Use nuon buildkit in infra-shared-ci
+        run: |
+         CI=true nuonctl builds driver --name ctl-api && docker buildx ls
 
       - name: 😎 Tests
         run: |
           CI=true nuonctl tests run-all --name=${{inputs.service}}
-
+        
       - name: 📦 Build
         run: |
           CI=true nuonctl builds release \
