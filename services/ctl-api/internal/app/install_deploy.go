@@ -104,7 +104,10 @@ func (c *InstallDeploy) AfterQuery(tx *gorm.DB) error {
 
 	outputs := make(map[string]any, 0)
 	for _, rj := range c.RunnerJobs {
-		outputs = generics.MergeMaps(outputs, rj.ParsedOutputs)
+		// NOTE: omit the create-apply-plan jobs from the outputs
+		if rj.Operation != RunnerJobOperationTypeCreateApplyPlan {
+			outputs = generics.MergeMaps(outputs, rj.ParsedOutputs)
+		}
 	}
 	c.Outputs = outputs
 
