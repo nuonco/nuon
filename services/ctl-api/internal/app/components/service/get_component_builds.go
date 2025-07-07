@@ -101,12 +101,13 @@ func (s *service) getComponentBuilds(ctx *gin.Context, cmpID string) ([]app.Comp
 	// query all builds that belong to the component id, starting at the component to ensure the component exists
 	// via the double join.
 	res := s.db.WithContext(ctx).
-		Scopes(scopes.WithOffsetPagination).
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))
 		}).
 		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
-			return db.Order("component_builds.created_at DESC")
+			return db.
+				Scopes(scopes.WithOffsetPagination).
+				Order("component_builds.created_at DESC")
 		}).
 		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
 		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection").
