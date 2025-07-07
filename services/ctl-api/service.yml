@@ -1,45 +1,38 @@
 ---
 type: service
+base_images:
+  - src: Dockerfile.build
+    name: BUILD_IMAGE
+    tag: buildimage
+  - src: Dockerfile.runtime
+    name: RUNTIME_IMAGE
+    tag: runtimeimage
 # sources define which pieces of the mono repo are included in your builds/envs.
 sources:
   - src: pkg
   - src: go.mod
   - src: go.sum
   - src: tools.go
-  - src: images/go-base/Dockerfile
-    dst: Dockerfile.base
   - src: images/go-base/Dockerfile.build
     dst: Dockerfile.build
+  - src: images/go-base/Dockerfile-awsauth-cacert.runtime
+    dst: Dockerfile.runtime
   - src: bins/runner/bundle
     dst: bundle
   - src: .golangci.yml
 
 # tests define which tests to run as part of CI. These are run sequentially, in GHA or locally using `nctl test all`
 tests:
-  # a standard test with nothing much spun up.
+  # a test is a dockerfile target. 
+  # we can make sure to cache mounts by leveraging dockerfile targets.
   - name: lint
     docker_target: lint
-    cmd: golangci-lint run -c .golangci.yml --issues-exit-code 0 -v ./...
 
-    # these fields are exploratory, as we figure out how to make the tests run reliably.
-    mem_limit: 6g
-    cpus: 6
-    # timeout: 300
 
-  # this test runs a setup command, before executing the test
-  #- name: setup
-  #docker_target: lint
-  #cmd: go version
-  #setup_cmds:
-  #- env
+  # todo(ht): looks like unit tests rely on temporal as a depe are failing. 
+  # - name: unit test
+  #   docker_target: test
 
-  # an integration test that can write to/from the DB, clickhouse, or temporal
-  - name: integration
-    dependencies: true
-    docker_target: lint
-    cmd: echo $INTEGRATION
-    env_vars:
-      INTEGRATION: "true"
 
   # an integration test that can use both dependencies, but other services. Useful, for example, for running canaries in
   # ci, or doing things like running the full test suite when the CLI changes.
