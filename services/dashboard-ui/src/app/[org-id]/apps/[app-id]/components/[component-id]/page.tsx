@@ -9,11 +9,12 @@ import {
   DashboardContent,
   ErrorFallback,
   Loading,
+  Pagination,
   Section,
   Text,
 } from '@/components'
 import { getApp, getComponent, getComponentBuilds } from '@/lib'
-import type { TComponent, TComponentConfig } from '@/types'
+import type { TComponent, TComponentConfig, TBuild } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -32,12 +33,13 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function AppComponent({ params }) {
+export default async function AppComponent({ params, searchParams }) {
   const {
     ['org-id']: orgId,
     ['app-id']: appId,
     ['component-id']: componentId,
   } = await params
+  const sp = await searchParams
   const [app, component] = await Promise.all([
     getApp({ appId, orgId }),
     getComponent({ componentId, orgId }),
@@ -107,6 +109,7 @@ export default async function AppComponent({ params }) {
                   appId={appId}
                   componentId={componentId}
                   orgId={orgId}
+                  offset={sp['offset'] || '0'}
                 />
               </Suspense>
             </ErrorBoundary>
@@ -121,16 +124,43 @@ const LoadComponentBuilds: FC<{
   appId: string
   componentId: string
   orgId: string
-}> = async ({ appId, componentId, orgId }) => {
-  const builds = await getComponentBuilds({ componentId, orgId })
+  limit?: string
+  offset?: string
+}> = async ({ appId, componentId, orgId, limit = '6', offset }) => {
+  const params = new URLSearchParams({
+    offset,
+    limit,
+    component_id: componentId,
+  }).toString()
+  const { data: builds, headers } = await nueQueryData<TBuild[]>({
+    orgId,
+    path: `builds${params ? '?' + params : params}`,
+    headers: {
+      'x-nuon-pagination-enabled': true,
+    },
+  })
+
+  const pageData = {
+    hasNext: headers?.get('x-nuon-page-next') || 'false',
+    offset: headers?.get('x-nuon-page-offset') || '0',
+  }
+
   return (
-    <ComponentBuildHistory
-      appId={appId}
-      componentId={componentId}
-      initBuilds={builds}
-      orgId={orgId}
-      shouldPoll
-    />
+    <div className="flex flex-col gap-4 w-full">
+      <ComponentBuildHistory
+        appId={appId}
+        componentId={componentId}
+        initBuilds={builds || []}
+        orgId={orgId}
+        shouldPoll
+      />
+      <Pagination
+        param="offset"
+        pageData={pageData}
+        position="center"
+        limit={parseInt(limit)}
+      />
+    </div>
   )
 }
 
