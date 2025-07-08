@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getInstallSandboxRuns } from '@/lib'
+import { nueQueryData } from '@/utils'
 import { TRouteRes } from '@/app/api/[org-id]/types'
 
 export const GET = async (
   req: NextRequest,
   { params }: TRouteRes<'org-id' | 'install-id'>
 ) => {
+  const { searchParams } = new URL(req.url)
+  const offset = searchParams.get('offset')
   const { ['org-id']: orgId, ['install-id']: installId } = await params
 
-  let sandboxRuns = []
-  try {
-    sandboxRuns = await getInstallSandboxRuns({ orgId, installId })
-  } catch (error) {
-    console.error(error)
-  }
+  const sp = new URLSearchParams({ offset, limit: '6' }).toString()
+  const res = await nueQueryData({
+    orgId,
+    path: `installs/${installId}/sandbox-runs${sp ? '?' + sp : sp}`,
+    headers: {
+      'x-nuon-pagination-enabled': true,
+    },
+  })
 
-  return NextResponse.json(sandboxRuns)
+  return NextResponse.json(res)
 }

@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import {
   ActionTriggerButton,
   Badge,
@@ -7,9 +9,12 @@ import {
   Config,
   ConfigurationVCS,
   ConfigurationVariables,
+  ErrorFallback,
   Expand,
   InstallWorkflowRunHistory,
+  Loading,
   DashboardContent,
+  Pagination,
   Section,
   StatusBadge,
   Text,
@@ -17,6 +22,8 @@ import {
   Truncate,
 } from '@/components'
 import { getInstall, getInstallActionWorkflowRecentRun } from '@/lib'
+import type { TInstallActionWorkflow } from '@/types'
+import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -34,12 +41,13 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function InstallWorkflowRuns({ params }) {
+export default async function InstallWorkflowRuns({ params, searchParams }) {
   const {
     ['org-id']: orgId,
     ['install-id']: installId,
     ['action-id']: actionWorkflowId,
   } = await params
+  const sp = await searchParams
   const [install, actionWithRecentRuns] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallActionWorkflowRecentRun({ actionWorkflowId, installId, orgId }),
@@ -122,12 +130,23 @@ export default async function InstallWorkflowRuns({ params }) {
     >
       <div className="flex flex-col md:flex-row flex-auto">
         <Section className="border-r" heading="Recent executions">
-          <InstallWorkflowRunHistory
-            orgId={orgId}
-            installId={installId}
-            actionsWithRecentRuns={actionWithRecentRuns}
-            shouldPoll
-          />
+          <ErrorBoundary fallbackRender={ErrorFallback}>
+            <Suspense
+              fallback={
+                <Loading
+                  loadingText="Loading deploy history..."
+                  variant="stack"
+                />
+              }
+            >
+              <LoadRunHistory
+                actionWorkflowId={actionWorkflowId}
+                installId={installId}
+                orgId={orgId}
+                offset={sp['offset'] || '0'}
+              />
+            </Suspense>
+          </ErrorBoundary>
         </Section>
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
@@ -181,5 +200,53 @@ export default async function InstallWorkflowRuns({ params }) {
         </div>
       </div>
     </DashboardContent>
+  )
+}
+
+const LoadRunHistory = async ({
+  actionWorkflowId,
+  installId,
+  orgId,
+  limit = '6',
+  offset,
+}: {
+  actionWorkflowId: string
+  installId: string
+  orgId: string
+  limit?: string
+  offset?: string
+}) => {
+  const params = new URLSearchParams({ offset, limit }).toString()
+  const { data: actionWithRecentRuns, headers } =
+    await nueQueryData<TInstallActionWorkflow>({
+      orgId,
+      path: `installs/${installId}/action-workflows/${actionWorkflowId}/recent-runs${params ? '?' + params : params}`,
+      headers: {
+        'x-nuon-pagination-enabled': true,
+      },
+    })
+
+  const pageData = {
+    hasNext: headers?.get('x-nuon-page-next') || 'false',
+    offset: headers?.get('x-nuon-page-offset') || '0',
+  }
+
+  return actionWithRecentRuns ? (
+    <div className="flex flex-col gap-4 w-full">
+      <InstallWorkflowRunHistory
+        orgId={orgId}
+        installId={installId}
+        actionsWithRecentRuns={actionWithRecentRuns}
+        shouldPoll
+      />
+      <Pagination
+        param="offset"
+        pageData={pageData}
+        position="center"
+        limit={parseInt(limit)}
+      />
+    </div>
+  ) : (
+    <Text>Unable to load deploy history.</Text>
   )
 }

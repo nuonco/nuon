@@ -247,6 +247,8 @@ export async function getInstallActionWorkflowLatestRun({
 
 export interface IGetInstallActionWorkflowRecentRuns extends IGetInstall {
   actionWorkflowId: string
+  offset?: string;
+  limit?: string
 }
 
 export async function getInstallActionWorkflowRecentRun({
