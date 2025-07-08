@@ -6,6 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 )
 
 type step struct {
@@ -44,6 +46,12 @@ func (m *Migrator) Exec(ctx context.Context) error {
 
 		for _, model := range m.models {
 			if err := method.objMethod(ctx, model); err != nil {
+				tableName := plugins.TableName(m.db, model)
+
+				m.l.Error("unable to migrate model",
+					zap.Error(err),
+					zap.String("model", tableName))
+
 				return err
 			}
 		}
