@@ -110,7 +110,7 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flowID, componentID
 		TriggerType: triggerTyp,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get components")
+		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
 	for _, installAction := range installActions {
@@ -207,7 +207,7 @@ func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.W
 		TriggerType: triggerTyp,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get components")
+		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
 	for _, installAction := range installActions {
