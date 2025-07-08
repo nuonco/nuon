@@ -15,6 +15,7 @@ import {
   InstallComponentManagementDropdown,
   Link,
   Loading,
+  Pagination,
   StatusBadge,
   Section,
   Text,
@@ -37,11 +38,16 @@ import type {
   TComponent,
   TComponentConfig,
   TInstall,
+  TInstallDeploy,
 } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const { ['org-id']: orgId, ['install-id']: installId, ['component-id']: componentId } = await params
+  const {
+    ['org-id']: orgId,
+    ['install-id']: installId,
+    ['component-id']: componentId,
+  } = await params
   const [install, component] = await Promise.all([
     getInstall({ installId, orgId }),
     getComponent({ componentId, orgId }),
@@ -52,10 +58,13 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function InstallComponent({
-  params,
-}) {
-  const { ['org-id']: orgId, ['install-id']: installId, ['component-id']: componentId } = await params
+export default async function InstallComponent({ params, searchParams }) {
+  const {
+    ['org-id']: orgId,
+    ['install-id']: installId,
+    ['component-id']: componentId,
+  } = await params
+  const sp = await searchParams
   const [org, install, component, installComponent] = await Promise.all([
     getOrg({ orgId }),
     getInstall({ installId, orgId }),
@@ -202,6 +211,7 @@ export default async function InstallComponent({
                   component={component}
                   installId={installId}
                   orgId={orgId}
+                  offset={sp['offset'] || '0'}
                 />
               </Suspense>
             </ErrorBoundary>
@@ -216,22 +226,40 @@ const LoadDeployHistory: FC<{
   component: TComponent
   installId: string
   orgId: string
-}> = async ({ component, installId, orgId }) => {
-  const deploys = await getInstallComponentDeploys({
-    componentId: component.id,
-    installId,
+  limit?: string
+  offset?: string
+}> = async ({ component, installId, orgId, limit = '6', offset }) => {
+  const params = new URLSearchParams({ offset, limit }).toString()
+  const { data: deploys, headers } = await nueQueryData<TInstallDeploy[]>({
     orgId,
-  }).catch(console.error)
+    path: `installs/${installId}/sandbox-runs${params ? '?' + params : params}`,
+    headers: {
+      'x-nuon-pagination-enabled': true,
+    },
+  })
+
+  const pageData = {
+    hasNext: headers?.get('x-nuon-page-next') || 'false',
+    offset: headers?.get('x-nuon-page-offset') || '0',
+  }
 
   return deploys ? (
-    <InstallComponentDeploys
-      component={component}
-      initDeploys={deploys}
-      installId={installId}
-      installComponentId={component.id}
-      orgId={orgId}
-      shouldPoll
-    />
+    <div className="flex flex-col gap-4 w-full">
+      <InstallComponentDeploys
+        component={component}
+        initDeploys={deploys}
+        installId={installId}
+        installComponentId={component.id}
+        orgId={orgId}
+        shouldPoll
+      />
+      <Pagination
+        param="offset"
+        pageData={pageData}
+        position="center"
+        limit={parseInt(limit)}
+      />
+    </div>
   ) : (
     <Text>Unable to load deploy history.</Text>
   )
