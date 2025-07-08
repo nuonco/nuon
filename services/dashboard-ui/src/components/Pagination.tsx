@@ -43,7 +43,7 @@ export const Pagination: FC<IPagination> = ({
           <Button
             disabled={offset === 0}
             onClick={() => {
-              const path = `${pathname}?${param}=${offset === limit + 1 ? 0 : offset - limit}`
+              const path = `${pathname}?${param}=${offset === limit ? 0 : offset - limit}`
               router.push(path)
             }}
             className="text-sm flex items-center gap-1 !p-2"
@@ -55,7 +55,7 @@ export const Pagination: FC<IPagination> = ({
           <Button
             disabled={!hasNext}
             onClick={() => {
-              const path = `${pathname}?${param}=${offset === 0 ? limit + 1 : offset + limit}`
+              const path = `${pathname}?${param}=${offset === 0 ? limit : offset + limit}`
               router.push(path)
             }}
             className="text-sm flex items-center gap-1 !p-2"
