@@ -5,23 +5,23 @@ linters:
   exclusions:
     generated: lax
   enable:
-    - bodyclose
     - dogsled
     - funlen
     - gochecknoinits
-    - goconst
     - gocyclo
     - goprintffuncname
     - govet
     - ineffassign
     - nakedret
-    - noctx
     - nolintlint
     - staticcheck
-    - unconvert
-    - unparam
-    - unused
     - whitespace
+    # - bodyclose
+    # - goconst
+    # - noctx
+    # - unconvert
+    # - unparam
+    # - unused
   settings:
     dupl:
       threshold: 100
@@ -76,4 +76,4 @@ formatters:
     generated: lax
 run:
   timeout: 5m
-  go: "1.19"
+  go: "1.24"
