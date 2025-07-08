@@ -23,7 +23,7 @@ func (d *devver) initEnv(ctx context.Context) error {
 		return nil
 	}
 
-	fmt.Println("since this is an install, we set the registry port to 5002 to prevent conflicts if running an org runner as well")
+	fmt.Println("since this is an install runner instance, we set the registry port to 5002 to prevent conflicts if running an org runner as well")
 	os.Setenv("REGISTRY_PORT", "5002")
 	return nil
 }
