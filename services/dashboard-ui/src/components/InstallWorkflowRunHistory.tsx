@@ -54,7 +54,7 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
           <div>
             <span className="flex items-center gap-2">
               <Text variant="reg-12">{action_workflow.name}</Text> /
-              <Badge className="!inline" variant="code">
+              <Badge className="!inline !text-[11px]" variant="code">
                 {run?.triggered_by_type}
               </Badge>
             </span>

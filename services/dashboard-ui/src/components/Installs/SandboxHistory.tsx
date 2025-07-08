@@ -1,5 +1,6 @@
 'use client'
 
+import { useSearchParams } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { Empty } from '@/components/Empty'
 import { Timeline } from '@/components/Timeline'
@@ -22,19 +23,26 @@ export const SandboxHistory: FC<ISandboxHistory> = ({
   orgId,
 }) => {
   const [sandboxRuns, setSandboxRuns] = useState(initSandboxRuns)
+  const searchParams = useSearchParams()
+
+  const fetchSandboxRuns = () => {
+    fetch(
+      `/api/${orgId}/installs/${installId}/sandbox-runs${searchParams ? '?' + searchParams.toString() : searchParams.toString()}`
+    )
+      .then((res) => res.json().then(({ data }) => setSandboxRuns(data)))
+      .catch(console.error)
+  }
 
   useEffect(() => {
-    const fetchSandboxRuns = () => {
-      fetch(`/api/${orgId}/installs/${installId}/sandbox-runs`)
-        .then((res) => res.json().then((r) => setSandboxRuns(r)))
-        .catch(console.error)
-    }
-
     if (shouldPoll) {
       const pollSandboxRuns = setInterval(fetchSandboxRuns, SHORT_POLL_DURATION)
       return () => clearInterval(pollSandboxRuns)
     }
   }, [sandboxRuns, orgId, shouldPoll])
+
+  useEffect(() => {
+    fetchSandboxRuns()
+  }, [searchParams])
 
   return (
     <Timeline

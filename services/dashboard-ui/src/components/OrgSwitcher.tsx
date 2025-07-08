@@ -60,7 +60,7 @@ export const OrgSummary: FC<IOrgSummary> = ({
   isSidebarOpen = true,
 }) => {
   return (
-    <div className="flex gap-4 items-center justify-start org-summary">
+    <div className="flex gap-4 items-center justify-start org-summary w-full">
       <OrgAvatar
         name={org?.name}
         logoURL={org?.logo_url}
