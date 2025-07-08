@@ -42,13 +42,10 @@ COPY --from=build /bin/${SERVICE} /bin/${BIN_NAME}
 
 ENTRYPOINT ["/bin/nuon"]
 
-FROM code as build-artifacts
-
+FROM code as build-darwin-arm64
 ARG BIN_NAME=nuon
 ARG tag=
 RUN mkdir -p /out
-
-# mac builds
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     GOOS=darwin \
@@ -56,6 +53,11 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go build \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_darwin_arm64 .
+
+FROM code as build-darwin-amd64
+ARG BIN_NAME=nuon
+ARG tag=
+RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     GOOS=darwin \
@@ -64,7 +66,10 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_darwin_amd64 .
 
-# linux builds
+FROM code as build-linux-arm
+ARG BIN_NAME=nuon
+ARG tag=
+RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     GOOS=linux \
@@ -72,6 +77,11 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go build \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_linux_arm .
+
+FROM code as build-linux-arm64
+ARG BIN_NAME=nuon
+ARG tag=
+RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     GOOS=linux \
@@ -80,6 +90,10 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_linux_arm64 .
 
+FROM code as build-linux-386
+ARG BIN_NAME=nuon
+ARG tag=
+RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     GOOS=linux \
@@ -87,6 +101,11 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go build \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_linux_386 .
+
+FROM code as build-linux-amd64
+ARG BIN_NAME=nuon
+ARG tag=
+RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     GOOS=linux \
@@ -95,6 +114,10 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_linux_amd64 .
 
-
 FROM scratch AS artifacts 
-COPY --from=build-artifacts /out /
+COPY --from=build-darwin-arm64 /out/ /
+COPY --from=build-darwin-amd64 /out/ /
+COPY --from=build-linux-arm /out/ /
+COPY --from=build-linux-arm64 /out/ /
+COPY --from=build-linux-386 /out/ /
+COPY --from=build-linux-amd64 /out/ /
