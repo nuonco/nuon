@@ -65,7 +65,11 @@ export const ApprovalStep: FC<IApprovalStep> = ({
     approval?.response ||
     workflowApproveOption === 'approve-all' ||
     step?.status?.status === 'cancelled' ? null : (
-      <div className="mt-4 flex gap-3 justify-end">
+      <div
+        className={classNames('flex items-center gap-4', {
+          'self-end': !inBanner,
+        })}
+      >
         <Button
           onClick={() => {
             setIsDenyLoading(true)
@@ -180,14 +184,18 @@ export const ApprovalStep: FC<IApprovalStep> = ({
       ) : workflowApproveOption === 'prompt' &&
         step?.status?.status !== 'cancelled' ? (
         <Notice className="!p-4 w-full" variant="warn">
-          <Text variant="med-14" className="mb-2">
-            Action needed: {removeSnakeCase(approval?.type)}
-          </Text>
-          <Text isMuted>
-            Approve or deny these changes included in this{' '}
-            {removeSnakeCase(approval?.type)}.
-          </Text>
-          <ApprovalButtons inBanner />
+          <div className="flex items-center gap-4">
+            <div>
+              <Text variant="med-14" className="mb-2">
+                Action needed: {removeSnakeCase(approval?.type)}
+              </Text>
+              <Text isMuted>
+                Approve or deny these changes included in this{' '}
+                {removeSnakeCase(approval?.type)}.
+              </Text>
+            </div>
+            <ApprovalButtons inBanner />
+          </div>
         </Notice>
       ) : null}
 
