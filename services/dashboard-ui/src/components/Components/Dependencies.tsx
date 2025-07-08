@@ -15,9 +15,10 @@ export const ComponentDependencies: FC<{
   name: string
   installId?: string
 }> = ({ deps, name, installId }) => {
-  const uniqueDeps = [...new Set(deps)]
-  
-  
+  const uniqueDeps = [...new Set(deps)]?.sort((a, b) =>
+    a?.id?.localeCompare(b?.id)
+  )
+
   return uniqueDeps?.length > 2 ? (
     <MultiDependencies installId={installId} deps={uniqueDeps} name={name} />
   ) : (
