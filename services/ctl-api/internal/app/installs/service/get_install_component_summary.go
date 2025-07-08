@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
@@ -19,6 +20,7 @@ import (
 // @Summary				get an installs components summary
 // @Description.markdown	get_install_components_summary.md
 // @Param					install_id					path	string	true	"install ID"
+// @Param					types						query	string	false	"component types to filter by"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
@@ -36,8 +38,13 @@ import (
 // @Router					/v1/installs/{install_id}/components/summary [GET]
 func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
+	types := ctx.Query("types")
+	var typesSlice []string
+	if types != "" {
+		typesSlice = pq.StringArray(strings.Split(types, ","))
+	}
 
-	install, err := s.getInstallByID(ctx, installID)
+	install, err := s.getInstallByID(ctx, installID, typesSlice)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
@@ -115,13 +122,21 @@ func buildInstallComponentConfig(installComponentConfigurations []app.ComponentC
 	return compMap
 }
 
-func (s *service) getInstallByID(ctx *gin.Context, installID string) (*app.Install, error) {
+func (s *service) getInstallByID(ctx *gin.Context, installID string, types []string) (*app.Install, error) {
 	install := &app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("InstallComponents", func(db *gorm.DB) *gorm.DB {
-			return db.
+			db = db.
 				Scopes(scopes.WithOffsetPagination).
 				Order("install_components.created_at DESC")
+
+			if len(types) > 0 {
+				db = db.
+					Joins("JOIN components ON components.id = install_components.component_id").
+					Where("components.type IN ?", types)
+			}
+
+			return db
 		}).
 		Preload("InstallComponents.Component").
 		Preload("InstallComponents.TerraformWorkspace").
