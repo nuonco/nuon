@@ -17,6 +17,7 @@ import (
 // @Summary				get latest runs for all action workflows by install id
 // @Description.markdown	get_install_action_workflows_latest_run.md
 // @Param					install_id	path	string	true	"install ID"
+// @Param					trigger_types	query	string	false	"filter by action workflow trigger by types"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
@@ -40,8 +41,13 @@ func (s *service) GetInstallActionWorkflowsLatestRuns(ctx *gin.Context) {
 	}
 
 	installID := ctx.Param("install_id")
+	triggerTypes := ctx.Query("trigger_types")
+	var triggerTypesSlice []string
+	if triggerTypes != "" {
+		triggerTypesSlice = []string{triggerTypes}
+	}
 
-	iaws, err := s.getInstallActionWorkflowsLatestRun(ctx, org.ID, installID)
+	iaws, err := s.getInstallActionWorkflowsLatestRun(ctx, org.ID, installID, triggerTypesSlice)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install action workflows: %w", err))
 		return
@@ -50,20 +56,28 @@ func (s *service) GetInstallActionWorkflowsLatestRuns(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, iaws)
 }
 
-func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, installID string) ([]*app.InstallActionWorkflow, error) {
+func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, installID string, triggerTypes []string) ([]*app.InstallActionWorkflow, error) {
 	iaws := []*app.InstallActionWorkflow{}
-	res := s.db.WithContext(ctx).
+	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("ActionWorkflow").
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(
+			db = db.Scopes(
 				scopes.WithOverrideTable("install_action_workflow_runs_latest_view_v1"),
 			)
+			return db
 		}).
 		Preload("Runs.RunnerJob", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithDisableViews)
-		}).
-		Find(&iaws, "org_id = ? AND install_id = ?", orgID, installID)
+		})
+
+	if len(triggerTypes) > 0 {
+		tx = tx.
+			Joins("JOIN install_action_workflow_runs_latest_view_v1 ON install_action_workflows.id = install_action_workflow_runs_latest_view_v1.install_action_workflow_id").
+			Where("install_action_workflow_runs_latest_view_v1.triggered_by_type IN ?", triggerTypes)
+	}
+
+	res := tx.Find(&iaws, "install_action_workflows.org_id = ? AND install_action_workflows.install_id = ?", orgID, installID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install action workflows: %w", res.Error)
 	}
