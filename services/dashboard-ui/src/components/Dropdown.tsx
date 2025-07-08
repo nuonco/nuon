@@ -61,7 +61,7 @@ export const Dropdown: FC<IDropdown> = ({
           type="button"
           variant={variant}
         >
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 w-full">
             {text}
 
             {noIcon ? null : variant !== 'ghost' && isDownIcon ? (
