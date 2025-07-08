@@ -7,7 +7,6 @@ RUN apk add --update build-base \
   python3 \
   py3-pip
 
-# Copy only package files first for better caching
 COPY \
   .eslintrc.json \
   .prettierrc \
@@ -20,29 +19,16 @@ COPY \
   package.json \
   tsconfig.json \
  ./
-
-# Add cache mounts for npm dependencies
-RUN --mount=type=cache,target=/src/node_modules \
-    --mount=type=cache,target=/root/.npm \
-    npm install
+RUN \
+npm install
 
 COPY test test
 COPY public public
 COPY src src
 
-FROM deps AS lint
-
-# Run linting with cache mounts
-RUN --mount=type=cache,target=/src/node_modules \
-    npm run lint
-
 FROM deps AS test
 
 ENV NUON_API_URL=https://api.stage.nuon.co
-
-# Run tests with cache mounts
-RUN --mount=type=cache,target=/src/node_modules \
-npm run test -- -t=30000
 
 FROM deps as build
 
@@ -50,10 +36,7 @@ ARG NUON_API_URL=https://api.stage.nuon.co
 ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
 ENV NEXT_PUBLIC_ACCESS_TOKEN_ROUTE=/api/auth/access-token
 
-# Add cache mount for the build process
-RUN --mount=type=cache,target=/src/node_modules \
-    --mount=type=cache,target=/src/.next/cache \
-    npm run build
+RUN npm run build
 
 FROM build as final
 
