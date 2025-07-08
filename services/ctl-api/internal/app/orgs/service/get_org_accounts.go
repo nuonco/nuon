@@ -14,7 +14,7 @@ import (
 )
 
 // @ID						GetOrgAcounts
-// @Summary				Get an org
+// @Summary				Get user accounts for current org 
 // @Description.markdown	get_org.md
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
@@ -29,7 +29,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{object}	app.Org
+// @Success				200	{object}	app.Account
 // @Router					/v1/orgs/current/accounts [GET]
 func (s *service) GetOrgAccounts(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
