@@ -41,7 +41,7 @@ func (s *service) GetInstallComponents(ctx *gin.Context) {
 }
 
 func (s *service) getInstallComponents(ctx *gin.Context, installID string) ([]app.InstallComponent, error) {
-	install, err := s.getInstallByID(ctx, installID, nil)
+	install, err := s.getInstallByID(ctx, installID, nil, "")
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
