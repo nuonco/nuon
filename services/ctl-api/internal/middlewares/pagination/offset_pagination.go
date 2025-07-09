@@ -48,6 +48,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 		offset := 0
 		limit := 10
 		maxLimit := 100
+		page := 0
 
 		if offsetParam := ctx.Query("offset"); offsetParam != "" {
 			if parsedOffset, err := strconv.Atoi(offsetParam); err == nil {
@@ -65,9 +66,20 @@ func (m middleware) Handler() gin.HandlerFunc {
 			}
 		}
 
+		if pageParam := ctx.Query("page"); pageParam != "" {
+			if parsedPage, err := strconv.Atoi(pageParam); err == nil {
+				page = parsedPage
+			}
+		}
+
+		if page > 0 {
+			offset = (page - 1) * limit
+		}
+
 		paginationQuery := pagination.PaginationQuery{
 			Offset: offset,
 			Limit:  limit,
+			Page:   page,
 		}
 
 		cctx.SetOffPaginationGinCtx(ctx, paginationQuery)
