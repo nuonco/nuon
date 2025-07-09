@@ -17,6 +17,7 @@ import (
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
 // @Tags					runners
 // @Accept					json
@@ -52,7 +53,6 @@ func (s *service) GetTerraformWorkspaceStatesJSON(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, paginatedStates)
-
 }
 
 func (s *service) GetTerraformStatesJSON(ctx *gin.Context, workspaceID string) ([]app.TerraformWorkspaceStateJSON, error) {
@@ -75,5 +75,4 @@ func (s *service) GetTerraformStatesJSON(ctx *gin.Context, workspaceID string) (
 	}
 
 	return states, nil
-
 }

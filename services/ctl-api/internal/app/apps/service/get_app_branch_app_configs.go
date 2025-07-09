@@ -20,6 +20,7 @@ import (
 // @Param					app_branch_id				path	string	true	"app branch ID"
 // @Param					offset						query	int		false	"offset of branches to return"	Default(0)
 // @Param					limit						query	int		false	"limit of branches to return"	Default(10)
+// @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
 // @Tags					apps
 // @Accept					json
@@ -74,4 +75,3 @@ func (s *service) getAppBranchAppConfigs(ctx *gin.Context, orgID, appID, appBran
 
 	return configs, nil
 }
-
