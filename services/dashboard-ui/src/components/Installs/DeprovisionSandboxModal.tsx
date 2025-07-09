@@ -19,7 +19,9 @@ interface IDeprovisionSandboxModal {
   install: TInstall
 }
 
-export const DeprovisionSandboxModal: FC<IDeprovisionSandboxModal> = ({ install }) => {
+export const DeprovisionSandboxModal: FC<IDeprovisionSandboxModal> = ({
+  install,
+}) => {
   const router = useRouter()
   const params = useParams<Record<'org-id' | 'install-id', string>>()
 
@@ -29,6 +31,7 @@ export const DeprovisionSandboxModal: FC<IDeprovisionSandboxModal> = ({ install 
   const { user } = useUser()
   const [confirm, setConfirm] = useState<string>()
   const [force, setForceDelete] = useState(false)
+  const [planOnly, setPlanOnly] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
@@ -62,7 +65,8 @@ export const DeprovisionSandboxModal: FC<IDeprovisionSandboxModal> = ({ install 
                 {error ? <Notice>{error}</Notice> : null}
                 <span className="flex flex-col gap-1">
                   <Text variant="med-18">
-                    Are you sure you want to deprovision {install?.name} sandbox?
+                    Are you sure you want to deprovision {install?.name}{' '}
+                    sandbox?
                   </Text>
                   <Text
                     className="text-cool-grey-600 dark:text-white/70"
@@ -78,7 +82,7 @@ export const DeprovisionSandboxModal: FC<IDeprovisionSandboxModal> = ({ install 
                     This will create a workflow that attempts to:
                   </Text>
 
-                  <ul className="flex flex-col gap-1 list-disc pl-4">                   
+                  <ul className="flex flex-col gap-1 list-disc pl-4">
                     <li className="text-sm">Teardown the install sandbox</li>
                   </ul>
                 </div>
@@ -115,10 +119,19 @@ export const DeprovisionSandboxModal: FC<IDeprovisionSandboxModal> = ({ install 
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       setForceDelete(Boolean(e?.currentTarget?.checked))
                     }}
-                    labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px] !items-start"
+                    labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px]"
                     labelText={'Continue deprovision even if steps fail?'}
                   />
-                </div>                
+                  <CheckboxInput
+                    name="ack"
+                    defaultChecked={planOnly}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setPlanOnly(Boolean(e?.currentTarget?.checked))
+                    }}
+                    labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px]"
+                    labelText={'Plan Only?'}
+                  />
+                </div>
               </div>
               <div className="flex gap-3 justify-end">
                 <Button
@@ -134,7 +147,7 @@ export const DeprovisionSandboxModal: FC<IDeprovisionSandboxModal> = ({ install 
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
                     setIsLoading(true)
-                    deprovisionSandbox({ installId, orgId, force })
+                    deprovisionSandbox({ installId, orgId, force, planOnly })
                       .then((workflowId) => {
                         trackEvent({
                           event: 'install_sandbox_deprovision',
@@ -148,7 +161,9 @@ export const DeprovisionSandboxModal: FC<IDeprovisionSandboxModal> = ({ install 
                             `/${orgId}/installs/${installId}/workflows/${workflowId}`
                           )
                         } else {
-                          router.push(`/${orgId}/installs/${installId}/workflows`)
+                          router.push(
+                            `/${orgId}/installs/${installId}/workflows`
+                          )
                         }
 
                         setForceDelete(false)
