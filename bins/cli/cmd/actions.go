@@ -7,6 +7,11 @@ import (
 )
 
 func (c *cli) actionsCmd() *cobra.Command {
+	var (
+		offset int
+		limit  int
+	)
+
 	actionsCmd := &cobra.Command{
 		Use:               "actions",
 		Short:             "manage app actions",
@@ -21,11 +26,13 @@ func (c *cli) actionsCmd() *cobra.Command {
 		Short:   "List all app actions",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := actions.New(c.v, c.apiClient, c.cfg)
-			return svc.List(cmd.Context(), appID, PrintJSON)
+			return svc.List(cmd.Context(), appID, offset, limit, PrintJSON)
 		}),
 	}
 
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter action workflows by")
+	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	actionsCmd.AddCommand(listCmd)
 
 	installID := ""
@@ -36,9 +43,16 @@ func (c *cli) actionsCmd() *cobra.Command {
 		Long:  "Get action's most recent runs for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := actions.New(c.v, c.apiClient, c.cfg)
-			return svc.GetRecentRuns(cmd.Context(), installID, actionWorkflowID, PrintJSON)
+			return svc.GetRecentRuns(cmd.Context(), installID, actionWorkflowID, offset, limit, PrintJSON)
 		}),
 	}
+	recentRunsCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of the install you want to view recent runs for")
+	recentRunsCmd.MarkFlagRequired("install-id")
+	recentRunsCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID of the action workflow you want to view recent runs for")
+	recentRunsCmd.MarkFlagRequired("action-workflow-id")
+	recentRunsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	recentRunsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
+	actionsCmd.AddCommand(recentRunsCmd)
 
 	deleteWorkflowCmd := &cobra.Command{
 		Use:   "delete-workflow",
@@ -52,12 +66,6 @@ func (c *cli) actionsCmd() *cobra.Command {
 	deleteWorkflowCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID of the action workflow you want to delete")
 	deleteWorkflowCmd.MarkFlagRequired("action-workflow-id")
 	actionsCmd.AddCommand(deleteWorkflowCmd)
-
-	recentRunsCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of the install you want to view recent runs for")
-	recentRunsCmd.MarkFlagRequired("install-id")
-	recentRunsCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID of the action workflow you want to view recent runs for")
-	recentRunsCmd.MarkFlagRequired("action-workflow-id")
-	actionsCmd.AddCommand(recentRunsCmd)
 
 	runID := ""
 	getRunCmd := &cobra.Command{

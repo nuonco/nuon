@@ -4,15 +4,15 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-go/models"
-	helpers "github.com/powertoolsdev/mono/bins/cli/internal"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) List(ctx context.Context, appID, compID string, asJSON bool) error {
+func (s *Service) List(ctx context.Context, appID, compID string, offset, limit int, asJSON bool) error {
 	view := ui.NewListView()
 
 	var (
+		hasMore  bool
 		releases []*models.AppComponentRelease
 		err      error
 	)
@@ -23,14 +23,14 @@ func (s *Service) List(ctx context.Context, appID, compID string, asJSON bool) e
 			return ui.PrintError(err)
 		}
 
-		releases, err = s.listComponentReleases(ctx, compID)
+		releases, hasMore, err = s.listComponentReleases(ctx, compID, offset, limit)
 	} else if appID != "" {
 		appID, err = lookup.AppID(ctx, s.api, appID)
 		if err != nil {
 			return ui.PrintError(err)
 		}
 
-		releases, err = s.listAppComponentReleases(ctx, appID)
+		releases, hasMore, err = s.listAppComponentReleases(ctx, appID, offset, limit)
 	}
 	if err != nil {
 		return view.Error(err)
@@ -57,62 +57,30 @@ func (s *Service) List(ctx context.Context, appID, compID string, asJSON bool) e
 			release.CreatedAt,
 		})
 	}
-	view.Render(data)
+	view.RenderPaging(data, offset, limit, hasMore)
 	return nil
 }
 
-func (s *Service) listComponentReleases(ctx context.Context, compID string) ([]*models.AppComponentRelease, error) {
-	if !s.cfg.PaginationEnabled {
-		releases, _, err := s.api.GetComponentReleases(ctx, compID, &models.GetComponentReleasesQuery{
-			Offset:            0,
-			Limit:             10,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return releases, nil
+func (s *Service) listComponentReleases(ctx context.Context, compID string, offset, limit int) ([]*models.AppComponentRelease, bool, error) {
+	cmps, hasMore, err := s.api.GetComponentReleases(ctx, compID, &models.GetPaginatedQuery{
+		Offset:            offset,
+		Limit:             limit,
+		PaginationEnabled: true,
+	})
+	if err != nil {
+		return nil, false, err
 	}
-
-	fetchFn := func(ctx context.Context, offset, limit int) ([]*models.AppComponentRelease, bool, error) {
-		cmps, hasMore, err := s.api.GetComponentReleases(ctx, compID, &models.GetComponentReleasesQuery{
-			Offset:            offset,
-			Limit:             limit,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, false, err
-		}
-		return cmps, hasMore, nil
-	}
-
-	return helpers.BatchFetch(ctx, 10, 50, fetchFn)
+	return cmps, hasMore, nil
 }
 
-func (s *Service) listAppComponentReleases(ctx context.Context, appID string) ([]*models.AppComponentRelease, error) {
-	if !s.cfg.PaginationEnabled {
-		cmps, _, err := s.api.GetAppReleases(ctx, appID, &models.GetAppReleasesQuery{
-			Offset:            0,
-			Limit:             10,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return cmps, nil
+func (s *Service) listAppComponentReleases(ctx context.Context, appID string, offset, limit int) ([]*models.AppComponentRelease, bool, error) {
+	cmps, hasMore, err := s.api.GetAppReleases(ctx, appID, &models.GetPaginatedQuery{
+		Offset:            offset,
+		Limit:             limit,
+		PaginationEnabled: true,
+	})
+	if err != nil {
+		return nil, hasMore, err
 	}
-
-	fetchFn := func(ctx context.Context, offset, limit int) ([]*models.AppComponentRelease, bool, error) {
-		cmps, hasMore, err := s.api.GetAppReleases(ctx, appID, &models.GetAppReleasesQuery{
-			Offset:            offset,
-			Limit:             limit,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, false, err
-		}
-		return cmps, hasMore, nil
-	}
-
-	return helpers.BatchFetch(ctx, 10, 50, fetchFn)
+	return cmps, hasMore, nil
 }

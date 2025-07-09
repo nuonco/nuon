@@ -4,19 +4,18 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-go/models"
-	helpers "github.com/powertoolsdev/mono/bins/cli/internal"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) ListInvites(ctx context.Context, limit int, asJSON bool) error {
+func (s *Service) ListInvites(ctx context.Context, offset, limit int, asJSON bool) error {
 	if s.cfg.OrgID == "" {
 		s.printOrgNotSetMsg()
 		return nil
 	}
 
-	view := ui.NewGetView()
+	view := ui.NewListView()
 
-	invites, err := s.listInvites(ctx, limit)
+	invites, hasMore, err := s.listInvites(ctx, offset, limit)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -41,34 +40,18 @@ func (s *Service) ListInvites(ctx context.Context, limit int, asJSON bool) error
 			string(invite.Status),
 		})
 	}
-	view.Render(data)
+	view.RenderPaging(data, offset, limit, hasMore)
 	return nil
 }
 
-func (s *Service) listInvites(ctx context.Context, limit int) ([]*models.AppOrgInvite, error) {
-	if !s.cfg.PaginationEnabled {
-		invites, _, err := s.api.GetOrgInvites(ctx, &models.GetOrgInvitesQuery{
-			Offset:            0,
-			Limit:             limit,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return invites, nil
+func (s *Service) listInvites(ctx context.Context, offset, limit int) ([]*models.AppOrgInvite, bool, error) {
+	invites, hasMore, err := s.api.GetOrgInvites(ctx, &models.GetPaginatedQuery{
+		Offset:            offset,
+		Limit:             limit,
+		PaginationEnabled: true,
+	})
+	if err != nil {
+		return nil, hasMore, err
 	}
-
-	fetchFn := func(ctx context.Context, offset, limit int) ([]*models.AppOrgInvite, bool, error) {
-		invites, hasMore, err := s.api.GetOrgInvites(ctx, &models.GetOrgInvitesQuery{
-			Offset:            offset,
-			Limit:             limit,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, false, err
-		}
-		return invites, hasMore, nil
-	}
-
-	return helpers.BatchFetch(ctx, 10, limit, fetchFn)
+	return invites, hasMore, nil
 }

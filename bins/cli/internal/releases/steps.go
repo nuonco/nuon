@@ -4,14 +4,13 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-go/models"
-	helpers "github.com/powertoolsdev/mono/bins/cli/internal"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Steps(ctx context.Context, releaseID string, asJSON bool) error {
+func (s *Service) Steps(ctx context.Context, releaseID string, offset, limit int, asJSON bool) error {
 	view := ui.NewListView()
 
-	steps, err := s.listSteps(ctx, releaseID)
+	steps, hasMore, err := s.listSteps(ctx, releaseID, offset, limit)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -37,34 +36,18 @@ func (s *Service) Steps(ctx context.Context, releaseID string, asJSON bool) erro
 			step.Delay,
 		})
 	}
-	view.Render(data)
+	view.RenderPaging(data, offset, limit, hasMore)
 	return nil
 }
 
-func (s *Service) listSteps(ctx context.Context, releaseID string) ([]*models.AppComponentReleaseStep, error) {
-	if !s.cfg.PaginationEnabled {
-		releases, _, err := s.api.GetReleaseSteps(ctx, releaseID, &models.GetReleaseStepsQuery{
-			Offset:            0,
-			Limit:             10,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return releases, nil
+func (s *Service) listSteps(ctx context.Context, releaseID string, offset, limit int) ([]*models.AppComponentReleaseStep, bool, error) {
+	cmps, hasMore, err := s.api.GetReleaseSteps(ctx, releaseID, &models.GetPaginatedQuery{
+		Offset:            offset,
+		Limit:             limit,
+		PaginationEnabled: true,
+	})
+	if err != nil {
+		return nil, false, err
 	}
-
-	fetchFn := func(ctx context.Context, offset, limit int) ([]*models.AppComponentReleaseStep, bool, error) {
-		cmps, hasMore, err := s.api.GetReleaseSteps(ctx, releaseID, &models.GetReleaseStepsQuery{
-			Offset:            offset,
-			Limit:             limit,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, false, err
-		}
-		return cmps, hasMore, nil
-	}
-
-	return helpers.BatchFetch(ctx, 10, 50, fetchFn)
+	return cmps, hasMore, nil
 }

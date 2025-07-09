@@ -11,6 +11,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		id       string
 		name     string
 		sandbox  bool
+		offset   int
 		limit    int
 		email    string
 		noSelect bool
@@ -65,9 +66,11 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:    "List all your orgs",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.List(cmd.Context(), PrintJSON)
+			return svc.List(cmd.Context(), offset, limit, PrintJSON)
 		}),
 	}
+	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	orgsCmd.AddCommand(listCmd)
 
 	listConntectedRepos := &cobra.Command{
@@ -76,9 +79,11 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:  "List repositories from connected GitHub accounts",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.ConnectedRepos(cmd.Context(), PrintJSON)
+			return svc.ConnectedRepos(cmd.Context(), offset, limit, PrintJSON)
 		}),
 	}
+	listConntectedRepos.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listConntectedRepos.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	orgsCmd.AddCommand(listConntectedRepos)
 
 	listVCSConnections := &cobra.Command{
@@ -87,9 +92,11 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:  "List all connected GitHub accounts",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.VCSConnections(cmd.Context(), PrintJSON)
+			return svc.VCSConnections(cmd.Context(), offset, limit, PrintJSON)
 		}),
 	}
+	listVCSConnections.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listVCSConnections.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	orgsCmd.AddCommand(listVCSConnections)
 
 	connectGithubCmd := &cobra.Command{
@@ -170,10 +177,11 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:  "List all org invites",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.ListInvites(cmd.Context(), limit, PrintJSON)
+			return svc.ListInvites(cmd.Context(), offset, limit, PrintJSON)
 		}),
 	}
-	listInvitesCmd.Flags().IntVarP(&limit, "limit", "l", 5, "Maximum invites to return")
+	listInvitesCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listInvitesCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum invites to return")
 	orgsCmd.AddCommand(listInvitesCmd)
 
 	return orgsCmd

@@ -19,6 +19,8 @@ func (c *cli) installsCmd() *cobra.Command {
 		inputs        []string
 		noSelect      bool
 		deployDeps    bool
+		offset        int
+		limit         int
 	)
 
 	installsCmds := &cobra.Command{
@@ -35,10 +37,12 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:    "List all your app's installs",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.List(cmd.Context(), appID, PrintJSON)
+			return svc.List(cmd.Context(), appID, offset, limit, PrintJSON)
 		}),
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter installs by")
+	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum installs to return")
 	installsCmds.AddCommand(listCmd)
 
 	getCmd := &cobra.Command{
@@ -95,11 +99,13 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "Get all components on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Components(cmd.Context(), id, PrintJSON)
+			return svc.Components(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
 	componentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	componentsCmd.MarkFlagRequired("install-id")
+	componentsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	componentsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum components to return")
 	installsCmds.AddCommand(componentsCmd)
 
 	getDeployCmd := &cobra.Command{
@@ -153,11 +159,13 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "View all install deploys by install ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.ListDeploys(cmd.Context(), id, PrintJSON)
+			return svc.ListDeploys(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
 	listDeploysCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install whose deploy you want to view")
 	listDeploysCmd.MarkFlagRequired("install-id")
+	listDeploysCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listDeploysCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum deploys to return")
 	installsCmds.AddCommand(listDeploysCmd)
 
 	sandboxRunsCmd := &cobra.Command{
@@ -166,11 +174,13 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "View sandbox runs by install ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.SandboxRuns(cmd.Context(), id, PrintJSON)
+			return svc.SandboxRuns(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
 	sandboxRunsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	sandboxRunsCmd.MarkFlagRequired("install-id")
+	sandboxRunsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	sandboxRunsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum runs to return")
 	installsCmds.AddCommand(sandboxRunsCmd)
 
 	sandboxRunLogsCmd := &cobra.Command{
@@ -186,6 +196,7 @@ func (c *cli) installsCmd() *cobra.Command {
 	sandboxRunLogsCmd.MarkFlagRequired("install-id")
 	sandboxRunLogsCmd.Flags().StringVarP(&runID, "run-id", "r", "", "The ID of the run you want to view")
 	sandboxRunLogsCmd.MarkFlagRequired("run-id")
+	sandboxRunLogsCmd.Flags().StringVarP(&installCompID, "install-comp-id", "c", "", "The ID of the install component to view logs for")
 	installsCmds.AddCommand(sandboxRunLogsCmd)
 
 	currentInputs := &cobra.Command{
@@ -326,11 +337,13 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "View workflows by install ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Workflows(cmd.Context(), id, PrintJSON)
+			return svc.Workflows(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
 	workflowsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	workflowsCmd.MarkFlagRequired("install-id")
+	workflowsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	workflowsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum workflows to return")
 	installsCmds.AddCommand(workflowsCmd)
 
 	return installsCmds
