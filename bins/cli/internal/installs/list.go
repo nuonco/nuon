@@ -5,16 +5,16 @@ import (
 
 	"github.com/nuonco/nuon-go/models"
 
-	helpers "github.com/powertoolsdev/mono/bins/cli/internal"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) List(ctx context.Context, appID string, asJSON bool) error {
+func (s *Service) List(ctx context.Context, appID string, offset, limit int, asJSON bool) error {
 	view := ui.NewListView()
 
 	var (
 		installs []*models.AppInstall
+		hasMore  bool
 		err      error
 	)
 
@@ -23,10 +23,10 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) error {
 		if err != nil {
 			return ui.PrintError(err)
 		}
-		installs, err = s.listAppInstalls(ctx, appID)
+		installs, hasMore, err = s.listAppInstalls(ctx, appID, offset, limit)
 
 	} else {
-		installs, err = s.listInstalls(ctx)
+		installs, hasMore, err = s.listInstalls(ctx, offset, limit)
 	}
 	if err != nil {
 		return view.Error(err)
@@ -65,62 +65,30 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) error {
 			install.CreatedAt,
 		})
 	}
-	view.Render(data)
+	view.RenderPaging(data, offset, limit, hasMore)
 	return nil
 }
 
-func (s *Service) listInstalls(ctx context.Context) ([]*models.AppInstall, error) {
-	if !s.cfg.PaginationEnabled {
-		installs, _, err := s.api.GetAllInstalls(ctx, &models.GetAllInstallsQuery{
-			Offset:            0,
-			Limit:             10,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return installs, nil
+func (s *Service) listInstalls(ctx context.Context, offset, limit int) ([]*models.AppInstall, bool, error) {
+	installs, hasMore, err := s.api.GetAllInstalls(ctx, &models.GetPaginatedQuery{
+		Offset:            offset,
+		Limit:             limit,
+		PaginationEnabled: true,
+	})
+	if err != nil {
+		return nil, hasMore, err
 	}
-
-	fetchFn := func(ctx context.Context, offset, limit int) ([]*models.AppInstall, bool, error) {
-		installs, hasMore, err := s.api.GetAllInstalls(ctx, &models.GetAllInstallsQuery{
-			Offset:            offset,
-			Limit:             limit,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, false, err
-		}
-		return installs, hasMore, nil
-	}
-
-	return helpers.BatchFetch(ctx, 10, 50, fetchFn)
+	return installs, hasMore, nil
 }
 
-func (s *Service) listAppInstalls(ctx context.Context, appID string) ([]*models.AppInstall, error) {
-	if !s.cfg.PaginationEnabled {
-		cmps, _, err := s.api.GetAppInstalls(ctx, appID, &models.GetAppInstallsQuery{
-			Offset:            0,
-			Limit:             10,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return cmps, nil
+func (s *Service) listAppInstalls(ctx context.Context, appID string, offset, limit int) ([]*models.AppInstall, bool, error) {
+	cmps, hasMore, err := s.api.GetAppInstalls(ctx, appID, &models.GetPaginatedQuery{
+		Offset:            0,
+		Limit:             10,
+		PaginationEnabled: true,
+	})
+	if err != nil {
+		return nil, hasMore, err
 	}
-
-	fetchFn := func(ctx context.Context, offset, limit int) ([]*models.AppInstall, bool, error) {
-		installs, hasMore, err := s.api.GetAppInstalls(ctx, appID, &models.GetAppInstallsQuery{
-			Offset:            offset,
-			Limit:             limit,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, false, err
-		}
-		return installs, hasMore, nil
-	}
-
-	return helpers.BatchFetch(ctx, 10, 50, fetchFn)
+	return cmps, hasMore, nil
 }

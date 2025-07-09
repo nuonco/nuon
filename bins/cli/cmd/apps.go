@@ -11,7 +11,11 @@ import (
 )
 
 func (c *cli) appsCmd() *cobra.Command {
-	var noSelect bool
+	var (
+		noSelect bool
+		offset   int
+		limit    int
+	)
 
 	appsCmd := &cobra.Command{
 		Use:               "apps",
@@ -26,10 +30,12 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short:   "List all your apps",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.List(cmd.Context(), PrintJSON)
+			return svc.List(cmd.Context(), offset, limit, PrintJSON)
 		}),
 	}
 
+	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	appsCmd.AddCommand(listCmd)
 
 	appID := ""
@@ -77,11 +83,13 @@ func (c *cli) appsCmd() *cobra.Command {
 		Long:  "List app configs",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.ListConfigs(cmd.Context(), appID, PrintJSON)
+			return svc.ListConfigs(cmd.Context(), appID, offset, limit, PrintJSON)
 		}),
 	}
 	configs.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	configs.MarkFlagRequired("app-id")
+	configs.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	configs.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	appsCmd.AddCommand(configs)
 
 	latestInputConfig := &cobra.Command{
