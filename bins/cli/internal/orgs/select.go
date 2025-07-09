@@ -15,7 +15,7 @@ func (s *Service) Select(ctx context.Context, orgID string, asJSON bool) error {
 	if orgID != "" {
 		s.SetCurrent(ctx, orgID, asJSON)
 	} else {
-		orgs, err := s.list(ctx)
+		orgs, _, err := s.list(ctx, 0, 50)
 		if err != nil {
 			return view.Error(err)
 		}
