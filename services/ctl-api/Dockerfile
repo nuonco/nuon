@@ -15,25 +15,25 @@ COPY cmd  ./cmd/
 COPY internal ./internal/
 COPY docs ./docs/
 COPY main.go admin.go public.go runner.go .
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-ctl-api \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-ctl-api \
     go generate ./...
 
 FROM code AS build
 
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-ctl-api \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-ctl-api \
     CGO_ENABLED=0 GOOS=linux go build -o /bin/service
 
 FROM code AS test
-RUN --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,target=/root/.cache/go-build,id=gobuild-ctl-api \
     go test -v ./...
 
 FROM code AS lint
 
 COPY .golangci.yml .
 
-RUN --mount=type=cache,target=/root/.cache/golangci-lint \
+RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-ctl-api \
     golangci-lint run -c .golangci.yml --issues-exit-code 0 -v
 
 # Use the provided runtime image
