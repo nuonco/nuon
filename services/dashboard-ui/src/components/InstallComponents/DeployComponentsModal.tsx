@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
 import { CloudArrowUp, CloudCheck } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
+import { CheckboxInput } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
@@ -24,6 +25,7 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
 }) => {
   const router = useRouter()
   const { user } = useUser()
+  const [planOnly, setPlanOnly] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
@@ -59,6 +61,15 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
                   Are you sure you want to deploy components? This will deploy
                   all components to this install.
                 </Text>
+                <CheckboxInput
+                  name="ack"
+                  defaultChecked={planOnly}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setPlanOnly(Boolean(e?.currentTarget?.checked))
+                  }}
+                  labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px]"
+                  labelText={'Plan Only?'}
+                />
               </div>
               <div className="flex gap-3 justify-end">
                 <Button
@@ -76,6 +87,7 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
                     deployComponents({
                       installId,
                       orgId,
+                      planOnly,
                     })
                       .then((workflowId) => {
                         trackEvent({
@@ -95,7 +107,9 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
                             `/${orgId}/installs/${installId}/workflows/${workflowId}`
                           )
                         } else {
-                          router.push(`/${orgId}/installs/${installId}/workflows`)
+                          router.push(
+                            `/${orgId}/installs/${installId}/workflows`
+                          )
                         }
 
                         setIsOpen(false)

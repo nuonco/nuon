@@ -67,7 +67,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
     step?.status?.status === 'cancelled' ? null : (
       <div
         className={classNames('flex items-center gap-4', {
-          'self-end': !inBanner,
+          'self-end ml-auto': !inBanner,
         })}
       >
         <Button

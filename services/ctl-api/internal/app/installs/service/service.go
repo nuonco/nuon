@@ -101,6 +101,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/installs/:install_id/components/:component_id/deploys", s.GetInstallComponentDeploys)
 	api.GET("/v1/installs/:install_id/components/:component_id/outputs", s.GetInstallComponentOutputs)
 	api.GET("/v1/installs/:install_id/components/:component_id/deploys/latest", s.GetInstallComponentLatestDeploy)
+	api.POST("/v1/installs/:install_id/sync-secrets", s.SyncSecrets)
 
 	// install events
 	api.GET("/v1/installs/:install_id/events", s.GetInstallEvents)
@@ -150,7 +151,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 	// NOTE(JM): the following endpoints should be removed after workflows/independent runners are rolled out
 	api.POST("/v1/installs/:install_id/admin-reprovision", s.ReprovisionInstall)
-	api.POST("/v1/installs/:install_id/admin-delete", s.AdminDeleteInstall)
 	api.POST("/v1/installs/:install_id/admin-forget", s.AdminForgetInstall)
 	api.POST("/v1/installs/:install_id/admin-update-sandbox", s.AdminUpdateSandbox)
 	api.POST("/v1/installs/admin-backfill-install-sandboxes", s.AdminaBackfillInstallSandboxes)

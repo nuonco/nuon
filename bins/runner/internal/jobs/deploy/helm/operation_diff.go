@@ -22,7 +22,7 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	if prevRel == nil {
 		l.Warn("unable to fetch previous release, so assuming it failed and was not installed", zap.Error(err))
 		l.Info("attempting install instead of upgrade")
-		return h.install_diff(ctx, l, actionCfg, kubeCfg)
+		return h.installDiff(ctx, l, actionCfg, kubeCfg)
 	}
 
 	l.Info("loading chart options")
@@ -77,7 +77,7 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	return diff, nil
 }
 
-func (h *handler) install_diff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (string, error) {
+func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (string, error) {
 	l.Info("loading chart options")
 	chart, err := helm.GetChartByPath(h.state.chartPath)
 	if err != nil {
@@ -132,7 +132,7 @@ func (h *handler) install_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	return diff, nil
 }
 
-func (h *handler) uninstall_diff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, prevRel *release.Release) (string, error) {
+func (h *handler) uninstallDiff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, prevRel *release.Release) (string, error) {
 	// not functional atm (panics)
 	l.Info("loading chart options")
 	chart, err := helm.GetChartByPath(h.state.chartPath)
@@ -156,12 +156,15 @@ func (h *handler) uninstall_diff(ctx context.Context, l *zap.Logger, actionCfg *
 	client.Timeout = h.state.timeout
 
 	l.Info("calculating helm diff")
-	rel, err := client.Run(prevRel.Name)
+	prevMapping := manifest.Parse(prevRel.Manifest, prevRel.Namespace, true)
+
+	resp, err := client.Run(prevRel.Name)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to execute with dry-run")
 	}
-	newMapping := manifest.Parse(rel.Release.Manifest, rel.Release.Namespace, true)
-	diff, err := h.getDiff(map[string]*manifest.MappingResult{}, newMapping)
+	l.Info(resp.Info)
+
+	diff, err := h.getDiff(prevMapping, map[string]*manifest.MappingResult{})
 	if err != nil {
 		return "", errors.Wrap(err, "unable to execute with dry-run")
 	}

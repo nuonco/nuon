@@ -16,7 +16,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 
 	step, err := installSignalStep(ctx, installID, "provision runner service account", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationProvisionRunner,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 
 	step, err = installSignalStep(ctx, installID, "generate install stack", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationGenerateInstallStackVersion,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 
 	step, err = installSignalStep(ctx, installID, "await install stack", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitInstallStackVersionRun,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 
 	step, err = installSignalStep(ctx, installID, "update install stack outputs", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationUpdateInstallStackOutputs,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 
 	step, err = installSignalStep(ctx, installID, "await runner health", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 
 	step, err = installSignalStep(ctx, installID, "provision sandbox plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationProvisionSandboxPlan,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 
 	step, err = installSignalStep(ctx, installID, "provision sandbox apply plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationProvisionSandboxApplyPlan,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 
 	step, err = installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationSyncSecrets,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 
 	step, err = installSignalStep(ctx, installID, "provision sandbox dns if enabled", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationProvisionDNS,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}

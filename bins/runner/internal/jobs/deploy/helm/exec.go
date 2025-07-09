@@ -90,7 +90,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
 		// in this case, the diff is generated so it is available to the createAPIResult method
 		if prevRel == nil {
-			diff, err = h.install_diff(ctx, l, actionCfg, kubeCfg)
+			diff, err = h.installDiff(ctx, l, actionCfg, kubeCfg)
 			helmPlan.Op = "install"
 		} else {
 			diff, err = h.upgrade_diff(ctx, l, actionCfg, kubeCfg)
@@ -99,15 +99,15 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		if diff == "" {
 			diff = "no changes"
 		}
+
 		helmPlan.Diff = diff
 		l.Debug("calculated helm diff", zap.String("diff", diff))
 	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
 		// TODO(fd): figure out the best way to get a plan for this
-		l.Info("executing helm uninstall")
-		// diff, err = h.uninstall_diff(ctx, l, actionCfg, prevRel)
-		// TODO(fd): we may need a new type to get a proper two step here
+		l.Info("executing helm uninstall plan")
+		diff, err = h.uninstallDiff(ctx, l, actionCfg, prevRel)
 		helmPlan.Op = "uninstall"
-		diff = "release uninstalled"
+		helmPlan.Diff = diff
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		l.Info(fmt.Sprintf("executing helm %s", op))
 		switch helmPlan.Op {

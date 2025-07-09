@@ -17,17 +17,20 @@ interface IReprovisionInstall {
   installId: string
   orgId: string
   continueOnError?: boolean
+  planOnly?: boolean
 }
 
 export async function reprovisionInstall({
   continueOnError = false,
   installId,
   orgId,
+  planOnly,
 }: IReprovisionInstall) {
   const res = fetch(`${API_URL}/v1/installs/${installId}/reprovision`, {
     ...(await getFetchOpts(orgId)),
     body: JSON.stringify({
       error_behavior: continueOnError ? 'continue' : 'abort',
+      plan_only: planOnly,
     }),
     method: 'POST',
   })
@@ -49,11 +52,13 @@ export async function reprovisionSandbox({
   continueOnError = false,
   installId,
   orgId,
+  planOnly,
 }: IReprovisionInstall) {
   const res = fetch(`${API_URL}/v1/installs/${installId}/reprovision-sandbox`, {
     ...(await getFetchOpts(orgId)),
     body: JSON.stringify({
       error_behavior: continueOnError ? 'continue' : 'abort',
+      plan_only: planOnly,
     }),
     method: 'POST',
   })
@@ -71,16 +76,46 @@ export async function reprovisionSandbox({
   return (await res).headers.get('x-nuon-install-workflow-id')
 }
 
+export async function syncSecrets({
+  continueOnError = false,
+  installId,
+  orgId,
+  planOnly,
+}: IReprovisionInstall) {
+  const res = fetch(`${API_URL}/v1/installs/${installId}/sync-secrets`, {
+    ...(await getFetchOpts(orgId)),
+    body: JSON.stringify({
+      error_behavior: continueOnError ? 'continue' : 'abort',
+      plan_only: planOnly,
+    }),
+    method: 'POST',
+  })
+    .then((r) => {
+      if (!r.ok) {
+        throw new Error('Unable to kick off secrets sync')
+      } else {
+        return r
+      }
+    })
+    .catch((err) => {
+      throw new Error(err)
+    })
+
+  return (await res).headers.get('x-nuon-install-workflow-id')
+}
+
 interface IDeployComponents {
   continueOnError?: boolean
   installId: string
   orgId: string
+  planOnly?: boolean
 }
 
 export async function deployComponents({
   continueOnError = false,
   installId,
   orgId,
+  planOnly,
 }: IDeployComponents) {
   const res = fetch(
     `${API_URL}/v1/installs/${installId}/components/deploy-all`,
@@ -89,6 +124,7 @@ export async function deployComponents({
 
       body: JSON.stringify({
         error_behavior: continueOnError ? 'continue' : 'abort',
+        plan_only: planOnly,
       }),
       method: 'POST',
     }
@@ -113,6 +149,7 @@ interface IDeployComponentBuild {
   orgId: string
   continueOnError?: boolean
   deployDeps?: boolean
+  planOnly?: boolean
 }
 
 export async function deployComponentBuild({
@@ -121,6 +158,7 @@ export async function deployComponentBuild({
   deployDeps = false,
   installId,
   orgId,
+  planOnly,
 }: IDeployComponentBuild) {
   const res = fetch(`${API_URL}/v1/installs/${installId}/deploys`, {
     ...(await getFetchOpts(orgId)),
@@ -129,6 +167,7 @@ export async function deployComponentBuild({
       //error_behavior: continueOnError ? 'continue' : 'abort',
       build_id: buildId,
       deploy_dependents: deployDeps,
+      plan_only: planOnly,
     }),
     method: 'POST',
   })
@@ -162,12 +201,14 @@ interface ITeardownAllComponents {
   continueOnError?: boolean
   installId: string
   orgId: string
+  planOnly?: boolean
 }
 
 export async function teardownAllComponents({
   continueOnError = false,
   installId,
   orgId,
+  planOnly,
 }: ITeardownAllComponents) {
   const res = fetch(
     `${API_URL}/v1/installs/${installId}/components/teardown-all`,
@@ -175,6 +216,7 @@ export async function teardownAllComponents({
       ...(await getFetchOpts(orgId)),
       body: JSON.stringify({
         error_behavior: continueOnError ? 'continue' : 'abort',
+        plan_only: planOnly,
       }),
       method: 'POST',
     }
@@ -254,6 +296,7 @@ interface IDeleteComponents {
   installId: string
   orgId: string
   force?: boolean
+  planOnly?: boolean
 }
 
 export async function deleteComponents({
@@ -261,6 +304,7 @@ export async function deleteComponents({
   installId,
   orgId,
   force = false,
+  planOnly,
 }: IDeleteComponents) {
   const res = fetch(
     `${API_URL}/v1/installs/${installId}/components/teardown-all`,
@@ -268,6 +312,7 @@ export async function deleteComponents({
       ...(await getFetchOpts(orgId)),
       body: JSON.stringify({
         error_behavior: force ? 'continue' : 'abort',
+        plan_only: planOnly,
       }),
       method: 'POST',
     }
@@ -292,6 +337,7 @@ interface IDeleteComponent {
   installId: string
   orgId: string
   force?: boolean
+  planOnly?: boolean
 }
 
 export async function deleteComponent({
@@ -300,6 +346,7 @@ export async function deleteComponent({
   installId,
   orgId,
   force = false,
+  planOnly,
 }: IDeleteComponent) {
   let error = null
   const res = await fetch(
@@ -308,6 +355,7 @@ export async function deleteComponent({
       ...(await getFetchOpts(orgId)),
       body: JSON.stringify({
         error_behavior: force ? 'continue' : 'abort',
+        plan_only: planOnly,
       }),
       method: 'POST',
     }
@@ -333,17 +381,20 @@ interface IDeleteInstall {
   installId: string
   orgId: string
   force?: boolean
+  planOnly?: boolean
 }
 
 export async function deleteInstall({
   installId,
   orgId,
   force = false,
+  planOnly,
 }: IDeleteInstall) {
   const res = fetch(`${API_URL}/v1/installs/${installId}/deprovision`, {
     ...(await getFetchOpts(orgId)),
     body: JSON.stringify({
       error_behavior: force ? 'continue' : 'abort',
+      plan_only: planOnly,
     }),
     method: 'POST',
   })
@@ -361,18 +412,20 @@ export async function deleteInstall({
   return (await res).headers.get('x-nuon-install-workflow-id')
 }
 
-interface IDeprovisionSandbox extends IDeleteComponents { }
+interface IDeprovisionSandbox extends IDeleteComponents {}
 
 export async function deprovisionSandbox({
   continueOnError = false,
   installId,
   orgId,
   force = false,
+  planOnly,
 }: IDeprovisionSandbox) {
   const res = fetch(`${API_URL}/v1/installs/${installId}/deprovision-sandbox`, {
     ...(await getFetchOpts(orgId)),
     body: JSON.stringify({
       error_behavior: force ? 'continue' : 'abort',
+      plan_only: planOnly,
     }),
     method: 'POST',
   })
