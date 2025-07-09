@@ -18,6 +18,8 @@ import (
 type CreateInstallDeployRequest struct {
 	BuildID          string `json:"build_id"`
 	DeployDependents bool   `json:"deploy_dependents"`
+
+	PlanOnly bool `json:"plan_only"`
 }
 
 func (c *CreateInstallDeployRequest) Validate(v *validator.Validate) error {
@@ -67,6 +69,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 			"deploy_dependents": strconv.FormatBool(req.DeployDependents),
 		},
 		app.StepErrorBehaviorAbort,
+		req.PlanOnly,
 	)
 	if err != nil {
 		ctx.Error(err)
@@ -143,12 +146,13 @@ func (s *service) createInstallDeploy(ctx context.Context, installID string, req
 		return nil, fmt.Errorf("unable to create install component: %w", res.Error)
 	}
 
+	typ := app.InstallDeployTypeApply
 	deploy := app.InstallDeploy{
 		Status:             "queued",
 		StatusDescription:  "waiting to be deployed to install",
 		ComponentBuildID:   req.BuildID,
 		InstallComponentID: installCmp.ID,
-		Type:               app.InstallDeployTypeApply,
+		Type:               typ,
 	}
 
 	res = s.db.WithContext(ctx).Create(&deploy)

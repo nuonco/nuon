@@ -29,6 +29,7 @@ const (
 	WorkflowTypeTeardownComponents WorkflowType = "teardown_components"
 	WorkflowTypeReprovisionSandbox WorkflowType = "reprovision_sandbox"
 	WorkflowTypeActionWorkflowRun  WorkflowType = "action_workflow_run"
+	WorkflowTypeSyncSecrets        WorkflowType = "sync_secrets"
 
 	// reprovision everything
 	WorkflowTypeReprovision WorkflowType = "reprovision"
@@ -52,6 +53,8 @@ func (i WorkflowType) PastTenseName() string {
 		return "Tore down all components"
 	case WorkflowTypeDeployComponents:
 		return "Deployed all components"
+	case WorkflowTypeSyncSecrets:
+		return "Synced secrets"
 	default:
 	}
 
@@ -76,6 +79,8 @@ func (i WorkflowType) Name() string {
 		return "Deploying all components"
 	case WorkflowTypeReprovisionSandbox:
 		return "Reprovisioning sandbox"
+	case WorkflowTypeSyncSecrets:
+		return "Syncing secrets"
 	default:
 	}
 
@@ -100,6 +105,8 @@ func (i WorkflowType) Description() string {
 		return "Deploy all components in the order of their dependencies."
 	case WorkflowTypeTeardownComponents:
 		return "Teardown components in the reverse order of their dependencies."
+	case WorkflowTypeSyncSecrets:
+		return "Syncing customer secrets into cluster."
 	}
 
 	return "unknown"
@@ -143,6 +150,8 @@ type Workflow struct {
 	StepErrorBehavior StepErrorBehavior `json:"step_error_behavior,omitzero" temporaljson:"step_error_behavior,omitzero,omitempty"`
 
 	ApprovalOption InstallApprovalOption `json:"approval_option,omitzero" gorm:"default 'auto'" temporaljson:"approval_option,omitzero,omitempty"`
+
+	PlanOnly bool `json:"plan_only"`
 
 	StartedAt  time.Time `json:"started_at,omitzero" gorm:"default:null" temporaljson:"started_at,omitzero,omitempty"`
 	FinishedAt time.Time `json:"finished_at,omitzero" gorm:"default:null" temporaljson:"finished_at,omitzero,omitempty"`

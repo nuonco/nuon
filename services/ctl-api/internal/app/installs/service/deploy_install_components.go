@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,7 +10,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-type DeployInstallComponentsRequest struct{}
+type DeployInstallComponentsRequest struct {
+	PlanOnly bool `json:"plan_only"`
+}
 
 // @ID						DeployInstallComponents
 // @Summary				deploy all components on an install
@@ -31,6 +34,12 @@ type DeployInstallComponentsRequest struct{}
 func (s *service) DeployInstallComponents(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
+	var req DeployInstallComponentsRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+
 	_, err := s.getInstall(ctx, installID)
 	if err != nil {
 		ctx.Error(err)
@@ -42,6 +51,7 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 		app.WorkflowTypeDeployComponents,
 		map[string]string{},
 		app.StepErrorBehaviorAbort,
+		req.PlanOnly,
 	)
 	if err != nil {
 		ctx.Error(err)

@@ -16,7 +16,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 	step, err := installSignalStep(ctx, installID, "reprovision runner service account", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationReprovisionRunner,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 	step, err = installSignalStep(ctx, installID, "generate install stack", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationGenerateInstallStackVersion,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 	step, err = installSignalStep(ctx, installID, "await install stack", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitInstallStackVersionRun,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 	step, err = installSignalStep(ctx, installID, "update install stack outputs", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationUpdateInstallStackOutputs,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 	step, err = installSignalStep(ctx, installID, "await runner health", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -62,17 +62,18 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 	step, err = installSignalStep(ctx, installID, "reprovision sandbox plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationReprovisionSandboxPlan,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, step)
 	step, err = installSignalStep(ctx, installID, "reprovision sandbox apply plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationReprovisionSandboxApplyPlan,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
+
 	steps = append(steps, step)
 
 	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync)
@@ -83,7 +84,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 	step, err = installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationSyncSecrets,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +98,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 	step, err = installSignalStep(ctx, installID, "reprovision sandbox dns if enabled", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationProvisionDNS,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}

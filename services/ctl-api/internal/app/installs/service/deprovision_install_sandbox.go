@@ -6,12 +6,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type DeprovisionInstallSandboxRequest struct {
 	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
+	PlanOnly      bool                  `json:"plan_only"`
 }
 
 func (c *DeprovisionInstallSandboxRequest) Validate(v *validator.Validate) error {
@@ -58,6 +60,7 @@ func (s *service) DeprovisionInstallSandbox(ctx *gin.Context) {
 		app.WorkflowTypeDeprovisionSandbox,
 		map[string]string{},
 		req.ErrorBehavior,
+		req.PlanOnly,
 	)
 	if err != nil {
 		ctx.Error(err)
