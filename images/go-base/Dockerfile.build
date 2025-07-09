@@ -2,7 +2,7 @@ FROM golang:1.24 AS build-base
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean
 
-RUN --mount=type=cache,target=/var/cache/apt \
+RUN --mount=type=cache,target=/var/cache/apt,id=gobase-apt \
     apt-get update && apt-get install --no-install-recommends -y ca-certificates \
     coreutils \
     make \
@@ -30,14 +30,14 @@ WORKDIR /src
 COPY tools.go go.mod go.sum ./
 
 # Pre-download dependencies
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gobase-mod \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobase-build \
     go mod download
 
 # Copy and generate package code (common code generation)
 COPY pkg pkg
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gobase-mod \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobase-build \
     cd pkg && go generate ./...
 
 # Final build image that can be referenced
