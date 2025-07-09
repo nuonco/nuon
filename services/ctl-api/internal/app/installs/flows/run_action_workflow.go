@@ -6,13 +6,31 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
+
+// createActionWorkflowStep creates a workflow step for executing an action workflow
+func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.InstallActionWorkflow, triggeredByID string, runEnvVars map[string]string) (*app.WorkflowStep, error) {
+	sig := &signals.Signal{
+		Type: signals.OperationExecuteActionWorkflow,
+		InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
+			InstallActionWorkflowID: iaw.ID,
+			TriggerType:             app.ActionWorkflowTriggerTypeManual,
+			TriggeredByID:           triggeredByID,
+			TriggeredByType:         string(app.ActionWorkflowTriggerTypeManual),
+			RunEnvVars:              runEnvVars,
+		},
+	}
+
+	name := fmt.Sprintf("%s action workflow run", string(app.ActionWorkflowTriggerTypeManual))
+	return installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig, false)
+}
 
 func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
@@ -26,6 +44,9 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	}
 
 	iaw, err := activities.AwaitGetInstallActionWorkflowByID(ctx, generics.FromPtrStr(installActionWorkflowID))
+	if err != nil {
+		return nil, err
+	}
 
 	steps := make([]*app.WorkflowStep, 0)
 	prefix := "RUNENV_"
@@ -41,18 +62,7 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 
 	runEnvVars["TRIGGER_TYPE"] = string(app.ActionWorkflowTriggerTypeManual)
 
-	sig := &signals.Signal{
-		Type: signals.OperationExecuteActionWorkflow,
-		InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
-			InstallActionWorkflowID: iaw.ID,
-			TriggerType:             app.ActionWorkflowTriggerTypeManual,
-			TriggeredByID:           generics.FromPtrStr(triggeredByID),
-			TriggeredByType:         string(app.ActionWorkflowTriggerTypeManual),
-			RunEnvVars:              runEnvVars,
-		},
-	}
-	name := fmt.Sprintf("%s action workflow run", string(app.ActionWorkflowTriggerTypeManual))
-	step, err := installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig)
+	step, err := createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars)
 	if err != nil {
 		return nil, err
 	}

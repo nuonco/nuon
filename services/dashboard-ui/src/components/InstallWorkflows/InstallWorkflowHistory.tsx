@@ -14,6 +14,7 @@ import {
   WarningDiamond,
 } from '@phosphor-icons/react/dist/ssr'
 import { revalidateData } from '@/components/actions'
+import { Badge } from '@/components/Badge'
 import { Link } from '@/components/Link'
 import { SpinnerSVG } from '@/components/Loading'
 import { useOrg } from '@/components/Orgs'
@@ -22,7 +23,15 @@ import { Text } from '@/components/Typography'
 import type { TInstallWorkflow } from '@/types'
 import { POLL_DURATION, removeSnakeCase, sentanceCase } from '@/utils'
 import { InstallWorkflowCancelModal } from './InstallWorkflowCancelModal'
-import { CheckCircleIcon, MinusCircleIcon, ProhibitIcon, Repeat, RepeatIcon, RepeatOnceIcon, WarningDiamondIcon } from '@phosphor-icons/react'
+import {
+  CheckCircleIcon,
+  MinusCircleIcon,
+  ProhibitIcon,
+  Repeat,
+  RepeatIcon,
+  RepeatOnceIcon,
+  WarningDiamondIcon,
+} from '@phosphor-icons/react'
 
 function formatToRelativeDay(isoDate: string) {
   const inputDate = DateTime.fromISO(isoDate).startOf('day')
@@ -106,10 +115,20 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                   <span className="flex gap-4">
                     <YAStatus status={iw.status.status} />
                     <span>
-                      <Text variant="med-12">
-                        {sentanceCase(removeSnakeCase(iw?.type))}{' '}
-                        {iw?.status?.status}
-                      </Text>
+                      <span className="flex gap-2">
+                        <Text variant="med-12">
+                          {sentanceCase(removeSnakeCase(iw?.type))}{' '}
+                          {iw?.status?.status}
+                        </Text>
+                        {k?.plan_only ? (
+                          <Badge
+                            className="!text-[10px] p-1 !leading-none ml-2"
+                            variant="code"
+                          >
+                            Plan only
+                          </Badge>
+                        ) : null}
+                      </span>
                       <Text variant="mono-12">{iw?.id}</Text>
                     </span>
                   </span>
@@ -131,10 +150,20 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                       <Link
                         href={`/${org?.id}/installs/${iw?.install_id}/workflows/${iw?.id}`}
                       >
-                        <Text variant="med-12">
-                          {sentanceCase(removeSnakeCase(iw?.type))}{' '}
-                          {iw?.status?.status}
-                        </Text>
+                        <span className="flex gap-2">
+                          <Text variant="med-12">
+                            {sentanceCase(removeSnakeCase(iw?.type))}{' '}
+                            {iw?.status?.status}
+                          </Text>
+                          {k?.plan_only ? (
+                            <Badge
+                              className="!text-[10px] p-1 !leading-none ml-2"
+                              variant="code"
+                            >
+                              Plan only
+                            </Badge>
+                          ) : null}
+                        </span>
                       </Link>
                       <Text variant="mono-12">{iw?.install_id}</Text>
                     </span>
@@ -174,7 +203,7 @@ export const YAStatus: FC<{
   status: TInstallWorkflow['status']['status']
   isSkipped?: boolean
   isRetried?: boolean
-}> = ({ status, isSkipped = false, isRetried = false, }) => {
+}> = ({ status, isSkipped = false, isRetried = false }) => {
   const isSuccess =
     status === 'active' || status === 'success' || status === 'approved'
   const isError = status === 'error'

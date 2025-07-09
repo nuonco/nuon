@@ -28,7 +28,6 @@ import {
 import {
   getComponent,
   getInstall,
-  getInstallComponentDeploys,
   getInstallComponentOutputs,
   getLatestComponentBuild,
   getInstallComponent,
@@ -232,7 +231,7 @@ const LoadDeployHistory: FC<{
   const params = new URLSearchParams({ offset, limit }).toString()
   const { data: deploys, headers } = await nueQueryData<TInstallDeploy[]>({
     orgId,
-    path: `installs/${installId}/sandbox-runs${params ? '?' + params : params}`,
+    path: `installs/${installId}/components/${component?.id}/deploys${params ? '?' + params : params}`,
     headers: {
       'x-nuon-pagination-enabled': true,
     },

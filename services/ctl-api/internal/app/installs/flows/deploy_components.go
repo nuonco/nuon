@@ -2,8 +2,9 @@ package flows
 
 import (
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -29,7 +30,7 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workfl
 	steps := make([]*app.WorkflowStep, 0)
 	step, err := installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}

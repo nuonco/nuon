@@ -21,7 +21,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	steps := make([]*app.WorkflowStep, 0)
 	step, err := installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		return nil, errors.Wrap(err, "unable to get component")
 	}
 
-	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, installDeploy.ComponentID, installID, app.ActionWorkflowTriggerTypePreDeployComponent)
+	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, installDeploy.ComponentID, installID, app.ActionWorkflowTriggerTypePreDeployComponent)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 				DeployID:    generics.FromPtrStr(installDeployID),
 				ComponentID: comp.ID,
 			},
-		})
+		}, flw.PlanOnly)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create image sync")
 		}
@@ -76,7 +76,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 				DeployID:    generics.FromPtrStr(installDeployID),
 				ComponentID: comp.ID,
 			},
-		})
+		}, flw.PlanOnly)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create image sync")
 		}
@@ -86,7 +86,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 				DeployID:    generics.FromPtrStr(installDeployID),
 				ComponentID: comp.ID,
 			},
-		})
+		}, flw.PlanOnly)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create image sync")
 		}
@@ -94,7 +94,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		steps = append(steps, planStep, applyPlanStep)
 	}
 
-	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, installDeploy.ComponentID, installID, app.ActionWorkflowTriggerTypePostDeployComponent)
+	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, installDeploy.ComponentID, installID, app.ActionWorkflowTriggerTypePostDeployComponent)
 	if err != nil {
 		return nil, err
 	}

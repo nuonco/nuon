@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import {
+  Badge,
   DashboardContent,
   Empty,
   InstallWorkflowActivity,
@@ -14,21 +15,30 @@ import { getInstall, getInstallWorkflow } from '@/lib'
 import { removeSnakeCase, sentanceCase } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const { ['org-id']: orgId, ['install-id']: installId, ['workflow-id']: installWorkflowId } = await params
+  const {
+    ['org-id']: orgId,
+    ['install-id']: installId,
+    ['workflow-id']: installWorkflowId,
+  } = await params
   const [install, installWorkflow] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallWorkflow({ installWorkflowId, orgId }),
   ])
 
   return {
-    title: `${install.name} | ${installWorkflow?.name ||
+    title: `${install.name} | ${
+      installWorkflow?.name ||
       removeSnakeCase(sentanceCase(installWorkflow?.type))
-      }`,
+    }`,
   }
 }
 
 export default async function InstallWorkflow({ params }) {
-  const { ['org-id']: orgId, ['install-id']: installId, ['workflow-id']: installWorkflowId } = await params
+  const {
+    ['org-id']: orgId,
+    ['install-id']: installId,
+    ['workflow-id']: installWorkflowId,
+  } = await params
   const [install, installWorkflow] = await Promise.all([
     getInstall({ installId, orgId }),
     getInstallWorkflow({ installWorkflowId, orgId }),
@@ -58,6 +68,11 @@ export default async function InstallWorkflow({ params }) {
           <YAStatus status={installWorkflow?.status?.status} />
           {installWorkflow?.name ||
             removeSnakeCase(sentanceCase(installWorkflow?.type))}
+          {installWorkflow?.plan_only ? (
+            <Badge className="!text-[11px] ml-2" variant="code">
+              Plan only
+            </Badge>
+          ) : null}
         </span>
       }
       headingUnderline={install?.id}
@@ -107,7 +122,7 @@ export default async function InstallWorkflow({ params }) {
           ) ? (
             <div className="flex flex-col gap-3">
               {installWorkflow?.approval_option === 'prompt' &&
-                !installWorkflow?.finished ? (
+              !installWorkflow?.finished ? (
                 <>
                   <Text>
                     Automatically approve all changes waiting for approval
@@ -115,8 +130,8 @@ export default async function InstallWorkflow({ params }) {
                   <WorkflowApproveAllModal workflow={installWorkflow} />
                 </>
               ) : installWorkflow?.steps?.some(
-                (s) => s?.approval?.response?.type === 'deny'
-              ) ? (
+                  (s) => s?.approval?.response?.type === 'deny'
+                ) ? (
                 <Text className="text-red-600 dark:text-red-400">
                   Changes have been denied
                 </Text>
