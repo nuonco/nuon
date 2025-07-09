@@ -23,6 +23,7 @@ import (
 // @Param					types						query	string	false	"component types to filter by"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param         name						query	string	false	"name of the component to filter by"
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
 // @Tags					installs
 // @Accept					json
@@ -39,12 +40,13 @@ import (
 func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	types := ctx.Query("types")
+	name := ctx.Query("name")
 	var typesSlice []string
 	if types != "" {
 		typesSlice = pq.StringArray(strings.Split(types, ","))
 	}
 
-	install, err := s.getInstallByID(ctx, installID, typesSlice)
+	install, err := s.getInstallByID(ctx, installID, typesSlice, name)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
@@ -122,18 +124,23 @@ func buildInstallComponentConfig(installComponentConfigurations []app.ComponentC
 	return compMap
 }
 
-func (s *service) getInstallByID(ctx *gin.Context, installID string, types []string) (*app.Install, error) {
+func (s *service) getInstallByID(ctx *gin.Context, installID string, types []string, name string) (*app.Install, error) {
 	install := &app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("InstallComponents", func(db *gorm.DB) *gorm.DB {
 			db = db.
 				Scopes(scopes.WithOffsetPagination).
+				Joins("JOIN components ON components.id = install_components.component_id").
 				Order("install_components.created_at DESC")
 
 			if len(types) > 0 {
 				db = db.
-					Joins("JOIN components ON components.id = install_components.component_id").
 					Where("components.type IN ?", types)
+			}
+
+			if name != "" {
+				db = db.
+					Where("components.name ILIKE ?", "%"+name+"%")
 			}
 
 			return db
