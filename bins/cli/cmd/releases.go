@@ -17,6 +17,8 @@ func (c *cli) releasesCmd() *cobra.Command {
 		installsPerStep int64
 		autoBuild       bool
 		latestBuild     bool
+		offset          int
+		limit           int
 	)
 
 	releasesCmd := &cobra.Command{
@@ -34,13 +36,15 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Long:    "List releases of a component",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := releases.New(c.apiClient, c.cfg)
-			return svc.List(cmd.Context(), appID, compID, PrintJSON)
+			return svc.List(cmd.Context(), appID, compID, offset, limit, PrintJSON)
 		}),
 	}
 	// TODO(ja): update cobra so we can require either app-id or component-id?
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter releases by")
 	listCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of a component to filter releases by")
 	listCmd.MarkFlagsOneRequired("app-id", "component-id")
+	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "The offset for pagination")
+	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "The limit for pagination")
 	releasesCmd.AddCommand(listCmd)
 
 	getCmd := &cobra.Command{
@@ -62,11 +66,13 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Long:  "Get the steps for a release by release ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := releases.New(c.apiClient, c.cfg)
-			return svc.Steps(cmd.Context(), releaseID, PrintJSON)
+			return svc.Steps(cmd.Context(), releaseID, offset, limit, PrintJSON)
 		}),
 	}
 	stepsCmd.Flags().StringVarP(&releaseID, "release-id", "r", "", "The ID of the release whose steps you want to view")
 	stepsCmd.MarkFlagRequired("release-id")
+	stepsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "The offset for pagination")
+	stepsCmd.Flags().IntVarP(&limit, "limit", "l", 10, "The limit for pagination")
 	releasesCmd.AddCommand(stepsCmd)
 
 	createCmd := &cobra.Command{

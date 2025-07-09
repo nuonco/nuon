@@ -9,7 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Workflows(ctx context.Context, installID string, asJSON bool) error {
+func (s *Service) Workflows(ctx context.Context, installID string, offset, limit int, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -17,7 +17,7 @@ func (s *Service) Workflows(ctx context.Context, installID string, asJSON bool) 
 
 	view := ui.NewListView()
 
-	workflows, hasMore, err := s.listWorkflows(ctx, installID)
+	workflows, hasMore, err := s.listWorkflows(ctx, installID, offset, limit)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -57,15 +57,15 @@ func (s *Service) Workflows(ctx context.Context, installID string, asJSON bool) 
 			updatedAt.Format(time.Stamp),
 		})
 	}
-	view.RenderPaging(data, 0, 10, hasMore)
+	view.RenderPaging(data, offset, limit, hasMore)
 	return nil
 }
 
-func (s *Service) listWorkflows(ctx context.Context, appID string) ([]*models.AppWorkflow, bool, error) {
+func (s *Service) listWorkflows(ctx context.Context, appID string, offset, limit int) ([]*models.AppWorkflow, bool, error) {
 	workflows, hasMore, err := s.api.GetInstallWorkflows(ctx, appID, &models.GetPaginatedQuery{
 		Offset:            0,
 		Limit:             10,
-		PaginationEnabled: s.cfg.PaginationEnabled,
+		PaginationEnabled: true,
 	})
 	if err != nil {
 		return nil, hasMore, err
