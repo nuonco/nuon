@@ -12,6 +12,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		buildID string
 		compID  string
 		appID   string
+		offset  int
 		limit   int
 	)
 
@@ -30,13 +31,14 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Long:    "List your app's builds",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := builds.New(c.apiClient, c.cfg)
-			return svc.List(cmd.Context(), compID, appID, &limit, PrintJSON)
+			return svc.List(cmd.Context(), compID, appID, offset, limit, PrintJSON)
 		}),
 	}
 	listCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of a component to filter builds by")
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app the component belongs to")
 	listCmd.MarkFlagRequired("app-id")
-	listCmd.Flags().IntVarP(&limit, "limit", "l", 60, "Maximum builds to return")
+	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum builds to return")
 	buildsCmd.AddCommand(listCmd)
 
 	getCmd := &cobra.Command{

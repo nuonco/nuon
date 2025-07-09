@@ -15,7 +15,7 @@ func (s *Service) Select(ctx context.Context, appID string, asJSON bool) error {
 	if appID != "" {
 		return s.SetCurrent(ctx, appID, asJSON)
 	} else {
-		apps, err := s.listApps(ctx)
+		apps, _, err := s.listApps(ctx, 0, 50)
 		if err != nil {
 			return view.Error(err)
 		}

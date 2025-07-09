@@ -7,6 +7,11 @@ import (
 )
 
 func (c *cli) installersCmd() *cobra.Command {
+	var (
+		offset int
+		limit  int
+	)
+
 	installsCmds := &cobra.Command{
 		Use:               "installers",
 		Short:             "Manage installers",
@@ -21,9 +26,11 @@ func (c *cli) installersCmd() *cobra.Command {
 		Long:    "List all installers",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installers.New(c.apiClient, c.cfg)
-			return svc.List(cmd.Context(), PrintJSON)
+			return svc.List(cmd.Context(), offset, limit, PrintJSON)
 		}),
 	}
+	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum installers to return")
 	installsCmds.AddCommand(listCmd)
 
 	return installsCmds

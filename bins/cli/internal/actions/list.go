@@ -4,11 +4,10 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-go/models"
-	helpers "github.com/powertoolsdev/mono/bins/cli/internal"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) List(ctx context.Context, appID string, asJSON bool) error {
+func (s *Service) List(ctx context.Context, appID string, offset, limit int, asJSON bool) error {
 	view := ui.NewListView()
 
 	if appID == "" {
@@ -16,7 +15,7 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) error {
 		return nil
 	}
 
-	wfs, err := s.getActionWorkflows(ctx, appID)
+	wfs, hasMore, err := s.getActionWorkflows(ctx, appID, offset, limit)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -39,31 +38,18 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) error {
 			wf.ID,
 		})
 	}
-	view.Render(data)
+	view.RenderPaging(data, offset, limit, hasMore)
 	return nil
 }
 
-func (s *Service) getActionWorkflows(ctx context.Context, appID string) ([]*models.AppActionWorkflow, error) {
-	if !s.cfg.PaginationEnabled {
-		wfs, _, err := s.api.GetActionWorkflows(ctx, appID, nil)
-		if err != nil {
-			return nil, err
-		}
-		return wfs, nil
+func (s *Service) getActionWorkflows(ctx context.Context, appID string, offset, limit int) ([]*models.AppActionWorkflow, bool, error) {
+	wfs, hasMore, err := s.api.GetActionWorkflows(ctx, appID, &models.GetPaginatedQuery{
+		Offset:            offset,
+		Limit:             limit,
+		PaginationEnabled: true,
+	})
+	if err != nil {
+		return nil, hasMore, err
 	}
-
-	fetchFn := func(ctx context.Context, offset, limit int) ([]*models.AppActionWorkflow, bool, error) {
-		wfs, hasMore, err := s.api.GetActionWorkflows(ctx, appID, &models.GetActionWorkflowsQuery{
-			Offset:            offset,
-			Limit:             limit,
-			PaginationEnabled: true,
-		})
-		if err != nil {
-			return nil, false, err
-		}
-
-		return wfs, hasMore, nil
-	}
-
-	return helpers.BatchFetch(ctx, 10, 50, fetchFn)
+	return wfs, hasMore, nil
 }

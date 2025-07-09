@@ -8,11 +8,10 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) GetRecentRuns(ctx context.Context, installID, actionWorkflowID string, asJSON bool) error {
+func (s *Service) GetRecentRuns(ctx context.Context, installID, actionWorkflowID string, offset, limit int, asJSON bool) error {
 	view := ui.NewListView()
 
-	response, err := s.getRecentRuns(ctx, installID, actionWorkflowID)
-
+	response, hasMore, err := s.getRecentRuns(ctx, installID, actionWorkflowID, offset, limit)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -41,47 +40,19 @@ func (s *Service) GetRecentRuns(ctx context.Context, installID, actionWorkflowID
 			time.Duration(run.ExecutionTime).String(),
 		})
 	}
-	view.Render(data)
+	view.RenderPaging(data, offset, limit, hasMore)
 	return nil
 }
 
 // GetRecentRuns fetches recent runs for an action workflow
-func (s *Service) getRecentRuns(ctx context.Context, installID, actionWorkflowID string) (*models.AppInstallActionWorkflow, error) {
-	if !s.cfg.PaginationEnabled {
-		iaw, _, err := s.api.GetInstallActionWorkflowRecentRuns(ctx, installID, actionWorkflowID, nil)
-
-		if err != nil {
-			return nil, err
-		}
-		return iaw, nil
+func (s *Service) getRecentRuns(ctx context.Context, installID, actionWorkflowID string, offset, limit int) (*models.AppInstallActionWorkflow, bool, error) {
+	iaw, hasMore, err := s.api.GetInstallActionWorkflowRecentRuns(ctx, installID, actionWorkflowID, &models.GetPaginatedQuery{
+		Offset:            offset,
+		Limit:             limit,
+		PaginationEnabled: true,
+	})
+	if err != nil {
+		return nil, hasMore, err
 	}
-
-	offset := 0
-	pageSize := 10
-	allRuns := []*models.AppInstallActionWorkflowRun{}
-
-	for {
-		iaw, hasMore, err := s.api.GetInstallActionWorkflowRecentRuns(ctx, installID, actionWorkflowID, &models.GetInstallActionWorkflowRecentRunsQuery{
-			Offset:            offset,
-			Limit:             pageSize,
-			PaginationEnabled: true,
-		})
-
-		if err != nil {
-			return nil, err
-		}
-
-		allRuns = append(allRuns, iaw.Runs...)
-		iaw.Runs = allRuns
-
-		if !hasMore {
-			return iaw, nil
-		}
-
-		if len(allRuns) >= 50 {
-			return iaw, nil
-		}
-
-		offset += pageSize
-	}
+	return iaw, hasMore, nil
 }
