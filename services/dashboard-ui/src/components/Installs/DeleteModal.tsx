@@ -29,6 +29,7 @@ export const DeleteInstallModal: FC<IDeleteInstallModal> = ({ install }) => {
   const { user } = useUser()
   const [confirm, setConfirm] = useState<string>()
   const [force, setForceDelete] = useState(false)
+  const [planOnly, setPlanOnly] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
@@ -119,8 +120,17 @@ export const DeleteInstallModal: FC<IDeleteInstallModal> = ({ install }) => {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       setForceDelete(Boolean(e?.currentTarget?.checked))
                     }}
-                    labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px] !items-start"
+                    labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px]"
                     labelText={'Continue deprovision even if steps fail?'}
+                  />
+                  <CheckboxInput
+                    name="ack"
+                    defaultChecked={planOnly}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setPlanOnly(Boolean(e?.currentTarget?.checked))
+                    }}
+                    labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px]"
+                    labelText={'Plan Only?'}
                   />
                 </div>
                 <Notice className="max-w-md" variant="warn">
@@ -142,7 +152,7 @@ export const DeleteInstallModal: FC<IDeleteInstallModal> = ({ install }) => {
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
                     setIsLoading(true)
-                    deleteInstall({ installId, orgId, force })
+                    deleteInstall({ installId, orgId, force, planOnly })
                       .then((workflowId) => {
                         trackEvent({
                           event: 'install_delete',
@@ -156,7 +166,9 @@ export const DeleteInstallModal: FC<IDeleteInstallModal> = ({ install }) => {
                             `/${orgId}/installs/${installId}/workflows/${workflowId}`
                           )
                         } else {
-                          router.push(`/${orgId}/installs/${installId}/workflows`)
+                          router.push(
+                            `/${orgId}/installs/${installId}/workflows`
+                          )
                         }
 
                         setForceDelete(false)

@@ -16,7 +16,7 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 
 	step, err := installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -30,14 +30,14 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 
 	step, err = installSignalStep(ctx, installID, "deprovision sandbox plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationDeprovisionSandboxPlan,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, step)
 	step, err = installSignalStep(ctx, installID, "deprovision sandbox apply plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationDeprovisionSandboxApplyPlan,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}

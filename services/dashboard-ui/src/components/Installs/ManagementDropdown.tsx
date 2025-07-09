@@ -11,6 +11,7 @@ import { ForgetModal } from './ForgetModal'
 import { InstallStateModal } from './InstallStateModal'
 import { ReprovisionModal } from './ReprovisionModal'
 import { InstallAuditHistoryModal } from './InstallAuditHistoryModal'
+import { SyncSecretsModal } from './SyncSecretsModal'
 import { Dropdown } from '@/components/Dropdown'
 import { useOrg } from '@/components/Orgs'
 import { Text } from '@/components/Typography'
@@ -60,6 +61,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
           Controls
         </Text>
         <ReprovisionModal installId={install.id} orgId={orgId} />
+        <SyncSecretsModal installId={install.id} orgId={orgId} />
         <DeleteInstallModal install={install} />
         <DeprovisionStackModal install={install} orgId={orgId} />
 

@@ -13,6 +13,7 @@ import (
 
 type TeardownInstallComponentsRequest struct {
 	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
+	PlanOnly      bool                  `json:"plan_only"`
 }
 
 func (c *TeardownInstallComponentsRequest) Validate(v *validator.Validate) error {
@@ -82,6 +83,7 @@ func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 		app.WorkflowTypeTeardownComponents,
 		map[string]string{},
 		req.ErrorBehavior,
+		req.PlanOnly,
 	)
 	if err != nil {
 		ctx.Error(err)

@@ -58,7 +58,7 @@ func TeardownComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 			reason := fmt.Sprintf("install component %s is not deployed", comp.Name)
 			deployStep, err := installSignalStep(ctx, installID, "skipped teardown "+comp.Name, pgtype.Hstore{
 				"reason": &reason,
-			}, nil)
+			}, nil, flw.PlanOnly)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create skip step")
 			}
@@ -67,7 +67,7 @@ func TeardownComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 			continue
 		}
 
-		preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, compID, installID, app.ActionWorkflowTriggerTypePreTeardownComponent)
+		preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, compID, installID, app.ActionWorkflowTriggerTypePreTeardownComponent)
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +78,7 @@ func TeardownComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: compID,
 			},
-		})
+		}, flw.PlanOnly)
 		steps = append(steps, deployStep)
 
 		deployStep, err = installSignalStep(ctx, installID, "teardown "+comp.Name, pgtype.Hstore{}, &signals.Signal{
@@ -86,10 +86,10 @@ func TeardownComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: compID,
 			},
-		})
+		}, flw.PlanOnly)
 		steps = append(steps, deployStep)
 
-		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, compID, installID, app.ActionWorkflowTriggerTypePostTeardownComponent)
+		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, compID, installID, app.ActionWorkflowTriggerTypePostTeardownComponent)
 		if err != nil {
 			return nil, err
 		}

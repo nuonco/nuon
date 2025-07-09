@@ -4,31 +4,29 @@ import { useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { Check, TrashSimple } from '@phosphor-icons/react'
+import { Check, ArrowsClockwise } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
-import { CheckboxInput, Input } from '@/components/Input'
+import { CheckboxInput } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { deleteComponents } from '@/components/install-actions'
+import { syncSecrets } from '@/components/install-actions'
 import { trackEvent } from '@/utils'
 
-interface IDeleteComponentsModal {
+interface ISyncSecretsModal {
   installId: string
   orgId: string
 }
 
-export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
+export const SyncSecretsModal: FC<ISyncSecretsModal> = ({
   installId,
   orgId,
 }) => {
   const router = useRouter()
   const { user } = useUser()
-  const [confirm, setConfirm] = useState<string>()
-  const [planOnly, setPlanOnly] = useState(false)
-  const [force, setForceDelete] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [planOnly, setPlanOnly] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [error, setError] = useState()
@@ -50,78 +48,27 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
       {isOpen
         ? createPortal(
             <Modal
-              className="!max-w-2xl"
+              className="max-w-lg"
+              heading="Sync secrets?"
               isOpen={isOpen}
-              heading={`Teardown all components`}
               onClose={() => {
                 setIsOpen(false)
               }}
             >
-              <div className="flex flex-col gap-6 mb-12">
+              <div className="flex flex-col gap-3 mb-6">
                 {error ? <Notice>{error}</Notice> : null}
-                <span className="flex flex-col gap-1">
-                  <Text variant="med-18">
-                    Are you sure you want to teardown all components?
-                  </Text>
-                  <Text variant="reg-12">
-                    Tearing down components will affect the working nature of
-                    this install.
-                  </Text>
-                </span>
-                <Notice>
-                  Warning, this action is not reversible. Please be certain.
-                </Notice>
-
-                <div className="w-full">
-                  <label className="flex flex-col gap-1 w-full">
-                    <Text variant="med-14">
-                      To verify, type{' '}
-                      <span className="text-red-800 dark:text-red-500">
-                        teardown
-                      </span>{' '}
-                      below.
-                    </Text>
-                    <Input
-                      placeholder="teardown"
-                      className="w-full"
-                      type="text"
-                      value={confirm}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        setConfirm(e?.currentTarget?.value)
-                      }}
-                    />
-                  </label>
-                </div>
-                <div className="flex flex-col items-start">
-                  <CheckboxInput
-                    name="ack"
-                    defaultChecked={force}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setForceDelete(Boolean(e?.currentTarget?.checked))
-                    }}
-                    className="mt-1.5"
-                    labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px] !items-start"
-                    labelText={
-                      <span className="flex flex-col gap2">
-                        <Text variant="med-14">Force teardown</Text>
-                        <Text className="!font-normal" variant="reg-12">
-                          Force tearing down may result in orphaned artifacts
-                          that will need manual removal.
-                        </Text>
-                      </span>
-                    }
-                  />
-
-                  <CheckboxInput
+                <Text variant="reg-14" className="leading-relaxed">
+                  Are you sure you want to sync secrets for this install?
+                </Text>
+                {/* <CheckboxInput
                     name="ack"
                     defaultChecked={planOnly}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setPlanOnly(Boolean(e?.currentTarget?.checked))
+                    setPlanOnly(Boolean(e?.currentTarget?.checked))
                     }}
                     labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px]"
-                    labelText={'Only create a teardown plan?'}
-                  />
-                </div>
+                    labelText={'Only create a sync secrets plan?'}
+                    /> */}
               </div>
               <div className="flex gap-3 justify-end">
                 <Button
@@ -133,19 +80,21 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
                   Cancel
                 </Button>
                 <Button
-                  disabled={confirm !== 'teardown'}
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
                     setIsLoading(true)
-                    deleteComponents({ installId, orgId, force, planOnly })
+                    syncSecrets({
+                      installId,
+                      orgId,
+                      planOnly,
+                    })
                       .then((workflowId) => {
                         trackEvent({
-                          event: 'components_teardown',
+                          event: 'install_sync_secrets',
                           user,
                           status: 'ok',
                           props: { orgId, installId },
                         })
-                        setForceDelete(false)
                         setIsLoading(false)
                         setIsKickedOff(true)
 
@@ -163,7 +112,7 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
                       })
                       .catch((err) => {
                         trackEvent({
-                          event: 'components_teardown',
+                          event: 'install_sync_secrets',
                           user,
                           status: 'error',
                           props: { orgId, installId, err },
@@ -175,16 +124,16 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
                         setIsLoading(false)
                       })
                   }}
-                  variant="danger"
+                  variant="primary"
                 >
                   {isKickedOff ? (
                     <Check size="18" />
                   ) : isLoading ? (
                     <SpinnerSVG />
                   ) : (
-                    <TrashSimple size="18" />
+                    <ArrowsClockwise size="18" />
                   )}{' '}
-                  Teardown all components
+                  Sync secrets
                 </Button>
               </div>
             </Modal>,
@@ -192,12 +141,14 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
           )
         : null}
       <Button
-        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-fit text-red-800 dark:text-red-500"
+        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full"
+        variant="ghost"
         onClick={() => {
           setIsOpen(true)
         }}
       >
-        <TrashSimple size="16" /> Teardown all components
+        <ArrowsClockwise size="16" />
+        Sync secrets
       </Button>
     </>
   )

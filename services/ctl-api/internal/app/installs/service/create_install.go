@@ -78,6 +78,7 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		app.WorkflowTypeProvision,
 		map[string]string{},
 		app.StepErrorBehaviorAbort,
+		false,
 	)
 	if err != nil {
 		ctx.Error(err)

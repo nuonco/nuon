@@ -15,7 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
-func installSignalStep(ctx workflow.Context, installID, name string, metadata pgtype.Hstore, signal *signals.Signal) (*app.WorkflowStep, error) {
+func installSignalStep(ctx workflow.Context, installID, name string, metadata pgtype.Hstore, signal *signals.Signal, planOnly bool) (*app.WorkflowStep, error) {
 	if signal == nil {
 		return &app.WorkflowStep{
 			Name:          name,
@@ -79,6 +79,18 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 		executionTyp = app.WorkflowStepExecutionTypeApproval
 	}
 
+	// plan-only-skip signals are signals that should not be executed, when in plan only
+	planOnlySkipSignals := []eventloop.SignalType{
+		signals.OperationDeprovisionSandboxApplyPlan,
+		signals.OperationProvisionSandboxApplyPlan,
+		signals.OperationReprovisionSandboxApplyPlan,
+		signals.OperationExecuteDeployComponentApplyPlan,
+		signals.OperationExecuteTeardownComponentApplyPlan,
+	}
+	if planOnly && generics.SliceContains(signal.Type, planOnlySkipSignals) {
+		executionTyp = app.WorkflowStepExecutionTypeSkipped
+	}
+
 	return &app.WorkflowStep{
 		Name:           name,
 		ExecutionType:  executionTyp,
@@ -97,7 +109,7 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 	}, nil
 }
 
-func getComponentLifecycleActionsSteps(ctx workflow.Context, flowID, componentID, installID string, triggerTyp app.ActionWorkflowTriggerType) ([]*app.WorkflowStep, error) {
+func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, componentID, installID string, triggerTyp app.ActionWorkflowTriggerType) ([]*app.WorkflowStep, error) {
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, componentID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component")
@@ -119,7 +131,7 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flowID, componentID
 			InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
 				InstallActionWorkflowID: installAction.ID,
 				TriggerType:             triggerTyp,
-				TriggeredByID:           flowID,
+				TriggeredByID:           flw.ID,
 				TriggeredByType:         string(triggerTyp),
 				RunEnvVars: map[string]string{
 					"TRIGGER_TYPE":   string(triggerTyp),
@@ -129,7 +141,7 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flowID, componentID
 			},
 		}
 		name := fmt.Sprintf("%s Action Run (%s)", installAction.ActionWorkflow.Name, triggerTyp)
-		step, err := installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig)
+		step, err := installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig, flw.PlanOnly)
 		if err != nil {
 			return nil, err
 		}
@@ -148,7 +160,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 			return nil, errors.Wrap(err, "unable to get component")
 		}
 
-		preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, compID, installID, app.ActionWorkflowTriggerTypePreDeployComponent)
+		preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, compID, installID, app.ActionWorkflowTriggerTypePreDeployComponent)
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +173,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 					ComponentID: comp.ID,
 				},
-			})
+			}, flw.PlanOnly)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
 			}
@@ -173,7 +185,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 					ComponentID: comp.ID,
 				},
-			})
+			}, flw.PlanOnly)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
 			}
@@ -183,14 +195,13 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 					ComponentID: comp.ID,
 				},
-			})
+			}, flw.PlanOnly)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
 			}
-
 			steps = append(steps, planStep, applyPlanStep)
 		}
-		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw.ID, compID, installID, app.ActionWorkflowTriggerTypePostDeployComponent)
+		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, compID, installID, app.ActionWorkflowTriggerTypePostDeployComponent)
 		if err != nil {
 			return nil, err
 		}
@@ -202,6 +213,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 
 func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.Workflow, triggerTyp app.ActionWorkflowTriggerType) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
+
 	installActions, err := activities.AwaitGetInstallActionWorkflowsByTriggerType(ctx, activities.GetInstallActionWorkflowsByTriggerTypeRequest{
 		InstallID:   installID,
 		TriggerType: triggerTyp,
@@ -229,7 +241,7 @@ func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.W
 			},
 		}
 		name := fmt.Sprintf("%s Action Run (%s)", installAction.ActionWorkflow.Name, triggerTyp)
-		step, err := installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig)
+		step, err := installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig, flw.PlanOnly)
 		if err != nil {
 			return nil, err
 		}
@@ -256,7 +268,7 @@ func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workfl
 	steps := make([]*app.WorkflowStep, 0)
 	step, err := installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
-	})
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
