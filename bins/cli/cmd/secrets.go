@@ -10,6 +10,8 @@ func (c *cli) secretsCmd() *cobra.Command {
 	var (
 		appID    string
 		secretID string
+		offset   int
+		limit    int
 	)
 
 	secretsCmd := &cobra.Command{
@@ -26,11 +28,13 @@ func (c *cli) secretsCmd() *cobra.Command {
 		Short:   "List all secrets ",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := secrets.New(c.apiClient, c.cfg)
-			return svc.List(cmd.Context(), appID, PrintJSON)
+			return svc.List(cmd.Context(), appID, offset, limit, PrintJSON)
 		}),
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to delete the secret from")
 	listCmd.MarkFlagRequired("app-id")
+	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "The offset to start listing secrets from")
+	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "The number of secrets to list")
 	secretsCmd.AddCommand(listCmd)
 
 	// delete command

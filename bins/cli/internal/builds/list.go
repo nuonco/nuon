@@ -6,12 +6,11 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-go/models"
-	helpers "github.com/powertoolsdev/mono/bins/cli/internal"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) List(ctx context.Context, compID, appID string, limit *int, asJSON bool) error {
+func (s *Service) List(ctx context.Context, compID, appID string, offset, limit int, asJSON bool) error {
 	var err error
 	if compID != "" {
 		compID, err = lookup.ComponentID(ctx, s.api, appID, compID)
@@ -28,7 +27,7 @@ func (s *Service) List(ctx context.Context, compID, appID string, limit *int, as
 
 	view := ui.NewListView()
 
-	builds, err := s.listComponentBuilds(ctx, compID, appID, limit)
+	builds, hasMore, err := s.listComponentBuilds(ctx, compID, appID, offset, limit)
 	if err != nil {
 		return view.Error(errors.Wrap(err, "failed to fetch component builds"))
 	}
@@ -58,39 +57,18 @@ func (s *Service) List(ctx context.Context, compID, appID string, limit *int, as
 			build.CreatedAt,
 		})
 	}
-	view.Render(data)
+	view.RenderPaging(data, offset, limit, hasMore)
 	return nil
 }
 
-func (s *Service) listComponentBuilds(ctx context.Context, compID, appID string, limit *int) ([]*models.AppComponentBuild, error) {
-	limitInt := 10
-	if limit != nil {
-		limitInt = *limit
+func (s *Service) listComponentBuilds(ctx context.Context, compID, appID string, offset, limit int) ([]*models.AppComponentBuild, bool, error) {
+	builds, hasMore, err := s.api.GetComponentBuilds(ctx, compID, appID, &models.GetPaginatedQuery{
+		Offset:            offset,
+		Limit:             limit,
+		PaginationEnabled: true,
+	})
+	if err != nil {
+		return nil, hasMore, err
 	}
-
-	if !s.cfg.PaginationEnabled {
-		builds, _, err := s.api.GetComponentBuilds(ctx, compID, appID, &models.GetComponentBuildsQuery{
-			Offset:            0,
-			Limit:             limitInt,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return builds, nil
-	}
-
-	fetchFn := func(ctx context.Context, offset, limit int) ([]*models.AppComponentBuild, bool, error) {
-		builds, hasMore, err := s.api.GetComponentBuilds(ctx, compID, appID, &models.GetComponentBuildsQuery{
-			Offset:            offset,
-			Limit:             limit,
-			PaginationEnabled: s.cfg.PaginationEnabled,
-		})
-		if err != nil {
-			return nil, false, err
-		}
-		return builds, hasMore, nil
-	}
-
-	return helpers.BatchFetch(ctx, 10, limitInt, fetchFn)
+	return builds, hasMore, nil
 }
