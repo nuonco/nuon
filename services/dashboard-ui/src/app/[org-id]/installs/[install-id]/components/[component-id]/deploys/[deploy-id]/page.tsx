@@ -207,42 +207,42 @@ export default async function InstallComponentDeploy({ params }) {
               </ToolTip>
             </Text>
           </span>
-          <ErrorBoundary fallback={<Text>Can&apso;t fetching sync plan</Text>}>
-            <Suspense
-              fallback={
-                <Loading variant="stack" loadingText="Loading sync plan..." />
-              }
-            >
-              <LoadRunnerJobPlan
-                buttonText="Sync plan"
-                headingText="Component sync plan"
-                orgId={orgId}
-                runnerJobId={deploy?.runner_jobs?.at(-1)?.id}
-              />
-            </Suspense>
-          </ErrorBoundary>
-
-          {deploy?.install_deploy_type !== 'sync-image' ? (
-            <ErrorBoundary
-              fallback={<Text>Can&apso;t fetching deploy plan</Text>}
-            >
+          {/* <ErrorBoundary fallback={<Text>Can&apso;t fetching sync plan</Text>}>
               <Suspense
-                fallback={
-                  <Loading
-                    variant="stack"
-                    loadingText="Loading deploy plan..."
-                  />
-                }
+              fallback={
+              <Loading variant="stack" loadingText="Loading sync plan..." />
+              }
               >
-                <LoadRunnerJobPlan
-                  buttonText="Deploy plan"
-                  headingText="Component deploy plan"
-                  orgId={orgId}
-                  runnerJobId={deploy?.runner_jobs?.at(0)?.id}
-                />
+              <LoadRunnerJobPlan
+              buttonText="Sync plan"
+              headingText="Component sync plan"
+              orgId={orgId}
+              runnerJobId={deploy?.runner_jobs?.at(-1)?.id}
+              />
               </Suspense>
-            </ErrorBoundary>
-          ) : null}
+              </ErrorBoundary>
+
+              {deploy?.install_deploy_type !== 'sync-image' ? (
+              <ErrorBoundary
+              fallback={<Text>Can&apso;t fetching deploy plan</Text>}
+              >
+              <Suspense
+              fallback={
+              <Loading
+              variant="stack"
+              loadingText="Loading deploy plan..."
+              />
+              }
+              >
+              <LoadRunnerJobPlan
+              buttonText="Deploy plan"
+              headingText="Component deploy plan"
+              orgId={orgId}
+              runnerJobId={deploy?.runner_jobs?.at(0)?.id}
+              />
+              </Suspense>
+              </ErrorBoundary>
+              ) : null} */}
           {component ? (
             <InstallComponentManagementDropdown component={component} />
           ) : null}

@@ -211,12 +211,7 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
           <DataTableSearch
             handleOnChange={handleGlobleFilter}
             value={globalFilter}
-          />
-
-          <InstallsTableStatusFilter
-            handleStatusFilter={handleStatusFilter}
-            clearStatusFilter={clearStatusFilter}
-          />
+          />         
         </>
       }
       data={data}
