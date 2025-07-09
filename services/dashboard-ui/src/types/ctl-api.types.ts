@@ -181,9 +181,9 @@ export type TAccount = components['schemas']['app.Account']
 export type TInvite = components['schemas']['app.OrgInvite']
 
 // install workflows
-export type TInstallWorkflow = components['schemas']['app.InstallWorkflow']
+export type TInstallWorkflow = components['schemas']['app.Workflow']
 export type TInstallWorkflowStep =
-  components['schemas']['app.InstallWorkflowStep']
+  components['schemas']['app.WorkflowStep']
 
 // app / install stack
 export type TInstallStack = components['schemas']['app.InstallStack']
