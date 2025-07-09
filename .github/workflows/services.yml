@@ -84,7 +84,7 @@ jobs:
     needs:
       - changes
       - tag
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' && needs.changes.outputs.services != '["dashboard-ui"]' }}
     strategy:
       fail-fast: false
     # nb: given that we've a common base for all Go services, we can do it for just ctl-api
@@ -95,22 +95,38 @@ jobs:
       service: ${{ matrix.service }}
     secrets: inherit
 
-  services:
-    # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
-    name: 🚢
+  go_services:
+    name: 🚢 
     needs:
       - changes
       - check_labels
       - tag
       - build_base_images
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' && needs.changes.outputs.services != '["dashboard-ui"]' }}
     strategy:
       fail-fast: false
       matrix:
         service: ${{ fromJSON(needs.changes.outputs.services) }}
+        exclude:
+          - service: dashboard-ui
     uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
+      prod: false
+      stage: ${{ github.event_name != 'pull_request' || needs.check_labels.outputs.auto_deploy == 'true'}}
+      tag: ${{ needs.tag.outputs.git_ref }}
+    secrets: inherit
+
+  dashboard_ui_service:
+    name: 🚢 Dashboard UI
+    needs:
+      - changes
+      - check_labels
+      - tag
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && contains(needs.changes.outputs.services, 'dashboard-ui') }}
+    uses: ./.github/workflows/service.yml
+    with:
+      service: dashboard-ui
       prod: false
       stage: ${{ github.event_name != 'pull_request' || needs.check_labels.outputs.auto_deploy == 'true'}}
       tag: ${{ needs.tag.outputs.git_ref }}
@@ -120,7 +136,8 @@ jobs:
     name: update status
     if: github.event_name == 'pull_request' && always()
     needs:
-      - services
+      - go_services
+      - dashboard_ui_service
     runs-on: ubuntu-latest
     steps:
       - uses: martialonline/workflow-status@v4.1
