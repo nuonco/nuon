@@ -20,6 +20,7 @@ import (
 // @Param					trigger_types	query	string	false	"filter by action workflow trigger by types"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param         name						query	string	false	"filter by action workflow name"
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
 // @Tags					actions
 // @Accept					json
@@ -42,12 +43,13 @@ func (s *service) GetInstallActionWorkflowsLatestRuns(ctx *gin.Context) {
 
 	installID := ctx.Param("install_id")
 	triggerTypes := ctx.Query("trigger_types")
+	name := ctx.Query("name")
 	var triggerTypesSlice []string
 	if triggerTypes != "" {
 		triggerTypesSlice = []string{triggerTypes}
 	}
 
-	iaws, err := s.getInstallActionWorkflowsLatestRun(ctx, org.ID, installID, triggerTypesSlice)
+	iaws, err := s.getInstallActionWorkflowsLatestRun(ctx, org.ID, installID, triggerTypesSlice, name)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install action workflows: %w", err))
 		return
@@ -56,7 +58,7 @@ func (s *service) GetInstallActionWorkflowsLatestRuns(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, iaws)
 }
 
-func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, installID string, triggerTypes []string) ([]*app.InstallActionWorkflow, error) {
+func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, installID string, triggerTypes []string, name string) ([]*app.InstallActionWorkflow, error) {
 	iaws := []*app.InstallActionWorkflow{}
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -75,6 +77,12 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, in
 		tx = tx.
 			Joins("JOIN install_action_workflow_runs_latest_view_v1 ON install_action_workflows.id = install_action_workflow_runs_latest_view_v1.install_action_workflow_id").
 			Where("install_action_workflow_runs_latest_view_v1.triggered_by_type IN ?", triggerTypes)
+	}
+
+	if name != "" {
+		tx = tx.
+			Joins("JOIN action_workflows ON install_action_workflows.action_workflow_id = action_workflows.id").
+			Where("action_workflows.name ILIKE ?", "%"+name+"%")
 	}
 
 	res := tx.Find(&iaws, "install_action_workflows.org_id = ? AND install_action_workflows.install_id = ?", orgID, installID)
