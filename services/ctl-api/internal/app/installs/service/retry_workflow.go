@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
@@ -79,7 +80,7 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	if step.Status.Status != app.StatusError || !step.Retryable || (req.Retry && step.Retried) {
+	if step.Status.Status != app.StatusError || !step.Retryable {
 		ctx.Error(stderr.ErrUser{
 			Err: fmt.Errorf("install workflow step %s can't be retried", req.StepID),
 		})
@@ -109,5 +110,4 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 	ctx.JSON(201, RetryWorkflowResponse{
 		WorkflowID: workflow.ID,
 	})
-
 }

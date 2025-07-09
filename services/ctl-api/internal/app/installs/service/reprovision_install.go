@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,7 +10,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-type ReprovisionInstallRequest struct{}
+type ReprovisionInstallRequest struct {
+	PlanOnly bool `json:"plan_only"`
+}
 
 // @ID						ReprovisionInstall
 // @Summary				reprovision an install
@@ -37,11 +40,18 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		return
 	}
 
+	var req ReprovisionInstallRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
 		install.ID,
 		app.WorkflowTypeReprovision,
 		map[string]string{},
 		app.StepErrorBehaviorAbort,
+		req.PlanOnly,
 	)
 	if err != nil {
 		ctx.Error(err)

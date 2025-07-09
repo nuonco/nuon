@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,12 +10,15 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-// DEPRECATED: This endpoint is deprecated and will be removed in a future release.
+type SyncSecretsRequest struct {
+	PlanOnly bool `json:"plan_only"`
+}
 
-// @ID						DeleteInstall
-// @Summary				delete an install
-// @Description.markdown	delete_install.md
-// @Param					install_id	path	string	true	"install ID"
+// @ID						SyncSecrets
+// @Summary				sync secrets install
+// @Description.markdown sync_secrets.md
+// @Param					install_id	path	string							true	"install ID"
+// @Param					req			body	SyncSecretsRequest	false	"Input"
 // @Tags					installs
 // @Accept					json
 // @Produce				json
@@ -25,37 +29,41 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{boolean}	true
-// @Router					/v1/installs/{install_id} [DELETE]
-func (s *service) DeleteInstall(ctx *gin.Context) {
+// @Success				201	{string}	ok
+// @Router					/v1/installs/{install_id}/sync-secrets [post]
+func (s *service) SyncSecrets(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-	install, err := s.getInstall(ctx, installID)
+
+	var req SyncSecretsRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+
+	_, err := s.getInstall(ctx, installID)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
 	workflow, err := s.helpers.CreateInstallFlow(ctx,
-		install.ID,
-		app.WorkflowTypeDeprovision,
+		installID,
+		app.WorkflowTypeSyncSecrets,
 		map[string]string{},
 		app.StepErrorBehaviorAbort,
-		false,
+		req.PlanOnly,
 	)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
+
+	s.evClient.Send(ctx, installID, &signals.Signal{
 		Type:              signals.OperationExecuteFlow,
 		InstallWorkflowID: workflow.ID,
 	})
 
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationForget,
-	})
-
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
-	ctx.JSON(http.StatusOK, true)
+	ctx.JSON(http.StatusCreated, "ok")
 }

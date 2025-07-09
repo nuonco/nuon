@@ -29,6 +29,7 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
   const componentId = params['component-id']
   const router = useRouter()
   const { user } = useUser()
+  const [planOnly, setPlanOnly] = useState(false)
   const [confirm, setConfirm] = useState<string>()
   const [force, setForceDelete] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -95,7 +96,7 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                     />
                   </label>
                 </div>
-                <div className="flex items-start">
+                <div className="flex flex-col items-start">
                   <CheckboxInput
                     name="ack"
                     defaultChecked={force}
@@ -113,6 +114,16 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                         </Text>
                       </span>
                     }
+                  />
+
+                  <CheckboxInput
+                    name="ack"
+                    defaultChecked={planOnly}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setPlanOnly(Boolean(e?.currentTarget?.checked))
+                    }}
+                    labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px]"
+                    labelText={'Only create a component teardown plan?'}
                   />
                 </div>
               </div>
@@ -135,6 +146,7 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                       installId,
                       orgId,
                       force,
+                      planOnly,
                     }).then(({ data: workflowId, error }) => {
                       if (error) {
                         trackEvent({
@@ -173,7 +185,9 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                             `/${orgId}/installs/${installId}/workflows/${workflowId}`
                           )
                         } else {
-                          router.push(`/${orgId}/installs/${installId}/workflows`)
+                          router.push(
+                            `/${orgId}/installs/${installId}/workflows`
+                          )
                         }
 
                         setIsOpen(false)
