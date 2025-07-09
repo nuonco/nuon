@@ -23,6 +23,11 @@ This is useful for checking for drift, for instance.
 
 You can sync secrets manually, using the UI.
 
+## Nuon CLI list command pagination
+
+The CLI now accepts limit & offset options for listing out items from commands.
+`nuon components list --offset=15 --limit=5`
+
 ## Bug Fixes
 
 * Fixed an issue where the Terraform state for a component would show an old state version.
