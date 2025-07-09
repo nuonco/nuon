@@ -120,7 +120,7 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                           {sentanceCase(removeSnakeCase(iw?.type))}{' '}
                           {iw?.status?.status}
                         </Text>
-                        {k?.plan_only ? (
+                        {iw?.plan_only ? (
                           <Badge
                             className="!text-[10px] p-1 !leading-none ml-2"
                             variant="code"
@@ -155,7 +155,7 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                             {sentanceCase(removeSnakeCase(iw?.type))}{' '}
                             {iw?.status?.status}
                           </Text>
-                          {k?.plan_only ? (
+                          {iw?.plan_only ? (
                             <Badge
                               className="!text-[10px] p-1 !leading-none ml-2"
                               variant="code"
