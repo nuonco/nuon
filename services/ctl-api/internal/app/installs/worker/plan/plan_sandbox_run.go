@@ -127,7 +127,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		roleARN = stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN
 	}
 	if run.RunType == app.SandboxRunTypeDeprovision {
-		roleARN = stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
+		roleARN = stack.InstallStackOutputs.AWSStackOutputs.DeprovisionIAMRoleARN
 	}
 
 	plan := &plantypes.SandboxRunPlan{

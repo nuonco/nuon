@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,7 +10,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-type ReprovisionInstallSandboxRequest struct{}
+type ReprovisionInstallSandboxRequest struct {
+	PlanOnly bool `json:"plan_only"`
+}
 
 // @ID						ReprovisionInstallSandbox
 // @Summary				reprovision an install sandbox
@@ -30,6 +33,12 @@ type ReprovisionInstallSandboxRequest struct{}
 // @Router					/v1/installs/{install_id}/reprovision-sandbox [post]
 func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
+
+	var req ReprovisionInstallSandboxRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
 
 	install, err := s.getInstall(ctx, installID)
 	if err != nil {
@@ -53,6 +62,7 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 		app.WorkflowTypeReprovisionSandbox,
 		map[string]string{},
 		app.StepErrorBehaviorAbort,
+		req.PlanOnly,
 	)
 	if err != nil {
 		ctx.Error(err)

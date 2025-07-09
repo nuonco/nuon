@@ -36,6 +36,7 @@ export const InstallDeployBuildModal: FC<{
   const installId = params['install-id']
   const router = useRouter()
   const { user } = useUser()
+  const [planOnly, setPlanOnly] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [buildId, setBuildId] = useState<string>(initBuildId)
   const [deployDeps, setDeployDeps] = useState<boolean>(initDeployDeps)
@@ -87,97 +88,109 @@ export const InstallDeployBuildModal: FC<{
                 />
               </div>
 
-              <div className="flex gap-3 justify-between border-t p-6 flex-wrap">
-                <div className="flex items-start px-6">
-                  <CheckboxInput
-                    name="ack"
-                    defaultChecked={deployDeps}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setDeployDeps(Boolean(e?.currentTarget?.checked))
-                    }}
-                    className="mt-1.5"
-                    labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[250px] !items-start"
-                    labelText={
-                      <span className="flex flex-col gap-1">
-                        <Text variant="med-12">Deploy dependents</Text>
-                        <Text className="!font-normal" variant="reg-12">
-                          Deploy all dependents as well as the selected build.
-                        </Text>
-                      </span>
-                    }
-                  />
-                </div>
-                <div className="flex gap-3 items-center">
-                  <Button
-                    onClick={() => {
-                      setIsOpen(false)
-                    }}
-                    className="text-base"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    disabled={!buildId}
-                    className="text-base flex items-center gap-1"
-                    onClick={() => {
-                      setIsLoading(true)
-                      deployComponentBuild({
-                        buildId,
-                        installId,
-                        orgId,
-                        deployDeps,
-                      })
-                        .then((workflowId) => {
-                          trackEvent({
-                            event: 'component_deploy',
-                            user,
-                            status: 'ok',
-                            props: { orgId, installId, componentId, buildId },
-                          })
-                          setIsLoading(false)
-                          setIsKickedOff(true)
-
-                          if (workflowId) {
-                            router.push(
-                              `/${orgId}/installs/${installId}/workflows/${workflowId}`
-                            )
-                          } else {
-                            router.push(
-                              `/${orgId}/installs/${installId}/workflows`
-                            )
-                          }
-
-                          setIsOpen(false)
+              <div className="p-6 border-t">
+                <CheckboxInput
+                  name="ack"
+                  defaultChecked={planOnly}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setPlanOnly(Boolean(e?.currentTarget?.checked))
+                  }}
+                  labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px]"
+                  labelText={'Plan Only?'}
+                />
+                <div className="flex gap-3 justify-between flex-wrap">
+                  <div className="flex items-start">
+                    <CheckboxInput
+                      name="ack"
+                      defaultChecked={deployDeps}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setDeployDeps(Boolean(e?.currentTarget?.checked))
+                      }}
+                      className="mt-1.5"
+                      labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[250px] !items-start"
+                      labelText={
+                        <span className="flex flex-col gap-1">
+                          <Text variant="med-12">Deploy dependents</Text>
+                          <Text className="!font-normal" variant="reg-12">
+                            Deploy all dependents as well as the selected build.
+                          </Text>
+                        </span>
+                      }
+                    />
+                  </div>
+                  <div className="flex gap-3 items-center">
+                    <Button
+                      onClick={() => {
+                        setIsOpen(false)
+                      }}
+                      className="text-base"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      disabled={!buildId}
+                      className="text-base flex items-center gap-1"
+                      onClick={() => {
+                        setIsLoading(true)
+                        deployComponentBuild({
+                          buildId,
+                          installId,
+                          orgId,
+                          deployDeps,
+                          planOnly,
                         })
-                        .catch((err) => {
-                          trackEvent({
-                            event: 'component_deploy',
-                            user,
-                            status: 'error',
-                            props: {
-                              orgId,
-                              installId,
-                              componentId,
-                              buildId,
-                              err,
-                            },
+                          .then((workflowId) => {
+                            trackEvent({
+                              event: 'component_deploy',
+                              user,
+                              status: 'ok',
+                              props: { orgId, installId, componentId, buildId },
+                            })
+                            setIsLoading(false)
+                            setIsKickedOff(true)
+
+                            if (workflowId) {
+                              router.push(
+                                `/${orgId}/installs/${installId}/workflows/${workflowId}`
+                              )
+                            } else {
+                              router.push(
+                                `/${orgId}/installs/${installId}/workflows`
+                              )
+                            }
+
+                            setIsOpen(false)
                           })
-                          console.error(err?.message)
-                          setIsLoading(false)
-                          setError('Unable to create deployment.')
-                        })
-                    }}
-                    variant="primary"
-                  >
-                    {isKickedOff ? (
-                      <CloudCheck size="18" />
-                    ) : isLoading ? (
-                      <SpinnerSVG />
-                    ) : (
-                      <CloudArrowUp size="18" />
-                    )}{' '}
-                    Deploy build
-                  </Button>
+                          .catch((err) => {
+                            trackEvent({
+                              event: 'component_deploy',
+                              user,
+                              status: 'error',
+                              props: {
+                                orgId,
+                                installId,
+                                componentId,
+                                buildId,
+                                err,
+                              },
+                            })
+                            console.error(err?.message)
+                            setIsLoading(false)
+                            setError('Unable to create deployment.')
+                          })
+                      }}
+                      variant="primary"
+                    >
+                      {isKickedOff ? (
+                        <CloudCheck size="18" />
+                      ) : isLoading ? (
+                        <SpinnerSVG />
+                      ) : (
+                        <CloudArrowUp size="18" />
+                      )}{' '}
+                      Deploy build
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Modal>,

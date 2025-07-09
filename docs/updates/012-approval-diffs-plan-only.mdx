@@ -1,0 +1,30 @@
+---
+title: 012 - Approval Diffs
+description: Approval Diffs
+---
+_July 8th, 2025_
+
+<div className="badge badge--primary">v0.19.598</div>
+
+## Improved Helm Resource Diff
+
+Improved the diff for helm teardowns.
+
+![Improved Helm Resource Diff](assets/2025-07-08-21-18-48.png)
+
+## Plan Only Mode
+
+You can now run most workflows in plan only mode. This means that changes will only be planned, and execution skipped. 
+This is useful for checking for drift, for instance.
+
+![Plan Only Mode](assets/2025-07-08-21-26-56.png)
+
+## Sync Secrets
+
+You can sync secrets manually, using the UI.
+
+## Bug Fixes
+
+* Fixed an issue where the Terraform state for a component would show an old state version.
+* Fixed an issue where deprovisioning was not properly tearing down from a plan.
+* Fixed an issue where some workflows would not get executed, due to an internal error.
