@@ -16,23 +16,23 @@ COPY cmd  ./cmd/
 COPY internal ./internal/
 COPY main.go .
 COPY generate.sh .
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
     go generate ./...
 
 FROM code as build
 
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
     CGO_ENABLED=0 GOOS=linux go build -o /bin/runner
 
 FROM code AS test
-RUN --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
         go test -v ./...
 
 FROM code AS lint
 COPY .golangci.yml .
-RUN --mount=type=cache,target=/root/.cache/golangci-lint \
+RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-runner \
     golangci-lint run -c .golangci.yml --issues-exit-code 0 -v
 
 FROM golang:1.24-alpine as nuon-cli
@@ -109,8 +109,8 @@ ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
     GOOS=linux \
     GOARCH=amd64 \
     go build \
