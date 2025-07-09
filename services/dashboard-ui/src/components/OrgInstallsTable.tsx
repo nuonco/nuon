@@ -219,11 +219,7 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
             value={globalFilter}
           />
 
-          <div className="flex items-center gap-4">
-            <InstallsTableStatusFilter
-              handleStatusFilter={handleStatusFilter}
-              clearStatusFilter={clearStatusFilter}
-            />
+          <div className="flex items-center gap-4">            
             <CreateInstallModal />
           </div>
         </>
