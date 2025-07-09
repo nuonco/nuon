@@ -15,7 +15,7 @@ import (
 type BaseSignal struct {
 	CtxPayload      *propagator.Payload `json:"ctx_payload"`
 	SignalListeners []SignalListener    `json:"signal_listeners"`
-	CGroup          string              `json:"cgroup`
+	CGroup          string              `json:"cgroup"`
 }
 
 func (BaseSignal) WorkflowName() string {
