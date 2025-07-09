@@ -30,7 +30,7 @@ const (
 	OperationProvisionSandbox            eventloop.SignalType = "provision-sandbox"
 	OperationProvisionDNS                eventloop.SignalType = "provision-dns"
 	OperationDeprovisionDNS              eventloop.SignalType = "deprovision-dns"
-	OperationExecuteActionWorkflow       eventloop.SignalType = "trigger-install-action-workflow"
+	OperationExecuteActionWorkflow       eventloop.SignalType = "execute-action-workflow"
 	OperationExecuteDeployComponent      eventloop.SignalType = "execute-deploy-component"
 	OperationExecuteTeardownComponent    eventloop.SignalType = "execute-teardown-component"
 	OperationSyncSecrets                 eventloop.SignalType = "sync-secrets"
@@ -46,6 +46,7 @@ const (
 	// approval based deploys
 	OperationExecuteDeployComponentSyncAndPlan eventloop.SignalType = "component-deploy-sync-and-plan"
 	OperationExecuteDeployComponentApplyPlan   eventloop.SignalType = "component-deploy-apply-plan"
+	OperationExecuteDeployComponentPlanOnly    eventloop.SignalType = "component-deploy-plan-only"
 
 	OperationExecuteTeardownComponentSyncAndPlan eventloop.SignalType = "component-teardown-sync-and-plan"
 	OperationExecuteTeardownComponentApplyPlan   eventloop.SignalType = "component-teardown-apply-plan"

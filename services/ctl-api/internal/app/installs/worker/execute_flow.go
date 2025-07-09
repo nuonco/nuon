@@ -6,6 +6,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/flows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
@@ -33,17 +34,18 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 
 func (w *Workflows) getWorkflowStepGenerators(ctx workflow.Context) map[app.WorkflowType]flow.WorkflowStepGenerator {
 	return map[app.WorkflowType]flow.WorkflowStepGenerator{
-		flows.WorkflowTypeManualDeploy:       flows.ManualDeploySteps,
-		flows.WorkflowTypeDeployComponents:   flows.DeployAllComponents,
-		flows.WorkflowTypeTeardownComponent:  flows.TeardownComponent,
-		flows.WorkflowTypeTeardownComponents: flows.TeardownComponents,
-		flows.WorkflowTypeInputUpdate:        flows.InputUpdate,
-		flows.WorkflowTypeActionWorkflowRun:  flows.RunActionWorkflow,
-		flows.WorkflowTypeProvision:          flows.Provision,
-		flows.WorkflowTypeReprovision:        flows.Reprovision,
-		flows.WorkflowTypeReprovisionSandbox: flows.ReprovisionSandbox,
-		flows.WorkflowTypeDeprovision:        flows.Deprovision,
-		flows.WorkflowTypeDeprovisionSandbox: flows.DeprovisionSandbox,
+		app.WorkflowTypeManualDeploy:       flows.ManualDeploySteps,
+		app.WorkflowTypeDeployComponents:   flows.DeployAllComponents,
+		app.WorkflowTypeTeardownComponent:  flows.TeardownComponent,
+		app.WorkflowTypeTeardownComponents: flows.TeardownComponents,
+		app.WorkflowTypeInputUpdate:        flows.InputUpdate,
+		app.WorkflowTypeActionWorkflowRun:  flows.RunActionWorkflow,
+		app.WorkflowTypeProvision:          flows.Provision,
+		app.WorkflowTypeReprovision:        flows.Reprovision,
+		app.WorkflowTypeReprovisionSandbox: flows.ReprovisionSandbox,
+		app.WorkflowTypeDeprovision:        flows.Deprovision,
+		app.WorkflowTypeDeprovisionSandbox: flows.DeprovisionSandbox,
+		app.WorkflowTypeSyncSecrets:        flows.SyncSecrets,
 	}
 }
 

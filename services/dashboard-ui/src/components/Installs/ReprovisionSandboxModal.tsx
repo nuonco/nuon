@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useUser } from '@auth0/nextjs-auth0'
 import { Check, BoxArrowUp } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
+import { CheckboxInput } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
@@ -25,6 +26,7 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
   const router = useRouter()
   const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
+  const [planOnly, setPlanOnly] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [error, setError] = useState<string>()
@@ -58,6 +60,16 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
                 <Text variant="reg-14" className="leading-relaxed">
                   Are you sure you want to reprovision this sandbox?
                 </Text>
+
+                <CheckboxInput
+                  name="ack"
+                  defaultChecked={planOnly}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setPlanOnly(Boolean(e?.currentTarget?.checked))
+                  }}
+                  labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px]"
+                  labelText={'Only create a reprovision plan?'}
+                />
               </div>
               <div className="flex gap-3 justify-end">
                 <Button
@@ -75,6 +87,7 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
                     reprovisionSandbox({
                       installId,
                       orgId,
+                      planOnly,
                     })
                       .then((workflowId) => {
                         trackEvent({
@@ -91,7 +104,9 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
                             `/${orgId}/installs/${installId}/workflows/${workflowId}`
                           )
                         } else {
-                          router.push(`/${orgId}/installs/${installId}/workflows`)
+                          router.push(
+                            `/${orgId}/installs/${installId}/workflows`
+                          )
                         }
 
                         setIsOpen(false)

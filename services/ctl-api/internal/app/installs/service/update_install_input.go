@@ -113,6 +113,7 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		// maybe that will change at some point, but this metadata should not be abused.
 		"inputs": strings.Join(*changedInputs, ","),
 	}, app.StepErrorBehaviorAbort,
+		false,
 	)
 	if err != nil {
 		ctx.Error(err)

@@ -36,7 +36,7 @@ export const Tabs = ({ children, defaultTab = 0 }: TabsProps): JSX.Element => {
         {tabs.map((tab: any, index) => (
           <button
             key={index}
-            className={`px-4 py-2 text-base border-b font-medium transition-colors duration-200 ${
+            className={`px-4 py-2 text-base border-b font-medium transition-colors duration-200 !shadow-none ${
               activeTab === index
                 ? 'text-primary-600 dark:text-primary-400 border-current'
                 : 'text-cool-grey-600 dark:text-cool-grey-400 border-transparent'

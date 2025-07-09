@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -66,22 +65,10 @@ func (w *Workflows) ExecuteTeardownComponentApplyPlan(ctx workflow.Context, sreq
 		return errors.Wrap(err, "unable to get install deploy")
 	}
 
-	shouldTeardown := true
-	comp, err := activities.AwaitGetComponentByComponentID(ctx, installDeploy.InstallComponent.ComponentID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get component")
-	}
-	if generics.SliceContains(comp.Type, []app.ComponentType{}) {
-		l.Info("nothing to teardown")
-		shouldTeardown = false
-	}
-
-	if shouldTeardown {
-		l.Info("performing component teardown")
-		err = w.doTeardown(ctx, sreq, install)
-		if err != nil {
-			return errors.Wrap(err, "unable to perform deploy")
-		}
+	l.Info("executing plan")
+	if err := w.execApplyPlan(ctx, install, installDeploy, sreq.FlowStepID, sreq.SandboxMode); err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to deploy")
+		return errors.Wrap(err, "unable to execute deploy")
 	}
 
 	w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusInactive, "successfully torn down")
