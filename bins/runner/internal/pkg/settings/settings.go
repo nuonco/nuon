@@ -29,6 +29,8 @@ type Settings struct {
 	EnableMetrics bool
 	EnableSentry  bool
 
+	Groups []string `validate:"required"`
+
 	// Metadata is added to sentry, metrics and loggers
 	Metadata map[string]string
 
