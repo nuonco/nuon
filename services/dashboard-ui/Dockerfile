@@ -20,10 +20,8 @@ COPY \
   package.json \
   tsconfig.json \
  ./
-
-# Install and persist node_modules (avoid mount to node_modules here)
-RUN --mount=type=cache,target=/root/.npm \
-    npm install
+RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui \
+npm install
 
 COPY test test
 COPY public public
@@ -46,8 +44,8 @@ ARG NUON_API_URL=https://api.stage.nuon.co
 ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
 ENV NEXT_PUBLIC_ACCESS_TOKEN_ROUTE=/api/auth/access-token
 
-RUN --mount=type=cache,target=/src/.next/cache \
-    npm run build
+RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui \
+npm run build
 
 FROM build as final
 
