@@ -12,6 +12,7 @@ const (
 	nextHeader   = "X-Nuon-Page-Next"
 	offsetHeader = "X-Nuon-Page-Offset"
 	limitHeader  = "X-Nuon-Page-Limit"
+	pageHeader   = "X-Nuon-Page-Number"
 )
 
 func HandlePaginatedResponse[T any](ctx *gin.Context, models []T) ([]T, error) {
@@ -30,6 +31,10 @@ func HandlePaginatedResponse[T any](ctx *gin.Context, models []T) ([]T, error) {
 
 	ctx.Header(offsetHeader, strconv.Itoa(pagination.Offset))
 	ctx.Header(limitHeader, strconv.Itoa(pagination.Limit))
+
+	if pagination.Page > 0 {
+		ctx.Header(pageHeader, strconv.Itoa(pagination.Page))
+	}
 
 	return models, nil
 }
