@@ -126,6 +126,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// install stacks
 	api.GET("/v1/installs/:install_id/stack", s.GetInstallStackByInstallID)
 	api.GET("/v1/installs/stacks/:stack_id", s.GetInstallStackByStackID)
+	api.GET("/v1/installs/:install_id/stack-runs", s.GetInstallStackRuns)
 
 	// install config
 	api.POST("/v1/installs/:install_id/configs", s.CreateInstallConfig)
