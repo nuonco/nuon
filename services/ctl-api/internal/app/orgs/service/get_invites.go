@@ -19,6 +19,7 @@ import (
 // @Description.markdown	get_org_invites.md
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
 // @Tags					orgs
 // @Accept					json
