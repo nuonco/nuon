@@ -25,6 +25,7 @@ func (s *Settings) fetch(ctx context.Context) error {
 	s.Metadata = settings.Metadata
 	s.EnableLogging = settings.EnableLogging
 	s.LoggingLevel = level
+	s.Groups = settings.Groups
 
 	// NOTE: we add a few additional fields into the metadata so they appear on all tags, but can not be set by the
 	// API.
