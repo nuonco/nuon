@@ -42,5 +42,6 @@ func (w *Workflows) Created(ctx workflow.Context, sreq signals.RequestSignal) er
 			"install_id": install.ID,
 		})
 	}
-	return nil
+
+	return w.ensureSubLoops(ctx, install, sreq)
 }
