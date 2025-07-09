@@ -2,15 +2,15 @@
 type: service
 
 tests: 
-  # - name: lint
-  #   docker_target: lint
+  - name: lint
+    docker_target: lint
 
   # # - name: compile
   # #   docker_target: test
   # #   cmd: npm run tsc
 
-  # - name: test
-  #   docker_target: test
+  - name: test
+    docker_target: test
 
 color: red
 env:
