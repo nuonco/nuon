@@ -23,6 +23,7 @@ import (
 // @Param					types						query	string	false	"component types to filter by"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Param         q					query	string	false	"search query for component name"
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
 // @Tags					installs
