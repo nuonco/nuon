@@ -39,14 +39,12 @@ additional_nodepools:
       # in this case, between 3AM EST/8AM UTC 7AM EST/12PM UTC
       # we start the node=0 budget at 3AM and it lasts for 20 hours
       budgets:
-        - nodes: "1" # allow empty nodes to be consolidated
-          reasons:
-          - "Empty"
-          - "Drifted"
-        - nodes: "1"
+        - nodes: "10%"
           schedule: "0 8 * * 1,2,3,4,5" # https://crontab.guru/#0_8_*_*_1,2,3,4,5
           duration: "20h"
           reasons:
+          - "Empty"
+          - "Drifted"
           - "Underutilized"
 
   - name: temporal
@@ -61,14 +59,12 @@ additional_nodepools:
       consolidateAfter: "1m"
       budgets:
         - nodes: "1"
-          schedule: "0 10 * * 1,2,3,4,5" 
+          schedule: "0 10 * * 1,2,3,4,5"
           duration: "23h"
-          reasons:
-          - "Underutilized"
-        - nodes: "1" 
           reasons:
           - "Empty"
           - "Drifted"
+          - "Underutilized"
 
   - name: clickhouse-keeper
     instance_types:
@@ -88,7 +84,7 @@ additional_nodepools:
       - effect: NoSchedule
         key: installation
         value: clickhouse-keeper
-        
+
   - name: clickhouse-installation
     instance_types:
       - t3a.large
@@ -123,14 +119,15 @@ additional_nodepools:
           reasons:
           - "Empty"
           - "Drifted"
+          - "Underutilized"
       consolidationPolicy: "WhenEmptyOrUnderutilized"
-      consolidateAfter: "30s"
+      consolidateAfter: "5m"
     taints:
       - effect: NoSchedule
         key: deployment
         value: ctl-api-worker
     zones:
-      - us-west-2a  
+      - us-west-2a
 
   - name: workers-executors
     nodeclass: default
@@ -149,7 +146,7 @@ additional_nodepools:
     disruption:
       budgets:
         - nodes: 10%
-      consolidationPolicy: "WhenEmpty"
-      consolidateAfter: 30s
+      consolidationPolicy: "WhenEmptyOrUnderutilized"
+      consolidateAfter: "5m"
     zones:
       - us-west-2b
