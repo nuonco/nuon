@@ -3,8 +3,10 @@ package service
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -17,6 +19,7 @@ import (
 // @Description.markdown	get_app_components.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param         q                 query	string	false	"search query to filter components by name"
+// @Param         types					    query	string	false	"comma-separated list of component types to filter by (e.g., terraform_module, helm_chart)"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -36,8 +39,13 @@ import (
 func (s *service) GetAppComponents(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	q := ctx.Query("q")
+	types := ctx.Query("types")
+	var typesSlice []string
+	if types != "" {
+		typesSlice = pq.StringArray(strings.Split(types, ","))
+	}
 
-	component, err := s.getAppComponents(ctx, appID, q)
+	component, err := s.getAppComponents(ctx, appID, q, typesSlice)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app components: %w", err))
 		return
@@ -52,13 +60,17 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, component)
 }
 
-func (s *service) getAppComponents(ctx *gin.Context, appID, q string) ([]app.Component, error) {
+func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []string) ([]app.Component, error) {
 	currentApp := &app.App{}
 	tx := s.db.WithContext(ctx).
 		Preload("Components", func(db *gorm.DB) *gorm.DB {
 			db = db.Scopes(scopes.WithOffsetPagination)
 			if q != "" {
 				db = db.Where("components.name ILIKE ?", "%"+q+"%")
+			}
+
+			if len(types) > 0 {
+				db = db.Where("components.type IN ?", types)
 			}
 			return db
 		}).
