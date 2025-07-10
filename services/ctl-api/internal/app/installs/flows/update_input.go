@@ -2,7 +2,6 @@ package flows
 
 import (
 	"context"
-	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -33,33 +32,31 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	installComponents, err := activities.AwaitGetInstallComponentsByInstallID(ctx, installID)
+	appConfig, err := activities.AwaitGetAppConfig(ctx, activities.GetAppConfigRequest{
+		ID: install.AppConfigID,
+	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to get components for app %s", install.App.ID)
+		return nil, errors.Wrapf(err, "unable to get app config for install %s", installID)
 	}
 
-	var compConfigs []app.ComponentConfigConnection
-	for _, ic := range installComponents {
-		component, err := activities.AwaitGetComponent(ctx, activities.GetComponentRequest{
-			ComponentID: ic.ComponentID,
+	var changedRefs []refs.Ref
+	for _, input := range changeInputs {
+		changedRefs = append(changedRefs, refs.Ref{
+			Name: input,
+			Type: refs.RefTypeInputs,
 		})
-		if err != nil {
-			return nil, errors.Wrapf(err, "unable to get component %s for app %s", ic.ComponentID, install.App.ID)
-		}
-
-		compConfigs = append(compConfigs, component.ComponentConfigs...)
 	}
 
 	var componentIDs []string
-	for _, compID := range getComponentsForChangedInputs(compConfigs, changeInputs) {
-		componentIDs = append(componentIDs, compID)
+	for _, comp := range getComponentsForChangedInputs(appConfig, &changedRefs) {
+		componentIDs = append(componentIDs, comp.ID)
 		comps, err := activities.AwaitGetComponentDependents(ctx, activities.GetComponentDependents{
 			AppID:           install.App.ID,
-			ComponentRootID: compID,
+			ComponentRootID: comp.ID,
 			ConfigVersion:   install.AppConfig.Version,
 		})
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to get component dependents for %s", compID)
+			return nil, errors.Wrapf(err, "unable to get component dependents for %s", comp.ID)
 		}
 		var cmpIds []string
 		for _, c := range comps {
@@ -69,18 +66,12 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	}
 	componentIDs = generics.UniqueSlice(componentIDs)
 
-	var components []app.Component
-	for _, c := range installComponents {
-		if slices.Contains(componentIDs, c.ComponentID) {
-			components = append(components, c.Component)
-		}
-	}
-	orderedCompIDs, err := helpers.GetDeploymentOrderFromComponents(context.TODO(), &components)
+	orderedCompIDs, err := helpers.GetDeploymentOrderFromAppConfig(context.TODO(), componentIDs, appConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get deployment order from components")
 	}
 
-	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, *orderedCompIDs)
+	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, orderedCompIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component deploy steps")
 	}
@@ -95,15 +86,16 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	return steps, nil
 }
 
-func getComponentsForChangedInputs(ccc []app.ComponentConfigConnection, changeInputs []string) []string {
-	componentIDs := make([]string, 0)
-	for _, conConfigs := range ccc {
+func getComponentsForChangedInputs(appConfig *app.AppConfig, changedRefs *[]refs.Ref) []app.Component {
+	components := make([]app.Component, 0)
+	for _, conConfigs := range appConfig.ComponentConfigConnections {
 		for _, ref := range conConfigs.Refs {
-
-			if ref.Type == refs.RefTypeInputs && slices.Contains(changeInputs, ref.Name) {
-				componentIDs = append(componentIDs, conConfigs.ComponentID)
+			for _, changedRef := range *changedRefs {
+				if ref.Name == changedRef.Name && ref.Type == changedRef.Type {
+					components = append(components, conConfigs.Component)
+				}
 			}
 		}
 	}
-	return componentIDs
+	return components
 }
