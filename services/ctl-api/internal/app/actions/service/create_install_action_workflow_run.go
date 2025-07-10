@@ -95,6 +95,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 
 	prependRunEnvVars := PrependRunEnvPrefix(req.RunEnvVars)
 	prependRunEnvVars["install_action_workflow_id"] = installActionWorkflow.ID
+	prependRunEnvVars["install_action_workflow_name"] = installActionWorkflow.ActionWorkflow.Name
 	account, err := cctx.AccountFromContext(ctx)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get account from context: %w", err))
