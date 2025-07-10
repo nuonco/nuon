@@ -38,7 +38,7 @@ func (s *service) GetComponentDependents(ctx *gin.Context) {
 	}
 
 	appID := component.AppID
-	components, err := s.getAppComponents(ctx, appID)
+	components, err := s.getAppComponents(ctx, appID, "")
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get components for app: %s", appID))
 		return
