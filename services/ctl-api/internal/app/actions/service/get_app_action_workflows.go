@@ -18,6 +18,7 @@ import (
 // @Summary				get action workflows for an app
 // @Description.markdown	get_app_action_workflows.md
 // @Param					app_id						path	string	true	"app ID"
+// @Param         q 						query	string	false	"search query to filter action workflows by name"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -41,6 +42,7 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 		return
 	}
 
+	q := ctx.Query("q")
 	appID := ctx.Param("app_id")
 	_, err = s.findApp(ctx, org.ID, appID)
 	if err != nil {
@@ -48,7 +50,7 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 		return
 	}
 
-	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, appID)
+	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, appID, q)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action workflows %s: %w", appID, err))
 		return
@@ -57,17 +59,21 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, actionWorkflows)
 }
 
-func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID string) ([]*app.ActionWorkflow, error) {
+func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, q string) ([]*app.ActionWorkflow, error) {
 	actionWorkflows := []*app.ActionWorkflow{}
-	res := s.db.WithContext(ctx).
+	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("Configs", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithOverrideTable("action_workflow_configs_latest_view_v1"))
 		}).
 		Preload("Configs.Triggers").
 		Preload("Configs.Steps").
-		Where("org_id = ? AND app_id = ?", orgID, appID).
-		Find(&actionWorkflows)
+		Where("org_id = ? AND app_id = ?", orgID, appID)
+
+	if q != "" {
+		tx = tx.Where("name ILIKE ?", "%"+q+"%")
+	}
+	res := tx.Find(&actionWorkflows)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get action workflows: %w", res.Error)
 	}
