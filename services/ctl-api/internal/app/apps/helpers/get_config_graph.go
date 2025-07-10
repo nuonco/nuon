@@ -7,6 +7,7 @@ import (
 	"github.com/dominikbraun/graph"
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -120,26 +121,38 @@ func getDeployOrderFromGraph(ctx context.Context, grph graph.Graph[string, *app.
 	return order, nil
 }
 
-func GetDeploymentOrderFromComponents(ctx context.Context, comps *[]app.Component) (*[]string, error) {
-	grph := graph.New(componentHash,
+// GetDeploymentOrderFromAppConfig retrieves the deployment order of given components using appconfig
+func GetDeploymentOrderFromAppConfig(ctx context.Context, compIds []string, appConfig *app.AppConfig) ([]string, error) {
+	grph := graph.New(
+		componentHash,
 		graph.Directed(),
 		graph.PreventCycles(),
-		graph.Rooted(),
-		graph.Acyclic())
+		graph.Acyclic(),
+	)
 
-	for _, comp := range *comps {
-		if err := grph.AddVertex(&comp); err != nil {
+	var cc []app.ComponentConfigConnection
+	for _, comp := range appConfig.ComponentConfigConnections {
+		if generics.SliceContains(comp.ComponentID, compIds) {
+			cc = append(cc, comp)
+		}
+	}
+
+	if len(compIds) != 0 && len(cc) == 0 {
+		return nil, errors.New("components not found in app config for deployment order")
+	}
+
+	for _, comp := range cc {
+		if err := grph.AddVertex(&comp.Component); err != nil {
 			return nil, errors.Wrap(err, "unable to add vertex to graph")
 		}
 	}
 
-	for _, comp := range *comps {
-		for _, dep := range comp.Dependencies {
-			if _, err := grph.Vertex(dep.ID); err != nil {
-				continue
-			}
-			if err := grph.AddEdge(comp.ID, dep.ID); err != nil {
-				return nil, errors.Wrap(err, "unable to add edge to graph")
+	for _, comp := range cc {
+		for _, dep := range comp.ComponentDependencyIDs {
+			if generics.SliceContains(dep, compIds) {
+				if err := grph.AddEdge(dep, comp.ComponentID); err != nil {
+					return nil, errors.Wrap(err, "unable to add edge to graph")
+				}
 			}
 		}
 	}
@@ -149,7 +162,7 @@ func GetDeploymentOrderFromComponents(ctx context.Context, comps *[]app.Componen
 		return nil, errors.Wrap(err, "unable to get deploy order from graph")
 	}
 
-	return &order, nil
+	return order, nil
 }
 
 func (h *Helpers) GetConfigDefaultComponentOrder(ctx context.Context, cfg *app.AppConfig) ([]string, error) {
