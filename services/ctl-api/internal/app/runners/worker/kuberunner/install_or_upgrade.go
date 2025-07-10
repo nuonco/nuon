@@ -25,6 +25,8 @@ type InstallOrUpgradeRequest struct {
 	APIURL                 string
 	APIToken               string
 	SettingsRefreshTimeout time.Duration
+
+	InstanceTypeName string
 }
 
 type InstallOrUpgradeResponse struct{}
@@ -52,6 +54,13 @@ func (a *Activities) InstallOrUpgrade(ctx context.Context, req *InstallOrUpgrade
 	if err != nil {
 		return nil, fmt.Errorf("unable to get previous helm release: %w", err)
 	}
+
+	// determine the insance types (box size) for the nodepool
+	instanceTypeName := "t3a.medium"
+	if a.config.Env != "prod" && a.config.Env != "production" {
+		instanceTypeName = "t3a.small"
+	}
+	req.InstanceTypeName = instanceTypeName
 
 	var (
 		rel *release.Release
