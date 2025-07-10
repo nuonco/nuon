@@ -23,14 +23,14 @@ func (m *patcherPlugin) Initialize(db *gorm.DB) error {
 }
 
 func (m *patcherPlugin) enablePatcher(tx *gorm.DB) {
-	enablePagination, ok := tx.Get(PatcherEnabledKey)
+	enablePagination, ok := tx.InstanceGet(PatcherEnabledKey)
 	if !(ok && enablePagination.(bool)) {
 		return
 	}
 
 	var ctxOptions PatcherOptions
 	ctxPatcher := cctx.PatcherFromContext(tx.Statement.Context)
-	options, ok := tx.Get(PatcherOptionsKey)
+	options, ok := tx.InstanceGet(PatcherOptionsKey)
 	if !ok {
 		options = []string{}
 	} else {
