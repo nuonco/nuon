@@ -16,6 +16,7 @@ import (
 // @Summary				get all apps for the current org
 // @Description.markdown	get_apps.md
 // @Param					offset						query	int		false	"offset of jobs to return"	Default(0)
+// @Param					q							query	string	false	"search query to filter apps by name"
 // @Param					limit						query	int		false	"limit of jobs to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
@@ -38,7 +39,9 @@ func (s *service) GetApps(ctx *gin.Context) {
 		return
 	}
 
-	apps, err := s.getApps(ctx, org.ID)
+	q := ctx.Query("q")
+
+	apps, err := s.getApps(ctx, org.ID, q)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get apps for %s: %w", org.ID, err))
 		return
@@ -46,13 +49,13 @@ func (s *service) GetApps(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, apps)
 }
 
-func (s *service) getApps(ctx *gin.Context, orgID string) ([]*app.App, error) {
+func (s *service) getApps(ctx *gin.Context, orgID, q string) ([]*app.App, error) {
 	var apps []*app.App
 	org := &app.Org{
 		ID: orgID,
 	}
 
-	err := s.db.WithContext(ctx).
+	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_runner_configs.created_at DESC")
@@ -61,8 +64,13 @@ func (s *service) getApps(ctx *gin.Context, orgID string) ([]*app.App, error) {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).
 		Preload("AppSandboxConfigs.PublicGitVCSConfig").
-		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
-		Model(&org).Association("Apps").Find(&apps)
+		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig")
+
+	if q != "" {
+		tx = tx.Where("apps.name ILIKE ?", "%"+q+"%")
+	}
+
+	err := tx.Model(&org).Association("Apps").Find(&apps)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get org apps: %w", err)
 	}

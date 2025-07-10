@@ -18,6 +18,7 @@ import (
 // @Summary				get all installs for an org
 // @Description.markdown	get_org_installs.md
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param         q								 query	string	false	"search query to filter installs by name"
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
@@ -40,7 +41,9 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 		return
 	}
 
-	install, err := s.getOrgInstalls(ctx, org.ID)
+	q := ctx.Query("q")
+
+	install, err := s.getOrgInstalls(ctx, org.ID, q)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get installs for org %s: %w", org.ID, err))
 		return
@@ -49,9 +52,9 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, install)
 }
 
-func (s *service) getOrgInstalls(ctx *gin.Context, orgID string) ([]app.Install, error) {
+func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string) ([]app.Install, error) {
 	var installs []app.Install
-	res := s.db.WithContext(ctx).
+	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("AppSandboxConfig").
 		Preload("AWSAccount").
@@ -73,8 +76,13 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID string) ([]app.Install,
 		Preload("RunnerGroup.Runners").
 		Joins(fmt.Sprintf("JOIN apps ON apps.id=%s", views.TableOrViewName(s.db, &app.Install{}, ".app_id"))).
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
-		Order("created_at desc").
-		Find(&installs, fmt.Sprintf("%s = ?", views.TableOrViewName(s.db, &app.Install{}, ".org_id")), orgID)
+		Where(views.TableOrViewName(s.db, &app.Install{}, ".org_id")+" = ?", orgID).
+		Order("created_at desc")
+
+	if q != "" {
+		tx = tx.Where(views.TableOrViewName(s.db, &app.Install{}, ".name")+" ILIKE ?", "%"+q+"%")
+	}
+	res := tx.Find(&installs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org installs: %w", res.Error)
 	}
