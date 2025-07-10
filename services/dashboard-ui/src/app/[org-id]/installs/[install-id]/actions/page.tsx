@@ -79,6 +79,8 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
               installId={installId}
               orgId={orgId}
               offset={sp['offset'] || '0'}
+              q={sp['q'] || ''}
+              trigger_types={sp['trigger_types'] || ''}
             />
           </Suspense>
         </ErrorBoundary>
@@ -92,8 +94,15 @@ const LoadInstallActions: FC<{
   orgId: string
   limit?: string
   offset?: string
-}> = async ({ installId, orgId, limit = '10', offset }) => {
-  const params = new URLSearchParams({ offset, limit }).toString()
+  q?: string
+  trigger_types?: string
+}> = async ({ installId, orgId, limit = '10', offset, q, trigger_types }) => {
+  const params = new URLSearchParams({
+    offset,
+    limit,
+    q,
+    trigger_types,
+  }).toString()
   const {
     data: actionsWithLatestRun,
     error,
@@ -111,7 +120,7 @@ const LoadInstallActions: FC<{
     offset: headers?.get('x-nuon-page-offset') || '0',
   }
 
-  return actionsWithLatestRun?.length && !error ? (
+  return actionsWithLatestRun && !error ? (
     <div className="flex flex-col gap-4 w-full">
       <InstallActionWorkflowsTable
         actions={actionsWithLatestRun}
