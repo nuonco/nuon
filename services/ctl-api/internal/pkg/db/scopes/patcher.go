@@ -7,8 +7,8 @@ import (
 
 func WithPatcher(options patcher.PatcherOptions) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		db = db.Set(patcher.PatcherOptionsKey, options.Exclusions)
-		db = db.Set(patcher.PatcherEnabledKey, true)
+		db = db.InstanceSet(patcher.PatcherOptionsKey, options.Exclusions)
+		db = db.InstanceSet(patcher.PatcherEnabledKey, true)
 		return db
 	}
 }
