@@ -65,18 +65,11 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
         <DeleteInstallModal install={install} />
         <DeprovisionStackModal install={install} orgId={orgId} />
 
-        <>
-          <hr className="my-2" />
-          <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
-            Remove
-          </Text>
-
-          {org?.features?.['install-delete'] ? (
-            <>
-              <ForgetModal install={install} orgId={orgId} />
-            </>
-          ) : null}
-        </>
+        <hr className="my-2" />
+        <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
+          Remove
+        </Text>
+        <ForgetModal install={install} orgId={orgId} />
       </div>
     </Dropdown>
   )
