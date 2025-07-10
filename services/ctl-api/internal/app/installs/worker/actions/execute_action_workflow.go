@@ -31,6 +31,7 @@ func (w *Workflows) ExecuteActionWorkflow(ctx workflow.Context, req signals.Requ
 		InstallActionWorkflowID: installActionWorkflow.ID,
 		ActionWorkflowID:        installActionWorkflow.ActionWorkflowID,
 		InstallID:               installActionWorkflow.InstallID,
+		InstallWorkflowID:       req.InstallWorkflowID,
 		TriggerType:             req.InstallActionWorkflowTrigger.TriggerType,
 		TriggeredByID:           req.InstallActionWorkflowTrigger.TriggeredByID,
 		TriggeredByType:         req.InstallActionWorkflowTrigger.TriggeredByType,
@@ -100,7 +101,7 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	l.Info("creating plan for executing action run")
 	runPlan, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
 		ActionWorkflowRunID: actionWorkflowRunID,
-		WorkflowID:      fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+		WorkflowID:          fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")
