@@ -86,6 +86,8 @@ export default async function InstallComponents({ params, searchParams }) {
               installId={install?.id}
               orgId={orgId}
               offset={sp['offset'] || '0'}
+              q={sp['q'] || ''}
+              types={sp['types'] || ''}
             />
           </Suspense>
         </ErrorBoundary>
@@ -99,8 +101,10 @@ const LoadInstallComponents: FC<{
   orgId: string
   limit?: string
   offset?: string
-}> = async ({ installId, orgId, limit = '10', offset }) => {
-  const params = new URLSearchParams({ offset, limit }).toString()
+  q?: string
+  types?: string
+}> = async ({ installId, orgId, limit = '10', offset, q, types }) => {
+  const params = new URLSearchParams({ offset, limit, q, types }).toString()
   const { data, error, headers } = await nueQueryData<
     Array<TInstallComponentSummary>
   >({
@@ -118,7 +122,7 @@ const LoadInstallComponents: FC<{
 
   return error ? (
     <Notice>Can&apos;t load install components: {error?.error}</Notice>
-  ) : data?.length ? (
+  ) : data ? (
     <div className="flex flex-col gap-4">
       <InstallComponentsTable
         installComponents={data.sort((a, b) =>
