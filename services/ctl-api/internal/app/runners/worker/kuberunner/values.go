@@ -18,8 +18,13 @@ type helmValuesEnv struct {
 	SettingsRefreshTimeout string `mapstructure:"SETTINGS_REFRESH_TIMEOUT"`
 }
 
+type instanceType struct {
+	Name string `mapstructure:"name"`
+}
+
 type nodePoolValues struct {
-	Enabled bool `mapstructure:"enabled"`
+	Enabled      bool         `mapstructure:"enabled"`
+	InstanceType instanceType `mapstructure:"instance_type"`
 }
 
 type helmValues struct {
@@ -50,6 +55,9 @@ func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
 		},
 		NodePool: nodePoolValues{
 			Enabled: true,
+			InstanceType: instanceType{
+				Name: req.InstanceTypeName,
+			},
 		},
 	}
 }
