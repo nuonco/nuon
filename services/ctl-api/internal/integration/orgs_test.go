@@ -172,7 +172,7 @@ func (s *orgsIntegrationTestSuite) TestCreateOrgInvite() {
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 
-		invites, _, err := s.apiClient.GetOrgInvites(s.ctx, &models.GetOrgInvitesQuery{
+		invites, _, err := s.apiClient.GetOrgInvites(s.ctx, &models.GetPaginatedQuery{
 			Limit:  100,
 			Offset: 0,
 		})
