@@ -61,6 +61,7 @@ const (
 
 	// operations jobs such as shutdown, restart, noop and update settings.
 	RunnerJobGroupOperations RunnerJobGroup = "operations"
+	RunnerJobGroupManagement RunnerJobGroup = "management"
 
 	// actions workflows
 	RunnerJobGroupActions RunnerJobGroup = "actions"
@@ -97,6 +98,14 @@ const (
 	RunnerJobTypeShutDown      RunnerJobType = "shut-down"
 	RunnerJobTypeUpdateVersion RunnerJobType = "update-version"
 	RunnerJobTypeNOOP          RunnerJobType = "noop"
+
+	// TODO(fd): revisit these names
+	// management job types
+	// RunnerJobTypeMngVMStats             RunnerJobType = "mng-vm-stats"          // log some vm stats/metrics
+	RunnerJobTypeMngVMShutDown          RunnerJobType = "mng-vm-shut-down"          // shut down the vm
+	RunnerJobTypeMngShutDown            RunnerJobType = "mng-shut-down"             // shutdown the runner mng process (usually triggers restart)
+	RunnerJobTypeMngRunnerUpdateVersion RunnerJobType = "mng-runner-update-version" // update the runner image/version (check for changes and update)
+	RunnerJobTypeMngRunnerRestart       RunnerJobType = "mng-runner-restart"        // restart the runner systemctl service (technically, a duplicate. runner can restart self.)
 
 	// sandbox job types
 	RunnerJobTypeSandboxTerraform     RunnerJobType = "sandbox-terraform"
@@ -156,6 +165,10 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		// operations
 	case RunnerJobTypeNOOP, RunnerJobTypeShutDown, RunnerJobTypeUpdateVersion:
 		return RunnerJobGroupOperations
+
+		// management
+	case RunnerJobTypeMngVMShutDown, RunnerJobTypeMngShutDown, RunnerJobTypeMngRunnerUpdateVersion, RunnerJobTypeMngRunnerRestart:
+		return RunnerJobGroupManagement
 
 	case RunnerJobTypeActionsWorkflowRun:
 		return RunnerJobGroupActions
