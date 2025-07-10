@@ -115,10 +115,6 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
               (s) => s?.status?.status === 'in-progress'
             )
           )
-        } else {
-          setActiveStep(
-            installWorkflow?.steps?.find((s) => s?.id === activeStep?.id)
-          )
         }
       } else if (!activeStep) {
         setActiveStep(installWorkflow?.steps?.at(0))
@@ -143,6 +139,60 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
       })
     }
   }, [activeStep])
+
+  const RetryButtons = ({ step }: { step: TInstallWorkflowStep }) => {
+    return step?.retryable &&
+      step?.status?.status == 'error' &&
+      !step?.retried ? (
+      <div className="mt-4">
+        <span className="flex justify-between">
+          <Button
+            onClick={() => {
+              setIsSkipLoading(true)
+              retry(false, step?.id)
+            }}
+            variant={'secondary'}
+            className="w-fit text-sm"
+            disabled={isKickedOff}
+          >
+            {isSkipLoading ? (
+              <>
+                <SpinnerSVG />
+                Continuing
+              </>
+            ) : (
+              <>
+                Skip and continue
+                <SkipForwardIcon />
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={() => {
+              setIsRetryLoading(true)
+              retry(true, step?.id)
+            }}
+            variant={'primary'}
+            className="w-fit text-sm"
+            disabled={isKickedOff}
+          >
+            {isRetryLoading ? (
+              <>
+                <SpinnerSVG />
+                Retrying
+              </>
+            ) : (
+              <>
+                Retry
+                <ArrowClockwiseIcon />
+              </>
+            )}
+          </Button>
+          {error ? <Notice>{error}</Notice> : null}
+        </span>
+      </div>
+    ) : null
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x h-full">
@@ -249,59 +299,11 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
                 getStepType(step, install, installWorkflow?.approval_option)
               )}
             </StepDetails>
-            {activeStep?.retryable &&
-            activeStep?.status?.status == 'error' &&
-            !activeStep?.retried ? (
-              <div className="mt-4">
-                <span className="flex justify-between">
-                  <Button
-                    onClick={() => {
-                      setIsSkipLoading(true)
-                      retry(false, activeStep?.id)
-                    }}
-                    variant={'secondary'}
-                    className="w-fit text-sm"
-                    disabled={isKickedOff}
-                  >
-                    {isSkipLoading ? (
-                      <>
-                        <SpinnerSVG />
-                        Continuing
-                      </>
-                    ) : (
-                      <>
-                        Skip and continue
-                        <SkipForwardIcon />
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setIsRetryLoading(true)
-                      retry(true, activeStep?.id)
-                    }}
-                    variant={'primary'}
-                    className="w-fit text-sm"
-                    disabled={isKickedOff}
-                  >
-                    {isRetryLoading ? (
-                      <>
-                        <SpinnerSVG />
-                        Retrying
-                      </>
-                    ) : (
-                      <>
-                        Retry
-                        <ArrowClockwiseIcon />
-                      </>
-                    )}
-                  </Button>
-                  {error ? <Notice>{error}</Notice> : null}
-                </span>
-              </div>
-            ) : (
-              <> </>
-            )}
+            <RetryButtons
+              step={installWorkflow?.steps?.find(
+                (s) => s?.id === activeStep?.id
+              )}
+            />
           </Section>
         ) : (
           <Section>
