@@ -5,6 +5,7 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight, Timer, CalendarBlank, Minus } from '@phosphor-icons/react'
 import { Badge } from '@/components/Badge'
 import { DataTableSearch, Table } from '@/components/DataTable'
+import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
 import { Time, Duration } from '@/components/Time'
@@ -156,15 +157,8 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
     <Table
       header={
         <>
-          <DataTableSearch
-            handleOnChange={handleGlobleFilter}
-            value={globalFilter}
-          />
-
-          <InstallActionTriggerFilter
-            handleTriggerFilter={handleTriggerFilter}
-            clearTriggerFilter={clearTriggerFilter}
-          />
+          <DebouncedSearchInput placeholder="Search action name" />
+          <InstallActionTriggerFilter />
         </>
       }
       data={data}

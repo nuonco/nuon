@@ -1,10 +1,11 @@
 'use client'
 
-import React, { type FC } from 'react'
+import React from 'react'
 import { X } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Dropdown } from '@/components/Dropdown'
 import { RadioInput } from '@/components/Input'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 const TRIGGER_OPTIONS = [
   'manual',
@@ -33,15 +34,30 @@ const TRIGGER_OPTIONS = [
   'post-update-inputs',
 ]
 
-export interface IInstallActionTriggerFilter {
-  handleTriggerFilter: any
-  clearTriggerFilter: any
-}
+export const InstallActionTriggerFilter: React.FC = () => {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const triggerType = searchParams.get('trigger_types') || ''
 
-export const InstallActionTriggerFilter: FC<IInstallActionTriggerFilter> = ({
-  handleTriggerFilter,
-  clearTriggerFilter,
-}) => {
+  // Select trigger type in URL
+  const setTriggerTypeInUrl = (type: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (type) {
+      params.set('trigger_types', type)
+    } else {
+      params.delete('trigger_types')
+    }
+    router.replace(`?${params.toString()}`)
+  }
+
+  const handleTriggerFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTriggerTypeInUrl(e.target.value)
+  }
+
+  const clearTriggerFilter = () => {
+    setTriggerTypeInUrl('')
+  }
+
   return (
     <Dropdown
       className="text-sm !font-medium !p-2 h-[32px]"
@@ -52,13 +68,14 @@ export const InstallActionTriggerFilter: FC<IInstallActionTriggerFilter> = ({
       <div>
         <form>
           <div className="min-w-[250px] max-h-[350px] overflow-y-auto">
-            {TRIGGER_OPTIONS?.map((t) => (
+            {TRIGGER_OPTIONS.map((t) => (
               <RadioInput
                 key={t}
                 labelClassName="font-mono"
                 name="trigger-filter"
                 onChange={handleTriggerFilter}
                 value={t}
+                checked={triggerType === t}
                 labelText={t}
               />
             ))}

@@ -6,16 +6,17 @@ import { CaretRight, Minus } from '@phosphor-icons/react'
 import {
   ComponentDependencies,
   ComponentConfigType,
-  ComponentTypeFilterDropdown,
   type TComponentConfigType,
 } from '@/components/Components'
+import { ComponentTypeFilterDropdown } from '@/components/Components/NewComponentTypeFilter'
 import {
   DeleteComponentsModal,
   DeployComponentsModal,
 } from '@/components/InstallComponents'
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
-import { DataTableSearch, Table } from '@/components/DataTable'
+import { Table } from '@/components/DataTable'
+import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
 import { ID, Text } from '@/components/Typography'
 // eslint-disable-next-line import/no-cycle
 import type { TInstallComponentSummary } from '@/types'
@@ -195,25 +196,14 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
       header={
         <div className="flex-auto flex flex-col gap-2">
           <div className="w-full flex items-start justify-between">
-            <DataTableSearch
-              handleOnChange={handleGlobleFilter}
-              value={globalFilter}
-            />
+            <DebouncedSearchInput placeholder="Search component name" />
 
             <div className="flex items-center gap-4">
               <DeployComponentsModal installId={installId} orgId={orgId} />
               <DeleteComponentsModal installId={installId} orgId={orgId} />
             </div>
           </div>
-          <ComponentTypeFilterDropdown
-            {...{
-              handleTypeFilter,
-              handleTypeOnlyFilter,
-              clearTypeFilter,
-              columnFilters,
-            }}
-            isNotDropdown
-          />
+          <ComponentTypeFilterDropdown isNotDropdown />
         </div>
       }
       data={data}
