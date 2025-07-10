@@ -4,4 +4,4 @@ region: us-west-2
 cluster_name: stage-nuon
 internal_root_domain: nuon.us-west-2.stage.nuon.cloud
 rds:
-  instance_class: "db.m5.xlarge"
+  instance_class: "db.m5.large"
