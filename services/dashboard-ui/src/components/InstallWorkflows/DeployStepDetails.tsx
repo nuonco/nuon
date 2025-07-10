@@ -3,13 +3,11 @@
 import { useParams } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { CaretRight } from '@phosphor-icons/react'
-import { Badge } from '@/components/Badge'
 import { Link } from '@/components/Link'
 import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { StatusBadge } from '@/components/Status'
 import { Text } from '@/components/Typography'
-import { InstallDeployBuildModal } from '@/components/InstallComponents/DeployBuildModal'
 import type { TInstallDeploy } from '@/types'
 import { ApprovalStep } from './ApproveStep'
 import type { IPollStepDetails } from './InstallWorkflowSteps'
@@ -106,26 +104,7 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
                           status={deploy?.status_v2?.status || deploy?.status_description}
                           label="Deployment status"
                         />
-                      </span>
-
-                      {deploy?.status_v2?.status === 'error' ? (
-                        <div className="flex flex-col gap-2 max-w-md">
-                          <Text isMuted>Retry failed deployment</Text>
-                          <Text className="mb-2">
-                            Retry this workflow starting at this step. This will
-                            deploy this component and any other components that
-                            are dependents of it.
-                          </Text>
-                          <InstallDeployBuildModal
-                            buttonClassName="text-sm w-fit h-[32px]"
-                            buttonText="Retry from here"
-                            buttonVariant="default"
-                            componentId={deploy?.component_id}
-                            initBuildId={deploy?.build_id}
-                            initDeployDeps
-                          />
-                        </div>
-                      ) : null}
+                      </span>                      
                     </div>
                   </div>
                 ) : null}
