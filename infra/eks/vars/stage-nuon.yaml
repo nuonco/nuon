@@ -27,73 +27,39 @@ ec2nodeclasses:
 additional_nodepools:
   - name: public
     instance_types:
-      - t3a.xlarge
+      - t3a.medium
     limits:
-      cpu: 250
-      memory: "500Gi"
-    expireAfter: "24h"
+      cpu: 125
+      memory: "250Gi"
+    expireAfter: "12h"
     disruption:
-      consolidationPolicy: "WhenEmptyOrUnderutilized"
-      consolidateAfter: "1m"
-      # NOTE(fd): perform disruptions during off hours
-      # in this case, between 3AM EST/8AM UTC 7AM EST/12PM UTC
-      # we start the node=0 budget at 3AM and it lasts for 20 hours
+      consolidateAfter: "5m"
       budgets:
-        - nodes: "1" # allow empty nodes to be consolidated
-          reasons:
-          - "Empty"
-          - "Drifted"
-        - nodes: "1"
-          schedule: "0 8 * * 1,2,3,4,5" # https://crontab.guru/#0_8_*_*_1,2,3,4,5
-          duration: "20h"
-          reasons:
-          - "Underutilized"
+        - nodes: "50%"
+
   - name: public-otel
     instance_types:
-      - t3a.xlarge
+      - t3a.medium
     limits:
       cpu: 50
-      memory: "100Gi"
+      memory: "50Gi"
     expireAfter: "24h"
     disruption:
-      consolidationPolicy: "WhenEmptyOrUnderutilized"
-      consolidateAfter: "1m"
-      # NOTE(fd): perform disruptions during off hours
-      # in this case, between 3AM EST/8AM UTC 7AM EST/12PM UTC
-      # we start the node=0 budget at 3AM and it lasts for 20 hours
+      consolidateAfter: "3m"
       budgets:
-        - nodes: "1" # allow empty nodes to be consolidated
-          reasons:
-          - "Empty"
-          - "Drifted"
-        - nodes: "1"
-          schedule: "0 7 * * 1,2,3,4,5" # https://crontab.guru/#0_8_*_*_1,2,3,4,5
-          duration: "20h"
-          reasons:
-          - "Underutilized"
+        - nodes: "50%"
+
   - name: temporal
     instance_types:
-      - t3a.large
+      - t3a.medium
     limits:
       cpu: 50
-      memory: "100Gi"
+      memory: "50Gi"
     expireAfter: "2160h"
     disruption:
-      consolidationPolicy: "WhenEmptyOrUnderutilized"
-      consolidateAfter: "1m"
-      # NOTE(fd): perform disruptions during off hours
-      # in this case, between 3AM EST/8AM UTC 7AM EST/12PM UTC
-      # we start the node=0 budget at 3AM and it lasts for 20 hours
+      consolidateAfter: "3m"
       budgets:
-        - nodes: "1"
-          schedule: "0 10 * * 1,2,3,4,5" # https://crontab.guru/#0_8_*_*_1,2,3,4,5
-          duration: "23h"
-          reasons:
-          - "Underutilized"
-        - nodes: "1" # allow empty nodes to be consolidated
-          reasons:
-          - "Empty"
-          - "Drifted"
+        - nodes: "50%"
 
   - name: clickhouse-keeper
     instance_types:
@@ -103,11 +69,11 @@ additional_nodepools:
     limits:
       cpu: 8
       memory: "32Gi"
-    expireAfter: "2160h"
+    expireAfter: "Never"
     disruption:
       budgets:
         - nodes: "0"
-      consolidationPolicy: "WhenEmptyOrUnderutilized"
+      consolidationPolicy: "WhenEmpty"
       consolidateAfter: "15m"
     taints:
       - effect: NoSchedule
@@ -119,13 +85,13 @@ additional_nodepools:
 
   - name: clickhouse-installation
     instance_types:
-      - t3a.large
+      - t3a.medium
     labels:
       clickhouse-installation: "true"
     limits:
       cpu: 14
       memory: "1000Gi"
-    expireAfter: "2160h"
+    expireAfter: "Never"
     disruption:
       budgets:
         - nodes: "0"
@@ -141,7 +107,7 @@ additional_nodepools:
 
   - name: ctl-api-worker
     instance_types:
-      - t3a.xlarge
+      - t3a.medium
     labels:
       ctl-api-worker: "true"
     limits:
@@ -150,12 +116,7 @@ additional_nodepools:
     expireAfter: "48h"
     disruption:
       budgets:
-        - nodes: "1"
-          reasons:
-          - "Empty"
-          - "Drifted"
-      consolidationPolicy: "WhenEmptyOrUnderutilized"
-      consolidateAfter: "30s"
+        - nodes: "50%"
     taints:
       - effect: NoSchedule
         key: deployment
@@ -176,18 +137,16 @@ additional_nodepools:
         value: workers-executors
     limits:
       cpu: 1k
-      memory: 200Gi
-    expireAfter: 64013s
+      memory: 50Gi
+    expireAfter: "24h"
     disruption:
       budgets:
-        - nodes: 10%
-      consolidationPolicy: "WhenEmpty"
-      consolidateAfter: 30s
+        - nodes: 50%
     zones:
       - us-west-2b
 
-
 karpenter:
   instance_types:
+    - t3a.small
     - t3a.medium
     - t3a.large
