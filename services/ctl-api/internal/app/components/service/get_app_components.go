@@ -16,6 +16,7 @@ import (
 // @Summary				get all components for an app
 // @Description.markdown	get_app_components.md
 // @Param					app_id						path	string	true	"app ID"
+// @Param         q                 query	string	false	"search query to filter components by name"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -34,8 +35,9 @@ import (
 // @Router					/v1/apps/{app_id}/components [GET]
 func (s *service) GetAppComponents(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
+	q := ctx.Query("q")
 
-	component, err := s.getAppComponents(ctx, appID)
+	component, err := s.getAppComponents(ctx, appID, q)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app components: %w", err))
 		return
@@ -50,15 +52,20 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, component)
 }
 
-func (s *service) getAppComponents(ctx *gin.Context, appID string) ([]app.Component, error) {
+func (s *service) getAppComponents(ctx *gin.Context, appID, q string) ([]app.Component, error) {
 	currentApp := &app.App{}
-	res := s.db.WithContext(ctx).
+	tx := s.db.WithContext(ctx).
 		Preload("Components", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithOffsetPagination)
+			db = db.Scopes(scopes.WithOffsetPagination)
+			if q != "" {
+				db = db.Where("components.name ILIKE ?", "%"+q+"%")
+			}
+			return db
 		}).
 		Preload("Components.ComponentConfigs").
-		Preload("Components.Dependencies").
-		First(&currentApp, "id = ?", appID)
+		Preload("Components.Dependencies")
+
+	res := tx.First(&currentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
