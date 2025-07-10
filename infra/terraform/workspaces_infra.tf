@@ -101,6 +101,29 @@ module "infra-datadog-stage" {
   trigger_workspaces = [module.infra-eks-stage-nuon.workspace_id]
 }
 
+
+
+module "infra-datadog-infra-shared-ci" {
+  source = "./modules/workspace"
+
+  name                            = "infra-shared-ci"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/datadog"
+  auto_apply                      = false
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
+
+  variable_sets = ["aws-environment-credentials", "datadog"]
+  project_id    = tfe_project.infra.id
+  vars = {
+    env = "infra-shared-ci"
+  }
+  trigger_workspaces = [module.infra-eks-infra-shared-ci-nuon.workspace_id]
+}
+
+
+
+
 module "infra-clickhouse-prod" {
   source = "./modules/workspace"
 

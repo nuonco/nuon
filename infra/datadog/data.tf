@@ -47,7 +47,7 @@ data "aws_organizations_organization" "orgs" {
 locals {
   template_vars = {
     "aws_account" : var.env,
-    "env" : strcontains(var.env, "stage") ? "stage" : "prod"
+    "env" : strcontains(var.env, "stage") ? "stage" : var.env
   }
   default_vars = templatefile("vars/defaults.yaml", local.template_vars)
   env_vars     = templatefile("vars/${var.env}.yaml", local.template_vars)
