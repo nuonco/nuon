@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -13,6 +14,7 @@ type CreateActionWorkflowRunRequest struct {
 	ActionWorkflowID        string `json:"action_workflow_id" validate:"required"`
 	InstallActionWorkflowID string `json:"install_action_workflow_id" validate:"required"`
 	InstallID               string `json:"install_id" validate:"required"`
+	InstallWorkflowID       string `json:"install_workflow_id,omitempty"`
 
 	TriggerType     app.ActionWorkflowTriggerType `json:"trigger_type" validate:"required"`
 	TriggeredByID   string                        `json:"triggered_by_id"`
@@ -27,6 +29,7 @@ func (a *Activities) CreateActionWorkflowRun(ctx context.Context, req *CreateAct
 		req.ActionWorkflowID,
 		req.InstallActionWorkflowID,
 		req.InstallID,
+		req.InstallWorkflowID,
 		req.TriggerType,
 		req.TriggeredByID,
 		req.TriggeredByType,
@@ -38,6 +41,7 @@ func (a *Activities) createActionWorkflowRun(ctx context.Context,
 	actionWorkflowID string,
 	installActionWorkflowID string,
 	installID string,
+	installWorkflowID string,
 	triggerType app.ActionWorkflowTriggerType,
 	triggeredByID string,
 	triggeredByType string,
@@ -72,6 +76,10 @@ func (a *Activities) createActionWorkflowRun(ctx context.Context,
 		RunEnvVars:              pgtype.Hstore(runEnvVars),
 		TriggeredByID:           triggeredByID,
 		TriggeredByType:         triggeredByType,
+	}
+
+	if installWorkflowID != "" {
+		newRun.InstallWorkflowID = generics.ToPtr(installWorkflowID)
 	}
 
 	res := a.db.WithContext(ctx).
