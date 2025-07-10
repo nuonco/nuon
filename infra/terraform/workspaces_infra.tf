@@ -106,7 +106,7 @@ module "infra-datadog-stage" {
 module "infra-datadog-infra-shared-ci" {
   source = "./modules/workspace"
 
-  name                            = "infra-shared-ci"
+  name                            = "infra-datadog-infra-shared-ci"
   repo                            = "powertoolsdev/mono"
   dir                             = "infra/datadog"
   auto_apply                      = false
