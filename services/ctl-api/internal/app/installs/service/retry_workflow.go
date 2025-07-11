@@ -33,7 +33,7 @@ func (c *RetryWorkflowRequest) Validate(v *validator.Validate) error {
 
 // @ID						RetryWorkflow
 // @Summary					rerun the workflow steps starting from input step id, can be used to retry a failed step
-// @Description.markdown	retry_install_workflow.md
+// @Description.markdown	retry_workflow.md
 // @Param					install_id	path	string					true	"install ID"
 // @Param					req			body	RetryWorkflowRequest	true	"Input"
 // @Tags					installs
@@ -64,7 +64,7 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.getInstallWorkflow(ctx, req.WorkflowID)
+	workflow, err := s.getWorkflow(ctx, req.WorkflowID)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
 			Err: fmt.Errorf("install workflow not found: %s", req.WorkflowID),
@@ -72,7 +72,7 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	step, err := s.getInstallWorkflowStep(ctx, workflow.ID, req.StepID)
+	step, err := s.getWorkflowStep(ctx, workflow.ID, req.StepID)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
 			Err: fmt.Errorf("install workflow step not found: %s", req.StepID),
