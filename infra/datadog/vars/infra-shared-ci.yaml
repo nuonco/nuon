@@ -1,2 +1,87 @@
 ---
 pool: nuon
+
+monitors:
+  karpenter_node_waiting:
+    enabled: true
+    json: >
+      {
+          "name": "${aws_account} - Karpenter Node Waiting",
+          "type": "query alert",
+          "query": "sum(last_5m):sum:karpenter.disruption.replacement.nodeclaim.failures.count{env:${aws_account}} > 0",
+          "message": "@pagerduty-Datadog @slack-alerts-${env}-infra \nKarpenter NodeClaim Failed.",
+          "tags": [
+            "terraform:true",
+            "env:${aws_account}"
+          ],
+          "options": {
+              "groupby_simple_monitor" : false,
+              "new_host_delay": 180,
+              "thresholds": {
+                  "critical": 0
+              },
+              "notify_audit": false,
+              "include_tags": true,
+              "renotify_interval": 60,
+              "escalation_message": "",
+              "notify_no_data": false,
+              "silenced": {}
+          },
+          "priority": 1,
+          "restricted_roles": null
+      }
+  clickhouse_insert_queries_failed:
+    enabled: false
+  clickhouse_pod_count_low:
+    enabled: false
+  clickhouse_containers_restarting:
+    enabled: false
+  kubernetes_container_waiting:
+    enabled: true
+    json: >
+      {
+          "name": "${aws_account} - Kubernetes Container Waiting",
+          "type": "query alert",
+          "query": "max(last_5m):sum:kubernetes.containers.state.waiting{env:${aws_account}} by {kube_container_name,kube_namespace} > 1",
+          "message": "@pagerduty-Datadog @slack-alerts-${env}-infra \n{{kube_container_name.name}} in {{kube_namespace.name}} has {{value}} containers waiting.",
+          "tags": [
+            "terraform:true",
+            "env:${aws_account}"
+          ],
+          "options": {
+              "groupby_simple_monitor" : false,
+              "new_host_delay": 300,
+              "thresholds": {
+                  "critical": 1,
+                  "warning": 0.5
+              },
+              "notify_audit": false,
+              "include_tags": true,
+              "new_group_delay": 120,
+              "renotify_interval": 0,
+              "escalation_message": "",
+              "notify_no_data": false,
+              "silenced": {}
+          },
+          "priority": 1,
+          "restricted_roles": null
+      }
+  org_container_waiting:
+    enabled: false
+  temporal_schedule_to_start_timeout:
+    enabled: false
+  org_is_unhealthy:
+    enabled: false
+  database_running_low_on_free_space:
+    enabled: false
+  ctl_api_public_5xx_errors:
+    enabled: false
+  ctl_api_runner_5xx_errors:
+    enabled: false
+
+
+byoc_synthetics: {}
+synthetics: {}
+installer_synthetics:
+  installers: {}
+  config: {}

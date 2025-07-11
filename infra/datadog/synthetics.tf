@@ -1,5 +1,6 @@
 resource "datadog_synthetics_test" "main" {
-  for_each = local.vars.synthetics
+  # Only create resources if synthetics configuration exists
+  for_each = try(local.vars.synthetics, {})
 
   name      = each.value.name
   type      = each.value.type
@@ -36,39 +37,39 @@ resource "datadog_synthetics_test" "main" {
 }
 
 resource "datadog_synthetics_test" "installers" {
-  for_each = local.vars.installer_synthetics.installers
+  # Only create resources if installer_synthetics configuration exists
+  for_each = try(local.vars.installer_synthetics.installers, {})
 
   name      = "[${var.env}] Installer Uptime - ${each.key}"
-  type      = local.vars.installer_synthetics.config.type
-  subtype   = local.vars.installer_synthetics.config.subtype
-  status    = local.vars.installer_synthetics.config.status
-  message   = local.vars.installer_synthetics.config.message
-  locations = local.vars.installer_synthetics.config.locations
-  tags      = local.vars.installer_synthetics.config.tags
+  type      = try(local.vars.installer_synthetics.config.type, "api")
+  subtype   = try(local.vars.installer_synthetics.config.subtype, "http")
+  status    = try(local.vars.installer_synthetics.config.status, "paused")
+  message   = try(local.vars.installer_synthetics.config.message, "Installer uptime check")
+  locations = try(local.vars.installer_synthetics.config.locations, ["aws:us-east-1"])
+  tags      = try(local.vars.installer_synthetics.config.tags, [])
 
   request_definition {
-    method = local.vars.installer_synthetics.config.request_definition.method
+    method = try(local.vars.installer_synthetics.config.request_definition.method, "GET")
     url    = each.value
   }
 
-  request_headers = local.vars.installer_synthetics.config.request_headers
+  request_headers = try(local.vars.installer_synthetics.config.request_headers, {})
 
   assertion {
-    type     = local.vars.installer_synthetics.config.assertion.type
-    operator = local.vars.installer_synthetics.config.assertion.operator
-    target   = local.vars.installer_synthetics.config.assertion.target
+    type     = try(local.vars.installer_synthetics.config.assertion.type, "statusCode")
+    operator = try(local.vars.installer_synthetics.config.assertion.operator, "is")
+    target   = try(local.vars.installer_synthetics.config.assertion.target, "200")
   }
 
-
   options_list {
-    tick_every = local.vars.installer_synthetics.config.options_list.tick_every
+    tick_every = try(local.vars.installer_synthetics.config.options_list.tick_every, 900)
     retry {
-      count    = local.vars.installer_synthetics.config.options_list.retry.count
-      interval = local.vars.installer_synthetics.config.options_list.retry.interval
+      count    = try(local.vars.installer_synthetics.config.options_list.retry.count, 2)
+      interval = try(local.vars.installer_synthetics.config.options_list.retry.interval, 300)
     }
     monitor_options {
-      renotify_interval = local.vars.installer_synthetics.config.options_list.monitor_options.renotify_interval
+      renotify_interval = try(local.vars.installer_synthetics.config.options_list.monitor_options.renotify_interval, 120)
     }
-    monitor_priority = local.vars.installer_synthetics.config.options_list.monitor_priority
+    monitor_priority = try(local.vars.installer_synthetics.config.options_list.monitor_priority, 3)
   }
 }
