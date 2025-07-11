@@ -263,10 +263,16 @@ const BuildOptions: FC<{
             }}
             labelClassName="!px-6 !items-start"
             labelText={
-              <span className="flex flex-col gap-0">
+              <span className="flex flex-col gap-2">
                 <span className="flex gap-4">
                   <Text variant="med-12">Build ID: {build?.id}</Text>
                 </span>
+
+                {build?.vcs_connection_commit?.message ? (
+                  <Text className="!font-normal max-w-[500px]" isMuted>
+                    {build?.vcs_connection_commit?.message}
+                  </Text>
+                ) : null}
 
                 <span>
                   <Text className="!font-normal text-cool-grey-600 dark:text-white/70">

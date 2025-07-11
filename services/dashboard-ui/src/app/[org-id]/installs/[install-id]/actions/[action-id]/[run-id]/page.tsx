@@ -153,18 +153,18 @@ export default async function InstallWorkflow({ params }) {
             </Text>
           </span>
 
-          <ErrorBoundary fallback={<Text>Can&apso;t fetching job plan</Text>}>
-            <Suspense
+          {/* <ErrorBoundary fallback={<Text>Can&apso;t fetching job plan</Text>}>
+              <Suspense
               fallback={
-                <Loading variant="stack" loadingText="Loading job plan..." />
+              <Loading variant="stack" loadingText="Loading job plan..." />
               }
-            >
+              >
               <LoadRunnerJobPlan
-                orgId={orgId}
-                runnerJobId={workflowRun?.runner_job?.id}
+              orgId={orgId}
+              runnerJobId={workflowRun?.runner_job?.id}
               />
-            </Suspense>
-          </ErrorBoundary>
+              </Suspense>
+              </ErrorBoundary> */}
           {CANCEL_RUNNER_JOBS &&
           workflowRun?.runner_job?.id &&
           (workflowRun?.status === 'queued' ||
