@@ -37,18 +37,6 @@ additional_nodepools:
       budgets:
         - nodes: "50%"
 
-  - name: public-otel
-    instance_types:
-      - t3a.medium
-    limits:
-      cpu: 50
-      memory: "50Gi"
-    expireAfter: "24h"
-    disruption:
-      consolidateAfter: "3m"
-      budgets:
-        - nodes: "50%"
-
   - name: temporal
     instance_types:
       - t3a.medium
