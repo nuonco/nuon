@@ -27,13 +27,15 @@ services: |
 
   dashboard-ui:
     - services/dashboard-ui/**
+  
+  wiki:
+    - services/wiki/**
+    - wiki/**
 
 disabled_services: |
   dashboard-ui:
     - services/dashboard-ui/**
-  wiki:
-    - services/wiki/**
-    - wiki/**
+
   workers-infra-tests:
     - go.mod
     - go.sum

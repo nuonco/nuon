@@ -1,6 +1,6 @@
 ---
 port: 4321
-type: api
+type: service
 local_only: true
 env:
 env_secrets:
@@ -9,3 +9,6 @@ local_startup_cmds: []
 local_cmds:
   - npm run dev
 namespace: wiki
+sources:
+  - src: wiki/
+    dst: wiki/
