@@ -108,8 +108,6 @@ additional_nodepools:
   - name: ctl-api-worker
     instance_types:
       - t3a.medium
-    labels:
-      ctl-api-worker: "true"
     limits:
       cpu: 1000
       memory: "500Gi"
@@ -117,10 +115,7 @@ additional_nodepools:
     disruption:
       budgets:
         - nodes: "50%"
-    taints:
-      - effect: NoSchedule
-        key: deployment
-        value: ctl-api-worker
+      consolidateAfter: "15m"
     zones:
       - us-west-2a
       - us-west-2d
@@ -142,6 +137,7 @@ additional_nodepools:
     disruption:
       budgets:
         - nodes: 50%
+      consolidateAfter: "15m"
     zones:
       - us-west-2b
 
