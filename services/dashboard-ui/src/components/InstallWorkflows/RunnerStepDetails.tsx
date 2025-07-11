@@ -74,7 +74,9 @@ export const RunnerStepDetails: FC<IRunnerStepDetails> = ({
   return (
     <div className="flex flex-col gap-8">
       {isLoading ? (
-        <Loading loadingText="Loading runner details" variant="page" />
+        <div className="border rounded-md p-6">
+          <Loading loadingText="Loading runner details..." variant="stack" />
+        </div>
       ) : (
         <>
           {error ? <Notice>{error}</Notice> : null}{' '}
