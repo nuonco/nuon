@@ -10,6 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/worker/activities"
 	orgssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 
 	enumsv1 "go.temporal.io/api/enums/v1"
@@ -47,7 +48,7 @@ func (w *Workflows) RestartOrgEventLoops(ctx workflow.Context) error {
 	}
 
 	for _, org := range orgs {
-		w.ev.Send(ctx, org.ID, &orgssignals.Signal{
+		w.ev.Send(cctx.SetOrgIDWorkflowContext(ctx, org.ID), org.ID, &orgssignals.Signal{
 			Type: orgssignals.OperationRestart,
 		})
 		// mitigate thundering herd
