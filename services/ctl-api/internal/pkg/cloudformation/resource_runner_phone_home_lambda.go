@@ -43,7 +43,7 @@ func (a *Templates) getRunnerPhoneHomeLambda(inp *TemplateInput, t tagBuilder) *
 	// This is going to be moved into a cloudformation stack template and split out, with parameters for the body
 	return &lambda.Function{
 		Handler:     ptr("index.lambda_handler"),
-		Runtime:     ptr("python3.9"),
+		Runtime:     ptr("python3.12"),
 		Tags:        t.apply(nil, "phone-home-lambda"),
 		Description: ptr("Notify the Nuon API of the stack state."),
 		Code: &lambda.Function_Code{
