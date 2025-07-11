@@ -56,15 +56,21 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
         underline: (
           <div>
             <Text>
-              <ToolTip tipContent={b.id}>
-                <Text className="truncate text-ellipsis w-16" variant="mono-12">
+              <ToolTip tipContent={`Build ID: ${b.id}`}>
+                <Text
+                  className="truncate !block text-ellipsis w-16"
+                  variant="mono-12"
+                >
                   {b.id}
                 </Text>
               </ToolTip>
               <>
                 /{' '}
                 {b.component_name.length >= 12 ? (
-                  <ToolTip tipContent={b.component_name} alignment="right">
+                  <ToolTip
+                    tipContent={`Component: ${b.component_name}`}
+                    alignment="right"
+                  >
                     <Truncate variant="small">{b.component_name}</Truncate>
                   </ToolTip>
                 ) : (
@@ -72,11 +78,27 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
                 )}
               </>
             </Text>
-            {b?.created_by ? (
-              <Text className="text-cool-grey-600 dark:text-white/70 !text-[10px]">
+            <span className="flex flex-col gap-2 mt-2">
+              {b?.vcs_connection_commit?.message &&
+              b?.vcs_connection_commit?.sha ? (
+                <span>
+                  <ToolTip tipContent={`SHA: ${b?.vcs_connection_commit?.sha}`}>
+                    <Text
+                      className="truncate !block w-20 !text-[11px]"
+                      variant="mono-12"
+                    >
+                      # {b?.vcs_connection_commit?.sha}
+                    </Text>
+                  </ToolTip>
+                  <Text className="!text-[11px] font-normal pr-2" isMuted>
+                    {b?.vcs_connection_commit?.message}
+                  </Text>
+                </span>
+              ) : null}
+              <Text className="!text-[10px]" isMuted>
                 Build by: {b?.created_by?.email}
               </Text>
-            ) : null}
+            </span>
           </div>
         ),
         time: b.updated_at,

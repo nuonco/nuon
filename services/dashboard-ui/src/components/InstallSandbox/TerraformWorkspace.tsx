@@ -103,7 +103,7 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
         </Text>
       </span>,
       outputs[key]?.type === 'string' || outputs[key]?.type === 'number' ? (
-        <Code>{outputs[key]?.value}</Code>
+        <Code key={idx}>{outputs[key]?.value}</Code>
       ) : (
         <JsonView key={idx} data={outputs[key]?.value} />
       ),
