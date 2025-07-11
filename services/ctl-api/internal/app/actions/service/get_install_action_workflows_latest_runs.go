@@ -14,27 +14,26 @@ import (
 )
 
 // @ID						GetInstallActionWorkflowsLatestRuns
-// @Summary				get latest runs for all action workflows by install id
+// @Summary					get latest runs for all action workflows by install id
 // @Description.markdown	get_install_action_workflows_latest_run.md
-// @Param					install_id	path	string	true	"install ID"
-// @Param					trigger_types	query	string	false	"filter by action workflow trigger by types"
+// @Param					install_id	path			string	true	"install ID"
+// @Param					trigger_types				query	string	false	"filter by action workflow trigger by types"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
-// @Param         q					query	string	false	"search query for action workflow name"
-// @Param					page						query	int		false	"page number of results to return"	Default(0)
+// @Param		 			q							query	string	false	"search query for action workflow name"
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
 // @Tags					actions
 // @Accept					json
-// @Produce				json
+// @Produce					json
 // @Security				APIKey
 // @Security				OrgID
-// @Failure				400	{object}	stderr.ErrResponse
-// @Failure				401	{object}	stderr.ErrResponse
-// @Failure				403	{object}	stderr.ErrResponse
-// @Failure				404	{object}	stderr.ErrResponse
-// @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{array}		app.InstallActionWorkflow
+// @Failure					400	{object}	stderr.ErrResponse
+// @Failure					401	{object}	stderr.ErrResponse
+// @Failure					403	{object}	stderr.ErrResponse
+// @Failure					404	{object}	stderr.ErrResponse
+// @Failure					500	{object}	stderr.ErrResponse
+// @Success					200	{array}		app.InstallActionWorkflow
 // @Router					/v1/installs/{install_id}/action-workflows/latest-runs [get]
 func (s *service) GetInstallActionWorkflowsLatestRuns(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
