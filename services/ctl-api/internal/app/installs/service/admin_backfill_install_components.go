@@ -14,6 +14,7 @@ type AdminaBackfillInstallComponentsResponse struct {
 	InstallComponentIDs []string `json:"install_component_ids"`
 }
 
+// TODO: There's a typo here Admina
 // @ID						AdminaBackfillInstallComnponents
 // @Description.markdown	admin_backfill_install_components.md
 // @Tags					installs/admin
