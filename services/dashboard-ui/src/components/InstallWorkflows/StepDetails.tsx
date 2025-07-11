@@ -11,19 +11,26 @@ import { DeployStepDetails } from './DeployStepDetails'
 import { SandboxStepDetails } from './SandboxStepDetails'
 import { StackStep } from './StackStepDetails'
 import { RunnerStepDetails } from './RunnerStepDetails'
+import { RetryButtons } from './RetryButtons'
 import { Button } from '../Button'
 import { StatusBadge } from '../Status'
 
 export function getStepType(
   step: TInstallWorkflowStep,
   install: TInstall,
-  workflowApproveOption: "prompt" | "approve-all"
+  workflowApproveOption: 'prompt' | 'approve-all'
 ): React.ReactNode {
   let stepDetails = <Loading loadingText="Waiting on step..." variant="page" />
 
   switch (step.step_target_type) {
     case 'install_sandbox_runs':
-      stepDetails = <SandboxStepDetails step={step} shouldPoll workflowApproveOption={workflowApproveOption} />
+      stepDetails = (
+        <SandboxStepDetails
+          step={step}
+          shouldPoll
+          workflowApproveOption={workflowApproveOption}
+        />
+      )
       break
 
     case 'install_stack_versions':
@@ -38,7 +45,13 @@ export function getStepType(
       stepDetails = <RunnerStepDetails step={step} shouldPoll />
       break
     case 'install_deploys':
-      stepDetails = <DeployStepDetails step={step} shouldPoll workflowApproveOption={workflowApproveOption} />
+      stepDetails = (
+        <DeployStepDetails
+          step={step}
+          shouldPoll
+          workflowApproveOption={workflowApproveOption}
+        />
+      )
       break
     default:
       stepDetails = (
@@ -77,22 +90,28 @@ export function getStepType(
           />{' '}
           <Text variant="med-18">{sentanceCase(step?.name)}</Text>
         </hgroup>
-        {step?.status?.metadata?.reason && step?.status?.metadata?.reason !== "" ? (
+        {step?.status?.metadata?.reason &&
+        step?.status?.metadata?.reason !== '' ? (
           <Notice
             variant={
               step?.status?.status === 'cancelled' ||
-                step?.status?.status === 'approval-denied' ||
-                step.execution_type === 'skipped'
+              step?.status?.status === 'approval-denied' ||
+              step.execution_type === 'skipped'
                 ? 'warn'
-                : step?.status?.status === 'discarded' || step?.status?.status === 'user-skipped'
-                  ? "info" : step?.status?.status === 'error'
+                : step?.status?.status === 'discarded' ||
+                    step?.status?.status === 'user-skipped'
+                  ? 'info'
+                  : step?.status?.status === 'error'
                     ? 'error'
                     : 'default'
             }
             className="!p-4 w-full"
           >
             <Text variant="med-14" className="mb-2">
-              {sentanceCase(step?.status?.status_human_description as string || "Component deployment failed.")}
+              {sentanceCase(
+                (step?.status?.status_human_description as string) ||
+                  'Component deployment failed.'
+              )}
             </Text>
             <Text isMuted>
               {sentanceCase(step?.status?.metadata?.reason as string)}
@@ -116,7 +135,8 @@ export function getStepType(
             </div>
           }
         />
-      </div >
+        <RetryButtons step={step} />
+      </div>
     </>
   )
 }

@@ -71,7 +71,12 @@ export const ActionStepDetails: FC<IPollStepDetails> = ({
   return (
     <>
       {isLoading ? (
-        <Loading loadingText="Loading action run details..." variant="page" />
+        <div className="border rounded-md p-6">
+          <Loading
+            loadingText="Loading action run details..."
+            variant="stack"
+          />
+        </div>
       ) : (
         <>
           {error ? <Notice>{error}</Notice> : null}
