@@ -68,6 +68,10 @@ export default async function InstallWorkflow({ params }) {
           <YAStatus status={installWorkflow?.status?.status} />
           {installWorkflow?.name ||
             removeSnakeCase(sentanceCase(installWorkflow?.type))}
+          {installWorkflow?.type === 'action_workflow_run' &&
+          installWorkflow?.metadata?.install_action_workflow_name
+            ? ` (${installWorkflow?.metadata?.install_action_workflow_name})`
+            : ' '}
           {installWorkflow?.plan_only ? (
             <Badge className="!text-[11px] ml-2" variant="code">
               Plan only
