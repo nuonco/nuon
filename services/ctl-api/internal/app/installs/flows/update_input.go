@@ -18,7 +18,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 
 	changedInputsRaw := generics.FromPtrStr(flw.Metadata["inputs"])
-	changeInputs := strings.Split(changedInputsRaw, ",")
+	changedInputs := strings.Split(changedInputsRaw, ",")
 
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
@@ -40,10 +40,14 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	}
 
 	var changedRefs []refs.Ref
-	for _, input := range changeInputs {
+	for _, input := range changedInputs {
 		changedRefs = append(changedRefs, refs.Ref{
 			Name: input,
 			Type: refs.RefTypeInputs,
+		})
+		changedRefs = append(changedRefs, refs.Ref{
+			Name: input,
+			Type: refs.RefTypeInstallInputs,
 		})
 	}
 
@@ -88,6 +92,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 func getComponentsForChangedInputs(appConfig *app.AppConfig, changedRefs *[]refs.Ref) []app.Component {
 	components := make([]app.Component, 0)
+
 	for _, conConfigs := range appConfig.ComponentConfigConnections {
 		for _, ref := range conConfigs.Refs {
 			for _, changedRef := range *changedRefs {
