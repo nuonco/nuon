@@ -107,8 +107,17 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/installs/:install_id/events", s.GetInstallEvents)
 	api.GET("/v1/installs/:install_id/events/:event_id", s.GetInstallEvent)
 
-	// install workflows
-	api.GET("/v1/installs/:install_id/workflows", s.GetInstallWorkflows)
+	// workflows
+	api.GET("/v1/installs/:install_id/workflows", s.GetWorkflows)
+	api.GET("/v1/workflows/:workflow_id", s.GetWorkflow)
+	api.PATCH("/v1/workflows/:workflow_id", s.UpdateWorkflow)
+	api.GET("/v1/workflows/:workflow_id/steps", s.GetWorkflowSteps)
+	api.GET("/v1/workflows/:workflow_id/steps/:workflow_step_id", s.GetWorkflowStep)
+	api.POST("/v1/workflows/:workflow_id/cancel", s.CancelWorkflow)
+	api.GET("/v1/workflows/:workflow_id/steps/:workflow_step_id/approvals/:approval_id", s.GetWorkflowStepApproval)
+	api.POST("/v1/workflows/:workflow_id/steps/:workflow_step_id/approvals/:approval_id/response", s.CreateWorkflowStepApprovalResponse)
+
+	// deprecated
 	api.GET("/v1/install-workflows/:install_workflow_id", s.GetInstallWorkflow)
 	api.PATCH("/v1/install-workflows/:install_workflow_id", s.UpdateInstallWorkflow)
 	api.GET("/v1/install-workflows/:install_workflow_id/steps", s.GetInstallWorkflowSteps)
