@@ -25,7 +25,7 @@ func New(v *validator.Validate, apiClient nuon.Client, cfg *config.Config) *Serv
 	}
 }
 
-func (s *Service) getAppID() (string) {
+func (s *Service) getAppID() string {
 	appID := s.cfg.GetString("app_id")
 	if appID == "" {
 		return ""
@@ -34,6 +34,16 @@ func (s *Service) getAppID() (string) {
 }
 
 func (s *Service) setAppID(ctx context.Context, appID string) error {
+	getCurrentAppID := s.cfg.GetString("app_id")
+	if getCurrentAppID == appID {
+		return nil
+	}
+
+	err := s.unsetAppID(ctx)
+	if err != nil {
+		return err
+	}
+
 	s.cfg.Set("app_id", appID)
 	return s.cfg.WriteConfig()
 }
