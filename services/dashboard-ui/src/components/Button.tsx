@@ -50,7 +50,7 @@ export const Button = forwardRef<HTMLButtonElement, IButton>(
             'text-gray-50 px-5 border-transparent font-medium':
               variant === 'primary' || variant === 'danger',
             'px-3 py-1.5': !hasCustomPadding,
-            'cursor-not-allowed text-cool-grey-500 dark:text-cool-grey-600 hover:!bg-transparent':
+            'cursor-not-allowed !text-cool-grey-500 dark:!text-cool-grey-600 !bg-white dark:!bg-dark-grey-200':
               props.disabled && variant !== 'primary' && variant !== 'danger',
             'cursor-not-allowed !text-cool-grey-500 !bg-primary-900 hover:!bg-primary-900':
               props.disabled && variant === 'primary',
