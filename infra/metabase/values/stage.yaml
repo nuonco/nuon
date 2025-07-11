@@ -6,3 +6,5 @@ env:
 
 api:
   domain: metabase.nuon.us-west-2.stage.nuon.cloud
+  autoscaling:
+    maxReplicas: 3
