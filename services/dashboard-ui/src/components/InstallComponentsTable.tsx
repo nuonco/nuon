@@ -122,6 +122,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         cell: (props) =>
           props.getValue<string>() ? (
             <StatusBadge
+              shouldPoll={props?.row.index === 0}
               status={props.getValue<string>()}
               description={props.row?.original?.build_status_description}
               descriptionAlignment="right"

@@ -60,7 +60,9 @@ export const StackStep: FC<IStackStepDetails> = ({
   return (
     <>
       {isLoading ? (
-        <Loading loadingText="Loading stack details..." variant="page" />
+        <div className="border rounded-md p-6">
+          <Loading loadingText="Loading stack details..." variant="stack" />
+        </div>
       ) : (
         <>
           {error ? <Notice>{error}</Notice> : null}
