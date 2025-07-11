@@ -55,7 +55,9 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
   return (
     <>
       {isLoading ? (
-        <Loading loadingText="Loading deploy details..." variant="page" />
+        <div className="border rounded-md p-6">
+          <Loading loadingText="Loading deploy details..." variant="stack" />
+        </div>
       ) : (
         <>
           {error ? <Notice>{error}</Notice> : null}
@@ -99,12 +101,16 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
                       <span className="flex gap-4 items-center">
                         <StatusBadge
                           description={
-                            deploy?.status_v2?.status_human_description || deploy?.status
+                            deploy?.status_v2?.status_human_description ||
+                            deploy?.status
                           }
-                          status={deploy?.status_v2?.status || deploy?.status_description}
+                          status={
+                            deploy?.status_v2?.status ||
+                            deploy?.status_description
+                          }
                           label="Deployment status"
                         />
-                      </span>                      
+                      </span>
                     </div>
                   </div>
                 ) : null}
