@@ -23,6 +23,16 @@ func New(apiClient nuon.Client, cfg *config.Config) *Service {
 }
 
 func (s *Service) setOrgID(ctx context.Context, orgID string) error {
+	getCurrentOrgID := s.cfg.GetString("org_id")
+	if getCurrentOrgID == orgID {
+		return nil
+	}
+
+	err := s.unsetOrgID(ctx)
+	if err != nil {
+		return err
+	}
+
 	s.cfg.Set("org_id", orgID)
 	return s.cfg.WriteConfig()
 }
