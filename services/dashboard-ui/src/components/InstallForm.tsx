@@ -350,6 +350,7 @@ const InputGroupFields: FC<{
             >
               <div />
               <div className="ml-1">
+                <input type="hidden" name={`inputs:${input?.name}`} value="off" />
                 <CheckboxInput
                   labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0"
                   labelTextClassName="!text-base !font-normal"
