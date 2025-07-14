@@ -6,6 +6,7 @@ import {
   ErrorFallback,
   NoApps,
   Loading,
+  Notice,
   OrgAppsTable,
   Pagination,
   Section,
@@ -40,7 +41,11 @@ export default async function Apps({ params, searchParams }) {
                 <Loading variant="page" loadingText="Loading apps..." />
               }
             >
-              <LoadApps orgId={orgId} offset={sp['offset'] || '0'} />
+              <LoadApps
+                orgId={orgId}
+                offset={sp['offset'] || '0'}
+                q={sp['q'] || ''}
+              />
             </Suspense>
           </ErrorBoundary>
         </Section>
@@ -53,8 +58,9 @@ const LoadApps: FC<{
   orgId: string
   limit?: string
   offset?: string
-}> = async ({ orgId, limit = '10', offset }) => {
-  const params = new URLSearchParams({ offset, limit }).toString()
+  q?: string
+}> = async ({ orgId, limit = '10', offset, q }) => {
+  const params = new URLSearchParams({ offset, limit, q }).toString()
   const {
     data: apps,
     error,
@@ -72,7 +78,9 @@ const LoadApps: FC<{
     offset: headers?.get('x-nuon-page-offset') || '0',
   }
 
-  return apps?.length && !error ? (
+  return error ? (
+    <Notice>Can&apos;t load apps: {error?.error}</Notice>
+  ) : apps ? (
     <div className="flex flex-col gap-4 w-full">
       <OrgAppsTable apps={apps} orgId={orgId} />
       <Pagination

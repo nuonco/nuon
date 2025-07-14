@@ -8,12 +8,13 @@ import {
   BuildAllComponentsButton,
   ComponentConfigType,
   ComponentDependencies,
-  ComponentTypeFilterDropdown,
   type TComponentConfigType,
 } from '@/components/Components'
+import { ComponentTypeFilterDropdown } from '@/components/Components/NewComponentTypeFilter'
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
 import { DataTableSearch, Table } from '@/components/DataTable'
+import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
 import { ID, Text } from '@/components/Typography'
 // eslint-disable-next-line import/no-cycle
 import type { TBuild, TComponent, TComponentConfig } from '@/types'
@@ -202,10 +203,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
       header={
         <div className="flex-auto flex flex-col gap-2">
           <div className="w-full flex items-start justify-between">
-            <DataTableSearch
-              handleOnChange={handleGlobleFilter}
-              value={globalFilter}
-            />
+            <DebouncedSearchInput placeholder="Search component name" />
 
             <div className="flex items-center gap-4">
               <AppConfigGraph appId={appId} configId={configId} />

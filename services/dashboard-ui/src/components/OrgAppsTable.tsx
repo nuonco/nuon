@@ -5,6 +5,7 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight, Minus } from '@phosphor-icons/react'
 import { AppSandboxRepoDirLink } from '@/components/AppSandbox'
 import { DataTableSearch, Table } from '@/components/DataTable'
+import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
 import { InstallPlatform } from '@/components/InstallCloudPlatform'
 import { Link } from '@/components/Link'
 import { ID, Text } from '@/components/Typography'
@@ -128,10 +129,7 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
     <Table
       header={
         <>
-          <DataTableSearch
-            handleOnChange={handleGlobleFilter}
-            value={globalFilter}
-          />
+          <DebouncedSearchInput placeholder="Search app name" />
         </>
       }
       data={data}
