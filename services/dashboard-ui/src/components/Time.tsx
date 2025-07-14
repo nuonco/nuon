@@ -3,17 +3,25 @@
 import { DateTime, Duration as LuxonDuration, type DurationUnits } from 'luxon'
 import React, { type FC } from 'react'
 import { Minus } from '@phosphor-icons/react'
+import { ToolTip, IToolTip } from '@/components/ToolTip'
 import { Text, type IText } from '@/components/Typography'
 
 export interface ITime extends Omit<IText, 'role'> {
   format?: 'default' | 'long' | 'relative' | 'time-only'
   time?: string
+  position?: IToolTip['position']
+  alignment?: IToolTip['alignment']
 }
 
-export const Time: FC<ITime> = ({ format, time, ...props }) => {
+export const Time: FC<ITime> = ({
+  alignment,
+  format,
+  time,
+  position,
+  ...props
+}) => {
   const datetime = time ? DateTime.fromISO(time) : DateTime.now()
-
-  return (
+  const TimeComp = (
     <Text {...props} role="time">
       {format === 'relative'
         ? datetime.toRelative()
@@ -25,6 +33,18 @@ export const Time: FC<ITime> = ({ format, time, ...props }) => {
                 : DateTime.DATETIME_SHORT_WITH_SECONDS
           )}
     </Text>
+  )
+
+  return format === 'relative' ? (
+    <ToolTip
+      tipContent={datetime.toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)}
+      alignment={alignment}
+      position={position}
+    >
+      {TimeComp}
+    </ToolTip>
+  ) : (
+    TimeComp
   )
 }
 
