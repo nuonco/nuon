@@ -8,6 +8,7 @@ import { InstallsTableStatusFilter } from '@/components/InstallsTableStatusFilte
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
 import { DataTableSearch, Table } from '@/components/DataTable'
+import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
 import { ID, Text } from '@/components/Typography'
 import type { TInstall } from '@/types'
 import { AWS_REGIONS, AZURE_REGIONS, getFlagEmoji } from '@/utils'
@@ -208,10 +209,7 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
     <Table
       header={
         <>
-          <DataTableSearch
-            handleOnChange={handleGlobleFilter}
-            value={globalFilter}
-          />         
+          <DebouncedSearchInput placeholder="Search install name" />
         </>
       }
       data={data}

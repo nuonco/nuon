@@ -18,7 +18,7 @@ export const DebouncedSearchInput: FC<IDebouncedSearchInput> = ({
   searchParamKey = 'q',
   initialValue,
   placeholder = 'Search…',
-  debounceMs = 400,
+  debounceMs = 200,
   className,
   onDebouncedChange,
 }) => {
