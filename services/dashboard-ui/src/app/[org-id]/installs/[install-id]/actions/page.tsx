@@ -11,6 +11,7 @@ import {
   ErrorFallback,
   Loading,
   NoActions,
+  Notice,
   Pagination,
   Section,
   Text,
@@ -120,7 +121,9 @@ const LoadInstallActions: FC<{
     offset: headers?.get('x-nuon-page-offset') || '0',
   }
 
-  return actionsWithLatestRun && !error ? (
+  return error ? (
+    <Notice>Can&apos;t load install actions: {error?.error}</Notice>
+  ) : actionsWithLatestRun ? (
     <div className="flex flex-col gap-4 w-full">
       <InstallActionWorkflowsTable
         actions={actionsWithLatestRun}
