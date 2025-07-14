@@ -9,6 +9,7 @@ import {
   ErrorFallback,
   Loading,
   NoActions,
+  Notice,
   Pagination,
   Section,
 } from '@/components'
@@ -65,6 +66,7 @@ export default async function AppWorkflows({ params, searchParams }) {
               appId={appId}
               orgId={orgId}
               offset={sp['offset'] || '0'}
+              q={sp['q'] || ''}
             />
           </Suspense>
         </ErrorBoundary>
@@ -78,8 +80,9 @@ const LoadAppActions: FC<{
   orgId: string
   limit?: string
   offset?: string
-}> = async ({ appId, orgId, limit = '10', offset }) => {
-  const params = new URLSearchParams({ offset, limit }).toString()
+  q?: string
+}> = async ({ appId, orgId, limit = '10', offset, q }) => {
+  const params = new URLSearchParams({ offset, limit, q }).toString()
   const {
     data: actions,
     error,
@@ -96,7 +99,9 @@ const LoadAppActions: FC<{
     hasNext: headers?.get('x-nuon-page-next') || 'false',
     offset: headers?.get('x-nuon-page-offset') || '0',
   }
-  return actions && actions?.length && !error ? (
+  return error ? (
+    <Notice>Can&apos;t load actions: {error?.error}</Notice>
+  ) : actions ? (
     <div className="flex flex-col gap-4 w-full">
       <AppWorkflowsTable appId={appId} orgId={orgId} workflows={actions} />
       <Pagination

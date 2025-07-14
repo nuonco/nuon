@@ -8,6 +8,7 @@ import {
   DashboardContent,
   ErrorFallback,
   Loading,
+  Notice,
   NoInstalls,
   Pagination,
   Section,
@@ -66,6 +67,7 @@ export default async function AppInstalls({ params, searchParams }) {
               appId={appId}
               orgId={orgId}
               offset={sp['offset'] || '0'}
+              q={sp['q'] || ''}
             />
           </Suspense>
         </ErrorBoundary>
@@ -80,8 +82,9 @@ const LoadAppInstalls: FC<{
   orgId: string
   limit?: string
   offset?: string
-}> = async ({ app, appId, orgId, limit = '10', offset }) => {
-  const params = new URLSearchParams({ offset, limit }).toString()
+  q?: string
+}> = async ({ app, appId, orgId, limit = '10', offset, q }) => {
+  const params = new URLSearchParams({ offset, limit, q }).toString()
   const {
     data: installs,
     error,
@@ -99,7 +102,9 @@ const LoadAppInstalls: FC<{
     offset: headers?.get('x-nuon-page-offset') || '0',
   }
 
-  return installs?.length && !error ? (
+  return error ? (
+    <Notice>Can&apos;t load installs: {error?.error}</Notice>
+  ) : installs ? (
     <div className="flex flex-col gap-8 w-full">
       <AppInstallsTable
         installs={installs.map((install) => ({ ...install, app }))}
