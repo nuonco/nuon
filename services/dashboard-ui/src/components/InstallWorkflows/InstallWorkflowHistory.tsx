@@ -142,7 +142,7 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                     variant="reg-12"
                     className="text-cool-grey-600 dark:text-white/70 self-end justify-self-end"
                   >
-                    <Time time={iw.created_at} format="relative" />
+                    <Time time={iw.created_at} format="relative" alignment="right" />
                   </Text>
                 </Link>
               ) : (
