@@ -5,10 +5,10 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight } from '@phosphor-icons/react'
 import { CreateInstallModal } from '@/components/Installs'
 import { InstallPlatform } from '@/components/InstallCloudPlatform'
-import { InstallsTableStatusFilter } from '@/components/InstallsTableStatusFilter'
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
-import { DataTableSearch, Table } from '@/components/DataTable'
+import { Table } from '@/components/DataTable'
+import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
 import { ID, Text } from '@/components/Typography'
 import { AWS_REGIONS, AZURE_REGIONS, getFlagEmoji } from '@/utils'
 // eslint-disable-next-line import/no-cycle
@@ -214,12 +214,9 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
     <Table
       header={
         <>
-          <DataTableSearch
-            handleOnChange={handleGlobleFilter}
-            value={globalFilter}
-          />
+          <DebouncedSearchInput placeholder="Search install name" />
 
-          <div className="flex items-center gap-4">            
+          <div className="flex items-center gap-4">
             <CreateInstallModal />
           </div>
         </>
