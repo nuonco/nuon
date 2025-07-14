@@ -107,6 +107,7 @@ export const TimelineEvent: FC<ITimelineEvent> = ({
           </span>
           <span className="flex items-center justify-end gap-0.5 min-w-[100px]">
             <Time
+              alignment="right"
               time={time}
               format="relative"
               variant="reg-12"
