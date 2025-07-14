@@ -5,6 +5,7 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight } from '@phosphor-icons/react'
 import { Badge } from '@/components/Badge'
 import { Link } from '@/components/Link'
+import { DebouncedSearchInput } from "@/components/DebouncedSearchInput"
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { ID, Text } from '@/components/Typography'
 import type {
@@ -130,10 +131,7 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
     <Table
       header={
         <>
-          <DataTableSearch
-            handleOnChange={handleGlobleFilter}
-            value={globalFilter}
-          />
+          <DebouncedSearchInput placeholder="Search aciton name" />
         </>
       }
       data={data}

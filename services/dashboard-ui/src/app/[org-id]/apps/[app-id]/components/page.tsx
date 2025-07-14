@@ -9,6 +9,7 @@ import {
   ErrorFallback,
   Loading,
   NoComponents,
+  Notice,
   Pagination,
   Section,
 } from '@/components'
@@ -67,6 +68,8 @@ export default async function AppComponents({ params, searchParams }) {
               configId={appConfig?.id}
               orgId={orgId}
               offset={sp['offset'] || '0'}
+              q={sp['q'] || ''}
+              types={sp['types'] || ''}
             />
           </Suspense>
         </ErrorBoundary>
@@ -81,8 +84,10 @@ const LoadAppComponents: FC<{
   orgId: string
   limit?: string
   offset?: string
-}> = async ({ appId, configId, orgId, limit = '10', offset }) => {
-  const params = new URLSearchParams({ offset, limit }).toString()
+  q?: string
+  types?: string
+}> = async ({ appId, configId, orgId, limit = '10', offset, q, types }) => {
+  const params = new URLSearchParams({ offset, limit, q, types }).toString()
   const {
     data: components,
     error,
@@ -124,7 +129,9 @@ const LoadAppComponents: FC<{
     offset: headers?.get('x-nuon-page-offset') || '0',
   }
 
-  return components?.length && !error ? (
+  return error ? (
+    <Notice>Can&apos;t load components: {error?.error}</Notice>
+  ) : components ? (
     <div className="flex flex-col gap-4 w-full">
       <AppComponentsTable
         components={hydratedComponents}
