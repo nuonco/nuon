@@ -122,6 +122,11 @@
     "global": {
       "anchors": [
         {
+          "anchor": "Nuon.co",
+          "href": "https://nuon.co/",
+          "icon": "globe"
+        },
+        {
           "anchor": "GitHub",
           "href": "https://github.com/nuonco",
           "icon": "github"
@@ -137,6 +142,13 @@
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.nuon.co/"
+    }
   },
   "api": {
     "openapi": "https://api.nuon.co/oapi/v3"
