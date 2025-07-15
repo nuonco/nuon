@@ -1,4 +1,4 @@
-package flows
+package workflows
 
 import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"

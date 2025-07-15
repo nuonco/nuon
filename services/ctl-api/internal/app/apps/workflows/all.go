@@ -1,9 +1,9 @@
-package flows
+package workflows
 
 import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 const (
-	FlowTypeAppBranchUpdate app.WorkflowType = "app_branch_update"
+	WorkflowTypeAppBranchUpdate app.WorkflowType = "app_branch_update"
 )

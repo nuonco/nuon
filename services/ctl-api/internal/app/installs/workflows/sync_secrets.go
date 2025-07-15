@@ -1,4 +1,4 @@
-package flows
+package workflows
 
 import (
 	"github.com/jackc/pgx/v5/pgtype"
