@@ -22,8 +22,7 @@ type AppBranch struct {
 	AppID string `json:"app_id,omitzero" gorm:"notnull;index:idx_app_app_branch" temporaljson:"app_id,omitzero,omitempty"`
 	App   App    `faker:"-" json:"-" temporaljson:"app,omitzero,omitempty"`
 
-	VCSConnectionBranchID string              `json:"vcs_connection_branch_id,omitzero" gorm:"notnull;unique" temporaljson:"vcs_connection_branch_id,omitzero,omitempty"`
-	VCSConnectionBranch   VCSConnectionBranch `json:"vcs_connection_branch,omitzero" temporaljson:"vcs_connection_branch,omitzero,omitempty"`
+	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 }
 
 func (a *AppBranch) BeforeCreate(tx *gorm.DB) error {

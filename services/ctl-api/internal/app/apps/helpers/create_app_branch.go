@@ -9,9 +9,8 @@ import (
 
 func (h *Helpers) CreateAppBranch(ctx context.Context, orgID, appID, vcsConnectionBranchID string) (*app.AppBranch, error) {
 	branch := app.AppBranch{
-		OrgID:                 orgID,
-		AppID:                 appID,
-		VCSConnectionBranchID: vcsConnectionBranchID,
+		OrgID: orgID,
+		AppID: appID,
 	}
 
 	res := h.db.WithContext(ctx).Create(&branch)
@@ -21,4 +20,3 @@ func (h *Helpers) CreateAppBranch(ctx context.Context, orgID, appID, vcsConnecti
 
 	return &branch, nil
 }
-
