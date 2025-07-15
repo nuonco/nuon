@@ -8,9 +8,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/flows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/flow"
 )
@@ -34,18 +34,18 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 
 func (w *Workflows) getWorkflowStepGenerators(ctx workflow.Context) map[app.WorkflowType]flow.WorkflowStepGenerator {
 	return map[app.WorkflowType]flow.WorkflowStepGenerator{
-		app.WorkflowTypeManualDeploy:       flows.ManualDeploySteps,
-		app.WorkflowTypeDeployComponents:   flows.DeployAllComponents,
-		app.WorkflowTypeTeardownComponent:  flows.TeardownComponent,
-		app.WorkflowTypeTeardownComponents: flows.TeardownComponents,
-		app.WorkflowTypeInputUpdate:        flows.InputUpdate,
-		app.WorkflowTypeActionWorkflowRun:  flows.RunActionWorkflow,
-		app.WorkflowTypeProvision:          flows.Provision,
-		app.WorkflowTypeReprovision:        flows.Reprovision,
-		app.WorkflowTypeReprovisionSandbox: flows.ReprovisionSandbox,
-		app.WorkflowTypeDeprovision:        flows.Deprovision,
-		app.WorkflowTypeDeprovisionSandbox: flows.DeprovisionSandbox,
-		app.WorkflowTypeSyncSecrets:        flows.SyncSecrets,
+		app.WorkflowTypeManualDeploy:       workflows.ManualDeploySteps,
+		app.WorkflowTypeDeployComponents:   workflows.DeployAllComponents,
+		app.WorkflowTypeTeardownComponent:  workflows.TeardownComponent,
+		app.WorkflowTypeTeardownComponents: workflows.TeardownComponents,
+		app.WorkflowTypeInputUpdate:        workflows.InputUpdate,
+		app.WorkflowTypeActionWorkflowRun:  workflows.RunActionWorkflow,
+		app.WorkflowTypeProvision:          workflows.Provision,
+		app.WorkflowTypeReprovision:        workflows.Reprovision,
+		app.WorkflowTypeReprovisionSandbox: workflows.ReprovisionSandbox,
+		app.WorkflowTypeDeprovision:        workflows.Deprovision,
+		app.WorkflowTypeDeprovisionSandbox: workflows.DeprovisionSandbox,
+		app.WorkflowTypeSyncSecrets:        workflows.SyncSecrets,
 	}
 }
 
