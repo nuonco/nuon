@@ -18,10 +18,6 @@ func NewAppBranchID() string {
 	return shortid.NewNanoID("abr")
 }
 
-func NewAppConfigSyncRunID() string {
-	return shortid.NewNanoID("asr")
-}
-
 func NewAccountID() string {
 	return shortid.NewNanoID("acc")
 }
@@ -292,14 +288,6 @@ func NewVCSConnectionID() string {
 
 func NewVCSID() string {
 	return shortid.NewNanoID("vcs")
-}
-
-func NewVCSBranchID() string {
-	return shortid.NewNanoID("vcb")
-}
-
-func NewComponentGithubPushID() string {
-	return shortid.NewNanoID("cgp")
 }
 
 func NewSandboxID() string {
