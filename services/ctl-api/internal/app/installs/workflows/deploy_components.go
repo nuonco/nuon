@@ -1,4 +1,4 @@
-package flows
+package workflows
 
 import (
 	"github.com/pkg/errors"
