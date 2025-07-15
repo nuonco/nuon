@@ -54,7 +54,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.PATCH("/v1/apps/:app_id/config/:app_config_id", s.UpdateAppConfig)
 	api.POST("/v1/apps/:app_id/config/:app_config_id/update-installs", s.UpdateAppConfigInstalls)
 	api.GET("/v1/apps/:app_id/config/:app_config_id/graph", s.GetAppConfigGraph)
-	api.GET("/v1/apps/:app_id/config-sync-run/:app_config_sync_run_id", s.GetAppConfigSyncRun)
 
 	// app sandbox management
 	api.POST("/v1/apps/:app_id/sandbox-config", s.CreateAppSandboxConfig)
@@ -124,7 +123,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.GET("/v1/apps/:app_id/config/:app_config_id", s.GetRunnerAppConfig)
-	api.GET("/v1/apps/:app_id/config-sync-run/:app_config_sync_run_id", s.GetAppConfigSyncRun)
 	return nil
 }
 
