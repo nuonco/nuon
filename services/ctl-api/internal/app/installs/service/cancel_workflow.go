@@ -61,7 +61,7 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 		ctx.JSON(http.StatusAccepted, true)
 	}
 
-	id := fmt.Sprintf("sig-execute-flow-%s", wf.InstallID)
+	id := fmt.Sprintf("sig-execute-flow-%s", wf.InstallID.ValueString())
 	err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to cancel workflow: %w", err))
@@ -119,7 +119,7 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 		ctx.JSON(http.StatusAccepted, true)
 	}
 
-	id := fmt.Sprintf("sig-execute-flow-%s", wf.InstallID)
+	id := fmt.Sprintf("sig-execute-flow-%s", wf.InstallID.ValueString())
 	err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to cancel install workflow: %w", err))

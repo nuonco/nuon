@@ -28,5 +28,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "088-accounts-email-not-empty",
 			Fn:   m.Migration088AccountsEmailsNotEmpty,
 		},
+		{
+			Name: "089-app-branches-cleanup",
+			Fn:   m.Migration089AppBracnhesCleanup,
+		},
 	}
 }
