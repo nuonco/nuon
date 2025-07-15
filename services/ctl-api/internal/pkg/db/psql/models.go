@@ -28,11 +28,8 @@ func AllModels() []interface{} {
 		&app.InstallerMetadata{},
 
 		// vcs basics
-		&app.VCSConnectionBranch{},
 		&app.VCSConnection{},
 		&app.VCSConnectionCommit{},
-		&app.VCSConnectionPullRequest{},
-		&app.VCSConnectionRepo{},
 
 		// apps
 		&app.App{},
@@ -54,7 +51,6 @@ func AllModels() []interface{} {
 		&app.AppAWSIAMPolicyConfig{},
 		&app.AppBreakGlassConfig{},
 		&app.AppStackConfig{},
-		&app.AppConfigSyncRun{},
 
 		// installs
 		&app.AWSAccount{},
@@ -91,8 +87,6 @@ func AllModels() []interface{} {
 		&app.ComponentBuild{},
 		&app.ComponentRelease{},
 		&app.ComponentReleaseStep{},
-		&app.ComponentBuildConnection{},
-		&app.ComponentPush{},
 
 		// install management
 		&app.InstallDeploy{},
