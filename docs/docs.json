@@ -35,8 +35,7 @@
       {
         "tab": "Changelog",
         "pages": [
-          "updates/updates",
-          "updates/012-approval-diffs-plan-only",          
+          "updates/updates",        
           "updates/011-approval-updates",
           "updates/010-approvals",
           "updates/009-action-triggers-secrets-configs",
