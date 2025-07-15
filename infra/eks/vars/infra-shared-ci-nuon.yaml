@@ -28,5 +28,5 @@ additional_nodepools:
       memory: "40Gi"
     expireAfter: "Never"
     disruption:
-      consolidationPolicy: "WhenEmptyOrUnderutilized"
+      consolidationPolicy: "WhenEmpty"
       consolidateAfter: "30m"
