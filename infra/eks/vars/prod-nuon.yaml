@@ -120,10 +120,6 @@ additional_nodepools:
           - "Underutilized"
       consolidationPolicy: "WhenEmptyOrUnderutilized"
       consolidateAfter: "5m"
-    taints:
-      - effect: NoSchedule
-        key: deployment
-        value: ctl-api-worker
     zones:
       - us-west-2a
 
