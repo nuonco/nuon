@@ -8,10 +8,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/loop"
 )
 
-func noop(ctx workflow.Context, sreq signals.RequestSignal) error {
-	return nil
-}
-
 func (w *Workflows) GetHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
 		signals.OperationDeprovisionSandboxPlan:      AwaitDeprovisionSandboxPlan,
@@ -22,9 +18,6 @@ func (w *Workflows) GetHandlers() map[eventloop.SignalType]func(workflow.Context
 
 		signals.OperationProvisionSandboxPlan:      AwaitProvisionSandboxPlan,
 		signals.OperationProvisionSandboxApplyPlan: AwaitProvisionSandboxApplyPlan,
-
-		signals.OperationRestart: noop,
-		signals.OperationCreated: noop,
 	}
 }
 
