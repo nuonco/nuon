@@ -56,5 +56,3 @@ func New(params Params) Client {
 		v:  params.V,
 	}
 }
-
-// func SendAsConcurrentGroup()
