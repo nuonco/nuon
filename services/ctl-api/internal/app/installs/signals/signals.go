@@ -137,9 +137,6 @@ type Signal struct {
 	// used for awaiting the run
 	InstallCloudFormationStackVersionID string `json:"install_cloud_formation_stack_version_id"`
 
-	// TODO(sdboyer) hack to let the caller specify which event loop to start. Only used in restarts.
-	EventLoopWorkflowType string `json:"event_loop_workflow_type"`
-
 	// used for sandbox runs
 
 	eventloop.BaseSignal
@@ -158,13 +155,6 @@ type RequestSignal struct {
 }
 
 var _ eventloop.Signal = (*Signal)(nil)
-
-func (s *Signal) WorkflowName() string {
-	if s.EventLoopWorkflowType == "" {
-		return "EventLoop"
-	}
-	return s.EventLoopWorkflowType
-}
 
 func (s *Signal) ConcurrencyGroup() string {
 	switch s.Type {
