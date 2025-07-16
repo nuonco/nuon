@@ -25,9 +25,19 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	l.Info("executing apply plan")
 
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatus(app.StatusApplying), "applying plan")
-	prevJob, err := activities.AwaitGetLatestJobByOwnerID(ctx, installRun.ID)
+
+	operation := app.RunnerJobOperationTypeCreateApplyPlan
+	if installRun.RunType == app.SandboxRunTypeDeprovision {
+		operation = app.RunnerJobOperationTypeCreateTeardownPlan
+	}
+	planJob, err := activities.AwaitGetLatestJob(ctx, &activities.GetLatestJobRequest{
+		OwnerID:   installRun.ID,
+		Operation: operation,
+		Group:     app.RunnerJobGroupSandbox,
+		Type:      app.RunnerJobTypeSandboxTerraform,
+	})
 	if err != nil {
-		return errors.Wrap(err, "unable to get latest runner job")
+		return errors.Wrap(err, "unable to get plan runner job for current apply job")
 	}
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
@@ -73,8 +83,8 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	}); err != nil {
 		return errors.Wrap(err, "unable to update install workflow")
 	}
-	runPlan.ApplyPlanContents = prevJob.Execution.Result.Contents
-	runPlan.ApplyPlanDisplay = prevJob.Execution.Result.ContentsDisplay
+	runPlan.ApplyPlanContents = planJob.Execution.Result.Contents
+	runPlan.ApplyPlanDisplay = planJob.Execution.Result.ContentsDisplay
 
 	planJSON, err := json.Marshal(runPlan)
 	if err != nil {
