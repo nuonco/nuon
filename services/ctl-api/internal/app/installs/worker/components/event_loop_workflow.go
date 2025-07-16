@@ -8,10 +8,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/loop"
 )
 
-func noop(ctx workflow.Context, sreq signals.RequestSignal) error {
-	return nil
-}
-
 func (w *Workflows) GetHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
 		signals.OperationExecuteDeployComponentSyncAndPlan: AwaitExecuteDeployComponentSyncAndPlan,
@@ -21,9 +17,6 @@ func (w *Workflows) GetHandlers() map[eventloop.SignalType]func(workflow.Context
 
 		signals.OperationExecuteTeardownComponentSyncAndPlan: AwaitExecuteTeardownComponentSyncAndPlan,
 		signals.OperationExecuteTeardownComponentApplyPlan:   AwaitExecuteTeardownComponentApplyPlan,
-
-		signals.OperationRestart: noop,
-		signals.OperationCreated: noop,
 	}
 }
 
@@ -35,6 +28,15 @@ func (w *Workflows) ComponentEventLoop(ctx workflow.Context, req eventloop.Event
 		MW:               w.mw,
 		Handlers:         handlers,
 		NewRequestSignal: signals.NewRequestSignal,
+		// StartupHook: func(ctx workflow.Context, req eventloop.EventLoopRequest) error {
+		//         w.handleSyncActionWorkflowTriggers(ctx, signals.RequestSignal{
+		//                 Signal: &signals.Signal{
+		//                         Type: signals.OperationSyncActionWorkflowTriggers,
+		//                 },
+		//                 EventLoopRequest: req,
+		//         })
+		//         return nil
+		// },
 	}
 
 	return l.Run(ctx, req, pendingSignals)
