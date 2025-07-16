@@ -39,7 +39,7 @@ jobs:
 
       - name: Use nuon buildkit in infra-shared-ci
         run: |
-         CI=true nuonctl builds driver --name ctl-api && docker buildx ls
+         CI=true nuonctl builds driver --name ctl-api || docker buildx ls
 
       - name: 😎 Tests
         run: |
