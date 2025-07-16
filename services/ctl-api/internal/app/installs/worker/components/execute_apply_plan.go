@@ -26,16 +26,26 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating deploy plan")
 	l.Info("creating execution plan")
 
-	// get previous job
-	prevJob, err := activities.AwaitGetLatestJobByOwnerID(ctx, installDeploy.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get latest runner job")
-	}
-
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
 		return fmt.Errorf("unable to get build: %w", err)
+	}
+
+	// get previous job
+	operation := app.RunnerJobOperationTypeCreateApplyPlan
+	if installDeploy.Type == app.InstallDeployTypeTeardown {
+		operation = app.RunnerJobOperationTypeCreateTeardownPlan
+	}
+	runnerJobType := build.ComponentConfigConnection.Type.DeployJobType()
+	planJob, err := activities.AwaitGetLatestJob(ctx, &activities.GetLatestJobRequest{
+		OwnerID:   installDeploy.ID,
+		Operation: operation,
+		Group:     runnerJobType.Group(),
+		Type:      runnerJobType,
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to plan runner job for current apply job")
 	}
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
@@ -84,8 +94,8 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 	}); err != nil {
 		return errors.Wrap(err, "unable to update install workflow")
 	}
-	plan.ApplyPlanContents = prevJob.Execution.Result.Contents
-	plan.ApplyPlanDisplay = string(prevJob.Execution.Result.ContentsDisplay)
+	plan.ApplyPlanContents = planJob.Execution.Result.Contents
+	plan.ApplyPlanDisplay = string(planJob.Execution.Result.ContentsDisplay)
 
 	planJSON, err := json.Marshal(plan)
 	if err != nil {

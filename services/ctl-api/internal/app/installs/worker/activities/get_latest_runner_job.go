@@ -10,7 +10,10 @@ import (
 )
 
 type GetLatestJobRequest struct {
-	OwnerID string
+	OwnerID   string
+	Operation app.RunnerJobOperationType
+	Group     app.RunnerJobGroup
+	Type      app.RunnerJobType
 }
 
 // @temporal-gen activity
@@ -19,7 +22,10 @@ func (a *Activities) GetLatestJob(ctx context.Context, req *GetLatestJobRequest)
 	job := app.RunnerJob{}
 	res := a.db.WithContext(ctx).
 		Where(app.RunnerJob{
-			OwnerID: req.OwnerID,
+			OwnerID:   req.OwnerID,
+			Group:     req.Group,
+			Type:      req.Type,
+			Operation: req.Operation,
 		}).
 		Preload("Executions").
 		Preload("Executions.Result", func(db *gorm.DB) *gorm.DB {
