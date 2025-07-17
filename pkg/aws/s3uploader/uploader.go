@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-playground/validator/v10"
 
 	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
@@ -160,9 +161,10 @@ func (s *s3Uploader) upload(ctx context.Context, client s3UploaderClient, f io.R
 	key := filepath.Join(s.prefix, name)
 	bucket := s.Bucket
 	_, err := client.Upload(ctx, &s3.PutObjectInput{
-		Bucket: &bucket,
-		Key:    &key,
-		Body:   f,
+		Bucket:            &bucket,
+		Key:               &key,
+		Body:              f,
+		ChecksumAlgorithm: types.ChecksumAlgorithmCrc32,
 	})
 	return err
 }
