@@ -204,8 +204,6 @@ func (s *service) buildSummary(ctx context.Context, installComponents []app.Inst
 			buildStatusDescription = build.StatusDescription
 		}
 
-		buildStatusV2 := app.NewCompositeStatus(ctx, app.Status(build.Status))
-		buildStatusV2.StatusHumanDescription = build.StatusDescription
 		summaries = append(summaries, app.InstallComponentSummary{
 			ID:                      ic.ID,
 			ComponentID:             ic.ComponentID,
