@@ -25,6 +25,14 @@ type Client interface {
 	// If knowing when the signal is done processing is a requirement, use SendAndWait or SendAsync.
 	Send(ctx workflow.Context, id string, signal eventloop.Signal)
 
+	// SendFaF sends a signal to an event loop for asynchronous processing.
+	//
+	// This method is for fire-and-forget use cases, where completion of signal handling does not matter.
+	// An error is returned if there was a problem in sending the signal, not in handling it.
+	//
+	// If knowing when the signal is done processing is a requirement, use SendAndWait or SendAsync.
+	SendFaF(ctx workflow.Context, id string, signal eventloop.Signal) error
+
 	// SendAsync is the same as Send, but it returns a future that allows you to decide when to
 	// wait for a result.
 	//
