@@ -9,7 +9,7 @@ import (
 )
 
 // @temporal-gen workflow
-// @execution-timeout 10m
+// @execution-timeout 30m
 // @task-timeout 30s
 func (w *Workflows) Promotion(ctx workflow.Context, _ signals.RequestSignal) error {
 	grp := workflow.NewWaitGroup(ctx)
