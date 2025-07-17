@@ -35,6 +35,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	}
 
 	l = l.With(zap.String("runner_job.id", job.ID))
+	l = l.With(zap.String("runner_job.type", string(job.Type)))
 	l = l.With(zap.String("log_stream.id", job.LogStreamID))
 
 	// create an execution in the API
