@@ -141,9 +141,6 @@ type Workflow struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Install   Install             `swaggerignore:"true" json:"-" temporaljson:"install,omitzero,omitempty"`
-	InstallID generics.NullString `swaggertype:"string" json:"install_id,omitzero" gorm:"defaultnull" temporaljson:"install_id,omitzero,omitempty"`
-
 	Type              WorkflowType      `json:"type,omitzero" gorm:"not null;default null" temporaljson:"type,omitzero,omitempty"`
 	Metadata          pgtype.Hstore     `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
 	Status            CompositeStatus   `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
@@ -187,14 +184,6 @@ func (i *Workflow) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (i *Workflow) BeforeSave(tx *gorm.DB) error {
-	// TODO: we need to remove this once we start to app-branches is also an OwnerType
-	// defensive fallback while we migrate, this should be handled elsewhere
-	if i.OwnerID == "" {
-		i.OwnerID = i.InstallID.ValueString()
-		// If OwnerID wasn't set, the data predates abstracting into workflows and must necessarily be an install
-		i.OwnerType = "installs"
-	}
-
 	return nil
 }
 
