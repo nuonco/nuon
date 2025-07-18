@@ -31,7 +31,9 @@ type StaticCredentials struct {
 type Config struct {
 	Static     *StaticCredentials `cty:"static,block" hcl:"static,block" mapstructure:"static,omitempty" json:"static" temporaljson:"static"`
 	AssumeRole *AssumeRoleConfig  `cty:"assume_role,block" hcl:"assume_role,block" mapstructure:"assume_role,omitempty" json:"assume_role" temporaljson:"assume_role"`
-	UseDefault bool               `cty:"use_default,optional" hcl:"use_default,optional" mapstructure:"use_default,omitempty" json:"use_default" temporaljson:"use_default"`
+	// If profile is provided, we'll use that profile over the default credentials
+	Profile    string `cty:"profile,optional" hcl:"profile,optional" mapstructure:"profile,omitempty" json:"profile,omitempty" temporaljson:"profile,omitempty"`
+	UseDefault bool   `cty:"use_default,optional" hcl:"use_default,optional" mapstructure:"use_default,omitempty" json:"use_default" temporaljson:"use_default"`
 
 	// when cache ID is set, these credentials will be reused, up to the duration of the sessionTimeout (or default)
 	CacheID string `cty:"cache_id,optional" hcl:"cache_id,optional" json:"cache_id,omitempty" mapstructure:"cache_id,omitempty" temporaljson:"cache_id,omitempty"`
