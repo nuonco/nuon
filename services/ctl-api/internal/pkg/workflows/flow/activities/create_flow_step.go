@@ -26,7 +26,6 @@ type CreateFlowStepRequest struct {
 func (a *Activities) PkgWorkflowsFlowCreateFlowStep(ctx context.Context, req CreateFlowStepRequest) (*app.WorkflowStep, error) {
 	step := &app.WorkflowStep{
 		InstallWorkflowID: req.FlowID,
-		InstallID:         req.OwnerID,
 		OwnerID:           req.OwnerID,
 		OwnerType:         req.OwnerType,
 		Status:            req.Status,
