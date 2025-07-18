@@ -207,52 +207,53 @@ export default async function InstallComponentDeploy({ params }) {
               </ToolTip>
             </Text>
           </span>
-          {/* <ErrorBoundary fallback={<Text>Can&apso;t fetching sync plan</Text>}>
-              <Suspense
+          <ErrorBoundary fallback={<Text>Can&apso;t fetching sync plan</Text>}>
+            <Suspense
               fallback={
-              <Loading variant="stack" loadingText="Loading sync plan..." />
+                <Loading variant="stack" loadingText="Loading sync plan..." />
               }
-              >
+            >
               <LoadRunnerJobPlan
-              buttonText="Sync plan"
-              headingText="Component sync plan"
-              orgId={orgId}
-              runnerJobId={deploy?.runner_jobs?.at(-1)?.id}
+                buttonText="Sync plan"
+                headingText="Component sync plan"
+                orgId={orgId}
+                runnerJobId={deploy?.runner_jobs?.at(-1)?.id}
               />
-              </Suspense>
-              </ErrorBoundary>
+            </Suspense>
+          </ErrorBoundary>
 
-              {deploy?.install_deploy_type !== 'sync-image' ? (
-              <ErrorBoundary
+          {deploy?.install_deploy_type !== 'sync-image' ? (
+            <ErrorBoundary
               fallback={<Text>Can&apso;t fetching deploy plan</Text>}
-              >
+            >
               <Suspense
-              fallback={
-              <Loading
-              variant="stack"
-              loadingText="Loading deploy plan..."
-              />
-              }
+                fallback={
+                  <Loading
+                    variant="stack"
+                    loadingText="Loading deploy plan..."
+                  />
+                }
               >
-              <LoadRunnerJobPlan
-              buttonText="Deploy plan"
-              headingText="Component deploy plan"
-              orgId={orgId}
-              runnerJobId={deploy?.runner_jobs?.at(0)?.id}
-              />
+                <LoadRunnerJobPlan
+                  buttonText="Deploy plan"
+                  headingText="Component deploy plan"
+                  orgId={orgId}
+                  runnerJobId={deploy?.runner_jobs?.at(0)?.id}
+                />
               </Suspense>
-              </ErrorBoundary>
-              ) : null} */}
+            </ErrorBoundary>
+          ) : null}
+
           {component ? (
             <InstallComponentManagementDropdown component={component} />
           ) : null}
           {CANCEL_RUNNER_JOBS &&
-            deploy?.status !== 'active' &&
-            deploy?.status !== 'error' &&
-            deploy?.status !== 'inactive' &&
-            deploy?.runner_jobs?.length &&
-            installWorkflow &&
-            !installWorkflow?.finished ? (
+          deploy?.status !== 'active' &&
+          deploy?.status !== 'error' &&
+          deploy?.status !== 'inactive' &&
+          deploy?.runner_jobs?.length &&
+          installWorkflow &&
+          !installWorkflow?.finished ? (
             <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
           ) : null}
         </div>
@@ -261,9 +262,9 @@ export default async function InstallComponentDeploy({ params }) {
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="md:col-span-8">
           {installWorkflow &&
-            step &&
-            step?.approval &&
-            !step?.approval?.response ? (
+          step &&
+          step?.approval &&
+          !step?.approval?.response ? (
             <Section
               className="border-b"
               childrenClassName="flex flex-col gap-6"
@@ -282,9 +283,9 @@ export default async function InstallComponentDeploy({ params }) {
           </LogStreamProvider>
 
           {installWorkflow &&
-            step &&
-            step?.approval &&
-            step?.approval?.response ? (
+          step &&
+          step?.approval &&
+          step?.approval?.response ? (
             <Section
               className="border-t"
               childrenClassName="flex flex-col gap-6"

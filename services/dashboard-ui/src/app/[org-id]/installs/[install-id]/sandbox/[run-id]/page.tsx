@@ -10,6 +10,7 @@ import {
   CodeViewer,
   DashboardContent,
   Duration,
+  ErrorFallback,
   InstallDeployIntermediateData,
   InstallWorkflowCancelModal,
   Loading,
