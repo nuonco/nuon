@@ -109,7 +109,7 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                 <Link
                   key={iw?.id}
                   className="flex justify-between w-full history-event"
-                  href={`/${org?.id}/installs/${iw?.install_id}/workflows/${iw?.id}`}
+                  href={`/${org?.id}/installs/${iw?.owner_id}/workflows/${iw?.id}`}
                   variant="ghost"
                 >
                   <span className="flex gap-4">
@@ -154,7 +154,7 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                     <YAStatus status={iw.status.status} />
                     <span>
                       <Link
-                        href={`/${org?.id}/installs/${iw?.install_id}/workflows/${iw?.id}`}
+                        href={`/${org?.id}/installs/${iw?.owner_id}/workflows/${iw?.id}`}
                       >
                         <span className="flex gap-2">
                           <Text variant="med-12">
@@ -177,7 +177,7 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                           ) : null}
                         </span>
                       </Link>
-                      <Text variant="mono-12">{iw?.install_id}</Text>
+                      <Text variant="mono-12">{iw?.owner_id}</Text>
                     </span>
                   </span>
                   <div className="flex flex-col gap-0">
@@ -189,7 +189,7 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                       />
                       <Link
                         className="text-sm font-medium"
-                        href={`/${org?.id}/installs/${iw?.install_id}/workflows/${iw?.id}`}
+                        href={`/${org?.id}/installs/${iw?.owner_id}/workflows/${iw?.id}`}
                       >
                         View details <CaretRight />
                       </Link>

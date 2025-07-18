@@ -42,7 +42,7 @@ export const ActionStepDetails: FC<IPollStepDetails> = ({
 
   const fetchData = () => {
     fetch(
-      `/api/${orgId}/installs/${step?.install_id}/action-workflows/runs/${step?.step_target_id}`
+      `/api/${orgId}/installs/${step?.owner_id}/action-workflows/runs/${step?.step_target_id}`
     ).then((r) =>
       r.json().then((res) => {
         setIsLoading(false)
@@ -86,7 +86,7 @@ export const ActionStepDetails: FC<IPollStepDetails> = ({
                 <Text variant="med-14">Action run</Text>
                 <Link
                   className="text-sm gap-0"
-                  href={`/${orgId}/installs/${step?.install_id}/actions/${actionRun?.config?.action_workflow_id}/${actionRun?.id}`}
+                  href={`/${orgId}/installs/${step?.owner_id}/actions/${actionRun?.config?.action_workflow_id}/${actionRun?.id}`}
                 >
                   View details
                   <CaretRight />

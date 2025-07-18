@@ -42,8 +42,8 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
   const [error, setError] = useState<string>()
 
   const workflowType = removeSnakeCase(installWorkflow?.type)
-  const workflowPath = `/${orgId}/installs/${installWorkflow?.install_id}/workflows/${installWorkflow?.id}`
-  const historyPath = `/${orgId}/installs/${installWorkflow?.install_id}/workflows`
+  const workflowPath = `/${orgId}/installs/${installWorkflow?.owner_id}/workflows/${installWorkflow?.id}`
+  const historyPath = `/${orgId}/installs/${installWorkflow?.owner_id}/workflows`
 
   return (
     <>
