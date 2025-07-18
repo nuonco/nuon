@@ -31,7 +31,7 @@ export const RetryButtons = ({ step }: { step: TInstallWorkflowStep }) => {
   const retry = (retryStep: boolean) => {
     retryWorkflow({
       orgId: org.id,
-      installId: step?.install_id,
+      installId: step?.owner_id,
       workflowId: step?.install_workflow_id,
       stepId: step?.id,
       retryStep: retryStep,

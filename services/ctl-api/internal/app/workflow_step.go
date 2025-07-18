@@ -34,9 +34,6 @@ type WorkflowStep struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Install   Install `swaggerignore:"true" json:"-" temporaljson:"install,omitzero,omitempty"`
-	InstallID string  `json:"install_id,omitzero" gorm:"notnull;default null" temporaljson:"install_id,omitzero,omitempty"`
-
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_install_workflows_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
@@ -89,13 +86,6 @@ func (i *WorkflowStep) TableName() string {
 }
 
 func (i *WorkflowStep) BeforeSave(tx *gorm.DB) error {
-	// defensive fallback while we migrate, this should be handled elsewhere
-	if i.OwnerID == "" {
-		i.OwnerID = i.InstallID
-		// If OwnerID wasn't set, the data predates abstracting into workflows and must necessarily be an install
-		i.OwnerType = "installs"
-	}
-
 	return nil
 }
 
