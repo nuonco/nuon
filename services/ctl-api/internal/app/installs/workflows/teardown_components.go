@@ -37,11 +37,21 @@ func TeardownComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 		return nil, errors.Wrap(err, "unable to get install graph")
 	}
 
+	appcfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
+	}
+	components := make(map[string]app.Component)
+	for _, ccc := range appcfg.ComponentConfigConnections {
+		components[ccc.ComponentID] = ccc.Component
+	}
+
 	for _, compID := range componentIDs {
-		comp, err := activities.AwaitGetComponentByComponentID(ctx, compID)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get component")
+		comp, has := components[compID]
+		if !has {
+			return nil, errors.Errorf("component %s not found in app config", compID)
 		}
+
 		installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 			InstallID:   installID,
 			ComponentID: comp.ID,
@@ -67,7 +77,7 @@ func TeardownComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 			continue
 		}
 
-		preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, compID, installID, app.ActionWorkflowTriggerTypePreTeardownComponent)
+		preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePreTeardownComponent)
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +99,7 @@ func TeardownComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 		}, flw.PlanOnly)
 		steps = append(steps, deployStep)
 
-		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, compID, installID, app.ActionWorkflowTriggerTypePostTeardownComponent)
+		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePostTeardownComponent)
 		if err != nil {
 			return nil, err
 		}
