@@ -26,7 +26,7 @@ export const SandboxStepDetails: FC<IPollStepDetails> = ({
 
   const fetchData = () => {
     fetch(
-      `/api/${orgId}/installs/${step?.install_id}/sandbox-runs/${step?.step_target_id}`
+      `/api/${orgId}/installs/${step?.owner_id}/sandbox-runs/${step?.step_target_id}`
     ).then((r) =>
       r.json().then((res) => {
         setIsLoading(false)
@@ -75,7 +75,7 @@ export const SandboxStepDetails: FC<IPollStepDetails> = ({
                 </Text>
                 <Link
                   className="text-sm gap-0"
-                  href={`/${orgId}/installs/${step?.install_id}/sandbox/${sandboxRun?.id}`}
+                  href={`/${orgId}/installs/${step?.owner_id}/sandbox/${sandboxRun?.id}`}
                 >
                   View details
                   <CaretRight />

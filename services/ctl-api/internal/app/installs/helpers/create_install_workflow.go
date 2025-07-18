@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
-	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
@@ -32,7 +31,6 @@ func (s *Helpers) CreateInstallFlow(ctx context.Context,
 	metadata["install_id"] = installID
 	installWorkflow := app.Workflow{
 		Type:              workflowType,
-		InstallID:         pkggenerics.NewNullString(installID),
 		OwnerID:           installID,
 		OwnerType:         "installs",
 		Metadata:          generics.ToHstore(metadata),

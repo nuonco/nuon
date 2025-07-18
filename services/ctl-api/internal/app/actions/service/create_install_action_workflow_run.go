@@ -9,7 +9,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
-	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
@@ -141,7 +140,6 @@ func PrependRunEnvPrefix(runEnvVars map[string]string) map[string]string {
 func (s *service) CreateWorkflow(ctx context.Context, installID string, workflowType app.WorkflowType, metadata map[string]string, errBehavior app.StepErrorBehavior) (*app.Workflow, error) {
 	installWorkflow := app.Workflow{
 		Type:              workflowType,
-		InstallID:         pkggenerics.NewNullString(installID),
 		OwnerID:           installID,
 		OwnerType:         "installs",
 		Metadata:          generics.ToHstore(metadata),

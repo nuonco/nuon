@@ -26,7 +26,7 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
 
   const fetchData = () => {
     fetch(
-      `/api/${orgId}/installs/${step?.install_id}/deploys/${step?.step_target_id}`
+      `/api/${orgId}/installs/${step?.owner_id}/deploys/${step?.step_target_id}`
     ).then((r) =>
       r.json().then((res) => {
         setIsLoading(false)
@@ -80,7 +80,7 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
                         {deploy?.status !== 'queued' ? (
                           <Link
                             className="text-sm gap-0"
-                            href={`/${orgId}/installs/${step?.install_id}/components/${deploy?.component_id}`}
+                            href={`/${orgId}/installs/${step?.owner_id}/components/${deploy?.component_id}`}
                           >
                             View component
                             <CaretRight />
@@ -89,7 +89,7 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
                         {deploy?.status !== 'queued' ? (
                           <Link
                             className="text-sm gap-0"
-                            href={`/${orgId}/installs/${step?.install_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
+                            href={`/${orgId}/installs/${step?.owner_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
                           >
                             View deployment
                             <CaretRight />
