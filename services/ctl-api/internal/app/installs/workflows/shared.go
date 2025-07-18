@@ -109,12 +109,7 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 	}, nil
 }
 
-func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, componentID, installID string, triggerTyp app.ActionWorkflowTriggerType) ([]*app.WorkflowStep, error) {
-	comp, err := activities.AwaitGetComponentByComponentID(ctx, componentID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get component")
-	}
-
+func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, comp *app.Component, installID string, triggerTyp app.ActionWorkflowTriggerType) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 	installActions, err := activities.AwaitGetInstallActionWorkflowsByTriggerType(ctx, activities.GetInstallActionWorkflowsByTriggerTypeRequest{
 		ComponentID: comp.ID,
@@ -154,13 +149,28 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, 
 
 func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Workflow, componentIDs []string) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
+
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
+	appcfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
+	}
+	components := make(map[string]app.Component)
+	for _, ccc := range appcfg.ComponentConfigConnections {
+		components[ccc.ComponentID] = ccc.Component
+	}
+
 	for _, compID := range componentIDs {
-		comp, err := activities.AwaitGetComponentByComponentID(ctx, compID)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get component")
+		comp, has := components[compID]
+		if !has {
+			return nil, errors.Errorf("component %s not found in app config", compID)
 		}
 
-		preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, compID, installID, app.ActionWorkflowTriggerTypePreDeployComponent)
+		preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePreDeployComponent)
 		if err != nil {
 			return nil, err
 		}
@@ -201,7 +211,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 			}
 			steps = append(steps, planStep, applyPlanStep)
 		}
-		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, compID, installID, app.ActionWorkflowTriggerTypePostDeployComponent)
+		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePostDeployComponent)
 		if err != nil {
 			return nil, err
 		}
