@@ -61,6 +61,17 @@ func (e ErrUnableToFetchStatic) Error() string {
 func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 	v := validator.New()
 
+	if c.Profile != "" {
+		// if a profile is set, use that profile over the default credentials
+		awsCfg, err := config.LoadDefaultConfig(context.TODO(),
+			config.WithSharedConfigProfile(c.Profile),
+			config.WithRegion(c.Region))
+		if err != nil {
+			return aws.Config{}, fmt.Errorf("unable to load profile %s: %w", c.Profile, err)
+		}
+
+		return awsCfg, nil
+	}
 	// if default credentials are set, just use the machine's credentials
 	if c.UseDefault {
 		if os.Getenv("AWS_REGION") == "" && c.Region == "" {
