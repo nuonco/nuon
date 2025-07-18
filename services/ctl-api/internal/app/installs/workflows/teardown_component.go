@@ -39,7 +39,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		return nil, errors.Wrap(err, "unable to get component")
 	}
 
-	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, generics.FromPtrStr(componentID), installID, app.ActionWorkflowTriggerTypePreTeardownComponent)
+	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePreTeardownComponent)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	}, flw.PlanOnly)
 	steps = append(steps, applyStep)
 
-	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, generics.FromPtrStr(componentID), installID, app.ActionWorkflowTriggerTypePostTeardownComponent)
+	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePostTeardownComponent)
 	if err != nil {
 		return nil, err
 	}
