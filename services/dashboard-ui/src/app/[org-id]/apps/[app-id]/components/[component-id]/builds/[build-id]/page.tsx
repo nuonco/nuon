@@ -101,18 +101,18 @@ export default async function AppComponent({ params }) {
             </Text>
           </span>
 
-          {/* <ErrorBoundary fallback={<Text>Can&apso;t fetching job plan</Text>}>
-              <Suspense
+          <ErrorBoundary fallback={<Text>Can&apso;t fetching job plan</Text>}>
+            <Suspense
               fallback={
-              <Loading variant="stack" loadingText="Loading job plan..." />
+                <Loading variant="stack" loadingText="Loading job plan..." />
               }
-              >
+            >
               <LoadRunnerJobPlan
-              orgId={orgId}
-              runnerJobId={build?.runner_job?.id}
+                orgId={orgId}
+                runnerJobId={build?.runner_job?.id}
               />
-              </Suspense>
-              </ErrorBoundary> */}
+            </Suspense>
+          </ErrorBoundary>
 
           {CANCEL_RUNNER_JOBS &&
           build?.status !== 'active' &&
