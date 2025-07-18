@@ -32,5 +32,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "089-app-branches-cleanup",
 			Fn:   m.Migration089AppBracnhesCleanup,
 		},
+		{
+			Name: "090-workflow-step-null-install-id",
+			Fn:   m.Migration09NullWorkflowInstallID,
+		},
 	}
 }

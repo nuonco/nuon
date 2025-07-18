@@ -86,7 +86,7 @@ export const RunnerStepDetails: FC<IRunnerStepDetails> = ({
                 <Text variant="med-14">Install runner</Text>
                 <Link
                   className="text-sm gap-0"
-                  href={`/${orgId}/installs/${step?.install_id}/runner`}
+                  href={`/${orgId}/installs/${step?.owner_id}/runner`}
                 >
                   View details
                   <CaretRight />
