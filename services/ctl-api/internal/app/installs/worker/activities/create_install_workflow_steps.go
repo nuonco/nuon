@@ -26,7 +26,6 @@ type CreateInstallWorkflowStepRequest struct {
 func (a *Activities) CreateInstallWorkflowStep(ctx context.Context, req CreateInstallWorkflowStepRequest) error {
 	step := &app.WorkflowStep{
 		InstallWorkflowID: req.InstallWorkflowID,
-		InstallID:         req.InstallID,
 		OwnerID:           req.OwnerID,
 		OwnerType:         req.OwnerType,
 		Status:            req.Status,

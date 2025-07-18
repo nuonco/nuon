@@ -32,7 +32,7 @@ export const StackStep: FC<IStackStepDetails> = ({
   const [error, setError] = useState<string>()
 
   const fetchData = () => {
-    fetch(`/api/${orgId}/installs/${step?.install_id}/stack`).then((r) =>
+    fetch(`/api/${orgId}/installs/${step?.owner_id}/stack`).then((r) =>
       r.json().then((res) => {
         setIsLoading(false)
         if (res?.error) {
