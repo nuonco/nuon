@@ -8,6 +8,19 @@ MONO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NUONCTL_DIR="${MONO_ROOT}/bins/nuonctl"
 INSTALL_SCRIPT="${NUONCTL_DIR}/install.sh"
 
+# Install to user's bin directory
+INSTALL_DIR="$HOME/bin"
+if [ ! -d "$INSTALL_DIR" ]; then
+    if [ -w "/usr/local/bin" ]; then
+        INSTALL_DIR="/usr/local/bin"
+    elif [ -w "/bin" ]; then
+        INSTALL_DIR="/bin"
+    else
+        echo "❌ Cannot find a writable bin directory. Try running with sudo."
+        exit 1
+    fi
+fi
+
 # Check if we should build locally
 if [ -n "${NUON_LOCAL:-}" ]; then
     echo "🛠️  NUON_LOCAL is set, building nuonctl locally..."
@@ -27,18 +40,6 @@ if [ -n "${NUON_LOCAL:-}" ]; then
     # Build the binary
     go build -o nuonctl .
     
-    # Install to user's bin directory
-    INSTALL_DIR="$HOME/bin"
-    if [ ! -d "$INSTALL_DIR" ]; then
-        if [ -w "/usr/local/bin" ]; then
-            INSTALL_DIR="/usr/local/bin"
-        elif [ -w "/bin" ]; then
-            INSTALL_DIR="/bin"
-        else
-            echo "❌ Cannot find a writable bin directory. Try running with sudo."
-            exit 1
-        fi
-    fi
     
     echo "Installing nuonctl to ${INSTALL_DIR}..."
     cp nuonctl "${INSTALL_DIR}/"
@@ -58,7 +59,7 @@ else
 
     # Run the installation script
     echo "Running nuonctl installation script..."
-    bash "$INSTALL_SCRIPT"
+    echo "y" | bash "$INSTALL_SCRIPT"
 
     # Check if installation was successful
     if [ $? -eq 0 ]; then
@@ -69,3 +70,4 @@ else
     fi
 fi
 
+exec ${INSTALL_DIR}/nuonctl $@
