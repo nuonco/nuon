@@ -24,6 +24,7 @@ func FetchEnv(ctx context.Context, cfg *Config) (map[string]string, error) {
 	envVars["AWS_ACCESS_KEY_ID"] = awsCreds.AccessKeyID
 	envVars["AWS_SECRET_ACCESS_KEY"] = awsCreds.SecretAccessKey
 	envVars["AWS_SESSION_TOKEN"] = awsCreds.SessionToken
+	envVars["AWS_REGION"] = awsCfg.Region
 
 	return envVars, nil
 }
