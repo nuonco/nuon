@@ -36,5 +36,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "090-workflow-step-null-install-id",
 			Fn:   m.Migration09NullWorkflowInstallID,
 		},
+		{
+			Name: "091-delete-orphaned-action-triggers",
+			Fn:   m.Migration091DeleteOrphanedActionTriggers,
+		},
 	}
 }
