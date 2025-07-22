@@ -1,39 +1,90 @@
 ---
-title: 'Azure Support'
-description: "Create BYOC apps that can be deployed to customer cloud accounts."
+title: 'Azure'
+description: "Deploy and manage BYOC apps in Microsoft Azure cloud."
 icon: 'terminal'
 ---
 
-Azure has not been publicly announced yet, however this guide is a starting point to create an Azure BYOC app using Nuon.
+Nuon offers first-class support for Microsoft's Azure cloud platorm.
 
-## Create Service Principal
+## Configuration
 
-In order for Nuon to provision an install on Azure, it must be given access via a [Service Principal](https://learn.microsoft.com/en-us/azure/aks/learn/quick-kubernetes-deploy-terraform?tabs=bash#create-a-service-principal) that has been assigned the [Owner](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/general#owner) role.
+To deploy an app to Azure, configure it to use an Azure sandbox and runner. We provide a minimal sandbox you can use to get started. You will need to set some vars to configure the sandbox. Create inputs for the public and private domains, since those will be different for each install.
 
-You can create a service principal using the [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/get-started-with-azure-cli). First, log into the account you want to install into.
+```toml sandbox.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=sandbox
+
+terraform_version = "1.11.3"
+
+[public_repo]
+directory = "."
+repo      = "nuonco/terraform-azure-aks-sandbox"
+branch    = "main"
+
+[vars]
+public_root_domain   = "{{ .nuon.inputs.inputs.root_domain }}"
+internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
+location = "{{.nuon.cloud_account.azure.location}}"
+nuon_id = "{{.nuon.install.id}}"
+vnet_name = "{{.nuon.install_stack.outputs.network_name}}"
+resource_group_name = "{{.nuon.install_stack.outputs.resource_group_name}}"
+private_subnet_names = "{{.nuon.install_stack.outputs.private_subnet_names}}"
+public_subnet_names = "{{.nuon.install_stack.outputs.public_subnet_names}}"
+```
+
+```toml runner.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=runner
+
+runner_type = "azure"
+helm_driver = "configmap"
+```
+
+## Installation
+
+Azure does not support a GUI installation flow, so you must use the CLI installation flow. It consists of 3 steps:
+
+1. You will create the install in the dashboard.
+1. Your customer will provision the install stack, which includes the install runner, in their Azure account.
+1. The install runner will provision your app.
+
+Let's walk  through each step in detail.
+
+### Create an Install
+
+Navigate to the Installs tab in the Nuon dashboard, and click on the "Create Install" button, and select the app you want to install.
+
+This will kick off a provision workflow. A new install stack template will be generated along with CLI commands to install it. These commands will have the install ID and other settings already interpolated, and can be shared with your customer to run as-is.
+
+### Install the Stack
+
+Your customer must [install the Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and log in.
 
 ```sh
 az login
 ```
 
-List your accounts to get the subscription ID.
+They will be prompted to select a subscription. They should select the subscription they want to manage the install under.
+
+Now they can run the command to create the resource group that the install will be provisioned in.
 
 ```sh
-az account list
+az group create --name {{install_id}}-rg --location eastus
 ```
 
-Use the subscription ID to create a Service Principal.
+<Note>
+We limit the install runner's permissions to this resource group, with the exception of service provider registration. Providers must be registered at the subscription level before their services can be used. We grant the runner this lone permission at the subscription level to facilitate provisioning in a new subscription.
+</Note>
+
+Once the resource group has been created, they can provision the stack.
 
 ```sh
-az ad sp create-for-rbac --name <principal-name> --role Owner --scopes /subscriptions/<subscription-id>
+az stack group create --name {{install_id}}-stack --resource-group {{install_id}}-rg --template-uri https://nuon-install-templates-stage.s3.us-east-1.amazonaws.com/templates/inlgofml5mnk1e69dw9w1w0xzt/ist5hnwpr1q36mpegdj6o1terw.json --deny-settings-mode "denyDelete" --aou deleteAll
 ```
 
-## Sandboxes
+## Updating
 
-Our current experimental Sandbox repository:
+If you make changes to the install stack template, and need to update an install, your customer must re-provision the stack.
 
-* [Azure AKS](https://github.com/nuonco/terraform-azure-aks-sandbox) - A fully managed app sandbox that provisions both the VPN and AKS cluster.
+1. From the install's Overview page, click on "Reprovision install" in the "Manage" drop-down menu. This will trigger a reprovision workflow, and an updated CLI command will be provided.
+1. Send the command to your customer for them to run.
 
-We build this Sandbox using the standard [Azure modules](https://github.com/Azure/terraform-azure-modules).
-
-Reference the [Sandboxes Guide](/concepts/sandboxes) for more information on using Sandboxes.
+Note that the provided CLI command is the same `az stack group create` command you used to create the install. Even though the command is `create` it is effectively an upsert, and will update the stack if it already exists.

@@ -48,7 +48,7 @@ function parseInstallsToTableData(installs: Array<TInstall>): Array<TData> {
     },
     app: install.app.name,
     appId: install.app.id,
-    platform: install?.app_runner_config?.cloud_platform,
+    platform: install?.app?.cloud_platform,
     region: install?.aws_account
       ? install?.aws_account?.region
       : install?.azure_account
@@ -175,11 +175,13 @@ export const OrgInstallsTable: FC<IOrgInstallsTable> = ({
       {
         header: 'Platform',
         accessorKey: 'platform',
-        cell: (props) => (
-          <Text className="gap-4">
-            <InstallPlatform platform={props.getValue<'aws' | 'azure'>()} />
-          </Text>
-        ),
+        cell: (props) => {
+          return (
+            <Text className="gap-4">
+              <InstallPlatform platform={props.getValue<'aws' | 'azure'>()} />
+            </Text>
+          )
+        },
       },
       {
         id: 'test',

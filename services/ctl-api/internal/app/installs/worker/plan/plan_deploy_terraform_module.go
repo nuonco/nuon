@@ -13,6 +13,7 @@ import (
 	_ "embed"
 
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
+	azurecredentials "github.com/powertoolsdev/mono/pkg/azure/credentials"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/pkg/render"
@@ -74,8 +75,8 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 		return nil, errors.Wrap(err, "unable to get component build")
 	}
 
+	// render cross-platform values
 	cfg := compBuild.ComponentConfigConnection.TerraformModuleComponentConfig
-
 	if err := render.RenderStruct(cfg, stateData); err != nil {
 		l.Error("error rendering terraform config",
 			zap.Error(err),
@@ -83,10 +84,43 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 		)
 		return nil, errors.Wrap(err, "unable to render config")
 	}
-
-	envVars := generics.ToStringMap(cfg.EnvVars)
 	vars := generics.ToStringMapAny(cfg.Variables)
+	if err := render.RenderMap(&vars, stateData); err != nil {
+		l.Error("error rendering vars",
+			zap.Any("vars", vars),
+			zap.Error(err),
+			zap.Any("state", stateData),
+		)
+		return nil, errors.Wrap(err, "unable to render environment variables")
+	}
+	var clusterInfo *kube.ClusterInfo
+	if !org.SandboxMode {
+		clusterInfo, err = p.getKubeClusterInfo(ctx, stack, state)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get cluster information")
+		}
+	}
 
+	// render platform-specific values
+	var awsAuth *awscredentials.Config
+	var azureAuth *azurecredentials.Config
+	envVars := generics.ToStringMap(cfg.EnvVars)
+	switch {
+	case stack.InstallStackOutputs.AWSStackOutputs != nil:
+		roleARN := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
+		awsAuth = &awscredentials.Config{
+			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
+			AssumeRole: &awscredentials.AssumeRoleConfig{
+				SessionName: fmt.Sprintf("install-deploy-%s", req.InstallDeployID),
+				RoleARN:     roleARN,
+			},
+		}
+	case stack.InstallStackOutputs.AzureStackOutputs != nil:
+		azureAuth = &azurecredentials.Config{
+			UseDefault: true,
+		}
+		envVars["ARM_SUBSCRIPTION_ID"] = "{{.nuon.install_stack.outputs.subscription_id}}"
+	}
 	if err := render.RenderMap(&envVars, stateData); err != nil {
 		l.Error("error rendering env-vars",
 			zap.Any("env-vars", envVars),
@@ -96,25 +130,7 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
-	if err := render.RenderMap(&vars, stateData); err != nil {
-		l.Error("error rendering vars",
-			zap.Any("vars", vars),
-			zap.Error(err),
-			zap.Any("state", stateData),
-		)
-		return nil, errors.Wrap(err, "unable to render environment variables")
-	}
-
-	roleARN := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
-
-	var clusterInfo *kube.ClusterInfo
-	if !org.SandboxMode {
-		clusterInfo, err = p.getKubeClusterInfo(ctx, stack, state)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get cluster information")
-		}
-	}
-
+	// construct plan from rendered values
 	return &plantypes.TerraformDeployPlan{
 		Vars:      vars,
 		EnvVars:   envVars,
@@ -124,14 +140,8 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 		TerraformBackend: &plantypes.TerraformBackend{
 			WorkspaceID: installComp.TerraformWorkspace.ID,
 		},
-		AzureAuth: nil,
-		AWSAuth: &awscredentials.Config{
-			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
-			AssumeRole: &awscredentials.AssumeRoleConfig{
-				SessionName: fmt.Sprintf("install-deploy-%s", req.InstallDeployID),
-				RoleARN:     roleARN,
-			},
-		},
+		AzureAuth:   azureAuth,
+		AWSAuth:     awsAuth,
 		ClusterInfo: clusterInfo,
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: false,

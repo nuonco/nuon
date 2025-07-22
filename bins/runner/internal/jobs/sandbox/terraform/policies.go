@@ -30,6 +30,11 @@ func (h *handler) writePolicies(ctx context.Context) error {
 	// ensure we clean up this directory.
 	policyPath := filepath.Join("/tmp", h.state.plan.InstallID)
 
+	// Remove the policy directory if it exits.
+	if err := os.RemoveAll(policyPath); err != nil {
+		return errors.Wrap(err, "unable to remove policy directory")
+	}
+
 	l.Debug("creating temporary directory to write rendered policies into", zap.String("dir", policyPath))
 	if err := os.Mkdir(policyPath, 0o750); err != nil {
 		return errors.Wrap(err, "unable to write policies to path")

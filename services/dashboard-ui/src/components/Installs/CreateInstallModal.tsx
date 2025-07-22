@@ -193,7 +193,7 @@ const CreateInstallFromApp: FC<{
                 appId: app?.id,
                 orgId: org?.id,
                 formData,
-                platform: app?.cloud_platform,
+                platform: app?.runner_config.app_runner_type,
               })
             }}
             onSuccess={(data) => {
@@ -204,7 +204,7 @@ const CreateInstallFromApp: FC<{
             onCancel={() => {
               props.onClose()
             }}
-            platform={app.cloud_platform}
+            platform={app?.runner_config.app_runner_type}
             inputConfig={inputConfig}
           />
         </>

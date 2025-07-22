@@ -23,12 +23,7 @@
           },
           {
             "group": "Resources",
-            "pages": [
-              "configuration-files",
-              "cli",
-              "nuon-api",
-              "sdks"
-            ]
+            "pages": ["configuration-files", "cli", "nuon-api", "sdks"]
           }
         ]
       },
@@ -36,7 +31,7 @@
         "tab": "Changelog",
         "pages": [
           "updates/updates",
-          "updates/012-approval-diffs-plan-only",        
+          "updates/012-approval-diffs-plan-only",
           "updates/011-approval-updates",
           "updates/010-approvals",
           "updates/009-action-triggers-secrets-configs",
@@ -49,23 +44,23 @@
           "updates/002-inputs-dependencies",
           "updates/001-install-workflows-actions"
         ]
-      }, 
+      },
       {
         "tab": "Architecture",
         "pages": ["runner-architecture"]
-      },           
+      },
       {
         "tab": "Concepts",
         "pages": [
           "concepts/overview",
           "concepts/apps",
-          "concepts/sandboxes",          
+          "concepts/sandboxes",
           "concepts/components",
           "concepts/installs",
           "concepts/actions",
-          "concepts/runners",   
+          "concepts/runners",
           "concepts/app-inputs",
-          "concepts/app-secrets",                 
+          "concepts/app-secrets",
           "concepts/platforms"
         ]
       },
@@ -105,6 +100,7 @@
               "guides/bring-your-own-network",
               "guides/custom-domains",
               "guides/azure-support",
+              "guides/platform-support",
               "guides/sandbox-orgs",
               "guides/team-management"
             ]
@@ -118,7 +114,7 @@
       {
         "tab": "Support",
         "pages": ["support/support"]
-      }   
+      }
     ],
     "global": {
       "anchors": [

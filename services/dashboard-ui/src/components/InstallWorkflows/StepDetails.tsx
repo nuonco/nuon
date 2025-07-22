@@ -34,7 +34,14 @@ export function getStepType(
       break
 
     case 'install_stack_versions':
-      stepDetails = <StackStep step={step} appId={install?.app_id} shouldPoll />
+      stepDetails = (
+        <StackStep
+          step={step}
+          install={install}
+          appId={install?.app_id}
+          shouldPoll
+        />
+      )
       break
 
     case 'install_action_workflow_runs':

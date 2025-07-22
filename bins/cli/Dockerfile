@@ -19,22 +19,22 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
     go generate ./...
 
-FROM code as build
+FROM code AS build
 
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
     CGO_ENABLED=0 GOOS=linux go build -o /bin/${BIN_NAME}
 
-FROM code as test
+FROM code AS test
 RUN --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
         go test -v ./...
 
-FROM code as lint
+FROM code AS lint
 COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-cli \
     golangci-lint run -c .golangci.yml --issues-exit-code 0 -v
 
-FROM golang:1.24-alpine as final
+FROM golang:1.24-alpine AS final
 
 WORKDIR /src/bins/${SERVICE}
 
@@ -42,7 +42,7 @@ COPY --from=build /bin/${SERVICE} /bin/${BIN_NAME}
 
 ENTRYPOINT ["/bin/nuon"]
 
-FROM code as build-darwin-arm64
+FROM code AS build-darwin-arm64
 ARG BIN_NAME=nuon
 ARG tag=
 RUN mkdir -p /out
@@ -54,7 +54,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_darwin_arm64 .
 
-FROM code as build-darwin-amd64
+FROM code AS build-darwin-amd64
 ARG BIN_NAME=nuon
 ARG tag=
 RUN mkdir -p /out
@@ -66,7 +66,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_darwin_amd64 .
 
-FROM code as build-linux-arm
+FROM code AS build-linux-arm
 ARG BIN_NAME=nuon
 ARG tag=
 RUN mkdir -p /out
@@ -78,7 +78,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_linux_arm .
 
-FROM code as build-linux-arm64
+FROM code AS build-linux-arm64
 ARG BIN_NAME=nuon
 ARG tag=
 RUN mkdir -p /out
@@ -90,7 +90,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_linux_arm64 .
 
-FROM code as build-linux-386
+FROM code AS build-linux-386
 ARG BIN_NAME=nuon
 ARG tag=
 RUN mkdir -p /out
@@ -102,7 +102,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_linux_386 .
 
-FROM code as build-linux-amd64
+FROM code AS build-linux-amd64
 ARG BIN_NAME=nuon
 ARG tag=
 RUN mkdir -p /out
