@@ -33,6 +33,10 @@ const (
 	OperationReprovisionServiceAccount eventloop.SignalType = "reprovision_service_account"
 	OperationInstallStackVersionRun    eventloop.SignalType = "install_stack_version_run"
 
+	// used for management operations
+	OperationMngVMShutDown eventloop.SignalType = "mng-shutdown-vm"
+	OperationMngShutDown   eventloop.SignalType = "mng-shutdown"
+
 	// used for internal provisioning
 	OperationProvision   eventloop.SignalType = "provision"
 	OperationDeprovision eventloop.SignalType = "deprovision"
