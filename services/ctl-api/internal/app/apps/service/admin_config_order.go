@@ -96,5 +96,4 @@ func (s *service) AdminConfigOrder(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, output)
-	return
 }
