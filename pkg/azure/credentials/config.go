@@ -1,15 +1,13 @@
 package credentials
 
 type ServicePrincipalCredentials struct {
-	SubscriptionID           string `cty:"subscription_id" json:"subscription_id" hcl:"subscription_id"`
-	SubscriptionTenantID     string `cty:"subscription_tenant_id" json:"subscription_tenant_id" hcl:"subscription_tenant_id"`
-	ServicePrincipalAppID    string `cty:"service_principal_app_id" json:"service_principal_app_id" hcl:"service_principal_id"`
-	ServicePrincipalPassword string `cty:"service_principal_password" json:"service_principal_password" hcl:"service_principal_password"`
+	SubscriptionID       string `cty:"subscription_id" json:"subscription_id" temporaljson:"subscription_id" hcl:"subscription_id" mapstructure:"subscription_id,omitempty"`
+	SubscriptionTenantID string `cty:"subscription_tenant_id" json:"subscription_tenant_id" temporaljson:"subscription_tenant_id" hcl:"subscription_tenant_id" mapstructure:"subscription_tenant_id,omitempty"`
 }
 
 type Config struct {
-	ServicePrincipal *ServicePrincipalCredentials `cty:"service_principal,block" hcl:"service_principal,block" mapstructure:"service_principal,omitempty"`
-	UseDefault       bool                         `cty:"use_default,optional" hcl:"use_default,optional" mapstructure:"use_default,omitempty"`
+	ServicePrincipal *ServicePrincipalCredentials `cty:"service_principal,block" hcl:"service_principal,block" mapstructure:"service_principal,omitempty" json:"service_principal" temporaljson:"service_principal"`
+	UseDefault       bool                         `cty:"use_default,optional" hcl:"use_default,optional" mapstructure:"use_default,omitempty" json:"use_default" temporaljson:"use_default"`
 }
 
 func (c Config) String() string {
@@ -17,5 +15,5 @@ func (c Config) String() string {
 		return "default credentials"
 	}
 
-	return "service principal"
+	return "managed identity"
 }

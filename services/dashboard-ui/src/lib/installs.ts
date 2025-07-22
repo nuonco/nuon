@@ -348,10 +348,10 @@ export interface ICreateInstallData {
   }
   azure_account?: {
     location: string
-    service_principal_app_id: string
-    service_principal_password: string
-    subscription_id: string
-    subscription_tenant_id: string
+    service_principal_app_id?: string
+    service_principal_password?: string
+    subscription_id?: string
+    subscription_tenant_id?: string
   }
 }
 

@@ -78,11 +78,10 @@ export async function createAppInstall({
     data = {
       azure_account: {
         location: formData?.location as string,
-        service_principal_app_id: formData?.service_principal_app_id as string,
-        service_principal_password:
-          formData?.service_principal_password as string,
-        subscription_id: formData?.subscription_id as string,
-        subscription_tenant_id: formData?.subscription_tenant_id as string,
+        service_principal_app_id: '',
+        service_principal_password: '',
+        subscription_id: '',
+        subscription_tenant_id: '',
       },
       ...data,
     }
