@@ -49,3 +49,35 @@ func (h *Helpers) GetRunnerJob(ctx context.Context, jobID string) (*app.RunnerJo
 
 	return job, nil
 }
+
+func (h *Helpers) CreateMngRunnerJob(
+	ctx context.Context,
+	runnerID string,
+	typ app.RunnerJobType,
+	op app.RunnerJobOperationType,
+	logStreamID string,
+	metadata map[string]string,
+) (*app.RunnerJob, error) {
+	job := &app.RunnerJob{
+		RunnerID:          runnerID,
+		OwnerType:         "runners",
+		OwnerID:           runnerID,
+		QueueTimeout:      DefaultQueueTimeout,
+		ExecutionTimeout:  h.getExecutionTimeout(typ),
+		AvailableTimeout:  DefaultAvailableTimeout,
+		MaxExecutions:     DefaultMaxExecutions,
+		Status:            app.RunnerJobStatusQueued,
+		StatusDescription: string(app.RunnerJobStatusQueued),
+		Type:              typ,
+		Operation:         op,
+		Group:             app.RunnerJobGroupManagement,
+		LogStreamID:       pkggenerics.ToPtr(logStreamID),
+		Metadata:          generics.ToHstore(metadata),
+	}
+
+	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {
+		return nil, fmt.Errorf("unable to create job: %w", res.Error)
+	}
+
+	return job, nil
+}

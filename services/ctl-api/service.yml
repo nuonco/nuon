@@ -23,13 +23,13 @@ sources:
 
 # tests define which tests to run as part of CI. These are run sequentially, in GHA or locally using `nctl test all`
 tests:
-  # a test is a dockerfile target. 
+  # a test is a dockerfile target.
   # we can make sure to cache mounts by leveraging dockerfile targets.
   - name: lint
     docker_target: lint
 
 
-  # todo(ht): looks like unit tests rely on temporal as a depe are failing. 
+  # todo(ht): looks like unit tests rely on temporal as a depe are failing.
   # - name: unit test
   #   docker_target: test
 
