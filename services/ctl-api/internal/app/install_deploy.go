@@ -42,7 +42,7 @@ const (
 type InstallDeploy struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
-	CreatedBy   Account               `json:"created_by,omitzero,omitzero" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedBy   Account               `json:"created_by,omitzero" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
@@ -53,7 +53,7 @@ type InstallDeploy struct {
 
 	// runner details
 	RunnerJobs  []RunnerJob `json:"runner_jobs,omitzero" gorm:"polymorphic:Owner;" temporaljson:"runner_jobs,omitzero,omitempty"`
-	OCIArtifact OCIArtifact `json:"oci_artifact,omitzero,omitzero,omitempty" gorm:"polymorphic:Owner;" temporaljson:"oci_artifact,omitempty"`
+	OCIArtifact OCIArtifact `json:"oci_artifact,omitzero,omitempty" gorm:"polymorphic:Owner;" temporaljson:"oci_artifact,omitempty"`
 	LogStream   LogStream   `json:"log_stream,omitzero" gorm:"polymorphic:Owner;" temporaljson:"log_stream,omitzero,omitempty"`
 
 	ActionWorkflowRuns []InstallActionWorkflowRun `json:"action_workflow_runs,omitzero" gorm:"polymorphic:TriggeredBy;" temporaljson:"action_workflow_runs,omitzero,omitempty"`
