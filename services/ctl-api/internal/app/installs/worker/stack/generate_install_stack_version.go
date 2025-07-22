@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/bicep"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cloudformation"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -24,19 +25,26 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		return errors.Wrap(err, "unable to get install")
 	}
 
-	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, install.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get stack")
-	}
-
 	// need to fetch app config
 	cfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get app config")
 	}
 
-	if cfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
+	// If we are not using one of the new independent runner types, stop here.
+	// To support backwards compatibility, we do not return an error, but we cannot create a stack.
+	switch cfg.RunnerConfig.Type {
+	case app.AppRunnerTypeAWS:
+		break
+	case app.AppRunnerTypeAzure:
+		break
+	default:
 		return nil
+	}
+
+	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, install.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get stack")
 	}
 
 	installState, err := activities.AwaitGetInstallStateByInstallID(ctx, install.ID)
@@ -65,12 +73,19 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	}
 
 	// need to generate a token
+	region := ""
+	switch {
+	case install.AWSAccount != nil:
+		region = install.AWSAccount.Region
+	case install.AzureAccount != nil:
+		region = install.AzureAccount.Location
+	}
 	stackVersion, err := activities.AwaitCreateInstallStackVersion(ctx, &activities.CreateInstallStackVersionRequest{
 		InstallID:      install.ID,
 		InstallStackID: stack.ID,
 		AppConfigID:    cfg.ID,
 		StackName:      cfg.StackConfig.Name,
-		Region:         install.AWSAccount.Region,
+		Region:         region,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create cloudformation stack version")
@@ -89,12 +104,17 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		return errors.Wrap(err, "unable to create runner token")
 	}
 
+	// TODO(ja): Ignoring this for Azure. Should probably update.
 	phoneHomeScript, err := activities.AwaitGetPhoneHomeScriptRaw(ctx, &activities.GetPhoneHomeScriptRequest{})
 	if err != nil {
 		return errors.Wrap(err, "unable to get phone home script")
 	}
 
-	// generate the cloudformation stack
+	// AWS and Azure diverge here, while generating the stack template file.
+
+	// Generate the stack template.
+	tmplByts := []byte{}
+	checksum := ""
 	inp := &cloudformation.TemplateInput{
 		Install:                    install,
 		CloudFormationStackVersion: stackVersion,
@@ -105,15 +125,28 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		Settings:                   &runner.RunnerGroup.Settings,
 		APIToken:                   generics.FromPtrStr(token),
 	}
-	tmpl, checksum, err := w.templates.Template(inp)
-	if err != nil {
-		return errors.Wrap(err, "unable to create cloudformation template")
+	switch cfg.RunnerConfig.Type {
+	case app.AppRunnerTypeAWS:
+		tmpl, awsChecksum, err := w.templates.Template(inp)
+		if err != nil {
+			return errors.Wrap(err, "unable to create cloudformation template")
+		}
+		checksum = awsChecksum
+
+		tmplByts, err = tmpl.JSON()
+		if err != nil {
+			return errors.Wrap(err, "unable to get cloudformation json")
+		}
+	case app.AppRunnerTypeAzure:
+		tmplByts, checksum, err = bicep.Render(inp)
+		if err != nil {
+			return errors.Wrap(err, "unable to create bicep template")
+		}
 	}
 
-	tmplByts, err := tmpl.JSON()
-	if err != nil {
-		return errors.Wrap(err, "unable to get cloudformation json")
-	}
+	// AWS and Azure converge here, after template generation is complete.
+	// We upload both types of stacks to S3.
+	// Even though Azure cannot use the AWS Quickcreate flow, the Azure CLI can still pull a bicep template file via HTTP.
 
 	// upload and publish the stack
 	if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
