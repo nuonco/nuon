@@ -1,0 +1,20 @@
+#:schema https://api.nuon.co/v1/general/config-schema?source=action
+
+name    = "kubectl_command"
+timeout = "1m"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name    = "execute kubectl command"
+inline_contents = """
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+echo >&2 "executing command..."
+kubectl $CMD
+"""
+[steps.env_vars]
+CMD = "ls"

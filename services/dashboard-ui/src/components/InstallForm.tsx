@@ -283,22 +283,6 @@ const AzureFields: FC = ({}) => {
       <Field labelText="Select Azure location *">
         <Select name="location" options={options} required />
       </Field>
-
-      <Field labelText="Provide a service principal app ID *">
-        <Input type="text" name="service_principal_app_id" required />
-      </Field>
-
-      <Field labelText="Provide a service principal password *">
-        <Input type="text" name="service_principal_password" required />
-      </Field>
-
-      <Field labelText="Provide a subscription ID *">
-        <Input type="text" name="subscription_id" required />
-      </Field>
-
-      <Field labelText="Provide a subscription tenant ID *">
-        <Input type="text" name="subscription_tenant_id" required />
-      </Field>
     </fieldset>
   )
 }

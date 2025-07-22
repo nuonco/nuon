@@ -58,7 +58,7 @@ export default async function App({ params }) {
       statues={
         inputCfg ? (
           <AppCreateInstallButton
-            platform={app?.cloud_platform}
+            platform={app?.runner_config.app_runner_type}
             inputConfig={inputCfg}
             appId={appId}
             orgId={orgId}

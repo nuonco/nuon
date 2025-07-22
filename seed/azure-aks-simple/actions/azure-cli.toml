@@ -1,0 +1,48 @@
+#:schema https://api.nuon.co/v1/general/config-schema?source=action
+
+name    = "azure_cli"
+timeout = "1m"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name    = "execute command"
+inline_contents = """
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+echo >&2 "installing azure cli deps..."
+apk add --no-cache --update \
+  python3 \
+  py3-pip \
+  gcc \
+  musl-dev \
+  python3-dev \
+  libffi-dev \
+  openssl-dev \
+  cargo \
+  make
+
+echo >&2 "creating a python virtualenv and installing azure cli..."
+python3 -m venv /opt/venv \
+  && . /opt/venv/bin/activate \
+  && pip install --upgrade pip \
+  && pip install --no-cache-dir azure-cli \
+  && deactivate
+
+echo >&2 "updating PATH to include azure cli..."
+ENV PATH="/opt/venv/bin:$PATH"
+
+echo >&2 "authenticating using the system-assigned managed identity..."
+az login --identity
+
+echo >&2 "executing command..."
+az $CMD
+"""
+[steps.env_vars]
+APP_ID = ""
+CLIENT_SECRET = ""
+TENANT_ID = ""
+CMD = "account show"

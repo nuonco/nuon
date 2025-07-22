@@ -1,3 +1,3 @@
 type        = "azure-bicep"
 name        = "nuon-azure-aks-simple-{{.nuon.install.id}}"
-description = "QuickLink to install runner for BYOC Nuon: Install {{.nuon.install.id}}"
+description = "Install the Nuon runner in an Azure resource group to manage a BYOC deployment of your app."

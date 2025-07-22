@@ -1,0 +1,8 @@
+#:schema https://api.nuon.co/v1/general/config-schema?source=container_image
+
+name   = "image_httpbin"
+type   = "container_image"
+
+[public]
+image_url = "kennethreitz/httpbin"
+tag       = "latest"

@@ -1,0 +1,14 @@
+#:schema https://api.nuon.co/v1/general/config-schema?source=helm
+name           = "httpbin_helm_chart"
+type           = "helm_chart"
+chart_name     = "httpbin"
+namespace      = "{{.nuon.install.id}}"
+storage_driver = "configmap"
+
+[connected_repo]
+repo      = "powertoolsdev/mono"
+directory = "seed/azure-aks-simple/src/components/httpbin_helm_chart"
+branch    = "ja/azure-support"
+
+[[values_file]]
+contents = "./values/httpbin.yaml"

@@ -1,0 +1,14 @@
+#:schema https://api.nuon.co/v1/general/config-schema?source=terraform_module
+
+name           = "storage"
+type           = "terraform_module"
+terraform_version = "1.11.3"
+
+[connected_repo]
+repo      = "powertoolsdev/mono"
+directory = "seed/azure-aks-simple/src/components/storage"
+branch    = "ja/azure-support"
+
+[vars]
+name = "jalocalazureaks022"
+resource_group_name = "{{.nuon.install_stack.outputs.resource_group_name}}"

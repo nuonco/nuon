@@ -1,0 +1,5 @@
+image:
+  repository: "{{ .nuon.sandbox.outputs.acr.login_server}}/{{ .nuon.components.image_httpbin.outputs.image.repository }}"
+  tag: "{{ .nuon.components.image_httpbin.outputs.image.tag }}"
+deployment:
+  namespace: "{{ .nuon.install.id }}"

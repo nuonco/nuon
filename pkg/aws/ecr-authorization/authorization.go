@@ -34,7 +34,6 @@ func (e *ecrAuthorizer) GetAuthorization(ctx context.Context) (*Authorization, e
 	return ParseAuthorizationData(authData)
 }
 
-
 type awsECRClient interface {
 	GetAuthorizationToken(context.Context, *ecr.GetAuthorizationTokenInput, ...func(*ecr.Options)) (*ecr.GetAuthorizationTokenOutput, error)
 }

@@ -98,7 +98,15 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 			},
 		}
 	}
-	if parentApp.AppRunnerConfigs[0].Type == "aws" {
+
+	switch parentApp.AppRunnerConfigs[0].Type {
+	case "aws":
+		install.InstallStack = &app.InstallStack{
+			InstallStackOutputs: app.InstallStackOutputs{
+				Data: generics.ToHstore(map[string]string{}),
+			},
+		}
+	case "azure":
 		install.InstallStack = &app.InstallStack{
 			InstallStackOutputs: app.InstallStackOutputs{
 				Data: generics.ToHstore(map[string]string{}),
