@@ -1,0 +1,5 @@
+/* ensure tables are full-width */
+.prose
+  :where(table):not(:where([class~="not-prose"], [class~="not-prose"] table)) {
+  display: table;
+}

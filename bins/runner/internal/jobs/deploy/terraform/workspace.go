@@ -61,6 +61,7 @@ func (p *handler) GetWorkspace(ctx context.Context) (workspace.Workspace, error)
 
 	authVars, err := authvars.New(p.v,
 		authvars.WithAWSAuth(p.state.plan.TerraformDeployPlan.AWSAuth),
+		authvars.WithAzureAuth(p.state.plan.TerraformDeployPlan.AzureAuth),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create auth vars: %w", err)
@@ -128,6 +129,7 @@ func (p *handler) GetWorkspaceWithPlan(ctx context.Context, planBytes []byte) (w
 
 	authVars, err := authvars.New(p.v,
 		authvars.WithAWSAuth(p.state.plan.TerraformDeployPlan.AWSAuth),
+		authvars.WithAzureAuth(p.state.plan.TerraformDeployPlan.AzureAuth),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create auth vars: %w", err)

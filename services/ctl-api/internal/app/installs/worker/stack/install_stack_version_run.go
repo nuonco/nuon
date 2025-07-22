@@ -31,6 +31,14 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
 	}
+	region := ""
+	switch {
+	case install.AWSAccount != nil:
+		region = install.AWSAccount.Region
+	case install.AzureAccount != nil:
+		region = install.AzureAccount.Location
+	}
+
 	version, err := activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install version")
@@ -65,7 +73,7 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		stackRefs := helpers.GetStackReferences(appCfg)
 		data := map[string]any{
 			"account":                  generics.GetFakeObj[string](),
-			"region":                   install.AWSAccount.Region,
+			"region":                   region,
 			"url":                      generics.GetFakeObj[string](),
 			"maintenance_iam_role_arn": generics.GetFakeObj[string](),
 			"provision_iam_role_arn":   generics.GetFakeObj[string](),

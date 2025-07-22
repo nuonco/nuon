@@ -1,6 +1,8 @@
 package stack
 
 import (
+	"fmt"
+
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/mitchellh/mapstructure"
@@ -36,31 +38,65 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		return errors.Wrap(err, "unable to get app config by id")
 	}
 
-	if appCfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
+	switch appCfg.RunnerConfig.Type {
+	case app.AppRunnerTypeAWS:
+		break
+	case app.AppRunnerTypeAzure:
+		break
+	default:
 		return nil
 	}
 
 	// make sure outputs are valid
-	var outputs app.AWSStackOutputs
+	outputs := app.InstallStackOutputs{
+		AWSStackOutputs:   nil,
+		AzureStackOutputs: nil,
+	}
+	switch appCfg.RunnerConfig.Type {
+	case app.AppRunnerTypeAWS:
+		fmt.Println("AWS")
+		decoderConfig := &mapstructure.DecoderConfig{
+			DecodeHook: mapstructure.ComposeDecodeHookFunc(
+				mapstructure.StringToSliceHookFunc(","),
+				mapstructure.StringToTimeDurationHookFunc(),
+			),
+			WeaklyTypedInput: true,
+			Result:           &outputs.AWSStackOutputs,
+		}
+		decoder, err := mapstructure.NewDecoder(decoderConfig)
+		if err != nil {
+			return errors.Wrap(err, "unable to create decoder")
+		}
+		fmt.Printf("run.Data: %+v", run.Data)
+		if err := decoder.Decode(run.Data); err != nil {
+			return errors.Wrap(err, "unable to parse install outputs")
+		}
 
-	decoderConfig := &mapstructure.DecoderConfig{
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			mapstructure.StringToSliceHookFunc(","),
-			mapstructure.StringToTimeDurationHookFunc(),
-		),
-		WeaklyTypedInput: true,
-		Result:           &outputs,
-	}
-	decoder, err := mapstructure.NewDecoder(decoderConfig)
-	if err != nil {
-		return errors.Wrap(err, "unable to create decoder")
-	}
-	if err := decoder.Decode(run.Data); err != nil {
-		return errors.Wrap(err, "unable to parse aws outputs")
-	}
+		if err := w.v.Struct(outputs); err != nil {
+			return errors.Wrap(err, "invalid outputs")
+		}
+	case app.AppRunnerTypeAzure:
+		fmt.Println("AWS")
+		decoderConfig := &mapstructure.DecoderConfig{
+			DecodeHook: mapstructure.ComposeDecodeHookFunc(
+				mapstructure.StringToSliceHookFunc(","),
+				mapstructure.StringToTimeDurationHookFunc(),
+			),
+			WeaklyTypedInput: true,
+			Result:           &outputs.AzureStackOutputs,
+		}
+		decoder, err := mapstructure.NewDecoder(decoderConfig)
+		if err != nil {
+			return errors.Wrap(err, "unable to create decoder")
+		}
+		fmt.Printf("run.Data: %+v", run.Data)
+		if err := decoder.Decode(run.Data); err != nil {
+			return errors.Wrap(err, "unable to parse install outputs")
+		}
 
-	if err := w.v.Struct(outputs); err != nil {
-		return errors.Wrap(err, "invalid outputs")
+		if err := w.v.Struct(outputs); err != nil {
+			return errors.Wrap(err, "invalid outputs")
+		}
 	}
 
 	// update outputs if needed
@@ -73,20 +109,32 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 	}
 
 	// update the runner settings group
+	runnerIAMRoleARN := ""
+	if outputs.AWSStackOutputs != nil {
+		runnerIAMRoleARN = outputs.AWSStackOutputs.RunnerIAMRoleARN
+	}
 	if err := activities.AwaitUpdateRunnerGroupSettings(ctx, &activities.UpdateRunnerGroupSettings{
 		RunnerID:           install.RunnerID,
-		LocalAWSIAMRoleARN: outputs.RunnerIAMRoleARN,
+		LocalAWSIAMRoleARN: runnerIAMRoleARN,
 	}); err != nil {
 		return errors.Wrap(err, "unable to update runner group settings")
 	}
 
 	// NOTE(jm): this is probably not the _best_ place to do this validation, but for now it works
 	// make sure the region matches the outputs
-	if install.AWSAccount == nil {
-		return nil
-	}
-	if install.AWSAccount.Region != outputs.Region {
-		return errors.Wrap(err, "install stack was run for a different region than the install was configured for")
+	return validateRegion(*install, outputs)
+}
+
+func validateRegion(install app.Install, outputs app.InstallStackOutputs) error {
+	switch {
+	case install.AWSAccount != nil:
+		if install.AWSAccount.Region != outputs.AWSStackOutputs.Region {
+			return errors.New("install stack was run for a different region than the install was configured for")
+		}
+	case install.AzureAccount != nil:
+		if install.AzureAccount.Location != outputs.AzureStackOutputs.ResourceGroupLocation {
+			return errors.New("install stack was run for a different region than the install was configured for")
+		}
 	}
 
 	return nil
