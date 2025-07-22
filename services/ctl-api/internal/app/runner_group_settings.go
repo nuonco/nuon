@@ -20,6 +20,7 @@ const (
 	DefaultAWSInstanceType = "t3a.medium"
 )
 
+// TODO(fd): use the consts
 var (
 	CommonRunnerGroupSettingsGroups         = [...]string{"operations", "sync"}
 	DefaultOrgRunnerGroupSettingsGroups     = [...]string{"build", "sandbox", "runner"}
@@ -72,6 +73,9 @@ type RunnerGroupSettings struct {
 	LocalAWSIAMRoleARN         string        `json:"local_aws_iam_role_arn,omitzero" temporaljson:"local_awsiam_role_arn,omitzero,omitempty"`
 
 	// azure runner specifics
+
+	// platform variable for use in the runner
+	Platform CloudPlatform `json:"platform" temporaljson:"-" gorm:"-"`
 }
 
 func (i *RunnerGroupSettings) Views(db *gorm.DB) []migrations.View {
@@ -106,5 +110,9 @@ func (r *RunnerGroupSettings) BeforeCreate(tx *gorm.DB) error {
 
 func (r *RunnerGroupSettings) AfterQuery(tx *gorm.DB) error {
 	r.ExpectedVersion = r.ContainerImageTag
+
+	if r.AWSInstanceType != "" && r.AWSCloudformationStackType != "" {
+		r.Platform = CloudPlatformAWS
+	}
 	return nil
 }

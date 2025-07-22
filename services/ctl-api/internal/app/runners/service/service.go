@@ -56,6 +56,8 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// trigger specific jobs
 	api.POST("/v1/runners/:runner_id/graceful-shutdown", s.GracefulShutDown)
 	api.POST("/v1/runners/:runner_id/force-shutdown", s.ForceShutDown)
+	api.POST("/v1/runners/:runner_id/mng/shutdown-vm", s.MngVMShutDown)
+	api.POST("/v1/runners/:runner_id/mng/shutdown", s.MngShutDown)
 
 	// settings
 	api.GET("/v1/runners/:runner_id/settings", s.GetRunnerSettingsPublic)
