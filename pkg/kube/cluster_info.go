@@ -111,5 +111,41 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 		cfg.ExecProvider = nil
 	}
 
+	if cInfo.AzureAuth != nil {
+		// TODO(ja): reverse engineer how kubelogin works so we can go back to using a BearerToken
+		// // get a credential
+		// cred, err := azurecredentials.Fetch(ctx)
+		// if err != nil {
+		// 	return nil, fmt.Errorf("unable to get azure credential: %w", err)
+		// }
+
+		// // use the credentials to get an Entra ID token
+		// entraToken, err := cred.GetToken(ctx, policy.TokenRequestOptions{
+		// 	Scopes: []string{"https://management.azure.com/.default"}},
+		// )
+		// if err != nil {
+		// 	return nil, fmt.Errorf("unable to get entra ID token: %w", err)
+		// }
+
+		// cfg.BearerToken = entraToken.Token
+		// cfg.ExecProvider = nil
+
+		// Use kubelogin to authenticate
+		cfg.ExecProvider = &clientcmdapi.ExecConfig{
+			APIVersion: "client.authentication.k8s.io/v1beta1",
+			Command:    "kubelogin",
+			Args: []string{
+				"get-token",
+				"--login",
+				"msi",
+				"--server-id",
+				"6dae42f8-4368-4678-94ff-3960e28e3630",
+				"--tenant-id",
+				cInfo.AzureAuth.ServicePrincipal.SubscriptionTenantID,
+			},
+			InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
+		}
+	}
+
 	return cfg, nil
 }
