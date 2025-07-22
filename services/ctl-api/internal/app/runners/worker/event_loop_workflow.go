@@ -35,9 +35,13 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		signals.OperationFlushOrphanedJobs: AwaitFlushOrphanedJobs,
 
 		// independent runner
-		signals.OperationProvisionServiceAccount: AwaitProvisionServiceAccount,
+		signals.OperationProvisionServiceAccount:   AwaitProvisionServiceAccount,
 		signals.OperationReprovisionServiceAccount: AwaitReprovisionServiceAccount,
-		signals.OperationInstallStackVersionRun:  AwaitInstallStackVersionRun,
+		signals.OperationInstallStackVersionRun:    AwaitInstallStackVersionRun,
+
+		// independent runner management mode
+		signals.OperationMngVMShutDown: AwaitMngVMShutdown,
+		signals.OperationMngShutDown:   AwaitMngShutdown,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
