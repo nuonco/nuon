@@ -41,7 +41,7 @@ func (w *Workflows) GracefulShutdown(ctx workflow.Context, sreq signals.RequestS
 		return nil
 	}
 
-	runnerJob, err := w.createRunnerJob(ctx, sreq.ID, map[string]string{
+	runnerJob, err := w.createRunnerShutDownJob(ctx, sreq.ID, map[string]string{
 		"shutdown_type": "graceful",
 	})
 	if err != nil {
@@ -59,7 +59,7 @@ func (w *Workflows) GracefulShutdown(ctx workflow.Context, sreq signals.RequestS
 	return nil
 }
 
-func (w *Workflows) createRunnerJob(ctx workflow.Context, runnerID string, metadata map[string]string) (*app.RunnerJob, error) {
+func (w *Workflows) createRunnerShutDownJob(ctx workflow.Context, runnerID string, metadata map[string]string) (*app.RunnerJob, error) {
 	runner, err := activities.AwaitGetByRunnerID(ctx, runnerID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get runner")
