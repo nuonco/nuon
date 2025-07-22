@@ -17,6 +17,8 @@ jobs:
     name: build-base
     runs-on: mono
     timeout-minutes: 15
+    env:
+      NO_CACHE: ${{ contains(github.event.pull_request.labels.*.name, 'no-cache') }}
     steps:
       - uses: FranzDiebold/github-env-vars-action@v2
       - name: Checkout repo
