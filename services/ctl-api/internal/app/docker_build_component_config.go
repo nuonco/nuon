@@ -29,7 +29,7 @@ type DockerBuildComponentConfig struct {
 
 	Dockerfile string         `json:"dockerfile,omitzero" gorm:"default:Dockerfile;notnull" temporaljson:"dockerfile,omitzero,omitempty"`
 	Target     string         `json:"target,omitzero" temporaljson:"target,omitzero,omitempty"`
-	BuildArgs  pq.StringArray `json:"build_args,omitzero" gorm:"type:text[]" json:"build_args" swaggertype:"array,string" temporaljson:"build_args,omitzero,omitempty"`
+	BuildArgs  pq.StringArray `json:"build_args,omitzero" gorm:"type:text[]" swaggertype:"array,string" temporaljson:"build_args,omitzero,omitempty"`
 	EnvVars    pgtype.Hstore  `json:"env_vars,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"env_vars,omitzero,omitempty"`
 
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty" temporaljson:"public_git_vcs_config,omitzero,omitempty"`
