@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
+	azurecredentials "github.com/powertoolsdev/mono/pkg/azure/credentials"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	"github.com/powertoolsdev/mono/pkg/render"
 	"github.com/powertoolsdev/mono/pkg/types/state"
@@ -20,17 +21,37 @@ func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallSta
 		return nil, errors.Wrap(err, "unable to get logger")
 	}
 
-	obj := &kube.ClusterInfo{
-		ID:       "{{.nuon.sandbox.outputs.cluster.name}}",
-		Endpoint: "{{.nuon.sandbox.outputs.cluster.endpoint}}",
-		CAData:   "{{.nuon.sandbox.outputs.cluster.certificate_authority_data}}",
-		AWSAuth: &awscredentials.Config{
-			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
-			AssumeRole: &awscredentials.AssumeRoleConfig{
-				RoleARN:     stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN,
-				SessionName: "maintenance",
+	obj := &kube.ClusterInfo{}
+	switch {
+	case stack.InstallStackOutputs.AWSStackOutputs != nil:
+		obj = &kube.ClusterInfo{
+			ID:       "{{.nuon.sandbox.outputs.cluster.name}}",
+			Endpoint: "{{.nuon.sandbox.outputs.cluster.endpoint}}",
+			CAData:   "{{.nuon.sandbox.outputs.cluster.certificate_authority_data}}",
+			AWSAuth: &awscredentials.Config{
+				Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
+				AssumeRole: &awscredentials.AssumeRoleConfig{
+					RoleARN:     stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN,
+					SessionName: "maintenance",
+				},
 			},
-		},
+		}
+	case stack.InstallStackOutputs.AzureStackOutputs != nil:
+		obj = &kube.ClusterInfo{
+			ID:       "{{.nuon.sandbox.outputs.cluster.name}}",
+			Endpoint: "{{.nuon.sandbox.outputs.cluster.host}}",
+			CAData:   "{{.nuon.sandbox.outputs.cluster.cluster_ca_certificate}}",
+			AzureAuth: &azurecredentials.Config{
+				ServicePrincipal: &azurecredentials.ServicePrincipalCredentials{
+					SubscriptionID:       stack.InstallStackOutputs.AzureStackOutputs.SubscriptionID,
+					SubscriptionTenantID: stack.InstallStackOutputs.AzureStackOutputs.SubscriptionTenantID,
+				},
+				UseDefault: true,
+			},
+		}
+	}
+
+	if stack.InstallStackOutputs.AWSStackOutputs != nil {
 	}
 
 	stateData, err := state.AsMap()

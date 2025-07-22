@@ -15,14 +15,17 @@ import (
 type AppRunnerType string
 
 const (
+	// legacy types from before independent runners
 	AppRunnerTypeAWSECS   AppRunnerType = "aws-ecs"
 	AppRunnerTypeAWSEKS   AppRunnerType = "aws-eks"
 	AppRunnerTypeAzureAKS AppRunnerType = "azure-aks"
 	AppRunnerTypeAzureACS AppRunnerType = "azure-acs"
-	AppRunnerTypeLocal    AppRunnerType = "local"
 
-	// the aws independent runner
-	AppRunnerTypeAWS AppRunnerType = "aws"
+	AppRunnerTypeLocal AppRunnerType = "local"
+
+	// for independent runners
+	AppRunnerTypeAWS   AppRunnerType = "aws"
+	AppRunnerTypeAzure AppRunnerType = "azure"
 )
 
 func (a AppRunnerType) JobType() RunnerJobType {
@@ -102,7 +105,7 @@ func (a *AppRunnerConfig) AfterQuery(tx *gorm.DB) error {
 	switch a.Type {
 	case AppRunnerTypeAWSECS, AppRunnerTypeAWSEKS, AppRunnerTypeAWS:
 		a.CloudPlatform = CloudPlatformAWS
-	case AppRunnerTypeAzureAKS, AppRunnerTypeAzureACS:
+	case AppRunnerTypeAzureAKS, AppRunnerTypeAzureACS, AppRunnerTypeAzure:
 		a.CloudPlatform = CloudPlatformAzure
 	default:
 		a.CloudPlatform = CloudPlatformUnknown

@@ -20,7 +20,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
     go generate ./...
 
-FROM code as build
+FROM code AS build
 
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
@@ -35,14 +35,14 @@ COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-runner \
     golangci-lint run -c .golangci.yml --issues-exit-code 0 -v
 
-FROM golang:1.24-alpine as nuon-cli
+FROM golang:1.24-alpine AS nuon-cli
 
 RUN apk add --update --no-cache curl ca-certificates
 RUN curl https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.519/nuon_linux_amd64 -o /bin/nuon && chmod +x /bin/nuon
 
-FROM gcr.io/kaniko-project/executor as kaniko
+FROM gcr.io/kaniko-project/executor AS kaniko
 
-FROM golang:1.24-alpine as aws-iam-authenticator
+FROM golang:1.24-alpine AS aws-iam-authenticator
 
 RUN apk add --update --no-cache curl ca-certificates
 WORKDIR /bin
@@ -53,7 +53,20 @@ RUN curl \
         "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
     && chmod +x aws-iam-authenticator
 
-FROM golang:1.24-alpine as certs
+FROM golang:1.24-alpine AS kubelogin
+
+RUN apk add --update --no-cache curl ca-certificates
+WORKDIR /bin
+# kubelogin download url
+RUN curl -LO \
+    https://github.com/Azure/kubelogin/releases/download/v0.2.9/kubelogin-linux-amd64.zip \
+    && unzip kubelogin-linux-amd64.zip \
+    && mv bin/linux_amd64/kubelogin . \
+    && rm kubelogin-linux-amd64.zip \
+    && rm -r bin \
+    && chmod +x kubelogin
+
+FROM golang:1.24-alpine AS certs
 
 # NOTE(jdt): ideally we would wget -a but busybox doesn't support it
 # or use `update-ca-certificate` but it can't handle a single file w/ multiple certs
@@ -61,7 +74,7 @@ RUN wget \
         https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
     && cat global-bundle.pem >> /global-bundle.pem
 
-FROM golang:1.24-alpine as final
+FROM golang:1.24-alpine AS final
 
 ARG tag
 
@@ -90,6 +103,7 @@ COPY --from=kaniko /kaniko/.docker /kaniko/.docker
 COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
 COPY --from=nuon-cli /bin/nuon /usr/bin/nuon
 COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+COPY --from=kubelogin /bin/kubelogin /usr/local/bin/kubelogin
 COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 
 COPY ./bundle /bundle
@@ -103,7 +117,7 @@ ENV GIT_REF=$tag
 
 ENTRYPOINT ["/bin/runner"]
 
-FROM build as build-artifacts
+FROM build AS build-artifacts
 
 ARG BIN_NAME=runner
 ARG tag=
