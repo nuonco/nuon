@@ -90,3 +90,19 @@ debugging any issues.
 ```sh
 NUON_DEBUG=true nuon apps list
 ```
+
+### Using the CLI against a BYOC Instance
+
+If you are using a Nuon BYOC instance, that is, a copy of the Nuon platform running in your own infrastructure, you can use the CLI to interact with it.
+
+To do this, you can:
+```sh
+NUON_API_URL=https://api.your-byoc-instance.com nuon login 
+
+# or
+
+export NUON_API_URL=https://api.your-byoc-instance.com
+nuon login #or other nuon CLI commands.
+```
+
+By default, the CLI will use api.nuon.co as the API URL.
