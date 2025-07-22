@@ -70,7 +70,7 @@ type AppConfig struct {
 	SandboxConfig              AppSandboxConfig            `json:"sandbox,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"sandbox_config,omitzero,omitempty"`
 	InputConfig                AppInputConfig              `json:"input,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"input_config,omitzero,omitempty"`
 	RunnerConfig               AppRunnerConfig             `json:"runner,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"runner_config,omitzero,omitempty"`
-	StackConfig                AppStackConfig              `json:"stack,omitempty",omitzero gorm:"constraint:OnDelete:CASCADE;" temporaljson:"stack_config,omitzero,omitempty"`
+	StackConfig                AppStackConfig              `json:"stack,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"stack_config,omitzero,omitempty"`
 	ComponentConfigConnections []ComponentConfigConnection `json:"component_config_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_config_connections,omitzero,omitempty"`
 	ActionWorkflowConfigs      []ActionWorkflowConfig      `json:"action_workflow_configs,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"action_workflow_configs,omitzero,omitempty"`
 
