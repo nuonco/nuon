@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import {
@@ -30,8 +31,14 @@ export default async function AppInstalls({ params, searchParams }) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
   const sp = await searchParams
   const [app, inputCfg] = await Promise.all([
-    getApp({ appId, orgId }),
-    getAppLatestInputConfig({ appId, orgId }).catch(console.error),
+    getApp({ appId, orgId }).catch((error) => {
+      console.error(error)
+      notFound()
+    }),
+    getAppLatestInputConfig({ appId, orgId }).catch((error) => {
+      console.error(error)
+      notFound()
+    }),
   ])
 
   return (
