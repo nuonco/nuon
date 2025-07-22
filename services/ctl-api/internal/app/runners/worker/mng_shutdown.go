@@ -11,11 +11,11 @@ import (
 )
 
 // @temporal-gen workflow
-// @execution-timeout 60m
-// @task-timeout 30m
-func (w *Workflows) ForceShutdown(ctx workflow.Context, sreq signals.RequestSignal) error {
-	runnerJob, err := w.createRunnerShutDownJob(ctx, sreq.ID, map[string]string{
-		"shutdown_type": "force",
+// @execution-timeout 10m
+// @task-timeout 5m
+func (w *Workflows) MngShutdown(ctx workflow.Context, sreq signals.RequestSignal) error {
+	runnerJob, err := w.createMngJob(ctx, sreq.ID, app.RunnerJobTypeMngShutDown, map[string]string{
+		"shutdown_type": "graceful",
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create runner job")
