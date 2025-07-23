@@ -182,13 +182,8 @@ func (i *Workflow) BeforeCreate(tx *gorm.DB) error {
 		i.ID = domains.NewWorkflowID()
 	}
 
-	if i.CreatedByID == "" {
-		i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
-	}
-
-	if i.OwnerID == "" {
-		i.OrgID = orgIDFromContext(tx.Statement.Context)
-	}
+	i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	i.OrgID = orgIDFromContext(tx.Statement.Context)
 
 	return nil
 }
