@@ -31,6 +31,11 @@ const (
 	WorkflowTypeActionWorkflowRun  WorkflowType = "action_workflow_run"
 	WorkflowTypeSyncSecrets        WorkflowType = "sync_secrets"
 
+	// app branches workflows
+	WorkflowTypeAppBranchesManualUpdate        WorkflowType = "app_branches_manual_update"
+	WorkflowTypeAppBranchesConfigRepoUpdate    WorkflowType = "app_branches_config_repo_update"
+	WorkflowTypeAppBranchesComponentRepoUpdate WorkflowType = "app_branches_component_repo_update"
+
 	// reprovision everything
 	WorkflowTypeReprovision WorkflowType = "reprovision"
 )
@@ -177,8 +182,13 @@ func (i *Workflow) BeforeCreate(tx *gorm.DB) error {
 		i.ID = domains.NewWorkflowID()
 	}
 
-	i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
-	i.OrgID = orgIDFromContext(tx.Statement.Context)
+	if i.CreatedByID == "" {
+		i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
+
+	if i.OwnerID == "" {
+		i.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
 
 	return nil
 }

@@ -35,7 +35,7 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateInstallFlow(ctx,
+	workflow, err := s.helpers.CreateWorkflow(ctx,
 		install.ID,
 		app.WorkflowTypeDeprovision,
 		map[string]string{},

@@ -46,7 +46,7 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateInstallFlow(ctx,
+	workflow, err := s.helpers.CreateWorkflow(ctx,
 		installID,
 		app.WorkflowTypeDeployComponents,
 		map[string]string{},
