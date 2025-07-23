@@ -9,6 +9,8 @@ import (
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	actionsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker"
 	actionsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/worker/activities"
+	appbranchesworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/app-branches/worker"
+	appbranchesactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/app-branches/worker/activities"
 	appsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker"
 	appsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 	componentsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker"
@@ -101,6 +103,15 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 			fx.Provide(appsactivities.New),
 			fx.Provide(appsworker.NewWorkflows),
 			fx.Provide(worker.AsWorker(appsworker.New)))
+	}
+
+	// app-branches worker
+	if namespace == "all" || namespace == "app-branches" {
+		providers = append(providers,
+			fx.Provide(appbranchesactivities.New),
+			fx.Provide(appbranchesworker.NewWorkflows),
+			fx.Provide(worker.AsWorker(componentsworker.New)),
+		)
 	}
 
 	// components worker
