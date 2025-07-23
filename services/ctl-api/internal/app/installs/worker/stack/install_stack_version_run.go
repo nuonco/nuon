@@ -85,7 +85,7 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 			"private_subnets":          generics.GetFakeObj[string](),
 			"runner_subnet":            generics.GetFakeObj[string](),
 		}
-		data = generics.MergeMap(data, refs.GetFakeRefs(stackRefs))
+		data = generics.MergeMap(refs.GetFakeRefs(stackRefs), data)
 
 		run, err := activities.AwaitCreateSandboxInstallStackVersionRun(ctx, &activities.CreateSandboxInstallStackVersionRunRequest{
 			StackVersionID: version.ID,
