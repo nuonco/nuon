@@ -75,7 +75,7 @@ type RunnerGroupSettings struct {
 	// azure runner specifics
 
 	// platform variable for use in the runner
-	Platform CloudPlatform `json:"platform" temporaljson:"-" gorm:"-"`
+	Platform CloudPlatform `json:"platform" temporaljson:"-" gorm:"-" swaggertype:"object,string"`
 }
 
 func (i *RunnerGroupSettings) Views(db *gorm.DB) []migrations.View {
