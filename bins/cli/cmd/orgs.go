@@ -73,19 +73,6 @@ func (c *cli) orgsCmd() *cobra.Command {
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	orgsCmd.AddCommand(listCmd)
 
-	listConntectedRepos := &cobra.Command{
-		Use:   "list-connected-repos",
-		Short: "List connected repos",
-		Long:  "List repositories from connected GitHub accounts",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.ConnectedRepos(cmd.Context(), offset, limit, PrintJSON)
-		}),
-	}
-	listConntectedRepos.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
-	listConntectedRepos.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
-	orgsCmd.AddCommand(listConntectedRepos)
-
 	listVCSConnections := &cobra.Command{
 		Use:   "list-vcs-connections",
 		Short: "List VCS connections",
