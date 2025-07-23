@@ -29,6 +29,7 @@ ENTRYPOINT [   \
   "-n", "installs",    \
   "-n", "orgs",        \
   "-n", "apps",        \
+  "-n", "app-branches",       \
   "-n", "components",  \
   "-n", "releases",    \
   "-n", "runners",     \
@@ -37,4 +38,4 @@ ENTRYPOINT [   \
   "--db-filename", "/tmp/nuon-dev-temporal.db", \
   "--dynamic-config-value", "limit.maxWorkflowExecutionSize=262144000", \
   "--dynamic-config-value", "limit.blobSize.error=5242880" \
-]
+  ]

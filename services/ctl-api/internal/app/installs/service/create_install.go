@@ -73,7 +73,7 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		Type: signals.OperationSyncActionWorkflowTriggers,
 	})
 
-	workflow, err := s.helpers.CreateInstallFlow(ctx,
+	workflow, err := s.helpers.CreateWorkflow(ctx,
 		install.ID,
 		app.WorkflowTypeProvision,
 		map[string]string{},
