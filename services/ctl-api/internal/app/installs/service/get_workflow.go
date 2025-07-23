@@ -70,9 +70,12 @@ func (s *service) GetInstallWorkflow(ctx *gin.Context) {
 func (s *service) getWorkflow(ctx *gin.Context, workflowID string) (*app.Workflow, error) {
 	var installWorkflow app.Workflow
 	res := s.db.WithContext(ctx).
+		Preload("CreatedBy").
 		Preload("Steps", func(db *gorm.DB) *gorm.DB {
-			return db.Order("idx, created_at ASC")
+			return db.
+				Order("idx, created_at ASC")
 		}).
+		Preload("Steps.CreatedBy").
 		Preload("Steps.Approval").
 		Preload("Steps.Approval.Response").
 		Where("id = ?", workflowID).
