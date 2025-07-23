@@ -168,5 +168,5 @@ jobs:
           
       - name: Docker buildx prune
         run: |
-          docker buildx du --verbose && docker buildx prune --max-used-space=275000000000 --force
+          docker buildx du --verbose && docker buildx prune --max-used-space=100000000000 --force
         continue-on-error: true
