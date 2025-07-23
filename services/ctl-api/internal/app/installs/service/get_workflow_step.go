@@ -74,6 +74,7 @@ func (s *service) getWorkflowStep(ctx *gin.Context, workflowID, stepID string) (
 	var installWorkflowStep app.WorkflowStep
 	res := s.db.WithContext(ctx).
 		Where("id = ? AND install_workflow_id = ?", stepID, workflowID).
+		Preload("CreatedBy").
 		Preload("Approval").
 		Preload("PolicyValidation").
 		First(&installWorkflowStep)
