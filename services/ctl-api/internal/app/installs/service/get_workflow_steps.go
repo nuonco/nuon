@@ -73,6 +73,7 @@ func (s *service) getWorkflowSteps(ctx *gin.Context, workflowID string) ([]app.W
 		Where(app.WorkflowStep{
 			InstallWorkflowID: workflowID,
 		}).
+		Preload("CreatedBy").
 		Preload("Approval").
 		Preload("Approval.Response").
 		Preload("PolicyValidation").

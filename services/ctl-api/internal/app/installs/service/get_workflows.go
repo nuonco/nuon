@@ -48,7 +48,9 @@ func (s *service) getWorkflows(ctx *gin.Context, installID string) ([]app.Workfl
 	var workflows []app.Workflow
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
+		Preload("CreatedBy").
 		Preload("Steps").
+		Preload("Steps.CreatedBy").
 		Preload("Steps.Approval").
 		Preload("Steps.Approval.Response").
 		Where("owner_id = ?", installID).
