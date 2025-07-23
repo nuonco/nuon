@@ -49,7 +49,7 @@ export const DeprovisionStackModal: FC<IDeprovisionStackModal> = ({
               isOpen={isOpen}
               heading={
                 <span className="flex items-center gap-3">
-                  Deprovision CloudFormation stack for {install.name}?
+                  Deprovision stack for {install.name}?
                 </span>
               }
               onClose={() => {
@@ -60,8 +60,8 @@ export const DeprovisionStackModal: FC<IDeprovisionStackModal> = ({
                 {error ? <Notice>{error}</Notice> : null}
                 <Notice variant="warn">
                   Once you have deprovisioned the install from the UI, please go
-                  to the AWS console and destroy this CloudFormation stack for
-                  your install.
+                  to the cloud platform console and destroy this stack for your
+                  install.
                 </Notice>
               </div>
               <div className="flex gap-3 justify-end">
