@@ -46,7 +46,7 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateInstallFlow(ctx,
+	workflow, err := s.helpers.CreateWorkflow(ctx,
 		install.ID,
 		app.WorkflowTypeReprovision,
 		map[string]string{},
