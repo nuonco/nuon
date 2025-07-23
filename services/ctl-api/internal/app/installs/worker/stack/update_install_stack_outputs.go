@@ -1,8 +1,6 @@
 package stack
 
 import (
-	"fmt"
-
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/mitchellh/mapstructure"
@@ -54,7 +52,6 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 	}
 	switch appCfg.RunnerConfig.Type {
 	case app.AppRunnerTypeAWS:
-		fmt.Println("AWS")
 		decoderConfig := &mapstructure.DecoderConfig{
 			DecodeHook: mapstructure.ComposeDecodeHookFunc(
 				mapstructure.StringToSliceHookFunc(","),
@@ -67,7 +64,6 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		if err != nil {
 			return errors.Wrap(err, "unable to create decoder")
 		}
-		fmt.Printf("run.Data: %+v", run.Data)
 		if err := decoder.Decode(run.Data); err != nil {
 			return errors.Wrap(err, "unable to parse install outputs")
 		}
@@ -76,7 +72,6 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 			return errors.Wrap(err, "invalid outputs")
 		}
 	case app.AppRunnerTypeAzure:
-		fmt.Println("AWS")
 		decoderConfig := &mapstructure.DecoderConfig{
 			DecodeHook: mapstructure.ComposeDecodeHookFunc(
 				mapstructure.StringToSliceHookFunc(","),
@@ -89,7 +84,6 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		if err != nil {
 			return errors.Wrap(err, "unable to create decoder")
 		}
-		fmt.Printf("run.Data: %+v", run.Data)
 		if err := decoder.Decode(run.Data); err != nil {
 			return errors.Wrap(err, "unable to parse install outputs")
 		}
