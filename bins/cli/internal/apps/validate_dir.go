@@ -2,7 +2,6 @@ package apps
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-playground/validator/v10"
 
@@ -24,7 +23,6 @@ func (s *Service) loadConfig(file string) (*config.AppConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return cfg, nil
 }
 
@@ -56,7 +54,7 @@ func (s *Service) ValidateDir(ctx context.Context, dir string) error {
 		ui.PrintJSON(cfg)
 	}
 
-	ui.PrintLn(fmt.Sprintf("validating configs"))
+	ui.PrintLn("validating configs")
 	err = validate.Validate(ctx, s.v, cfg)
 	if err != nil {
 		if config.IsWarningErr(err) {
@@ -65,7 +63,7 @@ func (s *Service) ValidateDir(ctx context.Context, dir string) error {
 			return ui.PrintError(err)
 		}
 	}
-	ui.PrintLn(fmt.Sprintf("all configs valid"))
+	ui.PrintLn("all configs valid")
 
 	return nil
 }
