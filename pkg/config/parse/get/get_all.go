@@ -62,6 +62,9 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 			if fieldType.Name == "Policies" {
 				subdir = "policies"
 			}
+			if fieldType.Name == "Installs" {
+				subdir = "installs"
+			}
 
 			// Recurse with the dereferenced pointer
 			if err := g.walkFields(ctx, field.Interface(), subdir); err != nil {
@@ -81,6 +84,9 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 			if fieldType.Name == "Policies" {
 				subdir = "policies"
 			}
+			if fieldType.Name == "Installs" {
+				subdir = "installs"
+			}
 
 			if err := g.walkFields(ctx, field.Interface(), subdir); err != nil {
 				return err
@@ -92,6 +98,9 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 
 			if fieldType.Name == "Actions" {
 				subdir = "actions"
+			}
+			if fieldType.Name == "Installs" {
+				subdir = "installs"
 			}
 
 			// Handle slices of structs
