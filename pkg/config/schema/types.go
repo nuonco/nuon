@@ -11,21 +11,24 @@ import (
 
 func LookupSchemaType(typ string) (*jsonschema.Schema, error) {
 	mapping := map[string]func() (*jsonschema.Schema, error){
-		"full":             AppConfigSchema,
-		"runner":           RunnerConfigSchema,
-		"sandbox":          SandboxConfigSchema,
-		"helm":             HelmConfigSchema,
-		"docker-build":     DockerBuildConfigSchema,
-		"terraform": TerraformModuleConfigSchema,
-		"container-image":  ContainerImageConfigSchema,
-		"permissions":      PermissionsConfigSchema,
-		"policy":           PolicyConfigSchema,
-		"secret":           SecretConfigSchema,
-		"metadata":         MetadataConfigSchema,
-		"action":           ActionConfigSchema,
-		"stack":            StackConfigSchema,
-		"installer":        InstallerConfigSchema,
-		"break-glass":      BreakGlassConfigSchema,
+		"full":            AppConfigSchema,
+		"runner":          RunnerConfigSchema,
+		"sandbox":         SandboxConfigSchema,
+		"helm":            HelmConfigSchema,
+		"docker-build":    DockerBuildConfigSchema,
+		"terraform":       TerraformModuleConfigSchema,
+		"container-image": ContainerImageConfigSchema,
+		"permissions":     PermissionsConfigSchema,
+		"policy":          PolicyConfigSchema,
+		"secret":          SecretConfigSchema,
+		"metadata":        MetadataConfigSchema,
+		"action":          ActionConfigSchema,
+		"stack":           StackConfigSchema,
+		"installer":       InstallerConfigSchema,
+		"break-glass":     BreakGlassConfigSchema,
+		"inputs":          InputsConfigSchema,
+		"input-group":     InputGroupSchema,
+		"input":           InputSchema,
 	}
 
 	fn, ok := mapping[typ]
@@ -39,6 +42,33 @@ func LookupSchemaType(typ string) (*jsonschema.Schema, error) {
 	}
 
 	return schema, nil
+}
+
+func InputSchema() (*jsonschema.Schema, error) {
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.AppInput{}), nil
+}
+
+func InputGroupSchema() (*jsonschema.Schema, error) {
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.AppInputGroup{}), nil
+}
+
+func InputsConfigSchema() (*jsonschema.Schema, error) {
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.AppInputConfig{}), nil
 }
 
 func AppConfigSchema() (*jsonschema.Schema, error) {
