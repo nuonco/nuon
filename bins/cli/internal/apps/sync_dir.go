@@ -40,7 +40,6 @@ func (s *Service) DeprecatedSyncDir(ctx context.Context, dir string, version str
 
 func (s *Service) SyncDir(ctx context.Context, dir string, version string) error {
 	ui.PrintLn("syncing directory from " + dir)
-
 	appName, err := parse.AppNameFromDirName(dir)
 	if err != nil {
 		err = errs.WithUserFacing(err, "error parsing app name from file")
@@ -66,7 +65,7 @@ func (s *Service) SyncDir(ctx context.Context, dir string, version string) error
 		ui.PrintJSON(cfg)
 	}
 
-	ui.PrintLn(fmt.Sprintf("validating configs"))
+	ui.PrintLn("validating configs")
 	err = validate.Validate(ctx, s.v, cfg)
 	if err != nil {
 		if config.IsWarningErr(err) {
@@ -75,7 +74,7 @@ func (s *Service) SyncDir(ctx context.Context, dir string, version string) error
 			return ui.PrintError(err)
 		}
 	}
-	ui.PrintLn(fmt.Sprintf("all configs valid"))
+	ui.PrintLn("all configs valid")
 
 	syncer := sync.New(s.api, appID, version, cfg)
 	err = syncer.Sync(ctx)
@@ -131,5 +130,4 @@ func (s *Service) notifyOrphanedActions(actions map[string]string) {
 	}
 
 	ui.PrintLn(msg)
-	return
 }
