@@ -49,6 +49,8 @@ type AppConfig struct {
 	// Components are used to connect container images, automation and infrastructure as code to your Nuon App
 	Components ComponentList `mapstructure:"components,omitempty"`
 
+	Installs []*Install `mapstructure:"installs,omitempty"`
+
 	Actions []*ActionConfig `mapstructure:"actions,omitempty"`
 }
 type ComponentList []*Component
@@ -73,6 +75,7 @@ func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "sandbox", "Sandbox configuration object")
 	addDescription(schema, "installer", "Installer configuration object")
 	addDescription(schema, "components", "Component configurations")
+	addDescription(schema, "installs", "Install configurations")
 }
 
 type parseFn struct {
@@ -146,6 +149,13 @@ func (a *AppConfig) Parse() error {
 		parseFns = append(parseFns, parseFn{
 			fmt.Sprintf("components.%d", idx),
 			comp.parse,
+		})
+	}
+
+	for idx, install := range a.Installs {
+		parseFns = append(parseFns, parseFn{
+			fmt.Sprintf("installs.%d", idx),
+			install.parse,
 		})
 	}
 
