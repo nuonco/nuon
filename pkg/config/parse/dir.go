@@ -11,8 +11,9 @@ import (
 // This will be removed and we will pass the `config.AppConfig` into the directory parser once we have time to remove
 // the old version.
 type ConfigDir struct {
-	Components []*config.Component    `name:"components"`
-	Actions    []*config.ActionConfig `name:"actions"`
+	Branch     *config.AppBranchConfig `name:"branch"`
+	Components []*config.Component     `name:"components"`
+	Actions    []*config.ActionConfig  `name:"actions"`
 
 	Policies    *config.PoliciesConfig `name:"policies"`
 	PoliciesDir []config.AppPolicy     `name:"policies"`
@@ -143,6 +144,7 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 		Actions:     c.Actions,
 		BreakGlass:  c.BreakGlass,
 		Secrets:     secrets,
+		Branch:      c.Branch,
 		Inputs:      inputs,
 		Installer:   c.Installer,
 		Sandbox:     c.Sandbox,

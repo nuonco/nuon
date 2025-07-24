@@ -19,8 +19,12 @@ type AppBranch struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	AppID string `json:"app_id,omitzero" gorm:"notnull;index:idx_app_app_branch" temporaljson:"app_id,omitzero,omitempty"`
+	AppID string `json:"app_id,omitzero" gorm:"not null;index:idx_app_app_branch;uniqueIndex:idx_app_branch_name_per_app" temporaljson:"app_id,omitzero,omitempty"`
 	App   App    `faker:"-" json:"-" temporaljson:"app,omitzero,omitempty"`
+
+	Name                       string                   `gorm:"uniqueIndex:idx_app_branch_name_per_app;not null" json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
+	ConnectedGithubVCSConfigID string                   `gorm:"notnull" json:"connected_github_vcs_config_id,omitzero" temporaljson:"connected_github_vcs_config_id,omitzero,omitempty"`
+	ConnectedGithubVCSConfig   ConnectedGithubVCSConfig `json:"-" temporaljson:"connected_github_vcs_config,omitzero,omitempty"`
 
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 }

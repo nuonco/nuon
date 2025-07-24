@@ -18,6 +18,9 @@ type AppConfig struct {
 	SlackWebhookURL string `mapstructure:"slack_webhook_url"`
 	// Readme for the app
 	Readme string `mapstructure:"readme,omitempty" features:"get,template"`
+
+	// Default App Branch config
+	Branch *AppBranchConfig `mapstructure:"branch,omitempty"`
 	// Input configuration
 	Inputs *AppInputConfig `mapstructure:"inputs,omitempty"`
 	// Sandbox configuration
@@ -65,6 +68,7 @@ func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "description", "App description which is rendered in the installer.")
 	addDescription(schema, "slack_webhook_url", "Optional notifications channel to send app notifications to.")
 
+	addDescription(schema, "branch", "Default app branch configuration object")
 	addDescription(schema, "inputs", "Inputs configuration object")
 	addDescription(schema, "sandbox", "Sandbox configuration object")
 	addDescription(schema, "installer", "Installer configuration object")
@@ -88,6 +92,12 @@ func (a *AppConfig) Parse() error {
 		},
 	}
 
+	if a.Branch != nil {
+		parseFns = append(parseFns, parseFn{
+			"branch",
+			a.Branch.parse,
+		})
+	}
 	if a.Installer != nil {
 		parseFns = append(parseFns, parseFn{
 			"installer",
