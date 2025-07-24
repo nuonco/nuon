@@ -6,6 +6,6 @@ env_secrets: {}
 disable_watch: true
 local_startup_cmds: []
 local_cmds:
-  - mintlify dev --no-open 
+  - npx --yes mintlify dev --no-open --port 3333
 disable_config_map: true
 earthly_cmds: []
