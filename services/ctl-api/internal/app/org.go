@@ -50,7 +50,7 @@ const (
 	OrgFeatureIndependentRunner       OrgFeature = "install-independent-runner"
 	OrgFeatureTerraformWorkspace      OrgFeature = "terraform-workspace"
 	OrgFeatureDevCommand              OrgFeature = "dev-command"
-  OrgFeatureAppBranches             OrgFeature = "app-branches"
+	OrgFeatureAppBranches             OrgFeature = "app-branches"
 )
 
 type Org struct {
@@ -185,6 +185,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureIndependentRunner,
 		OrgFeatureTerraformWorkspace,
 		OrgFeatureDevCommand,
-    OrgFeatureAppBranches,
+		OrgFeatureAppBranches,
 	}
 }

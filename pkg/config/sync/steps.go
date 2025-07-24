@@ -14,6 +14,13 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 			},
 		},
 		{
+			Resource: "app-branch",
+			Method: func(ctx context.Context) error {
+				// TODO: Implement syncAppBranch method
+				return nil
+			},
+		},
+		{
 			Resource: "app-inputs",
 			Method: func(ctx context.Context) error {
 				return s.syncAppInput(ctx, "app-inputs")
