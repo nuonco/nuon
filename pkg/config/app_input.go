@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/invopop/jsonschema"
@@ -82,6 +83,36 @@ func (a *AppInputConfig) parse() error {
 
 		a.Inputs = append(a.Inputs, inpCfg.Inputs...)
 		a.Groups = append(a.Groups, inpCfg.Groups...)
+	}
+
+	err := a.ValidateInputs()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *AppInputConfig) ValidateInputs() error {
+	// TODO: we need to move this to a package so we can also validate inuts the same way in api
+	for _, input := range a.Inputs {
+		if input.Type == "json" {
+			// make sure input.Default is a string and a valid JSON
+			if input.Default != nil {
+				if _, ok := input.Default.(string); !ok {
+					return ErrConfig{
+						Description: fmt.Sprintf("input %s has a default value that is not a json string", input.Name),
+						Err:         fmt.Errorf("input %s default value must be a json string", input.Name),
+					}
+				}
+				if !json.Valid([]byte(input.Default.(string))) {
+					return ErrConfig{
+						Description: fmt.Sprintf("input %s has an invalid default value", input.Name),
+						Err:         fmt.Errorf("input %s default value is not valid JSON", input.Name),
+					}
+				}
+			}
+		}
 	}
 
 	return nil
