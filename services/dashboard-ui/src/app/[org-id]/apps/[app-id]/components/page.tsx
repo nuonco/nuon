@@ -14,7 +14,7 @@ import {
   Section,
 } from '@/components'
 import { getApp, getAppLatestInputConfig, getAppLatestConfig } from '@/lib'
-import type { TBuild, TComponent } from '@/types'
+import type { TAppConfig, TBuild, TComponent } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -31,7 +31,7 @@ export default async function AppComponents({ params, searchParams }) {
   const sp = await searchParams
   const [app, appConfig, inputCfg] = await Promise.all([
     getApp({ appId, orgId }),
-    getAppLatestConfig({ appId, orgId }),
+    getAppLatestConfig({ appId, orgId }).catch(console.error),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
   ])
 
@@ -65,7 +65,7 @@ export default async function AppComponents({ params, searchParams }) {
           >
             <LoadAppComponents
               appId={appId}
-              configId={appConfig?.id}
+              configId={(appConfig as TAppConfig)?.id}
               orgId={orgId}
               offset={sp['offset'] || '0'}
               q={sp['q'] || ''}
