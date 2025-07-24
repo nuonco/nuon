@@ -37,7 +37,6 @@ export default async function AppInstalls({ params, searchParams }) {
     }),
     getAppLatestInputConfig({ appId, orgId }).catch((error) => {
       console.error(error)
-      notFound()
     }),
   ])
 
