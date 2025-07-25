@@ -31,11 +31,11 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 
 	flw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, inp.FlowID)
 	if err != nil {
-		return errors.Wrap(err, "unable to get flow object")
+		return errors.Wrap(err, "unable to get workflow object")
 	}
 
 	if flw.Status.Status == app.StatusCancelled {
-		return errors.New("flow already cancelled")
+		return errors.New("workflow already cancelled")
 	}
 
 	// reset state of the flow
@@ -80,7 +80,7 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 			ID: inp.FlowID,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusError,
-				StatusHumanDescription: "unable to fetch flow step",
+				StatusHumanDescription: "unable to fetch workflow step",
 				Metadata: map[string]any{
 					"error_message": err.Error(),
 				},
@@ -88,7 +88,7 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 		}); err != nil {
 			return err
 		}
-		return errors.Errorf("unable to fetch flow steps for flow %s: %v", inp.FlowID, err)
+		return errors.Errorf("unable to fetch workflow steps for workflow %s: %v", inp.FlowID, err)
 	}
 
 	// update the status of retryig step to discarded
@@ -159,7 +159,7 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 			}); err != nil {
 				return err
 			}
-			return errors.Wrapf(err, "unable to create retry step for flow %s", inp.FlowID)
+			return errors.Wrapf(err, "unable to create retry step for workflow %s", inp.FlowID)
 		}
 	}
 
@@ -169,7 +169,7 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 			ID: inp.FlowID,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusError,
-				StatusHumanDescription: "unable to fetch flow step",
+				StatusHumanDescription: "unable to fetch workflow step",
 				Metadata: map[string]any{
 					"error_message": err.Error(),
 				},
@@ -177,7 +177,7 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 		}); err != nil {
 			return err
 		}
-		return errors.Errorf("unable to fetch flow steps for flow %s: %v", inp.FlowID, err)
+		return errors.Errorf("unable to fetch workflow steps for workflow %s: %v", inp.FlowID, err)
 	}
 
 	// get the index of newly created step
@@ -218,7 +218,7 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 		flw.Steps[i] = app.WorkflowStep(step)
 	}
 
-	l.Debug("executing steps for flow")
+	l.Debug("executing steps for workflow")
 	if err := c.executeFlowSteps(ctx, req, flw, workflowStartStepNumber); err != nil {
 		status := app.CompositeStatus{
 			Status:                 app.StatusError,
@@ -235,14 +235,14 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 			return err
 		}
 
-		return errors.Wrap(err, "unable to execute flow steps")
+		return errors.Wrap(err, "unable to execute workflow steps")
 	}
 
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: inp.FlowID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusSuccess,
-			StatusHumanDescription: "successfully executed flow",
+			StatusHumanDescription: "successfully executed workflow",
 		},
 	}); err != nil {
 		return err
