@@ -31,6 +31,8 @@ const (
 type Signal struct {
 	Type eventloop.SignalType `json:"type"`
 
+	AppBranchID string `json:"app_branch_id"`
+
 	// WorkflowID is method in base signals
 	FlowID           string `json:"workflow_id"`
 	WorkflowStepID   string `json:"workflow_step_id"`
