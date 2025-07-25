@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/app-branches/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -63,10 +64,10 @@ func (s *service) CreateAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	// s.evClient.Send(ctx, appID, &signals.Signal{
-	// 	Type:        signals.OperationCreateAppBranch,
-	// 	AppBranchID: branch.ID,
-	// })
-	//
+	s.evClient.Send(ctx, appID, &signals.Signal{
+		Type:        signals.OperationCreated,
+		AppBranchID: branch.ID,
+	})
+
 	ctx.JSON(http.StatusCreated, branch)
 }
