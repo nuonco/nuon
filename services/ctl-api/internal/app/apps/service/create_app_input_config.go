@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -70,9 +71,19 @@ func (c *CreateAppInputConfigRequest) Validate(v *validator.Validate) error {
 		}) {
 			return stderr.ErrUser{
 				Err:         fmt.Errorf("invalid input type %s", input.Type),
-				Description: fmt.Sprintf("Please use a valid input type"),
+				Description: "Please use a valid input type",
 			}
 		}
+
+		if input.Type == "json" {
+			if input.Default != "" && !json.Valid([]byte(input.Default)) {
+				return stderr.ErrUser{
+					Description: fmt.Sprintf("input %s has an invalid JSON string", input.DisplayName),
+					Err:         fmt.Errorf("input %s default value is not valid JSON string", input.DisplayName),
+				}
+			}
+		}
+
 	}
 
 	return nil

@@ -94,10 +94,8 @@ func (a *AppInputConfig) parse() error {
 }
 
 func (a *AppInputConfig) ValidateInputs() error {
-	// TODO: we need to move this to a package so we can also validate inuts the same way in api
 	for _, input := range a.Inputs {
 		if input.Type == "json" {
-			// make sure input.Default is a string and a valid JSON
 			if input.Default != nil {
 				if _, ok := input.Default.(string); !ok {
 					return ErrConfig{
@@ -107,8 +105,8 @@ func (a *AppInputConfig) ValidateInputs() error {
 				}
 				if !json.Valid([]byte(input.Default.(string))) {
 					return ErrConfig{
-						Description: fmt.Sprintf("input %s has an invalid default value", input.Name),
-						Err:         fmt.Errorf("input %s default value is not valid JSON", input.Name),
+						Description: fmt.Sprintf("input %s has an invalid JSON string", input.Name),
+						Err:         fmt.Errorf("input %s default value is not valid JSON string", input.Name),
 					}
 				}
 			}
