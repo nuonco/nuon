@@ -74,6 +74,8 @@ type Install struct {
 	RunnerStatus                        RunnerStatus        `json:"runner_status,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_status,omitzero,omitempty"`
 	RunnerStatusDescription             string              `json:"runner_status_description,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_status_description,omitzero,omitempty"`
 	RunnerID                            string              `json:"runner_id,omitzero" gorm:"-" temporaljson:"runner_id,omitzero,omitempty"`
+	CloudPlatform                       CloudPlatform       `json:"cloud_platform,omitzero" gorm:"-" swaggertype:"string" temporaljson:"cloud_platform,omitzero,omitempty"`
+	RunnerType                          AppRunnerType       `json:"runner_type,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_type,omitzero,omitempty"`
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
@@ -155,6 +157,15 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 
 	i.Status = "deprecated"
 	i.StatusDescription = "deprecated, please use individual runner, sandbox and component statuses instead"
+
+	if i.AppRunnerConfig.ID != "" {
+		i.CloudPlatform = i.AppRunnerConfig.CloudPlatform
+		i.RunnerType = i.AppRunnerConfig.Type
+
+	} else {
+		i.CloudPlatform = CloudPlatformUnknown
+		i.RunnerType = AppRunnerTypeUnknown
+	}
 
 	return nil
 }
