@@ -22,10 +22,10 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 
 	flw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, fid)
 	if err != nil {
-		return errors.Wrap(err, "unable to get flow object")
+		return errors.Wrap(err, "unable to get workflow object")
 	}
 	if flw.Status.Status == app.StatusCancelled {
-		return errors.New("flow already cancelled")
+		return errors.New("workflow already cancelled")
 	}
 
 	defer func() {
@@ -54,12 +54,12 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 		}
 	}()
 
-	l.Debug("generating steps for flow")
+	l.Debug("generating steps for workflow")
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: fid,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusInProgress,
-			StatusHumanDescription: "generating steps for flow",
+			StatusHumanDescription: "generating steps for workflow",
 		},
 	}); err != nil {
 		return err
@@ -71,7 +71,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 			ID: fid,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusError,
-				StatusHumanDescription: "no flow step generator registered for type",
+				StatusHumanDescription: "no workflow step generator registered for type",
 				Metadata: map[string]any{
 					"error_message": err.Error(),
 				},
@@ -79,7 +79,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 		}); err != nil {
 			return err
 		}
-		return errors.Errorf("no flow step generator registered for flow type %s", flw.Type)
+		return errors.Errorf("no workflow step generator registered for workflow type %s", flw.Type)
 	}
 
 	steps, err := gen(ctx, flw)
@@ -116,7 +116,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 			return err
 		}
 
-		return errors.Wrap(err, "unable to generate flow steps")
+		return errors.Wrap(err, "unable to generate workflow steps")
 	}
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: fid,
@@ -134,7 +134,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 		flw.Steps[i] = *step
 	}
 
-	l.Debug("executing steps for flow")
+	l.Debug("executing steps for workflow")
 	if err := c.executeSteps(ctx, req, flw); err != nil {
 		status := app.CompositeStatus{
 			Status:                 app.StatusError,
@@ -151,14 +151,14 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 			return err
 		}
 
-		return errors.Wrap(err, "unable to execute flow steps")
+		return errors.Wrap(err, "unable to execute workflow steps")
 	}
 
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: fid,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusSuccess,
-			StatusHumanDescription: "successfully executed flow",
+			StatusHumanDescription: "successfully executed workflow",
 		},
 	}); err != nil {
 		return err
