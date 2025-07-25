@@ -19,7 +19,7 @@ const (
 	OperationRestart eventloop.SignalType = "restart"
 
 	OperationCheckChanges    eventloop.SignalType = "check-changes"
-	OperationSync            eventloop.SignalType = "sync"
+	OperationUpdateAppConfig eventloop.SignalType = "update-app-config"
 	OperationBuildComponents eventloop.SignalType = "build-components"
 	OperationUpdateInstalls  eventloop.SignalType = "update-installs"
 
