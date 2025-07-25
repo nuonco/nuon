@@ -15,6 +15,7 @@ import (
 type AppRunnerType string
 
 const (
+	AppRunnerTypeUnknown AppRunnerType = "unknown"
 	// legacy types from before independent runners
 	AppRunnerTypeAWSECS   AppRunnerType = "aws-ecs"
 	AppRunnerTypeAWSEKS   AppRunnerType = "aws-eks"
