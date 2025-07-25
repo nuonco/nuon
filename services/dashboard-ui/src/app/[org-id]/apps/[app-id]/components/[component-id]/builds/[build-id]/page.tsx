@@ -107,8 +107,7 @@ export default async function AppComponent({ params }) {
                 <Loading variant="stack" loadingText="Loading job plan..." />
               }
             >
-              <LoadRunnerJobPlan
-                orgId={orgId}
+              <RunnerJobPlanModal
                 runnerJobId={build?.runner_job?.id}
               />
             </Suspense>
@@ -229,22 +228,4 @@ const LoadComponentConfig: FC<{
   ) : (
     <ComponentConfiguration config={componentConfig} />
   )
-}
-
-const LoadRunnerJobPlan: FC<{ orgId: string; runnerJobId: string }> = async ({
-  orgId,
-  runnerJobId,
-}) => {
-  const { data: plan } = await nueQueryData<string>({
-    orgId,
-    path: `runner-jobs/${runnerJobId}/plan`,
-  })
-
-  return plan ? (
-    <RunnerJobPlanModal
-      buttonText="Build plan"
-      headingText="Build job plan"
-      plan={plan}
-    />
-  ) : null
 }
