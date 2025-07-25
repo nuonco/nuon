@@ -155,8 +155,7 @@ export default async function SandboxRuns({ params }) {
                 <Loading variant="stack" loadingText="Loading job plan..." />
               }
             >
-              <LoadRunnerJobPlan
-                orgId={orgId}
+              <RunnerJobPlanModal
                 runnerJobId={sandboxRun?.runner_jobs?.at(0)?.id}
               />
             </Suspense>
@@ -277,23 +276,5 @@ const LoadSandboxRunPlan = async ({ install, orgId, runnerJobId }) => {
         data={plan?.waypointPlan?.variables?.intermediaData}
       />
     </Section>
-  ) : null
-}
-
-const LoadRunnerJobPlan: FC<{ orgId: string; runnerJobId: string }> = async ({
-  orgId,
-  runnerJobId,
-}) => {
-  const { data: plan } = await nueQueryData<string>({
-    orgId,
-    path: `runner-jobs/${runnerJobId}/plan`,
-  })
-
-  return plan ? (
-    <RunnerJobPlanModal
-      buttonText="Run plan"
-      headingText="Sandbox run plan"
-      plan={plan}
-    />
   ) : null
 }
