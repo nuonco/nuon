@@ -61,6 +61,7 @@ type App struct {
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
 	CloudPlatform CloudPlatform `json:"cloud_platform,omitzero" gorm:"-" swaggertype:"string" temporaljson:"cloud_platform,omitzero,omitempty"`
+	RunnerType    AppRunnerType `json:"runner_type,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_type,omitzero,omitempty"`
 
 	ConfigRepo      string `json:"config_repo,omitzero" temporaljson:"config_repo,omitzero,omitempty"`
 	ConfigDirectory string `json:"config_directory,omitzero" temporaljson:"config_directory,omitzero,omitempty"`
@@ -85,9 +86,11 @@ func (a *App) AfterQuery(tx *gorm.DB) error {
 	a.Links = links.AppLinks(tx.Statement.Context, a.ID)
 
 	a.CloudPlatform = CloudPlatformUnknown
+	a.RunnerType = AppRunnerTypeUnknown
 	if len(a.AppRunnerConfigs) > 0 {
 		a.AppRunnerConfig = a.AppRunnerConfigs[0]
 		a.CloudPlatform = a.AppRunnerConfigs[0].CloudPlatform
+		a.RunnerType = a.AppRunnerConfigs[0].Type
 	}
 	if len(a.AppInputConfigs) > 0 {
 		a.AppInputConfig = a.AppInputConfigs[0]
