@@ -12,7 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
 )
 
-var FlowCancellationErr = fmt.Errorf("flow cancelled")
+var FlowCancellationErr = fmt.Errorf("workflow cancelled")
 
 func (c *WorkflowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req eventloop.EventLoopRequest, flw *app.Workflow) error {
 	return c.executeFlowSteps(ctx, req, flw, 0)
