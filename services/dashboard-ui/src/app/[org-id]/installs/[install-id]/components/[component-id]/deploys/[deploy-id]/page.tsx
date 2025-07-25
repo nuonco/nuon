@@ -207,17 +207,18 @@ export default async function InstallComponentDeploy({ params }) {
               </ToolTip>
             </Text>
           </span>
+
+          <div className="flex flex-wrap gap-4 items-center">
           <ErrorBoundary fallback={<Text>Can&apso;t fetching sync plan</Text>}>
             <Suspense
               fallback={
                 <Loading variant="stack" loadingText="Loading sync plan..." />
               }
             >
-              <LoadRunnerJobPlan
+              <RunnerJobPlanModal
                 buttonText="Sync plan"
                 headingText="Component sync plan"
-                orgId={orgId}
-                runnerJobId={deploy?.runner_jobs?.at(-1)?.id}
+                runnerJobId={deploy?.runner_jobs?.at(-1)?.id}              
               />
             </Suspense>
           </ErrorBoundary>
@@ -234,10 +235,9 @@ export default async function InstallComponentDeploy({ params }) {
                   />
                 }
               >
-                <LoadRunnerJobPlan
+                <RunnerJobPlanModal
                   buttonText="Deploy plan"
                   headingText="Component deploy plan"
-                  orgId={orgId}
                   runnerJobId={deploy?.runner_jobs?.at(0)?.id}
                 />
               </Suspense>
@@ -256,6 +256,7 @@ export default async function InstallComponentDeploy({ params }) {
           !installWorkflow?.finished ? (
             <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
           ) : null}
+          </div>
         </div>
       }
     >
@@ -592,7 +593,7 @@ const LoadRunnerJobPlan: FC<{
     <RunnerJobPlanModal
       buttonText={buttonText}
       headingText={headingText}
-      plan={plan}
+      runnerJobId={runnerJobId}
     />
   ) : null
 }

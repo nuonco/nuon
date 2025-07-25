@@ -1,24 +1,47 @@
 'use client'
 
-import React, { type FC, useState } from 'react'
+import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CodeBlock } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
+import { Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
+import { Notice } from '@/components/Notice'
+import { useOrg } from '@/components/Orgs'
 import { CodeViewer, JsonView } from '@/components/Code'
 
 interface IRunnerJobPlanModal {
   buttonText?: string
   headingText?: string
-  plan: string
+  runnerJobId: string
 }
 
 export const RunnerJobPlanModal: FC<IRunnerJobPlanModal> = ({
   buttonText = 'View job plan',
   headingText = 'Runner job plan',
-  plan,
+  runnerJobId,
 }) => {
+  const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
+  const [plan, setPlan] = useState()
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState()
+
+  useEffect(() => {
+    if (isOpen) {
+      fetch(`/api/${org?.id}/runner-jobs/${runnerJobId}/plan`).then((r) =>
+        r.json().then((res) => {
+          setIsLoading(false)
+          if (res?.error) {
+            setError(res?.error?.error || 'Unable to fetch job plan')
+          } else {
+            setError(undefined)
+            setPlan(res.data)
+          }
+        })
+      )
+    }
+  }, [isOpen])
 
   return (
     <>
@@ -33,7 +56,12 @@ export const RunnerJobPlanModal: FC<IRunnerJobPlanModal> = ({
               }}
             >
               <div className="flex flex-col gap-4">
-                <JsonView data={plan} />
+                {error ? <Notice>{error}</Notice> : null}
+                {isLoading ? (
+                  <Loading loadingText="Loading job plan..." variant="stack" />
+                ) : (
+                  <JsonView data={plan} />
+                )}
               </div>
               <div className="mt-4 flex gap-3 justify-end">
                 <Button
