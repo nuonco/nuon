@@ -153,18 +153,17 @@ export default async function InstallWorkflow({ params }) {
             </Text>
           </span>
 
-          {/* <ErrorBoundary fallback={<Text>Can&apso;t fetching job plan</Text>}>
+          {workflowRun?.runner_job?.id ? (
+            <ErrorBoundary fallback={<Text>Can&apso;t fetching job plan</Text>}>
               <Suspense
-              fallback={
-              <Loading variant="stack" loadingText="Loading job plan..." />
-              }
+                fallback={
+                  <Loading variant="stack" loadingText="Loading job plan..." />
+                }
               >
-              <LoadRunnerJobPlan
-              orgId={orgId}
-              runnerJobId={workflowRun?.runner_job?.id}
-              />
+                <RunnerJobPlanModal runnerJobId={workflowRun?.runner_job?.id} />
               </Suspense>
-              </ErrorBoundary> */}
+            </ErrorBoundary>
+          ) : null}
           {CANCEL_RUNNER_JOBS &&
           workflowRun?.runner_job?.id &&
           (workflowRun?.status === 'queued' ||
@@ -226,22 +225,4 @@ export default async function InstallWorkflow({ params }) {
       </div>
     </DashboardContent>
   )
-}
-
-const LoadRunnerJobPlan: FC<{ orgId: string; runnerJobId: string }> = async ({
-  orgId,
-  runnerJobId,
-}) => {
-  const { data: plan } = await nueQueryData<string>({
-    orgId,
-    path: `runner-jobs/${runnerJobId}/plan`,
-  })
-
-  return plan ? (
-    <RunnerJobPlanModal
-      buttonText="Run plan"
-      headingText="Action run plan"
-      plan={plan}
-    />
-  ) : null
 }
