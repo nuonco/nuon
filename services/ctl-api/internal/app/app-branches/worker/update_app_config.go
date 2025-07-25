@@ -9,6 +9,6 @@ import (
 // @temporal-gen workflow
 // @execution-timeout 1m
 // @task-timeout 30s
-func (w *Workflows) Sync(ctx workflow.Context, sreq signals.RequestSignal) error {
+func (w *Workflows) UpdateAppConfig(ctx workflow.Context, sreq signals.RequestSignal) error {
 	return nil
 }
