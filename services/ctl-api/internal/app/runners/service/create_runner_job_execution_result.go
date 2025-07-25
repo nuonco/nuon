@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -56,6 +57,8 @@ func (s *service) CreateRunnerJobExecutionResult(ctx *gin.Context) {
 		return
 	}
 
+	jobExecution.ContentsDisplay = nil
+	jobExecution.Contents = ""
 	ctx.JSON(http.StatusCreated, jobExecution)
 }
 
@@ -65,23 +68,32 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 		return nil, err
 	}
 
-	// TOOD: check error
 	byts, err := json.Marshal(req.ContentsDisplay)
 	result := app.RunnerJobExecutionResult{
 		OrgID:                runnerJob.OrgID,
 		RunnerJobExecutionID: runnerJobExecutionID,
 		Success:              req.Success,
 		Contents:             req.Contents,
-		ContentsDisplay:      byts,
-
-		ErrorCode:     req.ErrorCode,
-		ErrorMetadata: pgtype.Hstore(req.ErrorMetadata),
+		ErrorCode:            req.ErrorCode,
+		ErrorMetadata:        pgtype.Hstore(req.ErrorMetadata),
 	}
 
-	res := s.db.WithContext(ctx).
-		Create(&result)
+	res := s.db.WithContext(ctx).Create(&result)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to write runner job execution result: %w", res.Error)
+		return nil, errors.Wrap(res.Error, "unable to write runner job execution result: %w")
+	}
+
+	// NOTE(fd): we split up the write because this column can be rather large.
+	// TODO(fd): return a 206 partial content, ensure the client knows how to handle it.
+
+	rjer := app.RunnerJobExecutionResult{
+		ID: result.ID,
+	}
+	updateRes := s.db.WithContext(ctx).Model(&rjer).Updates(app.RunnerJobExecutionResult{
+		ContentsDisplay: byts,
+	})
+	if updateRes.Error != nil {
+		return &result, errors.Wrap(res.Error, "failed to set display content on runner job execution")
 	}
 
 	return &result, nil
