@@ -47,7 +47,6 @@ const (
 	OrgFeatureInstallBreakGlass       OrgFeature = "install-break-glass"
 	OrgFeatureInstallDeleteComponents OrgFeature = "install-delete-components"
 	OrgFeatureInstallDelete           OrgFeature = "install-delete"
-	OrgFeatureIndependentRunner       OrgFeature = "install-independent-runner"
 	OrgFeatureTerraformWorkspace      OrgFeature = "terraform-workspace"
 	OrgFeatureDevCommand              OrgFeature = "dev-command"
 	OrgFeatureAppBranches             OrgFeature = "app-branches"
@@ -182,7 +181,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureInstallBreakGlass,
 		OrgFeatureInstallDeleteComponents,
 		OrgFeatureInstallDelete,
-		OrgFeatureIndependentRunner,
 		OrgFeatureTerraformWorkspace,
 		OrgFeatureDevCommand,
 		OrgFeatureAppBranches,
