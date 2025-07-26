@@ -96,17 +96,6 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	// TODO(jm): remove this once the legacy install flow is deprecated
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureIndependentRunner)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if !enabled {
-		ctx.JSON(http.StatusOK, inputs)
-		return
-	}
-
 	workflow, err := s.helpers.CreateWorkflow(ctx, install.ID, app.WorkflowTypeInputUpdate, map[string]string{
 		// NOTE(jm): this metadata field is not really designed to be used for anything serious, outside of
 		// rendering things in the UI and other such things, which is why we are just using a string slice here,
