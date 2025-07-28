@@ -1,5 +1,4 @@
 # https://github.com/rebuy-de/aws-nuke
-
 ---
 regions:
   - us-west-1
@@ -54,6 +53,14 @@ accounts:
   "423623870300":
     presets:
       - common
+  # sandbox-cb
+  "543968496418":
+    presets:
+      - common
+  # sandbox-ey:
+  "642375199587":
+    presets:
+      - common
   # sandbox-fd
   "034362041463":
     presets:
@@ -70,8 +77,16 @@ accounts:
   "503638872234":
     presets:
       - common
+  # sandbox-mm
+  "425454508114":
+    presets:
+      - common
   # sandbox-nh
   "977099022641":
+    presets:
+      - common
+  # sandbox-pk
+  "017500899169":
     presets:
       - common
   # sandbox-rb
@@ -80,6 +95,10 @@ accounts:
       - common
   # sandbox-sb
   "390844782764":
+    presets:
+      - common
+  # sandbox-sk
+  "011547835899":
     presets:
       - common
   # sandbox-tw
@@ -112,7 +131,7 @@ presets:
     filters:
       CloudFormationStack:
         - type: glob
-          value: '*'
+          value: "*"
       CloudTrailTrail:
         - nuon-org-trail
       IAMOpenIDConnectProvider:
