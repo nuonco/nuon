@@ -3,15 +3,17 @@
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight } from '@phosphor-icons/react'
+import { ActionTriggerType } from '@/components/ActionTriggerType'
 import { Badge } from '@/components/Badge'
 import { Link } from '@/components/Link'
-import { DebouncedSearchInput } from "@/components/DebouncedSearchInput"
+import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { ID, Text } from '@/components/Typography'
 import type {
   TActionWorkflow,
   TActionConfigTriggerType,
   TActionConfigStep,
+  TActionConfigTrigger,
 } from '@/types'
 
 type TData = {
@@ -20,6 +22,7 @@ type TData = {
   config_count?: number
   steps?: TActionConfigStep[]
   triggers?: TActionConfigTriggerType[] | string[]
+  ogTriggers?: TActionConfigTrigger[]
 }
 
 function parseWorkflowsToTableData(
@@ -31,6 +34,7 @@ function parseWorkflowsToTableData(
     config_count: wf.config_count,
     steps: wf?.configs?.[0]?.steps?.map((s) => s),
     triggers: wf?.configs?.[0]?.triggers?.map((t) => t?.type),
+    ogTriggers: wf?.configs?.[0]?.triggers,
   }))
 }
 
@@ -82,11 +86,18 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
         accessorKey: 'triggers',
         cell: (props) => (
           <Text className="gap-4">
-            {props.getValue<TActionConfigTriggerType[]>()?.map((t) => (
-              <Badge key={t} variant="code">
-                {t}
-              </Badge>
-            ))}
+            {props
+              .getValue<TActionConfigTriggerType[]>()
+              ?.map((t, i) => (
+                <ActionTriggerType
+                  key={`${t}-${i}`}
+                  triggerType={t}
+                  componentName={
+                    props.row.original.ogTriggers?.at(i)?.component?.name
+                  }
+                  componentPath={`/${orgId}/apps/${appId}/components/${props.row.original.ogTriggers?.at(i)?.component?.id}`}
+                />
+              ))}
           </Text>
         ),
       },
