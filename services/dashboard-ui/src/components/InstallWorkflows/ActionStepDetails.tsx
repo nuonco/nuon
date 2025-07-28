@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { CaretRight } from '@phosphor-icons/react'
+import { ActionTriggerType } from '@/components/ActionTriggerType'
 import { Link } from '@/components/Link'
 import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
@@ -68,6 +69,9 @@ export const ActionStepDetails: FC<IPollStepDetails> = ({
     }
   }, [shouldPoll])
 
+  const componentName = actionRun?.run_env_vars?.COMPONENT_NAME
+  const componentPath = `/${orgId}/installs/${step?.owner_id}/components/${actionRun?.run_env_vars?.COMPONENT_ID}`
+
   return (
     <>
       {isLoading ? (
@@ -83,14 +87,34 @@ export const ActionStepDetails: FC<IPollStepDetails> = ({
           {actionRun ? (
             <div className="flex flex-col border rounded-md shadow">
               <div className="flex items-center justify-between p-3 border-b">
-                <Text variant="med-14">Action run</Text>
-                <Link
-                  className="text-sm gap-0"
-                  href={`/${orgId}/installs/${step?.owner_id}/actions/${actionRun?.config?.action_workflow_id}/${actionRun?.id}`}
-                >
-                  View details
-                  <CaretRight />
-                </Link>
+                <Text variant="med-14" className="inline-flex gap-4">
+                  Action run{' '}
+                  {componentName &&
+                  (actionRun?.triggered_by_type === 'pre-deploy-component' ||
+                    actionRun.triggered_by_type === 'post-deploy-component') ? (
+                    <ActionTriggerType
+                      triggerType={actionRun?.triggered_by_type}
+                      componentName={componentName}
+                      componentPath={componentPath}
+                    />
+                  ) : null}
+                </Text>
+                <div className="flex items-center gap-4">
+                  <Link
+                    className="text-sm gap-0"
+                    href={`/${orgId}/installs/${step?.owner_id}/actions/${actionRun?.config?.action_workflow_id}`}
+                  >
+                    View Action
+                    <CaretRight />
+                  </Link>
+                  <Link
+                    className="text-sm gap-0"
+                    href={`/${orgId}/installs/${step?.owner_id}/actions/${actionRun?.config?.action_workflow_id}/${actionRun?.id}`}
+                  >
+                    View run
+                    <CaretRight />
+                  </Link>
+                </div>
               </div>
 
               <div className="p-6 flex flex-col gap-4">

@@ -3,6 +3,7 @@ import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { CalendarBlank, CaretLeft, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
+  ActionTriggerType,
   ActionLogsSection,
   ActionWorkflowStatus,
   Badge,
@@ -85,8 +86,12 @@ export default async function InstallWorkflow({ params }) {
       breadcrumb={[
         { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${orgId}/installs/${install.id}/actions`,
+          href: `/${orgId}/installs/${install.id}`,
           text: install.name,
+        },
+        {
+          href: `/${orgId}/installs/${install.id}/actions`,
+          text: 'Actions',
         },
         {
           href: `/${orgId}/installs/${install.id}/actions/${actionWorkflowId}`,
@@ -133,12 +138,15 @@ export default async function InstallWorkflow({ params }) {
               shouldPoll
             />
           </span>
-
           <span className="flex flex-col gap-2">
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
               Trigger type
             </Text>
-            <Badge variant="code">{workflowRun?.triggered_by_type}</Badge>
+            <ActionTriggerType
+              triggerType={workflowRun?.triggered_by_type}
+              componentName={workflowRun?.run_env_vars?.COMPONENT_NAME}
+              componentPath={`/${orgId}/installs/${installId}/components/${workflowRun?.run_env_vars?.COMPONENT_ID}`}
+            />
           </span>
 
           <span className="flex flex-col gap-2">
@@ -152,7 +160,6 @@ export default async function InstallWorkflow({ params }) {
               </ToolTip>
             </Text>
           </span>
-
           {workflowRun?.runner_job?.id ? (
             <ErrorBoundary fallback={<Text>Can&apso;t fetching job plan</Text>}>
               <Suspense

@@ -3,6 +3,7 @@
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight, Timer, CalendarBlank, Minus } from '@phosphor-icons/react'
+import { ActionTriggerType } from '@/components/ActionTriggerType'
 import { Badge } from '@/components/Badge'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
@@ -101,7 +102,13 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
         accessorKey: 'latest_run.triggered_by_type',
         cell: (props) =>
           props.row.original?.latest_run ? (
-            <Badge variant="code">{props.getValue<string>()}</Badge>
+            <ActionTriggerType
+              triggerType={props.getValue<string>()}
+              componentName={
+                props?.row?.original?.latest_run?.run_env_vars?.COMPONENT_NAME
+              }
+              componentPath={`/${orgId}/installs/${installId}/components/${props?.row?.original?.latest_run?.run_env_vars?.COMPONENT_ID}`}
+            />
           ) : (
             <Minus />
           ),
