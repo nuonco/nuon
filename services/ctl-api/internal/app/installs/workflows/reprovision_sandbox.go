@@ -30,7 +30,7 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 
 	step, err = installSignalStep(ctx, installID, "reprovision sandbox plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationReprovisionSandboxPlan,
-	}, flw.PlanOnly)
+	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 
 	step, err = installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationSyncSecrets,
-	}, flw.PlanOnly)
+	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err
 	}

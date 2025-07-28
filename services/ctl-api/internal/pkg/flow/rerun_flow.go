@@ -1,6 +1,8 @@
 package flow
 
 import (
+	"fmt"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -13,10 +15,17 @@ import (
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
+type RerunOperation string
+
+const (
+	RerunOperationSkipStep  RerunOperation = "skip-step"
+	RerunOperationRetryStep RerunOperation = "retry-step"
+)
+
 type RerunInput struct {
-	FlowID    string `json:"flow_id" validate:"required"`
-	StepID    string `json:"step_id" validate:"required"`
-	RetryStep bool   `json:"retry_step"`
+	FlowID    string         `json:"flow_id" validate:"required"`
+	StepID    string         `json:"step_id" validate:"required"`
+	Operation RerunOperation `json:"operation" validate:"required"`
 }
 
 // Rerun is a workflow that reruns a flow from a specific step.
@@ -95,14 +104,31 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 	var stepStatusHumanDescription string
 	var status app.Status
 	var reason string
-	if inp.RetryStep {
+
+	switch inp.Operation {
+	case RerunOperationRetryStep:
 		stepStatusHumanDescription = "Step deployment failed."
 		status = app.StatusDiscarded
 		reason = "The step was discarded and retried by the user."
-	} else {
+	case RerunOperationSkipStep:
 		stepStatusHumanDescription = "Step skipped, continuing with next step."
 		status = app.StatusUserSkipped
 		reason = "The step was skipped by the user."
+	default:
+		err := fmt.Errorf("invalid rerun step operation %s", inp.Operation)
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: inp.FlowID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusError,
+				StatusHumanDescription: err.Error(),
+				Metadata: map[string]any{
+					"error_message": err.Error(),
+				},
+			},
+		}); err != nil {
+			return err
+		}
+		return err
 	}
 
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -142,7 +168,7 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 	}
 
 	l.Debug("generating steps for flow")
-	if inp.RetryStep {
+	if inp.Operation == RerunOperationRetryStep {
 		// create new retry step
 		// this can be moved into a seprate helper for reusability
 		err := c.cloneWorkflowStep(ctx, step, flw)
