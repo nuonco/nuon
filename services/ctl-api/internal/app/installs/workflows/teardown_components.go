@@ -88,7 +88,7 @@ func TeardownComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: compID,
 			},
-		}, flw.PlanOnly)
+		}, flw.PlanOnly, WithSkippable(false))
 		steps = append(steps, deployStep)
 
 		deployStep, err = installSignalStep(ctx, installID, "teardown "+comp.Name, pgtype.Hstore{}, &signals.Signal{
