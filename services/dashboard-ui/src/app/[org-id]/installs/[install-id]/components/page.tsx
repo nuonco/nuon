@@ -17,7 +17,7 @@ import {
   Time,
 } from '@/components'
 import { getInstall } from '@/lib'
-import type { TInstallComponentSummary } from '@/types'
+import type { TInstall, TInstallComponentSummary } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -83,6 +83,7 @@ export default async function InstallComponents({ params, searchParams }) {
             }
           >
             <LoadInstallComponents
+              install={install}
               installId={install?.id}
               orgId={orgId}
               offset={sp['offset'] || '0'}
@@ -97,13 +98,14 @@ export default async function InstallComponents({ params, searchParams }) {
 }
 
 const LoadInstallComponents: FC<{
+  install: TInstall
   installId: string
   orgId: string
   limit?: string
   offset?: string
   q?: string
   types?: string
-}> = async ({ installId, orgId, limit = '10', offset, q, types }) => {
+}> = async ({ install, installId, orgId, limit = '10', offset, q, types }) => {
   const params = new URLSearchParams({ offset, limit, q, types }).toString()
   const { data, error, headers } = await nueQueryData<
     Array<TInstallComponentSummary>
@@ -125,6 +127,7 @@ const LoadInstallComponents: FC<{
   ) : data ? (
     <div className="flex flex-col gap-4">
       <InstallComponentsTable
+        install={install}
         installComponents={data.sort((a, b) =>
           a?.component_id.localeCompare(b.component_id)
         )}

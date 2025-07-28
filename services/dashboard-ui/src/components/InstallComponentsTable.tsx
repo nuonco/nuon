@@ -3,6 +3,7 @@
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight, Minus } from '@phosphor-icons/react'
+import { AppConfigGraph } from "@/components/Apps"
 import {
   ComponentDependencies,
   ComponentConfigType,
@@ -19,15 +20,17 @@ import { Table } from '@/components/DataTable'
 import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
 import { ID, Text } from '@/components/Typography'
 // eslint-disable-next-line import/no-cycle
-import type { TInstallComponentSummary } from '@/types'
+import type { TInstall, TInstallComponentSummary } from '@/types'
 
 export interface IInstallComponentsTable {
   installComponents: Array<TInstallComponentSummary>
+  install: TInstall,
   installId: string
   orgId: string
 }
 
 export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
+  install,
   installComponents,
   installId,
   orgId,
@@ -200,6 +203,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
             <DebouncedSearchInput placeholder="Search component name" />
 
             <div className="flex items-center gap-4">
+              <AppConfigGraph appId={install?.app_id} configId={install?.app_config_id} />
               <DeployComponentsModal installId={installId} orgId={orgId} />
               <DeleteComponentsModal installId={installId} orgId={orgId} />
             </div>
