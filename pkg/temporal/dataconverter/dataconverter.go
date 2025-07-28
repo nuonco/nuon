@@ -68,11 +68,12 @@ func NewJSONConverter() converter.DataConverter {
 
 	// note: the order of this is inmportant, to ensure we also support protobufs as well.
 	return converter.NewCompositeDataConverter(
-		converter.NewNilPayloadConverter(),
-		converter.NewByteSlicePayloadConverter(),
-		converter.NewProtoJSONPayloadConverter(),
-		converter.NewProtoPayloadConverter(),
 		jc,
-		converter.NewJSONPayloadConverter(),
+		// converter.NewNilPayloadConverter(),
+		// converter.NewByteSlicePayloadConverter(),
+		// converter.NewProtoJSONPayloadConverter(),
+		// converter.NewProtoPayloadConverter(),
+		// jc,
+		// converter.NewJSONPayloadConverter(),
 	)
 }
