@@ -104,9 +104,16 @@ type SkipStepSubSignal struct {
 	Reason string
 }
 
+type RerunOperation string
+
+const (
+	RerunOperationSkipStep  RerunOperation = "skip-step"
+	RerunOperationRetryStep RerunOperation = "retry-step"
+)
+
 type RerunConfiguration struct {
-	StepID    string `json:"step_id"`
-	RetryStep bool   `json:"retry"`
+	StepID        string         `json:"step_id"`
+	StepOperation RerunOperation `json:"step_operation"`
 }
 
 type Signal struct {

@@ -50,7 +50,10 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 			ComponentID: generics.FromPtrStr(componentID),
 		},
-	}, flw.PlanOnly)
+	}, flw.PlanOnly, WithSkippable(false))
+	if err != nil {
+		return nil, err
+	}
 	steps = append(steps, deployStep)
 
 	applyStep, err := installSignalStep(ctx, install.ID, "teardown apply plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
@@ -59,6 +62,9 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 			ComponentID: generics.FromPtrStr(componentID),
 		},
 	}, flw.PlanOnly)
+	if err != nil {
+		return nil, err
+	}
 	steps = append(steps, applyStep)
 
 	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePostTeardownComponent)

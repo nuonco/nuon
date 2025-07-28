@@ -15,7 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
-func installSignalStep(ctx workflow.Context, installID, name string, metadata pgtype.Hstore, signal *signals.Signal, planOnly bool) (*app.WorkflowStep, error) {
+func installSignalStep(ctx workflow.Context, installID, name string, metadata pgtype.Hstore, signal *signals.Signal, planOnly bool, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
 	if signal == nil {
 		return &app.WorkflowStep{
 			Name:          name,
@@ -41,9 +41,7 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 		retryable = false
 	case signals.OperationExecuteDeployComponentApplyPlan,
 		signals.OperationExecuteDeployComponentSyncAndPlan,
-
 		signals.OperationExecuteDeployComponentSyncImage,
-
 		signals.OperationExecuteTeardownComponentSyncAndPlan,
 		signals.OperationExecuteTeardownComponentApplyPlan:
 		targettype = "install_deploys"
@@ -91,7 +89,7 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 		executionTyp = app.WorkflowStepExecutionTypeSkipped
 	}
 
-	return &app.WorkflowStep{
+	s := &app.WorkflowStep{
 		Name:           name,
 		ExecutionType:  executionTyp,
 		StepTargetType: targettype,
@@ -106,7 +104,14 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 			SignalJSON:  byts,
 		},
 		Retryable: retryable,
-	}, nil
+		Skippable: true,
+	}
+
+	for _, o := range opts {
+		o(s)
+	}
+
+	return s, nil
 }
 
 func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, comp *app.Component, installID string, triggerTyp app.ActionWorkflowTriggerType) ([]*app.WorkflowStep, error) {
@@ -195,7 +200,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 					ComponentID: comp.ID,
 				},
-			}, flw.PlanOnly)
+			}, flw.PlanOnly, WithSkippable(false))
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
 			}
