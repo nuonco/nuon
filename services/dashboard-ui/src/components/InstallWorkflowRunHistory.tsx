@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC, useEffect } from 'react'
+import { ActionTriggerType } from '@/components/ActionTriggerType'
 import { Badge } from '@/components/Badge'
 import { Empty } from '@/components/Empty'
 import { Timeline } from '@/components/Timeline'
@@ -54,9 +55,11 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
           <div>
             <span className="flex items-center gap-2">
               <Text variant="reg-12">{action_workflow.name}</Text> /
-              <Badge className="!inline !text-[11px]" variant="code">
-                {run?.triggered_by_type}
-              </Badge>
+              <ActionTriggerType
+                triggerType={run?.triggered_by_type}
+                componentName={run?.run_env_vars?.COMPONENT_NAME}
+                componentPath={`/${orgId}/installs/${installId}/components/${run?.run_env_vars?.COMPONENT_ID}`}
+              />
             </span>
             {run?.created_by ? (
               <Text className="!text-[10px]" isMuted>
