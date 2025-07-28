@@ -19,7 +19,7 @@ export const RetryButtons = ({ step }: { step: TInstallWorkflowStep }) => {
   const [error, setError] = useState<string>()
   const [shouldRender, setShouldRender] = useState(
     (step?.retryable && step?.status?.status == 'error' && !step?.retried) ||
-      step?.status?.status === 'user-skipped'
+    step?.status?.status === 'user-skipped'
   )
 
   useEffect(() => {
@@ -28,15 +28,22 @@ export const RetryButtons = ({ step }: { step: TInstallWorkflowStep }) => {
     }
   }, [step])
 
-  const retry = (retryStep: boolean) => {
+  const retry = (op: 'retry-step' | 'skip-step') => {
     retryWorkflow({
       orgId: org.id,
       installId: step?.owner_id,
       workflowId: step?.install_workflow_id,
       stepId: step?.id,
-      retryStep: retryStep,
+      op: op,
     }).then(({ data, error }) => {
-      retryStep ? setIsRetryLoading(false) : setIsSkipLoading(false)
+      switch (op) {
+        case 'retry-step':
+          setIsRetryKickedOff(true)
+          break
+        case 'skip-step':
+          setIsSkipKickedOff(true)
+          break
+      }
       if (error) {
         setError(error?.error)
         console.error(error)
@@ -50,35 +57,37 @@ export const RetryButtons = ({ step }: { step: TInstallWorkflowStep }) => {
     <div className="mt-4 flex flex-col gap-4">
       {shouldRender ? (
         <span className="flex justify-between">
-          <Button
-            onClick={() => {
-              setIsKickedOff(true)
-              setIsSkipKickedOff(true)
-              setIsSkipLoading(true)
-              retry(false)
-            }}
-            variant={'secondary'}
-            className="w-fit text-sm"
-            disabled={isKickedOff}
-          >
-            {isSkipLoading ? (
-              <>
-                <SpinnerSVG />
-                Continuing
-              </>
-            ) : (
-              <>
-                Skip and continue
-                <SkipForwardIcon />
-              </>
-            )}
-          </Button>
+          {step?.skippable ? (
+            <Button
+              onClick={() => {
+                setIsKickedOff(true)
+                setIsSkipKickedOff(true)
+                setIsSkipLoading(true)
+                retry('skip-step')
+              }}
+              variant={'secondary'}
+              className="w-fit text-sm"
+              disabled={isKickedOff}
+            >
+              {isSkipLoading ? (
+                <>
+                  <SpinnerSVG />
+                  Continuing
+                </>
+              ) : (
+                <>
+                  Skip and continue
+                  <SkipForwardIcon />
+                </>
+              )}
+            </Button>
+          ) : (<div></div>)}
           <Button
             onClick={() => {
               setIsKickedOff(true)
               setIsRetryKickedOff(true)
               setIsRetryLoading(true)
-              retry(true)
+              retry('retry-step')
             }}
             variant={'primary'}
             className="w-fit text-sm"
