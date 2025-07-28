@@ -38,7 +38,7 @@ RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-runner \
 FROM golang:1.24-alpine AS nuon-cli
 
 RUN apk add --update --no-cache curl ca-certificates
-RUN curl https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.519/nuon_linux_amd64 -o /bin/nuon && chmod +x /bin/nuon
+RUN curl https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.602/nuon_linux_amd64 -o /bin/nuon && chmod +x /bin/nuon
 
 FROM gcr.io/kaniko-project/executor AS kaniko
 
@@ -73,6 +73,78 @@ FROM golang:1.24-alpine AS certs
 RUN wget \
         https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
     && cat global-bundle.pem >> /global-bundle.pem
+
+# START
+
+FROM code AS build-darwin-arm64
+
+ARG BIN_NAME=runner
+ARG tag=
+RUN mkdir -p /out
+
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+    GOOS=darwin \
+    GOARCH=arm64 \
+    go build \
+    -o /out/${BIN_NAME}_darwin_arm64 .
+
+FROM code AS build-darwin-amd64
+ARG BIN_NAME=nuon
+ARG tag=
+RUN mkdir -p /out
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+    GOOS=darwin \
+    GOARCH=amd64 \
+    go build \
+    -o /out/${BIN_NAME}_darwin_amd64 .
+
+FROM code AS build-linux-arm
+ARG BIN_NAME=nuon
+ARG tag=
+RUN mkdir -p /out
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+    GOOS=linux \
+    GOARCH=arm \
+    go build \
+    -o /out/${BIN_NAME}_linux_arm .
+
+FROM code AS build-linux-arm64
+ARG BIN_NAME=nuon
+ARG tag=
+RUN mkdir -p /out
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+    GOOS=linux \
+    GOARCH=arm64 \
+    go build \
+    -o /out/${BIN_NAME}_linux_arm64 .
+
+FROM code AS build-linux-386
+ARG BIN_NAME=nuon
+ARG tag=
+RUN mkdir -p /out
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+    GOOS=linux \
+    GOARCH=386 \
+    go build \
+    -o /out/${BIN_NAME}_linux_386 .
+
+FROM code AS build-linux-amd64
+ARG BIN_NAME=nuon
+ARG tag=
+RUN mkdir -p /out
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+    GOOS=linux \
+    GOARCH=amd64 \
+    go build \
+    -o /out/${BIN_NAME}_linux_amd64 .
+
+# END
 
 FROM golang:1.24-alpine AS final
 
@@ -133,6 +205,12 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
 
 FROM scratch AS artifacts-build
 COPY --from=build-artifacts /out /
+COPY --from=build-darwin-arm64 /out/ /
+COPY --from=build-darwin-amd64 /out/ /
+COPY --from=build-linux-arm /out/ /
+COPY --from=build-linux-arm64 /out/ /
+COPY --from=build-linux-386 /out/ /
+COPY --from=build-linux-amd64 /out/ /
 
 FROM amazon/aws-cli:latest AS artifacts
 
