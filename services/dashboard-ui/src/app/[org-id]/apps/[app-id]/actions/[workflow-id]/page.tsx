@@ -112,7 +112,11 @@ export default async function AppWorkflow({ params }) {
             <div className="flex flex-col divide-y">
               {workflow.configs[0].triggers.map((t) => (
                 <div className="flex gap-2 py-2" key={t.id}>
-                  <ActionTriggerType triggerType={t.type} />
+                  <ActionTriggerType
+                    triggerType={t.type}
+                    componentName={t?.component?.name}
+                    componentPath={`/${orgId}/apps/${appId}/components/${t?.component_id}`}
+                  />
                   {t.type === 'cron' ? (
                     <Text variant="reg-12">
                       Will run{' '}

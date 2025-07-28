@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import {
   ActionTriggerButton,
+  ActionTriggerType,
   Badge,
   ClickToCopy,
   CodeViewer,
@@ -58,8 +59,12 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
       breadcrumb={[
         { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${orgId}/installs/${install.id}/actions`,
+          href: `/${orgId}/installs/${install.id}`,
           text: install.name,
+        },
+        {
+          href: `/${orgId}/installs/${install.id}/actions`,
+          text: 'Actions',
         },
         {
           href: `/${orgId}/installs/${install.id}/actions/${actionWorkflowId}`,
@@ -94,9 +99,16 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
                 <Text className="text-cool-grey-600 dark:text-cool-grey-500">
                   Last trigger
                 </Text>
-                <Badge variant="code">
-                  {actionWithRecentRuns.runs?.[0]?.triggered_by_type}
-                </Badge>
+
+                <ActionTriggerType
+                  triggerType={
+                    actionWithRecentRuns.runs?.[0]?.triggered_by_type
+                  }
+                  componentName={
+                    actionWithRecentRuns.runs?.[0]?.run_env_vars?.COMPONENT_NAME
+                  }
+                  componentPath={`/${orgId}/installs/${installId}/components/${actionWithRecentRuns.runs?.[0]?.run_env_vars?.COMPONENT_ID}`}
+                />
               </span>
             </>
           ) : null}

@@ -128,9 +128,10 @@ type Component struct {
 	Status            ComponentStatus `json:"status,omitzero" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string          `json:"status_description,omitzero" temporaljson:"status_description,omitzero,omitempty"`
 
-	ConfigVersions    int                         `gorm:"-" json:"config_versions,omitzero" temporaljson:"config_versions,omitzero,omitempty"`
-	ComponentConfigs  []ComponentConfigConnection `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_configs,omitzero,omitempty"`
-	InstallComponents []InstallComponent          `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"install_components,omitzero,omitempty"`
+	ConfigVersions               int                           `gorm:"-" json:"config_versions,omitzero" temporaljson:"config_versions,omitzero,omitempty"`
+	ComponentConfigs             []ComponentConfigConnection   `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_configs,omitzero,omitempty"`
+	InstallComponents            []InstallComponent            `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"install_components,omitzero,omitempty"`
+	ActionWorkflowTriggerConfigs []ActionWorkflowTriggerConfig `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"action_workflow_trigger_configs,omitzero,omitempty"`
 
 	Dependencies  []*Component `gorm:"many2many:component_dependencies;constraint:OnDelete:CASCADE;" json:"-" temporaljson:"dependencies,omitzero,omitempty"`
 	DependencyIDs []string     `gorm:"-" json:"dependencies,omitzero" temporaljson:"dependency_i_ds,omitzero,omitempty"`
