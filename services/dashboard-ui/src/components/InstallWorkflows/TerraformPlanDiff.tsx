@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { JsonView } from '@/components/Code'
 
 type ChangeAction =
   | 'create'
