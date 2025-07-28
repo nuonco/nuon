@@ -2,11 +2,11 @@
 
 import classNames from 'classnames'
 import { useParams } from 'next/navigation'
-import React, { type FC, useState } from 'react'
+import React, { type FC, useEffect, useState } from 'react'
 import { ArrowsClockwise, X, Check } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { JsonView } from '@/components/Code'
-import { SpinnerSVG } from '@/components/Loading'
+import { SpinnerSVG, Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { approveWorkflowStep } from '@/components/install-actions'
@@ -35,11 +35,28 @@ export const ApprovalStep: FC<IApprovalStep> = ({
 }) => {
   const params = useParams()
   const orgId = params?.['org-id'] as string
+  const [isPlanLoading, setIsPlanLoading] = useState(true)
+  const [plan, setPlan] = useState()
   const [isDenyLoading, setIsDenyLoading] = useState(false)
   const [isRetryLoading, setIsRetryLoading] = useState(false)
   const [isApproveLoading, setIsApproveLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [error, setError] = useState<string>()
+
+  useEffect(() => {
+    fetch(
+      `/api/${orgId}/install-workflows/${workflowId}/steps/${step.id}/approvals/${step?.approval?.id}/contents`
+    ).then((r) =>
+      r.json().then((res) => {
+        setIsPlanLoading(false)
+        if (res.error) {
+          setError(res.error?.error || 'Failed to fetch plan')
+        } else {
+          setPlan(res.data)
+        }
+      })
+    )
+  }, [])
 
   const approve = (responseType: 'approve' | 'deny' | 'retry') => {
     setIsKickedOff(true)
@@ -202,12 +219,16 @@ export const ApprovalStep: FC<IApprovalStep> = ({
       <div className="flex flex-col gap-2 !w-full">
         <div className="flex flex-col gap-4">
           {error ? <Notice>{error}</Notice> : null}
-          {approval?.type === 'helm_approval' ? (
-            <HelmChangesViewer planData={JSON.parse(approval.contents)} />
-          ) : approval?.contents ? (
-            <TerraformPlanViewer plan={JSON.parse(approval?.contents)} />
+          {isPlanLoading && !plan ? (
+            <div className="p-6 mb-2  border rounded-md bg-black/5 dark:bg-white/5">
+              <Loading variant="stack" loadingText="Loading plan..." />
+            </div>
+          ) : approval?.type === 'helm_approval' ? (
+            <HelmChangesViewer planData={plan} />
+          ) : plan ? (
+            <TerraformPlanViewer plan={plan} />
           ) : (
-            <JsonView data={approval?.contents} />
+            <JsonView data={plan} />
           )}
         </div>
         <ApprovalButtons />
