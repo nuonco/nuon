@@ -43,15 +43,20 @@ export const SignUpForm: FC = () => {
         </>
       ) : (
         <>
-          <Text className="!text-[32px]" level={1} role="heading" variant="semi-18">
+          <Text
+            className="!text-[32px]"
+            level={1}
+            role="heading"
+            variant="semi-18"
+          >
             Request Access Today
           </Text>
           <Text className="!text-xl !leading-loose" variant="reg-14">
-            Fill out the form below to reserve your organization name, and we
-            will follow up via email within 24 hours.
+            Fill out the form below and we
+            will get back to you ASAP!
           </Text>
           <form
-            className="flex flex-col gap-6 mt-4"
+            className="flex flex-col gap-6 mt-4 mb-12"
             onSubmit={(e: FormEvent<HTMLFormElement>) => {
               e.preventDefault()
               setIsSubmitting(true)
@@ -66,13 +71,35 @@ export const SignUpForm: FC = () => {
             }}
           >
             <label className="flex flex-col gap-2">
-              <Text variant="med-14">Organization name</Text>
+              <Text variant="med-14">Title</Text>
               <input
-                className="px-3 py-2 text-base rounded border bg-black/5 dark:bg-transparent shadow-sm [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600/300"
+                className="px-3 py-2 text-sm rounded border bg-black/5 dark:bg-transparent shadow-sm [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600/300"
                 required
+                name="job_title"
+                placeholder="E.g. CTO, VP or Director of Engineering, Engineering manager..."
+                type="text"
+              />
+            </label>
+
+            <label className="flex flex-col gap-2">
+              <Text variant="med-14">Company name</Text>
+              <input
+                className="px-3 py-2 text-sm rounded border bg-black/5 dark:bg-transparent shadow-sm [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600/300"
+                required
+                placeholder="Enter company name"
                 name="org_name"
                 type="text"
               />
+            </label>
+
+            <label className="flex flex-col gap-2">
+              <Text variant="med-14">Tell us more</Text>
+              <textarea
+                className="px-3 py-2 text-sm rounded border bg-black/5 dark:bg-transparent shadow-sm [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600/300 min-h-32"
+                required
+                name="tell_us_more"
+                placeholder="What do you want to speak with Nuon about? Feel free to share your software application, infrastructure and cloud providers and how Nuon can help with that?"
+              ></textarea>
             </label>
 
             <Button
