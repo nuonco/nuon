@@ -71,7 +71,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/deploys", s.CreateInstallDeploy)
 	api.GET("/v1/installs/:install_id/deploys/latest", s.GetInstallLatestDeploy)
 	api.GET("/v1/installs/:install_id/deploys/:deploy_id", s.GetInstallDeploy)
-	api.GET("/v1/installs/:install_id/deploys/:deploy_id/plan", s.GetInstallDeployPlan)
 
 	// install readme
 	api.GET("/v1/installs/:install_id/readme", s.GetInstallReadme)
