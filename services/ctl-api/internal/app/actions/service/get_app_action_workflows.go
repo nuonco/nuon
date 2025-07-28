@@ -67,6 +67,7 @@ func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, q string) 
 			return db.Scopes(scopes.WithOverrideTable("action_workflow_configs_latest_view_v1"))
 		}).
 		Preload("Configs.Triggers").
+		Preload("Configs.Triggers.Component").
 		Preload("Configs.Steps").
 		Where("org_id = ? AND app_id = ?", orgID, appID)
 
