@@ -73,7 +73,6 @@ else
     fi
 
     if [ -f "$INSTALL_DIR/nuonctl" ]; then
-      echo "there is something in $INSTALL_DIR. checking it."
       CURRENT_VERSION=`exec $INSTALL_DIR/nuonctl version`
       echo " > CURRENT_VERSION: $CURRENT_VERSION"
 
