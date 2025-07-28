@@ -118,6 +118,7 @@ type ActionWorkflowTriggerConfig struct {
 
 	CronSchedule string              `json:"cron_schedule,omitzero,omitempty" temporaljson:"cron_schedule,omitzero,omitempty"`
 	ComponentID  generics.NullString `json:"component_id,omitzero" swaggertype:"string" temporaljson:"component_id,omitzero,omitempty"`
+	Component    *Component          `json:"component" temporaljson:"component,omitzero,omitempty"`
 }
 
 func (a *ActionWorkflowTriggerConfig) BeforeCreate(tx *gorm.DB) error {
