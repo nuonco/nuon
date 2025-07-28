@@ -86,15 +86,11 @@ export default async function Install({ params, searchParams }) {
               />
             }
           >
-            {org?.features?.['install-independent-runner'] ? (
-              <LoadInstallWorkflows
-                installId={installId}
-                orgId={orgId}
-                offset={sp['workflows'] || '0'}
-              />
-            ) : (
-              <LoadInstallHistory installId={installId} orgId={orgId} />
-            )}
+            <LoadInstallWorkflows
+              installId={installId}
+              orgId={orgId}
+              offset={sp['workflows'] || '0'}
+            />
           </Suspense>
         </Section>
       </div>
@@ -125,10 +121,6 @@ const LoadInstallWorkflows: FC<{
     hasNext: headers.get('x-nuon-page-next') || 'false',
     offset: headers?.get('x-nuon-page-offset') || '0',
   }
-  /* const installWorkflows = await getInstallWorkflows({
-   *   installId,
-   *   orgId,
-   * }).catch(console.error) */
 
   return installWorkflows ? (
     <div className="flex flex-col gap-4">
