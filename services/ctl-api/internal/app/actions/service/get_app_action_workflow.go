@@ -55,6 +55,7 @@ func (s *service) findAppActionWorkflow(ctx context.Context, orgID, appID, awID 
 			return db.Scopes(scopes.WithOverrideTable("action_workflow_configs_latest_view_v1"))
 		}).
 		Preload("Configs.Triggers").
+		Preload("Configs.Triggers.Component").
 		Preload("Configs.Steps").
 		Preload("Configs.Steps.PublicGitVCSConfig").
 		Preload("Configs.Steps.ConnectedGithubVCSConfig").
