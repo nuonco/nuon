@@ -136,5 +136,7 @@ func AllModels() []interface{} {
 		&app.Waitlist{},
 		// NOTE(jm): this is a special table used in both ch and postgres
 		&app.PSQLTableSize{},
+
+		&app.TemporalPayload{},
 	}
 }

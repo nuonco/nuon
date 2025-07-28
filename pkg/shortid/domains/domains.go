@@ -14,6 +14,10 @@ func NewAppCfgID() string {
 	return shortid.NewNanoID("apc")
 }
 
+func NewTemporalPayload() string {
+	return shortid.NewNanoID("tpp")
+}
+
 func NewAppBranchID() string {
 	return shortid.NewNanoID("abr")
 }
