@@ -12,12 +12,19 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
+type RetryOperation string
+
+const (
+	RetryOperationSkipStep  = "skip-step"
+	RetryOperationRetryStep = "retry-step"
+)
+
 type RetryWorkflowRequest struct {
 	WorkflowID string `json:"workflow_id" swaggertype:"string"`
 	// StepID is the ID of the step to start the retry from
 	StepID string `json:"step_id" swaggertype:"string"`
 	// Retry indicates whether to retry the current step or not
-	Retry bool `json:"retry" swaggertype:"boolean"`
+	Operation RetryOperation `json:"operation" swaggertype:"string"`
 }
 
 type RetryWorkflowResponse struct {
@@ -80,14 +87,32 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	if step.Status.Status != app.StatusError || !step.Retryable {
+	if step.Status.Status != app.StatusError {
 		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("install workflow step %s can't be retried", req.StepID),
+			Err: fmt.Errorf("install workflow %s can't be retried", workflow.ID),
 		})
 		return
 	}
 
-	if req.Retry {
+	// this feels like code smell since its not explicit
+	switch req.Operation {
+	case RetryOperationRetryStep:
+		if !step.Retryable {
+			ctx.Error(stderr.ErrUser{
+				Err: fmt.Errorf("install workflow step %s can't be %s", req.StepID, req.Operation),
+			})
+			return
+		}
+	case RetryOperationSkipStep:
+		if !step.Skippable {
+			ctx.Error(stderr.ErrUser{
+				Err: fmt.Errorf("install workflow step %s can't be %s", req.StepID, req.Operation),
+			})
+			return
+		}
+	}
+
+	if req.Operation == RetryOperationRetryStep {
 		if err = s.helpers.UpdateInstallWorkflowStepRetry(ctx, helpers.UpdateInstallWorkflowStepRetry{
 			StepID: req.StepID,
 		}); err != nil {
@@ -102,8 +127,8 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 		Type:              signals.OperationRerunFlow,
 		InstallWorkflowID: workflow.ID,
 		RerunConfiguration: signals.RerunConfiguration{
-			StepID:    req.StepID,
-			RetryStep: req.Retry,
+			StepID:        req.StepID,
+			StepOperation: signals.RerunOperation(req.Operation),
 		},
 	})
 

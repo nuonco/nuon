@@ -185,6 +185,7 @@ func (c *WorkflowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context
 		ExecutionType: step.ExecutionType,
 		Metadata:      step.Metadata,
 		Retryable:     step.Retryable,
+		Skippable:     step.Skippable,
 	})
 	return err
 }
