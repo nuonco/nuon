@@ -77,6 +77,7 @@ type WorkflowStep struct {
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
 	Retryable bool `json:"retryable,omitzero" gorm:"default:false" temporaljson:"retryable,omitzero,omitempty"`
+	Skippable bool `json:"skippable,omitzero" gorm:"default:false" temporaljson:"skippable,omitzero,omitempty"`
 	Retried   bool `json:"retried,omitzero" gorm:"default:false" temporaljson:"retried,omitzero,omitempty"`
 }
 

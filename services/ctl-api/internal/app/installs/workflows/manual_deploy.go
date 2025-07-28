@@ -76,7 +76,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 				DeployID:    generics.FromPtrStr(installDeployID),
 				ComponentID: comp.ID,
 			},
-		}, flw.PlanOnly)
+		}, flw.PlanOnly, WithSkippable(false))
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create image sync")
 		}
