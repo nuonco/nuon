@@ -24,7 +24,9 @@ export async function requestWaitlistAccess(
         firstName: session?.user?.given_name,
         lastName: session?.user?.family_name,
         email: session?.user?.email,
-        organizationName: data?.org_name,
+        companyName: data?.org_name,
+        jobTitle: data?.job_title,
+        description: data?.tell_us_more,
       }),
     }).catch((err) => {
       console.error('error posting to salesforce api')
