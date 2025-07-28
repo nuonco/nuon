@@ -15,7 +15,6 @@ func (s *Helpers) CreateWorkflow(ctx context.Context,
 	metadata map[string]string,
 	errBehavior app.StepErrorBehavior,
 	planOnly bool,
-	orgID *string,
 ) (*app.Workflow, error) {
 	approvalOption := app.InstallApprovalOptionPrompt
 
@@ -29,10 +28,6 @@ func (s *Helpers) CreateWorkflow(ctx context.Context,
 		StepErrorBehavior: errBehavior,
 		ApprovalOption:    approvalOption,
 		PlanOnly:          planOnly,
-	}
-
-	if orgID != nil {
-		installWorkflow.OrgID = *orgID
 	}
 
 	res := s.db.WithContext(ctx).Create(&installWorkflow)
