@@ -1,0 +1,42 @@
+name   = "kubernetes_manifest"
+type   = "kubernetes_manifest"
+
+namespace = "default"
+manifest = """
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: development
+  labels:
+    name: development
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: game-demo
+data:
+  # property-like keys; each key maps to a simple value
+  sample_data: "3"
+  key: "prop.value"
+  domain_name: "{{ .nuon.inputs.inputs.root_domain }}"
+  domain_name_test: "{{ .nuon.inputs.inputs.root_domain }}"
+"""
+[kubernetes_manifest]
+namespace = "default"
+manifest = """
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: development
+  labels:
+    name: development
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: game-demo
+data:
+  # property-like keys; each key maps to a simple value
+  sample_data: "3"
+  key: "prop.value"
+"""

@@ -83,6 +83,9 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string) (*ap
 
 			// preload all job configs
 			Preload("JobComponentConfig").
+
+			// preload all kubernetes config
+			Preload("KubernetesManifestComponentConfig").
 			Where("component_id IN ?", missingComponentIds).
 			Find(&missingComponents)
 		if res.Error != nil {

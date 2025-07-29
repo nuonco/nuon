@@ -39,11 +39,12 @@ func (s *sync) syncComponentConfig(ctx context.Context, comp *config.Component, 
 	// decoding everywhere in this package.
 
 	methods := map[models.AppComponentType]func(context.Context, string, string, *config.Component) (string, string, error){
-		models.AppComponentTypeHelmChart:       s.createHelmChartComponentConfig,
-		models.AppComponentTypeTerraformModule: s.createTerraformModuleComponentConfig,
-		models.AppComponentTypeDockerBuild:     s.createDockerBuildComponentConfig,
-		models.AppComponentTypeExternalImage:   s.createContainerImageComponentConfig,
-		models.AppComponentTypeJob:             s.createJobComponentConfig,
+		models.AppComponentTypeHelmChart:          s.createHelmChartComponentConfig,
+		models.AppComponentTypeTerraformModule:    s.createTerraformModuleComponentConfig,
+		models.AppComponentTypeDockerBuild:        s.createDockerBuildComponentConfig,
+		models.AppComponentTypeExternalImage:      s.createContainerImageComponentConfig,
+		models.AppComponentTypeJob:                s.createJobComponentConfig,
+		models.AppComponentTypeKubernetesManifest: s.createKubernetesManifestComponentConfig,
 	}
 	method, ok := methods[comp.Type.APIType()]
 	if !ok {

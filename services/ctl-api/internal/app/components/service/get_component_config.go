@@ -65,6 +65,9 @@ func (s *service) getComponentConfig(ctx *gin.Context, cmpID, cfgID string) (*ap
 
 		// preload all job configs
 		Preload("JobComponentConfig").
+
+		// preload all job configs
+		Preload("KubernetesManifestComponentConfig").
 		First(&cfg, "id = ? and component_id = ?", cfgID, cmpID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component config connection: %w", res.Error)
