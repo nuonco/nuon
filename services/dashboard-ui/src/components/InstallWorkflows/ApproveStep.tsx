@@ -46,16 +46,16 @@ export const ApprovalStep: FC<IApprovalStep> = ({
   useEffect(() => {
     fetch(
       `/api/${orgId}/install-workflows/${workflowId}/steps/${step.id}/approvals/${step?.approval?.id}/contents`
-    ).then((r) =>
-      r.json().then((res) => {
-        setIsPlanLoading(false)
-        if (res.error) {
-          setError(res.error?.error || 'Failed to fetch plan')
-        } else {
-          setPlan(res.data)
-        }
-      })
     )
+      .then((r) => {
+        setIsPlanLoading(false)
+        return r.json().then((res) => {
+          setPlan(res)
+        })
+      })
+      .catch((error) => {
+        setError(error || 'Failed to fetch plan')
+      })
   }, [])
 
   const approve = (responseType: 'approve' | 'deny' | 'retry') => {
@@ -223,7 +223,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
             <div className="p-6 mb-2  border rounded-md bg-black/5 dark:bg-white/5">
               <Loading variant="stack" loadingText="Loading plan..." />
             </div>
-          ) : approval?.type === 'helm_approval' ? (
+          ) : approval?.type === 'helm_approval' && plan ? (
             <HelmChangesViewer planData={plan} />
           ) : plan ? (
             <TerraformPlanViewer plan={plan} />
