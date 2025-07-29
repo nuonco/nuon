@@ -52,6 +52,7 @@ func init() {
 
 	config.RegisterDefault("aws_cloudformation_stack_template_bucket_region", "us-east-1")
 	config.RegisterDefault("org_creation_email_allow_list", "nuon.co")
+	config.RegisterDefault("temporal_dataconverter_large_payload_size", 1024*128)
 }
 
 type Config struct {
@@ -92,8 +93,9 @@ type Config struct {
 	ClickhouseDBDialTimeout  time.Duration `config:"clickhouse_db_dial_timeout" validate:"required"`
 
 	// temporal configuration
-	TemporalHost                    string `config:"temporal_host"  validate:"required"`
-	TemporalStickyWorkflowCacheSize int    `config:"temporal_sticky_workflow_cache_size"`
+	TemporalHost                          string `config:"temporal_host"  validate:"required"`
+	TemporalStickyWorkflowCacheSize       int    `config:"temporal_sticky_workflow_cache_size"`
+	TemporalDataConverterLargePayloadSize int    `config:"temporal_dataconverter_large_payload_size"`
 
 	// github configuration
 	GithubAppID            string `config:"github_app_id" validate:"required"`

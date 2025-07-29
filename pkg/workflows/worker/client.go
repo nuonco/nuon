@@ -6,7 +6,6 @@ import (
 	"go.temporal.io/sdk/client"
 
 	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
-	"github.com/powertoolsdev/mono/pkg/temporal/dataconverter"
 )
 
 func (w *worker) getClient() (client.Client, func(), error) {
@@ -15,13 +14,11 @@ func (w *worker) getClient() (client.Client, func(), error) {
 		return nil, nil, err
 	}
 
-	dataConverter := dataconverter.NewJSONConverter()
 	tc, err := temporalclient.New(w.v,
 		temporalclient.WithAddr(w.Config.TemporalHost),
 		temporalclient.WithLogger(l),
 		temporalclient.WithNamespace(w.Config.TemporalNamespace),
 		temporalclient.WithContextPropagators(w.propagators),
-		temporalclient.WithDataConverter(dataConverter),
 		temporalclient.WithMetricsWriter(w.mw),
 	)
 	if err != nil {
