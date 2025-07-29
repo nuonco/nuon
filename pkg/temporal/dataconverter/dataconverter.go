@@ -56,8 +56,8 @@ func (c *temporalJSONConverter) Encoding() string {
 
 var _ converter.PayloadConverter = (*temporalJSONConverter)(nil)
 
-func NewJSONConverter() converter.DataConverter {
-	jc := &temporalJSONConverter{
+func NewJSONConverter() converter.PayloadConverter {
+	return &temporalJSONConverter{
 		json: jsoniter.Config{
 			EscapeHTML:             true,
 			SortMapKeys:            true,
@@ -65,15 +65,4 @@ func NewJSONConverter() converter.DataConverter {
 			TagKey:                 defaultTemporalJSONTag,
 		}.Froze(),
 	}
-
-	// note: the order of this is inmportant, to ensure we also support protobufs as well.
-	return converter.NewCompositeDataConverter(
-		jc,
-		// converter.NewNilPayloadConverter(),
-		// converter.NewByteSlicePayloadConverter(),
-		// converter.NewProtoJSONPayloadConverter(),
-		// converter.NewProtoPayloadConverter(),
-		// jc,
-		// converter.NewJSONPayloadConverter(),
-	)
 }
