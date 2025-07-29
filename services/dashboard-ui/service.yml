@@ -64,3 +64,23 @@ earthly_env:
   NEXT_PUBLIC_API_URL: http://host.docker.internal:8081
   # used for generating types
   NUON_API_URL: http://host.docker.internal:8081
+  AUTH0_AUDIENCE: 'api.nuon.co'
+  AUTH0_BASE_URL: http://localhost:4000
+  AUTH0_CLIENT_ID: q1GiyhLk6v6cmmsydNKp02ZghvgRMUTa
+  NEXT_PUBLIC_PROFILE_ROUTE: '/api/auth/profile'
+  NEXT_PUBLIC_ACCESS_TOKEN_ROUTE: '/api/auth/access-token'
+  NEXT_PUBLIC_ADMIN_API_URL: 'http://host.docker.internal:8082'
+  NEXT_PUBLIC_SEGMENT_WRITE_KEY: 'BejR5RWgZINK5Kc28pSn7yf1isc5Zalr'
+  NEXT_PUBLIC_DATADOG_ENV: 'local'
+  NUON_WORKFLOWS: true
+  NUON_RUNNERS: true
+  NUON_INSTALL_REPROVISION: true
+  NUON_DEPLOY_DATA: true
+  NUON_CANCEL_JOBS: true
+  NUON_INSTALL_UPDATE: true
+  NUON_ORG_DASHBOARD: false
+  NUON_ORG_SETTINGS: false
+  NUON_ORG_SUPPORT: false
+  NUON_ORG_RUNNER: true
+  NUON_CTL_API_ADMIN_URL: http://host.docker.internal:8082
+  NUON_TEMPORAL_UI_URL: http://host.docker.internal:8234
