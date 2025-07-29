@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 
+	"golang.org/x/term"
+
 	"github.com/fatih/color"
 
 	"github.com/go-playground/validator/v10"
@@ -144,6 +146,39 @@ func WithLineColor(color *color.Color) commandOption {
 func WithFileOutput(fp string) commandOption {
 	return func(l *command) error {
 		l.FileOutputPath = fp
+		return nil
+	}
+}
+
+// IsTTY checks if the current stdin is a TTY
+func IsTTY() bool {
+	return term.IsTerminal(int(os.Stdin.Fd()))
+}
+
+// WithTTYAwareStdin sets stdin based on TTY detection
+func WithTTYAwareStdin() commandOption {
+	return func(l *command) error {
+		if IsTTY() {
+			l.Stdin = os.Stdin
+		} else {
+			// Use a closed pipe for non-TTY stdin
+			l.Stdin = io.NopCloser(nil)
+		}
+		return nil
+	}
+}
+
+// WithTTYAwareEnv combines WithInheritedEnv with additional environment variables
+func WithTTYAwareEnv(env map[string]string) commandOption {
+	return func(l *command) error {
+		// First get the inherited environment
+		l.Env = DefaultEnv()
+
+		// Then add the provided environment variables
+		for k, v := range env {
+			l.Env[k] = v
+		}
+
 		return nil
 	}
 }
