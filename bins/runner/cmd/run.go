@@ -16,6 +16,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy"
 	helmdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/helm"
 	jobdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/job"
+	kubernetesmanifestdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/kubernetes_manifest"
 	noopdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/noop"
 	terraformdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/terraform"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations"
@@ -89,6 +90,7 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 		fx.Provide(jobs.AsJobHandler("deploys", jobdeploy.New)),
 		fx.Provide(jobs.AsJobHandler("deploys", noopdeploy.New)),
 		fx.Provide(jobs.AsJobHandler("deploys", terraformdeploy.New)),
+		fx.Provide(jobs.AsJobHandler("deploys", kubernetesmanifestdeploy.New)),
 
 		// actions jobs
 		fx.Provide(jobloop.AsJobLoop(actions.NewJobLoop)),

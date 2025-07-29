@@ -31,7 +31,8 @@ func (b *handler) pushLocal(
 		}
 	} else {
 		args = []string{
-			"--tlsverify=false",
+			"--tls=false",
+			// "--tlscacert=/etc/ssl/certs/ca-certificates.crt",
 			"push",
 			localRef,
 		}

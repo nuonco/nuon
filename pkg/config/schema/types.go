@@ -11,24 +11,25 @@ import (
 
 func LookupSchemaType(typ string) (*jsonschema.Schema, error) {
 	mapping := map[string]func() (*jsonschema.Schema, error){
-		"full":            AppConfigSchema,
-		"runner":          RunnerConfigSchema,
-		"sandbox":         SandboxConfigSchema,
-		"helm":            HelmConfigSchema,
-		"docker-build":    DockerBuildConfigSchema,
-		"terraform":       TerraformModuleConfigSchema,
-		"container-image": ContainerImageConfigSchema,
-		"permissions":     PermissionsConfigSchema,
-		"policy":          PolicyConfigSchema,
-		"secret":          SecretConfigSchema,
-		"metadata":        MetadataConfigSchema,
-		"action":          ActionConfigSchema,
-		"stack":           StackConfigSchema,
-		"installer":       InstallerConfigSchema,
-		"break-glass":     BreakGlassConfigSchema,
-		"inputs":          InputsConfigSchema,
-		"input-group":     InputGroupSchema,
-		"input":           InputSchema,
+		"full":                AppConfigSchema,
+		"runner":              RunnerConfigSchema,
+		"sandbox":             SandboxConfigSchema,
+		"helm":                HelmConfigSchema,
+		"docker-build":        DockerBuildConfigSchema,
+		"kubernetes-manifest": KubernetesManifestConfigSchema,
+		"terraform":           TerraformModuleConfigSchema,
+		"container-image":     ContainerImageConfigSchema,
+		"permissions":         PermissionsConfigSchema,
+		"policy":              PolicyConfigSchema,
+		"secret":              SecretConfigSchema,
+		"metadata":            MetadataConfigSchema,
+		"action":              ActionConfigSchema,
+		"stack":               StackConfigSchema,
+		"installer":           InstallerConfigSchema,
+		"break-glass":         BreakGlassConfigSchema,
+		"inputs":              InputsConfigSchema,
+		"input-group":         InputGroupSchema,
+		"input":               InputSchema,
 	}
 
 	fn, ok := mapping[typ]
@@ -105,6 +106,15 @@ func HelmConfigSchema() (*jsonschema.Schema, error) {
 	}
 
 	return r.Reflect(config.HelmChartComponentConfig{}), nil
+}
+
+func KubernetesManifestConfigSchema() (*jsonschema.Schema, error) {
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.KubernetesManifestComponentConfig{}), nil
 }
 
 func DockerBuildConfigSchema() (*jsonschema.Schema, error) {

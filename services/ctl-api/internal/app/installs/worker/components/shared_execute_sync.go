@@ -39,6 +39,7 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 	if err != nil {
 		return err
 	}
+
 	runnerJob, err := activities.AwaitCreateSyncJob(ctx, &activities.CreateSyncJobRequest{
 		DeployID:    installDeploy.ID,
 		RunnerID:    install.RunnerID,

@@ -102,6 +102,14 @@ func DecodeComponent(fromType reflect.Type, toType reflect.Type, from interface{
 			}
 		}
 		comp.Job = &cmpCfg
+	case KubernetesManifestComponentType:
+		var cmpCfg KubernetesManifestComponentConfig
+		if err := mapstructure.Decode(obj, &cmpCfg); err != nil {
+			return from, ErrConfig{
+				Description: fmt.Sprintf("unable to parse kubernetes manifest component: %s", err.Error()),
+			}
+		}
+		comp.KubernetesManifest = &cmpCfg
 	default:
 		return from, ErrConfig{Description: "invalid type"}
 	}
