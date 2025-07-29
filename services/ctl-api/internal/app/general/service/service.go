@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.temporal.io/sdk/converter"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -26,6 +27,7 @@ type service struct {
 	authzClient    *authz.Client
 	acctClient     *account.Client
 	evClient       eventloop.Client
+	codecs         []converter.PayloadCodec
 }
 
 var _ api.Service = (*service)(nil)
@@ -71,6 +73,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/general/waitlist", s.AdminGetWaitlist)
 
 	api.POST("/v1/general/seed", s.Seed)
+	api.POST("/v1/general/temporal-codec/decode", s.TemporalCodecDecode)
 
 	return nil
 }
@@ -94,6 +97,9 @@ type Params struct {
 	EvClient       eventloop.Client
 	DB             *gorm.DB `name:"psql"`
 	MW             metrics.Writer
+
+	TemporalCodecGzip         converter.PayloadCodec `name:"gzip"`
+	TemporalCodecLargePayload converter.PayloadCodec `name:"largepayload"`
 }
 
 func New(params Params) *service {
@@ -107,5 +113,9 @@ func New(params Params) *service {
 		authzClient:    params.AuthzClient,
 		acctClient:     params.AcctClient,
 		evClient:       params.EvClient,
+		codecs: []converter.PayloadCodec{
+			params.TemporalCodecGzip,
+			params.TemporalCodecLargePayload,
+		},
 	}
 }
