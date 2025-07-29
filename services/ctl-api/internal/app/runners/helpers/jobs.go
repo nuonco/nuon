@@ -28,9 +28,10 @@ func (s *Helpers) getExecutionTimeout(typ app.RunnerJobType) time.Duration {
 		app.RunnerJobTypeOCISync: time.Minute * 15,
 
 		// deploy timeouts
-		app.RunnerJobTypeTerraformDeploy: time.Minute * 60,
-		app.RunnerJobTypeHelmChartDeploy: time.Minute * 15,
-		app.RunnerJobTypeJobDeploy:       time.Minute * 15,
+		app.RunnerJobTypeTerraformDeploy:          time.Minute * 60,
+		app.RunnerJobTypeHelmChartDeploy:          time.Minute * 15,
+		app.RunnerJobTypeKubrenetesManifestDeploy: time.Minute * 15,
+		app.RunnerJobTypeJobDeploy:                time.Minute * 15,
 
 		// terraform timeouts
 		app.RunnerJobTypeSandboxTerraform: time.Minute * 60,
