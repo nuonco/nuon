@@ -7,10 +7,12 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-func (h *Helpers) CreateAppBranch(ctx context.Context, orgID, appID, vcsConnectionBranchID string) (*app.AppBranch, error) {
+func (h *Helpers) CreateAppBranch(ctx context.Context, orgID, appID, name string, connectedGithubVCSConfigID string) (*app.AppBranch, error) {
 	branch := app.AppBranch{
-		OrgID: orgID,
-		AppID: appID,
+		OrgID:                      orgID,
+		AppID:                      appID,
+		Name:                       name,
+		ConnectedGithubVCSConfigID: connectedGithubVCSConfigID,
 	}
 
 	res := h.db.WithContext(ctx).Create(&branch)

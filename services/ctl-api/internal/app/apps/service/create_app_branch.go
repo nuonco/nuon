@@ -12,7 +12,8 @@ import (
 )
 
 type CreateAppBranchRequest struct {
-	VCSConnectionBranchID string `json:"vcs_connection_branch_id"`
+	Name                       string `json:"name" validate:"required,min=1"`
+	ConnectedGithubVCSConfigID string `json:"connected_github_vcs_config_id" validate:"required"`
 }
 
 func (c *CreateAppBranchRequest) Validate(v *validator.Validate) error {
@@ -58,7 +59,7 @@ func (s *service) CreateAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	branch, err := s.helpers.CreateAppBranch(ctx, org.ID, appID, req.VCSConnectionBranchID)
+	branch, err := s.helpers.CreateAppBranch(ctx, org.ID, appID, req.Name, req.ConnectedGithubVCSConfigID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch: %w", err))
 		return
