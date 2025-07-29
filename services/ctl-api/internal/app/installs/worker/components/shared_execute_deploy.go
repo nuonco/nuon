@@ -114,6 +114,8 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		approvalTyp = app.HelmApprovalApprovalType
 	case app.ComponentTypeTerraformModule:
 		approvalTyp = app.TerraformPlanApprovalType
+	case app.ComponentTypeKubernetesManifest:
+		approvalTyp = app.KubernetesManifestApprovalType
 	default:
 		approvalTyp = app.NoopApprovalType
 	}

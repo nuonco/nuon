@@ -88,10 +88,11 @@ const (
 	RunnerJobTypeNOOPSync RunnerJobType = "noop-sync"
 
 	// deploy job types
-	RunnerJobTypeTerraformDeploy RunnerJobType = "terraform-deploy"
-	RunnerJobTypeHelmChartDeploy RunnerJobType = "helm-chart-deploy"
-	RunnerJobTypeJobDeploy       RunnerJobType = "job-deploy"
-	RunnerJobTypeJobNOOPDeploy   RunnerJobType = "noop-deploy"
+	RunnerJobTypeTerraformDeploy          RunnerJobType = "terraform-deploy"
+	RunnerJobTypeHelmChartDeploy          RunnerJobType = "helm-chart-deploy"
+	RunnerJobTypeJobDeploy                RunnerJobType = "job-deploy"
+	RunnerJobTypeKubrenetesManifestDeploy RunnerJobType = "kubernetes-manifest-deploy"
+	RunnerJobTypeJobNOOPDeploy            RunnerJobType = "noop-deploy"
 
 	// operations job types
 	RunnerJobTypeShutDown      RunnerJobType = "shut-down"
@@ -143,6 +144,7 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 	case RunnerJobTypeHelmChartDeploy,
 		RunnerJobTypeTerraformDeploy,
 		RunnerJobTypeJobDeploy,
+		RunnerJobTypeKubrenetesManifestDeploy,
 		RunnerJobTypeJobNOOPDeploy:
 		return RunnerJobGroupDeploy
 

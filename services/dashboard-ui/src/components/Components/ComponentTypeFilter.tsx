@@ -12,11 +12,13 @@ type TComponentConfigTypeText =
   | 'external_image'
   | 'helm_chart'
   | 'terraform_module'
+  | 'kubernetes_manifest'
 const FILTER_OPTIONS: Array<TComponentConfigTypeText> = [
   'docker_build',
   'external_image',
   'helm_chart',
   'terraform_module',
+  'kubernetes_manifest',
 ]
 
 const groupClasses = {
@@ -33,6 +35,10 @@ const groupClasses = {
     'group-hover/info:block group-hover/info:opacity-100',
   ],
   terraform_module: [
+    'group/warn',
+    'group-hover/warn:block group-hover/warn:opacity-100',
+  ],
+  kubernetes_manifest: [
     'group/warn',
     'group-hover/warn:block group-hover/warn:opacity-100',
   ],
