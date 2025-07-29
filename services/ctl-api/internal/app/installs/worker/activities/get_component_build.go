@@ -26,6 +26,7 @@ func (a *Activities) GetComponentBuild(ctx context.Context, req GetComponentBuil
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
 		Preload("ComponentConfigConnection.JobComponentConfig").
+		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig").
 
 		// load first result
 		First(&build)

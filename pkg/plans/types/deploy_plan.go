@@ -12,9 +12,10 @@ type DeployPlan struct {
 	Src    *configs.OCIRegistryRepository `json:"src_registry" validate:"required"`
 	SrcTag string                         `json:"src_tag" validate:"required"`
 
-	HelmDeployPlan      *HelmDeployPlan      `json:"helm"`
-	TerraformDeployPlan *TerraformDeployPlan `json:"terraform"`
-	NoopDeployPlan      *NoopDeployPlan      `json:"noop"`
+	HelmDeployPlan               *HelmDeployPlan               `json:"helm"`
+	TerraformDeployPlan          *TerraformDeployPlan          `json:"terraform"`
+	KubernetesManifestDeployPlan *KubernetesManifestDeployPlan `json:"kubernetes_manifest"`
+	NoopDeployPlan               *NoopDeployPlan               `json:"noop"`
 
 	// The following field is for applying a plan that is already save
 	ApplyPlanContents string `json:"apply_plan_contents"`
