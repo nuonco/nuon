@@ -23,7 +23,7 @@ schema:
 server:
   replicaCount: 5
   dynamicConfig:
-     limit.historySize.error: 
+     limit.historySize.error:
       - value: 209715200
      limit.blobSize.error:
       - value: 5242880
@@ -51,3 +51,5 @@ web:
   additionalEnv:
     - name: TEMPORAL_CSRF_COOKIE_INSECURE
       value: !!str "true"
+    - name: TEMPORAL_UI_PUBLIC_PATH
+      value: /admin/temporal
