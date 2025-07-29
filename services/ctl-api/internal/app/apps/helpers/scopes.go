@@ -90,7 +90,10 @@ func PreloadAppConfigComponentConfigConnections(db *gorm.DB) *gorm.DB {
 		Preload("ComponentConfigConnections.ExternalImageComponentConfig").
 
 		// preload all job configs
-		Preload("ComponentConfigConnections.JobComponentConfig")
+		Preload("ComponentConfigConnections.JobComponentConfig").
+
+		// preload all kubernetes manifest configs
+		Preload("ComponentConfigConnections.KubernetesManifestComponentConfig")
 }
 
 // component config connections
@@ -115,5 +118,8 @@ func PreloadComponentConfigConnections(db *gorm.DB) *gorm.DB {
 		Preload("ComponentConfigs.ExternalImageComponentConfig").
 
 		// preload all job configs
-		Preload("ComponentConfigs.JobComponentConfig")
+		Preload("ComponentConfigs.JobComponentConfig").
+
+		// preload all kubernetes manifest configs
+		Preload("ComponentConfigs.KubernetesManifestComponentConfig")
 }

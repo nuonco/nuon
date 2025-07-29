@@ -14,10 +14,11 @@ import (
 type WorkflowStepApprovalType string
 
 const (
-	NoopApprovalType          WorkflowStepApprovalType = "noop"
-	ApproveAllApprovalType    WorkflowStepApprovalType = "approve-all"
-	TerraformPlanApprovalType WorkflowStepApprovalType = "terraform_plan"
-	HelmApprovalApprovalType  WorkflowStepApprovalType = "helm_approval"
+	NoopApprovalType               WorkflowStepApprovalType = "noop"
+	ApproveAllApprovalType         WorkflowStepApprovalType = "approve-all"
+	TerraformPlanApprovalType      WorkflowStepApprovalType = "terraform_plan"
+	KubernetesManifestApprovalType WorkflowStepApprovalType = "kubernetes_manifest_approval"
+	HelmApprovalApprovalType       WorkflowStepApprovalType = "helm_approval"
 )
 
 type WorkflowStepApproval struct {

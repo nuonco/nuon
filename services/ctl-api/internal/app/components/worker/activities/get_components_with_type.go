@@ -42,6 +42,9 @@ func (a *Activities) GetComponentsWithType(ctx context.Context, req GetComponent
 
 		// preload all job configs
 		Preload("ComponentConfigs.JobComponentConfig").
+
+		// preload all kubernetes configs
+		Preload("ComponentConfigs.KubernetesManifestComponentConfig").
 		Find(&comps)
 	if res.Error != nil {
 		return nil, res.Error

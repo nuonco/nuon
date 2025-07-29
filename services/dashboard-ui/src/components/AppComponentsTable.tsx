@@ -74,6 +74,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
         'external_image',
         'helm_chart',
         'terraform_module',
+        'kubernetes_manifest',
       ],
     },
   ])
@@ -189,6 +190,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
           'external_image',
           'helm_chart',
           'terraform_module',
+          'kubernetes_manifest',
         ],
       },
     ])

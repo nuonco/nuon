@@ -23,12 +23,13 @@ const (
 type ComponentType string
 
 const (
-	ComponentTypeTerraformModule ComponentType = "terraform_module"
-	ComponentTypeHelmChart       ComponentType = "helm_chart"
-	ComponentTypeDockerBuild     ComponentType = "docker_build"
-	ComponentTypeExternalImage   ComponentType = "external_image"
-	ComponentTypeJob             ComponentType = "job"
-	ComponentTypeUnknown         ComponentType = "unknown"
+	ComponentTypeTerraformModule    ComponentType = "terraform_module"
+	ComponentTypeHelmChart          ComponentType = "helm_chart"
+	ComponentTypeDockerBuild        ComponentType = "docker_build"
+	ComponentTypeExternalImage      ComponentType = "external_image"
+	ComponentTypeJob                ComponentType = "job"
+	ComponentTypeKubernetesManifest ComponentType = "kubernetes_manifest"
+	ComponentTypeUnknown            ComponentType = "unknown"
 )
 
 func (c ComponentType) IsImage() bool {
@@ -46,8 +47,9 @@ func (c ComponentType) SyncJobType() RunnerJobType {
 		ComponentTypeHelmChart:
 		return RunnerJobTypeOCISync
 
-	case ComponentTypeJob:
-		return RunnerJobTypeNOOPBuild
+	case ComponentTypeJob,
+		ComponentTypeKubernetesManifest:
+		return RunnerJobTypeNOOPSync
 	default:
 	}
 
@@ -62,6 +64,8 @@ func (c ComponentType) DeployJobType() RunnerJobType {
 		return RunnerJobTypeHelmChartDeploy
 	case ComponentTypeJob:
 		return RunnerJobTypeJobDeploy
+	case ComponentTypeKubernetesManifest:
+		return RunnerJobTypeKubrenetesManifestDeploy
 
 		// the following do not require deploys
 	case ComponentTypeDockerBuild,
@@ -83,6 +87,8 @@ func (c ComponentType) DeployPlanJobType() RunnerJobType {
 		return RunnerJobTypeJobNOOPDeploy
 	case ComponentTypeExternalImage:
 		return RunnerJobTypeJobNOOPDeploy
+	case ComponentTypeKubernetesManifest:
+		return RunnerJobTypeKubrenetesManifestDeploy
 	default:
 	}
 
@@ -99,7 +105,7 @@ func (c ComponentType) BuildJobType() RunnerJobType {
 		return RunnerJobTypeDockerBuild
 	case ComponentTypeExternalImage:
 		return RunnerJobTypeContainerImageBuild
-	case ComponentTypeJob:
+	case ComponentTypeJob, ComponentTypeKubernetesManifest:
 		return RunnerJobTypeNOOPBuild
 	default:
 	}

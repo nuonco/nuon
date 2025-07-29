@@ -44,14 +44,15 @@ type ComponentConfigConnection struct {
 
 	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_builds,omitzero,omitempty"`
 
-	TerraformModuleComponentConfig *TerraformModuleComponentConfig `json:"terraform_module,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"terraform_module_component_config,omitzero,omitempty"`
-	HelmComponentConfig            *HelmComponentConfig            `json:"helm,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"helm_component_config,omitzero,omitempty"`
-	ExternalImageComponentConfig   *ExternalImageComponentConfig   `json:"external_image,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"external_image_component_config,omitzero,omitempty"`
-	DockerBuildComponentConfig     *DockerBuildComponentConfig     `json:"docker_build,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"docker_build_component_config,omitzero,omitempty"`
-	JobComponentConfig             *JobComponentConfig             `json:"job,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"job_component_config,omitzero,omitempty"`
-	ComponentDependencyIDs         pq.StringArray                  `json:"component_dependency_ids" temporaljson:"component_dependency_ids" swaggertype:"array,string" gorm:"type:text[]"`
-	References                     pq.StringArray                  `json:"references" temporaljson:"references" swaggertype:"array,string" gorm:"type:text[]"`
-	Checksum                       string                          `json:"checksum,omitzero" gorm:"default null" temporaljson:"checksum,omitzero,omitempty"`
+	TerraformModuleComponentConfig    *TerraformModuleComponentConfig    `json:"terraform_module,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"terraform_module_component_config,omitzero,omitempty"`
+	HelmComponentConfig               *HelmComponentConfig               `json:"helm,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"helm_component_config,omitzero,omitempty"`
+	ExternalImageComponentConfig      *ExternalImageComponentConfig      `json:"external_image,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"external_image_component_config,omitzero,omitempty"`
+	DockerBuildComponentConfig        *DockerBuildComponentConfig        `json:"docker_build,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"docker_build_component_config,omitzero,omitempty"`
+	JobComponentConfig                *JobComponentConfig                `json:"job,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"job_component_config,omitzero,omitempty"`
+	KubernetesManifestComponentConfig *KubernetesManifestComponentConfig `json:"kubernetes_manifest,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"kubernetes_manifest_component_config,omitzero,omitempty"`
+	ComponentDependencyIDs            pq.StringArray                     `json:"component_dependency_ids" temporaljson:"component_dependency_ids" swaggertype:"array,string" gorm:"type:text[]"`
+	References                        pq.StringArray                     `json:"references" temporaljson:"references" swaggertype:"array,string" gorm:"type:text[]"`
+	Checksum                          string                             `json:"checksum,omitzero" gorm:"default null" temporaljson:"checksum,omitzero,omitempty"`
 
 	// loaded via after query
 	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-" temporaljson:"vcs_connection_type,omitzero,omitempty"`
@@ -122,6 +123,9 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 	}
 	if c.JobComponentConfig != nil {
 		c.Type = ComponentTypeJob
+	}
+	if c.KubernetesManifestComponentConfig != nil {
+		c.Type = ComponentTypeKubernetesManifest
 	}
 
 	// set the vcs connection type, by parsing the subfields on the relationship
