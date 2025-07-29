@@ -80,6 +80,14 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 			return nil, errors.Wrap(err, "unable to helm deploy plan")
 		}
 		plan.HelmDeployPlan = helmPlan
+	case app.ComponentTypeKubernetesManifest:
+		l.Info("generating kubernetes manifest plan")
+		kubernetesManifestPlan, err := p.createKubernetesManifestDeployPlan(ctx, req)
+		if err != nil {
+			l.Error("error generating kubernetes manifest plan", zap.Error(err))
+			return nil, errors.Wrap(err, "unable to kubernets manifest deploy plan")
+		}
+		plan.KubernetesManifestDeployPlan = kubernetesManifestPlan
 	}
 
 	// the following section is for sandbox mode only
@@ -98,6 +106,13 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		switch build.ComponentConfigConnection.Type {
 		case app.ComponentTypeHelmChart:
 			plan.SandboxMode.Helm = p.createHelmDeploySandboxMode(ctx, plan.HelmDeployPlan)
+		case app.ComponentTypeKubernetesManifest:
+			sandboxPlan, err := p.createKubernetesManifestDeployPlanSandboxMode(plan.KubernetesManifestDeployPlan)
+			if err != nil {
+				return nil, errors.Wrap(err, "unable to create sandbox plan")
+			}
+
+			plan.SandboxMode.KubernetesManifest = sandboxPlan
 		case app.ComponentTypeTerraformModule:
 			sandboxPlan, err := p.createTerraformDeploySandboxMode(ctx, plan.TerraformDeployPlan)
 			if err != nil {

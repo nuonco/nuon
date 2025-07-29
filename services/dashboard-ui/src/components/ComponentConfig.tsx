@@ -28,6 +28,7 @@ type TComponentConfigType =
   | 'helm'
   | 'job'
   | 'terraform'
+  | 'kubernetes_manifest'
 
 export function getComponentConfigType({
   docker_build,
@@ -40,7 +41,8 @@ export function getComponentConfigType({
     (external_image && 'external') ||
     (helm && 'helm') ||
     (terraform_module && 'terraform') ||
-    (job && 'job')) as TComponentConfigType
+    (job && 'job') ||
+    (kubernetes_manifest as 'kubernetes_manifest')) as TComponentConfigType
 }
 
 export function getComponentConfigValues({
@@ -79,6 +81,9 @@ export const StaticComponentConfigType: FC<{
       break
     case 'job':
       cfgType = { icon: <SiAwslambda />, name: 'Job' }
+      break
+    case 'kubernetes_manifest':
+      cfgType = { icon: <SiAwslambda />, name: 'Kubernetes Manifest' }
       break
     default:
       cfgType = { icon: <GoQuestion />, name: 'Unknown' }

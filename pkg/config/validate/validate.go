@@ -53,6 +53,7 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 			return nil
 		},
 	}
+
 	for _, fn := range fns {
 		if err := fn(); err != nil {
 			return err
