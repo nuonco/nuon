@@ -46,7 +46,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - 7233:7233
-      - 8233:8233
     volumes:
       - /var/:/tmp/temporalcli
     networks:
@@ -63,8 +62,10 @@ services:
     environment:
       # NOTE: if you are on docker and this does not work, change the following to:
       # host.docker.internal:7233
-      TEMPORAL_ADDRESS: host.containers.internal:7233
+      TEMPORAL_ADDRESS: host.docker.internal:7233
       TEMPORAL_UI_PUBLIC_PATH: /admin/temporal
+      # NOTE: this value is actually used via the client, so does not need a docker host address
+      TEMPORAL_CODEC_ENDPOINT: 'http://localhost:8082/v1/general/temporal-codec'
 
   #
   # Replicated ClickHouse
