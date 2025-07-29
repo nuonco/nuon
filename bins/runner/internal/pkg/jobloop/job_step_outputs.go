@@ -115,6 +115,23 @@ func (j *jobLoop) writeHelmSandboxMode(ctx context.Context, job *models.AppRunne
 	return nil
 }
 
+func (j *jobLoop) writeKubernetesManifestSandboxMode(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution, plan *plantypes.KubernetesSandboxMode) error {
+	if len(plan.PlanContents) > 0 {
+		var planDisplayJson *map[string]interface{}
+		err := json.Unmarshal([]byte(plan.PlanDisplayContents), &planDisplayJson)
+		if err != nil {
+			return errors.Wrap(err, "unable to unmarshal plan display")
+		}
+		// write an output
+		j.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
+			Contents:        plan.PlanContents,
+			ContentsDisplay: planDisplayJson,
+		})
+	}
+
+	return nil
+}
+
 func (j *jobLoop) executeOutputsJobStep(ctx context.Context, handler jobs.JobHandler, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
@@ -158,6 +175,11 @@ func (j *jobLoop) executeOutputsJobStep(ctx context.Context, handler jobs.JobHan
 		if plan.SandboxMode != nil && plan.SandboxMode.Helm != nil {
 			if err := j.writeHelmSandboxMode(ctx, job, jobExecution, plan.SandboxMode.Helm); err != nil {
 				return errors.Wrap(err, "unable to write sandbox mode helm")
+			}
+		}
+		if plan.SandboxMode != nil && plan.SandboxMode.KubernetesManifest != nil {
+			if err := j.writeKubernetesManifestSandboxMode(ctx, job, jobExecution, plan.SandboxMode.KubernetesManifest); err != nil {
+				return errors.Wrap(err, "unable to write sandbox mode kubernetes_manifest")
 			}
 		}
 	}

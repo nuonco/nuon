@@ -24,6 +24,8 @@ const (
 	ExternalImageComponentType  ComponentType = "external_image"
 	// JobComponentType is the type for a job component
 	JobComponentType ComponentType = "job"
+	// KubernetesManifestComponentType is a type for kubernetes manifest compnent
+	KubernetesManifestComponentType ComponentType = "kubernetes_manifest"
 
 	ComponentTypeUnknown ComponentType = ""
 )
@@ -40,6 +42,8 @@ func (c ComponentType) APIType() models.AppComponentType {
 		return models.AppComponentTypeExternalImage
 	case JobComponentType:
 		return models.AppComponentTypeJob
+	case KubernetesManifestComponentType:
+		return models.AppComponentTypeKubernetesManifest
 	}
 
 	return models.AppComponentTypeUnknown
@@ -54,11 +58,12 @@ type Component struct {
 	VarName      string        `mapstructure:"var_name,omitempty"`
 	Dependencies []string      `mapstructure:"dependencies,omitempty"`
 
-	HelmChart       *HelmChartComponentConfig       `mapstructure:"helm_chart,omitempty" jsonschema:"oneof_required=helm"`
-	TerraformModule *TerraformModuleComponentConfig `mapstructure:"terraform_module,omitempty" jsonschema:"oneof_required=terraform_module"`
-	DockerBuild     *DockerBuildComponentConfig     `mapstructure:"docker_build,omitempty" jsonschema:"oneof_required=docker_build"`
-	Job             *JobComponentConfig             `mapstructure:"job,omitempty" jsonschema:"oneof_required=job"`
-	ExternalImage   *ExternalImageComponentConfig   `mapstructure:"external_image,omitempty" jsonschema:"oneof_required=external_image"`
+	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" jsonschema:"oneof_required=helm"`
+	TerraformModule    *TerraformModuleComponentConfig    `mapstructure:"terraform_module,omitempty" jsonschema:"oneof_required=terraform_module"`
+	DockerBuild        *DockerBuildComponentConfig        `mapstructure:"docker_build,omitempty" jsonschema:"oneof_required=docker_build"`
+	Job                *JobComponentConfig                `mapstructure:"job,omitempty" jsonschema:"oneof_required=job"`
+	ExternalImage      *ExternalImageComponentConfig      `mapstructure:"external_image,omitempty" jsonschema:"oneof_required=external_image"`
+	KubernetesManifest *KubernetesManifestComponentConfig `mapstructure:"kubernetes_manifest,omitempty" jsonschema:"oneof_required=kubernetes_manifest"`
 
 	// created during parsing
 	References []refs.Ref `mapstructure:"-" jsonschema:"-" nuonhash:"-"`
@@ -90,6 +95,12 @@ func (c *Component) parse() error {
 
 	if c.ExternalImage != nil {
 		if err := c.ExternalImage.Parse(); err != nil {
+			return err
+		}
+	}
+
+	if c.KubernetesManifest != nil {
+		if err := c.KubernetesManifest.Parse(); err != nil {
 			return err
 		}
 	}
@@ -129,6 +140,10 @@ func (a *Component) Validate() error {
 
 	if a.ExternalImage != nil {
 		return a.ExternalImage.Validate()
+	}
+
+	if a.KubernetesManifest != nil {
+		return a.KubernetesManifest.Validate()
 	}
 
 	return nil

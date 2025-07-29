@@ -189,6 +189,10 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	// TODO(jm): these will be moved to the otel namespace
 	api.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
 
+	// installs
+	installs := api.Group("/v1/installs")
+	installs.GET("/:install_id/:component_id/last-active-plan", s.GetInstallComponenetLastActivePlan)
+
 	return nil
 }
 

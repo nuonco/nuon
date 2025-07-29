@@ -49,6 +49,9 @@ func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Componen
 
 		// preload all job configs
 		Preload("ComponentConfigs.JobComponentConfig").
+
+		// preload all kubernetes configs
+		Preload("ComponentConfigs.KubernetesManifestComponentConfig").
 		First(&cmp, "id = ?", cmpID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)

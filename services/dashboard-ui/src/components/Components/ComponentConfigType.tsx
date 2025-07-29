@@ -14,6 +14,7 @@ export type TComponentConfigType =
   | 'terraform_module'
   | 'helm_chart'
   | 'job'
+  | 'kubernetes_manifest'
 
 export const ComponentConfigType: FC<{
   configType: TComponentConfigType
@@ -35,6 +36,9 @@ export const ComponentConfigType: FC<{
       break
     case 'job':
       cfgType = { icon: <SiAwslambda />, name: 'Job' }
+      break
+    case 'job':
+      cfgType = { icon: <SiAwslambda />, name: 'Kubernetes Manifest' }
       break
     default:
       cfgType = { icon: <GoQuestion />, name: 'Unknown' }

@@ -78,6 +78,7 @@ func AllModels() []interface{} {
 		&app.TerraformModuleComponentConfig{},
 		&app.DockerBuildComponentConfig{},
 		&app.JobComponentConfig{},
+		&app.KubernetesManifestComponentConfig{},
 		&app.ExternalImageComponentConfig{},
 		&app.ConnectedGithubVCSConfig{},
 		&app.PublicGitVCSConfig{},
