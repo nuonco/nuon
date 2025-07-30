@@ -31,8 +31,6 @@ var defaultSupportUsers = [][2]string{
 	{"google-oauth2|115499976104812001062", "stephen@nuon.co"},
 	// Harsh Thakur
 	{"google-oauth2|113727848816762717712", "harsh@nuon.co"},
-	// Tim Wong
-	{"google-oauth2|101754301726880307208", "tim@nuon.co"},
 	// Somesh Koli
 	{"google-oauth2|109216513967056704574", "somesh@nuon.co"},
 	// Mark Milligan
