@@ -104,7 +104,7 @@ export const ActionStepDetails: FC<IPollStepDetails> = ({
                     className="text-sm gap-0"
                     href={`/${orgId}/installs/${step?.owner_id}/actions/${actionRun?.config?.action_workflow_id}`}
                   >
-                    View Action
+                    View action
                     <CaretRight />
                   </Link>
                   <Link

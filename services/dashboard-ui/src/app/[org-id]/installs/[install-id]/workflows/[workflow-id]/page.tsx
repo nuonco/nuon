@@ -79,7 +79,7 @@ export default async function InstallWorkflow({ params }) {
           ) : null}
         </span>
       }
-      headingUnderline={install?.id}
+      headingUnderline={installWorkflow?.id}
       meta={
         <div className="pb-6 flex flex-col gap-4">
           <div className="flex gap-8">
