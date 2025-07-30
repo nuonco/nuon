@@ -2,7 +2,6 @@
 
 import classNames from 'classnames'
 import React, { type FC, useMemo } from 'react'
-import { DateTime } from 'luxon'
 import { type ColumnDef } from '@tanstack/react-table'
 import { LogsViewer } from './LogsViewer'
 import { LogLineSeverity } from './LogLineSeverity'
@@ -30,10 +29,7 @@ export const LogsPreview: FC<ILogsPreview> = ({ logs }) => {
             <LogLineSeverity
               severity_number={props.row.original?.severity_number}
             />
-            <Time
-              className="!text-sm"
-              time={DateTime.fromMillis(props.getValue<number>()).toISO()}
-            />
+            <Time className="!text-[11px]" nanos={props.getValue<number>()} />
           </span>
         ),
       },
