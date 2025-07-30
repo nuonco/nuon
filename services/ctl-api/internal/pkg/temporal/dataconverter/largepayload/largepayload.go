@@ -33,7 +33,6 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 			continue
 		}
 
-		// anything less than 128KB we pass to the server
 		if len(payload.Data) < d.cfg.TemporalDataConverterLargePayloadSize {
 			result[i] = payload
 			continue
@@ -48,13 +47,15 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 		}
 		if res := d.db.WithContext(ctx).Create(&dbPayload); res.Error != nil {
 			d.l.Error("error encoding using large payload codec", zap.Error(res.Error))
+			panic("error encoding" + res.Error.Error())
 			return nil, errors.Wrap(res.Error, "unable to write temporal payload")
 		}
 
 		// Create new payload with compressed data
 		result[i] = &commonpb.Payload{
 			Metadata: map[string][]byte{
-				converter.MetadataEncoding: []byte("nuon/largepayload"),
+				converter.MetadataEncoding:  []byte("nuon/largepayload"),
+				"nuon/largepayload/enabled": []byte("true"),
 			},
 			Data: []byte(dbPayload.ID),
 		}
@@ -63,7 +64,7 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 			if k != converter.MetadataEncoding {
 				result[i].Metadata[k] = v
 			} else {
-				result[i].Metadata["original-encoding"] = v
+				result[i].Metadata["nuon/large-payload/original-encoding"] = v
 			}
 		}
 	}
@@ -82,6 +83,11 @@ func (d *dataConverter) Decode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 			continue
 		}
 
+		if string(payload.Metadata["nuon/largepayload/enabled"]) != "true" {
+			result[i] = payload
+			continue
+		}
+
 		ctx := context.Background()
 		ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 		defer cancel()
@@ -94,7 +100,7 @@ func (d *dataConverter) Decode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 		// Create new payload with decompressed data
 		result[i] = &commonpb.Payload{
 			Metadata: make(map[string][]byte),
-			Data:     dbPayload.Contents,
+			Data:     []byte(dbPayload.Contents),
 		}
 
 		// Copy all metadata except the encoding
@@ -107,7 +113,7 @@ func (d *dataConverter) Decode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 		}
 
 		// Restore original encoding if it was preserved
-		if originalEncoding, ok := payload.Metadata["original-encoding"]; ok {
+		if originalEncoding, ok := payload.Metadata["nuon/large-payload/original-encoding"]; ok {
 			result[i].Metadata[converter.MetadataEncoding] = originalEncoding
 		}
 	}
