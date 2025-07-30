@@ -3,7 +3,15 @@
 import classNames from 'classnames'
 import { useParams } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
-import { ArrowsClockwise, X, Check, ArrowRightIcon, ArrowsOutSimpleIcon, CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react'
+import {
+  ArrowsClockwise,
+  X,
+  Check,
+  ArrowRightIcon,
+  ArrowsOutSimpleIcon,
+  CaretDownIcon,
+  CaretRightIcon,
+} from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { JsonView } from '@/components/Code'
 import { SpinnerSVG, Loading } from '@/components/Loading'
@@ -15,7 +23,7 @@ import type { TInstallWorkflowStep } from '@/types'
 import { removeSnakeCase } from '@/utils'
 import { HelmChangesViewer } from './HelmPlanDiff'
 import { TerraformPlanViewer } from './TerraformPlanDiff'
-import KubernetesManifestDiffViewer from './KubernetesPlanDiff'
+import { KubernetesManifestDiffViewer } from './KubernetesPlanDiff'
 
 interface IApprovalStep {
   approval?: TInstallWorkflowStep['approval']
@@ -56,7 +64,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
         })
       })
       .catch((error) => {
-        setError(error || 'Failed to fetch plan')
+        setError(error?.message || 'Failed to fetch plan')
       })
   }, [])
 
@@ -82,8 +90,8 @@ export const ApprovalStep: FC<IApprovalStep> = ({
 
   const ApprovalButtons = ({ inBanner = false }: { inBanner?: boolean }) =>
     approval?.response ||
-      workflowApproveOption === 'approve-all' ||
-      step?.status?.status === 'cancelled' ? null : (
+    workflowApproveOption === 'approve-all' ||
+    step?.status?.status === 'cancelled' ? null : (
       <div
         className={classNames('flex items-center gap-4', {
           'self-end ml-auto': !inBanner,
@@ -227,7 +235,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
             </div>
           ) : approval?.type === 'helm_approval' && plan ? (
             <HelmChangesViewer planData={plan} />
-          ) : approval?.type === 'kubernetes_manifest_approval' ? (
+          ) : approval?.type === 'kubernetes_manifest_approval' && plan ? (
             <KubernetesManifestDiffViewer approvalContents={plan} />
           ) : plan ? (
             <TerraformPlanViewer plan={plan} />
@@ -236,7 +244,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           )}
         </div>
         <ApprovalButtons />
-      </div >
+      </div>
     </>
   )
 }
