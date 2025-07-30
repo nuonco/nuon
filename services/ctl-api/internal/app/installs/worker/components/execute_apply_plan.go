@@ -94,8 +94,25 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 	}); err != nil {
 		return errors.Wrap(err, "unable to update install workflow")
 	}
-	plan.ApplyPlanContents = planJob.Execution.Result.Contents
-	plan.ApplyPlanDisplay = string(planJob.Execution.Result.ContentsDisplay)
+
+	// Add Plan contents from the result to the plan
+	if len(planJob.Execution.Result.Contents) > 0 {
+		l.Info("using the legacy contents from the runner job execution result")
+		plan.ApplyPlanContents = planJob.Execution.Result.Contents
+		plan.ApplyPlanDisplay = string(planJob.Execution.Result.ContentsDisplay)
+	} else if len(planJob.Execution.Result.ContentsGzip) > 0 {
+		l.Info("using the compressed contents from the runner job execution result")
+		applyPlanContents, err := planJob.Execution.Result.GetContentsB64String()
+		if err != nil {
+			return errors.Wrap(err, "unable to get contents string")
+		}
+		plan.ApplyPlanContents = applyPlanContents
+		applyPlanContentsDisplay, err := planJob.Execution.Result.GetContentsDisplayString()
+		if err != nil {
+			return errors.Wrap(err, "unable to get contents display string")
+		}
+		plan.ApplyPlanDisplay = applyPlanContentsDisplay
+	}
 
 	planJSON, err := json.Marshal(plan)
 	if err != nil {
