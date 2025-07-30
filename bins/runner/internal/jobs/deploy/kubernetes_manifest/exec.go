@@ -1,9 +1,13 @@
 package kubernetes_manifest
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/pkg/errors"
@@ -27,6 +31,33 @@ type kubernetesResource struct {
 	raw                  string
 	obj                  *unstructured.Unstructured
 	namespaced           bool
+}
+
+func (h *handler) getApplyPlanContents(ctx context.Context, l *zap.Logger, applyPlanContents string) ([]byte, error) {
+	// 1. base64 decode
+	l.Info("base64 decoding apply plan contents", zap.Int("contents.string.length", len(applyPlanContents)))
+	decodedString, err := base64.StdEncoding.DecodeString(applyPlanContents)
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "unable to base64 decode apply plan contents")
+	}
+	decodedBytes := bytes.NewBuffer([]byte(decodedString))
+	l.Info("base64 decoded apply plan contents", zap.Int("contents.decoded_bytes.length", len(decodedBytes.Bytes())))
+
+	// 2. decompress string
+	l.Info("decompressing apply plan contents", zap.Int("contents.decoded_bytes.length", len(decodedBytes.Bytes())))
+	reader, err := gzip.NewReader(decodedBytes)
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "unable to decompress apply plan contents")
+	}
+	defer reader.Close()
+	decompressedBytes, err := io.ReadAll(reader)
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "unable to decompress apply plan content")
+	}
+	l.Info("decompressed apply plan contents", zap.Int("contents.decompressed_bytes.length", len(decompressedBytes)))
+
+	return decompressedBytes, nil
+
 }
 
 // NOTE: the helm plans are not real plans, they are just diffs
@@ -142,10 +173,15 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		l.Debug("Processing Apply-Plan operation", zap.String("jobID", job.ID))
 
-		applyPlan := types.KubernetesManifestPlanContents{}
-		err := json.Unmarshal([]byte(h.state.plan.ApplyPlanContents), &applyPlan)
+		planContents, err := h.getApplyPlanContents(ctx, l, h.state.plan.ApplyPlanContents)
 		if err != nil {
-			return fmt.Errorf("unable to decode apply plan %w", err)
+			return errors.Wrap(err, "unable to get apply plan contents")
+		}
+
+		applyPlan := types.KubernetesManifestPlanContents{}
+		err = json.Unmarshal(planContents, &applyPlan)
+		if err != nil {
+			return errors.Wrap(err, "unable to decode apply plan")
 		}
 
 		l.Debug("Apply plan decoded",
@@ -215,15 +251,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	// in case of kubernetes we write apply plan in job result because we need to reference then in next plan cycle
 	// this is not the case with other component types apply results are empty
 	var apiRes *models.ServiceCreateRunnerJobExecutionResultRequest
-	resultDisplay := map[string]interface{}{}
-	resultContents, err := json.Marshal(kubernetesManifestPlan)
-	json.Unmarshal(resultContents, &resultDisplay)
-	if err != nil {
-		h.writeErrorResult(ctx, err)
-		l.Error("Failed to create API result", zap.Error(err), zap.String("jobID", job.ID))
-		return fmt.Errorf("unable to create api result from release: %w", err)
-	}
-	apiRes, err = h.createAPIResult(rel, string(resultContents), resultDisplay)
+	apiRes, err = h.createAPIResultRequest(rel, l, kubernetesManifestPlan)
 	if err != nil {
 		h.writeErrorResult(ctx, err)
 		l.Error("Failed to create API result", zap.Error(err), zap.String("jobID", job.ID))
