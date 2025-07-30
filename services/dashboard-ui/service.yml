@@ -55,12 +55,12 @@ local_build_cmds:
 local_cmds:
   - npm run dev
 namespace: dashboard-ui
-earthly_cmds:
+docker_cmds:
   # the entrypoint of the container is already run start
   - args: []
     ports:
       - 4000
-earthly_env:
+docker_env:
   NEXT_PUBLIC_API_URL: http://host.docker.internal:8081
   # used for generating types
   NUON_API_URL: http://host.docker.internal:8081
