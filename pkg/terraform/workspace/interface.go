@@ -5,8 +5,8 @@ package workspace
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/terraform-exec/tfexec"
 	tfjson "github.com/hashicorp/terraform-json"
 )
 
@@ -27,7 +27,6 @@ type Workspace interface {
 	// Root returns the root directory
 	Root() string
 
-
 	Cleanup(ctx context.Context) error
 
 	// the following commands are used to run terraform operations against a workspace
@@ -44,5 +43,9 @@ type Workspace interface {
 	Validate(context.Context, hclog.Logger) (*tfjson.ValidateOutput, error)
 	// Writes plan to plan.json
 	WriteTFPlan(context.Context, hclog.Logger) ([]byte, error)
+	CompressTFPlan(context.Context, hclog.Logger) ([]byte, error)
 	PlanDestroy(context.Context, hclog.Logger) ([]byte, error)
+	GetTfplan(ctx context.Context, log hclog.Logger) ([]byte, error)
+	GetTfplanCompressed(ctx context.Context, log hclog.Logger) ([]byte, error)
+	GetTfplanJsonCompressed(ctx context.Context, log hclog.Logger) ([]byte, error)
 }
