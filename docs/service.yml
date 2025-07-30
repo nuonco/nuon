@@ -8,4 +8,4 @@ local_startup_cmds: []
 local_cmds:
   - npx --yes mintlify dev --no-open --port 3333
 disable_config_map: true
-earthly_cmds: []
+docker_cmds: []

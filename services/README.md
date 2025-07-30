@@ -26,7 +26,7 @@ And then configure your local environment.
 ```sh
 export AWS_DEFAULT_PROFILE=stage.NuonPowerUser
 export AWS_REGION='us-west-2'
-export EARTHLY_SECRETS="GITHUB_TOKEN=CHANGEME_PUT_YOUR_REAL_GITHUB_PERSONAL_ACCESS_TOKEN_HERE"
+export DOCKER_SECRETS="GITHUB_TOKEN=CHANGEME_PUT_YOUR_REAL_GITHUB_PERSONAL_ACCESS_TOKEN_HERE"
 ```
 
 Now that all the dependencies are installed, configured & running, you should be able to run any service locally using nuonctl.
