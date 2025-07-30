@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -21,6 +22,10 @@ type CreateRunnerJobExecutionResultRequest struct {
 
 	Contents        string                 `json:"contents" swaggertype:"string"`
 	ContentsDisplay map[string]interface{} `json:"contents_display"`
+
+	// compressed versions
+	ContentsCompressed        string `json:"contents_compressed" swaggertype:"string"`
+	ContentsDisplayCompressed string `json:"contents_display_compressed" swaggertype:"string"`
 }
 
 // @ID						CreateRunnerJobExecutionResult
@@ -51,15 +56,62 @@ func (s *service) CreateRunnerJobExecutionResult(ctx *gin.Context) {
 		return
 	}
 
-	jobExecution, err := s.createRunnerJobExecutionResult(ctx, runnerJobID, runnerJobExecutionID, &req)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
-		return
+	// branch on wether or not the content received is compressed.
+	var jobExecution *app.RunnerJobExecutionResult
+	if req.Contents != "" {
+		jobExecution, err := s.createRunnerJobExecutionResult(ctx, runnerJobID, runnerJobExecutionID, &req)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
+			return
+		}
+
+		jobExecution.ContentsDisplay = nil
+		jobExecution.Contents = ""
+	}
+	if req.ContentsCompressed != "" {
+		jobExecution, err := s.createRunnerJobExecutionResultFromCompressed(ctx, runnerJobID, runnerJobExecutionID, &req)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
+			return
+		}
+
+		jobExecution.ContentsDisplay = nil
+		jobExecution.Contents = ""
 	}
 
-	jobExecution.ContentsDisplay = nil
-	jobExecution.Contents = ""
 	ctx.JSON(http.StatusCreated, jobExecution)
+}
+
+func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Context, runnerJobID, runnerJobExecutionID string, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, error) {
+	runnerJob, err := s.getRunnerJob(ctx, runnerJobID)
+	if err != nil {
+		return nil, err
+	}
+
+	contentsGzip, err := base64.URLEncoding.DecodeString(req.ContentsCompressed)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to decode contents")
+	}
+	contentsDisplayGzip, err := base64.URLEncoding.DecodeString(req.ContentsDisplayCompressed)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to decode contents display")
+	}
+	result := app.RunnerJobExecutionResult{
+		OrgID:                runnerJob.OrgID,
+		RunnerJobExecutionID: runnerJobExecutionID,
+		Success:              req.Success,
+		ContentsGzip:         contentsGzip,
+		ContentsDisplayGzip:  contentsDisplayGzip,
+		ErrorCode:            req.ErrorCode,
+		ErrorMetadata:        pgtype.Hstore(req.ErrorMetadata),
+	}
+
+	res := s.db.WithContext(ctx).Create(&result)
+	if res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to write runner job execution result: %w")
+	}
+
+	return &result, nil
 }
 
 func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobID, runnerJobExecutionID string, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, error) {
@@ -68,7 +120,6 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 		return nil, err
 	}
 
-	byts, err := json.Marshal(req.ContentsDisplay)
 	result := app.RunnerJobExecutionResult{
 		OrgID:                runnerJob.OrgID,
 		RunnerJobExecutionID: runnerJobExecutionID,
@@ -83,17 +134,22 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 		return nil, errors.Wrap(res.Error, "unable to write runner job execution result: %w")
 	}
 
-	// NOTE(fd): we split up the write because this column can be rather large.
-	// TODO(fd): return a 206 partial content, ensure the client knows how to handle it.
-
-	rjer := app.RunnerJobExecutionResult{
-		ID: result.ID,
-	}
-	updateRes := s.db.WithContext(ctx).Model(&rjer).Updates(app.RunnerJobExecutionResult{
-		ContentsDisplay: byts,
-	})
-	if updateRes.Error != nil {
-		return &result, errors.Wrap(res.Error, "failed to set display content on runner job execution")
+	if req.ContentsDisplay != nil {
+		// NOTE(fd): we split up the write because this column can be rather large.
+		// TODO(fd): return a 206 partial content, ensure the client knows how to handle it.
+		byts, err := json.Marshal(req.ContentsDisplay)
+		if err != nil {
+			return nil, errors.Wrap(res.Error, "unable to marshal contents display")
+		}
+		rjer := app.RunnerJobExecutionResult{
+			ID: result.ID,
+		}
+		updateRes := s.db.WithContext(ctx).Model(&rjer).Updates(app.RunnerJobExecutionResult{
+			ContentsDisplay: byts,
+		})
+		if updateRes.Error != nil {
+			return &result, errors.Wrap(res.Error, "failed to set display content on runner job execution")
+		}
 	}
 
 	return &result, nil
