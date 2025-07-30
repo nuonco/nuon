@@ -1,9 +1,13 @@
 package helm
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/pkg/errors"
@@ -36,6 +40,32 @@ func (h *handler) execUninstall(ctx context.Context, l *zap.Logger, actionCfg *a
 type HelmPlanContents struct {
 	Diff string `json:"plan"`
 	Op   string `json:"op"`
+}
+
+func (h *handler) extractApplyPlanContents(contents string) (HelmPlanContents, error) {
+	// base64 decode
+	decodedBytes, err := base64.StdEncoding.DecodeString(contents)
+	if err != nil {
+		return HelmPlanContents{}, errors.Wrap(err, "unable to base64 decode contents")
+	}
+
+	// decompress
+	contentsBuffer := bytes.NewReader([]byte(decodedBytes))
+	reader, err := gzip.NewReader(contentsBuffer)
+	if err != nil {
+		return HelmPlanContents{}, errors.Wrap(err, "unable to read contents into gzip reader")
+	}
+	defer reader.Close()
+
+	decompressedBytes, err := io.ReadAll(reader)
+	if err != nil {
+		return HelmPlanContents{}, errors.Wrap(err, "unable to decompress contents")
+	}
+
+	var helmPlan HelmPlanContents
+	json.Unmarshal(decompressedBytes, &helmPlan)
+
+	return helmPlan, nil
 }
 
 // NOTE: the helm plans are not real plans, they are just diffs
@@ -75,15 +105,12 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	// load helm plan from the plan
 	if len(h.state.plan.ApplyPlanContents) > 0 {
 		// TODO: use the actual struct and move into a shared pk
-		l.Debug("extracting apply plan contents", zap.Int("contents.length", len(h.state.plan.ApplyPlanContents)), zap.String("raw", h.state.plan.ApplyPlanContents))
-		var result map[string]interface{}
-		err = json.Unmarshal([]byte(h.state.plan.ApplyPlanContents), &result)
+		l.Debug("extracting apply plan contents", zap.Int("contents.compressed.length", len(h.state.plan.ApplyPlanContents)))
+		helmPlan, err = h.extractApplyPlanContents(h.state.plan.ApplyPlanContents)
 		if err != nil {
-			return fmt.Errorf("unable to parse the plan contents into a usable map")
+			return errors.Wrap(err, "unable to decompress and/or marshal apply plan contents into HelmPlanContents")
 		}
-		helmPlan.Op = result["op"].(string)
-		helmPlan.Diff = result["plan"].(string)
-		l.Debug("extracting apply plan contents", zap.Any("plan", helmPlan), zap.String("op", helmPlan.Op))
+		l.Debug("extracting apply plan contents", zap.Any("plan.diff", helmPlan.Diff), zap.String("plan.op", helmPlan.Op))
 	}
 
 	switch job.Operation {
@@ -109,7 +136,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		helmPlan.Op = "uninstall"
 		helmPlan.Diff = diff
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
-		l.Info(fmt.Sprintf("executing helm %s", op))
+		l.Info(fmt.Sprintf("executing helm %s", helmPlan.Op))
 		switch helmPlan.Op {
 		case "install":
 			op = "install"
@@ -120,6 +147,8 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		case "uninstall":
 			op = "uninstall"
 			err = h.execUninstall(ctx, l, actionCfg, job, jobExecution)
+		default:
+			l.Error("plan did not define an Op. this is unexpected.")
 		}
 		if err != nil {
 			return err
@@ -137,17 +166,14 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	var apiRes *models.ServiceCreateRunnerJobExecutionResultRequest
 	if job.Operation == models.AppRunnerJobOperationTypeApplyDashPlan {
 		// we only need to send success
-		apiRes, err = h.createAPIResult(rel, "", map[string]interface{}{}) // Ensure empty plan does not get written
+		apiRes, err = h.createAPIResultRequest(l, rel, HelmPlanContents{}) // ensure empty plan does not get written
 		if err != nil {
 			h.writeErrorResult(ctx, op, err)
 			return fmt.Errorf("unable to create api result from release: %w", err)
 		}
 	} else {
 		// save the plan w/ the diff
-		m := map[string]interface{}{}
-		bytes, err := json.Marshal(helmPlan)
-		json.Unmarshal(bytes, &m)
-		apiRes, err = h.createAPIResult(rel, string(bytes), m) // NOTES: something downstream expects Contents so we're storing the plan in both for now
+		apiRes, err = h.createAPIResultRequest(l, rel, helmPlan) // NOTES: something downstream expects Contents so we're storing the plan in both for now
 		if err != nil {
 			h.writeErrorResult(ctx, op, err)
 			return fmt.Errorf("unable to create api result from release: %w", err)
