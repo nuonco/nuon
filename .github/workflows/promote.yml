@@ -77,10 +77,10 @@ jobs:
           - dashboard-ui
           - runner
           - cli
-          - wiki
 
           # need to be updated to use nctl
           # - workers-infra-tests
+          # - wiki
     uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
