@@ -3,7 +3,7 @@
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { CaretRight, Minus } from '@phosphor-icons/react'
-import { AppConfigGraph } from "@/components/Apps"
+import { AppConfigGraph } from '@/components/Apps'
 import {
   ComponentDependencies,
   ComponentConfigType,
@@ -24,7 +24,7 @@ import type { TInstall, TInstallComponentSummary } from '@/types'
 
 export interface IInstallComponentsTable {
   installComponents: Array<TInstallComponentSummary>
-  install: TInstall,
+  install: TInstall
   installId: string
   orgId: string
 }
@@ -44,6 +44,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         'external_image',
         'helm_chart',
         'terraform_module',
+        'kubernetes_manifest',
       ],
     },
   ])
@@ -186,6 +187,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
           'external_image',
           'helm_chart',
           'terraform_module',
+          'kubernetes_manifest',
         ],
       },
     ])
@@ -203,7 +205,10 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
             <DebouncedSearchInput placeholder="Search component name" />
 
             <div className="flex items-center gap-4">
-              <AppConfigGraph appId={install?.app_id} configId={install?.app_config_id} />
+              <AppConfigGraph
+                appId={install?.app_id}
+                configId={install?.app_config_id}
+              />
               <DeployComponentsModal installId={installId} orgId={orgId} />
               <DeleteComponentsModal installId={installId} orgId={orgId} />
             </div>
