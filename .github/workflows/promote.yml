@@ -75,7 +75,6 @@ jobs:
         service:
           - ctl-api
           - dashboard-ui
-          - nuonctl
           - runner
           - cli
           - wiki
