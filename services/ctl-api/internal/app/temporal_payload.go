@@ -15,7 +15,7 @@ type TemporalPayload struct {
 	UpdatedAt time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	Contents []byte `json:"contents,omitzero" gorm:"type:jsonb" swaggertype:"string" features:"template" temporaljson:"contents,omitzero,omitempty"`
+	Contents []byte `json:"contents,omitzero" gorm:"type:bytea" swaggertype:"-" temporaljson:"contents,omitzero,omitempty"`
 }
 
 func (a *TemporalPayload) BeforeCreate(tx *gorm.DB) error {
