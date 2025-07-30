@@ -31,7 +31,11 @@ func (a *Activities) CreateStepApproval(ctx context.Context, req *CreateStepAppr
 			return nil, errors.Wrap(err, "unable to get job")
 		}
 
-		plan = string(job.Execution.Result.ContentsDisplay)
+		plan, err = job.Execution.Result.GetContentsDisplayString()
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get content display")
+		}
+
 	}
 
 	sa := app.WorkflowStepApproval{

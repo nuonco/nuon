@@ -72,7 +72,7 @@ func (r *run) getDestroyPlanPipeline() (*pipeline.Pipeline, error) {
 		ExecFn:     execmappers.MapBytesLog(r.Workspace.PlanDestroy),
 		CallbackFn: callbackmappers.Noop,
 	})
-	planCb, err := r.localFileCallback("plan.json")
+	planCb, err := r.localFileCallback("plan.json", true)
 	pipe.AddStep(&pipeline.Step{
 		Name:       "show plan",
 		ExecFn:     execmappers.MapTerraformPlan(r.Workspace.ShowPlan),

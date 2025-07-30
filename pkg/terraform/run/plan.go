@@ -24,10 +24,11 @@ func (r *run) Plan(ctx context.Context) error {
 	return nil
 }
 
-func (r *run) localFileCallback(filename string) (pipeline.CallbackFn, error) {
+func (r *run) localFileCallback(filename string, compress bool) (pipeline.CallbackFn, error) {
 	r.Log.Info(fmt.Sprintf("writing file to %s / %s", r.Workspace.Root(), filename))
 	applyCb, err := callbackmappers.NewLocalCallback(r.v,
 		callbackmappers.WithFilename(path.Join(r.Workspace.Root(), filename)),
+		callbackmappers.WithCompression(true),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create apply cb: %w", err)
@@ -90,7 +91,13 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: callbackmappers.Noop,
 	})
 
-	planCb, err := r.localFileCallback("plan.json")
+	pipe.AddStep(&pipeline.Step{
+		Name:       "compressing tfplan",
+		ExecFn:     execmappers.MapBytesLog(r.Workspace.CompressTFPlan),
+		CallbackFn: callbackmappers.Noop,
+	})
+
+	planCb, err := r.localFileCallback("plan.json", true)
 	pipe.AddStep(&pipeline.Step{
 		Name:       "show plan",
 		ExecFn:     execmappers.MapTerraformPlan(r.Workspace.ShowPlan),
