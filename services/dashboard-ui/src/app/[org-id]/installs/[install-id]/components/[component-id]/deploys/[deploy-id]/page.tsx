@@ -1,6 +1,3 @@
-import YAML from 'yaml'
-import * as hcl from 'hcl2-json-parser'
-
 import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
@@ -13,15 +10,12 @@ import {
 import {
   ApprovalStep,
   ClickToCopy,
-  ClickToCopyButton,
-  CodeViewer,
   ComponentConfiguration,
   ConfigurationVariables,
   DashboardContent,
   DeployStatus,
   Duration,
   ErrorFallback,
-  InstallDeployIntermediateData,
   InstallComponentManagementDropdown,
   InstallWorkflowCancelModal,
   Link,
@@ -40,17 +34,10 @@ import {
   getComponentBuild,
   getComponent,
   getInstall,
-  getInstallComponentOutputs,
   getInstallDeploy,
-  getInstallDeployPlan,
   getInstallWorkflow,
 } from '@/lib'
-import type {
-  TBuild,
-  TComponentConfig,
-  TInstallDeployPlan,
-  TInstall,
-} from '@/types'
+import type { TBuild, TComponentConfig } from '@/types'
 import { CANCEL_RUNNER_JOBS, sizeToMbOrGB, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -209,53 +196,55 @@ export default async function InstallComponentDeploy({ params }) {
           </span>
 
           <div className="flex flex-wrap gap-4 items-center">
-          <ErrorBoundary fallback={<Text>Can&apso;t fetching sync plan</Text>}>
-            <Suspense
-              fallback={
-                <Loading variant="stack" loadingText="Loading sync plan..." />
-              }
-            >
-              <RunnerJobPlanModal
-                buttonText="Sync plan"
-                headingText="Component sync plan"
-                runnerJobId={deploy?.runner_jobs?.at(-1)?.id}              
-              />
-            </Suspense>
-          </ErrorBoundary>
-
-          {deploy?.install_deploy_type !== 'sync-image' ? (
             <ErrorBoundary
-              fallback={<Text>Can&apso;t fetching deploy plan</Text>}
+              fallback={<Text>Can&apso;t fetching sync plan</Text>}
             >
               <Suspense
                 fallback={
-                  <Loading
-                    variant="stack"
-                    loadingText="Loading deploy plan..."
-                  />
+                  <Loading variant="stack" loadingText="Loading sync plan..." />
                 }
               >
                 <RunnerJobPlanModal
-                  buttonText="Deploy plan"
-                  headingText="Component deploy plan"
-                  runnerJobId={deploy?.runner_jobs?.at(0)?.id}
+                  buttonText="Sync plan"
+                  headingText="Component sync plan"
+                  runnerJobId={deploy?.runner_jobs?.at(-1)?.id}
                 />
               </Suspense>
             </ErrorBoundary>
-          ) : null}
 
-          {component ? (
-            <InstallComponentManagementDropdown component={component} />
-          ) : null}
-          {CANCEL_RUNNER_JOBS &&
-          deploy?.status !== 'active' &&
-          deploy?.status !== 'error' &&
-          deploy?.status !== 'inactive' &&
-          deploy?.runner_jobs?.length &&
-          installWorkflow &&
-          !installWorkflow?.finished ? (
-            <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
-          ) : null}
+            {deploy?.install_deploy_type !== 'sync-image' ? (
+              <ErrorBoundary
+                fallback={<Text>Can&apso;t fetching deploy plan</Text>}
+              >
+                <Suspense
+                  fallback={
+                    <Loading
+                      variant="stack"
+                      loadingText="Loading deploy plan..."
+                    />
+                  }
+                >
+                  <RunnerJobPlanModal
+                    buttonText="Deploy plan"
+                    headingText="Component deploy plan"
+                    runnerJobId={deploy?.runner_jobs?.at(0)?.id}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            ) : null}
+
+            {component ? (
+              <InstallComponentManagementDropdown component={component} />
+            ) : null}
+            {CANCEL_RUNNER_JOBS &&
+            deploy?.status !== 'active' &&
+            deploy?.status !== 'error' &&
+            deploy?.status !== 'inactive' &&
+            deploy?.runner_jobs?.length &&
+            installWorkflow &&
+            !installWorkflow?.finished ? (
+              <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
+            ) : null}
           </div>
         </div>
       }
@@ -386,8 +375,6 @@ export default async function InstallComponentDeploy({ params }) {
   )
 }
 
-// load log stream
-
 // load component build
 const LoadComponentBuild: FC<{ buildId: string; orgId: string }> = async ({
   buildId,
@@ -449,151 +436,4 @@ const LoadComponentConfig: FC<{
   ) : (
     <Text>No component config found.</Text>
   )
-}
-
-// load intermediate data
-const LoadIntermediateData: FC<{
-  deployId: string
-  install: TInstall
-  orgId: string
-}> = async ({ deployId, install, orgId }) => {
-  const deployPlan = await getInstallDeployPlan({
-    deployId,
-    installId: install.id,
-    orgId,
-  }).catch(console.error)
-
-  return deployPlan ? (
-    <>
-      {(deployPlan as TInstallDeployPlan)?.actual?.waypoint_plan?.variables
-        ?.intermediate_data?.nuon ? (
-        <Section
-          childrenClassName="flex flex-col gap-8"
-          heading="Rendered intermediate data"
-          className="flex-initial"
-        >
-          <InstallDeployIntermediateData
-            install={install}
-            data={
-              (deployPlan as TInstallDeployPlan)?.actual?.waypoint_plan
-                ?.variables?.intermediate_data
-            }
-          />
-        </Section>
-      ) : null}
-    </>
-  ) : null
-}
-
-// load helm values
-const LoadHelmValues: FC<{
-  componentId: string
-  deployId: string
-  install: TInstall
-  orgId: string
-}> = async ({ componentId, deployId, install, orgId }) => {
-  const deployPlan = await getInstallDeployPlan({
-    deployId,
-    installId: install.id,
-    orgId,
-  }).catch(console.error)
-
-  if (!deployPlan) return null
-
-  const hclConfig = await hcl.parseToObject(
-    deployPlan?.actual?.waypoint_plan?.waypoint_job?.hcl_config
-  )
-
-  const helmValueString = hclConfig?.app?.[componentId]
-    ?.at(0)
-    ?.deploy?.at(0)
-    ?.use?.helm?.at(0)
-    ?.values?.toString()
-
-  return hclConfig?.app?.[componentId]?.at(0)?.deploy?.at(0)?.use?.helm &&
-    helmValueString ? (
-    <>
-      <div className="flex flex-col gap-4">
-        <Text variant="med-12">Values file</Text>
-        <CodeViewer initCodeSource={helmValueString} language="yaml" />
-      </div>
-      <RenderHelmValues valuesString={helmValueString} />
-    </>
-  ) : null
-}
-
-const RenderHelmValues: FC<{ valuesString: string }> = ({ valuesString }) => {
-  function flattenValues(obj, parent = '', res = {}) {
-    for (let key in obj) {
-      let propName = parent ? parent + '.' + key : key
-      if (typeof obj[key] === 'object' && obj[key] !== null) {
-        if (Array.isArray(obj[key])) {
-          obj[key].forEach((item, index) => {
-            if (typeof item === 'object' && item !== null) {
-              flattenValues(item, `${propName}[${index}]`, res)
-            } else {
-              res[`${propName}[${index}]`] = item
-            }
-          })
-        } else {
-          flattenValues(obj[key], propName, res)
-        }
-      } else {
-        res[propName] = obj[key]?.toString()
-      }
-    }
-    return res
-  }
-
-  const helmValues = flattenValues(YAML.parse(valuesString))
-
-  return (
-    <ConfigurationVariables heading="Rendered values" variables={helmValues} />
-  )
-}
-
-// load latest output
-const LoadLatestOutputs: FC<{
-  componentId: string
-  installId: string
-  orgId: string
-}> = async ({ componentId, installId, orgId }) => {
-  const outputs = await getInstallComponentOutputs({
-    componentId,
-    installId,
-    orgId,
-  }).catch(console.error)
-
-  return outputs ? (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <Text variant="med-12">Outputs</Text>
-        <ClickToCopyButton textToCopy={JSON.stringify(outputs)} />
-      </div>
-      <CodeViewer
-        initCodeSource={JSON.stringify(outputs, null, 2)}
-        language="json"
-      />
-    </div>
-  ) : null
-}
-
-const LoadRunnerJobPlan: FC<{
-  orgId: string
-  runnerJobId: string
-  buttonText: string
-  headingText: string
-}> = async ({ buttonText, headingText, orgId, runnerJobId }) => {
-  const { data: plan } = await nueQueryData<string>({
-    orgId,
-    path: `runner-jobs/${runnerJobId}/plan`,
-  })
-
-  return plan ? (
-    <RunnerJobPlanModal
-      buttonText={buttonText}
-      headingText={headingText}
-      runnerJobId={runnerJobId}
-    />
-  ) : null
 }
