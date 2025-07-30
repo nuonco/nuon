@@ -83,8 +83,33 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	}); err != nil {
 		return errors.Wrap(err, "unable to update install workflow")
 	}
-	runPlan.ApplyPlanContents = planJob.Execution.Result.Contents
-	runPlan.ApplyPlanDisplay = planJob.Execution.Result.ContentsDisplay
+
+	// Add Plan contents from the result to the plan
+	if len(planJob.Execution.Result.Contents) > 0 {
+		l.Info("using the legacy contents from the runner job execution result")
+		runPlan.ApplyPlanContents = planJob.Execution.Result.Contents
+		runPlan.ApplyPlanDisplay = planJob.Execution.Result.ContentsDisplay
+	} else if len(planJob.Execution.Result.ContentsGzip) > 0 {
+		l.Info(
+			"using the compressed contents from the runner job execution result",
+			zap.Int("contents.bytes.compressed", len(planJob.Execution.Result.ContentsGzip)),
+		)
+		applyPlanContents, err := planJob.Execution.Result.GetContentsB64String()
+		if err != nil {
+			return errors.Wrap(err, "unable to get contents display string")
+		}
+		l.Info(
+			"using the compressed contents from the runner job execution result",
+			zap.Int("contents.bytes.compressed", len(planJob.Execution.Result.ContentsGzip)),
+			zap.Int("contents.bytes.compressed.b64", len(applyPlanContents)),
+		)
+		runPlan.ApplyPlanContents = applyPlanContents
+		applyPlanContentsDisplay, err := planJob.Execution.Result.GetContentsDisplayDecompressedBytes()
+		if err != nil {
+			return errors.Wrap(err, "unable to get contents display bytes")
+		}
+		runPlan.ApplyPlanDisplay = applyPlanContentsDisplay
+	}
 
 	planJSON, err := json.Marshal(runPlan)
 	if err != nil {

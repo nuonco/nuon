@@ -116,7 +116,7 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 	client.Description = ""
 	client.CreateNamespace = h.state.plan.HelmDeployPlan.CreateNamespace
 
-	l.Info("calculating helm diff")
+	l.Info("calculating helm diff", zap.String("operation", "diff"), zap.String("exec", "install"))
 	rel, err := client.RunWithContext(ctx, chart, values)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to execute with dry-run")
@@ -155,7 +155,7 @@ func (h *handler) uninstallDiff(ctx context.Context, l *zap.Logger, actionCfg *a
 	client.WaitStrategy = kube.StatusWatcherStrategy
 	client.Timeout = h.state.timeout
 
-	l.Info("calculating helm diff")
+	l.Info("calculating helm diff", zap.String("operation", "diff"), zap.String("exec", "uninstall"))
 	prevMapping := manifest.Parse(prevRel.Manifest, prevRel.Namespace, true)
 
 	resp, err := client.Run(prevRel.Name)
