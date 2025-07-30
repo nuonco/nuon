@@ -45,9 +45,3 @@ resource "pagerduty_user" "sam" {
   email = "sam@nuon.co"
   role  = "admin"
 }
-
-resource "pagerduty_user" "tim" {
-  name  = "Tim"
-  email = "tim@nuon.co"
-  role  = "admin"
-}

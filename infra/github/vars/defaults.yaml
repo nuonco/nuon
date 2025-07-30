@@ -33,9 +33,6 @@ members:
   - username: nuonbot
   # Casey Bierman
   - username: Casey-00
-  # Tim Wong
-  - username: mrwong
-    role: admin
   - username: onprem
     role: admin
   - username: sharkymark
