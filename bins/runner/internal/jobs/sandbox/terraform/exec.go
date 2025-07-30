@@ -5,8 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/nuonco/nuon-runner-go/models"
@@ -93,11 +91,11 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
 		l.Info("creating terraform plan", zap.String("operation", string(job.Operation)))
 		err = tfRun.Plan(ctx)
-		p.createResult(ctx)
+		p.createJobExecutionResultRequest(ctx, wkspace, hlog)
 	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
 		l.Info("creating terraform teardown plan", zap.String("operation", string(job.Operation)))
 		err = tfRun.DestroyPlan(ctx)
-		p.createResult(ctx)
+		p.createJobExecutionResultRequest(ctx, wkspace, hlog)
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		l.Info("executing terraform apply plan", zap.String("operation", string(job.Operation)))
 		err = tfRun.ApplyPlan(ctx)
@@ -141,35 +139,35 @@ func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Wo
 	return nil
 }
 
-func (p *handler) createResult(ctx context.Context) error {
-	// read the tfplan into b64 byts
-	pathToPlan := filepath.Join(p.state.tfWorkspace.Root(), "tfplan") // TODO: make this a built in on the workspace (tfplan)
-	planBytes, err := os.ReadFile(pathToPlan)
+// NOTE: createJobExecutionResultRequest is only called in cases when there _is_ a plan. otherwise, we don't really need a result object.
+// as a result, we're handling the loading of the plan.json within createJobExecutionResultRequest
+func (p *handler) createJobExecutionResultRequest(ctx context.Context, wkspace workspace.Workspace, hlog hclog.Logger) error {
+	// NOTE(fd): the tfplan is already a gzip directory so we do not want to gzip it again.
+	// read the tfplan into b64 bytes.
+	planBytes, err := wkspace.GetTfplan(ctx, hlog)
 	if err != nil {
 		p.writeErrorResult(ctx, "failed to read tfplan file", err)
 		return fmt.Errorf("unable to read tfplan file: %w", err)
 	}
-	planContents := base64.StdEncoding.EncodeToString(planBytes)
-
-	// read the plan.json into Display
-	pathToPlanJson := filepath.Join(p.state.tfWorkspace.Root(), "plan.json") // TODO: make this a built in on the workspace (GetPlan)
-	planJsonString, err := os.ReadFile(pathToPlanJson)
-	var planJson *map[string]interface{}
-	err = json.Unmarshal(planJsonString, &planJson)
-
+	hlog.Info("tfplan", zap.Int("bytes", len(planBytes)))
+	planBytesB64 := base64.URLEncoding.EncodeToString(planBytes)
+	planJsonBytes, err := wkspace.GetTfplanJsonCompressed(ctx, hlog)
 	if err != nil {
-		p.writeErrorResult(ctx, "failed to read plan.json file", err)
-		return fmt.Errorf("unable to read plan.json file: %w", err)
+		p.writeErrorResult(ctx, "failed to get compressed plan.json.gz bytes", err)
+		return fmt.Errorf("unable to read plan.json.gz file: %w", err)
 	}
+	hlog.Info("plan json", zap.Int("bytes", len(planJsonBytes)))
+	planJsonBytesB64 := base64.URLEncoding.EncodeToString(planJsonBytes)
 	// create the result object
 	_, err = p.apiClient.CreateJobExecutionResult(ctx, p.state.jobID, p.state.jobExecutionID, &models.ServiceCreateRunnerJobExecutionResultRequest{
-		Success:         true,
-		Contents:        planContents,
-		ContentsDisplay: planJson,
+		Success:                   true,
+		ContentsCompressed:        planBytesB64,
+		ContentsDisplayCompressed: planJsonBytesB64,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create terraform apply job execution result : %w", err)
 	}
 
+	// return nil
 	return nil
 }

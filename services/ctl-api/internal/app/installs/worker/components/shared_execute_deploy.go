@@ -120,16 +120,20 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		approvalTyp = app.NoopApprovalType
 	}
 
-	if job.Execution.Result == nil || len(job.Execution.Result.Contents) < 1 {
+	if job.Execution.Result == nil || (len(job.Execution.Result.Contents) < 1 && len(job.Execution.Result.ContentsGzip) < 1) {
 		return errors.New("no plan returned from job")
 	}
 
+	contentsDisplay, err := job.Execution.Result.GetContentsDisplayString()
+	if err != nil {
+		return errors.Wrap(err, "unable to get content display")
+	}
 	if _, err := activities.AwaitCreateStepApproval(ctx, &activities.CreateStepApprovalRequest{
 		OwnerID:     installDeploy.ID,
 		OwnerType:   "install_deploys",
 		RunnerJobID: job.ID,
 		StepID:      stepID,
-		Plan:        string(job.Execution.Result.ContentsDisplay), // TODO: this type conversion should not be necessary
+		Plan:        contentsDisplay,
 		Type:        approvalTyp,
 	}); err != nil {
 		return errors.Wrap(err, "unable to create approval")
