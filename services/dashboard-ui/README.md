@@ -28,14 +28,3 @@ To learn more about Next.js, take a look at the following resources:
 
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
 
-## Integrity checks
-
-We aim to make changes quickly and safely, using integrity checks that run in GitHub actions when you create a PR. Most text editors can be configured to format and lint code automatically and you can run these checks locally using either Earthly (e.g. `earthly +test --image_tag=local --repo=mono`) or `npm`.
-
-- lint (default next eslint): `npm run lint`
-
-- typecheck (typescript): `npm run tsc`, `npm run tsc -- --watch`
-
-- fmt (prettier): `npm run fmt`, `npm run fmt -- --write` (to format code in src)
-
-- unit test (vitest + react-testing-lib + msw): `npm run test`, `npm run test -- --watch`
