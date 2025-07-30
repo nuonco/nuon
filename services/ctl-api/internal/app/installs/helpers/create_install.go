@@ -57,7 +57,11 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	}
 
 	// make sure the inputs are valid
-	if err := s.ValidateInstallInputs(ctx, appID, req.Inputs); err != nil {
+	latestAppInputConfig, err := s.GetLatestAppInputConfig(ctx, appID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get latest app input config: %w", err)
+	}
+	if err := s.ValidateInstallInputs(ctx, latestAppInputConfig, req.Inputs); err != nil {
 		return nil, err
 	}
 
