@@ -1,0 +1,115 @@
+---
+name: nuonctl-release
+on:
+  push:
+    tags:
+      - 'nctl/v*.*.*'
+
+permissions:
+  contents: write
+  id-token: write
+  issues: read
+  packages: write
+  pull-requests: write
+  statuses: write
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  extract_version:
+    name: Extract version from tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Extract version
+        id: get_version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/nctl/v}
+          echo "version=$TAG" >> $GITHUB_OUTPUT
+
+  start_slack_notifications:
+    name: Notify nuonctl release start
+    needs:
+      - extract_version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'main'  # Always use main branch for nuonctl releases
+      
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_ICON_EMOJI: 🤖
+          SLACK_USERNAME: github-bot
+          SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
+          SLACK_MESSAGE: |
+            ⛴  releasing `nuonctl v${{ needs.extract_version.outputs.version }}`
+            *stage* - true
+            *prod* - true
+
+  release_nuonctl:
+    name: Release nuonctl
+    needs:
+      - extract_version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'main'  # Always use main branch for nuonctl releases
+          
+      - name: Release nuonctl
+        uses: ./.github/workflows/service.yml
+        with:
+          service: nuonctl
+          tag: ${{ needs.extract_version.outputs.version }}
+          prod: true
+          stage: true
+        secrets: inherit
+
+  update_statuses:
+    name: Update release status
+    needs:
+      - extract_version
+      - release_nuonctl
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'main'  # Always use main branch for nuonctl releases
+          
+      - uses: martialonline/workflow-status@v4.1
+        id: check
+        
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_ICON_EMOJI: 🤖
+          SLACK_USERNAME: github-bot
+          SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: ${{steps.check.outputs.status}}
+          SLACK_MESSAGE: |
+            ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} finished releasing `nuonctl v${{ needs.extract_version.outputs.version }}`
+            *status* - ${{steps.check.outputs.status}}
+
+      - name: Update datadog
+        uses: masci/datadog@v1
+        with:
+          api-key: ${{ secrets.DATADOG_API_KEY }}
+          api-url: "https://us5.datadoghq.com"
+          metrics: |
+            - type: "count"
+              name: "nuonctl.releases.count"
+              value: 1.0
+              host: ${{ github.repository_owner }}
+              tags:
+                - "version:${{ needs.extract_version.outputs.version }}"
+                - "status:${{ steps.check.outputs.status }}"
