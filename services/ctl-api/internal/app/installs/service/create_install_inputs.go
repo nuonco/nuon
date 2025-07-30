@@ -69,7 +69,14 @@ func (s *service) CreateInstallInputs(ctx *gin.Context) {
 		})
 		return
 	}
-	if err := s.helpers.ValidateInstallInputs(ctx, install.AppID, req.Inputs); err != nil {
+
+	latestAppInputConfig, err := s.helpers.GetLatestAppInputConfig(ctx, install.AppID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get latest app input config: %w", err))
+		return
+	}
+
+	if err := s.helpers.ValidateInstallInputs(ctx, latestAppInputConfig, req.Inputs); err != nil {
 		ctx.Error(err)
 		return
 	}
