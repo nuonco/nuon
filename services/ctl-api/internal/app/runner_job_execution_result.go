@@ -1,12 +1,17 @@
 package app
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
+	"io"
 	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
@@ -32,6 +37,10 @@ type RunnerJobExecutionResult struct {
 
 	Contents        string `json:"contents,omitzero" gorm:"string" swaggertype:"string" temporaljson:"contents"`
 	ContentsDisplay []byte `json:"contents_display,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"-"`
+
+	// columns for storage of gzipped contents and plans
+	ContentsGzip        []byte `json:"contents_gzip,omitzero" gorm:"type:bytea" swaggertype:"string" temporaljson:"contents_binary"`
+	ContentsDisplayGzip []byte `json:"contents_display_gzip,omitzero" gorm:"type:bytea" swaggertype:"string" temporaljson:"-"`
 }
 
 func (r *RunnerJobExecutionResult) BeforeCreate(tx *gorm.DB) error {
@@ -48,4 +57,41 @@ func (r *RunnerJobExecutionResult) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (r *RunnerJobExecutionResult) GetContentsDisplayDecompressedBytes() ([]byte, error) {
+	if len(r.ContentsDisplayGzip) == 0 {
+		return []byte{}, nil
+	}
+	// take the []byte and uncompress it
+	cdBuffer := bytes.NewReader(r.ContentsDisplayGzip)
+	reader, err := gzip.NewReader(cdBuffer)
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "unable to read contents display into gzip reader")
+	}
+	defer reader.Close()
+
+	decompressedBytes, err := io.ReadAll(reader)
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "unable to read contents display from gzip reader")
+	}
+	return decompressedBytes, nil
+}
+
+func (r *RunnerJobExecutionResult) GetContentsB64String() (string, error) {
+	if len(r.ContentsGzip) == 0 {
+		return "", nil
+	}
+	// base64 encode
+	planB64 := base64.StdEncoding.EncodeToString(r.ContentsGzip) // NOTE(fd): internally we can use StdEncoding
+	return planB64, nil
+
+}
+
+func (r *RunnerJobExecutionResult) GetContentsDisplayString() (string, error) {
+	byts, err := r.GetContentsDisplayDecompressedBytes()
+	if err != nil {
+		return "", err
+	}
+	return string(byts), nil
 }
