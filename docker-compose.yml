@@ -171,7 +171,7 @@ services:
      - clickhouse-01
      - clickhouse-02
 
-  # cache-registry used for earthly locally
+  # cache-registry used for docker locally
   cache-registry:
       image: registry:latest
       ports:

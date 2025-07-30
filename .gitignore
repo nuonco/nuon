@@ -45,7 +45,7 @@ Brewfile.lock.json
 
 # go debug binaries
 __debug_bin
-# Ignore earthly secret files
+# Ignore secret files
 .secret
 pkg/types/build/
 services/ctl-api/docs/public/docs.go

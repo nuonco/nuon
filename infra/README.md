@@ -53,21 +53,6 @@ Manages our github enterprise, repos, teams and configuration.
 
 Manages temporal via helm in our stage and prod accounts.
 
-## Earthly
-
-We use `earthly` during CI to run various steps and validations against code changes here. To run this locally, do the following:
-
-Export a terraform cloud team token with access to the `launchpaddev` workspace:
-
-```bash
-export EARTHLY_SECRETS="TERRAFORM_CLOUD_TOKEN=<your-token>"
-```
-
-Run earthly by passing in a module, as well as a workspace to be used for the backend during initialization:
-
-```bash
-$ earthly +lint --MODULE=datadog --TERRAFORM_WORKSPACE=infra-datadog-orgs-stage
-```
 
 ## Architecture
 

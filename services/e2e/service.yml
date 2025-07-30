@@ -38,6 +38,6 @@ local_cmds:
   - /tmp/svc-e2e-api
   - /tmp/svc-e2e-worker
 
-earthly_cmd: server
+docker_cmd: server
 port: 8080
 type: api

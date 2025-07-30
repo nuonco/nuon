@@ -16,9 +16,9 @@ local_startup_cmds:
   - go build -o /tmp/svc-workers-canary .
 local_cmds:
   - /tmp/svc-workers-canary all
-earthly_cmds:
+docker_cmds:
   - cmd: all
-earthly_env:
+docker_env:
   API_URL: http://host.docker.internal:8081
   INTERNAL_API_URL: http://host.docker.internal:8082
   RUNNER_API_URL: http://host.docker.internal:8083
