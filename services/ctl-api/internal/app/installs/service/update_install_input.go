@@ -78,19 +78,19 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	latestAppInputConfig, err := s.getLatestAppInputConfig(ctx, install.AppID)
+	pinnedAppInputConfig, err := s.helpers.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get latest app input config: %w", err))
 		return
 	}
 
-	err = s.validateInstallInput(ctx, *latestAppInputConfig, req)
+	err = s.helpers.ValidateInstallInputs(ctx, pinnedAppInputConfig, req.Inputs)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to validate install input: %w", err))
+		ctx.Error(err)
 		return
 	}
 
-	inputs, changedInputs, err := s.newInstallInputs(ctx, *latestLatestInstallInputs, *latestAppInputConfig, req)
+	inputs, changedInputs, err := s.newInstallInputs(ctx, *latestLatestInstallInputs, *pinnedAppInputConfig, req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
@@ -144,22 +144,6 @@ func (s *service) getLatestAppInputConfig(ctx context.Context, appID string) (*a
 	}
 
 	return &appInputConfig, nil
-}
-
-func (s *service) validateInstallInput(ctx context.Context, appInputConfig app.AppInputConfig, req UpdateInstallInputsRequest) error {
-	appInputs := appInputConfig.AppInputs
-	appInputNames := map[string]struct{}{}
-	for _, input := range appInputs {
-		appInputNames[input.Name] = struct{}{}
-	}
-
-	for name := range req.Inputs {
-		if _, ok := appInputNames[name]; !ok {
-			return fmt.Errorf("name %s does not exist in app inputs", name)
-		}
-	}
-
-	return nil
 }
 
 func (s *service) newInstallInputs(ctx context.Context, installInputs app.InstallInputs, appInputConfig app.AppInputConfig, req UpdateInstallInputsRequest) (*app.InstallInputs, *[]string, error) {
