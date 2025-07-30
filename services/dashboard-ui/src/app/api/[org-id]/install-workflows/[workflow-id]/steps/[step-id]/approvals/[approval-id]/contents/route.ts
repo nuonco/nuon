@@ -1,14 +1,10 @@
 export const runtime = 'nodejs'
 
 import https from 'https'
+import http from 'http'
 import { NextRequest } from 'next/server'
 import { API_URL, auth0 } from '@/utils'
 import { TRouteRes } from '@/app/api/[org-id]/types'
-
-function stripProtocol(url: string) {
-  // Remove protocol, trailing slash, and path/query if present
-  return url.replace(/^https?:\/\//, '').split('/')[0]
-}
 
 export async function GET(
   request: NextRequest,
@@ -22,9 +18,19 @@ export async function GET(
     ['approval-id']: approvalId,
   } = await params
 
+  // Parse API_URL for protocol, hostname, and port
+  const apiUrlObj = new URL(
+    API_URL.startsWith('http') ? API_URL : `http://${API_URL}`
+  )
+  const isHttps = apiUrlObj.protocol === 'https:'
+  const requestModule = isHttps ? https : http
+  const hostname = apiUrlObj.hostname
+  const port = apiUrlObj.port ? parseInt(apiUrlObj.port) : isHttps ? 443 : 80
+
   return new Promise<Response>((resolve, reject) => {
     const options: https.RequestOptions = {
-      hostname: stripProtocol(API_URL),
+      hostname,
+      port,
       path: `/v1/workflows/${workflowId}/steps/${stepId}/approvals/${approvalId}/contents`,
       method: 'GET',
       headers: {
@@ -35,7 +41,7 @@ export async function GET(
       },
     }
 
-    const req = https.request(options, (upstreamRes) => {
+    const req = requestModule.request(options, (upstreamRes) => {
       const headers: Record<string, string> = {}
       // Only add string headers (ignore array headers for simplicity)
       Object.entries(upstreamRes.headers).forEach(([key, value]) => {
