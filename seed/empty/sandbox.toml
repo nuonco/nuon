@@ -10,7 +10,3 @@ CLUSTER_NAME = "{{.nuon.install.id}}"
 
 [vars]
 account_id = "{{.nuon.install_stack.outputs.account_id}}"
-enable_nuon_dns = "true"
-public_root_domain = "{{.nuon.inputs.inputs.root_domain}}"
-internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
-
