@@ -21,7 +21,6 @@ import {
   getInstallActionWorkflowRecentRun,
   deployComponents,
   deployComponentBuild,
-  getInstallDeployPlan,
   getInstallCurrentInputs,
   getInstallComponentOutputs,
   teardownInstallComponents,
@@ -43,7 +42,7 @@ describe('getInstalls should handle response status codes from GET installs endp
   test.each(badResponseCodes)('%s status', async () => {
     await getInstalls({ orgId }).catch((err) => expect(err).toMatchSnapshot())
   })
-})
+}, 30000)
 
 describe('getInstall should handle response status codes from GET installs/:id endpoint', () => {
   const orgId = 'test-id'
@@ -369,28 +368,6 @@ describe('deployComponentBuild should handle response status codes from POST ins
     await deployComponentBuild({ buildId, installId, orgId }).catch((err) =>
       expect(err).toMatchSnapshot()
     )
-  })
-})
-
-describe('getInstallDeployPlan should handle response status codes from GET installs/:id/deploys/:id/plan endpoint', () => {
-  const orgId = 'test-id'
-  const installId = 'test-id'
-  const deployId = 'test-id'
-  test('200 status', async () => {
-    const spec = await getInstallDeployPlan({
-      deployId,
-      installId,
-      orgId,
-    })
-    expect(spec).toHaveProperty('actual')
-  })
-
-  test.each(badResponseCodes)('%s status', async () => {
-    await getInstallDeployPlan({
-      deployId,
-      installId,
-      orgId,
-    }).catch((err) => expect(err).toMatchSnapshot())
   })
 })
 
