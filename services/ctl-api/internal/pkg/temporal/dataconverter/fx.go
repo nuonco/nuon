@@ -32,6 +32,7 @@ func New(params Params) converter.DataConverter {
 	)
 
 	return converter.NewCodecDataConverter(cdc,
-		// params.Gzip,
-		params.LargePayload)
+		params.LargePayload,
+		params.Gzip,
+	)
 }
