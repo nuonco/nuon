@@ -67,14 +67,17 @@ local_cmds:
   # you can disable the org runner by adding DISABLE_INSTALL_RUNNER: true to your ~/.nuonctl-env.yml file
   - /tmp/runner run-local install
 
-# by default, using `run-earthly` will only run the runner with the most current org, however you can use `exec-earthly
-# installs"` or `exec-earthly <runner-id>` to run a specific runner.
-earthly_cmds:
+# by default, using `run-docker` will only run the runner with the most current org, however you can use `exec-docker
+# installs"` or `exec-docker <runner-id>` to run a specific runner.
+docker_cmds:
   - cmd: run-local
     args:
       - org
-earthly_target: oci-artifacts
-earthly_env:
+  - cmd: run-local
+    args:
+      - install
+docker_target: oci-artifacts
+docker_env:
   INTERNAL_API_URL: http://host.docker.internal:8082
   RUNNER_API_URL: http://host.docker.internal:8083
   GIT_REF: local
@@ -93,7 +96,7 @@ earthly_env:
   # NOTE(jm): this will not enable all debug output, as the logs are also controlled via the api but for things like
   # metrics this is useful.
   # LOG_LEVEL: DEBUG
-  INTERNAL_API_URL: http://localhost:8082
+  INTERNAL_API_URL: http://host.docker.internal:8082
 
   # this controls how long a job will stay in sandbox, printing out logs every quarter second.
   SANDBOX_JOB_DURATION: 1s
