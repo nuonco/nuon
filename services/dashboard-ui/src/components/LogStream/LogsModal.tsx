@@ -3,7 +3,6 @@
 import classNames from 'classnames'
 import React, { type FC, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { DateTime } from 'luxon'
 import { ArrowsOutSimple } from '@phosphor-icons/react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { LogsControls } from './LogsControls'
@@ -54,7 +53,7 @@ export const LogsModal: FC<ILogsModal> = ({ heading, logs }) => {
           >
             <Time
               className="!text-sm"
-              time={DateTime.fromMillis(props.getValue<number>()).toISO()}
+              nanos={props.getValue<number>()}
             />
           </span>
         ),
