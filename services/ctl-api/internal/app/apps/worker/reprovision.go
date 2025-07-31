@@ -42,9 +42,9 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 		return nil
 	}
 
-	var repoResp *ecrrepository.CreateRepositoryResponse
+	var repoResp *ecrrepository.ProvisionECRRepositoryResponse
 	if currentApp.Org.OrgType == app.OrgTypeDefault {
-		repoResp, err = ecrrepository.AwaitCreateRepository(ctx, &ecrrepository.CreateRepositoryRequest{
+		repoResp, err = ecrrepository.AwaitProvisionECRRepository(ctx, &ecrrepository.ProvisionECRRepositoryRequest{
 			OrgID: currentApp.OrgID,
 			AppID: sreq.ID,
 		})

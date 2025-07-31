@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
@@ -32,9 +33,9 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 		return fmt.Errorf("unable to get app from database: %w", err)
 	}
 
-	var repoResp *ecrrepository.CreateRepositoryResponse
+	var repoResp *ecrrepository.ProvisionECRRepositoryResponse
 	if currentApp.Org.OrgType == app.OrgTypeDefault {
-		repoResp, err = ecrrepository.AwaitCreateRepository(ctx, &ecrrepository.CreateRepositoryRequest{
+		repoResp, err = ecrrepository.AwaitProvisionECRRepository(ctx, &ecrrepository.ProvisionECRRepositoryRequest{
 			OrgID: currentApp.OrgID,
 			AppID: sreq.ID,
 		})
@@ -42,7 +43,7 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 			return errors.Wrap(err, "unable to provision ECR repository")
 		}
 	} else {
-		repoResp = generics.GetFakeObj[*ecrrepository.CreateRepositoryResponse]()
+		repoResp = generics.GetFakeObj[*ecrrepository.ProvisionECRRepositoryResponse]()
 		l.Info("skipping provision ecr",
 			zap.String("app_id", currentApp.ID),
 			zap.String("app_name", currentApp.Name),
