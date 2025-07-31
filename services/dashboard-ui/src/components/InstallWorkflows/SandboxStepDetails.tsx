@@ -55,7 +55,9 @@ export const SandboxStepDetails: FC<IPollStepDetails> = ({
   return (
     <>
       {isLoading ? (
-        <Loading loadingText="Loading deploy details..." variant="page" />
+        <div className="border rounded-md p-6">
+          <Loading loadingText="Loading sandobx details..." variant="stack" />
+        </div>
       ) : (
         <>
           {error ? <Notice>{error}</Notice> : null}

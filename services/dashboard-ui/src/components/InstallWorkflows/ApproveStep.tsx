@@ -50,7 +50,6 @@ export const ApprovalStep: FC<IApprovalStep> = ({
   const [isRetryLoading, setIsRetryLoading] = useState(false)
   const [isApproveLoading, setIsApproveLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
   const [error, setError] = useState<string>()
 
   useEffect(() => {
