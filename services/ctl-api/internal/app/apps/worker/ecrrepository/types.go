@@ -12,4 +12,5 @@ type ProvisionECRRepositoryResponse struct {
 	RepositoryName string
 	RepositoryARN  string
 	RepositoryURI  string
+	Region         string
 }
