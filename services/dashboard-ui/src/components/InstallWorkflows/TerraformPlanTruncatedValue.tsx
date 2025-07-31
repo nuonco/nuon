@@ -8,6 +8,17 @@ import { Loading } from '../Loading'
 import { Modal } from '../Modal'
 import { Code } from '../Typography'
 
+// Helper: strip leading/trailing quotes and replace escaped newlines
+function cleanString(str: string): string {
+  let s = str ?? ''
+  if (s.startsWith('"') && s.endsWith('"')) {
+    s = s.slice(1, -1)
+  }
+  // Replace double-escaped newlines with real newlines
+  s = s.replace(/\\n/g, '\n')
+  return s
+}
+
 // Only consider YAML if it parses to an object or array
 function isStringYaml(str: string): boolean {
   try {
@@ -39,10 +50,13 @@ export const TruncateValue = ({
   const [loading, setLoading] = useState<boolean>(false)
 
   // Normalize child to string for display
-  const child =
+  let child =
     typeof children === 'object'
       ? JSON.stringify(children, null, 2)
       : children?.toString() || 'null'
+
+  // Clean up quotes and newlines for all logic!
+  child = cleanString(child)
 
   // Check if it is YAML or JSON (but not scalar)
   const isYAML = isStringYaml(child)
@@ -63,10 +77,6 @@ export const TruncateValue = ({
       active = false
     }
   }, [isOpen, child])
-
-  const formattedChild = (
-    child.startsWith('"') && child.endsWith('"') ? child.slice(1, -1) : child
-  ).replace(/\\n/g, '\n')
 
   if (shouldShowModal) {
     return (
@@ -101,7 +111,9 @@ export const TruncateValue = ({
                 ) : (
                   <span>
                     <Code className="max-w-full" variant="preformated">
-                      {formattedChild}
+                      {isJSON
+                        ? JSON.stringify(JSON.parse(child), null, 2)
+                        : child}
                     </Code>
                   </span>
                 )}
