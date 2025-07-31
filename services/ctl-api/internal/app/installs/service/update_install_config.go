@@ -12,7 +12,7 @@ import (
 )
 
 type UpdateInstallConfigRequest struct {
-	ApprovalOption *app.InstallApprovalOption
+	ApprovalOption *app.InstallApprovalOption `json:"approval_option"`
 }
 
 func (c *UpdateInstallConfigRequest) Validate(v *validator.Validate) error {

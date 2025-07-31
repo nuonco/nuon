@@ -483,7 +483,7 @@ export async function createInstallConfig({
     orgId,
     path: `installs/${installId}/configs`,
     body: {
-      approvalOption,
+      approval_option: approvalOption,
     },
   })
 }
@@ -506,7 +506,7 @@ export async function updateInstallConfig({
     path: `installs/${installId}/configs/${configId}`,
     method: 'PATCH',
     body: {
-      approvalOption,
+      approval_option: approvalOption,
     },
   })
 }
