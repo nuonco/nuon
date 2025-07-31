@@ -13,7 +13,7 @@ import (
 type CreateAppRepositoryRequest struct {
 	AppID string
 
-	CreateResponse *ecrrepository.CreateRepositoryResponse
+	CreateResponse *ecrrepository.ProvisionECRRepositoryResponse
 }
 
 // @temporal-gen activity
@@ -22,7 +22,7 @@ func (a *Activities) CreateAppRepository(ctx context.Context, req *CreateAppRepo
 		AppID:          req.AppID,
 		RegistryID:     req.CreateResponse.RegistryID,
 		RepositoryName: req.CreateResponse.RepositoryName,
-		RepositoryArn:  req.CreateResponse.RepositoryArn,
+		RepositoryArn:  req.CreateResponse.RepositoryARN,
 		RepositoryURI:  req.CreateResponse.RepositoryURI,
 		Region:         req.CreateResponse.Region,
 	}
