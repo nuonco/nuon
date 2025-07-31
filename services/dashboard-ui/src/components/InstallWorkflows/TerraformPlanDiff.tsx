@@ -67,9 +67,11 @@ function diffFields(
             {key}:
           </span>
           <span className="text-sm line-through text-red-600 bg-red-50 dark:text-red-50 dark:bg-red-600/10 px-1 rounded">
-            {before[key] !== undefined
-              ? JSON.stringify(before[key], null, 2)
-              : ''}
+            <TruncateValue title={key}>
+              {before[key] !== undefined
+                ? JSON.stringify(before[key], null, 2)
+                : ''}
+            </TruncateValue>
           </span>
           <span className="text-sm text-green-700 bg-green-50 dark:text-green-50 dark:bg-green-600/10 px-1 rounded">
             <TruncateValue title={key}>
@@ -278,9 +280,16 @@ function ResourceChangesViewer({
                         )}
                       {res.change.actions.includes('delete') &&
                         !res.change.after && (
-                          <pre className="text-red-700 bg-red-50 dark:text-red-50 dark:bg-red-600/10 rounded p-2 text-[11px] overflow-x-auto">
-                            {JSON.stringify(res.change.before, null, 2)}
-                          </pre>
+                          <div className="text-red-700 bg-red-50 dark:text-red-50 dark:bg-red-600/10 rounded p-2 text-[11px] overflow-x-auto">
+                            {Object.keys(res.change.before).map((k) => (
+                              <span className="flex items-start gap-2" key={k}>
+                                <span>{k}:</span>
+                                <TruncateValue title={k}>
+                                  {res.change.before[k] || 'null'}
+                                </TruncateValue>
+                              </span>
+                            ))}
+                          </div>
                         )}
                       {res.change.actions.includes('update') && (
                         <div className="my-2">
