@@ -12,7 +12,7 @@ tests:
   - name: test
     docker_target: test
 
-color: red
+color: magenta
 env:
   # use this to write out debug logs locally
   # LOG_LEVEL: DEBUG
@@ -52,8 +52,9 @@ disable_watch: true
 local_startup_cmds: []
 local_build_cmds:
   - npm install --no-save
+  - npm run build
 local_cmds:
-  - npm run dev
+  - npm start
 namespace: dashboard-ui
 docker_cmds:
   # the entrypoint of the container is already run start
