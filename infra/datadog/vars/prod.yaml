@@ -229,7 +229,7 @@ byoc_synthetics:
     type: "api"
     subtype: "http"
     status: "live"
-    message: "@slack-alerts-prod-product @pagerduty-Datadog" # TODO: use a dedicated channel
+    message: "@slack-alerts-byoc @pagerduty-Datadog" # TODO: use a dedicated channel
     locations: ["aws:us-east-1", "aws:us-west-2"]
     tags: ["service:byoc-nuon", "terraform:true", "env:byoc"]
     request_definition:
