@@ -45,13 +45,19 @@ func (s *sync) syncInstall(ctx context.Context, resource string, install *config
 			}
 		}
 
-		appInstall, err = s.apiClient.CreateInstall(ctx, s.appID, &models.ServiceCreateInstallRequest{
+		req := models.ServiceCreateInstallRequest{
 			Name:   &install.Name,
 			Inputs: install.Inputs,
 			AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
 				Region: install.AWSRegion,
 			},
-		})
+		}
+		if install.ApprovalOption != config.InstallApprovalOptionUnknown {
+			req.InstallConfig = &models.HelpersCreateInstallConfigParams{
+				ApprovalOption: install.ApprovalOption.APIType(),
+			}
+		}
+		appInstall, err = s.apiClient.CreateInstall(ctx, s.appID, &req)
 		if err != nil {
 			return "", SyncAPIErr{
 				Resource: resource,
@@ -59,6 +65,33 @@ func (s *sync) syncInstall(ctx context.Context, resource string, install *config
 			}
 		}
 	} else {
+		if install.ApprovalOption != config.InstallApprovalOptionUnknown {
+			if appInstall.InstallConfig == nil {
+				appInstall.InstallConfig, err = s.apiClient.CreateInstallConfig(ctx, appInstall.ID, &models.ServiceCreateInstallConfigRequest{
+					ApprovalOption: install.ApprovalOption.APIType(),
+				})
+				if err != nil {
+					return "", SyncAPIErr{
+						Resource: resource,
+						Err:      err,
+					}
+				}
+			} else {
+				if appInstall.InstallConfig.ApprovalOption != install.ApprovalOption.APIType() {
+					// Update the install config if the approval option has changed.
+					_, err := s.apiClient.UpdateInstallConfig(ctx, appInstall.ID, appInstall.InstallConfig.ID, &models.ServiceUpdateInstallConfigRequest{
+						ApprovalOption: install.ApprovalOption.APIType(),
+					})
+					if err != nil {
+						return "", SyncAPIErr{
+							Resource: resource,
+							Err:      err,
+						}
+					}
+				}
+			}
+		}
+
 		currInputs, err := s.apiClient.GetInstallCurrentInputs(ctx, appInstall.ID)
 		if err != nil {
 			return "", SyncAPIErr{
