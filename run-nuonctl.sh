@@ -56,12 +56,12 @@ if [ -n "${NUON_LOCAL:-}" ]; then
     cd "${NUONCTL_SRC_DIR}"
 
     # Build the binary
-    go build -o nuonctl .
+    go build -o nuonctl-local .
 
 
     echo "Installing nuonctl to ${INSTALL_DIR}..."
-    cp nuonctl "${INSTALL_DIR}/"
-    chmod +x "${INSTALL_DIR}/nuonctl"
+    mv nuonctl-local "${INSTALL_DIR}/"
+    chmod +x "${INSTALL_DIR}/nuonctl-local"
 
     echo "🎉 nuonctl local build and installation completed successfully!"
 else
@@ -90,4 +90,9 @@ else
     fi
 fi
 
-exec ${INSTALL_DIR}/nuonctl $@
+
+if [ -n "${NUON_LOCAL:-}" ]; then
+  exec ${INSTALL_DIR}/nuonctl-local $@
+else
+  exec ${INSTALL_DIR}/nuonctl $@
+fi
