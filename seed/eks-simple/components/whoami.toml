@@ -12,3 +12,6 @@ branch    = "main"
 
 [[values_file]]
 contents = "./values/whoami.yaml"
+
+[values]
+"whoami.nuon"    = "nuon"
