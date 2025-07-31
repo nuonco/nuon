@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"regexp"
+	"strings"
 
 	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/pkg/errors"
@@ -20,7 +22,13 @@ import (
 	"github.com/powertoolsdev/mono/pkg/helm"
 )
 
-func (h *handler) execUninstall(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+func (h *handler) execUninstall(
+	ctx context.Context,
+	l *zap.Logger,
+	actionCfg *action.Configuration,
+	job *models.AppRunnerJob,
+	jobExecution *models.AppRunnerJobExecution,
+) error {
 	if err := h.uninstall(ctx, l, actionCfg); err != nil {
 		h.writeErrorResult(ctx, "uninstall", err)
 		return fmt.Errorf("unable to uninstall helm chart: %w", err)
@@ -29,17 +37,59 @@ func (h *handler) execUninstall(ctx context.Context, l *zap.Logger, actionCfg *a
 	res := &models.ServiceCreateRunnerJobExecutionResultRequest{
 		Success: true,
 	}
-	if _, err := h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, res); err != nil {
+	if _, err := h.apiClient.CreateJobExecutionResult(
+		ctx,
+		job.ID,
+		jobExecution.ID,
+		res,
+	); err != nil {
 		h.errRecorder.Record("write job execution result", err)
 	}
 
 	return nil
 }
 
-// struct for helm plan: essentially a light wrapper around an Op
+// HelmContentDiff represents a difference in the content of a Helm chart resource.
+// It is used to capture changes between two states of a resource.
+// Fields:
+// - ApiPath: The API path of the resource (e.g., "apps/v1").
+// - Name: The name of the resource.
+// - Namespace: The namespace in which the resource resides.
+// - Kind: The kind of the resource (e.g., "Deployment", "Service").
+// - Before: The state of the resource before the change, typically serialized as a string.
+// - After: The state of the resource after the change, typically serialized as a string.
+type HelmContentDiff struct {
+	ApiPath   string `json:"api,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
+	Kind      string `json:"kind,omitempty"`
+	Before    string `json:"before"`
+	After     string `json:"after"`
+}
+
+func (hc *HelmContentDiff) parseRawName(s string) {
+	// Parse format: "namespace, name, kind (apiBase)"
+	if s == "" {
+		return
+	}
+
+	// Use regex to parse the format: "namespace, name, kind (apiBase)"
+	re := regexp.MustCompile(`^([^,]+),\s*([^,]+),\s*([^(]+)\s*\(([^)]+)\)$`)
+	matches := re.FindStringSubmatch(s)
+
+	if len(matches) == 5 {
+		hc.Namespace = strings.TrimSpace(matches[1])
+		hc.Name = strings.TrimSpace(matches[2])
+		hc.Kind = strings.TrimSpace(matches[3])
+		hc.ApiPath = strings.TrimSpace(matches[4])
+	}
+}
+
+// HelmPlanContents is essentially a light wrapper around an Op
 type HelmPlanContents struct {
-	Diff string `json:"plan"`
-	Op   string `json:"op"`
+	Diff        string            `json:"plan"`
+	Op          string            `json:"op"`
+	ContentDiff []HelmContentDiff `json:"helm_content_diff"`
 }
 
 func (h *handler) extractApplyPlanContents(contents string) (HelmPlanContents, error) {
@@ -75,7 +125,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	l.Info("Initializing Helm...", zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()})
+	l.Info("Initializing Helm...",
+		zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()},
+	)
 	actionCfg, kubeCfg, err := h.actionInit(ctx, l)
 	if err != nil {
 		return fmt.Errorf("unable to initialize helm actions: %w", err)
@@ -89,7 +141,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	actionCfg.Releases = releaseStore
 
-	l.Info("Checking for previous Helm release...", zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()})
+	l.Info("Checking for previous Helm release...",
+		zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()},
+	)
 	prevRel, err := helm.GetRelease(actionCfg, h.state.plan.HelmDeployPlan.Name)
 	if err != nil {
 		return fmt.Errorf("unable to get previous helm release: %w", err)
@@ -115,26 +169,40 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
+		var contentDiff *[]HelmContentDiff
+		var err error
 		// in this case, the diff is generated so it is available to the createAPIResult method
 		if prevRel == nil {
-			diff, err = h.installDiff(ctx, l, actionCfg, kubeCfg)
+			diff, contentDiff, err = h.installDiff(ctx, l, actionCfg, kubeCfg)
 			helmPlan.Op = "install"
 		} else {
-			diff, err = h.upgrade_diff(ctx, l, actionCfg, kubeCfg)
+			diff, contentDiff, err = h.upgrade_diff(ctx, l, actionCfg, kubeCfg)
 			helmPlan.Op = "upgrade"
 		}
+		if err != nil {
+			return err
+		}
+
 		if diff == "" {
 			diff = "no changes"
 		}
 
 		helmPlan.Diff = diff
+		helmPlan.ContentDiff = *contentDiff
+
 		l.Debug("calculated helm diff", zap.String("diff", diff))
 	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
 		// TODO(fd): figure out the best way to get a plan for this
 		l.Info("executing helm uninstall plan")
-		diff, err = h.uninstallDiff(ctx, l, actionCfg, prevRel)
+
+		diff, contentDiff, err := h.uninstallDiff(ctx, l, actionCfg, prevRel)
+		if err != nil {
+			return err
+		}
+
 		helmPlan.Op = "uninstall"
 		helmPlan.Diff = diff
+		helmPlan.ContentDiff = *contentDiff
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		l.Info(fmt.Sprintf("executing helm %s", helmPlan.Op))
 		switch helmPlan.Op {
@@ -164,20 +232,17 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	var apiRes *models.ServiceCreateRunnerJobExecutionResultRequest
-	if job.Operation == models.AppRunnerJobOperationTypeApplyDashPlan {
-		// we only need to send success
-		apiRes, err = h.createAPIResultRequest(l, rel, HelmPlanContents{}) // ensure empty plan does not get written
-		if err != nil {
-			h.writeErrorResult(ctx, op, err)
-			return fmt.Errorf("unable to create api result from release: %w", err)
-		}
-	} else {
-		// save the plan w/ the diff
-		apiRes, err = h.createAPIResultRequest(l, rel, helmPlan) // NOTES: something downstream expects Contents so we're storing the plan in both for now
-		if err != nil {
-			h.writeErrorResult(ctx, op, err)
-			return fmt.Errorf("unable to create api result from release: %w", err)
-		}
+	var planContents HelmPlanContents
+
+	// save plan if its not apply job operation is not apply
+	if job.Operation != models.AppRunnerJobOperationTypeApplyDashPlan {
+		planContents = helmPlan
+	}
+
+	apiRes, err = h.createAPIResultRequest(l, rel, planContents)
+	if err != nil {
+		h.writeErrorResult(ctx, op, err)
+		return fmt.Errorf("unable to create api result from release: %w", err)
 	}
 
 	_, err = h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, apiRes)
