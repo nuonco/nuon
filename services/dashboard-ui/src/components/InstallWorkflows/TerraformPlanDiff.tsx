@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { TruncateValue } from './TerraformPlanTruncatedValue'
 
 type ChangeAction =
   | 'create'
@@ -71,9 +72,11 @@ function diffFields(
               : ''}
           </span>
           <span className="text-sm text-green-700 bg-green-50 dark:text-green-50 dark:bg-green-600/10 px-1 rounded">
-            {after[key] !== undefined
-              ? JSON.stringify(after[key], null, 2)
-              : ''}
+            <TruncateValue title={key}>
+              {after[key] !== undefined
+                ? JSON.stringify(after[key], null, 2)
+                : ''}
+            </TruncateValue>
           </span>
         </div>
       )
@@ -87,7 +90,9 @@ function diffFields(
             {before[key] === undefined || before[key] === 'undefined' ? (
               <i>Known after apply</i>
             ) : (
-              JSON.stringify(before[key])
+              <TruncateValue title={key}>
+                {JSON.stringify(before[key])}
+              </TruncateValue>
             )}
           </span>
         </div>
@@ -260,9 +265,16 @@ function ResourceChangesViewer({
                     <div>
                       {res.change.actions.includes('create') &&
                         !res.change.before && (
-                          <pre className="text-green-700 bg-green-50 dark:text-green-50 dark:bg-green-600/10 rounded p-2 text-[11px] overflow-x-auto">
-                            {JSON.stringify(res.change.after, null, 2)}
-                          </pre>
+                          <div className="text-green-700 bg-green-50 dark:text-green-50 dark:bg-green-600/10 rounded p-2 text-[11px] overflow-x-auto">
+                            {Object.keys(res.change.after).map((k) => (
+                              <span className="flex items-start gap-2" key={k}>
+                                <span>{k}:</span>
+                                <TruncateValue title={k}>
+                                  {res.change.after[k] || 'null'}
+                                </TruncateValue>
+                              </span>
+                            ))}
+                          </div>
                         )}
                       {res.change.actions.includes('delete') &&
                         !res.change.after && (
