@@ -1,14 +1,15 @@
 locals {
   temporal = {
     version       = "0.33.0"
-    image_tag     = "${local.vars.image_tag}"
+    image_tag     = local.vars.image_tag
     value_file    = "values/temporal.yaml"
     override_file = "values/${local.name}.yaml"
     namespace     = "temporal"
     frontend_url  = "temporal-frontend.${local.zone}"
     web_url       = "temporal-ui.${local.zone}"
   }
-  environment = local.tags.environment
+  # TODO: delete unused
+  # environment = local.tags.environment
 }
 
 resource "helm_release" "temporal" {
@@ -24,6 +25,13 @@ resource "helm_release" "temporal" {
     fileexists(local.temporal.override_file) ? file(local.temporal.override_file) : "",
     yamlencode(
       {
+
+        web = {
+          additionalEnv = [{
+            name  = "TEMPORAL_CODEC_ENDPOINT"
+            value = "https://${local.ctl_api_hostname}/v1/general/temporal-codec"
+          }]
+        }
         server = {
           image = {
             repository = "431927561584.dkr.ecr.us-west-2.amazonaws.com/mirror/temporalio/server"
@@ -65,23 +73,23 @@ resource "helm_release" "temporal" {
                 whenUnsatisfiable = "DoNotSchedule"
                 labelSelector = {
                   matchLabels = {
-                      "app.kubernetes.io/name"       = "temporal"
-                      "app.kubernetes.io/component" = "frontend"
-                    },
-              }
+                    "app.kubernetes.io/name"      = "temporal"
+                    "app.kubernetes.io/component" = "frontend"
+                  },
+                }
               }
             ]
-            nodeSelector =  {
+            nodeSelector = {
               "pool.nuon.co" = "temporal"
             }
-            tolerations =[
+            tolerations = [
               {
                 key      = "pool.nuon.co"
                 operator = "Equal"
                 value    = "temporal"
                 effect   = "NoSchedule"
               }
-            ] 
+            ]
           }
 
           worker = {
@@ -91,24 +99,24 @@ resource "helm_release" "temporal" {
                 topologyKey       = "kubernetes.io/hostname"
                 whenUnsatisfiable = "DoNotSchedule"
                 labelSelector = {
-                  matchLabels ={
-                      "app.kubernetes.io/name"       = "temporal"
-                      "app.kubernetes.io/component" = "worker"
-                    },
-              }
+                  matchLabels = {
+                    "app.kubernetes.io/name"      = "temporal"
+                    "app.kubernetes.io/component" = "worker"
+                  },
+                }
               }
             ]
-            nodeSelector =  {
-                  "pool.nuon.co" = "temporal"
-            } 
-           tolerations = [
+            nodeSelector = {
+              "pool.nuon.co" = "temporal"
+            }
+            tolerations = [
               {
                 key      = "pool.nuon.co"
                 operator = "Equal"
                 value    = "temporal"
                 effect   = "NoSchedule"
               }
-            ] 
+            ]
           }
 
           matching = {
@@ -119,16 +127,16 @@ resource "helm_release" "temporal" {
                 whenUnsatisfiable = "DoNotSchedule"
                 labelSelector = {
                   matchLabels = {
-                      "app.kubernetes.io/name"       = "temporal"
-                      "app.kubernetes.io/component" = "matching"
-                    },
-              }
+                    "app.kubernetes.io/name"      = "temporal"
+                    "app.kubernetes.io/component" = "matching"
+                  },
+                }
               }
             ]
-            nodeSelector =  {
-                "pool.nuon.co" = "temporal"
-              } 
-            tolerations =  [
+            nodeSelector = {
+              "pool.nuon.co" = "temporal"
+            }
+            tolerations = [
               {
                 key      = "pool.nuon.co"
                 operator = "Equal"
@@ -146,23 +154,23 @@ resource "helm_release" "temporal" {
                 whenUnsatisfiable = "DoNotSchedule"
                 labelSelector = {
                   matchLabels = {
-                      "app.kubernetes.io/name"       = "temporal"
-                      "app.kubernetes.io/component" = "history"
-                    }
-              }
+                    "app.kubernetes.io/name"      = "temporal"
+                    "app.kubernetes.io/component" = "history"
+                  }
+                }
               }
             ]
             nodeSelector = {
               "pool.nuon.co" = "temporal"
-            } 
-            tolerations =  [
+            }
+            tolerations = [
               {
                 key      = "pool.nuon.co"
                 operator = "Equal"
                 value    = "temporal"
                 effect   = "NoSchedule"
               }
-            ] 
+            ]
           }
         }
 
@@ -177,24 +185,24 @@ resource "helm_release" "temporal" {
               topologyKey       = "kubernetes.io/hostname"
               whenUnsatisfiable = "DoNotSchedule"
               labelSelector = {
-                  matchLabels = {
-                      "app.kubernetes.io/name"       = "temporal"
-                      "app.kubernetes.io/component" = "admintools"
-                    },
+                matchLabels = {
+                  "app.kubernetes.io/name"      = "temporal"
+                  "app.kubernetes.io/component" = "admintools"
+                },
               }
             }
           ]
-          nodeSelector =  {
+          nodeSelector = {
             "pool.nuon.co" = "temporal"
-          } 
+          }
           tolerations = [
-              {
-                key      = "pool.nuon.co"
-                operator = "Equal"
-                value    = "temporal"
-                effect   = "NoSchedule"
-              }
-          ] 
+            {
+              key      = "pool.nuon.co"
+              operator = "Equal"
+              value    = "temporal"
+              effect   = "NoSchedule"
+            }
+          ]
         }
 
         web = {
@@ -214,10 +222,10 @@ resource "helm_release" "temporal" {
               topologyKey       = "kubernetes.io/hostname"
               whenUnsatisfiable = "DoNotSchedule"
               labelSelector = {
-                  matchLabels ={
-                      "app.kubernetes.io/name"       = "temporal"
-                      "app.kubernetes.io/component" = "web"
-                    },
+                matchLabels = {
+                  "app.kubernetes.io/name"      = "temporal"
+                  "app.kubernetes.io/component" = "web"
+                },
               }
             }
           ]
@@ -225,13 +233,13 @@ resource "helm_release" "temporal" {
             "pool.nuon.co" = "temporal"
           }
           tolerations = [
-              {
-                key      = "pool.nuon.co"
-                operator = "Equal"
-                value    = "temporal"
-                effect   = "NoSchedule"
-              }
-          ] 
+            {
+              key      = "pool.nuon.co"
+              operator = "Equal"
+              value    = "temporal"
+              effect   = "NoSchedule"
+            }
+          ]
         }
       }
     )
