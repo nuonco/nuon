@@ -52,7 +52,7 @@ disable_watch: true
 local_startup_cmds: []
 local_build_cmds:
   - npm install --no-save
-  - npm run build
+  - npm run build -- --no-lint
 local_cmds:
   - npm start
 namespace: dashboard-ui
