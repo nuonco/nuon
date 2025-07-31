@@ -7,10 +7,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/ecrrepository"
 )
 
 func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, appID string) error {
@@ -81,14 +83,13 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 	}
 
 	if currentApp.Org.OrgType == app.OrgTypeDefault {
-		var repoProvisionResp executors.DeprovisionECRRepositoryResponse
-		repoProvisionReq := &executors.DeprovisionECRRepositoryRequest{
+		repoDeprovisionReq := &ecrrepository.DeprovisionECRRepositoryRequest{
 			OrgID: currentApp.OrgID,
 			AppID: sreq.ID,
 		}
-		if err := w.execChildWorkflow(ctx, sreq.ID, executors.DeprovisionECRRepositoryWorkflowName, sreq.SandboxMode, repoProvisionReq, &repoProvisionResp); err != nil {
-			w.updateStatus(ctx, sreq.ID, app.AppStatusError, "unable to provision ECR repository")
-			return fmt.Errorf("unable to provision ECR repository: %w", err)
+		_, err := ecrrepository.AwaitDeprovisionECRRepository(ctx, repoDeprovisionReq)
+		if err != nil {
+			return errors.Wrap(err, "unable to deprovision ECR repository")
 		}
 	} else {
 		l.Info("skipping deprovision ecr",

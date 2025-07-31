@@ -10,7 +10,7 @@ import (
 // @temporal-gen workflow
 // @execution-timeout 30m
 // @task-timeout 15m
-// @id-template {{.ParentID}}-provision-ecr-repo
+// @id-template {{.CallerID}}-provision-ecr-repo
 func (w Wkflow) ProvisionECRRepository(ctx workflow.Context, req *ProvisionECRRepositoryRequest) (*ProvisionECRRepositoryResponse, error) {
 	l := log.With(workflow.GetLogger(ctx))
 
@@ -29,5 +29,6 @@ func (w Wkflow) ProvisionECRRepository(ctx workflow.Context, req *ProvisionECRRe
 		RepositoryARN:  ecrResp.RepositoryArn,
 		RepositoryName: ecrResp.RepositoryName,
 		RepositoryURI:  ecrResp.RepositoryURI,
+		Region:         ecrResp.Region,
 	}, nil
 }
