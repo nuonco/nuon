@@ -29,6 +29,8 @@ type CreateInstallParams struct {
 	} `json:"azure_account"`
 
 	Inputs map[string]*string `json:"inputs"`
+
+	InstallConfig *CreateInstallConfigParams `json:"install_config"`
 }
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
@@ -121,6 +123,13 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	res = s.db.WithContext(ctx).Create(&install)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install: %w", res.Error)
+	}
+
+	if req.InstallConfig != nil {
+		_, err := s.CreateInstallConfig(ctx, install.ID, req.InstallConfig)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create install config: %w", err)
+		}
 	}
 
 	if err := s.componentHelpers.EnsureInstallComponents(ctx, appID, []string{install.ID}); err != nil {

@@ -7,11 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 )
 
 type CreateInstallConfigRequest struct {
-	ApprovalOption app.InstallApprovalOption
+	helpers.CreateInstallConfigParams
 }
 
 func (c *CreateInstallConfigRequest) Validate(v *validator.Validate) error {
@@ -51,23 +51,11 @@ func (s *service) CreateInstallConfig(ctx *gin.Context) {
 		return
 	}
 
-	app, err := s.createInstallConfig(ctx, installID, &req)
+	app, err := s.helpers.CreateInstallConfig(ctx, installID, &req.CreateInstallConfigParams)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusCreated, app)
-}
-
-func (s *service) createInstallConfig(ctx *gin.Context, installID string, req *CreateInstallConfigRequest) (*app.InstallConfig, error) {
-	installConfig := &app.InstallConfig{
-		InstallID:      installID,
-		ApprovalOption: req.ApprovalOption,
-	}
-
-	if err := s.db.WithContext(ctx).Create(installConfig).Error; err != nil {
-		return nil, fmt.Errorf("unable to create install config: %w", err)
-	}
-	return installConfig, nil
 }
