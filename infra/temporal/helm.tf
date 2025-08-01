@@ -25,13 +25,6 @@ resource "helm_release" "temporal" {
     fileexists(local.temporal.override_file) ? file(local.temporal.override_file) : "",
     yamlencode(
       {
-
-        web = {
-          additionalEnv = [{
-            name  = "TEMPORAL_CODEC_ENDPOINT"
-            value = "https://${local.ctl_api_hostname}/v1/general/temporal-codec"
-          }]
-        }
         server = {
           image = {
             repository = "431927561584.dkr.ecr.us-west-2.amazonaws.com/mirror/temporalio/server"
@@ -240,6 +233,11 @@ resource "helm_release" "temporal" {
               effect   = "NoSchedule"
             }
           ]
+
+          additionalEnv = [{
+            name  = "TEMPORAL_CODEC_ENDPOINT"
+            value = "https://${local.ctl_api_hostname}/v1/general/temporal-codec"
+          }]
         }
       }
     )
