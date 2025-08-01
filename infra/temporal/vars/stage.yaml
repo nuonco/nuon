@@ -4,5 +4,5 @@ rds:
   db_name: temporal
   instance_class: "db.m5.xlarge"
   storage type: "gp3"
-  allocated_storage: "600"
+  allocated_storage: "660"
   allocated_storage_alarm_threshold: "50"
