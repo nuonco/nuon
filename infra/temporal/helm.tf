@@ -245,7 +245,7 @@ resource "helm_release" "temporal" {
             },
             {
               name  = "TEMPORAL_UI_PUBLIC_PATH"
-              value = "/admin/termpoal"
+              value = "/admin/temporal"
             },
 
           ]
