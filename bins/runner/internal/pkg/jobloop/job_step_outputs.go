@@ -2,7 +2,9 @@ package jobloop
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -15,6 +17,15 @@ import (
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 )
+
+func compress(s string) string {
+	var b bytes.Buffer
+	gz := gzip.NewWriter(&b)
+	gz.Write([]byte(s))
+	gz.Close()
+	b64 := base64.URLEncoding.EncodeToString(b.Bytes())
+	return b64
+}
 
 func (j *jobLoop) getSandboxModePlan(ctx context.Context, job *models.AppRunnerJob) (*plantypes.MinSandboxMode, error) {
 	var plan plantypes.MinSandboxMode
@@ -87,9 +98,11 @@ func (j *jobLoop) writeTerraformSandboxMode(ctx context.Context, job *models.App
 
 		// write an output
 		if _, err := j.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
-			Contents:        plan.PlanContents,
-			ContentsDisplay: planDisplayJson,
-			Success:         true,
+			// Contents:                  plan.PlanContents,  // Deprecated
+			// ContentsDisplay:           planDisplayJson,
+			ContentsCompressed:        compress(plan.PlanContents),
+			ContentsDisplayCompressed: compress(plan.PlanDisplayContents),
+			Success:                   true,
 		}); err != nil {
 			return errors.Wrap(err, "unable to create job execution results")
 		}
@@ -105,10 +118,13 @@ func (j *jobLoop) writeHelmSandboxMode(ctx context.Context, job *models.AppRunne
 		if err != nil {
 			return errors.Wrap(err, "unable to unmarshal plan display")
 		}
+
 		// write an output
 		j.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
-			Contents:        plan.PlanContents,
-			ContentsDisplay: planDisplayJson,
+			// Contents:        plan.PlanContents,
+			// ContentsDisplay: planDisplayJson,
+			ContentsCompressed:        compress(plan.PlanContents),
+			ContentsDisplayCompressed: compress(plan.PlanDisplayContents),
 		})
 	}
 
@@ -122,10 +138,13 @@ func (j *jobLoop) writeKubernetesManifestSandboxMode(ctx context.Context, job *m
 		if err != nil {
 			return errors.Wrap(err, "unable to unmarshal plan display")
 		}
+
 		// write an output
 		j.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
-			Contents:        plan.PlanContents,
-			ContentsDisplay: planDisplayJson,
+			// Contents:        plan.PlanContents,
+			// ContentsDisplay: planDisplayJson,
+			ContentsCompressed:        compress(plan.PlanContents),
+			ContentsDisplayCompressed: compress(plan.PlanDisplayContents),
 		})
 	}
 
