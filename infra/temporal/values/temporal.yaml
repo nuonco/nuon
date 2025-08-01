@@ -46,10 +46,3 @@ server:
           driver: postgres12
           maxConnLifetime: 1h
           maxConns: 20
-
-web:
-  additionalEnv:
-    - name: TEMPORAL_CSRF_COOKIE_INSECURE
-      value: !!str "true"
-    - name: TEMPORAL_UI_PUBLIC_PATH
-      value: /admin/temporal
