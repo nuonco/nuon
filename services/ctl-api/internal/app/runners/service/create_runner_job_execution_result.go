@@ -59,24 +59,18 @@ func (s *service) CreateRunnerJobExecutionResult(ctx *gin.Context) {
 	// branch on wether or not the content received is compressed.
 	var jobExecution *app.RunnerJobExecutionResult
 	if req.Contents != "" {
-		jobExecution, err := s.createRunnerJobExecutionResult(ctx, runnerJobID, runnerJobExecutionID, &req)
+		_, err := s.createRunnerJobExecutionResult(ctx, runnerJobID, runnerJobExecutionID, &req)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
 			return
 		}
-
-		jobExecution.ContentsDisplay = nil
-		jobExecution.Contents = ""
 	}
 	if req.ContentsCompressed != "" {
-		jobExecution, err := s.createRunnerJobExecutionResultFromCompressed(ctx, runnerJobID, runnerJobExecutionID, &req)
+		_, err := s.createRunnerJobExecutionResultFromCompressed(ctx, runnerJobID, runnerJobExecutionID, &req)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
 			return
 		}
-
-		jobExecution.ContentsDisplay = nil
-		jobExecution.Contents = ""
 	}
 
 	ctx.JSON(http.StatusCreated, jobExecution)
