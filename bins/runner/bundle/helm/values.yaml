@@ -30,8 +30,8 @@ autoscaling:
 # docs: https://karpenter.sh/v0.37/reference/instance-types/#t3amedium
 resources:
   requests:
-    cpu: 1000m
-    memory: 1024Mi
+    cpu: 500m
+    memory: 512Mi
 
 node_pool:
   # if we want the deployment to create and run on its own NodePool, we must enable this
