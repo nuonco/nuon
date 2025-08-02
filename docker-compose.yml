@@ -65,7 +65,7 @@ services:
       TEMPORAL_ADDRESS: host.docker.internal:7233
       TEMPORAL_UI_PUBLIC_PATH: /admin/temporal
       # NOTE: this value is actually used via the client, so does not need a docker host address
-      TEMPORAL_CODEC_ENDPOINT: 'http://localhost:8082/v1/general/temporal-codec'
+      TEMPORAL_CODEC_ENDPOINT: 'http://localhost:4000/admin/temporal-codec'
 
   #
   # Replicated ClickHouse

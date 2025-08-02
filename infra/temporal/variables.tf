@@ -5,6 +5,7 @@ locals {
   zone                   = nonsensitive(data.tfe_outputs.infra-eks-nuon.values.private_zone)
 
   ctl_api_hostname = var.env == "prod" ? "api.nuon.co" : "api.stage.nuon.co"
+  dashboard_ui_hostname = var.env == "prod" ? "app.nuon.co" : "app.stage.nuon.co"
 
   tags = {
     environment = var.env
