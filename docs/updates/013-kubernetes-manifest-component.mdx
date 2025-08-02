@@ -4,7 +4,7 @@ description: Approval Diffs
 ---
 _August 1st, 2025_
 
-<div className="badge badge--primary">v0.19.601</div>
+<div className="badge badge--primary">v0.19.611</div>
 
 ## New component type: Kubernetes Manifests
 
@@ -40,3 +40,5 @@ Some Terraform diffs, such as nested kubernetes manifests could not render corre
 * Fixed an issue creating new org runners.
 * Fixed an issue where LSP server did not work correctly.
 * Fixed a bug where skipping some steps could render a workflow to make no progress.
+* Fixed a bug where apps would not delete with the CLI. Note: Components must still be deleted first.
+* Fixed a bug where the App's Components tab would error after nuon apps create --no-template and before nuon apps sync.
