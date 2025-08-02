@@ -54,8 +54,8 @@ jobs:
         run: |
           CI=true nuonctl builds release \
             --name=${{inputs.service}} \
-            --tag=${{inputs.tag}} \
-            --write-cache=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+            --tag=${{inputs.tag}}
+        # --write-cache=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
       - name: 🚪 Dry-Run Deploy Stage
         if: ${{ inputs.stage }}
