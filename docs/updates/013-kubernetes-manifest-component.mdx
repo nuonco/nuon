@@ -1,0 +1,36 @@
+---
+title: 013 - Kubernetes Manifest Component
+description: Approval Diffs
+---
+_August 1st, 2025_
+
+<div className="badge badge--primary">v0.19.601</div>
+
+## New component type: Kubernetes Manifests
+
+Adds support for kubernetes manifests component type.
+
+![Kubernetes Manifest Component Support](assets/2025-07-08-21-18-48.png)
+
+## Kubernetes manifests
+
+Nuon now supports provisioning raw Kubernetes manifests. This comes along with full suite of features such as plans,
+approvals supported to existing components.
+
+## Support Helm Resource Diffs
+
+Previously, we did not support showing Helm resource-level diffs.
+
+## Support for Large Terraform Diffs
+
+Some Terraform diffs, such as nested kubernetes manifests could not render correctly in the UI.
+
+## Bug Fixes
+
+* Fixed issue supporting large plans.
+* Fixed performance issues in application.
+* Fixed issue where you could not deprovision an application.
+* Added a new internal Temporal codec server for better performance.
+* Fixed an issue creating new org runners.
+* Fixed an issue where LSP server did not work correctly.
+* Fixed a bug where skipping some steps could render a workflow to make no progress.
