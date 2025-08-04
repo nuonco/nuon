@@ -3,7 +3,7 @@ title: 'Configuration Files'
 description: 'Configure apps using a single `.toml` file'
 ---
 
-Config files allow you to define a BYOC application using a single `.toml` file.
+Config files allow you to define a BYOC application using `.toml` files.
 Under the hood, Nuon will handle keeping your configuration in sync.
 
 ## Create an app
@@ -17,16 +17,13 @@ cd your-app
 ```
 </CodeGroup>
 
-Config files are used to sync the configuration for a single App. To create an App with no configuration files. e.g., so you can sync existing config files later. For consistency, use the same name as the directory you created above.
+Config files are used to sync the configuration for a single App. For consistency, use the same name as the directory you created above.
 
 <CodeGroup>
 ```sh nuon
-nuon apps create  \
-  --name=your-app --no-template
+nuon apps create --name=your-app
 ```
 </CodeGroup>
-
-If you happened to create the App without `--no-template` and a `your-app.toml` was created, delete the file and create you own config files.
 
 ## Sync an App
 
