@@ -5,7 +5,7 @@ to publish this externally.
 
 ## v0.19.612
 
-Force push for a promotion.
+Force push for a promotion, after fixing the git tags from subtrees.
 
 ## v0.19.611
 
