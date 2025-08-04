@@ -21,7 +21,7 @@ const (
 	defaultConfigFilePermissions fs.FileMode = 0o644
 )
 
-func (s *Service) Create(ctx context.Context, appName string, appTemplate string, noTemplate, asJSON, noSelect bool) error {
+func (s *Service) Create(ctx context.Context, appName string, asJSON, noSelect bool) error {
 	view := ui.NewCreateView("app", asJSON)
 	view.Start()
 	view.Update("creating app")
@@ -62,18 +62,6 @@ success:
 		}
 	}
 
-	if noTemplate {
-		return nil
-	}
-
-	flatTmpl, err := s.writeFile(ctx, app.ID, models.ServiceAppConfigTemplateType(models.ServiceAppConfigTemplateTypeFlat), view)
-	if err != nil {
-		return view.Fail(err)
-	}
-
-	view.Update("successfully wrote config template files at\n" +
-		flatTmpl.Filename + "\n",
-	)
 	return nil
 }
 
