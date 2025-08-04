@@ -23,7 +23,7 @@ This tutorial will walk you through creating the following:
 - An [Install](/concepts/installs), using our [AWS EKS sandbox](/concepts/sandboxes#nuon-managed-sandboxes)
 
 <Note>
-You can alternatively clone the [`example-app-configs` repository](https://github.com/nuonco/example-app-configs) which includes the `eks-simple` App Config versus creating each config file manually. This guide is meant to explain the concepts behind each config file, so you can create your own App Configs in the future.  
+You can alternatively clone the [`example-app-configs` repository](https://github.com/nuonco/example-app-configs) which includes the `eks-simple` App Config versus creating each config file manually. This guide is meant to explain the concepts behind each config file, so you can create your own App Configs in the future.
 </Note>
 
 ## Configure App
@@ -39,7 +39,7 @@ This will create the app in `app.nuon.co`
 ```sh
 mkdir eks-simple
 cd eks-simple
-nuon apps create --name=eks-simple --no-template
+nuon apps create --name=eks-simple
 ```
 
 You should see the new App in the dashboard.
@@ -256,7 +256,7 @@ Look at the `eks-simple` App Config in the [`example-app-configs` repository](ht
         - **alb.toml**
         - **certificate.toml**
         - **whoami.toml**
-    - permissions 
+    - permissions
         - deprovision_boundary.json
         - deprovision.toml
         - maintenance_boundary.json

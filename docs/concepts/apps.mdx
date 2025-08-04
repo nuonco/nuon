@@ -90,12 +90,12 @@ cd your-app
 ```
 </CodeGroup>
 
-**Create an App** - Create an app with no configuration files. e.g., so you can sync existing config files later. For consistency, use the same name as the directory you created above.
+**Create an App** - Config files are used to sync the configuration for a single App. For consistency, use the same name as the directory you created above.
 
 <CodeGroup>
 ```sh nuon
 nuon apps create  \
-  --name=your-app --no-template
+  --name=your-app
 ```
 </CodeGroup>
 
@@ -125,7 +125,7 @@ nuon apps rename --name=new-name
 
 ### Pinning an App
 
-You can pin an App, which will set its ID as a default argument to all app commands. This is helpful to avoid 
+You can pin an App, which will set its ID as a default argument to all app commands. This is helpful to avoid
 having to pass `-a` to each command.
 
 <CodeGroup>
