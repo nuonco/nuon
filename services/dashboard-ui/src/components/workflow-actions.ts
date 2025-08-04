@@ -1,36 +1,31 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { runInstallActionWorkflow } from '@/lib'
 import { nueMutateData } from '@/utils'
 
-// TODO(nnnat): rename these to run action workflows
-interface IRunManualWorkflow {
+interface IRunAction {
+  actionWorkflowConfigId: string
   orgId: string
   installId: string
-  workflowConfigId: string
   vars: Record<string, string>
 }
 
-export async function runManualWorkflow({
+export async function runAction({
   installId,
   orgId,
-  workflowConfigId,
+  actionWorkflowConfigId,
   vars,
-}: IRunManualWorkflow) {
+}: IRunAction) {
   const options = Object.keys(vars)?.length ? { run_env_vars: vars } : undefined
-  
-  try {
-    await runInstallActionWorkflow({
-      installId,
-      orgId,
-      actionWorkflowConfigId: workflowConfigId,
-      options,
-    })
+
+  return nueMutateData({
+    body: { action_workflow_config_id: actionWorkflowConfigId, ...options },
+    orgId,
+    path: `installs/${installId}/action-workflows/runs`,
+  }).then((r) => {
     revalidatePath(`/${orgId}/installs/${installId}/actions`)
-  } catch (error) {
-    throw new Error(error.message)
-  }
+    return r
+  })
 }
 
 // TODO(nnnat): rename to action workflow history
@@ -63,13 +58,16 @@ interface IInstallWorkflowApproveAll {
   workflowId: string
 }
 
-export async function installWorkflowApproveAll({ orgId, workflowId }: IInstallWorkflowApproveAll) {
+export async function installWorkflowApproveAll({
+  orgId,
+  workflowId,
+}: IInstallWorkflowApproveAll) {
   return nueMutateData({
     orgId,
     path: `install-workflows/${workflowId}`,
-    method: "PATCH",
+    method: 'PATCH',
     body: {
-      approval_option: "approve-all"
-    }
+      approval_option: 'approve-all',
+    },
   })
 }
