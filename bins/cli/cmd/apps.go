@@ -209,9 +209,7 @@ func (c *cli) appsCmd() *cobra.Command {
 	appsCmd.AddCommand(validateCmd)
 
 	var (
-		name       string
-		template   string
-		noTemplate bool
+		name string
 	)
 	createCmd := &cobra.Command{
 		Use:               "create",
@@ -219,13 +217,11 @@ func (c *cli) appsCmd() *cobra.Command {
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.Create(cmd.Context(), name, template, noTemplate, PrintJSON, noSelect)
+			return svc.Create(cmd.Context(), name, PrintJSON, noSelect)
 		}),
 	}
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "app name")
 	createCmd.MarkFlagRequired("name")
-	createCmd.Flags().StringVarP(&template, "template", "", "aws-ecs", "app config template type")
-	createCmd.Flags().BoolVarP(&noTemplate, "no-template", "", false, "do not write a template config file")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "do not automatically set the new app as the current app")
 
 	appsCmd.AddCommand(createCmd)
