@@ -14,7 +14,7 @@ import { Expand } from '@/components/Expand'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Text } from '@/components/Typography'
-import { runManualWorkflow } from './workflow-actions'
+import { runAction } from './workflow-actions'
 import type { TActionConfig, TActionWorkflow } from '@/types'
 import { trackEvent } from '@/utils'
 
@@ -55,7 +55,7 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [customVars, setCustomVars] = useState([])
-  const [error, setError] = useState()
+  const [error, setError] = useState<string>()
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -130,24 +130,14 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
                       return acc
                     }, {})
 
-                    runManualWorkflow({
+                    runAction({
+                      actionWorkflowConfigId: workflowConfigId,
                       installId,
                       orgId,
-                      workflowConfigId,
                       vars,
-                    })
-                      .then(() => {
-                        trackEvent({
-                          event: 'action_run',
-                          user,
-                          status: 'ok',
-                          props: { orgId, installId, workflowConfigId, vars },
-                        })
-                        setIsLoading(false)
-                        setIsKickedOff(true)
-                        setIsOpen(false)
-                      })
-                      .catch((err) => {
+                    }).then((res) => {
+                      setIsLoading(false)
+                      if (res.error) {
                         trackEvent({
                           event: 'action_run',
                           user,
@@ -157,15 +147,26 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
                             installId,
                             workflowConfigId,
                             vars,
-                            err,
+
+                            err: res.error,
                           },
                         })
                         setError(
-                          err?.message ||
+                          res?.error?.error ||
                             'Error occured, please refresh page and try again.'
                         )
-                        setIsLoading(false)
-                      })
+                      } else {
+                        trackEvent({
+                          event: 'action_run',
+                          user,
+                          status: 'ok',
+                          props: { orgId, installId, workflowConfigId, vars },
+                        })
+
+                        setIsKickedOff(true)
+                        setIsOpen(false)
+                      }
+                    })
                   }}
                 >
                   <Expand
