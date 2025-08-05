@@ -167,7 +167,7 @@ export default async function InstallComponent({ params, searchParams }) {
                 >
                   <TerraformWorkspace
                     orgId={orgId}
-                    workspace={install.sandbox.terraform_workspace}
+                    workspace={install?.sandbox?.terraform_workspace}
                   />
                 </Suspense>
               </ErrorBoundary>
