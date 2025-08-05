@@ -5,6 +5,6 @@ resource "aws_route53_record" "wiki" {
   type    = "CNAME"
   ttl     = 300
   records = [
-    "internal-k8s-wiki-wiki-e4a6410736-714817722.us-west-2.elb.amazonaws.com"
+    "internal-k8s-wiki-wikiprod-5a42d3fb8d-2119730064.us-west-2.elb.amazonaws.com"
   ]
 }

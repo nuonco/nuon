@@ -39,9 +39,8 @@ function install() {
     fi
 }
 
-# Check if we should build locally
-if [ -n "${NUON_LOCAL:-}" ]; then
-    echo "🛠️  NUON_LOCAL is set, building nuonctl locally..."
+function build_locally() {
+    echo >&2 "🛠️  NUONCTL_LOCAL is set, building nuonctl locally..."
 
     # Check for Go installation
     if ! command -v go &> /dev/null; then
@@ -52,18 +51,31 @@ if [ -n "${NUON_LOCAL:-}" ]; then
     # Assuming the nuonctl source is in the bins/nuonctl directory
     NUONCTL_SRC_DIR="${MONO_ROOT}/bins/nuonctl"
 
-    echo "Building from source in ${NUONCTL_SRC_DIR}..."
+    echo >&2 "Building from source in ${NUONCTL_SRC_DIR}..."
     cd "${NUONCTL_SRC_DIR}"
 
-    # Build the binary
-    go build -o nuonctl-local .
+    TMP_PATH=/tmp/nctl-$(date +%s)
+    go build -o $TMP_PATH .
 
+    echo >&2 "🎉 nuonctl local build and installation completed successfully!"
 
-    echo "Installing nuonctl to ${INSTALL_DIR}..."
-    mv nuonctl-local "${INSTALL_DIR}/"
-    chmod +x "${INSTALL_DIR}/nuonctl-local"
+    echo $TMP_PATH
+}
 
-    echo "🎉 nuonctl local build and installation completed successfully!"
+function exec_and_cleanup() {
+  local exec_path="$1"
+  shift
+
+  echo >&2 "executing $exec_path..."
+
+  exec "$exec_path" "$@"
+  rm -f "$exec_path"
+}
+
+# Check if we should build locally
+if [ "${NUONCTL_LOCAL:-}" = "true" ]; then
+  EXEC_PATH=$(build_locally)
+  exec_and_cleanup $EXEC_PATH $@
 else
     # Use the install script for the regular flow
     # Check if install script exists
@@ -74,25 +86,23 @@ else
 
     if [ -f "$INSTALL_DIR/nuonctl" ]; then
       CURRENT_VERSION=`exec $INSTALL_DIR/nuonctl version`
-      echo " > CURRENT_VERSION: $CURRENT_VERSION"
-
       echo "calculating latest version..."
       LATEST_VERSION=$(curl -s $BASE_URL/latest.txt)
-      echo " > LATEST_VERSION: $LATEST_VERSION"
 
       if [[ "$CURRENT_VERSION" == "$LATEST_VERSION" ]]; then
-        echo "currently installed version is current - doing nothing"
+        echo  >&2 "currently installed version is current ($LATEST_VERSION) - doing nothing"
       else
+        echo  >&2 "currently installed version is out of date - installing"
         install
       fi
     else
+      echo  >&2 "nuonctl is not currently installed - installing"
       install
     fi
-fi
 
+    # NOTE(jm): we do this, so that long running nuonctl processes do not have to be terminated when an update comes in.
+    EXEC_PATH=/tmp/nuonctl-$(date +%s)
+    cp $INSTALL_DIR/nuonctl $EXEC_PATH 
 
-if [ -n "${NUON_LOCAL:-}" ]; then
-  exec ${INSTALL_DIR}/nuonctl-local $@
-else
-  exec ${INSTALL_DIR}/nuonctl $@
+    exec_and_cleanup $EXEC_PATH $@
 fi

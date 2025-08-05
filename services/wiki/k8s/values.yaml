@@ -12,7 +12,7 @@ image:
 serviceAccount:
   name: wiki
   annotations:
-    eks.amazonaws.com/role-arn: TFO_EKS_ROLE_ARN
+    eks.amazonaws.com/role-arn: $TFO_EKS_ROLE_ARN
 
 ui:
   internal_port: 4321
@@ -29,8 +29,8 @@ ui:
 
   alb:
     scheme: internal
-    domain: TFO_DOMAIN
-    domain_certificate: TFO_CERTIFICATE_ARN
+    domain: $TFO_DOMAIN
+    domain_certificate: $TFO_CERTIFICATE_ARN
 
   autoscaling:
     minReplicas: 2
