@@ -72,14 +72,17 @@ type InstallDeploy struct {
 	Type              InstallDeployType   `json:"install_deploy_type,omitzero" temporaljson:"type,omitzero,omitempty"`
 	StatusV2          CompositeStatus     `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
-	// Fields that are de-nested at read time using AfterQuery
-	InstallID              string `json:"install_id" gorm:"-" temporaljson:"install_id,omitzero,omitempty"`
-	ComponentID            string `json:"component_id,omitzero" gorm:"-" temporaljson:"component_id,omitzero,omitempty"`
-	ComponentName          string `json:"component_name,omitzero" gorm:"-" temporaljson:"component_name,omitzero,omitempty"`
-	ComponentConfigVersion int    `gorm:"-" json:"component_config_version,omitzero" temporaljson:"component_config_version,omitzero,omitempty"`
-
+	// DEPRECATED: use WorkflowID
 	InstallWorkflowID *string   `json:"install_workflow_id,omitzero" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`
 	InstallWorkflow   *Workflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
+
+	// Fields that are de-nested at read time using AfterQuery
+	InstallID              string    `json:"install_id" gorm:"-" temporaljson:"install_id,omitzero,omitempty"`
+	ComponentID            string    `json:"component_id,omitzero" gorm:"-" temporaljson:"component_id,omitzero,omitempty"`
+	ComponentName          string    `json:"component_name,omitzero" gorm:"-" temporaljson:"component_name,omitzero,omitempty"`
+	ComponentConfigVersion int       `gorm:"-" json:"component_config_version,omitzero" temporaljson:"component_config_version,omitzero,omitempty"`
+	WorkflowID             *string   `json:"workflow_id,omitzero" gorm:"-" temporaljson:"workflow_step_id,omitzero,omitempty"`
+	Workflow               *Workflow `json:"workflow,omitzero" gorm:"-" temporaljson:"workflow_step,omitzero,omitempty"`
 
 	Outputs map[string]any `json:"outputs,omitzero" gorm:"-" temporaljson:"outputs,omitzero,omitempty"`
 }
@@ -101,6 +104,8 @@ func (c *InstallDeploy) AfterQuery(tx *gorm.DB) error {
 	c.ComponentID = c.InstallComponent.ComponentID
 	c.ComponentName = c.InstallComponent.Component.Name
 	c.ComponentConfigVersion = c.ComponentBuild.ComponentConfigVersion
+	c.WorkflowID = c.InstallWorkflowID
+	c.Workflow = c.InstallWorkflow
 
 	outputs := make(map[string]any, 0)
 	for _, rj := range c.RunnerJobs {

@@ -50,6 +50,10 @@ type WorkflowStepApproval struct {
 
 	// the response object must be created by the user in the UI or CLI
 	Response *WorkflowStepApprovalResponse `gorm:"foreignKey:InstallWorkflowStepApprovalID" json:"response,omitzero" temporaljson:"response,omitzero,omitempty"`
+
+	// afterquery
+	WorkflowStepID string       `json:"workflow_step_id,omitzero" gorm:"-" temporaljson:"workflow_step_id,omitzero,omitempty"`
+	WorkflowStep   WorkflowStep `json:"workflow_step,omitzero" gorm:"-" temporaljson:"workflow_step,omitzero,omitempty"`
 }
 
 func (c *WorkflowStepApproval) TableName() string {
@@ -70,6 +74,8 @@ func (c *WorkflowStepApproval) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (c *WorkflowStepApproval) AfterQuery(tx *gorm.DB) error {
+	c.WorkflowStepID = c.InstallWorkflowStep.ID
+	c.WorkflowStep = c.InstallWorkflowStep
 	return nil
 }
 
