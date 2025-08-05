@@ -3,6 +3,8 @@
 import { Dashboard, Heading, Link, Text } from '@/components'
 
 export default function Error({ error }) {
+  console.error('Error occured', error)
+  
   return (
     <Dashboard>
       <main className="flex h-full gap-6 py-6 md:py-12 lg:py-24">

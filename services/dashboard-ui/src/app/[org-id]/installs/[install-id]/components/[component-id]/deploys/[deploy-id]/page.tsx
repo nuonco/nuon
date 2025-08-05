@@ -138,7 +138,7 @@ export default async function InstallComponentDeploy({ params }) {
         </div>
       }
       statues={
-        <div className="flex gap-6 items-start justify-start flex-wrap">
+        <div className="flex gap-6 items-start justify-end flex-wrap">
           <span className="flex flex-col gap-2">
             <DeployStatus
               descriptionAlignment="right"
