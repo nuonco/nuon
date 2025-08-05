@@ -3,8 +3,9 @@ import { FaDocker } from 'react-icons/fa'
 import { GoQuestion } from 'react-icons/go'
 import {
   SiAwslambda,
-  SiOpencontainersinitiative,
   SiHelm,
+  SiKubernetes,
+  SiOpencontainersinitiative,
   SiTerraform,
 } from 'react-icons/si'
 
@@ -37,8 +38,8 @@ export const ComponentConfigType: FC<{
     case 'job':
       cfgType = { icon: <SiAwslambda />, name: 'Job' }
       break
-    case 'job':
-      cfgType = { icon: <SiAwslambda />, name: 'Kubernetes Manifest' }
+    case 'kubernetes_manifest':
+      cfgType = { icon: <SiKubernetes />, name: 'Kubernetes Manifest' }
       break
     default:
       cfgType = { icon: <GoQuestion />, name: 'Unknown' }
