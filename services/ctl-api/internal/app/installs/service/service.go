@@ -64,7 +64,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	api.POST("/v1/installs/:install_id/deprovision", s.DeprovisionInstall)
 	api.POST("/v1/installs/:install_id/forget", s.ForgetInstall)
-	api.POST("/v1/installs/:install_id/retry-workflow", s.RetryWorkflow)
+	api.POST("/v1/installs/:install_id/retry-workflow", s.RetryWorkflow) // Deprecated, use workflows instead
 
 	// install deploys
 	api.GET("/v1/installs/:install_id/deploys", s.GetInstallDeploys)
@@ -116,6 +116,8 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/workflows/:workflow_id/steps/:workflow_step_id/approvals/:approval_id", s.GetWorkflowStepApproval)
 	api.POST("/v1/workflows/:workflow_id/steps/:workflow_step_id/approvals/:approval_id/response", s.CreateWorkflowStepApprovalResponse)
 	api.GET("/v1/workflows/:workflow_id/steps/:workflow_step_id/approvals/:approval_id/contents", s.GetWorkflowStepApprovalContents)
+	// retry workflow
+	api.POST("/v1/workflows/:workflow_id/retry", s.RetryOwnerWorkflow)
 
 	// deprecated
 	api.GET("/v1/install-workflows/:install_workflow_id", s.GetInstallWorkflow)
