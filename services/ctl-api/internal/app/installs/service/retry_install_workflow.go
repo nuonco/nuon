@@ -12,43 +12,54 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
-type RetryWorkflowByIDRequest struct {
+type RetryOperation string
+
+const (
+	RetryOperationSkipStep  = "skip-step"
+	RetryOperationRetryStep = "retry-step"
+)
+
+type RetryWorkflowRequest struct {
+	WorkflowID string `json:"workflow_id" swaggertype:"string"`
 	// StepID is the ID of the step to start the retry from
 	StepID string `json:"step_id" swaggertype:"string"`
 	// Retry indicates whether to retry the current step or not
 	Operation RetryOperation `json:"operation" swaggertype:"string"`
 }
 
-type RetryWorkflowByIDResponse struct {
+type RetryWorkflowResponse struct {
 	WorkflowID string `json:"workflow_id" swaggertype:"string"`
 }
 
-func (c *RetryWorkflowByIDRequest) Validate(v *validator.Validate) error {
+func (c *RetryWorkflowRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
 	return nil
 }
 
-// @ID						RetryOwnerWorkflowByID
+// @ID						RetryWorkflow
 // @Summary					rerun the workflow steps starting from input step id, can be used to retry a failed step
-// @Description.markdown	retry_workflow_by_id.md
-// @Param					workflow_id	path	string					true	"workflow ID"
-// @Param					req			body	RetryWorkflowByIDRequest	true	"Input"
+// @Description.markdown	retry_workflow.md
+// @Param					install_id	path	string					true	"install ID"
+// @Param					req			body	RetryWorkflowRequest	true	"Input"
 // @Tags					installs
 // @Accept					json
 // @Produce					json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated
 // @Failure					400	{object}	stderr.ErrResponse
 // @Failure					401	{object}	stderr.ErrResponse
 // @Failure					403	{object}	stderr.ErrResponse
 // @Failure					404	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
-// @Success					201	{object}	RetryWorkflowByIDResponse
-// @Router					/v1/workflows/{workflow_id}/retry [post]
-func (s *service) RetryOwnerWorkflow(ctx *gin.Context) {
-	var req RetryWorkflowByIDRequest
+// @Success					201	{object}	RetryWorkflowResponse
+// @Router					/v1/installs/{install_id}/retry-workflow [post]
+func (s *service) RetryWorkflow(ctx *gin.Context) {
+	install_id := ctx.Param("install_id")
+
+	var req RetryWorkflowRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(stderr.ErrUser{
 			Err: err,
@@ -61,11 +72,10 @@ func (s *service) RetryOwnerWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	workflowID := ctx.Param("workflow_id")
-	workflow, err := s.getWorkflow(ctx, workflowID)
+	workflow, err := s.getWorkflow(ctx, req.WorkflowID)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("install workflow not found: %s", workflow.ID),
+			Err: fmt.Errorf("install workflow not found: %s", req.WorkflowID),
 		})
 		return
 	}
@@ -85,6 +95,7 @@ func (s *service) RetryOwnerWorkflow(ctx *gin.Context) {
 		return
 	}
 
+	// this feels like code smell since its not explicit
 	switch req.Operation {
 	case RetryOperationRetryStep:
 		if !step.Retryable {
@@ -113,16 +124,7 @@ func (s *service) RetryOwnerWorkflow(ctx *gin.Context) {
 		}
 	}
 
-	// TODO: support more than just installs workflow retries
-
-	if workflow.OwnerType != "installs" {
-		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("workflow %s retry not support for owner type", workflow.ID),
-		})
-		return
-	}
-
-	s.evClient.Send(ctx, workflow.OwnerID, &signals.Signal{
+	s.evClient.Send(ctx, install_id, &signals.Signal{
 		Type:              signals.OperationRerunFlow,
 		InstallWorkflowID: workflow.ID,
 		RerunConfiguration: signals.RerunConfiguration{
@@ -131,7 +133,7 @@ func (s *service) RetryOwnerWorkflow(ctx *gin.Context) {
 		},
 	})
 
-	ctx.JSON(201, RetryWorkflowByIDResponse{
+	ctx.JSON(201, RetryWorkflowResponse{
 		WorkflowID: workflow.ID,
 	})
 }
