@@ -8,8 +8,9 @@ import { FaDocker, FaGitAlt, FaGithub } from 'react-icons/fa'
 import { GoQuestion } from 'react-icons/go'
 import {
   SiAwslambda,
-  SiOpencontainersinitiative,
   SiHelm,
+  SiKubernetes,
+  SiOpencontainersinitiative,
   SiTerraform,
 } from 'react-icons/si'
 import { ArrowsOutSimple } from '@phosphor-icons/react/dist/ssr'
@@ -36,6 +37,7 @@ export function getComponentConfigType({
   helm,
   job,
   terraform_module,
+  kubernetes_manifest,
 }: TComponentConfig): TComponentConfigType {
   return ((docker_build && 'docker') ||
     (external_image && 'external') ||
@@ -83,7 +85,7 @@ export const StaticComponentConfigType: FC<{
       cfgType = { icon: <SiAwslambda />, name: 'Job' }
       break
     case 'kubernetes_manifest':
-      cfgType = { icon: <SiAwslambda />, name: 'Kubernetes Manifest' }
+      cfgType = { icon: <SiKubernetes />, name: 'Kubernetes Manifest' }
       break
     default:
       cfgType = { icon: <GoQuestion />, name: 'Unknown' }
@@ -115,6 +117,7 @@ export const ComponentConfiguration: FC<IComponentConfiguration> = ({
         {config.docker_build && <ConfigurationDocker {...config} />}
         {config.external_image && <ConfigurationExternalImage {...config} />}
         {config.helm && <ConfigurationHelm {...config} />}
+        {config.kubernetes_manifest && <ConfigurationK8s {...config} />}
         {config.job && <ConfigurationJob {...config} />}
       </Config>
 
@@ -185,6 +188,16 @@ export const ComponentConfiguration: FC<IComponentConfiguration> = ({
           ) : null}
         </>
       )}
+
+      {config?.kubernetes_manifest && (
+        <div className="flex flex-col gap-4">
+          <Text variant="med-12">Manifest</Text>
+          <CodeViewer
+            initCodeSource={config?.kubernetes_manifest?.manifest}
+            language="yaml"
+          />
+        </div>
+      )}
     </div>
   )
 }
@@ -247,6 +260,32 @@ const ConfigurationHelm: FC<Pick<TComponentConfig, 'helm'>> = ({ helm }) => {
   return (
     <>
       <ConfigurationVCS vcs={helm} />
+    </>
+  )
+}
+
+const ConfigurationK8s: FC<Pick<TComponentConfig, 'kubernetes_manifest'>> = ({
+  kubernetes_manifest,
+}) => {
+  return (
+    <>
+      <ConfigContent
+        label="Namespace"
+        value={
+          kubernetes_manifest.namespace.length >= 32 ? (
+            <ToolTip
+              alignment="right"
+              tipContent={kubernetes_manifest.namespace}
+            >
+              <Truncate variant="small">
+                {kubernetes_manifest.namespace}
+              </Truncate>
+            </ToolTip>
+          ) : (
+            kubernetes_manifest.namespace
+          )
+        }
+      />
     </>
   )
 }
