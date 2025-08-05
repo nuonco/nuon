@@ -22,11 +22,11 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   } = await params
   const [install, installWorkflow] = await Promise.all([
     getInstall({ installId, orgId }),
-    getInstallWorkflow({ installWorkflowId, orgId }),
+    getInstallWorkflow({ installWorkflowId, orgId })
   ])
 
   return {
-    title: `${install.name} | ${
+    title: `${install?.name} | ${
       installWorkflow?.name ||
       removeSnakeCase(sentanceCase(installWorkflow?.type))
     }`,
