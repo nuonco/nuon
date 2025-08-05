@@ -71,7 +71,7 @@ func (s *service) GetWorkflowStepApproval(ctx *gin.Context) {
 // @Failure								403	{object}	stderr.ErrResponse
 // @Failure								404	{object}	stderr.ErrResponse
 // @Failure								500	{object}	stderr.ErrResponse
-// @Success								200	{array}		app.WorkflowStepApproval
+// @Success								200	{object}		app.WorkflowStepApproval
 // @Router 								/v1/install-workflows/{install_workflow_id}/steps/{install_workflow_step_id}/approvals/{approval_id} [GET]
 func (s *service) GetInstallWorkflowStepApproval(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
