@@ -9,9 +9,6 @@ members:
   # Nat Hamilton
   - username: nnnnat
     role: admin
-  # Sam Boyer
-  - username: sdboyer
-    role: admin
   # Rob Bruce
   - username: ALPHAvibe
     role: admin

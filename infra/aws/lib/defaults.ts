@@ -111,7 +111,6 @@ export const desiredOrgStructure: orgStructure = [
     accounts: [
       { name: "sandbox-jm" },
       { name: "sandbox-ja" },
-      { name: "sandbox-sb" },
       { name: "sandbox-rb" },
       { name: "sandbox-fd" },
       { name: "sandbox-nh" },
