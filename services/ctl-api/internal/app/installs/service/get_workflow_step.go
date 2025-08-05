@@ -25,7 +25,7 @@ import (
 // @Failure					403	{object}	stderr.ErrResponse
 // @Failure					404	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
-// @Success					200	{array}		app.WorkflowStep
+// @Success					200	{object}	app.WorkflowStep
 // @Router					/v1/workflows/{workflow_id}/steps/{workflow_step_id} [GET]
 func (s *service) GetWorkflowStep(ctx *gin.Context) {
 	workflowID := ctx.Param("workflow_id")
@@ -56,7 +56,7 @@ func (s *service) GetWorkflowStep(ctx *gin.Context) {
 // @Failure					403	{object}	stderr.ErrResponse
 // @Failure					404	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
-// @Success					200	{array}		app.WorkflowStep
+// @Success					200	{object}	app.WorkflowStep
 // @Router					/v1/install-workflows/{install_workflow_id}/steps/{install_workflow_step_id} [GET]
 func (s *service) GetInstallWorkflowStep(ctx *gin.Context) {
 	workflowID := ctx.Param("install_workflow_id")
@@ -79,6 +79,7 @@ func (s *service) getWorkflowStep(ctx *gin.Context, workflowID, stepID string) (
 		Preload("Approval", func(db *gorm.DB) *gorm.DB {
 			return db.Omit("contents")
 		}).
+    Preload("Approval.Response").
 		Preload("PolicyValidation").
 		First(&installWorkflowStep)
 	if res.Error != nil {
