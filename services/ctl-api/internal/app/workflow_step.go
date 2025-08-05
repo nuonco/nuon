@@ -37,6 +37,7 @@ type WorkflowStep struct {
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_install_workflows_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
+	// DEPRECATED: this is the install workflow ID, which is now the workflow ID.
 	InstallWorkflowID string `json:"install_workflow_id,omitzero" temporaljson:"install_workflow_id,omitzero,omitempty"`
 
 	// status
@@ -79,6 +80,9 @@ type WorkflowStep struct {
 	Retryable bool `json:"retryable,omitzero" gorm:"default:false" temporaljson:"retryable,omitzero,omitempty"`
 	Skippable bool `json:"skippable,omitzero" gorm:"default:false" temporaljson:"skippable,omitzero,omitempty"`
 	Retried   bool `json:"retried,omitzero" gorm:"default:false" temporaljson:"retried,omitzero,omitempty"`
+
+	// Fields that are de-nested at read time using AfterQuery
+	WorkflowID string `json:"workflow_id,omitzero" gorm:"-" temporaljson:"workflow_id,omitzero,omitempty"`
 }
 
 func (i *WorkflowStep) TableName() string {
@@ -110,6 +114,8 @@ func (r *WorkflowStep) AfterQuery(tx *gorm.DB) error {
 
 	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
 	r.Finished = !r.FinishedAt.IsZero()
+
+	r.WorkflowID = r.InstallWorkflowID
 	return nil
 }
 

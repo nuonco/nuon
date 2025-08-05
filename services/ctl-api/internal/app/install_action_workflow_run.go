@@ -69,9 +69,10 @@ type InstallActionWorkflowRun struct {
 	InstallWorkflow   *Workflow `swaggerignore:"true" json:"-" temporaljson:"install_workflow,omitzero,omitempty"`
 
 	// after query
-
 	ExecutionTime time.Duration          `json:"execution_time,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
 	Outputs       map[string]interface{} `json:"outputs,omitzero" gorm:"-" temporaljson:"outputs,omitzero,omitempty"`
+	WorkflowID    *string                `json:"workflow_id,omitzero" gorm:"-" temporaljson:"workflow_step_id,omitzero,omitempty"`
+	Workflow      *Workflow              `json:"workflow,omitzero" gorm:"-" temporaljson:"workflow_step,omitzero,omitempty"`
 }
 
 func (i *InstallActionWorkflowRun) Views(db *gorm.DB) []migrations.View {
@@ -130,6 +131,9 @@ func (i *InstallActionWorkflowRun) AfterQuery(tx *gorm.DB) error {
 		i.Status = InstallActionWorkflowRunStatus(i.StatusV2.Status)
 		i.StatusDescription = i.StatusV2.StatusHumanDescription
 	}
+
+	i.WorkflowID = i.InstallWorkflowID
+	i.Workflow = i.InstallWorkflow
 
 	return nil
 }
