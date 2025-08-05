@@ -76,6 +76,10 @@ type InstallSandboxRun struct {
 	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config,omitzero" temporaljson:"app_sandbox_config,omitzero,omitempty"`
 
 	Outputs map[string]any `json:"outputs,omitzero" gorm:"-" temporaljson:"outputs,omitzero,omitempty"`
+
+	// Fields that are de-nested at read time using AfterQuery
+	WorkflowID *string   `json:"workflow_id,omitzero" gorm:"-" temporaljson:"workflow_step_id,omitzero,omitempty"`
+	Workflow   *Workflow `json:"workflow,omitzero" gorm:"-" temporaljson:"workflow_step,omitzero,omitempty"`
 }
 
 func (i *InstallSandboxRun) BeforeCreate(tx *gorm.DB) error {
@@ -109,6 +113,8 @@ func (i *InstallSandboxRun) AfterQuery(tx *gorm.DB) error {
 		i.Status = SandboxRunStatus(i.StatusV2.Status)
 		i.StatusDescription = i.StatusV2.StatusHumanDescription
 	}
+	i.WorkflowID = i.InstallWorkflowID
+	i.Workflow = i.InstallWorkflow
 
 	outputs := make(map[string]any, 0)
 	for _, rj := range i.RunnerJobs {
