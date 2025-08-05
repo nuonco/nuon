@@ -146,22 +146,33 @@ const CreateInstallFromApp: FC<{
   selectApp: (app: undefined) => void
 }> = ({ app, ...props }) => {
   const { org } = useOrg()
+  const [fetchTry, setFetchTry] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [inputConfig, setInputConfig] = useState<TAppInputConfig | undefined>()
   const [error, setError] = useState<string>()
   const router = useRouter()
 
-  useEffect(() => {
+
+  const fetchAppInputs = () => {
+    setFetchTry(prev => prev++);
     fetch(`/api/${org?.id}/apps/${app?.id}/input-configs/latest`).then((r) =>
       r.json().then((res) => {
         setIsLoading(false)
         if (res?.error) {
-          setError(res?.error?.error || 'Unable to fetch app input configs')
+          setError('Unable to fetch app input configs')
+          if (fetchTry < 5) {
+            fetchAppInputs()
+          }
         } else {
+          setError(undefined)
           setInputConfig(res.data)
         }
       })
     )
+}
+  
+  useEffect(() => {
+    fetchAppInputs()
   }, [])
 
   return (

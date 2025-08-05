@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import {
@@ -22,6 +23,15 @@ import { InstallManagementDropdown } from '@/components/Installs'
 import { getInstall, getRunner } from '@/lib'
 import type { TRunnerGroupSettings } from '@/types'
 import { nueQueryData } from '@/utils'
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const { ['org-id']: orgId, ['install-id']: installId } = await params
+  const install = await getInstall({ installId, orgId })
+
+  return {
+    title: `Runner | ${install?.name}`,
+  }
+}
 
 export default async function Runner({ params, searchParams }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
