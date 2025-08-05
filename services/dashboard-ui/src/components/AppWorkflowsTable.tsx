@@ -142,7 +142,7 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
     <Table
       header={
         <>
-          <DebouncedSearchInput placeholder="Search aciton name" />
+          <DebouncedSearchInput placeholder="Search action name" />
         </>
       }
       data={data}
