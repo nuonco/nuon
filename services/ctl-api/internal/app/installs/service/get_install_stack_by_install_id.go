@@ -25,7 +25,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{array}		app.InstallStack
+// @Success				200	{object}	app.InstallStack
 // @Router					/v1/installs/{install_id}/stack [GET]
 func (s *service) GetInstallStackByInstallID(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
