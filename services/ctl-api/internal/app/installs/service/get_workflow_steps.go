@@ -80,7 +80,7 @@ func (s *service) getWorkflowSteps(ctx *gin.Context, workflowID string) ([]app.W
 		}).
 		Preload("Approval.Response").
 		Preload("PolicyValidation").
-		Order("idx, created_at ASC").
+		Order("group_idx, group_retry_idx, idx, created_at asc").
 		Find(&steps)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get workflow steps")

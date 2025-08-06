@@ -114,6 +114,8 @@ const (
 type RerunConfiguration struct {
 	StepID        string         `json:"step_id"`
 	StepOperation RerunOperation `json:"step_operation"`
+	StalePlan     bool           `json:"stale_plan"`
+	RePlanStepID  string         `json:"replan_step_id"`
 }
 
 type Signal struct {

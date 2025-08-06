@@ -73,7 +73,7 @@ func (s *service) getWorkflow(ctx *gin.Context, workflowID string) (*app.Workflo
 		Preload("CreatedBy").
 		Preload("Steps", func(db *gorm.DB) *gorm.DB {
 			return db.
-				Order("idx, created_at ASC")
+				Order("group_idx, group_retry_idx, idx, created_at asc")
 		}).
 		Preload("Steps.CreatedBy").
 		Preload("Steps.Approval").
