@@ -22,7 +22,12 @@ interface IInstallForm {
   install?: TInstall
   onSubmit: (
     formData: FormData
-  ) => Promise<TInstall | string | Record<'installId' | 'workflowId', string>>
+  ) => Promise<
+    | TInstall
+    | string
+    | Record<'installId' | 'workflowId', string>
+    | { error: any }
+  >
   onSuccess: (
     install: TInstall | string | Record<'installId' | 'workflowId', string>
   ) => void
@@ -95,20 +100,46 @@ export const InstallForm: FC<IInstallForm> = ({
           props
             .onSubmit(formData)
             .then((ins) => {
-              trackEvent({
-                event: install ? 'install_update' : 'install_create',
-                user,
-                status: 'ok',
-                props: {
-                  orgId: org.id,
-                  installId: install ? install?.id : (ins as TInstall)?.id,
-                },
-              })
-              setIsLoading(false)
-              setIsCreated(true)
-              props.onSuccess(ins)
+              if ((ins as any)?.error) {
+                const errMsg =
+                  (ins as any)?.error?.error ===
+                  'unable to create install: unable to create install: duplicated key not allowed'
+                    ? "Can't create install: duplicate install names not allowed"
+                    : (ins as any)?.error?.error
+                trackEvent({
+                  event: install ? 'install_update' : 'install_create',
+                  user,
+                  status: 'error',
+                  props: {
+                    orgId: org.id,
+                    installId: install ? install?.id : null,
+                  },
+                })
+                setIsLoading(false)
+                setError(
+                  errMsg ||
+                    'Unable to create install, refresh the page and try again.'
+                )
+                formRef.current?.parentElement?.scrollTo({
+                  top: 0,
+                  behavior: 'smooth',
+                })
+              } else {
+                trackEvent({
+                  event: install ? 'install_update' : 'install_create',
+                  user,
+                  status: 'ok',
+                  props: {
+                    orgId: org.id,
+                    installId: install ? install?.id : (ins as TInstall)?.id,
+                  },
+                })
+                setIsLoading(false)
+                setIsCreated(true)
+                props.onSuccess(ins as any)
+              }
             })
-            .catch(() => {
+            .catch((err) => {
               trackEvent({
                 event: install ? 'install_update' : 'install_create',
                 user,
@@ -334,7 +365,11 @@ const InputGroupFields: FC<{
             >
               <div />
               <div className="ml-1">
-                <input type="hidden" name={`inputs:${input?.name}`} value="off" />
+                <input
+                  type="hidden"
+                  name={`inputs:${input?.name}`}
+                  value="off"
+                />
                 <CheckboxInput
                   labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0"
                   labelTextClassName="!text-base !font-normal"
