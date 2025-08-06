@@ -515,7 +515,6 @@ interface IRetryWorklow {
   orgId: string
   workflowId: string
   stepId: string
-  installId: string
   op: 'retry-step' | 'skip-step'
 }
 
@@ -523,15 +522,13 @@ export async function retryWorkflow({
   orgId,
   workflowId,
   stepId,
-  installId,
   op,
 }: IRetryWorklow) {
-  let path = `installs/${installId}/retry-workflow`
+  let path = `workflows/${workflowId}/retry`
   return nueMutateData({
     orgId,
     path,
     body: {
-      workflow_id: workflowId,
       step_id: stepId,
       operation: op
     },
