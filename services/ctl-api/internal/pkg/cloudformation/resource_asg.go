@@ -12,8 +12,9 @@ func (a *Templates) getRunnerASG(inp *TemplateInput, t tagBuilder) *autoscaling.
 			LaunchTemplateId: cloudformation.RefPtr("RunnerLaunchTemplate"),
 			Version:          cloudformation.GetAtt("RunnerLaunchTemplate", "LatestVersionNumber"),
 		},
-		MaxSize: "1",
-		MinSize: "1",
+		MaxSize:             "1",
+		MinSize:             "1",
+		MaxInstanceLifetime: cloudformation.Int(inp.Settings.AWSMaxInstanceLifetime),
 		Tags: []autoscaling.AutoScalingGroup_TagProperty{
 			{
 				Key:               "nuon_install_id",
