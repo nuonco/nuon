@@ -48,9 +48,12 @@ func (s *sync) syncInstall(ctx context.Context, resource string, install *config
 		req := models.ServiceCreateInstallRequest{
 			Name:   &install.Name,
 			Inputs: install.Inputs,
-			AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
-				Region: install.AWSRegion,
-			},
+		}
+		if install.AWSAccount != nil {
+			req.AwsAccount = &models.ServiceCreateInstallRequestAwsAccount{
+				Region:     install.AWSAccount.Region,
+				IamRoleArn: install.AWSAccount.IAMRoleARN,
+			}
 		}
 		if install.ApprovalOption != config.InstallApprovalOptionUnknown {
 			req.InstallConfig = &models.HelpersCreateInstallConfigParams{
