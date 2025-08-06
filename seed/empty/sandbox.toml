@@ -1,8 +1,8 @@
 terraform_version = "1.11.3"
 
-[connected_repo]
-repo      = "powertoolsdev/mono"
-directory = "infra/datadog"
+[public_repo]
+repo      = "sharkymark/aws-min-sandbox"
+directory = "/"
 branch    = "main"
 
 [env_vars]
