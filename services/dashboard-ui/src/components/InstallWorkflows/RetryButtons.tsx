@@ -31,7 +31,6 @@ export const RetryButtons = ({ step }: { step: TInstallWorkflowStep }) => {
   const retry = (op: 'retry-step' | 'skip-step') => {
     retryWorkflow({
       orgId: org.id,
-      installId: step?.owner_id,
       workflowId: step?.install_workflow_id,
       stepId: step?.id,
       op: op,
