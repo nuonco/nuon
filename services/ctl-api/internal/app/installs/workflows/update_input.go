@@ -16,6 +16,7 @@ import (
 
 func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
+	sg := newStepGroup()
 
 	changedInputsRaw := generics.FromPtrStr(flw.Metadata["inputs"])
 	changedInputs := strings.Split(changedInputsRaw, ",")
@@ -26,7 +27,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	}
 
 	steps := make([]*app.WorkflowStep, 0)
-	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreUpdateInputs)
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreUpdateInputs, sg)
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +76,13 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 		return nil, errors.Wrap(err, "unable to get deployment order from components")
 	}
 
-	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, orderedCompIDs)
+	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, orderedCompIDs, sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component deploy steps")
 	}
 	steps = append(steps, deploySteps...)
 
-	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostUpdateInputs)
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostUpdateInputs, sg)
 	if err != nil {
 		return nil, err
 	}
