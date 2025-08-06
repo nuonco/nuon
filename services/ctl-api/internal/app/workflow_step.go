@@ -49,6 +49,11 @@ type WorkflowStep struct {
 
 	Idx int `json:"idx,omitzero" temporaljson:"idx,omitzero,omitempty"`
 
+	// to group steps which belong to same logical group, eg, plan/apply
+	GroupIdx int `json:"group_idx,omitzero" temporaljson:"group_idx,omitzero,omitempty"`
+	// counter for every retry attempted on a group
+	GroupRetryIdx int `json:"group_retry_idx" gorm:"default:0" temporaljson:"group_retry_idx,omitzero,omitempty"`
+
 	ExecutionType WorkflowStepExecutionType `json:"execution_type,omitzero" temporaljson:"execution_type"`
 
 	// the following fields are set _once_ a step is in flight, and are orchestrated via the step's signal.

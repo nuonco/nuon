@@ -23,9 +23,48 @@ const (
 )
 
 type RerunInput struct {
-	FlowID    string         `json:"flow_id" validate:"required"`
-	StepID    string         `json:"step_id" validate:"required"`
-	Operation RerunOperation `json:"operation" validate:"required"`
+	FlowID       string         `json:"flow_id" validate:"required"`
+	StepID       string         `json:"step_id" validate:"required"`
+	Operation    RerunOperation `json:"operation" validate:"required"`
+	StalePlan    bool           `json:"stale_plan"`
+	RePlanStepID string         `json:"replan_step_id"`
+}
+
+// updateFlowStatusWithError is a helper function to update flow status with error information
+func (c *WorkflowConductor[SignalType]) updateFlowStatusWithError(
+	ctx workflow.Context,
+	flowID string,
+	description string,
+	err error,
+) error {
+	return statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: flowID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusError,
+			StatusHumanDescription: description,
+			Metadata: map[string]any{
+				"error_message": err.Error(),
+			},
+		},
+	})
+}
+
+// updateFlowStatus is a helper function to update flow status
+func (c *WorkflowConductor[SignalType]) updateFlowStatus(
+	ctx workflow.Context,
+	flowID string,
+	status app.Status,
+	description string,
+	metadata map[string]any,
+) error {
+	return statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: flowID,
+		Status: app.CompositeStatus{
+			Status:                 status,
+			StatusHumanDescription: description,
+			Metadata:               metadata,
+		},
+	})
 }
 
 // Rerun is a workflow that reruns a flow from a specific step.
@@ -48,12 +87,13 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 	}
 
 	// reset state of the flow
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: inp.FlowID,
-		Status: app.CompositeStatus{
-			Status: app.StatusRetrying,
-		},
-	}); err != nil {
+	if err := c.updateFlowStatus(
+		ctx,
+		inp.FlowID,
+		app.StatusRetrying,
+		"",
+		nil,
+	); err != nil {
 		l.Error("unable to update status on retry", zap.Error(err))
 	}
 
@@ -66,12 +106,13 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
 			defer cancelCtxCancel()
 
-			if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(cancelCtx, statusactivities.UpdateStatusRequest{
-				ID: flw.ID,
-				Status: app.CompositeStatus{
-					Status: app.StatusCancelled,
-				},
-			}); err != nil {
+			if err := c.updateFlowStatus(
+				cancelCtx,
+				flw.ID,
+				app.StatusCancelled,
+				"",
+				nil,
+			); err != nil {
 				l.Error("unable to update status on cancellation", zap.Error(err))
 			}
 		}
@@ -85,16 +126,12 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 
 	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, inp.StepID)
 	if err != nil {
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: inp.FlowID,
-			Status: app.CompositeStatus{
-				Status:                 app.StatusError,
-				StatusHumanDescription: "unable to fetch workflow step",
-				Metadata: map[string]any{
-					"error_message": err.Error(),
-				},
-			},
-		}); err != nil {
+		if err := c.updateFlowStatusWithError(
+			ctx,
+			inp.FlowID,
+			"unable to fetch workflow step",
+			err,
+		); err != nil {
 			return err
 		}
 		return errors.Errorf("unable to fetch workflow steps for workflow %s: %v", inp.FlowID, err)
@@ -116,16 +153,7 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 		reason = "The step was skipped by the user."
 	default:
 		err := fmt.Errorf("invalid rerun step operation %s", inp.Operation)
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: inp.FlowID,
-			Status: app.CompositeStatus{
-				Status:                 app.StatusError,
-				StatusHumanDescription: err.Error(),
-				Metadata: map[string]any{
-					"error_message": err.Error(),
-				},
-			},
-		}); err != nil {
+		if err := c.updateFlowStatusWithError(ctx, inp.FlowID, err.Error(), err); err != nil {
 			return err
 		}
 		return err
@@ -141,48 +169,116 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 			},
 		},
 	}); err != nil {
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: inp.FlowID,
-			Status: app.CompositeStatus{
-				Status:                 app.StatusError,
-				StatusHumanDescription: stepStatusHumanDescription,
-				Metadata: map[string]any{
-					"reason": reason,
-				},
-			},
-		}); err != nil {
+		if err := c.updateFlowStatusWithError(
+			ctx,
+			inp.FlowID,
+			stepStatusHumanDescription,
+			errors.New(reason),
+		); err != nil {
 			return err
 		}
 
 		return errors.Wrapf(err, "unable to update flow step %s status to discarded", step.ID)
 	}
 
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: inp.FlowID,
-		Status: app.CompositeStatus{
-			Status:                 app.StatusInProgress,
-			StatusHumanDescription: "generating steps for flow",
-		},
-	}); err != nil {
+	if err := c.updateFlowStatus(
+		ctx,
+		inp.FlowID,
+		app.StatusInProgress,
+		"generating steps for flow",
+		nil,
+	); err != nil {
 		l.Error("unable to update status on retry", zap.Error(err))
 	}
 
 	l.Debug("generating steps for flow")
 	if inp.Operation == RerunOperationRetryStep {
-		// create new retry step
-		// this can be moved into a seprate helper for reusability
-		err := c.cloneWorkflowStep(ctx, step, flw)
-		if err != nil {
-			if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: inp.FlowID,
+		updatedGroupRetryIdx := step.GroupRetryIdx
+
+		// if current plan has a stale plan, create new plan step
+		// in case of stale plan, retry entire group for now it includes plan + apply step
+		if inp.StalePlan {
+			l.Debug("retry step is a apply plan wiht stale plan")
+			l.Debug("updating group number for new plan set and new step group")
+			updatedGroupRetryIdx += 1
+
+			planStep, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, inp.RePlanStepID)
+			if err != nil {
+				if err := c.updateFlowStatusWithError(
+					ctx,
+					inp.FlowID,
+					"unable to fetch replan step for rerun apply step",
+					err,
+				); err != nil {
+					return err
+				}
+				return errors.Errorf(
+					"unable to fetch replan steps %s for apply step %s for workflow %s: %v",
+					inp.RePlanStepID, inp.RePlanStepID, inp.FlowID, err,
+				)
+			}
+
+			// this should never be the case ideally, only here for initial validation
+			// can be removed once planstep id is coming in correctly
+			if step.GroupIdx != planStep.GroupIdx {
+				return errors.Errorf(
+					"invalid plan step for input retry step, groupIdx for retry step %s is %d, groupIdx for stale plan step %s is %d",
+					step.ID, step.GroupIdx, planStep.ID, planStep.GroupIdx,
+				)
+			}
+
+			l.Debug("updating status for stale plan step")
+			// update the status of plan step to discarded
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: planStep.ID,
 				Status: app.CompositeStatus{
-					Status:                 app.StatusError,
-					StatusHumanDescription: "unable to create retry step",
+					Status:                 app.StatusDiscarded,
+					StatusHumanDescription: "Plan step discarded, continuing with retry.",
 					Metadata: map[string]any{
-						"error_message": err.Error(),
+						"reason": "The plan step was discarded and retried by the user.",
 					},
 				},
 			}); err != nil {
+				if err := c.updateFlowStatusWithError(
+					ctx,
+					inp.FlowID,
+					"unable to update plan step status to discarded",
+					err,
+				); err != nil {
+					return err
+				}
+				return errors.Wrapf(err, "unable to update plan step %s status to discarded", planStep.ID)
+			}
+
+			// fix grop idx and retry count for plan step since this will be in new group
+			planStep.GroupRetryIdx = updatedGroupRetryIdx
+			planStep.Name = removeRetryFromStepName(planStep.Name)
+			step.Name = removeRetryFromStepName(step.Name)
+
+			l.Debug("creating new plan step")
+			if err = c.cloneWorkflowStep(ctx, planStep, flw); err != nil {
+				if err := c.updateFlowStatusWithError(
+					ctx,
+					inp.FlowID,
+					"unable to create plan retry step for apply step",
+					err,
+				); err != nil {
+					return err
+				}
+				return errors.Wrapf(err, "unable to create retry plan step for step %s workflow %s", inp.StepID, inp.FlowID)
+			}
+		}
+
+		// create new retry step
+		step.GroupRetryIdx = updatedGroupRetryIdx
+		l.Debug("creating new retry plan")
+		if err := c.cloneWorkflowStep(ctx, step, flw); err != nil {
+			if err := c.updateFlowStatusWithError(
+				ctx,
+				inp.FlowID,
+				"unable to create retry step",
+				err,
+			); err != nil {
 				return err
 			}
 			return errors.Wrapf(err, "unable to create retry step for workflow %s", inp.FlowID)
@@ -191,16 +287,7 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 
 	flowSteps, err := activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, inp.FlowID)
 	if err != nil {
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: inp.FlowID,
-			Status: app.CompositeStatus{
-				Status:                 app.StatusError,
-				StatusHumanDescription: "unable to fetch workflow step",
-				Metadata: map[string]any{
-					"error_message": err.Error(),
-				},
-			},
-		}); err != nil {
+		if err := c.updateFlowStatusWithError(ctx, inp.FlowID, "unable to fetch workflow step", err); err != nil {
 			return err
 		}
 		return errors.Errorf("unable to fetch workflow steps for workflow %s: %v", inp.FlowID, err)
@@ -212,6 +299,7 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 		if step.ID == inp.StepID {
 			// if the step was retried it'll start from the new retry step
 			// if the step was not retried, it'll start from next step
+			// if apply step was retried, it'll start from retrying the plan step then apply step
 			workflowStartStepNumber = i + 1
 			break
 		}
@@ -229,13 +317,13 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 		}
 	}
 
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: inp.FlowID,
-		Status: app.CompositeStatus{
-			Status:                 app.StatusInProgress,
-			StatusHumanDescription: "successfully generated all steps",
-		},
-	}); err != nil {
+	if err := c.updateFlowStatus(
+		ctx,
+		inp.FlowID,
+		app.StatusInProgress,
+		"successfully generated all steps",
+		nil,
+	); err != nil {
 		return err
 	}
 
@@ -246,31 +334,26 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 
 	l.Debug("executing steps for workflow")
 	if err := c.executeFlowSteps(ctx, req, flw, workflowStartStepNumber); err != nil {
-		status := app.CompositeStatus{
-			Status:                 app.StatusError,
-			StatusHumanDescription: "error while executing steps",
-			Metadata: map[string]any{
-				"error_message": err.Error(),
-			},
-		}
-
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID:     inp.FlowID,
-			Status: status,
-		}); err != nil {
+		if err := c.updateFlowStatus(
+			ctx,
+			inp.FlowID,
+			app.StatusError,
+			"error while executing steps",
+			map[string]any{"error_message": err.Error()},
+		); err != nil {
 			return err
 		}
 
 		return errors.Wrap(err, "unable to execute workflow steps")
 	}
 
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: inp.FlowID,
-		Status: app.CompositeStatus{
-			Status:                 app.StatusSuccess,
-			StatusHumanDescription: "successfully executed workflow",
-		},
-	}); err != nil {
+	if err := c.updateFlowStatus(
+		ctx,
+		inp.FlowID,
+		app.StatusSuccess,
+		"successfully executed workflow",
+		nil,
+	); err != nil {
 		return err
 	}
 

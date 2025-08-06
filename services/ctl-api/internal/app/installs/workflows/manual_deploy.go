@@ -17,9 +17,12 @@ import (
 
 func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
+	sg := newStepGroup()
 
 	steps := make([]*app.WorkflowStep, 0)
-	step, err := installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
+
+	sg.nextGroup() // runner health
+	step, err := sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	}, flw.PlanOnly)
 	if err != nil {
@@ -48,8 +51,14 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component")
 	}
-
-	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePreDeployComponent)
+	preDeploySteps, err := getComponentLifecycleActionsSteps(
+		ctx,
+		flw,
+		comp,
+		installID,
+		app.ActionWorkflowTriggerTypePreDeployComponent,
+		sg,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +66,8 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 
 	// sync image
 	if comp.Type.IsImage() {
-		deployStep, err := installSignalStep(ctx, installID, "sync "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+		sg.nextGroup() // component sync
+		deployStep, err := sg.installSignalStep(ctx, installID, "sync "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 			Type: signals.OperationExecuteDeployComponentSyncImage,
 			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 				DeployID:    generics.FromPtrStr(installDeployID),
@@ -70,7 +80,8 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 
 		steps = append(steps, deployStep)
 	} else {
-		planStep, err := installSignalStep(ctx, installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+		sg.nextGroup() // component sync + plan + apply
+		planStep, err := sg.installSignalStep(ctx, installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 			Type: signals.OperationExecuteDeployComponentSyncAndPlan,
 			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 				DeployID:    generics.FromPtrStr(installDeployID),
@@ -80,7 +91,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create image sync")
 		}
-		applyPlanStep, err := installSignalStep(ctx, installID, "apply "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+		applyPlanStep, err := sg.installSignalStep(ctx, installID, "apply "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 			Type: signals.OperationExecuteDeployComponentApplyPlan,
 			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 				DeployID:    generics.FromPtrStr(installDeployID),
@@ -94,7 +105,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		steps = append(steps, planStep, applyPlanStep)
 	}
 
-	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePostDeployComponent)
+	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePostDeployComponent, sg)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +121,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	}
 
 	dependencyCompIDs := generics.SliceAfterValue(componentIDs, comp.ID)
-	dependencyDeploySteps, err := getComponentDeploySteps(ctx, installID, flw, dependencyCompIDs)
+	dependencyDeploySteps, err := getComponentDeploySteps(ctx, installID, flw, dependencyCompIDs, sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component deploy steps")
 	}
