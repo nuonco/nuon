@@ -97,6 +97,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 			Metadata:      step.Metadata,
 			Retryable:     step.Retryable,
 			Skippable:     step.Skippable,
+			GroupIdx:      step.GroupIdx,
 		})
 		if err != nil {
 			return errors.Wrap(err, "unable to create steps")

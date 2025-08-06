@@ -22,8 +22,10 @@ func (w *Workflows) RerunFlow(ctx workflow.Context, sreq signals.RequestSignal) 
 	}
 
 	return fc.Rerun(ctx, sreq.EventLoopRequest, flow.RerunInput{
-		FlowID:    sreq.FlowID,
-		StepID:    sreq.RerunConfiguration.StepID,
-		Operation: flow.RerunOperation(sreq.RerunConfiguration.StepOperation),
+		FlowID:       sreq.FlowID,
+		StepID:       sreq.RerunConfiguration.StepID,
+		StalePlan:    sreq.RerunConfiguration.StalePlan,
+		RePlanStepID: sreq.RerunConfiguration.RePlanStepID,
+		Operation:    flow.RerunOperation(sreq.RerunConfiguration.StepOperation),
 	})
 }
