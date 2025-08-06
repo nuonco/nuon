@@ -20,6 +20,17 @@ func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
+
+	if c.AWSAccount == nil && c.AzureAccount == nil {
+		return fmt.Errorf("either AWSAccount or AzureAccount must be provided")
+	}
+
+	if c.AWSAccount != nil {
+		if c.AWSAccount.Region == "" {
+			return fmt.Errorf("AWSAccount region is required")
+		}
+	}
+
 	return nil
 }
 
