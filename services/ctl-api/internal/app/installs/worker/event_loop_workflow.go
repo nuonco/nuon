@@ -27,7 +27,7 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 		// NOTE(jm): these should be cross account to the runners namespace
 		signals.OperationAwaitRunnerHealthy: w.AwaitRunnerHealthy,
 		signals.OperationProvisionRunner:    AwaitProvisionRunner,
-		signals.OperationReprovisionRunner:  AwaitProvisionRunner,
+		signals.OperationReprovisionRunner:  AwaitReprovisionRunner,
 
 		// NOTE(jm): these should be child loops
 		signals.OperationProvisionDNS:   AwaitProvisionDNS,

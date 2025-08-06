@@ -38,12 +38,10 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 
 	// If we are not using one of the new independent runner types, stop here.
 	// To support backwards compatibility, we do not return an error, but we cannot create a stack.
-	switch cfg.RunnerConfig.Type {
-	case app.AppRunnerTypeAWS:
-		break
-	case app.AppRunnerTypeAzure:
-		break
-	default:
+	if !generics.SliceContains(cfg.RunnerConfig.Type, []app.AppRunnerType{
+		app.AppRunnerTypeAWS,
+		app.AppRunnerTypeAzure,
+	}) {
 		return nil
 	}
 

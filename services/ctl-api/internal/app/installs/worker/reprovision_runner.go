@@ -5,8 +5,6 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/pkg/errors"
-
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
@@ -28,14 +26,6 @@ func (w *Workflows) ReprovisionRunner(ctx workflow.Context, sreq signals.Request
 	w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
 		Type: runnersignals.OperationReprovisionServiceAccount,
 	})
-
-	// NOTE(jm): this does not send a signal at the moment
-	return nil
-	if err := w.evClient.SendAndWait(ctx, install.RunnerID, &runnersignals.Signal{
-		Type: runnersignals.OperationReprovisionServiceAccount,
-	}); err != nil {
-		return errors.Wrap(err, "unable to provision service account")
-	}
 
 	return nil
 }
