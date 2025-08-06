@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
@@ -20,6 +21,15 @@ type UpdateRunnerSettingsRequest struct {
 
 	K8sServiceAccountName string `json:"org_k8s_service_account_name"`
 	AWSIAMRoleARN         string `json:"org_awsiam_role_arn"`
+
+	AWSMaxInstanceLifetime int `json:"aws_max_instance_lifetime" default:"604800" validate:"min=86400,max=31536000"`
+}
+
+func (c *UpdateRunnerSettingsRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
 }
 
 // @ID						UpdateRunnerSettings
@@ -54,6 +64,11 @@ func (s *service) UpdateRunnerSettings(ctx *gin.Context) {
 		return
 	}
 
+	if err := req.Validate(validator.New()); err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	settings, err := s.updateRunnerSettings(ctx, runnerID, org.ID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update settings: %w", err))
@@ -79,6 +94,7 @@ func (s *service) updateRunnerSettings(ctx context.Context, runnerID, orgID stri
 		RunnerAPIURL:             req.RunnerAPIURL,
 		OrgK8sServiceAccountName: req.K8sServiceAccountName,
 		OrgAWSIAMRoleARN:         req.AWSIAMRoleARN,
+		AWSMaxInstanceLifetime:   req.AWSMaxInstanceLifetime,
 	}
 	obj := app.RunnerGroupSettings{
 		RunnerGroupID: runner.RunnerGroupID,
