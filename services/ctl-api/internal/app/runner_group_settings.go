@@ -68,6 +68,7 @@ type RunnerGroupSettings struct {
 
 	// aws runner specifics runner-v2
 	AWSInstanceType            string        `json:"aws_instance_type,omitzero" temporaljson:"aws_instance_type,omitzero,omitempty"`
+	AWSMaxInstanceLifetime     int           `json:"aws_max_instance_lifetime" gorm:"not null;default:604800;check:aws_max_instance_lifetime >= 86400 AND aws_max_instance_lifetime <= 31536000" swaggertype:"primitive,integer" temporaljson:"aws_max_instance_lifetime"` // Default: 7 days
 	AWSCloudformationStackType string        `json:"aws_cloudformation_stack_type,omitzero" temporaljson:"aws_cloudformation_stack_type,omitzero,omitempty"`
 	AWSTags                    pgtype.Hstore `json:"aws_tags,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"aws_tags,omitzero,omitempty"`
 	LocalAWSIAMRoleARN         string        `json:"local_aws_iam_role_arn,omitzero" temporaljson:"local_awsiam_role_arn,omitzero,omitempty"`
