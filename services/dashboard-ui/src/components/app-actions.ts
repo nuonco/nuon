@@ -87,29 +87,29 @@ export async function createAppInstall({
     }
   }
 
-  const res = fetch(`${API_URL}/v1/apps/${appId}/installs`, {
+  const res = await fetch(`${API_URL}/v1/apps/${appId}/installs`, {
     ...(await getFetchOpts(orgId)),
     body: JSON.stringify(data),
     method: 'POST',
   })
     .then(async (r) => {
-      if (!r.ok) {
-        throw new Error('Unable to create inputs')
-      } else {
-        return r
-      }
+      return r
     })
     .catch((err) => {
+      console.error(err)
       throw new Error(err)
     })
 
-  const response = await res
-  const workflowId = response.headers.get('x-nuon-install-workflow-id')
-  const install = await response.json()
+  const response = await res.json()
+  if (response?.error) {
+    return { error: response }
+  } else {
+    const workflowId = res.headers.get('x-nuon-install-workflow-id')
 
-  return {
-    installId: install?.id,
-    workflowId,
+    return {
+      installId: response?.id,
+      workflowId,
+    }
   }
 }
 
