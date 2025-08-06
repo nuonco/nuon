@@ -60,3 +60,21 @@ func (i *Install) Validate() error {
 
 	return nil
 }
+
+func (i *Install) ParseInstall(ins *models.AppInstall, inputs *models.AppInstallInputs) {
+	if ins != nil {
+		i.Name = ins.Name
+		if ins.AwsAccount != nil {
+			i.AWSAccount = &AWSAccount{
+				Region:     ins.AwsAccount.Region,
+				IAMRoleARN: ins.AwsAccount.IamRoleArn,
+			}
+		}
+		if ins.InstallConfig != nil {
+			i.ApprovalOption = InstallApprovalOption(ins.InstallConfig.ApprovalOption)
+		}
+	}
+	if inputs != nil {
+		i.Inputs = inputs.Values
+	}
+}

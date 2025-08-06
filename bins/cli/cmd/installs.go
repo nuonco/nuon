@@ -58,6 +58,19 @@ func (c *cli) installsCmd() *cobra.Command {
 	getCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(getCmd)
 
+	generateConfigCmd := &cobra.Command{
+		Use:   "generate-config",
+		Short: "Generate config for an existing install",
+		Long:  "Generate config file for an existing install, to be used with a nuon app config",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.GenerateConfig(cmd.Context(), id)
+		}),
+	}
+	generateConfigCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to import")
+	generateConfigCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(generateConfigCmd)
+
 	createCmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create an install",
