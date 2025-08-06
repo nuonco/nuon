@@ -17,6 +17,8 @@ type AppRunnerConfig struct {
 
 	HelmDriver string `mapstructure:"helm_driver,omitempty"`
 
+	InitScriptURL string `mapstructure:"init_script_url"`
+
 	// Deprecated
 	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var"`
 }
