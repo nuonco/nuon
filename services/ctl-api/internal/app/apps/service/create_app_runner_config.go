@@ -13,9 +13,10 @@ import (
 )
 
 type CreateAppRunnerConfigRequest struct {
-	Type       app.AppRunnerType                 `json:"type" validate:"required"`
-	EnvVars    map[string]*string                `json:"env_vars"`
-	HelmDriver app.AppRunnerConfigHelmDriverType `json:"helm_driver"`
+	Type          app.AppRunnerType                 `json:"type" validate:"required"`
+	EnvVars       map[string]*string                `json:"env_vars"`
+	HelmDriver    app.AppRunnerConfigHelmDriverType `json:"helm_driver"`
+	InitScriptURL string                            `json:"init_script_url"`
 
 	AppConfigID string `json:"app_config_id"`
 }
@@ -68,11 +69,12 @@ func (s *service) CreateAppRunnerConfig(ctx *gin.Context) {
 
 func (s *service) createAppRunnerConfig(ctx context.Context, appID string, req *CreateAppRunnerConfigRequest) (*app.AppRunnerConfig, error) {
 	appRunnerConfig := app.AppRunnerConfig{
-		AppConfigID: req.AppConfigID,
-		AppID:       appID,
-		HelmDriver:  req.HelmDriver,
-		EnvVars:     pgtype.Hstore(req.EnvVars),
-		Type:        req.Type,
+		AppConfigID:   req.AppConfigID,
+		AppID:         appID,
+		HelmDriver:    req.HelmDriver,
+		EnvVars:       pgtype.Hstore(req.EnvVars),
+		InitScriptURL: req.InitScriptURL,
+		Type:          req.Type,
 	}
 	res := s.db.WithContext(ctx).
 		Create(&appRunnerConfig)

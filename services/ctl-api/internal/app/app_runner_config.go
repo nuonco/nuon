@@ -74,6 +74,9 @@ type AppRunnerConfig struct {
 	// fields set via after query
 
 	CloudPlatform CloudPlatform `json:"cloud_platform,omitzero" gorm:"-" temporaljson:"cloud_platform,omitzero,omitempty"`
+
+	// takes a URL to a bash script ⤵  which will be `curl | bash`-ed on the VM. usually via user-data or equivalent.
+	InitScriptURL string `json:"init_script,omitzero" gorm:"default null" temporaljson:"init_script,omitzero,omitempty" features:"get,omitzero"`
 }
 
 func (a *AppRunnerConfig) Indexes(db *gorm.DB) []migrations.Index {
@@ -111,5 +114,17 @@ func (a *AppRunnerConfig) AfterQuery(tx *gorm.DB) error {
 	default:
 		a.CloudPlatform = CloudPlatformUnknown
 	}
+
+	// configured in the stack generation
+	// // NOTE(fd): we set default init scripts here
+	// // TODO(fd): use config values
+	// if a.InitScript == "" {
+	// 	switch a.CloudPlatform {
+	// 	case CloudPlatformAWS:
+	// 		a.InitScript = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh"
+	// 	case CloudPlatformAzure:
+	// 		a.InitScript = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/azure/init.sh"
+	// 	}
+	// }
 	return nil
 }
