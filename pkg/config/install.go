@@ -25,17 +25,22 @@ func (o InstallApprovalOption) APIType() models.AppInstallApprovalOption {
 	}
 }
 
+type AWSAccount struct {
+	Region     string `mapstructure:"region,omitempty"`
+	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty"`
+}
+
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
 	Name           string                `mapstructure:"name" jsonschema:"required"`
-	AWSRegion      string                `mapstructure:"aws_region,omitempty"`
+	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty"`
 	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty"`
 	Inputs         map[string]string     `mapstructure:"inputs,omitempty"`
 }
 
 func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "name", "name of the install")
-	addDescription(schema, "aws_region", "AWS region to use for the install, if not set, the default region will be used")
+	addDescription(schema, "aws_account", "AWS account related configuration")
 	addDescription(schema, "approval_option", "approval option for the install, can be 'approve_all' or 'prompt'")
 	addDescription(schema, "inputs", "list of inputs")
 }
