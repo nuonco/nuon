@@ -16,6 +16,11 @@ import (
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
+const (
+	DefaultAzureRunnerInitScript string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh#azure"
+	DefaultAWSRunnerInitScript   string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh#default"
+)
+
 // @temporal-gen workflow
 // @execution-timeout 5m
 // @task-timeout 1m
@@ -127,6 +132,16 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	}
 	switch cfg.RunnerConfig.Type {
 	case app.AppRunnerTypeAWS:
+		// NOTE(fd): we set the runner init script here dynamically in order to have it readily available on the input
+		// the motivation is that the logic for the "decision" on what the runner init script should be belongs firmly
+		// in this workflow, NOT in the templating code
+		if cfg.RunnerConfig.InitScriptURL != "" {
+			inp.RunnerInitScriptURL = cfg.RunnerConfig.InitScriptURL
+		} else {
+			inp.RunnerInitScriptURL = DefaultAWSRunnerInitScript
+		}
+
+		// render the template
 		tmpl, awsChecksum, err := w.templates.Template(inp)
 		if err != nil {
 			return errors.Wrap(err, "unable to create cloudformation template")
@@ -138,6 +153,12 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 			return errors.Wrap(err, "unable to get cloudformation json")
 		}
 	case app.AppRunnerTypeAzure:
+		if cfg.RunnerConfig.InitScriptURL != "" {
+			inp.RunnerInitScriptURL = cfg.RunnerConfig.InitScriptURL
+		} else {
+			inp.RunnerInitScriptURL = DefaultAzureRunnerInitScript
+		}
+
 		tmplByts, checksum, err = bicep.Render(inp)
 		if err != nil {
 			return errors.Wrap(err, "unable to create bicep template")

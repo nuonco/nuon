@@ -1,6 +1,8 @@
 package cloudformation
 
 import (
+	"fmt"
+
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/ec2"
 	"github.com/awslabs/goformation/v7/cloudformation/tags"
@@ -46,9 +48,10 @@ func (a *Templates) getRunnerLaunchTemplateData(inp *TemplateInput, t tagBuilder
 				Tags:         t.apply(nil, "runner-eni"),
 			},
 		},
-		// in the beginning, there was a curlbash
-		UserData: cloudformation.Base64Ptr(`#!/bin/bash
-curl https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh | bash
-`),
+		// NOTE(fd): this script is loaded from the RunnerConfig.InitScript field.
+		// this field is a url or a bash script. it is retrieved in the activity that generates the stack.
+		UserData: cloudformation.Base64Ptr(fmt.Sprintf(`#!/bin/bash
+curl %s | bash
+`, inp.RunnerInitScriptURL)),
 	}
 }
