@@ -9,6 +9,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/powertoolsdev/mono/pkg/azure/credentials"
+	"go.uber.org/zap"
 )
 
 const (
@@ -20,9 +21,9 @@ const (
 //
 // NOTE: we do this, instead of using the ACR repository client to simplify our dependencies, however, at some point we
 // plan on moving this into a package, like we have with `pkg/aws`.
-func GetRepositoryToken(ctx context.Context, cfg *credentials.Config, acrService string) (string, error) {
+func GetRepositoryToken(ctx context.Context, cfg *credentials.Config, acrService string, logger *zap.Logger) (string, error) {
 	// get a credential
-	credential, err := credentials.Fetch(ctx)
+	credential, err := credentials.Fetch(ctx, logger)
 	if err != nil {
 		return "", fmt.Errorf("unable to get credential: %w", err)
 	}
