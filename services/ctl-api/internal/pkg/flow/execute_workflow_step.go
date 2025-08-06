@@ -173,19 +173,22 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 }
 
 func (c *WorkflowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
-
 	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowStep(ctx, activities.CreateFlowStepRequest{
-		FlowID:        flw.ID,
-		OwnerID:       flw.OwnerID,
-		OwnerType:     flw.OwnerType,
-		Name:          getCloneStepName(step.Name),
-		Signal:        step.Signal,
-		Status:        step.Status,
-		Idx:           step.Idx,
-		ExecutionType: step.ExecutionType,
-		Metadata:      step.Metadata,
-		Retryable:     step.Retryable,
-		Skippable:     step.Skippable,
+		FlowID:         flw.ID,
+		OwnerID:        flw.OwnerID,
+		OwnerType:      flw.OwnerType,
+		Name:           getCloneStepName(step.Name),
+		Signal:         step.Signal,
+		Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
+		Idx:            step.Idx,
+		ExecutionType:  step.ExecutionType,
+		Metadata:       step.Metadata,
+		Retryable:      step.Retryable,
+		Skippable:      step.Skippable,
+		GroupIdx:       step.GroupIdx,
+		GroupRetryIdx:  step.GroupRetryIdx,
+		StepTargetType: step.StepTargetType,
+		StepTargetID:   step.StepTargetID,
 	})
 	return err
 }
@@ -206,4 +209,18 @@ func getCloneStepName(name string) string {
 
 	// No retry suffix found, or unable to parse
 	return fmt.Sprintf("%s (retry 1)", name)
+}
+
+// removeRetryFromStepName removes the retry suffix from a step name if it exists.
+// this is quick regex based approach to skip unwanted db call
+func removeRetryFromStepName(name string) string {
+	re := regexp.MustCompile(`^(.*)\(retry \d+\)$`)
+	matches := re.FindStringSubmatch(name)
+
+	if len(matches) == 2 {
+		return strings.TrimSpace(matches[1])
+	}
+
+	// No retry suffix found
+	return name
 }

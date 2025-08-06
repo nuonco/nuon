@@ -16,7 +16,7 @@ import (
 )
 
 // createActionWorkflowStep creates a workflow step for executing an action workflow
-func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.InstallActionWorkflow, triggeredByID string, runEnvVars map[string]string) (*app.WorkflowStep, error) {
+func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.InstallActionWorkflow, triggeredByID string, runEnvVars map[string]string, sg *stepGroup) (*app.WorkflowStep, error) {
 	sig := &signals.Signal{
 		Type: signals.OperationExecuteActionWorkflow,
 		InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
@@ -29,12 +29,14 @@ func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.I
 	}
 
 	name := fmt.Sprintf("%s action workflow run", string(app.ActionWorkflowTriggerTypeManual))
-	return installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig, false)
+	return sg.installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig, false)
 }
 
 func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	installActionWorkflowID, ok := flw.Metadata["install_action_workflow_id"]
+	sg := newStepGroup()
+
 	if !ok {
 		return nil, errors.New("install action workflow is not set on the install workflow for a manual deploy")
 	}
@@ -62,7 +64,8 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 
 	runEnvVars["TRIGGER_TYPE"] = string(app.ActionWorkflowTriggerTypeManual)
 
-	step, err := createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars)
+	sg.nextGroup()
+	step, err := createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars, sg)
 	if err != nil {
 		return nil, err
 	}

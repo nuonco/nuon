@@ -79,7 +79,7 @@ func (s *service) getWorkflowStep(ctx *gin.Context, workflowID, stepID string) (
 		Preload("Approval", func(db *gorm.DB) *gorm.DB {
 			return db.Omit("contents")
 		}).
-    Preload("Approval.Response").
+		Preload("Approval.Response").
 		Preload("PolicyValidation").
 		First(&installWorkflowStep)
 	if res.Error != nil {
