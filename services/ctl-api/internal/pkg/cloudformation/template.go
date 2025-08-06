@@ -19,9 +19,10 @@ type TemplateInput struct {
 	AppCfg                     *app.AppConfig           `validate:"required"`
 	PhonehomeScript            string                   `validate:"required"`
 
-	Runner   *app.Runner              `validate:"required"`
-	Settings *app.RunnerGroupSettings `validate:"required"`
-	APIToken string                   `validate:"required"`
+	Runner              *app.Runner              `validate:"required"`
+	Settings            *app.RunnerGroupSettings `validate:"required"`
+	APIToken            string                   `validate:"required"`
+	RunnerInitScriptURL string                   `validate:"required"`
 }
 
 func (t *Templates) Template(inputs *TemplateInput) (*cloudformation.Template, string, error) {
