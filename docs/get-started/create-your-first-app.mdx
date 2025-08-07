@@ -53,7 +53,7 @@ Inputs are customer-specific configs that are entered when you install the App i
 In the App root directory, create a file named `inputs.toml` and add the following:
 
 ```toml inputs.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+#:schema https://api.nuon.co/v1/general/config-schema?type=inputs
 [[group]]
 name         = "dns"
 description  = "DNS Configrations"
@@ -147,7 +147,7 @@ In this example, we will create a Component to install Traefik's [Whoami](https:
 In the App root directory, create directory called `components` and within it, a file named `whoami.toml` and add the following:
 
 ```toml whoami.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=helm
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
 name           = "whoami"
 type           = "helm_chart"
 chart_name     = "whoami"
@@ -168,7 +168,7 @@ You will also need ALB and Certificate components to expose the Whoami service t
 In the `components` directory, create a file named `alb.toml` and add the following:
 
 ```toml alb.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=helm
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
 
 name         = "application_load_balancer"
 type         = "helm_chart"
@@ -193,7 +193,7 @@ install_name       = "{{.nuon.install.id}}"
 In the components directory, create a file named `certificate.toml` and add the following:
 
 ```toml certificate.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
+#:schema https://api.nuon.co/v1/general/config-schema?type=terraform
 
 name              = "certificate"
 type              = "terraform_module"
@@ -219,7 +219,7 @@ domain_name = "*.{{ .nuon.install.sandbox.outputs.nuon_dns.public_domain.name }}
 In the App root directory, create directory called `actions` and within it, a file named `simple_action.toml` and add the following to create a random secret in the `whoami` namespace:
 
 ```toml simple_action.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=action
+#:schema https://api.nuon.co/v1/general/config-schema?type=action
 
 name    = "simple_demonstration"
 timeout = "1m"

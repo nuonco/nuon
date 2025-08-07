@@ -39,7 +39,7 @@ As your config grows, keeping everything in a single file can become
 unmanagable. Create `components` and `actions` directories in your project root and individual files for each component. e.g., `helm_deploy.toml`.
 
 ```toml helm_deploy.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=helm
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
 name           = "whoami"
 type           = "helm_chart"
 chart_name     = "whoami"
@@ -69,7 +69,7 @@ Define [inputs](/concepts/app-inputs) for an app using `inputs.toml` file.
 To configure a sensitive `api_key` and `vpc_id` input:
 
 ```toml inputs.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+#:schema https://api.nuon.co/v1/general/config-schema?type=inputs
 [inputs]
 name = "vpc_id"
 description = "vpc_id to install application into"
@@ -98,7 +98,7 @@ Define the [sandbox](/concepts/sandboxes) for an app using a `[sandbox]` block.
 To define an `aws-eks-sandbox` Sandbox:
 
 ```toml sandbox.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=sandbox
+#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
 terraform_version = "1.11.3"
 
 [public_repo]
@@ -139,7 +139,7 @@ To define a [terraform module component](/guides/terraform-components) use the
 To configure a terraform component using a connected repo:
 
 ```toml my-tf-component.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
+#:schema https://api.nuon.co/v1/general/config-schema?type=terraform
 name = "terraform"
 type = "terraform_module"
 terraform_version = "1.11.3"
@@ -165,7 +165,7 @@ To define a [helm chart component](/guides/helm-chart-components) use the
 To configure a helm chart in a connected repo:
 
 ```toml helm.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=helm
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
 name = "helm"
 type = "helm_chart"
 chart_name = "chart-name"
