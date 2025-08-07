@@ -1,0 +1,38 @@
+---
+title: 014 - Install Config Files
+description: [Description]
+---
+_August 7th, 2025_
+
+<div className="badge badge--primary">v0.19.614</div>
+
+## Install Config Files
+
+You can now manage installs via source control for apps managed by `nuon apps sync`. Create one config file per-install
+in a folder named `installs/` under your app's config. Now syncing the app will also create/update the corresponding
+installs.
+
+![Install Config File](assets/014-install-config-file.png)
+
+## Generate an Install Config File
+
+To make it even easier to manage existing installs using CI, we have added a new command `nuon installs generate-config` to
+import an existing install and generate a config file for it. After this generated config file is placed in the `installs` folder
+of your app's config, it can be tweaked to make updates to the install.
+
+![Install Generate Config File](assets/014-install-generate-config.png)
+
+## Workflow Step Groups
+
+Workflow steps are now grouped, and some retries will retry an entire group when required. For instance, when retrying a 
+Terraform apply step, the plan can not be reused, so a new group is created and the plan is retried (and re-approved) 
+first.
+
+![Workflow Step Groups](assets/2025-08-06-16-46-05.png)
+
+## Bug Fixes
+
+* Fixes an issue where you could not cancel an install reprovision.
+* Runner instances, by default now automatically terminate after 1 day.
+* Fixes an issue where running a `plan-only` action did not update it's status correctly.
+* Fixes an issue where an install showed a "deprovisioned" status on first setup.
