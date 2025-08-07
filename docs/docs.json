@@ -31,6 +31,7 @@
         "tab": "Changelog",
         "pages": [
           "updates/updates",
+          "updates/014-install-config-files",
           "updates/013-kubernetes-manifest-component",
           "updates/012-approval-diffs-plan-only",
           "updates/011-approval-updates",
