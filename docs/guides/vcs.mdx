@@ -71,7 +71,7 @@ If the connection was successful you should see a list on connected GitHub accou
 In a Component configuration file, you must use the `[connected_repo]` table syntax to reference a connected repository. For example:
 
 ```toml components/my-component.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=connected-repo
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
 name = "my-private-component"
 type = "helm_chart"
 chart_name = "my-private-chart"
