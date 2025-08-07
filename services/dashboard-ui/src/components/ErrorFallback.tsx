@@ -1,11 +1,15 @@
 'use client'
-import type { FC } from 'react'
+import { useEffect, type FC } from 'react'
 import type { FallbackProps } from 'react-error-boundary'
 import { Warning } from '@phosphor-icons/react'
 import { Link } from '@/components/Link'
 import { Text } from '@/components/Typography'
 
 export const ErrorFallback: FC<FallbackProps> = ({ error }) => {
+  useEffect(() => {
+    console.error('Error occured: ', error)
+  }, [error])
+
   return (
     <div className="flex flex-col gap-2 lg:max-w-xl">
       <Text className="text-red-800 dark:text-red-500 !gap-2" variant="med-14">

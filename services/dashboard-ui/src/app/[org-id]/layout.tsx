@@ -1,10 +1,15 @@
 // @ts-nocheck
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { Layout, OrgProvider } from '@/components'
 import { getAPIVersion, getOrg, getOrgs } from '@/lib'
 import { VERSION } from '@/utils'
 
 export default async function OrgLayout({ children, params }) {
+  const cookieStore = await cookies()
+  const isSidebarOpen = Boolean(
+    cookieStore.get('is-sidebar-open')?.value === 'true'
+  )
   const { ['org-id']: orgId } = await params
   const [org, orgs, apiVersion] = await Promise.all([
     getOrg({ orgId }).catch((error) => {
@@ -27,6 +32,7 @@ export default async function OrgLayout({ children, params }) {
   return (
     <OrgProvider initOrg={org} shouldPoll>
       <Layout
+        isSidebarOpen={isSidebarOpen}
         orgs={orgs}
         versions={{
           api: apiVersion,
