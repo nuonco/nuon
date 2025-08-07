@@ -2,7 +2,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import React, { useState, type FC } from 'react'
+import React, { useEffect, useState, type FC } from 'react'
 import { Loading } from '@/components/Loading'
 import CodeEditor from '@uiw/react-textarea-code-editor'
 const JsonViewer = dynamic(
@@ -64,20 +64,26 @@ export const CodeViewer: FC<ICodeViewer> = ({
   )
 }
 
-export const JsonView = ({ data, ...props }) => (
-  <>
-    <div className="border rounded-md overflow-auto">
-      <JsonViewer
-        data={data}
-        {...props}
-        theme={
-          window &&
+export const JsonView = ({ data, ...props }) => {
+  const [theme, setTheme] = useState('google-dark')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setTheme(
+        window &&
           window?.matchMedia &&
           window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? 'google-dark'
-            : 'google-light'
-        }
-      />
-    </div>
-  </>
-)
+          ? 'google-dark'
+          : 'google-light'
+      )
+    }
+  }, [])
+
+  return (
+    <>
+      <div className="border rounded-md overflow-auto">
+        <JsonViewer data={data} {...props} theme={theme} />
+      </div>
+    </>
+  )
+}
