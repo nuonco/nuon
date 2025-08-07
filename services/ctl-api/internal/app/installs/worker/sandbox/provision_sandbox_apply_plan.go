@@ -46,6 +46,6 @@ func (w *Workflows) ProvisionSandboxApplyPlan(ctx workflow.Context, sreq signals
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully deprovisioned")
+	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully provisioned")
 	return nil
 }
