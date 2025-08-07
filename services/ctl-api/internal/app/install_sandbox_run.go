@@ -116,8 +116,13 @@ func (i *InstallSandboxRun) AfterQuery(tx *gorm.DB) error {
 	i.WorkflowID = i.InstallWorkflowID
 	i.Workflow = i.InstallWorkflow
 
+	// NOTE(fd): this logic presents the possibility we may operate on "stale" outputs internally if a sandbox is planned
+	// but not applied. this is mostly fine since the outputs are simply refreshed. however, this may be problematic IFF
+	// an output type has changed AND the apply doesn't run AND a downstream method/workflow/activity depends on changes in
+	// the outputs.
 	outputs := make(map[string]any, 0)
-	for _, rj := range i.RunnerJobs {
+	for j := len(i.RunnerJobs) - 1; j >= 0; j-- {
+		rj := i.RunnerJobs[j]
 		outputs = generics.MergeMaps(outputs, rj.ParsedOutputs)
 	}
 	i.Outputs = outputs
