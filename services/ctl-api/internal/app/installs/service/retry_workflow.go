@@ -119,11 +119,11 @@ func (s *service) RetryOwnerWorkflow(ctx *gin.Context) {
 			}
 		case plugins.TableName(s.db, app.InstallSandboxRun{}):
 			switch step.Signal.Type {
-			case string(signals.OperationProvisionSandboxPlan):
+			case string(signals.OperationProvisionSandboxApplyPlan):
 				planStepSignal = []eventloop.SignalType{signals.OperationProvisionSandboxPlan}
 			case string(signals.OperationReprovisionSandboxApplyPlan):
 				planStepSignal = []eventloop.SignalType{signals.OperationReprovisionSandboxPlan}
-			case string(signals.OperationDeprovisionSandboxPlan):
+			case string(signals.OperationDeprovisionSandboxApplyPlan):
 				planStepSignal = []eventloop.SignalType{signals.OperationDeprovisionSandboxPlan}
 			}
 		default:
