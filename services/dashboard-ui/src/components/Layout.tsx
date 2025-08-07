@@ -2,13 +2,14 @@
 
 import classNames from 'classnames'
 import { useSearchParams } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
+import React, { type FC, useState } from 'react'
 import {
   ArrowLineLeft,
   ArrowLineRight,
   List,
   X,
 } from '@phosphor-icons/react/dist/ssr'
+import { setDashboardSidebarCookie } from '@/components/actions'
 import { AdminModal } from '@/components/AdminModal'
 import { Button } from '@/components/Button'
 import { Logo } from '@/components/Logo'
@@ -83,16 +84,11 @@ export const OldLayout: FC<ILayout> = ({ children, orgs, versions }) => {
 
 export const Layout: FC<{
   children: React.ReactNode
+  isSidebarOpen: boolean
   orgs: Array<TOrg>
   versions: TNuonVersions
-}> = ({ children, orgs, versions }) => {
-  const [isOpen, setIsOpen] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('isOpen') === 'true' || false
-    }
-
-    return false
-  })
+}> = ({ children, isSidebarOpen, orgs, versions }) => {
+  const [isOpen, setIsOpen] = useState(isSidebarOpen)
   const searchParams = useSearchParams()
 
   return (
@@ -113,7 +109,7 @@ export const Layout: FC<{
               variant="ghost"
               onClick={() => {
                 setIsOpen(!isOpen)
-                localStorage.setItem('isOpen', isOpen ? 'false' : 'true')
+                setDashboardSidebarCookie(!isOpen)
               }}
             >
               {isOpen ? (
