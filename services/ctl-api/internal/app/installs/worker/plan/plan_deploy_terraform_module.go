@@ -93,11 +93,12 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 		)
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
+
 	var clusterInfo *kube.ClusterInfo
 	if !org.SandboxMode {
 		clusterInfo, err = p.getKubeClusterInfo(ctx, stack, state)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to get cluster information")
+			l.Warn("unable to get cluster information, this usually means this was not a kubernetes application")
 		}
 	}
 

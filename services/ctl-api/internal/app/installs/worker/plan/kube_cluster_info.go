@@ -51,9 +51,6 @@ func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallSta
 		}
 	}
 
-	if stack.InstallStackOutputs.AWSStackOutputs != nil {
-	}
-
 	stateData, err := state.AsMap()
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get state data")
