@@ -30,7 +30,7 @@ You can configure Sandboxes to use either a public repo (using a `public_repo` b
 repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
 
 ```toml sandbox.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=sandbox
+#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
 terraform_version = "1.11.3"
 
 [public_repo]
@@ -136,7 +136,7 @@ To use a custom Sandbox, simply update your App Config's `sandbox.toml` to point
 
 
 ```toml sandbox.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=sandbox
+#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
 terraform_version = "1.11.3"
 
 [public_repo]
