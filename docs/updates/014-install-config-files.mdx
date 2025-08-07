@@ -20,7 +20,18 @@ To make it even easier to manage existing installs using CI, we have added a new
 import an existing install and generate a config file for it. After this generated config file is placed in the `installs` folder
 of your app's config, it can be tweaked to make updates to the install.
 
-![Install Generate Config File](assets/014-install-generate-config.png)
+```txt
+nb installs generate-config -i config_demo | tee installs/config_demo.toml
+name = "config_demo"
+
+[aws_account]
+  region = "us-east-1"
+
+[inputs]
+  sub_domain = "whoami"
+  test = "required-value"
+  testdefault = "default-value"
+```
 
 ## Workflow Step Groups
 
