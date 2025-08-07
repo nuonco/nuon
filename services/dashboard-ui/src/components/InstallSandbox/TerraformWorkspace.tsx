@@ -149,7 +149,7 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
             <BackendModal
               orgId={orgId}
               workspace={workspace}
-              token={(tokenRes as any)?.result?.accessToken}
+              token={(tokenRes as any)?.result?.token}
             />
           </div>
         }
