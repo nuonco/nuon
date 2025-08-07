@@ -50,6 +50,10 @@ func (i *Install) parse() error {
 		return nil
 	}
 
+	if i.Inputs == nil {
+		i.Inputs = make(map[string]string)
+	}
+
 	return nil
 }
 
