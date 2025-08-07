@@ -21,6 +21,7 @@ func LookupSchemaType(typ string) (*jsonschema.Schema, error) {
 		"container-image":     ContainerImageConfigSchema,
 		"permissions":         PermissionsConfigSchema,
 		"policy":              PolicyConfigSchema,
+		"secrets":             SecretsConfigSchema,
 		"secret":              SecretConfigSchema,
 		"metadata":            MetadataConfigSchema,
 		"action":              ActionConfigSchema,
@@ -160,6 +161,15 @@ func PolicyConfigSchema() (*jsonschema.Schema, error) {
 	}
 
 	return r.Reflect(config.AppPolicy{}), nil
+}
+
+func SecretsConfigSchema() (*jsonschema.Schema, error) {
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.SecretsConfig{}), nil
 }
 
 func SecretConfigSchema() (*jsonschema.Schema, error) {
