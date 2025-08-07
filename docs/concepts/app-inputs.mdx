@@ -12,7 +12,7 @@ Inputs are configured in a `inputs.toml` file inside the root of your App Config
 Add Inputs to your App using the following configuration block
 
 ```toml inputs.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+#:schema https://api.nuon.co/v1/general/config-schema?type=inputs
 
 [[group]]
 name = "network"
@@ -45,7 +45,7 @@ For example, to use the `root_domain` Input, as a variable to configure the Sand
 
 ```toml sandbox.toml
 
-#:schema https://api.nuon.co/v1/general/config-schema?source=sandbox
+#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
 terraform_version = "1.11.3"
 
 [public_repo]
@@ -65,7 +65,7 @@ variables or environment variables.
 To use Inputs in a Terraform module.
 
 ```toml components.database.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
+#:schema https://api.nuon.co/v1/general/config-schema?type=terraform
 type              = "terraform_module"
 name              = "database"
 terraform_version = "1.11.3"
@@ -124,7 +124,7 @@ To create a Group, and add an Input to it, simply declare the Group in your conf
 field on any input belonging to it.
 
 ```toml inputs.toml
-#:schema http://localhost:8081/v1/general/config-schema?source=inputs
+#:schema http://localhost:8081/v1/general/config-schema?type=inputs
 [[group]]
 name         = "db"
 description  = "Configuration for the database "
