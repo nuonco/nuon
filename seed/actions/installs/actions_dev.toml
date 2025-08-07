@@ -1,0 +1,5 @@
+name = "actions_dev"
+approval_option = "approve-all"
+
+[aws_account]
+  region = "us-east-1"

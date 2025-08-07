@@ -1,0 +1,8 @@
+name = "component-app-dev"
+approval_option = "approve-all"
+
+[aws_account]
+  region = "us-east-1"
+
+[inputs]
+  bool_type = "true"

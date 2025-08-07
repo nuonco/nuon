@@ -1,0 +1,5 @@
+name = "app-branch-install"
+approval_option = "approve-all"
+
+[aws_account]
+  region = "us-east-1"

@@ -1,0 +1,11 @@
+name = "retool_dev"
+approval_option = "approve-all"
+
+[aws_account]
+  region = "us-east-1"
+
+[inputs]
+  license_key = "abc123"
+  number_type = "10"
+  json_type = '{"key": "value"}'
+  bool_type = "true"

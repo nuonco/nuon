@@ -1,0 +1,8 @@
+name = "simple_install"
+approval_option = "approve-all"
+
+[aws_account]
+  region = "us-east-1"
+
+[inputs]
+  root_domain = "byoc.simple.example.com"
