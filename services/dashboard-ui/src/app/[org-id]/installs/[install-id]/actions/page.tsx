@@ -122,7 +122,7 @@ const LoadInstallActions: FC<{
   }
 
   return error ? (
-    <Notice>Can&apos;t load install actions: {error?.error}</Notice>
+    <Notice className="grow-0 h-max">Can&apos;t load install actions</Notice>
   ) : actionsWithLatestRun ? (
     <div className="flex flex-col gap-4 w-full">
       <InstallActionWorkflowsTable
