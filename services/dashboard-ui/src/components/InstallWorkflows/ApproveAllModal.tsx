@@ -71,7 +71,7 @@ export const WorkflowApproveAllModal: FC<IWorkflowApproveAllModal> = ({
                 </Text>
                 <div className="flex flex-wrap gap-2">
                   {workflow?.steps
-                    ?.filter((s) => s?.execution_type === 'approval')
+                    ?.filter((s) => s?.execution_type === 'approval' && s?.status?.status !== 'discarded' )
                     .map((s) => (
                       <Badge className="text-[11px]" variant="code" key={s?.id}>
                         {sentanceCase(s?.name)}
