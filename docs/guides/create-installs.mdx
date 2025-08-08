@@ -25,6 +25,25 @@ Installs can be created via the [Nuon CLI](/cli).
 nuon installs create  --name=auto-deploy --region=us-east-1 --role=iam-role
 ```
 
+## Install Config Files
+
+Installs can be managed as part of a Nuon app's config. Create a config file for the install under the `installs/` folder
+in the app's config directory.
+
+```toml install.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=install
+name = "<install-name>"
+
+[aws_account]
+  region = "us-east-1"
+  iam_role_arn = "<aws-iam-role>"
+
+[inputs]
+input_string = "sample"
+input_number = "100"
+input_bool   = "true"
+```
+
 ## API and SDKs
 
 Installs can be created directly via our API, or by using an SDK:
