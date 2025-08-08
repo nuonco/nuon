@@ -61,12 +61,19 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 		return
 	}
 
+	deploy, err = s.getInstallDeploy(ctx, installID, deploy.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get newly created deploy %s:  %w", deploy.ID, err))
+		return
+	}
+
 	workflow, err := s.helpers.CreateWorkflow(ctx,
 		installID,
 		app.WorkflowTypeManualDeploy,
 		map[string]string{
-			"install_deploy_id": deploy.ID,
-			"deploy_dependents": strconv.FormatBool(req.DeployDependents),
+			app.WorkflowMetadataKeyWorkflowNameSuffix: deploy.InstallComponent.Component.Name,
+			"install_deploy_id":                       deploy.ID,
+			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
 		},
 		app.StepErrorBehaviorAbort,
 		req.PlanOnly,
