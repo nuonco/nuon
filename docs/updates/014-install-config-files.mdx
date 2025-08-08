@@ -12,17 +12,9 @@ You can now manage installs via source control for apps managed by `nuon apps sy
 in a folder named `installs/` under your app's config. Now syncing the app will also create/update the corresponding
 installs. For more details take a look at [Install Config file reference](/configuration-files#install-config).
 
-![Install Config File](assets/014-install-config-file.png)
-
-## Generate an Install Config File
-
-To make it even easier to manage existing installs using CI, we have added a new command `nuon installs generate-config` to
-import an existing install and generate a config file for it. After this generated config file is placed in the `installs` folder
-of your app's config, it can be tweaked to make updates to the install.
-
-```txt
-nb installs generate-config -i config_demo | tee installs/config_demo.toml
+```toml
 name = "config_demo"
+approval_option = "approve-all"
 
 [aws_account]
   region = "us-east-1"
@@ -32,6 +24,14 @@ name = "config_demo"
   test = "required-value"
   testdefault = "default-value"
 ```
+
+## Generate an Install Config File
+
+To make it even easier to manage existing installs using CI, we have added a new command `nuon installs generate-config` to
+import an existing install and generate a config file for it. After this generated config file is placed in the `installs` folder
+of your app's config, it can be tweaked to make updates to the install.
+
+![Generate Install Config](assets/014-cli-output.png)
 
 ## Workflow Step Groups
 
