@@ -164,7 +164,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		if err != nil {
 			return errors.Wrap(err, "unable to decompress and/or marshal apply plan contents into HelmPlanContents")
 		}
-		l.Debug("extracting apply plan contents", zap.Any("plan.diff", helmPlan.Diff), zap.String("plan.op", helmPlan.Op))
+		l.Debug("extracting apply plan contents", zap.String("plan.op", helmPlan.Op))
 	}
 
 	switch job.Operation {
