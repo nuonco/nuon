@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -38,6 +39,12 @@ const (
 
 	// reprovision everything
 	WorkflowTypeReprovision WorkflowType = "reprovision"
+)
+
+type WorkflowMetadataKey string
+
+const (
+	WorkflowMetadataKeyWorkflowNameSuffix = "workflow-name-suffix"
 )
 
 func (i WorkflowType) PastTenseName() string {
@@ -215,6 +222,9 @@ func (r *Workflow) AfterQuery(tx *gorm.DB) error {
 		name = r.Type.PastTenseName()
 	}
 	r.Name = name
+	if component_name, ok := r.Metadata[WorkflowMetadataKeyWorkflowNameSuffix]; ok {
+		r.Name = fmt.Sprintf("%s (%s)", r.Name, generics.FromPtrStr(component_name))
+	}
 
 	return nil
 }
