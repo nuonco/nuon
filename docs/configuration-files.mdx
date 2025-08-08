@@ -120,6 +120,37 @@ contents = "./sandbox.tfvars"
   Notice how variables can be defined in the `vars` block and with `var_file`.
 </Note>
 
+### Install Config
+
+You can create and manage [Installs](/concepts/installs) by creating `<install>.toml` files in a `installs` directory. Install config must
+declare a `name` field and any relevant install-specific configuration.
+
+<Note>
+  Currently only AWS installs are supported using Install config files.
+</Note>
+
+```toml install.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=install
+name = "<install-name>"
+
+# configure Auto Approval settings for an install
+approval_option = "prompt" # set this to "approve-all" to enable auto approval
+
+[aws_account]
+  region = "us-east-1"
+  iam_role_arn = "<aws-iam-role>"
+
+[inputs]
+  input_string = "sample"
+  input_number = "100"
+  input_bool   = "true"
+  input_json   = '{"key": "value"}'
+```
+
+<Note>
+  All input values should be defined as strings. They will be parsed into the correct type by Nuon.
+</Note>
+
 ### Component Config
 
 You can define components by creating `<component>.toml` files in a `components` directory. Components must declare
