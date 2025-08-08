@@ -117,13 +117,12 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                     <span>
                       <span className="flex gap-2">
                         <Text variant="med-12">
-                          {sentanceCase(removeSnakeCase(iw?.type))}
                           {iw?.type === 'action_workflow_run' &&
                           iw?.metadata?.install_action_workflow_name
-                            ? ' (' +
+                            ? sentanceCase(removeSnakeCase(iw?.type)) + ' (' +
                               iw?.metadata?.install_action_workflow_name +
                               ') '
-                            : ' '}
+                            :  sentanceCase(iw?.name) + ' '}
                           {iw?.status?.status}
                         </Text>
                         {iw?.plan_only ? (
@@ -158,13 +157,12 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                       >
                         <span className="flex gap-2">
                           <Text variant="med-12">
-                            {sentanceCase(removeSnakeCase(iw?.type))}
                             {iw?.type === 'action_workflow_run' &&
                             iw?.metadata?.install_action_workflow_name
-                              ? ' (' +
+                              ? sentanceCase(removeSnakeCase(iw?.type)) + ' (' +
                                 iw?.metadata?.install_action_workflow_name +
                                 ') '
-                              : ' '}
+                              : sentanceCase(iw?.name) + ' '}
                             {iw?.status?.status}
                           </Text>
                           {iw?.plan_only ? (
