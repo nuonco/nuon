@@ -91,7 +91,7 @@ export default async function InstallWorkflow({ params }) {
                 {
                   installWorkflow?.steps?.filter(
                     (s) =>
-                      s?.execution_type === 'approval' && !s?.approval?.response
+                      s?.execution_type === 'approval' && !s?.approval?.response && s?.status?.status !== 'discarded'
                   )?.length
                 }
               </Text>
