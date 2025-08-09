@@ -48,12 +48,17 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	// app configs
 	api.GET("/v1/apps/:app_id/template-config", s.GetAppConfigTemplate)
-	api.POST("/v1/apps/:app_id/config", s.CreateAppConfig)
+	api.POST("/v1/apps/:app_id/config", s.CreateAppConfig) // DEPRECATED
+	api.POST("/v1/apps/:app_id/configs", s.CreateAppAppConfig)
 	api.GET("/v1/apps/:app_id/configs", s.GetAppConfigs)
-	api.GET("/v1/apps/:app_id/config/:app_config_id", s.GetAppConfig)
-	api.PATCH("/v1/apps/:app_id/config/:app_config_id", s.UpdateAppConfig)
-	api.POST("/v1/apps/:app_id/config/:app_config_id/update-installs", s.UpdateAppConfigInstalls)
-	api.GET("/v1/apps/:app_id/config/:app_config_id/graph", s.GetAppConfigGraph)
+	api.GET("/v1/apps/:app_id/config/:app_config_id", s.GetAppConfig) // DEPRECATED
+	api.GET("/v1/apps/:app_id/configs/:config_id", s.GetAppAppConfig)
+	api.PATCH("/v1/apps/:app_id/config/:app_config_id", s.UpdateAppConfig) // DEPRECATED
+	api.PATCH("/v1/apps/:app_id/configs/:config_id", s.UpdateAppAppConfig)
+	api.POST("/v1/apps/:app_id/config/:app_config_id/update-installs", s.UpdateAppConfigInstalls) // DEPRECATED
+	api.POST("/v1/apps/:app_id/configs/:config_id/update-installs", s.UpdateAppAppConfigInstalls)
+	api.GET("/v1/apps/:app_id/config/:app_config_id/graph", s.GetAppConfigGraph) // DEPRECATED
+	api.GET("/v1/apps/:app_id/configs/:config_id/graph", s.GetAppAppConfigGraph)
 
 	// app sandbox management
 	api.POST("/v1/apps/:app_id/sandbox-config", s.CreateAppSandboxConfig)
