@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -105,6 +106,11 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 }
 
 func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgID string, after int64) ([]app.OtelLogRecord, map[string]string, error) {
+	// NOTE(jm): this is a temporary mechanism, while we test log reading. Ultimately, this should be done in a
+	// middleware.
+	ctx, cancelFn := context.WithTimeout(ctx, time.Second*5)
+	defer cancelFn()
+
 	// headers
 	headers := map[string]string{"Range-Units": "items"}
 
