@@ -1,0 +1,72 @@
+---
+title: 015 - Azure Support
+description: Deploy and manage installs on Azure
+---
+_August 8th, 2025_
+
+<div className="badge badge--primary">v0.19.615</div>
+
+## Azure Support
+
+You can now configure, deploy, and manage apps on Microsoft's Azure cloud platform.
+
+Nuon had Azure support before we made the switch to the indepent runner architecure. When we made that change, we decided to focus on one platform first, AWS, in order to ensure the best possible experience. We always intended to re-introduce Azure support once the new architecture had matured, and we felt that time had arrived.
+
+We have taken great care to ensure the Nuon experience is as consistent as possible across both AWS and Azure. Aside from a few small digressions, the experience of configuring, deploying, and maintaining an Azure app should be familiar and require little to no ramp-up time.
+
+### Configuring an Azure App
+
+To get started, configure an app using an Azure sandbox and runner. Here's an example using our off-the-shelf Azure AKS sandbox.
+
+```toml sandbox.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
+
+terraform_version = "1.12.2"
+
+[public_repo]
+directory = "."
+repo      = "nuonco/terraform-azure-aks-sandbox"
+branch    = "main"
+
+[vars]
+public_root_domain   = "{{ .nuon.inputs.inputs.root_domain }}"
+internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
+location = "{{.nuon.cloud_account.azure.location}}"
+vnet_name = "{{.nuon.install_stack.outputs.network_name}}"
+resource_group_name = "{{.nuon.install_stack.outputs.resource_group_name}}"
+private_subnet_names = "{{.nuon.install_stack.outputs.private_subnet_names}}"
+public_subnet_names = "{{.nuon.install_stack.outputs.public_subnet_names}}"
+```
+
+```toml runner.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=runner
+
+runner_type = "azure"
+helm_driver = "configmap"
+```
+
+You can then add components to the app as you normally would. All component types are supported.
+
+<Note>
+Keep in mind that Terraform components will need to create Azure resources using the [azurerm provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest). Many Helm charts may also rely on platform-specific operators. If you want to re-use components across platforms, you must avoid platform-specific dependencies.
+</Note>
+
+### Installing an App on Azure
+
+When you create an Azure install, you will be presented with an install creation modal, just as you would for AWS, except with an Azure location selector instead of an AWS region selector.
+
+![azure_install_modal](/images/changelog/015_azure_install_modal.png)
+
+The provision workflow will create an Azure Resource Manager template, and provide azure CLI commands your customer can use to create a resource group and install the Nuon runner in it.
+
+![azure_awaiting_stack](/images/changelog/015_azure_awaiting_stack.png)
+
+### Maintaining an Azure Install
+
+Once the install has been provisioned, the experience is practically identical for both cloud platforms. You will have access to the same info and controls for the runner, the sandbox, components, and actions.
+
+<Note>
+Currently, the runner does not have the Azure CLI installed. This will be added in a future update, so it can be used for actions on Azure like the AWS CLI can be used on AWS.
+</Note>
+
+For more details on Azure, and how it compares to AWS, and our general approach to supporting cloud platforms, see our [Platform Support docs](/platform-support/introduction)

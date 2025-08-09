@@ -1,14 +1,14 @@
 ---
 title: 'Azure'
-description: "Deploy and manage BYOC apps in Microsoft Azure cloud."
-icon: 'terminal'
+description: "Deploy and manage BYOC apps on Microsoft Azure."
+icon: 'microsoft'
 ---
 
 Nuon offers first-class support for Microsoft's Azure cloud platorm.
 
 ## Configuration
 
-To deploy an app to Azure, configure it to use an Azure sandbox and runner. We provide a minimal sandbox you can use to get started. You will need to set some vars to configure the sandbox. Create inputs for the public and private domains, since those will be different for each install.
+To deploy an app to Azure, configure it to use an Azure sandbox and runner. We provide an AKS sandbox you can use to get started. You will need to set some vars to configure the sandbox. Create inputs for the public and private domains, since those will be different for each install.
 
 ```toml sandbox.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
@@ -24,7 +24,6 @@ branch    = "main"
 public_root_domain   = "{{ .nuon.inputs.inputs.root_domain }}"
 internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
 location = "{{.nuon.cloud_account.azure.location}}"
-nuon_id = "{{.nuon.install.id}}"
 vnet_name = "{{.nuon.install_stack.outputs.network_name}}"
 resource_group_name = "{{.nuon.install_stack.outputs.resource_group_name}}"
 private_subnet_names = "{{.nuon.install_stack.outputs.private_subnet_names}}"

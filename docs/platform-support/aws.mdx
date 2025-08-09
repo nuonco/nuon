@@ -1,0 +1,82 @@
+---
+title: 'AWS'
+description: "Deploy and manage BYOC apps on AWS."
+icon: 'amazon'
+---
+
+Nuon offers first-class support for AWS.
+
+## Configuration
+
+To deploy an app to AWS, configure it to use an AWS sandbox and runner. We provide a minimal sandbox you can use to get started. You will need to set some vars to configure the sandbox. Create inputs for the public and private domains, since those will be different for each install. You will also need to set some IAM roles to grant the runner access to the EKS cluster.
+
+```toml sandbox.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=sandbox
+
+terraform_version = "1.11.3"
+
+[public_repo]
+directory = "."
+repo      = "nuonco/aws-eks-karpenter-sandbox"
+branch    = "main"
+
+[vars]
+cluster_version = "1.33"
+cluster_name    = "n-{{.nuon.install.id}}"
+public_root_domain   = "{{ .nuon.inputs.inputs.root_domain }}"
+internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
+
+[[var_file]]
+contents = "./sandbox.tfvars"
+```
+
+```toml sandbox.tfvars
+maintenance_role_eks_access_entry_policy_associations = {
+  eks_admin = {
+    policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
+    access_scope = {
+      type = "cluster"
+    }
+  }
+  eks_view = {
+    policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+    access_scope = {
+      type = "cluster"
+    }
+  }
+}
+```
+
+```toml runner.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=runner
+
+runner_type = "azure"
+helm_driver = "configmap"
+```
+
+## Installation
+
+When you create a new install, Nuon will generate a Cloudformation stack your customer can use to install the runner and base infrastructure. AWS supports installing Cloudformation stacks via their CLI, and also provides a GUI installation flow using Cloudformation Quick-Create links.
+
+### Create an Install
+
+Navigate to the Installs tab in the Nuon dashboard, and click on the "Create Install" button, and select the app you want to install.
+
+This will kick off a provision workflow. The stack will be generated, and a Quick-Create URL and CLI commands will be provided for it. These will have the install ID and other settings already interpolated, and can be shared with your customer.
+
+### Install the Stack
+
+Your customer must log into the AWS account they want to install your app in, and ensure they have the required permissions to provision the stack.
+
+If they are using the Quick-Create URL, they can simply open  that in a browser and go through the web flow.
+
+If they are using the CLI command, they must [install the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and log in. Then they can run the command.
+
+## Updating
+
+If you make changes to the install stack template, the install must be reprovisioned to update the stack.
+
+1. From the install's Overview page, click on "Reprovision install" in the "Manage" drop-down menu. This will trigger a reprovision workflow.
+1. A new Cloudformation stack will be generated.
+1. An updated Quick-Create URL and CLI command will be generated.
+1. Send the Quick-Create URL or CLI commands to your customer for them to run.
