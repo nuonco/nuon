@@ -1,5 +1,26 @@
+:root {
+  --primary: #8040bf;
+  --light: #c494f4;
+  --dark: #8040bf;
+}
+
 /* ensure tables are full-width */
 .prose
   :where(table):not(:where([class~="not-prose"], [class~="not-prose"] table)) {
   display: table;
+}
+
+.prose
+  :where(table):not(:where([class~="not-prose"], [class~="not-prose"] th)) {
+  text-align: left;
+}
+
+.nuon-label {
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 0.6rem;
+  padding: 0.01rem 0.25rem;
+  color: white;
+  background-color: var(--light);
+  border-radius: 10%;
 }
