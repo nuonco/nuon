@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	clickhousecore "github.com/nuonco/clickhouse-go/v2"
+	clickhousecore "github.com/ClickHouse/clickhouse-go/v2"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/gorm/clickhouse"
