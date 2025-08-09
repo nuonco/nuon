@@ -3,7 +3,7 @@ package app
 import (
 	"time"
 
-	"github.com/nuonco/clickhouse-go/v2"
+	"github.com/ClickHouse/clickhouse-go/v2"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 

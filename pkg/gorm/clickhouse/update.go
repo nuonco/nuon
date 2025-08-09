@@ -3,7 +3,7 @@ package clickhouse
 import (
 	"regexp"
 
-	"github.com/nuonco/clickhouse-go/v2"
+	"github.com/ClickHouse/clickhouse-go/v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/callbacks"
 	"gorm.io/gorm/clause"

@@ -11,8 +11,9 @@ import (
 type Config struct {
 	confighttp.ClientConfig `mapstructure:",squash"` // squash ensures fields are correctly decoded in embedded struct.
 
-	QueueConfig exporterhelper.QueueSettings `mapstructure:"sending_queue"`
-	RetryConfig configretry.BackOffConfig    `mapstructure:"retry_on_failure"`
+	QueueConfig exporterhelper.QueueBatchConfig `mapstructure:"sending_queue"`
+	RetryConfig configretry.BackOffConfig       `mapstructure:"retry_on_failure"`
+	exporterhelper.Option
 }
 
 var _ component.Config = (*Config)(nil)
