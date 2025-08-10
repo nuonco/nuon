@@ -557,3 +557,18 @@ module "waypoint" {
   topics      = ["archived"]
   archived = "true"
 }
+
+module "nuon-azure-aks-byopn-sandbox" {
+  source           = "./modules/repository"
+  name             = "terraform-azure-aks-byovpn-sandbox"
+  description      = "Azure AKS BYOVPN sandbox for Nuon apps."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+  archived         = "true"
+
+  providers = {
+    github = github.nuon
+  }
+}

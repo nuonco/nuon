@@ -7,7 +7,7 @@ terraform_version = "1.11.3"
 [connected_repo]
 repo      = "powertoolsdev/mono"
 directory = "seed/azure-aks-simple/src/components/storage"
-branch    = "ja/azure-support"
+branch    = "main"
 
 [vars]
 name = "jalocalazureaks022"

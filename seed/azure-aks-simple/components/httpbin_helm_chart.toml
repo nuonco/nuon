@@ -8,7 +8,7 @@ storage_driver = "configmap"
 [connected_repo]
 repo      = "powertoolsdev/mono"
 directory = "seed/azure-aks-simple/src/components/httpbin_helm_chart"
-branch    = "ja/azure-support"
+branch    = "main"
 
 [[values_file]]
 contents = "./values/httpbin.yaml"

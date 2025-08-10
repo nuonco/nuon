@@ -82,20 +82,6 @@ module "nuon-azure-aks-sandbox" {
   }
 }
 
-module "nuon-azure-aks-byopn-sandbox" {
-  source           = "./modules/repository"
-  name             = "terraform-azure-aks-byovpn-sandbox"
-  description      = "Azure AKS BYOVPN sandbox for Nuon apps."
-  required_checks  = []
-  is_public        = true
-  owning_team_id   = github_team.nuon.id
-  owning_team_name = "nuonco/${github_team.nuon.name}"
-
-  providers = {
-    github = github.nuon
-  }
-}
-
 module "nuon-aws-eks-sandbox-m1" {
   source           = "./modules/repository"
   name             = "aws-eks-sandbox"
