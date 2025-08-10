@@ -9,7 +9,7 @@ const tmpl = `
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "14798628880930657627"
+      "templateHash": "1114783915413020592"
     }
   },
   "parameters": {
@@ -331,7 +331,7 @@ const tmpl = `
     {
       "type": "Microsoft.KeyVault/vaults",
       "apiVersion": "2023-02-01",
-      "name": "[take(format('{0}kv', parameters('nuonInstallID')), 24)]",
+      "name": "[take(format('{0}', parameters('nuonInstallID')), 24)]",
       "location": "[parameters('location')]",
       "tags": "[variables('commonTags')]",
       "properties": {
@@ -339,7 +339,7 @@ const tmpl = `
         "enabledForTemplateDeployment": true,
         "enabledForDiskEncryption": true,
         "tenantId": "[subscription().tenantId]",
-        "accessPolicies": [],
+        "enableRbacAuthorization": true,
         "sku": {
           "name": "standard",
           "family": "A"
@@ -369,7 +369,7 @@ const tmpl = `
       },
       "type": "Microsoft.KeyVault/vaults/secrets",
       "apiVersion": "2023-02-01",
-      "name": "[format('{0}/{1}', take(format('{0}kv', parameters('nuonInstallID')), 24), parameters('secrets')[copyIndex()].name)]",
+      "name": "[format('{0}/{1}', take(format('{0}', parameters('nuonInstallID')), 24), parameters('secrets')[copyIndex()].name)]",
       "properties": {
         "value": "[parameters('secrets')[copyIndex()].value]",
         "contentType": "[if(contains(parameters('secrets')[copyIndex()], 'contentType'), parameters('secrets')[copyIndex()].contentType, null())]",
@@ -378,7 +378,7 @@ const tmpl = `
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', take(format('{0}kv', parameters('nuonInstallID')), 24))]"
+        "[resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))]"
       ]
     },
     {
@@ -563,6 +563,14 @@ const tmpl = `
             "value": "[format('{0}-vnet', parameters('nuonInstallID'))]"
           },
           {
+            "name": "KEY_VAULT_ID",
+            "value": "[resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))]"
+          },
+          {
+            "name": "KEY_VAULT_NAME",
+            "value": "[take(format('{0}', parameters('nuonInstallID')), 24)]"
+          },
+          {
             "name": "PUBLIC_SUBNET_1_ID",
             "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-public-subnet-zone1', parameters('nuonInstallID')))]"
           },
@@ -627,16 +635,17 @@ const tmpl = `
             "value": "[join(filter(createArray(format('{0}-private-subnet-zone1', parameters('nuonInstallID')), if(variables('createPrivateSubnet2'), format('{0}-private-subnet-zone2', parameters('nuonInstallID')), ''), if(variables('createPrivateSubnet3'), format('{0}-private-subnet-zone3', parameters('nuonInstallID')), '')), lambda('x', not(empty(lambdaVariables('x'))))), ',')]"
           }
         ],
-        "scriptContent": "      #!/bin/bash\n      \n      # Construct the JSON payload with stack outputs\n      #\n      # Including the credentails object for backwards compatibility.\n      # We used to need this when the org runner did the sandbox provision,\n      # but the independent runner obviates the need for this.\n      #\n      # The provision workflow still looks for auth credentials,\n      # because it needs the role ARNs to use for different jobs.\n      # Azure resource groups obviate the need for multiple roles,\n      # so we don't need to return anything.\n\n      # Create arrays for public and private subnets (filtering out empty values)\n      PUBLIC_SUBNETS=(\"$PUBLIC_SUBNET_1_ID\")\n      PUBLIC_SUBNET_NAMES=(\"$PUBLIC_SUBNET_1_NAME\")\n      if [ -n \"$PUBLIC_SUBNET_2_ID\" ]; then \n        PUBLIC_SUBNETS+=(\"$PUBLIC_SUBNET_2_ID\")\n        PUBLIC_SUBNET_NAMES+=(\"$PUBLIC_SUBNET_2_NAME\")\n      fi\n      if [ -n \"$PUBLIC_SUBNET_3_ID\" ]; then \n        PUBLIC_SUBNETS+=(\"$PUBLIC_SUBNET_3_ID\")\n        PUBLIC_SUBNET_NAMES+=(\"$PUBLIC_SUBNET_3_NAME\")\n      fi\n\n      PRIVATE_SUBNETS=(\"$PRIVATE_SUBNET_1_ID\")\n      PRIVATE_SUBNET_NAMES=(\"$PRIVATE_SUBNET_1_NAME\")\n      if [ -n \"$PRIVATE_SUBNET_2_ID\" ]; then \n        PRIVATE_SUBNETS+=(\"$PRIVATE_SUBNET_2_ID\")\n        PRIVATE_SUBNET_NAMES+=(\"$PRIVATE_SUBNET_2_NAME\")\n      fi\n      if [ -n \"$PRIVATE_SUBNET_3_ID\" ]; then \n        PRIVATE_SUBNETS+=(\"$PRIVATE_SUBNET_3_ID\")\n        PRIVATE_SUBNET_NAMES+=(\"$PRIVATE_SUBNET_3_NAME\")\n      fi\n\n      PAYLOAD=$(cat << EOF\n{\n  \"resource_group_id\": \"$RESOURCE_GROUP_ID\",\n  \"resource_group_name\": \"$RESOURCE_GROUP_NAME\",\n  \"resource_group_location\": \"$RESOURCE_GROUP_LOCATION\",\n  \"network_id\": \"$VNET_ID\",\n  \"network_name\": \"$VNET_NAME\",\n  \"public_subnet_ids\": \"$PUBLIC_SUBNET_IDS_CSV\",\n  \"public_subnet_names\": \"$PUBLIC_SUBNET_NAMES_CSV\",\n  \"private_subnet_ids\": \"$PRIVATE_SUBNET_IDS_CSV\",\n  \"private_subnet_names\": \"$PRIVATE_SUBNET_NAMES_CSV\",\n  \"subscription_id\": \"$SUBSCRIPTION_ID\",\n  \"subscription_tenant_id\": \"$SUBSCRIPTION_TENANT_ID\"\n}\nEOF\n)\n      \n      # Send the phone home request\n      curl -X POST \\\n        \"{{.CloudFormationStackVersion.PhoneHomeURL}}\" \\\n        -H \"Content-Type: application/json\" \\\n        -H \"Accept: application/json\" \\\n        -d \"$PAYLOAD\" \\\n        --fail \\\n        --silent \\\n        --show-error\n      \n      if [ $? -eq 0 ]; then\n        echo \"Phone home request sent successfully\"\n      else\n        echo \"Failed to send phone home request\"\n        exit 1\n      fi\n    "
+        "scriptContent": "      #!/bin/bash\n      \n      # Construct the JSON payload with stack outputs\n      #\n      # Including the credentails object for backwards compatibility.\n      # We used to need this when the org runner did the sandbox provision,\n      # but the independent runner obviates the need for this.\n      #\n      # The provision workflow still looks for auth credentials,\n      # because it needs the role ARNs to use for different jobs.\n      # Azure resource groups obviate the need for multiple roles,\n      # so we don't need to return anything.\n\n      # Create arrays for public and private subnets (filtering out empty values)\n      PUBLIC_SUBNETS=(\"$PUBLIC_SUBNET_1_ID\")\n      PUBLIC_SUBNET_NAMES=(\"$PUBLIC_SUBNET_1_NAME\")\n      if [ -n \"$PUBLIC_SUBNET_2_ID\" ]; then \n        PUBLIC_SUBNETS+=(\"$PUBLIC_SUBNET_2_ID\")\n        PUBLIC_SUBNET_NAMES+=(\"$PUBLIC_SUBNET_2_NAME\")\n      fi\n      if [ -n \"$PUBLIC_SUBNET_3_ID\" ]; then \n        PUBLIC_SUBNETS+=(\"$PUBLIC_SUBNET_3_ID\")\n        PUBLIC_SUBNET_NAMES+=(\"$PUBLIC_SUBNET_3_NAME\")\n      fi\n\n      PRIVATE_SUBNETS=(\"$PRIVATE_SUBNET_1_ID\")\n      PRIVATE_SUBNET_NAMES=(\"$PRIVATE_SUBNET_1_NAME\")\n      if [ -n \"$PRIVATE_SUBNET_2_ID\" ]; then \n        PRIVATE_SUBNETS+=(\"$PRIVATE_SUBNET_2_ID\")\n        PRIVATE_SUBNET_NAMES+=(\"$PRIVATE_SUBNET_2_NAME\")\n      fi\n      if [ -n \"$PRIVATE_SUBNET_3_ID\" ]; then \n        PRIVATE_SUBNETS+=(\"$PRIVATE_SUBNET_3_ID\")\n        PRIVATE_SUBNET_NAMES+=(\"$PRIVATE_SUBNET_3_NAME\")\n      fi\n\n      PAYLOAD=$(cat << EOF\n{\n  \"resource_group_id\": \"$RESOURCE_GROUP_ID\",\n  \"resource_group_name\": \"$RESOURCE_GROUP_NAME\",\n  \"resource_group_location\": \"$RESOURCE_GROUP_LOCATION\",\n  \"network_id\": \"$VNET_ID\",\n  \"network_name\": \"$VNET_NAME\",\n  \"key_vault_id\": \"$KEY_VAULT_ID\",\n  \"key_vault_name\": \"$KEY_VAULT_NAME\",\n  \"public_subnet_ids\": \"$PUBLIC_SUBNET_IDS_CSV\",\n  \"public_subnet_names\": \"$PUBLIC_SUBNET_NAMES_CSV\",\n  \"private_subnet_ids\": \"$PRIVATE_SUBNET_IDS_CSV\",\n  \"private_subnet_names\": \"$PRIVATE_SUBNET_NAMES_CSV\",\n  \"subscription_id\": \"$SUBSCRIPTION_ID\",\n  \"subscription_tenant_id\": \"$SUBSCRIPTION_TENANT_ID\"\n}\nEOF\n)\n      \n      # Send the phone home request\n      curl -X POST \\\n        \"{{.CloudFormationStackVersion.PhoneHomeURL}}\" \\\n        -H \"Content-Type: application/json\" \\\n        -H \"Accept: application/json\" \\\n        -d \"$PAYLOAD\" \\\n        --fail \\\n        --silent \\\n        --show-error\n      \n      if [ $? -eq 0 ]; then\n        echo \"Phone home request sent successfully\"\n      else\n        echo \"Failed to send phone home request\"\n        exit 1\n      fi\n    "
       },
       "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))]",
         "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', parameters('nuonInstallID')))]"
       ]
     },
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
-      "name": "custom-role-deployment",
+      "name": "[format('{0}-custom-role-deployment', parameters('nuonInstallID'))]",
       "subscriptionId": "[subscription().subscriptionId]",
       "location": "[resourceGroup().location]",
       "properties": {
@@ -770,6 +779,14 @@ const tmpl = `
     "privateSubnet3Name": {
       "type": "string",
       "value": "[if(variables('createPrivateSubnet3'), format('{0}-private-subnet-zone3', parameters('nuonInstallID')), '')]"
+    },
+    "keyVaultName": {
+      "type": "string",
+      "value": "[take(format('{0}', parameters('nuonInstallID')), 24)]"
+    },
+    "keyVaultId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))]"
     },
     "publicSubnetIds": {
       "type": "string",
