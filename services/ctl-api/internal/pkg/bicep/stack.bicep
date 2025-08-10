@@ -244,7 +244,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-04-01' = {
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
-  name: take('${nuonInstallID}kv', 24)
+  name: take('${nuonInstallID}', 24)
   location: location
   tags: commonTags
   properties: {
@@ -252,7 +252,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
     enabledForTemplateDeployment: true
     enabledForDiskEncryption: true
     tenantId: subscription().tenantId
-    accessPolicies: []
+    enableRbacAuthorization: true
     sku: {
       name: 'standard'
       family: 'A'
@@ -525,7 +525,7 @@ resource vmssAksRbacClusterAdminRoleAssignment 'Microsoft.Authorization/roleAssi
 }
 
 module customRoleModule 'custom-role.bicep' = {
-  name: 'custom-role-deployment'
+  name: '${nuonInstallID}-custom-role-deployment'
   scope: subscription()
   params: {
     nuonInstallID: nuonInstallID
@@ -570,6 +570,14 @@ resource phoneHomeScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
       {
         name: 'VNET_NAME'
         value: vnet.name
+      }
+      {
+        name: 'KEY_VAULT_ID'
+        value: keyVault.id
+      }
+      {
+        name: 'KEY_VAULT_NAME'
+        value: keyVault.name
       }
       {
         name: 'PUBLIC_SUBNET_1_ID'
@@ -696,6 +704,8 @@ resource phoneHomeScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
   "resource_group_location": "$RESOURCE_GROUP_LOCATION",
   "network_id": "$VNET_ID",
   "network_name": "$VNET_NAME",
+  "key_vault_id": "$KEY_VAULT_ID",
+  "key_vault_name": "$KEY_VAULT_NAME",
   "public_subnet_ids": "$PUBLIC_SUBNET_IDS_CSV",
   "public_subnet_names": "$PUBLIC_SUBNET_NAMES_CSV",
   "private_subnet_ids": "$PRIVATE_SUBNET_IDS_CSV",
@@ -744,6 +754,8 @@ output privateSubnet2Id string = createPrivateSubnet2 ? resourceId('Microsoft.Ne
 output privateSubnet2Name string = createPrivateSubnet2 ? '${nuonInstallID}-private-subnet-zone2' : ''
 output privateSubnet3Id string = createPrivateSubnet3 ? resourceId('Microsoft.Network/virtualNetworks/subnets', vnet.name, '${nuonInstallID}-private-subnet-zone3') : ''
 output privateSubnet3Name string = createPrivateSubnet3 ? '${nuonInstallID}-private-subnet-zone3' : ''
+output keyVaultName string = keyVault.name
+output keyVaultId string = keyVault.id
 
 // Comma-separated list outputs
 output publicSubnetIds string = join(filter([

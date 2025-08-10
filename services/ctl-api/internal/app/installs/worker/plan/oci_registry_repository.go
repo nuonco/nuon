@@ -119,35 +119,6 @@ func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, insta
 		cfg.ACRAuth = &azurecredentials.Config{
 			UseDefault: true,
 		}
-
-		// TODO(ja): work-around for failing Azure system-assigned identity auth with ACR.
-		// Just get the token from the sandbox and use that.
-		ociUser, err := RenderText("{{.nuon.sandbox.outputs.acr.token_id}}", stateData)
-		if err != nil {
-			l.Error("error rendering registy username",
-				zap.Any("registry-username", loginServer),
-				zap.Error(err),
-				zap.Any("state", stateData),
-			)
-			return nil, errors.Wrap(err, "unable to render acr username")
-		}
-		// The last segment of the token ID is the name,
-		// which is what we need to log in.
-		parts := strings.Split(ociUser, "/")
-		ociUser = parts[len(parts)-1]
-		ociPass, err := RenderText("{{.nuon.sandbox.outputs.acr.password}}", stateData)
-		if err != nil {
-			l.Error("error rendering registy password",
-				zap.Any("registry-password", loginServer),
-				zap.Error(err),
-				zap.Any("state", stateData),
-			)
-			return nil, errors.Wrap(err, "unable to render acr password")
-		}
-		cfg.OCIAuth = &configs.OCIRegistryAuth{
-			Username: ociUser,
-			Password: ociPass,
-		}
 	}
 
 	return cfg, nil
