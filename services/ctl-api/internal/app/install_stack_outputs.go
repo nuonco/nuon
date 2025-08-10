@@ -63,6 +63,9 @@ type AzureStackOutputs struct {
 
 	PrivateSubnetIDs   []string `json:"private_subnet_ids,omitzero" mapstructure:"private_subnet_ids" temporaljson:"private_subnet_ids,omitzero,omitempty"`
 	PrivateSubnetNames []string `json:"private_subnet_names,omitzero" mapstructure:"private_subnet_names" temporaljson:"private_subnet_names,omitzero,omitempty"`
+
+	KeyVaultID   string `json:"key_vault_id,omitzero" mapstructure:"key_vault_id" temporaljson:"key_vault_id,omitzero,omitempty"`
+	KeyVaultName string `json:"key_vault_name,omitzero" mapstructure:"key_vault_name" temporaljson:"key_vault_name,omitzero,omitempty"`
 }
 
 func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {
