@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
@@ -43,6 +45,7 @@ import (
 )
 
 var namespace string
+var skipNamespaces string
 
 func (c *cli) registerWorker() error {
 	cmd := &cobra.Command{
@@ -53,7 +56,23 @@ func (c *cli) registerWorker() error {
 	rootCmd.AddCommand(cmd)
 	helpText := "namespace defines the namespace whose workers to run. e.g. all, general, orgs, apps, components, installs, releases."
 	rootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "all", helpText)
+	rootCmd.PersistentFlags().StringVar(&skipNamespaces, "skip", "", "comma-separated list of namespaces to skip (e.g. 'installs,releases')")
 	return nil
+}
+
+// shouldSkipNamespace checks if a namespace should be skipped based on the skipNamespaces flag
+func shouldSkipNamespace(ns string) bool {
+	if skipNamespaces == "" {
+		return false
+	}
+
+	skips := strings.Split(skipNamespaces, ",")
+	for _, skip := range skips {
+		if strings.TrimSpace(skip) == ns {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
@@ -80,7 +99,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	)
 
 	// generals worker
-	if namespace == "all" || namespace == "general" {
+	if (namespace == "all" || namespace == "general") && !shouldSkipNamespace("general") {
 		providers = append(providers,
 			fx.Provide(generalactivities.New),
 			fx.Provide(generalworker.NewWorkflows),
@@ -89,7 +108,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	}
 
 	// orgs worker
-	if namespace == "all" || namespace == "orgs" {
+	if (namespace == "all" || namespace == "orgs") && !shouldSkipNamespace("orgs") {
 		providers = append(providers,
 			fx.Provide(orgsactivities.New),
 			fx.Provide(orgsworker.NewWorkflows),
@@ -98,7 +117,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	}
 
 	// apps worker
-	if namespace == "all" || namespace == "apps" {
+	if (namespace == "all" || namespace == "apps") && !shouldSkipNamespace("apps") {
 		providers = append(providers,
 			fx.Provide(appsactivities.New),
 			fx.Provide(appsworker.NewWorkflows),
@@ -106,7 +125,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	}
 
 	// app-branches worker
-	if namespace == "all" || namespace == "app-branches" {
+	if (namespace == "all" || namespace == "app-branches") && !shouldSkipNamespace("app-branches") {
 		providers = append(providers,
 			fx.Provide(appbranchesactivities.New),
 			fx.Provide(appbranchesworker.NewWorkflows),
@@ -115,7 +134,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	}
 
 	// components worker
-	if namespace == "all" || namespace == "components" {
+	if (namespace == "all" || namespace == "components") && !shouldSkipNamespace("components") {
 		providers = append(providers,
 			fx.Provide(componentsactivities.New),
 			fx.Provide(componentsworker.NewWorkflows),
@@ -124,7 +143,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	}
 
 	// installs worker
-	if namespace == "all" || namespace == "installs" {
+	if (namespace == "all" || namespace == "installs") && !shouldSkipNamespace("installs") {
 		providers = append(providers,
 			fx.Provide(installsactivities.New),
 			fx.Provide(installsworker.NewWorkflows),
@@ -136,7 +155,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		)
 	}
 
-	if namespace == "all" || namespace == "releases" {
+	if (namespace == "all" || namespace == "releases") && !shouldSkipNamespace("releases") {
 		providers = append(providers,
 			fx.Provide(releasesactivities.New),
 			fx.Provide(releasesworker.NewWorkflows),
@@ -144,7 +163,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		)
 	}
 
-	if namespace == "all" || namespace == "runners" {
+	if (namespace == "all" || namespace == "runners") && !shouldSkipNamespace("runners") {
 		providers = append(providers,
 			// runners worker
 			fx.Provide(runnersactivities.New),
@@ -153,7 +172,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		)
 	}
 
-	if namespace == "all" || namespace == "actions" {
+	if (namespace == "all" || namespace == "actions") && !shouldSkipNamespace("actions") {
 		providers = append(providers,
 			// actions worker
 			fx.Provide(actionsactivities.New),
