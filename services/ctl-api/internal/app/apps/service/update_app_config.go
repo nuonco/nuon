@@ -37,7 +37,6 @@ func (c *UpdateAppConfigRequest) Validate(v *validator.Validate) error {
 // @Param					app_config_id	path	string	true	"app config ID"
 // @Security				APIKey
 // @Security				OrgID
-// @Deprecated
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
@@ -68,91 +67,6 @@ func (s *service) UpdateAppConfig(ctx *gin.Context) {
 }
 
 func (s *service) updateAppConfig(ctx context.Context, appConfigID string, req *UpdateAppConfigRequest) (*app.AppConfig, error) {
-	var cfg app.AppConfig
-	if err := s.db.WithContext(ctx).
-		Where("id = ?", appConfigID).
-		First(&cfg).Error; err != nil {
-		return nil, fmt.Errorf("unable to find app config: %w", err)
-	}
-
-	appConfig := app.AppConfig{
-		Status:            req.Status,
-		StatusDescription: req.StatusDescription,
-		State:             req.State,
-	}
-
-	if len(req.ComponentIDs) > 0 {
-		appConfig.ComponentIDs = req.ComponentIDs
-	}
-
-	res := s.db.WithContext(ctx).
-		Model(&cfg).
-		Updates(appConfig)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to update app config: %w", res.Error)
-	}
-	if res.RowsAffected < 1 {
-		return nil, fmt.Errorf("app config not found %s %w", appConfigID, gorm.ErrRecordNotFound)
-	}
-
-	return &cfg, nil
-}
-
-type UpdateAppAppConfigRequest struct {
-	Status            app.AppConfigStatus `json:"status"`
-	StatusDescription string              `json:"status_description"`
-	State             string              `json:"state"`
-	ComponentIDs      []string            `json:"component_ids"`
-}
-
-func (c *UpdateAppAppConfigRequest) Validate(v *validator.Validate) error {
-	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
-	}
-
-	return nil
-}
-
-// @ID						UpdateAppAppConfig
-// @Description.markdown	update_app_config.md
-// @Tags					apps
-// @Accept					json
-// @Param					req	body	UpdateAppAppConfigRequest	true	"Input"
-// @Produce				json
-// @Param					app_id			path	string	true	"app ID"
-// @Param					config_id	path	string	true	"app config ID"
-// @Security				APIKey
-// @Security				OrgID
-// @Failure				400	{object}	stderr.ErrResponse
-// @Failure				401	{object}	stderr.ErrResponse
-// @Failure				403	{object}	stderr.ErrResponse
-// @Failure				404	{object}	stderr.ErrResponse
-// @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{object}	app.AppConfig
-// @Router					/v1/apps/{app_id}/configs/{config_id} [PATCH]
-func (s *service) UpdateAppAppConfig(ctx *gin.Context) {
-	appConfigID := ctx.Param("config_id")
-
-	var req UpdateAppAppConfigRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
-		return
-	}
-	if err := req.Validate(s.v); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
-		return
-	}
-
-	cfg, err := s.updateAppAppConfig(ctx, appConfigID, &req)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to update app config: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusCreated, cfg)
-}
-
-func (s *service) updateAppAppConfig(ctx context.Context, appConfigID string, req *UpdateAppAppConfigRequest) (*app.AppConfig, error) {
 	var cfg app.AppConfig
 	if err := s.db.WithContext(ctx).
 		Where("id = ?", appConfigID).
