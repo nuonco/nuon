@@ -152,7 +152,7 @@ resource "aws_iam_role" "clickhouse_role" {
 
 module "bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = ">= v3.2.4"
+  version = "v4.11.0"
 
   bucket = local.bucket_name
   versioning = {
