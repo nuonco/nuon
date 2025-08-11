@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	PageSize             int    = 250
+	PageSize             int    = 100
 	nestedAttributeRegex string = `^(?:[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)?)$` // https://regex101.com/r/179bxx/1
 )
 
