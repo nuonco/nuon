@@ -35,7 +35,6 @@ func (c *CreateAppConfigRequest) Validate(v *validator.Validate) error {
 // @Param					app_id	path	string	true	"app ID"
 // @Security				APIKey
 // @Security				OrgID
-// @Deprecated
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
@@ -72,82 +71,6 @@ func (s *service) CreateAppConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppConfig(ctx context.Context, orgID, appID string, req *CreateAppConfigRequest) (*app.AppConfig, error) {
-	inputs := app.AppConfig{
-		OrgID:             orgID,
-		AppID:             appID,
-		Status:            app.AppConfigStatusPending,
-		StatusDescription: "sync pending",
-		Readme:            req.Readme,
-		CLIVersion:        req.CLIVersion,
-	}
-
-	res := s.db.WithContext(ctx).Create(&inputs)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create app inputs: %w", res.Error)
-	}
-
-	return &inputs, nil
-}
-
-type CreateAppAppConfigRequest struct {
-	// not required Readme
-	Readme     string `json:"readme,omitempty"`
-	CLIVersion string `json:"cli_version,omitempty"`
-}
-
-func (c *CreateAppAppConfigRequest) Validate(v *validator.Validate) error {
-	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
-	}
-
-	return nil
-}
-
-// @ID						CreateAppAppConfig
-// @Description.markdown	create_app_config.md
-// @Tags					apps
-// @Accept					json
-// @Param					req	body	CreateAppAppConfigRequest	true	"Input"
-// @Produce				json
-// @Param					app_id	path	string	true	"app ID"
-// @Security				APIKey
-// @Security				OrgID
-// @Failure				400	{object}	stderr.ErrResponse
-// @Failure				401	{object}	stderr.ErrResponse
-// @Failure				403	{object}	stderr.ErrResponse
-// @Failure				404	{object}	stderr.ErrResponse
-// @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{object}	app.AppConfig
-// @Router					/v1/apps/{app_id}/configs [post]
-func (s *service) CreateAppAppConfig(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	appID := ctx.Param("app_id")
-
-	var req CreateAppAppConfigRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
-		return
-	}
-	if err := req.Validate(s.v); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
-		return
-	}
-
-	cfg, err := s.createAppAppConfig(ctx, org.ID, appID, &req)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create app inputs config: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusCreated, cfg)
-}
-
-func (s *service) createAppAppConfig(ctx context.Context, orgID, appID string, req *CreateAppAppConfigRequest) (*app.AppConfig, error) {
 	inputs := app.AppConfig{
 		OrgID:             orgID,
 		AppID:             appID,
