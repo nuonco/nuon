@@ -22,7 +22,7 @@ type UpdateRunnerSettingsRequest struct {
 	K8sServiceAccountName string `json:"org_k8s_service_account_name"`
 	AWSIAMRoleARN         string `json:"org_awsiam_role_arn"`
 
-	AWSMaxInstanceLifetime int `json:"aws_max_instance_lifetime" default:"604800" validate:"min=86400,max=31536000"`
+	AWSMaxInstanceLifetime *int `json:"aws_max_instance_lifetime,omitempty" validate:"omitempty,min=86400,max=31536000"`
 }
 
 func (c *UpdateRunnerSettingsRequest) Validate(v *validator.Validate) error {
@@ -94,8 +94,11 @@ func (s *service) updateRunnerSettings(ctx context.Context, runnerID, orgID stri
 		RunnerAPIURL:             req.RunnerAPIURL,
 		OrgK8sServiceAccountName: req.K8sServiceAccountName,
 		OrgAWSIAMRoleARN:         req.AWSIAMRoleARN,
-		AWSMaxInstanceLifetime:   req.AWSMaxInstanceLifetime,
 	}
+	if req.AWSMaxInstanceLifetime != nil {
+		updates.AWSMaxInstanceLifetime = *req.AWSMaxInstanceLifetime
+	}
+
 	obj := app.RunnerGroupSettings{
 		RunnerGroupID: runner.RunnerGroupID,
 	}
