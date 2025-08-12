@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 )
 
@@ -15,6 +16,7 @@ type Params struct {
 	Cfg *internal.Config
 	L   *zap.Logger
 	DB  *gorm.DB `name:"psql"`
+	MW  metrics.Writer
 }
 
 func New(params Params) converter.PayloadCodec {
@@ -22,6 +24,7 @@ func New(params Params) converter.PayloadCodec {
 		cfg: params.Cfg,
 		l:   params.L,
 		db:  params.DB,
+		mw:  params.MW,
 	}
 }
 
