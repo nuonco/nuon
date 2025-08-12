@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -12,6 +13,7 @@ import (
 
 	commonpb "go.temporal.io/api/common/v1"
 
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 )
 
@@ -20,9 +22,20 @@ var _ converter.PayloadCodec = (*dataConverter)(nil)
 type dataConverter struct {
 	cfg *internal.Config
 	l   *zap.Logger
+	mw  metrics.Writer
 }
 
 func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payload, error) {
+	// TODO(fd): add a gauge or similar to determine how many where actually encoded
+	// TODO(fd): add a tag for success/failure based on wether or not an error was returned
+	startTime := time.Now()
+	tags := []string{"format:gzip", "op:encode"}
+	defer func() {
+		duration := time.Time.Sub(time.Now(), startTime)
+		d.mw.Incr("temporal.codec.incr", tags)
+		d.mw.Timing("temporal.codec.duration", duration, tags)
+	}()
+
 	result := make([]*commonpb.Payload, len(payloads))
 
 	for i, payload := range payloads {
@@ -65,6 +78,14 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 }
 
 func (d *dataConverter) Decode(payloads []*commonpb.Payload) ([]*commonpb.Payload, error) {
+	startTime := time.Now()
+	tags := []string{"format:gzip", "op:decode"}
+	defer func() {
+		duration := time.Time.Sub(time.Now(), startTime)
+		d.mw.Incr("temporal.codec.incr", tags)
+		d.mw.Timing("temporal.codec.duration", duration, tags)
+	}()
+
 	result := make([]*commonpb.Payload, len(payloads))
 
 	for i, payload := range payloads {
