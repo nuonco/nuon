@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -21,9 +22,18 @@ type dataConverter struct {
 	cfg *internal.Config
 	l   *zap.Logger
 	db  *gorm.DB
+	mw  metrics.Writer
 }
 
 func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payload, error) {
+	startTime := time.Now()
+	tags := []string{"format:largepayload", "op:encode"}
+	defer func() {
+		duration := time.Time.Sub(time.Now(), startTime)
+		d.mw.Incr("temporal.codec.incr", tags)
+		d.mw.Timing("temporal.codec.duration", duration, tags)
+	}()
+
 	result := make([]*commonpb.Payload, len(payloads))
 
 	for i, payload := range payloads {
@@ -73,6 +83,14 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 }
 
 func (d *dataConverter) Decode(payloads []*commonpb.Payload) ([]*commonpb.Payload, error) {
+	startTime := time.Now()
+	tags := []string{"format:largepayload", "op:decode"}
+	defer func() {
+		duration := time.Time.Sub(time.Now(), startTime)
+		d.mw.Incr("temporal.codec.incr", tags)
+		d.mw.Timing("temporal.codec.duration", duration, tags)
+	}()
+
 	result := make([]*commonpb.Payload, len(payloads))
 
 	for i, payload := range payloads {
