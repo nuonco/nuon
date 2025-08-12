@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 )
 
@@ -13,12 +14,14 @@ type Params struct {
 
 	Cfg *internal.Config
 	L   *zap.Logger
+	MW  metrics.Writer
 }
 
 func New(params Params) converter.PayloadCodec {
 	return &dataConverter{
 		cfg: params.Cfg,
 		l:   params.L,
+		mw:  params.MW,
 	}
 }
 
