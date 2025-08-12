@@ -33,11 +33,12 @@ import {
   WarningDiamondIcon,
 } from '@phosphor-icons/react'
 
-function formatToRelativeDay(isoDate: string) {
-  const inputDate = DateTime.fromISO(isoDate).startOf('day')
+function formatToRelativeDay(dateString: string) {
+  const inputDate = DateTime.fromISO(dateString)
   const today = DateTime.now().startOf('day')
+  const inputDateDay = inputDate.startOf('day')
 
-  const diffDays = inputDate.diff(today, 'days').days
+  const diffDays = inputDateDay.diff(today, 'days').days
 
   if (diffDays === 0) {
     return 'Today'
@@ -54,7 +55,7 @@ function parseInstallWorkflowsByDate(
   installWorkflows: Array<TInstallWorkflow>
 ): TInstallWorkflowHistory {
   return installWorkflows.reduce<TInstallWorkflowHistory>((acc, iw) => {
-    const date = iw.created_at.split('T')[0]
+    const date = iw.created_at
 
     if (!acc[date]) {
       acc[date] = []
@@ -119,10 +120,11 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                         <Text variant="med-12">
                           {iw?.type === 'action_workflow_run' &&
                           iw?.metadata?.install_action_workflow_name
-                            ? sentanceCase(removeSnakeCase(iw?.type)) + ' (' +
+                            ? sentanceCase(removeSnakeCase(iw?.type)) +
+                              ' (' +
                               iw?.metadata?.install_action_workflow_name +
                               ') '
-                            :  sentanceCase(iw?.name) + ' '}
+                            : sentanceCase(iw?.name) + ' '}
                           {iw?.status?.status}
                         </Text>
                         {iw?.plan_only ? (
@@ -141,7 +143,11 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                     variant="reg-12"
                     className="text-cool-grey-600 dark:text-white/70 self-end justify-self-end"
                   >
-                    <Time time={iw.created_at} format="relative" alignment="right" />
+                    <Time
+                      time={iw.created_at}
+                      format="relative"
+                      alignment="right"
+                    />
                   </Text>
                 </Link>
               ) : (
@@ -159,7 +165,8 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
                           <Text variant="med-12">
                             {iw?.type === 'action_workflow_run' &&
                             iw?.metadata?.install_action_workflow_name
-                              ? sentanceCase(removeSnakeCase(iw?.type)) + ' (' +
+                              ? sentanceCase(removeSnakeCase(iw?.type)) +
+                                ' (' +
                                 iw?.metadata?.install_action_workflow_name +
                                 ') '
                               : sentanceCase(iw?.name) + ' '}
