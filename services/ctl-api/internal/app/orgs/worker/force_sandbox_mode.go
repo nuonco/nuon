@@ -27,7 +27,7 @@ func (w *Workflows) ForceSandboxMode(ctx workflow.Context, sreq signals.RequestS
 
 	if org.SandboxMode {
 		l.Debug("skipping, org is in sandbox mode", zap.String("name", org.Name))
-		return nil
+		// return nil
 	}
 
 	if err := activities.AwaitForceSandboxModeByOrgID(ctx, sreq.ID); err != nil {
