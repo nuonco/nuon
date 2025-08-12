@@ -148,7 +148,8 @@ local_build_cmds:
   - go build -o /tmp/svc-ctl-api
 local_cmds:
   - /tmp/svc-ctl-api api
-  - /tmp/svc-ctl-api worker --namespace=all
+  - /tmp/svc-ctl-api worker --namespace=all --skip=installs
+  - ENABLE_PROFILING=true /tmp/svc-ctl-api worker --namespace=installs
 
 docker_cmds:
   - cmd: startup
