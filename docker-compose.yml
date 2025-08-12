@@ -180,7 +180,7 @@ services:
         - default
    
   parca:
-    image: ghcr.io/parca-dev/parca:v0.23.1
+    image: ghcr.io/parca-dev/parca:v0.24.0
     container_name: parca
     restart: unless-stopped
     command: ["/parca", "--config-path=/etc/parca/parca.yaml"]
