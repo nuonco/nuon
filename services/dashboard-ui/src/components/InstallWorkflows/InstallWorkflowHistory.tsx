@@ -4,15 +4,6 @@ import classNames from 'classnames'
 import { DateTime } from 'luxon'
 import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect } from 'react'
-import {
-  CaretRight,
-  ClockCountdown,
-  CheckCircle,
-  XCircle,
-  Prohibit,
-  Warning,
-  WarningDiamond,
-} from '@phosphor-icons/react/dist/ssr'
 import { revalidateData } from '@/components/actions'
 import { Badge } from '@/components/Badge'
 import { Link } from '@/components/Link'
@@ -24,6 +15,13 @@ import type { TInstallWorkflow } from '@/types'
 import { POLL_DURATION, removeSnakeCase, sentanceCase } from '@/utils'
 import { InstallWorkflowCancelModal } from './InstallWorkflowCancelModal'
 import {
+  CaretRight,
+  ClockCountdown,
+  CheckCircle,
+  XCircle,
+  Prohibit,
+  Warning,
+  WarningDiamond,
   CheckCircleIcon,
   MinusCircleIcon,
   ProhibitIcon,
@@ -34,18 +32,16 @@ import {
 } from '@phosphor-icons/react'
 
 function formatToRelativeDay(dateString: string) {
-  const inputDate = DateTime.fromISO(dateString)
+  const inputDate = DateTime.fromISO(dateString).startOf('day')
   const today = DateTime.now().startOf('day')
-  const inputDateDay = inputDate.startOf('day')
-
-  const diffDays = inputDateDay.diff(today, 'days').days
+  const diffDays = inputDate.diff(today, 'days').days
 
   if (diffDays === 0) {
     return 'Today'
   } else if (diffDays === -1) {
     return 'Yesterday'
   } else {
-    return inputDate.toLocaleString(DateTime.DATETIME_MED_WITH_WEEKDAY)
+    return inputDate.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY)
   }
 }
 
@@ -55,7 +51,7 @@ function parseInstallWorkflowsByDate(
   installWorkflows: Array<TInstallWorkflow>
 ): TInstallWorkflowHistory {
   return installWorkflows.reduce<TInstallWorkflowHistory>((acc, iw) => {
-    const date = iw.created_at
+    const date = iw.created_at.split('T')[0]
 
     if (!acc[date]) {
       acc[date] = []
