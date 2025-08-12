@@ -19,7 +19,7 @@ var cleanupPrefixes []string = []string{
 func CleanupAll(ctx context.Context) error {
 	entries, err := os.ReadDir(defaultTmpRootDir)
 	if err != nil {
-		return fmt.Errorf("failed to read /tmp directory: %w", err)
+		return nil
 	}
 
 	for _, entry := range entries {
