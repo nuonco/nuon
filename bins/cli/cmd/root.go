@@ -34,7 +34,6 @@ func (c *cli) rootCmd() *cobra.Command {
 		c.installsCmd(),
 		c.installersCmd(),
 		c.loginCmd(),
-		c.releasesCmd(),
 		c.orgsCmd(),
 		c.versionCmd(),
 		c.secretsCmd(),
