@@ -103,6 +103,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/orgs/:org_id/admin-debug-mode", s.AdminDebugModeOrg)
 	api.POST("/v1/orgs/:org_id/admin-add-priority", s.AdminAddPriority)
 	api.POST("/v1/orgs/:org_id/admin-forget", s.AdminForgetOrg)
+	api.POST("/v1/orgs/:org_id/admin-force-sandbox-mode", s.AdminForceSandboxMode)
 	api.POST("/v1/orgs/:org_id/admin-restart-runners", s.AdminRestartRunners)
 	api.PATCH("/v1/orgs/:org_id/admin-features", s.AdminUpdateOrgFeatures)
 

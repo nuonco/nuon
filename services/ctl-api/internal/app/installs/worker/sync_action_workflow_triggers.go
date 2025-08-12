@@ -13,6 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/actions"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
 func actionWorkflowTriggerWorkflowID(installID string, actionWorkflowID string) string {
@@ -20,6 +21,13 @@ func actionWorkflowTriggerWorkflowID(installID string, actionWorkflowID string) 
 }
 
 func (w *Workflows) ActionWorkflowTriggers(ctx workflow.Context, sreq signals.RequestSignal) error {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+	l.Info("returning before starting children event loops for action crons")
+	return nil
+
 	workflows, err := activities.AwaitGetActionWorkflowsByInstallID(ctx, sreq.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get action workflow run")

@@ -3,6 +3,7 @@ package components
 import (
 	"encoding/json"
 	"fmt"
+	"runtime"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -90,6 +91,10 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
+
+	planJSON = nil
+	plan = nil
+	runtime.GC()
 
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "creating plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
