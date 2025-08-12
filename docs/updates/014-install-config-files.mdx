@@ -35,11 +35,17 @@ of your app's config, it can be tweaked to make updates to the install.
 
 ## Workflow Step Groups
 
-Workflow steps are now grouped, and some retries will retry an entire group when required. For instance, when retrying a 
-Terraform apply step, the plan can not be reused, so a new group is created and the plan is retried (and re-approved) 
+Workflow steps are now grouped, and some retries will retry an entire group when required. For instance, when retrying a
+Terraform apply step, the plan can not be reused, so a new group is created and the plan is retried (and re-approved)
 first.
 
 ![Workflow Step Groups](assets/2025-08-06-16-46-05.png)
+
+## Runner Instance Lifetime
+
+As part of the install stack, we now set the MaxInstanceLifetime for Runner instances to 7 days by default and recreate
+it via the autoscaling group. This serves as a safety net in case the runner instance becomes unresponsive for some
+reason due to accumlated state, such as disk space.
 
 ## Bug Fixes
 
