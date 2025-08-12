@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    optimizePackageImports: ['@/components', '@/stratus', "@/utils"],
+    optimizePackageImports: ['@/components', '@/stratus', '@/utils'],
   },
   images: {
     remotePatterns: [
@@ -35,7 +35,7 @@ const nextConfig = {
         source: '/admin/temporal-codec/decode',
         destination: `${
           process.env.NUON_CTL_API_ADMIN_URL ||
-          'http://ctl.nuon.us-west-2.stage.nuon.cloud'
+          'http://ctl-api-admin.ctl-api.svc.cluster.local:8082'
         }/v1/general/temporal-codec/decode`,
       },
     ]
