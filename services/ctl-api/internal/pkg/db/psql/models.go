@@ -5,8 +5,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-// declare all
-// models in the correct order they should be migrated.
+// declare all models in the correct order they should be migrated.
 func AllModels() []interface{} {
 	return []interface{}{
 		// management, auth and user management

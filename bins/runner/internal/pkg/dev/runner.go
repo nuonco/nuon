@@ -12,10 +12,28 @@ import (
 )
 
 func (d *devver) initRunner(ctx context.Context) error {
+	// NOTE(jm): we are removing `RUNNER_ID`
 	if os.Getenv("RUNNER_ID") != "" {
-		fmt.Println("runner id set from environment")
+		fmt.Println("runner id set from environment using RUNNER_ID env-var (note this is no longer recommended, please use ORG_RUNNER_ID or INSTALL_RUNNER_ID).")
 		d.runnerID = os.Getenv("RUNNER_ID")
 		return nil
+	}
+
+	switch d.watchRunnerType {
+	case "org":
+		if os.Getenv("ORG_RUNNER_ID") != "" {
+			fmt.Println("runner id set from environment using ORG_RUNNER_ID env-var")
+			d.runnerID = os.Getenv("ORG_RUNNER_ID")
+			os.Setenv("RUNNER_ID", d.runnerID)
+			return nil
+		}
+	case "install":
+		if os.Getenv("INSTALL_RUNNER_ID") != "" {
+			fmt.Println("runner id set from environment using INSTALL_RUNNER_ID env-var")
+			d.runnerID = os.Getenv("INSTALL_RUNNER_ID")
+			os.Setenv("RUNNER_ID", d.runnerID)
+			return nil
+		}
 	}
 
 	fn := func(ctx context.Context) error {

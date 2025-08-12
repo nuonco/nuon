@@ -21,7 +21,7 @@ func (h *Helpers) getInstallActionWorkflows(ctx context.Context, installID strin
 				scopes.WithOverrideTable(views.CustomViewName(db, &app.InstallActionWorkflowRun{}, "state_view_v1")),
 			)
 		}).
-		Preload("Runs.RunnerJob").
+		// Preload("Runs.RunnerJob").
 		Preload("ActionWorkflow").
 		Find(&acts, "install_id = ?", installID)
 	if res.Error != nil {
