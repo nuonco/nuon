@@ -13,8 +13,6 @@ replace github.com/go-playground/validator/v10 v10.22.1 => github.com/go-playgro
 
 replace github.com/go-playground/validator/v10 v10.23.0 => github.com/go-playground/validator/v10 v10.16.0
 
-exclude google.golang.org/grpc/stats/opentelemetry v0.0.0-20240907200651-3ffb98b2c93a
-
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.0
