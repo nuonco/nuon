@@ -13,8 +13,8 @@ buildkit:
     pullPolicy: IfNotPresent
   resources:
     limits:
-      cpu: 10000m
-      memory: 24Gi
+      cpu: 30000m
+      memory: 56Gi
   securityContext:
     privileged: true
   persistence:

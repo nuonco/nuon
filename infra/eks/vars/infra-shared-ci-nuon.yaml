@@ -24,8 +24,8 @@ additional_nodepools:
     instance_types:
       - c5a.8xlarge
     limits:
-      cpu: 20
-      memory: "40Gi"
+      cpu: 32
+      memory: "62Gi"
     expireAfter: "Never"
     disruption:
       consolidationPolicy: "WhenEmpty"
