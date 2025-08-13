@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/powertoolsdev/mono/pkg/pipeline"
 	callbackmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/callbacks"
 	execmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/exec"
@@ -25,16 +26,18 @@ func (r *run) Plan(ctx context.Context) error {
 }
 
 func (r *run) localFileCallback(filename string, compress bool) (pipeline.CallbackFn, error) {
-	r.Log.Info(fmt.Sprintf("writing file to %s / %s", r.Workspace.Root(), filename))
-	applyCb, err := callbackmappers.NewLocalCallback(r.v,
-		callbackmappers.WithFilename(path.Join(r.Workspace.Root(), filename)),
-		callbackmappers.WithCompression(true),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create apply cb: %w", err)
-	}
+	return func(ctx context.Context, log hclog.Logger, byts []byte) error {
+		r.Log.Info(fmt.Sprintf("writing file to %s / %s", r.Workspace.Root(), filename))
+		applyCb, err := callbackmappers.NewLocalCallback(r.v,
+			callbackmappers.WithFilename(path.Join(r.Workspace.Root(), filename)),
+			callbackmappers.WithCompression(true),
+		)
+		if err != nil {
+			return fmt.Errorf("unable to create apply cb: %w", err)
+		}
 
-	return applyCb, nil
+		return applyCb(ctx, log, byts)
+	}, nil
 }
 
 func (r *run) noopOutputCallback() (pipeline.CallbackFn, error) {
