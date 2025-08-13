@@ -22,7 +22,7 @@ ec2nodeclasses:
 additional_nodepools:
   - name: buildkit
     instance_types:
-      - c5a.4xlarge
+      - c5a.8xlarge
     limits:
       cpu: 20
       memory: "40Gi"
