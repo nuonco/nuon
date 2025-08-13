@@ -40,6 +40,7 @@ newly-created workflow to track the install's upgrade process.
 ```bash
 cd <your-app-config>
 mkdir -p installs
+touch installs/<install-name>.toml
 nuon installs generate-config -i <install-name> | tee installs/<install-name>.toml
 ```
 
