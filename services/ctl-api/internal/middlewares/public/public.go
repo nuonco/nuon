@@ -19,6 +19,9 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/oapi/v3"}:                  {},
 	{"GET", "/v1/general/config-schema"}: {},
 
+	{"GET", "/v1/general/httpbin/:code"}:  {},
+	{"POST", "/v1/general/httpbin/:code"}: {},
+
 	// cli / ui methods
 	{"GET", "/v1/general/cli-config"}:                              {},
 	{"GET", "/v1/general/cloud-platform/:cloud_platform/regions"}:  {},
