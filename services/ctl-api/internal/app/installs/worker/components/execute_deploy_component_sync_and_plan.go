@@ -63,7 +63,7 @@ func (w *Workflows) ExecuteDeployComponentSyncAndPlan(ctx workflow.Context, sreq
 	err = w.pollForDeployableBuild(ctx, installDeploy.ID, installDeploy.ComponentBuildID)
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusNoop, "build is not deployable")
-		return errors.New("build is not deployable")
+		return errors.Wrap(err, "failed to poll for build")
 	}
 
 	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
