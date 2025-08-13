@@ -27,6 +27,7 @@ func (c *cli) commonProviders() []fx.Option {
 		fx.Provide(api.New),
 		fx.Provide(heartbeater.New),
 		fx.Provide(metrics.New),
+		// logging and error handling
 		fx.Provide(slog.AsSystemProvider(slog.NewSystemProvider)),
 		fx.Provide(log.AsSystemLogger(log.NewSystem)),
 		fx.Provide(log.AsDevLogger(log.NewDev)),

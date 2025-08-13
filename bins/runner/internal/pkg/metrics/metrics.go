@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal"
+	"github.com/powertoolsdev/mono/bins/runner/internal/version"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 )
@@ -23,7 +24,7 @@ type Params struct {
 }
 
 func New(params Params) (metrics.Writer, error) {
-	tags := metrics.ToTags(params.Settings.Metadata, "git_ref", params.Cfg.GitRef, "service", "runner")
+	tags := metrics.ToTags(params.Settings.Metadata, "version", version.Version, "git_ref", params.Cfg.GitRef, "service", "runner")
 
 	disableMetrics := !params.Settings.EnableMetrics
 	if os.Getenv("ENV") == "development" {

@@ -10,6 +10,7 @@ var rootCmd = &cobra.Command{}
 
 func Execute() {
 	c := &cli{}
+	c.registerMng()
 	c.registerRun()
 	c.registerVersion()
 	c.registerRunLocal()
