@@ -34,8 +34,9 @@ func (w *Workflows) pollForDeployableBuild(ctx workflow.Context, installDeployId
 	}
 
 	l.Info("build is not yet deployable, polling")
+	// check the build every 10 seconds for 1 hour
 	sleepTimer := time.Second * 10
-	maxAttempts := 20
+	maxAttempts := 360
 	attempt := 0
 	for {
 		if attempt >= maxAttempts {
