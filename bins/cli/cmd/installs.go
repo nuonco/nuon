@@ -106,6 +106,22 @@ func (c *cli) installsCmd() *cobra.Command {
 	deleteCmd.MarkFlagRequired("confirm")
 	installsCmds.AddCommand(deleteCmd)
 
+	confirmForget := false
+	forgetCmd := &cobra.Command{
+		Use:   "forget",
+		Short: "Forget install",
+		Long:  "Forget an install by ID",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.Forget(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	forgetCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to forget")
+	forgetCmd.Flags().BoolVar(&confirmForget, "confirm", false, "Confirm you want to forget the install")
+	forgetCmd.MarkFlagRequired("install-id")
+	forgetCmd.MarkFlagRequired("confirm")
+	installsCmds.AddCommand(forgetCmd)
+
 	componentsCmd := &cobra.Command{
 		Use:   "components",
 		Short: "Get install components",
