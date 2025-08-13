@@ -21,8 +21,10 @@ type SystemParams struct {
 }
 
 func NewSystem(params SystemParams) *zap.Logger {
-	zapCore := otelzap.NewCore("system",
-		otelzap.WithLoggerProvider(params.LP))
+	zapCore := otelzap.NewCore(
+		"system",
+		otelzap.WithLoggerProvider(params.LP),
+	)
 	l := zap.New(zapCore)
 	return l
 }
