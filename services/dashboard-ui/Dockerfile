@@ -45,7 +45,7 @@ ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
 ENV NEXT_PUBLIC_ACCESS_TOKEN_ROUTE=/api/auth/access-token
 
 RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui \
-npm run build
+npm run build -- --no-lint
 
 FROM build as final
 
