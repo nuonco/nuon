@@ -21,6 +21,17 @@ func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallSta
 		return nil, errors.Wrap(err, "unable to get logger")
 	}
 
+	l.Info("checking sandbox outputs for kubernetes cluster info")
+	stateData, err := state.AsMap()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get state data")
+	}
+	if ok := hasClusterOutputs(stateData); !ok {
+		l.Info("sandbox outputs do not include kubernetes cluster info, skipping")
+		return nil, nil
+	}
+
+	l.Info("sandbox outputs contain kubernetes cluster info, parsing")
 	obj := &kube.ClusterInfo{}
 	switch {
 	case stack.InstallStackOutputs.AWSStackOutputs != nil:
@@ -50,12 +61,6 @@ func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallSta
 			},
 		}
 	}
-
-	stateData, err := state.AsMap()
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get state data")
-	}
-
 	if err := render.RenderStruct(obj, stateData); err != nil {
 		l.Error("error rendering cluster info",
 			zap.Any("cluster-info", obj),
@@ -65,5 +70,18 @@ func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallSta
 		return nil, errors.Wrap(err, "unable to render config")
 	}
 
+	l.Info("successfully parsed kubernetes cluster info, including in plan")
 	return obj, nil
+}
+
+// hasClusterOutputs checks for sandbox cluster outputs in install state data.
+func hasClusterOutputs(stateData map[string]any) bool {
+	if sandbox, ok := stateData["sandbox"]; ok {
+		if outputs, ok := sandbox.(map[string]any)["outputs"]; ok {
+			if _, ok := outputs.(map[string]any)["cluster"]; ok {
+				return true
+			}
+		}
+	}
+	return false
 }
