@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+
+	"github.com/powertoolsdev/mono/bins/runner/internal/version"
 )
 
 func (s *Settings) fetch(ctx context.Context) error {
@@ -27,11 +29,22 @@ func (s *Settings) fetch(ctx context.Context) error {
 	s.LoggingLevel = level
 	s.Groups = settings.Groups
 
+	// container
+	s.ContainerImageTag = settings.ContainerImageTag
+	s.ContainerImageURL = settings.ContainerImageURL
+
 	// NOTE: we add a few additional fields into the metadata so they appear on all tags, but can not be set by the
 	// API.
 	s.Metadata["runner.id"] = s.Cfg.RunnerID
-	s.Metadata["runner.version"] = s.Cfg.GitRef
+	s.Metadata["runner.version"] = version.Version
 	s.OtelSchemaURL = s.Cfg.RunnerAPIURL
+
+	// TODO(fd): return the platform on the RunnerGroupSettings object
+	// platform
+	s.Platform = "aws"
+	if settings.AwsCloudformationStackType != "" && settings.AwsInstanceType != "" {
+		s.Platform = "aws"
+	}
 
 	return nil
 }

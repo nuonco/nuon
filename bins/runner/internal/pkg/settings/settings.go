@@ -37,6 +37,13 @@ type Settings struct {
 	// like cloudwatch metrics and more.
 	OTELConfiguration string `validate:"required"`
 
+	// container
+	ContainerImageTag string
+	ContainerImageURL string
+
+	// platform
+	Platform string
+
 	apiClient nuonrunner.Client
 	l         *zap.Logger
 	Cfg       *internal.Config

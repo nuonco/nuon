@@ -2,6 +2,7 @@ package jobloop
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -18,6 +19,7 @@ const (
 )
 
 func (j *jobLoop) runWorker() {
+	fmt.Printf("starting worker: %s\n", j.jobGroup)
 	l, _ := zap.NewProduction()
 	l = l.With(zap.Any("group", j.jobGroup))
 

@@ -24,6 +24,14 @@ func AsOperationsJobLoop(f any) any {
 	)
 }
 
+func AsManagementJobLoop(f any) any {
+	return fx.Annotate(
+		f,
+		fx.ResultTags(`group:"management"`),
+		fx.As(new(JobLoop)),
+	)
+}
+
 func WithJobLoops(f any) any {
 	return fx.Annotate(
 		f,
@@ -35,5 +43,12 @@ func WithOperationsJobLoops(f any) any {
 	return fx.Annotate(
 		f,
 		fx.ParamTags(`group:"operations"`),
+	)
+}
+
+func WithManagementJobLoops(f any) any {
+	return fx.Annotate(
+		f,
+		fx.ParamTags(`group:"management"`),
 	)
 }
