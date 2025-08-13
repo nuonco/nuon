@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon-runner-go/models"
 	"go.uber.org/zap"
 
+	"github.com/powertoolsdev/mono/bins/runner/internal/version"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
@@ -18,7 +19,7 @@ func (h *HeartBeater) writeHeartBeat(ctx context.Context) error {
 	aliveDur := time.Since(h.startTS)
 	req := &models.ServiceCreateRunnerHeartBeatRequest{
 		AliveTime: generics.ToPtr(int64(aliveDur)),
-		Version:   h.settings.Cfg.GitRef,
+		Version:   version.Version,
 	}
 
 	if _, err := h.apiClient.CreateHeartBeat(ctx, req); err != nil {
