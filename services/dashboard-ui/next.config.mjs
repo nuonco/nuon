@@ -18,12 +18,18 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/admin/temporal/:path*',
-        destination: `${
-          process.env.NUON_TEMPORAL_UI_URL ||
-          'http://temporal-web.temporal.svc.cluster.local:8080'
-        }/admin/temporal/:path*`,
+        source: '/admin/temporal',
+        destination: '/api/admin/temporal/ui',
       },
+      {
+        source: '/admin/temporal/:path*',
+        destination: '/api/admin/temporal/ui/:path*',
+      },
+      {
+        source: '/_app/:path*',
+        destination: '/api/admin/temporal/ui/_app/:path*',
+      },
+
       {
         source: '/admin/swagger/docs/:path*',
         destination: `${
@@ -33,10 +39,7 @@ const nextConfig = {
       },
       {
         source: '/admin/temporal-codec/decode',
-        destination: `${
-          process.env.NUON_CTL_API_ADMIN_URL ||
-          'http://ctl-api-admin.ctl-api.svc.cluster.local:8082'
-        }/v1/general/temporal-codec/decode`,
+        destination: '/api/admin/temporal/decode',
       },
     ]
   },
