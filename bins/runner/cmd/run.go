@@ -6,37 +6,18 @@ import (
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/actions"
-	actionsworkflow "github.com/powertoolsdev/mono/bins/runner/internal/jobs/actions/workflow"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/build"
-	containerimagebuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/containerimage"
-	dockerbuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/docker"
-	helmbuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/helm"
-	noopbuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/noop"
-	terraformbuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/terraform"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy"
-	helmdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/helm"
-	jobdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/job"
-	kubernetesmanifestdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/kubernetes_manifest"
-	noopdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/noop"
-	terraformdeploy "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/terraform"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/sandbox"
-	sandboxsyncsecrets "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sandbox/sync_secrets"
-
-	sandboxterraform "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sandbox/terraform"
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync"
+
 	"github.com/powertoolsdev/mono/bins/runner/internal/registry"
 
-	// containerimagesync "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/containerimage"
-	noopsync "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/noop"
-	ocisync "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/oci"
-
-	check "github.com/powertoolsdev/mono/bins/runner/internal/jobs/healthcheck/check"
-	noopoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/noop"
-	shutdownoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/shutdown"
-	updateoperation "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/update"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/heartbeater"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
+
+	check "github.com/powertoolsdev/mono/bins/runner/internal/jobs/healthcheck/check"
 )
 
 func (c *cli) registerRun() error {
@@ -51,58 +32,43 @@ func (c *cli) registerRun() error {
 }
 
 func (c *cli) runRun(cmd *cobra.Command, _ []string) {
-	providers := []fx.Option{
-		// common providers
-		// operation jobs
-		fx.Provide(jobloop.AsOperationsJobLoop(operations.NewJobLoop)),
-		fx.Provide(jobs.AsJobHandler("operations", noopoperation.New)),
-		fx.Provide(jobs.AsJobHandler("operations", shutdownoperation.New)),
-		fx.Provide(jobs.AsJobHandler("operations", updateoperation.New)),
-		fx.Provide(jobs.AsJobHandler("operations", check.New)),
+	providers := []fx.Option{}
 
-		// sync jobs
-		fx.Provide(jobloop.AsJobLoop(sync.NewJobLoop)),
-		fx.Provide(jobs.AsJobHandler("sync", ocisync.New)),
-		fx.Provide(jobs.AsJobHandler("sync", noopsync.New)),
-
-		// start all job loops
-		fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
-		fx.Invoke(jobloop.WithOperationsJobLoops(func([]jobloop.JobLoop) {})),
-
-		// org-only providers
-		// build jobs
-		fx.Provide(jobloop.AsJobLoop(build.NewJobLoop)),
-		fx.Provide(jobs.AsJobHandler("builds", dockerbuild.New)),
-		fx.Provide(jobs.AsJobHandler("builds", containerimagebuild.New)),
-		fx.Provide(jobs.AsJobHandler("builds", helmbuild.New)),
-		fx.Provide(jobs.AsJobHandler("builds", terraformbuild.New)),
-		fx.Provide(jobs.AsJobHandler("builds", noopbuild.New)),
-
-		// sandbox jobs
-		fx.Provide(jobloop.AsJobLoop(sandbox.NewJobLoop)),
-		fx.Provide(jobs.AsJobHandler("sandbox", sandboxterraform.New)),
-		fx.Provide(jobs.AsJobHandler("sandbox", sandboxsyncsecrets.New)),
-
-		// install-only proviers
-		// deploy jobs
-		fx.Provide(jobloop.AsJobLoop(deploy.NewJobLoop)),
-		fx.Provide(jobs.AsJobHandler("deploys", helmdeploy.New)),
-		fx.Provide(jobs.AsJobHandler("deploys", jobdeploy.New)),
-		fx.Provide(jobs.AsJobHandler("deploys", noopdeploy.New)),
-		fx.Provide(jobs.AsJobHandler("deploys", terraformdeploy.New)),
-		fx.Provide(jobs.AsJobHandler("deploys", kubernetesmanifestdeploy.New)),
-
-		// actions jobs
-		fx.Provide(jobloop.AsJobLoop(actions.NewJobLoop)),
-		fx.Provide(jobs.AsJobHandler("actions", actionsworkflow.New)),
-
-		fx.Invoke(func(*heartbeater.HeartBeater) {}),
-		fx.Invoke(func(*registry.Registry) {}),
-	}
-
+	// common providers
 	providers = append(providers, c.providers()...)
 
-	// we need a way to determine what kind of runner we are running as
+	// sandbox
+	providers = append(providers, sandbox.GetJobs()...)
 
+	// operations
+	providers = append(providers, operations.GetJobs()...)
+	providers = append(providers, fx.Provide(jobs.AsJobHandler("operations", check.New)))
+
+	// sync
+	providers = append(providers, sync.GetJobs()...)
+
+	// actions
+	providers = append(providers, actions.GetJobs()...)
+
+	// org-only providers
+	providers = append(providers, build.GetJobs()...)
+
+	// install-only proviers
+	providers = append(providers, deploy.GetJobs()...)
+
+	providers = append(
+		providers,
+		[]fx.Option{
+			// start all job loops
+			fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
+			fx.Invoke(jobloop.WithOperationsJobLoops(func([]jobloop.JobLoop) {})),
+
+			// registry and heartbeater
+			fx.Invoke(func(*heartbeater.HeartBeater) {}),
+			fx.Invoke(func(*registry.Registry) {}),
+		}...,
+	)
+
+	// NOTE(fd): we need a way to determine what kind of runner we are running as
 	fx.New(providers...).Run()
 }
