@@ -38,13 +38,13 @@ server:
           database: temporal
           driver: postgres12
           maxConnLifetime: 1h
-          maxConns: 30
-          maxIdleConns: 30
+          maxConns: 40
+          maxIdleConns: 40
       visibility:
         driver: sql
         sql:
           database: temporal_visibility
           driver: postgres12
           maxConnLifetime: 1h
-          maxConns: 30
-          maxIdleConns: 30
+          maxConns: 40
+          maxIdleConns: 40
