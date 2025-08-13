@@ -46,6 +46,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - 7233:7233
+      - 8233:8233
     volumes:
       - /var/:/tmp/temporalcli
     networks:
