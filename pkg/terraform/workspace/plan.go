@@ -9,7 +9,9 @@ import (
 	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/pkg/errors"
+	"github.com/powertoolsdev/mono/pkg/terraform/workspace/output"
 	"go.uber.org/zap"
 )
 
@@ -17,6 +19,45 @@ const (
 	defaultPlanFilename    = "tfplan"
 	compressedPlanFilename = "tfplan.gz"
 )
+
+func (w *workspace) Plan(ctx context.Context, log hclog.Logger) ([]byte, error) {
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.plan(ctx, client, log)
+}
+
+func (w *workspace) plan(ctx context.Context, client Terraform, log hclog.Logger) ([]byte, error) {
+	out, err := output.New(w.v, output.WithLogger(log))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output: %w", err)
+	}
+
+	writer, err := out.Writer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get writer: %w", err)
+	}
+
+	opts := []tfexec.PlanOption{
+		tfexec.Refresh(true),
+		tfexec.Out("tfplan"), // NOTE: this should probably be configured w/ a WithPlanOut
+	}
+	for _, fp := range w.varsPaths {
+		opts = append(opts, tfexec.VarFile(fp))
+	}
+
+	if _, err := client.PlanJSON(ctx,
+		writer,
+		opts...,
+	); err != nil {
+		fmt.Printf("%e", err)
+		return nil, fmt.Errorf("unable to plan: %w", err)
+	}
+
+	return out.Bytes()
+}
 
 // WritePlan writes the Terraform tfplan to a file called tfplan in the workspace. the bytes are provided externally. e.g. in the runner in exec.
 func (w *workspace) WriteTFPlan(ctx context.Context, log hclog.Logger) ([]byte, error) {
