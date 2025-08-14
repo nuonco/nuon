@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
@@ -50,6 +51,15 @@ func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 	l.Debug("finished executing sandbox apply plan", zap.String("install_run.id", installRun.ID))
 
 	l.Info("updating install sandbox run status", zap.String("install_run.id", installRun.ID))
+
+	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+		InstallID:       install.ID,
+		TriggeredByID:   sreq.InstallWorkflowID,
+		TriggeredByType: "install_workflow",
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to generate state")
+	}
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")
 	return nil
 }

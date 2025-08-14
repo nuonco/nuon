@@ -15,6 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/state"
 	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
@@ -167,6 +168,15 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusActive),
 	}); err != nil {
 		return errors.Wrap(err, "unable to update status")
+	}
+
+	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+		InstallID:       install.ID,
+		TriggeredByID:   run.ID,
+		TriggeredByType: "install_stack_version_run",
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to generate state")
 	}
 
 	return nil
