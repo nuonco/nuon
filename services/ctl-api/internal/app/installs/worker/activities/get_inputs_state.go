@@ -3,9 +3,8 @@ package activities
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
 type GetInstallInputsStateRequest struct {
@@ -23,7 +22,7 @@ func (a *Activities) GetInstallInputsState(ctx context.Context, req GetInstallIn
 		Order("created_at desc").
 		First(&inps)
 	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to find install inputs")
+		return nil, generics.TemporalGormError(res.Error, "unable to get install inputs")
 	}
 
 	return &inps, nil

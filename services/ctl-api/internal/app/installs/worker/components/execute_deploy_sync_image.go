@@ -75,6 +75,7 @@ func (w *Workflows) ExecuteDeployComponentSyncImage(ctx workflow.Context, sreq s
 		return errors.Wrap(err, "unable to execute sync")
 	}
 
+	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   installDeploy.ID,
@@ -83,6 +84,5 @@ func (w *Workflows) ExecuteDeployComponentSyncImage(ctx workflow.Context, sreq s
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")
 	}
-	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")
 	return nil
 }
