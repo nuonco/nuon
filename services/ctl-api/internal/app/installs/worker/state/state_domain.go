@@ -14,11 +14,11 @@ import (
 func (w *Workflows) getDomainPartial(ctx workflow.Context, installID string) (*state.DomainState, error) {
 	sandboxRun, err := activities.AwaitGetInstallSandboxRunStateByInstallID(ctx, installID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.Wrap(err, "unable to get domain state")
 		}
 
-		return nil, errors.Wrap(err, "unable to get sandbox run")
+		return &state.DomainState{}, nil
 	}
 
 	st := w.toDomainState(sandboxRun)
