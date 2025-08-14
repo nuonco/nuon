@@ -17,6 +17,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/sandbox"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/stack"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cloudformation"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 )
@@ -35,6 +36,7 @@ type Params struct {
 	StackWorkflows      *stack.Workflows
 	ComponentsWorkflows *components.Workflows
 	ActionsWorkflows    *actions.Workflows
+	StateWorkflows      *state.Workflows
 }
 
 type Workflows struct {
@@ -51,6 +53,7 @@ type Workflows struct {
 	subwfStack      *stack.Workflows
 	subwfComponents *components.Workflows
 	subwfActions    *actions.Workflows
+	stateWorkflows  *state.Workflows
 }
 
 func (w *Workflows) All() []any {
@@ -58,6 +61,7 @@ func (w *Workflows) All() []any {
 	wkflows := []any{
 		w.EventLoop,
 		w.ActionWorkflowTriggers,
+		w.stateWorkflows.GenerateState,
 		plan.CreateActionWorkflowRunPlan,
 		plan.CreateSandboxRunPlan,
 		plan.CreateDeployPlan,
@@ -95,5 +99,6 @@ func NewWorkflows(params Params) (*Workflows, error) {
 		subwfStack:      params.StackWorkflows,
 		subwfComponents: params.ComponentsWorkflows,
 		subwfActions:    params.ActionsWorkflows,
+		stateWorkflows:  params.StateWorkflows,
 	}, nil
 }
