@@ -403,6 +403,7 @@ func (h *Helpers) getInstallStateFromDB(ctx context.Context, installID string) (
 	var is app.InstallState
 	res := h.db.WithContext(ctx).
 		Where("install_id = ?", installID).
+		Order("created_at DESC").
 		First(&is)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to find install state")
