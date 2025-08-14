@@ -2,11 +2,11 @@ package activities
 
 import (
 	"context"
-	"fmt"
 
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -39,7 +39,7 @@ func (a *Activities) GetInstallSandboxRunState(ctx context.Context, req GetInsta
 		Order("created_at desc").
 		First(&installSandboxRun)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install sandbox run for state: %w", res.Error)
+		return nil, generics.TemporalGormError(res.Error, "unable to update install action workflow run")
 	}
 
 	return &installSandboxRun, nil

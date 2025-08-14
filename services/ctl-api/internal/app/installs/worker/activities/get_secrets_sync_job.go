@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
 type GetSecretsSyncJobRequest struct {
@@ -30,7 +32,7 @@ func (a *Activities) GetSecretsSyncJob(ctx context.Context, req GetSecretsSyncJo
 		First(&job)
 
 	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get runner job")
+		return nil, generics.TemporalGormError(res.Error, "unable to get secrets sync job")
 	}
 
 	return &job, nil
