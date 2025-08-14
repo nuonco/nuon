@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { API_URL } from '@/utils/configs'
 
-// Handles both Swagger UI/static asset proxying (.js, .css, .ico, .html, .png, .svg, etc) and API requests.
-// For asset requests, sets the correct content-type. For API requests, passes through everything.
-async function buildTargetUrl(p: Promise<{ slug?: string[] }>, req: NextRequest) {
-  const params = (await p) || {}
-  // If no slug, serve "/" (root of API_URL), else join slug for asset/api path
-  const urlPath = Array.isArray(params.slug) && params.slug.length > 0 ? '/' + params.slug.join('/') : ''
+async function buildTargetUrl(
+  paramsPromise: Promise<{ slug?: string[] }>,
+  req: NextRequest
+) {
+  // Always await params!
+  const params = (await paramsPromise) || {}
+  // If no slug, serve /docs/index.html (main swagger page)
+  let urlPath = '/docs/index.html'
+  if (Array.isArray(params.slug) && params.slug.length > 0) {
+    urlPath = '/docs/' + params.slug.join('/')
+  }
   return `${API_URL}${urlPath}${req.nextUrl.search}`
 }
 
@@ -17,7 +22,6 @@ async function proxyRequest(
 ) {
   const targetUrl = await buildTargetUrl(paramsPromise, req)
 
-  // Clone all headers except compression
   const headers = { ...Object.fromEntries(req.headers) }
   delete headers['accept-encoding']
 
@@ -26,7 +30,6 @@ async function proxyRequest(
     headers,
   }
 
-  // Pass through body for mutating requests
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
     const contentType = req.headers.get('content-type') || ''
     if (contentType.includes('application/json')) {
@@ -39,13 +42,12 @@ async function proxyRequest(
   const res = await fetch(targetUrl, fetchInit)
   const body = await res.arrayBuffer()
 
-  // Clone response headers, strip problematic encodings
+  // Set correct content-type for HTML and other assets
   const responseHeaders = new Headers(res.headers)
   responseHeaders.delete('content-encoding')
   responseHeaders.delete('transfer-encoding')
   responseHeaders.delete('content-length')
 
-  // Set content-type for known Swagger/static assets
   if (targetUrl.endsWith('.js')) {
     responseHeaders.set('content-type', 'application/javascript')
   } else if (targetUrl.endsWith('.css')) {
@@ -54,12 +56,6 @@ async function proxyRequest(
     responseHeaders.set('content-type', 'image/x-icon')
   } else if (targetUrl.endsWith('.html')) {
     responseHeaders.set('content-type', 'text/html; charset=utf-8')
-  } else if (targetUrl.endsWith('.png')) {
-    responseHeaders.set('content-type', 'image/png')
-  } else if (targetUrl.endsWith('.svg')) {
-    responseHeaders.set('content-type', 'image/svg+xml')
-  } else if (targetUrl.endsWith('.json')) {
-    responseHeaders.set('content-type', 'application/json')
   }
 
   return new NextResponse(body, {
@@ -68,6 +64,7 @@ async function proxyRequest(
   })
 }
 
+// Always pass context.params as a promise to proxyRequest!
 export async function GET(req: NextRequest, context: any) {
   return proxyRequest('GET', req, context.params)
 }

@@ -29,17 +29,17 @@ const nextConfig = {
         source: '/_app/:path*',
         destination: '/api/admin/temporal/ui/_app/:path*',
       },
-
-      {
-        source: '/admin/swagger/docs/:path*',
-        destination: `${
-          process.env.NUON_CTL_API_ADMIN_URL ||
-          'http://ctl-api-admin.ctl-api.svc.cluster.local:8082'
-        }/docs/:path*`,
-      },
       {
         source: '/admin/temporal-codec/decode',
         destination: '/api/admin/temporal/decode',
+      },
+      {
+        source: '/admin/swagger/:path*',
+        destination: '/api/ctl-api/:path*',
+      },
+      {
+        source: '/admin/:path*',
+        destination: '/api/ctl-api/docs/:path*',
       },
     ]
   },
