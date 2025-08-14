@@ -2,6 +2,7 @@ package state
 
 import (
 	"go.temporal.io/sdk/workflow"
+	"gorm.io/gorm"
 
 	"github.com/pkg/errors"
 
@@ -13,6 +14,10 @@ import (
 func (w *Workflows) getSandboxStatePartial(ctx workflow.Context, installID string) (*state.SandboxState, error) {
 	sandboxRun, err := activities.AwaitGetInstallSandboxRunStateByInstallID(ctx, installID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &state.SandboxState{}, nil
+		}
+
 		return nil, errors.Wrap(err, "unable to get sandbox run")
 	}
 
