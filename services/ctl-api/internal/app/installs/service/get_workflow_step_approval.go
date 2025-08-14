@@ -11,7 +11,7 @@ import (
 )
 
 // @ID									GetWorkflowStepApproval
-// @Summary								get an workflow step
+// @Summary								get an workflow step approval
 // @Description.markdown				get_workflow_step_approval.md
 // @Param	workflow_id			path	string	true	"workflow id"
 // @Param	workflow_step_id	path	string	true	"step id"
@@ -26,7 +26,7 @@ import (
 // @Failure								403	{object}	stderr.ErrResponse
 // @Failure								404	{object}	stderr.ErrResponse
 // @Failure								500	{object}	stderr.ErrResponse
-// @Success								200	{array}		app.WorkflowStepApproval
+// @Success								200	{object}		app.WorkflowStepApproval
 // @Router 								/v1/workflows/{workflow_id}/steps/{workflow_step_id}/approvals/{approval_id} [GET]
 func (s *service) GetWorkflowStepApproval(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -56,7 +56,7 @@ func (s *service) GetWorkflowStepApproval(ctx *gin.Context) {
 
 // TODO: Remove. Deprecated.
 // @ID									GetInstallWorkflowStepApproval
-// @Summary								get an install workflow step
+// @Summary								get an install workflow step approval
 // @Description.markdown				get_workflow_step_approval.md
 // @Param	install_workflow_id			path	string	true	"workflow id"
 // @Param	install_workflow_step_id	path	string	true	"step id"
