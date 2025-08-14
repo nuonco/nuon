@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/plan"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
@@ -158,5 +159,15 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	}
 
 	w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
+
+	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+		InstallID:       installID,
+		TriggeredByID:   actionWorkflowRunID,
+		TriggeredByType: "action_workflow_run",
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to generate state")
+	}
+
 	return nil
 }
