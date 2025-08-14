@@ -25,6 +25,7 @@ import (
 	installscomponentsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/components"
 	installssandboxworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/sandbox"
 	installsstackworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/stack"
+	installstate "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/state"
 	orgsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker"
 	orgsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 	releasesworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker"
@@ -44,8 +45,10 @@ import (
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-var namespace string
-var skipNamespaces string
+var (
+	namespace      string
+	skipNamespaces string
+)
 
 func (c *cli) registerWorker() error {
 	cmd := &cobra.Command{
@@ -151,6 +154,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 			fx.Provide(installscomponentsworker.NewWorkflows),
 			fx.Provide(installssandboxworker.NewWorkflows),
 			fx.Provide(installsstackworker.NewWorkflows),
+			fx.Provide(installstate.New),
 			fx.Provide(worker.AsWorker(installsworker.New)),
 		)
 	}

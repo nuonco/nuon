@@ -54,6 +54,10 @@ func NewInstallStackID() string {
 	return shortid.NewNanoID("ist")
 }
 
+func NewInstallStateID() string {
+	return shortid.NewNanoID("isa")
+}
+
 func NewInstallStackVersionID() string {
 	return shortid.NewNanoID("isv")
 }
