@@ -1,0 +1,67 @@
+package app
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/pkg/types/state"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
+)
+
+type InstallState struct {
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
+
+	// used for RLS
+	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
+
+	Install   Install `json:"-" faker:"-" temporaljson:"install,omitzero,omitempty"`
+	InstallID string  `json:"install_id,omitzero" gorm:"notnull" temporaljson:"install_id,omitzero,omitempty"`
+
+	State   *state.State `json:"contents,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"-"`
+	Version int          `json:"version,omitzero" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
+
+	TriggeredByID   string `json:"triggered_by_id,omitzero" gorm:"type:text;check:triggered_by_id_checker,char_length(id)=26"`
+	TriggeredByType string `json:"triggered_by_type,omitzero" gorm:"type:text;"`
+}
+
+func (a *InstallState) BeforeCreate(tx *gorm.DB) error {
+	if a.ID == "" {
+		a.ID = domains.NewAppID()
+	}
+
+	if a.CreatedByID == "" {
+		a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
+	a.OrgID = orgIDFromContext(tx.Statement.Context)
+
+	return nil
+}
+
+func (i *InstallState) UseView() bool {
+	return true
+}
+
+func (i *InstallState) ViewVersion() string {
+	return "v1"
+}
+
+func (i *InstallState) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name:          views.DefaultViewName(db, &InstallState{}, 1),
+			SQL:           viewsql.InstallStatesViewV1,
+			AlwaysReapply: true,
+		},
+	}
+}

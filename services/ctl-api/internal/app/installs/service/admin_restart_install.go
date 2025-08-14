@@ -14,17 +14,17 @@ import (
 
 type RestartInstallRequest struct{}
 
-//	@ID						AdminRestartInstall
-//	@Summary				restart an installs event loop
-//	@Description.markdown	restart_install.md
-//	@Param					install_id	path	string					true	"install ID"
-//	@Param					req			body	RestartInstallRequest	true	"Input"
-//	@Tags					installs/admin
-//	@Security				AdminEmail
-//	@Accept					json
-//	@Produce				json
-//	@Success				200	{boolean}	true
-//	@Router					/v1/installs/{install_id}/admin-restart [POST]
+// @ID						AdminRestartInstall
+// @Summary				restart an installs event loop
+// @Description.markdown	restart_install.md
+// @Param					install_id	path	string					true	"install ID"
+// @Param					req			body	RestartInstallRequest	true	"Input"
+// @Tags					installs/admin
+// @Security				AdminEmail
+// @Accept					json
+// @Produce				json
+// @Success				200	{boolean}	true
+// @Router					/v1/installs/{install_id}/admin-restart [POST]
 func (s *service) RestartInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
@@ -52,13 +52,13 @@ func (s *service) getInstall(ctx context.Context, installID string) (*app.Instal
 		Preload("AzureAccount").
 		Preload("App").
 		Preload("App.AppInputConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_input_configs.created_at DESC")
+			return db.Order("app_input_configs.created_at DESC").Limit(1)
 		}).
 		Preload("App.AppSecrets", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_secrets.created_at DESC")
 		}).
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_sandbox_runs.created_at DESC")
+			return db.Order("install_sandbox_runs.created_at DESC").Limit(1)
 		}).
 		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Preload("App.Org").

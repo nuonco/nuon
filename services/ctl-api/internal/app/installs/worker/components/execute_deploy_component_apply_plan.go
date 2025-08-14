@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
@@ -46,5 +47,13 @@ func (w *Workflows) ExecuteDeployComponentApplyPlan(ctx workflow.Context, sreq s
 	}
 
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")
+	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+		InstallID:       install.ID,
+		TriggeredByID:   installDeploy.ID,
+		TriggeredByType: "install_deploy",
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to generate state")
+	}
 	return nil
 }
