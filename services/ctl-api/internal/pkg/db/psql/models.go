@@ -55,6 +55,7 @@ func AllModels() []interface{} {
 		&app.AWSAccount{},
 		&app.AzureAccount{},
 		&app.Install{},
+		&app.InstallState{},
 		&app.InstallEvent{},
 		&app.InstallInputs{},
 		&app.InstallSandbox{},
