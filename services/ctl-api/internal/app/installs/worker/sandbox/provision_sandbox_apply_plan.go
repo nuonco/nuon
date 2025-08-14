@@ -47,6 +47,7 @@ func (w *Workflows) ProvisionSandboxApplyPlan(ctx workflow.Context, sreq signals
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 
+	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully provisioned")
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   sreq.InstallWorkflowID,
@@ -55,6 +56,5 @@ func (w *Workflows) ProvisionSandboxApplyPlan(ctx workflow.Context, sreq signals
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")
 	}
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully provisioned")
 	return nil
 }
