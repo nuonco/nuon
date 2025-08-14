@@ -1,6 +1,8 @@
 package state
 
 import (
+	"strings"
+
 	"go.temporal.io/sdk/workflow"
 	"gorm.io/gorm"
 
@@ -14,11 +16,11 @@ import (
 func (w *Workflows) getDomainPartial(ctx workflow.Context, installID string) (*state.DomainState, error) {
 	sandboxRun, err := activities.AwaitGetInstallSandboxRunStateByInstallID(ctx, installID)
 	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.Wrap(err, "unable to get domain state")
+		if strings.Contains(err.Error(), gorm.ErrRecordNotFound.Error()) {
+			return &state.DomainState{}, nil
 		}
 
-		return &state.DomainState{}, nil
+		return nil, errors.Wrap(err, "unable to get domain state")
 	}
 
 	st := w.toDomainState(sandboxRun)

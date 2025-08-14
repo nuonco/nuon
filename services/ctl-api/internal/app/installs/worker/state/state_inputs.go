@@ -1,6 +1,8 @@
 package state
 
 import (
+	"strings"
+
 	"go.temporal.io/sdk/workflow"
 	"gorm.io/gorm"
 
@@ -20,11 +22,11 @@ func (w *Workflows) getInputsStatePartial(ctx workflow.Context, installID string
 
 	inps, err := activities.AwaitGetInstallInputsStateByInstallID(ctx, installID)
 	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.Wrap(err, "unable to get domain state")
+		if strings.Contains(err.Error(), gorm.ErrRecordNotFound.Error()) {
+			return &state.InputsState{}, nil
 		}
 
-		return &state.InputsState{}, nil
+		return nil, errors.Wrap(err, "unable to get domain state")
 	}
 
 	cfg, err := activities.AwaitGetAppConfigByID(ctx, inst.AppConfigID)

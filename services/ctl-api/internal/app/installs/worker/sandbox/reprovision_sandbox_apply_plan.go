@@ -52,6 +52,7 @@ func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 
 	l.Info("updating install sandbox run status", zap.String("install_run.id", installRun.ID))
 
+	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   sreq.InstallWorkflowID,
@@ -60,6 +61,5 @@ func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")
 	}
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")
 	return nil
 }
