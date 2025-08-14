@@ -138,7 +138,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	if status != app.RunnerJobStatusFinished {
 		l.Error("runner job status was not successful", zap.Any("status", status))
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job failed with status"+string(status))
-		return errors.New("job was not successful" + err.Error())
+		return errors.New("job was not successful")
 	}
 
 	return nil

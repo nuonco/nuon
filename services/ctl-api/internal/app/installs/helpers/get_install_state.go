@@ -18,6 +18,15 @@ import (
 
 // GetInstallState reads the current state of the install from the DB, and returns it in a structure that can be used for variable interpolation.
 func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool) (*state.State, error) {
+	es, err := h.getInstallStateFromDB(ctx, installID)
+	if err == nil {
+		return es, nil
+	}
+
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, errors.Wrap(err, "unable to get install state from db")
+	}
+
 	is := state.New()
 
 	var (
@@ -32,7 +41,7 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 
 	p := pool.New().WithErrors()
 
-	// collect all data up front
+	// collect all data up front e
 	p.Go(func() error {
 		var err error
 		install, err = h.getStateInstall(ctx, installID)
@@ -146,22 +155,6 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 	is.InstallStack = h.toInstallStackState(stack)
 	is.Secrets = secrets
 
-	// NOTE(JM): this is purely for historical and legacy reasons, and will be removed once we migrate all users to
-	// the flattened structure
-	is.Install = &state.InstallState{
-		Populated: true,
-		ID:        install.ID,
-		Name:      install.Name,
-		Sandbox:   *is.Sandbox,
-	}
-	if is.Domain != nil {
-		is.Install.PublicDomain = is.Domain.PublicDomain
-		is.Install.InternalDomain = is.Domain.InternalDomain
-	}
-
-	if is.Inputs != nil {
-		is.Install.Inputs = is.Inputs.Inputs
-	}
 
 	return is, nil
 }
@@ -389,4 +382,16 @@ func (h *Helpers) toActionWorkflow(act app.InstallActionWorkflow) *state.ActionW
 	}
 
 	return st
+}
+
+func (h *Helpers) getInstallStateFromDB(ctx context.Context, installID string) (*state.State, error) {
+	var is app.InstallState
+	res := h.db.WithContext(ctx).
+		Where("install_id = ?", installID).
+		First(&is)
+	if res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to find install state")
+	}
+
+	return is.State, nil
 }
