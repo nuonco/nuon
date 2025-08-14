@@ -154,7 +154,22 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 	is.Actions = h.toActions(actions)
 	is.InstallStack = h.toInstallStackState(stack)
 	is.Secrets = secrets
+	// NOTE(JM): this is purely for historical and legacy reasons, and will be removed once we migrate all users to
+	// the flattened structure
+	is.Install = &state.InstallState{
+		Populated: true,
+		ID:        install.ID,
+		Name:      install.Name,
+		Sandbox:   *is.Sandbox,
+	}
+	if is.Domain != nil {
+		is.Install.PublicDomain = is.Domain.PublicDomain
+		is.Install.InternalDomain = is.Domain.InternalDomain
+	}
 
+	if is.Inputs != nil {
+		is.Install.Inputs = is.Inputs.Inputs
+	}
 
 	return is, nil
 }
