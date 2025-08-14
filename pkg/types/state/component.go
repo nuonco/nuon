@@ -26,5 +26,6 @@ type ComponentState struct {
 	BuildID            string                 `json:"build_id"`
 	ComponentID        string                 `json:"component_id"`
 	InstallComponentID string                 `json:"install_component_id"`
+	Name               string                 `json:"name"`
 	Outputs            map[string]interface{} `json:"outputs" faker:"componentOutputs"`
 }
