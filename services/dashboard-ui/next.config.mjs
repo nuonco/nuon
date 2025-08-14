@@ -34,12 +34,20 @@ const nextConfig = {
         destination: '/api/admin/temporal/decode',
       },
       {
-        source: '/admin/swagger/:path*',
+        source: '/public/swagger/:path*',
         destination: '/api/ctl-api/:path*',
       },
       {
-        source: '/admin/:path*',
+        source: '/public/:path*',
         destination: '/api/ctl-api/docs/:path*',
+      },
+      {
+        source: '/admin/swagger/:path*',
+        destination: '/api/admin/ctl-api/:path*',
+      },
+      {
+        source: '/admin/:path*',
+        destination: '/api/admin/ctl-api/docs/:path*',
       },
     ]
   },
