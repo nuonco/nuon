@@ -30,11 +30,8 @@ func (m *middleware) onTimeout(c *gin.Context) {
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
-	// If MaxRequestDuration is not set or is less than or equal to 0, skip the timeout middleware
-	if m.cfg.MaxRequestDuration <= 0 {
-		return func(c *gin.Context) {
-			c.Next()
-		}
+	return func(c *gin.Context) {
+		c.Next()
 	}
 
 	return timeout.New(
