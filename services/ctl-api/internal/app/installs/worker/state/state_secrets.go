@@ -1,6 +1,7 @@
 package state
 
 import (
+	"strings"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -16,11 +17,11 @@ import (
 func (w *Workflows) getSecretsStatePartial(ctx workflow.Context, installID string) (*state.SecretsState, error) {
 	runnerJob, err := activities.AwaitGetSecretsSyncJobByInstallID(ctx, installID)
 	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.Wrap(err, "unable to get secrets")
+		if strings.Contains(err.Error(), gorm.ErrRecordNotFound.Error()) {
+			return &state.SecretsState{}, nil
 		}
 
-		return &state.SecretsState{}, nil
+		return nil, errors.Wrap(err, "unable to get secrets state")
 	}
 
 	var state state.SecretsState

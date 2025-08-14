@@ -41,11 +41,11 @@ func (w *Workflows) DeprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 	}()
 
 	l.Info("executing plan")
+	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioned, "successfully deprovisioned")
 	if err := w.executeApplyPlan(ctx, install, installRun, sreq.FlowStepID, sreq.SandboxMode); err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job did not succeed")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioned, "successfully deprovisioned")
 	return nil
 }
