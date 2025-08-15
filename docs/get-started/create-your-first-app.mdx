@@ -9,6 +9,8 @@ This guide walks you through packaging an AWS EKS Traefik `whomami` application 
 This [App Config](/concepts/apps) can be found in a [GitHub repository](https://github.com/nuonco/example-app-configs).
 </Note>
 
+For a more complex app config example, read the blog post on [Deploying Coder with Nuon](https://nuon.co/blog/installing-coder-with-nuon/) or review the app config in the [example-app-configs repository](https://github.com/nuonco/example-app-configs).
+
 ## Prerequisites
 
 - [Set up a Nuon organization](/get-started/quickstart). You will need a working Nuon org.
@@ -39,7 +41,7 @@ This will create the app in `app.nuon.co`
 ```sh
 mkdir eks-simple
 cd eks-simple
-nuon apps create --name=eks-simple
+nuon apps create -n eks-simple
 ```
 
 You should see the new App in the dashboard.
@@ -53,11 +55,18 @@ Inputs are customer-specific configs that are entered when you install the App i
 In the App root directory, create a file named `inputs.toml` and add the following:
 
 ```toml inputs.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=inputs
+#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
 [[group]]
 name         = "dns"
 description  = "DNS Configrations"
 display_name = "Configurations for the root domain for Route53"
+
+[[input]]
+name         = "domain"
+description  = "domain for the whoami endpoint e.g., nuon.run"
+default      = "nuon.run"
+display_name = "Domain"
+group        = "dns"
 
 [[input]]
 name         = "sub_domain"
@@ -68,7 +77,7 @@ group        = "dns"
 
 ```
 
-This Input defines a subdomain for the Whoami service that will be deployed in the customer's AWS account. The customer will be prompted to enter this value when they create an Install of the App. It will default to `whoami`, but the customer can change it to whatever they want.
+This Input defines a domain, which will default to nuon.run and a subdomain for the Whoami service that will be deployed in the customer's AWS account. The customer will be prompted to enter this value when they create an Install of the App. The subdomain will default to `whoami`, but the customer can change it to whatever they want.
 
 
 ### Sandbox
@@ -91,8 +100,8 @@ branch    = "main"
 [vars]
 cluster_name         = "n-{{.nuon.install.id}}"
 enable_nuon_dns      = "true"
-public_root_domain   = "{{ .nuon.install.id }}.nuon.run"
-internal_root_domain = "internal.{{ .nuon.install.id }}.nuon.run"
+public_root_domain   = "{{ .nuon.install.id }}.{{.nuon.inputs.inputs.domain}}"
+internal_root_domain = "internal.{{ .nuon.install.id }}.{{.nuon.inputs.inputs.domain}}"
 
 [[var_file]]
 contents = "./sandbox.tfvars"
@@ -132,10 +141,6 @@ min_size = 2
 max_size = 3
 desired_capacity = 2
 ```
-
-<Note>
-Notice you can manage compute costs by setting the `min_size`, `max_size`, and `desired_capacity` of the EKS cluster.
-</Note>
 
 
 ### Components
@@ -216,7 +221,69 @@ domain_name = "*.{{ .nuon.install.sandbox.outputs.nuon_dns.public_domain.name }}
 
 [Actions](/concepts/actions) are used to perform operations on your App, such as healthchecks or running `kubectl` commands.
 
-In the App root directory, create directory called `actions` and within it, a file named `simple_action.toml` and add the following to create a random secret in the `whoami` namespace:
+In the App root directory, create directory called `actions` and within it, two actions. Create a file named `healthcheck.toml` and add the following to check the ALB status and the resource types in the whoami cluster namespace.
+
+```toml healthcheck.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=action
+
+# This action checks the ALB's health status
+# It is triggered manually from the dashboard.
+
+name    = "healthcheck"
+timeout = "5m"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name    = "Check ALB health"
+inline_contents = """
+#!/usr/bin/env sh
+
+if [ -z "$NUON_ACCESS_URL" ]; then
+  echo "Error: external access URL is empty after Nuon interpolation."
+  exit 1
+fi
+
+# The health check path for ALB and external monitoring, as per Coder's design
+HEALTH_CHECK_URL="${NUON_ACCESS_URL}/livez"
+
+echo "Checking ALB health at: $HEALTH_CHECK_URL"
+
+# Use curl to get the HTTP status code.
+# -s : Silent output
+# -o /dev/null : Discard the response body
+# -w "%{http_code}" : Print only the HTTP status code to stdout
+# --max-time 15 : Set a generous timeout for the entire operation
+# --fail-early : Exit immediately on the first transfer error
+# --retry 5 --retry-delay 5 : Retry up to 5 times, with 5 seconds between retries
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 --fail-early --retry 5 --retry-delay 5 "$HEALTH_CHECK_URL")
+
+# Check if the HTTP code is 200 (OK) or 307 (Temporary Redirect).
+# For a robust external check, accepting both 200 and 307 (if present) is reasonable.
+if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 307 ]; then
+  echo "ALB health check passed! Status code: $HTTP_CODE"
+  exit 0
+else
+  echo "ALB health check failed! Status code: $HTTP_CODE"
+  exit 1
+fi
+"""
+
+[steps.env_vars]
+NUON_ACCESS_URL = "https://{{.nuon.inputs.inputs.sub_domain}}.{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.name}}"
+
+[[steps]]
+name    = "Check all whoami namespace's resource types"
+inline_contents = """
+#!/usr/bin/env sh
+kubectl get all -n whoami
+"""
+
+```
+
+
+Create another file named `simple_action.toml` and add the following to create a random secret in the `whoami` namespace:
 
 ```toml simple_action.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=action
@@ -251,6 +318,7 @@ Look at the `eks-simple` App Config in the [`example-app-configs` repository](ht
 ```
 - **eks-simple**
     - **actions**
+        - **healthcheck.toml**
         - **simple_action.toml**
     - **components**
         - **alb.toml**
@@ -348,7 +416,7 @@ In the AWS console, you can see the Application Load Balancer being created and 
 
 ### Inspect the Install
 
-When the install has provisioned, and the deploys have completed, copy the install ID from the UI and curl the API to verify it's running.
+When the install has provisioned, and the deploys have completed, click the URL link in the Install's README.md visible on the install page in the dashboard.  Alternatively, copy the link and open a terminal and curl the API to verify it's running.
 
 ```sh
 curl https://whoami.{install_id}.nuon.run
@@ -392,7 +460,11 @@ You still have to delete the CloudFormation stack in the AWS console after runni
 ## Wrapping Up and Next Steps
 
 Congratulations, you just deployed a BYOC app to AWS!
+
 A few suggestions for where to go next:
 
+- Try the Coder cloud development environment app config in the [example-app-configs repository](https://github.com/nuonco/example-app-configs) to see how to deploy a more complex app. Read the blog post on [Deploying Coder with Nuon](https://nuon.co/blog/installing-coder-with-nuon/) for more details.
+
 - Dig into our [App Configuration](/concepts/apps) guide to learn how to configure more complex apps.
+
 - Share your installer with a friend and have them install your app in their AWS account.
