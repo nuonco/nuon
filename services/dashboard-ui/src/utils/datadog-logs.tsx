@@ -18,6 +18,7 @@ const initDatadogLogs = (env: 'local' | 'stage' | 'prod') => {
     sessionSampleRate: 100,
     env,
     service: 'dashboard',
+    proxy: `/api/ddp`,
   })
 
   isDatadogInitialized = true
