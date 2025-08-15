@@ -27,6 +27,7 @@ const initDatadogRUM = (env: 'local' | 'stage' | 'prod') => {
     trackResources: true,
     trackLongTasks: true,
     defaultPrivacyLevel: 'mask-user-input',
+    proxy: `/api/ddp`,
   })
 
   isDatadogRUMInitialized = true
