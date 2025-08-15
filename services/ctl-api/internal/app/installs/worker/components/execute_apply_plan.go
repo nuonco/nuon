@@ -97,7 +97,10 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 	}
 
 	// Add Plan contents from the result to the plan
-	if len(planJob.Execution.Result.Contents) > 0 {
+	if runnerJob.Type == app.RunnerJobTypeJobNOOPDeploy {
+		plan.ApplyPlanContents = ""
+		plan.ApplyPlanDisplay = ""
+	} else if len(planJob.Execution.Result.Contents) > 0 {
 		l.Info("using the legacy contents from the runner job execution result")
 		plan.ApplyPlanContents = planJob.Execution.Result.Contents
 		plan.ApplyPlanDisplay = string(planJob.Execution.Result.ContentsDisplay)
