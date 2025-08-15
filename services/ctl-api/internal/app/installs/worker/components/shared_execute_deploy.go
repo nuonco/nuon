@@ -125,14 +125,25 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		approvalTyp = app.NoopApprovalType
 	}
 
+	// all component types require a plan EXCEPT fro docker builds
 	if job.Execution.Result == nil || (len(job.Execution.Result.Contents) < 1 && len(job.Execution.Result.ContentsGzip) < 1) {
-		return errors.New("no plan returned from job")
+		if runnerJob.Type != app.RunnerJobTypeJobNOOPDeploy {
+			return errors.New("no plan returned from job")
+		}
 	}
 
-	contentsDisplay, err := job.Execution.Result.GetContentsDisplayString()
-	if err != nil {
-		return errors.Wrap(err, "unable to get content display")
+	var contentsDisplay string
+	if runnerJob.Type == app.RunnerJobTypeJobNOOPDeploy {
+		l.Debug("job is a noop - no plan is expected")
+		contentsDisplay = "{\"op\": \"noop\"}"
+	} else {
+		l.Debug(fmt.Sprintf("getting job execution result from result:%s", job.Execution.Result.ID))
+		contentsDisplay, err = job.Execution.Result.GetContentsDisplayString()
+		if err != nil {
+			return errors.Wrap(err, "unable to get content display")
+		}
 	}
+
 	if _, err := activities.AwaitCreateStepApproval(ctx, &activities.CreateStepApprovalRequest{
 		OwnerID:     installDeploy.ID,
 		OwnerType:   "install_deploys",
