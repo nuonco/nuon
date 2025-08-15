@@ -33,6 +33,8 @@ type InstallState struct {
 
 	TriggeredByID   string `json:"triggered_by_id,omitzero" gorm:"type:text;check:triggered_by_id_checker,char_length(id)=26"`
 	TriggeredByType string `json:"triggered_by_type,omitzero" gorm:"type:text;"`
+
+	Archived bool `json:"archived" gorm:"default:false;not null" temporaljson:"archived,omitzero,omitempty"`
 }
 
 func (a *InstallState) BeforeCreate(tx *gorm.DB) error {
