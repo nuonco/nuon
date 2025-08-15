@@ -38,6 +38,7 @@ func (h *Workflows) getInstallComponentState(ctx workflow.Context, instCompID st
 
 	st := state.NewComponentState()
 
+	st.Name = installComp.Component.Name
 	st.Populated = true
 	st.ComponentID = installComp.ComponentID
 	st.InstallComponentID = installComp.ID
