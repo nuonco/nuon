@@ -217,5 +217,11 @@ func (w *Workflows) GenerateState(ctx workflow.Context, req *GenerateStateReques
 		return nil, errors.Wrap(err, "unable to write state")
 	}
 
+	if err := activities.AwaitArchiveState(ctx, &activities.ArchiveStateRequest{
+		InstallID: req.InstallID,
+	}); err != nil {
+		return nil, errors.Wrap(err, "unable to purge stale state")
+	}
+
 	return is, nil
 }
