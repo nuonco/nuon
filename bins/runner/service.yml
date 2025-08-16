@@ -82,7 +82,7 @@ docker_env:
   RUNNER_API_URL: http://host.docker.internal:8083
   GIT_REF: local
 
-  RUNNER_API_URL: http://localhost:8083
+  RUNNER_API_URL: http://host.docker.internal:8083
 
   # NOTE: by default, run-local will fetch the first runner from the api and set these for you.
   #
