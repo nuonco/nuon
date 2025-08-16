@@ -2,7 +2,6 @@ package local
 
 import (
 	"fmt"
-	"os/exec"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal"
 )
@@ -10,7 +9,7 @@ import (
 // When we are building and pushing images locally, we have to do things _slightly_ different, to ensure we interoperate
 // with the docker vm correctly.
 //
-// When using `nctl run-local`, we need to tag and push the image as `host.containers.internal`, because the docker
+// When using `nctl run-local`, we need to tag and push the image as `localhost`, because the docker
 // build is happening _inside_ the vm. This will push it to our local registry running on port 5001 (ultimately, on the
 // host)
 //
@@ -18,25 +17,17 @@ import (
 //
 // For running builds inside kaniko, we can simply use localhost:5001 for everything.
 
-// GetContainerRuntime returns the container runtime that is installed.
-func GetContainerRuntime() string {
-	if _, err := exec.LookPath("docker"); err == nil {
-		return "docker"
-	}
-	return "podman"
-}
-
 // GetLocalhostAlias returns the localhost alias for the installed container runtime.
 func GetLocalhostAlias() string {
-	if runtime := GetContainerRuntime(); runtime == "docker" {
+	if ok := IsDocker(); ok {
 		return "host.docker.internal"
 	}
-	return "host.containers.internal"
+	return "localhost"
 }
 
 // Return a tag that can be used to build+push from the run-local environment
 func GetLocalTag(cfg *internal.Config, version string) string {
-	return fmt.Sprintf("%s:%d/runner:%s", GetLocalhostAlias(), cfg.RegistryPort, version)
+	return fmt.Sprintf("localhost:%d/runner:%s", cfg.RegistryPort, version)
 }
 
 // Return a tag that can be used inside kaniko
