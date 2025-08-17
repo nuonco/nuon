@@ -21,6 +21,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		deployDeps    bool
 		offset        int
 		limit         int
+		planOnly      bool
 	)
 
 	installsCmds := &cobra.Command{
@@ -325,11 +326,12 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "Deploy all components to an install.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.DeployComponents(cmd.Context(), id, PrintJSON)
+			return svc.DeployComponents(cmd.Context(), id, planOnly, PrintJSON)
 		}),
 	}
 	deployInstallComponentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	deployInstallComponentsCmd.MarkFlagRequired("install-id")
+	deployInstallComponentsCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Only plan, do not actually deploy")
 	installsCmds.AddCommand(deployInstallComponentsCmd)
 
 	updateInputCmd := &cobra.Command{
