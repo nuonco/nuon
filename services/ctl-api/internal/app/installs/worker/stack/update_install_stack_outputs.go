@@ -125,7 +125,7 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   run.ID,
-		TriggeredByType: "install_stack_version_run",
+		TriggeredByType: "update_install_stack_outputs",
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")
