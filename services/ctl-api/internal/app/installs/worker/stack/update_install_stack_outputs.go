@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
@@ -116,7 +117,21 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 
 	// NOTE(jm): this is probably not the _best_ place to do this validation, but for now it works
 	// make sure the region matches the outputs
-	return validateRegion(*install, outputs)
+	err = validateRegion(*install, outputs)
+	if err != nil {
+		return errors.Wrap(err, "unable to validate region")
+	}
+
+	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+		InstallID:       install.ID,
+		TriggeredByID:   run.ID,
+		TriggeredByType: "install_stack_version_run",
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to generate state")
+	}
+
+	return nil
 }
 
 func validateRegion(install app.Install, outputs app.InstallStackOutputs) error {
