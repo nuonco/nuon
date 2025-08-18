@@ -15,8 +15,14 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
 
+	sg.nextGroup() // generate install state
+	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationGenerateState,
+	}, flw.PlanOnly, WithSkippable(false))
+	steps = append(steps, step)
+
 	sg.nextGroup() // runner health
-	step, err := sg.installSignalStep(ctx, installID, "await runner health", pgtype.Hstore{}, &signals.Signal{
+	step, err = sg.installSignalStep(ctx, installID, "await runner health", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	}, flw.PlanOnly)
 	if err != nil {
@@ -24,7 +30,6 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 	}
 	steps = append(steps, step)
 
-	sg.nextGroup()
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreReprovisionSandbox, sg)
 	if err != nil {
 		return nil, err
