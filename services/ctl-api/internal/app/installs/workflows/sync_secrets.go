@@ -14,6 +14,14 @@ func SyncSecrets(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	sg := newStepGroup()
 
+	sg.nextGroup() // generate install state
+	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationGenerateState,
+	}, flw.PlanOnly, WithSkippable(false))
+	if err != nil {
+		return nil, err
+	}
+
 	steps := make([]*app.WorkflowStep, 0)
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync, sg)
 	if err != nil {
@@ -22,7 +30,7 @@ func SyncSecrets(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	steps = append(steps, lifecycleSteps...)
 
 	sg.nextGroup() // sync secrets
-	step, err := sg.installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
+	step, err = sg.installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationSyncSecrets,
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
