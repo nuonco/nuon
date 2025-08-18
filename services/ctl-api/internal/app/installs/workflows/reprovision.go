@@ -13,10 +13,21 @@ import (
 func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	steps := make([]*app.WorkflowStep, 0)
+
 	sg := newStepGroup()
 
+	sg.nextGroup() // generate install state
+	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationGenerateState,
+	}, flw.PlanOnly, WithSkippable(false))
+	if err != nil {
+		return nil, err
+	}
+
+	steps = append(steps, step)
+
 	sg.nextGroup() // reprovision service account
-	step, err := sg.installSignalStep(ctx, installID, "reprovision runner service account", pgtype.Hstore{}, &signals.Signal{
+	step, err = sg.installSignalStep(ctx, installID, "reprovision runner service account", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationReprovisionRunner,
 	}, flw.PlanOnly)
 	if err != nil {
