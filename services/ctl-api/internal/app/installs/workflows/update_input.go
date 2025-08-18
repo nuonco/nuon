@@ -4,9 +4,11 @@ import (
 	"context"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"go.temporal.io/sdk/workflow"
 
@@ -16,7 +18,15 @@ import (
 
 func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
+
 	sg := newStepGroup()
+
+	sg.nextGroup()
+	steps := make([]*app.WorkflowStep, 0)
+	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationGenerateState,
+	}, flw.PlanOnly, WithSkippable(false))
+	steps = append(steps, step)
 
 	changedInputsRaw := generics.FromPtrStr(flw.Metadata["inputs"])
 	changedInputs := strings.Split(changedInputsRaw, ",")
@@ -26,7 +36,6 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	steps := make([]*app.WorkflowStep, 0)
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreUpdateInputs, sg)
 	if err != nil {
 		return nil, err
