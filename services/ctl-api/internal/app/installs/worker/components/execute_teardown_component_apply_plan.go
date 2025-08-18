@@ -77,7 +77,7 @@ func (w *Workflows) ExecuteTeardownComponentApplyPlan(ctx workflow.Context, sreq
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   installDeploy.ID,
-		TriggeredByType: "install_deploy",
+		TriggeredByType: plugins.TableName(w.db, installDeploy),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")
