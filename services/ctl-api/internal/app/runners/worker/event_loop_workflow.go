@@ -42,6 +42,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		// independent runner management mode
 		signals.OperationMngVMShutDown: AwaitMngVMShutdown,
 		signals.OperationMngShutDown:   AwaitMngShutdown,
+		signals.OperationMngUpdate:     AwaitMngUpdate,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
