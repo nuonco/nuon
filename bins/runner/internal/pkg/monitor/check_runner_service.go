@@ -8,10 +8,13 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
+
 	"text/template"
 
 	"github.com/fidiego/systemctl"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 // NOTE: the process will require ownership of /opt/nuon/runner and its children
@@ -222,5 +225,22 @@ func (h *Monitor) ensureRunnerServiceIsActive(ctx context.Context) error {
 		fmt.Println(fmt.Sprintf("service is up and running - uptime: %s\n", time))
 	}
 
+	return nil
+}
+
+func EnsureImageConfigFile(ctx context.Context, l *zap.Logger, settings *settings.Settings) error {
+	// NOTE(fd): this method just writes the settings no matter what
+	// TODO: we should really be comparing the settings to the contents of the file and writing only when they have changed
+	l.Info(fmt.Sprintf("ensuring runner image config file exists: %s\n", ImageConfigFilename))
+	tmpl := template.Must(template.New("").Parse(imageConfigTemplate))
+	f, err := os.Create(ImageConfigFilename)
+	if err != nil {
+		return errors.Wrap(err, "unable to create image config file")
+	}
+	err = tmpl.Execute(f, settings)
+	if err != nil {
+		return errors.Wrap(err, "unable to execute template for image config file")
+	}
+	f.Close()
 	return nil
 }

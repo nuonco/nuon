@@ -36,6 +36,7 @@ const (
 	// used for management operations
 	OperationMngVMShutDown eventloop.SignalType = "mng-shutdown-vm"
 	OperationMngShutDown   eventloop.SignalType = "mng-shutdown"
+	OperationMngUpdate     eventloop.SignalType = "mng-update"
 
 	// used for internal provisioning
 	OperationProvision   eventloop.SignalType = "provision"
