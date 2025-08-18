@@ -47,6 +47,6 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 	return nil
 }
 
-func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
-	return map[string]interface{}{}, nil
+func (h *handler) Outputs(ctx context.Context) (map[string]any, error) {
+	return map[string]any{}, nil
 }
