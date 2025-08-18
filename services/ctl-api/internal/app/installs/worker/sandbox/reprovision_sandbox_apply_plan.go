@@ -13,6 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
@@ -24,7 +25,7 @@ func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	installRun, err := activities.AwaitGetInstallSandboxRunForApplyStep(ctx, activities.GetInstallSandboxRunForApplyStep{
+	sandboxRun, err := activities.AwaitGetInstallSandboxRunForApplyStep(ctx, activities.GetInstallSandboxRunForApplyStep{
 		InstallWorkflowID: sreq.FlowID,
 		InstallID:         install.ID,
 	})
@@ -32,31 +33,31 @@ func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 		return errors.Wrap(err, "unable to get install deploy")
 	}
 
-	ctx = cctx.SetLogStreamWorkflowContext(ctx, &installRun.LogStream)
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, &sandboxRun.LogStream)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, installRun.LogStream.ID)
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, sandboxRun.LogStream.ID)
 	}()
 
-	l.Info("executing sandbox apply plan", zap.String("install_run.id", installRun.ID))
-	err = w.executeApplyPlan(ctx, install, installRun, sreq.FlowStepID, sreq.SandboxMode)
+	l.Info("executing sandbox apply plan", zap.String("install_run.id", sandboxRun.ID))
+	err = w.executeApplyPlan(ctx, install, sandboxRun, sreq.FlowStepID, sreq.SandboxMode)
 	if err != nil {
-		l.Error("error executing sandbox apply plan", zap.String("install_run.id", installRun.ID), zap.Error(err))
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job did not succeed")
+		l.Error("error executing sandbox apply plan", zap.String("install_run.id", sandboxRun.ID), zap.Error(err))
+		w.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusError, "job did not succeed")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
-	l.Debug("finished executing sandbox apply plan", zap.String("install_run.id", installRun.ID))
+	l.Debug("finished executing sandbox apply plan", zap.String("install_run.id", sandboxRun.ID))
 
-	l.Info("updating install sandbox run status", zap.String("install_run.id", installRun.ID))
+	l.Info("updating install sandbox run status", zap.String("install_run.id", sandboxRun.ID))
 
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")
+	w.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   sreq.InstallWorkflowID,
-		TriggeredByType: "install_workflow",
+		TriggeredByType: plugins.TableName(w.db, sandboxRun),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")

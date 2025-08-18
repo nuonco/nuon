@@ -163,7 +163,7 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       installID,
 		TriggeredByID:   actionWorkflowRunID,
-		TriggeredByType: "action_workflow_run",
+		TriggeredByType: plugins.TableName(w.db, run),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")

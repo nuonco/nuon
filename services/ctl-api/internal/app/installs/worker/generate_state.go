@@ -5,8 +5,10 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/state"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 )
 
 // @temporal-gen workflow
@@ -17,7 +19,7 @@ func (w *Workflows) GenerateStateAdmin(ctx workflow.Context, sreq signals.Reques
 	_, err := state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       sreq.ID,
 		TriggeredByID:   sreq.ID,
-		TriggeredByType: "installs",
+		TriggeredByType: plugins.TableName(w.db, app.Install{}),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")
