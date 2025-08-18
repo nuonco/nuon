@@ -37,6 +37,17 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	installActionWorkflowID, ok := flw.Metadata["install_action_workflow_id"]
 	sg := newStepGroup()
 
+	steps := make([]*app.WorkflowStep, 0)
+	sg.nextGroup() // generate install state
+	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationGenerateState,
+	}, flw.PlanOnly, WithSkippable(false))
+	if err != nil {
+		return nil, err
+	}
+
+	steps = append(steps, step)
+
 	if !ok {
 		return nil, errors.New("install action workflow is not set on the install workflow for a manual deploy")
 	}
@@ -50,7 +61,6 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		return nil, err
 	}
 
-	steps := make([]*app.WorkflowStep, 0)
 	prefix := "RUNENV_"
 	runEnvVars := map[string]string{}
 
@@ -65,7 +75,7 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	runEnvVars["TRIGGER_TYPE"] = string(app.ActionWorkflowTriggerTypeManual)
 
 	sg.nextGroup()
-	step, err := createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars, sg)
+	step, err = createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars, sg)
 	if err != nil {
 		return nil, err
 	}

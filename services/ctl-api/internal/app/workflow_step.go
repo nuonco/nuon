@@ -20,6 +20,7 @@ const (
 	WorkflowStepExecutionTypeUser     WorkflowStepExecutionType = "user"
 	WorkflowStepExecutionTypeApproval WorkflowStepExecutionType = "approval"
 	WorkflowStepExecutionTypeSkipped  WorkflowStepExecutionType = "skipped"
+	WorkflowStepExecutionTypeHidden   WorkflowStepExecutionType = "hidden"
 )
 
 type WorkflowStep struct {
