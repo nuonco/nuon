@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
@@ -24,7 +25,7 @@ func (w *Workflows) ProvisionSandboxApplyPlan(ctx workflow.Context, sreq signals
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	installRun, err := activities.AwaitGetInstallSandboxRunForApplyStep(ctx, activities.GetInstallSandboxRunForApplyStep{
+	sandboxRun, err := activities.AwaitGetInstallSandboxRunForApplyStep(ctx, activities.GetInstallSandboxRunForApplyStep{
 		InstallWorkflowID: sreq.FlowID,
 		InstallID:         install.ID,
 	})
@@ -32,26 +33,26 @@ func (w *Workflows) ProvisionSandboxApplyPlan(ctx workflow.Context, sreq signals
 		return errors.Wrap(err, "unable to get install deploy")
 	}
 
-	ctx = cctx.SetLogStreamWorkflowContext(ctx, &installRun.LogStream)
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, &sandboxRun.LogStream)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		activities.AwaitCloseLogStreamByLogStreamID(ctx, installRun.LogStream.ID)
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, sandboxRun.LogStream.ID)
 	}()
 
 	l.Info("executing plan")
-	if err := w.executeApplyPlan(ctx, install, installRun, sreq.FlowStepID, sreq.SandboxMode); err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job did not succeed")
+	if err := w.executeApplyPlan(ctx, install, sandboxRun, sreq.FlowStepID, sreq.SandboxMode); err != nil {
+		w.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusError, "job did not succeed")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusActive, "successfully provisioned")
+	w.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully provisioned")
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   sreq.InstallWorkflowID,
-		TriggeredByType: "install_workflow",
+		TriggeredByType: plugins.TableName(w.db, sandboxRun),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")

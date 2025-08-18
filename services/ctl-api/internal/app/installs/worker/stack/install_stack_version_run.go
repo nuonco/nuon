@@ -173,7 +173,7 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   run.ID,
-		TriggeredByType: "install_stack_version_run",
+		TriggeredByType: plugins.TableName(w.db, run),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")
