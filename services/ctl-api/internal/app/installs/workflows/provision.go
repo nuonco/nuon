@@ -13,10 +13,18 @@ import (
 func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	steps := make([]*app.WorkflowStep, 0)
+
 	sg := newStepGroup()
 
-	sg.nextGroup() // provision service account
-	step, err := sg.installSignalStep(ctx, installID, "provision runner service account", pgtype.Hstore{}, &signals.Signal{
+	sg.nextGroup() // generate install state
+	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationGenerateState,
+	}, flw.PlanOnly, WithSkippable(false))
+	steps = append(steps, step)
+
+	sg.nextGroup() // provision service accoun
+
+	step, err = sg.installSignalStep(ctx, installID, "provision runner service account", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationProvisionRunner,
 	}, flw.PlanOnly)
 	if err != nil {
