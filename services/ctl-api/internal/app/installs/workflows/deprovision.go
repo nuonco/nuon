@@ -12,11 +12,21 @@ import (
 
 func Deprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
+
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
 
+	sg.nextGroup() // generate install state
+	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationGenerateState,
+	}, flw.PlanOnly, WithSkippable(false))
+	steps = append(steps, step)
+	if err != nil {
+		return nil, err
+	}
+
 	sg.nextGroup() // runner health
-	step, err := sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
+	step, err = sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	}, flw.PlanOnly)
 	if err != nil {

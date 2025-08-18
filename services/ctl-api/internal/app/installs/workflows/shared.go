@@ -54,10 +54,13 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 		targettype = "install_sandbox_runs"
 	case signals.OperationExecuteActionWorkflow:
 		targettype = "install_action_workflow_runs"
+	case signals.OperationGenerateState:
+		targettype = "install_states"
 	}
 
 	executionTyp := app.WorkflowStepExecutionTypeSystem
 	// user signals
+
 	userSignals := []eventloop.SignalType{
 		signals.OperationAwaitInstallStackVersionRun,
 	}
@@ -87,6 +90,10 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 	}
 	if planOnly && generics.SliceContains(signal.Type, planOnlySkipSignals) {
 		executionTyp = app.WorkflowStepExecutionTypeSkipped
+	}
+
+	if signal.Type == signals.OperationGenerateState {
+		executionTyp = app.WorkflowStepExecutionTypeHidden
 	}
 
 	s := &app.WorkflowStep{
