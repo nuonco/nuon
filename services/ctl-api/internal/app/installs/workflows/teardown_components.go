@@ -27,6 +27,17 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 	}
 
 	steps := make([]*app.WorkflowStep, 0)
+
+	sg.nextGroup() // generate install state
+	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationGenerateState,
+	}, flw.PlanOnly, WithSkippable(false))
+	if err != nil {
+		return nil, err
+	}
+
+	steps = append(steps, step)
+
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreTeardownAllComponents, sg)
 	if err != nil {
 		return nil, err
