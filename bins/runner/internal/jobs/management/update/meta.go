@@ -7,7 +7,7 @@ func (h *handler) Name() string {
 }
 
 func (h *handler) JobType() models.AppRunnerJobType {
-	return models.AppRunnerJobTypeUpdateDashVersion
+	return models.AppRunnerJobTypeMngDashRunnerDashUpdateDashVersion
 }
 
 func (h *handler) JobStatus() models.AppRunnerJobStatus {
