@@ -32,10 +32,15 @@ import {
   restartOrgRunners,
   gracefulRunnerShutdown,
   forceRunnerShutdown,
+  mngShutdownRunner,
+  mngShutdownRunnerVM,
+  mngUpdateRunner,
 } from '@/components/admin-actions'
 import type { TRunner, TRunnerHeartbeat, TRunnerJob, TInstall } from '@/types'
 
-export const AdminRunnerModal: FC = ({}) => {
+export const AdminRunnerModal: FC<{
+  showText?: boolean
+}> = ({ showText = false }) => {
   const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -107,15 +112,17 @@ export const AdminRunnerModal: FC = ({}) => {
                     <Loading loadingText="Loading install runners" />
                   ) : installs && installs.length ? (
                     <Grid variant="3-cols">
-                      {installs.map((install) => (
-                        <GridCard key={install.id}>
-                          <Text variant="med-12">{install.name} runner</Text>
-                          <LoadRunnerCard
-                            runnerId={install?.runner_id}
-                            installId={install.id}
-                          />
-                        </GridCard>
-                      ))}
+                      {installs.map((install) => {
+                        return (
+                          <GridCard key={install.id}>
+                            <Text variant="med-12">{install.name} runner</Text>
+                            <LoadRunnerCard
+                              runnerId={install?.runner_id}
+                              installId={install.id}
+                            />
+                          </GridCard>
+                        )
+                      })}
                     </Grid>
                   ) : (
                     <Text>No installs</Text>
@@ -127,7 +134,9 @@ export const AdminRunnerModal: FC = ({}) => {
           )
         : null}
       <div className="flex flex-col gap-2">
-        <Text variant="reg-14">Manage all runners in this org</Text>
+        {showText ? (
+          <Text variant="reg-14">Manage all runners in this org</Text>
+        ) : null}
         <Button
           className="text-base w-full"
           onClick={() => {
@@ -149,10 +158,11 @@ const GridCard: FC<{ children: React.ReactNode }> = ({ children }) => {
   )
 }
 
-const RunnerCard: FC<{ runner: TRunner; href: string }> = ({
-  runner,
-  href,
-}) => {
+const RunnerCard: FC<{
+  runner: TRunner
+  href: string
+  isInstallRunner?: boolean
+}> = ({ runner, href, isInstallRunner = false }) => {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between w-full">
@@ -197,6 +207,13 @@ const RunnerCard: FC<{ runner: TRunner; href: string }> = ({
           </div>
         }
       />
+      {isInstallRunner ? (
+        <div className="flex flex-wrap gap-4 w-full mb-4">
+          <MngShutdownButton runnerId={runner.id} />
+          <MngShutdownVMButton runnerId={runner.id} />
+          <MngUpdateButton runnerId={runner.id} />
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-4 w-full">
         <InvalidateTokenButton runnerId={runner.id} />
         <GracefulShutdownButton runnerId={runner.id} />
@@ -215,12 +232,17 @@ const LoadRunnerCard: FC<{ runnerId: string; installId: string }> = ({
   const [runner, setRunner] = useState<TRunner>()
   const [error, setError] = useState<string>()
 
-  useEffect(() => {
+  const fetchRunner = () => {
+    setIsLoading(true)
     fetch(`/api/${org.id}/runners/${runnerId}`)
       .then((res) =>
-        res.json().then((rnr) => {
-          setRunner(rnr)
+        res.json().then((r) => {
           setIsLoading(false)
+          if (r?.error) {
+            setError(r?.error?.error || 'Unable to load runner')
+          } else {
+            setRunner(r.data)
+          }
         })
       )
       .catch((err) => {
@@ -228,6 +250,10 @@ const LoadRunnerCard: FC<{ runnerId: string; installId: string }> = ({
         setIsLoading(false)
         setError('Unable to load runner')
       })
+  }
+
+  useEffect(() => {
+    fetchRunner()
   }, [])
 
   return error ? (
@@ -237,7 +263,8 @@ const LoadRunnerCard: FC<{ runnerId: string; installId: string }> = ({
   ) : (
     <RunnerCard
       runner={runner}
-      href={`/${org.id}/installs/${installId}/runner-group/${runnerId}`}
+      href={`/${org.id}/installs/${installId}/runner`}
+      isInstallRunner
     />
   )
 }
@@ -252,8 +279,12 @@ const LoadRunnerHeartbeat: FC<{ runnerId: string }> = ({ runnerId }) => {
     fetch(`/api/${org.id}/runners/${runnerId}/latest-heart-beat`)
       .then((res) =>
         res.json().then((rnr) => {
-          setHeartbeat(rnr)
           setIsLoading(false)
+          if (rnr.error) {
+            setError(rnr?.error?.error || 'Unable to load install runner')
+          } else {
+            setHeartbeat(rnr.data)
+          }
         })
       )
       .catch((err) => {
@@ -585,7 +616,161 @@ const InvalidateTokenButton: FC<{ runnerId: string }> = ({
         </>
       ) : (
         <>
-          {isSuccess ? <Check size="16" /> : <WarningOctagon size="16" />} Invalidate token
+          {isSuccess ? <Check size="16" /> : <WarningOctagon size="16" />}{' '}
+          Invalidate token
+        </>
+      )}
+    </Button>
+  )
+}
+
+const MngShutdownButton: FC<{ runnerId: string }> = ({
+  runnerId,
+  ...props
+}) => {
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [error, setError] = useState<string>()
+
+  return error ? (
+    <Notice>{error}</Notice>
+  ) : (
+    <Button
+      onClick={() => {
+        setIsLoading(true)
+        mngShutdownRunner(runnerId)
+          .then((res) => {
+            setIsLoading(false)
+            if (res.status === 201 || res.status === 200) {
+              setIsSuccess(true)
+              if (props?.onSuccess) props?.onSuccess()
+            } else {
+              setError(
+                'Unable to kick off mng shutdown, refresh page and try again.'
+              )
+            }
+          })
+          .catch((err) => {
+            console.error(err?.message)
+            setIsLoading(false)
+            setError(
+              'Unable to kick off mng shutdown, refresh page and try again.'
+            )
+          })
+      }}
+      className="text-sm flex items-center gap-2 flex-auto justify-center"
+      disabled={isLoading}
+      variant="caution"
+    >
+      {isLoading ? (
+        <>
+          <SpinnerSVG /> Shutting down
+        </>
+      ) : (
+        <>
+          {isSuccess ? <Check size="16" /> : <StopCircle size="16" />} mng
+          shutdown
+        </>
+      )}
+    </Button>
+  )
+}
+
+const MngShutdownVMButton: FC<{ runnerId: string }> = ({
+  runnerId,
+  ...props
+}) => {
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [error, setError] = useState<string>()
+
+  return error ? (
+    <Notice>{error}</Notice>
+  ) : (
+    <Button
+      onClick={() => {
+        setIsLoading(true)
+        mngShutdownRunnerVM(runnerId)
+          .then((res) => {
+            setIsLoading(false)
+            if (res.status === 201 || res.status === 200) {
+              setIsSuccess(true)
+              if (props?.onSuccess) props?.onSuccess()
+            } else {
+              setError(
+                'Unable to kick off mng shutdown VM, refresh page and try again.'
+              )
+            }
+          })
+          .catch((err) => {
+            console.error(err?.message)
+            setIsLoading(false)
+            setError(
+              'Unable to kick off mng shutdown VM, refresh page and try again.'
+            )
+          })
+      }}
+      className="text-sm flex items-center gap-2 flex-auto justify-center"
+      disabled={isLoading}
+      variant="caution"
+    >
+      {isLoading ? (
+        <>
+          <SpinnerSVG /> Shutting down VM
+        </>
+      ) : (
+        <>
+          {isSuccess ? <Check size="16" /> : <StopCircle size="16" />} mng
+          shutdown VM
+        </>
+      )}
+    </Button>
+  )
+}
+
+const MngUpdateButton: FC<{ runnerId: string }> = ({ runnerId, ...props }) => {
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [error, setError] = useState<string>()
+
+  return error ? (
+    <Notice>{error}</Notice>
+  ) : (
+    <Button
+      onClick={() => {
+        setIsLoading(true)
+        mngUpdateRunner(runnerId)
+          .then((res) => {
+            setIsLoading(false)
+            if (res.status === 201 || res.status === 200) {
+              setIsSuccess(true)
+              if (props?.onSuccess) props?.onSuccess()
+            } else {
+              setError(
+                'Unable to kick off mng runner update, refresh page and try again.'
+              )
+            }
+          })
+          .catch((err) => {
+            console.error(err?.message)
+            setIsLoading(false)
+            setError(
+              'Unable to kick off mng runner update, refresh page and try again.'
+            )
+          })
+      }}
+      className="text-sm flex items-center gap-2 flex-auto justify-center"
+      disabled={isLoading}
+      variant="default"
+    >
+      {isLoading ? (
+        <>
+          <SpinnerSVG /> Updating
+        </>
+      ) : (
+        <>
+          {isSuccess ? <Check size="16" /> : <ArrowsClockwise size="16" />} mng
+          update
         </>
       )}
     </Button>
