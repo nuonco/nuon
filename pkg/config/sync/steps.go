@@ -125,22 +125,5 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 		})
 	}
 
-	for _, install := range s.cfg.Installs {
-		obj := install
-		resourceName := fmt.Sprintf("install-%s", obj.Name)
-
-		steps = append(steps, syncStep{
-			Resource: resourceName,
-			Method: func(ctx context.Context) error {
-				_, err := s.syncInstall(ctx, resourceName, obj)
-				if err != nil {
-					return err
-				}
-
-				return nil
-			},
-		})
-	}
-
 	return steps, nil
 }
