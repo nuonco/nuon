@@ -7,7 +7,6 @@ import React, {
   useEffect,
   useState,
 } from 'react'
-import { parseOTELLog } from './helpers'
 import type { TLogRecord } from './types'
 import type { TLogStream } from '@/types'
 
@@ -56,7 +55,7 @@ export const LogsProvider: FC<ILogsProvider> = ({
         if (next !== nextPage) setNextPage(next)
         res.json().then((l) => {
           updateLogs((state) =>
-            [...state, ...parseOTELLog(l)].filter(
+            [...state, ...l].filter(
               (log, i, arr) => i === arr.findIndex((lr) => lr?.id === log?.id)
             )
           )
