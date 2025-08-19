@@ -28,16 +28,16 @@ function getDateTime({ time, nanos }: { time?: string, nanos?: number | string |
   }
 }
 
-export const Time: FC<ITime> = ({
+export const Time: FC<ITime & { useMicro?: boolean }> = ({
   alignment,
   format,
   time,
   nanos,
   position,
+  useMicro = false,
   ...props
 }) => {
-  const datetime = getDateTime({ time, nanos })
-
+  const datetime = useMicro ? DateTime.fromISO(time) : getDateTime({ time, nanos });
   let formatted: string
 
   if (format === 'relative') {
@@ -48,7 +48,7 @@ export const Time: FC<ITime> = ({
     formatted = datetime.toFormat("HH:mm:ss.SSS")
   } else {
     // default (old-style): 7/29/2025, 8:21:11:562 PM
-    formatted = datetime.toFormat("M/d/yyyy, h:mm:ss:SSS a")
+    formatted = datetime.toFormat("M/d/yyyy, h:mm:ss.SSSs a")
   }
 
   const TimeComp = (
