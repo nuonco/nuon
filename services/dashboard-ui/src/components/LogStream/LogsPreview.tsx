@@ -20,18 +20,24 @@ export const LogsPreview: FC<ILogsPreview> = ({ logs }) => {
       {
         header: 'Date',
         accessorKey: 'timestamp',
-        cell: (props) => (
-          <span
-            className={classNames(lineStyle, {
-              'col-span-3 flex items-center gap-2': true,
-            })}
-          >
-            <LogLineSeverity
-              severity_number={props.row.original?.severity_number}
-            />
-            <Time className="!text-[11px]" nanos={props.getValue<number>()} />
-          </span>
-        ),
+        cell: (props) => {
+          return (
+            <span
+              className={classNames(lineStyle, {
+                'col-span-3 flex items-center gap-2': true,
+              })}
+            >
+              <LogLineSeverity
+                severity_number={props.row.original?.severity_number}
+              />
+              <Time
+                className="!text-[11px]"
+                time={props.getValue<string>()}
+                useMicro
+              />
+            </span>
+          )
+        },
       },
       {
         header: 'Content',
