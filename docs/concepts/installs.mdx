@@ -94,6 +94,26 @@ nuon installs get
 ```
 </CodeGroup>
 
+### Install Config Commands
+
+Manage Installs with the help of [Install Config files](/configuration-files#install-config).
+
+**Sync** - syncs Installs defined in config files to Nuon. Existing installs are updated, otherwise a new install gets created for the app.
+
+<CodeGroup>
+```sh nuon
+nuon installs sync -a <app-name-or-id> -d <path-to-file-or-dir>
+```
+</CodeGroup>
+
+**Generate Config** - easily generate an Install config from an existing Install.
+
+<CodeGroup>
+```sh nuon
+nuon installs generate-config -i <install-name-or-id>
+```
+</CodeGroup>
+
 ### Install Sandbox Commands
 
 Commands for working with an Install's Sandbox.
