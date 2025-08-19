@@ -84,8 +84,7 @@ func (s *Service) syncInstall(ctx context.Context, install *config.Install, appI
 		}
 		if install.AWSAccount != nil {
 			req.AwsAccount = &models.ServiceCreateInstallRequestAwsAccount{
-				Region:     install.AWSAccount.Region,
-				IamRoleArn: install.AWSAccount.IAMRoleARN,
+				Region: install.AWSAccount.Region,
 			}
 		}
 		if install.ApprovalOption != config.InstallApprovalOptionUnknown {
