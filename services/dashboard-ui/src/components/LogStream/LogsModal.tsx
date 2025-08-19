@@ -48,12 +48,13 @@ export const LogsModal: FC<ILogsModal> = ({ heading, logs }) => {
         cell: (props) => (
           <span
             className={classNames(lineStyle, {
-              'col-span-2 flex items-center gap-2': true,
+              'col-span-2 flex items-center gap-1': true,
             })}
           >
             <Time
-              className="!text-sm"
-              nanos={props.getValue<number>()}
+              className="!text-[10px]"
+              time={props.getValue<string>()}
+              useMicro
             />
           </span>
         ),
@@ -95,7 +96,7 @@ export const LogsModal: FC<ILogsModal> = ({ heading, logs }) => {
         ? createPortal(
             <Modal
               actions={<LogsControls showLogExpand showLogFilter />}
-              className="mx-6 xl:mx-auto"
+              className="mx-6 xl:mx-auto xl:w-8xl"
               hasFixedHeight
               heading={heading}
               isOpen={isOpen}

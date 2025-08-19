@@ -14,6 +14,7 @@ function isoToEpochNanos(iso: string): bigint {
     // Pad to 9 digits for nanosecond precision
     nanos = BigInt((match[1] + "000000000").slice(0, 9));
   }
+  
   // Combine ms part with nanoseconds
   return msSinceEpoch * 1000000n + nanos;
 }
@@ -22,7 +23,7 @@ export function parseOTELLog(logs: Array<TOTELLog>): Array<TLogRecord> {
   return logs?.length
     ? logs?.map((l) => ({
         ...l,
-      timestamp: isoToEpochNanos(l.timestamp),
+      timestamp: l.timestamp,
       }))
     : []
 }
