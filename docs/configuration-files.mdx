@@ -122,15 +122,16 @@ contents = "./sandbox.tfvars"
 
 ### Install Config
 
-You can create and manage [Installs](/concepts/installs) by creating `<install>.toml` files in a `installs` directory. Install config must
-declare a `name` field and any relevant install-specific configuration.
+You can create and manage [Installs](/concepts/installs) by creating `<install>.toml` files
+managed separately from the app configs. An Install config must declare a `name` field and
+any relevant install-specific configuration.
 
 <Note>
   Currently only AWS installs are supported using Install config files.
 </Note>
 
 ```toml install.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=install
+#:schema https://api.nuon.co/v1/general/config-schema?type=install
 name = "<install-name>"
 
 # configure Auto Approval settings for an install
