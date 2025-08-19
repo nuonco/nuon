@@ -63,7 +63,7 @@ export const AdminModal: FC<{
     {
       action: () => removeSupportUsersFromOrg(params?.['org-id'] as string),
       description: 'Remove all nuon support users from current org',
-      text: 'Remove support users',      
+      text: 'Remove support users',
     },
     {
       action: () => reprovisionOrg(params?.['org-id'] as string),
@@ -196,6 +196,7 @@ export const AdminModal: FC<{
       </Button>
       <Modal
         heading="Admin controls"
+        actions={<AdminRunnerModal />}
         isOpen={isOpen}
         onClose={() => {
           setIsOpen(false)
@@ -208,7 +209,7 @@ export const AdminModal: FC<{
                 <AdminAction key={action.text} {...action} />
               ))}
               <AdminOrgFeatures org={org} />
-              <AdminRunnerModal />
+              <AdminRunnerModal showText />
             </Grid>
           </AdminOrgActions>
 
