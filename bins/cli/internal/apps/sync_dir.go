@@ -76,6 +76,11 @@ func (s *Service) SyncDir(ctx context.Context, dir string, version string) error
 	}
 	ui.PrintLn("all configs valid")
 
+	// TODO(onprem): remove this after a few releases
+	if len(cfg.Installs) > 0 {
+		ui.PrintWarning("deprecated: skipped syncing installs from app config. to sync these installs, switch to 'nuon installs sync' command.")
+	}
+
 	syncer := sync.New(s.api, appID, version, cfg)
 	err = syncer.Sync(ctx)
 	if err != nil {
