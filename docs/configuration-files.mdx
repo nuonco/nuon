@@ -132,6 +132,7 @@ any relevant install-specific configuration.
 
 ```toml install.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=install
+
 name = "<install-name>"
 
 # configure Auto Approval settings for an install
@@ -139,7 +140,6 @@ approval_option = "prompt" # set this to "approve-all" to enable auto approval
 
 [aws_account]
   region = "us-east-1"
-  iam_role_arn = "<aws-iam-role>"
 
 [inputs]
   input_string = "sample"
