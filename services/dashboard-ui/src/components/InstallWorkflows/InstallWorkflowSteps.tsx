@@ -132,97 +132,117 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
         >
           {installWorkflow?.steps?.length ? (
             <div className="flex flex-col gap-2 workflow-steps">
-                {(() => {
-                  const steps = installWorkflow?.steps || []
-                  const groupedSteps = Object.groupBy(steps, (step) => step.group_idx)
-                  const sortedGroups = Object.entries(groupedSteps)
-                    .sort(([, a], [, b]) => a[0].group_idx - b[0].group_idx)
-                    .map(([groupId, groupSteps]) => 
-                      groupSteps.sort((a, b) => a.group_retry_idx - b.group_retry_idx)
+              {(() => {
+                const steps =
+                  installWorkflow?.steps?.filter(
+                    (step) => step?.execution_type !== 'hidden'
+                  ) || []
+                const groupedSteps = Object.groupBy(
+                  steps,
+                  (step) => step.group_idx
+                )
+                const sortedGroups = Object.entries(groupedSteps)
+                  .sort(([, a], [, b]) => a[0].group_idx - b[0].group_idx)
+                  .map(([groupId, groupSteps]) =>
+                    groupSteps.sort(
+                      (a, b) => a.group_retry_idx - b.group_retry_idx
                     )
-                  return sortedGroups.map((groupSteps, groupIndex) => (
-                    <React.Fragment key={`group-${groupIndex}`}>
-                      {groupSteps.map((step, stepIndex) => {
-                        const globalIndex = steps.findIndex(s => s.id === step.id)
-                        const isLastInRetryGroup = stepIndex === groupSteps.length - 1
-                        return (
-                          <React.Fragment key={step?.id}>
-                            {step?.status?.status === 'pending' ? (
-                              <div
-                                ref={(el) => (buttonRefs.current[globalIndex] = el)}
-                                className={classNames(
-                                  'p-2 rounded-md !text-cool-grey-600 dark:!text-cool-grey-500 history-event w-full',
-                                  {
-                                    '!bg-black/5 dark:!bg-white/5 !text-cool-grey-950 dark:!text-cool-grey-50':
-                                      activeStep?.id === step?.id,
-                                  }
-                                )}
-                              >
-                                <InstallWorkflowStepTitle
-                                  executionTime={step?.execution_time}
-                                  name={step?.name}
-                                  status={step?.status}
-                                  stepNumber={globalIndex + 1}
-                                  isSkipped={step?.execution_type === 'skipped'}
-                                  isRetried={step?.retried}
-                                />
-                              </div>
-                            ) : (
-                              <Button
-                                ref={(el) => (buttonRefs.current[globalIndex] = el)}
-                                className={classNames(
-                                  'text-left border-none !p-2 history-event w-full',
-                                  {
-                                    '!bg-black/5 dark:!bg-white/5 !text-cool-grey-950 dark:!text-cool-grey-50':
-                                      activeStep?.id === step?.id,
-                                    '!bg-transparent hover:!bg-black/5 focus:!bg-black/5 active:!bg-black/10 dark:hover:!bg-white/5 dark:focus:!bg-white/5 dark:active:!bg-white/10':
-                                      activeStep?.id !== step?.id,
-                                  }
-                                )}
-                                onClick={() => {
-                                  if (!isManualControl) setManualControl(true)
-                                  if (step?.step_target_id) {
-                                    router.push(
-                                      `${path}?${new URLSearchParams({ target: step?.step_target_id }).toString()}`
-                                    )
-                                  }
-                                  setActiveStep(step)
+                  )
+                return sortedGroups.map((groupSteps, groupIndex) => (
+                  <React.Fragment key={`group-${groupIndex}`}>
+                    {groupSteps.map((step, stepIndex) => {
+                      const globalIndex = steps.findIndex(
+                        (s) => s.id === step.id
+                      )
+                      const isLastInRetryGroup =
+                        stepIndex === groupSteps.length - 1
+                      return (
+                        <React.Fragment key={step?.id}>
+                          {step?.status?.status === 'pending' ? (
+                            <div
+                              ref={(el) =>
+                                (buttonRefs.current[globalIndex] = el)
+                              }
+                              className={classNames(
+                                'p-2 rounded-md !text-cool-grey-600 dark:!text-cool-grey-500 history-event w-full',
+                                {
+                                  '!bg-black/5 dark:!bg-white/5 !text-cool-grey-950 dark:!text-cool-grey-50':
+                                    activeStep?.id === step?.id,
+                                }
+                              )}
+                            >
+                              <InstallWorkflowStepTitle
+                                executionTime={step?.execution_time}
+                                name={step?.name}
+                                status={step?.status}
+                                stepNumber={globalIndex + 1}
+                                isSkipped={step?.execution_type === 'skipped'}
+                                isRetried={step?.retried}
+                              />
+                            </div>
+                          ) : (
+                            <Button
+                              ref={(el) =>
+                                (buttonRefs.current[globalIndex] = el)
+                              }
+                              className={classNames(
+                                'text-left border-none !p-2 history-event w-full',
+                                {
+                                  '!bg-black/5 dark:!bg-white/5 !text-cool-grey-950 dark:!text-cool-grey-50':
+                                    activeStep?.id === step?.id,
+                                  '!bg-transparent hover:!bg-black/5 focus:!bg-black/5 active:!bg-black/10 dark:hover:!bg-white/5 dark:focus:!bg-white/5 dark:active:!bg-white/10':
+                                    activeStep?.id !== step?.id,
+                                }
+                              )}
+                              onClick={() => {
+                                if (!isManualControl) setManualControl(true)
+                                if (step?.step_target_id) {
+                                  router.push(
+                                    `${path}?${new URLSearchParams({ target: step?.step_target_id }).toString()}`
+                                  )
+                                }
+                                setActiveStep(step)
 
-                                  if (buttonRefs.current[globalIndex] && scrollableRef.current) {
-                                    const button = buttonRefs.current[globalIndex]
-                                    const container = scrollableRef.current
-                                    const buttonTop = button.offsetTop
-                                    const newScrollTop = buttonTop - buttonOffset
+                                if (
+                                  buttonRefs.current[globalIndex] &&
+                                  scrollableRef.current
+                                ) {
+                                  const button = buttonRefs.current[globalIndex]
+                                  const container = scrollableRef.current
+                                  const buttonTop = button.offsetTop
+                                  const newScrollTop = buttonTop - buttonOffset
 
-                                    container.scrollTo({
-                                      top: newScrollTop,
-                                      behavior: 'smooth',
-                                    })
-                                  }
-                                }}
-                              >
-                                <InstallWorkflowStepTitle
-                                  executionTime={step?.execution_time}
-                                  name={step?.name}
-                                  status={step?.status}
-                                  stepNumber={globalIndex + 1}
-                                  isSkipped={step?.execution_type === 'skipped'}
-                                  isRetried={step?.retried}
-                                />
-                              </Button>
-                            )}
-                            {!isLastInRetryGroup && step.group_retry_idx < groupSteps[stepIndex + 1]?.group_retry_idx && (
+                                  container.scrollTo({
+                                    top: newScrollTop,
+                                    behavior: 'smooth',
+                                  })
+                                }
+                              }}
+                            >
+                              <InstallWorkflowStepTitle
+                                executionTime={step?.execution_time}
+                                name={step?.name}
+                                status={step?.status}
+                                stepNumber={globalIndex + 1}
+                                isSkipped={step?.execution_type === 'skipped'}
+                                isRetried={step?.retried}
+                              />
+                            </Button>
+                          )}
+                          {!isLastInRetryGroup &&
+                            step.group_retry_idx <
+                              groupSteps[stepIndex + 1]?.group_retry_idx && (
                               <hr className="border-cool-grey-200 dark:border-dark-grey-600 ml-10 mt-2" />
                             )}
-                          </React.Fragment>
-                        )
-                      })}
-                      {groupIndex < sortedGroups.length - 1 && (
-                        <hr className="border-cool-grey-200 dark:border-dark-grey-600 ml-10 mt-2" />
-                      )}
-                    </React.Fragment>
-                  ))
-                })()}
+                        </React.Fragment>
+                      )
+                    })}
+                    {groupIndex < sortedGroups.length - 1 && (
+                      <hr className="border-cool-grey-200 dark:border-dark-grey-600 ml-10 mt-2" />
+                    )}
+                  </React.Fragment>
+                ))
+              })()}
             </div>
           ) : (
             <Empty
