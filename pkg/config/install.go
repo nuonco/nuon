@@ -26,8 +26,7 @@ func (o InstallApprovalOption) APIType() models.AppInstallApprovalOption {
 }
 
 type AWSAccount struct {
-	Region     string `mapstructure:"region,omitempty"`
-	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty"`
+	Region string `mapstructure:"region,omitempty"`
 }
 
 // Install is a flattened configuration type that allows us to define installs for an app.
@@ -70,8 +69,7 @@ func (i *Install) ParseInstall(ins *models.AppInstall, inputs *models.AppInstall
 		i.Name = ins.Name
 		if ins.AwsAccount != nil {
 			i.AWSAccount = &AWSAccount{
-				Region:     ins.AwsAccount.Region,
-				IAMRoleARN: ins.AwsAccount.IamRoleArn,
+				Region: ins.AwsAccount.Region,
 			}
 		}
 		if ins.InstallConfig != nil {
