@@ -4,7 +4,7 @@ terraform_version = "1.11.3"
 [public_repo]
 directory = "."
 repo      = "nuonco/terraform-azure-aks-sandbox"
-branch    = "ja/azure-support"
+branch    = "main"
 
 [vars]
 cluster_name         = "n-{{.nuon.install.id}}"
