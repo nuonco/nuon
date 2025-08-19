@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a Promotion. There is currently no intention
 to publish this externally.
 
+## v0.19.618
+
+Fixing issue with login and ddp proxy.
+
 ## v0.19.617
 
 Promoting 16 changelog.
