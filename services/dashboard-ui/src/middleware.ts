@@ -93,6 +93,6 @@ export default async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|livez|readyz|\\.js|\\.css$|api/ctl-api|_app|admin/temporal-codec/decode).*)',
+    '/((?!_next/static|_next/image|favicon.ico|livez|readyz|\\.js|\\.css$|api/ddp|api/ctl-api|_app|admin/temporal-codec/decode).*)',
   ],
 }
