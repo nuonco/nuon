@@ -98,6 +98,10 @@ func PrintLn(msg string) {
 	pterm.Info.Println(msg)
 }
 
+func PrintWarning(msg string) {
+	pterm.Warning.Println(msg)
+}
+
 func PrintSuccess(msg string) {
 	pterm.Success.Println(msg)
 }
