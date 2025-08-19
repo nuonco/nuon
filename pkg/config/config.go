@@ -155,7 +155,7 @@ func (a *AppConfig) Parse() error {
 	for idx, install := range a.Installs {
 		parseFns = append(parseFns, parseFn{
 			fmt.Sprintf("installs.%d", idx),
-			install.parse,
+			install.Parse,
 		})
 	}
 
