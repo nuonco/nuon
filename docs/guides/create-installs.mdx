@@ -27,21 +27,34 @@ nuon installs create  --name=auto-deploy --region=us-east-1 --role=iam-role
 
 ## Install Config Files
 
-Installs can be managed as part of a Nuon app's config. Create a config file for the install under the `installs/` folder
-in the app's config directory.
+Installs can be managed with the help of a config file, similar to App Configs. Create a config file
+for the install in a separate directory from the app config.
 
-```toml install.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=install
-name = "<install-name>"
+```toml install_name.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=install
+name = "<install_name>"
 
 [aws_account]
   region = "us-east-1"
-  iam_role_arn = "<aws-iam-role>"
+  iam_role_arn = "<aws_iam_role>"
 
 [inputs]
-input_string = "sample"
-input_number = "100"
-input_bool   = "true"
+  input_string = "sample"
+  input_number = "100"
+  input_bool   = "true"
+```
+
+Then sync this install using the [Nuon CLI](/cli).
+
+```sh
+nuon installs sync -a <app-name-or-id> -d ./install_name.toml
+```
+
+You can also manage installs in bulk by passing path to a directory containing installs to sync
+for an App.
+
+```sh
+nuon installs sync -a <app-name-or-id> -d ./installs_dir
 ```
 
 ## API and SDKs
