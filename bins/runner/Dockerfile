@@ -22,6 +22,8 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
 
 FROM code AS build
 
+ARG tag=
+
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
     CGO_ENABLED=0 \
