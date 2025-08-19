@@ -1,25 +1,29 @@
 'use server'
 
 import type { TRunner } from '@/types'
-import { auth0 } from "@/utils/auth"
-import { ADMIN_API_URL } from '@/utils'
+import { auth0 } from '@/utils/auth'
+import { API_URL, ADMIN_API_URL } from '@/utils'
 
 async function adminAction(
   domain: string,
   path: string,
-  errMessage = 'Admin action failed'
+  errMessage = 'Admin action failed',
+  options: { usePublicAPI?: boolean } = { usePublicAPI: false }
 ) {
   const { user } = await auth0.getSession()
 
   try {
-    const result = await fetch(`${ADMIN_API_URL}/v1/${domain}/${path}`, {
-      method: 'POST',
-      body: '{}',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Nuon-Admin-Email': user?.email,
-      },
-    }).then((r) => r.json())
+    const result = await fetch(
+      `${options?.usePublicAPI ? API_URL : ADMIN_API_URL}/v1/${domain}/${path}`,
+      {
+        method: 'POST',
+        body: '{}',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Nuon-Admin-Email': user?.email,
+        },
+      }
+    ).then((r) => r.json())
     return { status: 201, result }
   } catch (error) {
     throw new Error(errMessage)
@@ -270,6 +274,33 @@ export async function invalidateRunnerToken(runnerId: string) {
     'runners',
     `${runnerId}/invalidate-service-account-token`,
     'Failed to invalidate service account token'
+  )
+}
+
+export async function mngShutdownRunner(runnerId: string) {
+  return adminAction(
+    'runners',
+    `${runnerId}/mng/shutdown`,
+    'Failed to kickoff mng shutdown',
+    { usePublicAPI: true }
+  )
+}
+
+export async function mngShutdownRunnerVM(runnerId: string) {
+  return adminAction(
+    'runners',
+    `${runnerId}/mng/shutdown-vm`,
+    'Failed to kickoff mng shutdown vm',
+    { usePublicAPI: true }
+  )
+}
+
+export async function mngUpdateRunner(runnerId: string) {
+  return adminAction(
+    'runners',
+    `${runnerId}/mng/update`,
+    'Failed to kickoff mng update runner',
+    { usePublicAPI: true }
   )
 }
 
