@@ -45,7 +45,7 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "inputs", "list of inputs")
 }
 
-func (i *Install) parse() error {
+func (i *Install) Parse() error {
 	if i == nil {
 		return nil
 	}
