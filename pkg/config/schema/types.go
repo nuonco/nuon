@@ -31,6 +31,7 @@ func LookupSchemaType(typ string) (*jsonschema.Schema, error) {
 		"inputs":              InputsConfigSchema,
 		"input-group":         InputGroupSchema,
 		"input":               InputSchema,
+		"install":             InstallSchema,
 	}
 
 	fn, ok := mapping[typ]
@@ -224,4 +225,13 @@ func BreakGlassConfigSchema() (*jsonschema.Schema, error) {
 	}
 
 	return r.Reflect(config.AppAWSIAMRole{}), nil
+}
+
+func InstallSchema() (*jsonschema.Schema, error) {
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.Install{}), nil
 }
