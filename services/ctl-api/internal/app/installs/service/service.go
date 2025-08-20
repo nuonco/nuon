@@ -166,8 +166,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/admin-reprovision", s.ReprovisionInstall)
 	api.POST("/v1/installs/:install_id/admin-forget", s.AdminForgetInstall)
 	api.POST("/v1/installs/:install_id/admin-update-sandbox", s.AdminUpdateSandbox)
-	api.POST("/v1/installs/admin-backfill-install-sandboxes", s.AdminaBackfillInstallSandboxes)
-	api.POST("/v1/installs/admin-backfill-install-components", s.AdminaBackfillInstallComponents)
 
 	// temp for hackathon
 	api.POST("/v1/admin-install-workflow-step-approve", s.AdminInstallWorkflowStepApprove)
