@@ -19,7 +19,6 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		signals.OperationBuild:               AwaitBuild,
 		signals.OperationDelete:              AwaitDelete,
 		signals.OperationRestart:             AwaitRestarted,
-		signals.OperationBackillType:         AwaitBackfillComponentType,
 		signals.OperationUpdateComponentType: AwaitUpdateComponentType,
 	}
 
