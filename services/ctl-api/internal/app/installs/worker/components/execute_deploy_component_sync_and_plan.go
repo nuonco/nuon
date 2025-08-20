@@ -13,6 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
+	flowactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
 )
 
 // @temporal-gen workflow
@@ -23,6 +24,11 @@ func (w *Workflows) ExecuteDeployComponentSyncAndPlan(ctx workflow.Context, sreq
 	if err != nil {
 		w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "unable to get install from database")
 		return fmt.Errorf("unable to get install: %w", err)
+	}
+
+	flw, err := flowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, sreq.FlowID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get workflow object")
 	}
 
 	var installDeploy *app.InstallDeploy
@@ -110,6 +116,14 @@ func (w *Workflows) ExecuteDeployComponentSyncAndPlan(ctx workflow.Context, sreq
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 
+	if flw.PlanOnly {
+		if installDeploy.Status == app.InstallDeployStatusAutoSkipped {
+			w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusNoDrift, "no-drift")
+			return nil
+		}
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusDriftDetected, "drift-detected")
+		return nil
+	}
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPendingApproval, "pending-approval")
 	return nil
 }

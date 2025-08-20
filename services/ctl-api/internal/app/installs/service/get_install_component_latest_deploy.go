@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -41,24 +41,31 @@ func (s *service) GetInstallComponentLatestDeploy(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installDeploy)
 }
 
-func (s *service) getInstallComponentLatestDeploy(ctx context.Context, installID string, componentID string) (*app.InstallDeploy, error) {
-	installCmp := app.InstallComponent{}
-	res := s.db.WithContext(ctx).
-		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_deploys.created_at DESC").Limit(1)
-		}).
-		Preload("TerraformWorkspace").
-		Where(&app.InstallComponent{
-			InstallID:   installID,
-			ComponentID: componentID,
-		}).
-		First(&installCmp)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
+func (s *service) getInstallComponentLatestDeploy(ctx context.Context, installID, componentID string) (app.InstallDeploy, error) {
+	ginCtx, ok := ctx.(*gin.Context)
+	if !ok {
+		return app.InstallDeploy{}, fmt.Errorf("invalid context type, expected *gin.Context")
 	}
-	if len(installCmp.InstallDeploys) < 1 {
-		return nil, fmt.Errorf("no deploy exists for install: %w", gorm.ErrRecordNotFound)
+	deploys, err := s.getInstallComponentDeploys(ginCtx, installID, componentID)
+	if err != nil {
+		return app.InstallDeploy{}, fmt.Errorf("unable to get install component deploys: %w", err)
 	}
 
-	return &installCmp.InstallDeploys[0], nil
+	filterOutPlanOnly := make([]app.InstallDeploy, 0, len(deploys))
+	for _, deploy := range deploys {
+		if deploy.PlanOnly {
+			continue
+		}
+		filterOutPlanOnly = append(filterOutPlanOnly, deploy)
+	}
+
+	if len(filterOutPlanOnly) == 0 {
+		return app.InstallDeploy{}, nil
+	}
+
+	sort.Slice(filterOutPlanOnly, func(i, j int) bool {
+		return filterOutPlanOnly[i].CreatedAt.After(filterOutPlanOnly[j].CreatedAt)
+	})
+
+	return filterOutPlanOnly[0], nil
 }

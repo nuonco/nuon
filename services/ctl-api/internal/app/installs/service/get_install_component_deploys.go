@@ -65,7 +65,30 @@ func (s *service) getInstallComponentDeploys(ctx *gin.Context, installID, compon
 		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
 	}
 
-	dpls, err := db.HandlePaginatedResponse(ctx, install.InstallDeploys)
+	workflowIDs := make([]string, 0, len(install.InstallDeploys))
+	for _, deploy := range install.InstallDeploys {
+		workflowID := deploy.WorkflowID
+		if workflowID != nil {
+			workflowIDs = append(workflowIDs, *workflowID)
+		}
+	}
+
+	planStatusMap, err := s.helpers.GetWorkflowsPlanOnlyMap(ctx, workflowIDs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get workflow plan status: %w", err)
+	}
+
+	filterOutPlanOnly := make([]app.InstallDeploy, 0, len(install.InstallDeploys))
+	for i := range install.InstallDeploys {
+		workflowID := install.InstallDeploys[i].WorkflowID
+		if planOnly, exists := planStatusMap[*workflowID]; exists {
+			if !planOnly {
+				filterOutPlanOnly = append(filterOutPlanOnly, install.InstallDeploys[i])
+			}
+		}
+	}
+
+	dpls, err := db.HandlePaginatedResponse(ctx, filterOutPlanOnly)
 	if err != nil {
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}

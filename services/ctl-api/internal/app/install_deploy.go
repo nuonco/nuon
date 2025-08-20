@@ -36,6 +36,9 @@ const (
 	InstallDeployStatusPending         InstallDeployStatus = "pending"
 	InstallDeployStatusQueued          InstallDeployStatus = "queued"
 	InstallDeployStatusPendingApproval InstallDeployStatus = "pending-approval"
+	InstallDeployStatusDriftDetected   InstallDeployStatus = "drift-detected"
+	InstallDeployStatusAutoSkipped     InstallDeployStatus = "auto-skipped"
+	InstallDeployStatusNoDrift         InstallDeployStatus = "no-drift"
 	InstallDeployApprovalDenied        InstallDeployStatus = "approval-denied"
 )
 
@@ -83,6 +86,7 @@ type InstallDeploy struct {
 	ComponentConfigVersion int       `gorm:"-" json:"component_config_version,omitzero" temporaljson:"component_config_version,omitzero,omitempty"`
 	WorkflowID             *string   `json:"workflow_id,omitzero" gorm:"-" temporaljson:"workflow_step_id,omitzero,omitempty"`
 	Workflow               *Workflow `json:"workflow,omitzero" gorm:"-" temporaljson:"workflow_step,omitzero,omitempty"`
+	PlanOnly               bool      `json:"plan_only" gorm:"-" temporaljson:"plan_only,omitzero,omitempty"`
 
 	Outputs map[string]any `json:"outputs,omitzero" gorm:"-" temporaljson:"outputs,omitzero,omitempty"`
 }
