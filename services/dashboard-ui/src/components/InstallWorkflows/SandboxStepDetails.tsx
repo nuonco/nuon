@@ -54,7 +54,13 @@ export const SandboxStepDetails: FC<IPollStepDetails> = ({
 
   return (
     <>
-      {isLoading ? (
+    { step?.execution_type === 'approval' && step?.status?.status === 'auto-skipped' ? (
+        <div className="flex flex-col gap-2">
+        <Text variant="reg-14">Plan had no changes, skipping deployent.</Text>
+        <br></br>
+        </div>
+    ) : null }
+    {isLoading ? (
         <div className="border rounded-md p-6">
           <Loading loadingText="Loading sandobx details..." variant="stack" />
         </div>
