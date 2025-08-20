@@ -208,7 +208,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           </Notice>
         )
       ) : workflowApproveOption === 'prompt' &&
-        step?.status?.status !== 'cancelled' ? (
+        step?.status?.status !== 'cancelled' && step?.status?.status !== 'auto-skipped' ? (
         <Notice className="!p-4 w-full" variant="warn">
           <div className="flex items-center gap-4">
             <div>
@@ -242,7 +242,9 @@ export const ApprovalStep: FC<IApprovalStep> = ({
             <JsonView data={plan} />
           )}
         </div>
-        <ApprovalButtons />
+        { step?.status?.status !== 'cancelled' && step?.status?.status !== 'auto-skipped' ? (
+          <ApprovalButtons />
+        ) : null}
       </div>
     </>
   )

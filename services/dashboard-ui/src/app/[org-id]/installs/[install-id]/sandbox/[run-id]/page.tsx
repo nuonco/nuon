@@ -176,7 +176,8 @@ export default async function SandboxRuns({ params }) {
           {installWorkflow &&
           step &&
           step?.approval &&
-          !step?.approval?.response ? (
+          !step?.approval?.response &&
+          step?.status?.status !== 'auto-skipped'? (
             <Section
               className="border-b"
               childrenClassName="flex flex-col gap-6"
@@ -199,7 +200,8 @@ export default async function SandboxRuns({ params }) {
           {installWorkflow &&
           step &&
           step?.approval &&
-          step?.approval?.response ? (
+          step?.approval?.response &&
+          step?.status?.status !== 'auto-skipped'? (
             <Section
               className="border-t"
               childrenClassName="flex flex-col gap-6"

@@ -24,6 +24,7 @@ const (
 	StatusRetrying     Status = "retrying"
 	StatusDiscarded    Status = "discarded"
 	StatusUserSkipped  Status = "user-skipped"
+	StatusAutoSkipped  Status = "auto-skipped"
 	StatusPlanning     Status = "planning"
 	StatusApplying     Status = "applying"
 )
