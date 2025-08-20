@@ -9,7 +9,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
-	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
@@ -128,33 +127,67 @@ func buildInstallComponentConfig(installComponentConfigurations []app.ComponentC
 func (s *service) getInstallByID(ctx *gin.Context, installID string, types []string, q string) (*app.Install, error) {
 	install := &app.Install{}
 	res := s.db.WithContext(ctx).
-		Preload("InstallComponents", func(db *gorm.DB) *gorm.DB {
-			db = db.
-				Scopes(scopes.WithOffsetPagination).
-				Joins("JOIN components ON components.id = install_components.component_id").
-				Order("install_components.created_at DESC")
-
-			if len(types) > 0 {
-				db = db.
-					Where("components.type IN ?", types)
-			}
-
-			if q != "" {
-				db = db.
-					Where("components.name ILIKE ?", "%"+q+"%")
-			}
-
-			return db
-		}).
-		Preload("InstallComponents.Component").
-		Preload("InstallComponents.TerraformWorkspace").
 		Preload("AppConfig").
 		Preload("AppConfig.ComponentConfigConnections").
 		First(&install, "id = ?", installID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install components: %w", res.Error)
 	}
+
+	iCmps, err := s.getInstallsComponentsInBatches(ctx, installID, types, q)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install components in batches: %w", err)
+	}
+
+	install.InstallComponents = iCmps
+
 	return install, nil
+}
+
+func (s *service) getInstallsComponentsInBatches(ctx *gin.Context, installID string, types []string, q string) ([]app.InstallComponent, error) {
+	installComponents := make([]app.InstallComponent, 0)
+	batchSize := 10
+	offset := 0
+	hasMore := true
+
+	for hasMore {
+		var installComponentsBatch []app.InstallComponent
+		tx := s.db.WithContext(ctx).
+			Scopes(scopes.WithOffsetPagination).
+			Joins("JOIN components ON components.id = install_components.component_id").
+			Order("created_at DESC")
+
+		if len(types) > 0 {
+			tx = tx.
+				Where("components.type IN ?", types)
+		}
+
+		if q != "" {
+			tx = tx.
+				Where("components.name ILIKE ?", "%"+q+"%")
+		}
+
+		tx = tx.Preload("Component").
+			Preload("TerraformWorkspace").
+			Where("install_id = ?", installID).
+			Limit(batchSize).
+			Offset(offset).
+			Find(&installComponents)
+
+		if tx.Error != nil {
+			return nil, fmt.Errorf("unable to get install components for install %s: %w", installID, tx.Error)
+		}
+
+		installComponents = append(installComponents, installComponentsBatch...)
+
+		if len(installComponentsBatch) < batchSize {
+			hasMore = false
+		} else {
+			offset += batchSize
+		}
+	}
+
+	return installComponents, nil
 }
 
 func filterLatestDeploy(deploys []app.InstallDeploy) *app.InstallDeploy {
