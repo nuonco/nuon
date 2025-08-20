@@ -226,7 +226,11 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
 			}
-			steps = append(steps, planStep, applyPlanStep)
+			if flw.PlanOnly {
+				steps = append(steps, planStep)
+			} else {
+				steps = append(steps, planStep, applyPlanStep)
+			}
 		}
 		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePostDeployComponent, sg)
 		if err != nil {
