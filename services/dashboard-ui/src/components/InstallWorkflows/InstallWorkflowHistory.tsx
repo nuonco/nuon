@@ -221,12 +221,13 @@ export const YAStatus: FC<{
   const isInProgress = status === 'in-progress'
   const isCanceled = status === 'cancelled'
   const isNotAttempted = status === 'not-attempted'
-  const isPending = !isSuccess && !isError && !isProhibit && !isInProgress
   const isPendingApproval = status === 'approval-awaiting'
   const isApprovalDenied = status === 'approval-denied'
   const isDiscarded = status === 'discarded'
   const isUserSkipped = status === 'user-skipped'
   const isSystemSkipped = status == 'auto-skipped'
+  const isPending =
+    !isSuccess && !isError && !isProhibit && !isInProgress && !isSystemSkipped
 
   const StatusIcon = isSuccess ? (
     <CheckCircle size="18" weight="bold" />
@@ -259,7 +260,7 @@ export const YAStatus: FC<{
       className={classNames(
         'rounded-full w-[26px] h-[26px] flex items-center justify-center',
         {
-          'bg-blue-600/15 dark:bg-blue-500/15 text-blue-800 dark:text-green-500':
+          'bg-green-600/15 dark:bg-green-500/15 text-green-800 dark:text-green-500':
             isSuccess && !isSkipped,
           'bg-red-600/15 dark:bg-red-500/15 text-red-800 dark:text-red-500':
             isError,
