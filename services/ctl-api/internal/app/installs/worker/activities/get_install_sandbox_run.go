@@ -16,10 +16,20 @@ type GetInstallSandboxRunForApplyStep struct {
 
 // @temporal-gen activity
 func (a *Activities) GetInstallSandboxRunForApplyStep(ctx context.Context, req GetInstallSandboxRunForApplyStep) (*app.InstallSandboxRun, error) {
-	return a.getInstallSandboxRunForApplyStep(ctx, req.InstallWorkflowID, req.InstallID)
+	return a.getInstallSandboxRun(ctx, req.InstallWorkflowID, req.InstallID)
 }
 
-func (a *Activities) getInstallSandboxRunForApplyStep(ctx context.Context, installWorkflowID, installID string) (*app.InstallSandboxRun, error) {
+type GetLatestInstallSandboxRun struct {
+	InstallWorkflowID string `validate:"required"`
+	InstallID         string `validate:"required"`
+}
+
+// @temporal-gen activity
+func (a *Activities) GetLatestInstallSandboxRun(ctx context.Context, req GetInstallSandboxRunForApplyStep) (*app.InstallSandboxRun, error) {
+	return a.getInstallSandboxRun(ctx, req.InstallWorkflowID, req.InstallID)
+}
+
+func (a *Activities) getInstallSandboxRun(ctx context.Context, installWorkflowID, installID string) (*app.InstallSandboxRun, error) {
 	installSandboxRun := app.InstallSandboxRun{}
 	res := a.db.WithContext(ctx).
 		Where(app.InstallSandboxRun{

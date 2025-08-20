@@ -37,7 +37,7 @@ func (w *Workflows) ProvisionSandboxPlan(ctx workflow.Context, sreq signals.Requ
 		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
 			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
 			defer updateCtxCancel()
-			w.updateRunStatus(updateCtx, installRun.ID, app.SandboxRunStatusCancelled, "install sandbox run cancelled")
+			w.updateRunStatusWithoutStatusSync(updateCtx, installRun.ID, app.SandboxRunStatusCancelled, "install sandbox run cancelled")
 		}
 	}()
 
@@ -51,12 +51,12 @@ func (w *Workflows) ProvisionSandboxPlan(ctx workflow.Context, sreq signals.Requ
 
 	defer func() {
 		if pan := recover(); pan != nil {
-			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
+			w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
 			panic(pan)
 		}
 	}()
 
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatus(app.InstallDeployStatusPlanning), "planning")
+	w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatus(app.InstallDeployStatusPlanning), "planning")
 
 	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
 		SandboxRunID: installRun.ID,
@@ -80,7 +80,7 @@ func (w *Workflows) ProvisionSandboxPlan(ctx workflow.Context, sreq signals.Requ
 		return err
 	}
 
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunPendingApproval, "pending approval")
+	w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunPendingApproval, "auto skipped")
 	l.Info("provision plan was successful")
 	return nil
 }

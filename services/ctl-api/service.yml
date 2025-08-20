@@ -96,6 +96,7 @@ env:
   APP_URL: http://localhost:4000
   TEMPORAL_UI_URL: http://localhost:8233
   ORG_RUNNER_HELM_CHART_DIR: $NUON_ROOT/bins/runner/bundle/helm
+  MAX_REQUEST_DURATION: 10s
 
   # The following fields control local behavior and can be changed by adding a ~/.nuonctl-env.yml file:
   #
