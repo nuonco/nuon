@@ -131,8 +131,12 @@ func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Wo
 		p.writeErrorResult(ctx, "terraform show", err)
 		return fmt.Errorf("unable to marshal state: %w", err)
 	}
-
-	if _, err := p.apiClient.UpdateTerraformStateJSON(ctx, p.state.plan.TerraformDeployPlan.TerraformBackend.WorkspaceID, &p.state.jobID, stateBody); err != nil {
+	if _, err := p.apiClient.UpdateTerraformStateJSON(
+		ctx,
+		p.state.plan.TerraformDeployPlan.TerraformBackend.WorkspaceID,
+		&p.state.jobID,
+		stateBody,
+	); err != nil {
 		p.writeErrorResult(ctx, "terraform show", err)
 		return fmt.Errorf("unable to update state: %w", err)
 	}
@@ -152,18 +156,18 @@ func (p *handler) createResult(ctx context.Context, wkspace workspace.Workspace,
 	}
 	hlog.Info("tfplan", zap.Int("bytes", len(planBytes)))
 	planBytesB64 := base64.URLEncoding.EncodeToString(planBytes)
-	planJsonBytes, err := wkspace.GetTfplanJsonCompressed(ctx, hlog)
+	planJSONBytes, err := wkspace.GetTfplanJsonCompressed(ctx, hlog)
 	if err != nil {
 		p.writeErrorResult(ctx, "failed to get compressed plan.json bytes", err)
 		return fmt.Errorf("unable to read plan.json.gz file: %w", err)
 	}
-	hlog.Info("plan json", zap.Int("bytes", len(planJsonBytes)))
-	planJsonBytesB64 := base64.URLEncoding.EncodeToString(planJsonBytes)
+	hlog.Info("plan json", zap.Int("bytes", len(planJSONBytes)))
+	planJSONBytesB64 := base64.URLEncoding.EncodeToString(planJSONBytes)
 	// create the result object
 	_, err = p.apiClient.CreateJobExecutionResult(ctx, p.state.jobID, p.state.jobExecutionID, &models.ServiceCreateRunnerJobExecutionResultRequest{
 		Success:                   true,
 		ContentsCompressed:        planBytesB64,
-		ContentsDisplayCompressed: planJsonBytesB64,
+		ContentsDisplayCompressed: planJSONBytesB64,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create terraform apply job execution result : %w", err)

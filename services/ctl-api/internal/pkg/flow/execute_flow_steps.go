@@ -28,8 +28,8 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context,
 	for i := startingStepNumber; i < len(steps); i++ {
 		step := &steps[i]
 
-		retry, err := c.executeFlowStep(ctx, req, step.Idx, step, flw)
-		if retry {
+		reFetchSteps, err := c.executeFlowStep(ctx, req, step.Idx, step, flw)
+		if reFetchSteps {
 			// outer steps loop should continue to retry the step since the result here is ordered by idx asc
 			steps, err = activities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, activities.GetFlowStepsRequest{
 				FlowID: flw.ID,
@@ -47,7 +47,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context,
 			return c.handleCancellation(ctx, err, step.ID, i, flw)
 		}
 
-		if errors.Is(err, NotApprovedErr) {
+		if errors.Is(err, ErrNotApproved) {
 			if err := c.cancelFutureSteps(ctx, flw, i, "workflow step was not approved"); err != nil {
 				return errors.Wrap(err, "unable to cancel future steps "+err.Error())
 			}

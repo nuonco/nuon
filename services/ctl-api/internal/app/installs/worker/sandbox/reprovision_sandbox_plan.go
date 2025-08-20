@@ -38,7 +38,7 @@ func (w *Workflows) ReprovisionSandboxPlan(ctx workflow.Context, sreq signals.Re
 		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
 			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
 			defer updateCtxCancel()
-			w.updateRunStatus(updateCtx, installRun.ID, app.SandboxRunStatusCancelled, "install sandbox run cancelled")
+			w.updateRunStatusWithoutStatusSync(updateCtx, installRun.ID, app.SandboxRunStatusCancelled, "install sandbox run cancelled")
 		}
 	}()
 
@@ -52,7 +52,7 @@ func (w *Workflows) ReprovisionSandboxPlan(ctx workflow.Context, sreq signals.Re
 
 	defer func() {
 		if pan := recover(); pan != nil {
-			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
+			w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
 			panic(pan)
 		}
 	}()
@@ -70,16 +70,16 @@ func (w *Workflows) ReprovisionSandboxPlan(ctx workflow.Context, sreq signals.Re
 	}
 
 	l.Info("executing sandbox plan", zap.String("log_stream.id", logStream.ID))
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusPlanning, "planning")
+	w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusPlanning, "planning")
 
 	err = w.executeSandboxPlan(ctx, install, installRun, sreq.FlowStepID, sandboxMode)
 	if err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, err.Error())
+		w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, err.Error())
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 		return err
 	}
 
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunPendingApproval, "install resources provisioned")
+	w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunPendingApproval, "pending approval")
 	l.Info("reprovision plan was successful")
 
 	return nil
