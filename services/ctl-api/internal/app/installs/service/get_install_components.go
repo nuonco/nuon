@@ -46,11 +46,6 @@ func (s *service) getInstallComponents(ctx *gin.Context, installID string) ([]ap
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	err = s.populateInstallComponentsWithDeploys(ctx, install)
-	if err != nil {
-		return nil, fmt.Errorf("unable to populate install components with deploys: %w", err)
-	}
-
 	paginatedComponents, err := db.HandlePaginatedResponse(ctx, install.InstallComponents)
 	if err != nil {
 		return nil, fmt.Errorf("failed to paginate install components: %w", err)
