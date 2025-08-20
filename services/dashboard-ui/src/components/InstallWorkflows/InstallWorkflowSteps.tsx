@@ -345,6 +345,8 @@ const InstallWorkflowStepTitle: FC<{
             </span>
           ) : status?.status === 'user-skipped' ? (
             <Badge isCompact>Skipped</Badge>
+          ) : status?.status === 'auto-skipped' ? (
+            <Badge isCompact theme='info'>Auto Approved</Badge>
           ) : status?.status === 'discarded' ? (
             <Badge isCompact>Discarded</Badge>
           ) : null}
@@ -373,7 +375,7 @@ function getFinishedText(
       text = 'Finished'
   }
 
-  if (isSkipped) {
+  if (isSkipped || status === 'auto-approved') {
     text = 'Skipped'
   }
 

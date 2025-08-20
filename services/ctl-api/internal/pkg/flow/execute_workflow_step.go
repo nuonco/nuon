@@ -13,14 +13,19 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	activities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
+	jobactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-var NotApprovedErr error = fmt.Errorf("Not approved")
+var ErrNotApproved error = fmt.Errorf("not approved")
 
 // executeFlowStep executes a single step in the flow. It handles the execution of the step, updates the status, and waits for approval if necessary.
-// It returns true if the step needs to be retried (in case of approval steps), false otherwise.
+// It returns true if the step needs to be refetched (in case of approval steps), false otherwise.
 func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req eventloop.EventLoopRequest, idx int, step *app.WorkflowStep, flw *app.Workflow) (bool, error) {
+	if step.Status.Status == app.StatusAutoSkipped {
+		return false, nil
+	}
+
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: flw.ID,
 		Status: app.CompositeStatus{
@@ -69,6 +74,64 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		return false, nil
 	}
 
+	approvalPlan, err := c.getStepApprovalPlan(ctx, step)
+	if err != nil {
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status: app.StatusError,
+				Metadata: map[string]any{
+					"reason": "Step failed, failed to get deploy plan.",
+				},
+				StatusHumanDescription: "Step failed",
+			},
+		}); err != nil {
+			return false, errors.Wrap(err, "unable to mark step as error")
+		}
+
+		return false, err
+	}
+
+	noopPlan, err := approvalPlan.NoopPlan()
+	if err != nil {
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status: app.StatusError,
+				Metadata: map[string]any{
+					"reason": "Step failed, failed to check for noop plan.",
+				},
+				StatusHumanDescription: "Step failed",
+			},
+		}); err != nil {
+			return false, errors.Wrap(err, "unable to mark step as error")
+		}
+
+		return false, errors.Wrap(err, "failed to check for noop plan")
+	}
+
+	// check for plan contents here, if noop then mark auto approved + nex step as skipped since its noop change
+	if noopPlan {
+		if err := c.handleNoopDeployPlan(ctx, step, flw); err != nil {
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: step.ID,
+				Status: app.CompositeStatus{
+					Status: app.StatusError,
+					Metadata: map[string]any{
+						"reason": "Step failed, unable to handle noop plan.",
+					},
+					StatusHumanDescription: "Step failed",
+				},
+			}); err != nil {
+				return false, errors.Wrap(err, "unable to mark step as error")
+			}
+
+			return false, errors.Wrap(err, "failed to handle noop plan")
+		}
+
+		return true, nil
+	}
+
 	// update the status to awaiting
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
@@ -83,20 +146,6 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 	}); err != nil {
 		return false, errors.Wrap(err, "unable to update step to success status")
 	}
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: flw.ID,
-		Status: app.CompositeStatus{
-			Status:                 app.AwaitingApproval,
-			StatusHumanDescription: "awaiting approval " + strconv.Itoa(step.Idx+1),
-			Metadata: map[string]any{
-				"step_idx": step.Idx,
-				"status":   "ok",
-			},
-		},
-	}); err != nil {
-		return false, errors.Wrap(err, "unable to update step to success status")
-	}
-
 	resp, err := c.waitForApprovalResponse(ctx, flw, step, idx)
 	if err != nil {
 		return false, err
@@ -169,7 +218,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		return false, errors.Wrap(err, "unable to update step target status")
 	}
 
-	return false, NotApprovedErr
+	return false, ErrNotApproved
 }
 
 func (c *WorkflowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
@@ -223,4 +272,78 @@ func removeRetryFromStepName(name string) string {
 
 	// No retry suffix found
 	return name
+}
+
+func (c *WorkflowConductor[DomainSignal]) getStepApprovalPlan(ctx workflow.Context, step *app.WorkflowStep) (*jobactivities.ApprovalPlan, error) {
+	// assumption here is that, for approval type steps, there will always be a runPlan
+	approvalPlan, err := jobactivities.AwaitPkgWorkflowsGetApprovalPlan(ctx, jobactivities.GetApprovalPlanRequest{
+		StepTargetID: step.StepTargetID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get step approval plan")
+	}
+
+	return approvalPlan, nil
+}
+
+func (c *WorkflowConductor[DomainSignal]) handleNoopDeployPlan(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: step.ID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusAutoSkipped,
+			StatusHumanDescription: "Noop Plan, automatically skipped " + strconv.Itoa(step.Idx+1),
+			Metadata: map[string]any{
+				"step_idx": step.Idx,
+				"status":   "auto-skipped",
+			},
+		},
+	}); err != nil {
+		return errors.Wrap(err, "unable to update step to success status")
+	}
+	currentStepIndex := c.getStepIndex(step.ID, flw.Steps)
+	if currentStepIndex == -1 {
+		return errors.Errorf("step index not found for step id: %s", step.ID)
+	}
+
+	nextStepIndex := currentStepIndex + 1
+	if nextStepIndex >= len(flw.Steps) {
+		return errors.Errorf("next step index(%d) out of bound, total step count: %d", nextStepIndex, len(flw.Steps))
+	}
+
+	nextStep := flw.Steps[nextStepIndex]
+
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		// this needs to be the step next in line
+		ID: nextStep.ID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusAutoSkipped,
+			StatusHumanDescription: "Noop Plan, automatically skipped " + strconv.Itoa(nextStep.Idx),
+			Metadata: map[string]any{
+				"step_idx": nextStep.Idx,
+				"status":   "auto-skipped",
+			},
+		},
+	}); err != nil {
+		return errors.Wrap(err, "unable to update step to success status")
+	}
+
+	// this needs to be same as previous value
+	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
+		StepID:            step.ID,
+		Status:            app.StatusAutoSkipped,
+		StatusDescription: "No changes found in plan, skipping deployment.",
+	}); err != nil {
+		return errors.Wrap(err, "unable to update step target status")
+	}
+
+	return nil
+}
+
+func (c *WorkflowConductor[DomainSignal]) getStepIndex(stepID string, steps []app.WorkflowStep) int {
+	for i, s := range steps {
+		if s.ID == stepID {
+			return i
+		}
+	}
+	return -1
 }

@@ -97,6 +97,8 @@ type SandboxSubSignal struct {
 	// used to control if a plan is created or not
 	CreatePlan bool
 
+	SkipSyncStatus bool
+
 	// used to consume an existing plan-id
 	PlanID string
 }

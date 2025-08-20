@@ -22,13 +22,10 @@ import {
   Prohibit,
   Warning,
   WarningDiamond,
-  CheckCircleIcon,
   MinusCircleIcon,
   ProhibitIcon,
-  Repeat,
   RepeatIcon,
-  RepeatOnceIcon,
-  WarningDiamondIcon,
+  EmptyIcon,
 } from '@phosphor-icons/react'
 
 function formatToRelativeDay(dateString: string) {
@@ -229,6 +226,7 @@ export const YAStatus: FC<{
   const isApprovalDenied = status === 'approval-denied'
   const isDiscarded = status === 'discarded'
   const isUserSkipped = status === 'user-skipped'
+  const isSystemSkipped = status == 'auto-skipped'
 
   const StatusIcon = isSuccess ? (
     <CheckCircle size="18" weight="bold" />
@@ -250,6 +248,8 @@ export const YAStatus: FC<{
     <WarningDiamond size="18" weight="bold" />
   ) : isPendingApproval ? (
     <Warning size="18" weight="bold" />
+  ) : isSystemSkipped ? (
+    <EmptyIcon size="18" weight="bold" />
   ) : (
     <ClockCountdown size="18" weight="bold" />
   )
@@ -259,7 +259,7 @@ export const YAStatus: FC<{
       className={classNames(
         'rounded-full w-[26px] h-[26px] flex items-center justify-center',
         {
-          'bg-green-600/15 dark:bg-green-500/15 text-green-800 dark:text-green-500':
+          'bg-blue-600/15 dark:bg-blue-500/15 text-blue-800 dark:text-green-500':
             isSuccess && !isSkipped,
           'bg-red-600/15 dark:bg-red-500/15 text-red-800 dark:text-red-500':
             isError,
@@ -268,7 +268,7 @@ export const YAStatus: FC<{
           'bg-orange-600/15 dark:bg-orange-500/15 text-orange-600 dark:text-orange-300':
             isCanceled || isPendingApproval,
           'bg-blue-600/15 dark:bg-blue-500/15 text-blue-800 dark:text-blue-500':
-            isInProgress,
+            isInProgress || isSystemSkipped,
           'bg-cool-grey-600/15 dark:bg-cool-grey-500/15 text-cool-grey-800 dark:text-cool-grey-500':
             isPending || isSkipped || isDiscarded,
         }
