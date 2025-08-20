@@ -33,11 +33,6 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if cctx.IsGlobal(ctx) || cctx.IsPublic(ctx) {
-			ctx.Next()
-			return
-		}
-
 		paginationEnable := ctx.Request.Header.Get(paginationEnabledHeaderKey)
 
 		if paginationEnable == "" && paginationEnable != "true" {
