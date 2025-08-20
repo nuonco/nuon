@@ -1,6 +1,8 @@
 package plantypes
 
-import "github.com/powertoolsdev/mono/pkg/plugins/configs"
+import (
+	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+)
 
 type DeployPlan struct {
 	InstallID     string `json:"install_id"`

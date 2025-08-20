@@ -100,7 +100,10 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		Preload("InstallSandbox").
 		Preload("InstallSandbox.TerraformWorkspace").
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_sandbox_runs.created_at DESC").Limit(5)
+			return db.
+				Where("status != ?", app.StatusAutoSkipped).
+				Order("install_sandbox_runs.created_at DESC").
+				Limit(5)
 		}).
 		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Preload("InstallConfig").

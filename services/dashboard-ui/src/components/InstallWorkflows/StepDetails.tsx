@@ -12,8 +12,6 @@ import { SandboxStepDetails } from './SandboxStepDetails'
 import { StackStep } from './StackStepDetails'
 import { RunnerStepDetails } from './RunnerStepDetails'
 import { RetryButtons } from './RetryButtons'
-import { Button } from '../Button'
-import { StatusBadge } from '../Status'
 
 export function getStepType(
   step: TInstallWorkflowStep,
@@ -53,11 +51,11 @@ export function getStepType(
       break
     case 'install_deploys':
       stepDetails = (
-        <DeployStepDetails
-          step={step}
-          shouldPoll
-          workflowApproveOption={workflowApproveOption}
-        />
+          <DeployStepDetails
+            step={step}
+            shouldPoll
+            workflowApproveOption={workflowApproveOption}
+          />
       )
       break
     default:
@@ -77,6 +75,7 @@ export function getStepType(
       </div>
     )
   }
+
 
   if (step?.execution_type === 'system' && step?.step_target_type === '') {
     stepDetails = (
