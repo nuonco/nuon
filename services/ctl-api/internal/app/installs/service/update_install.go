@@ -8,13 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/patcher"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
 
 type UpdateInstallRequest struct {
-	Name string `json:"name"`
+	Name     string                   `json:"name"`
+	Metadata *helpers.InstallMetadata `json:"metadata,omitempty"`
 }
 
 func (c *UpdateInstallRequest) Validate(v *validator.Validate) error {
@@ -68,13 +71,20 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 		ID: installID,
 	}
 
+	updateObj := app.Install{Name: req.Name}
+	if req.Metadata != nil {
+		updateObj.Metadata = generics.ToHstore(map[string]string{
+			"managed_by": req.Metadata.ManagedBy,
+		})
+	}
+
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithPatcher(patcher.PatcherOptions{})).
 		Model(&currentInstall).
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("AppSandboxConfig").
-		UpdateColumns(&app.Install{Name: req.Name})
+		UpdateColumns(&updateObj)
 
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)

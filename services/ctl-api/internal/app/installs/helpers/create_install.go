@@ -12,6 +12,10 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
+type InstallMetadata struct {
+	ManagedBy string `json:"managed_by,omitempty"`
+}
+
 type CreateInstallParams struct {
 	Name string `json:"name" validate:"required"`
 
@@ -31,6 +35,8 @@ type CreateInstallParams struct {
 	Inputs map[string]*string `json:"inputs"`
 
 	InstallConfig *CreateInstallConfigParams `json:"install_config"`
+
+	Metadata InstallMetadata `json:"metadata,omitempty"`
 }
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
@@ -79,6 +85,9 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 				ID: domains.NewTerraformWorkspaceID(),
 			},
 		},
+		Metadata: generics.ToHstore(map[string]string{
+			"managed_by": req.Metadata.ManagedBy,
+		}),
 	}
 
 	if req.AWSAccount != nil {
