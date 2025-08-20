@@ -25,7 +25,6 @@ const (
 	OperationDelete              eventloop.SignalType = "delete"
 	OperationPollDependencies    eventloop.SignalType = "poll_dependencies"
 	OperationConfigCreated       eventloop.SignalType = "config_created"
-	OperationBackillType         eventloop.SignalType = "backfill_type"
 	OperationUpdateComponentType eventloop.SignalType = "update_component_type"
 )
 
