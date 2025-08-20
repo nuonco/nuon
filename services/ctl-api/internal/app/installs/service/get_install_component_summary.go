@@ -52,12 +52,6 @@ func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 		return
 	}
 
-	err = s.populateInstallComponentsWithDeploys(ctx, install)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to populate install components with deploys: %w", err))
-		return
-	}
-
 	// pagination helper relies on providing +1 results to determine if there are more results.
 	// summary wasnt really designed for this. so we decrement here using the HandlePaginatedResponse.
 	ics, err := db.HandlePaginatedResponse(ctx, install.InstallComponents)
@@ -221,14 +215,6 @@ func filterAppID(installComponents []app.InstallComponent) string {
 func (s *service) buildSummary(ctx context.Context, installComponents []app.InstallComponent, compMap map[string]*app.ComponentConfigConnection, builds []app.ComponentBuild, depComps map[string][]app.Component) []app.InstallComponentSummary {
 	summaries := make([]app.InstallComponentSummary, 0, len(installComponents))
 	for _, ic := range installComponents {
-		deploy := filterLatestDeploy(ic.InstallDeploys)
-		deployStatus := app.InstallDeployStatusUnknown
-		deployStatusDescription := ""
-		if deploy != nil {
-			deployStatus = deploy.Status
-			deployStatusDescription = deploy.StatusDescription
-		}
-
 		build := filterBuildByComponentID(builds, ic.ComponentID)
 		buildStatus := app.ComponentBuildStatusBuilding
 		buildStatusDescription := ""
@@ -241,8 +227,8 @@ func (s *service) buildSummary(ctx context.Context, installComponents []app.Inst
 			ID:                      ic.ID,
 			ComponentID:             ic.ComponentID,
 			ComponentName:           ic.Component.Name,
-			DeployStatus:            deployStatus,
-			DeployStatusDescription: deployStatusDescription,
+			DeployStatus:            app.InstallDeployStatus(ic.Component.Status),
+			DeployStatusDescription: ic.Component.StatusDescription,
 			BuildStatus:             buildStatus,
 			BuildStatusDescription:  buildStatusDescription,
 			ComponentConfig:         compMap[ic.ComponentID],
@@ -252,29 +238,6 @@ func (s *service) buildSummary(ctx context.Context, installComponents []app.Inst
 	}
 
 	return summaries
-}
-
-func (s *service) populateInstallComponentsWithDeploys(ctx *gin.Context, install *app.Install) error {
-	installComponentIDs := make([]string, 0, len(install.InstallComponents))
-	for _, component := range install.InstallComponents {
-		installComponentIDs = append(installComponentIDs, component.ID)
-	}
-
-	latestDeploys, err := s.getLatestInstallsDeploys(ctx, installComponentIDs...)
-	if err != nil {
-		return fmt.Errorf("unable to get latest installs deploys: %w", err)
-	}
-
-	for i := range install.InstallComponents {
-		component := &install.InstallComponents[i]
-		for _, deploy := range latestDeploys {
-			if component.ID == deploy.InstallComponentID {
-				component.InstallDeploys = append(component.InstallDeploys, deploy)
-			}
-		}
-	}
-
-	return nil
 }
 
 func (s *service) buildDependentComponents(compMap map[string]*app.ComponentConfigConnection, comps []app.Component) (map[string][]app.Component, error) {

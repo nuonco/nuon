@@ -73,7 +73,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 				Status:                 app.StatusError,
 				StatusHumanDescription: "no workflow step generator registered for type",
 				Metadata: map[string]any{
-					"error_message": err.Error(),
+					"error_message": "no workflow step generator registered for workflow type " + flw.Type,
 				},
 			},
 		}); err != nil {
