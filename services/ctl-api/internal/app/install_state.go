@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -42,10 +43,38 @@ func (a *InstallState) BeforeCreate(tx *gorm.DB) error {
 		a.ID = domains.NewAppID()
 	}
 
+	// NOTE: temporary but we need to fallback to the install's created_by_id and org_id if not set
+	var install *Install
+	if a.CreatedByID == "" || a.OrgID == "" {
+		res := tx.WithContext(tx.Statement.Context).
+			Model(&Install{}).
+			First(&install, "id = ?", a.InstallID)
+		if res.Error != nil {
+			fmt.Println("rb - Error fetching install for InstallState creation:", res.Error)
+			return res.Error
+		}
+	}
+
 	if a.CreatedByID == "" {
 		a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+		if a.CreatedByID == "" {
+			if install != nil {
+				a.CreatedByID = install.CreatedByID
+			} else {
+				return fmt.Errorf("created_by_id is required and could not be determined")
+			}
+		}
 	}
-	a.OrgID = orgIDFromContext(tx.Statement.Context)
+	if a.OrgID == "" {
+		a.OrgID = orgIDFromContext(tx.Statement.Context)
+		if a.OrgID == "" {
+			if install != nil {
+				a.OrgID = install.OrgID
+			} else {
+				return fmt.Errorf("org_id is required and could not be determined")
+			}
+		}
+	}
 
 	return nil
 }
