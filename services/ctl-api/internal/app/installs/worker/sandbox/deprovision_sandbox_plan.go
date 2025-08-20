@@ -37,7 +37,7 @@ func (w *Workflows) DeprovisionSandboxPlan(ctx workflow.Context, sreq signals.Re
 		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
 			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
 			defer updateCtxCancel()
-			w.updateRunStatus(updateCtx, installRun.ID, app.SandboxRunStatusCancelled, "install sandbox run cancelled")
+			w.updateRunStatusWithoutStatusSync(updateCtx, installRun.ID, app.SandboxRunStatusCancelled, "install sandbox run cancelled")
 		}
 	}()
 
@@ -51,7 +51,7 @@ func (w *Workflows) DeprovisionSandboxPlan(ctx workflow.Context, sreq signals.Re
 
 	defer func() {
 		if pan := recover(); pan != nil {
-			w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
+			w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
 			panic(pan)
 		}
 	}()
@@ -73,18 +73,19 @@ func (w *Workflows) DeprovisionSandboxPlan(ctx workflow.Context, sreq signals.Re
 	}
 	l.Info("deprovisioning install")
 
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioning, "deprovisioning")
+	w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusDeprovisioning, "deprovisioning")
 
 	// wait for the runner
 	l.Info("executing deprovision")
 	err = w.executeSandboxPlan(ctx, install, installRun, sreq.FlowStepID, sandboxMode)
 	if err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "error deprovisioning")
+		w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "error deprovisioning")
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 		return err
 	}
 
 	l.Info("deprovision plan was successful")
-	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunPendingApproval, "pending approval")
+
+	w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunPendingApproval, "auto skipped")
 	return nil
 }

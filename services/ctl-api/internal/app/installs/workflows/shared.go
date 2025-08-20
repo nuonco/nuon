@@ -132,7 +132,8 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, 
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	sg.nextGroup() // lifecycleSteps
+	// this should be in same step gorup as component
+	// sg.nextGroup() // lifecycleSteps
 
 	for _, installAction := range installActions {
 		sig := &signals.Signal{
