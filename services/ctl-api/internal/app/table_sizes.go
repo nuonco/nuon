@@ -9,8 +9,8 @@ import (
 )
 
 type PSQLTableSize struct {
-	TableName  string  `json"table_name,omitzero" gorm:"->;-:migration"`
-	SizePretty string  `json"size_pretty,omitzero" gorm:"->;-:migration"`
+	TableName  string  `json:"table_name,omitzero"`
+	SizePretty string  `json:"size_pretty,omitzero"`
 	SizeBytes  float64 `json:"size_bytes,omitzero" gorm:"->;-:migration" temporaljson:"size_bytes,omitzero,omitempty"`
 }
 
