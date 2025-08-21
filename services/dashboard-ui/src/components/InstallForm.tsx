@@ -408,6 +408,7 @@ const InputGroupFields: FC<{
                         ? 'password'
                         : 'text'
                   }
+                  autoComplete="off"
                   name={`inputs:${input?.name}`}
                   required={input?.required}
                   defaultValue={installInputs?.[input?.name] || input?.default}
