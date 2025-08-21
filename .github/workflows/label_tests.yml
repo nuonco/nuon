@@ -6,6 +6,7 @@ name: tests labeler
       - opened
       - ready_for_review
       - reopened
+  merge_group:
 
 jobs:
   changes:
