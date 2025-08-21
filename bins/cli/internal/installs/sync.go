@@ -9,8 +9,6 @@ import (
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/nuonco/nuon-go"
-	"github.com/nuonco/nuon-go/models"
 	"github.com/pelletier/go-toml"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
@@ -18,14 +16,12 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config"
 )
 
-const ManagedByNuonCLIConfig = "nuon/cli/install-config"
-
 func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string) error {
 	if fileOrDir == "" {
 		return ui.PrintError(fmt.Errorf("file or directory path is required"))
 	}
 
-	installs, err := readInstallConfigs(fileOrDir)
+	installCfgs, err := readInstallConfigs(fileOrDir)
 	if err != nil {
 		return ui.PrintError(err)
 	}
@@ -35,143 +31,21 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string) erro
 		return ui.PrintError(err)
 	}
 
-	for _, install := range installs {
-		appIns, err := s.syncInstall(ctx, install, appID)
-		if err != nil {
-			return ui.PrintError(fmt.Errorf("error syncing install %s: %w", install.Name, err))
-		}
+	is := newAppInstallSyncer(s.api, appID)
 
-		ui.PrintSuccess(fmt.Sprintf("Install %s synced successfully", appIns.Name))
+	for _, installCfg := range installCfgs {
+		sv := ui.NewSpinnerView(false)
+		sv.Start(fmt.Sprintf("syncing install %s", installCfg.Name))
+
+		appIns, err := is.syncInstall(ctx, installCfg, sv)
+		if err != nil {
+			err = fmt.Errorf("error syncing install %s: %w", installCfg.Name, err)
+			sv.Fail(err)
+			return err
+		}
+		sv.Success(fmt.Sprintf("install %s synced successfully", appIns.Name))
 	}
 	return nil
-}
-
-func (s *Service) syncInstall(ctx context.Context, install *config.Install, appID string) (*models.AppInstall, error) {
-	if install == nil {
-		return nil, fmt.Errorf("install cannot be nil")
-	}
-
-	isNew := false
-
-	appInstall, err := s.api.GetInstall(ctx, install.Name)
-	if err != nil {
-		if !nuon.IsNotFound(err) {
-			return nil, fmt.Errorf("error getting install %s: %w", install.Name, err)
-		}
-		isNew = true
-	}
-
-	if isNew {
-		// Use defaults for any missing inputs.
-		{
-			appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, appID)
-			if err != nil {
-				return nil, fmt.Errorf("error getting latest input config for app %s: %w", appID, err)
-			}
-
-			for _, ic := range appInputCfg.Inputs {
-				val, ok := install.Inputs[ic.Name]
-				if ok && val != "" {
-					continue
-				}
-				if ic.Default != "" {
-					install.Inputs[ic.Name] = ic.Default
-				}
-			}
-		}
-
-		req := models.ServiceCreateInstallRequest{
-			Name:   &install.Name,
-			Inputs: install.Inputs,
-			Metadata: &models.HelpersInstallMetadata{
-				ManagedBy: ManagedByNuonCLIConfig,
-			},
-		}
-		if install.AWSAccount != nil {
-			req.AwsAccount = &models.ServiceCreateInstallRequestAwsAccount{
-				Region: install.AWSAccount.Region,
-			}
-		}
-		if install.ApprovalOption != config.InstallApprovalOptionUnknown {
-			req.InstallConfig = &models.HelpersCreateInstallConfigParams{
-				ApprovalOption: install.ApprovalOption.APIType(),
-			}
-		}
-		appInstall, err = s.api.CreateInstall(ctx, appID, &req)
-		if err != nil {
-			return nil, fmt.Errorf("error creating install %s: %w", install.Name, err)
-		}
-	} else {
-		if appInstall.AppID != appID {
-			return nil, fmt.Errorf("install %s exists in a different app, aborting sync", install.Name)
-		}
-
-		if install.ApprovalOption != config.InstallApprovalOptionUnknown {
-			if appInstall.InstallConfig == nil {
-				appInstall.InstallConfig, err = s.api.CreateInstallConfig(ctx, appInstall.ID, &models.ServiceCreateInstallConfigRequest{
-					ApprovalOption: install.ApprovalOption.APIType(),
-				})
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				if appInstall.InstallConfig.ApprovalOption != install.ApprovalOption.APIType() {
-					// Update the install config if the approval option has changed.
-					_, err := s.api.UpdateInstallConfig(ctx, appInstall.ID, appInstall.InstallConfig.ID, &models.ServiceUpdateInstallConfigRequest{
-						ApprovalOption: install.ApprovalOption.APIType(),
-					})
-					if err != nil {
-						return nil, err
-					}
-				}
-			}
-		}
-
-		if appInstall.Metadata["managed_by"] != ManagedByNuonCLIConfig {
-			_, err = s.api.UpdateInstall(ctx, appInstall.ID, &models.ServiceUpdateInstallRequest{
-				Name: appInstall.Name,
-				Metadata: &models.HelpersInstallMetadata{
-					ManagedBy: ManagedByNuonCLIConfig,
-				},
-			})
-		}
-
-		currInputs, err := s.api.GetInstallCurrentInputs(ctx, appInstall.ID)
-		if err != nil {
-			return nil, fmt.Errorf("error getting current inputs for install %s: %w", appInstall.Name, err)
-		}
-		// Use the current inputs as defaults, for missing values in the current inputs.
-		for k, v := range currInputs.Values {
-			if _, ok := install.Inputs[k]; !ok {
-				install.Inputs[k] = v
-			}
-		}
-
-		hasChanged := false
-		if len(install.Inputs) != len(currInputs.Values) {
-			hasChanged = true
-		} else {
-			// length is same, go through each input to see if any have changed.
-			for k, v := range install.Inputs {
-				if currInputs.Values[k] != v {
-					hasChanged = true
-					break
-				}
-			}
-		}
-
-		// If inputs have divereged, update the install inputs.
-		if hasChanged {
-			_, err = s.api.UpdateInstallInputs(ctx, appInstall.ID, &models.ServiceUpdateInstallInputsRequest{
-				Inputs: install.Inputs,
-			})
-			if err != nil {
-				return nil, fmt.Errorf("error updating inputs for install %s: %w", appInstall.Name, err)
-			}
-		}
-	}
-
-	return appInstall, nil
 }
 
 func readInstallConfigs(fileOrDir string) ([]*config.Install, error) {
