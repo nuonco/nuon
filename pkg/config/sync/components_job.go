@@ -7,6 +7,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/hasher"
 )
 
 func (s *sync) createJobComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, string, error) {
@@ -33,21 +34,21 @@ func (s *sync) createJobComponentConfig(ctx context.Context, resource, compID st
 		configRequest.References = append(configRequest.References, ref.String())
 	}
 
-	cmpChecksum, err := s.generateComponentChecksun(ctx, comp)
+	newChecksum, err := hasher.HashStruct(comp)
 	if err != nil {
 		return "", "", err
 	}
 
-	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, cmpChecksum)
+	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, newChecksum)
 	if err != nil {
 		return "", "", err
 	}
 
 	if shouldSkip {
-		return existingConfigID, cmpChecksum.Checksum, nil
+		return existingConfigID, newChecksum, nil
 	}
 
-	configRequest.Checksum = cmpChecksum.Checksum
+	configRequest.Checksum = newChecksum
 	cfg, err := s.apiClient.CreateJobComponentConfig(ctx, compID, configRequest)
 	if err != nil {
 		return "", "", err
@@ -55,5 +56,5 @@ func (s *sync) createJobComponentConfig(ctx context.Context, resource, compID st
 
 	s.cmpBuildsScheduled = append(s.cmpBuildsScheduled, compID)
 
-	return cfg.ID, cmpChecksum.Checksum, nil
+	return cfg.ID, newChecksum, nil
 }

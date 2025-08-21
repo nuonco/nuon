@@ -8,7 +8,7 @@ import (
 
 // shouldSkipBuildDueToChecksum checks if a component build should be skipped
 // based on checksum comparison, considering the latest build status
-func (s *sync) shouldSkipBuildDueToChecksum(ctx context.Context, compID string, cmpChecksum componentChecksum) (bool, string, error) {
+func (s *sync) shouldSkipBuildDueToChecksum(ctx context.Context, compID, newChecksum string) (bool, string, error) {
 	// Get the latest build to check its status
 	cmpBuild, err := s.apiClient.GetComponentLatestBuild(ctx, compID)
 	if err != nil {
@@ -36,7 +36,7 @@ func (s *sync) shouldSkipBuildDueToChecksum(ctx context.Context, compID string, 
 	}
 
 	// if the new checksum equals the old one, skip
-	if cmpChecksum.Equals(cmpLatestConfig.Checksum) {
+	if cmpLatestConfig.Checksum == newChecksum {
 		return true, cmpLatestConfig.ID, nil
 	}
 
