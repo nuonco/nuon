@@ -74,6 +74,7 @@ export const UnlockModal: FC<IUnlockModal> = ({ orgId, workspace, lock }) => {
                           props: { orgId, workspaceId: workspace.id },
                         })
                         setIsLoading(false)
+                        setIsOpen(false)
                       })
                       .catch((err: any) => {
                         trackEvent({
