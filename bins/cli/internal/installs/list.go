@@ -83,8 +83,8 @@ func (s *Service) listInstalls(ctx context.Context, offset, limit int) ([]*model
 
 func (s *Service) listAppInstalls(ctx context.Context, appID string, offset, limit int) ([]*models.AppInstall, bool, error) {
 	cmps, hasMore, err := s.api.GetAppInstalls(ctx, appID, &models.GetPaginatedQuery{
-		Offset:            0,
-		Limit:             10,
+		Offset:            offset,
+		Limit:             limit,
 		PaginationEnabled: true,
 	})
 	if err != nil {
