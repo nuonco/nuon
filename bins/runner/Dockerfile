@@ -34,7 +34,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
 
 FROM code AS test
 RUN --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
-        go test -v ./...
+    go test -v ./...
 
 FROM code AS lint
 COPY .golangci.yml .
@@ -55,8 +55,8 @@ WORKDIR /bin
 # iam authenticator download url
 ARG version=0.6.2
 RUN curl \
-        -Lo aws-iam-authenticator \
-        "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
+    -Lo aws-iam-authenticator \
+    "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
     && chmod +x aws-iam-authenticator
 
 FROM golang:1.24-alpine AS kubelogin
@@ -77,7 +77,7 @@ FROM golang:1.24-alpine AS certs
 # NOTE(jdt): ideally we would wget -a but busybox doesn't support it
 # or use `update-ca-certificate` but it can't handle a single file w/ multiple certs
 RUN wget \
-        https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
+    https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
     && cat global-bundle.pem >> /global-bundle.pem
 
 # START
@@ -163,21 +163,21 @@ FROM golang:1.24-alpine AS final
 ARG tag
 
 RUN apk add --no-cache \
-  bash \
-  libc6-compat \
-  build-base \
-  make \
-  ca-certificates-bundle \
-  coreutils \
-  curl \
-  protoc \
-  jq \
-  git \
-  aws-cli \
-  kubectl \
-  zip \
-  openssl \
-  helm
+    bash \
+    libc6-compat \
+    build-base \
+    make \
+    ca-certificates-bundle \
+    coreutils \
+    curl \
+    protoc \
+    jq \
+    git \
+    aws-cli \
+    kubectl \
+    zip \
+    openssl \
+    helm
 
 WORKDIR /src/bins/runner
 

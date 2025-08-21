@@ -61,6 +61,7 @@ services/ctl-api/ctl-api/.restart
 # MacOS files
 .DS_Store
 .vscode/
+.zed/
 
 # ignore binaries
 services/ctl-api/ctl-api
