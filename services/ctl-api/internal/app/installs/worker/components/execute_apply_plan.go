@@ -3,7 +3,6 @@ package components
 import (
 	"encoding/json"
 	"fmt"
-	"runtime"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -134,7 +133,6 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 
 	planJSON = nil
 	plan = nil
-	runtime.GC()
 
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "executing deploy plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
