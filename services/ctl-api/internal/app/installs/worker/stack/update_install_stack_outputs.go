@@ -98,7 +98,7 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 	// update outputs if needed
 	if err := activities.AwaitUpdateInstallStackOutputs(ctx, activities.UpdateInstallStackOutputs{
 		InstallStackID:           version.InstallStackID,
-		InstallStackVersionRunID: version.ID,
+		InstallStackVersionRunID: run.ID,
 		Data:                     generics.ToStringMap(run.Data),
 	}); err != nil {
 		return errors.Wrap(err, "unable to update install stack outputs")
