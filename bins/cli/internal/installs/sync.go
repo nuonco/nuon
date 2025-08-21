@@ -18,6 +18,8 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config"
 )
 
+const ManagedByNuonCLIConfig = "nuon/cli/install-config"
+
 func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string) error {
 	if fileOrDir == "" {
 		return ui.PrintError(fmt.Errorf("file or directory path is required"))
@@ -81,6 +83,9 @@ func (s *Service) syncInstall(ctx context.Context, install *config.Install, appI
 		req := models.ServiceCreateInstallRequest{
 			Name:   &install.Name,
 			Inputs: install.Inputs,
+			Metadata: &models.HelpersInstallMetadata{
+				ManagedBy: ManagedByNuonCLIConfig,
+			},
 		}
 		if install.AWSAccount != nil {
 			req.AwsAccount = &models.ServiceCreateInstallRequestAwsAccount{
@@ -120,6 +125,15 @@ func (s *Service) syncInstall(ctx context.Context, install *config.Install, appI
 					}
 				}
 			}
+		}
+
+		if appInstall.Metadata["managed_by"] != ManagedByNuonCLIConfig {
+			_, err = s.api.UpdateInstall(ctx, appInstall.ID, &models.ServiceUpdateInstallRequest{
+				Name: appInstall.Name,
+				Metadata: &models.HelpersInstallMetadata{
+					ManagedBy: ManagedByNuonCLIConfig,
+				},
+			})
 		}
 
 		currInputs, err := s.api.GetInstallCurrentInputs(ctx, appInstall.ID)
