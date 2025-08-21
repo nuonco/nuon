@@ -3,7 +3,6 @@
 name: services
 "on":
   pull_request:
-  merge_group:
   push:
     branches:
       - main
@@ -88,16 +87,16 @@ jobs:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' && needs.changes.outputs.services != '["dashboard-ui"]' }}
     strategy:
       fail-fast: false
-      # nb: given that we've a common base for all Go services, we can do it for just ctl-api
+    # nb: given that we've a common base for all Go services, we can do it for just ctl-api
       matrix:
-        service: ["ctl-api"]
+        service: ['ctl-api']
     uses: ./.github/workflows/build-base-images.yml
     with:
       service: ${{ matrix.service }}
     secrets: inherit
 
   go_services:
-    name: 🚢
+    name: 🚢 
     needs:
       - changes
       - check_labels
@@ -147,4 +146,4 @@ jobs:
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: services ✅
-          status: ${{steps.check.outputs.status}}
+          status: ${{steps.check.outputs.status}}          
