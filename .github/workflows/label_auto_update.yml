@@ -1,0 +1,31 @@
+---
+name: auto update label
+"on":
+  pull_request:
+    types:
+      - opened
+  push:
+    branches:
+      - main
+
+jobs:
+  update-prs:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
+    steps:
+      - name: update prs
+        uses: docker://chinthakagodawita/autoupdate-action:v1
+        env:
+          GITHUB_TOKEN: "${{ secrets.NUON_BOT_GITHUB_TOKEN }}"
+          PR_FILTER: "labelled"
+          PR_LABELS: "auto-update"
+          PR_READY_STATE: "ready_for_review"
+
+  add-label:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - name: add label
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: auto-update
