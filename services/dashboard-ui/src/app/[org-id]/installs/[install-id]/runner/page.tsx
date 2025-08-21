@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
+import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import {
   DashboardContent,
   DeprovisionRunnerModal,
@@ -70,6 +71,16 @@ export default async function Runner({ params, searchParams }) {
       }
       statues={
         <div className="flex items-start gap-8">
+          {install?.metadata?.managed_by &&
+          install?.metadata?.managed_by === 'nuon/cli/install-config' ? (
+            <span className="flex flex-col gap-2">
+              <Text isMuted>Managed By</Text>
+              <Text>
+                <FileCodeIcon />
+                Config File
+              </Text>
+            </span>
+          ) : null}
           <span className="flex flex-col gap-2">
             <Text isMuted>App config</Text>
             <Text>
