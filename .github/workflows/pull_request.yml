@@ -3,6 +3,7 @@ name: pull request checks
 "on":
   pull_request:
     types: [opened, synchronize]
+  merge_group:
 permissions:
   contents: read
   pull-requests: write
