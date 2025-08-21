@@ -2,8 +2,7 @@
 name: branch checks
 on:
   pull_request:
-    types: ["opened", "edited", "synchronize"]
-  merge_group:
+    types: ['opened', 'edited', 'synchronize']
 
 permissions:
   actions: read
