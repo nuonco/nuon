@@ -2,6 +2,7 @@
 name: terraform cloud
 "on":
   pull_request:
+  merge_group:
   push:
     branches:
       - main
@@ -57,5 +58,5 @@ jobs:
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
-          name: 'Terraform Cloud/nuonco/repo-id-B14tP6vG7ia3CQHo'
+          name: "Terraform Cloud/nuonco/repo-id-B14tP6vG7ia3CQHo"
           status: success

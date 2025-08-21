@@ -3,6 +3,7 @@
 name: pkg
 "on":
   pull_request:
+  merge_group:
   push:
     branches:
       - main
@@ -60,8 +61,8 @@ jobs:
 
       # TODO(jm): need to implement a way to run tests
       #- name: 😎 Tests
-        #run: |
-          #CI=true nuonctl tests run-all --name=${{inputs.service}}
+      #run: |
+      #CI=true nuonctl tests run-all --name=${{inputs.service}}
 
   update_status:
     name: update status
