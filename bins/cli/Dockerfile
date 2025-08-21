@@ -27,7 +27,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
 
 FROM code AS test
 RUN --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
-        go test -v ./...
+    go test -v ./...
 
 FROM code AS lint
 COPY .golangci.yml .
@@ -139,8 +139,8 @@ RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
 
 RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
     for file in $(ls /artifacts/ | grep -v "checksums.txt"); do \
-      echo "Uploading to s3://$S3_BUCKET_NAME/$VERSION/$file" && \
-      aws s3 cp "/artifacts/$file" "s3://$S3_BUCKET_NAME/$VERSION/$file"; \
+    echo "Uploading to s3://$S3_BUCKET_NAME/$VERSION/$file" && \
+    aws s3 cp "/artifacts/$file" "s3://$S3_BUCKET_NAME/$VERSION/$file"; \
     done
 
 RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
