@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { CaretRight } from '@phosphor-icons/react/dist/ssr'
+import { CaretRight, FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
@@ -77,6 +77,16 @@ export default async function InstallComponent({ params, searchParams }) {
       }
       statues={
         <div className="flex items-start gap-8">
+          {install?.metadata?.managed_by &&
+          install?.metadata?.managed_by === 'nuon/cli/install-config' ? (
+            <span className="flex flex-col gap-2">
+              <Text isMuted>Managed By</Text>
+              <Text>
+                <FileCodeIcon />
+                Config File
+              </Text>
+            </span>
+          ) : null}
           <span className="flex flex-col gap-2">
             <Text isMuted>App config</Text>
             <Text>
