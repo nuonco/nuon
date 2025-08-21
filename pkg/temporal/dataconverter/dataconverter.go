@@ -35,6 +35,18 @@ func (c *temporalJSONConverter) ToPayload(value interface{}) (*commonpb.Payload,
 	return c.newPayload(data, c), nil
 }
 
+func (c *temporalJSONConverter) ToPayloads(values ...interface{}) (*commonpb.Payloads, error) {
+	payloads := make([]*commonpb.Payload, len(values))
+	for i, value := range values {
+		payload, err := c.ToPayload(value)
+		if err != nil {
+			return nil, err
+		}
+		payloads[i] = payload
+	}
+	return &commonpb.Payloads{Payloads: payloads}, nil
+}
+
 // FromPayload converts single value from payload.
 func (c *temporalJSONConverter) FromPayload(payload *commonpb.Payload, valuePtr interface{}) error {
 	err := c.json.Unmarshal(payload.GetData(), valuePtr)
@@ -44,9 +56,27 @@ func (c *temporalJSONConverter) FromPayload(payload *commonpb.Payload, valuePtr 
 	return nil
 }
 
+func (c *temporalJSONConverter) FromPayloads(payloads *commonpb.Payloads, valuePtrs ...interface{}) error {
+	for i := range payloads.Payloads {
+		err := c.FromPayload(payloads.Payloads[i], valuePtrs[i])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // ToString converts payload object into human readable string.
 func (c *temporalJSONConverter) ToString(payload *commonpb.Payload) string {
 	return string(payload.GetData())
+}
+
+func (c *temporalJSONConverter) ToStrings(input *commonpb.Payloads) []string {
+	strings := make([]string, len(input.Payloads))
+	for i, payload := range input.Payloads {
+		strings[i] = c.ToString(payload)
+	}
+	return strings
 }
 
 // Encoding returns MetadataEncodingJSON.
@@ -56,7 +86,7 @@ func (c *temporalJSONConverter) Encoding() string {
 
 var _ converter.PayloadConverter = (*temporalJSONConverter)(nil)
 
-func NewJSONConverter() converter.PayloadConverter {
+func NewJSONConverter() *temporalJSONConverter {
 	return &temporalJSONConverter{
 		json: jsoniter.Config{
 			EscapeHTML:             true,
