@@ -3,7 +3,6 @@ package actions
 import (
 	"encoding/json"
 	"fmt"
-	"runtime"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -144,7 +143,6 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 
 	planJSON = nil
 	runPlan = nil
-	runtime.GC()
 
 	// now queue and execute the job
 	l.Info("executing runner job")
