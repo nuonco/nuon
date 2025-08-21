@@ -51,6 +51,8 @@ jobs:
       run:
         working-directory: pkg
     runs-on: mono
+    env: # preemptive inclusion
+      TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
