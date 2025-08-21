@@ -58,16 +58,14 @@ type Component struct {
 	VarName      string        `mapstructure:"var_name,omitempty"`
 	Dependencies []string      `mapstructure:"dependencies,omitempty"`
 
-	// WARNING: properties below should be ignored by nuonhash when empty
-	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`
-	TerraformModule    *TerraformModuleComponentConfig    `mapstructure:"terraform_module,omitempty" jsonschema:"oneof_required=terraform_module" nuonhash:"omitempty"`
-	DockerBuild        *DockerBuildComponentConfig        `mapstructure:"docker_build,omitempty" jsonschema:"oneof_required=docker_build" nuonhash:"omitempty"`
-	Job                *JobComponentConfig                `mapstructure:"job,omitempty" jsonschema:"oneof_required=job" nuonhash:"omitempty"`
-	ExternalImage      *ExternalImageComponentConfig      `mapstructure:"external_image,omitempty" jsonschema:"oneof_required=external_image" nuonhash:"omitempty"`
-	KubernetesManifest *KubernetesManifestComponentConfig `mapstructure:"kubernetes_manifest,omitempty" jsonschema:"oneof_required=kubernetes_manifest" nuonhash:"omitempty"`
+	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" jsonschema:"oneof_required=helm"`
+	TerraformModule    *TerraformModuleComponentConfig    `mapstructure:"terraform_module,omitempty" jsonschema:"oneof_required=terraform_module"`
+	DockerBuild        *DockerBuildComponentConfig        `mapstructure:"docker_build,omitempty" jsonschema:"oneof_required=docker_build"`
+	Job                *JobComponentConfig                `mapstructure:"job,omitempty" jsonschema:"oneof_required=job"`
+	ExternalImage      *ExternalImageComponentConfig      `mapstructure:"external_image,omitempty" jsonschema:"oneof_required=external_image"`
+	KubernetesManifest *KubernetesManifestComponentConfig `mapstructure:"kubernetes_manifest,omitempty" jsonschema:"oneof_required=kubernetes_manifest"`
 
 	// created during parsing
-	// WARNING: properties below should not be hashed with nuonhash
 	References []refs.Ref `mapstructure:"-" jsonschema:"-" nuonhash:"-"`
 	Checksum   string     `mapstructure:"-" jsonschema:"-" toml:"checksum" nuonhash:"-"`
 }

@@ -11,16 +11,10 @@ import (
 	"github.com/mitchellh/reflectwalk"
 )
 
-type StructHasherOptions struct {
-	EnableOmitEmpty bool // Flag to enable omitempty handling
-}
-
 // StructHasher implements reflectwalk.StructWalker to collect hashable field data
 type StructHasher struct {
 	fieldData []string
 	path      []string
-
-	options StructHasherOptions // Options for the hasher
 }
 
 // Struct is called for each struct encountered during the walk
@@ -35,33 +29,21 @@ func (s *StructHasher) StructField(field reflect.StructField, v reflect.Value) e
 		return reflectwalk.SkipEntry
 	}
 
+	// Check nuonhash tag for exclusion
 	tag := field.Tag.Get("nuonhash")
-
-	// Parse tag for field name and options
-	fieldName := toSnakeCase(field.Name)
-	omitEmpty := false
-
-	if tag != "" {
-		parts := strings.Split(tag, ",")
-
-		for _, part := range parts {
-			switch strings.TrimSpace(part) {
-			case "-":
-				// If the field is explicitly marked with `-`, skip it
-				return reflectwalk.SkipEntry // Skip this field if explicitly marked
-			case "omitempty":
-				if s.options.EnableOmitEmpty {
-					// If the field is marked with `omitempty`, check if it should be omitted
-					omitEmpty = true
-					continue
-				}
-			}
-		}
+	if tag == "-" {
+		return reflectwalk.SkipEntry
 	}
 
-	// Skip field if omitempty is set and value is empty
-	if omitEmpty && s.isEmpty(v) {
-		return reflectwalk.SkipEntry
+	// Get the field name (use tag name if available, otherwise convert field name to snake_case)
+	fieldName := toSnakeCase(field.Name)
+	if tag != "" && !strings.Contains(tag, ",") {
+		fieldName = tag
+	} else if strings.Contains(tag, ",") {
+		parts := strings.Split(tag, ",")
+		if parts[0] != "" {
+			fieldName = parts[0]
+		}
 	}
 
 	// Build the full path
@@ -77,28 +59,6 @@ func (s *StructHasher) StructField(field reflect.StructField, v reflect.Value) e
 	// For non-primitives, add the field name to path and continue walking
 	s.path = append(s.path, fieldName)
 	return nil
-}
-
-// isEmpty checks if a value is considered empty for omitempty purposes
-func (s *StructHasher) isEmpty(v reflect.Value) bool {
-	switch v.Kind() {
-	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
-		return v.Len() == 0
-	case reflect.Bool:
-		return !v.Bool()
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return v.Int() == 0
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return v.Uint() == 0
-	case reflect.Float32, reflect.Float64:
-		return v.Float() == 0
-	case reflect.Interface, reflect.Ptr:
-		return v.IsNil()
-	case reflect.Struct:
-		// For structs, check if it's the zero value
-		return v.IsZero()
-	}
-	return false
 }
 
 // Enter is called when entering a new level during walk
@@ -207,11 +167,10 @@ func toSnakeCase(s string) string {
 }
 
 // HashStruct creates a hash of a struct using reflectwalk, ignoring fields marked with `-` in the nuonhash tag
-func HashStruct(v interface{}, options StructHasherOptions) (string, error) {
+func HashStruct(v interface{}) (string, error) {
 	hasher := &StructHasher{
 		fieldData: make([]string, 0),
 		path:      make([]string, 0),
-		options:   options,
 	}
 
 	// Walk the struct
