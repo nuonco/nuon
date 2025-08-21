@@ -1,6 +1,8 @@
 ---
 name: add labels based on changes
-on: pull_request
+on:
+  pull_request:
+  merge_group:
 
 jobs:
   changes:
