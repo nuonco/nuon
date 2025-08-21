@@ -32,9 +32,10 @@ jobs:
     env:
       NO_CACHE: ${{ contains(github.event.pull_request.labels.*.name, 'no-cache') }}
       NO_REMOTE_BUILDKIT: ${{ contains(github.event.pull_request.labels.*.name, 'no-remote-buildkit') }}
+      TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
     steps:
       - uses: FranzDiebold/github-env-vars-action@v2
-            
+
       - name: Checkout repo
         uses: actions/checkout@v4
 
@@ -49,7 +50,7 @@ jobs:
       - name: 😎 Tests
         run: |
           CI=true nuonctl tests run-all --name=${{inputs.service}}
-        
+
       - name: 📦 Build
         run: |
           CI=true nuonctl builds release \
