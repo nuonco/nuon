@@ -40,7 +40,7 @@ type InstallState struct {
 
 func (a *InstallState) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
-		a.ID = domains.NewAppID()
+		a.ID = domains.NewInstallStateID()
 	}
 
 	// NOTE: temporary but we need to fallback to the install's created_by_id and org_id if not set
