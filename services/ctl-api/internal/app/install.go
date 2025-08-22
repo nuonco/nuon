@@ -61,23 +61,23 @@ type Install struct {
 
 	// generated view current view
 
-	InstallNumber            int              `json:"install_number,omitzero" gorm:"->;-:migration" temporaljson:"install_number,omitzero,omitempty"`
-	SandboxStatus            SandboxRunStatus `json:"sandbox_status,omitzero" gorm:"->;-:migration" swaggertype:"string" temporaljson:"sandbox_status,omitzero,omitempty"`
-	SandboxStatusDescription string           `json:"sandbox_status_description,omitzero" gorm:"-" swaggertype:"string" temporaljson:"sandbox_status_description,omitzero,omitempty"`
-	ComponentStatuses        pgtype.Hstore    `json:"component_statuses,omitzero" gorm:"type:hstore;->;-:migration" swaggertype:"object,string" temporaljson:"component_statuses,omitzero,omitempty"`
+	InstallNumber            int                  `json:"install_number,omitzero" gorm:"->;-:migration" temporaljson:"install_number,omitzero,omitempty"`
+	SandboxStatus            InstallSandboxStatus `json:"sandbox_status,omitzero" gorm:"->;-:migration" swaggertype:"string" temporaljson:"sandbox_status,omitzero,omitempty"`
+	SandboxStatusDescription string               `json:"sandbox_status_description,omitzero" gorm:"-" swaggertype:"string" temporaljson:"sandbox_status_description,omitzero,omitempty"`
+	ComponentStatuses        pgtype.Hstore        `json:"component_statuses,omitzero" gorm:"type:hstore;->;-:migration" swaggertype:"object,string" temporaljson:"component_statuses,omitzero,omitempty"`
 
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 
 	// after queries
 
-	CurrentInstallInputs                *InstallInputs      `json:"-" gorm:"-" temporaljson:"current_install_inputs,omitzero,omitempty"`
-	CompositeComponentStatus            InstallDeployStatus `json:"composite_component_status,omitzero" gorm:"-" swaggertype:"string" temporaljson:"composite_component_status,omitzero,omitempty"`
-	CompositeComponentStatusDescription string              `json:"composite_component_status_description,omitzero" gorm:"-" swaggertype:"string" temporaljson:"composite_component_status_description,omitzero,omitempty"`
-	RunnerStatus                        RunnerStatus        `json:"runner_status,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_status,omitzero,omitempty"`
-	RunnerStatusDescription             string              `json:"runner_status_description,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_status_description,omitzero,omitempty"`
-	RunnerID                            string              `json:"runner_id,omitzero" gorm:"-" temporaljson:"runner_id,omitzero,omitempty"`
-	CloudPlatform                       CloudPlatform       `json:"cloud_platform,omitzero" gorm:"-" swaggertype:"string" temporaljson:"cloud_platform,omitzero,omitempty"`
-	RunnerType                          AppRunnerType       `json:"runner_type,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_type,omitzero,omitempty"`
+	CurrentInstallInputs                *InstallInputs         `json:"-" gorm:"-" temporaljson:"current_install_inputs,omitzero,omitempty"`
+	CompositeComponentStatus            InstallComponentStatus `json:"composite_component_status,omitzero" gorm:"-" swaggertype:"string" temporaljson:"composite_component_status,omitzero,omitempty"`
+	CompositeComponentStatusDescription string                 `json:"composite_component_status_description,omitzero" gorm:"-" swaggertype:"string" temporaljson:"composite_component_status_description,omitzero,omitempty"`
+	RunnerStatus                        RunnerStatus           `json:"runner_status,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_status,omitzero,omitempty"`
+	RunnerStatusDescription             string                 `json:"runner_status_description,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_status_description,omitzero,omitempty"`
+	RunnerID                            string                 `json:"runner_id,omitzero" gorm:"-" temporaljson:"runner_id,omitzero,omitempty"`
+	CloudPlatform                       CloudPlatform          `json:"cloud_platform,omitzero" gorm:"-" swaggertype:"string" temporaljson:"cloud_platform,omitzero,omitempty"`
+	RunnerType                          AppRunnerType          `json:"runner_type,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_type,omitzero,omitempty"`
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
@@ -91,14 +91,14 @@ func (i *Install) UseView() bool {
 }
 
 func (i *Install) ViewVersion() string {
-	return "v4"
+	return "v5"
 }
 
 func (i *Install) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name:          views.DefaultViewName(db, &Install{}, 4),
-			SQL:           viewsql.InstallsViewV4,
+			Name:          views.DefaultViewName(db, &Install{}, 5),
+			SQL:           viewsql.InstallsViewV5,
 			AlwaysReapply: true,
 		},
 		{
@@ -146,13 +146,6 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 		i.CurrentInstallInputs = &i.InstallInputs[0]
 	}
 
-	// get the sandbox status
-	i.SandboxStatus = SandboxRunStatusQueued
-	if len(i.InstallSandboxRuns) > 0 {
-		i.SandboxStatus = i.InstallSandboxRuns[0].Status
-		i.SandboxStatusDescription = i.InstallSandboxRuns[0].StatusDescription
-	}
-
 	// get the composite status of all the components
 	i.CompositeComponentStatus = compositeComponentStatus(i.ComponentStatuses)
 	i.CompositeComponentStatusDescription = compositeComponentStatusDescription(i.ComponentStatuses)
@@ -175,32 +168,32 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 // compositeComponentStatus coalesces a single status from the statuses of the app's components.
 // This is based on the components defined in the app config, not the components present in the install.
 // Components may be present in an install's history that have been removed from the app.
-func compositeComponentStatus(componentStatuses pgtype.Hstore) InstallDeployStatus {
+func compositeComponentStatus(componentStatuses pgtype.Hstore) InstallComponentStatus {
 	// if there are no components, then there are no operations to wait for
 	if len(componentStatuses) == 0 {
-		return InstallDeployStatusPending
+		return InstallComponentStatusPending
 	}
 
 	// check status of each component
 	activecount := 0
 	for _, status := range componentStatuses {
-		switch InstallDeployStatus(*status) {
-		case InstallDeployStatusActive:
+		switch InstallComponentStatus(*status) {
+		case InstallComponentStatusActive:
 			activecount++
-		case InstallDeployStatusError:
+		case InstallComponentStatusError:
 			// if any components have failed, composite status should be "error"
 			// we can stop immediately
-			return InstallDeployStatusError
+			return InstallComponentStatusError
 		}
 	}
 
 	// if all components are active, composite status should be "active"
 	if activecount == len(componentStatuses) {
-		return InstallDeployStatusActive
+		return InstallComponentStatusActive
 	}
 
 	// if any components have not yet succeeded or failed, composite status should be "pending"
-	return InstallDeployStatusPending
+	return InstallComponentStatusPending
 }
 
 func compositeComponentStatusDescription(componentStatuses pgtype.Hstore) string {
@@ -212,10 +205,10 @@ func compositeComponentStatusDescription(componentStatuses pgtype.Hstore) string
 	// check status of each component
 	activecount := 0
 	for _, status := range componentStatuses {
-		switch InstallDeployStatus(*status) {
-		case InstallDeployStatusActive:
+		switch InstallComponentStatus(*status) {
+		case InstallComponentStatusActive:
 			activecount++
-		case InstallDeployStatusError:
+		case InstallComponentStatusError:
 			// if any components have failed we can stop immediately
 			return "A component is in an error state"
 		}

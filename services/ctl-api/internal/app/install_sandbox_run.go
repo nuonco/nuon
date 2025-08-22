@@ -39,6 +39,9 @@ const (
 	SandboxRunStatusEmpty          SandboxRunStatus = "empty"
 	SandboxRunPendingApproval      SandboxRunStatus = "pending-approval"
 	SandboxRunApprovalDenied       SandboxRunStatus = "approval-denied"
+	SandboxRunDriftDetected        SandboxRunStatus = "drift-detected"
+	SandboxRunNoDrift              SandboxRunStatus = "no-drift"
+	SandboxRunAutoSkipped          SandboxRunStatus = "auto-skipped"
 )
 
 type InstallSandboxRun struct {
