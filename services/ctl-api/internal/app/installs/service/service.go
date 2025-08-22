@@ -77,6 +77,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	// install state
 	api.GET("/v1/installs/:install_id/state", s.GetInstallState)
+	api.GET("/v1/installs/:install_id/state-history", s.GetInstallStateHistory)
 
 	// install sandbox
 	api.POST("/v1/installs/:install_id/reprovision-sandbox", s.ReprovisionInstallSandbox)
