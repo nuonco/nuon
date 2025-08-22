@@ -16,6 +16,7 @@ import { StatusBadge } from '@/components/Status'
 import { Text } from '@/components/Typography'
 import type { TOrg } from '@/types'
 import { GITHUB_APP_NAME, POLL_DURATION, initialsFromString } from '@/utils'
+import { SearchInput } from '@/components/SearchInput'
 
 export const OrgAvatar: FC<{
   name: string
@@ -130,37 +131,57 @@ export interface IOrgsNav {
 }
 
 export const OrgsNav: FC<IOrgsNav> = ({ orgs }) => {
+  const [searchTerm, setSearchTerm] = useState<string>('')
+
   return (
     <div className="flex flex-col gap-4">
       <Text className="px-4" variant="med-14">
         Organizations
       </Text>
+
+      {orgs?.length > 8 ? (
+        <div className="px-4 w-full">
+          <SearchInput
+            className="md:!min-w-full"
+            placeholder="Search org name..."
+            value={searchTerm}
+            onChange={setSearchTerm}
+          />
+        </div>
+      ) : null}
+
       <nav className="flex flex-col gap-0 px-1">
-        {orgs.map((org) => (
-          <NextLink
-            className="flex items-center justify-start gap-4 rounded-md p-2 hover:bg-cool-grey-600/20"
-            key={org.id}
-            href={`/${org.id}/apps`}
-          >
-            <OrgAvatar name={org.name} logoURL={org.logo_url} />
-            <span>
-              <Text
-                className="break-all text-md font-medium leading-normal mb-1 !flex-nowrap"
-                title={org.sandbox_mode ? 'Org is in sandbox mode' : undefined}
-              >
-                {org.sandbox_mode && <TestTube className="text-sm" />}
-                <span
-                  className={classNames('', {
-                    'truncate !inline max-w-[140px]': org.name.length >= 16,
-                  })}
+        {orgs
+          .filter((o) =>
+            o.name.toLocaleLowerCase().includes(searchTerm.toLocaleLowerCase())
+          )
+          .map((org) => (
+            <NextLink
+              className="flex items-center justify-start gap-4 rounded-md p-2 hover:bg-cool-grey-600/20"
+              key={org.id}
+              href={`/${org.id}/apps`}
+            >
+              <OrgAvatar name={org.name} logoURL={org.logo_url} />
+              <span>
+                <Text
+                  className="break-all text-md font-medium leading-normal mb-1 !flex-nowrap"
+                  title={
+                    org.sandbox_mode ? 'Org is in sandbox mode' : undefined
+                  }
                 >
-                  {org.name}
-                </span>
-              </Text>
-              <StatusBadge status={org.status} isWithoutBorder />
-            </span>
-          </NextLink>
-        ))}
+                  {org.sandbox_mode && <TestTube className="text-sm" />}
+                  <span
+                    className={classNames('', {
+                      'truncate !inline max-w-[140px]': org.name.length >= 16,
+                    })}
+                  >
+                    {org.name}
+                  </span>
+                </Text>
+                <StatusBadge status={org.status} isWithoutBorder />
+              </span>
+            </NextLink>
+          ))}
       </nav>
     </div>
   )
@@ -203,7 +224,7 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({
     <Dropdown
       className={classNames('w-full', {
         '!p-1': !isSidebarOpen,
-      })}      
+      })}
       hasCustomPadding
       id="test"
       isFullWidth
