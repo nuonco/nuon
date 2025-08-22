@@ -43,7 +43,7 @@ export default async function InstallWorkflow({ params }) {
     getInstall({ installId, orgId }),
     getInstallWorkflow({ installWorkflowId, orgId }),
   ])
-
+  
   return (
     <DashboardContent
       breadcrumb={[
@@ -150,7 +150,7 @@ export default async function InstallWorkflow({ params }) {
       }
       statues={
         <div className="flex flex-col gap-3 items-end">
-          {!installWorkflow?.finished ? (
+          {!installWorkflow?.finished && installWorkflow?.status?.status !== "cancelled" ? (
             <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
           ) : null}
 
