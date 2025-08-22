@@ -25,27 +25,36 @@ func newAppInstallSyncer(api nuon.Client, appID string) *appInstallSyncer {
 	}
 }
 
-func (s *appInstallSyncer) syncInstall(ctx context.Context, installCfg *config.Install, view *ui.SpinnerView) (*models.AppInstall, error) {
+func (s *appInstallSyncer) syncInstall(ctx context.Context, installCfg *config.Install, installID string) (*models.AppInstall, error) {
+	var err error
+	view := ui.NewSpinnerView(false)
+	view.Start(fmt.Sprintf("syncing install %s", installCfg.Name))
+
 	if installCfg == nil {
-		return nil, fmt.Errorf("install cannot be nil")
+		return nil, fmt.Errorf("install config cannot be nil")
 	}
 
 	view.Update(fmt.Sprintf("fetching install %s", installCfg.Name))
-	isNew := false
-	appInstall, err := s.api.GetInstall(ctx, installCfg.Name)
-	if err != nil {
-		if !nuon.IsNotFound(err) {
-			return nil, fmt.Errorf("error getting install %s: %w", installCfg.Name, err)
+
+	if installID == "" {
+		appInstall, err := s.syncNewInstall(ctx, installCfg, view)
+		if err != nil {
+			view.Fail(err)
 		}
-		// Install does not exist.
-		isNew = true
+		return appInstall, err
 	}
 
-	if isNew {
-		return s.syncNewInstall(ctx, installCfg, view)
+	appInstall, err := s.api.GetInstall(ctx, installID)
+	if err != nil {
+		view.Fail(err)
+		return nil, fmt.Errorf("error getting install %s: %w", installCfg.Name, err)
 	}
 
-	return s.syncExistingInstall(ctx, installCfg, appInstall, view)
+	appInstall, err = s.syncExistingInstall(ctx, installCfg, appInstall, view)
+	if err != nil {
+		view.Fail(err)
+	}
+	return appInstall, err
 }
 
 func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, view *ui.SpinnerView) (*models.AppInstall, error) {
@@ -91,6 +100,8 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 	if err != nil {
 		return nil, fmt.Errorf("error creating install %s: %w", installCfg.Name, err)
 	}
+
+	view.Success(fmt.Sprintf("install %s created successfully", appInstall.Name))
 	return appInstall, nil
 }
 
@@ -166,5 +177,6 @@ func (s *appInstallSyncer) syncExistingInstall(ctx context.Context, installCfg *
 		}
 	}
 
+	view.Success(fmt.Sprintf("install %s updated successfully", appInstall.Name))
 	return appInstall, nil
 }

@@ -31,7 +31,7 @@ type AWSAccount struct {
 
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
-	Name           string                `mapstructure:"name" jsonschema:"required"`
+	Name           string                `mapstructure:"name" comment:"#:schema https://api.nuon.co/v1/general/config-schema?type=install" jsonschema:"required"`
 	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty"`
 	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty"`
 	Inputs         map[string]string     `mapstructure:"inputs,omitempty"`
