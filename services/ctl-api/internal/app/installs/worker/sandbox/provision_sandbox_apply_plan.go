@@ -33,6 +33,8 @@ func (w *Workflows) ProvisionSandboxApplyPlan(ctx workflow.Context, sreq signals
 		return errors.Wrap(err, "unable to get install deploy")
 	}
 
+	w.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusProvisioning, "provisioning sandbox")
+
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, &sandboxRun.LogStream)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
