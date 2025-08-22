@@ -141,7 +141,7 @@ func (w *Workflows) updateDeployStatusWithoutStatusSync(ctx workflow.Context, de
 		DeployID:          deployID,
 		Status:            app.Status(status),
 		StatusDescription: statusDescription,
-		SkipStatusSync:    false,
+		SkipStatusSync:    true,
 	}); err != nil {
 		l.Error("unable to update deploy status v2",
 			zap.String("deploy-id", deployID),

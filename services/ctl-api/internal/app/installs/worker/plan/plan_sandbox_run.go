@@ -50,9 +50,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 	l.Info("configuring environment variables to execute terraform run as")
 	envVars := p.getSandboxRunEnvVars(appCfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get env vars")
-	}
 
 	l.Info("configuring terraform variables to execute terraform run as")
 	vars, err := p.getSandboxRunTerraformVars(appCfg, req.RootDomain)
@@ -66,6 +63,9 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	state, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
 		InstallID: install.ID,
 	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install state")
+	}
 	stateData, err := state.AsMap()
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get state")
@@ -130,7 +130,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 	runAuth := &awscredentials.Config{}
 	if awsAuth != nil {
-		runAuth = *&awsAuth
+		runAuth = awsAuth
 	}
 	plan := &plantypes.SandboxRunPlan{
 		AppID:       install.AppID,

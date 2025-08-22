@@ -64,7 +64,7 @@ func (w *Workflows) ExecuteTeardownComponentSyncAndPlan(ctx workflow.Context, sr
 		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
 			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
 			defer updateCtxCancel()
-			w.updateDeployStatus(updateCtx, installDeploy.ID, app.InstallDeployStatusCancelled, "teardown cancelled")
+			w.updateDeployStatusWithoutStatusSync(updateCtx, installDeploy.ID, app.InstallDeployStatusCancelled, "teardown cancelled")
 		}
 	}()
 
