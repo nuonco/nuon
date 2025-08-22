@@ -60,6 +60,12 @@ func (s *service) getInstallSandboxRuns(ctx *gin.Context, installID string) ([]a
 		Preload("LogStream").
 		Preload("CreatedBy").
 		Where("install_id = ?", installID).
+		Not(map[string]interface{}{
+			"status": []string{
+				string(app.SandboxRunDriftDetected),
+				string(app.SandboxRunNoDrift),
+			},
+		}).
 		Order("created_at desc").
 		Find(&installSandboxRuns)
 	if res.Error != nil {

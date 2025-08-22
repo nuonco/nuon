@@ -22,12 +22,12 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		return err
 	}
 
-	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating deploy plan")
+	w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating deploy plan")
 	l.Info("planning and executing deploy")
 
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
 	if err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
 		return fmt.Errorf("unable to get build: %w", err)
 	}
 
@@ -63,7 +63,7 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		},
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
@@ -73,13 +73,13 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		WorkflowID:      fmt.Sprintf("%s-create-deploy-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create deploy plan")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create deploy plan")
 		return errors.Wrap(err, "unable to create deploy plan")
 	}
 
 	planJSON, err := json.Marshal(plan)
 	if err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create json from deploy plan")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create json from deploy plan")
 		return errors.Wrap(err, "unable to create json from plan")
 	}
 
@@ -87,21 +87,21 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 	}); err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
 	planJSON = nil
 	plan = nil
 
-	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "creating plan")
+	w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "creating plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		RunnerID:   install.RunnerID,
 		JobID:      runnerJob.ID,
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to execute runner job")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to execute runner job")
 		l.Error("job did not succeed", zap.Error(err))
 		return fmt.Errorf("unable to get install: %w", err)
 	}
