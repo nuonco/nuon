@@ -27,11 +27,11 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 	}
 
 	l.Info("syncing image into install OCI repository")
-	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating sync plan")
+	w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating sync plan")
 
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
 	if err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
 		return fmt.Errorf("unable to get build: %w", err)
 	}
 
@@ -55,7 +55,7 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 		},
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
@@ -66,7 +66,7 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 		WorkflowID:      fmt.Sprintf("%s-create-oci-sync-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		return errors.Wrap(err, "unable to create plan")
 	}
 
@@ -74,27 +74,24 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 	if err != nil {
 		return errors.Wrap(err, "unable to create json")
 	}
-	if err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
-		return fmt.Errorf("unable to convert plan to json: %w", err)
-	}
+
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 	}); err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
 	// queue job
-	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
+	w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		RunnerID:   install.RunnerID,
 		JobID:      runnerJob.ID,
 		WorkflowID: fmt.Sprintf("%s-execute-job", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to poll job")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to poll job")
 		l.Error("error polling sync image job", zap.Error(err))
 		return fmt.Errorf("unable to poll job: %w", err)
 	}

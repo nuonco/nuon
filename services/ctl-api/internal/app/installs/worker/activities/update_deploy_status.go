@@ -32,10 +32,6 @@ func (a *Activities) UpdateDeployStatus(ctx context.Context, req UpdateDeploySta
 		return fmt.Errorf("no install found: %s %w", req.DeployID, gorm.ErrRecordNotFound)
 	}
 
-	if req.SkipStatusSync {
-		return nil
-	}
-
 	extantInstallDeploy := app.InstallDeploy{}
 	res = a.db.WithContext(ctx).
 		Preload("InstallComponent").
@@ -45,17 +41,19 @@ func (a *Activities) UpdateDeployStatus(ctx context.Context, req UpdateDeploySta
 		return fmt.Errorf("unable to get install deploy: %w", res.Error)
 	}
 
-	installComponent := app.InstallComponent{
-		ID: extantInstallDeploy.InstallComponent.ID,
-	}
-	res = a.db.WithContext(ctx).
-		Model(&installComponent).
-		Updates(app.InstallComponent{
-			Status:            app.DeployStatusToComponentStatus(req.Status),
-			StatusDescription: req.StatusDescription,
-		})
-	if res.Error != nil {
-		return fmt.Errorf("unable to update install component: %w", res.Error)
+	if !req.SkipStatusSync {
+		installComponent := app.InstallComponent{
+			ID: extantInstallDeploy.InstallComponent.ID,
+		}
+		res = a.db.WithContext(ctx).
+			Model(&installComponent).
+			Updates(app.InstallComponent{
+				Status:            app.DeployStatusToComponentStatus(req.Status),
+				StatusDescription: req.StatusDescription,
+			})
+		if res.Error != nil {
+			return fmt.Errorf("unable to update install component: %w", res.Error)
+		}
 	}
 
 	return nil

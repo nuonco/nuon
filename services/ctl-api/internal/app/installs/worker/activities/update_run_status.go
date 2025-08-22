@@ -46,13 +46,18 @@ func (a *Activities) UpdateRunStatus(ctx context.Context, req UpdateRunStatusReq
 			return nil
 		}
 
-		if run.InstallSandboxID == nil {
+		installSandbox := app.InstallSandbox{}
+		resSandbox := a.db.WithContext(ctx).
+			Where("install_id = ?", run.InstallID).
+			First(&installSandbox)
+		if resSandbox.Error != nil && resSandbox.Error != gorm.ErrRecordNotFound {
+			return fmt.Errorf("unable to get install sandbox: %w", resSandbox.Error)
+		}
+
+		if resSandbox.Error == gorm.ErrRecordNotFound {
 			return nil
 		}
 
-		installSandbox := app.InstallSandbox{
-			ID: *run.InstallSandboxID,
-		}
 		res = a.db.WithContext(ctx).Model(&installSandbox).Updates(app.InstallSandbox{
 			Status:            app.SandboxRunStatusToInstallSandboxStatus(req.Status),
 			StatusDescription: req.StatusDescription,

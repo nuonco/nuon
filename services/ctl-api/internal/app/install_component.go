@@ -83,13 +83,6 @@ func (c *InstallComponent) AfterQuery(tx *gorm.DB) error {
 		c.StatusDescription = c.StatusV2.StatusHumanDescription
 	}
 
-	if c.Status == InstallComponentStatusUnset && len(c.InstallDeploys) > 0 {
-		// TODO: we shouldn't need this check, after we migrated all statuses from latest deploys
-		status := DeployStatusToComponentStatus(c.InstallDeploys[0].Status)
-		c.Status = status
-		return nil
-	}
-
 	return nil
 }
 
