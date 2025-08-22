@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/nuonco/nuon-go/models"
 	"github.com/pelletier/go-toml"
+	"github.com/pterm/pterm"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -31,21 +33,74 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string) erro
 		return ui.PrintError(err)
 	}
 
+	curInstalls, err := s.listAllAppInstalls(ctx, appID)
+	if err != nil {
+		return ui.PrintError(fmt.Errorf("error listing installs for app %s: %w", appID, err))
+	}
+
 	is := newAppInstallSyncer(s.api, appID)
 
 	for _, installCfg := range installCfgs {
-		sv := ui.NewSpinnerView(false)
-		sv.Start(fmt.Sprintf("syncing install %s", installCfg.Name))
+		var installID string
 
-		appIns, err := is.syncInstall(ctx, installCfg, sv)
-		if err != nil {
-			err = fmt.Errorf("error syncing install %s: %w", installCfg.Name, err)
-			sv.Fail(err)
-			return err
+		appInstall, ok := curInstalls[installCfg.Name]
+		if ok && appInstall != nil {
+			installID = appInstall.ID
+
+			if appInstall.AppID != appID {
+				ui.PrintWarning(fmt.Sprintf("install %s is not associated with app %s", installCfg.Name, appID))
+				continue
+			}
+
+			// Check if the install is managed by Nuon CLI config.
+			// If so, confirm with the user before updating.
+			if appInstall.Metadata["managed_by"] != ManagedByNuonCLIConfig {
+				ui.PrintWarning(fmt.Sprintf(
+					"install \"%s\" is not managed by an Install Config file, syncing can overwrite existing config",
+					appInstall.Name,
+				))
+				ok, _ := pterm.DefaultInteractiveConfirm.Show(fmt.Sprintf(
+					"Do you want to continue syncing install \"%s\"?",
+					appInstall.Name,
+				))
+				if !ok {
+					ui.PrintWarning(fmt.Sprintf("skipping install %s", appInstall.Name))
+					continue
+				}
+			}
 		}
-		sv.Success(fmt.Sprintf("install %s synced successfully", appIns.Name))
+
+		_, err = is.syncInstall(ctx, installCfg, installID)
+		if err != nil {
+			return ui.PrintError(fmt.Errorf("error syncing install %s: %w", installCfg.Name, err))
+		}
 	}
 	return nil
+}
+
+func (s *Service) listAllAppInstalls(ctx context.Context, appID string) (map[string]*models.AppInstall, error) {
+	var (
+		hasMore bool = true
+		offset  int
+		limit   int = 50
+		result      = make(map[string]*models.AppInstall)
+	)
+	for hasMore {
+		installs, more, err := s.api.GetAppInstalls(ctx, appID, &models.GetPaginatedQuery{
+			Offset:            offset,
+			Limit:             limit,
+			PaginationEnabled: true,
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, install := range installs {
+			result[install.Name] = install
+		}
+		offset += limit
+		hasMore = more
+	}
+	return result, nil
 }
 
 func readInstallConfigs(fileOrDir string) ([]*config.Install, error) {
