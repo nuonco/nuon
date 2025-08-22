@@ -101,7 +101,13 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		Preload("InstallSandbox.TerraformWorkspace").
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.
-				Where("status != ?", app.StatusAutoSkipped).
+				Not(map[string]interface{}{
+					"status": []string{
+						string(app.SandboxRunDriftDetected),
+						string(app.SandboxRunNoDrift),
+						string(app.SandboxRunAutoSkipped),
+					},
+				}).
 				Order("install_sandbox_runs.created_at DESC").
 				Limit(5)
 		}).

@@ -13,6 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
+	flowactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
 )
 
 // @temporal-gen workflow
@@ -24,6 +25,11 @@ func (w *Workflows) ProvisionSandboxPlan(ctx workflow.Context, sreq signals.Requ
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 	sandboxMode := sreq.SandboxMode
+
+	flw, err := flowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, sreq.FlowID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get workflow object")
+	}
 
 	installRun, err := activities.AwaitCreateSandboxRun(ctx, activities.CreateSandboxRunRequest{
 		InstallID:  install.ID,
@@ -80,7 +86,16 @@ func (w *Workflows) ProvisionSandboxPlan(ctx workflow.Context, sreq signals.Requ
 		return err
 	}
 
-	w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunPendingApproval, "auto skipped")
+	if flw.PlanOnly {
+		if installRun.Status == app.SandboxRunAutoSkipped {
+			w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunNoDrift, "no-drift")
+			return nil
+		}
+		w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunDriftDetected, "drift-detected")
+		return nil
+	}
+
+	w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunPendingApproval, "pending approval")
 	l.Info("provision plan was successful")
 	return nil
 }

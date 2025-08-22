@@ -22,7 +22,7 @@ import (
 func (w *Workflows) ExecuteDeployComponentSyncAndPlan(ctx workflow.Context, sreq signals.RequestSignal) error {
 	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, sreq.ID)
 	if err != nil {
-		w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "unable to get install from database")
+		w.updateDeployStatusWithoutStatusSync(ctx, sreq.DeployID, app.InstallDeployStatusError, "unable to get install from database")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
@@ -62,13 +62,13 @@ func (w *Workflows) ExecuteDeployComponentSyncAndPlan(ctx workflow.Context, sreq
 		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
 			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
 			defer updateCtxCancel()
-			w.updateDeployStatus(updateCtx, installDeploy.ID, app.InstallDeployStatusCancelled, "deploy cancelled")
+			w.updateDeployStatusWithoutStatusSync(updateCtx, installDeploy.ID, app.InstallDeployStatusCancelled, "deploy cancelled")
 		}
 	}()
 
 	err = w.pollForDeployableBuild(ctx, installDeploy.ID, installDeploy.ComponentBuildID)
 	if err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusNoop, "build is not deployable")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusNoop, "build is not deployable")
 		return errors.Wrap(err, "failed to poll for build")
 	}
 
@@ -82,7 +82,7 @@ func (w *Workflows) ExecuteDeployComponentSyncAndPlan(ctx workflow.Context, sreq
 
 	defer func() {
 		if pan := recover(); pan != nil {
-			w.updateDeployStatus(ctx, sreq.DeployID, app.InstallDeployStatusError, "internal error")
+			w.updateDeployStatusWithoutStatusSync(ctx, sreq.DeployID, app.InstallDeployStatusError, "internal error")
 			panic(pan)
 		}
 	}()
@@ -106,24 +106,24 @@ func (w *Workflows) ExecuteDeployComponentSyncAndPlan(ctx workflow.Context, sreq
 
 	l.Info("syncing oci artifact")
 	if err := w.execSync(ctx, install, installDeploy, sreq.SandboxMode); err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to sync")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to sync")
 		return errors.Wrap(err, "unable to execute sync")
 	}
 
 	l.Info("creating plan")
 	if err := w.execPlan(ctx, install, installDeploy, sreq.FlowStepID, sreq.SandboxMode); err != nil {
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to deploy")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to deploy")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 
 	if flw.PlanOnly {
 		if installDeploy.Status == app.InstallDeployStatusAutoSkipped {
-			w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusNoDrift, "no-drift")
+			w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusNoDrift, "no-drift")
 			return nil
 		}
-		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusDriftDetected, "drift-detected")
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusDriftDetected, "drift-detected")
 		return nil
 	}
-	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPendingApproval, "pending-approval")
+	w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusPendingApproval, "pending-approval")
 	return nil
 }

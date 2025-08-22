@@ -40,7 +40,7 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		},
 	})
 	if err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create runner job")
+		w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create runner job")
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
@@ -51,7 +51,7 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		WorkflowID: fmt.Sprintf("%s-create-api-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install plan request")
+		w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install plan request")
 		return errors.Wrap(err, "unable to create plan")
 	}
 
@@ -64,7 +64,7 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 	}); err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
+		w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
@@ -76,12 +76,12 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job failed")
+		w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "job failed")
 		return fmt.Errorf("unable to execute job: %w", err)
 	}
 	if status != app.RunnerJobStatusFinished {
 		l.Error("runner job status was not successful", zap.Any("status", status))
-		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job failed with status"+string(status))
+		w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "job failed with status"+string(status))
 	}
 
 	job, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
