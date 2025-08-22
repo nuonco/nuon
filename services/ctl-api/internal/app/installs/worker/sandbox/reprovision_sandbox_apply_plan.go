@@ -43,6 +43,9 @@ func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 	}()
 
 	l.Info("executing sandbox apply plan", zap.String("install_run.id", sandboxRun.ID))
+
+	w.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusReprovisioning, "reprovisioning sandbox")
+
 	err = w.executeApplyPlan(ctx, install, sandboxRun, sreq.FlowStepID, sreq.SandboxMode)
 	if err != nil {
 		l.Error("error executing sandbox apply plan", zap.String("install_run.id", sandboxRun.ID), zap.Error(err))
