@@ -7,7 +7,6 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/hasher"
 )
 
 func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, string, error) {
@@ -47,21 +46,21 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 
 	configRequest.EnvVars = obj.EnvVarMap
 
-	newChecksum, err := hasher.HashStruct(comp)
+	cmpChecksum, err := s.generateComponentChecksun(ctx, comp)
 	if err != nil {
 		return "", "", err
 	}
 	// Check if we should skip this build due to checksum match
-	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, newChecksum)
+	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, cmpChecksum)
 	if err != nil {
 		return "", "", err
 	}
 
 	if shouldSkip {
-		return existingConfigID, newChecksum, nil
+		return existingConfigID, cmpChecksum.Checksum, nil
 	}
 
-	configRequest.Checksum = newChecksum
+	configRequest.Checksum = cmpChecksum.Checksum
 	cfg, err := s.apiClient.CreateDockerBuildComponentConfig(ctx, compID, configRequest)
 	if err != nil {
 		return "", "", err
@@ -69,5 +68,5 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 
 	s.cmpBuildsScheduled = append(s.cmpBuildsScheduled, compID)
 
-	return cfg.ID, newChecksum, nil
+	return cfg.ID, cmpChecksum.Checksum, nil
 }
