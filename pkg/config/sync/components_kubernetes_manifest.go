@@ -5,7 +5,6 @@ import (
 
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/hasher"
 )
 
 func (s *sync) createKubernetesManifestComponentConfig(
@@ -26,21 +25,21 @@ func (s *sync) createKubernetesManifestComponentConfig(
 		configRequest.References = append(configRequest.References, ref.String())
 	}
 
-	newChecksum, err := hasher.HashStruct(comp)
+	cmpChecksum, err := s.generateComponentChecksun(ctx, comp)
 	if err != nil {
 		return "", "", err
 	}
 
-	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, newChecksum)
+	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, cmpChecksum)
 	if err != nil {
 		return "", "", err
 	}
 
 	if shouldSkip {
-		return existingConfigID, newChecksum, nil
+		return existingConfigID, cmpChecksum.Checksum, nil
 	}
 
-	configRequest.Checksum = newChecksum
+	configRequest.Checksum = cmpChecksum.Checksum
 	cfg, err := s.apiClient.CreateKubernetesComponentConfig(ctx, compID, configRequest)
 	if err != nil {
 		return "", "", err
@@ -48,5 +47,5 @@ func (s *sync) createKubernetesManifestComponentConfig(
 
 	s.cmpBuildsScheduled = append(s.cmpBuildsScheduled, compID)
 
-	return cfg.ID, newChecksum, nil
+	return cfg.ID, cmpChecksum.Checksum, nil
 }
