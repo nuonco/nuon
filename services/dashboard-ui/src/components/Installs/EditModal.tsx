@@ -9,8 +9,9 @@ import { InstallForm } from '@/components/InstallForm'
 import { Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
-import { updateInstall } from '@/components/install-actions'
+import { updateInstall, updateInstallManagedBy } from '@/components/install-actions'
 import type { TInstall, TAppInputConfig } from '@/types'
+import { ConfirmUpdateModal } from './ConfirmUpdateModal'
 
 interface IEditModal {
   install: TInstall
@@ -19,6 +20,7 @@ interface IEditModal {
 
 export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
   const [isOpen, setIsOpen] = useState(false)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [inputConfig, setInputConfig] = useState<TAppInputConfig | undefined>()
   const [error, setError] = useState<string>()
@@ -64,11 +66,17 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
               ) : (
                 <InstallForm
                   onSubmit={(formData) => {
-                    return updateInstall({
+                    const res = updateInstall({
                       installId: install.id,
                       orgId,
                       formData,
                     })
+                    updateInstallManagedBy({
+                      installId: install?.id,
+                      orgId: orgId,
+                      managedBy: install?.metadata?.managed_by,
+                    })
+                    return res
                   }}
                   onSuccess={(workflowId) => {
                     if (workflowId) {
@@ -90,11 +98,19 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
             document.body
           )
         : null}
+      <ConfirmUpdateModal
+        install={install}
+        isOpen={isConfirmOpen}
+        onClose={(isConfirmed) => {
+          setIsOpen(isConfirmed)
+          setIsConfirmOpen(false)
+        }}
+      />
       <Button
         className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full"
         variant="ghost"
         onClick={() => {
-          setIsOpen(true)
+          setIsConfirmOpen(true)
         }}
       >
         <PencilSimpleLine size="16" />
