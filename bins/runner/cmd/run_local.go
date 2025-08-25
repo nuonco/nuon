@@ -28,7 +28,7 @@ func (c *cli) registerRunLocal() error {
 
 func (c *cli) runLocalRun(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
-		log.Fatal("must pass in a valid runner-id or orgs|installs to select the most current one")
+		log.Fatal("must pass in a valid runner-id or \"org\"|\"install\" to select the most current one")
 	}
 
 	ctx := context.Background()
@@ -44,5 +44,14 @@ func (c *cli) runLocalRun(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println("running runner like usual")
-	c.runRun(cmd, nil)
+	arg := args[0]
+	switch arg {
+	case "org", "build":
+		c.runBuild(cmd, nil)
+	case "install":
+		c.runInstall(cmd, nil)
+	default:
+		log.Fatalf("we know naught of this arg: %s", arg)
+
+	}
 }
