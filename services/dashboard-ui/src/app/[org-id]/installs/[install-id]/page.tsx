@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
@@ -32,7 +33,10 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 
 export default async function Install({ params }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const install = await getInstall({ installId, orgId })
+  const install = await getInstall({ installId, orgId }).catch((err) => {
+    console.error(err)
+    notFound()
+  })
 
   return (
     <DashboardContent
