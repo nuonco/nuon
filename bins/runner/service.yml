@@ -19,7 +19,7 @@ sources:
 
 
 tests:
-  # a test is a dockerfile target. 
+  # a test is a dockerfile target.
   # we can make sure to cache mounts by leveraging dockerfile targets.
   - name: lint
     docker_target: lint
@@ -64,8 +64,11 @@ local_build_cmds:
 local_cmds:
   # you can disable the org runner by adding DISABLE_ORG_RUNNER: true to your ~/.nuonctl-env.yml file
   - /tmp/runner run-local org
+  # - /tmp/runner org
+  # - /tmp/runner deploy
   # you can disable the org runner by adding DISABLE_INSTALL_RUNNER: true to your ~/.nuonctl-env.yml file
   - /tmp/runner run-local install
+  # - /tmp/runner install
 
 # by default, using `run-docker` will only run the runner with the most current org, however you can use `exec-docker
 # installs"` or `exec-docker <runner-id>` to run a specific runner.
