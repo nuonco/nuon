@@ -336,7 +336,12 @@ export interface ICreateInstallData {
     subscription_id?: string
     subscription_tenant_id?: string
   }
+  metadata?: {
+    managed_by?: string
+  }
 }
+
+export const installManagedByUI = 'nuon/dashboard'
 
 export interface ICreateInstall {
   appId: string

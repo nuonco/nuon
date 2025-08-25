@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import type { ICreateInstallData } from '@/lib'
+import { ICreateInstallData, installManagedByUI } from '@/lib'
 import type { TBuild, TComponent } from '@/types'
 import { API_URL, nueMutateData, getFetchOpts } from '@/utils'
 
@@ -61,6 +61,9 @@ export async function createAppInstall({
   let data: ICreateInstallData = {
     inputs,
     name: formData.name as string,
+    metadata: {
+      managed_by: installManagedByUI,
+    },
   }
 
   if (platform === 'aws') {
