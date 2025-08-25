@@ -15,9 +15,11 @@ import { Text } from '@/components/Typography'
 import {
   createInstallConfig,
   updateInstallConfig,
+  updateInstallManagedBy,
 } from '@/components/install-actions'
 import type { TInstall } from '@/types'
 import { trackEvent } from '@/utils'
+import { ConfirmUpdateModal } from './ConfirmUpdateModal'
 
 interface IAutoApproveModal {
   install: TInstall
@@ -26,6 +28,7 @@ interface IAutoApproveModal {
 export const AutoApproveModal: FC<IAutoApproveModal> = ({ install }) => {
   const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [error, setError] = useState()
@@ -92,6 +95,11 @@ export const AutoApproveModal: FC<IAutoApproveModal> = ({ install }) => {
         .then(handleApprovalOptionChange)
         .catch(handleApprovalOptionError)
     }
+    updateInstallManagedBy({
+      installId: install?.id,
+      orgId: org?.id,
+      managedBy: install?.metadata?.managed_by,
+    })
   }
 
   const createApprovalOption = () => {
@@ -156,11 +164,19 @@ export const AutoApproveModal: FC<IAutoApproveModal> = ({ install }) => {
             document.body
           )
         : null}
+      <ConfirmUpdateModal
+        install={install}
+        isOpen={isConfirmOpen}
+        onClose={(isConfirmed) => {
+          setIsOpen(isConfirmed)
+          setIsConfirmOpen(false)
+        }}
+      />
       <Button
         className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full"
         variant="ghost"
         onClick={() => {
-          setIsOpen(true)
+          setIsConfirmOpen(true)
         }}
       >
         {buttonIcon} {buttonText}
