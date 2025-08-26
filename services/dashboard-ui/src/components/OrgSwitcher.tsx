@@ -1,21 +1,19 @@
 'use client'
 
 import classNames from 'classnames'
-import React, { type FC, useEffect, useState } from 'react'
+import React, { type FC, useState } from 'react'
 import { FaGithub } from 'react-icons/fa'
 import { Plus, TestTube } from '@phosphor-icons/react'
 import Image from 'next/image'
 import NextLink from 'next/link'
-import { setOrgSessionCookie } from '@/app/actions'
 import { ClickToCopy } from '@/components/ClickToCopy'
 import { Dropdown } from '@/components/Dropdown'
-import { Link } from '@/components/Link'
 import { useOrg, ConnectGithubModal } from '@/components/Orgs'
 import { OrgStatus } from '@/components/OrgStatus'
 import { StatusBadge } from '@/components/Status'
 import { Text } from '@/components/Typography'
 import type { TOrg } from '@/types'
-import { GITHUB_APP_NAME, POLL_DURATION, initialsFromString } from '@/utils'
+import { initialsFromString } from '@/utils'
 import { SearchInput } from '@/components/SearchInput'
 
 export const OrgAvatar: FC<{
@@ -197,29 +195,6 @@ export const OrgSwitcher: FC<IOrgSwitcher> = ({
   isSidebarOpen = true,
 }) => {
   const { org } = useOrg()
-  //  const [org, updateOrg] = useState<TOrg>(initOrg)
-
-  /* useEffect(() => {
-   *   async function setSession() {
-   *     await setOrgSessionCookie(initOrg.id)
-   *   }
-
-   *   setSession()
-
-   *   const fetchOrg = () => {
-   *     fetch(`/api/${initOrg.id}`)
-   *       .then((res) =>
-   *         res.json().then((o) => {
-   *           updateOrg(o)
-   *         })
-   *       )
-   *       .catch(console.error)
-   *   }
-
-   *   const pollOrg = setInterval(fetchOrg, POLL_DURATION)
-   *   return () => clearInterval(pollOrg)
-   * }, []) */
-
   return (
     <Dropdown
       className={classNames('w-full', {
