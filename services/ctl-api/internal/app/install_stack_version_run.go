@@ -47,36 +47,6 @@ func (i *InstallStackVersionRun) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (c *InstallStackVersionRun) AfterCreate(tx *gorm.DB) error {
-	var installStackVersion InstallStackVersion
-	if c.InstallStackVersion.ID == "" {
-		err := tx.Where("id = ?", c.InstallStackVersionID).First(&installStackVersion).Error
-		if err != nil {
-			return err
-		}
-	}
-	err := MarkInstallStateStale(tx, installStackVersion.InstallID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *InstallStackVersionRun) AfterUpdate(tx *gorm.DB) error {
-	var installStackVersion InstallStackVersion
-	if c.InstallStackVersion.ID == "" {
-		err := tx.Where("id = ?", c.InstallStackVersionID).First(&installStackVersion).Error
-		if err != nil {
-			return err
-		}
-	}
-	err := MarkInstallStateStale(tx, installStackVersion.InstallID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (i *InstallStackVersionRun) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
