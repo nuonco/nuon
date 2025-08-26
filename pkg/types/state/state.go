@@ -2,10 +2,10 @@ package state
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/pkg/errors"
 )
-
 
 type State struct {
 	ID   string `json:"id"`
@@ -25,6 +25,9 @@ type State struct {
 
 	// NOTE: for backwards compatibility, these are remaining in place.
 	Install *InstallState `json:"install"`
+
+	// loaded from the database but not part of the state itself
+	StaleAt *time.Time `json:"stale_at"`
 }
 
 func New() *State {
