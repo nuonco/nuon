@@ -1,11 +1,8 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
 	"strings"
 
-	"github.com/DataDog/dd-trace-go/v2/ddtrace/tracer"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
@@ -150,11 +147,6 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 
 	// installs worker
 	if (namespace == "all" || namespace == "installs") && !shouldSkipNamespace("installs") {
-		tracer.Start(
-			tracer.WithRuntimeMetrics(),
-			tracer.WithDogstatsdAddr(fmt.Sprintf("%s:8125", os.Getenv("HOST_IP"))),
-		)
-
 		providers = append(providers,
 			fx.Provide(installsactivities.New),
 			fx.Provide(installsworker.NewWorkflows),
