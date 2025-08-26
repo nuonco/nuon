@@ -1,3 +1,7 @@
+output "internal_domain" {
+  value = "ctl.${data.aws_route53_zone.private.name}"
+}
+
 output "tfe_token" {
   value = var.tfe_token
 }
