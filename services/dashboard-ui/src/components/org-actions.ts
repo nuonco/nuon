@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
 import { joinWaitlist, type IJoinWaitlist } from '@/lib'
 import type { TInvite, TWaitlist } from '@/types'
 import {
@@ -83,4 +84,9 @@ export async function removeUserFromOrg(
     revalidatePath(`/${orgId}/team`)
     return invite
   })
+}
+
+export async function setOrgSessionCookie(orgId: string) {
+  const c = await cookies()
+  c.set('org-session', orgId)
 }
