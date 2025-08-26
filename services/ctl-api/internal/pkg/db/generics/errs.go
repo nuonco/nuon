@@ -2,6 +2,7 @@ package generics
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
@@ -30,4 +31,17 @@ func TemporalGormError(err error, args ...string) error {
 	}
 
 	return err
+}
+
+func IsGormErrRecordNotFound(err error) bool {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return true
+	}
+
+	// NOTE: if this was returned via a temporal activity, we want to check the string, as well.
+	if strings.Contains(err.Error(), "not found") {
+		return true
+	}
+
+	return false
 }
