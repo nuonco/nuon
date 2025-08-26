@@ -555,7 +555,7 @@ module "waypoint" {
   name        = "waypoint"
   description = "Our internal fork of hashicorp/waypoint."
   topics      = ["archived"]
-  archived = "true"
+  archived    = "true"
 }
 
 module "nuon-azure-aks-byopn-sandbox" {
@@ -567,6 +567,108 @@ module "nuon-azure-aks-byopn-sandbox" {
   owning_team_id   = github_team.nuon.id
   owning_team_name = "nuonco/${github_team.nuon.name}"
   archived         = "true"
+
+  providers = {
+    github = github.nuon
+  }
+}
+
+module "nuon-terraform-installer-ui-hosted" {
+  source           = "./modules/repository"
+  name             = "installer-hosted"
+  description      = "Multitenant Hosted Installer UI"
+  required_checks  = []
+  is_public        = false
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  topics   = ["archived"]
+  archived = true
+
+  providers = {
+    github = github.nuon
+  }
+}
+
+module "nuon-aws-eks-sandbox" {
+  source           = "./modules/repository"
+  name             = "terraform-aws-eks-sandbox"
+  description      = "AWS EKS sandbox for Nuon apps."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  topics   = ["archived"]
+  archived = true
+
+  providers = {
+    github = github.nuon
+  }
+}
+
+module "nuon-aws-eks-byovpc-sandbox" {
+  source           = "./modules/repository"
+  name             = "terraform-aws-eks-byovpc-sandbox"
+  description      = "AWS EKS BYOVPC sandbox for Nuon apps."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  topics   = ["archived"]
+  archived = true
+
+  providers = {
+    github = github.nuon
+  }
+}
+
+module "nuon-aws-ecs-sandbox" {
+  source           = "./modules/repository"
+  name             = "terraform-aws-ecs-sandbox"
+  description      = "AWS ECS sandbox for Nuon apps."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  topics   = ["archived"]
+  archived = true
+
+  providers = {
+    github = github.nuon
+  }
+}
+
+module "nuon-aws-ecs-byovpc-sandbox" {
+  source           = "./modules/repository"
+  name             = "terraform-aws-ecs-byovpc-sandbox"
+  description      = "AWS ECS BYOVPC sandbox for Nuon apps."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  topics   = ["archived"]
+  archived = true
+
+  providers = {
+    github = github.nuon
+  }
+}
+
+module "nuon-azure-aks-sandbox" {
+  source           = "./modules/repository"
+  name             = "terraform-azure-aks-sandbox"
+  description      = "Azure AKS sandbox for Nuon apps."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  topics   = ["archived"]
+  archived = true
 
   providers = {
     github = github.nuon
