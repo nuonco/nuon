@@ -1738,8 +1738,6 @@ github.com/gin-contrib/size v1.0.1 h1:GreQH9js/8s683t6zeoAzpO936TIUOLg7/FPX+lln2
 github.com/gin-contrib/size v1.0.1/go.mod h1:OdxqPUhQ3lW9y9zB1wR7MjkSDHMbaPJ5PVSMkGgQF1A=
 github.com/gin-contrib/sse v0.1.0 h1:Y/yl/+YNO8GZSjAhjMsSuLt29uWRFHdHYUb5lYOV9qE=
 github.com/gin-contrib/sse v0.1.0/go.mod h1:RHrZQHXnP2xjPF+u1gW/2HnVO7nvIa9PG3Gm+fLHvGI=
-github.com/gin-contrib/timeout v1.0.2 h1:r4RoqvDHs0rCLUCK54VSORt5c2ICKWUHNa+MFrJ3jTY=
-github.com/gin-contrib/timeout v1.0.2/go.mod h1:2nd5bn+1BdaPEKD6ksEkRJQhPCUM/keMGFSCNg3jkis=
 github.com/gin-contrib/zap v1.1.4 h1:xvxTybg6XBdNtcQLH3Tf0lFr4vhDkwzgLLrIGlNTqIo=
 github.com/gin-contrib/zap v1.1.4/go.mod h1:7lgEpe91kLbeJkwBTPgtVBy4zMa6oSBEcvj662diqKQ=
 github.com/gin-gonic/gin v1.9.1/go.mod h1:hPrL7YrpYKXt5YId3A/Tnip5kqbEAP+KLuI3SUcPTeU=
