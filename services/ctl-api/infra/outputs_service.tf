@@ -10,14 +10,6 @@ output "public_domain" {
   value = module.cert.domain
 }
 
-output "internal_domain" {
-  value = module.internal-cert.domain
-}
-
-output "internal_certificate_arn" {
-  value = module.internal-cert.acm_certificate_arn
-}
-
 output "runner_domain" {
   value = module.runner-cert.domain
 }
