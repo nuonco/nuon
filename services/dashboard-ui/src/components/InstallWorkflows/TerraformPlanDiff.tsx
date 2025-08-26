@@ -26,6 +26,19 @@ type TFResourceChange = {
   }
 }
 
+type TFResourceDrift = {
+  address: string
+  mode: string
+  type: string
+  name: string
+  change: {
+    actions: ChangeAction[]
+    before?: Record<string, any>
+    after?: Record<string, any>
+    after_unknown?: Record<string, any>
+  }
+}
+
 function getActionColor(actions: ChangeAction[]): string {
   if (actions.length === 1 && actions[0] === 'read')
     return 'bg-blue-100 text-blue-700 border-blue-400 dark:bg-blue-500/10 dark:border-blue-600 dark:text-blue-200'
@@ -38,6 +51,10 @@ function getActionColor(actions: ChangeAction[]): string {
   if (actions.includes('delete'))
     return 'bg-red-100 text-red-700 border-red-400 dark:bg-red-500/10 dark:border-red-600 dark:text-red-200'
   return 'bg-cool-grey-100 text-cool-grey-700 border-cool-grey-400 dark:bg-dark-grey-500/10 dark:border-cool-grey-500 dark:text-cool-grey-500'
+}
+
+function getDriftColor(): string {
+  return 'bg-amber-100 text-amber-700 border-amber-400 dark:bg-amber-500/10 dark:border-amber-600 dark:text-amber-200'
 }
 
 function getActionLabel(actions: ChangeAction[]): string {
@@ -207,6 +224,116 @@ function OutputChangesViewer({
   )
 }
 
+function ResourceDriftViewer({
+  resource_drift,
+}: {
+  resource_drift: TFResourceDrift[]
+}) {
+  const [open, setOpen] = useState<Record<string, boolean>>({})
+
+  if (!resource_drift?.length) {
+    return null
+  }
+
+  return (
+    <div>
+      <h3 className="font-bold text-base mb-2">Resource Drift</h3>
+      <div className="w-full mx-auto space-y-2">
+        {resource_drift.map((res: TFResourceDrift) => {
+          const actionLabel = getActionLabel(res.change.actions)
+          const color = getDriftColor()
+          const isOpen = open[res.address] ?? false
+
+          return (
+            <div
+              key={res.address}
+              className={`border-l-4 shadow rounded ${color} relative transition-all`}
+            >
+              <button
+                onClick={() =>
+                  setOpen((o) => ({ ...o, [res.address]: !isOpen }))
+                }
+                className="w-full flex justify-between items-center px-4 py-3 gap-3 text-left focus:outline-none"
+              >
+                <span className="font-mono text-sm font-semibold truncate">
+                  {res.address}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-200 px-2 py-1 rounded-full border border-amber-300 dark:border-amber-600">
+                    DRIFT
+                  </span>
+                  <span
+                    className={`px-2 py-1 rounded-full text-[11px] border ${color} !bg-white/50 dark:!bg-black/20`}
+                  >
+                    {actionLabel}
+                  </span>
+                </div>
+              </button>
+              {isOpen && (
+                <div className="bg-cool-grey-50 dark:bg-dark-grey-200 px-6 py-4 border-t">
+                  <div className="mb-4 text-sm text-cool-grey-600 dark:text-cool-grey-300">
+                    <b>Type:</b> {res.type} &nbsp;
+                    <b>Name:</b> {res.name}
+                  </div>
+                  <div className="mb-2 text-amber-700 dark:text-amber-200 text-sm bg-amber-50 dark:bg-amber-900/20 p-2 rounded border border-amber-200 dark:border-amber-700">
+                    ⚠️ This resource has drifted from its expected state.
+                  </div>
+                  <div>
+                    {res.change.actions.includes('create') &&
+                      !res.change.before && (
+                        <div className="text-green-700 bg-green-50 dark:text-green-50 dark:bg-green-600/10 rounded p-2 text-[11px] overflow-x-auto">
+                          {Object.keys(res.change.after).map((k) => (
+                            <span className="flex items-start gap-2" key={k}>
+                              <span>{k}:</span>
+                              <TruncateValue title={k}>
+                                {res.change.after[k] || 'null'}
+                              </TruncateValue>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    {res.change.actions.includes('delete') &&
+                      !res.change.after && (
+                        <div className="text-red-700 bg-red-50 dark:text-red-50 dark:bg-red-600/10 rounded p-2 text-[11px] overflow-x-auto">
+                          {Object.keys(res.change.before).map((k) => (
+                            <span className="flex items-start gap-2" key={k}>
+                              <span>{k}:</span>
+                              <TruncateValue title={k}>
+                                {res.change.before[k] || 'null'}
+                              </TruncateValue>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    {res.change.actions.includes('update') && (
+                      <div className="my-2">
+                        {diffFields(res.change.before, res.change.after)}
+                      </div>
+                    )}
+                    {res.change.actions.includes('create') &&
+                      res.change.actions.includes('delete') && (
+                        <div className="my-2">
+                          {diffFields(res.change.before, res.change.after)}
+                        </div>
+                      )}
+                    {res.change.actions.length === 1 &&
+                      res.change.actions[0] === 'read' && (
+                        <div className="my-2 text-blue-700 dark:text-blue-200 text-sm">
+                          Terraform will refresh this resource from the
+                          provider.
+                        </div>
+                      )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function ResourceChangesViewer({
   resource_changes,
   hideNoOps,
@@ -329,12 +456,14 @@ export function TerraformPlanViewer({ plan }: { plan: any }) {
   // Default: hide no-op changes, so set true
   const [hideNoOps, setHideNoOps] = useState<boolean>(true)
 
+  const hasResourceDrift =
+    Array.isArray(plan?.resource_drift) && plan.resource_drift.length > 0
   const hasResourceChanges =
     Array.isArray(plan?.resource_changes) && plan.resource_changes.length > 0
   const hasOutputChanges =
     plan?.output_changes && Object.keys(plan.output_changes).length > 0
 
-  if (!hasResourceChanges && !hasOutputChanges) {
+  if (!hasResourceDrift && !hasResourceChanges && !hasOutputChanges) {
     return (
       <div>
         <div className="flex items-center mb-4">
@@ -370,6 +499,9 @@ export function TerraformPlanViewer({ plan }: { plan: any }) {
           Show no-op changes
         </label>
       </div>
+      {hasResourceDrift && (
+        <ResourceDriftViewer resource_drift={plan.resource_drift} />
+      )}
       {hasResourceChanges && (
         <ResourceChangesViewer
           resource_changes={plan.resource_changes}
