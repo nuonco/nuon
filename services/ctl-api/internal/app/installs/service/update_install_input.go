@@ -109,6 +109,11 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 
 		return
 	}
+
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type:              signals.OperationUpdated,
+		InstallWorkflowID: workflow.ID,
+	})
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
 		Type:              signals.OperationExecuteFlow,
 		InstallWorkflowID: workflow.ID,
