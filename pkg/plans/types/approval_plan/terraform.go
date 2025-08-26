@@ -39,7 +39,31 @@ func terraformPlanNoop(planJSON []byte) (bool, error) {
 	if noResourceChanges && noOutputChanges && noDeferredChanges {
 		return true, nil
 	}
-	return false, nil
+
+	// Check each resource change for no-op actions
+	for _, rc := range plan.ResourceChanges {
+		if rc.Change != nil && len(rc.Change.Actions) == 1 && rc.Change.Actions[0] != tfjson.ActionNoop {
+			return false, nil
+		}
+	}
+
+	// Check each output change for no-op actions
+	for _, oc := range plan.OutputChanges {
+		if oc != nil && len(oc.Actions) == 1 && oc.Actions[0] != tfjson.ActionNoop {
+			return false, nil
+		}
+	}
+
+	// Check each drift change for no-op actions
+	// temporarily commented till frontend is fixed
+	// for _, oc := range plan.ResourceDrift {
+	// 	if oc != nil && len(oc.Change.Actions) == 1 && oc.Change.Actions[0] != tfjson.ActionNoop {
+	// 		fmt.Println("sk non noop resource drift change", oc)
+	// 		return false, nil
+	// 	}
+	// }
+
+	return true, nil
 }
 
 func (t *TerraformApprovalPlan) IsNoop() (bool, error) {
