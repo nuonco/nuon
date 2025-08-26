@@ -9,6 +9,14 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
+type RunnerHeartBeatProcess string
+
+const (
+	RunnerHeartBeatProcessMng     RunnerHeartBeatProcess = "mng"
+	RunnerHeartBeatProcessInstall RunnerHeartBeatProcess = "install"
+	RunnerHeartBeatProcessOrg     RunnerHeartBeatProcess = "org"
+)
+
 // clickhouse table
 type RunnerHeartBeat struct {
 	ID          string `gorm:"primary_key" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
@@ -23,6 +31,8 @@ type RunnerHeartBeat struct {
 	AliveTime time.Duration `json:"alive_time,omitzero" swaggertype:"primitive,integer" temporaljson:"alive_time,omitzero,omitempty"`
 	Version   string        `json:"version,omitzero" temporaljson:"version,omitzero,omitempty"`
 	StartedAt time.Time     `json:"started_at,omitzero" gorm:"-" temporaljson:"started_at,omitzero,omitempty"`
+
+	Process RunnerHeartBeatProcess `json:"process" gorm:"not null;default:install" swaggertype:"string"`
 }
 
 func (r *RunnerHeartBeat) AfterQuery(tx *gorm.DB) error {
