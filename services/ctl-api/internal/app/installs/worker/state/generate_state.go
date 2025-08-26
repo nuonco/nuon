@@ -7,6 +7,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/types/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
@@ -37,6 +38,16 @@ func (w *Workflows) GenerateState(ctx workflow.Context, req *GenerateStateReques
 	l.Info("generating workflow state")
 
 	is := state.New()
+
+	if err := activities.AwaitMarkStateStale(ctx, &activities.MarkStateStaleRequest{
+		InstallID:       req.InstallID,
+		TriggeredByID:   req.TriggeredByID,
+		TriggeredByType: req.TriggeredByType,
+	}); err != nil {
+		if !generics.IsGormErrRecordNotFound(err) {
+			return nil, errors.Wrap(err, "unable to mark state as stale")
+		}
+	}
 
 	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
 	if err != nil {
