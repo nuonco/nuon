@@ -14,6 +14,7 @@ WITH sandbox_runs_partitioned AS (
     WHERE
         sr.deleted_at = 0
         AND sr.status != 'drift-detected'
+        AND sr.status != 'auto-skipped'
         AND sr.status != 'no-drift'
 ),
 /* filter down to the most recent install sandbox runs */
