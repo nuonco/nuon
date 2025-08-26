@@ -22,6 +22,7 @@ const (
 	OperationActionWorkflowRun           eventloop.SignalType = "action-workflow-run"
 	OperationPollDependencies            eventloop.SignalType = "poll-dependencies"
 	OperationCreated                     eventloop.SignalType = "created"
+	OperationUpdated                     eventloop.SignalType = "updated"
 	OperationGenerateInstallStackVersion eventloop.SignalType = "generate-install-stack-version"
 	OperationProvisionRunner             eventloop.SignalType = "provision-runner"
 	OperationAwaitInstallStackVersionRun eventloop.SignalType = "await-install-stack-version-run"
