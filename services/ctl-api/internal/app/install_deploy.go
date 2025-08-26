@@ -103,6 +103,22 @@ func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+func (c *InstallDeploy) AfterCreate(tx *gorm.DB) error {
+	err := MarkInstallStateStale(tx, c.InstallID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *InstallDeploy) AfterUpdate(tx *gorm.DB) error {
+	err := MarkInstallStateStale(tx, c.InstallID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *InstallDeploy) AfterQuery(tx *gorm.DB) error {
 	c.InstallID = c.InstallComponent.InstallID
 	c.ComponentID = c.InstallComponent.ComponentID
