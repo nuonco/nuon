@@ -32,6 +32,8 @@ type RunnerHealthCheck struct {
 	// after queries
 
 	RunnerStatusCode int `json:"status_code" gorm:"-" temporaljson:"runner_status_code,omitzero,omitempty"`
+
+	Process RunnerHeartBeatProcess `json:"process" gorm:"not null;default:install" swaggertype:"string"`
 }
 
 func (r *RunnerHealthCheck) BeforeCreate(tx *gorm.DB) error {
