@@ -129,3 +129,35 @@ func (a *InstallStackOutputs) BeforeCreate(tx *gorm.DB) error {
 
 	return nil
 }
+
+func (c *InstallStackOutputs) AfterCreate(tx *gorm.DB) error {
+	var installStackVersionRun InstallStackVersionRun
+	err := tx.
+		Preload("InstallStackVersion").
+		Where("id = ?", c.InstallStackVersionRunID).
+		First(&installStackVersionRun).Error
+	if err != nil {
+		return err
+	}
+	err = MarkInstallStateStale(tx, installStackVersionRun.InstallStackVersion.InstallID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *InstallStackOutputs) AfterUpdate(tx *gorm.DB) error {
+	var installStackVersionRun InstallStackVersionRun
+	err := tx.
+		Preload("InstallStackVersion").
+		Where("id = ?", c.InstallStackVersionRunID).
+		First(&installStackVersionRun).Error
+	if err != nil {
+		return err
+	}
+	err = MarkInstallStateStale(tx, installStackVersionRun.InstallStackVersion.InstallID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
