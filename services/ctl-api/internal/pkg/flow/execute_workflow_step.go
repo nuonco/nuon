@@ -92,7 +92,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		return false, err
 	}
 
-	noopPlan, err := approvalPlan.NoopPlan()
+	noopPlan, err := approvalPlan.IsNoopPlan()
 	if err != nil {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
