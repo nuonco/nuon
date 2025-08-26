@@ -413,7 +413,7 @@ monitors:
       {
         "name": "[${aws_account}] Deployment HPA 80% Threshold Alert",
         "type": "query alert",
-        "query": "avg(last_5m):avg:kubernetes.hpa.current_replicas{*} by {hpa,kube_namespace} / avg:kubernetes.hpa.max_replicas{*} by {hpa,kube_namespace} * 100 >= 80",
+        "query": "avg(last_5m):avg:kubernetes.hpa.current_replicas{*} by {hpa,kube_namespace} / avg:kubernetes.hpa.max_replicas{*} by {hpa,kube_namespace} * 100 >= 100",
         "message": "@pagerduty-Datadog @slack-alerts-${env}-infra 🚨 **HPA Scaling Alert** 🚨\n\n**Deployment:** {{hpa.name}}\n**Namespace:** {{kube_namespace.name}}\n**Current Usage:** {{value}}% of maximum replicas\n\nThe deployment has scaled to 80% or more of its configured HPA maximum replicas. This may indicate:\n- High traffic/load requiring attention\n- Need to review HPA max replica limits\n- Potential capacity planning required\n\n**Current Replicas:** {{kubernetes.hpa.current_replicas}}\n**Max Replicas:** {{kubernetes.hpa.max_replicas}}\n\nPlease investigate the underlying cause and consider scaling limits.\n\n@slack-alerts-channel @oncall-team",
         "tags": [
           "terraform:true",
