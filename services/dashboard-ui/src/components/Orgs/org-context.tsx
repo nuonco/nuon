@@ -7,9 +7,9 @@ import React, {
   useEffect,
   useState,
 } from 'react'
-import { setOrgSessionCookie } from '@/app/actions'
 import type { TOrg } from '@/types'
 import { POLL_DURATION } from '@/utils'
+import { setOrgSessionCookie } from '../org-actions'
 
 type TFetchError = Record<string | 'message', string>
 
@@ -35,17 +35,17 @@ export const OrgProvider: FC<IOrgProvider> = ({
   const [org, updateOrg] = useState<TOrg>(initOrg)
 
   useEffect(() => {
-    async function setSession() {
-      await setOrgSessionCookie(initOrg.id)
-    }
-
-    setSession()
-  }, [])
+    setOrgSessionCookie(org.id)
+  }, [org])
 
   useEffect(() => {
     const refreshOrg = () => {
       fetch(`/api/${initOrg?.id}`)
-        .then((res) => res.json().then((o) => updateOrg(o)))
+        .then((res) =>
+          res.json().then((o) => {
+            updateOrg(o)
+          })
+        )
         .catch((err) => setError(err))
     }
 
