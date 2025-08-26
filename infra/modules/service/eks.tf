@@ -47,7 +47,7 @@ resource "aws_iam_policy" "service" {
 
 module "iam_eks_role" {
   source      = "terraform-aws-modules/iam/aws//modules/iam-eks-role"
-  version     = ">= 5.1.0"
+  version     = "5.59.0"
   create_role = true
 
   role_name = "eks-${var.name}"
@@ -61,6 +61,6 @@ module "iam_eks_role" {
     {
       custom = aws_iam_policy.service.arn
     },
-    { for i, policy in var.additional_iam_policies: tostring(i) => policy }
+    { for i, policy in var.additional_iam_policies : tostring(i) => policy }
   )
 }
