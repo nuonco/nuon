@@ -17,3 +17,13 @@ module "runner-cert" {
   env             = var.env
   service         = local.name
 }
+
+module "internal-cert" {
+  source = "../../../infra/modules/internal-certificate"
+
+  aws_region = local.vars.region
+  subdomain  = "ctl"
+  domain     = local.vars.internal_root_domain
+  env        = var.env
+  service    = local.name
+}
