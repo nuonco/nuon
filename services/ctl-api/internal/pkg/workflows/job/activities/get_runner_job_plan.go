@@ -82,7 +82,7 @@ type ApprovalPlan struct {
 	PlanContents  []byte            `json:"plan_contents" temporaljson:"plan_contents,omitempty"`
 }
 
-func (p *ApprovalPlan) NoopPlan() (bool, error) {
+func (p *ApprovalPlan) IsNoopPlan() (bool, error) {
 	switch p.RunnerJobType {
 	case app.RunnerJobTypeSandboxTerraform, app.RunnerJobTypeSandboxTerraformPlan:
 		plan := approvalplan.NewSandboxRunApprovalPlan(p.PlanContents)
@@ -123,6 +123,9 @@ func (a *Activities) PkgWorkflowsGetApprovalPlan(ctx context.Context, req GetApp
 
 	// we're only using content display currently since we're only dealing with terraform and sandbox plans
 	decompressedContentDisplay, err := decompressRunnerJobExecutionResult(runnerJobExecutionResult.ContentsDisplayGzip)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("unable to decompress runner job execution result, id: %s", runnerJobExecutionResult.ID))
+	}
 
 	plan := ApprovalPlan{
 		RunnerJobType: runnerJob.Type,
