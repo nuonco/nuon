@@ -55,13 +55,11 @@ func terraformPlanNoop(planJSON []byte) (bool, error) {
 	}
 
 	// Check each drift change for no-op actions
-	// temporarily commented till frontend is fixed
-	// for _, oc := range plan.ResourceDrift {
-	// 	if oc != nil && len(oc.Change.Actions) == 1 && oc.Change.Actions[0] != tfjson.ActionNoop {
-	// 		fmt.Println("sk non noop resource drift change", oc)
-	// 		return false, nil
-	// 	}
-	// }
+	for _, oc := range plan.ResourceDrift {
+		if oc != nil && len(oc.Change.Actions) == 1 && oc.Change.Actions[0] != tfjson.ActionNoop {
+			return false, nil
+		}
+	}
 
 	return true, nil
 }
