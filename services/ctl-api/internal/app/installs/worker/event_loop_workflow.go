@@ -12,6 +12,7 @@ import (
 func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
 		signals.OperationCreated:            AwaitCreated,
+		signals.OperationUpdated:            AwaitUpdated,
 		signals.OperationPollDependencies:   AwaitPollDependencies,
 		signals.OperationForget:             AwaitForget,
 		signals.OperationExecuteFlow:        AwaitExecuteFlow,

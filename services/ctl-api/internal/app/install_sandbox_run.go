@@ -101,22 +101,6 @@ func (i *InstallSandboxRun) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (c *InstallSandboxRun) AfterCreate(tx *gorm.DB) error {
-	err := MarkInstallStateStale(tx, c.InstallID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *InstallSandboxRun) AfterUpdate(tx *gorm.DB) error {
-	err := MarkInstallStateStale(tx, c.InstallID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (i *InstallSandboxRun) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
