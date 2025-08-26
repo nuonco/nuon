@@ -59,7 +59,7 @@ func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 	w.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
-		TriggeredByID:   sreq.InstallWorkflowID,
+		TriggeredByID:   sandboxRun.ID,
 		TriggeredByType: plugins.TableName(w.db, sandboxRun),
 	})
 	if err != nil {

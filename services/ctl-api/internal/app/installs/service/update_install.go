@@ -7,12 +7,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/patcher"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
-	"gorm.io/gorm"
 )
 
 type UpdateInstallRequest struct {
@@ -62,6 +64,10 @@ func (s *service) UpdateInstall(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
 		return
 	}
+
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationUpdated,
+	})
 
 	ctx.JSON(http.StatusOK, install)
 }
