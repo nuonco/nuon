@@ -409,5 +409,9 @@ func (h *Helpers) getInstallStateFromDB(ctx context.Context, installID string) (
 		return nil, errors.Wrap(res.Error, "unable to find install state")
 	}
 
+	if !is.StaleAt.Empty() {
+		is.State.StaleAt = &is.StaleAt.Time
+	}
+
 	return is.State, nil
 }
