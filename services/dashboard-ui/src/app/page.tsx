@@ -1,6 +1,31 @@
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { Dashboard, Text } from '@/components'
+import type { TOrg } from "@/types";
+import { auth0 } from '@/utils/auth'
+import { nueQueryData } from "@/utils/query-data";
 
-export default function Home() {
+export default async function Home() {
+  const cookieStore = await cookies();
+  const session = await auth0.getSession();
+
+  if (session) {
+    const orgSession = cookieStore.get("org-session");
+    const { data: orgs } = await nueQueryData<TOrg[]>({
+      path: "orgs",
+    });
+
+    if (orgs && orgs?.length) {
+      if (orgSession && orgs.some((org) => org.id === orgSession?.value)) {
+        redirect(`/${orgSession?.value}/apps`);
+      } else {
+        redirect(`/${orgs?.at(0)?.id}/apps`);
+      }
+    } else {
+      redirect(`/request-access`);
+    }
+  }
+  
   return (
     <Dashboard isLandingPage>
       <main className="flex flex-col h-full gap-24 md:gap-[250px] py-6 md:py-12 lg:py-24">
