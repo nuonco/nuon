@@ -16,26 +16,27 @@ import (
 type CreateRunnerHeartBeatRequest struct {
 	AliveTime time.Duration `json:"alive_time" validate:"required" swaggertype:"primitive,integer"`
 	// Making this required might break existing installs? Should update all installs to send this, then make it required?
-	Version string `json:"version"`
+	Version string            `json:"version"`
+	Process app.RunnerProcess `json:"process" swaggertype:"string"`
 }
 
-//	@ID						CreateRunnerHeartBeat
-//	@Summary				create a runner heart beat
-//	@Description.markdown	create_runner_heart_beat.md
-//	@Param					req			body	CreateRunnerHeartBeatRequest	true	"Input"
-//	@Param					runner_id	path	string							true	"runner job ID"
-//	@Tags					runners/runner
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.RunnerHeartBeat
-//	@Router					/v1/runners/{runner_id}/heart-beats [POST]
+// @ID						CreateRunnerHeartBeat
+// @Summary				create a runner heart beat
+// @Description.markdown	create_runner_heart_beat.md
+// @Param					req			body	CreateRunnerHeartBeatRequest	true	"Input"
+// @Param					runner_id	path	string							true	"runner job ID"
+// @Tags					runners/runner
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.RunnerHeartBeat
+// @Router					/v1/runners/{runner_id}/heart-beats [POST]
 func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
@@ -74,6 +75,12 @@ func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, re
 		RunnerID:  runnerID,
 		AliveTime: req.AliveTime,
 		Version:   req.Version,
+	}
+	// if we do not receive a value, set a default
+	if req.Process != "" {
+		runnerHeartBeat.Process = req.Process
+	} else {
+		runnerHeartBeat.Process = app.RunnerProcessUknown
 	}
 
 	res := s.chDB.
