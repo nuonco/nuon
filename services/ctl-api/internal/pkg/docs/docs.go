@@ -59,6 +59,10 @@ func (r *Docs) RegisterInternalRoutes(g *gin.Engine) error {
 			return errors.Wrap(err, "unable to parse admin api url")
 		}
 		admin.SwaggerInfoadmin.Host = u.Host
+
+		if u.Path != "" {
+			admin.SwaggerInfoadmin.BasePath = u.Path
+		}
 	}
 
 	admin.SwaggerInfoadmin.Version = r.cfg.Version
