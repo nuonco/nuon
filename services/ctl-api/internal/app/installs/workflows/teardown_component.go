@@ -57,27 +57,37 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	steps = append(steps, preDeploySteps...)
 
 	sg.nextGroup() // teardown sync + plan + apply
-	deployStep, err := sg.installSignalStep(ctx, install.ID, "teardown sync and plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
-		Type: signals.OperationExecuteTeardownComponentSyncAndPlan,
-		ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
-			ComponentID: generics.FromPtrStr(componentID),
-		},
-	}, flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, deployStep)
+	if !comp.Type.IsImage() {
+		deployStep, err := sg.installSignalStep(ctx, install.ID, "teardown sync and plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+			Type: signals.OperationExecuteTeardownComponentSyncAndPlan,
+			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
+				ComponentID: generics.FromPtrStr(componentID),
+			},
+		}, flw.PlanOnly, WithSkippable(false))
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, deployStep)
 
-	applyStep, err := sg.installSignalStep(ctx, install.ID, "teardown apply plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
-		Type: signals.OperationExecuteTeardownComponentApplyPlan,
-		ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
-			ComponentID: generics.FromPtrStr(componentID),
-		},
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
+		applyStep, err := sg.installSignalStep(ctx, install.ID, "teardown apply plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+			Type: signals.OperationExecuteTeardownComponentApplyPlan,
+			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
+				ComponentID: generics.FromPtrStr(componentID),
+			},
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, applyStep)
+	} else {
+		deployStep, err := sg.installSignalStep(ctx, installID, "skipped image teardown "+comp.Name, pgtype.Hstore{
+			"reason": generics.ToPtr("skipped image teardown"),
+		}, nil, false)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create skip step")
+		}
+		steps = append(steps, deployStep)
 	}
-	steps = append(steps, applyStep)
 
 	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePostTeardownComponent, sg)
 	if err != nil {
