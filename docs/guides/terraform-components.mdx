@@ -70,9 +70,10 @@ http-based API.
 ## Execution and Permissions
 
 The [runner](/concepts/runners) is responsible for executing Terraform, and is
-provisioned as part of the initial Install Stack. e.g., in AWS, the stack
-creates a VPC, ASG and and EC2 instance to start the runner. The runner is
-separate from the Install's infrastructure e.g., Kubernetes cluster.
+provisioned as part of the initial Install Stack. e.g., in AWS, the
+CloudFormationstack creates a VPC, networking, ASG and an EC2 instance to start
+the runner. The runner is separate from the Install's infrastructure e.g.,
+Kubernetes cluster.
 
 To learn more about the runner, read the
 [Nuon Runner Architecture](https://nuon.co/blog/the-nuon-runner-architecture/#nuons-runner-model)
