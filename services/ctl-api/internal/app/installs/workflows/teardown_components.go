@@ -79,11 +79,26 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 			continue
 		}
 
-		if installComp.StatusV2.Status == app.Status(app.InstallComponentStatusInactive) || installComp.StatusV2.Status == app.Status("") {
+		if comp.Type.IsImage() {
+			deployStep, err := sg.installSignalStep(ctx, installID, "skipped image teardown "+comp.Name, pgtype.Hstore{
+				"reason": generics.ToPtr("skipped image teardown"),
+			}, nil, false)
+			if err != nil {
+				return nil, errors.Wrap(err, "unable to create skip step")
+			}
+			steps = append(steps, deployStep)
+			continue
+		}
+
+		if generics.SliceContains(installComp.StatusV2.Status, []app.Status{
+			app.Status(app.InstallComponentStatusInactive),
+			app.Status(""),
+		}) {
 			reason := fmt.Sprintf("install component %s is not deployed", comp.Name)
-			sg.nextGroup() // teardown skipped
+			sg.nextGroup()
+
 			deployStep, err := sg.installSignalStep(ctx, installID, "skipped teardown "+comp.Name, pgtype.Hstore{
-				"reason": &reason,
+				"reason": generics.ToPtr(reason),
 			}, nil, flw.PlanOnly)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create skip step")
