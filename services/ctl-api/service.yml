@@ -1,5 +1,6 @@
 ---
 type: service
+
 base_images:
   - src: Dockerfile.build
     name: BUILD_IMAGE
