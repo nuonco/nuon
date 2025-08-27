@@ -1,86 +1,79 @@
 ---
-title: 'Terraform Components'
-description: "Terraform Components allow you to provision infrastructure in your customer's cloud account to power your install."
-icon: 'code'
+title: "Terraform Components"
+description:
+  "Terraform Components allow you to provision infrastructure in your customer's
+  cloud account to power your install."
+icon: "code"
 ---
 
-Terraform Components allow you to deploy Terraform from a public or connected repo, to provision infrastructure
-resources in customer installs. 
-
-<Note>
-In order for Terraform modules to properly work with Nuon, they must specify an `s3 {}` backend for state. [Read more below](#state-management) for more details.
-</Note>
+Terraform Components allow you to deploy Terraform from a public or connected
+repo, to provision infrastructure resources in customer installs.
 
 ## Configuring a Terraform component
 
-To configure a Terraform component, specify a repo, the required configuration values, and the version of Terraform to run it with.
+To configure a Terraform component, specify a repo, the required configuration
+values, and the version of Terraform to run it with.
 
-```toml nuon.<your-app>.toml
-[[components]]
-name              = "infra"
+```toml nuon.<your-component>.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
+name              = "certificate_wildcard_public"
 type              = "terraform_module"
 terraform_version = "1.11.3"
-[components.connected_repo]
-directory = "components/infra"
-repo      = "<your-org>/<your-repo>"
+
+[public_repo]
+repo      = "nuonco/byoc"
+directory = "byoc-nuon/src/components/certificate"
 branch    = "main"
+
+[vars]
+install_id  = "{{ .nuon.install.id }}"
+region      = "{{ .nuon.install_stack.outputs.region }}"
+zone_id     = "{{ .nuon.sandbox.outputs.nuon_dns.public_domain.zone_id }}"
+domain_name = "*.{{ .nuon.sandbox.outputs.nuon_dns.public_domain.name }}"
 ```
 
-You can configure Terraform Components to use either a public repo (using a `public_repo` block) or a private GitHub
-repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
+You can configure Terraform Components to use either a public repo (using a
+`public_repo` block) or a private GitHub repo (using a `connected_repo` block).
+Read more about VCS configuration [here](/guides/vcs).
 
 ## Configuring Terraform Vars
 
-You can configure terraform variables for a component using [component variables](/guides/using-variables).
+You can configure terraform variables for a component using
+[component variables](/guides/using-variables).
 
-These variables can access inputs, other Components, the sandbox, and details on the install itself.
+These variables can access inputs, other Components, the sandbox, and details on
+the install itself using interpolation.
 
-```toml nuon.<your-app>.toml
-[[components]]
-name              = "lambda_function"
+```toml nuon.<your-component>.toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
+name              = "dynamodb_table"
 type              = "terraform_module"
-terraform_version = "1.11.3"
-[components.connected_repo]
-directory = "components/lambda-function"
-repo      = "<your-org>/<your-repo>"
-branch    = "main"
-[components.env_vars]
-AWS_REGION = "{{.nuon.install.sandbox.outputs.account.region}}"
-[components.vars]
-database_instance = "{{.nuon.install.inputs.database_instance}}"
-```
+terraform_version = "1.11.4"
 
-## Configuring Env Vars
+[public_repo]
+repo      = "nuonco/example-app-configs"
+directory = "aws-lambda/src/components/dynamodb-table"
+branch    = "main"
+
+[vars]
+name       = "widgets-{{.nuon.install.id}}"
+hash_key   = "ID"
+install_id = "{{.nuon.install.id}}"
+region     = "{{.nuon.install_stack.outputs.region}}"
+```
 
 ## State Management
 
-All Terraform state is managed using an S3 backend, within the Nuon platform.
-
-In order for Terraform modules to be compatible with Nuon, and not lose state, they must set the backend to the [s3
-backend](https://developer.hashicorp.com/terraform/language/settings/backends/s3).
-
-```hcl
-terraform {
-  required_version = ">= 1.11.3"
-
-  backend "s3" {}
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 4.0"
-    }
-  }
-}
-```
+All Terraform state is managed by the Nuon data plane through the Nuon
+http-based API.
 
 ## Execution and Permissions
 
-The [runner](/concepts/runners) is responsible for executing Terraform, which means that Terraform is executed from _within_
-the Kubernetes cluster in K8S sandboxes, and from within ECS Fargate for `aws-ecs` sandboxes. In both cases, this is
-inside of the install network.
+The [runner](/concepts/runners) is responsible for executing Terraform, and is
+provisioned as part of the initial Install Stack. e.g., in AWS, the stack
+creates a VPC, ASG and and EC2 instance to start the runner. The runner is
+separate from the Install's infrastructure e.g., Kubernetes cluster.
 
-Since Terraform is executed from within the install sandbox, Terraform resources can access both resources within the network (such as internal APIs,) and, in K8S sandboxes, the local Kubernetes
-cluster.
-
-The runner uses a dedicated IAM role defined in the sandbox when executing Terraform.
+To learn more about the runner, read the
+[Nuon Runner Architecture](https://nuon.co/blog/the-nuon-runner-architecture/#nuons-runner-model)
+blog post.
