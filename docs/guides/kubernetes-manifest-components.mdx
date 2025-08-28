@@ -1,0 +1,229 @@
+---
+title: 'Kubernetes Manifest Components'
+description: "Kubernetes manifest Components allow you to deploy raw Kubernetes resources directly into your customer's cloud account."
+icon: 'code'
+---
+
+Kubernetes manifest Components allow you to deploy raw Kubernetes resources using YAML manifests.
+
+## Configuring a Kubernetes Manifest component
+
+To configure a Kubernetes manifest component, specify a repo and the manifest files to deploy.
+
+```toml nuon.<your-app>.toml
+[[components]]
+name = "k8s_manifest"
+type = "k8s_manifest"
+
+namespace = "nuon-sample"
+manifest = """
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo
+data:
+  sample_data: "3"
+"""
+
+## Multiple Resources in a Single Manifest
+
+Kubernetes manifest Components support multiple resources separated by the standard YAML document separator `---`:
+
+```yaml deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: app
+        image: "alpine:latest"
+        ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+  namespace: default
+spec:
+  selector:
+    app: my-app
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+```
+
+## Using Nuon Context Variables
+
+Kubernetes manifest Components support Nuon's templating system, allowing you to access variables and outputs from other components:
+
+```yaml configmap.yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: default
+data:
+  # access a synced image
+  image_repository: "{{.nuon.components.image.image.repository.uri}}"
+  image_tag: "{{.nuon.components.image.image.tag}}"
+  
+  # access outputs from a terraform component
+  database_url: "{{.nuon.components.terraform.outputs.database_url}}"
+  
+  # access outputs from the sandbox
+  aws_region: "{{.nuon.install.sandbox.outputs.account.aws_region}}"
+  vpc_id: "{{.nuon.install.sandbox.outputs.vpc.id}}"
+  
+  # access information about the install domain
+  public_domain: "{{.nuon.sandbox.outputs.nuon_dns.public_domain.name}}"
+  internal_domain: "{{.nuon.sandbox.outputs.nuon_dns.internal_domain.name}}"
+```
+
+## Common Use Cases
+
+### Deploying with Custom Images
+
+```yaml app-deployment.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{.nuon.app.name}}"
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: "{{.nuon.app.name}}"
+  template:
+    metadata:
+      labels:
+        app: "{{.nuon.app.name}}"
+    spec:
+      containers:
+      - name: app
+        image: "{{.nuon.components.app_image.image.repository.uri}}:{{.nuon.components.app_image.image.tag}}"
+        env:
+        - name: DATABASE_URL
+          value: "{{.nuon.components.infra.outputs.database_url}}"
+        - name: AWS_REGION
+          value: "{{.nuon.install.sandbox.outputs.account.aws_region}}"
+        ports:
+        - containerPort: 8080
+```
+
+### Creating Ingress Resources
+
+```yaml ingress.yaml
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  namespace: default
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "app.{{.nuon.sandbox.outputs.nuon_dns.public_domain.name}}"
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: "public-issuer"
+spec:
+  tls:
+  - hosts:
+    - "app.{{.nuon.sandbox.outputs.nuon_dns.public_domain.name}}"
+    secretName: app-tls
+  rules:
+  - host: "app.{{.nuon.sandbox.outputs.nuon_dns.public_domain.name}}"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: app-service
+            port:
+              number: 80
+```
+
+### Using AWS Load Balancer Controller
+
+```yaml nlb-service.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-nlb
+  namespace: default
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "{{.nuon.components.infra.outputs.public_domain_certificate_arn}}"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: https
+    external-dns.alpha.kubernetes.io/hostname: "app.{{.nuon.sandbox.outputs.nuon_dns.public_domain.name}}"
+spec:
+  type: LoadBalancer
+  loadBalancerClass: service.k8s.aws/nlb
+  selector:
+    app: my-app
+  ports:
+  - name: https
+    port: 443
+    targetPort: 8080
+```
+
+## Nuon Managed Sandbox Components
+
+The `aws-eks-sandbox` [managed Sandbox](/concepts/sandboxes#nuon-managed-sandboxes) ships with standard Components that your Kubernetes manifests can leverage:
+
+* [AWS ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller)
+* [External DNS](https://github.com/kubernetes-sigs/external-dns)
+* [Cert Manager](https://cert-manager.io/)
+* [Nginx Ingress](https://docs.nginx.com/nginx-ingress-controller/)
+* [EBS CSI](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html)
+
+The Sandboxes are [open source](/concepts/sandboxes#nuon-managed-sandboxes) and can be [customized](/concepts/sandboxes#create-a-custom-sandbox), if these Components do not work for your application.
+
+## Best Practices
+
+### Namespace Management
+
+Always specify namespaces explicitly in your manifests. If not provided, it defaults to the namespace specified in the config. If both the component configuration and manifest are missing namespace specifications, the component deployment will fail:
+
+```yaml namespace.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "{{.nuon.app.name}}"
+  labels:
+    app: "{{.nuon.app.name}}"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: "{{.nuon.app.name}}"
+spec:
+  # deployment spec...
+```
+
+<br />
+
+<Note>
+Kubernetes manifest Components are processed in the order they appear in your repository. If you have dependencies between resources, ensure they are ordered appropriately or use proper Kubernetes resource dependencies.
+</Note>
+
