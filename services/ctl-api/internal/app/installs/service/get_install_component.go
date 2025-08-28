@@ -44,6 +44,7 @@ func (s *service) GetInstallComponent(ctx *gin.Context) {
 func (s *service) getInstallComponent(ctx context.Context, installID, componentID string) (*app.InstallComponent, error) {
 	installCmp := app.InstallComponent{}
 	res := s.db.WithContext(ctx).
+    Preload("Component").
 		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Order("install_deploys.created_at DESC").Limit(1)
