@@ -1,51 +1,17 @@
 'use client'
 
 import classNames from 'classnames'
-import React, { type FC, useState } from 'react'
+import React, { type FC } from 'react'
 import { FaGithub } from 'react-icons/fa'
 import { Plus, TestTube } from '@phosphor-icons/react'
-import Image from 'next/image'
-import NextLink from 'next/link'
 import { ClickToCopy } from '@/components/ClickToCopy'
 import { Dropdown } from '@/components/Dropdown'
 import { useOrg, ConnectGithubModal } from '@/components/Orgs'
 import { OrgStatus } from '@/components/OrgStatus'
-import { StatusBadge } from '@/components/Status'
 import { Text } from '@/components/Typography'
 import type { TOrg } from '@/types'
-import { initialsFromString } from '@/utils'
-import { SearchInput } from '@/components/SearchInput'
-
-export const OrgAvatar: FC<{
-  name: string
-  isSmall?: boolean
-  logoURL?: string
-}> = ({ name, isSmall = false, logoURL }) => {
-  return (
-    <span
-      className={classNames(
-        'flex items-center justify-center rounded-md bg-cool-grey-200 text-cool-grey-600 dark:bg-dark-grey-300 dark:text-white/50 font-medium font-sans',
-        {
-          'w-[40px] h-[40px]': !isSmall,
-          'w-[30px] h-[30px]': isSmall,
-          'p-2': !logoURL,
-        }
-      )}
-    >
-      {logoURL ? (
-        <Image
-          className="rounded-md"
-          height={isSmall ? 30 : 40}
-          width={isSmall ? 30 : 40}
-          src={logoURL}
-          alt="Logo"
-        />
-      ) : (
-        initialsFromString(name)
-      )}
-    </span>
-  )
-}
+import { OrgAvatar } from '@/components/Orgs/OrgAvatar'
+import { OrgsNav } from '@/components/Orgs/OrgsNav'
 
 export interface IOrgSummary {
   org: TOrg
@@ -121,67 +87,6 @@ export const OrgVCSConnectionsDetails: FC<{ org: TOrg }> = ({ org }) => {
       <div>
         <OrgVCSConnections vcs_connections={org.vcs_connections} />
       </div>
-    </div>
-  )
-}
-
-export interface IOrgsNav {
-  orgs: Array<TOrg>
-}
-
-export const OrgsNav: FC<IOrgsNav> = ({ orgs }) => {
-  const [searchTerm, setSearchTerm] = useState<string>('')
-
-  return (
-    <div className="flex flex-col gap-4">
-      <Text className="px-4" variant="med-14">
-        Organizations
-      </Text>
-
-      {orgs?.length > 8 ? (
-        <div className="px-4 w-full">
-          <SearchInput
-            className="md:!min-w-full"
-            placeholder="Search org name..."
-            value={searchTerm}
-            onChange={setSearchTerm}
-          />
-        </div>
-      ) : null}
-
-      <nav className="flex flex-col gap-0 px-1">
-        {orgs
-          .filter((o) =>
-            o.name.toLocaleLowerCase().includes(searchTerm.toLocaleLowerCase())
-          )
-          .map((org) => (
-            <NextLink
-              className="flex items-center justify-start gap-4 rounded-md p-2 hover:bg-cool-grey-600/20"
-              key={org.id}
-              href={`/${org.id}/apps`}
-            >
-              <OrgAvatar name={org.name} logoURL={org.logo_url} />
-              <span>
-                <Text
-                  className="break-all text-md font-medium leading-normal mb-1 !flex-nowrap"
-                  title={
-                    org.sandbox_mode ? 'Org is in sandbox mode' : undefined
-                  }
-                >
-                  {org.sandbox_mode && <TestTube className="text-sm" />}
-                  <span
-                    className={classNames('', {
-                      'truncate !inline max-w-[140px]': org.name.length >= 16,
-                    })}
-                  >
-                    {org.name}
-                  </span>
-                </Text>
-                <StatusBadge status={org.status} isWithoutBorder />
-              </span>
-            </NextLink>
-          ))}
-      </nav>
     </div>
   )
 }
