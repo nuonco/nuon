@@ -47,6 +47,20 @@ const (
 	WorkflowStepApprovalStatusApprovalRetryPlan Status = "approval-retry"
 )
 
+// component build specific statuses
+const (
+	StatusBuilding Status = "building"
+	StatusDeleting Status = "deleting"
+)
+
+// release specific statuses
+const (
+	StatusProvisioning   ReleaseStatus = "provisioning"
+	StatusDeprovisioning ReleaseStatus = "deprovisioning"
+	StatusSyncing        ReleaseStatus = "syncing"
+	StatusExecuting      ReleaseStatus = "executing"
+)
+
 const (
 	InstallDeployStatusV2Noop Status = "noop"
 )
