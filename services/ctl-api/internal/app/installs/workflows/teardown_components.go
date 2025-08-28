@@ -80,12 +80,14 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 		}
 
 		if comp.Type.IsImage() {
+			sg.nextGroup()
 			deployStep, err := sg.installSignalStep(ctx, installID, "skipped image teardown "+comp.Name, pgtype.Hstore{
 				"reason": generics.ToPtr("skipped image teardown"),
 			}, nil, false)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create skip step")
 			}
+
 			steps = append(steps, deployStep)
 			continue
 		}
