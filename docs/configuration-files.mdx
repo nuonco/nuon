@@ -258,3 +258,35 @@ image_url = "ecr-url"
 tag = "latest"
 region = "us-west-2"
 ```
+
+### Kubernetes Manifest Component
+
+To define a [kubernetes manifest component](/guides/kubernetes-manifest-components) use the
+`kubernetes_manifest` type.
+
+```toml helm.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=kubernetes-manifest
+name   = "kubernetes_manifest"
+type   = "kubernetes_manifest"
+
+dependencies = ["toml_terraform_s3"]
+
+namespace = "default"
+manifest = """
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: development
+  labels:
+    name: development
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: game-demo
+data:
+  # property-like keys; each key maps to a simple value
+  sample_data: "3"
+  key: "prop.value"
+"""
+```
