@@ -135,7 +135,6 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		l.Debug("job is a noop - no plan is expected")
 		contentsDisplay = "{\"op\": \"noop\"}"
 	} else {
-		l.Debug(fmt.Sprintf("getting job execution result from result:%s", job.Execution.Result.ID))
 		contentsDisplay, err = job.Execution.Result.GetContentsDisplayString()
 		if err != nil {
 			return errors.Wrap(err, "unable to get content display")
