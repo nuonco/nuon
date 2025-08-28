@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -24,20 +25,20 @@ func (c *CreateConnectionCallbackRequest) Validate(v *validator.Validate) error 
 	return nil
 }
 
-//	@ID						CreateVCSConnectionCallback
-//	@Summary				public connection to create a vcs connection via a callback
-//	@Description.markdown	create_connection_callback.md
-//	@Tags					vcs
-//	@Accept					json
-//	@Produce				json
-//	@Param					req	body		CreateConnectionCallbackRequest	true	"Input"
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.VCSConnection
-//	@Router					/v1/vcs/connection-callback [post]
+// @ID						CreateVCSConnectionCallback
+// @Summary					public connection to create a vcs connection via a callback
+// @Description.markdown	create_connection_callback.md
+// @Tags					vcs
+// @Accept					json
+// @Produce					json
+// @Param					req	body		CreateConnectionCallbackRequest	true	"Input"
+// @Failure					400	{object}	stderr.ErrResponse
+// @Failure					401	{object}	stderr.ErrResponse
+// @Failure					403	{object}	stderr.ErrResponse
+// @Failure					404	{object}	stderr.ErrResponse
+// @Failure					500	{object}	stderr.ErrResponse
+// @Success					201	{object}	app.VCSConnection
+// @Router					/v1/vcs/connection-callback [post]
 func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 	var req CreateConnectionCallbackRequest
 	if err := ctx.BindJSON(&req); err != nil {
@@ -55,8 +56,18 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 		return
 	}
 
+	// Fetch org name
+	ghAccount, err := s.getGithubAccount(ctx, req.GithubInstallID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get org name: %w", err))
+		return
+	}
+	ghAccountID := strconv.FormatInt(ghAccount.GetID(), 10)
+	ghAccountName := ghAccount.GetLogin()
+
+	// Create object
 	dbCtx := cctx.SetAccountIDContext(ctx, org.CreatedByID)
-	vcsConn, err := s.createOrgConnection(dbCtx, req.OrgID, req.GithubInstallID)
+	vcsConn, err := s.createOrgConnection(dbCtx, req.OrgID, req.GithubInstallID, ghAccountID, ghAccountName)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org connection: %w", err))
 		return
