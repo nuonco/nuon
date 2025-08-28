@@ -20,7 +20,11 @@ type VCSConnection struct {
 	OrgID string `json:"org_id,omitzero" swaggerignore:"true" gorm:"index:idx_github_install_id,unique" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `swaggerignore:"true" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	GithubInstallID           string                     `json:"github_install_id,omitzero" gorm:"index:idx_github_install_id,unique" temporaljson:"github_install_id,omitzero,omitempty"`
+	GithubInstallID string `json:"github_install_id,omitzero" gorm:"index:idx_github_install_id,unique" temporaljson:"github_install_id,omitzero,omitempty"`
+
+	GithubAccountID   string `json:"github_account_id,omitempty" gorm:"not null;default:''" temporaljson:"github_account_id,omitzero,omitempty"`
+	GithubAccountName string `json:"github_account_name,omitempty" gorm:"not null;default:''" temporaljson:"github_account_name,omitzero,omitempty"`
+
 	Commits                   []VCSConnectionCommit      `json:"vcs_connection_commit,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"commits,omitzero,omitempty"`
 	ConnectedGithubVCSConfigs []ConnectedGithubVCSConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"connected_github_vcs_configs,omitzero,omitempty"`
 }
