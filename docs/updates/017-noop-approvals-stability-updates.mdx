@@ -1,0 +1,51 @@
+---
+title: 017 - Noop Approvals, Install Config Improvements and more
+description: Approvals with no changes will automatically be approved, and more stability fixes.
+---
+August 28th, 2025
+
+<div className="badge badge--primary">v0.19.621</div>
+
+## Resource Drift for Terraform Component Plans
+
+We now show resource drift for Terraform Component Plans.
+
+![Resource Drift](assets/2025-08-28-10-33-42.png)
+
+## Install Config Updates
+
+For installs managed by a config file, a confirmation in the UI will be shown before making any input changes.
+
+![Prompt](assets/2025-08-28-10-48-45.png)
+
+The UI now shows whether an install is managed by a config file or not.
+
+![UI Label](assets/2025-08-28-10-50-27.png)
+
+## Noop Approvals
+
+Approvals for deploys with no changes will automatically be approved.
+
+<Note>
+  To prevent inadvertently mutating infrastructure due to drift, when noop changes are auto-approved the apply step is skipped.
+</Note>
+
+## Org Search Box
+
+For users with many orgs, you can now search for them in the UI:
+
+![Search](assets/2025-08-28-10-52-06.png)
+
+## Stability Improvements
+
+We have been rolling out stability improvements for workers that are running in BYOC installs, including:
+
+* Workers use less memory.
+* States will automatically be marked as stale when generating.
+* Improvements to worker caching.
+
+## Bug Fixes
+
+- Removed deprecated sandboxes from [nuonco GitHub org](https://github.com/nuonco).
+- Improved documentation for [Kubernetes Manifests](https://docs.nuon.co/guides/kubernetes-manifest-components).
+- Fixed a bug where some orgs would not properly provision due to a timeout.
