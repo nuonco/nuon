@@ -54,11 +54,13 @@ export const LogsProvider: FC<ILogsProvider> = ({
 
         if (next !== nextPage) setNextPage(next)
         res.json().then((l) => {
-          updateLogs((state) =>
-            [...state, ...l].filter(
-              (log, i, arr) => i === arr.findIndex((lr) => lr?.id === log?.id)
+          if (l?.length) {
+            updateLogs((state) =>
+              [...state, ...l].filter(
+                (log, i, arr) => i === arr.findIndex((lr) => lr?.id === log?.id)
+              )
             )
-          )
+          }
           if (!keepLoading) {
             setIsLoading(false)
           }
