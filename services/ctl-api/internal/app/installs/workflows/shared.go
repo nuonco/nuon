@@ -180,6 +180,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 	}
 
 	for _, compID := range componentIDs {
+		sg.nextGroup()
 		comp, has := components[compID]
 		if !has {
 			return nil, errors.Errorf("component %s not found in app config", compID)
@@ -193,7 +194,6 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 
 		// sync image
 		if comp.Type.IsImage() {
-			sg.nextGroup() // sync
 			deployStep, err := sg.installSignalStep(ctx, installID, "sync "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 				Type: signals.OperationExecuteDeployComponentSyncImage,
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
@@ -206,7 +206,6 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 
 			steps = append(steps, deployStep)
 		} else {
-			sg.nextGroup() // component sync + plan + apply
 			planStep, err := sg.installSignalStep(ctx, installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 				Type: signals.OperationExecuteDeployComponentSyncAndPlan,
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
