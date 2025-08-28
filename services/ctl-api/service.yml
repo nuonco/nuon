@@ -29,11 +29,9 @@ tests:
   - name: lint
     docker_target: lint
 
-
   # todo(ht): looks like unit tests rely on temporal as a depe are failing.
   # - name: unit test
   #   docker_target: test
-
 
   # an integration test that can use both dependencies, but other services. Useful, for example, for running canaries in
   # ci, or doing things like running the full test suite when the CLI changes.
