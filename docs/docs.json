@@ -40,6 +40,7 @@
         "tab": "Changelog",
         "pages": [
           "updates/updates",
+          "updates/017-noop-approvals-stability-updates",
           "updates/016-enhanced-install-config-files-and-improved-plans",
           "updates/015-azure-support",
           "updates/014-install-config-files",
