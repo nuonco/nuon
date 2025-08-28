@@ -407,42 +407,6 @@ monitors:
           "priority": 1,
           "restricted_roles": null
       }
-  kube_hpa_threshold:
-    enabled: true
-    json: >
-      {
-        "name": "[${aws_account}] Deployment HPA 80% Threshold Alert",
-        "type": "query alert",
-        "query": "avg(last_5m):avg:kubernetes_state.hpa.current_replicas{*} by {horizontalpodautoscaler} / avg:kubernetes_state.hpa.max_replicas{*} by {horizontalpodautoscaler} * 100 >= 100",
-        "message": "@pagerduty-Datadog @slack-alerts-${env}-infra 🚨 **HPA Scaling Alert** 🚨\n\n**Deployment:** {{horizontalpodautoscaler}}\n**Namespace:** {{kube_namespace.name}}\n**Current Usage:** {{value}}% of maximum replicas\n\nThe deployment has scaled to 80% or more of its configured HPA maximum replicas. This may indicate:\n- High traffic/load requiring attention\n- Need to review HPA max replica limits\n- Potential capacity planning required\n\n**Current Replicas:** {{kubernetes_state.hpa.current_replicas}}\n**Max Replicas:** {{kubernetes_state.hpa.max_replicas}}\n\nPlease investigate the underlying cause and consider scaling limits.\n\n@slack-alerts-channel @oncall-team",
-        "tags": [
-          "terraform:true",
-          "aws_account:${aws_account}",
-          "env:${env}",
-          "alert-type:capacity",
-          "severity:warning"
-        ],
-        "options": {
-          "thresholds": {
-            "critical": 100,
-            "warning": 80,
-            "critical_recovery": 80,
-            "warning_recovery": 75
-          },
-          "notify_audit": false,
-          "require_full_window": true,
-          "notify_no_data": false,
-          "renotify_interval": 300,
-          "timeout_h": 0,
-          "include_tags": true,
-          "new_host_delay": 300,
-          "evaluation_delay": 60,
-          "no_data_timeframe": 10
-        },
-        "multi": true,
-        "restricted_roles": null,
-        "priority": 3
-      }
 
 synthetics: {}
 
