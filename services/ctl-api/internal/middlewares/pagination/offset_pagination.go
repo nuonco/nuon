@@ -1,6 +1,7 @@
 package pagination
 
 import (
+	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -9,10 +10,6 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-)
-
-const (
-	paginationEnabledHeaderKey string = "X-Nuon-Pagination-Enabled"
 )
 
 type Params struct {
@@ -33,9 +30,7 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		paginationEnable := ctx.Request.Header.Get(paginationEnabledHeaderKey)
-
-		if paginationEnable == "" && paginationEnable != "true" {
+		if ctx.Request.Method != http.MethodGet {
 			ctx.Next()
 			return
 		}

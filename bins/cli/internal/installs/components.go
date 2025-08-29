@@ -61,9 +61,8 @@ func (s *Service) Components(ctx context.Context, installID string, offset, limi
 
 func (s *Service) listComponents(ctx context.Context, installID string, offset, limit int) ([]*models.AppInstallComponent, bool, error) {
 	cmps, hasMore, err := s.api.GetInstallComponents(ctx, installID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, false, err

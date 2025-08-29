@@ -68,9 +68,8 @@ func (s *Service) SandboxRuns(ctx context.Context, installID string, offset, lim
 
 func (s *Service) listSandboxRuns(ctx context.Context, appID string, offset, limit int) ([]*models.AppInstallSandboxRun, bool, error) {
 	runs, hasMore, err := s.api.GetInstallSandboxRuns(ctx, appID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, false, err

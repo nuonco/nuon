@@ -57,9 +57,8 @@ func (s *Service) ListDeploys(ctx context.Context, installID string, offset, lim
 
 func (s *Service) listInstallDeploys(ctx context.Context, installID string, offset, limit int) ([]*models.AppInstallDeploy, bool, error) {
 	installs, hasMore, err := s.api.GetInstallDeploys(ctx, installID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, false, err

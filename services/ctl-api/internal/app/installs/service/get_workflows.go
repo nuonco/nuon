@@ -25,7 +25,6 @@ import (
 // @Param					type						query	string	false	"filter by workflow type"
 // @Param					created_at_gte				query	string	false	"filter workflows created after timestamp (RFC3339 format)"
 // @Param					created_at_lte				query	string	false	"filter workflows created before timestamp (RFC3339 format)"
-// @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
 // @Tags					installs
 // @Accept					json
 // @Produce					json

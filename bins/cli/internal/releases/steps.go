@@ -42,9 +42,8 @@ func (s *Service) Steps(ctx context.Context, releaseID string, offset, limit int
 
 func (s *Service) listSteps(ctx context.Context, releaseID string, offset, limit int) ([]*models.AppComponentReleaseStep, bool, error) {
 	cmps, hasMore, err := s.api.GetReleaseSteps(ctx, releaseID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, false, err
