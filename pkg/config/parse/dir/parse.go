@@ -74,6 +74,9 @@ func (p *parser) parse(ctx context.Context) error {
 			}
 
 			if !parsed {
+				if fieldOpts.Required {
+					return fmt.Errorf("missing required file %s", fieldOpts.Name+p.opts.Ext)
+				}
 				continue
 			}
 
