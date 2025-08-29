@@ -21,7 +21,7 @@ export interface IOrgsNav {
 export const OrgsNav: FC<IOrgsNav> = ({ orgs: initOrgs }) => {
   const enablePaginationCount = 6
   const [offset, setOffset] = useState<number>(0)
-  const [limit, setLimit] = useState<number>(8)
+  const [limit, setLimit] = useState<number>(10)
   const [searchTerm, setSearchTerm] = useState<string>('')
   const queryParams = buildQueryParams({ offset, limit, q: searchTerm })
 
@@ -101,7 +101,7 @@ export const OrgsNav: FC<IOrgsNav> = ({ orgs: initOrgs }) => {
         headers?.['x-nuon-page-next'] === 'true' ? (
           <Button
             onClick={() => {
-              setLimit(limit + 4)
+              setLimit(limit + 10)
             }}
             className="w-full text-[12px] my-2 !py-3"
             variant="ghost"
