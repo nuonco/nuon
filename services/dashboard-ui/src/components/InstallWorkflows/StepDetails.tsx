@@ -105,7 +105,7 @@ export function getStepType(
               step.execution_type === 'skipped'
                 ? 'warn'
                 : step?.status?.status === 'discarded' ||
-                    step?.status?.status === 'user-skipped'
+                    step?.status?.status === 'noop'
                   ? 'info'
                   : step?.status?.status === 'error'
                     ? 'error'
