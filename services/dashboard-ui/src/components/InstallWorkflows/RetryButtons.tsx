@@ -19,7 +19,7 @@ export const RetryButtons = ({ step }: { step: TInstallWorkflowStep }) => {
   const [error, setError] = useState<string>()
   const [shouldRender, setShouldRender] = useState(
     (step?.retryable && step?.status?.status == 'error' && !step?.retried) ||
-    step?.status?.status === 'user-skipped'
+    step?.status?.status === 'noop'
   )
 
   useEffect(() => {
