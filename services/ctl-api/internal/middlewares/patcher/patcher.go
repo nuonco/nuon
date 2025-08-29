@@ -37,6 +37,13 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		// Check if body is already nil/empty
+		if ctx.Request.Body == nil || ctx.Request.ContentLength == 0 {
+			m.l.Warn("Request body is nil")
+			ctx.Next()
+			return
+		}
+
 		// Read the request body
 		bodyBytes, err := io.ReadAll(ctx.Request.Body)
 		if err != nil {
