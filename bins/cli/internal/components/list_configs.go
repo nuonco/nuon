@@ -27,9 +27,8 @@ func (s *Service) ListConfigs(ctx context.Context, appID, compID string, offset,
 
 func (s *Service) listConfigs(ctx context.Context, compID string, offset, limit int) ([]*models.AppComponentConfigConnection, bool, error) {
 	cmps, hasMore, err := s.api.GetComponentConfigs(ctx, compID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err

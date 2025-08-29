@@ -63,9 +63,8 @@ func (s *Service) List(ctx context.Context, appID, compID string, offset, limit 
 
 func (s *Service) listComponentReleases(ctx context.Context, compID string, offset, limit int) ([]*models.AppComponentRelease, bool, error) {
 	cmps, hasMore, err := s.api.GetComponentReleases(ctx, compID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, false, err
@@ -75,9 +74,8 @@ func (s *Service) listComponentReleases(ctx context.Context, compID string, offs
 
 func (s *Service) listAppComponentReleases(ctx context.Context, appID string, offset, limit int) ([]*models.AppComponentRelease, bool, error) {
 	cmps, hasMore, err := s.api.GetAppReleases(ctx, appID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err
