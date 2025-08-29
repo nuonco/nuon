@@ -47,9 +47,8 @@ func (s *Service) GetRecentRuns(ctx context.Context, installID, actionWorkflowID
 // GetRecentRuns fetches recent runs for an action workflow
 func (s *Service) getRecentRuns(ctx context.Context, installID, actionWorkflowID string, offset, limit int) (*models.AppInstallActionWorkflow, bool, error) {
 	iaw, hasMore, err := s.api.GetInstallActionWorkflowRecentRuns(ctx, installID, actionWorkflowID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err
