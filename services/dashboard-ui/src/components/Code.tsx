@@ -39,6 +39,7 @@ export const CodeViewer: FC<ICodeViewer> = ({
   return (
     <div className="rounded overflow-auto">
       <CodeEditor
+        autoCapitalize="off"
         value={code}
         language={language}
         placeholder={placeholder}
