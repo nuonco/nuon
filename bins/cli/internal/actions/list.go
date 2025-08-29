@@ -44,9 +44,8 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, asJ
 
 func (s *Service) getActionWorkflows(ctx context.Context, appID string, offset, limit int) ([]*models.AppActionWorkflow, bool, error) {
 	wfs, hasMore, err := s.api.GetActionWorkflows(ctx, appID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err
