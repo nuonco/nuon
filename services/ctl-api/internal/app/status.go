@@ -18,6 +18,7 @@ const (
 	StatusError        Status = "error"
 	StatusPending      Status = "pending"
 	StatusInProgress   Status = "in-progress"
+	StatusCheckPlan    Status = "checking-plan"
 	StatusSuccess      Status = "success"
 	StatusNotAttempted Status = "not-attempted"
 	StatusCancelled    Status = "cancelled"

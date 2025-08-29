@@ -7,11 +7,13 @@ import (
 	"strings"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	activities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
 	jobactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -22,9 +24,20 @@ var ErrNotApproved error = fmt.Errorf("not approved")
 // executeFlowStep executes a single step in the flow. It handles the execution of the step, updates the status, and waits for approval if necessary.
 // It returns true if the step needs to be refetched (in case of approval steps), false otherwise.
 func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req eventloop.EventLoopRequest, idx int, step *app.WorkflowStep, flw *app.Workflow) (bool, error) {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return false, nil
+	}
+
 	if step.Status.Status == app.StatusAutoSkipped {
 		return false, nil
 	}
+
+	defer func() {
+		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepFinishedAtByID(ctx, step.ID); err != nil {
+			l.Error("unable to update finished at", zap.Error(err))
+		}
+	}()
 
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: flw.ID,
@@ -57,6 +70,15 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 	}
 
 	if step.ExecutionType != app.WorkflowStepExecutionTypeApproval {
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status: app.StatusSuccess,
+			},
+		}); err != nil {
+			return false, errors.Wrap(err, "unable to mark step as success")
+		}
+
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: flw.ID,
 			Status: app.CompositeStatus{
@@ -72,6 +94,19 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		}
 
 		return false, nil
+	}
+
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: step.ID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusCheckPlan,
+			StatusHumanDescription: "checking plan for changes",
+			Metadata: map[string]any{
+				"status": "checking plan for changes",
+			},
+		},
+	}); err != nil {
+		return false, errors.Wrap(err, "unable to mark step as success")
 	}
 
 	approvalPlan, err := c.getStepApprovalPlan(ctx, step)
@@ -92,7 +127,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		return false, err
 	}
 
-	noopPlan, err := approvalPlan.IsNoopPlan()
+	noopPlan, err := jobactivities.AwaitPkgWorkflowsCheckNoopPlan(ctx, *approvalPlan)
 	if err != nil {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
