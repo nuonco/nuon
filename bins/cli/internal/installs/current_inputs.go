@@ -47,9 +47,8 @@ func (s *Service) CurrentInputs(ctx context.Context, installID string, asJSON bo
 
 func (s *Service) listInstallInputs(ctx context.Context, installID string) ([]*models.AppInstallInputs, error) {
 	inputs, _, err := s.api.GetInstallInputs(ctx, installID, &models.GetPaginatedQuery{
-		Offset:            0,
-		Limit:             1,
-		PaginationEnabled: true,
+		Offset: 0,
+		Limit:  1,
 	})
 	if err != nil {
 		return nil, err

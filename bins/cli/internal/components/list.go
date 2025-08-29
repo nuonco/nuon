@@ -62,9 +62,8 @@ func (s *Service) List(ctx context.Context, appNameOrID string, offset, limit in
 
 func (s *Service) listComponents(ctx context.Context, offset, limit int) ([]*models.AppComponent, bool, error) {
 	cmps, hasMore, err := s.api.GetAllComponents(ctx, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err
@@ -74,9 +73,8 @@ func (s *Service) listComponents(ctx context.Context, offset, limit int) ([]*mod
 
 func (s *Service) listAppComponents(ctx context.Context, appID string, offset, limit int) ([]*models.AppComponent, bool, error) {
 	cmps, hasMore, err := s.api.GetAppComponents(ctx, appID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err

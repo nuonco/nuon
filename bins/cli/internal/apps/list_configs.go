@@ -49,9 +49,8 @@ func (s *Service) ListConfigs(ctx context.Context, appID string, offset, limit i
 
 func (s *Service) listConfigs(ctx context.Context, appID string, offset, limit int) ([]*models.AppAppConfig, bool, error) {
 	cfgs, hasMore, err := s.api.GetAppConfigs(ctx, appID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err

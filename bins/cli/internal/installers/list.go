@@ -40,9 +40,8 @@ func (s *Service) List(ctx context.Context, offset, limit int, asJSON bool) erro
 
 func (s *Service) list(ctx context.Context, offset, limit int) ([]*models.AppInstaller, bool, error) {
 	installers, hasMore, err := s.api.GetInstallers(ctx, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err
