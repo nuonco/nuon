@@ -18,7 +18,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config"
 )
 
-func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string) error {
+func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, autoApprove bool) error {
 	if fileOrDir == "" {
 		return ui.PrintError(fmt.Errorf("file or directory path is required"))
 	}
@@ -70,7 +70,7 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string) erro
 			}
 		}
 
-		_, err = is.syncInstall(ctx, installCfg, installID)
+		_, err = is.syncInstall(ctx, installCfg, installID, autoApprove)
 		if err != nil {
 			return ui.PrintError(fmt.Errorf("error syncing install %s: %w", installCfg.Name, err))
 		}

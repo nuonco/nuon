@@ -1,8 +1,11 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/invopop/jsonschema"
 	"github.com/nuonco/nuon-go/models"
+	"github.com/powertoolsdev/mono/pkg/config/diff"
 )
 
 type InstallApprovalOption string
@@ -64,7 +67,7 @@ func (i *Install) Validate() error {
 	return nil
 }
 
-func (i *Install) ParseInstall(ins *models.AppInstall, inputs *models.AppInstallInputs) {
+func (i *Install) ParseIntoInstall(ins *models.AppInstall, inputs *models.AppInstallInputs) {
 	if ins != nil {
 		i.Name = ins.Name
 		if ins.AwsAccount != nil {
@@ -79,4 +82,55 @@ func (i *Install) ParseInstall(ins *models.AppInstall, inputs *models.AppInstall
 	if inputs != nil {
 		i.Inputs = inputs.Values
 	}
+}
+
+func (i *Install) Diff(upstreamInstall *Install) (string, diff.DiffSummary, error) {
+	if i == nil {
+		return "", diff.DiffSummary{}, fmt.Errorf("cannot diff a nil install")
+	}
+
+	if upstreamInstall == nil {
+		upstreamInstall = &Install{
+			AWSAccount: &AWSAccount{},
+		}
+	}
+
+	diffs := make([]*diff.Diff, 0)
+	diffs = append(diffs,
+		diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(upstreamInstall.Name, i.Name)))
+
+	if i.ApprovalOption != InstallApprovalOptionUnknown {
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("approval_option"),
+			diff.WithStringDiff(string(upstreamInstall.ApprovalOption), string(i.ApprovalOption)),
+		))
+	}
+
+	if i.AWSAccount != nil {
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("aws_account"), diff.WithChildren(diff.NewDiff(
+				diff.WithKey("region"),
+				diff.WithStringDiff(upstreamInstall.AWSAccount.Region, i.AWSAccount.Region),
+			))),
+		)
+	}
+
+	inputDiffs := make([]*diff.Diff, len(i.Inputs))
+	for key, val := range i.Inputs {
+		inputDiffs = append(inputDiffs, diff.NewDiff(
+			diff.WithKey(key),
+			diff.WithStringDiff(upstreamInstall.Inputs[key], val),
+		))
+	}
+	diffs = append(diffs, diff.NewDiff(
+		diff.WithKey("inputs"),
+		diff.WithChildren(inputDiffs...),
+	))
+
+	installDiff := diff.NewDiff(
+		diff.WithKey(i.Name),
+		diff.WithChildren(diffs...),
+	)
+
+	return installDiff.String(""), installDiff.Summary(), nil
 }
