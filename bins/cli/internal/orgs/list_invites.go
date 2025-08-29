@@ -46,9 +46,8 @@ func (s *Service) ListInvites(ctx context.Context, offset, limit int, asJSON boo
 
 func (s *Service) listInvites(ctx context.Context, offset, limit int) ([]*models.AppOrgInvite, bool, error) {
 	invites, hasMore, err := s.api.GetOrgInvites(ctx, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err

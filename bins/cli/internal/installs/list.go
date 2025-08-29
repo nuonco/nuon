@@ -71,9 +71,8 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, asJ
 
 func (s *Service) listInstalls(ctx context.Context, offset, limit int) ([]*models.AppInstall, bool, error) {
 	installs, hasMore, err := s.api.GetAllInstalls(ctx, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err
@@ -83,9 +82,8 @@ func (s *Service) listInstalls(ctx context.Context, offset, limit int) ([]*model
 
 func (s *Service) listAppInstalls(ctx context.Context, appID string, offset, limit int) ([]*models.AppInstall, bool, error) {
 	cmps, hasMore, err := s.api.GetAppInstalls(ctx, appID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err
