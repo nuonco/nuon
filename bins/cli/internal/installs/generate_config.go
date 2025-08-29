@@ -26,7 +26,7 @@ func (s *Service) GenerateConfig(ctx context.Context, installID string) error {
 	}
 
 	var ins config.Install
-	ins.ParseInstall(install, curInps)
+	ins.ParseIntoInstall(install, curInps)
 
 	ui.PrintTOML(ins)
 
