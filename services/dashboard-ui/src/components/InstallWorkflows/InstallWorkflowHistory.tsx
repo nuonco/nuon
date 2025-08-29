@@ -224,7 +224,7 @@ export const YAStatus: FC<{
   const isPendingApproval = status === 'approval-awaiting'
   const isApprovalDenied = status === 'approval-denied'
   const isDiscarded = status === 'discarded'
-  const isUserSkipped = status === 'user-skipped'
+  const isUserSkipped = status === 'noop'
   const isSystemSkipped = status == 'auto-skipped'
   const isPending =
     !isSuccess && !isError && !isProhibit && !isInProgress && !isSystemSkipped
