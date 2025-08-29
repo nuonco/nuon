@@ -1,15 +1,9 @@
 ---
-name: nuonctl-release
+name: promote nuonctl
 on:
   push:
-    tags:
-      - 'nctl/v*.*.*'
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release (without v prefix, e.g. 1.2.3)'
-        required: true
-        type: string
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -21,7 +15,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: false
 
 defaults:
@@ -29,32 +23,60 @@ defaults:
     shell: bash
 
 jobs:
-  extract_version:
-    name: Extract version from tag
+  # we use the merged pr to see if the PR was labeled "promote", but since this _only_ runs after the PR is merged
+  # (on main), we have to use an action to pull it from the github api.
+  merged_pr:
+    name: Get merged PR
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.get_version.outputs.version }}
+      promote: ${{steps.output.outputs.promote}}
     steps:
-      - name: Extract version
-        id: get_version
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            TAG=${GITHUB_REF#refs/tags/nctl/v}
-            echo "version=$TAG" >> $GITHUB_OUTPUT
-          fi
+      - uses: actions-ecosystem/action-get-merged-pull-request@v1
+        name: get merged pr
+        id: merged_pr
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: update promote output
+        id: output
+        if: contains( steps.merged_pr.outputs.labels, 'promote-nuonctl')
+        run: echo "promote=true" >> "$GITHUB_OUTPUT"
+
+  tag:
+    name: Determine short ref
+    needs:
+      - merged_pr
+    runs-on: ubuntu-latest
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
+    outputs:
+      git_ref: ${{steps.git_ref.outputs.git_ref}}
+      semver: ${{ steps.semver.outputs.nextStrict }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set git_ref output
+        id: git_ref
+        run: echo "git_ref=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Determine next version
+        id: semver
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          minorList: ""
+          patchAll: true
 
   start_slack_notifications:
-    name: Notify nuonctl release start
+    name: update promotions channel
     needs:
-      - extract_version
+      - tag
+      - merged_pr
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: 'main'  # Always use main branch for nuonctl releases
-
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
@@ -62,36 +84,56 @@ jobs:
           SLACK_USERNAME: github-bot
           SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
           SLACK_MESSAGE: |
-            ⛴  releasing `nuonctl v${{ needs.extract_version.outputs.version }}`
+            ⛴  promoting nuonctl `${{ needs.tag.outputs.git_ref }}`
             *stage* - true
             *prod* - true
 
-  release_nuonctl:
-    name: Release nuonctl
+  services:
+    # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
+    name: 🚢
     needs:
-      - extract_version
+      - tag
+      - merged_pr
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - nuonctl
     uses: ./.github/workflows/service.yml
     with:
-      service: nuonctl
-      tag: ${{ needs.extract_version.outputs.version }}
+      service: ${{matrix.service}}
+      tag: ${{ needs.tag.outputs.semver }}
       prod: true
-      stage: true
+      stage: false
     secrets: inherit
 
-  update_statuses:
-    name: Update release status
+  bump_tag:
+    name: bump tag
     needs:
-      - extract_version
-      - release_nuonctl
+      - tag
+      - merged_pr
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }} && always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push tag
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          custom_tag: ${{ needs.tag.outputs.semver }}
+
+  update_statuses:
+    name: update statuses
+    if: needs.merged_pr.outputs.promote == 'true' && always()
+    needs:
+      - tag
+      - services
+      - merged_pr
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: 'main'  # Always use main branch for nuonctl releases
-
       - uses: martialonline/workflow-status@v4.1
         id: check
-
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
@@ -100,7 +142,8 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
           SLACK_COLOR: ${{steps.check.outputs.status}}
           SLACK_MESSAGE: |
-            ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} finished releasing `nuonctl v${{ needs.extract_version.outputs.version }}`
+            ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} finished promoting nuonctl `${{ needs.tag.outputs.git_ref }}`
+            *prod* - true
             *status* - ${{steps.check.outputs.status}}
 
       - name: Update datadog
@@ -110,9 +153,10 @@ jobs:
           api-url: "https://us5.datadoghq.com"
           metrics: |
             - type: "count"
-              name: "nuonctl.releases.count"
+              name: "promotions.count"
               value: 1.0
               host: ${{ github.repository_owner }}
               tags:
-                - "version:${{ needs.extract_version.outputs.version }}"
+                - "branch:${{ github.head_ref }}"
                 - "status:${{ steps.check.outputs.status }}"
+                - "version:${{ needs.tag.outputs.semver }}"
