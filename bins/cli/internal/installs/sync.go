@@ -87,9 +87,8 @@ func (s *Service) listAllAppInstalls(ctx context.Context, appID string) (map[str
 	)
 	for hasMore {
 		installs, more, err := s.api.GetAppInstalls(ctx, appID, &models.GetPaginatedQuery{
-			Offset:            offset,
-			Limit:             limit,
-			PaginationEnabled: true,
+			Offset: offset,
+			Limit:  limit,
 		})
 		if err != nil {
 			return nil, err
@@ -153,7 +152,6 @@ func readInstallConfigsFromDir(fileOrDir string) ([]*config.Install, error) {
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("error parsing installs from directory '%s': %v", fileOrDir, err)
 	}

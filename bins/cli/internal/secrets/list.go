@@ -57,9 +57,8 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, asJ
 
 func (s *Service) list(ctx context.Context, appID string, offset, limit int) ([]*models.AppAppSecret, bool, error) {
 	cmps, hasMore, err := s.api.GetAppSecrets(ctx, appID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, false, err
