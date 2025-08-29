@@ -52,9 +52,8 @@ func (s *Service) List(ctx context.Context, offset, limit int, asJSON bool) erro
 
 func (s *Service) listApps(ctx context.Context, offset, limit int) ([]*models.AppApp, bool, error) {
 	apps, hasMore, err := s.api.GetApps(ctx, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err

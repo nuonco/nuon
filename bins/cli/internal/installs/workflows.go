@@ -63,9 +63,8 @@ func (s *Service) Workflows(ctx context.Context, installID string, offset, limit
 
 func (s *Service) listWorkflows(ctx context.Context, appID string, offset, limit int) ([]*models.AppWorkflow, bool, error) {
 	workflows, hasMore, err := s.api.GetWorkflows(ctx, appID, &models.GetPaginatedQuery{
-		Offset:            0,
-		Limit:             10,
-		PaginationEnabled: true,
+		Offset: 0,
+		Limit:  10,
 	})
 	if err != nil {
 		return nil, hasMore, err

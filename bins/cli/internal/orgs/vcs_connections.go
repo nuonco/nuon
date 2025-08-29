@@ -43,9 +43,8 @@ func (s *Service) VCSConnections(ctx context.Context, offset, limit int, asJSON 
 
 func (s *Service) listVCSConnections(ctx context.Context, offset, limit int) ([]*models.AppVCSConnection, bool, error) {
 	o, hasMore, err := s.api.GetVCSConnections(ctx, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err

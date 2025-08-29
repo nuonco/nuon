@@ -63,9 +63,8 @@ func (s *Service) List(ctx context.Context, compID, appID string, offset, limit 
 
 func (s *Service) listComponentBuilds(ctx context.Context, compID, appID string, offset, limit int) ([]*models.AppComponentBuild, bool, error) {
 	builds, hasMore, err := s.api.GetComponentBuilds(ctx, compID, appID, &models.GetPaginatedQuery{
-		Offset:            offset,
-		Limit:             limit,
-		PaginationEnabled: true,
+		Offset: offset,
+		Limit:  limit,
 	})
 	if err != nil {
 		return nil, hasMore, err
