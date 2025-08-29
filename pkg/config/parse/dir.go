@@ -35,7 +35,7 @@ type ConfigDir struct {
 	Stack     *config.StackConfig      `name:"stack"`
 	Sandbox   *config.AppSandboxConfig `name:"sandbox"`
 	Runner    *config.AppRunnerConfig  `name:"runner"`
-	Metadata  *config.MetadataConfig   `name:"metadata"`
+	Metadata  *config.MetadataConfig   `name:"metadata,required"`
 	Installer *config.InstallerConfig  `name:"installer"`
 }
 
@@ -154,13 +154,14 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 		Permissions: permissions,
 		Stack:       c.Stack,
 		Policies:    policies,
+	}
 
-		// Metadata
-		Version:         c.Metadata.Version,
-		Description:     c.Metadata.Description,
-		DisplayName:     c.Metadata.DisplayName,
-		SlackWebhookURL: c.Metadata.SlackWebhookURL,
-		Readme:          c.Metadata.Readme,
+	if c.Metadata != nil {
+		cfg.Version = c.Metadata.Version
+		cfg.Description = c.Metadata.Description
+		cfg.DisplayName = c.Metadata.DisplayName
+		cfg.SlackWebhookURL = c.Metadata.SlackWebhookURL
+		cfg.Readme = c.Metadata.Readme
 	}
 
 	return cfg, nil
