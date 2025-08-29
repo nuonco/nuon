@@ -24,7 +24,7 @@ const (
 	StatusCancelled    Status = "cancelled"
 	StatusRetrying     Status = "retrying"
 	StatusDiscarded    Status = "discarded"
-	StatusUserSkipped  Status = "user-skipped"
+	StatusUserSkipped  Status = "noop"
 	StatusAutoSkipped  Status = "auto-skipped"
 	StatusPlanning     Status = "planning"
 	StatusApplying     Status = "applying"
