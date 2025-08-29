@@ -109,6 +109,14 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		return false, errors.Wrap(err, "unable to mark step as success")
 	}
 
+	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
+		StepID:            step.ID,
+		Status:            app.StatusCheckPlan,
+		StatusDescription: "Checking plan for changes",
+	}); err != nil {
+		return false, errors.Wrap(err, "unable to update step target status to check-plan")
+	}
+
 	approvalPlan, err := c.getStepApprovalPlan(ctx, step)
 	if err != nil {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
