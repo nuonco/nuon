@@ -56,7 +56,6 @@ func (a *Activities) pkgWorkflowsJobsGetRunnerJobExecutionResult(ctx context.Con
 	return &runnerJobExecutionResult, nil
 }
 
-// @temporal-gen activity
 func (a *Activities) pkgWorkflowsJobsGetRunnerJob(ctx context.Context, req *GetRunnerJobRequest) (*app.RunnerJob, error) {
 	var runnerJob app.RunnerJob
 
@@ -102,6 +101,13 @@ func (p *ApprovalPlan) IsNoopPlan() (bool, error) {
 }
 
 // @temporal-gen activity
+// @max-retries 1
+func (a *Activities) PkgWorkflowsCheckNoopPlan(ctx context.Context, plan ApprovalPlan) (bool, error) {
+	return plan.IsNoopPlan()
+}
+
+// @temporal-gen activity
+// @max-retries 1
 func (a *Activities) PkgWorkflowsGetApprovalPlan(ctx context.Context, req GetApprovalPlanRequest) (*ApprovalPlan, error) {
 	runnerJob, err := a.pkgWorkflowsJobsGetRunnerJob(ctx, &GetRunnerJobRequest{RunnerJobOwnerID: req.StepTargetID})
 	if err != nil {
@@ -112,30 +118,31 @@ func (a *Activities) PkgWorkflowsGetApprovalPlan(ctx context.Context, req GetApp
 		RunnerJobID: runnerJob.ID,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("unable to fetch runner job execution, runner job id: %s", runnerJob.ID))
+		return nil, err
 	}
+
 	runnerJobExecutionResult, err := a.pkgWorkflowsJobsGetRunnerJobExecutionResult(ctx, GetRunnerJobExecutionResultRequest{
 		RunnerJobExecutionID: runnerJobExecution.ID,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("unable to fetch runner job execution result, runner job execution id: %s", runnerJobExecution.ID))
+		return nil, err
 	}
 
 	// we're only using content display currently since we're only dealing with terraform and sandbox plans
-	decompressedContentDisplay, err := decompressRunnerJobExecutionResult(runnerJobExecutionResult.ContentsDisplayGzip)
+	decompressedContentDisplay, err := a.pkgWorkflowsDecompressRunnerJobExecutionResult(ctx, runnerJobExecutionResult.ContentsDisplayGzip)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("unable to decompress runner job execution result, id: %s", runnerJobExecutionResult.ID))
+		return nil, err
 	}
 
 	plan := ApprovalPlan{
 		RunnerJobType: runnerJob.Type,
-		PlanContents:  *decompressedContentDisplay,
+		PlanContents:  decompressedContentDisplay,
 	}
 
 	return &plan, nil
 }
 
-func decompressRunnerJobExecutionResult(b []byte) (*[]byte, error) {
+func (a *Activities) pkgWorkflowsDecompressRunnerJobExecutionResult(ctx context.Context, b []byte) ([]byte, error) {
 	gz, err := gzip.NewReader(bytes.NewReader(b))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to decompress plan contents, failed to read contents")
@@ -154,5 +161,5 @@ func decompressRunnerJobExecutionResult(b []byte) (*[]byte, error) {
 
 	ob := output.Bytes()
 
-	return &ob, nil
+	return ob, nil
 }
