@@ -23,6 +23,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		limit         int
 		planOnly      bool
 		fileOrDir     string
+		confirm       bool
 	)
 
 	installsCmds := &cobra.Command{
@@ -130,11 +131,12 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "Sync install(s) with the help of config files",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Sync(cmd.Context(), fileOrDir, appID)
+			return svc.Sync(cmd.Context(), fileOrDir, appID, confirm)
 		}),
 	}
 	syncCmd.Flags().StringVarP(&fileOrDir, "file", "d", "", "Path to an install config file or a directory with install config files to sync")
 	syncCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app the install belongs to")
+	syncCmd.Flags().BoolVarP(&confirm, "yes", "y", false, "Set to automatically approve diffs before syncing installs")
 	syncCmd.MarkFlagRequired("file")
 	syncCmd.MarkFlagRequired("app-id")
 	installsCmds.AddCommand(syncCmd)
