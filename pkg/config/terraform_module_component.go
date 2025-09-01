@@ -15,6 +15,8 @@ type TerraformModuleComponentConfig struct {
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
 
+	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
+
 	// deprecated
 	Variables []TerraformVariable   `mapstructure:"var,omitempty" `
 	EnvVars   []EnvironmentVariable `mapstructure:"env_var,omitempty"`

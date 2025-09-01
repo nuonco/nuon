@@ -45,15 +45,18 @@ type Workflows struct {
 }
 
 func (w *Workflows) All() []any {
-	return append(w.ListWorkflowFns(), w.ComponentEventLoop)
+	return append(w.ListWorkflowFns(),
+		w.ComponentEventLoop,
+		w.DriftCheck,
+	)
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {
 	tmw, err := tmetrics.New(params.V,
 		tmetrics.WithMetricsWriter(params.MW),
 		tmetrics.WithTags(map[string]string{
-			"namespace": defaultNamespace,
-			"context":   "worker",
+			"namespace":    defaultNamespace,
+			"context":      "worker",
 			"actor-object": "install-component",
 		}))
 	if err != nil {
