@@ -69,7 +69,7 @@ func (s *StructHasher) StructField(field reflect.StructField, v reflect.Value) e
 
 	// For primitive types, add to field data
 	if s.isPrimitive(v) {
-		fieldStr := fmt.Sprintf("%s:%v", fullPath, v.Interface())
+		fieldStr := fmt.Sprintf("%s:%v", fullPath, s.formatFieldValue(v))
 		s.fieldData = append(s.fieldData, fieldStr)
 		return reflectwalk.SkipEntry // Don't walk into primitive values
 	}
@@ -125,7 +125,7 @@ func (s *StructHasher) SliceElem(i int, v reflect.Value) error {
 	if s.isPrimitive(v) {
 		// For slices of primitives, include the index in the path
 		currentPath := strings.Join(s.path, ".")
-		fieldStr := fmt.Sprintf("%s[%d]:%v", currentPath, i, v.Interface())
+		fieldStr := fmt.Sprintf("%s[%d]:%v", currentPath, i, s.formatFieldValue(v))
 		s.fieldData = append(s.fieldData, fieldStr)
 		return nil // Don't use SkipEntry here
 	}
@@ -156,7 +156,7 @@ func (s *StructHasher) Map(v reflect.Value) error {
 func (s *StructHasher) MapElem(m, k, v reflect.Value) error {
 	if s.isPrimitive(v) {
 		currentPath := strings.Join(s.path, ".")
-		fieldStr := fmt.Sprintf("%s[%v]:%v", currentPath, k.Interface(), v.Interface())
+		fieldStr := fmt.Sprintf("%s[%v]:%v", currentPath, k.Interface(), s.formatFieldValue(v))
 		s.fieldData = append(s.fieldData, fieldStr)
 		return nil // Don't use SkipEntry here
 	}
@@ -204,6 +204,28 @@ func toSnakeCase(s string) string {
 		result = append(result, r)
 	}
 	return strings.ToLower(string(result))
+}
+
+// formatFieldValue consistently formats a value for hashing, handling pointer dereferencing
+func (s *StructHasher) formatFieldValue(v reflect.Value) any {
+	if !v.IsValid() {
+		return ""
+	}
+
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return ""
+		}
+
+		elem := v.Elem()
+		if !elem.IsValid() {
+			return ""
+		}
+
+		return elem.Interface()
+	}
+
+	return v.Interface()
 }
 
 // HashStruct creates a hash of a struct using reflectwalk, ignoring fields marked with `-` in the nuonhash tag

@@ -26,6 +26,10 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 		TakeOwnership:            obj.TakeOwnership,
 	}
 
+	if obj.DriftSchedule != nil {
+		configRequest.DriftSchedule = *obj.DriftSchedule
+	}
+
 	for _, ref := range comp.References {
 		configRequest.References = append(configRequest.References, ref.String())
 	}
