@@ -53,6 +53,7 @@ type ComponentConfigConnection struct {
 	ComponentDependencyIDs            pq.StringArray                     `json:"component_dependency_ids" temporaljson:"component_dependency_ids" swaggertype:"array,string" gorm:"type:text[]"`
 	References                        pq.StringArray                     `json:"references" temporaljson:"references" swaggertype:"array,string" gorm:"type:text[]"`
 	Checksum                          string                             `json:"checksum,omitzero" gorm:"default null" temporaljson:"checksum,omitzero,omitempty"`
+	DriftSchedule                     string                             `json:"drift_schedule,omitzero" gorm:"default null" temporaljson:"drift_schedule,omitzero,omitempty"`
 
 	// loaded via after query
 	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-" temporaljson:"vcs_connection_type,omitzero,omitempty"`
