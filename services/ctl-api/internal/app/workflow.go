@@ -31,6 +31,7 @@ const (
 	WorkflowTypeReprovisionSandbox WorkflowType = "reprovision_sandbox"
 	WorkflowTypeActionWorkflowRun  WorkflowType = "action_workflow_run"
 	WorkflowTypeSyncSecrets        WorkflowType = "sync_secrets"
+	WorkflowTypeDriftRun           WorkflowType = "drift_run"
 
 	// app branches workflows
 	WorkflowTypeAppBranchesManualUpdate        WorkflowType = "app_branches_manual_update"
@@ -57,7 +58,7 @@ func (i WorkflowType) PastTenseName() string {
 		return "Reprovisioned sandbox"
 	case WorkflowTypeDeprovision:
 		return "Deprovisioned install"
-	case WorkflowTypeManualDeploy:
+	case WorkflowTypeManualDeploy, WorkflowTypeDriftRun:
 		return "Deployed to install"
 	case WorkflowTypeInputUpdate:
 		return "Updated Input"
@@ -81,7 +82,7 @@ func (i WorkflowType) Name() string {
 		return "Reprovisioning install"
 	case WorkflowTypeDeprovision:
 		return "Deprovisioning install"
-	case WorkflowTypeManualDeploy:
+	case WorkflowTypeManualDeploy, WorkflowTypeDriftRun:
 		return "Deploying to install"
 	case WorkflowTypeInputUpdate:
 		return "Input Update"
@@ -109,7 +110,7 @@ func (i WorkflowType) Description() string {
 		return "Reprovisions the sandbox and redeploys everything on top of it."
 	case WorkflowTypeDeprovision:
 		return "Deprovisions all components, deprovisions the sandbox and then waits for the cloudformation stack to be deleted."
-	case WorkflowTypeManualDeploy:
+	case WorkflowTypeManualDeploy, WorkflowTypeActionWorkflowRun:
 		return "Deploys a single component."
 	case WorkflowTypeInputUpdate:
 		return "Depending on which input was changed, will reprovision the sandbox and deploy one or all components."

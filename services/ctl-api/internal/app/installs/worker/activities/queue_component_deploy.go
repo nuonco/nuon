@@ -34,6 +34,10 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
 	}
 
+	var installWorkflowID *string
+	if req.WorkflowID != "" {
+		installWorkflowID = generics.ToPtr(req.WorkflowID)
+	}
 	installDeploy := app.InstallDeploy{
 		InstallComponentID: installCmp.ID,
 		OrgID:              install.OrgID,
@@ -41,7 +45,7 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		StatusDescription:  "waiting to be deployed to install",
 		ComponentBuildID:   req.BuildID,
 		Type:               req.Type,
-		InstallWorkflowID:  generics.ToPtr(req.WorkflowID),
+		InstallWorkflowID:  installWorkflowID,
 	}
 
 	res = a.db.WithContext(ctx).Create(&installDeploy)

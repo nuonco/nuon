@@ -35,6 +35,7 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 func (w *Workflows) getWorkflowStepGenerators(ctx workflow.Context) map[app.WorkflowType]flow.WorkflowStepGenerator {
 	return map[app.WorkflowType]flow.WorkflowStepGenerator{
 		app.WorkflowTypeManualDeploy:       workflows.ManualDeploySteps,
+		app.WorkflowTypeDriftRun:           workflows.ManualDeploySteps,
 		app.WorkflowTypeDeployComponents:   workflows.DeployAllComponents,
 		app.WorkflowTypeTeardownComponent:  workflows.TeardownComponent,
 		app.WorkflowTypeTeardownComponents: workflows.TeardownComponents,
