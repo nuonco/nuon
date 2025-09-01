@@ -83,7 +83,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.updateDeployWithWorkflowID(ctx, deploy.ID, workflow.ID); err != nil {
+	if err := s.helpers.UpdateDeployWithWorkflowID(ctx, deploy.ID, workflow.ID); err != nil {
 		ctx.Error(fmt.Errorf("unable to update install deploy with workflow ID: %w", err))
 		return
 	}
@@ -96,16 +96,6 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
 	ctx.JSON(http.StatusCreated, deploy)
-}
-
-func (s *service) updateDeployWithWorkflowID(ctx context.Context, deployID, workflowID string) error {
-	res := s.db.WithContext(ctx).Model(&app.InstallDeploy{}).
-		Where("id = ?", deployID).
-		Update("install_workflow_id", workflowID)
-	if res.Error != nil {
-		return fmt.Errorf("unable to update install deploy: %w", res.Error)
-	}
-	return nil
 }
 
 func (s *service) createInstallDeploy(ctx context.Context, installID string, req *CreateInstallDeployRequest) (*app.InstallDeploy, error) {
