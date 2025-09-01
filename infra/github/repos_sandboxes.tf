@@ -39,3 +39,17 @@ module "nuon-aws-eks-karpenter-sandbox-m1" {
     github = github.nuon
   }
 }
+
+module "nuon-azure-aks-sandbox-m1" {
+  source           = "./modules/repository"
+  name             = "azure-aks-sandbox"
+  description      = "Azure AKS sandbox for Nuon apps."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
