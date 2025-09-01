@@ -23,6 +23,10 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 		Version:                  obj.TerraformVersion,
 	}
 
+	if obj.DriftSchedule != nil {
+		configRequest.DriftSchedule = *obj.DriftSchedule
+	}
+
 	for _, ref := range comp.References {
 		configRequest.References = append(configRequest.References, ref.String())
 	}
