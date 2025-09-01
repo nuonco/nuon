@@ -31,6 +31,8 @@ type HelmChartComponentConfig struct {
 
 	TakeOwnership bool `mapstructure:"take_ownership" features:"template"`
 
+	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
+
 	// deprecated
 	Values []HelmValue `mapstructure:"value,omitempty"`
 }
