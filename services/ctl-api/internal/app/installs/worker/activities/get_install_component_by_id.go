@@ -5,6 +5,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
+	"gorm.io/gorm"
 )
 
 // @temporal-gen activity
@@ -20,6 +21,10 @@ func (a *Activities) getInstallComponentByID(ctx context.Context, installCompone
 	installComponent := app.InstallComponent{}
 	res := a.db.WithContext(ctx).
 		Preload("TerraformWorkspace").
+		Preload("Component").
+		Preload("Component.ComponentConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at DESC").Limit(10)
+		}).
 		First(&installComponent, "id = ?", installComponentID)
 	if res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error)

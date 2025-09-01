@@ -5,6 +5,7 @@ chart_name = "retool"
 namespace = "{{.nuon.install.id}}-test"
 storage_driver = "configmap"
 
+drift_schedule = "0 * * * *"
 # define a dependency directly, if you do not use any outputs from it.
 dependencies = ["toml_docker_build", "container_image", "toml_terraform_s3"]
 

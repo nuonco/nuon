@@ -21,6 +21,10 @@ func (s *sync) createKubernetesManifestComponentConfig(
 		Manifest:  comp.KubernetesManifest.Manifest,
 	}
 
+	if comp.KubernetesManifest.DriftSchedule != nil {
+		configRequest.DriftSchedule = *comp.KubernetesManifest.DriftSchedule
+	}
+
 	for _, ref := range comp.References {
 		configRequest.References = append(configRequest.References, ref.String())
 	}

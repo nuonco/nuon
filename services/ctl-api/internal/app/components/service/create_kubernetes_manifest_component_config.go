@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/robfig/cron"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
@@ -21,8 +22,9 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 	Checksum     string   `json:"checksum"`
 	Dependencies []string `json:"dependencies"`
 
-	Manifest  string `json:"manifest"`
-	Namespace string `json:"namespace"`
+	Manifest      string  `json:"manifest"`
+	Namespace     string  `json:"namespace"`
+	DriftSchedule *string `json:"drift_schedule,omitempty"`
 }
 
 func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -106,6 +108,16 @@ func (s *service) createKubernetesManifestComponentConfig(
 		Checksum:                          req.Checksum,
 		ComponentDependencyIDs:            pq.StringArray(depIDs),
 	}
+
+	if req.DriftSchedule != nil {
+		_, err := cron.ParseStandard(*req.DriftSchedule)
+		if err != nil {
+			return nil, fmt.Errorf("invalid drift schedule: must be a valid cron expression: %s . Error: %s", *req.DriftSchedule, err.Error())
+		}
+		componentConfigConnection.DriftSchedule = *req.DriftSchedule
+
+	}
+
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create kubernetes component config connection: %w", res.Error)
 	}
