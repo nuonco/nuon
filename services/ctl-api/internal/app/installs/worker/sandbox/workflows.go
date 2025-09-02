@@ -42,7 +42,7 @@ type Workflows struct {
 }
 
 func (w *Workflows) All() []any {
-	return append(w.ListWorkflowFns(), w.SandboxEventLoop)
+	return append(w.ListWorkflowFns(), w.SandboxEventLoop, w.DriftCheckSandbox)
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {
