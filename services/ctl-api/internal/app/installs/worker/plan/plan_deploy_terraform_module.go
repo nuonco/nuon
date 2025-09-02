@@ -65,7 +65,8 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 	state, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
 		InstallID: install.ID,
 	})
-	stateData, err := state.AsMap()
+
+	stateData, err := state.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get state")
 	}
