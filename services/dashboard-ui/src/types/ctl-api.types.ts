@@ -184,6 +184,15 @@ export type TInvite = components['schemas']['app.OrgInvite']
 export type TInstallWorkflow = components['schemas']['app.Workflow']
 export type TInstallWorkflowStep =
   components['schemas']['app.WorkflowStep']
+export type TWorkflow = components['schemas']['app.Workflow']
+export type TWorkflowStep =
+  components['schemas']['app.WorkflowStep']
+export type TWorkflowStepApproval =
+  components["schemas"]["app.WorkflowStepApproval"];
+export type TWorkflowStepApprovalResponse =
+  components["schemas"]["app.WorkflowStepApprovalResponse"];
+export type TWorkflowStepApprovalType =
+  components["schemas"]["app.WorkflowStepApprovalType"];
 
 // app / install stack
 export type TInstallStack = components['schemas']['app.InstallStack']

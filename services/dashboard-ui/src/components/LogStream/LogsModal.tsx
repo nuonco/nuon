@@ -48,7 +48,7 @@ export const LogsModal: FC<ILogsModal> = ({ heading, logs }) => {
         cell: (props) => (
           <span
             className={classNames(lineStyle, {
-              'col-span-2 flex items-center gap-1': true,
+              'col-span-3 flex items-center gap-1': true,
             })}
           >
             <Time
@@ -79,7 +79,7 @@ export const LogsModal: FC<ILogsModal> = ({ heading, logs }) => {
         cell: (props) => (
           <span
             className={classNames(lineStyle, {
-              'col-span-8 flex items-center break-all': true,
+              'col-span-7 flex items-center break-all': true,
             })}
           >
             <span>{props.getValue<string>()}</span>
