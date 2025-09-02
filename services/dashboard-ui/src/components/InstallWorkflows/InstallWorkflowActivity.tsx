@@ -2,11 +2,13 @@
 
 import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect } from 'react'
+import { useUser } from '@auth0/nextjs-auth0'
+import { ArrowSquareOut } from '@phosphor-icons/react'
 import { revalidateData } from '@/components/actions'
+import { Link } from '@/components/Link'
 import { Text } from '@/components/Typography'
 import type { TInstallWorkflow } from '@/types'
-import { SHORT_POLL_DURATION, sentanceCase } from '@/utils'
-import { YAStatus } from './InstallWorkflowHistory'
+import { SHORT_POLL_DURATION } from '@/utils'
 
 interface IInstallWorkflowActivity {
   installWorkflow: TInstallWorkflow
@@ -20,6 +22,7 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
   pollDuration = SHORT_POLL_DURATION,
 }) => {
   const path = usePathname()
+  const { user, isLoading } = useUser()
 
   useEffect(() => {
     const refreshData = () => {
@@ -71,25 +74,15 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
         </span>
       </span>
 
-      {/* <div className="">
-          {installWorkflow?.status ? (
-          <span className="flex gap-2">
-          <YAStatus status={installWorkflow?.status?.status} />
-          <Text variant="reg-12">
-          {sentanceCase(
-          installWorkflow?.status?.status_human_description
-          ) || 'Waiting on workflow to run.'}
-          </Text>
-          </span>
-          ) : null}
-          {installWorkflow?.status?.status === 'error' ? (
-          <Text className="ml-9 text-red-800 dark:text-red-500 text-[12px]">
-          {sentanceCase(
-          installWorkflow?.status?.history?.at(-1)?.status_human_description
-          )}
-          </Text>
-          ) : null}
-          </div> */}
+      {!isLoading && user?.email?.endsWith('@nuon.co') ? (
+        <Link
+          className="text-base gap-2 mt-3 ml-auto"
+          href={`/admin/temporal/namespaces/installs/workflows/${installWorkflow?.owner_id}-execute-workflow-${installWorkflow?.id}`}
+          target="_blank"
+        >
+          View in Temporal <ArrowSquareOut />
+        </Link>
+      ) : null}
     </div>
   )
 }

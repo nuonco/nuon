@@ -43,8 +43,8 @@ export const InstallWorkflowRunHistory: FC<IInstallWorkflowRunHistory> = ({
     <Timeline
       emptyContent={
         <Empty
-          emptyTitle="No workflow runs yet"
-          emptyMessage={`Waiting on ${actionsWithRecentRuns?.action_workflow?.name} workflow to run.`}
+          emptyTitle="No action runs yet"
+          emptyMessage={`Waiting on ${actionsWithRecentRuns?.action_workflow?.name} action to run.`}
           variant="history"
         />
       }

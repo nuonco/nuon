@@ -35,7 +35,7 @@ export const StatusBadge: FC<IStatusBadge> = ({
   isStatusTextHidden = false,
   isWithoutBorder = false,
   label,
-  status = "unknown",
+  status = 'unknown',
   shouldPoll = false,
   pollDuration = POLL_DURATION,
 }) => {
@@ -64,7 +64,8 @@ export const StatusBadge: FC<IStatusBadge> = ({
     status === 'Not deployed' ||
     status === 'No build' ||
     status === 'deprovisioned' ||
-    status === 'user-skipped'
+    status === 'user-skipped' ||
+    status === 'auto-skipped'
 
   const statusText = isLabelStatusText ? label : status
 
