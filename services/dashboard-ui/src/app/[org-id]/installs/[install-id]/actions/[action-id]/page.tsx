@@ -146,7 +146,7 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
             <Suspense
               fallback={
                 <Loading
-                  loadingText="Loading deploy history..."
+                  loadingText="Loading action run history..."
                   variant="stack"
                 />
               }
@@ -259,6 +259,6 @@ const LoadRunHistory = async ({
       />
     </div>
   ) : (
-    <Text>Unable to load deploy history.</Text>
+    <Text>Unable to load action run history.</Text>
   )
 }
