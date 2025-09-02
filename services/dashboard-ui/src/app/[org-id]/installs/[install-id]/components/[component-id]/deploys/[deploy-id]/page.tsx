@@ -86,7 +86,12 @@ export default async function InstallComponentDeploy({ params }) {
     orgId,
   }).catch(console.error)
   const step = installWorkflow
-    ? installWorkflow?.steps?.find((s) => s?.step_target_id === deploy?.id)
+    ? installWorkflow?.steps
+        ?.filter(
+          (s) =>
+            s?.step_target_id === deploy?.id && s?.execution_type === 'approval'
+        )
+        ?.at(-1)
     : null
 
   return (
@@ -255,7 +260,7 @@ export default async function InstallComponentDeploy({ params }) {
           step &&
           step?.approval &&
           !step?.approval?.response &&
-          step?.status?.status !== 'auto-skipped'? (
+          step?.status?.status !== 'auto-skipped' ? (
             <Section
               className="border-b"
               childrenClassName="flex flex-col gap-6"
@@ -277,7 +282,7 @@ export default async function InstallComponentDeploy({ params }) {
           step &&
           step?.approval &&
           step?.approval?.response &&
-          step?.status?.status !== 'auto-skipped'? (
+          step?.status?.status !== 'auto-skipped' ? (
             <Section
               className="border-t"
               childrenClassName="flex flex-col gap-6"
