@@ -12,7 +12,7 @@ EnvironmentFile=/opt/nuon/runner/image
 EnvironmentFile=/opt/nuon/runner/env
 EnvironmentFile=/opt/nuon/runner/token
 ExecStartPre=/usr/bin/docker pull ${CONTAINER_IMAGE_URL}:${CONTAINER_IMAGE_TAG}
-ExecStart=/usr/bin/docker run --volume /tmp/nuon-runner:/tmp --rm --name %n -p 5000:5000 --memory "3750g" --cpus="1.75" --env-file /opt/nuon/runner/env --env-file /opt/nuon/runner/token --log-driver=awslogs --log-opt awslogs-region=${AWS_REGION} --log-opt awslogs-group=runner-${RUNNER_ID} ${CONTAINER_IMAGE_URL}:${CONTAINER_IMAGE_TAG} run
+ExecStart=/usr/bin/docker run --volume /tmp/nuon-runner:/tmp --rm --name %n -p 5000:5000 --memory "3750g" --cpus="1.75" --env-file /opt/nuon/runner/env --env-file /opt/nuon/runner/token --log-driver=awslogs --log-opt awslogs-region=${AWS_REGION} --log-opt awslogs-group=runner-${RUNNER_ID} ${CONTAINER_IMAGE_URL}:${CONTAINER_IMAGE_TAG} install
 ExecStopPost=-/usr/bin/rm -rf /tmp/nuon-runner/*"
 ExecStopPost=-/bin/sh -c "/usr/bin/docker rmi $(/usr/bin/docker images -a -q)"
 ExecStopPost=-/bin/sh -c "yes | /usr/bin/docker system prune -a"
