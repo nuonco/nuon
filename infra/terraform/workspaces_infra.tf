@@ -395,3 +395,21 @@ module "buildkit-infra-shared-ci" {
   pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
   trigger_workspaces              = [module.infra-eks-infra-shared-ci-nuon.workspace_id]
 }
+
+module "self-hosted-runners" {
+  source = "./modules/workspace"
+
+  name       = "self-hosted-runners"
+  repo       = "powertoolsdev/mono"
+  dir        = "infra/self-hosted-runners"
+  auto_apply = true
+  vars = {
+    env = "infra-shared-ci"
+  }
+
+  variable_sets                   = ["aws-environment-credentials"]
+  project_id                      = tfe_project.product.id
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
+  trigger_workspaces              = [module.infra-eks-infra-shared-ci-nuon.workspace_id]
+}
