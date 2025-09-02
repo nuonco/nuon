@@ -18,5 +18,8 @@ if (typeof window === 'undefined') {
       backChannelLogout: '/api/auth/backchannel-logout',
     },
     secret: process.env.AUTH0_SECRET,
+    transactionCookie: {
+      maxAge: 300,
+    },
   })
 }
