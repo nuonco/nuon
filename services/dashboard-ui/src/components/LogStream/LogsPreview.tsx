@@ -24,7 +24,7 @@ export const LogsPreview: FC<ILogsPreview> = ({ logs }) => {
           return (
             <span
               className={classNames(lineStyle, {
-                'col-span-3 flex items-center gap-2': true,
+                'col-span-4 flex items-center gap-2': true,
               })}
             >
               <LogLineSeverity

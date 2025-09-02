@@ -9,14 +9,12 @@ import { Notice } from '@/components/Notice'
 import { StatusBadge } from '@/components/Status'
 import { Text } from '@/components/Typography'
 import type { TSandboxRun } from '@/types'
-import { ApprovalStep } from './ApproveStep'
 import type { IPollStepDetails } from './InstallWorkflowSteps'
 
 export const SandboxStepDetails: FC<IPollStepDetails> = ({
   step,
   shouldPoll = false,
   pollDuration = 5000,
-  workflowApproveOption,
 }) => {
   const params = useParams<Record<'org-id', string>>()
   const orgId = params?.['org-id']
@@ -53,28 +51,14 @@ export const SandboxStepDetails: FC<IPollStepDetails> = ({
   }, [shouldPoll])
 
   return (
-    <>
-    { step?.execution_type === 'approval' && step?.status?.status === 'auto-skipped' ? (
-        <div className="flex flex-col gap-2">
-        <Text variant="reg-14">Plan had no changes, skipping deployent.</Text>
-        <br></br>
-        </div>
-    ) : null }
+    <>   
     {isLoading ? (
         <div className="border rounded-md p-6">
           <Loading loadingText="Loading sandobx details..." variant="stack" />
         </div>
       ) : (
         <>
-          {error ? <Notice>{error}</Notice> : null}
-          {step?.approval && step?.execution_type !== 'system' ? (
-            <ApprovalStep
-              approval={step?.approval}
-              step={step}
-              workflowId={step?.install_workflow_id}
-              workflowApproveOption={workflowApproveOption}
-            />
-          ) : null}
+          {error ? <Notice>{error}</Notice> : null}        
           {sandboxRun ? (
             <div className="flex flex-col border rounded-md shadow">
               <div className="flex items-center justify-between p-3 border-b">

@@ -5,6 +5,7 @@ import { Notice } from '@/components/Notice'
 import { Text, Code } from '@/components/Typography'
 import type { TInstallWorkflowStep, TInstall } from '@/types'
 import { sentanceCase } from '@/utils'
+import { ApprovalStep } from './ApproveStep'
 import { YAStatus } from './InstallWorkflowHistory'
 import { ActionStepDetails } from './ActionStepDetails'
 import { DeployStepDetails } from './DeployStepDetails'
@@ -51,11 +52,11 @@ export function getStepType(
       break
     case 'install_deploys':
       stepDetails = (
-          <DeployStepDetails
-            step={step}
-            shouldPoll
-            workflowApproveOption={workflowApproveOption}
-          />
+        <DeployStepDetails
+          step={step}
+          shouldPoll
+          workflowApproveOption={workflowApproveOption}
+        />
       )
       break
     default:
@@ -75,7 +76,6 @@ export function getStepType(
       </div>
     )
   }
-
 
   if (step?.execution_type === 'system' && step?.step_target_type === '') {
     stepDetails = (
@@ -129,6 +129,12 @@ export function getStepType(
             {sentanceCase(step?.status?.metadata?.err_step_message as string)}
           </Notice>
         ) : null}
+        <ApprovalStep
+          approval={step?.approval}
+          step={step}
+          workflowId={step?.install_workflow_id}
+          workflowApproveOption={workflowApproveOption}
+        />
         {stepDetails}
         <Expand
           id={step.id}

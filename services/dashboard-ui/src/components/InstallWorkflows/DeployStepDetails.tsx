@@ -9,14 +9,12 @@ import { Notice } from '@/components/Notice'
 import { StatusBadge } from '@/components/Status'
 import { Text } from '@/components/Typography'
 import type { TInstallDeploy } from '@/types'
-import { ApprovalStep } from './ApproveStep'
 import type { IPollStepDetails } from './InstallWorkflowSteps'
 
 export const DeployStepDetails: FC<IPollStepDetails> = ({
   step,
   shouldPoll = false,
   pollDuration = 5000,
-  workflowApproveOption = 'prompt',
 }) => {
   const params = useParams<Record<'org-id', string>>()
   const orgId = params?.['org-id']
@@ -66,15 +64,7 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
         </div>
       ) : (
         <>
-          {error ? <Notice>{error}</Notice> : null}
-          {step?.approval && step?.execution_type !== 'system' ? (
-            <ApprovalStep
-              approval={step?.approval}
-              step={step}
-              workflowId={step?.install_workflow_id}
-              workflowApproveOption={workflowApproveOption}
-            />
-          ) : null}
+          {error ? <Notice>{error}</Notice> : null}         
           {deploy ? (
             <div className="flex flex-col gap-8">
               <>
