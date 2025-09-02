@@ -15,15 +15,45 @@ import {
 import { Button } from '@/components/Button'
 import { JsonView } from '@/components/Code'
 import { SpinnerSVG, Loading } from '@/components/Loading'
-import { Notice } from '@/components/Notice'
+import { Notice, type INotice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { approveWorkflowStep } from '@/components/install-actions'
-import { DiffEditor, splitYamlDiff } from '@/stratus/components/'
 import type { TInstallWorkflowStep } from '@/types'
 import { removeSnakeCase } from '@/utils'
 import { HelmChangesViewer } from './HelmPlanDiff'
 import { TerraformPlanViewer } from './TerraformPlanDiff'
 import { KubernetesManifestDiffViewer } from './KubernetesPlanDiff'
+
+const APPROVAL_NOTICE: Record<
+  string,
+  { title: string; copy: string; variant: INotice['variant'] }
+> = {
+  approve: {
+    title: 'Plan approved',
+    copy: 'These changes have been approved and changes will be applied.',
+    variant: 'success',
+  },
+  skip: {
+    title: 'Plan skipped',
+    copy: 'This changes have been skipped and changes will not be applied.',
+    variant: 'warn',
+  },
+  retry: {
+    title: 'Plan being retried',
+    copy: 'This plan is being retried, a new plan will be created in the next workflow step.',
+    variant: 'info',
+  },
+  deny: {
+    title: 'Plan denied',
+    copy: 'This plan was denied and changes will not be applied.',
+    variant: 'warn',
+  },
+  'auto-approve': {
+    title: 'Auto approved',
+    copy: 'This plan was auto approved and changes will be applied automatically.',
+    variant: 'info',
+  },
+}
 
 interface IApprovalStep {
   approval?: TInstallWorkflowStep['approval']
@@ -175,41 +205,30 @@ export const ApprovalStep: FC<IApprovalStep> = ({
       </div>
     )
 
-  return (
+  return step.execution_type === 'approval' ? (
     <>
       {approval?.response ? (
-        approval?.response?.type === 'approve' ? (
-          <Notice className="!p-4 w-full" variant="success">
-            <Text variant="med-14" className="mb-2">
-              Step approved: {removeSnakeCase(approval?.type)}
-            </Text>
-            <Text isMuted>
-              These {removeSnakeCase(approval?.type)} changes have been
-              approved.
-            </Text>
-          </Notice>
-        ) : approval?.response?.type === 'deny' ? (
-          <Notice className="!p-4 w-full" variant="default">
-            <Text variant="med-14" className="mb-2">
-              Step denied: {removeSnakeCase(approval?.type)}
-            </Text>
-            <Text isMuted>
-              These {removeSnakeCase(approval?.type)} changes have been denied.
-            </Text>
-          </Notice>
-        ) : (
-          <Notice className="!p-4 w-full" variant="default">
-            <Text variant="med-14" className="mb-2">
-              Step retry: {removeSnakeCase(approval?.type)}
-            </Text>
-            <Text isMuted>
-              These {removeSnakeCase(approval?.type)} changes have been retried.
-            </Text>
-          </Notice>
-        )
+        <Notice
+          className="!p-4 w-full"
+          variant={APPROVAL_NOTICE[approval?.response?.type]?.variant}
+        >
+          <Text variant="med-14" className="mb-2">
+            {APPROVAL_NOTICE[approval?.response?.type]?.title}
+          </Text>
+          <Text isMuted>{APPROVAL_NOTICE[approval?.response?.type]?.copy}</Text>
+        </Notice>
+      ) : step?.status?.status === 'auto-skipped' ? (
+        <Notice className="!p-4 w-full" variant="info">
+          <Text variant="med-14" className="mb-2">
+            No changes detected
+          </Text>
+          <Text isMuted>
+            The workflow found no changes to apply. Approval step skipped
+            automatically.
+          </Text>
+        </Notice>
       ) : workflowApproveOption === 'prompt' &&
-        step?.status?.status !== 'cancelled' &&
-        step?.status?.status !== 'auto-skipped' ? (
+        step?.status?.status !== 'cancelled' ? (
         <Notice className="!p-4 w-full" variant="warn">
           <div className="flex items-center gap-4">
             <div>
@@ -238,21 +257,16 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           ) : approval?.type === 'kubernetes_manifest_approval' && plan ? (
             <KubernetesManifestDiffViewer approvalContents={plan} />
           ) : plan ? (
-            <TerraformPlanViewer plan={plan} />
+            <TerraformPlanViewer
+              plan={plan}
+              showNoops={step.status.status === 'auto-skipped'}
+            />
           ) : (
             <JsonView data={plan} />
           )}
         </div>
-        {step?.status?.status !== 'cancelled' &&
-        step?.status?.status !== 'auto-skipped' ? (
-          <ApprovalButtons />
-        ) : null}
+        <ApprovalButtons />
       </div>
     </>
-  )
-}
-
-const HelmDiff: FC<{ diff: string }> = ({ diff }) => {
-  const splitDiff = splitYamlDiff(diff)
-  return <DiffEditor {...splitDiff} language="yaml" />
+  ) : null
 }

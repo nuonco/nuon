@@ -452,9 +452,9 @@ function ResourceChangesViewer({
   )
 }
 
-export function TerraformPlanViewer({ plan }: { plan: any }) {
+export function TerraformPlanViewer({ plan, showNoops = false }: { plan: any, showNoops?: boolean }) {
   // Default: hide no-op changes, so set true
-  const [hideNoOps, setHideNoOps] = useState<boolean>(true)
+  const [hideNoOps, setHideNoOps] = useState<boolean>(!showNoops)
 
   const hasResourceDrift =
     Array.isArray(plan?.resource_drift) && plan.resource_drift.length > 0
