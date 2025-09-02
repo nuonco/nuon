@@ -56,7 +56,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	}
 
 	// generate fields
-	stateData, err := installState.AsMap()
+	stateData, err := installState.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to generate install map data")
 	}
