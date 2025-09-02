@@ -22,7 +22,7 @@ func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallSta
 	}
 
 	l.Info("checking sandbox outputs for kubernetes cluster info")
-	stateData, err := state.AsMap()
+	stateData, err := state.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get state data")
 	}

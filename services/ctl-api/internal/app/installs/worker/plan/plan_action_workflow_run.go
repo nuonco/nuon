@@ -52,7 +52,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, errors.Wrap(err, "unable to get install state")
 	}
 
-	stateMap, err := state.AsMap()
+	stateMap, err := state.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to convert state to map")
 	}

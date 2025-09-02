@@ -66,7 +66,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install state")
 	}
-	stateData, err := state.AsMap()
+	stateData, err := state.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get state")
 	}
@@ -392,5 +392,4 @@ func (p *Planner) getSandboxModeOutputs(install app.Install, stack app.InstallSt
 			},
 		}
 	}
-
 }
