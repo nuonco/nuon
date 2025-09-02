@@ -63,12 +63,12 @@ export const LogsViewer: FC<ILogsViewer> = ({
                 showLogAttr
                   ? {
                       'col-span-1': i === 0 || i === 2,
-                      'col-span-2': i === 1,
-                      'col-span-8': i === 3,
+                      'col-span-3': i === 1,
+                      'col-span-7': i === 3,
                     }
                   : {
-                      'col-span-3': i === 0,
-                      'col-span-9': i === 1,
+                      'col-span-4': i === 0,
+                      'col-span-8': i === 1,
                     }
               )}
               onClick={(e) => {

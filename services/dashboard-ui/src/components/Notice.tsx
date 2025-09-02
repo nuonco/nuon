@@ -7,7 +7,7 @@ import {
   WarningOctagon,
 } from '@phosphor-icons/react/dist/ssr'
 
-interface INotice {
+export interface INotice {
   className?: string
   children: React.ReactNode
   variant?: 'error' | 'warn' | 'info' | 'success' | 'default'
