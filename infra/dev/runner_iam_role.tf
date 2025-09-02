@@ -1,6 +1,6 @@
 data "aws_iam_policy_document" "runner_dev" {
   statement {
-    effect = "Allow"
+    effect    = "Allow"
     actions   = ["*"]
     resources = ["*"]
   }
@@ -30,7 +30,7 @@ resource "aws_iam_policy" "runner_dev" {
 
 module "runner_dev" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
-  version = ">= 5.1.0"
+  version = "5.59.0"
   providers = {
     aws = aws.demo
   }
@@ -40,6 +40,6 @@ module "runner_dev" {
   role_name = "nuon-runner-dev"
 
   create_custom_role_trust_policy = true
-  custom_role_trust_policy = data.aws_iam_policy_document.runner_dev_trust.json
-  custom_role_policy_arns  = [aws_iam_policy.runner_dev.arn, ]
+  custom_role_trust_policy        = data.aws_iam_policy_document.runner_dev_trust.json
+  custom_role_policy_arns         = [aws_iam_policy.runner_dev.arn, ]
 }

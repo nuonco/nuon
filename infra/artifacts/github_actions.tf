@@ -98,7 +98,7 @@ resource "aws_iam_policy" "github_actions_policy" {
 
 module "github_actions" {
   source      = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version     = ">= 5.1.0"
+  version     = "5.59.0"
   create_role = true
 
   role_name                      = "gha-${local.name}"
