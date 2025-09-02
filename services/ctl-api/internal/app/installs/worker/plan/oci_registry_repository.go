@@ -43,7 +43,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, insta
 		return nil, errors.Wrap(err, "unable to get install stack outputs")
 	}
 
-	stateData, err := state.AsMap()
+	stateData, err := state.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "state data")
 	}

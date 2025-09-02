@@ -34,7 +34,7 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		l.Error("unable to get install state", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to get install state")
 	}
-	stateData, err := state.AsMap()
+	stateData, err := state.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to generate install map data")
 	}
