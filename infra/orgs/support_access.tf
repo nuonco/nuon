@@ -39,7 +39,7 @@ resource "aws_iam_policy" "support" {
 
 module "support_role" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
-  version = ">= 5.1.0"
+  version = "5.59.0"
   providers = {
     aws = aws.orgs
   }

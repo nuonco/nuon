@@ -57,7 +57,7 @@ resource "aws_iam_policy" "install_k8s_external" {
 
 module "install_k8s_role_external" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
-  version = ">= 5.1.0"
+  version = "5.59.0"
   providers = {
     aws = aws.orgs
   }
