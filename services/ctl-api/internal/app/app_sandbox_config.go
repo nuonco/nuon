@@ -14,10 +14,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-const (
-	httpsArtifactTemplateURL string = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox/%s/%s"
-)
-
 type AppSandboxConfig struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -46,7 +42,9 @@ type AppSandboxConfig struct {
 	EnvVars        pgtype.Hstore  `json:"env_vars,omitzero" temporalsjson:"env_vars" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"env_vars,omitzero,omitempty"`
 	VariablesFiles pq.StringArray `gorm:"type:text[]" json:"variables_files,omitzero" swaggertype:"array,string" features:"template" temporaljson:"variables_files,omitzero,omitempty"`
 
-	TerraformVersion   string              `json:"terraform_version,omitzero" gorm:"notnull" temporaljson:"terraform_version,omitzero,omitempty"`
+	TerraformVersion string `json:"terraform_version,omitzero" gorm:"notnull" temporaljson:"terraform_version,omitzero,omitempty"`
+	DriftSchedule    string `json:"drift_schedule,omitzero" gorm:"default null" temporaljson:"drift_schedule,omitzero,omitempty"`
+
 	InstallSandboxRuns []InstallSandboxRun `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox_runs,omitzero,omitempty"`
 
 	// cloud specific fields

@@ -18,7 +18,8 @@ import (
 type CreateAppSandboxConfigRequest struct {
 	basicVCSConfigRequest
 
-	TerraformVersion string `json:"terraform_version" validate:"required"`
+	TerraformVersion string  `json:"terraform_version" validate:"required"`
+	DriftSchedule    *string `json:"drift_schedule,omitempty"`
 
 	VariablesFiles []string           `json:"variables_files,omitempty"`
 	Variables      map[string]*string `json:"variables" validate:"required"`
@@ -111,6 +112,11 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		VariablesFiles:           pq.StringArray(req.VariablesFiles),
 		TerraformVersion:         req.TerraformVersion,
 	}
+
+	if req.DriftSchedule != nil {
+		appSandboxConfig.DriftSchedule = *req.DriftSchedule
+	}
+
 	res = s.db.WithContext(ctx).
 		Create(&appSandboxConfig)
 	if res.Error != nil {

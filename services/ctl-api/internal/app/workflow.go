@@ -23,15 +23,16 @@ const (
 	WorkflowTypeDeprovisionSandbox WorkflowType = "deprovision_sandbox"
 
 	// day-2 triggers
-	WorkflowTypeManualDeploy       WorkflowType = "manual_deploy"
-	WorkflowTypeInputUpdate        WorkflowType = "input_update"
-	WorkflowTypeDeployComponents   WorkflowType = "deploy_components"
-	WorkflowTypeTeardownComponent  WorkflowType = "teardown_component"
-	WorkflowTypeTeardownComponents WorkflowType = "teardown_components"
-	WorkflowTypeReprovisionSandbox WorkflowType = "reprovision_sandbox"
-	WorkflowTypeActionWorkflowRun  WorkflowType = "action_workflow_run"
-	WorkflowTypeSyncSecrets        WorkflowType = "sync_secrets"
-	WorkflowTypeDriftRun           WorkflowType = "drift_run"
+	WorkflowTypeManualDeploy               WorkflowType = "manual_deploy"
+	WorkflowTypeInputUpdate                WorkflowType = "input_update"
+	WorkflowTypeDeployComponents           WorkflowType = "deploy_components"
+	WorkflowTypeTeardownComponent          WorkflowType = "teardown_component"
+	WorkflowTypeTeardownComponents         WorkflowType = "teardown_components"
+	WorkflowTypeReprovisionSandbox         WorkflowType = "reprovision_sandbox"
+	WorkflowTypeDriftRunReprovisionSandbox WorkflowType = "drift_run_reprovision_sandbox"
+	WorkflowTypeActionWorkflowRun          WorkflowType = "action_workflow_run"
+	WorkflowTypeSyncSecrets                WorkflowType = "sync_secrets"
+	WorkflowTypeDriftRun                   WorkflowType = "drift_run"
 
 	// app branches workflows
 	WorkflowTypeAppBranchesManualUpdate        WorkflowType = "app_branches_manual_update"
@@ -54,7 +55,7 @@ func (i WorkflowType) PastTenseName() string {
 		return "Provisioned install"
 	case WorkflowTypeReprovision:
 		return "Reprovisioned install"
-	case WorkflowTypeReprovisionSandbox:
+	case WorkflowTypeReprovisionSandbox, WorkflowTypeDriftRunReprovisionSandbox:
 		return "Reprovisioned sandbox"
 	case WorkflowTypeDeprovision:
 		return "Deprovisioned install"
@@ -78,7 +79,7 @@ func (i WorkflowType) Name() string {
 	switch i {
 	case WorkflowTypeProvision:
 		return "Provisioning install"
-	case WorkflowTypeReprovision:
+	case WorkflowTypeReprovision, WorkflowTypeDriftRunReprovisionSandbox:
 		return "Reprovisioning install"
 	case WorkflowTypeDeprovision:
 		return "Deprovisioning install"
@@ -106,7 +107,7 @@ func (i WorkflowType) Description() string {
 		return "Creates a runner stack, waits for it to be applied and then provisions the sandbox and deploys all components."
 	case WorkflowTypeReprovision:
 		return "Creates a new runner stack, waits for it to be applied and then reprovisions the sandbox and deploys all components."
-	case WorkflowTypeReprovisionSandbox:
+	case WorkflowTypeReprovisionSandbox, WorkflowTypeDriftRunReprovisionSandbox:
 		return "Reprovisions the sandbox and redeploys everything on top of it."
 	case WorkflowTypeDeprovision:
 		return "Deprovisions all components, deprovisions the sandbox and then waits for the cloudformation stack to be deleted."
