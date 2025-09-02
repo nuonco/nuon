@@ -34,19 +34,20 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 
 func (w *Workflows) getWorkflowStepGenerators(ctx workflow.Context) map[app.WorkflowType]flow.WorkflowStepGenerator {
 	return map[app.WorkflowType]flow.WorkflowStepGenerator{
-		app.WorkflowTypeManualDeploy:       workflows.ManualDeploySteps,
-		app.WorkflowTypeDriftRun:           workflows.ManualDeploySteps,
-		app.WorkflowTypeDeployComponents:   workflows.DeployAllComponents,
-		app.WorkflowTypeTeardownComponent:  workflows.TeardownComponent,
-		app.WorkflowTypeTeardownComponents: workflows.TeardownComponents,
-		app.WorkflowTypeInputUpdate:        workflows.InputUpdate,
-		app.WorkflowTypeActionWorkflowRun:  workflows.RunActionWorkflow,
-		app.WorkflowTypeProvision:          workflows.Provision,
-		app.WorkflowTypeReprovision:        workflows.Reprovision,
-		app.WorkflowTypeReprovisionSandbox: workflows.ReprovisionSandbox,
-		app.WorkflowTypeDeprovision:        workflows.Deprovision,
-		app.WorkflowTypeDeprovisionSandbox: workflows.DeprovisionSandbox,
-		app.WorkflowTypeSyncSecrets:        workflows.SyncSecrets,
+		app.WorkflowTypeManualDeploy:               workflows.ManualDeploySteps,
+		app.WorkflowTypeDriftRun:                   workflows.ManualDeploySteps,
+		app.WorkflowTypeDeployComponents:           workflows.DeployAllComponents,
+		app.WorkflowTypeTeardownComponent:          workflows.TeardownComponent,
+		app.WorkflowTypeTeardownComponents:         workflows.TeardownComponents,
+		app.WorkflowTypeInputUpdate:                workflows.InputUpdate,
+		app.WorkflowTypeActionWorkflowRun:          workflows.RunActionWorkflow,
+		app.WorkflowTypeProvision:                  workflows.Provision,
+		app.WorkflowTypeReprovision:                workflows.Reprovision,
+		app.WorkflowTypeReprovisionSandbox:         workflows.ReprovisionSandbox,
+		app.WorkflowTypeDriftRunReprovisionSandbox: workflows.ReprovisionSandbox,
+		app.WorkflowTypeDeprovision:                workflows.Deprovision,
+		app.WorkflowTypeDeprovisionSandbox:         workflows.DeprovisionSandbox,
+		app.WorkflowTypeSyncSecrets:                workflows.SyncSecrets,
 	}
 }
 

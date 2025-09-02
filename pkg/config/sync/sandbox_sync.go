@@ -29,11 +29,15 @@ func (s *sync) syncAppSandbox(ctx context.Context, resource string) error {
 
 func (s *sync) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigRequest {
 	req := &models.ServiceCreateAppSandboxConfigRequest{
-		AppConfigID:             s.appConfigID,
-		TerraformVersion:        &s.cfg.Sandbox.TerraformVersion,
-		Variables:               map[string]string{},
-		EnvVars:                 map[string]string{},
-		VariablesFiles:          make([]string, 0),
+		AppConfigID:      s.appConfigID,
+		TerraformVersion: &s.cfg.Sandbox.TerraformVersion,
+		Variables:        map[string]string{},
+		EnvVars:          map[string]string{},
+		VariablesFiles:   make([]string, 0),
+	}
+
+	if s.cfg.Sandbox.DriftSchedule != nil {
+		req.DriftSchedule = *s.cfg.Sandbox.DriftSchedule
 	}
 
 	for k, v := range s.cfg.Sandbox.VarsMap {
