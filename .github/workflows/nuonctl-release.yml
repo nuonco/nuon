@@ -39,7 +39,7 @@ jobs:
 
       - name: update promote output
         id: output
-        if: contains( steps.merged_pr.outputs.labels, 'promote-nuonctl')
+        if: steps.merged_pr.outputs.labels == 'promote-nuonctl'
         run: echo "promote=true" >> "$GITHUB_OUTPUT"
 
   tag:
