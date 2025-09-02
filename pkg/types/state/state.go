@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/workflow"
 )
 
 type State struct {
@@ -46,4 +47,52 @@ func (i State) AsMap() (map[string]interface{}, error) {
 	}
 
 	return obj, nil
+}
+
+func (i State) WorkflowSafeAsMap(ctx workflow.Context) (map[string]interface{}, error) {
+	type seResp struct {
+		ErrMsg string
+		Bytes  []byte
+		Result map[string]any
+	}
+	encodedResp := workflow.SideEffect(ctx, func(ctx workflow.Context) any {
+		byts, err := json.Marshal(i)
+		if err != nil {
+			return seResp{
+				ErrMsg: errors.Wrap(err, "unable to convert state to json").Error(),
+			}
+		}
+		return seResp{
+			Bytes: byts,
+		}
+	})
+	var resp seResp
+	if err := encodedResp.Get(&resp); err != nil {
+		return nil, errors.Wrap(err, "unable to get encoded response")
+	}
+	if resp.ErrMsg != "" {
+		return nil, errors.New(resp.ErrMsg)
+	}
+
+	// unmarshal bytes
+	encodedResp = workflow.SideEffect(ctx, func(ctx workflow.Context) any {
+		var obj map[string]any
+		if err := json.Unmarshal(resp.Bytes, &obj); err != nil {
+			return seResp{
+				ErrMsg: errors.Wrap(err, "unable to convert to map[string]interface{}").Error(),
+			}
+		}
+
+		return seResp{
+			Result: obj,
+		}
+	})
+	if err := encodedResp.Get(&resp); err != nil {
+		return nil, errors.Wrap(err, "unable to get encoded response")
+	}
+	if resp.ErrMsg != "" {
+		return nil, errors.New(resp.ErrMsg)
+	}
+
+	return resp.Result, nil
 }

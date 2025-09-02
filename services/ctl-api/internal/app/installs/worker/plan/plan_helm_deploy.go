@@ -49,7 +49,7 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		return nil, errors.Wrap(err, "unable to get install state")
 	}
 
-	stateData, err := state.AsMap()
+	stateData, err := state.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get state")
 	}
