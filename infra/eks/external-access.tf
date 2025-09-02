@@ -7,7 +7,7 @@ data "aws_iam_policy_document" "extra_auth_map" {
       "eks:ListClusters",
     ]
 
-    # NOTE: to prevent a cycle with the eks module, we do _not_ set this to the resource ARN here, to prevent depending 
+    # NOTE: to prevent a cycle with the eks module, we do _not_ set this to the resource ARN here, to prevent depending
     # on `module.eks.cluster_arn`.
     #
     # however, since these roles have to be added to the auth map, the ultimate permissions set is essentially the same.
@@ -40,7 +40,7 @@ resource "aws_iam_policy" "extra_auth_map" {
 module "extra_auth_map" {
   for_each = { for add in local.vars.auth_map_additions : add.name => add }
   source   = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
-  version  = "5.47.1"
+  version  = "5.59.0"
 
   create_role = true
 
