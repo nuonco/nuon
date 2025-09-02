@@ -14,6 +14,7 @@ type AppSandboxConfig struct {
 	TerraformVersion string               `mapstructure:"terraform_version" jsonschema:"required"`
 	ConnectedRepo    *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
 	PublicRepo       *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
+	DriftSchedule    *string              `mapstructure:"drift_schedule,omitempty"`
 
 	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty"`
 	VarsMap        map[string]string        `mapstructure:"vars,omitempty"`
