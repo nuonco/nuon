@@ -48,7 +48,7 @@ export const Time: FC<ITime & { useMicro?: boolean }> = ({
     formatted = datetime.toFormat("HH:mm:ss.SSS")
   } else {
     // default (old-style): 7/29/2025, 8:21:11:562 PM
-    formatted = datetime.toFormat("M/d/yyyy, h:mm:ss.SSSs a")
+    formatted = datetime.toFormat("M/d/yyyy, h:mm:ss.SSSs a ZZZZ")
   }
 
   const TimeComp = (
