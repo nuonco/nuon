@@ -23,5 +23,9 @@ func (w *Workflows) getAppStatePartial(ctx workflow.Context, installID string) (
 	st.Name = currentApp.Name
 	st.Status = string(currentApp.Status)
 
+	for _, secr := range currentApp.AppSecrets {
+		st.Secrets[secr.Name] = secr.Value
+	}
+
 	return st, nil
 }
