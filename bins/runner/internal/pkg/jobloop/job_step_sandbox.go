@@ -2,12 +2,18 @@ package jobloop
 
 import (
 	"context"
+	"errors"
+	"math/rand"
 	"time"
 
 	"go.uber.org/zap"
 
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 const (
 	logPeriod  time.Duration = time.Second / 4
@@ -25,6 +31,9 @@ func (j *jobLoop) execSandboxStep(ctx context.Context) error {
 		zap.String("step", "initialize"),
 		zap.Duration("duration", j.cfg.SandboxJobDuration),
 	)
+
+	shouldFault := rand.Intn(10) == 0
+	l.Error("sandbox mode fault randomly selected, will return an error at the end of this job")
 
 	timeout := time.NewTimer(duration)
 	ticker := time.NewTicker(logPeriod)
@@ -47,6 +56,10 @@ BREAK:
 		zap.String("key", "value"),
 		zap.Any("obj", map[string]interface{}{}),
 	)
+
+	if shouldFault {
+		return errors.New("Sandbox Mode Fault Injected")
+	}
 
 	return nil
 }
