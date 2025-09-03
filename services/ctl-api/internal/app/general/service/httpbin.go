@@ -1,14 +1,15 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 )
 
 type HttpBinResponse struct {
@@ -22,8 +23,10 @@ type HttpBinRequestInfo struct {
 	URI         string              `json:"uri"`
 	Headers     map[string][]string `json:"headers"`
 	Body        string              `json:"body"`
+	Request     string              `json:"request"`
 	QueryParams map[string][]string `json:"query_params"`
 	IP          string              `json:"ip"`
+	Panic       bool                `json:"panic"`
 }
 
 func (s *service) HttpBin(ctx *gin.Context) {
@@ -39,7 +42,20 @@ func (s *service) HttpBin(ctx *gin.Context) {
 		return
 	}
 
-	// Read request body
+	panicArg := ctx.DefaultQuery("panic", "false")
+	shouldPanic, err := strconv.ParseBool(panicArg)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to parse panic argument"))
+		return
+	}
+
+	httpRequest, err := httputil.DumpRequest(ctx.Request, true)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to dump request"))
+		return
+	}
+	httpRequestString := string(httpRequest)
+
 	bodyBytes, _ := io.ReadAll(ctx.Request.Body)
 	bodyString := string(bodyBytes)
 
@@ -51,28 +67,25 @@ func (s *service) HttpBin(ctx *gin.Context) {
 			URI:         ctx.Request.URL.String(),
 			Headers:     ctx.Request.Header,
 			Body:        bodyString,
+			Request:     httpRequestString,
 			QueryParams: ctx.Request.URL.Query(),
 			IP:          ctx.ClientIP(),
 		},
 	}
 
-	// Pretty print the entire response
-	jsonBytes, err := json.MarshalIndent(response, "", "  ")
-	if err != nil {
-		ctx.Error(fmt.Errorf("failed to marshal response: %w", err))
-		return
-	}
-
 	wait := ctx.Query("delay")
 	if wait != "" {
-		delay, err := strconv.Atoi(wait)
+		delayDur, err := time.ParseDuration(wait)
 		if err != nil {
 			ctx.Error(fmt.Errorf("invalid delay: %w", err))
 			return
 		}
-		time.Sleep(time.Duration(delay*1000) * time.Millisecond)
+		time.Sleep(delayDur)
 	}
 
-	ctx.Header("Content-Type", "application/json")
-	ctx.String(code, string(jsonBytes))
+	if shouldPanic {
+		panic("HTTPBIN force panic")
+	}
+
+	ctx.IndentedJSON(code, response)
 }

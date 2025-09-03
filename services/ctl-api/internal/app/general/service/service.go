@@ -38,8 +38,11 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/general/cloud-platform/:cloud_platform/regions", s.GetCloudPlatformRegions)
 	api.GET("/v1/general/config-schema", s.GetConfigSchema)
 	api.POST("/v1/general/waitlist", s.CreateWaitlist)
-	api.GET("/v1/general/httpbin/:code", s.HttpBin)
-	api.POST("/v1/general/httpbin/:code", s.HttpBin)
+
+	if s.cfg.EnableHttpBinDebugEndpoints {
+		api.GET("/v1/general/httpbin/:code", s.HttpBin)
+		api.POST("/v1/general/httpbin/:code", s.HttpBin)
+	}
 
 	return nil
 }
@@ -77,8 +80,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/seed", s.Seed)
 	api.POST("/v1/general/temporal-codec/decode", s.TemporalCodecDecode)
 
-	api.GET("/v1/general/httpbin/:code", s.HttpBin)
-	api.POST("/v1/general/httpbin/:code", s.HttpBin)
+	if s.cfg.EnableHttpBinDebugEndpoints {
+		api.GET("/v1/general/httpbin/:code", s.HttpBin)
+		api.POST("/v1/general/httpbin/:code", s.HttpBin)
+	}
 
 	return nil
 }
@@ -86,8 +91,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/metrics", s.PublishMetrics)
 
-	api.GET("/v1/general/httpbin/:code", s.HttpBin)
-	api.POST("/v1/general/httpbin/:code", s.HttpBin)
+	if s.cfg.EnableHttpBinDebugEndpoints {
+		api.GET("/v1/general/httpbin/:code", s.HttpBin)
+		api.POST("/v1/general/httpbin/:code", s.HttpBin)
+	}
 
 	return nil
 }
