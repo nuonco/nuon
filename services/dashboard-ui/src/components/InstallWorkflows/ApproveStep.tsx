@@ -118,9 +118,11 @@ export const ApprovalStep: FC<IApprovalStep> = ({
   }
 
   const ApprovalButtons = ({ inBanner = false }: { inBanner?: boolean }) =>
-    approval?.response ||
-    workflowApproveOption === 'approve-all' ||
-    step?.status?.status === 'cancelled' ? null : (
+    !approval?.response &&
+    workflowApproveOption !== 'approve-all' &&
+    step?.status?.status !== 'cancelled' &&
+    step?.status?.status !== 'error' &&
+    step?.status?.status !== 'auto-skipped' ? (
       <div
         className={classNames('flex items-center gap-4', {
           'self-end ml-auto': !inBanner,
@@ -203,7 +205,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           )}
         </Button>
       </div>
-    )
+    ) : null
 
   return step.execution_type === 'approval' ? (
     <>
@@ -228,7 +230,8 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           </Text>
         </Notice>
       ) : workflowApproveOption === 'prompt' &&
-        step?.status?.status !== 'cancelled' ? (
+        step?.status?.status !== 'cancelled' &&
+        step?.status?.status !== 'error' ? (
         <Notice className="!p-4 w-full" variant="warn">
           <div className="flex items-center gap-4">
             <div>
