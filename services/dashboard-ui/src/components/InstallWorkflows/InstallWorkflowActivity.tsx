@@ -39,7 +39,7 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
     <div className="">
       <span className="flex w-full justify-between flex-wrap">
         <span className="flex flex-col gap-0">
-          <span className="flex items-center gap-4">
+          <span className="flex items-center gap-4 ml-auto">
             <span>&#x1F680;</span>
             <progress
               className="rounded-lg [&::-webkit-progress-bar]:rounded-lg [&::-webkit-progress-value]:rounded-lg   [&::-webkit-progress-bar]:bg-cool-grey-300 [&::-webkit-progress-value]:bg-green-400 [&::-moz-progress-bar]:bg-green-400 [&::-webkit-progress-value]:transition-all [&::-webkit-progress-value]:duration-500 [&::-moz-progress-bar]:transition-all [&::-moz-progress-bar]:duration-500 h-[8px]"
@@ -69,7 +69,20 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
                   s?.status?.status === 'approved'
               ).length
             }{' '}
-            of {installWorkflow?.steps?.length} steps completed
+            of {installWorkflow?.steps?.length} steps completed{' '}
+            {installWorkflow?.steps?.filter(
+              (s) => s?.status?.status === 'discarded'
+            ).length ? (
+              <>
+                ,{' '}
+                {
+                  installWorkflow?.steps?.filter(
+                    (s) => s?.status?.status === 'discarded'
+                  ).length
+                }{' '}
+                steps discarded
+              </>
+            ) : null}
           </Text>
         </span>
       </span>

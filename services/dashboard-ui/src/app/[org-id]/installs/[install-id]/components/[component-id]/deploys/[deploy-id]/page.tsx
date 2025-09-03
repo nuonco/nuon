@@ -120,7 +120,7 @@ export default async function InstallComponentDeploy({ params }) {
       headingMeta={
         deploy?.install_workflow_id ? (
           <Link
-            href={`/${orgId}/installs/${installId}/workflows/${deploy?.install_workflow_id}?target=${deployId}`}
+            href={`/${orgId}/installs/${installId}/workflows/${deploy?.install_workflow_id}?target=${step?.id}`}
           >
             <CaretLeft />
             View workflow
