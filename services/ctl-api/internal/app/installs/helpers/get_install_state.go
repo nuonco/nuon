@@ -178,6 +178,7 @@ func (h *Helpers) getStateInstall(ctx context.Context, installID string) (*app.I
 	var install app.Install
 	res := h.db.WithContext(ctx).
 		Preload("App").
+		Preload("App.AppSecrets").
 		Preload("Org").
 		Preload("CreatedBy").
 		Preload("AppRunnerConfig").
