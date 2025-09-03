@@ -56,6 +56,7 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 			"method:" + c.Request.Method,
 			"context:" + m.context,
 			"within_target_latency:" + strconv.FormatBool(withinTargetLatency),
+			"is_panic:" + strconv.FormatBool(ctxObj.IsPanic),
 		}
 
 		m.writer.Incr("api.request.status", tags)
