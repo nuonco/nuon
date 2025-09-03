@@ -39,6 +39,14 @@ func (a *API) init() error {
 	return nil
 }
 
+func (a *API) middlewareDebugWrapper(name string, fn gin.HandlerFunc) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		a.l.Debug("starting middleware " + name)
+		fn(ctx)
+		a.l.Debug("finished middleware " + name)
+	}
+}
+
 func (a *API) registerMiddlewares() error {
 	// register middlewares
 	middlewaresLookup := make(map[string]gin.HandlerFunc, 0)
@@ -52,7 +60,7 @@ func (a *API) registerMiddlewares() error {
 		if !ok {
 			return fmt.Errorf("middleware not found: %s", middleware)
 		}
-		a.handler.Use(fn)
+		a.handler.Use(a.middlewareDebugWrapper(middleware, fn))
 	}
 
 	return nil
