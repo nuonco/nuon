@@ -25,6 +25,24 @@ func (m *middleware) Name() string {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		defer func() {
+			if r := recover(); r != nil {
+				// Log the panic
+				m.l.Error("Panic recovered",
+					zap.Any("panic", r),
+					zap.Stack("stack"),
+				)
+
+				// Return a system error response
+				c.JSON(http.StatusInternalServerError, ErrResponse{
+					Error:       "internal server error",
+					UserError:   false,
+					Description: "An unexpected error occurred",
+				})
+				c.Abort()
+			}
+		}()
+
 		c.Next()
 
 		if len(c.Errors) < 1 {
