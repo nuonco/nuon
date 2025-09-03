@@ -129,12 +129,14 @@ export function getStepType(
             {sentanceCase(step?.status?.metadata?.err_step_message as string)}
           </Notice>
         ) : null}
-        <ApprovalStep
-          approval={step?.approval}
-          step={step}
-          workflowId={step?.install_workflow_id}
-          workflowApproveOption={workflowApproveOption}
-        />
+        {step?.approval ? (
+          <ApprovalStep
+            approval={step?.approval}
+            step={step}
+            workflowId={step?.install_workflow_id}
+            workflowApproveOption={workflowApproveOption}
+          />
+        ) : null}
         {stepDetails}
         <Expand
           id={step.id}
