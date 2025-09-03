@@ -182,8 +182,9 @@ type Config struct {
 	MaxRequestDuration time.Duration `config:"max_request_duration" validate:"required"`
 
 	// Force debug mode for everything
-	ForceDebugMode bool `config:"force_debug_mode"`
-	LogRequestBody bool `config:"log_request_body"`
+	ForceDebugMode              bool `config:"force_debug_mode"`
+	LogRequestBody              bool `config:"log_request_body"`
+	EnableHttpBinDebugEndpoints bool `config:"enable_httpbin_debug_endpoints"`
 }
 
 func NewConfig() (*Config, error) {
