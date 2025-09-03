@@ -13,7 +13,7 @@ import (
 )
 
 type GetRunnerJobRequest struct {
-	RunnerJobOwnerID string
+	RunnerJobOwnerID string `validate:"required"`
 }
 
 type GetRunnerJobExecutionRequest struct {
@@ -24,7 +24,7 @@ type GetRunnerJobExecutionResultRequest struct {
 	RunnerJobExecutionID string
 }
 
-func (a *Activities) pkgWorkflowsJobsGetRunnerJobExecution(ctx context.Context, req GetRunnerJobExecutionRequest) (*app.RunnerJobExecution, error) {
+func (a *Activities) getRunnerJobExecution(ctx context.Context, req GetRunnerJobExecutionRequest) (*app.RunnerJobExecution, error) {
 	var runnerJobExecution app.RunnerJobExecution
 
 	res := a.db.WithContext(ctx).Where(app.RunnerJobExecution{
@@ -40,7 +40,7 @@ func (a *Activities) pkgWorkflowsJobsGetRunnerJobExecution(ctx context.Context, 
 	return &runnerJobExecution, nil
 }
 
-func (a *Activities) pkgWorkflowsJobsGetRunnerJobExecutionResult(ctx context.Context, req GetRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, error) {
+func (a *Activities) getRunnerJobExecutionResult(ctx context.Context, req GetRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, error) {
 	var runnerJobExecutionResult app.RunnerJobExecutionResult
 
 	res := a.db.WithContext(ctx).Where(app.RunnerJobExecutionResult{
@@ -56,7 +56,7 @@ func (a *Activities) pkgWorkflowsJobsGetRunnerJobExecutionResult(ctx context.Con
 	return &runnerJobExecutionResult, nil
 }
 
-func (a *Activities) pkgWorkflowsJobsGetRunnerJob(ctx context.Context, req *GetRunnerJobRequest) (*app.RunnerJob, error) {
+func (a *Activities) getRunnerJob(ctx context.Context, req *GetRunnerJobRequest) (*app.RunnerJob, error) {
 	var runnerJob app.RunnerJob
 
 	res := a.db.WithContext(ctx).Where(app.RunnerJob{
@@ -102,26 +102,26 @@ func (p *ApprovalPlan) IsNoopPlan() (bool, error) {
 
 // @temporal-gen activity
 // @max-retries 1
-func (a *Activities) PkgWorkflowsCheckNoopPlan(ctx context.Context, plan ApprovalPlan) (bool, error) {
+func (a *Activities) CheckNoopPlan(ctx context.Context, plan ApprovalPlan) (bool, error) {
 	return plan.IsNoopPlan()
 }
 
 // @temporal-gen activity
 // @max-retries 1
-func (a *Activities) PkgWorkflowsGetApprovalPlan(ctx context.Context, req GetApprovalPlanRequest) (*ApprovalPlan, error) {
-	runnerJob, err := a.pkgWorkflowsJobsGetRunnerJob(ctx, &GetRunnerJobRequest{RunnerJobOwnerID: req.StepTargetID})
+func (a *Activities) GetApprovalPlan(ctx context.Context, req GetApprovalPlanRequest) (*ApprovalPlan, error) {
+	runnerJob, err := a.getRunnerJob(ctx, &GetRunnerJobRequest{RunnerJobOwnerID: req.StepTargetID})
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("unable to fetch runner job, step target id: %s", req.StepTargetID))
 	}
 
-	runnerJobExecution, err := a.pkgWorkflowsJobsGetRunnerJobExecution(ctx, GetRunnerJobExecutionRequest{
+	runnerJobExecution, err := a.getRunnerJobExecution(ctx, GetRunnerJobExecutionRequest{
 		RunnerJobID: runnerJob.ID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	runnerJobExecutionResult, err := a.pkgWorkflowsJobsGetRunnerJobExecutionResult(ctx, GetRunnerJobExecutionResultRequest{
+	runnerJobExecutionResult, err := a.getRunnerJobExecutionResult(ctx, GetRunnerJobExecutionResultRequest{
 		RunnerJobExecutionID: runnerJobExecution.ID,
 	})
 	if err != nil {
@@ -129,7 +129,7 @@ func (a *Activities) PkgWorkflowsGetApprovalPlan(ctx context.Context, req GetApp
 	}
 
 	// we're only using content display currently since we're only dealing with terraform and sandbox plans
-	decompressedContentDisplay, err := a.pkgWorkflowsDecompressRunnerJobExecutionResult(ctx, runnerJobExecutionResult.ContentsDisplayGzip)
+	decompressedContentDisplay, err := a.decompressRunnerJobExecutionResult(ctx, runnerJobExecutionResult.ContentsDisplayGzip)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (a *Activities) PkgWorkflowsGetApprovalPlan(ctx context.Context, req GetApp
 	return &plan, nil
 }
 
-func (a *Activities) pkgWorkflowsDecompressRunnerJobExecutionResult(ctx context.Context, b []byte) ([]byte, error) {
+func (a *Activities) decompressRunnerJobExecutionResult(ctx context.Context, b []byte) ([]byte, error) {
 	gz, err := gzip.NewReader(bytes.NewReader(b))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to decompress plan contents, failed to read contents")
