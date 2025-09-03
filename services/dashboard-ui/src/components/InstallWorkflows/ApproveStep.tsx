@@ -259,8 +259,11 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           </div>
         </Notice>
       ) : null}
-    
-      {step?.status?.status === 'approval-awaiting' || step?.status?.status === 'auto-skipped' ? (
+
+      {step?.status?.status === 'success' ||
+      step?.status?.status === 'approved' ||
+      step?.status?.status === 'approval-awaiting' ||
+      step?.status?.status === 'auto-skipped' ? (
         <div className="flex flex-col gap-2 !w-full">
           <div className="flex flex-col gap-4">
             {error ? <Notice>{error}</Notice> : null}
@@ -283,7 +286,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           </div>
           <ApprovalButtons />
         </div>
-      ): null}
+      ) : null}
     </>
   ) : null
 }
