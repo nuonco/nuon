@@ -77,7 +77,7 @@ jobs:
             *version* - ${{ needs.tag.outputs.semver }}
             *services* - all
             *stage* - true
-            *prod* - false
+            *prod* - true
 
   services:
     name: 🚢 ${{ matrix.service }}
@@ -91,7 +91,7 @@ jobs:
     with:
       service: ${{matrix.service}}
       tag: ${{ needs.tag.outputs.semver }}
-      prod: false
+      prod: true
       stage: true
     secrets: inherit
 
@@ -138,7 +138,7 @@ jobs:
             ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} [MANUAL PROMOTION] finished from branch `${{ github.event.inputs.branch }}` (`${{ needs.tag.outputs.git_ref }}`)
             *version* - ${{ needs.tag.outputs.semver }}
             *stage* - true
-            *prod* - false
+            *prod* - true
             *status* - ${{steps.check.outputs.status}}
 
       - name: Update datadog
