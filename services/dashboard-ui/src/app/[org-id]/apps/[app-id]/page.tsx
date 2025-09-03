@@ -25,8 +25,8 @@ import {
   getAppLatestInputConfig,
   getAppLatestRunnerConfig,
   getAppLatestSandboxConfig,
-  type IGetApp,
 } from '@/lib'
+import type { IGetApp } from '@/lib/ctl-api/shared-interfaces'
 import type { TApp } from '@/types'
 import { nueQueryData } from '@/utils'
 
