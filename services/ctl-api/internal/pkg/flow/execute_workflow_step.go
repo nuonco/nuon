@@ -15,7 +15,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	activities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
-	jobactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -67,6 +66,12 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		}
 
 		return false, stepErr
+	}
+
+	// fetch the step after the signal was executed, to gather any new state such as the step target id on it.
+	step, err = activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to get step")
 	}
 
 	if step.ExecutionType != app.WorkflowStepExecutionTypeApproval {
@@ -127,7 +132,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		return false, err
 	}
 
-	noopPlan, err := jobactivities.AwaitPkgWorkflowsCheckNoopPlan(ctx, *approvalPlan)
+	noopPlan, err := activities.AwaitCheckNoopPlan(ctx, *approvalPlan)
 	if err != nil {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
@@ -309,9 +314,9 @@ func removeRetryFromStepName(name string) string {
 	return name
 }
 
-func (c *WorkflowConductor[DomainSignal]) getStepApprovalPlan(ctx workflow.Context, step *app.WorkflowStep) (*jobactivities.ApprovalPlan, error) {
+func (c *WorkflowConductor[DomainSignal]) getStepApprovalPlan(ctx workflow.Context, step *app.WorkflowStep) (*activities.ApprovalPlan, error) {
 	// assumption here is that, for approval type steps, there will always be a runPlan
-	approvalPlan, err := jobactivities.AwaitPkgWorkflowsGetApprovalPlan(ctx, jobactivities.GetApprovalPlanRequest{
+	approvalPlan, err := activities.AwaitGetApprovalPlan(ctx, activities.GetApprovalPlanRequest{
 		StepTargetID: step.StepTargetID,
 	})
 	if err != nil {
