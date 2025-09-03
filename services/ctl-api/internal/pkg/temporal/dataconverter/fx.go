@@ -2,6 +2,7 @@ package dataconverter
 
 import (
 	"go.temporal.io/sdk/converter"
+	"go.temporal.io/sdk/workflow"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -31,8 +32,8 @@ func New(params Params) converter.DataConverter {
 		dc,
 	)
 
-	return converter.NewCodecDataConverter(cdc,
+	return workflow.DataConverterWithoutDeadlockDetection(converter.NewCodecDataConverter(cdc,
 		params.LargePayload,
 		params.Gzip,
-	)
+	))
 }
