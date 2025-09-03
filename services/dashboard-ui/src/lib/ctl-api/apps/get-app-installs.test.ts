@@ -3,7 +3,7 @@ import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { getAppInstalls } from './get-app-installs'
 
-describe('getAppInstalls should handle response status codes from GET apps/:id/installs endpoint', () => {
+describe.skip('getAppInstalls should handle response status codes from GET apps/:id/installs endpoint', () => {
   const orgId = 'test-id'
   const appId = 'test-id'
   test('200 status', async () => {

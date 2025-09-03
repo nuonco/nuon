@@ -69,7 +69,7 @@ export default async function SandboxRuns({ params }) {
     installWorkflowId: sandboxRun?.install_workflow_id,
   }).catch(console.error)
   const step = installWorkflow
-    ? installWorkflow?.steps?.find((s) => s?.step_target_id === sandboxRun?.id)
+    ? installWorkflow?.steps?.filter((s) => s?.step_target_id === sandboxRun?.id)?.at(-1)
     : null
 
   return (
@@ -94,7 +94,7 @@ export default async function SandboxRuns({ params }) {
       headingMeta={
         sandboxRun?.install_workflow_id ? (
           <Link
-            href={`/${orgId}/installs/${installId}/workflows/${sandboxRun?.install_workflow_id}?target=${runId}`}
+            href={`/${orgId}/installs/${installId}/workflows/${sandboxRun?.install_workflow_id}?target=${step?.id}`}
           >
             <CaretLeft />
             View workflow
