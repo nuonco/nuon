@@ -82,7 +82,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [error, setError] = useState<string>()
 
-  useEffect(() => {
+  const fetchPlan = () => {
     fetch(
       `/api/${orgId}/install-workflows/${workflowId}/steps/${step.id}/approvals/${step?.approval?.id}/contents`
     )
@@ -95,7 +95,18 @@ export const ApprovalStep: FC<IApprovalStep> = ({
       .catch((error) => {
         setError(error?.message || 'Failed to fetch plan')
       })
+  }
+
+  useEffect(() => {
+    // fetch plan on mount
+    fetchPlan()
   }, [])
+
+  useEffect(() => {
+    if (approval?.id) {
+      fetchPlan()
+    }
+  }, [approval])
 
   const approve = (responseType: 'approve' | 'deny' | 'retry') => {
     setIsKickedOff(true)
@@ -231,7 +242,8 @@ export const ApprovalStep: FC<IApprovalStep> = ({
         </Notice>
       ) : workflowApproveOption === 'prompt' &&
         step?.status?.status !== 'cancelled' &&
-        step?.status?.status !== 'error' ? (
+        step?.status?.status !== 'error' &&
+        step?.status?.status === 'approval-awaiting' ? (
         <Notice className="!p-4 w-full" variant="warn">
           <div className="flex items-center gap-4">
             <div>
@@ -247,29 +259,31 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           </div>
         </Notice>
       ) : null}
-
-      <div className="flex flex-col gap-2 !w-full">
-        <div className="flex flex-col gap-4">
-          {error ? <Notice>{error}</Notice> : null}
-          {isPlanLoading && !plan ? (
-            <div className="p-6 mb-2  border rounded-md bg-black/5 dark:bg-white/5">
-              <Loading variant="stack" loadingText="Loading plan..." />
-            </div>
-          ) : approval?.type === 'helm_approval' && plan ? (
-            <HelmChangesViewer planData={plan} />
-          ) : approval?.type === 'kubernetes_manifest_approval' && plan ? (
-            <KubernetesManifestDiffViewer approvalContents={plan} />
-          ) : plan ? (
-            <TerraformPlanViewer
-              plan={plan}
-              showNoops={step.status.status === 'auto-skipped'}
-            />
-          ) : (
-            <JsonView data={plan} />
-          )}
+    
+      {step?.status?.status === 'approval-awaiting' || step?.status?.status === 'auto-skipped' ? (
+        <div className="flex flex-col gap-2 !w-full">
+          <div className="flex flex-col gap-4">
+            {error ? <Notice>{error}</Notice> : null}
+            {isPlanLoading && !plan ? (
+              <div className="p-6 mb-2  border rounded-md bg-black/5 dark:bg-white/5">
+                <Loading variant="stack" loadingText="Loading plan..." />
+              </div>
+            ) : approval?.type === 'helm_approval' && plan ? (
+              <HelmChangesViewer planData={plan} />
+            ) : approval?.type === 'kubernetes_manifest_approval' && plan ? (
+              <KubernetesManifestDiffViewer approvalContents={plan} />
+            ) : plan ? (
+              <TerraformPlanViewer
+                plan={plan}
+                showNoops={step.status.status === 'auto-skipped'}
+              />
+            ) : (
+              <JsonView data={plan} />
+            )}
+          </div>
+          <ApprovalButtons />
         </div>
-        <ApprovalButtons />
-      </div>
+      ): null}
     </>
   ) : null
 }
