@@ -36,8 +36,9 @@ type Config struct {
 	RegistryPort int    `config:"registry_port" validate:"required"`
 
 	// only for enabling local things
-	IsNuonctl          bool          `config:"is_nuonctl"`
-	SandboxJobDuration time.Duration `config:"sandbox_job_duration"`
+	IsNuonctl                bool          `config:"is_nuonctl"`
+	SandboxJobDuration       time.Duration `config:"sandbox_job_duration"`
+	SandboxModeFaultsEnabled bool          `config:"sandbox_mode_faults_enabled"`
 }
 
 func NewConfig() (*Config, error) {
