@@ -80,6 +80,11 @@ export default async function InstallWorkflow({ params }) {
     orgId,
     installWorkflowId: workflowRun?.install_workflow_id,
   }).catch(console.error)
+  const step = installWorkflow
+    ? installWorkflow?.steps
+        ?.filter((s) => s?.step_target_id === workflowRun?.id)
+        ?.at(-1)
+    : null
 
   return (
     <DashboardContent
@@ -107,7 +112,7 @@ export default async function InstallWorkflow({ params }) {
       headingMeta={
         workflowRun?.install_workflow_id ? (
           <Link
-            href={`/${orgId}/installs/${installId}/workflows/${workflowRun?.install_workflow_id}?target=${actionWorkflowRunId}`}
+            href={`/${orgId}/installs/${installId}/workflows/${workflowRun?.install_workflow_id}?target=${step?.id}`}
           >
             <CaretLeft />
             View workflow
