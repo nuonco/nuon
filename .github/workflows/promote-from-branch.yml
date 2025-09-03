@@ -1,0 +1,185 @@
+---
+name: Manual Promotion
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to promote from'
+        required: true
+        default: 'main'
+      version:
+        description: 'Version tag to use for promotion (optional)'
+        required: false
+      services:
+        description: 'Comma-separated list of services to promote (leave empty for all)'
+        required: false
+        default: 'ctl-api,dashboard-ui,runner,cli,wiki'
+
+permissions:
+  contents: write
+  id-token: write
+  issues: read
+  packages: write
+  pull-requests: write
+  statuses: write
+  actions: read
+
+concurrency:
+  group: manual-${{ github.workflow }}-${{ github.event.inputs.branch }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  tag:
+    name: Setup promotion
+    runs-on: ubuntu-latest
+    outputs:
+      git_ref: ${{steps.git_ref.outputs.git_ref}}
+      semver: ${{ inputs.version || steps.semver.outputs.nextStrict }}
+      services: ${{ steps.parse_services.outputs.services }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          fetch-depth: 0
+
+      - name: Set git_ref output
+        id: git_ref
+        run: echo "git_ref=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Determine next version
+        id: semver
+        if: ${{ !inputs.version }}
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.event.inputs.branch }}
+          minorList: ""
+          patchAll: true
+
+      - name: Parse services
+        id: parse_services
+        run: |
+          if [[ -z "${{ github.event.inputs.services }}" ]]; then
+            echo "services=ctl-api,dashboard-ui,runner,cli,wiki" >> $GITHUB_OUTPUT
+          else
+            echo "services=${{ github.event.inputs.services }}" >> $GITHUB_OUTPUT
+          fi
+
+  start_slack_notifications:
+    name: Update promotions channel
+    needs:
+      - tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_ICON_EMOJI: 🤖
+          SLACK_USERNAME: github-bot
+          SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
+          SLACK_MESSAGE: |
+            ⛴  [MANUAL PROMOTION] from branch `${{ github.event.inputs.branch }}` (`${{ needs.tag.outputs.git_ref }}`)
+            *version* - ${{ needs.tag.outputs.semver }}
+            *services* - ${{ needs.tag.outputs.services }}
+            *stage* - true
+            *prod* - false
+
+  services:
+    name: 🚢 ${{ matrix.service }}
+    needs:
+      - tag
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson('[' + needs.tag.outputs.services + ']') }}
+    uses: ./.github/workflows/service.yml
+    with:
+      service: ${{matrix.service}}
+      tag: ${{ needs.tag.outputs.semver }}
+      prod: false
+      stage: true
+    secrets: inherit
+
+  bump_tag:
+    name: Bump tag
+    needs:
+      - tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          
+      - name: Push tag
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          custom_tag: ${{ needs.tag.outputs.semver }}
+
+  update_statuses:
+    name: Update statuses
+    needs:
+      - tag
+      - services
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          
+      - uses: martialonline/workflow-status@v4.1
+        id: check
+        
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_ICON_EMOJI: 🤖
+          SLACK_USERNAME: github-bot
+          SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: ${{steps.check.outputs.status}}
+          SLACK_MESSAGE: |
+            ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} [MANUAL PROMOTION] finished from branch `${{ github.event.inputs.branch }}` (`${{ needs.tag.outputs.git_ref }}`)
+            *version* - ${{ needs.tag.outputs.semver }}
+            *stage* - true
+            *prod* - false
+            *status* - ${{steps.check.outputs.status}}
+
+      - name: Update datadog
+        uses: masci/datadog@v1
+        with:
+          api-key: ${{ secrets.DATADOG_API_KEY }}
+          api-url: "https://us5.datadoghq.com"
+          metrics: |
+            - type: "count"
+              name: "promotions.count"
+              value: 1.0
+              host: ${{ github.repository_owner }}
+              tags:
+                - "branch:${{ github.event.inputs.branch }}"
+                - "status:${{ steps.check.outputs.status }}"
+                - "version:${{ needs.tag.outputs.semver }}"
+                - "type:manual"
+                - "env:stage"
+
+  promote_success:
+    name: Promote success
+    needs:
+      - tag
+      - bump_tag
+      - services
+    if: ${{ success() }}
+    uses: ./.github/workflows/promote_success.yml
+    with:
+      tag: ${{ needs.tag.outputs.semver }}
+    secrets: inherit
