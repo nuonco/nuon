@@ -5,10 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
-	"gorm.io/gorm"
 )
 
 // @ID						GetInstallComponentDeploys
@@ -45,54 +46,33 @@ func (s *service) GetInstallComponentDeploys(ctx *gin.Context) {
 }
 
 func (s *service) getInstallComponentDeploys(ctx *gin.Context, installID, componentID string) ([]app.InstallDeploy, error) {
-	install := app.InstallComponent{
-		ComponentID: componentID,
-		InstallID:   installID,
-	}
-	res := s.db.WithContext(ctx).Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
-		return db.
-			Scopes(scopes.WithOffsetPagination).
-			Order("install_deploys.created_at DESC").Limit(1000)
-	}).
-		Preload("InstallDeploys.CreatedBy").
-		Preload("InstallDeploys.ComponentBuild").
-		Preload("InstallDeploys.ComponentBuild.VCSConnectionCommit").
-		Preload("TerraformWorkspace").
-		Where(install).
-		First(&install)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
-	}
-
-	workflowIDs := make([]string, 0, len(install.InstallDeploys))
-	for _, deploy := range install.InstallDeploys {
-		workflowID := deploy.WorkflowID
-		if workflowID != nil {
-			workflowIDs = append(workflowIDs, *workflowID)
-		}
-	}
-
-	planStatusMap, err := s.helpers.GetWorkflowsPlanOnlyMap(ctx, workflowIDs)
+	installComp, err := s.getInstallComponent(ctx, installID, componentID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get workflow plan status: %w", err)
+		return nil, errors.Wrap(err, "unable to get install component")
 	}
 
-	filterOutPlanOnly := make([]app.InstallDeploy, 0, len(install.InstallDeploys))
-	for i := range install.InstallDeploys {
-		workflowID := install.InstallDeploys[i].WorkflowID
-		if planOnly, exists := planStatusMap[*workflowID]; exists {
-			if !planOnly {
-				filterOutPlanOnly = append(filterOutPlanOnly, install.InstallDeploys[i])
-			}
-		}
+	var installDeploys []app.InstallDeploy
+	res := s.db.WithContext(ctx).
+		Where(app.InstallDeploy{
+			InstallComponentID: installComp.ID,
+		}).
+		Scopes(scopes.WithOffsetPagination).
+		Preload("CreatedBy").
+		Preload("ComponentBuild").
+		Preload("ComponentBuild.VCSConnectionCommit").
+		Joins("JOIN install_workflows ON install_workflows.id=install_deploys.install_workflow_id").
+		Where("install_workflows.plan_only = ?", false).
+		Order("created_at DESC").
+		Limit(100).
+		First(&installDeploys)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get install deploys: %w", res.Error)
 	}
 
-	dpls, err := db.HandlePaginatedResponse(ctx, filterOutPlanOnly)
+	dpls, err := db.HandlePaginatedResponse(ctx, installDeploys)
 	if err != nil {
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
-	install.InstallDeploys = dpls
-
-	return install.InstallDeploys, nil
+	return dpls, nil
 }
