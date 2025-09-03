@@ -77,11 +77,17 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/seed", s.Seed)
 	api.POST("/v1/general/temporal-codec/decode", s.TemporalCodecDecode)
 
+	api.GET("/v1/general/httpbin/:code", s.HttpBin)
+	api.POST("/v1/general/httpbin/:code", s.HttpBin)
+
 	return nil
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/metrics", s.PublishMetrics)
+
+	api.GET("/v1/general/httpbin/:code", s.HttpBin)
+	api.POST("/v1/general/httpbin/:code", s.HttpBin)
 
 	return nil
 }
