@@ -100,7 +100,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJson('[' + needs.tag.outputs.services + ']') }}
+        service: ${{ fromJSON('["' + join(split(needs.tag.outputs.services, ','), '","') + '"]') }}
     uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
