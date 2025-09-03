@@ -58,7 +58,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 			Status: app.CompositeStatus{
 				Status: app.StatusError,
 				Metadata: map[string]any{
-					"reason": "Step failed, review the error and try again.",
+					"reason": "Step failed, review the error in logs and try again.",
 				},
 				StatusHumanDescription: "Step failed",
 			},
