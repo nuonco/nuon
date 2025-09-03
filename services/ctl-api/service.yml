@@ -97,6 +97,7 @@ env:
   TEMPORAL_UI_URL: http://localhost:8233
   ORG_RUNNER_HELM_CHART_DIR: $NUON_ROOT/bins/runner/bundle/helm
   MAX_REQUEST_DURATION: 10s
+  ENABLE_HTTPBIN_DEBUG_ENDPOINTS: true
 
   # The following fields control local behavior and can be changed by adding a ~/.nuonctl-env.yml file:
   #
@@ -123,7 +124,6 @@ env:
   FORCE_DEBUG_MODE: true
   ENABLE_PROFILING: false
   PROFILING_PORT: 6060
-  # LOG_LEVEL: "DEBUG"
 
 env_secrets:
   GITHUB_APP_KEY:
