@@ -46,12 +46,14 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
   const orgId = params?.['org-id'] as string
   const [stepCount, setStepCount] = useState(installWorkflow?.steps?.length)
   const [activeStep, setActiveStep] = useState(
-    installWorkflow?.steps.find((s) => s?.step_target_id === queryTargetId) ||
+    installWorkflow?.steps.find((s) => s?.id === queryTargetId) ||
       installWorkflow?.steps?.find(
         (s) =>
-          s?.status?.status === 'in-progress' ||
-          s?.status?.status === 'approval-awaiting' ||
-          s?.status?.status === 'error'
+          (s?.status?.status === 'in-progress' &&
+            s?.execution_type !== 'hidden') ||
+          (s?.status?.status === 'approval-awaiting' &&
+            s?.execution_type !== 'hidden') ||
+          (s?.status?.status === 'error' && s?.execution_type !== 'hidden')
       ) ||
       installWorkflow?.finished
       ? installWorkflow?.steps?.find((s) => s?.status?.status === 'error')
@@ -198,7 +200,7 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
                                 if (!isManualControl) setManualControl(true)
                                 if (step?.step_target_id) {
                                   router.push(
-                                    `${path}?${new URLSearchParams({ target: step?.step_target_id }).toString()}`
+                                    `${path}?${new URLSearchParams({ target: step?.id }).toString()}`
                                   )
                                 }
                                 setActiveStep(step)
@@ -346,7 +348,9 @@ const InstallWorkflowStepTitle: FC<{
           ) : status?.status === 'user-skipped' ? (
             <Badge isCompact>Skipped</Badge>
           ) : status?.status === 'auto-skipped' ? (
-            <Badge isCompact theme='info'>Noop</Badge>
+            <Badge isCompact theme="info">
+              Noop
+            </Badge>
           ) : status?.status === 'discarded' ? (
             <Badge isCompact>Discarded</Badge>
           ) : null}
