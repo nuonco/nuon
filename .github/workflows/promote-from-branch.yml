@@ -71,6 +71,13 @@ jobs:
             echo "services=${{ github.event.inputs.services }}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Convert services to JSON array
+        id: convert_services
+        run: |
+          services="${{ steps.parse_services.outputs.services }}"
+          json_array=$(echo "$services" | jq -R 'split(",")')
+          echo "json_services=$json_array" >> $GITHUB_OUTPUT
+
   start_slack_notifications:
     name: Update promotions channel
     needs:
@@ -100,7 +107,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJSON('["' + join(split(needs.tag.outputs.services, ','), '","') + '"]') }}
+        service: ${{ fromJSON(needs.tag.outputs.json_services) }}
     uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
