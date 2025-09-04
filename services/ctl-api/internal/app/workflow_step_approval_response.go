@@ -41,7 +41,7 @@ type WorkflowStepApprovalResponse struct {
 	InstallWorkflowStepApproval   WorkflowStepApproval `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_workflow_step_approval,omitzero,omitempty"`
 
 	// the response type
-	Type WorkflowStepResponseType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
+	Type WorkflowStepResponseType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty" swaggertype:"string"`
 
 	Note string `json:"note,omitzero" temporaljson:"note,omitzero,omitempty"`
 }
