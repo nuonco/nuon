@@ -19,8 +19,7 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/oapi/v3"}:                  {},
 	{"GET", "/v1/general/config-schema"}: {},
 
-	{"GET", "/v1/general/httpbin/:code"}:  {},
-	{"POST", "/v1/general/httpbin/:code"}: {},
+	{"*", "/httpbin/*any"}: {},
 
 	// cli / ui methods
 	{"GET", "/v1/general/cli-config"}:                              {},
@@ -56,6 +55,17 @@ func (m middleware) Handler() gin.HandlerFunc {
 		wildcardKey := [2]string{
 			method,
 			"*",
+		}
+		_, found = publicEndpointList[wildcardKey]
+		if found {
+			m.l.Debug("marking request as public due to wildcard", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
+			cctx.SetPublicContext(ctx, true)
+			return
+		}
+
+		wildcardKey = [2]string{
+			"*",
+			path,
 		}
 		_, found = publicEndpointList[wildcardKey]
 		if found {

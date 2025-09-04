@@ -39,11 +39,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/general/config-schema", s.GetConfigSchema)
 	api.POST("/v1/general/waitlist", s.CreateWaitlist)
 
-	if s.cfg.EnableHttpBinDebugEndpoints {
-		api.GET("/v1/general/httpbin/:code", s.HttpBin)
-		api.POST("/v1/general/httpbin/:code", s.HttpBin)
-	}
-
 	return nil
 }
 
@@ -80,21 +75,11 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/seed", s.Seed)
 	api.POST("/v1/general/temporal-codec/decode", s.TemporalCodecDecode)
 
-	if s.cfg.EnableHttpBinDebugEndpoints {
-		api.GET("/v1/general/httpbin/:code", s.HttpBin)
-		api.POST("/v1/general/httpbin/:code", s.HttpBin)
-	}
-
 	return nil
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/metrics", s.PublishMetrics)
-
-	if s.cfg.EnableHttpBinDebugEndpoints {
-		api.GET("/v1/general/httpbin/:code", s.HttpBin)
-		api.POST("/v1/general/httpbin/:code", s.HttpBin)
-	}
 
 	return nil
 }
