@@ -18,6 +18,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.10.1
 	github.com/ClickHouse/clickhouse-go/v2 v2.40.1
+	github.com/DataDog/datadog-api-client-go/v2 v2.44.0
 	github.com/DataDog/datadog-go/v5 v5.6.0
 	github.com/DataDog/dd-trace-go/v2 v2.2.2
 	github.com/abiosoft/lineprefix v0.1.4
@@ -169,7 +170,6 @@ require (
 	github.com/DataDog/datadog-agent/pkg/util/log v0.67.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/scrubber v0.67.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/version v0.67.0 // indirect
-	github.com/DataDog/datadog-api-client-go/v2 v2.44.0 // indirect
 	github.com/DataDog/go-libddwaf/v4 v4.3.2 // indirect
 	github.com/DataDog/go-runtime-metrics-internal v0.0.4-0.20250721125240-fdf1ef85b633 // indirect
 	github.com/DataDog/go-sqllexer v0.1.6 // indirect
@@ -348,7 +348,7 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
-	github.com/nuonco/nuon-go v0.76.0
+	github.com/nuonco/nuon-go v0.77.1
 	github.com/oasdiff/yaml v0.0.0-20250309154309-f31be36b4037 // indirect
 	github.com/oasdiff/yaml3 v0.0.0-20250309153720-d2182401db90 // indirect
 	github.com/otiai10/mint v1.6.3 // indirect
