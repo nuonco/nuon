@@ -27,6 +27,11 @@ func (s *Service) Workflows(ctx context.Context, installID string, offset, limit
 		return nil
 	}
 
+	view.RenderPaging(formatWorkflows(workflows), offset, limit, hasMore)
+	return nil
+}
+
+func formatWorkflows(workflows []*models.AppWorkflow) [][]string {
 	data := [][]string{
 		{
 			"ID",
@@ -57,8 +62,8 @@ func (s *Service) Workflows(ctx context.Context, installID string, offset, limit
 			updatedAt.Format(time.Stamp),
 		})
 	}
-	view.RenderPaging(data, offset, limit, hasMore)
-	return nil
+
+	return data
 }
 
 func (s *Service) listWorkflows(ctx context.Context, appID string, offset, limit int) ([]*models.AppWorkflow, bool, error) {
