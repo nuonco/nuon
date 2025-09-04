@@ -80,6 +80,7 @@ func (s *sync) syncAction(ctx context.Context, resource string, action *config.A
 			Type:          models.NewAppActionWorkflowTriggerType(models.AppActionWorkflowTriggerType(typ)),
 			CronSchedule:  trigger.CronSchedule,
 			ComponentName: trigger.ComponentName,
+			Index:         trigger.Index,
 		})
 	}
 
