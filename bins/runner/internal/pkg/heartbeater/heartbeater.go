@@ -24,6 +24,7 @@ type Params struct {
 	LC        fx.Lifecycle
 	Settings  *settings.Settings
 	MW        metrics.Writer
+	Process   string `name:"process"`
 }
 
 type HeartBeater struct {
@@ -37,6 +38,7 @@ type HeartBeater struct {
 	wg       *conc.WaitGroup
 	startTS  time.Time
 	mw       metrics.Writer
+	process  string
 }
 
 func New(params Params) (*HeartBeater, error) {
@@ -52,6 +54,7 @@ func New(params Params) (*HeartBeater, error) {
 		ctx:       ctx,
 		cancelFn:  cancelFn,
 		mw:        params.MW,
+		process:   params.Process,
 	}
 
 	params.LC.Append(hb.LifecycleHook())

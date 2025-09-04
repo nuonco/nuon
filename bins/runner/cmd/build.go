@@ -48,6 +48,8 @@ func (c *cli) runBuild(cmd *cobra.Command, _ []string) {
 	providers = append(
 		providers,
 		[]fx.Option{
+			// provide process for the heartbeater
+			fx.Supply(fx.Annotate("build", fx.ResultTags(`name:"process"`))),
 			// start all job loops
 			fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
 			fx.Invoke(jobloop.WithOperationsJobLoops(func([]jobloop.JobLoop) {})),
