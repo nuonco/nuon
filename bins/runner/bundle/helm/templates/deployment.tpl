@@ -34,7 +34,7 @@ spec:
           imagePullPolicy: Always
           command:
             - /bin/runner
-            - run
+            - org
           resources:
             limits:
               cpu: {{ .Values.node_pool.instance_type.cpu }}
