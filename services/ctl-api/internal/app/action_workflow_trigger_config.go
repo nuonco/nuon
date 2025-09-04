@@ -114,6 +114,8 @@ type ActionWorkflowTriggerConfig struct {
 
 	Type ActionWorkflowTriggerType `json:"type,omitzero" swaggertype:"string" gorm:"default null;not null;index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique" temporaljson:"type,omitzero,omitempty"`
 
+	Index int `json:"index,omitzero" swaggertype:"integer" gorm:"default:0;"`
+
 	// individual fields for different types
 
 	CronSchedule string              `json:"cron_schedule,omitzero,omitempty" temporaljson:"cron_schedule,omitzero,omitempty"`
