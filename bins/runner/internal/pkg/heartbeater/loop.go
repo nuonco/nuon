@@ -2,6 +2,7 @@ package heartbeater
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/nuonco/nuon-runner-go/models"
@@ -20,14 +21,15 @@ func (h *HeartBeater) writeHeartBeat(ctx context.Context) error {
 	req := &models.ServiceCreateRunnerHeartBeatRequest{
 		AliveTime: generics.ToPtr(int64(aliveDur)),
 		Version:   version.Version,
+		Process:   h.process,
 	}
 
 	if _, err := h.apiClient.CreateHeartBeat(ctx, req); err != nil {
 		return err
 	}
 
-	h.mw.Incr("heart_beat.incr", []string{})
-	h.mw.Timing("heart_beat.alive_time", aliveDur, []string{})
+	h.mw.Incr("heart_beat.incr", []string{fmt.Sprintf("process:%s", h.process)})
+	h.mw.Timing("heart_beat.alive_time", aliveDur, []string{fmt.Sprintf("process:%s", h.process)})
 	return nil
 }
 
