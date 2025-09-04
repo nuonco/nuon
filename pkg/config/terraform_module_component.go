@@ -6,8 +6,6 @@ type TerraformVariablesFile struct {
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type TerraformModuleComponentConfig struct {
-	CommonComponentFields
-
 	TerraformVersion string `mapstructure:"terraform_version" jsonschema:"required"`
 
 	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty"`
