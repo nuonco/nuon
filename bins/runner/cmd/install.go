@@ -51,11 +51,12 @@ func (c *cli) runInstall(cmd *cobra.Command, _ []string) {
 	providers = append(
 		providers,
 		[]fx.Option{
+			// provide process for the heartbeater
+			fx.Supply(fx.Annotate("install", fx.ResultTags(`name:"process"`))),
 			// start all job loops
 			fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
 			fx.Invoke(jobloop.WithOperationsJobLoops(func([]jobloop.JobLoop) {})),
-
-			// registry and heartbeater
+			// start registry and heartbeater
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
 			fx.Invoke(func(*registry.Registry) {}),
 		}...,
