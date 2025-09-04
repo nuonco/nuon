@@ -14,6 +14,8 @@ type PublicImageConfig struct {
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type ExternalImageComponentConfig struct {
+	CommonComponentFields
+
 	AWSECRImageConfig *AWSECRConfig      `mapstructure:"aws_ecr,omitempty" jsonschema:"oneof_required=public"`
 	PublicImageConfig *PublicImageConfig `mapstructure:"public,omitempty" jsonschema:"oneof_required=aws_ecr"`
 }
