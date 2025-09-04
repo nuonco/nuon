@@ -49,18 +49,14 @@ func (c ComponentType) APIType() models.AppComponentType {
 	return models.AppComponentTypeUnknown
 }
 
-type CommonComponentFields struct {
+// Component is a flattened configuration type that allows us to define components using a `type: type` field.
+type Component struct {
+	Source string `mapstructure:"source,omitempty"`
+
 	Type         ComponentType `mapstructure:"type,omitempty" jsonschema:"required"`
 	Name         string        `mapstructure:"name" jsonschema:"required"`
 	VarName      string        `mapstructure:"var_name,omitempty"`
 	Dependencies []string      `mapstructure:"dependencies,omitempty"`
-}
-
-// Component is a flattened configuration type that allows us to define components using a `type: type` field.
-type Component struct {
-	CommonComponentFields
-
-	Source string `mapstructure:"source,omitempty"`
 
 	// WARNING: properties below should be ignored by nuonhash when empty
 	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`
