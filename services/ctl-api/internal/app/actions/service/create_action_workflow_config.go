@@ -30,6 +30,7 @@ type CreateActionWorkflowConfigRequest struct {
 }
 
 type CreateActionWorkflowConfigTriggerRequest struct {
+	Index         int                           `json:"index,omitempty" swaggertype:"primitive,integer"`
 	Type          app.ActionWorkflowTriggerType `json:"type" validate:"required"`
 	CronSchedule  string                        `json:"cron_schedule,omitempty" validate:"cron_schedule"`
 	ComponentName string                        `json:"component_name"`
@@ -230,6 +231,7 @@ func (s *service) createActionWorkflowTriggers(ctx context.Context, orgId, appID
 			ActionWorkflowConfigID: awcID,
 			Type:                   trigger.Type,
 			CronSchedule:           trigger.CronSchedule,
+			Index:                  trigger.Index,
 			ComponentID:            generics.NewNullString(componentID),
 		}
 
