@@ -122,3 +122,23 @@ func (a *ActionWorkflowConfig) HasTrigger(typ ActionWorkflowTriggerType) bool {
 
 	return false
 }
+
+func (a *ActionWorkflowConfig) GetTriggerIndex(typ ActionWorkflowTriggerType) int {
+	for _, trigger := range a.Triggers {
+		if trigger.Type == typ {
+			return trigger.Index
+		}
+	}
+
+	return 0
+}
+
+func (a *ActionWorkflowConfig) GetComponentTriggerIndex(typ ActionWorkflowTriggerType, componentID string) int {
+	for _, trigger := range a.Triggers {
+		if trigger.Type == typ && trigger.ComponentID.ValueString() == componentID {
+			return trigger.Index
+		}
+	}
+
+	return 0
+}
