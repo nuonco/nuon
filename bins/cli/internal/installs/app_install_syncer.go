@@ -3,9 +3,11 @@ package installs
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
+	"github.com/pkg/browser"
 	"github.com/pterm/pterm"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -14,20 +16,23 @@ import (
 
 const ManagedByNuonCLIConfig = "nuon/cli/install-config"
 
+const defaultPollDuration = time.Second * 10
+
 type appInstallSyncer struct {
-	api   nuon.Client
-	appID string
+	api          nuon.Client
+	appID, orgID string
 }
 
-func newAppInstallSyncer(api nuon.Client, appID string) *appInstallSyncer {
+func newAppInstallSyncer(api nuon.Client, appID, orgID string) *appInstallSyncer {
 	return &appInstallSyncer{
 		api:   api,
 		appID: appID,
+		orgID: orgID,
 	}
 }
 
 func (s *appInstallSyncer) syncInstall(
-	ctx context.Context, installCfg *config.Install, installID string, autoApprove bool,
+	ctx context.Context, installCfg *config.Install, installID string, autoApprove, wait bool,
 ) (*models.AppInstall, error) {
 	var err error
 	ui.PrintLn(fmt.Sprintf("syncing install %s", installCfg.Name))
@@ -37,7 +42,7 @@ func (s *appInstallSyncer) syncInstall(
 	}
 
 	if installID == "" {
-		appInstall, err := s.syncNewInstall(ctx, installCfg, autoApprove)
+		appInstall, err := s.syncNewInstall(ctx, installCfg, autoApprove, wait)
 		return appInstall, err
 	}
 
@@ -46,11 +51,11 @@ func (s *appInstallSyncer) syncInstall(
 		return nil, fmt.Errorf("error getting install %s: %w", installCfg.Name, err)
 	}
 
-	appInstall, err = s.syncExistingInstall(ctx, installCfg, appInstall, autoApprove)
+	appInstall, err = s.syncExistingInstall(ctx, installCfg, appInstall, autoApprove, wait)
 	return appInstall, err
 }
 
-func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, autoApprove bool) (*models.AppInstall, error) {
+func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, autoApprove, wait bool) (*models.AppInstall, error) {
 	// Use defaults for any missing inputs.
 	{
 		appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, s.appID)
@@ -101,17 +106,19 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		}
 	}
 
-	appInstall, _, err := s.api.CreateInstall(ctx, s.appID, &req)
+	appInstall, installWorkflowID, err := s.api.CreateInstall(ctx, s.appID, &req)
 	if err != nil {
 		return nil, fmt.Errorf("error creating install %s: %w", installCfg.Name, err)
 	}
+
+	s.printWorkflowStatus(ctx, installWorkflowID, appInstall.ID, wait)
 
 	ui.PrintSuccess(fmt.Sprintf("install %s created successfully", appInstall.Name))
 	return appInstall, nil
 }
 
 func (s *appInstallSyncer) syncExistingInstall(
-	ctx context.Context, installCfg *config.Install, appInstall *models.AppInstall, autoApprove bool,
+	ctx context.Context, installCfg *config.Install, appInstall *models.AppInstall, autoApprove, wait bool,
 ) (*models.AppInstall, error) {
 	var err error
 
@@ -200,14 +207,62 @@ func (s *appInstallSyncer) syncExistingInstall(
 
 	// If inputs have divereged, update the install inputs.
 	if hasInputChanged {
-		_, err = s.api.UpdateInstallInputs(ctx, appInstall.ID, &models.ServiceUpdateInstallInputsRequest{
+		_, workflowID, err := s.api.UpdateInstallInputs(ctx, appInstall.ID, &models.ServiceUpdateInstallInputsRequest{
 			Inputs: installCfg.Inputs,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error updating inputs for install %s: %w", appInstall.Name, err)
 		}
+
+		s.printWorkflowStatus(ctx, workflowID, appInstall.ID, wait)
 	}
 
 	ui.PrintSuccess(fmt.Sprintf("install %s updated successfully", appInstall.Name))
 	return appInstall, nil
+}
+
+func (s *appInstallSyncer) printWorkflowStatus(ctx context.Context, workflowID string, installID string, wait bool) {
+	workflow, err := s.api.GetWorkflow(ctx, workflowID)
+	if err != nil {
+		return
+	}
+
+	view := ui.NewGetView()
+	view.Render(formatWorkflows([]*models.AppWorkflow{workflow}))
+
+	ui.PrintWarning("Some workflow steps might need manual approval from the UI")
+
+	if wait == false {
+		return
+	}
+
+	spinner := ui.NewSpinnerView(false)
+	spinner.Start("waiting for the workflow to complete")
+
+	for !workflow.Finished {
+		spinner.Update(fmt.Sprintf("waiting for the workflow to complete (status: %s)", workflow.Status.Status))
+
+		time.Sleep(defaultPollDuration)
+		currentWorkflow, err := s.api.GetWorkflow(ctx, workflowID)
+		if err == nil {
+			workflow = currentWorkflow
+		} else {
+			ui.PrintError(fmt.Errorf("failed fetching workflow status: %w", err))
+		}
+	}
+
+	switch workflow.Status.Status {
+	case models.AppStatusSuccess:
+		spinner.Success("workflow successfully completed")
+	case models.AppStatusError:
+		spinner.Fail(fmt.Errorf("workflow failed"))
+		cfg, err := s.api.GetCLIConfig(ctx)
+		if err == nil {
+			url := fmt.Sprintf(
+				"%s/%s/installs/%s/workflows/%s", cfg.DashboardURL, s.orgID, installID, workflowID)
+			browser.OpenURL(url)
+		}
+	default:
+		spinner.Fail(fmt.Errorf("unknown workflow status: %s", workflow.Status.Status))
+	}
 }
