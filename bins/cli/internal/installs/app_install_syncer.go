@@ -101,7 +101,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		}
 	}
 
-	appInstall, err := s.api.CreateInstall(ctx, s.appID, &req)
+	appInstall, _, err := s.api.CreateInstall(ctx, s.appID, &req)
 	if err != nil {
 		return nil, fmt.Errorf("error creating install %s: %w", installCfg.Name, err)
 	}
