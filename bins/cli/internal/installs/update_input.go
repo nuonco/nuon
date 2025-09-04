@@ -15,7 +15,7 @@ func (s *Service) UpdateInput(ctx context.Context, installID string, inputs []st
 		kvT := strings.Split(kv, "=")
 		inputsMap[kvT[0]] = kvT[1]
 	}
-	installInput, err := s.api.UpdateInstallInputs(ctx, installID, &models.ServiceUpdateInstallInputsRequest{
+	installInput, _, err := s.api.UpdateInstallInputs(ctx, installID, &models.ServiceUpdateInstallInputsRequest{
 		Inputs: inputsMap,
 	})
 	if err != nil {
