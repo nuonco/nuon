@@ -18,6 +18,8 @@ type HelmValuesFile struct {
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type HelmChartComponentConfig struct {
+	CommonComponentFields
+
 	ChartName string `mapstructure:"chart_name,omitempty" jsonschema:"required"`
 
 	ValuesMap   map[string]string `mapstructure:"values,omitempty"`
