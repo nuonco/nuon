@@ -23,6 +23,7 @@ type ActionConfig struct {
 type ActionTriggerConfig struct {
 	Type string `mapstructure:"type" jsonschema:"required"`
 
+	Index         int64  `mapstructure:"index,omitempty"`
 	CronSchedule  string `mapstructure:"cron_schedule,omitempty"`
 	ComponentName string `mapstructure:"component_name,omitempty"`
 }
