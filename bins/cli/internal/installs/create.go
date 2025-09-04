@@ -31,7 +31,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 	}
 
 	if asJSON {
-		install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
+		install, _, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
 			Name: &name,
 			AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
 				Region:     region,
@@ -46,7 +46,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 		return nil
 	}
 
-	install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
+	install, _, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
 		Name: &name,
 		AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
 			Region: region,
