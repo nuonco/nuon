@@ -9,11 +9,11 @@ import (
 )
 
 type CreateInstallDeployRequest struct {
-	InstallID   string                `json:"install_id"`
-	ComponentID string                `json:"component_id"`
-	BuildID     string                `json:"build_id"`
-	Type        app.InstallDeployType `json:"type"`
-	WorkflowID  string                `json:"workflow_id"`
+	InstallID   string                `json:"install_id" validate:"required"`
+	ComponentID string                `json:"component_id" validate:"required"`
+	BuildID     string                `json:"build_id" validate:"required"`
+	Type        app.InstallDeployType `json:"type" validate:"required"`
+	WorkflowID  string                `json:"workflow_id" validate:"required"`
 }
 
 // @temporal-gen activity

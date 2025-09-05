@@ -8,12 +8,12 @@ import (
 )
 
 type WriteEventRequest struct {
-	DeployID     string
-	InstallID    string
-	SandboxRunID string
+	DeployID     string `validate:"required"`
+	InstallID    string `validate:"required"`
+	SandboxRunID string `validate:"required"`
 
-	Operation       eventloop.SignalType
-	OperationStatus app.OperationStatus
+	Operation       eventloop.SignalType `validate:"required"`
+	OperationStatus app.OperationStatus  `validate:"required"`
 }
 
 // @temporal-gen activity

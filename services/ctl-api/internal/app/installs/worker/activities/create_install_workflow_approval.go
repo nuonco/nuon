@@ -9,7 +9,7 @@ import (
 )
 
 type CreateInstallWorkflowApprovalRequest struct {
-	InstallWorkflowStepID string
+	InstallWorkflowStepID string `validate:"required"`
 }
 
 // @temporal-gen activity

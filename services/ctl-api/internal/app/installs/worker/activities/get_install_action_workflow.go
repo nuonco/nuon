@@ -9,10 +9,10 @@ import (
 )
 
 type GetInstallActionWorkflowRequest struct {
-	ID string
+	ID string `validate:"required"`
 
-	InstallID        string
-	ActionWorkflowID string
+	InstallID        string `validate:"required"`
+	ActionWorkflowID string `validate:"required"`
 }
 
 // @temporal-gen activity

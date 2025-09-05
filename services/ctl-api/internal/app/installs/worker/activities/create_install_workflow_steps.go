@@ -10,16 +10,16 @@ import (
 )
 
 type CreateInstallWorkflowStepRequest struct {
-	InstallWorkflowID string                        `json:"install_workflow_id"`
-	InstallID         string                        `json:"install_id"`
-	OwnerID           string                        `json:"owner_id"`
-	OwnerType         string                        `json:"owner_type"`
-	Status            app.CompositeStatus           `json:"status"`
-	Name              string                        `json:"name"`
-	Signal            app.Signal                    `json:"signal"`
-	Idx               int                           `json:"idx"`
-	ExecutionType     app.WorkflowStepExecutionType `json:"execution_type"`
-	Metadata          pgtype.Hstore                 `json:"metadata"`
+	InstallWorkflowID string                        `json:"install_workflow_id" validate:"required"`
+	InstallID         string                        `json:"install_id" validate:"required"`
+	OwnerID           string                        `json:"owner_id" validate:"required"`
+	OwnerType         string                        `json:"owner_type" validate:"required"`
+	Status            app.CompositeStatus           `json:"status" validate:"required"`
+	Name              string                        `json:"name" validate:"required"`
+	Signal            app.Signal                    `json:"signal" validate:"required"`
+	Idx               int                           `json:"idx" validate:"required"`
+	ExecutionType     app.WorkflowStepExecutionType `json:"execution_type" validate:"required"`
+	Metadata          pgtype.Hstore                 `json:"metadata" validate:"required"`
 }
 
 // @temporal-gen activity

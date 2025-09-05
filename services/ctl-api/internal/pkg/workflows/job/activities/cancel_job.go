@@ -9,7 +9,7 @@ import (
 )
 
 type CancelJobRequest struct {
-	ID string
+	ID string `validate:"required"`
 }
 
 // @temporal-gen activity
