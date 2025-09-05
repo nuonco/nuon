@@ -160,6 +160,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/installs/:install_id/admin-get-runner", s.AdminGetInstallRunner)
 	api.POST("/v1/orgs/:org_id/admin-forget-installs", s.ForgetOrgInstalls)
 	api.PATCH("/v1/installs/:install_id/admin-update-runner", s.AdminUpdateInstallRunner)
+	api.POST("/v1/installs/:install_id/admin-generate-state", s.AdminInstallGenerateInstallState)
 	api.GET("/v1/orgs/:org_id/admin-get-installs", s.AdminGetOrgInstalls)
 
 	// NOTE(JM): the following endpoints should be removed after workflows/independent runners are rolled out
