@@ -7,10 +7,10 @@ import (
 )
 
 type CreateShutdownJobRequest struct {
-	RunnerID    string
-	OwnerID     string
-	LogStreamID string
-	Metadata    map[string]string
+	RunnerID    string            `validate:"required"`
+	OwnerID     string            `validate:"required"`
+	LogStreamID string            `validate:"required"`
+	Metadata    map[string]string `validate:"required"`
 }
 
 // @temporal-gen activity
@@ -19,12 +19,12 @@ func (a *Activities) CreateShutdownJob(ctx context.Context, req *CreateShutdownJ
 }
 
 type CreateMngJobRequest struct {
-	RunnerID    string
-	OwnerID     string
-	LogStreamID string
-	JobType     app.RunnerJobType
+	RunnerID    string            `validate:"required"`
+	OwnerID     string            `validate:"required"`
+	LogStreamID string            `validate:"required"`
+	JobType     app.RunnerJobType `validate:"required"`
 
-	Metadata map[string]string
+	Metadata map[string]string `validate:"required"`
 }
 
 // @temporal-gen activity

@@ -10,10 +10,10 @@ import (
 // to the API when processing this job, so version is not a parameter here
 
 type CreateUpdateVersionJobRequest struct {
-	RunnerID    string
-	OwnerID     string
-	LogStreamID string
-	Metadata    map[string]string
+	RunnerID    string            `validate:"required"`
+	OwnerID     string            `validate:"required"`
+	LogStreamID string            `validate:"required"`
+	Metadata    map[string]string `validate:"required"`
 }
 
 // @temporal-gen activity

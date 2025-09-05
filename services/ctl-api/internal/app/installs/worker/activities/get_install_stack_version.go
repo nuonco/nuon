@@ -10,7 +10,7 @@ import (
 )
 
 type GetInstallStackVersionRequest struct {
-	InstallID string `json:"id"`
+	InstallID string `json:"id" validate:"required"`
 }
 
 // @temporal-gen activity

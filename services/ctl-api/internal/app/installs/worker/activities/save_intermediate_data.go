@@ -13,9 +13,9 @@ import (
 )
 
 type SaveIntermediateDataRequest struct {
-	InstallID   string
-	RunnerJobID string
-	PlanJSON    string
+	InstallID   string `validate:"required"`
+	RunnerJobID string `validate:"required"`
+	PlanJSON    string `validate:"required"`
 }
 
 // @temporal-gen activity

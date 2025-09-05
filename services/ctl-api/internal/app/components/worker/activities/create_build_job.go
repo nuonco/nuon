@@ -13,12 +13,12 @@ const (
 )
 
 type CreateBuildJobRequest struct {
-	BuildID     string
-	RunnerID    string
-	Op          app.RunnerJobOperationType
-	Type        app.RunnerJobType
-	LogStreamID string
-	Metadata    map[string]string
+	BuildID     string                     `validate:"required"`
+	RunnerID    string                     `validate:"required"`
+	Op          app.RunnerJobOperationType `validate:"required"`
+	Type        app.RunnerJobType          `validate:"required"`
+	LogStreamID string                     `validate:"required"`
+	Metadata    map[string]string          `validate:"required"`
 }
 
 // @temporal-gen activity

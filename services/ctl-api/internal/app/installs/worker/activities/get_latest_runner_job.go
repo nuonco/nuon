@@ -10,10 +10,10 @@ import (
 )
 
 type GetLatestJobRequest struct {
-	OwnerID   string
-	Operation app.RunnerJobOperationType
-	Group     app.RunnerJobGroup
-	Type      app.RunnerJobType
+	OwnerID   string                     `validate:"required"`
+	Operation app.RunnerJobOperationType `validate:"required"`
+	Group     app.RunnerJobGroup         `validate:"required"`
+	Type      app.RunnerJobType          `validate:"required"`
 }
 
 // @temporal-gen activity

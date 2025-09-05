@@ -9,13 +9,13 @@ import (
 )
 
 type CreateJobRequest struct {
-	RunnerID    string
-	OwnerType   string
-	OwnerID     string
-	Op          app.RunnerJobOperationType
-	Type        app.RunnerJobType
-	LogStreamID string
-	Metadata    map[string]string
+	RunnerID    string                     `validate:"required"`
+	OwnerType   string                     `validate:"required"`
+	OwnerID     string                     `validate:"required"`
+	Op          app.RunnerJobOperationType `validate:"required"`
+	Type        app.RunnerJobType          `validate:"required"`
+	LogStreamID string                     `validate:"required"`
+	Metadata    map[string]string          `validate:"required"`
 }
 
 // @temporal-gen activity

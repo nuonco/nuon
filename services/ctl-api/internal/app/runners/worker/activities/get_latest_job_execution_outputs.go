@@ -17,8 +17,8 @@ type GetLatestJobExecutionOutputsRequest struct {
 }
 
 type GetLatestJobExecutionOutputsResponse struct {
-	Found        bool
-	JobExecution *app.RunnerJobExecution
+	Found        bool                    `validate:"required"`
+	JobExecution *app.RunnerJobExecution `validate:"required"`
 }
 
 // @temporal-gen activity

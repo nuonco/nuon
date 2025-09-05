@@ -16,12 +16,12 @@ const (
 )
 
 type CreateLogStreamRequest struct {
-	SandboxRunID        string
-	DeployID            string
-	ActionWorkflowRunID string
-	StepID              string
+	SandboxRunID        string `validate:"required"`
+	DeployID            string `validate:"required"`
+	ActionWorkflowRunID string `validate:"required"`
+	StepID              string `validate:"required"`
 
-	ParentLogStreamID string
+	ParentLogStreamID string `validate:"required"`
 }
 
 // @temporal-gen activity
