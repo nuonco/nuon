@@ -28,7 +28,7 @@ func GetLogger(ctx ValueContext, l *zap.Logger) *zap.Logger {
 	acctID, _ := AccountIDFromContext(ctx)
 
 	if traceID != "" {
-		fields = append(fields, zap.String("trace_id", traceID))
+		fields = append(fields, zap.String("nuon_trace_id", traceID))
 	}
 
 	if orgID != "" {
