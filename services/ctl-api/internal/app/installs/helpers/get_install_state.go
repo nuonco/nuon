@@ -301,7 +301,7 @@ func (h *Helpers) toAppState(currentApp app.App) *state.AppState {
 	st.Status = string(currentApp.Status)
 
 	for _, secr := range currentApp.AppSecrets {
-		st.Secrets[secr.Name] = secr.Value
+		st.Variables[secr.Name] = secr.Value
 	}
 
 	return st
