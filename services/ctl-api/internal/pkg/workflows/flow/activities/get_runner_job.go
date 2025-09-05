@@ -17,11 +17,11 @@ type GetRunnerJobRequest struct {
 }
 
 type GetRunnerJobExecutionRequest struct {
-	RunnerJobID string
+	RunnerJobID string `validate:"required"`
 }
 
 type GetRunnerJobExecutionResultRequest struct {
-	RunnerJobExecutionID string
+	RunnerJobExecutionID string `validate:"required"`
 }
 
 func (a *Activities) getRunnerJobExecution(ctx context.Context, req GetRunnerJobExecutionRequest) (*app.RunnerJobExecution, error) {
@@ -73,7 +73,7 @@ func (a *Activities) getRunnerJob(ctx context.Context, req *GetRunnerJobRequest)
 }
 
 type GetApprovalPlanRequest struct {
-	StepTargetID string
+	StepTargetID string `validate:"required"`
 }
 
 type ApprovalPlan struct {

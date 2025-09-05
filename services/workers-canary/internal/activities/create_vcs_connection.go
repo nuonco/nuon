@@ -11,10 +11,10 @@ import (
 )
 
 type CreateVCSConnectionRequest struct {
-	CanaryID        string
-	OrgID           string
-	APIToken        string
-	GithubInstallID string
+	CanaryID        string `validate:"required"`
+	OrgID           string `validate:"required"`
+	APIToken        string `validate:"required"`
+	GithubInstallID string `validate:"required"`
 }
 
 type CreateVCSConnectionResponse struct {

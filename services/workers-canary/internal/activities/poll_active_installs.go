@@ -8,7 +8,7 @@ import (
 )
 
 type GetInstallsByOrgIDRequest struct {
-	OrgID string
+	OrgID string `validate:"required"`
 }
 
 func (a *Activities) GetInstallsByOrgID(ctx context.Context, req *GetInstallsByOrgIDRequest) ([]api.Install, error) {

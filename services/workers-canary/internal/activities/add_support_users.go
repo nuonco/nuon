@@ -8,7 +8,7 @@ import (
 )
 
 type AddSupportUsersRequest struct {
-	OrgID string
+	OrgID string `validate:"required"`
 }
 
 type AddSupportUsersResponse struct{}

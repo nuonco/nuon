@@ -11,9 +11,9 @@ import (
 )
 
 type CreateOrgRequest struct {
-	CanaryID    string
-	SandboxMode bool
-	APIToken    string
+	CanaryID    string `validate:"required"`
+	SandboxMode bool   `validate:"required"`
+	APIToken    string `validate:"required"`
 }
 
 type CreateOrgResponse struct {

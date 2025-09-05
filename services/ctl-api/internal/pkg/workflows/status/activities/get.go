@@ -13,7 +13,7 @@ import (
 // by it, but if we do that and something _does not_ work, then it's going to be damn near impossible to debug, so we
 // keep the verbose approach here, until something more elegant comes along.
 type GetStatusRequest struct {
-	ID string `json:"id"`
+	ID string `json:"id" validate:"required"`
 }
 
 // @temporal-gen activity

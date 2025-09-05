@@ -8,8 +8,8 @@ import (
 )
 
 type DeleteOrgRequest struct {
-	CanaryID string
-	OrgID    string
+	CanaryID string `validate:"required"`
+	OrgID    string `validate:"required"`
 }
 
 type DeleteOrgResponse struct {

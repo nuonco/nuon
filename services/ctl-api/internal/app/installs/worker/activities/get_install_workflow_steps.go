@@ -8,7 +8,7 @@ import (
 )
 
 type GetInstallWorkflowStepsRequest struct {
-	InstallWorkflowID string `json:"install_workflow_id"`
+	InstallWorkflowID string `json:"install_workflow_id" validate:"required"`
 }
 
 // @temporal-gen activity

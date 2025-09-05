@@ -16,13 +16,13 @@ const (
 )
 
 type ExecTestScriptRequest struct {
-	Path string
-	Env  map[string]string
+	Path string            `validate:"required"`
+	Env  map[string]string `validate:"required"`
 
-	TFOutputsPath string
-	TFOutputs     *TerraformRunOutputs
+	TFOutputsPath string               `validate:"required"`
+	TFOutputs     *TerraformRunOutputs `validate:"required"`
 
-	InstallCLI bool
+	InstallCLI bool `validate:"required"`
 }
 
 type ExecTestScriptResponse struct{}

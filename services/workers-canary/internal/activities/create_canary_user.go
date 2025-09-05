@@ -8,7 +8,7 @@ import (
 )
 
 type CreateUserRequest struct {
-	CanaryID string
+	CanaryID string `validate:"required"`
 }
 
 type CreateUserResponse struct {

@@ -8,7 +8,7 @@ import (
 )
 
 type GetInstallForInstallComponentRequest struct {
-	InstallComponentID string `json:"component_id"`
+	InstallComponentID string `json:"component_id" validate:"required"`
 }
 
 // @temporal-gen activity

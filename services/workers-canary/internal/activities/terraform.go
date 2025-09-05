@@ -49,11 +49,11 @@ type TerraformRunOutputs struct {
 }
 
 type RunTerraformRequest struct {
-	RunType      RunType
-	CanaryID     string
-	OrgID        string
-	APIToken     string
-	InstallCount int
+	RunType      RunType `validate:"required"`
+	CanaryID     string  `validate:"required"`
+	OrgID        string  `validate:"required"`
+	APIToken     string  `validate:"required"`
+	InstallCount int     `validate:"required"`
 }
 
 type RunTerraformResponse struct {

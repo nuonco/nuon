@@ -8,7 +8,7 @@ import (
 )
 
 type GetOrgRequest struct {
-	CanaryID string
+	CanaryID string `validate:"required"`
 }
 
 type GetOrgResponse struct {
