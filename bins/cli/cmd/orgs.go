@@ -8,13 +8,14 @@ import (
 
 func (c *cli) orgsCmd() *cobra.Command {
 	var (
-		id       string
-		name     string
-		sandbox  bool
-		offset   int
-		limit    int
-		email    string
-		noSelect bool
+		id           string
+		name         string
+		sandbox      bool
+		offset       int
+		limit        int
+		email        string
+		noSelect     bool
+		connectionID string
 	)
 
 	orgsCmd := &cobra.Command{
@@ -85,6 +86,20 @@ func (c *cli) orgsCmd() *cobra.Command {
 	listVCSConnections.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
 	listVCSConnections.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	orgsCmd.AddCommand(listVCSConnections)
+
+	deleteVCSConnectionCmd := &cobra.Command{
+		Use:   "delete-vcs-connection",
+		Short: "Delete VCS Connection",
+		Long:  "Delete a VCS connection from your Nuon org",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.DeleteVCSConnection(cmd.Context(), connectionID, PrintJSON)
+		}),
+	}
+	deleteVCSConnectionCmd.MarkFlagRequired("org-id")
+	deleteVCSConnectionCmd.Flags().StringVar(&connectionID, "connection-id", "", "The VCS Connection ID you want to remove")
+	deleteVCSConnectionCmd.MarkFlagRequired("connection-id")
+	orgsCmd.AddCommand(deleteVCSConnectionCmd)
 
 	connectGithubCmd := &cobra.Command{
 		Use:   "connect-github",
