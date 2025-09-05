@@ -22,17 +22,15 @@ func (t *Templates) getAWSTemplate(inp *TemplateInput) (*cloudformation.Template
 		tmpl.Parameters[name] = param
 	}
 
+	// NOTE(fd): this uses the configurable neste runner asg cf stack
+	tmpl.Resources["RunnerAutoScalingGroup"] = t.getRunnerASGNestedStack(inp, tb)
+
 	// runner ASG and launch template
 	tmpl.Resources["PhoneHomeProps"] = t.getRunnerPhoneHomeProps(inp)
 	tmpl.Resources["RunnerPhoneHome"] = t.getRunnerPhoneHomeLambda(inp, tb)
 	tmpl.Resources["RunnerPhoneHomeRole"] = t.getRunnerPhoneHomeLambdaRole(inp, tb)
 
-	tmpl.Resources["RunnerLaunchTemplate"] = t.getRunnerLaunchTemplatea(inp, tb)
 	tmpl.Resources["RunnerSecurityGroup"] = t.getRunnerSecurityGroup(inp, tb)
-	tmpl.Resources["RunnerASG"] = t.getRunnerASG(inp, tb)
-	tmpl.Resources["RunnerInstanceProfile"] = t.getRunnerInstanceProfile(inp, tb)
-	tmpl.Resources["RunnerInstanceRole"] = t.getRunnerInstanceRole(inp, tb)
-	tmpl.Resources["RunnerInstanceRoleCloudWatchLogPolicy"] = t.getRunnerInstanceRoleCloudWatchLogPolicy(inp, tb)
 
 	// CloudWatch: logs
 	tmpl.Resources["RunnerCloudWatchLogGroup"] = t.getRunnerCloudWatchLogGroup(inp, tb)
