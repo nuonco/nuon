@@ -53,7 +53,7 @@ func (a *Templates) getRolesResources(inp *TemplateInput, t tagBuilder) map[stri
 		trustPolicies = append(trustPolicies, map[string]any{
 			"Effect": "Allow",
 			"Principal": map[string]any{
-				"AWS": cloudformation.GetAttPtr("RunnerInstanceRole", "Arn"),
+				"AWS": cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRoleARN"),
 			},
 			"Action": "sts:AssumeRole",
 		})
