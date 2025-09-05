@@ -47,6 +47,7 @@ func (b *BaseSignal) GetWorkflowContext(ctx workflow.Context) workflow.Context {
 
 	ctx = cctx.SetAccountIDWorkflowContext(ctx, b.CtxPayload.AccountID)
 	ctx = cctx.SetOrgIDWorkflowContext(ctx, b.CtxPayload.OrgID)
+	ctx = cctx.SetTraceIDWorkflowContext(ctx, b.CtxPayload.TraceID)
 	if b.CtxPayload.LogStream != nil {
 		ctx = cctx.SetLogStreamWorkflowContext(ctx, b.CtxPayload.LogStream)
 	}
@@ -61,6 +62,7 @@ func (b *BaseSignal) GetContext(ctx context.Context) context.Context {
 
 	ctx = cctx.SetAccountIDContext(ctx, b.CtxPayload.AccountID)
 	ctx = cctx.SetOrgIDContext(ctx, b.CtxPayload.OrgID)
+	ctx = cctx.SetTraceIDContext(ctx, b.CtxPayload.TraceID)
 	if b.CtxPayload.LogStream != nil {
 		ctx = cctx.SetLogStreamContext(ctx, b.CtxPayload.LogStream)
 	}

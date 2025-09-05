@@ -2,38 +2,17 @@ package log
 
 import (
 	"bytes"
-	"errors"
+	"fmt"
+	"strings"
 	"time"
 
-	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
-
-// Custom response writer to capture response body and status code
-type responseBodyWriter struct {
-	gin.ResponseWriter
-	body       *bytes.Buffer
-	statusCode int
-}
-
-func (w *responseBodyWriter) Write(data []byte) (int, error) {
-	// Write to our buffer to capture the response
-	w.body.Write(data)
-	// Also write to the original writer
-	return w.ResponseWriter.Write(data)
-}
-
-func (w *responseBodyWriter) WriteHeader(statusCode int) {
-	w.statusCode = statusCode
-	w.ResponseWriter.WriteHeader(statusCode)
-}
 
 type middleware struct {
 	l   *zap.Logger
@@ -44,91 +23,160 @@ func (m middleware) Name() string {
 	return "log"
 }
 
-func (m middleware) Handler() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Create a custom response writer to capture response body
-		responseBody := &bytes.Buffer{}
-		customWriter := &responseBodyWriter{
-			ResponseWriter: c.Writer,
-			body:           responseBody,
-			statusCode:     200, // default status
+type responseBodyWriter struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
+
+func (r responseBodyWriter) Write(b []byte) (int, error) {
+	r.body.Write(b)
+	return r.ResponseWriter.Write(b)
+}
+
+func (m *middleware) Handler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		w := &responseBodyWriter{body: &bytes.Buffer{}, ResponseWriter: ctx.Writer}
+		ctx.Writer = w
+
+		childLogger := m.setCTXLogger(ctx)
+
+		startAt := time.Now()
+
+		reqZapFields := m.requestToZapFields(ctx, startAt)
+
+		requestMessage := fmt.Sprintf("api request: %s", ctx.FullPath())
+		childLogger.Info(requestMessage, reqZapFields...)
+
+		ctx.Next()
+
+		respZapFields := m.responseToZapFields(ctx, w, startAt)
+
+		responseMessage := fmt.Sprintf("api response: %s", ctx.FullPath())
+
+		status := ctx.Writer.Status()
+
+		if status >= 500 {
+			childLogger.Error(responseMessage, respZapFields...)
+		} else {
+			childLogger.Info(responseMessage, respZapFields...)
 		}
-		c.Writer = customWriter
-
-		// Continue with ginzap middleware
-		ginzapHandler := ginzap.GinzapWithConfig(m.l, &ginzap.Config{
-			UTC:        true,
-			TimeFormat: time.RFC3339,
-			Context: func(c *gin.Context) []zapcore.Field {
-				fields := make([]zapcore.Field, 0)
-
-				// Add organization context
-				org, err := cctx.OrgFromContext(c)
-				if err == nil {
-					fields = append(fields,
-						zap.String("org_id", org.ID),
-						zap.String("org_name", org.Name),
-						zap.Bool("org_debug_mode", org.DebugMode),
-					)
-				}
-
-				// Add account context
-				acct, err := cctx.AccountFromContext(c)
-				if err == nil {
-					fields = append(fields,
-						zap.String("account_id", acct.ID),
-						zap.String("account_email", acct.Email),
-					)
-				} else {
-					m.l.Debug("no account object on request")
-				}
-
-				// Add request body if configured
-				if c.Request.Body != nil && m.cfg.LogRequestBody {
-					body, err := c.GetRawData()
-					if err == nil || len(body) > 0 {
-						fields = append(fields, zap.String("request_body", string(body)))
-					}
-				}
-
-				// Add response body for 5xx status codes
-				if customWriter.statusCode >= 500 && customWriter.statusCode < 600 {
-					if responseBody.Len() > 0 {
-						fields = append(fields, zap.String("response_body", responseBody.String()))
-					}
-				}
-
-				return fields
-			},
-			Skipper: func(c *gin.Context) bool {
-				// some errors should never be logged, such as auth issues because they are spammy and could
-				// correspond to actually bad runners or bad actors.
-				if len(c.Errors) > 0 {
-					var errAuth stderr.ErrAuthentication
-					if errors.As(c.Errors[0], &errAuth) {
-						return true
-					}
-				}
-				//
-				if m.cfg.ForceDebugMode {
-					return false
-				}
-				org, err := cctx.OrgFromContext(c)
-				if err == nil {
-					if org.DebugMode {
-						return false
-					}
-				}
-				if len(c.Errors) > 0 {
-					return false
-				}
-				return true
-			},
-		})
-
-		// Execute the ginzap handler
-		ginzapHandler(c)
 	}
+}
+
+// helper func to add headers to zap fields
+func headerToZapField(header string) zap.Field {
+	parts := strings.SplitN(header, ": ", 2)
+	if len(parts) != 2 {
+		return zap.String("header", header)
+	}
+	key := parts[0]
+	value := parts[1]
+
+	// Mask sensitive headers
+	sensitiveHeaders := map[string]struct{}{
+		"Authorization": {},
+		"Cookie":        {},
+		"Set-Cookie":    {},
+	}
+
+	if _, ok := sensitiveHeaders[key]; ok {
+		value = "*"
+	}
+
+	return zap.String(fmt.Sprintf("header_%s", strings.ToLower(strings.ReplaceAll(key, "-", "_"))), value)
+}
+
+func (m *middleware) setCTXLogger(ctx *gin.Context) *zap.Logger {
+	fields := []zap.Field{}
+	// Add organization context
+	org, err := cctx.OrgFromContext(ctx)
+	if err == nil {
+		fields = append(fields,
+			zap.String("org_id", org.ID),
+			zap.String("org_name", org.Name),
+			zap.Bool("org_debug_mode", org.DebugMode),
+		)
+	}
+
+	// Add account context
+	acct, err := cctx.AccountFromContext(ctx)
+	if err == nil {
+		fields = append(fields,
+			zap.String("account_id", acct.ID),
+			zap.String("account_email", acct.Email),
+		)
+	} else {
+		m.l.Debug("no account object on request")
+	}
+
+	// Add request body if configured
+	if ctx.Request.Body != nil && m.cfg.LogRequestBody {
+		body, err := ctx.GetRawData()
+		if err == nil || len(body) > 0 {
+			fields = append(fields, zap.String("request_body", string(body)))
+		}
+	}
+
+	cctx.SetAPILoggerFields(ctx, fields)
+
+	ctxLogger := cctx.GetLogger(ctx, m.l)
+
+	return ctxLogger
+}
+
+// helper func to generate zap fields for request
+func (m *middleware) requestToZapFields(ctx *gin.Context, startAt time.Time) []zap.Field {
+	fields := []zap.Field{
+		zap.String("method", ctx.Request.Method),
+		zap.String("url", ctx.Request.URL.String()),
+		zap.String("path", ctx.FullPath()),
+		zap.String("query", ctx.Request.URL.RawQuery),
+		zap.String("ip", ctx.ClientIP()),
+		zap.String("started_at", startAt.Format(time.RFC3339)),
+	}
+
+	for key, values := range ctx.Request.Header {
+		for _, value := range values {
+			fields = append(fields, headerToZapField(fmt.Sprintf("%s: %s", key, value)))
+		}
+	}
+
+	// Add request body if configured
+	if ctx.Request.Body != nil && m.cfg.LogRequestBody {
+		body, err := ctx.GetRawData()
+		if err == nil || len(body) > 0 {
+			fields = append(fields, zap.String("request_body", string(body)))
+		}
+	}
+
+	return fields
+}
+
+func (m *middleware) responseToZapFields(ctx *gin.Context, bw *responseBodyWriter, startAt time.Time) []zap.Field {
+	endAt := time.Now()
+	fields := []zap.Field{
+		zap.String("method", ctx.Request.Method),
+		zap.Int("status", ctx.Writer.Status()),
+		zap.String("url", ctx.Request.URL.String()),
+		zap.String("path", ctx.FullPath()),
+		zap.String("query", ctx.Request.URL.RawQuery),
+		zap.String("ip", ctx.ClientIP()),
+		zap.String("started_at", startAt.Format(time.RFC3339)),
+		zap.String("ended_at", endAt.Format(time.RFC3339)),
+		zap.Float64("duration_ms", float64(endAt.Sub(startAt).Milliseconds())),
+	}
+
+	for key, values := range ctx.Writer.Header() {
+		for _, value := range values {
+			fields = append(fields, headerToZapField(fmt.Sprintf("%s: %s", key, value)))
+		}
+	}
+
+	if ctx.Writer.Status() >= 500 {
+		fields = append(fields, zap.String("response_body", bw.body.String()))
+	}
+
+	return fields
 }
 
 type Params struct {
@@ -143,4 +191,3 @@ func New(params Params) *middleware {
 		cfg: params.Cfg,
 	}
 }
-

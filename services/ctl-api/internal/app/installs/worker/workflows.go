@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	temporalanalytics "github.com/powertoolsdev/mono/pkg/analytics/temporal"
@@ -37,6 +38,7 @@ type Params struct {
 	ComponentsWorkflows *components.Workflows
 	ActionsWorkflows    *actions.Workflows
 	StateWorkflows      *state.Workflows
+	L                   *zap.Logger
 }
 
 type Workflows struct {
@@ -47,6 +49,7 @@ type Workflows struct {
 	analytics temporalanalytics.Writer
 	templates *cloudformation.Templates
 	db        *gorm.DB
+	l         *zap.Logger
 
 	// NOTE(sdboyer) temporary while we split up and refactor the workflows within the installs pkg
 	subwfSandbox    *sandbox.Workflows
@@ -100,5 +103,6 @@ func NewWorkflows(params Params) (*Workflows, error) {
 		subwfComponents: params.ComponentsWorkflows,
 		subwfActions:    params.ActionsWorkflows,
 		stateWorkflows:  params.StateWorkflows,
+		l:               params.L,
 	}, nil
 }
