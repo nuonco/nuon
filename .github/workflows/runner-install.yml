@@ -1,0 +1,62 @@
+name: Runner Install Binary Check
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  install-runner-versioned:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Latest Tag
+        id: get-tag
+        run: |
+          latest_tag=$(git describe --tags --abbrev=0)
+          echo "latest_tag=${latest_tag}" >> $GITHUB_OUTPUT
+          echo "Latest tag: ${latest_tag}"
+
+      - name: Run ./install.sh
+        id: install-runner
+        run: |
+          cd bins/runner
+          chmod +x install.sh
+          yes | ./install.sh ${{ steps.get-tag.outputs.latest_tag }} .
+          echo "runner_version=$(runner version)" >> $GITHUB_OUTPUT
+
+      - name: Check Version
+        run: |
+          [[ "${{ steps.install-runner.outputs.version }}" == "${{ steps.get-tag.outputs.latest_tag }}" ]]
+
+  Install-runner-latest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Latest Tag
+        id: get-tag
+        run: |
+          latest_tag=$(git describe --tags --abbrev=0)
+          echo "latest_tag=${latest_tag}" >> $GITHUB_OUTPUT
+          echo "Latest tag: ${latest_tag}"
+
+      - name: Run ./install.sh
+        id: install-runner
+        run: |
+          cd bins/runner
+          chmod +x install.sh
+          yes | ./install.sh latest .
+          echo "runner_version=$(runner version)" >> $GITHUB_OUTPUT
+
+      - name: Check Version
+        run: |
+          [[ "${{ steps.install-runner.outputs.version }}" == "${{ steps.get-tag.outputs.latest_tag }}" ]]
