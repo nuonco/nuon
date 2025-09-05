@@ -9,7 +9,6 @@ import (
 )
 
 func (s *Service) Forget(ctx context.Context, installID string, asJSON bool) error {
-	fmt.Println("rb - forgetting install", installID)
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)

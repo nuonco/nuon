@@ -3,6 +3,7 @@ package activities
 import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
@@ -34,6 +35,7 @@ type Params struct {
 	AuthzClient       *authz.Client
 	Cfg               *internal.Config
 	Features          *features.Features
+	L                 *zap.Logger
 }
 
 type Activities struct {
@@ -50,6 +52,7 @@ type Activities struct {
 	authzClient       *authz.Client
 	vcsHelpers        *vcshelpers.Helpers
 	features          *features.Features
+	l                 *zap.Logger
 }
 
 func New(params Params) *Activities {
@@ -67,5 +70,6 @@ func New(params Params) *Activities {
 		vcsHelpers:        params.VCSHelpers,
 		componentsHelpers: params.ComponentsHelpers,
 		features:          params.Features,
+		l:                 params.L,
 	}
 }
