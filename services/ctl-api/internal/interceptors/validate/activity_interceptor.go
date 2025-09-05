@@ -7,7 +7,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/interceptor"
-	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
@@ -58,12 +57,13 @@ func (a *actInterceptor) ExecuteActivity(
 				zap.String("workflow_type", info.WorkflowType.Name),
 				zap.Any("request_object", in.Args[0]),
 			)
-
-			return nil, temporal.NewNonRetryableApplicationError(
-				"invalid activity request",
-				"invalid activity request",
-				err,
-			)
+			
+			//NOTE(sk): we dont want to break with errors now, uncomment only after metrics is clear
+			// return nil, temporal.NewNonRetryableApplicationError(
+			// 	"invalid activity request",
+			// 	"invalid activity request",
+			// 	err,
+			// )
 		}
 	default:
 	}

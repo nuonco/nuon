@@ -8,12 +8,12 @@ import (
 )
 
 type CreateSyncSecretsJobRequest struct {
-	InstallID string
-	RunnerID  string
-	OwnerType string
-	OwnerID   string
-	Op        app.RunnerJobOperationType
-	Metadata  map[string]string
+	InstallID string                     `validate:"required"`
+	RunnerID  string                     `validate:"required"`
+	OwnerType string                     `validate:"required"`
+	OwnerID   string                     `validate:"required"`
+	Op        app.RunnerJobOperationType `validate:"required"`
+	Metadata  map[string]string          `validate:"required"`
 }
 
 // @temporal-gen activity
