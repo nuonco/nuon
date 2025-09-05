@@ -9,12 +9,12 @@ import (
 )
 
 type CreateDeployJobRequest struct {
-	RunnerID    string
-	DeployID    string
-	Op          app.RunnerJobOperationType
-	Type        app.RunnerJobType
-	LogStreamID string
-	Metadata    map[string]string
+	RunnerID    string                     `validate:"required"`
+	DeployID    string                     `validate:"required"`
+	Op          app.RunnerJobOperationType `validate:"required"`
+	Type        app.RunnerJobType          `validate:"required"`
+	LogStreamID string                     `validate:"required"`
+	Metadata    map[string]string          `validate:"required"`
 }
 
 // @temporal-gen activity

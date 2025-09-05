@@ -9,7 +9,7 @@ import (
 )
 
 type GetFlowStepRequest struct {
-	FlowStepID string `json:"flow_step_id"`
+	FlowStepID string `json:"flow_step_id" validate:"required"`
 }
 
 // @temporal-gen activity

@@ -11,10 +11,10 @@ import (
 )
 
 type CreateOCIArtifactRequest struct {
-	OwnerType string
-	OwnerID   string
+	OwnerType string `validate:"required"`
+	OwnerID   string `validate:"required"`
 
-	Outputs state.OCIArtifactOutputs
+	Outputs state.OCIArtifactOutputs `validate:"required"`
 }
 
 // @temporal-gen activity

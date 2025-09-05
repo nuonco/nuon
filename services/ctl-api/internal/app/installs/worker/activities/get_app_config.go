@@ -9,7 +9,7 @@ import (
 )
 
 type GetAppConfigRequest struct {
-	ID string `json:"id"`
+	ID string `json:"id" validate:"required"`
 }
 
 // @temporal-gen activity
