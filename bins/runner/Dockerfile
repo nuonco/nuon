@@ -97,7 +97,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     -o /out/${BIN_NAME}_darwin_arm64 .
 
 FROM code AS build-darwin-amd64
-ARG BIN_NAME=nuon
+ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
@@ -109,7 +109,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     -o /out/${BIN_NAME}_darwin_amd64 .
 
 FROM code AS build-linux-arm
-ARG BIN_NAME=nuon
+ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
@@ -121,7 +121,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     -o /out/${BIN_NAME}_linux_arm .
 
 FROM code AS build-linux-arm64
-ARG BIN_NAME=nuon
+ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
@@ -133,7 +133,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     -o /out/${BIN_NAME}_linux_arm64 .
 
 FROM code AS build-linux-386
-ARG BIN_NAME=nuon
+ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
@@ -145,7 +145,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     -o /out/${BIN_NAME}_linux_386 .
 
 FROM code AS build-linux-amd64
-ARG BIN_NAME=nuon
+ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
