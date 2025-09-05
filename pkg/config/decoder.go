@@ -6,6 +6,6 @@ import (
 
 func DecoderConfig() *mapstructure.DecoderConfig {
 	return &mapstructure.DecoderConfig{
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(DecodeSource, DecodeComponent),
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(DecodeSource, DecodeComponent, DecodeInstallInputs),
 	}
 }
