@@ -57,7 +57,7 @@ BREAK:
 		zap.Any("obj", map[string]interface{}{}),
 	)
 
-	if shouldFault {
+	if shouldFault && j.cfg.SandboxModeFaultsEnabled {
 		return errors.New("Sandbox Mode Fault Injected")
 	}
 
