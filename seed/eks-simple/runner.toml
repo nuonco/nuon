@@ -1,7 +1,7 @@
 #:schema https://api.nuon.co/v1/general/config-schema?source=runner
 runner_type = "aws"
 helm_driver = "configmap"
-init_script_url = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh#dynamic-config"
+init_script_url = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init-mng.sh"
 
 [env_vars]
 foo = "bar"
