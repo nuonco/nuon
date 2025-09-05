@@ -62,6 +62,7 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 		"org_name":       runner.Org.Name,
 		"install_type":   string(runner.RunnerGroup.Type),
 		"runner_version": req.Version,
+		"process":        string(req.Process),
 	})
 
 	s.mw.Incr("heart_beat.incr", tags)
