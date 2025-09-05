@@ -1,40 +1,44 @@
 ---
-title: 018 Management Mode
+title: 018 - Management Mode
 description: Runner Mangagement Mode, Input updates, and App Variables
 ---
 
 _Sep 8, 2025_
 
-<div className="badge badge--primary">v0.19.622</div>
+<div className="badge badge--primary">v0.19.627</div>
 
 ## Management Mode
 
-With this new release, were introducing a new method to manage install runner's which we've dubbed "runner management
-mode." Management mode is a standalone runner process that runs on the install runner VM and is responsible for
-monitoring and managing the health of the VM as well as a child runner process. This allows us an additional degree of
-flexibility for managing updates and paves the way for future runner features. This release introduces runner management
-mode into GA as an opt-in feature which can be enabled by configuring the `init_script_url` attribute in `runner.toml`
-in the app config.
-
-```toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=runner
-runner_type     = "aws"
-helm_driver     = "configmap"
-init_script_url = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init-mng.sh"
-```
+Management mode is a standalone runner process that runs on the install runner VM and is responsible for
+monitoring and managing the health of the VM as well as the runner process itself. Read more about how to enable this for
+your installs here: [Runner Management Mode](/guides/runner-management-mode).
 
 ## Sensitive Inputs and Install Config Files
 
-Write one to two sentences describing what your changes were and how the person reading would use them. If you have
-them, be sure to add a screenshot and/or code block that accompanies your changes with a visual.
+When you generate a config, inputs will now be grouped together, reflecting the input groups you have defined in the app
+config. Senstive inputs will be excluded, to avoid saving them in plain text in version control.
+
+```toml
+name = "my_install"
+
+[aws_account]
+  region = "us-east-1"
+
+[[inputs]]
+  use_insecure_cookies = "false"
+
+[[inputs]]
+  bool_type = "true"
+  json_type = "{\"key\": \"value\"}"
+  number_type = "10"
+```
+
+When syncing install config files, sensitive inputs will be ignored. They can still be managed manually via the
+Dashboard.
 
 ## App Variables
 
-Sometimes you need to use the same value across all installs of an app. While you can do this using the default value of
-an App Input, this is not an ideal solution. These values are typically irrelevant to your customer, and you do not want
-to display them during the install process. There is also no way to prevent them from being overriden.
-
-To solve this problem we have introduced App Variables, a simple key/value store you can reference from app configs. The
+App Variables is a feature that allows you to define values you can use across all installs of an app. The
 values are not managed in the app config itself, and therefore do not need to be stored in version control, and are not
 displayed to your customer during the install process.
 
@@ -44,7 +48,7 @@ You can create app variables via the CLI.
 nuon apps variables create --name=my_var --value="some value"
 ```
 
-To use an app variable, interpolate in your app config.
+To use an app variable, interpolate them in your app config.
 
 ```toml actions/demo_action.toml
 #:schema https://api.nuon.co/v1/general/config-schema?source=action
@@ -66,12 +70,12 @@ echo $MY_VAR
 MY_VAR="{{.nuon.app.variables.my_var}}"
 ```
 
-Learn more about App Variables in [the docs](concepts/app-variables).
+Learn more about App Variables here: [Concepts - App Variables](/concepts/app-variables).
 
 ## Orderable Action Triggers
 
-It is often useful to be able to determine an explicit order for actions. We're introducing a new optional field `index`
-o action triggers that allows you to define an order for actions with the same trigger. For example, you can define a
+It is often useful to be able to define an explicit order for actions. We are introducing a new optional field ,`index`,
+on action triggers that allows you to define an order for actions with the same trigger. For example, you can define a
 trigger like this in one action:
 
 ```toml
@@ -96,7 +100,5 @@ This will result in the actions running in the order defined by `index`.
 
 ## Bug Fixes
 
-- Bug fix description
-- Bug fix description
-- Bug fix description
-- Bug fix description
+- Nested Runner ASG Cloudformation Stack is now respected and used during install stack re/provisions.
+- Fixed a bug causing workflow cancellation to intermittently fail.
