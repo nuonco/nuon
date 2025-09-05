@@ -2,7 +2,6 @@ package heartbeater
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/nuonco/nuon-runner-go/models"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/version"
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/metrics"
 )
 
 const (
@@ -17,6 +17,12 @@ const (
 )
 
 func (h *HeartBeater) writeHeartBeat(ctx context.Context) error {
+	tags := metrics.ToTags(
+		map[string]string{
+			"process": h.process,
+		},
+	)
+
 	aliveDur := time.Since(h.startTS)
 	req := &models.ServiceCreateRunnerHeartBeatRequest{
 		AliveTime: generics.ToPtr(int64(aliveDur)),
@@ -28,8 +34,8 @@ func (h *HeartBeater) writeHeartBeat(ctx context.Context) error {
 		return err
 	}
 
-	h.mw.Incr("heart_beat.incr", []string{fmt.Sprintf("process:%s", h.process)})
-	h.mw.Timing("heart_beat.alive_time", aliveDur, []string{fmt.Sprintf("process:%s", h.process)})
+	h.mw.Incr("heart_beat.incr", tags)
+	h.mw.Timing("heart_beat.alive_time", aliveDur, tags)
 	return nil
 }
 
