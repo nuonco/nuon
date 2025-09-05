@@ -53,7 +53,6 @@ func (a *InstallState) BeforeCreate(tx *gorm.DB) error {
 			Model(&Install{}).
 			First(&install, "id = ?", a.InstallID)
 		if res.Error != nil {
-			fmt.Println("rb - Error fetching install for InstallState creation:", res.Error)
 			return res.Error
 		}
 	}

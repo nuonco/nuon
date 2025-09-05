@@ -59,7 +59,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 		if err != nil {
 			ctx.Error(stderr.ErrAuthorization{
 				Err:         fmt.Errorf("no account identified"),
-				Description: fmt.Sprintf("no account was set in the middleware"),
+				Description: fmt.Sprint("no account was set in the middleware"),
 			})
 			ctx.Abort()
 			return

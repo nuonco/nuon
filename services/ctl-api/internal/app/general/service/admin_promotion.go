@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -76,7 +75,6 @@ func (s *service) initializeInstallStates(ctx *gin.Context) {
 		}
 
 		for _, install := range installs {
-			fmt.Println("rb - Initializing install state for install", install.ID)
 			s.evClient.Send(ctx, install.ID, &installsig.Signal{
 				Type: installsig.OperationGenerateState,
 			})
