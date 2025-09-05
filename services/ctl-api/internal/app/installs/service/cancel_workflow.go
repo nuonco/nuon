@@ -12,6 +12,8 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 // @ID							CancelWorkflow
@@ -61,8 +63,14 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 		ctx.JSON(http.StatusAccepted, true)
 	}
 
-	// TODO: cancellation should support workflows by owner type
-	id := fmt.Sprintf("sig-execute-flow-%s", wf.OwnerID)
+	id := worker.ExecuteWorkflowIDCallback(signals.RequestSignal{
+		EventLoopRequest: eventloop.EventLoopRequest{
+			ID: wf.OwnerID,
+		},
+		Signal: &signals.Signal{
+			InstallWorkflowID: wf.ID,
+		},
+	})
 	err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to cancel workflow: %w", err))
@@ -121,7 +129,15 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 	}
 
 	// TODO: cancellation should support workflows by owner type
-	id := fmt.Sprintf("sig-execute-flow-%s", wf.OwnerID)
+	id := worker.ExecuteWorkflowIDCallback(signals.RequestSignal{
+		EventLoopRequest: eventloop.EventLoopRequest{
+			ID: wf.OwnerID,
+		},
+		Signal: &signals.Signal{
+			InstallWorkflowID: wf.ID,
+		},
+	})
+
 	err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to cancel install workflow: %w", err))
