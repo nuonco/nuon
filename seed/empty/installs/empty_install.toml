@@ -6,5 +6,5 @@ approval_option = "approve-all"
 [aws_account]
   region = "us-east-1"
 
-[inputs]
+[[inputs]]
   root_domain = "byoc.install.example.com"

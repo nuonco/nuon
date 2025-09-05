@@ -63,15 +63,13 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 			return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
 		}
 
+		inputDefaults := make(map[string]string)
 		for _, ic := range appInputCfg.Inputs {
-			val, ok := installCfg.Inputs[ic.Name]
-			if ok && val != "" {
-				continue
-			}
 			if ic.Default != "" {
-				installCfg.Inputs[ic.Name] = ic.Default
+				inputDefaults[ic.Name] = ic.Default
 			}
 		}
+		installCfg.InputGroups = append([]config.InputGroup{inputDefaults}, installCfg.InputGroups...)
 	}
 
 	diff, _, err := installCfg.Diff(nil)
@@ -90,7 +88,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 
 	req := models.ServiceCreateInstallRequest{
 		Name:   &installCfg.Name,
-		Inputs: installCfg.Inputs,
+		Inputs: installCfg.FlattenedInputs(),
 		Metadata: &models.HelpersInstallMetadata{
 			ManagedBy: ManagedByNuonCLIConfig,
 		},
@@ -127,8 +125,13 @@ func (s *appInstallSyncer) syncExistingInstall(
 		return nil, fmt.Errorf("error getting current inputs for install %s: %w", appInstall.Name, err)
 	}
 
+	appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, appInstall.AppID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting current app input config for install %s: %w", appInstall.Name, err)
+	}
+
 	upstreamConfig := &config.Install{}
-	upstreamConfig.ParseIntoInstall(appInstall, currInputs)
+	upstreamConfig.ParseIntoInstall(appInstall, currInputs, appInputCfg, false)
 
 	diff, diffRes, err := installCfg.Diff(upstreamConfig)
 	if err != nil {
@@ -186,18 +189,16 @@ func (s *appInstallSyncer) syncExistingInstall(
 	}
 
 	// Use the current inputs as defaults, for missing values in the current inputs.
-	for k, v := range currInputs.Values {
-		if _, ok := installCfg.Inputs[k]; !ok {
-			installCfg.Inputs[k] = v
-		}
-	}
+	installCfg.InputGroups = append([]config.InputGroup{currInputs.Values}, installCfg.InputGroups...)
+
+	installCfgInputs := installCfg.FlattenedInputs()
 
 	hasInputChanged := false
-	if len(installCfg.Inputs) != len(currInputs.Values) {
+	if len(installCfg.InputGroups) != len(currInputs.Values) {
 		hasInputChanged = true
 	} else {
 		// length is same, go through each input to see if any have changed.
-		for k, v := range installCfg.Inputs {
+		for k, v := range installCfgInputs {
 			if currInputs.Values[k] != v {
 				hasInputChanged = true
 				break
@@ -208,7 +209,7 @@ func (s *appInstallSyncer) syncExistingInstall(
 	// If inputs have divereged, update the install inputs.
 	if hasInputChanged {
 		_, workflowID, err := s.api.UpdateInstallInputs(ctx, appInstall.ID, &models.ServiceUpdateInstallInputsRequest{
-			Inputs: installCfg.Inputs,
+			Inputs: installCfgInputs,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error updating inputs for install %s: %w", appInstall.Name, err)

@@ -4,5 +4,5 @@ approval_option = "approve-all"
 [aws_account]
   region = "us-east-1"
 
-[inputs]
+[[inputs]]
   db_password = "random123"
