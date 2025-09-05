@@ -36,6 +36,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/size"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/timeout"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/tracer"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/docs"
@@ -79,6 +80,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(middlewares.AsMiddleware(size.New)),
 		fx.Provide(middlewares.AsMiddleware(timeout.New)),
 		fx.Provide(middlewares.AsMiddleware(panicker.New)),
+		fx.Provide(middlewares.AsMiddleware(tracer.New)),
 
 		// add endpoints
 		fx.Provide(api.AsService(docs.New)),
