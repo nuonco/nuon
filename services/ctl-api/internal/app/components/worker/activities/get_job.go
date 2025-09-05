@@ -8,7 +8,7 @@ import (
 )
 
 type GetJobRequest struct {
-	ID string
+	ID string `validate:"required"`
 }
 
 // @temporal-gen activity

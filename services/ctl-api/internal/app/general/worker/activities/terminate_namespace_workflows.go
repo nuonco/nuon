@@ -11,7 +11,7 @@ import (
 )
 
 type TerminateNamespaceWorkflowsRequest struct {
-	Namespace string `json:"namespace"`
+	Namespace string `json:"namespace" validate:"required"`
 }
 
 // @temporal-gen activity

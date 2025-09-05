@@ -7,10 +7,10 @@ import (
 )
 
 type MarkStateStaleRequest struct {
-	TriggeredByID   string
-	TriggeredByType string
+	TriggeredByID   string `validate:"required"`
+	TriggeredByType string `validate:"required"`
 
-	InstallID string
+	InstallID string `validate:"required"`
 }
 
 // @temporal-gen activity

@@ -7,9 +7,9 @@ import (
 )
 
 type GetAppGraphRequest struct {
-	InstallID string `json:"install_id"`
+	InstallID string `json:"install_id" validate:"required"`
 
-	Reverse bool
+	Reverse bool `json:"reverse"`
 }
 
 // @temporal-gen activity

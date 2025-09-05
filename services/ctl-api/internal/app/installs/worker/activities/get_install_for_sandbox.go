@@ -8,7 +8,7 @@ import (
 )
 
 type GetInstallForSandboxRequest struct {
-	SandboxID string `json:"sandbox_id"`
+	SandboxID string `json:"sandbox_id" validate:"required"`
 }
 
 // @temporal-gen activity

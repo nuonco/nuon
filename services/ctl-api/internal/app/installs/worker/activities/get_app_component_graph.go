@@ -7,10 +7,10 @@ import (
 )
 
 type GetAppComponentGraphRequest struct {
-	InstallID   string `json:"install_id"`
-	ComponentID string `json:"component_id"`
+	InstallID   string `json:"install_id" validate:"required"`
+	ComponentID string `json:"component_id" validate:"required"`
 
-	Reverse bool
+	Reverse bool `validate:"required"`
 }
 
 // @temporal-gen activity

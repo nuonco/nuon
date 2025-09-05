@@ -9,8 +9,8 @@ import (
 )
 
 type FetchUntornDependenciesRequest struct {
-	ComponentRootID string `json:"component_root_id"`
-	InstallID       string `json:"install_id"`
+	ComponentRootID string `json:"component_root_id" validate:"required"`
+	InstallID       string `json:"install_id" validate:"required"`
 }
 
 // @temporal-gen activity
