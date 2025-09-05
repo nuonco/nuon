@@ -461,7 +461,7 @@ export async function approveWorkflowStep({
 }: IApproveWorklowStep) {
   return nueMutateData({
     orgId,
-    path: `install-workflows/${workflowId}/steps/${stepId}/approvals/${approvalId}/response`,
+    path: `workflows/${workflowId}/steps/${stepId}/approvals/${approvalId}/response`,
     body: {
       note: '',
       response_type: responseType,
