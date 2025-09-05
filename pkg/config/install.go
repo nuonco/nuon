@@ -32,12 +32,14 @@ type AWSAccount struct {
 	Region string `mapstructure:"region,omitempty"`
 }
 
+type InputGroup map[string]string
+
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
 	Name           string                `mapstructure:"name" comment:"#:schema https://api.nuon.co/v1/general/config-schema?type=install" jsonschema:"required"`
 	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty"`
 	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty"`
-	Inputs         map[string]string     `mapstructure:"inputs,omitempty"`
+	InputGroups    []InputGroup          `mapstructure:"inputs,omitempty"`
 }
 
 func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -52,8 +54,8 @@ func (i *Install) Parse() error {
 		return nil
 	}
 
-	if i.Inputs == nil {
-		i.Inputs = make(map[string]string)
+	if i.InputGroups == nil {
+		i.InputGroups = make([]InputGroup, 0)
 	}
 
 	return nil
@@ -67,7 +69,17 @@ func (i *Install) Validate() error {
 	return nil
 }
 
-func (i *Install) ParseIntoInstall(ins *models.AppInstall, inputs *models.AppInstallInputs) {
+func (i *Install) FlattenedInputs() map[string]string {
+	flattened := make(map[string]string)
+	for _, group := range i.InputGroups {
+		for key, val := range group {
+			flattened[key] = val
+		}
+	}
+	return flattened
+}
+
+func (i *Install) ParseIntoInstall(ins *models.AppInstall, inputs *models.AppInstallInputs, cfg *models.AppAppInputConfig, skipSensetive bool) {
 	if ins != nil {
 		i.Name = ins.Name
 		if ins.AwsAccount != nil {
@@ -80,7 +92,29 @@ func (i *Install) ParseIntoInstall(ins *models.AppInstall, inputs *models.AppIns
 		}
 	}
 	if inputs != nil {
-		i.Inputs = inputs.Values
+		if i.InputGroups == nil {
+			i.InputGroups = make([]InputGroup, 0)
+		}
+		if cfg == nil {
+			i.InputGroups = append(i.InputGroups, inputs.Values)
+		} else {
+			groups := make(map[string]map[string]string)
+
+			for _, appInput := range cfg.Inputs {
+				if groups[appInput.GroupID] == nil {
+					groups[appInput.GroupID] = make(map[string]string)
+				}
+				if skipSensetive && appInput.Sensitive {
+					continue
+				}
+				groups[appInput.GroupID][appInput.Name] = inputs.Values[appInput.Name]
+			}
+			for _, group := range groups {
+				if len(group) > 0 {
+					i.InputGroups = append(i.InputGroups, group)
+				}
+			}
+		}
 	}
 }
 
@@ -115,11 +149,14 @@ func (i *Install) Diff(upstreamInstall *Install) (string, diff.DiffSummary, erro
 		)
 	}
 
-	inputDiffs := make([]*diff.Diff, len(i.Inputs))
-	for key, val := range i.Inputs {
+	inputDiffs := make([]*diff.Diff, len(i.InputGroups))
+	installInputs := i.FlattenedInputs()
+	upstreamInputs := upstreamInstall.FlattenedInputs()
+
+	for key, val := range installInputs {
 		inputDiffs = append(inputDiffs, diff.NewDiff(
 			diff.WithKey(key),
-			diff.WithStringDiff(upstreamInstall.Inputs[key], val),
+			diff.WithStringDiff(upstreamInputs[key], val),
 		))
 	}
 	diffs = append(diffs, diff.NewDiff(

@@ -126,6 +126,10 @@ You can create and manage [Installs](/concepts/installs) by creating `<install>.
 managed separately from the app configs. An Install config must declare a `name` field and
 any relevant install-specific configuration.
 
+The inputs are defined as a list of input groups. This is just for logical grouping, and inputs
+from different groups can be defined together. Note that if an input is defined multiple times,
+the last defined value would be used.
+
 <Note>
   Currently only AWS installs are supported using Install config files.
 </Note>
@@ -141,8 +145,10 @@ approval_option = "prompt" # set this to "approve-all" to enable auto approval
 [aws_account]
   region = "us-east-1"
 
-[inputs]
+[[inputs]]
   input_string = "sample"
+
+[[inputs]]
   input_number = "100"
   input_bool   = "true"
   input_json   = '{"key": "value"}'
