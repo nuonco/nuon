@@ -13,6 +13,20 @@ Management mode is a standalone runner process that runs on the install runner V
 monitoring and managing the health of the VM as well as the runner process itself. Read more about how to enable this for
 your installs here: [Runner Management Mode](/guides/runner-management-mode).
 
+## Stack Config Breaking Change
+
+We fixed a bug where the `runner_nested_template_url` is now recognized, where as before it was ignored.
+
+<Warning>
+This requires a config update for any apps that currently define a `runner_nested_template_url` in their `stack.toml`, as older versions of the nested template could be invalid or not work.
+</Warning>
+
+We recommend using the latest nested template url: 
+
+```toml
+runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.1.6/runner/asg/stack.yaml"
+```
+
 ## Sensitive Inputs and Install Config Files
 
 When you generate a config, inputs will now be grouped together, reflecting the input groups you have defined in the app
