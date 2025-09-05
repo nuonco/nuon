@@ -2,6 +2,7 @@ locals {
   org_id     = data.aws_organizations_organization.orgs.id
   account_id = local.accounts[local.aws_settings.account_name]
   public_prefixes = [
+    "aws-cloudformation-templates/*",
     "cli/*",
     "runner/*",
     "nuonctl/*",
@@ -9,6 +10,7 @@ locals {
     "sandbox/*",
     "stacks/*",
   ]
+
 }
 
 # give all accounts in our org access to this bucket
