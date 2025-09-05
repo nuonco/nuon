@@ -43,11 +43,13 @@ func (s *propagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.He
 		return err
 	}
 
+	traceID := cctx.TraceIDFromContext(ctx)
 	logStream, _ := cctx.GetLogStreamWorkflow(ctx)
 
 	payload, err := s.dataConverter.ToPayload(Payload{
 		OrgID:     orgID,
 		AccountID: acctID,
+		TraceID:   traceID,
 		LogStream: logStream,
 	})
 	if err != nil {
@@ -80,6 +82,7 @@ func (s *propagator) Extract(ctx context.Context, reader workflow.HeaderReader) 
 
 	ctx = cctx.SetAccountIDContext(ctx, payload.AccountID)
 	ctx = cctx.SetOrgIDContext(ctx, payload.OrgID)
+	ctx = cctx.SetTraceIDContext(ctx, payload.TraceID)
 
 	if payload.LogStream != nil {
 		ctx = cctx.SetLogStreamContext(ctx, payload.LogStream)
@@ -97,6 +100,7 @@ func (s *propagator) ExtractToWorkflow(ctx workflow.Context, reader workflow.Hea
 
 	ctx = cctx.SetAccountIDWorkflowContext(ctx, payload.AccountID)
 	ctx = cctx.SetOrgIDWorkflowContext(ctx, payload.OrgID)
+	ctx = cctx.SetTraceIDWorkflowContext(ctx, payload.TraceID)
 
 	if payload.LogStream != nil {
 		ctx = cctx.SetLogStreamWorkflowContext(ctx, payload.LogStream)
