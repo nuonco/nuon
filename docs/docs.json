@@ -15,11 +15,7 @@
         "groups": [
           {
             "group": "Get Started",
-            "pages": [
-              "get-started/introduction",
-              "get-started/quickstart",
-              "get-started/create-your-first-app"
-            ]
+            "pages": ["get-started/introduction", "get-started/quickstart", "get-started/create-your-first-app"]
           },
           {
             "group": "Resources",
@@ -116,7 +112,8 @@
               "guides/bring-your-own-network",
               "guides/custom-domains",
               "guides/sandbox-orgs",
-              "guides/team-management"
+              "guides/team-management",
+              "guides/runner-management-mode"
             ]
           },
           {
