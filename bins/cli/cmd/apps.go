@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
+	"github.com/powertoolsdev/mono/bins/cli/internal/variables"
 	"github.com/powertoolsdev/mono/bins/cli/internal/version"
 )
 
@@ -261,5 +262,85 @@ func (c *cli) appsCmd() *cobra.Command {
 
 	appsCmd.AddCommand(renameCmd)
 
+	// variables subcommand (replacing secrets)
+	variablesCmd := c.variablesCmd()
+	appsCmd.AddCommand(variablesCmd)
+
 	return appsCmd
+}
+
+func (c *cli) variablesCmd() *cobra.Command {
+	var (
+		appID      string
+		variableID string
+		offset     int
+		limit      int
+	)
+
+	variablesCmd := &cobra.Command{
+		Use:               "variables",
+		Short:             "Create and manage app variables.",
+		PersistentPreRunE: c.persistentPreRunE,
+	}
+
+	// list command
+	listCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List all app variables",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := variables.New(c.apiClient, c.cfg)
+			return svc.List(cmd.Context(), appID, offset, limit, PrintJSON)
+		}),
+	}
+	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app")
+	listCmd.MarkFlagRequired("app-id")
+	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "The offset to start listing variables from")
+	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "The number of variables to list")
+	variablesCmd.AddCommand(listCmd)
+
+	// delete command
+	confirmDelete := false
+	deleteCmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete an app variable",
+		Long:  "Delete an app variable value",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := variables.New(c.apiClient, c.cfg)
+			return svc.Delete(cmd.Context(), appID, variableID, PrintJSON)
+		}),
+	}
+	deleteCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app")
+	deleteCmd.Flags().StringVarP(&variableID, "variable-id", "i", "", "The ID or name of the variable to delete")
+	deleteCmd.Flags().BoolVar(&confirmDelete, "confirm", false, "Confirm you want to delete the variable")
+
+	deleteCmd.MarkFlagRequired("app-id")
+	deleteCmd.MarkFlagRequired("variable-id")
+	deleteCmd.MarkFlagRequired("confirm")
+	variablesCmd.AddCommand(deleteCmd)
+
+	// create command
+	var (
+		name  string
+		value string
+	)
+	createCmd := &cobra.Command{
+		Use:               "create",
+		Short:             "Create a new app variable.",
+		PersistentPreRunE: c.persistentPreRunE,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := variables.New(c.apiClient, c.cfg)
+			return svc.Create(cmd.Context(), appID, name, value, PrintJSON)
+		}),
+	}
+	createCmd.Flags().StringVarP(&name, "name", "n", "", "The name of the variable, must be alphanumeric, lower case and can use underscores.")
+	createCmd.Flags().StringVarP(&value, "value", "v", "", "The variable value.")
+	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app")
+
+	createCmd.MarkFlagRequired("name")
+	createCmd.MarkFlagRequired("value")
+	createCmd.MarkFlagRequired("app-id")
+	variablesCmd.AddCommand(createCmd)
+
+	return variablesCmd
 }
