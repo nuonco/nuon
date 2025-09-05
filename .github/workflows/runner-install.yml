@@ -32,7 +32,7 @@ jobs:
 
       - name: Check Version
         run: |
-          [[ "${{ steps.install-runner.outputs.version }}" == "${{ steps.get-tag.outputs.latest_tag }}" ]]
+          [[ "${{ steps.install-runner.outputs.runner_version }}" == "${{ steps.get-tag.outputs.latest_tag }}" ]]
 
   Install-runner-latest:
     runs-on: ubuntu-latest
@@ -55,8 +55,8 @@ jobs:
           cd bins/runner
           chmod +x install.sh
           yes | ./install.sh latest .
-          echo "runner_version=$(runner version)" >> $GITHUB_OUTPUT
+          echo "runnerversion=$(runner version)" >> $GITHUB_OUTPUT
 
       - name: Check Version
         run: |
-          [[ "${{ steps.install-runner.outputs.version }}" == "${{ steps.get-tag.outputs.latest_tag }}" ]]
+          [[ "${{ steps.install-runner.outputs.runner_version }}" == "${{ steps.get-tag.outputs.latest_tag }}" ]]
