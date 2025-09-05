@@ -18,6 +18,7 @@ func (c *cli) secretsCmd() *cobra.Command {
 		Use:               "secrets",
 		Short:             "Create and manage secrets.",
 		Aliases:           []string{"s"},
+		Deprecated:        "use 'nuon apps variables' instead",
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 

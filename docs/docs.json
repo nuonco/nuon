@@ -40,6 +40,7 @@
         "tab": "Changelog",
         "pages": [
           "updates/updates",
+          "updates/018-management-mode",
           "updates/017-noop-approvals-stability-updates",
           "updates/016-enhanced-install-config-files-and-improved-plans",
           "updates/015-azure-support",
@@ -74,6 +75,7 @@
           "concepts/actions",
           "concepts/runners",
           "concepts/app-inputs",
+          "concepts/app-variables",
           "concepts/app-secrets",
           "concepts/platforms"
         ]
