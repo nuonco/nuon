@@ -55,7 +55,7 @@ jobs:
           cd bins/runner
           chmod +x install.sh
           yes | ./install.sh latest .
-          echo "runnerversion=$(runner version)" >> $GITHUB_OUTPUT
+          echo "runner_version=$(runner version)" >> $GITHUB_OUTPUT
 
       - name: Check Version
         run: |
