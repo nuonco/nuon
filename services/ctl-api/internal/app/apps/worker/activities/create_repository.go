@@ -11,9 +11,9 @@ import (
 )
 
 type CreateAppRepositoryRequest struct {
-	AppID string
+	AppID string `validate:"required"`
 
-	CreateResponse *ecrrepository.ProvisionECRRepositoryResponse
+	CreateResponse *ecrrepository.ProvisionECRRepositoryResponse `validate:"required"`
 }
 
 // @temporal-gen activity

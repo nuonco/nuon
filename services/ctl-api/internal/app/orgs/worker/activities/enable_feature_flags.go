@@ -5,7 +5,7 @@ import (
 )
 
 type EnableFeaturesRequest struct {
-	OrgID string `json:"org_id"`
+	OrgID string `json:"org_id" validate:"required"`
 }
 
 // @temporal-gen activity

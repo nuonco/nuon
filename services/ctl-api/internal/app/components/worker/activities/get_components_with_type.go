@@ -9,7 +9,7 @@ import (
 )
 
 type GetComponentsWithType struct {
-	IDs []string
+	IDs []string `validate:"required"`
 }
 
 // @temporal-gen activity
