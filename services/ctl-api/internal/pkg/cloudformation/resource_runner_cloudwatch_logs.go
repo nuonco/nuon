@@ -32,7 +32,7 @@ func (a *Templates) getRunnerCloudWatchLogPolicy(inp *TemplateInput, t tagBuilde
 	return &iam.Policy{
 		PolicyName: fmt.Sprintf("nuon-install-%s-cw-logs-access", inp.Install.ID),
 		Roles: []string{
-			cloudformation.Ref("RunnerInstanceRole"),
+			cloudformation.GetAtt("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRole"),
 		},
 		PolicyDocument: map[string]interface{}{
 			"Version": "2012-10-17",
