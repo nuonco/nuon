@@ -8,9 +8,9 @@ import (
 )
 
 type GetComponentDependents struct {
-	AppID           string `json:"app_id"`
-	ComponentRootID string `json:"component_root_id"`
-	ConfigVersion   int    `json:"config_version"`
+	AppID           string `json:"app_id" validate:"required"`
+	ComponentRootID string `json:"component_root_id" validate:"required"`
+	ConfigVersion   int    `json:"config_version" validate:"required"`
 }
 
 // @temporal-gen activity

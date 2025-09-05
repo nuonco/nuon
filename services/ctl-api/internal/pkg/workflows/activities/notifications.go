@@ -9,11 +9,11 @@ import (
 )
 
 type SendNotificationRequest struct {
-	OrgID string
-	AppID string
+	OrgID string `validate:"required"`
+	AppID string `validate:"required"`
 
-	Type notifications.Type
-	Vars map[string]string
+	Type notifications.Type   `validate:"required"`
+	Vars map[string]string    `validate:"required"`
 }
 
 // @temporal-gen activity

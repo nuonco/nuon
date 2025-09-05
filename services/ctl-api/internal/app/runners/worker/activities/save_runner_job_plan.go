@@ -6,8 +6,8 @@ import (
 )
 
 type SaveRunnerJobPlanRequest struct {
-	JobID    string
-	PlanJSON string
+	JobID    string `validate:"required"`
+	PlanJSON string `validate:"required"`
 }
 
 // @temporal-gen activity

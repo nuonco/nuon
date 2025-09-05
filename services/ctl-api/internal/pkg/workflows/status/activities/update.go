@@ -24,8 +24,8 @@ import (
 // 2. ability to start doing things such as sending a signal to a channel if needed. This enables the ability to start
 // blocking for a "status" change or a specific status.
 type UpdateStatusRequest struct {
-	ID     string
-	Status app.CompositeStatus `json:"status"`
+	ID     string              `validate:"required"`
+	Status app.CompositeStatus `json:"status" validate:"required"`
 }
 
 // TODO(sdboyer) remove after workflow refactor

@@ -8,7 +8,7 @@ import (
 )
 
 type GetInstallForStackRequest struct {
-	StackID string `json:"stack_id"`
+	StackID string `json:"stack_id" validate:"required"`
 }
 
 // @temporal-gen activity

@@ -8,7 +8,7 @@ import (
 )
 
 type CheckExistsRequest struct {
-	ID string
+	ID string `validate:"required"`
 }
 
 // @temporal-gen activity
