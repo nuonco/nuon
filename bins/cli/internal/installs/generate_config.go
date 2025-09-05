@@ -25,8 +25,10 @@ func (s *Service) GenerateConfig(ctx context.Context, installID string) error {
 		return view.Error(err)
 	}
 
+	appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, install.AppID)
+
 	var ins config.Install
-	ins.ParseIntoInstall(install, curInps)
+	ins.ParseIntoInstall(install, curInps, appInputCfg, true)
 
 	ui.PrintTOML(ins)
 
