@@ -16,7 +16,7 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *TemplateInput) *cloudformation.
 		"maintenance_iam_role_arn": cloudformation.GetAttPtr("RunnerMaintenance", "Arn"),
 		"provision_iam_role_arn":   cloudformation.GetAttPtr("RunnerProvision", "Arn"),
 		"deprovision_iam_role_arn": cloudformation.GetAttPtr("RunnerDeprovision", "Arn"),
-		"runner_iam_role_arn":      cloudformation.GetAttPtr("RunnerInstanceRole", "Arn"),
+		"runner_iam_role_arn":      cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRole"),
 
 		// from the nested VPC Cloudformation Template (we want its outputs)
 		"vpc_id":          cloudformation.GetAtt("VPC", "Outputs.VPC"),
