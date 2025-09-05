@@ -1,0 +1,34 @@
+---
+title: 'App Variables'
+description: "App Variables allow you to store values in the API to be used across installs of an app."
+---
+
+App Variables are values that you can store in the API to be used across all installs of an app.
+
+## Defining App Variables
+
+You can create App Variables using the CLI.
+
+```sh
+nuon apps variables create --name=external_api_key --value=b25yYW5nZXRpZ2h0bHlhdHRlbXB0cGxlbnR5cmVhZGRvdWJsZXdlc3RleWVodW50d2g=
+```
+
+Once created you should be able to view the default using the CLI.
+
+```sh
+nuon apps variables list
+```
+
+If you no longer need the default, you can delete it using the CLI
+
+```
+nuon variables delete --id=apsmsj5rucsdc758c2cs6x7geu
+```
+
+## Using App Variables
+
+App Variables are included in the install state, and are available in job plans. Using our example secret named `external_api_key`, you could interpolate it's value in your app config using `{{ .nuon.app.variables.external_api_key }}`.
+
+<Note>
+If you add or a update an app default after an install has been created. You will need to update that install's state before the value will be included in plans. Running a deploy or sandbox provision will trigger a state update.
+</Note>

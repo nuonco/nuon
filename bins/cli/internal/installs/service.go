@@ -35,7 +35,6 @@ func (s *Service) GetInstallID() string {
 	return installID
 }
 
-
 func (s *Service) unsetInstallID(ctx context.Context) error {
 	s.cfg.Set("install_id", "")
 	pterm.Info.Printfln("current install is now %s", pterm.Green("unset"))
