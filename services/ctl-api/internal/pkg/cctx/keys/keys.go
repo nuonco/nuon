@@ -13,7 +13,7 @@ const (
 	InstallWorkflowCtxKey string = "workflow"
 	FlowCtxKey            string = "flow"
 	IsEmployeeCtxKey      string = "is_employee"
-	LoggerCtxKey          string = "logger"
+	LoggerFieldsCtxKey    string = "logger_fields"
 	LogStreamCtxKey       string = "log_stream"
 	MetricsKey            string = "metrics"
 	OrgCtxKey             string = "org"
@@ -24,4 +24,5 @@ const (
 	RunnerIDCtxKey        string = "runner_id"
 	DisableViewCtxKey     string = "disable_view"
 	PatcherCtxKey         string = "patcher"
+	TraceIDCtxKey         string = "trace_id"
 )
