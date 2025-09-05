@@ -1,0 +1,51 @@
+---
+title: 'Runner Management Mode'
+description: 'We are releasing runner management mode into GA. Here is how to start using it or migrate over.'
+icon: 'code'
+---
+
+## What is Management Mode?
+
+Runner management mode is a standalone process that is deployed _first_ in an install's runner VM. Once it has started,
+it is responsible for configuring, starting, monitoring, and updating a child runner process for the install itself.
+This install runner process then carries out all of the day to day runner operations. This allows for an additional
+degree of flexibility when managing updates and paves the way for future runner features.
+
+This release introduces runner management mode into GA as an opt-in feature which can be enabled by configuring the
+`init_script_url` attribute in `runner.toml` in the app config. We recommend all new installs make use of it from day-1.
+
+## Migrating an existing Install
+
+1. Update `runner.toml` to use the management mode init script.
+2. Update `stack.toml` to use the 1.6 version of the Runner ASG nested CF stack.
+
+```toml
+init_script_url = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init-mng.sh"
+```
+
+in stack.yaml, update `runner_nested_template_url`, like so:
+
+```toml
+runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.1.6/runner/asg/stack.yaml"
+```
+
+Once these values are updated:
+
+1. Sync the app config with `nuon apps sync`.
+2. Reprovision the install and apply the new stack as a CF change-set.
+
+## New Installs
+
+1. Configure `runner.toml` to use the management mode init script.
+2. Configure `stack.toml` to use the 1.6 version of the Runner ASG nested CF stack.
+3. Carry on as usual.
+
+```toml
+init_script_url = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init-mng.sh"
+```
+
+in stack.yaml, update `runner_nested_template_url`:
+
+```toml
+runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.1.6/runner/asg/stack.yaml"
+```
