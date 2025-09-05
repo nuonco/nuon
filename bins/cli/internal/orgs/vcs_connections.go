@@ -27,13 +27,17 @@ func (s *Service) VCSConnections(ctx context.Context, offset, limit int, asJSON 
 
 	data := [][]string{
 		{
+			"ID",
 			"GITHUB INSTALL ID",
+			"GITHUB ACCOUNT NAME",
 		},
 	}
 
 	for _, v := range vcs {
 		data = append(data, []string{
-			*&v.GithubInstallID,
+			v.ID,
+			v.GithubInstallID,
+			v.GithubAccountName,
 		})
 	}
 
