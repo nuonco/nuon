@@ -55,8 +55,8 @@ func (v *varsValidator) getFakeAppState() *state.AppState {
 	fakeApp.ID = domains.NewAppID()
 	fakeApp.Name = "fake-app"
 	fakeApp.Status = "active"
-	// TODO: fake secrets
-	fakeApp.Secrets = make(map[string]string)
+	// TODO: fake defaults
+	fakeApp.Variables = make(map[string]string)
 	return &fakeApp
 }
 
