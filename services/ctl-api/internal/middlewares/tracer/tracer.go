@@ -34,7 +34,8 @@ func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		traceID := ctx.Request.Header.Get(traceIDHeaderKey)
 		if traceID == "" {
-			traceID = uuid.NewString()
+			u7 := uuid.Must(uuid.NewV7())
+			traceID = u7.String()
 		}
 
 		cctx.SetTraceIDGinContext(ctx, traceID)
