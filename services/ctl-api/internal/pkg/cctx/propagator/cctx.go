@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -44,6 +45,11 @@ func (s *propagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.He
 	}
 
 	traceID := cctx.TraceIDFromContext(ctx)
+	if traceID == "" {
+		u7 := uuid.Must(uuid.NewV7())
+		traceID = u7.String()
+		cctx.SetTraceIDWorkflowContext(ctx, traceID)
+	}
 	logStream, _ := cctx.GetLogStreamWorkflow(ctx)
 
 	payload, err := s.dataConverter.ToPayload(Payload{
@@ -68,6 +74,11 @@ func (s *propagator) getPayload(reader workflow.HeaderReader) (*Payload, error) 
 	var payload Payload
 	if err := s.dataConverter.FromPayload(value, &payload); err != nil {
 		return nil, errors.Wrap(err, "unable to convert payload")
+	}
+
+	if payload.TraceID == "" {
+		u7 := uuid.Must(uuid.NewV7())
+		payload.TraceID = u7.String()
 	}
 
 	return &payload, nil
