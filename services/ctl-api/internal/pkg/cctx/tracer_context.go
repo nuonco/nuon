@@ -12,7 +12,6 @@ import (
 func TraceIDFromContext(ctx ValueContext) string {
 	traceID := ctx.Value(keys.TraceIDCtxKey)
 	if traceID == nil {
-		// Generate a new trace ID if not present
 		return ""
 	}
 
