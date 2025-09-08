@@ -10,23 +10,27 @@ Most applications have either explicit or implicit dependencies between the diff
 
 For example, given an app that comprises a [Helm chart](/guides/helm-chart-components) component and a [Terraform component](./terraform-components):
 
-```toml nuon.<your-app>.toml
-[[components]]
+```toml components/helm.toml
 name       = "helm"
 type       = "helm_chart"
 chart_name = "helm"
-[components.connected_repo]
+dependencies = ["database"]
+
+[connected_repo]
 directory = "components/helm"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
-[components.values]
-database_url = "{{.nuon.components.database.outputs.database_url}}"
 
-[[components]]
+[values]
+database_url = "{{.nuon.components.database.outputs.database_url}}"
+```
+
+```toml components/database.toml
 name              = "database"
 type              = "terraform_module"
 terraform_version = "1.11.3"
-[components.connected_repo]
+
+[connected_repo]
 directory = "components/database"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
@@ -48,34 +52,36 @@ The dependency graph is directed and _acyclic_, which means circular dependencie
 Nuon checks for cycles and will error if you attempt to define one.
 </Warning>
 
-Dependencies will be inferred from the order of the components in your app config file.
-Every component will automatically depend on the component defined before it.
-If you re-order the components in the file, the dependencies will be updated.
+Dependencies can be explicitly defined using the `dependencies` field in each component's configuration file.
+You can specify which components a given component depends on by listing their names in the `dependencies` array.
 
-Taking the example above, you can make the Helm chart depend on the database by simply reversing their order in the file.
+Taking the example above, you can make the Helm chart depend on the database by adding it to the dependencies list.
 
-```toml
-# Move the helm_chart component from up here...
+With the directory-based approach, you can specify dependencies explicitly in each component file:
 
-[[components]]
+```toml components/database.toml
 name              = "database"
 type              = "terraform_module"
 terraform_version = "1.11.3"
-[components.connected_repo]
+
+[connected_repo]
 directory = "components/database"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
+```
 
-# to down here.
-[[components]]
+```toml components/helm.toml
 name       = "helm"
 type       = "helm_chart"
 chart_name = "helm"
-[components.connected_repo]
+dependencies = ["database"]
+
+[connected_repo]
 directory = "components/helm"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
-[components.values]
+
+[values]
 database_url = "{{.nuon.components.database.outputs.database_url}}"
 ```
 
