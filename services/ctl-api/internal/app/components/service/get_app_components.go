@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
-	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -45,7 +44,7 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 		typesSlice = pq.StringArray(strings.Split(types, ","))
 	}
 
-	components, err := s.getAppComponents(ctx, appID, q, typesSlice)
+	component, err := s.getAppComponents(ctx, appID, q, typesSlice)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app components: %w", err))
 		return
@@ -57,21 +56,14 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 	//return
 	//}
 
-	ctx.JSON(http.StatusOK, components)
+	ctx.JSON(http.StatusOK, component)
 }
 
 func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []string) ([]app.Component, error) {
 	currentApp := &app.App{}
-
-	appCfg, err := s.appsHelpers.GetAppLatestConfig(ctx, appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get latest app config")
-	}
-
 	tx := s.db.WithContext(ctx).
 		Preload("Components", func(db *gorm.DB) *gorm.DB {
 			db = db.Scopes(scopes.WithOffsetPagination)
-			db = db.Where("id in ?", appCfg.ComponentIDs)
 			if q != "" {
 				db = db.Where("components.name ILIKE ?", "%"+q+"%")
 			}
