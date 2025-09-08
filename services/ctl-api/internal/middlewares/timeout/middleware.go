@@ -39,13 +39,13 @@ func (m *middleware) Handler() gin.HandlerFunc {
 				// Request completed normally
 				return
 			case <-timeoutCtx.Done():
-				cl := cctx.GetLogger(c.Request.Context(), m.l)
+				cl := cctx.GetLogger(c, m.l)
 				cl.Error("request timed out",
 					zap.Duration("max_duration", m.cfg.MaxRequestDuration),
 					zap.String("path", c.Request.URL.Path),
 					zap.String("method", c.Request.Method))
 
-				metricsCtx, err := cctx.MetricsContextFromGinContext(c.Request.Context())
+				metricsCtx, err := cctx.MetricsContextFromGinContext(c)
 				if err != nil {
 					cl.Error("no metrics context found")
 					return
@@ -77,4 +77,3 @@ func New(params Params) *middleware {
 		cfg: params.Cfg,
 	}
 }
-
