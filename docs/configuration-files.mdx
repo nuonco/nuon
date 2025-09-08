@@ -1,6 +1,6 @@
 ---
 title: 'Configuration Files'
-description: 'Configure apps using a single `.toml` file'
+description: 'Configure apps using `.toml` configuration files'
 ---
 
 Config files allow you to define a BYOC application using `.toml` files.
@@ -35,10 +35,10 @@ nuon apps sync
 
 ## Breaking up Config Files
 
-As your config grows, keeping everything in a single file can become
-unmanagable. Create `components` and `actions` directories in your project root and individual files for each component. e.g., `helm_deploy.toml`.
+Since configs can get complex as your application grows, we follow a structured approach to organize your configuration files.
+Create a `components` directory in your project root with individual files for each component. e.g., `components/helm_deploy.toml`.
 
-```toml helm_deploy.toml
+```toml components/helm_deploy.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=helm
 name           = "whoami"
 type           = "helm_chart"
@@ -59,7 +59,6 @@ contents = "./whoami.yaml"
   When loading a component from a source, the `components` prefix is not needed
   for each field, like it is in the main config file.
 </Note>
-
 ## Reference
 
 ### Input Config
@@ -123,7 +122,7 @@ contents = "./sandbox.tfvars"
 ### Install Config
 
 You can create and manage [Installs](/concepts/installs) by creating `<install>.toml` files
-managed separately from the app configs. An Install config must declare a `name` field and
+in an `installs` directory managed separately from the app configs. An Install config must declare a `name` field and
 any relevant install-specific configuration.
 
 The inputs are defined as a list of input groups. This is just for logical grouping, and inputs
@@ -134,7 +133,7 @@ the last defined value would be used.
   Currently only AWS installs are supported using Install config files.
 </Note>
 
-```toml install.toml
+```toml installs/install.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=install
 
 name = "<install-name>"
@@ -176,7 +175,7 @@ To define a [terraform module component](/guides/terraform-components) use the
 
 To configure a terraform component using a connected repo:
 
-```toml my-tf-component.toml
+```toml components/terraform.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=terraform
 name = "terraform"
 type = "terraform_module"
@@ -202,7 +201,7 @@ To define a [helm chart component](/guides/helm-chart-components) use the
 
 To configure a helm chart in a connected repo:
 
-```toml helm.toml
+```toml components/helm.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=helm
 name = "helm"
 type = "helm_chart"
@@ -224,7 +223,7 @@ To define a [docker build component](/guides/docker-build-components) use the
 
 To configure a docker build component from a private repo:
 
-```toml docker_build.toml
+```toml components/docker_build.toml
 name = "docker_build"
 type = "docker_build"
 
@@ -243,7 +242,7 @@ the `container_image` type.
 
 To configure a public container image:
 
-```toml container_image.toml
+```toml components/container_image.toml
 name = "container_image"
 type = "container_image"
 
@@ -254,7 +253,7 @@ tag = "latest"
 
 To configure a container image from an ECR repo:
 
-```toml container_image_ecr.toml
+```toml components/container_image_ecr.toml
 name = "container_image_ecr"
 type = "container_image"
 

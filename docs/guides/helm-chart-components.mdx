@@ -10,7 +10,7 @@ Helm chart Components allow you to deploy any helm from a public or connected re
 
 To configure a Helm component, specify a repo, the required configuration values and version to deploy it with.
 
-```toml nuon.<your-app>.toml
+```toml components/<your-component>.toml
 [[components]]
 name       = "helm_chart"
 type       = "helm_chart"
@@ -51,7 +51,7 @@ options, reference infrastructure from other Components or access an image that 
 
 Examples for accessing common interpolated variables:
 
-```toml nuon.<your-app>.toml
+```toml components/<your-helm-component>.toml
 [[components]]
 name       = "helm_chart"
 type       = "helm_chart"
@@ -78,7 +78,7 @@ internal_root_domain = "{{.nuon.sandbox.outputs.nuon_dns.internal_domain.name}}"
 
 You can add a values file, and set multiple values at once.
 
-```toml nuon.<your-app>.toml
+```toml components/<your-component>.toml
 [[components]]
 name       = "helm_chart"
 type       = "helm_chart"
@@ -166,7 +166,7 @@ nlbs:
 
 Then, you could set those values per install with the following component config.
 
-```toml nuon.<your-app>.toml
+```toml components/<your-component>.toml
 [[components]]
 name       = "nlb"
 type       = "helm_chart"
@@ -186,7 +186,7 @@ If you would prefer to manage resources within Kubernetes instead, you could use
 
 In your chart, you would define the Ingress and Certificate resources.
 
-```yaml api_public.tpl
+```yaml components/api_public.tpl
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -240,7 +240,7 @@ nginx:
 
 You could then set the domain per install in your Component config.
 
-```toml nuon.<your-app>.toml
+```toml components/<your-component>.toml
 [[components]]
 name       = "nlb"
 type       = "helm_chart"
