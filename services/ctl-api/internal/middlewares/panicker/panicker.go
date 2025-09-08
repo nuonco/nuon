@@ -47,10 +47,11 @@ func (m middleware) Handler() gin.HandlerFunc {
 			attrs = append(attrs, zap.String("header", headers[idx]))
 		}
 
-		m.l.Error("api request panic", attrs...)
+		cl := cctx.GetLogger(ctx, m.l)
+		cl.Error("api request panic", attrs...)
 		metricsCtx, err := cctx.MetricsContextFromGinContext(ctx)
 		if err != nil {
-			m.l.Error("no metrics context found")
+			cl.Error("no metrics context found")
 			return
 		}
 		metricsCtx.IsPanic = true

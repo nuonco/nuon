@@ -16,7 +16,8 @@ type MetricContext struct {
 	Context  string
 
 	DBQueryCount int
-	IsPanic bool
+	IsPanic      bool
+	IsTimeout    bool
 }
 
 func MetricsContextFromGinContext(ctx ValueContext) (*MetricContext, error) {
