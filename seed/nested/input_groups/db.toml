@@ -1,4 +1,4 @@
-#:schema http://localhost:8081/v1/general/config-schema?source=inputs
+#:schema http://localhost:8081/v1/general/config-schema?type=inputs
 name         = "db"
 description  = "Configuration for the database"
 display_name = "Database configuration"

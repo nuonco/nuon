@@ -1,4 +1,4 @@
-#:schema http://localhost:8081/v1/general/config-schema?source=terraform
+#:schema http://localhost:8081/v1/general/config-schema?type=terraform
 name = "buckets"
 type = "terraform_module"
 terraform_version = "1.8.4"

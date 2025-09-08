@@ -1,4 +1,4 @@
-#:schema http://localhost:8081/v1/general/config-schema?source=runner
+#:schema http://localhost:8081/v1/general/config-schema?type=runner
 runner_type     = "aws"
 helm_driver     = "configmap"
 init_script_url = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init-mng.sh"

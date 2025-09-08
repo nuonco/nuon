@@ -1,4 +1,4 @@
-#:schema https://api.nuon.co/v1/general/config-schema?source=container_image
+#:schema https://api.nuon.co/v1/general/config-schema?type=container_image
 
 name   = "image_httpbin"
 type   = "container_image"

@@ -1,4 +1,4 @@
-#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+#:schema https://api.nuon.co/v1/general/config-schema?type=inputs
 [[group]]
 name         = "dns"
 description  = "DNS Configrations"

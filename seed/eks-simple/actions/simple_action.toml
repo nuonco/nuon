@@ -1,4 +1,4 @@
-#:schema https://api.nuon.co/v1/general/config-schema?source=action
+#:schema https://api.nuon.co/v1/general/config-schema?type=action
 
 name    = "simple_demonstration"
 timeout = "1m"

@@ -1,4 +1,4 @@
-#:schema https://api.nuon.co/v1/general/config-schema?source=terraform_module
+#:schema https://api.nuon.co/v1/general/config-schema?type=terraform_module
 
 name           = "storage"
 type           = "terraform_module"
