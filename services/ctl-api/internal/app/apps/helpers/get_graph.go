@@ -97,7 +97,6 @@ func (h *Helpers) OrderComponentsByDep(ctx context.Context, components []app.Com
 	}
 
 	return orderedComponents, nil
-
 }
 
 func (h *Helpers) GetDependencyGraph(ctx context.Context, appID string) (graph.Graph[string, *app.Component], []app.Component, error) {
@@ -157,8 +156,8 @@ func (h *Helpers) GetInvertedDependencyGraph(ctx context.Context, appID string) 
 }
 
 // getInvertedDependencyGraphByConfigVersion builds a graph from components at a specific config version.
-func (h *Helpers) getInvertedDependencyGraphByConfigVersion(ctx context.Context, appID string, configVersion int) (graph.Graph[string, *app.Component], []app.Component, error) {
-	comps, err := h.GetAppComponentsAtConfigVersion(ctx, appID, configVersion)
+func (h *Helpers) getInvertedDependencyGraphByConfigVersion(ctx context.Context, appID string, cfg *app.AppConfig, configVersion int) (graph.Graph[string, *app.Component], []app.Component, error) {
+	comps, err := h.GetAppComponentsAtConfigVersion(ctx, appID, configVersion, cfg.ComponentIDs)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get app components at config version")
 	}
