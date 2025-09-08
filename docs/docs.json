@@ -72,8 +72,7 @@
           "concepts/runners",
           "concepts/app-inputs",
           "concepts/app-variables",
-          "concepts/app-secrets",
-          "concepts/platforms"
+          "concepts/app-secrets"
         ]
       },
       {
@@ -99,6 +98,7 @@
               "guides/container-image-components",
               "guides/terraform-components",
               "guides/helm-chart-components",
+              "guides/kubernetes-manifest-components",
               "guides/component-dependencies",
               "guides/actions"
             ]

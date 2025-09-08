@@ -12,12 +12,13 @@ customer installs.
 
 To configure a Docker build Component, specify a repo, the required build paramaters and Dockerfile path.
 
-```toml nuon.<your-app>.toml
-[[components]]
+```toml components/app_image.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=docker-build
 name       = "app_image"
 type       = "docker_build"
 dockerfile = "Dockerfile"
-[components.connected_repo]
+
+[connected_repo]
 directory = "components/app-image"
 repo      = "<your-app>"
 branch    = "main"
@@ -33,32 +34,40 @@ into the customer install and made available to other Components via [variables]
 
 To deploy a Docker build component, reference the image from a Helm Component or Terraform Component:
 
-```toml nuon.<your-app>.toml
-[[components]]
+```toml components/eks_deployment.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
 name       = "eks_deployment"
 type       = "helm_chart"
 chart_name = "<your-app>"
-[components.connected_repo]
+
+[connected_repo]
 repo      = "<your-app>"
 directory = "components/helm-chart"
 branch    = "main"
-[components.values]
+
+[values]
 "env.IMAGE_TAG"        = "{{.nuon.components.app_image.image.tag}}"
 "env.IMAGE_REPOSITORY" = "{{.nuon.components.app_image.image.repository.uri}}"
+```
 
-[[components]]
+```toml components/ecs_service.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=terraform
 name              = "ecs_service"
 type              = "terraform_module"
 terraform_version = "1.11.3"
-[components.connected_repo]
+
+[connected_repo]
 repo      = "<your-app>"
 directory = "components/ecs-service"
 branch    = "main"
-[components.vars]
+
+[vars]
 "image_tag"        = "{{.nuon.components.app_image.image.tag}}"
 "image_repository" = "{{.nuon.components.app_image.image.repository.uri}}"
+```
 
-[[components]]
+```toml components/eks_job.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=action
 name      = "eks_job"
 type      = "job"
 image_url = "{{.nuon.components.app_image.image.repository.uri}}"
