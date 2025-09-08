@@ -35,7 +35,7 @@ If you have private prebuilt images in a registry other than AWS ECR, that you w
 
 To use a public image from any container registry, configure the `public` block.
 
-```toml nuon.<your-app>.toml
+```toml components/<your-component>.toml
 [[components]]
 name   = "public"
 type   = "container_image"
@@ -48,7 +48,7 @@ tag       = "latest"
 
 To use an image from a private ECR registry, configure the `aws_ecr` block.
 
-```toml nuon.<your-app>.toml
+```toml components/<your-component>.toml
 name   = "ecr"
 type   = "container_image"
 [components.aws_ecr]
@@ -67,7 +67,7 @@ into the customer install and made available to other Components via [variables]
 
 To deploy a Container image component, reference the image from a Helm component or Terraform component:
 
-```toml nuon.<your-app>.toml
+```toml components/<your-component>.toml
 [[components]]
 name       = "eks_deployment"
 type       = "helm_chart"

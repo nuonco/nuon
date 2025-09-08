@@ -14,7 +14,7 @@ repo, to provision infrastructure resources in customer installs.
 To configure a Terraform component, specify a repo, the required configuration
 values, and the version of Terraform to run it with.
 
-```toml nuon.<your-component>.toml
+```toml components/<your-component>.toml
 #:schema https://api.nuon.co/v1/general/config-schema?source=terraform
 name              = "certificate_wildcard_public"
 type              = "terraform_module"
@@ -44,7 +44,7 @@ You can configure terraform variables for a component using
 These variables can access inputs, other Components, the sandbox, and details on
 the install itself using interpolation.
 
-```toml nuon.<your-component>.toml
+```toml components/<your-component>.toml
 #:schema https://api.nuon.co/v1/general/config-schema?source=terraform
 name              = "dynamodb_table"
 type              = "terraform_module"
