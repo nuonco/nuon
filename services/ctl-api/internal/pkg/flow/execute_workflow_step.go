@@ -114,25 +114,9 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		return false, errors.Wrap(err, "unable to mark step as success")
 	}
 
-	approvalPlan, err := c.getStepApprovalPlan(ctx, step)
-	if err != nil {
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: step.ID,
-			Status: app.CompositeStatus{
-				Status: app.StatusError,
-				Metadata: map[string]any{
-					"reason": "Step failed, failed to get deploy plan.",
-				},
-				StatusHumanDescription: "Step failed",
-			},
-		}); err != nil {
-			return false, errors.Wrap(err, "unable to mark step as error")
-		}
-
-		return false, err
-	}
-
-	noopPlan, err := activities.AwaitCheckNoopPlan(ctx, *approvalPlan)
+	noopPlan, err := activities.AwaitCheckNoopPlan(ctx, &activities.CheckNoopPlanRequest{
+		StepTargetID: step.StepTargetID,
+	})
 	if err != nil {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,

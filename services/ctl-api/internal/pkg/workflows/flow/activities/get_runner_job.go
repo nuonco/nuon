@@ -8,7 +8,7 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	approvalplan "github.com/powertoolsdev/mono/pkg/plans/types/approval_plan"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -76,35 +76,7 @@ type GetApprovalPlanRequest struct {
 	StepTargetID string `validate:"required"`
 }
 
-type ApprovalPlan struct {
-	RunnerJobType app.RunnerJobType `json:"runner_job_type" temporaljson:"runner_job_type,omitempty"`
-	PlanContents  []byte            `json:"plan_contents" temporaljson:"plan_contents,omitempty"`
-}
 
-func (p *ApprovalPlan) IsNoopPlan() (bool, error) {
-	switch p.RunnerJobType {
-	case app.RunnerJobTypeSandboxTerraform, app.RunnerJobTypeSandboxTerraformPlan:
-		plan := approvalplan.NewSandboxRunApprovalPlan(p.PlanContents)
-		return plan.IsNoop()
-	case app.RunnerJobTypeTerraformDeploy:
-		plan := approvalplan.NewTerraformApprovalPlan(p.PlanContents)
-		return plan.IsNoop()
-	case app.RunnerJobTypeKubrenetesManifestDeploy:
-		plan := approvalplan.NewKubernetesApprovalPlan(p.PlanContents)
-		return plan.IsNoop()
-	case app.RunnerJobTypeHelmChartDeploy:
-		plan := approvalplan.NewHelmApprovalPlen(p.PlanContents)
-		return plan.IsNoop()
-	default:
-		return false, fmt.Errorf("unsupported approval plan request, runner job type %s", p.RunnerJobType)
-	}
-}
-
-// @temporal-gen activity
-// @max-retries 1
-func (a *Activities) CheckNoopPlan(ctx context.Context, plan ApprovalPlan) (bool, error) {
-	return plan.IsNoopPlan()
-}
 
 // @temporal-gen activity
 // @max-retries 1
