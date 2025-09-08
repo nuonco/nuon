@@ -11,7 +11,7 @@ Nuon offers first-class support for AWS.
 To deploy an app to AWS, configure it to use an AWS sandbox and runner. We provide a minimal sandbox you can use to get started. You will need to set some vars to configure the sandbox. Create inputs for the public and private domains, since those will be different for each install. You will also need to set some IAM roles to grant the runner access to the EKS cluster.
 
 ```toml sandbox.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=sandbox
+#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
 
 terraform_version = "1.11.3"
 
@@ -48,7 +48,7 @@ maintenance_role_eks_access_entry_policy_associations = {
 ```
 
 ```toml runner.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=runner
+#:schema https://api.nuon.co/v1/general/config-schema?type=runner
 
 runner_type = "azure"
 helm_driver = "configmap"

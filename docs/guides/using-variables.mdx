@@ -8,16 +8,17 @@ The Components of your App can get custom configuration settings applied by usin
 
 You can set these variables as vars in your Terraform configuration. For example, if you wanted to set values in a Helm chart:
 
-```toml nuon.<your-app>.toml
-[[components]]
+```toml components/helm_chart.toml
 name       = "helm_chart"
 type       = "helm_chart"
 chart_name = "<your-app>"
-[components.connected_repo]
+
+[connected_repo]
 directory = "components/helm-chart"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
-[components.values]
+
+[values]
 # manually set a variable
 "some-var-name" = "some-var-value"
 # reference another component
@@ -48,9 +49,10 @@ Example: `cache_size` with value `4096`.
 
 For example, the install id can be passed as a variable to the Sandbox for an EKS cluster name.
 
-```toml nuon.sandbox.toml
+```toml sandbox.toml
 [vars]
 cluster_name    = "n-{{.nuon.install.id}}"
+```
 
 ## Variable Data Sources
 
