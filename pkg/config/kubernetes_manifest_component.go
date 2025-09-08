@@ -1,7 +1,7 @@
 package config
 
 type KubernetesManifestComponentConfig struct {
-	Manifest      string  `mapstructure:"manifest,omitempty" jsonschema:"required"`
+	Manifest      string  `mapstructure:"manifest,omitempty" jsonschema:"required" features:"get,template"`
 	Namespace     string  `mapstructure:"namespace,omitempty" jsonschema:"required"`
 	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 }
