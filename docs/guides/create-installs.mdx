@@ -28,9 +28,9 @@ nuon installs create  --name=auto-deploy --region=us-east-1 --role=iam-role
 ## Install Config Files
 
 Installs can be managed with the help of a config file, similar to App Configs. Create a config file
-for the install in a separate directory from the app config.
+for the install in a separate directory from the app config(eg; `installs/`).
 
-```toml install_name.toml
+```toml installs/install_name.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=install
 
 name = "<install_name>"
