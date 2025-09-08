@@ -11,7 +11,7 @@ Kubernetes manifest Components allow you to deploy raw Kubernetes resources usin
 To configure a Kubernetes manifest component, specify a namespace and the manifest files to deploy.
 
 
-```toml nuon.<your-app>.toml
+```toml components/<your-component>.toml
 [[components]]
 name = "k8s_manifest"
 type = "k8s_manifest"
@@ -31,7 +31,7 @@ data:
 
 Kubernetes manifest Components support multiple resources separated by the standard YAML document separator `---`:
 
-```yaml deployment.yaml
+```yaml components/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -72,7 +72,7 @@ spec:
 
 Kubernetes manifest Components support Nuon's templating system, allowing you to access variables and outputs from other components:
 
-```yaml configmap.yaml
+```yaml components/configmap.yaml
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -100,7 +100,7 @@ data:
 
 ### Deploying with Custom Images
 
-```yaml app-deployment.yaml
+```yaml components/app-deployment.yaml
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -131,7 +131,7 @@ spec:
 
 ### Creating Ingress Resources
 
-```yaml ingress.yaml
+```yaml components/ingress.yaml
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -162,7 +162,7 @@ spec:
 
 ### Using AWS Load Balancer Controller
 
-```yaml nlb-service.yaml
+```yaml components/nlb-service.yaml
 ---
 apiVersion: v1
 kind: Service
@@ -204,7 +204,7 @@ The Sandboxes are [open source](/concepts/sandboxes#nuon-managed-sandboxes) and 
 
 Always specify namespaces explicitly in your manifests. If not provided, it defaults to the namespace specified in the config. If both the component configuration and manifest are missing namespace specifications, the component deployment will fail:
 
-```yaml namespace.yaml
+```yaml components/namespace.yaml
 ---
 apiVersion: v1
 kind: Namespace

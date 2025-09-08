@@ -30,7 +30,7 @@ repo (using a `connected_repo` block). Read more about VCS configuration [here](
 For example, to pull logs from all Kubernetes pods in a namespace, you would write an action like this:
 
 <CodeGroup>
-```toml kubectl_logs.toml
+```toml actions/kubectl_logs.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=action
 name    = "kubectl_logs"
 timeout = "30s"
@@ -54,7 +54,7 @@ NAMESPACE = "default"
 For example, if you wanted to implement a healthcheck for an AWS ALB, you would write something like this:
 
 <CodeGroup>
-```toml http_healthcheck.toml
+```toml actions/http_healthcheck.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=action
 
 name    = "http_healthcheck"
