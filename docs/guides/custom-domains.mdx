@@ -19,7 +19,7 @@ If you would like each of your installs to have a common root domain, such as `i
 
 First, configure your sandbox to use a custom root domain using:
 
-```toml nuon.<your-app>.toml
+```toml sandbox.toml
 [sandbox]
 terraform_version = "1.11.3"
 [sandbox.public_repo]
@@ -68,7 +68,7 @@ more details on how to delegate the domain.
 
 To offer custom install domains, add the following to your config file:
 
-```toml nuon.<your-app>.toml
+```toml inputs.toml
 [inputs]
 
 [[inputs.input]]
@@ -82,7 +82,7 @@ display_name = "Root"
 
 Next, set the sandbox root domain to the input value:
 
-```toml nuon.<your-app>.toml
+```toml sandbox.toml
 [sandbox]
 terraform_version = "1.11.3"
 [sandbox.public_repo]
@@ -97,7 +97,7 @@ public_root_domain = "{{.nuon.install.inputs.root_domain}}"
 
 You can completely disable DNS in any sandbox by adding the following to your sandbox config:
 
-```toml nuon.<your-app>.toml
+```toml sandbox.toml
 [sandbox.vars]
 enable_private_dns = "false"
 enable_public_dns  = "false"
