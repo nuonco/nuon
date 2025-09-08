@@ -10,7 +10,7 @@ App READMEs allow you to define documentation for an App that can be rendered pe
 
 To add a README to an App, define the `readme` field in your App Config. We'll start with something simple.
 
-```toml nuon.<your-app>.toml
+```toml metadata.toml
 name = "My App"
 readme = "This is the README for My App."
 ```
@@ -21,7 +21,7 @@ Sync your config, and you should see this rendered on the Overview of each insta
 
 READMEs are technically just a string field, but our rendering in the Dashboard supports Markdown. You can also use TOML's multi-line strings to make formatting easier. Let's use both to add some more structure and content.
 
-```toml nuon.<your-app>.toml
+```toml metadata.toml
 name = "My App"
 readme = """
 # My App
@@ -50,7 +50,7 @@ This app consists of the following components.
 
 READMEs support variables. These will be rendered server-side in the context of each install, just as they are in component and actions fields. We will use variables here to add some install info. We can also parametrize the app info, to make sure the README is up to date if we change the app config later.
 
-```toml nuon.<your-app>.toml
+```toml metadata.toml
 name = "My App"
 readme = """
 # {{.nuon.app.name}}
@@ -72,7 +72,7 @@ This app consists of the following components.
 
 Additionally, because READMEs are designed to be rendered on a webpage, and variables use Golang templating, you have access to the full power of [Golang's templating language](https://pkg.go.dev/text/template). Let's use that to add component statuses.
 
-```toml nuon.<your-app>.toml
+```toml metadata.toml
 name = "My App"
 readme = """
 # {{.nuon.app.name}}

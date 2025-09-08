@@ -35,11 +35,12 @@ If you have private prebuilt images in a registry other than AWS ECR, that you w
 
 To use a public image from any container registry, configure the `public` block.
 
-```toml components/<your-component>.toml
-[[components]]
+```toml components/public_image.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=container-image
 name   = "public"
 type   = "container_image"
-[components.public]
+
+[public]
 image_url = "kennethreitz/httpbin"
 tag       = "latest"
 ```
@@ -48,10 +49,12 @@ tag       = "latest"
 
 To use an image from a private ECR registry, configure the `aws_ecr` block.
 
-```toml components/<your-component>.toml
+```toml components/ecr_image.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=container-image
 name   = "ecr"
 type   = "container_image"
-[components.aws_ecr]
+
+[aws_ecr]
 image_url    = "123927561584.dkr.ecr.us-west-2.amazonaws.com/repo-name"
 tag          = "latest"
 region       = "us-west-2"
@@ -67,32 +70,40 @@ into the customer install and made available to other Components via [variables]
 
 To deploy a Container image component, reference the image from a Helm component or Terraform component:
 
-```toml components/<your-component>.toml
-[[components]]
+```toml components/eks_deployment.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
 name       = "eks_deployment"
 type       = "helm_chart"
 chart_name = "<your-app>"
-[components.connected_repo]
+
+[connected_repo]
 repo      = "<your-app>"
 directory = "components/helm-chart"
 branch    = "main"
-[components.values]
+
+[values]
 "env.IMAGE_TAG"        = "{{.nuon.components.app_image.image.tag}}"
 "env.IMAGE_REPOSITORY" = "{{.nuon.components.app_image.image.repository.uri}}"
+```
 
-[[components]]
+```toml components/ecs_service.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=terraform
 name              = "ecs_service"
 type              = "terraform_module"
 terraform_version = "v1.6.3"
-[components.connected_repo]
+
+[connected_repo]
 repo      = "<your-app>"
 directory = "components/ecs-service"
 branch    = "main"
-[components.vars]
+
+[vars]
 "image_tag"        = "{{.nuon.components.app_image.image.tag}}"
 "image_repository" = "{{.nuon.components.app_image.image.repository.uri}}"
+```
 
-[[components]]
+```toml components/eks_job.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=action
 name      = "eks_job"
 type      = "job"
 image_url = "{{.nuon.components.app_image.image.repository.uri}}"
