@@ -96,9 +96,5 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string) (*ap
 		}
 	}
 
-	if len(appCfg.ComponentConfigConnections) != len(appCfg.ComponentIDs) {
-		return nil, errors.New("an app config references a component-id which has a config that could not be found")
-	}
-
 	return &appCfg, nil
 }

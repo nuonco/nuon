@@ -1,14 +1,10 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
-
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -42,40 +38,15 @@ func (s *service) GetComponentDependents(ctx *gin.Context) {
 	}
 
 	appID := component.AppID
-	appCfg, err := s.appsHelpers.GetAppLatestConfig(ctx, appID)
+	components, err := s.getAppComponents(ctx, appID, "", nil)
 	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to get app latest config"))
+		ctx.Error(fmt.Errorf("unable to get components for app: %s", appID))
 		return
 	}
 
-	if !generics.SliceContains(component.ID, appCfg.ComponentIDs) {
-		ctx.Error(errors.Wrap(err, "component does not belong to a current app config"))
-		return
-	}
-
-	cdo, err := s.appsHelpers.GetComponentDependents(ctx, appCfg.ID, componentID)
-	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to get component dependents"))
-		return
-	}
-
-	comps, err := s.getComponents(ctx, cdo)
-	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to get components"))
-		return
-	}
+	cdo := s.appsHelpers.GetComponentsDependents(componentID, components)
 
 	ctx.JSON(http.StatusOK, ComponentChildren{
-		Children: comps,
+		Children: cdo,
 	})
-}
-
-func (s *service) getComponents(ctx context.Context, compIDs []string) ([]app.Component, error) {
-	var comps []app.Component
-	if res := s.db.WithContext(ctx).
-		Where("id IN ?", compIDs).Find(&comps); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get components")
-	}
-
-	return comps, nil
 }
