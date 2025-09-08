@@ -69,7 +69,7 @@ To configure a sensitive `api_key` and `vpc_id` input:
 
 ```toml inputs.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=inputs
-[inputs]
+[[input]]
 name = "vpc_id"
 description = "vpc_id to install application into"
 default = ""
@@ -77,7 +77,7 @@ sensitive = false
 display_name = "VPC ID"
 type = "string"
 
-[[inputs]]
+[[input]]
 name = "api_key"
 description = "API key"
 default = ""
@@ -207,7 +207,7 @@ name = "helm"
 type = "helm_chart"
 chart_name = "chart-name"
 
-[components.connected_repo]
+[connected_repo]
 directory = "helm"
 repo = "org/repo"
 branch = "main"

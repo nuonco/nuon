@@ -10,25 +10,25 @@ Helm chart Components allow you to deploy any helm from a public or connected re
 
 To configure a Helm component, specify a repo, the required configuration values and version to deploy it with.
 
-```toml components/<your-component>.toml
-[[components]]
+```toml components/helm_chart.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
 name       = "helm_chart"
 type       = "helm_chart"
 chart_name = "<your-app>"
 
-[components.connected_repo]
+[connected_repo]
 directory = "components/helm-chart"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
 
-[[components.values_file]]
+[[values_file]]
 contents = """
 image:
   tag: "{{.nuon.components.docker_build.image.name}}"
 """
 
 # alternatively, you can read from disk
-[[components.values_file]]
+[[values_file]]
 source = "./values.yaml"
 ```
 
@@ -51,16 +51,18 @@ options, reference infrastructure from other Components or access an image that 
 
 Examples for accessing common interpolated variables:
 
-```toml components/<your-helm-component>.toml
-[[components]]
+```toml components/helm_chart.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
 name       = "helm_chart"
 type       = "helm_chart"
 chart_name = "<your-app>"
-[components.connected_repo]
+
+[connected_repo]
 directory = "components/helm-chart"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
-[components.values]
+
+[values]
 # access a synced image
 image_repository = "{{.nuon.components.image.image.repository.uri}}"
 image_tag        = "{{.nuon.components.image.image.tag}}"
@@ -78,16 +80,18 @@ internal_root_domain = "{{.nuon.sandbox.outputs.nuon_dns.internal_domain.name}}"
 
 You can add a values file, and set multiple values at once.
 
-```toml components/<your-component>.toml
-[[components]]
+```toml components/helm_chart.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
 name       = "helm_chart"
 type       = "helm_chart"
 chart_name = "<your-app>"
-[components.connected_repo]
+
+[connected_repo]
 directory = "components/helm-chart"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
-[[components.values_file]]
+
+[[values_file]]
 contents = """
 image:
   tag: "{{.nuon.components.docker_build.image.name}}"
@@ -166,16 +170,18 @@ nlbs:
 
 Then, you could set those values per install with the following component config.
 
-```toml components/<your-component>.toml
-[[components]]
+```toml components/nlb.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
 name       = "nlb"
 type       = "helm_chart"
 chart_name = "nlb"
-[components.connected_repo]
+
+[connected_repo]
 directory = "components/nlb"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
-[components.values]
+
+[values]
 "nlbs.public_domain"                 = "nlb.{{.nuon.sandbox.outputs.nuon_dns.public_domain.name}}"
 "nlbs.public_domain_certificate_arn" = "{{.nuon.components.infra.outputs.public_domain_certificate_arn}}"
 ```
@@ -240,16 +246,18 @@ nginx:
 
 You could then set the domain per install in your Component config.
 
-```toml components/<your-component>.toml
-[[components]]
+```toml components/nlb.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
 name       = "nlb"
 type       = "helm_chart"
 chart_name = "nlb"
-[components.connected_repo]
+
+[connected_repo]
 directory = "components/nlb"
 repo      = "<your-org>/<your-repo>"
 branch    = "main"
-[components.values]
+
+[values]
 "nlbs.public_domain"                 = "nlb.{{.nuon.sandbox.outputs.nuon_dns.public_domain.name}}"
 ```
 
