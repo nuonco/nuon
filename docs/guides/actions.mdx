@@ -11,7 +11,7 @@ Actions allows you to define and remotely execute custom workflows in installs. 
 Action workflows can be configured in your app's TOML config. For example, to define an HTTP healthcheck:
 
 <CodeGroup>
-```toml http_healthcheck.toml
+```toml actions/http_healthcheck.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=action
 
 name    = "http_healthcheck"
@@ -39,7 +39,7 @@ METHOD               = "HEAD"
 EXPECTED_STATUS_CODE = "200"
 ```
 
-```toml nuon.your_app.toml
+```toml actions/<your-action>.toml
 #:schema https://api.nuon.co/v1/general/config-schema
 
 version      = "v1"
@@ -76,7 +76,7 @@ Actions can be triggered manually, on a cron, or by install events. You can defi
 
 The example action defines two triggers. It will run every five minutes, and can also be triggered manually at any time.
 
-```toml
+```toml actions/<action-name>.toml
 [[triggers]]
 type          = "cron"
 cron_schedule = "*/5 * * * *"
@@ -91,7 +91,7 @@ Each step in an action requires a command to be run. You can optionally load a s
 
 The example action is pretty simple, so it has only one step. It loads a curl script from our [open-source repo of commonly-used scripts](https://github.com/nuonco/actions), and sets a few env vars to configure it.
 
-```toml
+```toml actions/<action-name>.toml
 [[steps]]
 name    = "healthcheck"
 command = "./healthcheck"
