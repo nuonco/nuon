@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
+// NOTE(jm): this should basically never be used at this point.
 func (h *Helpers) GetAppComponentsAndLatestConfigConnection(ctx context.Context, appID string) ([]app.Component, error) {
 	var components []app.Component
 
