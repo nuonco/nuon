@@ -30,7 +30,7 @@ In order for components to work with `aws-eks-byovpc` sandbox, subnets must be t
 The `eks-byovpc` sandbox requires adding a `"kubernetes.io/role/internal-elb:1"` tag to all private subnets, and a `"kubernetes.io/role/elb:1"` tag to all public subnets.
 </Note>
 
-```toml nuon.<your-app>.toml
+```toml inputs.toml
 [inputs]
 [[inputs.input]]
 name         = "vpc_id"
@@ -38,7 +38,9 @@ description  = "The VPC to install the app in"
 sensitive    = false
 display_name = "VPC ID"
 required     = true
+```
 
+```toml sandbox.toml
 [sandbox]
 terraform_version = "1.11.3"
 [sandbox.public_repo]
@@ -59,7 +61,7 @@ This sandbox also needs to be given private and public subnets to use. There are
 1. Tag the public subnets in the target VPC with `visibility:public`, and the private subnets with `visibility:private`. This is the default behavior
 1. Define app inputs named `private_subnet_ids` and `public_subnet_ids` that each accept a comma-separated string of subnet IDs, and pass them to the sandbox using vars. These will override any tagged subnets that are found.
 
-```toml nuon.<your-app>.toml
+```toml inputs.toml
 [inputs]
 
 [[inputs.input]]
@@ -82,7 +84,9 @@ description  = "Subnets for public resources"
 sensitive    = false
 display_name = "Public Subnets"
 required     = false
+```
 
+```toml sandbox.toml
 [sandbox]
 terraform_version = "1.11.3"
 [sandbox.public_repo]
@@ -101,7 +105,7 @@ public_subnet_ids  = "{{.nuon.install.inputs.public_subnet_ids}}"
 The [Azure AKS BYOVPN](https://registry.terraform.io/modules/nuonco/aks-byovpn-sandbox/azure/latest) sandbox creates an AKS cluster in a customer-provided VPN.
 It requires `resource_group_name`, `network_name`, and `subnet_name`.
 
-```toml nuon.<your-app>.toml
+```toml inputs.toml
 [inputs]
 [[inputs.input]]
 name         = "resource_group_name"
@@ -123,7 +127,9 @@ description  = "The Subnet in the VPN to install the app in."
 sensitive    = false
 display_name = "Subnet Name"
 required     = true
+```
 
+```toml sandbox.toml
 [sandbox]
 terraform_version = "1.11.3"
 [sandbox.public_repo]
@@ -134,7 +140,9 @@ branch    = "main"
 resource_group_name = "{{.nuon.install.inputs.resource_group_name}}"
 network_name        = "{{.nuon.install.inputs.network_name}}"
 subnet_name         = "{{.nuon.install.inputs.subnet_name}}"
+```
 
+```toml runner.toml
 [runner]
 runner_type = "azure-aks"
 ```
