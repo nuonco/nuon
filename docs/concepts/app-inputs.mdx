@@ -82,8 +82,8 @@ DATABASE_HOST     = "{{.nuon.install.inputs.database_host}}"
 
 To use inputs in a Helm chart Component.
 
-```toml components.helm-database.toml
-
+```toml components/helm-database.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
 type   = "helm_chart"
 name   = "helm-database"
 chart_name = "database"
@@ -100,8 +100,8 @@ DATABASE_HOST     = "{{.nuon.install.inputs.database_host}}"
 
 To use inputs in a Docker image.
 
-```toml components.docker-build.toml
-
+```toml components/docker-build.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=docker-build
 type   = "docker_build"
 name   = "docker-build"
 

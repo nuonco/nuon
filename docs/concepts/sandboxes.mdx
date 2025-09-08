@@ -74,16 +74,17 @@ Sandbox outputs are made accessible to all components [using variables](/guides/
 
 You can use any output from your selected Sandbox by setting a config value on your component. In this example, we are using the `account.region` output from the Sandbox to configure a Helm chart component:
 
-```toml nuon.<your-app>.toml
-[[components]]
+```toml components/e2e_helm.toml
 name   = "e2e_helm"
 type = "helm_chart"
 chart_name = "e2e-helm"
-[components.public_repo]
+
+[public_repo]
 repo      = "org/repo"
 directory = "chart"
 branch    = "main"
-[components.values]
+
+[values]
 account_region = "{{.nuon.install.sandbox.outputs.account.region}}"
 ```
 

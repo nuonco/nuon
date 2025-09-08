@@ -10,8 +10,8 @@ Kubernetes manifest Components allow you to deploy raw Kubernetes resources usin
 
 To configure a Kubernetes manifest component, specify a namespace and the manifest files to deploy.
 
-```toml components/<your-component>.toml
-[[components]]
+```toml components/kubernetes_manifest.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=kubernetes-manifest
 name = "kubernetes_manifest"
 type = "kubernetes_manifest"
 
