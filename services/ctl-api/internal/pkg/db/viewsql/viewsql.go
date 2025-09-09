@@ -13,7 +13,7 @@ var InstallsViewV3 string
 //go:embed installs_view_v4.sql
 var InstallsViewV4 string
 
-//go:embed installs_view_v5.sql
+//go:embed installs_view_v6.sql
 var InstallsViewV5 string
 
 //go:embed install_states_view_v1.sql
