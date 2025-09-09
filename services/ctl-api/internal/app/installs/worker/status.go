@@ -76,6 +76,7 @@ func (w *Workflows) updateRunStatusWithoutStatusSync(ctx workflow.Context, runID
 		RunID:             runID,
 		Status:            status,
 		StatusDescription: statusDescription,
+		SkipStatusSync:    true,
 	}); err != nil {
 		l.Error("unable to update run status v2",
 			zap.String("run-id", runID),
