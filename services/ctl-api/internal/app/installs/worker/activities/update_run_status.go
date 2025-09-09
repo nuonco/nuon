@@ -32,35 +32,46 @@ func (a *Activities) UpdateRunStatus(ctx context.Context, req UpdateRunStatusReq
 		return fmt.Errorf("no run found: %s %w", req.RunID, gorm.ErrRecordNotFound)
 	}
 
+	run := app.InstallSandboxRun{}
+	res = a.db.WithContext(ctx).
+		Where("id = ?", req.RunID).
+		First(&run)
+	if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
+		return fmt.Errorf("unable to get install sandbox run: %w", res.Error)
+	}
+
+	install2 := &app.Install{}
+	res = a.db.WithContext(ctx).
+		Where("id = ?", run.InstallID).
+		First(install2)
+	if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
+		return fmt.Errorf("unable to get install: %w", res.Error)
+	}
+
+	installSandbox := app.InstallSandbox{}
+	res = a.db.WithContext(ctx).
+		Where("install_id = ?", install2.ID).
+		First(&installSandbox)
+	if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
+		return fmt.Errorf("unable to get install sandbox: %w", res.Error)
+	}
+
+	if res.Error == gorm.ErrRecordNotFound {
+		return nil
+	}
+
+	runUpdate := app.InstallSandboxRun{
+		ID: req.RunID,
+	}
+	res = a.db.WithContext(ctx).Model(&runUpdate).Updates(app.InstallSandboxRun{
+		InstallSandboxID: &installSandbox.ID,
+	})
+	if res.Error != nil {
+		return fmt.Errorf("unable to update install sandbox run with sandbox ID: %w", res.Error)
+	}
+
+	// Only update status if SkipStatusSync is false
 	if !req.SkipStatusSync {
-		run := app.InstallSandboxRun{}
-		res := a.db.WithContext(ctx).
-			Where("id = ?", req.RunID).
-			First(&run)
-		if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
-			return fmt.Errorf("unable to get install sandbox run: %w", res.Error)
-		}
-
-		install := &app.Install{}
-		res = a.db.WithContext(ctx).
-			Where("id = ?", run.InstallID).
-			First(install)
-		if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
-			return fmt.Errorf("unable to get install: %w", res.Error)
-		}
-
-		installSandbox := app.InstallSandbox{}
-		res = a.db.WithContext(ctx).
-			Where("install_id = ?", install.ID).
-			First(&installSandbox)
-		if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
-			return fmt.Errorf("unable to get install sandbox: %w", res.Error)
-		}
-
-		if res.Error == gorm.ErrRecordNotFound {
-			return nil
-		}
-
 		installSandbox = app.InstallSandbox{
 			ID: installSandbox.ID,
 		}
