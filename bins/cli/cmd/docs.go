@@ -9,9 +9,10 @@ import (
 func (c *cli) docsCmd() *cobra.Command {
 	docsCmd := &cobra.Command{
 		Use:               "docs",
-		Short:             "Explore docs",
+		Short:             "Explore the docs",
 		Aliases:           []string{"d"},
 		PersistentPreRunE: c.persistentPreRunE,
+		GroupID:           HelpGroup.ID,
 	}
 
 	browseCmd := &cobra.Command{

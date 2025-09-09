@@ -23,6 +23,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short:             "Manage your organizations",
 		Aliases:           []string{"a"},
 		PersistentPreRunE: c.persistentPreRunE,
+		GroupID:           AdditionalGroup.ID,
 	}
 
 	currentCmd := &cobra.Command{
