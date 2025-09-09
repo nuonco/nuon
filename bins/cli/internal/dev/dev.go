@@ -9,9 +9,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/pkg/errors"
-	"github.com/pterm/pterm"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
 	"github.com/powertoolsdev/mono/pkg/config/sync"
@@ -32,11 +32,11 @@ const (
 func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bool) error {
 	var err error
 	defer func() {
-		pterm.Println()
+		fmt.Println()
 		if err != nil {
-			pterm.Println(pterm.LightRed("Dev workflow failed"))
+			bubbles.PrintStyledError("Dev workflow failed")
 		} else {
-			pterm.Println(pterm.LightGreen("Dev workflow complete"))
+			bubbles.PrintStyledSuccess("Dev workflow complete")
 		}
 	}()
 
@@ -46,9 +46,9 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 	// Pre-flight checks
 	//
 
-	pterm.Println()
-	pterm.Println(pterm.LightCyan("Checking that you are ready to create a new app version..."))
-	pterm.Println()
+	fmt.Println()
+	bubbles.PrintStyledInfo("Checking that you are ready to create a new app version...")
+	fmt.Println()
 
 	ui.PrintLn("checking git branch...")
 	branchName, err := s.checkGitBranch(ctx)
@@ -143,7 +143,7 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 
 	if len(cmpsScheduled) > 0 {
 		ui.PrintLn("some components require new builds...")
-		pterm.Println()
+		fmt.Println()
 		err = s.pollComponentBuilds(ctx, cmpsScheduled)
 		if err != nil {
 			return ui.PrintError(err)
@@ -188,7 +188,7 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 		deploy.ComponentName = comp.Name
 		deploys = append(deploys, deploy)
 	}
-	pterm.Println()
+	fmt.Println()
 	err = s.pollDeploys(ctx, installID, deploys)
 	if err != nil {
 		return ui.PrintError(err)

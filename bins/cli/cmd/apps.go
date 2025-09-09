@@ -20,9 +20,10 @@ func (c *cli) appsCmd() *cobra.Command {
 
 	appsCmd := &cobra.Command{
 		Use:               "apps",
-		Short:             "View the apps in your org",
+		Short:             "Manage apps",
 		Aliases:           []string{"a"},
 		PersistentPreRunE: c.persistentPreRunE,
+		GroupID:           CoreGroup.ID,
 	}
 
 	listCmd := &cobra.Command{
@@ -54,10 +55,9 @@ func (c *cli) appsCmd() *cobra.Command {
 	appsCmd.AddCommand(getCmd)
 
 	currentCmd := &cobra.Command{
-		Use:   "current",
-		Short: "Get the current app",
-		// TODO(sdboyer) remove this whole subcommand, it's obviated by marking current in the list cmd
-		Hidden: true,
+		Deprecated: "Use `nuon apps get` instead",
+		Short:      "Get the current app (deprecated)",
+		Use:        "current",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			return svc.Get(cmd.Context(), c.cfg.GetString("app_id"), PrintJSON)
@@ -165,7 +165,7 @@ func (c *cli) appsCmd() *cobra.Command {
 	appsCmd.AddCommand(syncCmd)
 
 	syncDirCmd := &cobra.Command{
-		Hidden:            true, // Deprecated command
+		Deprecated:        "use `nuon sync` instead",
 		Use:               "sync-dir",
 		Short:             "Sync nuon app directory (deprecated)",
 		PersistentPreRunE: c.persistentPreRunE,

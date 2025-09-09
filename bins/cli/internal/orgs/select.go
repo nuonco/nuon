@@ -2,11 +2,10 @@ package orgs
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
+	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
 func (s *Service) Select(ctx context.Context, orgID string, asJSON bool) error {
@@ -25,21 +24,39 @@ func (s *Service) Select(ctx context.Context, orgID string, asJSON bool) error {
 			return nil
 		}
 
-		// select options
-		var options []string
-		for _, org := range orgs {
-			options = append(options, fmt.Sprintf("%s: %s", org.Name, org.ID))
+		// Convert orgs to selector options
+		orgOptions := make([]bubbles.OrgOption, len(orgs))
+		for i, org := range orgs {
+			// TODO: Detect evaluation orgs based on user journey data
+			orgOptions[i] = bubbles.OrgOption{
+				ID:           org.ID,
+				Name:         org.Name,
+				IsEvaluation: false, // Will be updated when user journey detection is added
+			}
 		}
 
-		// select org prompt
-		selectedOrg, _ := pterm.DefaultInteractiveSelect.WithOptions(options).Show()
-		org := strings.Split(selectedOrg, ":")
-
-		if err := s.setOrgID(ctx, strings.ReplaceAll(org[1], " ", "")); err != nil {
+		// Show org selector
+		selectedOrgID, err := bubbles.SelectOrg(orgOptions)
+		if err != nil {
 			return view.Error(err)
 		}
 
-		s.printOrgSetMsg(org[0], org[1])
+		if err := s.setOrgID(ctx, selectedOrgID); err != nil {
+			return view.Error(err)
+		}
+
+		// Find selected org for display
+		var selectedOrg *models.AppOrg
+		for _, org := range orgs {
+			if org.ID == selectedOrgID {
+				selectedOrg = org
+				break
+			}
+		}
+
+		if selectedOrg != nil {
+			s.printOrgSetMsg(selectedOrg.Name, selectedOrg.ID)
+		}
 	}
 	return nil
 }

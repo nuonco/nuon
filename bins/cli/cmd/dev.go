@@ -36,6 +36,7 @@ Select an app and a dev install, then run this command to sync, build, and deplo
 			svc := dev.New(c.v, c.apiClient, c.cfg)
 			return svc.Dev(cmd.Context(), dirName, installID, yes)
 		}),
+		GroupID: AdditionalGroup.ID,
 	}
 	devCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of your dev install")
 	devCmd.Flags().BoolVarP(&yes, "yes", "y", false, "If true, automatically approve all prompts")

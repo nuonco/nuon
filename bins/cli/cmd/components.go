@@ -18,6 +18,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Short:             "Manage app components",
 		Aliases:           []string{"c"},
 		PersistentPreRunE: c.persistentPreRunE,
+		GroupID:           AdditionalGroup.ID,
 	}
 
 	listCmd := &cobra.Command{

@@ -14,9 +14,10 @@ func (c *cli) installersCmd() *cobra.Command {
 
 	installsCmds := &cobra.Command{
 		Use:               "installers",
-		Short:             "Manage installers",
+		Short:             "Manage app installers",
 		Aliases:           []string{"i"},
 		PersistentPreRunE: c.persistentPreRunE,
+		GroupID:           AdditionalGroup.ID,
 	}
 
 	listCmd := &cobra.Command{
