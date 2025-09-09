@@ -153,7 +153,29 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 			return false, errors.Wrap(err, "failed to handle noop plan")
 		}
 
-		return true, nil
+		if !flw.PlanOnly {
+			return true, nil
+		}
+	}
+
+	// Auto approve if plan-only mode is enabled
+	if flw.PlanOnly {
+		if err := c.handlePlanOnlyApproval(ctx, step, noopPlan); err != nil {
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: step.ID,
+				Status: app.CompositeStatus{
+					Status: app.StatusError,
+					Metadata: map[string]any{
+						"reason": "Step failed, unable to handle plan-only auto-approval.",
+					},
+					StatusHumanDescription: "Step failed",
+				},
+			}); err != nil {
+				return false, errors.Wrap(err, "unable to mark step as error")
+			}
+			return false, errors.Wrap(err, "failed to handle plan-only auto-approval")
+		}
+		return false, nil
 	}
 
 	// update the status to awaiting
@@ -170,6 +192,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 	}); err != nil {
 		return false, errors.Wrap(err, "unable to update step to success status")
 	}
+
 	resp, err := c.waitForApprovalResponse(ctx, flw, step, idx)
 	if err != nil {
 		return false, err
@@ -330,8 +353,9 @@ func (c *WorkflowConductor[DomainSignal]) handleNoopDeployPlan(ctx workflow.Cont
 	}
 
 	nextStepIndex := currentStepIndex + 1
-	if nextStepIndex >= len(flw.Steps) {
-		return errors.Errorf("next step index(%d) out of bound, total step count: %d", nextStepIndex, len(flw.Steps))
+
+	if nextStepIndex >= len(flw.Steps) { // this can happen in plan-only mode where we don't have an apply step.
+		return nil // we can let the planonly workflow condition update the status
 	}
 
 	nextStep := flw.Steps[nextStepIndex]
@@ -370,4 +394,43 @@ func (c *WorkflowConductor[DomainSignal]) getStepIndex(stepID string, steps []ap
 		}
 	}
 	return -1
+}
+
+func (c *WorkflowConductor[DomainSignal]) handlePlanOnlyApproval(ctx workflow.Context, step *app.WorkflowStep, noopPlan bool) error {
+	statusDescription := "Auto-approved in plan-only mode."
+	targetStatus := app.WorkflowStepApprovalStatusApproved
+
+	if noopPlan {
+		statusDescription = "No drift detected "
+		targetStatus = app.WorkflowStepNoDrift
+	} else {
+		statusDescription = "Drift detected"
+		targetStatus = app.WorkflowStepDrifted
+	}
+
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: step.ID,
+		Status: app.CompositeStatus{
+			Status:                 app.WorkflowStepApprovalStatusApproved,
+			StatusHumanDescription: "auto-approved (plan-only mode) " + strconv.Itoa(step.Idx+1),
+			Metadata: map[string]any{
+				"step_idx":  step.Idx,
+				"status":    "auto-approved",
+				"plan_only": true,
+				"no_op":     noopPlan,
+			},
+		},
+	}); err != nil {
+		return errors.Wrap(err, "unable to update step to auto-approved status")
+	}
+
+	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
+		StepID:            step.ID,
+		Status:            targetStatus,
+		StatusDescription: statusDescription,
+	}); err != nil {
+		return errors.Wrap(err, "unable to update step target status")
+	}
+
+	return nil
 }
