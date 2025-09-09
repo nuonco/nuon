@@ -55,3 +55,23 @@ func (r RunnerHeartBeat) GetTableOptions() string {
 func (r RunnerHeartBeat) GetTableClusterOptions() string {
 	return "on cluster simple"
 }
+
+// Struct for a read-only materialized view. the view is created directly in sql.
+// NOTE(fd): i am not registering this model so GORM never thinks about it when migrating.
+type LatestRunnerHeartBeat struct {
+	RunnerID  string        `json:"runner_id,omitzero"  gorm:"->" temporaljson:"runner_id,omitzero,omitempty"`
+	Process   RunnerProcess `json:"process"             gorm:"->" swaggertype:"string"`
+	Version   string        `json:"version,omitzero"    gorm:"->" temporaljson:"version,omitzero,omitempty"`
+	StartedAt time.Time     `json:"started_at,omitzero" gorm:"-"  temporaljson:"started_at,omitzero,omitempty"`
+	AliveTime time.Duration `json:"alive_time,omitzero" gorm:"->" swaggertype:"primitive,integer" temporaljson:"alive_time,omitzero,omitempty"`
+	CreatedAt time.Time     `json:"created_at,omitzero" gorm:"->;column:created_at_latest" temporaljson:"CreatedAt,omitzero,omitempty"`
+}
+
+func (r *LatestRunnerHeartBeat) AfterQuery(tx *gorm.DB) error {
+	r.StartedAt = r.CreatedAt.Add(-1 * r.AliveTime)
+	return nil
+}
+
+func (*LatestRunnerHeartBeat) TableName() string {
+	return "latest_runner_heart_beats"
+}
