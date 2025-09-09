@@ -22,6 +22,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Long:              "Manage builds of your app components",
 		Aliases:           []string{"b"},
 		PersistentPreRunE: c.persistentPreRunE,
+		GroupID:           AdditionalGroup.ID,
 	}
 
 	listCmd := &cobra.Command{

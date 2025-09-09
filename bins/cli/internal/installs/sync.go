@@ -11,10 +11,10 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/pelletier/go-toml"
-	"github.com/pterm/pterm"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 	"github.com/powertoolsdev/mono/pkg/config"
 )
 
@@ -59,7 +59,7 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, auto
 					"install \"%s\" is not managed by an Install Config file, syncing can overwrite existing config",
 					appInstall.Name,
 				))
-				ok, _ := pterm.DefaultInteractiveConfirm.Show(fmt.Sprintf(
+				ok, _ := bubbles.ShowConfirmDialog(fmt.Sprintf(
 					"Do you want to continue syncing install \"%s\"?",
 					appInstall.Name,
 				))
