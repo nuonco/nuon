@@ -2,6 +2,7 @@
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { Layout, OrgProvider } from '@/components'
+import { REFRESH_PAGE_INTERVAL, REFRESH_PAGE_WARNING } from '@/configs/app'
 import { getAPIVersion, getOrg, getOrgs } from '@/lib'
 import { AutoRefreshProvider } from '@/providers/auto-refresh-provider'
 import { VERSION } from '@/utils'
@@ -32,8 +33,8 @@ export default async function OrgLayout({ children, params }) {
 
   return (
     <AutoRefreshProvider
-      refreshIntervalMs={10 * 60 * 1000} // 10 minutes
-      showWarning={true}
+      refreshIntervalMs={REFRESH_PAGE_INTERVAL}
+      showWarning={REFRESH_PAGE_WARNING}
       warningTimeMs={30 * 1000} // 30 second warning
     >
       <OrgProvider initOrg={org} shouldPoll>

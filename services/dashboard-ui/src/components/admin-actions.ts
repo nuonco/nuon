@@ -2,7 +2,7 @@
 
 import type { TRunner } from '@/types'
 import { auth0 } from '@/lib/auth'
-import { API_URL, ADMIN_API_URL } from '@/utils'
+import { API_URL, ADMIN_API_URL } from '@/configs/api'
 
 async function adminAction(
   domain: string,
