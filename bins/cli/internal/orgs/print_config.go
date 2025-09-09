@@ -1,8 +1,9 @@
 package orgs
 
 import (
+	"fmt"
+
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/pterm/pterm"
 )
 
 func (s *Service) PrintConfig(asJSON bool) error {
@@ -10,7 +11,7 @@ func (s *Service) PrintConfig(asJSON bool) error {
 
 	settings := s.cfg.AllSettings()
 	if len(settings) == 0 {
-		pterm.DefaultBasicText.Println("No config set")
+		fmt.Println("No config set")
 		return nil
 	} else {
 

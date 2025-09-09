@@ -51,7 +51,8 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "unable to initialize api client")
 	}
 
-	if cmd.Use != "login" {
+	// Skip user initialization for auth commands (login, logout)
+	if cmd.Use != "login" && cmd.Use != "auth" && (cmd.Parent() == nil || cmd.Parent().Use != "auth") {
 		if err := c.initUser(); err != nil {
 			return errors.Wrap(err, "unable to initialize user")
 		}

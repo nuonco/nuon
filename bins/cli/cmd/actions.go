@@ -14,9 +14,10 @@ func (c *cli) actionsCmd() *cobra.Command {
 
 	actionsCmd := &cobra.Command{
 		Use:               "actions",
-		Short:             "manage app actions",
+		Short:             "Manage app actions",
 		Aliases:           []string{"a"},
 		PersistentPreRunE: c.persistentPreRunE,
+		GroupID:           AdditionalGroup.ID,
 	}
 
 	appID := ""

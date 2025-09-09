@@ -7,7 +7,7 @@ import (
 
 	"github.com/nuonco/nuon-go"
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
 type Service struct {
@@ -37,20 +37,20 @@ func (s *Service) GetInstallID() string {
 
 func (s *Service) unsetInstallID(ctx context.Context) error {
 	s.cfg.Set("install_id", "")
-	pterm.Info.Printfln("current install is now %s", pterm.Green("unset"))
+	fmt.Printf("%s\n", bubbles.InfoStyle.Render("current install is now unset"))
 	return s.cfg.WriteConfig()
 }
 
 func (s *Service) printInstallSetMsg(name, id string) {
-	pterm.Info.Printfln("current install is now %s: %s", pterm.Green(name), pterm.Green(id))
+	fmt.Printf("%s\n", bubbles.InfoStyle.Render(fmt.Sprintf("current install is now %s: %s", name, id)))
 }
 
 func (s *Service) printNoInstallsMsg() {
-	pterm.DefaultBasicText.Printfln("you don't have any installs, create one using %s", pterm.LightMagenta("installs create"))
+	fmt.Printf("%s\n", bubbles.BaseStyle.Render("you don't have any installs, create one using installs create"))
 }
 
 func (s *Service) printInstallNotFoundMsg(id string) {
-	pterm.DefaultBasicText.Printfln("can't find install %s, use %s to view all installs or create one using %s", pterm.Green(id), pterm.LightMagenta("installs list"), pterm.LightMagenta("installs create"))
+	fmt.Printf("%s\n", bubbles.BaseStyle.Render(fmt.Sprintf("can't find install %s, use installs list to view all installs or create one using installs create", id)))
 }
 
 func (s *Service) notFoundErr(id string) error {
