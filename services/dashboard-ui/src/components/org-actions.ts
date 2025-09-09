@@ -2,14 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
+import { auth0 } from '@/lib/auth'
 import { joinWaitlist, type IJoinWaitlist } from '@/lib'
 import type { TInvite, TWaitlist } from '@/types'
-import {
-  mutateData,
-  nueMutateData,
-  auth0,
-  SF_TRIAL_ACCESS_ENDPOINT,
-} from '@/utils'
+import { mutateData, nueMutateData, SF_TRIAL_ACCESS_ENDPOINT } from '@/utils'
 
 export async function requestWaitlistAccess(
   formData: FormData
