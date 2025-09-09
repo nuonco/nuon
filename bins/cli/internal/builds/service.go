@@ -1,9 +1,11 @@
 package builds
 
 import (
+	"fmt"
+
 	"github.com/nuonco/nuon-go"
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
 type Service struct {
@@ -19,9 +21,9 @@ func New(apiClient nuon.Client, cfg *config.Config) *Service {
 }
 
 func (s *Service) printAppNotSetMsg() {
-	pterm.DefaultBasicText.Printfln("current app is not set, use %s to set one", pterm.LightMagenta("apps select"))
+	fmt.Printf("%s\n", bubbles.BaseStyle.Render("current app is not set, use apps select to set one"))
 }
 
 func (s *Service) printOrgNotSetMsg() {
-	pterm.DefaultBasicText.Printfln("current org is not set, use %s to set one", pterm.LightMagenta("orgs select"))
+	fmt.Printf("%s\n", bubbles.BaseStyle.Render("current org is not set, use orgs select to set one"))
 }

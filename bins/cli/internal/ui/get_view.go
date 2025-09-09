@@ -2,25 +2,26 @@ package ui
 
 import (
 	"github.com/cockroachdb/errors/withstack"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 	"github.com/powertoolsdev/mono/pkg/errs"
-	"github.com/pterm/pterm"
 )
 
 type GetView struct {
+	tableView *bubbles.TableView
 }
 
 func NewGetView() *GetView {
-	return &GetView{}
+	return &GetView{
+		tableView: bubbles.NewTableView(),
+	}
 }
 
 func (v *GetView) Print(msg string) {
-	pterm.DefaultBasicText.Println(msg)
+	v.tableView.Print(msg)
 }
 
 func (v *GetView) Render(data [][]string) {
-	pterm.DefaultTable.
-		WithData(data).
-		Render()
+	v.tableView.Render(data)
 }
 
 func (v *GetView) Error(err error) error {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
 func prompt(autoApprove bool, msg string, vars ...any) error {
@@ -12,9 +12,12 @@ func prompt(autoApprove bool, msg string, vars ...any) error {
 		return nil
 	}
 
-	pterm.Println()
-	yes, _ := pterm.DefaultInteractiveConfirm.Show(fmt.Sprintf(msg, vars...))
-	pterm.Println()
+	promptText := fmt.Sprintf(msg, vars...)
+	yes, err := bubbles.Confirm(promptText)
+	if err != nil {
+		return err
+	}
+	
 	if !yes {
 		return errors.New("Stopping now")
 	}
