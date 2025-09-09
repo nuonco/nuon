@@ -2,7 +2,8 @@
 // TODO(nnnat): URLSearchParams typing is terrible.
 // What we're doing now is legit but TS doesn't think so.
 import type { TRunnerJob } from '@/types'
-import { API_URL, getFetchOpts } from '@/utils'
+import { API_URL } from '@/configs/api'
+import { getFetchOpts } from '@/utils'
 import type { IGetRunner } from '../shared-interfaces'
 
 export type TRunnerJobGroup =

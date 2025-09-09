@@ -37,3 +37,18 @@ export type TPaginationPageData = {
   hasNext: string
   offset: string
 }
+
+// fetch wrapper types
+export type TAPIError = {
+  description: string;
+  error: string;
+  user_error: boolean;
+  meta?: any;
+};
+
+export type TAPIResponse<T> = {
+  data: T | null;
+  error: null | TAPIError;
+  headers: Response["headers"];
+  status: Response["status"];
+};
