@@ -257,27 +257,39 @@ func (a *Activities) UpdateRunStatusV2(ctx context.Context, req UpdateRunStatusV
 			Where("id = ?", req.RunID).
 			First(&run)
 		if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
-			return fmt.Errorf("unable to get install deploy: %w", res.Error)
+			return fmt.Errorf("unable to get install sandbox run: %w", res.Error)
+		}
+
+		install := &app.Install{}
+		res = a.db.WithContext(ctx).
+			Where("id = ?", run.InstallID).
+			First(install)
+		if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
+			return fmt.Errorf("unable to get install: %w", res.Error)
+		}
+
+		installSandbox := app.InstallSandbox{}
+		res = a.db.WithContext(ctx).
+			Where("install_id = ?", install.ID).
+			First(&installSandbox)
+		if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
+			return fmt.Errorf("unable to get install sandbox: %w", res.Error)
 		}
 
 		if res.Error == gorm.ErrRecordNotFound {
 			return nil
 		}
 
-		if run.InstallSandboxID == nil {
-			return nil
-		}
-
-		installSandbox := app.InstallSandbox{
-			ID: *run.InstallSandboxID,
+		installSandbox = app.InstallSandbox{
+			ID: installSandbox.ID,
 		}
 
 		getter := func(ctx context.Context) (app.CompositeStatus, error) {
-			var installSandbox app.InstallSandbox
-			if err := a.getStatus(ctx, &installSandbox, *run.InstallSandboxID); err != nil {
+			var ninstallSandbox app.InstallSandbox
+			if err := a.getStatus(ctx, &ninstallSandbox, installSandbox.ID); err != nil {
 				return app.CompositeStatus{}, err
 			}
-			return installSandbox.StatusV2, nil
+			return ninstallSandbox.StatusV2, nil
 		}
 
 		err = a.updateStatusV2(ctx, &installSandbox, compStatus, getter)

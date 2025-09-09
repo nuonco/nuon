@@ -42,6 +42,8 @@ const (
 
 const (
 	WorkflowStepApprovalStatusApproved Status = "approved"
+	WorkflowStepDrifted                Status = "drifted"
+	WorkflowStepNoDrift                Status = "no-drift"
 	// WorkflowStepApprovalStatusAwaitingResponse  Status = "approval-awaiting" // NOTE(fd): superceded by shared const below
 	WorkflowStepApprovalStatusApprovalExpired   Status = "approval-expired"
 	WorkflowStepApprovalStatusApprovalDenied    Status = "approval-denied"
