@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { API_URL } from '@/utils/configs'
+import { API_URL } from '@/configs/api'
 
 async function buildTargetUrl(
   paramsPromise: Promise<{ slug?: string[] }>,

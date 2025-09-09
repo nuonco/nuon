@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { API_URL } from "@/configs/api"
 import {
   deployComponents as deployAllComponents,
   reprovisionInstall as reprovision,
@@ -11,7 +12,7 @@ import {
   forgetInstall as forget,
   installManagedByUI,
 } from '@/lib'
-import { API_URL, nueMutateData, getFetchOpts } from '@/utils'
+import {  nueMutateData, getFetchOpts } from '@/utils'
 import type { TInstall } from '@/types'
 
 interface IReprovisionInstall {

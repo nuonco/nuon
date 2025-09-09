@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TEMPORAL_ADMIN_URL } from '@/utils/configs'
+import { ADMIN_TEMPORAL_UI_URL } from '@/configs/api'
 
 async function buildTargetUrl(p, req: NextRequest) {
   const params = await p
   const urlPath =
     params.slug && params.slug.length > 0 ? '/' + params.slug.join('/') : ''
-  return `${TEMPORAL_ADMIN_URL}${urlPath}${req.nextUrl.search}`
+  return `${ADMIN_TEMPORAL_UI_URL}${urlPath}${req.nextUrl.search}`
 }
 
 async function proxyRequest(
