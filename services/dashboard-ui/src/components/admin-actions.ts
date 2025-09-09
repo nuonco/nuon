@@ -1,7 +1,7 @@
 'use server'
 
 import type { TRunner } from '@/types'
-import { auth0 } from '@/utils/auth'
+import { auth0 } from '@/lib/auth'
 import { API_URL, ADMIN_API_URL } from '@/utils'
 
 async function adminAction(

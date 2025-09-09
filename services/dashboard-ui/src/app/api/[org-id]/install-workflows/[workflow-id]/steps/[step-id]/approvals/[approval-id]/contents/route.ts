@@ -3,7 +3,8 @@ export const runtime = 'nodejs'
 import https from 'https'
 import http from 'http'
 import { NextRequest } from 'next/server'
-import { API_URL, auth0 } from '@/utils'
+import { auth0 } from '@/lib/auth'
+import { API_URL } from '@/utils'
 import { TRouteRes } from '@/app/api/[org-id]/types'
 
 export async function GET(

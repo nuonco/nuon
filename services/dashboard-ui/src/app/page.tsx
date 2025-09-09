@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Dashboard, Text } from '@/components'
 import type { TOrg } from "@/types";
-import { auth0 } from '@/utils/auth'
+import { auth0 } from '@/lib/auth'
 import { nueQueryData } from "@/utils/query-data";
 
 export default async function Home() {
