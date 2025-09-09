@@ -29,7 +29,7 @@ func NewCHMigrator(p ChParams, lc fx.Lifecycle) *migrations.Migrator {
 
 	return migrations.New(migrations.Params{
 		Opts:         opts,
-		Migrations:   chmigrations.All(),
+		Migrations:   p.Migrations.All(),
 		Models:       AllModels(),
 		MigrationsDB: p.MigrationsDB,
 		DB:           p.DB,
