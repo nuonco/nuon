@@ -44,21 +44,22 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
   const searchParams = useSearchParams()
   const queryTargetId = searchParams.get('target')
   const orgId = params?.['org-id'] as string
-  const [stepCount, setStepCount] = useState(installWorkflow?.steps?.length)
+  const workflowSteps = installWorkflow?.steps?.filter(
+    (s) => s?.execution_type !== 'hidden'
+  )
+  const [stepCount, setStepCount] = useState(workflowSteps?.length)
   const [activeStep, setActiveStep] = useState(
-    installWorkflow?.steps.find((s) => s?.id === queryTargetId) ||
-      installWorkflow?.steps?.find(
+    workflowSteps?.find((s) => s?.id === queryTargetId) ||
+      workflowSteps?.find(
         (s) =>
-          (s?.status?.status === 'in-progress' &&
-            s?.execution_type !== 'hidden') ||
-          (s?.status?.status === 'approval-awaiting' &&
-            s?.execution_type !== 'hidden') ||
-          (s?.status?.status === 'error' && s?.execution_type !== 'hidden')
+          s?.status?.status === 'in-progress' ||
+          s?.status?.status === 'approval-awaiting' ||
+          s?.status?.status === 'error'
       ) ||
       installWorkflow?.finished
-      ? installWorkflow?.steps?.find((s) => s?.status?.status === 'error')
-      : installWorkflow?.steps?.at(-1) ||
-          installWorkflow?.steps?.find((s) => s?.step_target_type !== '')
+      ? workflowSteps?.find((s) => s?.status?.status === 'error')
+      : workflowSteps?.at(-1) ||
+          workflowSteps?.find((s) => s?.step_target_type !== '')
   )
   const scrollableRef = useRef(null)
   const buttonRefs = useRef([])
@@ -71,41 +72,32 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
 
   useEffect(() => {
     if (!isManualControl) {
-      if (
-        installWorkflow?.steps?.some((s) => s?.status?.status === 'in-progress')
-      ) {
+      if (workflowSteps?.some((s) => s?.status?.status === 'in-progress')) {
         if (
           activeStep?.id !==
-          installWorkflow?.steps?.find(
-            (s) => s?.status?.status === 'in-progress'
-          ).id
+          workflowSteps?.find((s) => s?.status?.status === 'in-progress').id
         ) {
           setActiveStep(
-            installWorkflow?.steps?.find(
-              (s) => s?.status?.status === 'in-progress'
-            )
+            workflowSteps?.find((s) => s?.status?.status === 'in-progress')
           )
         }
       } else if (!activeStep) {
-        setActiveStep(installWorkflow?.steps?.at(0))
+        setActiveStep(workflowSteps?.at(0))
       }
     } else {
-      if (stepCount < installWorkflow?.steps?.length) {
+      if (stepCount < workflowSteps?.length) {
         setActiveStep(
-          installWorkflow?.steps?.find(
-            (s) => s?.status?.status === 'in-progress'
-          ) || installWorkflow?.steps?.find((s) => activeStep?.id === s?.id)
+          workflowSteps?.find((s) => s?.status?.status === 'in-progress') ||
+            workflowSteps?.find((s) => activeStep?.id === s?.id)
         )
-        setStepCount(installWorkflow?.steps.length)
+        setStepCount(workflowSteps.length)
         setManualControl(false)
       }
     }
   }, [installWorkflow])
 
   useEffect(() => {
-    const activeIndex = installWorkflow?.steps?.findIndex(
-      (s) => s.id === activeStep?.id
-    )
+    const activeIndex = workflowSteps?.findIndex((s) => s.id === activeStep?.id)
 
     if (buttonRefs.current[activeIndex] && !isManualControl) {
       const button = buttonRefs.current[activeIndex]
@@ -132,11 +124,11 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
           className="flex flex-col gap-2"
           childrenClassName="flex flex-col gap-4"
         >
-          {installWorkflow?.steps?.length ? (
+          {workflowSteps?.length ? (
             <div className="flex flex-col gap-2 workflow-steps">
               {(() => {
                 const steps =
-                  installWorkflow?.steps?.filter(
+                  workflowSteps?.filter(
                     (step) => step?.execution_type !== 'hidden'
                   ) || []
                 const groupedSteps = Object.groupBy(
@@ -260,11 +252,11 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
         {activeStep ? (
           <Section>
             <StepDetails
-              activeStepIndex={installWorkflow?.steps?.findIndex(
+              activeStepIndex={workflowSteps?.findIndex(
                 (s) => s?.id === activeStep?.id
               )}
             >
-              {installWorkflow?.steps?.map((step) =>
+              {workflowSteps?.map((step) =>
                 getStepType(step, install, installWorkflow?.approval_option)
               )}
             </StepDetails>
