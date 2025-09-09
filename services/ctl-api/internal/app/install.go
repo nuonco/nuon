@@ -98,7 +98,7 @@ func (i *Install) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
 			Name:          views.DefaultViewName(db, &Install{}, 6),
-			SQL:           viewsql.InstallsViewV5,
+			SQL:           viewsql.InstallsViewV6,
 			AlwaysReapply: true,
 		},
 		{
