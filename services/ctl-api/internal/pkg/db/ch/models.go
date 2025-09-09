@@ -16,5 +16,8 @@ func AllModels() []any {
 		&app.OtelMetricExponentialHistogram{},
 
 		&app.CHTableSize{},
+
+		// noted but not migrated
+		// &app.LatestRunnerHeartBeat{},
 	}
 }
