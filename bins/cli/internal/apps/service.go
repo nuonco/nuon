@@ -8,7 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon-go"
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
 type Service struct {
@@ -52,24 +52,24 @@ func (s *Service) unsetAppID(ctx context.Context) error {
 	// unset install_id
 	s.cfg.Set("install_id", "")
 	s.cfg.Set("app_id", "")
-	pterm.Info.Printfln("current app is now %s", pterm.Green("unset"))
+	fmt.Printf("%s\n", bubbles.InfoStyle.Render("current app is now unset"))
 	return s.cfg.WriteConfig()
 }
 
 func (s *Service) printAppSetMsg(name, id string) {
-	pterm.Info.Printfln("current app is now %s: %s", pterm.Green(name), pterm.Green(id))
+	fmt.Printf("%s\n", bubbles.InfoStyle.Render(fmt.Sprintf("current app is now %s: %s", name, id)))
 }
 
 func (s *Service) printNoAppsMsg() {
-	pterm.DefaultBasicText.Printfln("you don't have any apps, create one using %s", pterm.LightMagenta("apps create"))
+	fmt.Printf("%s\n", bubbles.BaseStyle.Render("you don't have any apps, create one using apps create"))
 }
 
 func (s *Service) printAppNotFoundMsg(id string) {
-	pterm.DefaultBasicText.Printfln("can't find app %s, use %s to view all apps", pterm.Green(id), pterm.LightMagenta("apps list"))
+	fmt.Printf("%s\n", bubbles.BaseStyle.Render(fmt.Sprintf("can't find app %s, use apps list to view all apps", id)))
 }
 
 func (s *Service) printAppNotSetMsg() {
-	pterm.DefaultBasicText.Printfln("current app is not set, use %s to set one", pterm.LightMagenta("apps select"))
+	fmt.Printf("%s\n", bubbles.BaseStyle.Render("current app is not set, use apps select to set one"))
 }
 
 func (s *Service) notFoundErr(id string) error {

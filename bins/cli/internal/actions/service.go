@@ -1,10 +1,12 @@
 package actions
 
 import (
+	"fmt"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon-go"
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
 type Service struct {
@@ -22,5 +24,5 @@ func New(v *validator.Validate, apiClient nuon.Client, cfg *config.Config) *Serv
 }
 
 func (s *Service) printAppNotSetMsg() {
-	pterm.DefaultBasicText.Printfln("current app is not set, use %s to set one", pterm.LightMagenta("apps select"))
+	fmt.Printf("%s\n", bubbles.BaseStyle.Render("current app is not set, use apps select to set one"))
 }

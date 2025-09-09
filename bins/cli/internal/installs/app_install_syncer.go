@@ -8,9 +8,9 @@ import (
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/pkg/browser"
-	"github.com/pterm/pterm"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 	"github.com/powertoolsdev/mono/pkg/config"
 )
 
@@ -73,12 +73,13 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 	}
 
 	diff, _, err := installCfg.Diff(nil)
-	pterm.DefaultBasicText.Println(diff)
+	fmt.Println(diff)
 
 	if !autoApprove {
-		ok, err := pterm.DefaultInteractiveConfirm.Show("Do you want to proceed with creating this install?")
+		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with creating this install?")
 		if err != nil {
-			return nil, fmt.Errorf("error getting confirmation: %w", err)
+			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
+			return nil, nil
 		}
 		if !ok {
 			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
@@ -142,15 +143,16 @@ func (s *appInstallSyncer) syncExistingInstall(
 		return appInstall, nil
 	}
 
-	pterm.DefaultBasicText.Printf(`[install diff]
+	fmt.Printf(`[install diff]
 %s
 (added %d, removed %d, changed %d)
 `, diff, diffRes.Added, diffRes.Removed, diffRes.Changed)
 
 	if !autoApprove {
-		ok, err := pterm.DefaultInteractiveConfirm.Show("Do you want to proceed with creating this install?")
+		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with updating this install?")
 		if err != nil {
-			return nil, fmt.Errorf("error getting confirmation: %w", err)
+			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
+			return nil, nil
 		}
 		if !ok {
 			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))

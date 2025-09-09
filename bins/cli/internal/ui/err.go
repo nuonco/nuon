@@ -1,9 +1,10 @@
 package ui
 
 import (
+	"fmt"
 	"os"
 
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
 func printDebugErr(err error) {
@@ -11,5 +12,5 @@ func printDebugErr(err error) {
 		return
 	}
 
-	pterm.Error.Println(err.Error())
+	fmt.Println(bubbles.ErrorStyle.Render(err.Error()))
 }
