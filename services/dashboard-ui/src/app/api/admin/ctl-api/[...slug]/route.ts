@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ADMIN_API_URL } from '@/utils/configs'
+import { ADMIN_API_URL } from '@/configs/api'
 
 // Handles both Swagger UI/static asset proxying (.js, .css, .ico, .html, .png, .svg, etc) and API requests.
 // For asset requests, sets the correct content-type. For API requests, passes through everything.
