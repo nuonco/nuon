@@ -2,47 +2,26 @@ package ui
 
 import (
 	"github.com/cockroachdb/errors/withstack"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 	"github.com/powertoolsdev/mono/pkg/errs"
-	"github.com/pterm/pterm"
 )
 
-type ListView struct{}
+type ListView struct {
+	tableView *bubbles.TableView
+}
 
 func NewListView() *ListView {
-	return &ListView{}
+	return &ListView{
+		tableView: bubbles.NewTableView(),
+	}
 }
 
 func (v *ListView) Render(data [][]string) {
-	if len(data) <= 1 {
-		pterm.DefaultBasicText.Println("No items found")
-		return
-	}
-
-	pterm.DefaultTable.
-		WithData(data).
-		WithHasHeader().
-		WithHeaderRowSeparator("-").
-		Render()
+	v.tableView.Render(data)
 }
 
 func (v *ListView) RenderPaging(data [][]string, offset, limit int, hasMore bool) {
-	if len(data) <= 1 {
-		pterm.DefaultBasicText.Println("No items found")
-		return
-	}
-
-	pterm.DefaultTable.
-		WithData(data).
-		WithHasHeader().
-		WithHeaderRowSeparator("-").
-		Render()
-
-	pterm.DefaultBasicText.Printf("offset %d, limit %d, ", offset, limit)
-	if hasMore {
-		pterm.DefaultBasicText.Println("more items available")
-	} else {
-		pterm.DefaultBasicText.Println("no more items available")
-	}
+	v.tableView.RenderPaging(data, offset, limit, hasMore)
 }
 
 func (v *ListView) Error(err error) error {
@@ -53,5 +32,5 @@ func (v *ListView) Error(err error) error {
 }
 
 func (v *ListView) Print(msg string) {
-	pterm.DefaultBasicText.Println(msg)
+	v.tableView.Print(msg)
 }

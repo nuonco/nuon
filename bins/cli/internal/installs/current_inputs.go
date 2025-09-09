@@ -2,12 +2,13 @@ package installs
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
 func (s *Service) CurrentInputs(ctx context.Context, installID string, asJSON bool) error {
@@ -37,9 +38,9 @@ func (s *Service) CurrentInputs(ctx context.Context, installID string, asJSON bo
 		for _, k := range keys {
 			data = append(data, []string{k, inp.RedactedValues[k]})
 		}
-		pterm.Println("")
-		pterm.DefaultBasicText.Println("inputs ID: " + pterm.LightMagenta(inp.ID))
-		pterm.DefaultBasicText.Println("modified at: " + pterm.LightMagenta(inp.CreatedAt))
+		fmt.Println("")
+		fmt.Println("inputs ID: " + bubbles.StyleHighlight(inp.ID))
+		fmt.Println("modified at: " + bubbles.StyleHighlight(inp.CreatedAt))
 		view.Render(data)
 	}
 	return nil

@@ -177,6 +177,11 @@ require (
 	github.com/DataDog/sketches-go v1.4.7 // indirect
 	github.com/DataDog/zstd v1.5.6 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
+	github.com/charmbracelet/colorprofile v0.3.1 // indirect
+	github.com/charmbracelet/fang v0.3.0 // indirect
+	github.com/charmbracelet/lipgloss/v2 v2.0.0-beta.2 // indirect
+	github.com/charmbracelet/x/cellbuf v0.0.13 // indirect
+	github.com/charmbracelet/x/exp/charmtone v0.0.0-20250603201427-c31516f43444 // indirect
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575 // indirect
 	github.com/eapache/queue/v2 v2.0.0-20230407133247-75960ed334e4 // indirect
 	github.com/ebitengine/purego v0.8.4 // indirect
@@ -185,6 +190,10 @@ require (
 	github.com/google/go-tpm v0.9.5 // indirect
 	github.com/knadh/koanf/providers/env/v2 v2.0.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20240909124753-873cd0166683 // indirect
+	github.com/muesli/mango v0.1.0 // indirect
+	github.com/muesli/mango-cobra v1.2.0 // indirect
+	github.com/muesli/mango-pflag v0.1.0 // indirect
+	github.com/muesli/roff v0.1.0 // indirect
 	github.com/outcaste-io/ristretto v0.2.3 // indirect
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
@@ -245,8 +254,8 @@ require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/bytedance/sonic/loader v0.2.1 // indirect
 	github.com/charmbracelet/bubbletea v1.1.0 // indirect
-	github.com/charmbracelet/x/ansi v0.2.3 // indirect
-	github.com/charmbracelet/x/term v0.2.0 // indirect
+	github.com/charmbracelet/x/ansi v0.8.0 // indirect
+	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443 // indirect
