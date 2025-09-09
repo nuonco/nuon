@@ -38,6 +38,8 @@ env:
   NUON_ORG_RUNNER: true
   NUON_CTL_API_ADMIN_URL: http://localhost:8082
   NUON_TEMPORAL_UI_URL: http://localhost:8234
+  REFRESH_PAGE_INTERVAL: 600000
+  REFRESH_PAGE_WARNING: true
 env_secrets:
   AUTH0_CLIENT_SECRET:
     name: dashboard-ui-auth0-client-secret-dev

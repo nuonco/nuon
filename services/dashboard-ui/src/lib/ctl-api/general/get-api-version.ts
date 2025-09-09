@@ -1,4 +1,5 @@
-import { API_URL, getFetchOpts } from '@/utils'
+import { API_URL } from '@/configs/api'
+import { getFetchOpts } from '@/utils'
 
 export async function getAPIVersion(): Promise<{
   git_ref: string

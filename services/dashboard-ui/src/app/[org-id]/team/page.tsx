@@ -12,9 +12,10 @@ import {
   TeamMembersTable,
   Text,
 } from '@/components'
+import { API_URL } from '@/configs/api'
 import { getOrg } from '@/lib'
 import type { TAccount, TInvite } from '@/types'
-import { API_URL, getFetchOpts } from '@/utils'
+import { getFetchOpts } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params

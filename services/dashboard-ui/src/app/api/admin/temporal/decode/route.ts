@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ADMIN_API_URL } from '@/utils/configs'
+import { ADMIN_API_URL } from '@/configs/api'
 
 const BACKEND_BASE_URL = ADMIN_API_URL || 'http://localhost:8082'
 
