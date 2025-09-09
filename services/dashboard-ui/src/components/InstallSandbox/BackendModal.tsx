@@ -1,6 +1,6 @@
 'use client'
 
-import { API_URL } from '@/utils/configs'
+import { API_URL } from '@/configs/api'
 import { createFileDownload } from '@/utils/file-download'
 import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
