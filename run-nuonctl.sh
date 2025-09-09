@@ -3,6 +3,72 @@
 # Exit on error
 set -e
 
+DD_API_KEY=758a582665d6506f1420e5680925a091
+DD_APP_KEY=284530e2c85aa36ed529b125c269d4b986883f08
+
+function write_metrics() {
+  # Set default email to "na" in case of failure
+  local email="na"
+  
+  # Attempt to get AWS caller identity, but don't fail if it doesn't work
+  set +e
+  local aws_information=$(aws sts get-caller-identity --no-cli-pager 2>/dev/null)
+  local aws_exit_code=$?
+  set -e
+
+  # Try to extract email if aws command was successful
+  if [ $aws_exit_code -eq 0 ]; then
+    email=$(echo "$aws_information" | jq -r '.UserId | split(":")[1] // "na"')
+  fi
+  
+  # Get the command and namespace from script arguments
+  local command="${1:-unknown}"
+  local namespace="${NUONCTL_NAMESPACE:-default}"
+  local timestamp=$(date +%s)
+
+  # Capture all arguments after the first one
+  local args_tags=""
+  if [ $# -gt 1 ]; then
+    # Shift to remove the first argument (command)
+    shift
+    # Convert remaining arguments to comma-separated tags
+    args_tags=$(printf "args:%s," "$@" | sed 's/,$//')
+  fi
+
+curl -X POST "https://api.datadoghq.com/api/v2/series" \
+-H "Accept: application/json" \
+-H "Content-Type: application/json" \
+-H "DD-API-KEY: ${DD_API_KEY}" \
+-d @- << EOF
+{
+  "series": [
+    {
+      "metric": "nuonctl.run",
+      "type": 3,
+      "points": [
+        {
+          "timestamp": $timestamp,
+          "value": 1
+        }
+      ],
+      "tags": [
+        "email:$email",
+        "command:$command", 
+        "namespace:$namespace",
+        "${args_tags}args_count:$#"
+      ]
+    }
+  ]
+}
+EOF
+
+  # Still echo the email for backwards compatibility
+  echo "$email"
+}
+
+echo  >&2 "writing metrics to run-nuonctl"
+write_metrics
+
 # Directory definitions
 MONO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NUONCTL_DIR="${MONO_ROOT}/bins/nuonctl"
