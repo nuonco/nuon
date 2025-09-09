@@ -1,4 +1,4 @@
-import { auth0 } from './auth'
+import { auth0 } from '@/lib/auth'
 
 export async function getFetchOpts(
   orgId = '',
