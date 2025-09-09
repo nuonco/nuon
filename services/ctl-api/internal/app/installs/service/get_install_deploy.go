@@ -57,6 +57,7 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 		Preload("ComponentBuild").
 		Preload("ComponentBuild.ComponentConfigConnection").
 		Preload("ComponentBuild.ComponentConfigConnection.Component").
+    Preload("ComponentBuild.VCSConnectionCommit").
 		Where("install_components.install_id = ?", installID).
 		First(&installDeploy, "install_deploys.id = ?", deployID)
 	if res.Error != nil {
