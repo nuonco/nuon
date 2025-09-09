@@ -1,4 +1,3 @@
-export * from './auth'
 export * from './configs'
 export * from './datadog-logs'
 export * from './datadog-rum'

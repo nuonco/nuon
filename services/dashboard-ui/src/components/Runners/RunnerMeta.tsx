@@ -3,8 +3,7 @@ import React, { type FC } from 'react'
 import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
 import { ID, Text } from '@/components/Typography'
-import { getRunnerLatestHeartbeat } from '@/lib'
-import type { TRunner, TRunnerGroupSettings } from '@/types'
+import type { TRunner, TRunnerHeartbeat, TRunnerGroupSettings } from '@/types'
 import { nueQueryData } from '@/utils'
 
 function isLessThan15SecondsOld(timestampStr: string) {
@@ -22,16 +21,18 @@ interface IRunnerMeta {
 }
 
 export const RunnerMeta: FC<IRunnerMeta> = async ({ orgId, runner }) => {
-  const [runnerHeartbeat, { data: settings }] = await Promise.all([
-    getRunnerLatestHeartbeat({
+  const [{ data: heartbeats }, { data: settings }] = await Promise.all([
+    nueQueryData<{ install: TRunnerHeartbeat; mng: TRunnerHeartbeat }>({
       orgId,
-      runnerId: runner.id,
-    }).catch(console.error),
+      path: `runners/${runner?.id}/heart-beats/latest`,
+    }),
     nueQueryData<TRunnerGroupSettings>({
       orgId,
       path: `runners/${runner?.id}/settings`,
     }),
   ])
+
+  const runnerHeartbeat = heartbeats?.install || undefined
 
   return (
     <div className="grid md:grid-cols-3 gap-8 items-start justify-start">
