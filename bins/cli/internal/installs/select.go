@@ -2,13 +2,11 @@ package installs
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
 func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bool) error {
@@ -43,21 +41,37 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 			return nil
 		}
 
-		// select options
-		var options []string
-		for _, install := range installs {
-			options = append(options, fmt.Sprintf("%s: %s", install.Name, install.ID))
+		// Convert installs to selector options
+		installOptions := make([]bubbles.InstallOption, len(installs))
+		for i, install := range installs {
+			installOptions[i] = bubbles.InstallOption{
+				ID:   install.ID,
+				Name: install.Name,
+			}
 		}
 
-		// select install prompt
-		selectedInstall, _ := pterm.DefaultInteractiveSelect.WithOptions(options).Show()
-		install := strings.Split(selectedInstall, ":")
-
-		if err := s.setInstallID(ctx, strings.ReplaceAll(install[1], " ", "")); err != nil {
+		// Show install selector
+		selectedInstallID, err := bubbles.SelectInstall(installOptions)
+		if err != nil {
 			return view.Error(err)
 		}
 
-		s.printInstallSetMsg(install[0], install[1])
+		if err := s.setInstallID(ctx, selectedInstallID); err != nil {
+			return view.Error(err)
+		}
+
+		// Find selected install for display
+		var selectedInstall *models.AppInstall
+		for _, install := range installs {
+			if install.ID == selectedInstallID {
+				selectedInstall = install
+				break
+			}
+		}
+
+		if selectedInstall != nil {
+			s.printInstallSetMsg(selectedInstall.Name, selectedInstall.ID)
+		}
 	}
 
 	return nil

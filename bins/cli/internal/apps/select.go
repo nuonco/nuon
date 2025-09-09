@@ -2,11 +2,10 @@ package apps
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
+	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
 func (s *Service) Select(ctx context.Context, appID string, asJSON bool) error {
@@ -25,21 +24,37 @@ func (s *Service) Select(ctx context.Context, appID string, asJSON bool) error {
 			return nil
 		}
 
-		// select options
-		var options []string
-		for _, app := range apps {
-			options = append(options, fmt.Sprintf("%s: %s", app.Name, app.ID))
+		// Convert apps to selector options
+		appOptions := make([]bubbles.AppOption, len(apps))
+		for i, app := range apps {
+			appOptions[i] = bubbles.AppOption{
+				ID:   app.ID,
+				Name: app.Name,
+			}
 		}
 
-		// select app prompt
-		selectedApp, _ := pterm.DefaultInteractiveSelect.WithOptions(options).Show()
-		app := strings.Split(selectedApp, ":")
-
-		if err := s.setAppID(ctx, strings.ReplaceAll(app[1], " ", "")); err != nil {
+		// Show app selector
+		selectedAppID, err := bubbles.SelectApp(appOptions)
+		if err != nil {
 			return view.Error(err)
 		}
 
-		s.printAppSetMsg(app[0], app[1])
+		if err := s.setAppID(ctx, selectedAppID); err != nil {
+			return view.Error(err)
+		}
+
+		// Find selected app for display
+		var selectedApp *models.AppApp
+		for _, app := range apps {
+			if app.ID == selectedAppID {
+				selectedApp = app
+				break
+			}
+		}
+
+		if selectedApp != nil {
+			s.printAppSetMsg(selectedApp.Name, selectedApp.ID)
+		}
 	}
 	return nil
 }

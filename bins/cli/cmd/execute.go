@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/charmbracelet/fang"
 	"github.com/getsentry/sentry-go"
 )
 
@@ -25,7 +27,11 @@ func Execute() {
 	}()
 
 	rootCmd := c.rootCmd()
-	err = rootCmd.ExecuteContext(c.ctx)
+	err = fang.Execute(
+		context.Background(),
+		rootCmd,
+		fang.WithColorSchemeFunc(fang.AnsiColorScheme),
+	)
 
 	// Sentry should be flushed just the once, just prior to program exit
 	if c.cfg != nil && !c.cfg.DisableTelemetry {

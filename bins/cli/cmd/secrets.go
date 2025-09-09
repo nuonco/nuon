@@ -15,11 +15,12 @@ func (c *cli) secretsCmd() *cobra.Command {
 	)
 
 	secretsCmd := &cobra.Command{
-		Use:               "secrets",
-		Short:             "Create and manage secrets.",
-		Aliases:           []string{"s"},
 		Deprecated:        "use 'nuon apps variables' instead",
+		Use:               "secrets",
+		Short:             "Create and manage secrets (deprecated)",
+		Aliases:           []string{"s"},
 		PersistentPreRunE: c.persistentPreRunE,
+		GroupID:           AdditionalGroup.ID,
 	}
 
 	// list command

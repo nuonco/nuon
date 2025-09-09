@@ -8,7 +8,7 @@ import (
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
 func (s *Service) pollDeploys(ctx context.Context, install *models.AppInstall, deploys []*models.AppInstallDeploy) error {
@@ -20,15 +20,12 @@ func (s *Service) pollDeploys(ctx context.Context, install *models.AppInstall, d
 	pollTimeout, cancel := context.WithTimeout(ctx, defaultSyncTimeout)
 	defer cancel()
 
-	multi := pterm.DefaultMultiPrinter
+	multiSpinner := bubbles.NewMultiSpinnerView()
+	multiSpinner.Start()
 
-	spinnersByDeployID := make(map[string]*pterm.SpinnerPrinter)
 	for _, dep := range deploys {
-		spinner, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start(fmt.Sprintf("deploying %s to %s", dep.ComponentName, install.Name))
-		spinnersByDeployID[dep.ID] = spinner
+		multiSpinner.AddSpinner(dep.ID, fmt.Sprintf("deploying %s to %s", dep.ComponentName, install.Name))
 	}
-
-	multi.Start()
 
 	time.Sleep(time.Second * 5)
 
@@ -37,22 +34,24 @@ func (s *Service) pollDeploys(ctx context.Context, install *models.AppInstall, d
 		case <-pollTimeout.Done():
 			err := fmt.Errorf("timeout waiting for components to deploy")
 			ui.PrintError(err)
-			for depID, spinner := range spinnersByDeployID {
-				dep, _ := depByID[depID]
-				spinner.Fail(fmt.Sprintf("timeout waiting for %s to deploy", dep.ComponentName))
+			for depID := range depByID {
+				dep := depByID[depID]
+				multiSpinner.CompleteSpinner(dep.ID, false, fmt.Sprintf("timeout waiting for %s to deploy", dep.ComponentName))
 			}
-			multi.Stop()
+			multiSpinner.Stop()
 			return err
 		default:
 		}
 
-		for depID := range spinnersByDeployID {
-			dep, _ := depByID[depID]
+		completedDeploys := make([]string, 0)
+
+		for depID := range depByID {
+			dep := depByID[depID]
 			installDeploy, err := s.api.GetInstallDeploy(ctx, install.ID, dep.ID)
 			if err != nil {
 				if nuon.IsServerError(err) {
-					spinnersByDeployID[depID].Fail(fmt.Sprintf("error deploying %s", dep.ComponentName))
-					delete(spinnersByDeployID, depID)
+					multiSpinner.CompleteSpinner(dep.ID, false, fmt.Sprintf("error deploying %s", dep.ComponentName))
+					completedDeploys = append(completedDeploys, depID)
 					continue
 				}
 				if nuon.IsNotFound(err) {
@@ -64,20 +63,25 @@ func (s *Service) pollDeploys(ctx context.Context, install *models.AppInstall, d
 			}
 
 			if installDeploy.Status == "error" {
-				spinnersByDeployID[depID].Fail(fmt.Sprintf("error deploying %s", dep.ComponentName))
-				delete(spinnersByDeployID, depID)
+				multiSpinner.CompleteSpinner(dep.ID, false, fmt.Sprintf("error deploying %s", dep.ComponentName))
+				completedDeploys = append(completedDeploys, depID)
 				continue
 			}
 
 			if installDeploy.Status == "active" {
-				spinnersByDeployID[depID].Success(fmt.Sprintf("finished deploying %s", dep.ComponentName))
-				delete(spinnersByDeployID, depID)
+				multiSpinner.CompleteSpinner(dep.ID, true, fmt.Sprintf("finished deploying %s", dep.ComponentName))
+				completedDeploys = append(completedDeploys, depID)
 				continue
 			}
 		}
 
-		if len(spinnersByDeployID) == 0 {
-			multi.Stop()
+		// Remove completed deploys from tracking
+		for _, depID := range completedDeploys {
+			delete(depByID, depID)
+		}
+
+		if len(depByID) == 0 {
+			multiSpinner.Stop()
 			return nil
 		}
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/nuonco/nuon-go"
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
 type Service struct {
@@ -41,20 +41,20 @@ func (s *Service) unsetOrgID(ctx context.Context) error {
 	s.cfg.Set("install_id", "")
 	s.cfg.Set("app_id", "")
 	s.cfg.Set("org_id", "")
-	pterm.Info.Printfln("current org is now %s", pterm.Green("unset"))
+	fmt.Printf("%s\n", bubbles.InfoStyle.Render("current org is now unset"))
 	return s.cfg.WriteConfig()
 }
 
 func (s *Service) printOrgSetMsg(name, id string) {
-	pterm.Info.Printfln("current org is now %s: %s", pterm.Green(name), pterm.Green(id))
+	fmt.Printf("%s\n", bubbles.InfoStyle.Render(fmt.Sprintf("current org is now %s: %s", name, id)))
 }
 
 func (s *Service) printNoOrgsMsg() {
-	pterm.DefaultBasicText.Printfln("you don't have any orgs, create one using %s", pterm.LightMagenta("orgs create"))
+	fmt.Printf("%s\n", bubbles.BaseStyle.Render("you don't have any orgs, create one using orgs create"))
 }
 
 func (s *Service) printOrgNotFoundMsg(id string) {
-	pterm.DefaultBasicText.Printfln("can't find org %s, use %s to view all orgs or create one using %s", pterm.Green(id), pterm.LightMagenta("orgs list"), pterm.LightMagenta("orgs create"))
+	fmt.Printf("%s\n", bubbles.BaseStyle.Render(fmt.Sprintf("can't find org %s, use orgs list to view all orgs or create one using orgs create", id)))
 }
 
 func (s *Service) notFoundErr(id string) error {
@@ -62,5 +62,5 @@ func (s *Service) notFoundErr(id string) error {
 }
 
 func (s *Service) printOrgNotSetMsg() {
-	pterm.DefaultBasicText.Printfln("current org is not set, use %s to set one", pterm.LightMagenta("orgs select"))
+	fmt.Printf("%s\n", bubbles.BaseStyle.Render("current org is not set, use orgs select to set one"))
 }
