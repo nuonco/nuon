@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { Layout, OrgProvider } from '@/components'
 import { getAPIVersion, getOrg, getOrgs } from '@/lib'
+import { AutoRefreshProvider } from '@/providers/auto-refresh-provider'
 import { VERSION } from '@/utils'
 
 export default async function OrgLayout({ children, params }) {
@@ -30,19 +31,25 @@ export default async function OrgLayout({ children, params }) {
   ])
 
   return (
-    <OrgProvider initOrg={org} shouldPoll>
-      <Layout
-        isSidebarOpen={isSidebarOpen}
-        orgs={orgs}
-        versions={{
-          api: apiVersion,
-          ui: {
-            version: VERSION,
-          },
-        }}
-      >
-        {children}
-      </Layout>
-    </OrgProvider>
+    <AutoRefreshProvider
+      refreshIntervalMs={10 * 60 * 1000} // 10 minutes
+      showWarning={true}
+      warningTimeMs={30 * 1000} // 30 second warning
+    >
+      <OrgProvider initOrg={org} shouldPoll>
+        <Layout
+          isSidebarOpen={isSidebarOpen}
+          orgs={orgs}
+          versions={{
+            api: apiVersion,
+            ui: {
+              version: VERSION,
+            },
+          }}
+        >
+          {children}
+        </Layout>
+      </OrgProvider>
+    </AutoRefreshProvider>
   )
 }
