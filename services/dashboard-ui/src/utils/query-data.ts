@@ -1,4 +1,4 @@
-import { API_URL } from '@/utils/configs'
+import { API_URL } from '@/configs/api'
 import { getFetchOpts } from '@/utils/get-fetch-opts'
 
 export type TResponseError = {

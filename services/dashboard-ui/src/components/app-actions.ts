@@ -1,9 +1,10 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { API_URL } from '@/configs/api'
 import { ICreateInstallData, installManagedByUI } from '@/lib'
 import type { TBuild, TComponent } from '@/types'
-import { API_URL, nueMutateData, getFetchOpts } from '@/utils'
+import { nueMutateData, getFetchOpts } from '@/utils'
 
 interface IRevalidateAppData {
   appId: string

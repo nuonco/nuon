@@ -4,7 +4,7 @@ import https from 'https'
 import http from 'http'
 import { NextRequest } from 'next/server'
 import { auth0 } from '@/lib/auth'
-import { API_URL } from '@/utils'
+import { API_URL } from '@/configs/api'
 import { TRouteRes } from '@/app/api/[org-id]/types'
 
 export async function GET(
