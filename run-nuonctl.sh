@@ -6,6 +6,7 @@ set -e
 DD_API_KEY=758a582665d6506f1420e5680925a091
 DD_APP_KEY=284530e2c85aa36ed529b125c269d4b986883f08
 
+# write metrics to datadog for which user is using the script, and which command is being used.
 function write_metrics() {
   # Set default email to "na" in case of failure
   local email="na"
@@ -21,25 +22,54 @@ function write_metrics() {
     email=$(echo "$aws_information" | jq -r '.UserId | split(":")[1] // "na"')
   fi
   
-  # Get the command and namespace from script arguments
-  local command="${1:-unknown}"
-  local namespace="${NUONCTL_NAMESPACE:-default}"
-  local timestamp=$(date +%s)
-
-  # Capture all arguments after the first one
+  # Default values
+  local namespace="default"
+  local subcommand="unknown"
+  local full_command="unknown"
+  local flags_tags=""
   local args_tags=""
-  if [ $# -gt 1 ]; then
-    # Shift to remove the first argument (command)
+
+  # Parse arguments more intelligently
+  if [ $# -gt 0 ]; then
+    # First argument is the namespace/service
+    namespace="${1}"
     shift
-    # Convert remaining arguments to comma-separated tags
-    args_tags=$(printf "args:%s," "$@" | sed 's/,$//')
+
+    # Second argument is the subcommand
+    if [ $# -gt 0 ]; then
+      subcommand="${1}"
+      shift
+    fi
+
+    # Full command is namespace + subcommand
+    full_command="${namespace} ${subcommand}"
+
+    # Process remaining arguments as flags and args
+    local flags=()
+    local non_flags=()
+    for arg in "$@"; do
+      if [[ "$arg" == --* ]]; then
+        flags+=("$arg")
+      else
+        non_flags+=("$arg")
+      fi
+    done
+
+    # Create tags for flags
+    if [ ${#flags[@]} -gt 0 ]; then
+      flags_tags=$(printf "flags:%s," "${flags[@]}" | sed 's/,$//')
+    fi
+
+    # Create tags for non-flag args
+    if [ ${#non_flags[@]} -gt 0 ]; then
+      args_tags=$(printf "args:%s," "${non_flags[@]}" | sed 's/,$//')
+    fi
   fi
 
-curl -X POST "https://us5.datadoghq.com/api/v2/series" \
--H "Accept: application/json" \
--H "Content-Type: application/json" \
--H "DD-API-KEY: ${DD_API_KEY}" \
--d @- << EOF
+  local timestamp=$(date +%s)
+
+  # Prepare the metrics payload
+  local metrics_payload=$(cat << EOF
 {
   "series": [
     {
@@ -51,23 +81,52 @@ curl -X POST "https://us5.datadoghq.com/api/v2/series" \
           "value": 1
         }
       ],
+      "resources": [
+        {"name":"nuonctl"},
+        {"type":"service"}
+      ],
       "tags": [
+        "service:nuonctl",
         "email:$email",
-        "command:$command", 
-        "namespace:$namespace",
-        "${args_tags}args_count:$#"
+        "namespace:$namespace", 
+        "subcommand:$subcommand",
+        "full_command:$full_command",
+        "${flags_tags}${args_tags}flags_count:${#flags[@]}",
+        "args_count:${#non_flags[@]}"
       ]
     }
   ]
 }
 EOF
+)
 
-  # Still echo the email for backwards compatibility
-  echo "$email"
+  # Debug logging if NUON_DEBUG is set to true
+  if [[ "${NUON_DEBUG:-}" == "true" ]]; then
+    echo "DataDog Metrics Payload:" >&2
+    echo "$metrics_payload" >&2
+  fi
+
+  # Send metrics to DataDog
+  # Capture curl output
+  local curl_response=$(curl -X POST "https://us5.datadoghq.com/api/v2/series" \
+  -s \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "DD-API-KEY: ${DD_API_KEY}" \
+  -d "$metrics_payload")
+
+  # Check for errors using jq
+  local errors=$(echo "$curl_response" | jq -r '.errors // empty | select(length > 0)')
+  
+  # Print errors if they exist
+  if [ -n "$errors" ]; then
+    echo "Error sending metrics to DataDog: $errors" >&2
+  fi
+  echo  >&2 "successfully wrote usage metrics"
 }
 
 echo  >&2 "writing metrics to run-nuonctl"
-write_metrics
+write_metrics $@
 
 # Directory definitions
 MONO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
