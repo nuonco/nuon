@@ -1,16 +1,20 @@
-import type { TBuild } from '@/types'
-import { queryData } from '@/utils'
-import type { IGetComponent } from '../shared-interfaces'
+import type { TBuild, TPaginationParams } from '@/types'
+import { api } from '@/lib/api'
+import { buildQueryParams } from '@/utils/build-query-params'
 
-export interface IGetComponentBuilds extends IGetComponent {}
+export interface IGetComponentBuilds extends TPaginationParams {
+  componentId: string
+  orgId: string
+}
 
 export async function getComponentBuilds({
   componentId,
   orgId,
-}: IGetComponent) {
-  return queryData<Array<TBuild>>({
-    errorMessage: 'Unable to retrieve component builds.',
+  limit,
+  offset,
+}: IGetComponentBuilds) {
+  return api<TBuild[]>({
     orgId,
-    path: `builds?component_id=${componentId}`,
+    path: `builds${buildQueryParams({ limit, offset, component_id: componentId })}`,
   })
 }
