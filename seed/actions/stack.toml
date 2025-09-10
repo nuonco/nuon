@@ -3,5 +3,5 @@ name        = "nuon-seed-actions-{{.nuon.install.id}}"
 description = "Quick link to install nuon-seed-actions for {{.nuon.install.id}}"
 
 # nested stack
-vpc_nested_template_url    = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox/exp/aws-cloudformation-templates/v0.1.5/vpc/eks/default/stack.yaml"
+vpc_nested_template_url    = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.1.6/vpc/eks/default/stack.yaml"
 runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.1.6/runner/asg/stack.yaml"
