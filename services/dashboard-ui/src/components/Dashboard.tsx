@@ -11,16 +11,10 @@ import { getAPIVersion } from '@/lib'
 import { VERSION } from '@/utils'
 
 const HeaderVersions = async () => {
-  const apiVersion = await getAPIVersion().catch((error) => {
-    console.error(error)
-    return {
-      git_ref: 'unknown',
-      version: 'unknown',
-    }
-  })
+  const { data: apiVersion } = await getAPIVersion()
 
   const versions = {
-    api: apiVersion,
+    api: apiVersion || { git_ref: 'unknown', version: 'unknown' },
     ui: {
       version: VERSION,
     },

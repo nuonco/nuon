@@ -81,8 +81,8 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
             <span className="flex flex-col gap-2 mt-2">
               {b?.vcs_connection_commit?.message &&
               b?.vcs_connection_commit?.sha ? (
-                <span>
-                  <ToolTip tipContent={`SHA: ${b?.vcs_connection_commit?.sha}`}>
+                <span className="">
+                  <ToolTip tipContent={`SHA: ${b?.vcs_connection_commit?.sha}`} alignment="right">
                     <Text
                       className="truncate !block w-20 !text-[11px]"
                       variant="mono-12"
@@ -90,8 +90,10 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
                       # {b?.vcs_connection_commit?.sha}
                     </Text>
                   </ToolTip>
-                  <Text className="!text-[11px] font-normal pr-2" isMuted>
-                    {b?.vcs_connection_commit?.message}
+                  <Text className="!text-[11px] font-normal pr-2 !block max-w-[250px] truncate" isMuted>
+                    <span className="truncate">
+                      {b?.vcs_connection_commit?.message}
+                    </span>
                   </Text>
                 </span>
               ) : null}
