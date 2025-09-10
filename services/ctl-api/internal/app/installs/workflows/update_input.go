@@ -1,16 +1,15 @@
 package workflows
 
 import (
-	"context"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/workflow"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/pkg/config/refs"
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -64,28 +63,20 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	var componentIDs []string
 	for _, comp := range getComponentsForChangedInputs(appConfig, &changedRefs) {
 		componentIDs = append(componentIDs, comp.ID)
-		comps, err := activities.AwaitGetComponentDependents(ctx, activities.GetComponentDependents{
-			AppID:           install.App.ID,
-			ComponentRootID: comp.ID,
-			ConfigVersion:   install.AppConfig.Version,
+
+		dependentCompIDs, err := activities.AwaitGetComponentDependents(ctx, &activities.GetComponentDependentsRequest{
+			AppConfigID: appConfig.ID,
+			ComponentID: comp.ID,
 		})
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to get component dependents for %s", comp.ID)
 		}
-		var cmpIds []string
-		for _, c := range comps {
-			cmpIds = append(cmpIds, c.ID)
-		}
-		componentIDs = append(componentIDs, cmpIds...)
+
+		componentIDs = append(componentIDs, dependentCompIDs...)
 	}
 	componentIDs = generics.UniqueSlice(componentIDs)
 
-	orderedCompIDs, err := helpers.GetDeploymentOrderFromAppConfig(context.TODO(), componentIDs, appConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get deployment order from components")
-	}
-
-	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, orderedCompIDs, sg)
+	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component deploy steps")
 	}
