@@ -333,3 +333,7 @@ func NewWaitListID() string {
 func NewHelmChartID() string {
 	return shortid.NewNanoID("hmc")
 }
+
+func NewEndpointAuditID() string {
+	return shortid.NewNanoID("epa")
+}

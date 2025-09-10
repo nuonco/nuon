@@ -77,9 +77,9 @@ env:
   RUNNER_HTTP_PORT: 8083
   GRACEFUL_SHUTDOWN_TIMEOUT: 1s
   # middlewares are applied from left to right, with the left most being the outermost.
-  MIDDLEWARES: tracer,public_metrics,error,public,size,global,auth,org,log,offset_pagination,invites,headers,cors,config,patcher,panicker
-  RUNNER_MIDDLEWARES: tracer,runner_metrics,error,size,public,auth,runner_org,log,offset_pagination,headers,cors,config,panicker
-  INTERNAL_MIDDLEWARES: tracer,internal_metrics,error,size,public,log,global,config,admin,offset_pagination,cors,config,panicker
+  MIDDLEWARES: tracer,public_metrics,error,public,size,global,public_audit,auth,org,log,offset_pagination,invites,headers,cors,config,patcher,panicker
+  RUNNER_MIDDLEWARES: tracer,runner_metrics,error,size,public,auth,runner_org,log,offset_pagination,headers,cors,config,runner_audit,panicker
+  INTERNAL_MIDDLEWARES: tracer,internal_metrics,error,size,public,log,global,config,admin,offset_pagination,cors,config,internal_audit,panicker
   GITHUB_APP_ID: !!string 261597
   RUNNER_API_URL: http://localhost:8083
   AUTH0_ISSUER_URL: "https://nuon.us.auth0.com/"
@@ -124,6 +124,7 @@ env:
   FORCE_DEBUG_MODE: true
   ENABLE_PROFILING: false
   PROFILING_PORT: 6060
+  ENABLE_ENDPOINT_AUDITING: true
 
 env_secrets:
   GITHUB_APP_KEY:
