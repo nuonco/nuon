@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
-	"gorm.io/gorm"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
@@ -44,49 +44,43 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 		typesSlice = pq.StringArray(strings.Split(types, ","))
 	}
 
-	component, err := s.getAppComponents(ctx, appID, q, typesSlice)
+	components, err := s.getAppComponents(ctx, appID, q, typesSlice)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app components: %w", err))
 		return
 	}
 
-	//reorderedCmp, err := s.appsHelpers.OrderComponentsByDep(ctx, component)
-	//if err != nil {
-	//ctx.Error(fmt.Errorf("unable to order components by dependency: %w", err))
-	//return
-	//}
-
-	ctx.JSON(http.StatusOK, component)
+	ctx.JSON(http.StatusOK, components)
 }
 
 func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []string) ([]app.Component, error) {
-	currentApp := &app.App{}
+	appCfg, err := s.appsHelpers.GetAppLatestConfig(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get latest app config")
+	}
+
+	var components []app.Component
 	tx := s.db.WithContext(ctx).
-		Preload("Components", func(db *gorm.DB) *gorm.DB {
-			db = db.Scopes(scopes.WithOffsetPagination)
-			if q != "" {
-				db = db.Where("components.name ILIKE ?", "%"+q+"%")
-			}
+		Scopes(scopes.WithOffsetPagination).
+		Where("id IN ?", []string(appCfg.ComponentIDs)).
+		Preload("Dependencies")
+	if q != "" {
+		tx = tx.Where("components.name ILIKE ?", "%"+q+"%")
+	}
 
-			if len(types) > 0 {
-				db = db.Where("components.type IN ?", types)
-			}
-			return db
-		}).
-		Preload("Components.ComponentConfigs").
-		Preload("Components.Dependencies")
+	if len(types) > 0 {
+		tx = tx.Where("components.type IN ?", types)
+	}
 
-	res := tx.First(&currentApp, "id = ?", appID)
+	res := tx.Find(&components)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	cmps, err := db.HandlePaginatedResponse(ctx, currentApp.Components)
+	cmps, err := db.HandlePaginatedResponse(ctx, components)
 	if err != nil {
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
-	currentApp.Components = cmps
-
-	return currentApp.Components, nil
+	return cmps, nil
 }
