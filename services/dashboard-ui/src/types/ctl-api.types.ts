@@ -203,3 +203,9 @@ export type TInstallStackVersionRun =
 export type TInstallStackOutputs =
   components['schemas']['app.InstallStackOutputs']
 export type TAppStackConfig = components['schemas']['app.AppStackConfig']
+
+// api version
+export type TAPIVersion = {
+  git_ref: string
+  version: string
+}
