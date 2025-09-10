@@ -35,6 +35,9 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
     }
   }, [installWorkflow, shouldPoll])
 
+  const workflowSteps =
+    installWorkflow?.steps?.filter((s) => s?.execution_type !== 'hidden') || []
+
   return (
     <div className="">
       <span className="flex w-full justify-between flex-wrap">
@@ -43,9 +46,9 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
             <span>&#x1F680;</span>
             <progress
               className="rounded-lg [&::-webkit-progress-bar]:rounded-lg [&::-webkit-progress-value]:rounded-lg   [&::-webkit-progress-bar]:bg-cool-grey-300 [&::-webkit-progress-value]:bg-green-400 [&::-moz-progress-bar]:bg-green-400 [&::-webkit-progress-value]:transition-all [&::-webkit-progress-value]:duration-500 [&::-moz-progress-bar]:transition-all [&::-moz-progress-bar]:duration-500 h-[8px]"
-              max={installWorkflow?.steps?.length}
+              max={workflowSteps.length}
               value={
-                installWorkflow?.steps?.filter(
+                workflowSteps.filter(
                   (s) =>
                     s?.status?.status === 'success' ||
                     s?.status?.status === 'active' ||
@@ -61,7 +64,7 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
             className="text-cool-grey-600 dark:text-white/70 self-end"
           >
             {
-              installWorkflow?.steps?.filter(
+              workflowSteps.filter(
                 (s) =>
                   s?.status?.status === 'success' ||
                   s?.status?.status === 'active' ||
@@ -69,16 +72,14 @@ export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
                   s?.status?.status === 'approved'
               ).length
             }{' '}
-            of {installWorkflow?.steps?.length} steps completed{' '}
-            {installWorkflow?.steps?.filter(
-              (s) => s?.status?.status === 'discarded'
-            ).length ? (
+            of {workflowSteps.length} steps completed{' '}
+            {workflowSteps.filter((s) => s?.status?.status === 'discarded')
+              .length ? (
               <>
                 ,{' '}
                 {
-                  installWorkflow?.steps?.filter(
-                    (s) => s?.status?.status === 'discarded'
-                  ).length
+                  workflowSteps.filter((s) => s?.status?.status === 'discarded')
+                    .length
                 }{' '}
                 steps discarded
               </>
