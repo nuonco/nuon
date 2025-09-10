@@ -1,7 +1,7 @@
 package audit
 
 type internalMiddleware struct {
-	baseMiddleware
+	*baseMiddleware
 }
 
 func (m *internalMiddleware) Name() string {
@@ -10,10 +10,6 @@ func (m *internalMiddleware) Name() string {
 
 func NewInternal(params Params) *internalMiddleware {
 	return &internalMiddleware{
-		baseMiddleware: baseMiddleware{
-			l:       params.L,
-			db:      params.DB,
-			context: "internal",
-		},
+		baseMiddleware: newBaseMiddleware(params, "internal"),
 	}
 }
