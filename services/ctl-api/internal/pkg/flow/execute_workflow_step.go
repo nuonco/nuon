@@ -133,7 +133,6 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 
 		return false, errors.Wrap(err, "failed to check for noop plan")
 	}
-
 	// check for plan contents here, if noop then mark auto approved + nex step as skipped since its noop change
 	if noopPlan {
 		if err := c.handleNoopDeployPlan(ctx, step, flw); err != nil {
