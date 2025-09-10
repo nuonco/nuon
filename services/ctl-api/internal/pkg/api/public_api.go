@@ -13,6 +13,7 @@ func NewPublicAPI(params Params) (*API, error) {
 		services:              params.Services,
 		middlewares:           params.Middlewares,
 		l:                     params.L,
+		db:                    params.DB,
 	}
 	if err := api.init(); err != nil {
 		return nil, errors.Wrap(err, "unable to initialize")

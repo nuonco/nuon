@@ -3,6 +3,7 @@ package api
 import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
@@ -18,4 +19,5 @@ type Params struct {
 	Middlewares []middlewares.Middleware `group:"middlewares"`
 	L           *zap.Logger
 	Cfg         *internal.Config
+	DB          *gorm.DB `name:"psql"`
 }
