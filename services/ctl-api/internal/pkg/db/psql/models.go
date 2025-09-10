@@ -8,6 +8,8 @@ import (
 // declare all models in the correct order they should be migrated.
 func AllModels() []interface{} {
 	return []interface{}{
+		&app.EndpointAudit{},
+
 		// management, auth and user management
 		&app.Role{},
 		&app.Account{},

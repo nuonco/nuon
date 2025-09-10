@@ -13,6 +13,7 @@ func NewRunnerAPI(params Params) (*API, error) {
 		middlewares:           params.Middlewares,
 		configuredMiddlewares: params.Cfg.RunnerMiddlewares,
 		l:                     params.L,
+		db:                    params.DB,
 	}
 
 	if err := api.init(); err != nil {
