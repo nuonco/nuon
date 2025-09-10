@@ -135,6 +135,9 @@ func AllModels() []interface{} {
 		// internal
 		&migrations.MigrationModel{},
 
+		// drifts
+		&app.DriftedObject{},
+
 		// waitlist
 		&app.Waitlist{},
 		// NOTE(jm): this is a special table used in both ch and postgres
