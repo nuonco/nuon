@@ -13,6 +13,7 @@ func NewInternalAPI(params Params) (*API, error) {
 		middlewares:           params.Middlewares,
 		l:                     params.L,
 		configuredMiddlewares: params.Cfg.InternalMiddlewares,
+		db:                    params.DB,
 	}
 
 	if err := api.init(); err != nil {

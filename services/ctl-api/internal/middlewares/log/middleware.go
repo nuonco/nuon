@@ -128,6 +128,7 @@ func (m *middleware) setCTXLogger(ctx *gin.Context) *zap.Logger {
 func (m *middleware) requestToZapFields(ctx *gin.Context, startAt time.Time) []zap.Field {
 	fields := []zap.Field{
 		zap.String("method", ctx.Request.Method),
+		zap.String("host", ctx.Request.Host),
 		zap.String("url", ctx.Request.URL.String()),
 		zap.String("path", ctx.FullPath()),
 		zap.String("query", ctx.Request.URL.RawQuery),
@@ -157,6 +158,7 @@ func (m *middleware) responseToZapFields(ctx *gin.Context, bw *responseBodyWrite
 	fields := []zap.Field{
 		zap.String("method", ctx.Request.Method),
 		zap.Int("status", ctx.Writer.Status()),
+		zap.String("host", ctx.Request.Host),
 		zap.String("url", ctx.Request.URL.String()),
 		zap.String("path", ctx.FullPath()),
 		zap.String("query", ctx.Request.URL.RawQuery),
